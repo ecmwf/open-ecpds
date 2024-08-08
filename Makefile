@@ -47,7 +47,7 @@ check-container-state = \
   fi
 
 # Conditional targets based on the environment
-.PHONY: all build run login rm-cntnr rm-image inst-libs make clean info
+.PHONY: all build run login rm-cntnr rm-image get-geodb inst-libs make clean info
 all: build run login ## Build, run and login into the dev-container (*)
 
 build: ## Build the dev-container (*)
@@ -77,6 +77,11 @@ rm-cntnr: ## Stop and remove the dev-container (*)
 rm-image: ## Remove the dev-image (*)
 	@$(call check-container-state,true,outside)
 	@$(DOCKER) rmi $(IMAGE_NAME) || exit 1
+
+get-geodb: ## Fetch GeoLite2-City (MaxMind.com) CDN files
+	@$(call check-container-state,"",inside)
+	wget -qO- https://cdn.jsdelivr.net/npm/geolite2-city/GeoLite2-City.mmdb.gz | \
+		gunzip -c > src/main/resources/master/conf/GeoLite2-City.mmdb
 
 inst-libs: ## Install jars in libs into the local Maven repository (**)
 	@$(call check-container-state,"",inside)
