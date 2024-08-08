@@ -47,7 +47,7 @@ check-container-state = \
   fi
 
 # Conditional targets based on the environment
-.PHONY: all build run login rm-cntnr rm-image import-libs make clean info
+.PHONY: all build run login rm-cntnr rm-image inst-libs make clean info
 all: build run login ## Build, run and login into the dev-container (*)
 
 build: ## Build the dev-container (*)
@@ -78,7 +78,7 @@ rm-image: ## Remove the dev-image (*)
 	@$(call check-container-state,true,outside)
 	@$(DOCKER) rmi $(IMAGE_NAME) || exit 1
 
-import-libs: ## Install jars in libs into the local Maven repository (**)
+inst-libs: ## Install jars in libs into the local Maven repository (**)
 	@$(call check-container-state,"",inside)
 	@mvn install:install-file -Dfile=libs/ecaccess.jar -DgroupId=ecaccess -DartifactId=ecaccess -Dversion=1.0.0 -Dpackaging=jar
 	@mvn install:install-file -Dfile=libs/ecmwf-webgrp.jar -DgroupId=ecaccess -DartifactId=ecmwf-webgrp -Dversion=1.0.0 -Dpackaging=jar
