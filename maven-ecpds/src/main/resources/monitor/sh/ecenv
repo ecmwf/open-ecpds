@@ -1,0 +1,60 @@
+#!/bin/sh
+
+#
+# File ecenv
+#
+# Purpose: Monitor common environment variables (OpenPDS)
+#
+# (c) Copyright ECMWF 2011-2024 - Laurent Gougeon (syi@ecmwf.int)
+#
+
+######################
+## OpenPDS directories
+######################
+ECPDS_APP="/usr/local/ecpds"
+ECPDS_LOG="/var/log/ecpds"
+ECPDS_TMP="/var/tmp/ecpds"
+
+##########################################
+## Set of commands used within the scripts
+##########################################
+cat=cat
+echo=echo
+find=find
+grep=grep
+java=java
+kill=kill
+ls=ls
+nohup=nohup
+pidof=pidof
+ps=ps
+rm=rm
+ulimit=ulimit
+wc=wc
+
+#####################################
+## Set values for OpenPDS directories
+#####################################
+dir_etc="/etc/ecpds/monitor"
+dir_htdocs="$ECPDS_APP/monitor/htdocs"
+dir_conf="$ECPDS_APP/monitor/conf"
+dir_lib="$ECPDS_APP/monitor/lib"
+dir_sh="$ECPDS_APP/monitor/sh"
+dir_log="$ECPDS_LOG/monitor"
+dir_tmp="$ECPDS_TMP/monitor"
+
+##################################
+## Check the ECPDS_APP directories
+##################################
+if [ ! -d "$dir_htdocs" -o ! -d "$dir_conf" -o ! -d "$dir_lib" -o ! -d "$dir_sh" ]; then
+  $echo "Missing directories in $ECPDS_APP!"
+  exit 1
+fi
+
+####################################
+## Check the log and tmp directories
+####################################
+if [ ! -d "$dir_log" -o ! -d "$dir_tmp" ]; then
+  $echo "Missing log or tmp directories!"
+  exit 1
+fi

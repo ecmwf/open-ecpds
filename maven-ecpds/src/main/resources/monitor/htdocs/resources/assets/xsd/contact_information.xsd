@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema elementFormDefault="qualified"
+           targetNamespace="http://www.ecmwf.int/schema/cos/contact_information/1.0"
+           xmlns="http://www.ecmwf.int/schema/cos/contact_information/1.0"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:ns2="http://www.w3.org/1999/xhtml"
+           xmlns:ns="http://www.ecmwf.int/schema/cos/contact_information/1.0"
+           xmlns:hfp="http://www.w3.org/2001/XMLSchema-hasFacetAndProperty">
+  <xs:element name="contactInformation" type="ContactInformationType"/>
+
+  <xs:complexType name="ContactInformationType">
+    <xs:sequence>
+      <xs:element maxOccurs="1" minOccurs="1" name="info" type="InfoType"/>
+
+      <xs:element maxOccurs="1" minOccurs="1" name="comments"
+                  type="CommentsType"/>
+
+      <xs:element maxOccurs="1" minOccurs="0" name="computingRepresentative" type="xs:string"/>
+
+      <xs:element maxOccurs="unbounded" minOccurs="0"
+                  name="mainOperationalContact" type="NameAndDetailsType"/>
+
+      <xs:element maxOccurs="unbounded" minOccurs="0"
+                  name="computerOperations" type="NameAndDetailsType"/>
+
+      <xs:element maxOccurs="unbounded" minOccurs="0" name="telecomOperators"
+                  type="NameAndDetailsType"/>
+
+      <xs:element maxOccurs="unbounded" minOccurs="0" name="meteorologists"
+                  type="NameAndDetailsType"/>
+
+      <xs:element maxOccurs="unbounded" minOccurs="0" name="ecpdsContact"
+                  type="NameAndDetailsType"/>
+
+      <xs:element maxOccurs="unbounded" minOccurs="0" name="switchboard"
+                  type="DetailsType"/>
+
+     <xs:element maxOccurs="unbounded" minOccurs="0" name="mailGroup"
+                  type="NameMailType"/>
+
+      <xs:element maxOccurs="1" minOccurs="0" name="dataServices"
+                  type="DataServicesType"/>
+
+      <xs:element maxOccurs="unbounded" minOccurs="0" name="other"
+                  type="OtherType"/>
+
+      <xs:element maxOccurs="1" minOccurs="0" name="documentation"
+                  type="DocumentationType"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="NameAndDetailsType">
+    <xs:sequence>
+      <xs:element name="name" type="xs:string"/>
+
+      <xs:element name="telephoneNumber" type="xs:string" minOccurs="0" maxOccurs="1"/>
+
+      <xs:element name="faxNumber" type="xs:string" minOccurs="0" maxOccurs="1"/>
+
+      <xs:element name="email" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="NameDetailsAndUrlType">
+    <xs:complexContent>
+      <xs:extension base="NameAndDetailsType">
+        <xs:sequence>
+          <xs:element name="url" type="xs:string"/>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="OtherType">
+    <xs:complexContent>
+      <xs:extension base="NameAndDetailsType">
+        <xs:attribute name="type" type="xs:string"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="DetailsType">
+    <xs:sequence>
+      <xs:element name="telephoneNumber" type="xs:string"/>
+
+      <xs:element name="email" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="NameTelType">
+    <xs:sequence>
+      <xs:element name="name" type="xs:string"/>
+
+      <xs:element name="telephoneNumber" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="NameMailType">
+    <xs:sequence>
+      <xs:element name="name" type="xs:string"/>
+
+      <xs:element name="email" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="CommentsType">
+    <xs:sequence>
+      <xs:element name="general" type="xs:string"/>
+
+      <xs:element name="disseminationCharts" type="xs:string" minOccurs="0" maxOccurs="1"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="InfoType">
+    <xs:sequence>
+      <xs:element name="organisationWebPage" type="xs:string"/>
+
+      <xs:element name="SADNumber" type="xs:string" minOccurs="0" maxOccurs="1"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="DocumentationType">
+    <xs:sequence>
+      <xs:element maxOccurs="unbounded" minOccurs="0"
+                  name="metappsSystemChange" type="xs:string"/>
+
+      <xs:element maxOccurs="unbounded" minOccurs="0" name="opsProcedure"
+                  type="xs:string"/>
+
+      <xs:element maxOccurs="unbounded" minOccurs="0" name="opsImportantNote"
+                  type="xs:string"/>
+
+      <xs:element maxOccurs="1" minOccurs="0" name="rmdcnTechnicalPage"
+                  type="xs:string"/>
+
+      <xs:element maxOccurs="unbounded" minOccurs="0" name="repgenEntry"
+                  type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="DataServicesType">
+    <xs:sequence>
+      <xs:element name="contractId" type="xs:string"/>
+
+      <xs:element maxOccurs="unbounded" minOccurs="0" name="technicalContact"
+                  type="NameDetailsAndUrlType"/>
+
+      <xs:element maxOccurs="unbounded" minOccurs="0"
+                  name="meteorologicalContact" type="NameDetailsAndUrlType"/>
+
+      <xs:element maxOccurs="unbounded" minOccurs="0" name="ecmwfContact"
+                  type="NameTelType"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>

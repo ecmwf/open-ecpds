@@ -1,0 +1,1363 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+
+ <!DOCTYPE tiles-definitions PUBLIC
+       "-//Apache Software Foundation//DTD Tiles Configuration 1.1//EN"
+       "http://jakarta.apache.org/struts/dtds/tiles-config_1_1.dtd">
+
+<tiles-definitions>
+
+	<!-- Base -->
+
+	<definition name=".ecmwf.base"
+		path="/WEB-INF/jsp/common/ecmwf/layout.jsp">
+		<put name="html.head"
+			value="/WEB-INF/jsp/common/ecmwf/html_head.jsp" />
+		<put name="page_width" value="100%" />
+		<put name="submenu_width" value="150" />
+		<put name="header" value=".ecmwf.header.simple" />
+		<put name="location"
+			value="/WEB-INF/jsp/common/ecmwf/location.jsp" />
+		<put name="submenu"
+			value="/WEB-INF/jsp/common/ecmwf/submenu.jsp" />
+		<put name="submenu_top" value=".pds.empty" />
+		<put name="search" value=".pds.empty" />
+		<put name="spare" value=".pds.empty" />
+		<put name="spare2" value=".pds.empty" />
+		<put name="spare3" value=".pds.spare.login" />
+		<put name="content"
+			value="/WEB-INF/jsp/common/ecmwf/content.jsp" />
+		<put name="helpKey" value="help.top" />
+		<put name="footer" value="/WEB-INF/jsp/common/ecmwf/footer.jsp" />
+		<put name="html.bottom"
+			value="/WEB-INF/jsp/common/ecmwf/html_bottom.jsp" />
+	</definition>
+
+	<definition name=".ecmwf.header"
+		path="/WEB-INF/jsp/common/ecmwf/header.jsp">
+		<put name="title" value="Default Header Title" />
+		<put name="location" value=".pds.empty" />
+	</definition>
+
+	<definition name=".ecmwf.header.simple"
+		path="/WEB-INF/jsp/common/ecmwf/header_simple.jsp">
+		<put name="title" value="Default Header Title" />
+		<put name="location" value=".pds.empty" />
+	</definition>
+
+	<definition name=".ecmwf.fullscreen.base"
+		path="/WEB-INF/jsp/common/ecmwf/fullscreen_layout.jsp">
+		<put name="location"
+			value="/WEB-INF/jsp/common/ecmwf/location.jsp" />
+		<put name="html.head"
+			value="/WEB-INF/jsp/common/ecmwf/html_head.jsp" />
+		<put name="header" value=".ecmwf.header.simple" />
+		<put name="submenu_top" value=".pds.empty" />
+		<put name="submenu" value=".pds.empty" />
+		<put name="spare" value=".pds.spare.login" />
+		<put name="spare2" value=".pds.empty" />
+		<put name="spare3" value=".pds.empty" />
+		<put name="search" value=".pds.empty" />
+		<put name="content"
+			value="/WEB-INF/jsp/common/ecmwf/content.jsp" />
+		<put name="helpKey" value="help.top" />
+		<put name="footer" value="/WEB-INF/jsp/common/ecmwf/footer.jsp" />
+		<put name="html.bottom"
+			value="/WEB-INF/jsp/common/ecmwf/html_bottom.jsp" />
+	</definition>
+
+	<definition name=".pds.file"
+		path="/WEB-INF/jsp/common/file.jsp" />
+
+	<!-- PDS base -->
+
+	<definition name=".pds.base" extends=".ecmwf.base">
+		<put name="location" value="/WEB-INF/jsp/pds/location.jsp" />
+		<put name="submenu" value="/WEB-INF/jsp/pds/submenu.jsp" />
+		<put name="content" value="/WEB-INF/jsp/pds/monitoring.jsp" />
+	</definition>
+
+	<!-- Error -->
+
+	<definition name=".error" extends=".pds.base">
+		<put name="title.key" value="errors.title" />
+		<put name="content" value="/WEB-INF/jsp/common/error.jsp" />
+	</definition>
+
+	<!-- Start -->
+
+	<definition name=".pds.start" extends=".pds.base">
+		<put name="title.expression" value="%{title}" />
+		<put name="submenu" value=".pds.spare.login" />
+		<put name="spare3" value=".pds.empty" />
+		<put name="content" value="/WEB-INF/jsp/pds/index.jsp" />
+	</definition>
+
+	<!-- Login -->
+
+	<definition name=".login" extends=".pds.base">
+		<put name="title.expression" value="%{title}" />
+		<put name="submenu" value=".pds.empty" />
+		<put name="location" value=".pds.empty" />
+		<put name="submenu_width" value="0" />
+		<put name="spare3" value=".pds.empty" />
+		<put name="content" value="/WEB-INF/jsp/pds/login/login.jsp" />
+	</definition>
+
+	<!-- Form -->
+
+	<definition name=".pds.form.content"
+		path="/WEB-INF/jsp/pds/form.jsp">
+		<put name="action" value="/do/login" />
+		<put name="action.parameter" value="" />
+		<put name="action.form.name" value="" />
+		<put name="body" value="/WEB-INF/jsp/pds/submenu.jsp" />
+		<put name="buttons"
+			value="/WEB-INF/jsp/common/ecmwf/buttons.jsp" />
+	</definition>
+
+	<!-- Spares -->
+
+	<definition name=".pds.spare.edit"
+		path="/WEB-INF/jsp/pds/spare_edit.jsp">
+		<put name="title" value="Edit" />
+		<put name="bean.name" value="none" />
+		<put name="application.path" value="/none/none" />
+	</definition>
+
+	<definition name=".pds.spare.login"
+		path="/WEB-INF/jsp/pds/login/spare.jsp">
+		<put name="title" value="Login" />
+		<put name="bean.name" value="none" />
+		<put name="application.path" value="/none/none" />
+	</definition>
+
+	<definition name=".pds.spare.monitoring"
+		path="/WEB-INF/jsp/pds/transfer/destination/spare.jsp" />
+
+	<definition name=".pds.empty"
+		path="/WEB-INF/jsp/common/empty.jsp" />
+
+	<!-- *** Data File ******************************************************************************************** -->
+
+	<definition name=".pds.datafile.base" extends=".pds.base">
+		<put name="title" value="Data" />
+		<put name="location"
+			value="/WEB-INF/jsp/pds/datafile/location.jsp" />
+		<put name="submenu"
+			value="/WEB-INF/jsp/pds/datafile/submenu.jsp" />
+	</definition>
+
+
+	<!-- Data File Main -->
+
+	<definition name=".pds.datafile"
+		extends=".pds.datafile.base">
+		<put name="title" value="Data Storage" />
+		<put name="submenu" value="/WEB-INF/jsp/pds/submenu.jsp" />
+		<put name="content" value="/WEB-INF/jsp/pds/datafile/index.jsp" />
+	</definition>
+
+	<!-- Data File -->
+
+	<definition name=".pds.datafile.datafile"
+		extends=".pds.datafile.base">
+		<put name="title" value="Data Files" />
+		<put name="date.select"
+			value="/WEB-INF/jsp/pds/common/date_select.jsp" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/datafile/datafile/datafiles.jsp" />
+		<put name="metadata.select"
+			value="/WEB-INF/jsp/pds/common/metadata_select.jsp" />
+	</definition>
+
+	<definition name=".pds.datafile.datafile.detail"
+		extends=".pds.datafile.base">
+		<put name="title.expression" value="Show Data File %{datafile.id}" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/datafile/datafile/detail.jsp" />
+		<put name="spare"
+			value="/WEB-INF/jsp/pds/datafile/datafile/spare.jsp" />
+	</definition>
+
+	<definition name=".pds.datafile.datafile.delete.content"
+		extends=".pds.form.content">
+		<put name="action" value="/datafile/datafile/edit/delete/" />
+		<put name="action.form.name" value="dataFileActionForm" />
+		<put name="body"
+			value="/WEB-INF/jsp/pds/datafile/datafile/data.jsp" />
+	</definition>
+
+	<definition name=".pds.datafile.datafile.delete"
+		extends=".pds.datafile.base">
+		<put name="title" value="Delete Data File" />
+		<put name="content" value=".pds.datafile.datafile.delete.content" />
+	</definition>
+
+	<!-- Meta Data -->
+
+	<definition name=".pds.datafile.metadata"
+		extends=".pds.datafile.base">
+		<put name="title" value="Meta Datas" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/datafile/metadata/metadatas.jsp" />
+	</definition>
+
+	<definition name=".pds.datafile.metadata.spare.edit"
+		extends=".pds.spare.edit">
+		<put name="bean.name" value="metadata" />
+	</definition>
+
+	<definition name=".pds.datafile.metadata.detail"
+		extends=".pds.datafile.base">
+		<put name="title" value="Show Meta Data" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/datafile/metadata/detail.jsp" />
+		<put name="spare" value=".pds.datafile.metadata.spare.edit" />
+	</definition>
+
+	<definition name=".pds.datafile.metadata.insert.content"
+		extends=".pds.form.content">
+		<put name="action" value="/datafile/metadata/edit/insert" />
+		<put name="action.form.name" value="dataTagActionForm" />
+		<put name="body"
+			value="/WEB-INF/jsp/pds/datafile/metadata/fields.jsp" />
+	</definition>
+	<definition name=".pds.datafile.metadata.insert"
+		extends=".pds.datafile.base">
+		<put name="title" value="Create Meta Data" />
+		<put name="content" value=".pds.datafile.metadata.insert.content" />
+	</definition>
+
+	<definition name=".pds.datafile.metadata.update.content"
+		extends=".pds.form.content">
+		<put name="action" value="/datafile/metadata/edit/update/" />
+		<put name="action.form.name" value="dataTagActionForm" />
+		<put name="body"
+			value="/WEB-INF/jsp/pds/datafile/metadata/fields.jsp" />
+	</definition>
+	<definition name=".pds.datafile.metadata.update"
+		extends=".pds.datafile.base">
+		<put name="title" value="Edit Meta Data" />
+		<put name="content" value=".pds.datafile.metadata.update.content" />
+	</definition>
+
+	<definition name=".pds.datafile.metadata.delete.content"
+		extends=".pds.form.content">
+		<put name="action" value="/datafile/metadata/edit/delete/" />
+		<put name="action.form.name" value="dataTagActionForm" />
+		<put name="body"
+			value="/WEB-INF/jsp/pds/datafile/metadata/data.jsp" />
+	</definition>
+	<definition name=".pds.datafile.metadata.delete"
+		extends=".pds.datafile.base">
+		<put name="title" value="Delete Meta Data" />
+		<put name="content" value=".pds.datafile.metadata.delete.content" />
+	</definition>
+
+	<!-- Transfer Group -->
+
+	<definition name=".pds.datafile.transfergroup.spare.edit"
+		extends=".pds.spare.edit">
+		<put name="bean.name" value="transfergroup" />
+	</definition>
+
+	<definition name=".pds.datafile.transfergroup"
+		extends=".pds.datafile.base">
+		<put name="title" value="Transfer Groups" />
+		<put name="spare" value=".pds.datafile.transfergroup.spare.edit" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/datafile/transfergroup/transfergroups.jsp" />
+	</definition>
+
+	<definition name=".pds.datafile.transfergroup.detail"
+		extends=".pds.datafile.base">
+		<put name="title" value="Show Transfer Group" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/datafile/transfergroup/detail.jsp" />
+		<put name="spare" value=".pds.datafile.transfergroup.spare.edit" />
+	</definition>
+
+	<definition
+		name=".pds.datafile.transfergroup.insert.content"
+		extends=".pds.form.content">
+		<put name="action" value="/datafile/transfergroup/edit/insert" />
+		<put name="action.form.name" value="transferGroupActionForm" />
+		<put name="body"
+			value="/WEB-INF/jsp/pds/datafile/transfergroup/fields.jsp" />
+	</definition>
+	<definition name=".pds.datafile.transfergroup.insert"
+		extends=".pds.datafile.base">
+		<put name="title" value="Create Transfer Group" />
+		<put name="content"
+			value=".pds.datafile.transfergroup.insert.content" />
+	</definition>
+
+	<definition
+		name=".pds.datafile.transfergroup.update.content"
+		extends=".pds.form.content">
+		<put name="action" value="/datafile/transfergroup/edit/update/" />
+		<put name="action.form.name" value="transferGroupActionForm" />
+		<put name="body"
+			value="/WEB-INF/jsp/pds/datafile/transfergroup/fields.jsp" />
+	</definition>
+	<definition name=".pds.datafile.transfergroup.update"
+		extends=".pds.datafile.base">
+		<put name="title" value="Edit Transfer Group" />
+		<put name="content"
+			value=".pds.datafile.transfergroup.update.content" />
+	</definition>
+
+	<definition
+		name=".pds.datafile.transfergroup.delete.content"
+		extends=".pds.form.content">
+		<put name="action" value="/datafile/transfergroup/edit/delete/" />
+		<put name="action.form.name" value="transferGroupActionForm" />
+		<put name="body"
+			value="/WEB-INF/jsp/pds/datafile/transfergroup/data.jsp" />
+	</definition>
+	<definition name=".pds.datafile.transfergroup.delete"
+		extends=".pds.datafile.base">
+		<put name="title" value="Delete Transfer Group" />
+		<put name="content"
+			value=".pds.datafile.transfergroup.delete.content" />
+	</definition>
+
+	<!-- Transfer Server -->
+
+	<definition name=".pds.datafile.transferserver"
+		extends=".pds.datafile.base">
+		<put name="title" value="Transfer Servers" />
+		<put name="spare" value=".pds.datafile.transferserver.spare.edit" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/datafile/transferserver/transferservers.jsp" />
+	</definition>
+
+	<definition name=".pds.datafile.transferserver.spare.edit"
+		extends=".pds.spare.edit">
+		<put name="bean.name" value="transferserver" />
+	</definition>
+
+	<definition name=".pds.datafile.transferserver.detail"
+		extends=".pds.datafile.base">
+		<put name="title" value="Show Transfer Server" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/datafile/transferserver/detail.jsp" />
+		<put name="spare" value=".pds.datafile.transferserver.spare.edit" />
+	</definition>
+
+	<definition
+		name=".pds.datafile.transferserver.insert.content"
+		extends=".pds.form.content">
+		<put name="action" value="/datafile/transferserver/edit/insert" />
+		<put name="action.form.name" value="transferServerActionForm" />
+		<put name="body"
+			value="/WEB-INF/jsp/pds/datafile/transferserver/fields.jsp" />
+	</definition>
+	<definition name=".pds.datafile.transferserver.insert"
+		extends=".pds.datafile.base">
+		<put name="title" value="Create Transfer Server" />
+		<put name="content"
+			value=".pds.datafile.transferserver.insert.content" />
+	</definition>
+
+	<definition
+		name=".pds.datafile.transferserver.update.content"
+		extends=".pds.form.content">
+		<put name="action" value="/datafile/transferserver/edit/update/" />
+		<put name="action.form.name" value="transferServerActionForm" />
+		<put name="body"
+			value="/WEB-INF/jsp/pds/datafile/transferserver/fields.jsp" />
+	</definition>
+	<definition name=".pds.datafile.transferserver.update"
+		extends=".pds.datafile.base">
+		<put name="title" value="Edit Transfer Server" />
+		<put name="content"
+			value=".pds.datafile.transferserver.update.content" />
+	</definition>
+
+	<definition
+		name=".pds.datafile.transferserver.delete.content"
+		extends=".pds.form.content">
+		<put name="action" value="/datafile/transferserver/edit/delete/" />
+		<put name="action.form.name" value="transferServerActionForm" />
+		<put name="body"
+			value="/WEB-INF/jsp/pds/datafile/transferserver/data.jsp" />
+	</definition>
+	<definition name=".pds.datafile.transferserver.delete"
+		extends=".pds.datafile.base">
+		<put name="title" value="Delete Transfer Server" />
+		<put name="content"
+			value=".pds.datafile.transferserver.delete.content" />
+	</definition>
+
+	<!-- *** Transfer ******************************************************************************************** -->
+
+	<definition name=".pds.transfer.base" extends=".pds.base">
+		<put name="title" value="Transfers" />
+		<put name="location"
+			value="/WEB-INF/jsp/pds/transfer/location.jsp" />
+		<put name="submenu"
+			value="/WEB-INF/jsp/pds/transfer/submenu.jsp" />
+	</definition>
+
+	<!-- Main page -->
+
+	<definition name=".pds.transfer"
+		extends=".pds.transfer.base">
+		<put name="title" value="Transmission" />
+		<put name="submenu" value="/WEB-INF/jsp/pds/submenu.jsp" />
+		<put name="content" value="/WEB-INF/jsp/pds/transfer/index.jsp" />
+	</definition>
+
+	<!-- Host -->
+
+	<definition name=".pds.transfer.host"
+		extends=".pds.transfer.base">
+		<put name="title" value="Transfer Hosts" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/transfer/host/hosts.jsp" />
+		<put name="spare" value=".pds.transfer.host.spare.edit" />
+		<put name="helpKey" value="help.host" />
+	</definition>
+
+	<definition name=".pds.transfer.host.spare.edit"
+		extends=".pds.spare.edit">
+		<put name="bean.name" value="host" />
+	</definition>
+
+	<definition name=".pds.transfer.host.detail"
+		extends=".pds.transfer.base">
+		<put name="title.expression"
+			value="Show Transfer Host %{host.nickName}" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/transfer/host/detail.jsp" />
+		<put name="spare" value=".pds.transfer.host.spare.edit" />
+		<put name="spare2"
+			value="/WEB-INF/jsp/pds/transfer/host/spare.jsp" />
+		<put name="helpKey" value="help.host" />
+	</definition>
+	
+	<definition name=".pds.transfer.host.changelog"
+		extends=".pds.transfer.host.detail">
+		<put name="content"
+			value="/WEB-INF/jsp/pds/transfer/host/changelog.jsp" />
+	</definition>
+	
+	<definition name=".pds.transfer.host.output"
+		extends=".pds.transfer.host.detail">
+		<put name="content"
+			value="/WEB-INF/jsp/pds/transfer/host/output.jsp" />
+	</definition>
+
+	<definition name=".pds.transfer.host.report"
+		extends=".pds.transfer.host.detail">
+		<put name="content"
+			value="/WEB-INF/jsp/pds/transfer/host/report.jsp" />
+	</definition>
+	
+	<definition name=".pds.transfer.host.insert.content"
+		extends=".pds.form.content">
+		<put name="action" value="/transfer/host/edit/insert" />
+		<put name="action.form.name" value="hostActionForm" />
+		<put name="body"
+			value="/WEB-INF/jsp/pds/transfer/host/fields.jsp" />
+	</definition>
+	<definition name=".pds.transfer.host.insert"
+		extends=".pds.transfer.base">
+		<put name="title" value="Create Transfer Host" />
+		<put name="content" value=".pds.transfer.host.insert.content" />
+		<put name="helpKey" value="help.host" />
+	</definition>
+
+	<definition name=".pds.transfer.host.update.content"
+		extends=".pds.form.content">
+		<put name="action" value="/transfer/host/edit/update/" />
+		<put name="action.form.name" value="hostActionForm" />
+		<put name="body"
+			value="/WEB-INF/jsp/pds/transfer/host/fields.jsp" />
+	</definition>
+	<definition name=".pds.transfer.host.update"
+		extends=".pds.transfer.base">
+		<put name="title" value="Edit Transfer Host" />
+		<put name="content" value=".pds.transfer.host.update.content" />
+		<put name="helpKey" value="help.host" />
+	</definition>
+
+	<definition name=".pds.transfer.host.delete.content"
+		extends=".pds.form.content">
+		<put name="action" value="/transfer/host/edit/delete/" />
+		<put name="action.form.name" value="hostActionForm" />
+		<put name="body" value="/WEB-INF/jsp/pds/transfer/host/data.jsp" />
+	</definition>
+	<definition name=".pds.transfer.host.delete"
+		extends=".pds.transfer.base">
+		<put name="title" value="Delete Transfer Host" />
+		<put name="content" value=".pds.transfer.host.delete.content" />
+		<put name="helpKey" value="help.host" />
+	</definition>
+
+	<!-- Transfer Methods -->
+
+	<definition name=".pds.transfer.method"
+		extends=".pds.transfer.base">
+		<put name="title" value="Transfer Methods" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/transfer/method/methods.jsp" />
+		<put name="spare" value=".pds.transfer.method.spare.edit" />
+	</definition>
+
+	<definition name=".pds.transfer.method.spare.edit"
+		extends=".pds.spare.edit">
+		<put name="bean.name" value="method" />
+	</definition>
+
+	<definition name=".pds.transfer.method.detail"
+		extends=".pds.transfer.base">
+		<put name="title.expression"
+			value="Show Transfer Method %{method.name}" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/transfer/method/detail.jsp" />
+		<put name="spare" value=".pds.transfer.method.spare.edit" />
+	</definition>
+
+	<definition name=".pds.transfer.method.insert.content"
+		extends=".pds.form.content">
+		<put name="action" value="/transfer/method/edit/insert" />
+		<put name="action.form.name" value="transferMethodActionForm" />
+		<put name="body"
+			value="/WEB-INF/jsp/pds/transfer/method/fields.jsp" />
+	</definition>
+	<definition name=".pds.transfer.method.insert"
+		extends=".pds.transfer.base">
+		<put name="title" value="Create Transfer Method" />
+		<put name="content" value=".pds.transfer.method.insert.content" />
+	</definition>
+
+	<definition name=".pds.transfer.method.update.content"
+		extends=".pds.form.content">
+		<put name="action" value="/transfer/method/edit/update/" />
+		<put name="action.form.name" value="transferMethodActionForm" />
+		<put name="body"
+			value="/WEB-INF/jsp/pds/transfer/method/fields.jsp" />
+	</definition>
+	<definition name=".pds.transfer.method.update"
+		extends=".pds.transfer.base">
+		<put name="title" value="Edit Transfer Method" />
+		<put name="content" value=".pds.transfer.method.update.content" />
+	</definition>
+
+	<definition name=".pds.transfer.method.delete.content"
+		extends=".pds.form.content">
+		<put name="action" value="/transfer/method/edit/delete/" />
+		<put name="action.form.name" value="transferMethodActionForm" />
+		<put name="body"
+			value="/WEB-INF/jsp/pds/transfer/method/data.jsp" />
+	</definition>
+	<definition name=".pds.transfer.method.delete"
+		extends=".pds.transfer.base">
+		<put name="title" value="Delete Transfer Method" />
+		<put name="content" value=".pds.transfer.method.delete.content" />
+	</definition>
+
+	<!-- Destinations -->
+
+	<definition name=".pds.transfer.destination"
+		extends=".pds.transfer.base">
+		<put name="title.key" value="ecpds.destination.title.listing" />
+		<put name="location"
+			value="/WEB-INF/jsp/pds/transfer/destination/location.jsp" />
+		<put name="spare" value=".pds.transfer.destination.spare.edit" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/transfer/destination/destinations.jsp" />
+	</definition>
+
+	<definition name=".pds.transfer.destination.spare.edit"
+		extends=".pds.spare.edit">
+		<put name="bean.name" value="destination" />
+	</definition>
+
+	<definition name=".pds.transfer.destination.detail"
+		extends=".pds.transfer.base">
+		<put name="title.expression"
+			value="Destination %{destination.name}" />
+		<put name="location"
+			value="/WEB-INF/jsp/pds/transfer/destination/location.jsp" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/transfer/destination/detail.jsp" />
+		<put name="spare" value=".pds.spare.monitoring" />
+		<put name="spare2" value=".pds.transfer.destination.spare.edit" />
+		<put name="helpKey" value="help.destination" />
+	</definition>
+
+	<definition name=".pds.transfer.destination.validate"
+		extends=".pds.transfer.destination.detail">
+		<put name="content"
+			value="/WEB-INF/jsp/pds/transfer/destination/validate.jsp" />
+	</definition>
+
+	<definition name=".pds.transfer.destination.allparams"
+		extends=".pds.transfer.destination.detail">
+		<put name="content"
+			value="/WEB-INF/jsp/pds/transfer/destination/all_parameters.jsp" />
+	</definition>
+
+	<definition name=".pds.transfer.destination.traffic"
+		extends=".pds.transfer.destination.detail">
+		<put name="content"
+			value="/WEB-INF/jsp/pds/transfer/destination/traffic.jsp" />
+	</definition>
+
+	<definition name=".pds.transfer.destination.changelog"
+		extends=".pds.transfer.destination.detail">
+		<put name="content"
+			value="/WEB-INF/jsp/pds/transfer/destination/changelog.jsp" />
+	</definition>
+
+	<definition name=".pds.transfer.destination.aliasesfrom"
+		extends=".pds.transfer.destination.detail">
+		<put name="content"
+			value="/WEB-INF/jsp/pds/transfer/destination/aliases_from.jsp" />
+	</definition>
+
+	<definition name=".pds.transfer.destination.aliasesto"
+		extends=".pds.transfer.destination.detail">
+		<put name="content"
+			value="/WEB-INF/jsp/pds/transfer/destination/aliases_to.jsp" />
+	</definition>
+
+	<definition name=".pds.transfer.destination.metadata"
+		extends=".pds.transfer.destination.detail">
+		<put name="content"
+			value="/WEB-INF/jsp/pds/transfer/destination/metadata.jsp" />
+	</definition>
+
+	<definition name=".pds.transfer.destination.insert.content"
+		extends=".pds.form.content">
+		<put name="action" value="/transfer/destination/edit/insert" />
+		<put name="action.form.name" value="destinationActionForm" />
+		<put name="body"
+			value="/WEB-INF/jsp/pds/transfer/destination/fields.jsp" />
+	</definition>
+	<definition name=".pds.transfer.destination.insert"
+		extends=".pds.transfer.base">
+		<put name="title" value="Create Destination" />
+		<put name="content"
+			value=".pds.transfer.destination.insert.content" />
+		<put name="helpKey" value="help.destination" />
+	</definition>
+
+	<definition name=".pds.transfer.destination.update.content"
+		extends=".pds.form.content">
+		<put name="action" value="/transfer/destination/edit/update/" />
+		<put name="action.form.name" value="destinationActionForm" />
+		<put name="body"
+			value="/WEB-INF/jsp/pds/transfer/destination/fields.jsp" />
+	</definition>
+	<definition name=".pds.transfer.destination.update"
+		extends=".pds.transfer.base">
+		<put name="title" value="Edit Destination" />
+		<put name="content"
+			value=".pds.transfer.destination.update.content" />
+		<put name="helpKey" value="help.destination" />
+	</definition>
+
+	<definition name=".pds.transfer.destination.delete.content"
+		extends=".pds.form.content">
+		<put name="action" value="/transfer/destination/edit/delete/" />
+		<put name="action.form.name" value="destinationActionForm" />
+		<put name="body"
+			value="/WEB-INF/jsp/pds/transfer/destination/data.jsp" />
+	</definition>
+	<definition name=".pds.transfer.destination.delete"
+		extends=".pds.transfer.base">
+		<put name="title" value="Delete Destination" />
+		<put name="content"
+			value=".pds.transfer.destination.delete.content" />
+		<put name="helpKey" value="help.destination" />
+	</definition>
+
+	<!-- Data Transfers -->
+
+	<definition name=".pds.transfer.data"
+		extends=".pds.transfer.base">
+		<put name="title" value="Data Transfers" />
+		<put name="date.select"
+			value="/WEB-INF/jsp/pds/common/date_select.jsp" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/transfer/data/transfers.jsp" />
+	</definition>
+
+	<definition name=".pds.transfer.data.detail"
+		extends=".pds.transfer.base">
+		<put name="title.expression"
+			value="Show Data Transfer %{datatransfer.id} for
+        destination %{datatransfer.destinationName}" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/transfer/data/detail.jsp" />
+		<put name="spare"
+			value="/WEB-INF/jsp/pds/transfer/data/spare.jsp" />
+	</definition>
+
+	<definition name=".pds.transfer.data.insert"
+		extends=".pds.transfer.base">
+		<put name="title" value="Create Data Transfer" />
+		<put name="content" value=".pds.transfer.data.insert.content" />
+	</definition>
+
+	<definition name=".pds.transfer.data.update"
+		extends=".pds.transfer.base">
+		<put name="title" value="Edit Data Transfer" />
+		<put name="content" value=".pds.transfer.data.update.content" />
+	</definition>
+
+	<definition name=".pds.transfer.data.delete"
+		extends=".pds.transfer.base">
+		<put name="title" value="Delete Data Transfer" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/transfer/data/delete.jsp" />
+	</definition>
+
+	<!-- Transfer Modules -->
+
+	<definition name=".pds.transfer.module"
+		extends=".pds.transfer.base">
+		<put name="title" value="Transfer Modules" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/transfer/module/modules.jsp" />
+		<put name="spare" value=".pds.transfer.module.spare.edit" />
+	</definition>
+
+	<definition name=".pds.transfer.module.spare.edit"
+		extends=".pds.spare.edit">
+		<put name="bean.name" value="module" />
+	</definition>
+
+	<definition name=".pds.transfer.module.detail"
+		extends=".pds.transfer.base">
+		<put name="title" value="Show Transfer Module" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/transfer/module/detail.jsp" />
+		<put name="spare" value=".pds.transfer.module.spare.edit" />
+	</definition>
+
+	<definition name=".pds.transfer.module.insert.content"
+		extends=".pds.form.content">
+		<put name="action" value="/transfer/module/edit/insert" />
+		<put name="action.form.name" value="ecTransModuleActionForm" />
+		<put name="body"
+			value="/WEB-INF/jsp/pds/transfer/module/fields.jsp" />
+	</definition>
+	<definition name=".pds.transfer.module.insert"
+		extends=".pds.transfer.base">
+		<put name="title" value="Create Transfer Module" />
+		<put name="content" value=".pds.transfer.module.insert.content" />
+	</definition>
+
+	<definition name=".pds.transfer.module.update.content"
+		extends=".pds.form.content">
+		<put name="action" value="/transfer/module/edit/update/" />
+		<put name="action.form.name" value="ecTransModuleActionForm" />
+		<put name="body"
+			value="/WEB-INF/jsp/pds/transfer/module/fields.jsp" />
+	</definition>
+	<definition name=".pds.transfer.module.update"
+		extends=".pds.transfer.base">
+		<put name="title" value="Edit Transfer Module" />
+		<put name="content" value=".pds.transfer.module.update.content" />
+	</definition>
+
+	<definition name=".pds.transfer.module.delete.content"
+		extends=".pds.form.content">
+		<put name="action" value="/transfer/module/edit/delete/" />
+		<put name="action.form.name" value="ecTransModuleActionForm" />
+		<put name="body"
+			value="/WEB-INF/jsp/pds/transfer/module/data.jsp" />
+	</definition>
+	<definition name=".pds.transfer.module.delete"
+		extends=".pds.transfer.base">
+		<put name="title" value="Delete Transfer Module" />
+		<put name="content" value=".pds.transfer.module.delete.content" />
+	</definition>
+
+	<!-- Transfer History -->
+
+	<definition name=".pds.transfer.history"
+		extends=".pds.transfer.base">
+		<put name="title" value="Transfer History" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/transfer/history/history.jsp" />
+		<put name="date.select"
+			value="/WEB-INF/jsp/pds/common/date_select.jsp" />
+		<put name="destination.select"
+			value="/WEB-INF/jsp/pds/common/destination_select.jsp" />
+		<put name="spare" value=".pds.spare.monitoring" />
+		<put name="spare2"
+			value="/WEB-INF/jsp/pds/transfer/history/spare.jsp" />
+	</definition>
+
+	<definition name=".pds.transfer.history.detail"
+		extends=".pds.transfer.base">
+		<put name="title" value="Transfer History Item" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/transfer/history/detail.jsp" />
+	</definition>
+
+	<!-- *** User ******************************************************************************************** -->
+
+	<definition name=".pds.user.base" extends=".pds.base">
+		<put name="title" value="Access Control" />
+		<put name="location" value="/WEB-INF/jsp/pds/user/location.jsp" />
+		<put name="submenu" value="/WEB-INF/jsp/pds/user/submenu.jsp" />
+	</definition>
+
+	<definition name=".pds.user" extends=".pds.user.base">
+		<put name="title" value="Access Control" />
+		<put name="submenu" value="/WEB-INF/jsp/pds/submenu.jsp" />
+		<put name="content" value="/WEB-INF/jsp/pds/user/index.jsp" />
+	</definition>
+
+	<definition name=".pds.user.detailer"
+		extends=".pds.user.base">
+		<put name="title" value="Access Detailer" />
+		<put name="submenu" value="/WEB-INF/jsp/pds/submenu.jsp" />
+		<put name="content" value="/WEB-INF/jsp/pds/user/detailer.jsp" />
+	</definition>
+
+	<!-- User -->
+
+	<definition name=".pds.user.user" extends=".pds.user.base">
+		<put name="title" value="Web Users" />
+		<put name="spare" value=".pds.user.user.spare.edit" />
+		<put name="date.select"
+			value="/WEB-INF/jsp/pds/common/date_select.jsp" />
+		<put name="content" value="/WEB-INF/jsp/pds/user/user/users.jsp" />
+	</definition>
+
+	<definition name=".pds.user.event" extends=".pds.user.user">
+		<put name="title" value="Web Event Log" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/user/user/events.jsp" />
+	</definition>
+
+	<definition name=".pds.user.user.spare.edit"
+		extends=".pds.spare.edit">
+		<put name="bean.name" value="user" />
+	</definition>
+
+	<definition name=".pds.user.user.detail" extends=".pds.user">
+		<put name="title" value="Show Web User" />
+		<put name="submenu" value="/WEB-INF/jsp/pds/user/submenu.jsp" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/user/user/detail.jsp" />
+		<put name="spare" value=".pds.user.user.spare.edit" />
+	</definition>
+
+	<definition name=".pds.user.event.detail"
+		extends=".pds.user.user.detail">
+		<put name="date.select"
+			value="/WEB-INF/jsp/pds/common/date_select.jsp" />
+		<put name="title.expression" value="Web Event Log for %{user.id}" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/user/user/user_event.jsp" />
+	</definition>
+
+	<definition name=".pds.user.user.insert.content"
+		extends=".pds.form.content">
+		<put name="action" value="/user/user/edit/insert" />
+		<put name="action.form.name" value="userActionForm" />
+		<put name="body" value="/WEB-INF/jsp/pds/user/user/fields.jsp" />
+	</definition>
+	<definition name=".pds.user.user.insert" extends=".pds.user">
+		<put name="title" value="Create Web User" />
+		<put name="submenu" value="/WEB-INF/jsp/pds/user/submenu.jsp" />
+		<put name="content" value=".pds.user.user.insert.content" />
+	</definition>
+
+	<definition name=".pds.user.user.update.content"
+		extends=".pds.form.content">
+		<put name="action" value="/user/user/edit/update/" />
+		<put name="action.form.name" value="userActionForm" />
+		<put name="body" value="/WEB-INF/jsp/pds/user/user/fields.jsp" />
+	</definition>
+	<definition name=".pds.user.user.update" extends=".pds.user">
+		<put name="title" value="Edit Web User" />
+		<put name="submenu" value="/WEB-INF/jsp/pds/user/submenu.jsp" />
+		<put name="content" value=".pds.user.user.update.content" />
+	</definition>
+	<definition name=".pds.user.user.delete.content"
+		extends=".pds.form.content">
+		<put name="action" value="/user/user/edit/delete/" />
+		<put name="action.form.name" value="userActionForm" />
+		<put name="body" value="/WEB-INF/jsp/pds/user/user/data.jsp" />
+	</definition>
+	<definition name=".pds.user.user.delete" extends=".pds.user">
+		<put name="title" value="Delete Web User" />
+		<put name="submenu" value="/WEB-INF/jsp/pds/user/submenu.jsp" />
+		<put name="content" value=".pds.user.user.delete.content" />
+	</definition>
+
+	<!-- IncomingUser -->
+
+	<definition name=".pds.user.incoming"
+		extends=".pds.user.base">
+		<put name="title" value="Data Users" />
+		<put name="submenu" value="/WEB-INF/jsp/pds/user/submenu.jsp" />
+		<put name="spare" value=".pds.user.incoming.spare.edit" />
+		<put name="date.select"
+			value="/WEB-INF/jsp/pds/common/date_select.jsp" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/user/incoming/users.jsp" />
+	</definition>
+
+	<definition name=".pds.user.history"
+		extends=".pds.user.incoming">
+		<put name="title" value="Data Event Log" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/user/incoming/history.jsp" />
+	</definition>
+
+	<definition name=".pds.user.incoming.spare.edit"
+		extends=".pds.spare.edit">
+		<put name="bean.name" value="incoming" />
+	</definition>
+
+	<definition name=".pds.user.incoming.detail"
+		extends=".pds.user">
+		<put name="title" value="Show Data User" />
+		<put name="submenu" value="/WEB-INF/jsp/pds/user/submenu.jsp" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/user/incoming/detail.jsp" />
+		<put name="spare" value=".pds.user.incoming.spare.edit" />
+	</definition>
+
+	<definition name=".pds.user.incoming.insert.content"
+		extends=".pds.form.content">
+		<put name="action" value="/user/incoming/edit/insert" />
+		<put name="action.form.name" value="incomingUserActionForm" />
+		<put name="body"
+			value="/WEB-INF/jsp/pds/user/incoming/fields.jsp" />
+	</definition>
+	<definition name=".pds.user.incoming.insert"
+		extends=".pds.user">
+		<put name="title" value="Create Data User" />
+		<put name="submenu" value="/WEB-INF/jsp/pds/user/submenu.jsp" />
+		<put name="content" value=".pds.user.incoming.insert.content" />
+	</definition>
+
+	<definition name=".pds.user.incoming.update.content"
+		extends=".pds.form.content">
+		<put name="action" value="/user/incoming/edit/update/" />
+		<put name="action.form.name" value="incomingUserActionForm" />
+		<put name="body"
+			value="/WEB-INF/jsp/pds/user/incoming/fields.jsp" />
+	</definition>
+	<definition name=".pds.user.incoming.update"
+		extends=".pds.user">
+		<put name="title" value="Edit Data User" />
+		<put name="submenu" value="/WEB-INF/jsp/pds/user/submenu.jsp" />
+		<put name="content" value=".pds.user.incoming.update.content" />
+	</definition>
+	<definition name=".pds.user.incoming.delete.content"
+		extends=".pds.form.content">
+		<put name="action" value="/user/incoming/edit/delete/" />
+		<put name="action.form.name" value="incomingUserActionForm" />
+		<put name="body" value="/WEB-INF/jsp/pds/user/incoming/data.jsp" />
+	</definition>
+	<definition name=".pds.user.incoming.delete"
+		extends=".pds.user">
+		<put name="title" value="Delete Data User" />
+		<put name="submenu" value="/WEB-INF/jsp/pds/user/submenu.jsp" />
+		<put name="content" value=".pds.user.incoming.delete.content" />
+	</definition>
+
+	<!-- IncomingPolicy -->
+
+	<definition name=".pds.user.policy" extends=".pds.user.base">
+		<put name="title" value="Data Policies" />
+		<put name="submenu" value="/WEB-INF/jsp/pds/user/submenu.jsp" />
+		<put name="spare" value=".pds.user.policy.spare.edit" />
+		<put name="date.select"
+			value="/WEB-INF/jsp/pds/common/date_select.jsp" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/user/policy/policies.jsp" />
+	</definition>
+
+	<definition name=".pds.user.policy.spare.edit"
+		extends=".pds.spare.edit">
+		<put name="bean.name" value="policy" />
+	</definition>
+
+	<definition name=".pds.user.policy.detail"
+		extends=".pds.user">
+		<put name="title" value="Show Data Policy" />
+		<put name="submenu" value="/WEB-INF/jsp/pds/user/submenu.jsp" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/user/policy/detail.jsp" />
+		<put name="spare" value=".pds.user.policy.spare.edit" />
+	</definition>
+
+	<definition name=".pds.user.policy.insert.content"
+		extends=".pds.form.content">
+		<put name="action" value="/user/policy/edit/insert" />
+		<put name="action.form.name" value="incomingPolicyActionForm" />
+		<put name="body" value="/WEB-INF/jsp/pds/user/policy/fields.jsp" />
+	</definition>
+	<definition name=".pds.user.policy.insert"
+		extends=".pds.user">
+		<put name="title" value="Create Data Policy" />
+		<put name="submenu" value="/WEB-INF/jsp/pds/user/submenu.jsp" />
+		<put name="content" value=".pds.user.policy.insert.content" />
+	</definition>
+
+	<definition name=".pds.user.policy.update.content"
+		extends=".pds.form.content">
+		<put name="action" value="/user/policy/edit/update/" />
+		<put name="action.form.name" value="incomingPolicyActionForm" />
+		<put name="body" value="/WEB-INF/jsp/pds/user/policy/fields.jsp" />
+	</definition>
+	<definition name=".pds.user.policy.update"
+		extends=".pds.user">
+		<put name="title" value="Edit Data Policy" />
+		<put name="submenu" value="/WEB-INF/jsp/pds/user/submenu.jsp" />
+		<put name="content" value=".pds.user.policy.update.content" />
+	</definition>
+	<definition name=".pds.user.policy.delete.content"
+		extends=".pds.form.content">
+		<put name="action" value="/user/policy/edit/delete/" />
+		<put name="action.form.name" value="incomingPolicyActionForm" />
+		<put name="body" value="/WEB-INF/jsp/pds/user/policy/data.jsp" />
+	</definition>
+	<definition name=".pds.user.policy.delete"
+		extends=".pds.user">
+		<put name="title" value="Delete Data Policy" />
+		<put name="submenu" value="/WEB-INF/jsp/pds/user/submenu.jsp" />
+		<put name="content" value=".pds.user.policy.delete.content" />
+	</definition>
+
+	<!-- Category -->
+
+	<definition name=".pds.user.category" extends=".pds.user">
+		<put name="title" value="Web Categories" />
+		<put name="submenu" value="/WEB-INF/jsp/pds/user/submenu.jsp" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/user/category/categories.jsp" />
+		<put name="spare" value=".pds.user.category.spare.edit" />
+	</definition>
+
+	<definition name=".pds.user.category.spare.edit"
+		extends=".pds.spare.edit">
+		<put name="bean.name" value="category" />
+	</definition>
+
+	<definition name=".pds.user.category.detail"
+		extends=".pds.user">
+		<put name="title" value="Show Web Category" />
+		<put name="submenu" value="/WEB-INF/jsp/pds/user/submenu.jsp" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/user/category/detail.jsp" />
+		<put name="spare" value=".pds.user.category.spare.edit" />
+	</definition>
+
+	<definition name=".pds.user.category.insert.content"
+		extends=".pds.form.content">
+		<put name="action" value="/user/category/edit/insert" />
+		<put name="action.form.name" value="categoryActionForm" />
+		<put name="body"
+			value="/WEB-INF/jsp/pds/user/category/fields.jsp" />
+	</definition>
+	<definition name=".pds.user.category.insert"
+		extends=".pds.user">
+		<put name="title" value="Create Web Category" />
+		<put name="submenu" value="/WEB-INF/jsp/pds/user/submenu.jsp" />
+		<put name="content" value=".pds.user.category.insert.content" />
+	</definition>
+
+	<definition name=".pds.user.category.update.content"
+		extends=".pds.form.content">
+		<put name="action" value="/user/category/edit/update/" />
+		<put name="action.form.name" value="categoryActionForm" />
+		<put name="body"
+			value="/WEB-INF/jsp/pds/user/category/fields.jsp" />
+	</definition>
+	<definition name=".pds.user.category.update"
+		extends=".pds.user">
+		<put name="title" value="Edit Web Category" />
+		<put name="submenu" value="/WEB-INF/jsp/pds/user/submenu.jsp" />
+		<put name="content" value=".pds.user.category.update.content" />
+	</definition>
+
+	<definition name=".pds.user.category.delete.content"
+		extends=".pds.form.content">
+		<put name="action" value="/user/category/edit/delete/" />
+		<put name="action.form.name" value="categoryActionForm" />
+		<put name="body" value="/WEB-INF/jsp/pds/user/category/data.jsp" />
+	</definition>
+	<definition name=".pds.user.category.delete"
+		extends=".pds.user">
+		<put name="title" value="Delete Web Category" />
+		<put name="submenu" value="/WEB-INF/jsp/pds/user/submenu.jsp" />
+		<put name="content" value=".pds.user.category.delete.content" />
+	</definition>
+
+	<!-- Resource -->
+
+	<definition name=".pds.user.resource" extends=".pds.user">
+		<put name="title" value="Web Resources" />
+		<put name="submenu" value="/WEB-INF/jsp/pds/user/submenu.jsp" />
+		<put name="spare" value=".pds.user.resource.spare.edit" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/user/resource/resources.jsp" />
+	</definition>
+
+	<definition name=".pds.user.resource.spare.edit"
+		extends=".pds.spare.edit">
+		<put name="bean.name" value="resource" />
+	</definition>
+
+	<definition name=".pds.user.resource.detail"
+		extends=".pds.user">
+		<put name="title" value="Show Web Resource" />
+		<put name="submenu" value="/WEB-INF/jsp/pds/user/submenu.jsp" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/user/resource/detail.jsp" />
+		<put name="spare" value=".pds.user.resource.spare.edit" />
+	</definition>
+
+	<definition name=".pds.user.resource.insert.content"
+		extends=".pds.form.content">
+		<put name="action" value="/user/resource/edit/insert" />
+		<put name="action.form.name" value="resourceActionForm" />
+		<put name="body"
+			value="/WEB-INF/jsp/pds/user/resource/fields.jsp" />
+	</definition>
+	<definition name=".pds.user.resource.insert"
+		extends=".pds.user">
+		<put name="title" value="Create Web Resource" />
+		<put name="submenu" value="/WEB-INF/jsp/pds/user/submenu.jsp" />
+		<put name="content" value=".pds.user.resource.insert.content" />
+	</definition>
+
+	<definition name=".pds.user.resource.update.content"
+		extends=".pds.form.content">
+		<put name="action" value="/user/resource/edit/update/" />
+		<put name="action.form.name" value="resourceActionForm" />
+		<put name="body"
+			value="/WEB-INF/jsp/pds/user/resource/fields.jsp" />
+	</definition>
+	<definition name=".pds.user.resource.update"
+		extends=".pds.user">
+		<put name="title" value="Edit Web Resource" />
+		<put name="submenu" value="/WEB-INF/jsp/pds/user/submenu.jsp" />
+		<put name="content" value=".pds.user.resource.update.content" />
+	</definition>
+
+	<definition name=".pds.user.resource.delete.content"
+		extends=".pds.form.content">
+		<put name="action" value="/user/resource/edit/delete/" />
+		<put name="action.form.name" value="resourceActionForm" />
+		<put name="body" value="/WEB-INF/jsp/pds/user/resource/data.jsp" />
+	</definition>
+	<definition name=".pds.user.resource.delete"
+		extends=".pds.user">
+		<put name="title" value="Delete Web Resource" />
+		<put name="submenu" value="/WEB-INF/jsp/pds/user/submenu.jsp" />
+		<put name="content" value=".pds.user.resource.delete.content" />
+	</definition>
+
+	<!-- *** Monitoring ******************************************************************************************** -->
+
+	<definition name=".pds.monitoring" extends=".pds.base">
+		<put name="date.select"
+			value="/WEB-INF/jsp/pds/common/date_select.jsp" />
+		<put name="title" value="Monitoring" />
+		<put name="location"
+			value="/WEB-INF/jsp/pds/monitoring/location.jsp" />
+		<put name="submenu"
+			value="/WEB-INF/jsp/pds/monitoring/submenu.jsp" />
+		<put name="date.select"
+			value="/WEB-INF/jsp/pds/common/date_select.jsp" />
+	</definition>
+
+	<definition name=".pds.monitoring.spare"
+		page="/WEB-INF/jsp/pds/monitoring/spare.jsp" />
+
+	<definition name=".pds.monitoring.toplevel"
+		extends=".ecmwf.fullscreen.base">
+		<put name="title" value="Monitoring" />
+		<put name="location"
+			value="/WEB-INF/jsp/pds/monitoring/location.jsp" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/monitoring/top_level/index.jsp" />
+		<put name="search" value="/WEB-INF/jsp/pds/monitoring/pages.jsp" />
+	</definition>
+
+	<definition name=".pds.monitoring.disabled"
+		extends=".pds.monitoring.toplevel">
+		<put name="title" value="Monitoring Disabled" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/monitoring/top_level/disabled.jsp" />
+	</definition>
+
+	<definition name=".pds.monitoring.summary"
+		extends=".ecmwf.fullscreen.base">
+		<put name="title" value="Operators Monitoring Summary" />
+		<put name="location"
+			value="/WEB-INF/jsp/pds/monitoring/location.jsp" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/monitoring/summary.jsp" />
+	</definition>
+
+	<definition name=".pds.monitoring.summary.product"
+		extends=".ecmwf.fullscreen.base">
+		<put name="title.expression" value="%{productNameAndTime}" />
+		<put name="location"
+			value="/WEB-INF/jsp/pds/monitoring/location.jsp" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/monitoring/product.jsp" />
+		<put name="search" value="/WEB-INF/jsp/pds/monitoring/pages.jsp" />
+	</definition>
+
+	<!-- Arrival -->
+
+	<definition name=".pds.monitoring.arrival.table"
+		extends=".pds.monitoring">
+		<put name="title.expression"
+			value="Arrival Table for %{destination.name}: %{time}-%{product}" />
+		<put name="location"
+			value="/WEB-INF/jsp/pds/monitoring/arrival/location.jsp" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/monitoring/arrival/arrival_table.jsp" />
+		<put name="spare" value=".pds.spare.monitoring" />
+	</definition>
+
+	<definition name=".pds.monitoring.arrival.chart"
+		extends=".pds.monitoring">
+		<put name="title.expression"
+			value="Arrival Chart for %{destination.name}: %{time}-%{product}" />
+		<put name="location"
+			value="/WEB-INF/jsp/pds/monitoring/arrival/location.jsp" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/monitoring/arrival/arrival_chart.jsp" />
+		<put name="spare" value=".pds.spare.monitoring" />
+	</definition>
+
+	<!-- Transfer -->
+
+	<definition name=".pds.monitoring.transfer.table"
+		extends=".pds.monitoring">
+		<put name="title.expression"
+			value="Transfer Table for %{destination.name}: %{time}-%{product}" />
+		<put name="location"
+			value="/WEB-INF/jsp/pds/monitoring/transfer/location.jsp" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/monitoring/transfer/transfer_table.jsp" />
+		<put name="spare" value=".pds.spare.monitoring" />
+	</definition>
+
+	<definition name=".pds.monitoring.transfer.chart"
+		extends=".pds.monitoring">
+		<put name="title.expression"
+			value="Transfer Chart for %{destination.name}: %{time}-%{product}" />
+		<put name="location"
+			value="/WEB-INF/jsp/pds/monitoring/transfer/location.jsp" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/monitoring/transfer/transfer_chart.jsp" />
+		<put name="spare" value=".pds.spare.monitoring" />
+	</definition>
+
+	<!-- Timeline -->
+
+	<definition name=".pds.monitoring.timeline.chart"
+		extends=".pds.monitoring">
+		<put name="title.expression"
+			value="Transfer Timeline for %{destination.name}" />
+		<put name="location"
+			value="/WEB-INF/jsp/pds/monitoring/timeline/location.jsp" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/monitoring/timeline/timeline_chart.jsp" />
+		<put name="spare" value=".pds.spare.monitoring" />
+	</definition>
+
+	<!-- Unsuccessful -->
+
+	<definition name=".pds.monitoring.transfer.unsuccessful"
+		extends=".pds.monitoring">
+		<put name="title.expression"
+			value="Outstanding Transfers for %{destination.name}" />
+		<put name="location"
+			value="/WEB-INF/jsp/pds/monitoring/timeline/location.jsp" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/monitoring/unsuccessful/transfers.jsp" />
+		<put name="spare" value=".pds.spare.monitoring" />
+	</definition>
+
+	<!-- *** Admin ******************************************************************************************** -->
+
+	<definition name=".pds.admin" extends=".pds.base">
+		<put name="title" value="Administration Tasks" />
+		<put name="location" value="/WEB-INF/jsp/pds/admin/location.jsp" />
+		<put name="submenu" value="/WEB-INF/jsp/pds/admin/submenu.jsp" />
+	</definition>
+
+	<definition name=".pds.admin.index" extends=".pds.admin">
+		<put name="content" value="/WEB-INF/jsp/pds/admin/index.jsp" />
+		<put name="submenu" value="/WEB-INF/jsp/pds/submenu.jsp" />
+	</definition>
+
+	<definition name=".pds.admin.requeue.list"
+		extends=".pds.admin">
+		<put name="title" value="Outstanding Files" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/admin/requeue/requeued.jsp" />
+		<put name="subcontent"
+			value="/WEB-INF/jsp/pds/monitoring/unsuccessful/transfers.jsp" />
+	</definition>
+
+	<definition name=".pds.admin.requeue.success"
+		extends=".pds.admin">
+		<put name="content"
+			value="/WEB-INF/jsp/pds/admin/requeue/requeued.jsp" />
+		<put name="subcontent"
+			value="/WEB-INF/jsp/pds/monitoring/unsuccessful/transfers.jsp" />
+	</definition>
+
+	<definition name=".pds.admin.upload" extends=".pds.admin">
+		<put name="title" value="Upload Files" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/admin/upload/index.jsp" />
+	</definition>
+
+	<definition name=".pds.admin.filter" extends=".pds.admin">
+		<put name="title" value="Compress Files" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/admin/filter/index.jsp" />
+
+	</definition>
+	<definition name=".pds.admin.filter.success"
+		extends=".pds.admin.filter">
+		<put name="content"
+			value="/WEB-INF/jsp/pds/admin/filter/success.jsp" />
+	</definition>
+
+	<definition name=".pds.datafile.monitoring"
+		extends=".pds.datafile.base">
+		<put name="title" value="Retrieval Rates" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/datafile/monitoring/index.jsp" />
+
+	</definition>
+	<definition name=".pds.datafile.monitoring.success"
+		extends=".pds.datafile.base">
+		<put name="content"
+			value="/WEB-INF/jsp/pds/datafile/monitoring/success.jsp" />
+	</definition>
+
+	<definition
+		name=".pds.transfer.destination.metadata.send.success"
+		extends=".pds.base">
+		<put name="title" value="Send your requirements to Data Services" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/transfer/destination/metadata/success.jsp" />
+	</definition>
+
+</tiles-definitions>

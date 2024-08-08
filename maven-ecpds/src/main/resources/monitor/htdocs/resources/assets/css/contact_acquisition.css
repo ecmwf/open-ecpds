@@ -1,0 +1,87 @@
+@namespace ca url(http://www.ecmwf.int/schema/cos/contact_acquisition/1.0);
+
+
+ca|* { 
+  display: block;
+  margin-top: 5px;
+  margin-bottom: 5px;
+  margin-left: 10px;
+}
+
+ca|*:before { 
+  display: block;
+  content: " " element-label() " ";
+  font-weight: bold;
+  font-size: medium;
+  color: white;
+  background-color: #0000A0; 
+  margin-top: 5px;
+  margin-bottom: 5px;
+
+ }
+
+ca|dataSourceInformation:before {
+    display: block;
+    content: url(../icons/ecmwf.gif) " Acquisition Contact Information: Operations Department";
+    font-weight: bold;
+    font-size: 32px;
+    background-color: white;
+    color: #0000A0;
+    margin-bottom: 1;
+}
+
+
+
+ca|general,
+ca|disseminationCharts { 
+  margin-left: 15px;
+}
+
+
+ca|name:before,
+ca|telephoneNumber:before,
+ca|faxNumber:before,
+ca|url:before,
+ca|email:before { 
+    background-color: white; 
+    color: #0000A0; 
+    font-weight: normal;
+}
+
+ca|name,
+ca|telephoneNumber,
+ca|faxNumber,
+ca|email,
+ca|PhoneNumber,
+ca|SADNumber { 
+ display: inline;
+ content: content(text-field(columns, 10,
+	                                  background-color, white,
+                                          color, black,
+					  font-weight, bold),
+                               " ");
+
+}
+ca|url { 
+  display:inline;
+}
+
+
+ca|DataSourceInformations > ca|*:before, ca|DataSourceAccessInformations > ca|*:before, ca|DataTypeInformations > ca|*:before, ca|OpsProcedure > ca|*:before, ca|Documentation > ca|*:before { 
+  display: inline;
+  background-color: white; 
+  color: #0000A0; 
+  font-weight: normal;
+  margin-right: 25px;
+}
+
+ca|documentation > ca|*, ca|info > ca|*, ca|comments > ca|* { 
+  margin-left: 15px;
+  display: block;
+}
+
+ca|other:before {
+ content: content(" ", element-label(), ",  Type: ", text-field(attribute, type, font-weight, normal, font-style, italic, columns, 6, background-color, #ffffff, color, #000000, border, 0));
+}
+
+

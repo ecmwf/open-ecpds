@@ -1,0 +1,30 @@
+#!/bin/sh
+
+#
+# File gzip
+#
+# Purpose: Helper for gzip (OpenPDS)
+#
+# (c) Copyright ECMWF 2010-2022 - Laurent Gougeon (syi@ecmwf.int)
+#
+
+##########################
+## Load configuration file
+##########################
+if [ -f "/usr/local/ecpds/mover/sh/ecenv" ]; then
+  source /usr/local/ecpds/mover/sh/ecenv
+else
+  # Started from Eclipse? 
+  gzip=gzip
+  for cmd in $gzip; do
+    if ! command -v $cmd &> /dev/null
+    then
+      exit -1
+    fi
+  done
+fi
+
+##########################
+## Start the bzip2 command
+##########################
+$gzip -f -c -9 $1 > $2

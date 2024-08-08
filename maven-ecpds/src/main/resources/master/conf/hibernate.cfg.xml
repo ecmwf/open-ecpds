@@ -1,0 +1,33 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE hibernate-configuration PUBLIC
+        "-//Hibernate/Hibernate Configuration DTD 3.0//EN"
+        "http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
+<!-- Revised by Laurent Gougeon to include c3p0 parameters instead of using c3p0.properties files -->
+<!-- c3p0 - JDBC Connection and Statement Pooling: https://www.mchange.com/projects/c3p0/#configuration -->
+<hibernate-configuration>
+	<session-factory>
+		<property name="hibernate.show_sql">false</property>
+		<property name="hibernate.format_sql">false</property>
+		<property name="hibernate.use_sql_comments">false</property>
+		<property name="hibernate.generate_statistics">true</property>
+		<property name="hibernate.max_fetch_depth">3</property>
+		<property name="hibernate.default_batch_fetch_size">1024</property>
+		<property name="hibernate.connection.autocommit">true</property>
+		<property name="hibernate.connection.isolation">2</property>
+		<property name="hibernate.cache.use_second_level_cache">true</property>
+		<property name="hibernate.cache.region.factory_class">org.hibernate.cache.jcache.internal.JCacheRegionFactory</property>
+		<property name="hibernate.javax.cache.provider">org.ehcache.jsr107.EhcacheCachingProvider</property>
+		<property name="hibernate.javax.cache.uri">file:${master.conf}/ehcache.xml</property>
+		<property name="hibernate.javax.cache.missing_cache_strategy">create</property>
+		<property name="hibernate.c3p0.testConnectionOnCheckout">false</property>
+		<property name="hibernate.c3p0.testConnectionOnCheckin">true</property>
+		<property name="hibernate.c3p0.idleConnectionTestPeriod">300</property>
+		<property name="hibernate.c3p0.maxIdleTime">7200</property>
+		<property name="hibernate.c3p0.maxIdleTimeExcessConnections">180</property>
+		<property name="hibernate.c3p0.acquireRetryAttempts">0</property>
+		<property name="hibernate.c3p0.initialPoolSize">${hibernate.minPoolSize}</property>
+		<property name="hibernate.c3p0.minPoolSize">${hibernate.minPoolSize}</property>
+		<property name="hibernate.c3p0.maxPoolSize">${hibernate.maxPoolSize}</property>
+		<property name="hibernate.c3p0.statementCacheNumDeferredCloseThreads">1</property>
+	</session-factory>
+</hibernate-configuration>

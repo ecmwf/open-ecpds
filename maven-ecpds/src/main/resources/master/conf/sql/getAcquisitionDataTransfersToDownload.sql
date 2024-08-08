@@ -1,0 +1,32 @@
+##
+## References
+##
+#menu "ECpdsBase"
+#name "getAcquisitionDataTransfersToDownload"
+#group "query"
+
+##
+## Variable(s)
+##
+#prompt "currentTimeMillis;Current Time in Milliseconds;;long"
+#prompt "limit;Limit;%;int"
+
+##
+## Request(s)
+##
+SELECT * FROM (
+  SELECT DT1.*, DF1.DAF_GROUP_BY,ROW_NUMBER() OVER (PARTITION BY DT1.DES_NAME
+    ORDER BY DT1.DES_NAME, DF1.DAF_GROUP_BY ASC, DT1.DAT_PRIORITY ASC, DT1.DAT_QUEUE_TIME ASC, DT1.DAT_ID ASC) ROW_NUM
+  FROM DATA_TRANSFER DT1 USE INDEX(replicateRequest2), DATA_FILE DF1
+  WHERE
+    DES_NAME IN (SELECT DES_NAME FROM DESTINATION WHERE NOT STA_CODE = 'STOP')
+    AND NOT DF1.DAF_GROUP_BY IS NULL
+    AND NOT DF1.HOS_NAME_FOR_ACQUISITION IS NULL
+    AND DT1.DAF_ID = DF1.DAF_ID
+    AND DT1.STA_CODE = 'SCHE'
+    AND DF1.DAF_DOWNLOADED = 0
+    AND DT1.DAT_EXPIRY_TIME > $currentTimeMillis
+    AND (DT1.DAT_REPLICATE_TIME IS NULL OR DT1.DAT_REPLICATE_COUNT < 3 OR ($currentTimeMillis - DT1.DAT_REPLICATE_TIME) > 180000)
+    AND DT1.DAT_DELETED = 0) T
+WHERE
+  ROW_NUM < 60

@@ -1,0 +1,26 @@
+{
+	"name": "ECAC",
+	"build": {
+		"dockerfile": "Dockerfile"
+	},
+	"remoteUser": "root",
+	"remoteEnv": {
+		"DOCKER_HOST_WORKSPACE": "${localWorkspaceFolder}",
+		"DOCKER_HOST_OS": "Darwin"
+	},
+	"customizations": {
+		"vscode": {
+			"settings": {
+				"java.jdt.ls.java.home": "/usr/lib/jvm/graalvm-community-openjdk-22.0.1+8.1"
+			},
+			"extensions": [
+				"vscjava.vscode-java-pack",
+				"vscjava.vscode-java-debug",
+				"dgileadi.java-decompiler"
+			]
+		}
+	},
+	"mounts": [
+		"source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+	]
+}

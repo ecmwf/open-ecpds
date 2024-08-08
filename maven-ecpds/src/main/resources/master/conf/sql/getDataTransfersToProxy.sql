@@ -1,0 +1,36 @@
+##
+## References
+##
+#menu "ECpdsBase"
+#name "getDataTransfersToProxy"
+#group "query"
+
+##
+## Variable(s)
+##
+#prompt "currentTimeMillis;Current Time in Milliseconds;;long"
+#prompt "limit;Limit;%;int"
+
+##
+## Request(s)
+##
+SELECT DT1.*
+FROM
+  DATA_TRANSFER DT1,DATA_FILE DF1,DESTINATION DES
+WHERE
+  DT1.DAF_ID = DF1.DAF_ID
+  AND DT1.DES_NAME IN (SELECT DES_NAME FROM ASSOCIATION WHERE HOS_NAME IN (SELECT HOS_NAME FROM HOST WHERE HOS_TYPE = 'Proxy' AND HOS_ACTIVE <> 0))
+  AND DT1.DES_NAME = DES.DES_NAME
+  AND NOT DES.STA_CODE = 'STOP'
+  AND DAT_EXPIRY_TIME > $currentTimeMillis
+  AND DT1.HOS_NAME_PROXY is NULL
+  AND DT1.STA_CODE = 'WAIT'
+  AND (DAT_PROXY_TIME IS NULL OR ($currentTimeMillis - DAT_PROXY_TIME) > 180000)  
+  AND DAF_DOWNLOADED <> 0
+  AND (DAF_GET_TIME IS NULL OR ($currentTimeMillis - (DAF_GET_TIME + DAF_GET_COMPLETE_DURATION)) > 5000)  
+  AND DAF_DELETED = 0
+  AND DAT_DELETED = 0
+ORDER BY
+  DAT_PRIORITY ASC,
+  DAT_QUEUE_TIME ASC,
+  DAT_ID ASC

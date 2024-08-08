@@ -1,0 +1,19 @@
+#
+# Systemd startup file for the ECPDS Master-Server
+#
+
+[Unit]
+Description=OpenPDS Master-Server
+After=network-online.target
+
+[Service]
+Type=forking
+LimitNOFILE=infinity
+WorkingDirectory=/usr/local/ecpds/master/sh
+ExecStart=/usr/local/ecpds/master/sh/master start
+ExecStop=/usr/local/ecpds/master/sh/master stop
+ExecReload=/usr/local/ecpds/master/sh/master restart
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
