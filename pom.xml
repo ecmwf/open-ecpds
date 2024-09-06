@@ -115,6 +115,7 @@
 				<version>3.4.0</version>
 				<configuration>
 					<warName>${finalName}</warName>
+					<packagingExcludes>WEB-INF/lib/*.jar</packagingExcludes>
 				</configuration>
 				<executions>
 					<execution>
@@ -243,67 +244,208 @@
 				<version>2.2.0</version>
 				<executions>
 					<execution>
-						<id>rpm</id>
+						<id>rpm-ecpds-master</id>
 						<phase>package</phase>
 						<goals>
 							<goal>rpm</goal>
 						</goals>
+						<configuration>
+							<name>ecpds-master</name>
+							<summary>Master-Server</summary>
+							<description>The Master-Server daemon</description>
+							<group>System Environment/Daemons</group>
+							<version>${project.version}</version>
+							<release>${build.number}</release>
+							<packager>${packager.name} &lt;${packager.email}&gt;</packager>
+							<distribution>${packager.distribution}</distribution>
+							<license>Apache License 2.0</license>
+							<requires>
+								<require>java >= ${maven.compiler.target}</require>
+							</requires>
+							<mappings>
+								<mapping>
+									<directory>/usr/local/ecpds/master/conf</directory>
+									<directoryIncluded>true</directoryIncluded>
+									<filemode>0644</filemode>
+									<dirmode>0755</dirmode>
+									<sources>
+										<source>
+											<location>
+												src/main/resources/master/conf</location>
+										</source>
+									</sources>
+								</mapping>
+								<mapping>
+									<directory>/usr/local/ecpds/master/sh</directory>
+									<directoryIncluded>true</directoryIncluded>
+									<filemode>0755</filemode>
+									<dirmode>0755</dirmode>
+									<sources>
+										<source>
+											<location>
+												src/main/resources/master/sh</location>
+										</source>
+									</sources>
+								</mapping>
+								<mapping>
+									<directory>/usr/local/ecpds/master/lib</directory>
+									<directoryIncluded>true</directoryIncluded>
+									<filemode>0644</filemode>
+									<dirmode>0755</dirmode>
+									<sources>
+										<source>
+											<location>
+												${project.build.directory}/third-party</location>
+										</source>
+										<source>
+											<location>
+												${project.build.directory}/ecmwf-${project.version}-${build.number}.jar</location>
+										</source>
+									</sources>
+								</mapping>
+							</mappings>
+						</configuration>
+					</execution>
+					<execution>
+						<id>rpm-ecpds-monitor</id>
+						<phase>package</phase>
+						<goals>
+							<goal>rpm</goal>
+						</goals>
+						<configuration>
+							<name>ecpds-monitor</name>
+							<summary>Monitor-Server</summary>
+							<description>The Monitor-Server daemon</description>
+							<group>System Environment/Daemons</group>
+							<version>${project.version}</version>
+							<release>${build.number}</release>
+							<packager>${packager.name} &lt;${packager.email}&gt;</packager>
+							<distribution>${packager.distribution}</distribution>
+							<license>Apache License 2.0</license>
+							<requires>
+								<require>java >= ${maven.compiler.target}</require>
+							</requires>
+							<mappings>
+								<mapping>
+									<directory>/usr/local/ecpds/monitor/conf</directory>
+									<directoryIncluded>true</directoryIncluded>
+									<filemode>0644</filemode>
+									<dirmode>0755</dirmode>
+									<sources>
+										<source>
+											<location>
+												src/main/resources/monitor/conf</location>
+										</source>
+									</sources>
+								</mapping>
+								<mapping>
+									<directory>/usr/local/ecpds/monitor/sh</directory>
+									<directoryIncluded>true</directoryIncluded>
+									<filemode>0755</filemode>
+									<dirmode>0755</dirmode>
+									<sources>
+										<source>
+											<location>
+												src/main/resources/monitor/sh</location>
+										</source>
+									</sources>
+								</mapping>
+								<mapping>
+									<directory>/usr/local/ecpds/monitor/lib</directory>
+									<directoryIncluded>true</directoryIncluded>
+									<filemode>0644</filemode>
+									<dirmode>0755</dirmode>
+									<sources>
+										<source>
+											<location>
+												${project.build.directory}/third-party</location>
+										</source>
+										<source>
+											<location>
+												${project.build.directory}/ecmwf-${project.version}-${build.number}.jar</location>
+										</source>
+									</sources>
+								</mapping>
+								<mapping>
+									<directory>
+										/usr/local/ecpds/monitor/htdocs/webapps</directory>
+									<directoryIncluded>true</directoryIncluded>
+									<filemode>0644</filemode>
+									<dirmode>0755</dirmode>
+									<sources>
+										<source>
+											<location>
+												${project.build.directory}/ecmwf-${project.version}-${build.number}.war</location>
+										</source>
+									</sources>
+								</mapping>
+							</mappings>
+						</configuration>
+					</execution>
+					<execution>
+						<id>rpm-ecpds-mover</id>
+						<phase>package</phase>
+						<goals>
+							<goal>rpm</goal>
+						</goals>
+						<configuration>
+							<name>ecpds-mover</name>
+							<summary>Mover-Server</summary>
+							<description>The Mover-Server daemon</description>
+							<group>System Environment/Daemons</group>
+							<version>${project.version}</version>
+							<release>${build.number}</release>
+							<packager>${packager.name} &lt;${packager.email}&gt;</packager>
+							<distribution>${packager.distribution}</distribution>
+							<license>Apache License 2.0</license>
+							<requires>
+								<require>java >= ${maven.compiler.target}</require>
+							</requires>
+							<mappings>
+								<mapping>
+									<directory>/usr/local/ecpds/mover/conf</directory>
+									<directoryIncluded>true</directoryIncluded>
+									<filemode>0644</filemode>
+									<dirmode>0755</dirmode>
+									<sources>
+										<source>
+											<location>
+												src/main/resources/mover/conf</location>
+										</source>
+									</sources>
+								</mapping>
+								<mapping>
+									<directory>/usr/local/ecpds/mover/sh</directory>
+									<directoryIncluded>true</directoryIncluded>
+									<filemode>0755</filemode>
+									<dirmode>0755</dirmode>
+									<sources>
+										<source>
+											<location>
+												src/main/resources/mover/sh</location>
+										</source>
+									</sources>
+								</mapping>
+								<mapping>
+									<directory>/usr/local/ecpds/mover/lib</directory>
+									<directoryIncluded>true</directoryIncluded>
+									<filemode>0644</filemode>
+									<dirmode>0755</dirmode>
+									<sources>
+										<source>
+											<location>
+												${project.build.directory}/third-party</location>
+										</source>
+										<source>
+											<location>
+												${project.build.directory}/ecmwf-${project.version}-${build.number}.jar</location>
+										</source>
+									</sources>
+								</mapping>
+							</mappings>
+						</configuration>
 					</execution>
 				</executions>
-				<configuration>
-					<name>ecpds-master</name>
-					<summary>Master-Server</summary>
-					<description>The Master-Server daemon</description>
-					<group>System Environment/Daemons</group>
-					<version>${project.version}</version>
-					<release>${build.number}</release>
-					<packager>${packager.name} &lt;${packager.email}&gt;</packager>
-					<distribution>${packager.distribution}</distribution>
-					<license>Apache License 2.0</license>
-					<requires>
-						<require>java >= ${maven.compiler.target}</require>
-					</requires>
-					<mappings>
-						<mapping>
-							<directory>/usr/local/ecpds/master/conf</directory>
-							<directoryIncluded>true</directoryIncluded>
-							<filemode>0644</filemode>
-							<dirmode>0755</dirmode>
-							<sources>
-								<source>
-									<location>src/main/resources/master/conf</location>
-								</source>
-							</sources>
-						</mapping>
-						<mapping>
-							<directory>/usr/local/ecpds/master/sh</directory>
-							<directoryIncluded>true</directoryIncluded>
-							<filemode>0755</filemode>
-							<dirmode>0755</dirmode>
-							<sources>
-								<source>
-									<location>src/main/resources/master/sh</location>
-								</source>
-							</sources>
-						</mapping>
-						<mapping>
-							<directory>/usr/local/ecpds/master/lib</directory>
-							<directoryIncluded>true</directoryIncluded>
-							<filemode>0644</filemode>
-							<dirmode>0755</dirmode>
-							<sources>
-								<source>
-									<location>
-										${project.build.directory}/third-party</location>
-								</source>
-								<source>
-									<location>
-										${project.build.directory}/ecmwf-${project.version}-${build.number}.jar</location>
-								</source>
-							</sources>
-						</mapping>
-					</mappings>
-				</configuration>
 			</plugin>
 		</plugins>
 	</build>
