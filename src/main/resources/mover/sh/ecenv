@@ -53,6 +53,7 @@ dir_mover="$ECPDS_APP/mover"
 dir_htdocs="$ECPDS_APP/mover/htdocs"
 dir_conf="$ECPDS_APP/mover/conf"
 dir_lib="$ECPDS_APP/mover/lib"
+dir_jni="$ECPDS_APP/mover/jni"
 dir_sh="$ECPDS_APP/mover/sh"
 dir_log="$ECPDS_LOG/mover"
 dir_tmp="$ECPDS_TMP/mover"
@@ -62,7 +63,7 @@ dir_data="$ECPDS_LIB/mover/data"
 ##################################
 ## Check the ECPDS_APP directories
 ##################################
-if [ ! -d "$dir_htdocs" -o ! -d "$dir_conf" -o ! -d "$dir_lib" -o ! -d "$dir_sh" ]; then
+if [ ! -d "$dir_htdocs" -o ! -d "$dir_conf" -o ! -d "$dir_jni" -o ! -d "$dir_lib" -o ! -d "$dir_sh" ]; then
   $echo "Missing directories in $ECPDS_APP!"
   exit 1
 fi

@@ -473,6 +473,18 @@
 										</source>
 									</sources>
 								</mapping>
+								<mapping>
+									<directory>/usr/local/ecpds/mover/jni</directory>
+									<filemode>0644</filemode>
+									<dirmode>0755</dirmode>
+									<sources>
+										<source>
+											<location>
+												${project.build.directory}/libsocketoptions.so</location>
+										</source>
+									</sources>
+								</mapping>
+
 							</mappings>
 						</configuration>
 					</execution>
