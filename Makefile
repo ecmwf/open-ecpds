@@ -12,9 +12,8 @@ CONTAINER_NAME := running-$(PROJECT_NAME)-dev
 WORKDIR := /workspaces/$(PROJECT_NAME)
 
 # Extract the tag number from the Java class
-VERSION_CLASS="src/ecmwf/common/version/Version.java"
-VERSION=$(shell grep 'String VERSION =' $(VERSION_CLASS) | sed -e 's/.*VERSION = "\(.*\)";/\1/')
-BUILD=$(shell grep 'String BUILD =' $(VERSION_CLASS) | sed -e 's/.*BUILD = "\(.*\)";/\1/')
+VERSION=$(shell grep '<version>' pom.xml | head -n 1 | sed 's/.*>\(.*\)<.*/\1/')
+BUILD=$(shell grep '<build.number>' pom.xml | head -n 1 | sed 's/.*>\(.*\)<.*/\1/')
 TAG="$(VERSION)-$(BUILD)"
 
 # Define color codes
