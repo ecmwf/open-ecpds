@@ -239,6 +239,7 @@
 						<configuration>
 							<outputDirectory>
 								${project.build.directory}/third-party</outputDirectory>
+							<includeScope>runtime</includeScope>
 							<overWriteReleases>true</overWriteReleases>
 							<overWriteSnapshots>true</overWriteSnapshots>
 							<overWriteIfNewer>true</overWriteIfNewer>
@@ -286,7 +287,7 @@
 							<group>System Environment/Daemons</group>
 							<version>${project.version}</version>
 							<release>${build.number}</release>
-							<packager>${packager.name} &lt;${packager.email}&gt;</packager>
+							<packager>${packager.name} - ${packager.email}</packager>
 							<distribution>${packager.distribution}</distribution>
 							<license>Apache License 2.0</license>
 							<requires>
@@ -349,7 +350,7 @@
 							<group>System Environment/Daemons</group>
 							<version>${project.version}</version>
 							<release>${build.number}</release>
-							<packager>${packager.name} &lt;${packager.email}&gt;</packager>
+							<packager>${packager.name} - ${packager.email}</packager>
 							<distribution>${packager.distribution}</distribution>
 							<license>Apache License 2.0</license>
 							<requires>
@@ -425,7 +426,7 @@
 							<group>System Environment/Daemons</group>
 							<version>${project.version}</version>
 							<release>${build.number}</release>
-							<packager>${packager.name} &lt;${packager.email}&gt;</packager>
+							<packager>${packager.name} - ${packager.email}</packager>
 							<distribution>${packager.distribution}</distribution>
 							<license>Apache License 2.0</license>
 							<requires>
