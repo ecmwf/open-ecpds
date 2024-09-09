@@ -11,7 +11,7 @@ IMAGE_NAME := node-$(PROJECT_NAME)-dev
 CONTAINER_NAME := running-$(PROJECT_NAME)-dev
 WORKDIR := /workspaces/$(PROJECT_NAME)
 
-# Extract the tag number from the Java class
+# Extract the tag number from the Maven file
 VERSION=$(shell grep '<version>' pom.xml | head -n 1 | sed 's/.*>\(.*\)<.*/\1/')
 BUILD=$(shell grep '<build.number>' pom.xml | head -n 1 | sed 's/.*>\(.*\)<.*/\1/')
 TAG="$(VERSION)-$(BUILD)"
@@ -46,8 +46,8 @@ check-container-state = \
   fi
 
 # Conditional targets based on the environment
-.PHONY: all build run login rm-cntnr rm-image get-geodb inst-libs make clean info
-all: build run login ## Build, run and login into the dev-container (*)
+.PHONY: dev build run login rm-cntnr rm-image get-geodb inst-libs make clean info
+dev: build run login ## Build, run and login into the dev-container (*)
 
 build: ## Build the dev-container (*)
 	@$(call check-container-state,true,outside)
