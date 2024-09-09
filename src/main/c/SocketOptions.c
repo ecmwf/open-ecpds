@@ -186,5 +186,5 @@ JNIEXPORT jstring JNICALL Java_ecmwf_common_rmi_SocketOptions_getSSOutput(JNIEnv
 	iconv_close(cd);
 
 	// Create the Java string using the converted buffer
-	jstring result = (*env)->NewStringUTF(env, buffer);
+	return (*env)->NewStringUTF(env, buffer);
 }
