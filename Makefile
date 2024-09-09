@@ -100,10 +100,7 @@ clean: ## Stop containers, remove images, JARs, RPMs and dependencies (**)
 	@cd run/bin/ecpds && $(MAKE) -s down clean  || exit 1
 	@cd docker && $(MAKE) -s rm-images  || exit 1
 	@cd docker && $(MAKE) clean  || exit 1
-	@cd rpmbuild && $(MAKE) clean  || exit 1
-	@cd ant && ant clean  || exit 1
-	@cd rpmbuild/SOURCES/ecpds && rm -f \
-		master/lib/ext/* monitor/lib/ext/* mover/lib/ext/*  || exit 1
+	@mvn clean  || exit 1
 
 info: ## Output the configuration
 	@if [ -n "$(IN_DEV_CONTAINER)" ]; then \

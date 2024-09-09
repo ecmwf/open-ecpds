@@ -83,7 +83,6 @@ rm-images: ## Remove images (args: app, tag)
 	done
 
 clean: ## Remove all RPMs
-	@$(MAKE) .clean app=dissftpd
 	@$(MAKE) .clean app=mover
 	@$(MAKE) .clean app=master
 	@$(MAKE) .clean app=monitor

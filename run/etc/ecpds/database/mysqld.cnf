@@ -1,0 +1,4 @@
+# Allow overwriting the default options
+
+[mysqld]
+port=3309
