@@ -238,7 +238,7 @@
 						</goals>
 						<configuration>
 							<outputDirectory>
-								${project.build.directory}/third-party</outputDirectory>
+								${project.basedir}/third-party</outputDirectory>
 							<includeScope>runtime</includeScope>
 							<overWriteReleases>true</overWriteReleases>
 							<overWriteSnapshots>true</overWriteSnapshots>
@@ -326,7 +326,7 @@
 									<sources>
 										<source>
 											<location>
-												${project.build.directory}/third-party</location>
+												${project.basedir}/third-party</location>
 										</source>
 										<source>
 											<location>
@@ -389,7 +389,7 @@
 									<sources>
 										<source>
 											<location>
-												${project.build.directory}/third-party</location>
+												${project.basedir}/third-party</location>
 										</source>
 										<source>
 											<location>
@@ -465,7 +465,7 @@
 									<sources>
 										<source>
 											<location>
-												${project.build.directory}/third-party</location>
+												${project.basedir}/third-party</location>
 										</source>
 										<source>
 											<location>

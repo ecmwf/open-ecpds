@@ -1,5 +1,6 @@
-/target/
-/src/main/resources/master/conf/GeoLite2-City.mmdb
 /docker/ecpds/master/rpms/
 /docker/ecpds/monitor/rpms/
 /docker/ecpds/mover/rpms/
+/src/main/resources/master/conf/GeoLite2-City.mmdb
+/target/
+/third-party/
