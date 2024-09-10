@@ -145,6 +145,8 @@
 				<version>3.4.0</version>
 				<configuration>
 					<warName>${finalName}</warName>
+					<classesDirectory>
+						${project.build.directory}/generated-sources/jsp</classesDirectory>
 					<packagingExcludes>WEB-INF/lib/*.jar</packagingExcludes>
 				</configuration>
 				<executions>
@@ -258,13 +260,14 @@
 						<goals>
 							<goal>jspc</goal>
 						</goals>
+						<phase>process-classes</phase>
 						<configuration>
 							<webAppSourceDirectory>
 								${project.basedir}/src/main/webapp</webAppSourceDirectory>
 							<generatedClasses>
 								${project.build.directory}/generated-sources/jsp</generatedClasses>
 							<webXmlFragment>
-								${project.build.directory}/generated-web.xml</webXmlFragment>
+								${project.build.directory}/generated-sources/web-fragment.xml</webXmlFragment>
 						</configuration>
 					</execution>
 				</executions>
@@ -407,6 +410,7 @@
 										<source>
 											<location>
 												${project.build.directory}/ecmwf-${project.version}-${build.number}.war</location>
+											<destination>ecpds.war</destination>
 										</source>
 									</sources>
 								</mapping>
@@ -433,6 +437,18 @@
 								<require>java >= ${maven.compiler.target}</require>
 							</requires>
 							<mappings>
+								<mapping>
+									<directory>/usr/local/ecpds/mover/htdocs</directory>
+									<directoryIncluded>true</directoryIncluded>
+									<filemode>0644</filemode>
+									<dirmode>0755</dirmode>
+									<sources>
+										<source>
+											<location>
+												src/main/resources/mover/htdocs</location>
+										</source>
+									</sources>
+								</mapping>
 								<mapping>
 									<directory>/usr/local/ecpds/mover/conf</directory>
 									<directoryIncluded>true</directoryIncluded>
