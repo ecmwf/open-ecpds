@@ -65,8 +65,6 @@ services:
       SMTP_HOST:
       SMTP_FROM:
       OPSVIEW_HOST:
-      NAGIOS_HOST:
-      NAGIOS_KEY:
       ECACCESS_ADDRESS:
       ECCMD_ADDRESS:
       PORT_ECCMD: 640
@@ -123,8 +121,6 @@ services:
       MONITOR_COLOR: "#0079d3"
       # Interactions with various ECMWF services (requirements, nagios)
       REQUIREMENTS_URL:
-      NAGIOS_HOST:
-      NAGIOS_KEY:
       # Miscellaneous parameters
       USE_CACHE: "no"
       MASTER_URL_LIST:
@@ -182,8 +178,6 @@ services:
       MOVER_TITLE: "Personal Data Store (PDS)"
       MOVER_COLOR: "#0079d3"
       # Interactions with various ECMWF services (nagios)
-      NAGIOS_HOST:
-      NAGIOS_KEY:
       # Miscellaneous parameters
       OPERATION: "yes" # Set to 'no' to produce random data for missing files (for testing purpose only)
       # Java Virtual Machine options

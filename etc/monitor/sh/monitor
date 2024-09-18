@@ -62,15 +62,6 @@ JAVA_OPTS=$JAVA_OPTS" -Dport.master='$PORT_MASTER'"
 [ ! -z "$LOG_ROLLOVER_SIZE_KEEP" ] && JAVA_OPTS=$JAVA_OPTS" -Dlog.rollover.size.keep='$LOG_ROLLOVER_SIZE_KEEP'"
 [ ! -z "$LOG_LEVEL" ] && JAVA_OPTS=$JAVA_OPTS" -Dlog.ecmwf.level='$LOG_LEVEL'"
 
-###################################
-## Deal with Nagios (notifications)
-###################################
-if [ ! -z "$NAGIOS_HOST" -a ! -z "$NAGIOS_KEY" ]; then
-  JAVA_OPTS=$JAVA_OPTS" -Dnagios.activated=yes"
-  JAVA_OPTS=$JAVA_OPTS" -Dnagios.host='$NAGIOS_HOST'"
-  JAVA_OPTS=$JAVA_OPTS" -Dnagios.key='$NAGIOS_KEY'"
-fi
-
 #####################
 ## Export directories
 #####################

@@ -80,15 +80,6 @@ if [ ! -z "$OPSVIEW_HOST" ]; then
   JAVA_OPTS=$JAVA_OPTS" -Dopsview.host='$OPSVIEW_HOST'"
 fi
 
-###################################
-## Deal with Nagios (notifications)
-###################################
-if [ ! -z "$NAGIOS_HOST" -a ! -z "$NAGIOS_KEY" ]; then
-  JAVA_OPTS=$JAVA_OPTS" -Dnagios.activated=yes"
-  JAVA_OPTS=$JAVA_OPTS" -Dnagios.host='$NAGIOS_HOST'"
-  JAVA_OPTS=$JAVA_OPTS" -Dnagios.key='$NAGIOS_KEY'"
-fi
-
 #####################
 ## Export directories
 #####################
