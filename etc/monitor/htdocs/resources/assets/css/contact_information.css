@@ -1,0 +1,86 @@
+@namespace ci url(http://www.ecmwf.int/schema/cos/contact_information/1.0);
+
+
+ci|* { 
+  display: block;
+  margin-top: 5px;
+  margin-bottom: 5px;
+  margin-left: 10px;
+}
+
+ci|*:before { 
+  display: block;
+  content: " " element-label() " ";
+  font-weight: bold;
+  font-size: medium;
+  color: white;
+  background-color: #0000A0; 
+  margin-top: 5px;
+  margin-bottom: 5px;
+
+ }
+
+ci|contactInformation:before {
+    display: block;
+    content: url(../icons/ecmwf.gif) " Contact Information: Operations Department";
+    font-weight: bold;
+    font-size: 32px;
+    background-color: white;
+    color: #0000A0;
+    margin-bottom: 1;
+}
+
+
+
+ci|general,
+ci|disseminationCharts { 
+  margin-left: 15px;
+}
+
+
+ci|name:before,
+ci|telephoneNumber:before,
+ci|faxNumber:before,
+ci|url:before,
+ci|email:before { 
+    background-color: white; 
+    color: #0000A0; 
+    font-weight: normal;
+}
+
+ci|name,
+ci|telephoneNumber,
+ci|faxNumber,
+ci|email,
+ci|contractId { 
+ display: inline;
+ content: content(text-field(columns, 10,
+	                                  background-color, white,
+                                          color, black,
+					  font-weight, bold),
+                               " ");
+
+}
+ci|url { 
+  display:inline;
+}
+
+
+ci|documentation > ci|*:before, ci|info > ci|*:before, ci|comments > ci|*:before { 
+  display: inline;
+  background-color: white; 
+  color: #0000A0; 
+  font-weight: normal;
+  margin-right: 25px;
+}
+
+ci|documentation > ci|*, ci|info > ci|*, ci|comments > ci|* { 
+  margin-left: 15px;
+  display: block;
+}
+
+ci|other:before {
+ content: content(" ", element-label(), ",  Type: ", text-field(attribute, type, font-weight, normal, font-style, italic, columns, 6, background-color, #ffffff, color, #000000, border, 0));
+}
+
+

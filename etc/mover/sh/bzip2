@@ -1,0 +1,30 @@
+#!/bin/sh
+
+#
+# File bzip2
+#
+# Purpose: Helper for bzip2 (OpenPDS)
+#
+# (c) Copyright ECMWF 2010-2022 - Laurent Gougeon (syi@ecmwf.int)
+#
+
+##########################
+## Load configuration file
+##########################
+if [ -f "/usr/local/ecpds/mover/sh/ecenv" ]; then
+  source /usr/local/ecpds/mover/sh/ecenv
+else
+  # Started from Eclipse? 
+  bzip2=bzip2
+  for cmd in $bzip2; do
+    if ! command -v $cmd &> /dev/null
+    then
+      exit -1
+    fi
+  done
+fi
+
+##########################
+## Start the bzip2 command
+##########################
+$bzip2 -f -k -c $1 > $2

@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema elementFormDefault="qualified"
+           targetNamespace="http://www.ecmwf.int/schema/cos/contact_acquisition/1.0"
+           xmlns="http://www.ecmwf.int/schema/cos/contact_acquisition/1.0"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:ns2="http://www.w3.org/1999/xhtml"
+           xmlns:ns="http://www.ecmwf.int/schema/cos/contact_information/1.0"
+           xmlns:hfp="http://www.w3.org/2001/XMLSchema-hasFacetAndProperty">
+  <xs:element name="dataSourceInformation" type="dataSourceInformationType"/>
+
+  <xs:complexType name="dataSourceInformationType">
+    <xs:sequence>
+      <xs:element maxOccurs="1" minOccurs="1" name="DataSourceInformations" type="InfoType"/>
+     
+      <xs:element maxOccurs="3" minOccurs="1" name="ContactInformations" type="ContactType"/>
+      
+      <xs:element maxOccurs="1" minOccurs="1" name="DataSourceAccessInformations" type="AccessType"/>
+      
+      <xs:element maxOccurs="1" minOccurs="1" name="DataTypeInformations" type="DataType"/>
+      
+      <xs:element maxOccurs="1" minOccurs="1" name="OpsProcedure" type="OpsType"/>
+
+      <xs:element maxOccurs="unbounded" minOccurs="1" name="AnalystProcedure" type="xs:string"/>
+
+      <xs:element maxOccurs="1" minOccurs="0" name="Documentation" type="DocumentationType"/>
+      
+      <xs:element maxOccurs="unbounded" minOccurs="0" name="metappsSystemChange" type="xs:string"/>
+            
+      <xs:element maxOccurs="unbounded" minOccurs="1" name="comments" type="xs:string"/>
+
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="InfoType">
+    <xs:sequence>
+      <xs:element name="AgencyOrOrganizationOfOrigin" type="xs:string"/>
+      
+      <xs:element name="CentreOfOrigin" type="xs:string"/>
+      
+      <xs:element name="AgencyOrOrganizationOfOriginWebPage" type="xs:string"/>
+      
+      <xs:element name="PhoneNumber" type="xs:string" minOccurs="0" maxOccurs="3"/>
+      
+      <xs:element name="SADNumber" type="xs:string" minOccurs="0" maxOccurs="1"/>      
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="ContactType">
+    <xs:sequence>
+      <xs:element name="name" type="xs:string" minOccurs="0" maxOccurs="3"/>
+
+      <xs:element name="telephoneNumber" type="xs:string" minOccurs="0" maxOccurs="3"/>
+
+      <xs:element name="faxNumber" type="xs:string" minOccurs="0" maxOccurs="3"/>
+
+      <xs:element name="email" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+ <xs:complexType name="AccessType">
+    <xs:sequence>
+      <xs:element name="RemoteServer" type="xs:string"/>
+
+      <xs:element name="UserId" type="xs:string"/>
+
+      <xs:element name="Passwd" type="xs:string"/>
+
+      <xs:element name="FilePattern" type="xs:string"/>
+      
+      <xs:element name="RemotePath" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="DataType">
+    <xs:sequence>
+      <xs:element name="DataDescription" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+
+      <xs:element name="TypeOfObservation" type="xs:string"/>
+
+      <xs:element name="ImportanceOfDataTypeForAssimilation" type="xs:string"/>
+
+      <xs:element name="Instrument" type="xs:string" minOccurs="0" maxOccurs="5"/>
+
+      <xs:element name="InstrumentChannels" type="xs:string" minOccurs="0" maxOccurs="5"/>
+
+      <xs:element name="DataFormat" type="xs:string"/>
+            
+     <xs:element name="WarningInfo" type="xs:string"/>
+
+     <xs:element name="ECFSPath" type="xs:string"/>
+
+     <xs:element name="OnLineBackup" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="OpsType">
+    <xs:sequence>
+      <xs:element name="OpsProcedureWebPage" type="xs:string"/>
+      
+      <xs:element name="ShiftProcedure" type="xs:string" maxOccurs="unbounded" minOccurs="1" />
+    </xs:sequence>
+  </xs:complexType>
+
+
+ <xs:complexType name="DocumentationType">
+    <xs:sequence>
+       <xs:element maxOccurs="unbounded" minOccurs="0" name="URL" type="xs:string"/>
+
+      <xs:element maxOccurs="unbounded" minOccurs="0" name="TechDoc" type="xs:string"/>
+     </xs:sequence>
+  </xs:complexType>
+</xs:schema>

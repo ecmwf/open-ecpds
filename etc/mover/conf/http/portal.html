@@ -1,0 +1,369 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<title>${tab}</title>
+<script src="/js/jquery-3.7.0.min.js"></script>
+<script src="/js/bowser.min.js"></script>
+</head>
+<script>
+	$(document).ready(function() {
+		$(".account").click(function() {
+			var X = $(this).attr('id');
+			if (X == 1) {
+				$(".submenu").hide();
+				$(this).attr('id', '0');
+			} else {
+				$(".submenu").show();
+				$(this).attr('id', '1');
+			}
+		});
+
+		//Mouse click on sub menu
+		$(".submenu").mouseup(function() {
+			return false
+		});
+
+		//Mouse click on my account link
+		$(".account").mouseup(function() {
+			return false
+		});
+
+		//Document Click
+		$(document).mouseup(function() {
+			$(".submenu").hide();
+			$(".account").attr('id', '');
+		});
+	});
+</script>
+<style>
+html {
+	Font-family: Verdana, Arial, Helvetica;
+	Color: black;
+	Font-size: 10pt;
+	Background-color: white;
+	Text-decoration: None;
+}
+
+a:link {
+	text-decoration: none;
+	color: black;
+}
+
+a:visited {
+	text-decoration: none;
+	color: black;
+}
+
+a:hover {
+	text-decoration: underline;
+	color: black;
+}
+
+a:active {
+	text-decoration: underline;
+	color: black;
+}
+
+h1 {
+	Font-size: 10pt;
+	font-weight: bold;
+	color: navy;
+	padding-top: 8pt;
+}
+
+h2 {
+	Font-size: 10pt;
+	width: 100%;
+	font-weight: bold;
+	border-width: 0pt 0pt 0pt 0pt;
+}
+
+h3 {
+	Font-size: 10pt;
+	width: 100%;
+}
+
+.dropdown {
+	color: #555;
+	margin: 3px -22px 0 0;
+	width: 243px;
+	position: relative;
+	height: 17px;
+	text-align: left;
+}
+
+.submenu {
+	background: #fff;
+	position: absolute;
+	top: -12px;
+	left: -20px;
+	z-index: 100;
+	width: 235px;
+	display: none;
+	margin-left: 10px;
+	padding: 40px 0 5px;
+	border-radius: 6px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+
+.dropdown li a {
+	color: #555555;
+	display: block;
+	font-family: arial;
+	font-weight: bold;
+	padding: 6px 15px;
+	cursor: pointer;
+	text-decoration: none;
+}
+
+.dropdown li a:hover {
+	background: #155FB0;
+	color: #FFFFFF;
+	text-decoration: none;
+}
+
+a.account {
+	font-size: 14px;
+	line-height: 16px;
+	color: #cccccc;
+	position: absolute;
+	z-index: 110;
+	display: block;
+	padding: 11px 0 0 20px;
+	height: 28px;
+	width: 221px;
+	margin: -11px 0 0 -10px;
+	text-decoration: none;
+	cursor: pointer;
+}
+
+.root {
+	list-style: none;
+	margin: 0px;
+	padding: 0px;
+	font-size: 11px;
+	padding: 11px 0 0 0px;
+	border-top: 1px solid #dedede;
+}
+
+.location_simple {
+	padding-left: 123px;
+	margin-top: 1px;
+	margin-bottom: 2px;
+	background: #000000;
+	color: white;
+	font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+	font-size: 11pt;
+}
+
+.location_simple a:link {
+	text-decoration: none;
+	color: white;
+}
+
+.location_simple a:visited {
+	text-decoration: none;
+	color: white;
+}
+
+.location_simple a:hover {
+	text-decoration: underline;
+	color: white;
+}
+
+.location_simple a:active {
+	text-decoration: underline;
+	color: white;
+}
+
+.footer_simple_title {
+	font-size: 11pt;
+	font-weight: none;
+	color: white;
+	padding-top: 0px;
+	padding-left: 8pt;
+	padding-right: 8pt;
+	font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.topheader {
+	position: fixed;
+	z-index: 2147483646 !important;
+	top: 0;
+	left: 0;
+	width: 100%;
+	margin: 0;
+}
+
+.bottomfooter {
+	position: fixed;
+	z-index: 2147483646 !important;
+	bottom: 0;
+	left: 0;
+	width: 100%;
+	margin: 0;
+}
+
+.header_simple_title {
+	font-size: 16pt;
+	font-weight: bold;
+	color: white;
+	padding-top: 8px;
+	font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+td.content {
+	Font-size: 10pt;
+	padding: 5pt;
+	padding-left: 8pt;
+}
+
+.messageDiv {
+	border: 5px outset yellow;
+	background-color: lightyellow;
+	display: none;
+}
+
+.warningDiv {
+	border: 5px outset red;
+	background-color: lightred;
+	display: none;
+}
+
+.message {
+	border: 1px outset black;
+	color: black;
+	background-color: #eeeeee;
+	width: 98%;
+	margin-top: 5;
+}
+
+.warning {
+	border: 1px outset red;
+	color: white;
+	background-color: #ff0000;
+	width: 98%;
+	margin-top: 5;
+}
+</style>
+<body bgcolor="#ffffff" text="#000000">
+	<div id="topheader" class="topheader">
+		<table width="100%" cellpadding="0" cellspacing="0" height="100"
+			border=0>
+			<tr>
+				<td bgcolor="${color}">
+					<table width="100%" border=0>
+						<tr>
+							<td width="50">&nbsp;</td>
+							<td width="240"><img src="/images/logo.production.png"
+								border="0" alt="Home page" width="140" height="24"></td>
+							<td><div class="header_simple_title">${title}</div></td>
+							<td align="right" valign="middle"></td>
+						</tr>
+					</table>
+				</td>
+				<td bgcolor="${color}" colspan=2>
+					<table width="100%">
+						<tr>
+							<td width="340" align="right">
+								<div class="dropdown">
+									<a class="account">Data User <font size=-1>(${userid})&nbsp;&nbsp;&nbsp;<img
+											src="/images/arrow_up.png"></font></a>
+									<div class="submenu">
+										<ul class="root">
+											<li><a
+												href="javascript:logout('/ecpds/data/list/','/logout.html')">Sign
+													Out</a></li>
+										</ul>
+									</div>
+								</div>
+							</td>
+						</tr>
+					</table>
+				</td>
+			</tr>
+			<tr>
+				<td bgcolor="#ffffff" height="1" colspan="3"></td>
+			</tr>
+			<tr>
+				<td bgcolor="#000000" colspan="3"><div class="location_simple">Index
+						of ${path}</div></td>
+			</tr>
+		</table>
+	</div>
+	<div id="contentDiv">
+		<table id="outerTable" width="100%" border="0" cellspacing="0"
+			cellpadding="0" bgcolor="#ffffff">
+			<tr>
+				<td colspan=2 height=100>&nbsp;</td>
+			</tr>
+			<tr id="warning" class="warning">
+				<td valign="top" class="content"><pre>${warning}</pre></td>
+			</tr>
+			<tr id="msgTop" class="message">
+				<td valign="top" class="content"><pre>${msgTop}</pre></td>
+			</tr>
+			<tr>
+				<td valign="top" class="content"><pre>${header}</pre>
+					<hr> <pre>${listing}</pre>
+					<hr> <pre>${parent}</pre></td>
+			</tr>
+			<tr id="msgDown" class="message">
+				<td valign="top" class="content"><pre>${msgDown}</pre></td>
+			</tr>
+			<tr>
+				<td colspan=2 height=40>&nbsp;</td>
+			</tr>
+		</table>
+	</div>
+	<div id="bottomfooter" class="bottomfooter">
+		<table border=0 height="40" border="0" cellspacing="0" cellpadding="0"
+			width="100%">
+			<tr>
+				<td bgcolor="#000000" width="30%" align="left" valign="middle"><div
+						class="footer_simple_title">${footer}</div></td>
+				<td bgcolor="#000000" align="center" valign="middle"></td>
+				<td bgcolor="#000000" width="30%" align="right" valign="middle"><div
+						class="footer_simple_title">
+						v${version}&nbsp;<font size=-1>(${build})</font>
+					</div></td>
+			</tr>
+		</table>
+	</div>
+	<script>
+
+		var msgTop = document.getElementById("msgTop");
+		msgTop.style.display = "${msgTop}".length > 0 ? "block" : "none";
+		var msgDown = document.getElementById("msgDown");
+		msgDown.style.display = "${msgDown}".length > 0 ? "block" : "none";
+		var warning = document.getElementById("warning");
+		warning.style.display = "${warning}".length > 0 ? "block" : "none";
+	</script>
+</body>
+<script>
+	function logout(secUrl, redirUrl) {
+		if (bowser.msie) {
+			document.execCommand('ClearAuthenticationCache', 'false');
+		} else if (bowser.gecko) {
+			$.ajax({
+				async : false,
+				url : secUrl,
+				type : 'GET',
+				username : 'logout'
+			});
+		} else if (bowser.webkit || bowser.chrome) {
+			var xmlhttp = new XMLHttpRequest();
+			xmlhttp.open("GET", secUrl, true);
+			xmlhttp.setRequestHeader("Authorization", "Basic logout");
+			xmlhttp.send();
+		} else {
+			redirUrl = url.replace('http://', 'http://' + new Date().getTime()
+					+ '@');
+		}
+		setTimeout(function() {
+			window.location.href = redirUrl;
+		}, 200);
+	}
+</script>
+</html>

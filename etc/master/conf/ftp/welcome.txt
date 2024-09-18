@@ -1,0 +1,15 @@
+FTP Server
+
+Use this FTP server to load and download files
+from your ECHOME, ECSCRATCH or ECFS domain.
+
+To select a new domain use the DOMAIN command.
+For example to access ECSCRATCH:
+
+   ftp> quote domain ECSCRATCH
+   200 SITE DOMAIN set to ecscratch
+
+For further information point your browser to:
+
+   http://www.ecmwf.int/services/ecaccess/
+

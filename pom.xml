@@ -80,6 +80,12 @@
 				</includes>
 				<filtering>true</filtering>
 			</resource>
+			<resource>
+				<directory>src/main/resources</directory>
+				<includes>
+					<include>**/*.properties</include>
+				</includes>
+			</resource>
 		</resources>
 		<plugins>
 			<plugin>
@@ -134,26 +140,6 @@
 						<id>default-jar</id>
 						<goals>
 							<goal>jar</goal>
-						</goals>
-						<phase>package</phase>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-war-plugin</artifactId>
-				<version>3.4.0</version>
-				<configuration>
-					<warName>${finalName}</warName>
-					<classesDirectory>
-						${project.build.directory}/generated-sources/jsp</classesDirectory>
-					<packagingExcludes>WEB-INF/lib/*.jar</packagingExcludes>
-				</configuration>
-				<executions>
-					<execution>
-						<id>default-war</id>
-						<goals>
-							<goal>war</goal>
 						</goals>
 						<phase>package</phase>
 					</execution>
@@ -240,34 +226,12 @@
 						</goals>
 						<configuration>
 							<outputDirectory>
-								${project.basedir}/third-party</outputDirectory>
+								${project.basedir}/lib</outputDirectory>
 							<includeScope>runtime</includeScope>
 							<overWriteReleases>true</overWriteReleases>
 							<overWriteSnapshots>true</overWriteSnapshots>
 							<overWriteIfNewer>true</overWriteIfNewer>
 							<excludeGroupIds>ecmwf</excludeGroupIds>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
-				<groupId>org.eclipse.jetty</groupId>
-				<artifactId>jetty-jspc-maven-plugin</artifactId>
-				<version>10.0.18</version>
-				<executions>
-					<execution>
-						<id>jspc</id>
-						<goals>
-							<goal>jspc</goal>
-						</goals>
-						<phase>process-classes</phase>
-						<configuration>
-							<webAppSourceDirectory>
-								${project.basedir}/src/main/webapp</webAppSourceDirectory>
-							<generatedClasses>
-								${project.build.directory}/generated-sources/jsp</generatedClasses>
-							<webXmlFragment>
-								${project.build.directory}/generated-sources/web-fragment.xml</webXmlFragment>
 						</configuration>
 					</execution>
 				</executions>
@@ -304,8 +268,7 @@
 									<dirmode>0755</dirmode>
 									<sources>
 										<source>
-											<location>
-												src/main/resources/master/conf</location>
+											<location>etc/master/conf</location>
 										</source>
 									</sources>
 								</mapping>
@@ -316,8 +279,7 @@
 									<dirmode>0755</dirmode>
 									<sources>
 										<source>
-											<location>
-												src/main/resources/master/sh</location>
+											<location>etc/master/sh</location>
 										</source>
 									</sources>
 								</mapping>
@@ -329,7 +291,7 @@
 									<sources>
 										<source>
 											<location>
-												${project.basedir}/third-party</location>
+												${project.basedir}/lib</location>
 										</source>
 										<source>
 											<location>
@@ -367,8 +329,7 @@
 									<dirmode>0755</dirmode>
 									<sources>
 										<source>
-											<location>
-												src/main/resources/monitor/conf</location>
+											<location>etc/monitor/conf</location>
 										</source>
 									</sources>
 								</mapping>
@@ -379,8 +340,7 @@
 									<dirmode>0755</dirmode>
 									<sources>
 										<source>
-											<location>
-												src/main/resources/monitor/sh</location>
+											<location>etc/monitor/sh</location>
 										</source>
 									</sources>
 								</mapping>
@@ -392,7 +352,7 @@
 									<sources>
 										<source>
 											<location>
-												${project.basedir}/third-party</location>
+												${project.basedir}/lib</location>
 										</source>
 										<source>
 											<location>
@@ -401,16 +361,13 @@
 									</sources>
 								</mapping>
 								<mapping>
-									<directory>
-										/usr/local/ecpds/monitor/htdocs/webapps</directory>
+									<directory>/usr/local/ecpds/monitor/htdocs</directory>
 									<directoryIncluded>true</directoryIncluded>
 									<filemode>0644</filemode>
 									<dirmode>0755</dirmode>
 									<sources>
 										<source>
-											<location>
-												${project.build.directory}/ecmwf-${project.version}-${build.number}.war</location>
-											<destination>ecpds.war</destination>
+											<location>etc/monitor/htdocs</location>
 										</source>
 									</sources>
 								</mapping>
@@ -444,8 +401,7 @@
 									<dirmode>0755</dirmode>
 									<sources>
 										<source>
-											<location>
-												src/main/resources/mover/htdocs</location>
+											<location>etc/mover/htdocs</location>
 										</source>
 									</sources>
 								</mapping>
@@ -456,8 +412,7 @@
 									<dirmode>0755</dirmode>
 									<sources>
 										<source>
-											<location>
-												src/main/resources/mover/conf</location>
+											<location>etc/mover/conf</location>
 										</source>
 									</sources>
 								</mapping>
@@ -468,8 +423,7 @@
 									<dirmode>0755</dirmode>
 									<sources>
 										<source>
-											<location>
-												src/main/resources/mover/sh</location>
+											<location>etc/mover/sh</location>
 										</source>
 									</sources>
 								</mapping>
@@ -481,7 +435,7 @@
 									<sources>
 										<source>
 											<location>
-												${project.basedir}/third-party</location>
+												${project.basedir}/lib</location>
 										</source>
 										<source>
 											<location>
@@ -833,6 +787,10 @@
 				<exclusion>
 					<groupId>xml-apis</groupId>
 					<artifactId>xml-apis</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>xalan</groupId>
+					<artifactId>xalan</artifactId>
 				</exclusion>
 			</exclusions>
 		</dependency>

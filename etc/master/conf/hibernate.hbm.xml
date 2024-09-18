@@ -1,0 +1,1595 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping default-access="field" package="ecmwf.common.database"
+	default-lazy="false">
+
+	<class name="Activity" table="ACTIVITY">
+		<id name="ACT_ID" type="java.lang.Long">
+			<column name="ACT_ID" />
+			<generator class="increment" />
+		</id>
+		<property name="ACT_AGENT" type="java.lang.String">
+			<column name="ACT_AGENT" />
+		</property>
+		<property name="ACT_HOST" type="java.lang.String">
+			<column name="ACT_HOST" />
+		</property>
+		<property name="ACT_PLUGIN" type="java.lang.String">
+			<column name="ACT_PLUGIN" />
+		</property>
+		<property name="ECU_NAME" type="java.lang.String">
+			<column name="ECU_NAME" />
+		</property>
+		<many-to-one name="ecuser"
+			class="ECUser" not-found="ignore" insert="false"
+			update="false" >
+			<column name="ECU_NAME" length="128" not-null="true" />
+		</many-to-one>
+	</class>
+
+	<class name="Alias" table="ALIAS">
+		<cache usage="read-write"/>
+		<composite-id>
+			<key-property name="ALI_DES_NAME"
+				type="java.lang.String">
+				<column name="ALI_DES_NAME" length="32" />
+			</key-property>
+			<key-property name="DES_NAME" type="java.lang.String">
+				<column name="DES_NAME" length="32" />
+			</key-property>
+		</composite-id>
+		<many-to-one name="destination"
+			class="Destination" not-found="ignore"
+			insert="false" update="false" >
+			<column name="ALI_DES_NAME" length="32" not-null="true" />
+		</many-to-one>
+	</class>
+
+	<class name="Association" table="ASSOCIATION">
+		<cache usage="read-write"/>
+		<composite-id>
+			<key-property name="DES_NAME" type="java.lang.String">
+				<column name="DES_NAME" length="32" />
+			</key-property>
+			<key-property name="HOS_NAME" type="java.lang.Integer">
+				<column name="HOS_NAME" precision="10" />
+			</key-property>
+		</composite-id>
+		<property name="ASO_PRIORITY" type="java.lang.Integer">
+			<column name="ASO_PRIORITY" />
+		</property>
+		<many-to-one name="destination"
+			class="Destination" update="false"
+			insert="false" not-found="ignore" >
+			<column name="DES_NAME" length="32" not-null="true" />
+		</many-to-one>
+		<many-to-one name="host"
+			class="Host" update="false" insert="false"
+			not-found="ignore" >
+			<column name="HOS_NAME" not-null="true" />
+		</many-to-one>
+	</class>
+
+	<class name="ChangeLog" table="CHANGE_LOG">
+		<id name="CHL_ID" type="java.lang.Long">
+			<column name="CHL_ID" />
+			<generator class="increment" />
+		</id>
+		<property name="WEU_ID" type="java.lang.String">
+			<column name="WEU_ID" />
+		</property>
+		<property name="CHL_KEY_NAME" type="java.lang.String">
+			<column name="CHL_KEY_NAME" />
+		</property>
+		<property name="CHL_KEY_VALUE" type="java.lang.String">
+			<column name="CHL_KEY_VALUE" />
+		</property>
+		<property name="CHL_TIME" type="java.math.BigDecimal">
+			<column name="CHL_TIME" />
+		</property>
+		<property name="CHL_OLD_OBJECT" type="java.lang.String">
+			<column name="CHL_OLD_OBJECT" />
+		</property>
+		<property name="CHL_NEW_OBJECT" type="java.lang.String">
+			<column name="CHL_NEW_OBJECT" />
+		</property>
+	</class>
+
+	<class name="PolicyAssociation" table="POLICY_ASSOCIATION">
+		<cache usage="read-write"/>
+		<composite-id>
+			<key-property name="DES_NAME" type="java.lang.String">
+				<column name="DES_NAME" length="32" />
+			</key-property>
+			<key-property name="INP_ID" type="java.lang.String">
+				<column name="INP_ID" length="128" />
+			</key-property>
+		</composite-id>
+		<many-to-one name="destination"
+			class="Destination" update="false"
+			insert="false" not-found="ignore" >
+			<column name="DES_NAME" length="32" not-null="true" />
+		</many-to-one>
+		<many-to-one name="incomingPolicy"
+			class="IncomingPolicy" update="false"
+			insert="false" not-found="ignore" >
+			<column name="INP_ID" not-null="true" />
+		</many-to-one>
+	</class>
+
+	<class name="PolicyUser" table="POLICY_USER">
+		<cache usage="read-write"/>
+		<composite-id>
+			<key-property name="INU_ID" type="java.lang.String">
+				<column name="INU_ID" length="128" />
+			</key-property>
+			<key-property name="INP_ID" type="java.lang.String">
+				<column name="INP_ID" precision="128" />
+			</key-property>
+		</composite-id>
+		<many-to-one name="incomingUser"
+			class="IncomingUser" not-found="ignore"
+			update="false" insert="false" >
+			<column name="INU_ID" length="128" not-null="true" />
+		</many-to-one>
+		<many-to-one name="incomingPolicy"
+			class="IncomingPolicy" update="false"
+			insert="false" not-found="ignore" >
+			<column name="INP_ID" not-null="true" />
+		</many-to-one>
+	</class>
+
+	<class name="CatUrl" table="CAT_URL">
+		<cache usage="read-write"/>
+		<composite-id>
+			<key-property name="URL_NAME" type="java.lang.String">
+				<column name="URL_NAME" length="128" />
+			</key-property>
+			<key-property name="CAT_ID" type="java.lang.Long">
+				<column name="CAT_ID" />
+			</key-property>
+		</composite-id>
+		<many-to-one name="category"
+			class="Category" update="false" insert="false"
+			not-found="ignore" >
+			<column name="CAT_ID" not-null="true" />
+		</many-to-one>
+		<many-to-one name="url" class="Url"
+			update="false" insert="false" not-found="ignore" >
+			<column name="URL_NAME" length="128" not-null="true" />
+		</many-to-one>
+	</class>
+
+	<class name="Category" table="CATEGORY">
+		<cache usage="read-write"/>
+		<id name="CAT_ID" type="java.lang.Long">
+			<column name="CAT_ID" />
+			<generator class="increment" />
+		</id>
+		<property name="CAT_ACTIVE" type="boolean">
+			<column name="CAT_ACTIVE" />
+		</property>
+		<property name="CAT_DESCRIPTION" type="java.lang.String">
+			<column name="CAT_DESCRIPTION" />
+		</property>
+		<property name="CAT_NAME" type="java.lang.String">
+			<column name="CAT_NAME" />
+		</property>
+	</class>
+
+	<class name="Country" table="COUNTRY">
+		<cache usage="read-write"/>
+		<id name="COU_ISO" type="java.lang.String">
+			<column name="COU_ISO" length="2" />
+			<generator class="assigned" />
+		</id>
+		<property name="COU_NAME" type="java.lang.String">
+			<column name="COU_NAME" />
+		</property>
+	</class>
+
+	<class name="DataFile" table="DATA_FILE" dynamic-update="true">
+		<cache usage="read-write"/>
+		<id name="DAF_ID" type="java.lang.Long">
+			<column name="DAF_ID" />
+			<generator class="increment" />
+		</id>
+		<property name="DAF_ARRIVED_TIME" type="java.math.BigDecimal">
+			<column name="DAF_ARRIVED_TIME" />
+		</property>
+		<property name="DAF_DELETED" type="boolean">
+			<column name="DAF_DELETED" />
+		</property>
+		<property name="DAF_STANDBY" type="boolean">
+			<column name="DAF_STANDBY" />
+		</property>
+		<property name="DAF_INDEX" type="int">
+			<column name="DAF_INDEX" />
+		</property>
+		<property name="DAF_DELETE_ORIGINAL" type="boolean">
+			<column name="DAF_DELETE_ORIGINAL" />
+		</property>
+		<property name="DAF_DOWNLOADED" type="boolean">
+			<column name="DAF_DOWNLOADED" />
+		</property>
+		<property name="DAF_CALLER" type="java.lang.String">
+			<column name="DAF_CALLER" />
+		</property>
+		<property name="DAF_REMOTE_HOST" type="java.lang.String">
+			<column name="DAF_REMOTE_HOST" />
+		</property>
+		<property name="DAF_GET_HOST" type="java.lang.String">
+			<column name="DAF_GET_HOST" />
+		</property>
+		<property name="DAF_GET_TIME" type="java.math.BigDecimal">
+			<column name="DAF_GET_TIME" />
+		</property>
+		<property name="DAF_GET_DURATION" type="java.lang.Long">
+			<column name="DAF_GET_DURATION" />
+		</property>
+		<property name="DAF_GET_COMPLETE_DURATION"
+			type="java.lang.Long">
+			<column name="DAF_GET_COMPLETE_DURATION" />
+		</property>
+		<property name="DAF_ECAUTH_HOST" type="java.lang.String">
+			<column name="DAF_ECAUTH_HOST" />
+		</property>
+		<property name="DAF_ECAUTH_USER" type="java.lang.String">
+			<column name="DAF_ECAUTH_USER" />
+		</property>
+		<property name="DAF_CHECKSUM" type="java.lang.String">
+			<column name="DAF_CHECKSUM" />
+		</property>
+		<property name="DAF_FILTER_NAME" type="java.lang.String">
+			<column name="DAF_FILTER_NAME" />
+		</property>
+		<property name="DAF_FILTER_TIME" type="java.math.BigDecimal">
+			<column name="DAF_FILTER_TIME" />
+		</property>
+		<property name="DAF_FILTER_SIZE" type="java.lang.Long">
+			<column name="DAF_FILTER_SIZE" />
+		</property>
+		<property name="DAF_META_STREAM" type="java.lang.String">
+			<column name="DAF_META_STREAM" />
+		</property>
+		<property name="DAF_META_TARGET" type="java.lang.String">
+			<column name="DAF_META_TARGET" />
+		</property>
+		<property name="DAF_META_TIME" type="java.lang.String">
+			<column name="DAF_META_TIME" />
+		</property>
+		<property name="DAF_META_TYPE" type="java.lang.String">
+			<column name="DAF_META_TYPE" />
+		</property>
+		<property name="DAF_ORIGINAL" type="java.lang.String">
+			<column name="DAF_ORIGINAL" />
+		</property>
+		<property name="DAF_REMOVED" type="boolean">
+			<column name="DAF_REMOVED" />
+		</property>
+		<property name="DAF_SIZE" type="long">
+			<column name="DAF_SIZE" />
+		</property>
+		<property name="DAF_SOURCE" type="java.lang.String">
+			<column name="DAF_SOURCE" />
+		</property>
+		<property name="DAF_TIME_BASE" type="java.math.BigDecimal">
+			<column name="DAF_TIME_BASE" />
+		</property>
+		<property name="DAF_TIME_FILE" type="java.math.BigDecimal">
+			<column name="DAF_TIME_FILE" />
+		</property>
+		<property name="DAF_TIME_STEP" type="java.lang.Long">
+			<column name="DAF_TIME_STEP" />
+		</property>
+		<property name="MOV_ID" type="java.lang.Long">
+			<column name="MOV_ID" />
+		</property>
+		<property name="DAF_FILE_SYSTEM" type="java.lang.Integer">
+			<column name="DAF_FILE_SYSTEM" />
+		</property>
+		<property name="DAF_FILE_INSTANCE" type="java.lang.Integer">
+			<column name="DAF_FILE_INSTANCE" />
+		</property>
+		<property name="TRG_NAME" type="java.lang.String">
+			<column name="TRG_NAME" />
+		</property>
+		<property name="DAF_GROUP_BY" type="java.lang.String">
+			<column name="DAF_GROUP_BY" />
+		</property>
+		<property name="HOS_NAME_FOR_ACQUISITION"
+			type="java.lang.Integer">
+			<column name="HOS_NAME_FOR_ACQUISITION" precision="10" />
+		</property>
+		<many-to-one name="transferGroup"
+			class="TransferGroup" not-found="ignore"
+			insert="false" update="false" >
+			<column name="TRG_NAME" />
+		</many-to-one>
+		<many-to-one name="monitoringValue"
+			class="MonitoringValue" not-found="ignore"
+			insert="false" update="false" >
+			<column name="MOV_ID" />
+		</many-to-one>
+	</class>
+
+	<class name="DataTransfer"
+		table="DATA_TRANSFER" dynamic-update="true">
+		<cache usage="read-write"/>
+		<id name="DAT_ID" type="java.lang.Long">
+			<column name="DAT_ID" />
+			<generator class="increment" />
+		</id>
+		<property name="DAF_ID" type="java.lang.Long">
+			<column name="DAF_ID" />
+		</property>
+		<property name="DAT_COMMENT" type="java.lang.String">
+			<column name="DAT_COMMENT" />
+		</property>
+		<property name="DAT_DELETED" type="boolean">
+			<column name="DAT_DELETED" />
+		</property>
+		<property name="DAT_DURATION" type="java.lang.Long">
+			<column name="DAT_DURATION" />
+		</property>
+		<property name="DAT_EXPIRY_TIME" type="java.math.BigDecimal">
+			<column name="DAT_EXPIRY_TIME" />
+		</property>
+		<property name="DAT_FAILED_TIME" type="java.math.BigDecimal">
+			<column name="DAT_FAILED_TIME" />
+		</property>
+		<property name="DAT_FINISH_TIME" type="java.math.BigDecimal">
+			<column name="DAT_FINISH_TIME" />
+		</property>
+		<property name="DAT_FIRST_FINISH_TIME"
+			type="java.math.BigDecimal">
+			<column name="DAT_FIRST_FINISH_TIME" />
+		</property>
+		<property name="DAT_IDENTITY" type="java.lang.String">
+			<column name="DAT_IDENTITY" />
+		</property>
+		<property name="DAT_PRIORITY" type="int">
+			<column name="DAT_PRIORITY" />
+		</property>
+		<property name="DAT_QUEUE_TIME" type="java.math.BigDecimal">
+			<column name="DAT_QUEUE_TIME" />
+		</property>
+		<property name="DAT_REQUEUE_COUNT" type="int">
+			<column name="DAT_REQUEUE_COUNT" />
+		</property>
+		<property name="DAT_REPLICATE_COUNT" type="int">
+			<column name="DAT_REPLICATE_COUNT" />
+		</property>
+		<property name="DAT_REQUEUE_HISTORY" type="int">
+			<column name="DAT_REQUEUE_HISTORY" />
+		</property>
+		<property name="DAT_RETRY_TIME" type="java.math.BigDecimal">
+			<column name="DAT_RETRY_TIME" />
+		</property>
+		<property name="DAT_SCHEDULED_TIME"
+			type="java.math.BigDecimal">
+			<column name="DAT_SCHEDULED_TIME" />
+		</property>
+		<property name="DAT_SENT" type="java.lang.Long">
+			<column name="DAT_SENT" />
+		</property>
+		<property name="DAT_SIZE" type="java.lang.Long">
+			<column name="DAT_SIZE" />
+		</property>
+		<property name="DAT_START_COUNT" type="int">
+			<column name="DAT_START_COUNT" />
+		</property>
+		<property name="DAT_START_TIME" type="java.math.BigDecimal">
+			<column name="DAT_START_TIME" />
+		</property>
+		<property name="DAT_PUT_TIME" type="java.math.BigDecimal">
+			<column name="DAT_PUT_TIME" />
+		</property>
+		<property name="DAT_TARGET" type="java.lang.String">
+			<column name="DAT_TARGET" />
+		</property>
+		<property name="DAT_TIME_BASE" type="java.math.BigDecimal">
+			<column name="DAT_TIME_BASE" />
+		</property>
+		<property name="DAT_TIME_STEP" type="java.lang.Long">
+			<column name="DAT_TIME_STEP" />
+		</property>
+		<property name="DAT_UNIQUE_KEY" type="java.lang.String">
+			<column name="DAT_UNIQUE_KEY" />
+		</property>
+		<property name="DAT_USER_STATUS" type="java.lang.String">
+			<column name="DAT_USER_STATUS" />
+		</property>
+		<property name="DES_NAME" type="java.lang.String">
+			<column name="DES_NAME" />
+		</property>
+		<property name="HOS_NAME" type="java.lang.Integer">
+			<column name="HOS_NAME" precision="10" />
+		</property>
+		<property name="HOS_NAME_BACKUP" type="java.lang.Integer">
+			<column name="HOS_NAME_BACKUP" precision="10" />
+		</property>
+		<property name="HOS_NAME_PROXY" type="java.lang.Integer">
+			<column name="HOS_NAME_PROXY" precision="10" />
+		</property>
+		<property name="MOV_ID" type="java.lang.Long">
+			<column name="MOV_ID" />
+		</property>
+		<property name="STA_CODE" type="java.lang.String">
+			<column name="STA_CODE" />
+		</property>
+		<property name="TRS_NAME" type="java.lang.String">
+			<column name="TRS_NAME" />
+		</property>
+		<property name="TRS_NAME_ORIGINAL" type="java.lang.String">
+			<column name="TRS_NAME_ORIGINAL" />
+		</property>
+		<property name="DAT_REPLICATED" type="boolean">
+			<column name="DAT_REPLICATED" />
+		</property>
+		<property name="DAT_ASAP" type="boolean">
+			<column name="DAT_ASAP" />
+		</property>
+		<property name="DAT_EVENT" type="boolean">
+			<column name="DAT_EVENT" />
+		</property>
+		<property name="DAT_REPLICATE_TIME"
+			type="java.math.BigDecimal">
+			<column name="DAT_REPLICATE_TIME" />
+		</property>
+		<property name="DAT_BACKUP_TIME" type="java.math.BigDecimal">
+			<column name="DAT_BACKUP_TIME" />
+		</property>
+		<property name="DAT_PROXY_TIME" type="java.math.BigDecimal">
+			<column name="DAT_PROXY_TIME" />
+		</property>
+		<many-to-one name="originalTransferServer"
+			class="TransferServer" not-found="ignore"
+			insert="false" update="false" >
+			<column name="TRS_NAME_ORIGINAL" />
+		</many-to-one>
+		<many-to-one name="transferServer"
+			class="TransferServer" not-found="ignore"
+			insert="false" update="false" >
+			<column name="TRS_NAME" />
+		</many-to-one>
+		<many-to-one name="destination"
+			class="Destination" not-found="ignore"
+			insert="false" update="false" >
+			<column name="DES_NAME" length="32" not-null="true" />
+		</many-to-one>
+		<many-to-one name="dataFile"
+			class="DataFile" not-found="ignore" insert="false"
+			update="false" >
+			<column name="DAF_ID" not-null="true" />
+		</many-to-one>
+		<many-to-one name="host"
+			class="Host" not-found="ignore" insert="false"
+			update="false" >
+			<column name="HOS_NAME" length="32" />
+		</many-to-one>
+		<many-to-one name="backupHost"
+			class="Host" not-found="ignore" insert="false"
+			update="false" >
+			<column name="HOS_NAME_BACKUP" length="32" />
+		</many-to-one>
+		<many-to-one name="proxyHost"
+			class="Host" not-found="ignore" insert="false"
+			update="false" >
+			<column name="HOS_NAME_PROXY" length="32" />
+		</many-to-one>
+		<many-to-one name="monitoringValue"
+			class="MonitoringValue" not-found="ignore"
+			insert="false" update="false" >
+			<column name="MOV_ID" precision="10" scale="0" not-null="true" />
+		</many-to-one>
+	</class>
+
+	<class name="Destination" table="DESTINATION" dynamic-update="true">
+		<cache usage="read-write"/>
+		<id name="DES_NAME" type="java.lang.String">
+			<column name="DES_NAME" length="32" />
+			<generator class="assigned" />
+		</id>
+		<property name="COU_ISO" type="java.lang.String">
+			<column name="COU_ISO" />
+		</property>
+		<property name="DES_ACTIVE" type="boolean">
+			<column name="DES_ACTIVE" />
+		</property>
+		<property name="DES_COMMENT" type="java.lang.String">
+			<column name="DES_COMMENT" />
+		</property>
+		<property name="DES_DATA" type="java.lang.String">
+			<column name="DES_DATA" />
+		</property>
+		<property name="DES_IF_TARGET_EXIST" type="java.lang.Integer">
+			<column name="DES_IF_TARGET_EXIST" />
+		</property>
+		<property name="DES_KEEP_IN_SPOOL" type="java.lang.Integer">
+			<column name="DES_KEEP_IN_SPOOL" />
+		</property>
+		<property name="DES_MAIL_ON_END" type="boolean">
+			<column name="DES_MAIL_ON_END" />
+		</property>
+		<property name="DES_MAIL_ON_ERROR" type="boolean">
+			<column name="DES_MAIL_ON_ERROR" />
+		</property>
+		<property name="DES_MAIL_ON_START" type="boolean">
+			<column name="DES_MAIL_ON_START" />
+		</property>
+		<property name="DES_MAX_CONNECTIONS" type="java.lang.Integer">
+			<column name="DES_MAX_CONNECTIONS" />
+		</property>
+		<property name="DES_MAX_PENDING" type="java.lang.Integer">
+			<column name="DES_MAX_PENDING" />
+		</property>
+		<property name="DES_MAX_REQUEUE" type="java.lang.Integer">
+			<column name="DES_MAX_REQUEUE" />
+		</property>
+		<property name="DES_MAX_START" type="java.lang.Integer">
+			<column name="DES_MAX_START" />
+		</property>
+		<property name="DES_MONITOR" type="boolean">
+			<column name="DES_MONITOR" />
+		</property>
+		<property name="DES_GROUPBY_DATE" type="boolean">
+			<column name="DES_GROUPBY_DATE" />
+		</property>
+		<property name="DES_DATE_FORMAT" type="java.lang.String">
+			<column name="DES_DATE_FORMAT" />
+		</property>
+		<property name="DES_ON_HOST_FAILURE" type="java.lang.Integer">
+			<column name="DES_ON_HOST_FAILURE" />
+		</property>
+		<property name="DES_RESET_FREQUENCY" type="java.lang.Long">
+			<column name="DES_RESET_FREQUENCY" />
+		</property>
+		<property name="DES_RETRY_COUNT" type="int">
+			<column name="DES_RETRY_COUNT" />
+		</property>
+		<property name="DES_RETRY_FREQUENCY" type="java.lang.Integer">
+			<column name="DES_RETRY_FREQUENCY" />
+		</property>
+		<property name="DES_START_FREQUENCY" type="java.lang.Integer">
+			<column name="DES_START_FREQUENCY" />
+		</property>
+		<property name="DES_STOP_IF_DIRTY" type="boolean">
+			<column name="DES_STOP_IF_DIRTY" />
+		</property>
+		<property name="DES_ACQUISITION" type="boolean">
+			<column name="DES_ACQUISITION" />
+		</property>
+		<property name="DES_MAX_INACTIVITY" type="java.lang.Integer">
+			<column name="DES_MAX_INACTIVITY" />
+		</property>
+		<property name="DES_TRANSFER_RATE" type="java.lang.Long">
+			<column name="DES_TRANSFER_RATE" />
+		</property>
+		<property name="DES_UPDATE" type="java.math.BigDecimal">
+			<column name="DES_UPDATE" />
+		</property>
+		<property name="DES_FILTER_NAME" type="java.lang.String">
+			<column name="DES_FILTER_NAME" />
+		</property>
+		<property name="DES_USER_MAIL" type="java.lang.String">
+			<column name="DES_USER_MAIL" />
+		</property>
+		<property name="DES_USER_STATUS" type="java.lang.String">
+			<column name="DES_USER_STATUS" />
+		</property>
+		<property name="DES_TYPE" type="int">
+			<column name="DES_TYPE" />
+		</property>
+		<property name="HOS_NAME_FOR_SOURCE" type="java.lang.Integer">
+			<column name="HOS_NAME_FOR_SOURCE" precision="10" />
+		</property>
+		<property name="STA_CODE" type="java.lang.String">
+			<column name="STA_CODE" />
+		</property>
+		<property name="SCV_ID" type="java.lang.Integer">
+			<column name="SCV_ID" />
+		</property>
+		<property name="ECU_NAME" type="java.lang.String">
+			<column name="ECU_NAME" />
+		</property>
+		<property name="TRG_NAME" type="java.lang.String">
+			<column name="TRG_NAME" />
+		</property>
+		<property name="DES_MAX_FILE_SIZE" type="java.lang.Long">
+			<column name="DES_MAX_FILE_SIZE" />
+		</property>
+		<property name="DES_BACKUP" type="boolean">
+			<column name="DES_BACKUP" />
+		</property>
+		<many-to-one name="hostForSource"
+			class="Host" not-found="ignore" insert="false"
+			update="false" >
+			<column name="HOS_NAME_FOR_SOURCE" length="32" />
+		</many-to-one>
+		<many-to-one name="ecuser"
+			class="ECUser" not-found="ignore" insert="false"
+			update="false" >
+			<column name="ECU_NAME" length="32" not-null="true" />
+		</many-to-one>
+		<many-to-one name="country"
+			class="Country" not-found="ignore" insert="false"
+			update="false" >
+			<column name="COU_ISO" length="2" not-null="true" />
+		</many-to-one>
+		<many-to-one name="schedulerValue"
+			class="SchedulerValue" not-found="ignore"
+			insert="false" update="false" >
+			<column name="SCV_ID" />
+		</many-to-one>
+		<many-to-one name="transferGroup"
+			class="TransferGroup" not-found="ignore"
+			insert="false" update="false" >
+			<column name="TRG_NAME" />
+		</many-to-one>
+	</class>
+
+	<class name="ECUser" table="ECUSER">
+	    <cache usage="read-write"/>
+		<id name="ECU_NAME" type="java.lang.String">
+			<column name="ECU_NAME" length="128" />
+			<generator class="assigned" />
+		</id>
+		<property name="ECU_COMMENT" type="java.lang.String">
+			<column name="ECU_COMMENT" length="65535" not-null="false" />
+		</property>
+		<property name="ECU_GID" type="java.lang.Long">
+			<column name="ECU_GID" />
+		</property>
+		<property name="ECU_SHELL" type="java.lang.String">
+			<column name="ECU_SHELL" />
+		</property>
+		<property name="ECU_UID" type="java.lang.Long">
+			<column name="ECU_UID" />
+		</property>
+		<property name="ECU_DIR" type="java.lang.String">
+			<column name="ECU_DIR" />
+		</property>
+	</class>
+
+	<class name="ECtransModule" table="ECTRANS_MODULE">
+		<cache usage="read-write"/>
+		<id name="ECM_NAME" type="java.lang.String">
+			<column name="ECM_NAME" length="128" />
+			<generator class="assigned" />
+		</id>
+		<property name="ECM_ACTIVE" type="boolean">
+			<column name="ECM_ACTIVE" />
+		</property>
+		<property name="ECM_ARCHIVE" type="java.lang.String">
+			<column name="ECM_ARCHIVE" />
+		</property>
+		<property name="ECM_CLASSE" type="java.lang.String">
+			<column name="ECM_CLASSE" />
+		</property>
+	</class>
+
+	<class name="Event" table="EVENT">
+		<id name="EVE_ID" type="java.lang.Long">
+			<column name="EVE_ID" precision="10" scale="0" />
+			<generator class="increment" />
+		</id>
+		<property name="EVE_ACTION" type="java.lang.String">
+			<column name="EVE_ACTION" />
+		</property>
+		<property name="ACT_ID" type="java.lang.Long">
+			<column name="ACT_ID" />
+		</property>
+		<property name="EVE_COMMENT" type="java.lang.String">
+			<column name="EVE_COMMENT" />
+		</property>
+		<property name="EVE_DATE" type="java.sql.Date">
+			<column name="EVE_DATE" />
+		</property>
+		<property name="EVE_ERROR" type="boolean">
+			<column name="EVE_ERROR" />
+		</property>
+		<property name="EVE_TIME" type="java.sql.Time">
+			<column name="EVE_TIME" />
+		</property>
+		<many-to-one name="activity"
+			class="Activity" not-found="ignore" insert="false"
+			update="false" >
+			<column name="ACT_ID" precision="10" scale="0" not-null="true" />
+		</many-to-one>
+	</class>
+
+	<class name="Publication" table="PUBLICATION" dynamic-update="true">
+		<id name="PUB_ID" type="long">
+			<column name="PUB_ID" precision="10" scale="0" />
+			<generator class="increment" />
+		</id>
+		<property name="PUB_SCHEDULED_TIME"
+			type="java.math.BigDecimal">
+			<column name="PUB_SCHEDULED_TIME" />
+		</property>
+		<property name="PUB_PROCESSED_TIME"
+			type="java.math.BigDecimal">
+			<column name="PUB_PROCESSED_TIME" />
+		</property>
+		<property name="PUB_DONE" type="boolean">
+			<column name="PUB_DONE" />
+		</property>
+		<property name="DAT_ID" type="long">
+			<column name="DAT_ID" />
+		</property>
+		<property name="PUB_OPTIONS" type="java.lang.String">
+			<column name="PUB_OPTIONS" />
+		</property>
+	</class>
+
+	<class name="Host" table="HOST" dynamic-update="true">
+		<cache usage="read-write"/>
+		<id name="HOS_NAME" type="java.lang.Integer">
+			<column name="HOS_NAME" precision="10" />
+			<generator class="increment" />
+		</id>
+		<property name="HOS_ACTIVE" type="boolean">
+			<column name="HOS_ACTIVE" />
+		</property>
+		<property name="HOS_CHECK" type="boolean">
+			<column name="HOS_CHECK" />
+		</property>
+		<property name="HOS_TYPE" type="java.lang.String">
+			<column name="HOS_TYPE" />
+		</property>
+		<property name="HOS_CHECK_FILENAME" type="java.lang.String">
+			<column name="HOS_CHECK_FILENAME" />
+		</property>
+		<property name="HOS_CHECK_FREQUENCY" type="long">
+			<column name="HOS_CHECK_FREQUENCY" />
+		</property>
+		<property name="HOS_ACQUISITION_FREQUENCY"
+			type="java.lang.Long">
+			<column name="HOS_ACQUISITION_FREQUENCY" />
+		</property>
+		<property name="HOS_COMMENT" type="java.lang.String">
+			<column name="HOS_COMMENT" />
+		</property>
+		<property name="HOS_DATA" type="java.lang.String">
+			<column name="HOS_DATA" />
+		</property>
+		<property name="HOS_DIR" type="java.lang.String">
+			<column name="HOS_DIR" />
+		</property>
+		<property name="HOS_HOST" type="java.lang.String">
+			<column name="HOS_HOST" />
+		</property>
+		<property name="HOS_LOGIN" type="java.lang.String">
+			<column name="HOS_LOGIN" />
+		</property>
+		<property name="HOS_MAIL_ON_ERROR" type="boolean">
+			<column name="HOS_MAIL_ON_ERROR" />
+		</property>
+		<property name="HOS_MAIL_ON_SUCCESS" type="boolean">
+			<column name="HOS_MAIL_ON_SUCCESS" />
+		</property>
+		<property name="HOS_MAX_CONNECTIONS" type="int">
+			<column name="HOS_MAX_CONNECTIONS" />
+		</property>
+		<property name="HOS_NETWORK_CODE" type="java.lang.String">
+			<column name="HOS_NETWORK_CODE" />
+		</property>
+		<property name="HOS_NETWORK_NAME" type="java.lang.String">
+			<column name="HOS_NETWORK_NAME" />
+		</property>
+		<property name="HOS_NICKNAME" type="java.lang.String">
+			<column name="HOS_NICKNAME" />
+		</property>
+		<property name="HOS_NOTIFY_ONCE" type="boolean">
+			<column name="HOS_NOTIFY_ONCE" />
+		</property>
+		<property name="HOS_PASSWD" type="java.lang.String">
+			<column name="HOS_PASSWD" />
+		</property>
+		<property name="HOS_RETRY_COUNT" type="java.lang.Integer">
+			<column name="HOS_RETRY_COUNT" />
+		</property>
+		<property name="HOS_RETRY_FREQUENCY" type="java.lang.Integer">
+			<column name="HOS_RETRY_FREQUENCY" />
+		</property>
+		<property name="HOS_USER_MAIL" type="java.lang.String">
+			<column name="HOS_USER_MAIL" />
+		</property>
+		<property name="TME_NAME" type="java.lang.String">
+			<column name="TME_NAME" />
+		</property>
+		<property name="TRG_NAME" type="java.lang.String">
+			<column name="TRG_NAME" />
+		</property>
+		<property name="HOS_FILTER_NAME" type="java.lang.String">
+			<column name="HOS_FILTER_NAME" />
+		</property>
+		<property name="HOS_AUTOMATIC_LOCATION" type="boolean">
+			<column name="HOS_AUTOMATIC_LOCATION" />
+		</property>
+		<property name="ECU_NAME" type="java.lang.String">
+			<column name="ECU_NAME" />
+		</property>
+		<property name="HST_ID" type="java.lang.Integer">
+			<column name="HST_ID" />
+		</property>
+		<property name="HLO_ID" type="java.lang.Integer">
+			<column name="HLO_ID" />
+		</property>
+		<property name="HOU_ID" type="java.lang.Integer">
+			<column name="HOU_ID" />
+		</property>
+		<many-to-one name="ecuser"
+			class="ECUser" not-found="ignore" insert="false"
+			update="false" >
+			<column name="ECU_NAME" not-null="true" />
+		</many-to-one>
+		<many-to-one name="transferMethod"
+			class="TransferMethod" not-found="ignore"
+			insert="false" update="false" >
+			<column name="TME_NAME" />
+		</many-to-one>
+		<many-to-one name="transferGroup"
+			class="TransferGroup" not-found="ignore"
+			insert="false" update="false" >
+			<column name="TRG_NAME" />
+		</many-to-one>
+		<many-to-one name="hostLocation"
+			class="HostLocation" not-found="ignore"
+			insert="false" update="false" >
+			<column name="HLO_ID" />
+		</many-to-one>
+		<many-to-one name="hostStats"
+			class="HostStats" not-found="ignore" insert="false"
+			update="false" >
+			<column name="HST_ID" />
+		</many-to-one>
+	</class>
+
+	<class name="HostStats" table="HOST_STATS" dynamic-update="true">
+		<cache usage="read-write"/>
+		<id name="HST_ID" type="java.lang.Integer">
+			<column name="HST_ID" precision="10" scale="0" />
+			<generator class="increment" />
+		</id>
+		<property name="HST_CHECK_TIME" type="java.math.BigDecimal">
+			<column name="HST_CHECK_TIME" />
+		</property>
+		<property name="HST_CONNECTIONS" type="int">
+			<column name="HST_CONNECTIONS" />
+		</property>
+		<property name="HST_DURATION" type="java.lang.Long">
+			<column name="HST_DURATION" />
+		</property>
+		<property name="HST_SENT" type="java.lang.Long">
+			<column name="HST_SENT" />
+		</property>
+		<property name="HST_VALID" type="boolean">
+			<column name="HST_VALID" />
+		</property>
+	</class>
+
+	<class name="HostLocation" table="HOST_LOCATION" dynamic-update="true">
+		<cache usage="read-write"/>
+		<id name="HLO_ID" type="java.lang.Integer">
+			<column name="HLO_ID" precision="10" scale="0" />
+			<generator class="increment" />
+		</id>
+		<property name="HLO_IP" type="java.lang.String">
+			<column name="HLO_IP" />
+		</property>
+		<property name="HLO_LATITUDE" type="java.lang.Double">
+			<column name="HLO_LATITUDE" />
+		</property>
+		<property name="HLO_LONGITUDE" type="java.lang.Double">
+			<column name="HLO_LONGITUDE" />
+		</property>
+	</class>
+
+	<class name="HostOutput" table="HOST_OUTPUT" dynamic-update="true">
+		<cache usage="read-write"/>
+		<id name="HOU_ID" type="java.lang.Integer">
+			<column name="HOU_ID" precision="10" scale="0" />
+			<generator class="increment" />
+		</id>
+		<property name="HOU_ACQUISITION_TIME"
+			type="java.math.BigDecimal">
+			<column name="HOU_ACQUISITION_TIME" />
+		</property>
+		<property name="HOU_OUTPUT" type="java.lang.String">
+			<column name="HOU_OUTPUT" />
+		</property>
+	</class>
+
+	<class name="MetadataAttribute" table="METADATA_ATTRIBUTE">
+		<cache usage="read-write"/>
+		<id name="MEA_NAME" type="java.lang.String">
+			<column name="MEA_NAME" length="26" />
+			<generator class="assigned" />
+		</id>
+	</class>
+
+	<class name="MetadataValue" table="METADATA_VALUE">
+		<cache usage="read-write"/>
+		<id name="MEV_ID" type="java.lang.Long">
+			<column name="MEV_ID" />
+			<generator class="increment" />
+		</id>
+		<property name="MEA_NAME" type="java.lang.String">
+			<column name="MEA_NAME" />
+		</property>
+		<property name="DAF_ID" type="java.lang.Long">
+			<column name="DAF_ID" />
+		</property>
+		<property name="MEV_VALUE" type="java.lang.String">
+			<column name="MEV_VALUE" length="256" />
+		</property>
+		<many-to-one name="dataFile"
+			class="DataFile" not-found="ignore" update="false"
+			insert="false" >
+			<column name="DAF_ID" not-null="true" />
+		</many-to-one>
+		<many-to-one name="metadataAttribute"
+			class="MetadataAttribute" not-found="ignore"
+			update="false" insert="false" >
+			<column name="MEA_NAME" length="26" />
+		</many-to-one>
+	</class>
+
+	<class name="MonitoringHistory" table="MONITORING_HISTORY">
+		<composite-id>
+			<key-property name="MOH_TIME"
+				type="java.math.BigDecimal">
+				<column name="MOH_TIME" precision="20" scale="0" />
+			</key-property>
+			<key-property name="MOH_KEY" type="java.lang.String">
+				<column name="MOH_KEY" length="128" />
+			</key-property>
+		</composite-id>
+		<property name="MOH_METADATA" type="java.lang.String">
+			<column name="MOH_METADATA" length="1024" />
+		</property>
+		<property name="MOH_OBJECT" type="binary">
+			<column name="MOH_OBJECT" not-null="true" />
+		</property>
+	</class>
+
+	<class name="MonitoringValue" table="MONITORING_VALUE" dynamic-update="true">
+		<cache usage="read-write"/>
+		<id name="MOV_ID" type="java.lang.Long">
+			<generator class="increment" />
+		</id>
+		<property name="MOV_EARLIEST_TIME"
+			type="java.math.BigDecimal">
+			<column name="MOV_EARLIEST_TIME" />
+		</property>
+		<property name="MOV_LATEST_TIME" type="java.math.BigDecimal">
+			<column name="MOV_LATEST_TIME" />
+		</property>
+		<property name="MOV_PREDICTED_TIME"
+			type="java.math.BigDecimal">
+			<column name="MOV_PREDICTED_TIME" />
+		</property>
+		<property name="MOV_TARGET_TIME" type="java.math.BigDecimal">
+			<column name="MOV_TARGET_TIME" />
+		</property>
+	</class>
+
+	<class name="Operation" table="OPERATION">
+		<cache usage="read-write"/>
+		<id name="OPE_NAME" type="java.lang.String">
+			<column name="OPE_NAME" length="128" />
+			<generator class="assigned" />
+		</id>
+		<property name="OPE_COMMENT" type="java.lang.String"
+			access="field">
+			<column name="OPE_COMMENT" length="1024" />
+		</property>
+		<property name="OPE_VALIDITY" type="java.lang.Integer"
+			access="field">
+			<column name="OPE_VALIDITY" precision="10" scale="0"
+				not-null="true" />
+		</property>
+	</class>
+
+	<class name="Permission" table="PERMISSION">
+		<composite-id>
+			<key-property name="OPE_NAME" type="java.lang.String">
+				<column name="OPE_NAME" length="128" />
+			</key-property>
+			<key-property name="ECU_NAME" type="java.lang.String">
+				<column name="ECU_NAME" length="128" />
+			</key-property>
+		</composite-id>
+		<property name="PER_VALIDITY" type="int">
+			<column name="PER_VALIDITY" />
+		</property>
+		<many-to-one name="ecuser"
+			class="ECUser" not-found="ignore" update="false"
+			insert="false" >
+			<column name="ECU_NAME" length="128" not-null="true" />
+		</many-to-one>
+		<many-to-one name="operation"
+			class="Operation" update="false" insert="false"
+			not-found="ignore" >
+			<column name="OPE_NAME" length="128" not-null="true" />
+		</many-to-one>
+	</class>
+
+	<class name="IncomingUser" table="INCOMING_USER" dynamic-update="true">
+		<cache usage="read-write"/>
+		<id name="INU_ID" type="java.lang.String">
+			<column name="INU_ID" length="128" />
+			<generator class="assigned" />
+		</id>
+		<property name="COU_ISO" type="java.lang.String">
+			<column name="COU_ISO" />
+		</property>
+		<property name="INU_PASSWORD" type="java.lang.String">
+			<column name="INU_PASSWORD" />
+		</property>
+		<property name="INU_COMMENT" type="java.lang.String">
+			<column name="INU_COMMENT" />
+		</property>
+		<property name="INU_ACTIVE" type="boolean">
+			<column name="INU_ACTIVE" />
+		</property>
+		<property name="INU_SYNCHRONIZED" type="boolean">
+			<column name="INU_SYNCHRONIZED" />
+		</property>
+		<property name="INU_LAST_LOGIN" type="java.math.BigDecimal">
+			<column name="INU_LAST_LOGIN" />
+		</property>
+		<property name="INU_LAST_LOGIN_HOST" type="java.lang.String">
+			<column name="INU_LAST_LOGIN_HOST" />
+		</property>
+		<property name="INU_DATA" type="java.lang.String">
+			<column name="INU_DATA" />
+		</property>
+		<property name="INU_AUTHORIZED_KEYS" type="java.lang.String">
+			<column name="INU_AUTHORIZED_KEYS" />
+		</property>
+	</class>
+
+	<class name="IncomingPolicy" table="INCOMING_POLICY">
+		<cache usage="read-write"/>
+		<id name="INP_ID" type="java.lang.String">
+			<column name="INP_ID" length="128" />
+			<generator class="assigned" />
+		</id>
+		<property name="INP_COMMENT" type="java.lang.String">
+			<column name="INP_COMMENT" />
+		</property>
+		<property name="INP_ACTIVE" type="boolean">
+			<column name="INP_ACTIVE" />
+		</property>
+		<property name="INP_DATA" type="java.lang.String">
+			<column name="INP_DATA" />
+		</property>
+	</class>
+
+	<class name="IncomingPermission" table="INCOMING_PERMISSION">
+		<cache usage="read-write"/>
+		<composite-id>
+			<key-property name="INU_ID" type="java.lang.String">
+				<column name="INU_ID" length="128" />
+			</key-property>
+			<key-property name="OPE_NAME" type="java.lang.String">
+				<column name="OPE_NAME" length="128" />
+			</key-property>
+		</composite-id>
+		<many-to-one name="incomingUser"
+			class="IncomingUser" not-found="ignore"
+			update="false" insert="false" >
+			<column name="INU_ID" length="128" not-null="true" />
+		</many-to-one>
+		<many-to-one name="operation"
+			class="Operation" update="false" insert="false"
+			not-found="ignore" >
+			<column name="OPE_NAME" length="128" not-null="true" />
+		</many-to-one>
+	</class>
+
+	<class name="IncomingAssociation" table="INCOMING_ASSOCIATION">
+		<cache usage="read-write"/>
+		<composite-id>
+			<key-property name="INU_ID" type="java.lang.String">
+				<column name="INU_ID" length="128" />
+			</key-property>
+			<key-property name="DES_NAME" type="java.lang.String">
+				<column name="DES_NAME" length="32" />
+			</key-property>
+		</composite-id>
+		<many-to-one name="incomingUser"
+			class="IncomingUser" not-found="ignore"
+			update="false" insert="false" >
+			<column name="INU_ID" length="128" not-null="true" />
+		</many-to-one>
+		<many-to-one name="destination"
+			class="Destination" update="false"
+			insert="false" not-found="ignore" >
+			<column name="DES_NAME" length="32" not-null="true" />
+		</many-to-one>
+	</class>
+
+	<class name="ProductStatus" table="PRODUCT_STATUS">
+		<cache usage="read-write"/>
+		<id name="PRS_ID" type="java.lang.Long">
+			<column name="PRS_ID" precision="10" scale="0" />
+			<generator class="increment" />
+		</id>
+		<property name="PRS_COMMENT" type="java.lang.String">
+			<column name="PRS_COMMENT" />
+		</property>
+		<property name="STA_CODE" type="java.lang.String">
+			<column name="STA_CODE" />
+		</property>
+		<property name="PRS_LAST_UPDATE" type="java.math.BigDecimal">
+			<column name="PRS_LAST_UPDATE" />
+		</property>
+		<property name="PRS_SCHEDULE_TIME"
+			type="java.math.BigDecimal">
+			<column name="PRS_SCHEDULE_TIME" />
+		</property>
+		<property name="PRS_STEP" type="java.lang.Long">
+			<column name="PRS_STEP" />
+		</property>
+		<property name="PRS_BUFFER" type="java.lang.Long">
+			<column name="PRS_BUFFER" />
+		</property>
+		<property name="PRS_STREAM" type="java.lang.String">
+			<column name="PRS_STREAM" />
+		</property>
+		<property name="PRS_TIME" type="java.lang.String">
+			<column name="PRS_TIME" />
+		</property>
+		<property name="PRS_TIME_BASE" type="java.math.BigDecimal">
+			<column name="PRS_TIME_BASE" />
+		</property>
+		<property name="PRS_TYPE" type="java.lang.String">
+			<column name="PRS_TYPE" />
+		</property>
+		<property name="PRS_USER_STATUS" type="java.lang.String">
+			<column name="PRS_USER_STATUS" />
+		</property>
+	</class>
+
+	<class name="SchedulerValue" table="SCHEDULER_VALUE" dynamic-update="true">
+		<cache usage="read-write"/>
+		<id name="SCV_ID" type="java.lang.Integer">
+			<column name="SCV_ID" precision="10" scale="0" />
+			<generator class="increment" />
+		</id>
+		<property name="HOS_NAME" type="java.lang.Integer">
+			<column name="HOS_NAME" precision="10" />
+		</property>
+		<property name="SCV_HAS_REQUEUED" type="boolean">
+			<column name="SCV_HAS_REQUEUED" />
+		</property>
+		<property name="SCV_LAST_TRANSFER_KO" type="java.lang.Long">
+			<column name="SCV_LAST_TRANSFER_KO" />
+		</property>
+		<property name="SCV_LAST_TRANSFER_OK" type="java.lang.Long">
+			<column name="SCV_LAST_TRANSFER_OK" />
+		</property>
+		<property name="SCV_RESET_TIME" type="java.math.BigDecimal">
+			<column name="SCV_RESET_TIME" />
+		</property>
+		<property name="SCV_START_COUNT" type="int">
+			<column name="SCV_START_COUNT" />
+		</property>
+		<many-to-one name="host"
+			class="Host" not-found="ignore" update="false"
+			insert="false" >
+			<column name="HOS_NAME" length="32" />
+		</many-to-one>
+	</class>
+
+	<class name="TransferGroup" table="TRANSFER_GROUP" dynamic-update="true">
+		<cache usage="read-write"/>
+		<id name="TRG_NAME" type="java.lang.String">
+			<column name="TRG_NAME" length="32" />
+			<generator class="assigned" />
+		</id>
+		<property name="TRG_CLUSTER_NAME" type="java.lang.String">
+			<column name="TRG_CLUSTER_NAME" />
+		</property>
+		<property name="TRG_ACTIVE" type="boolean">
+			<column name="TRG_ACTIVE" />
+		</property>
+		<property name="TRG_COMMENT" type="java.lang.String">
+			<column name="TRG_COMMENT" />
+		</property>
+		<property name="TRG_REPLICATE" type="boolean">
+			<column name="TRG_REPLICATE" />
+		</property>
+		<property name="TRG_FILTER" type="boolean">
+			<column name="TRG_FILTER" />
+		</property>
+		<property name="TRG_CLUSTER_WEIGHT" type="java.lang.Integer">
+			<column name="TRG_CLUSTER_WEIGHT" />
+		</property>
+		<property name="TRG_MIN_REPLICATION_COUNT"
+			type="java.lang.Integer">
+			<column name="TRG_MIN_REPLICATION_COUNT" />
+		</property>
+		<property name="TRG_VOLUME_COUNT" type="java.lang.Integer">
+			<column name="TRG_VOLUME_COUNT" />
+		</property>
+		<property name="TRG_MIN_FILTERING_COUNT"
+			type="java.lang.Integer">
+			<column name="TRG_MIN_FILTERING_COUNT" />
+		</property>
+		<property name="TRG_BACKUP" type="boolean">
+			<column name="TRG_BACKUP" />
+		</property>
+		<property name="HOS_NAME_FOR_BACKUP" type="java.lang.Integer">
+			<column name="HOS_NAME_FOR_BACKUP" precision="10" />
+		</property>
+		<many-to-one name="hostForBackup"
+			class="Host" not-found="ignore" update="false"
+			insert="false" >
+			<column name="HOS_NAME_FOR_BACKUP" />
+		</many-to-one>
+	</class>
+
+	<class name="TransferHistory" table="TRANSFER_HISTORY">
+		<id name="TRH_ID" type="java.lang.Long">
+			<column name="TRH_ID" />
+			<generator class="increment" />
+		</id>
+		<property name="DAT_ID" type="long">
+			<column name="DAT_ID" />
+		</property>
+		<property name="TRH_COMMENT" type="java.lang.String">
+			<column name="TRH_COMMENT" />
+		</property>
+		<property name="DES_NAME" type="java.lang.String">
+			<column name="DES_NAME" />
+		</property>
+		<property name="TRH_ERROR" type="boolean">
+			<column name="TRH_ERROR" />
+		</property>
+		<property name="TRH_SENT" type="java.lang.Long">
+			<column name="TRH_SENT" />
+		</property>
+		<property name="TRH_TIME" type="java.math.BigDecimal">
+			<column name="TRH_TIME" />
+		</property>
+		<property name="HOS_NAME" type="java.lang.Integer">
+			<column name="HOS_NAME" precision="10" />
+		</property>
+		<property name="STA_CODE" type="java.lang.String">
+			<column name="STA_CODE" />
+		</property>
+		<many-to-one name="dataTransfer"
+			class="DataTransfer" not-found="ignore"
+			update="false" insert="false" >
+			<column name="DAT_ID" not-null="true" />
+		</many-to-one>
+		<many-to-one name="host"
+			class="Host" not-found="ignore" update="false"
+			insert="false" >
+			<column name="HOS_NAME" />
+		</many-to-one>
+	</class>
+
+	<class name="TransferMethod" table="TRANSFER_METHOD">
+		<cache usage="read-write"/>
+		<id name="TME_NAME" type="java.lang.String">
+			<column name="TME_NAME" length="128" />
+			<generator class="assigned" />
+		</id>
+		<property name="ECM_NAME" type="java.lang.String">
+			<column name="ECM_NAME" />
+		</property>
+		<property name="TME_ACTIVE" type="boolean">
+			<column name="TME_ACTIVE" />
+		</property>
+		<property name="TME_COMMENT" type="java.lang.String">
+			<column name="TME_COMMENT" />
+		</property>
+		<property name="TME_RESOLVE" type="boolean">
+			<column name="TME_RESOLVE" />
+		</property>
+		<property name="TME_RESTRICT" type="boolean">
+			<column name="TME_RESTRICT" />
+		</property>
+		<property name="TME_VALUE" type="java.lang.String">
+			<column name="TME_VALUE" />
+		</property>
+		<many-to-one name="ectransModule"
+			class="ECtransModule" not-found="ignore"
+			update="false" insert="false" >
+			<column name="ECM_NAME" length="128" not-null="true" />
+		</many-to-one>
+	</class>
+
+	<class name="TransferServer" table="TRANSFER_SERVER" dynamic-update="true">
+		<cache usage="read-write"/>
+		<id name="TRS_NAME" type="java.lang.String">
+			<column name="TRS_NAME" length="32" />
+			<generator class="assigned" />
+		</id>
+		<property name="TRG_NAME" type="java.lang.String">
+			<column name="TRG_NAME" />
+		</property>
+		<property name="TRS_REPLICATE" type="boolean">
+			<column name="TRS_REPLICATE" />
+		</property>
+		<property name="TRS_ACTIVE" type="boolean">
+			<column name="TRS_ACTIVE" />
+		</property>
+		<property name="TRS_CHECK" type="boolean">
+			<column name="TRS_CHECK" />
+		</property>
+		<property name="TRS_HOST" type="java.lang.String">
+			<column name="TRS_HOST" />
+		</property>
+		<property name="TRS_LAST_UPDATE" type="long">
+			<column name="TRS_LAST_UPDATE" />
+		</property>
+		<property name="TRS_MAX_INACTIVITY" type="int">
+			<column name="TRS_MAX_INACTIVITY" />
+		</property>
+		<property name="TRS_MAX_TRANSFERS" type="java.lang.Integer">
+			<column name="TRS_MAX_TRANSFERS" />
+		</property>
+		<property name="TRS_PORT" type="int">
+			<column name="TRS_PORT" />
+		</property>
+		<property name="HOS_NAME_FOR_REPLICATION"
+			type="java.lang.Integer">
+			<column name="HOS_NAME_FOR_REPLICATION" precision="10" />
+		</property>
+		<many-to-one name="transferGroup"
+			class="TransferGroup" not-found="ignore"
+			update="false" insert="false" >
+			<column name="TRG_NAME" length="32" not-null="true" />
+		</many-to-one>
+		<many-to-one name="hostForReplication"
+			class="Host" not-found="ignore" update="false"
+			insert="false" >
+			<column name="HOS_NAME_FOR_REPLICATION" length="32" />
+		</many-to-one>
+	</class>
+
+	<class name="UploadHistory" table="UPLOAD_HISTORY">
+		<id name="UPH_ID" type="java.lang.Long">
+			<column name="UPH_ID" />
+			<generator class="increment" />
+		</id>
+		<property name="DAT_ID" type="java.lang.Long">
+			<column name="DAT_ID" />
+		</property>
+		<property name="STA_CODE" type="java.lang.String">
+			<column name="STA_CODE" />
+		</property>
+		<property name="UPH_DESTINATION" type="java.lang.String">
+			<column name="UPH_DESTINATION" />
+		</property>
+		<property name="UPH_FILE_NAME" type="java.lang.String">
+			<column name="UPH_FILE_NAME" />
+		</property>
+		<property name="UPH_FILE_SIZE" type="java.lang.Long">
+			<column name="UPH_FILE_SIZE" />
+		</property>
+		<property name="UPH_FINISH_TIME" type="java.math.BigDecimal">
+			<column name="UPH_FINISH_TIME" />
+		</property>
+		<property name="UPH_META_STREAM" type="java.lang.String">
+			<column name="UPH_META_STREAM" />
+		</property>
+		<property name="UPH_META_TIME" type="java.lang.String">
+			<column name="UPH_META_TIME" />
+		</property>
+		<property name="UPH_META_TYPE" type="java.lang.String">
+			<column name="UPH_META_TYPE" />
+		</property>
+		<property name="UPH_PRIORITY" type="int">
+			<column name="UPH_PRIORITY" />
+		</property>
+		<property name="UPH_QUEUE_TIME" type="java.math.BigDecimal">
+			<column name="UPH_QUEUE_TIME" />
+		</property>
+		<property name="UPH_REQUEUE_COUNT" type="int">
+			<column name="UPH_REQUEUE_COUNT" />
+		</property>
+		<property name="UPH_SCHEDULED_TIME"
+			type="java.math.BigDecimal">
+			<column name="UPH_SCHEDULED_TIME" />
+		</property>
+		<property name="UPH_START_TIME" type="java.math.BigDecimal">
+			<column name="UPH_START_TIME" />
+		</property>
+		<property name="UPH_RETRIEVAL_TIME"
+			type="java.math.BigDecimal">
+			<column name="UPH_RETRIEVAL_TIME" />
+		</property>
+		<property name="UPH_PUT_TIME" type="java.math.BigDecimal">
+			<column name="UPH_PUT_TIME" />
+		</property>
+		<property name="UPH_TIME_BASE" type="java.math.BigDecimal">
+			<column name="UPH_TIME_BASE" />
+		</property>
+		<property name="UPH_TIME_STEP" type="java.lang.Long">
+			<column name="UPH_TIME_STEP" />
+		</property>
+		<property name="UPH_DURATION" type="java.lang.Long">
+			<column name="UPH_DURATION" />
+		</property>
+		<property name="UPH_SENT" type="java.lang.Long">
+			<column name="UPH_SENT" />
+		</property>
+		<property name="UPH_TRANSFER_MODULE" type="java.lang.String">
+			<column name="UPH_TRANSFER_MODULE" />
+		</property>
+		<property name="UPH_TRANSFER_SERVER" type="java.lang.String">
+			<column name="UPH_TRANSFER_SERVER" />
+		</property>
+		<property name="UPH_HOST_ADDRESS" type="java.lang.String">
+			<column name="UPH_HOST_ADDRESS" />
+		</property>
+		<property name="UPH_NETWORK_CODE" type="java.lang.String">
+			<column name="UPH_NETWORK_CODE" />
+		</property>
+		<many-to-one name="dataTransfer"
+			class="DataTransfer" not-found="ignore"
+			update="false" insert="false">
+			<column name="DAT_ID" />
+		</many-to-one>
+	</class>
+
+	<class name="IncomingHistory" table="INCOMING_HISTORY">
+		<id name="INH_ID" type="java.lang.Long">
+			<column name="INH_ID" />
+			<generator class="increment" />
+		</id>
+		<property name="DAT_ID" type="java.lang.Long">
+			<column name="DAT_ID" />
+		</property>
+		<property name="INH_DESTINATION" type="java.lang.String">
+			<column name="INH_DESTINATION" />
+		</property>
+		<property name="INH_FILE_NAME" type="java.lang.String">
+			<column name="INH_FILE_NAME" />
+		</property>
+		<property name="INH_FILE_SIZE" type="java.lang.Long">
+			<column name="INH_FILE_SIZE" />
+		</property>
+		<property name="INH_META_STREAM" type="java.lang.String">
+			<column name="INH_META_STREAM" />
+		</property>
+		<property name="INH_META_TIME" type="java.lang.String">
+			<column name="INH_META_TIME" />
+		</property>
+		<property name="INH_META_TYPE" type="java.lang.String">
+			<column name="INH_META_TYPE" />
+		</property>
+		<property name="INH_PRIORITY" type="int">
+			<column name="INH_PRIORITY" />
+		</property>
+		<property name="INH_START_TIME" type="java.math.BigDecimal">
+			<column name="INH_START_TIME" />
+		</property>
+		<property name="INH_SCHEDULED_TIME"
+			type="java.math.BigDecimal">
+			<column name="INH_SCHEDULED_TIME" />
+		</property>
+		<property name="INH_TIME_BASE" type="java.math.BigDecimal">
+			<column name="INH_TIME_BASE" />
+		</property>
+		<property name="INH_TIME_STEP" type="java.lang.Long">
+			<column name="INH_TIME_STEP" />
+		</property>
+		<property name="INH_DURATION" type="java.lang.Long">
+			<column name="INH_DURATION" />
+		</property>
+		<property name="INH_SENT" type="java.lang.Long">
+			<column name="INH_SENT" />
+		</property>
+		<property name="INH_PROTOCOL" type="java.lang.String">
+			<column name="INH_PROTOCOL" />
+		</property>
+		<property name="INH_TRANSFER_SERVER" type="java.lang.String">
+			<column name="INH_TRANSFER_SERVER" />
+		</property>
+		<property name="INH_HOST_ADDRESS" type="java.lang.String">
+			<column name="INH_HOST_ADDRESS" />
+		</property>
+		<property name="INH_USER_NAME" type="java.lang.String">
+			<column name="INH_USER_NAME" />
+		</property>
+		<property name="INH_UPLOAD" type="boolean">
+			<column name="INH_UPLOAD" />
+		</property>
+		<many-to-one name="dataTransfer"
+			class="DataTransfer" not-found="ignore"
+			update="false" insert="false">
+			<column name="DAT_ID" />
+		</many-to-one>
+	</class>
+
+	<class name="Url" table="URL">
+		<cache usage="read-write"/>
+		<id name="URL_NAME" type="java.lang.String">
+			<column name="URL_NAME" length="128" />
+			<generator class="assigned" />
+		</id>
+	</class>
+
+	<class name="WebUser" table="WEB_USER">
+		<cache usage="read-write"/>
+		<id name="WEU_ID" type="java.lang.String">
+			<column name="WEU_ID" length="32" />
+			<generator class="assigned" />
+		</id>
+		<property name="WEU_ACTIVE" type="boolean">
+			<column name="WEU_ACTIVE" />
+		</property>
+		<property name="WEU_ENVIRONMENT" type="java.lang.String">
+			<column name="WEU_ENVIRONMENT" />
+		</property>
+		<property name="WEU_LAST_LOGIN" type="java.math.BigDecimal">
+			<column name="WEU_LAST_LOGIN" />
+		</property>
+		<property name="WEU_LAST_LOGIN_HOST" type="java.lang.String">
+			<column name="WEU_LAST_LOGIN_HOST" />
+		</property>
+		<property name="WEU_NAME" type="java.lang.String">
+			<column name="WEU_NAME" />
+		</property>
+		<property name="WEU_PASSWORD" type="java.lang.String">
+			<column name="WEU_PASSWORD" />
+		</property>
+	</class>
+
+	<class name="WeuCat" table="WEU_CAT">
+		<cache usage="read-write"/>
+		<composite-id>
+			<key-property name="CAT_ID" type="java.lang.Long">
+				<column name="CAT_ID" />
+			</key-property>
+			<key-property name="WEU_ID" type="java.lang.String">
+				<column name="WEU_ID" length="32" />
+			</key-property>
+		</composite-id>
+		<many-to-one name="category"
+			class="Category" update="false" insert="false"
+			not-found="ignore" >
+			<column name="CAT_ID" not-null="true" />
+		</many-to-one>
+		<many-to-one name="webUser"
+			class="WebUser" update="false" insert="false"
+			not-found="ignore" >
+			<column name="WEU_ID" length="32" not-null="true" />
+		</many-to-one>
+	</class>
+
+	<class name="HostECUser" table="HOS_ECU">
+		<cache usage="read-write"/>
+		<composite-id>
+			<key-property name="HOS_NAME" type="java.lang.Integer">
+				<column name="HOS_NAME" precision="10" />
+			</key-property>
+			<key-property name="ECU_NAME" type="java.lang.String">
+				<column name="ECU_NAME" length="32" />
+			</key-property>
+		</composite-id>
+	</class>
+
+	<class name="DestinationECUser" table="DES_ECU">
+		<cache usage="read-write"/>
+		<composite-id>
+			<key-property name="DES_NAME" type="java.lang.String">
+				<column name="DES_NAME" />
+			</key-property>
+			<key-property name="ECU_NAME" type="java.lang.String">
+				<column name="ECU_NAME" />
+			</key-property>
+		</composite-id>
+	</class>
+
+</hibernate-mapping>

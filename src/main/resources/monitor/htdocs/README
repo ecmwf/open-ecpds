@@ -1,8 +1,0 @@
-The jsp files in the jsp directory are used by the struts tiles framework. They aren't
-complete pages by themselves and are not accessed directly by name.
-
-Please check:
-- WEB-INF/tiles-defs.xml:		For the page definitions.
-- WEB-INF/struts-config.xml:	For the path mappings leading to these definitions.
-
-Dl

@@ -1,0 +1,112 @@
+<config
+        xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
+        xmlns='http://www.ehcache.org/v3'
+        xmlns:jsr107='http://www.ehcache.org/v3/jsr107'
+        xsi:schemaLocation="https://www.ehcache.org/v3/ https://www.ehcache.org/schema/ehcache-core-3.0.xsd">
+
+ 	<service>
+    	<jsr107:defaults default-template="default" enable-management="false" enable-statistics="false"/>
+  	</service>
+
+  	<!-- The default cache used for all DB objects -->
+  	
+    <cache-template name="default">
+    	<expiry>
+      		<ttl unit="minutes">10</ttl>
+    	</expiry>
+    	<resources>
+    		<heap unit="entries">2000</heap>
+    	</resources>
+  	</cache-template>
+  	
+  	<!-- The cache template for rarely updated DB objects -->
+  	
+    <cache-template name="no-expiry">
+    	<expiry>
+      		<none/>
+    	</expiry>
+  	</cache-template>
+  	
+  	<!-- The biggest fish -->
+    
+  	<cache alias="ecmwf.common.database.DataFile" uses-template="default">
+    	<resources>
+    		<heap unit="entries">5000</heap>
+    	</resources>
+    </cache>
+  	
+  	<cache alias="ecmwf.common.database.DataTransfer" uses-template="default">
+    	<resources>
+    		<heap unit="entries">6500</heap>
+    	</resources>
+    </cache>
+    
+  	<cache alias="ecmwf.common.database.MonitoringValue" uses-template="default">
+    	<resources>
+    		<heap unit="entries">11500</heap>
+    	</resources>
+    </cache>
+  	
+  	<!-- The default cache for rarely updated DB objects -->
+
+  	<cache alias="ecmwf.common.database.Country" uses-template="no-expiry">
+    	<resources>
+    		<heap unit="entries">250</heap>
+    	</resources>
+    </cache>
+    
+  	<cache alias="ecmwf.common.database.Operation" uses-template="no-expiry">
+    	<resources>
+    		<heap unit="entries">10</heap>
+    	</resources>
+    </cache>
+    
+  	<cache alias="ecmwf.common.database.TransferGroup" uses-template="no-expiry">
+    	<resources>
+    		<heap unit="entries">25</heap>
+    	</resources>
+    </cache>
+
+  	<cache alias="ecmwf.common.database.TransferServer" uses-template="no-expiry">
+    	<resources>
+    		<heap unit="entries">50</heap>
+    	</resources>
+    </cache>
+
+  	<cache alias="ecmwf.common.database.Category" uses-template="no-expiry">
+    	<resources>
+    		<heap unit="entries">20</heap>
+    	</resources>
+    </cache>
+    
+  	<cache alias="ecmwf.common.database.ECtransModule" uses-template="no-expiry">
+    	<resources>
+    		<heap unit="entries">30</heap>
+    	</resources>
+    </cache>
+    
+  	<cache alias="ecmwf.common.database.MetadataAttribute" uses-template="no-expiry">
+    	<resources>
+    		<heap unit="entries">30</heap>
+    	</resources>
+    </cache>
+
+  	<cache alias="ecmwf.common.database.IncomingPolicy" uses-template="no-expiry">
+    	<resources>
+    		<heap unit="entries">30</heap>
+    	</resources>
+    </cache>
+
+  	<cache alias="ecmwf.common.database.Url" uses-template="no-expiry">
+    	<resources>
+    		<heap unit="entries">2500</heap>
+    	</resources>
+    </cache>
+
+  	<cache alias="ecmwf.common.database.CatUrl" uses-template="no-expiry">
+    	<resources>
+    		<heap unit="entries">5000</heap>
+    	</resources>
+    </cache>
+
+</config>

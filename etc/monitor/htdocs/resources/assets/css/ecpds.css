@@ -1,0 +1,941 @@
+html {
+	Font-family: Verdana, Arial, Helvetica;
+	Color: black;
+	Font-size: 10pt;
+	Background-color: white;
+	Text-decoration: None;
+}
+
+a:link {
+    text-decoration: none;
+    color: black;
+}
+
+a:visited {
+    text-decoration: none;
+    color: black;
+}
+
+a:hover {
+    text-decoration: underline;
+    color: black;
+}
+
+a:active {
+    text-decoration: underline;
+    color: black;
+}
+
+h1 {	
+	Font-size: 10pt;
+	font-weight: bold;
+	color: navy;
+	padding-top: 8pt;
+}
+
+h2 {
+	Font-size: 10pt;
+        width: 100%;
+        font-weight: bold;
+        border-width: 0pt 0pt 0pt 0pt;
+}
+
+h3 {
+	Font-size: 10pt;
+        width: 100%;
+}
+
+.login_simple {
+	background: #000000;
+        color: white;
+        font-family: "Open Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
+        font-size: 10pt;
+}
+
+.location_simple {
+        padding-left: 123px;
+        margin-top: 1px;
+        margin-botttom: 2px;
+        background: #000000;
+        color: white;
+        font-family: "Open Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
+        font-size: 11pt;
+}
+
+.location_simple a:link {
+    text-decoration: none;
+    color: white;
+}
+
+.location_simple a:visited {
+    text-decoration: none;
+    color: white;
+}
+
+.location_simple a:hover {
+    text-decoration: underline;
+    color: white;
+}
+
+.location_simple a:active {
+    text-decoration: underline;
+    color: white;
+}
+
+.footer_simple_title {
+        font-size: 11pt;
+        font-weight: none;
+        color: white;
+        padding-top: 0px;
+        padding-left: 8pt;
+        padding-right: 8pt;
+        font-family: "Open Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
+}
+
+.topheader {
+  position: fixed;
+  z-index:2147483646 !important;
+  top: 0;
+  left: 0;
+  width: 100%;
+  margin: 0;
+}
+
+.bottomfooter {
+   position:fixed;
+   z-index:2147483646 !important;
+   bottom:0;
+   left: 0;
+   width:100%;
+   margin: 0;
+}
+
+.header_simple_title {
+        font-size: 16pt;
+        font-weight: bold;
+        color: white;
+        padding-top: 8px;
+        font-family: "Open Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
+}
+   
+td.content {
+	vertical-align: top;
+	Font-size: 10pt;
+	padding: 5pt;
+	padding-left: 8pt;
+}   
+
+table.listing a {
+	Font-size: 10pt;
+	text-decoration: None;
+	color: black;
+	width: 100%;
+}
+
+table.listing caption {
+	Font-size: 10pt;
+	background:white;
+	margin-top: 5;
+	margin-bottom: 5;
+	font-weight: bold;
+	text-align: left;
+}
+
+table.listing a:hover {
+	Font-size: 10pt;
+	text-decoration: Underline;
+}
+
+table.listing {
+	Font-size: 10pt;
+	border: 1pt solid #d5d5d5;
+	width: 100%;
+        border-collapse:collapse;
+}
+span.pagebanner {
+	Font-size: 10pt;
+	font-weight: bold;
+	margin-bottom: 25;
+}
+
+span.pagelinks {
+	Font-size: 10pt;
+	margin-left: 25pt;
+}
+
+table.listing th {
+	Font-size: 10pt;
+	font-weight: normal;
+	text-align: left;
+	background: #999999;
+        color: white;
+	padding-left: 5pt;
+	padding-right: 10pt;
+	font-weight: bold;
+
+}
+
+table.listing th a {
+	Font-size: 10pt;
+	background-repeat:no-repeat;
+	background-position: right;
+	display: block;
+	width: 100%;
+        font-weight:bold;
+}
+
+
+table.listing tr.selected {
+   Font-size: 10pt;
+   background: #666666;
+   font-weight:bold;
+
+}
+
+table.listing th.sorted {
+    Font-size: 10pt;
+    background-color: #666666;
+}
+
+table.listing th.sortable a {
+	background-image:url(/assets/icons/displaytag/arrow_off.png);
+}
+table.listing th.order1 a {
+	background-image: url(/assets/icons/displaytag/arrow_down.png);
+}
+table.listing th.order2 a {
+	background-image: url(/assets/icons/displaytag/arrow_up.png);
+}
+
+table.listing td {
+	vertical-align: top;
+    border: 1px solid #eeeeee;
+    Font-size: 10pt;
+	text-decoration: none;
+	padding: 5pt;
+}
+
+table.notFullWidth {
+    Font-size: 10pt;
+	width: 500pt;
+}
+
+ul.listing {
+    Font-size: 10pt;
+	margin-top: 10pt;
+	margin-bottom: 5pt;
+}
+
+ul.biggerListing {
+	margin-top: 10pt;
+	font-size: 12pt;
+	font-weight: bold;
+}
+
+
+ul.biggerListing li {
+        Font-size: 12pt;
+	padding: 2pt;
+}
+
+table.biggerListing a {
+        Font-size: 12pt;
+	color: black;
+	padding: 5pt;
+	align: left;
+}
+
+table.biggerListing a:link {
+    text-decoration: none;
+}
+
+table.biggerListing a:visited {
+    text-decoration: none;
+}
+
+table.biggerListing a:hover {
+    text-decoration: underline;
+}
+
+table.biggerListing a:active {
+    text-decoration: underline;
+}
+
+table.biggerListing th {
+        Font-size: 12pt;
+	text-align: right;
+	padding-right: 15pt;
+}
+table.biggerListing td {
+        Font-size: 12pt;
+	text-align: left;
+}
+
+
+tr.odd {
+   background:#d5d5d5;
+}
+
+tr.even {
+   background:#ffffff;
+}
+
+td.nowrap {
+   text-decoration: none;
+   white-space: nowrap;
+}
+
+input.buttonImage {
+    Font-size: 10pt;
+    margin: 0px;
+    padding: 0px;
+    border: none;
+    background-color: none;
+}
+
+td.buttons table {
+	Font-size: 10pt;
+	border: 0pt;
+	text-align: center;
+	margin: 0pt;
+	padding: 0pt;
+}
+
+td.buttons table td {
+	Font-size: 10pt;
+	border: 0pt;
+	text-align: center;
+	margin: 0pt;
+	padding: 0pt;
+}
+	
+table.destination {
+	Font-size: 10pt;
+	border: 1pt solid #d5d5d5;
+}
+
+table.destination a {
+	Font-size: 10pt;
+	text-decoration: None;
+	color: black;
+	width: 100%;
+}
+table.destination a:hover {
+	Font-size: 10pt;	
+	text-decoration: Underline;
+}
+
+table.warning {
+	Font-size: 10pt;
+	border: 1pt solid #ff0000;
+	width: 100%;
+	margin-top: 20;
+}
+
+table.warning th {
+	Font-size: 10pt;
+	background: #ff0000;
+}
+
+table.warning td {
+	Font-size: 10pt;
+	font-weight: bold;	
+	background: white;
+	padding-right: 20;
+    	padding-left: 20;
+	padding-top: 20;
+    	padding-bottom: 20;
+}
+
+
+td.code {
+	Font-size: 10pt;
+	padding-left: 5;
+}
+
+input {
+	Font-size: 10pt;
+	border: 1pt solid #d5d5d5;
+}
+
+input[type="text"] 
+{
+    width: 250px;
+}
+
+input[type="checkbox"] 
+{
+    width: 16px;
+    height: 16px;
+}
+
+input.number {
+	Font-size: 10pt;
+	border: 1pt solid #d5d5d5;
+    	padding-left: 2;
+    	width: 100pt;
+}
+
+input.small_number {
+	Font-size: 10pt;
+	border: 1pt solid #d5d5d5;
+    	padding-left: 2;
+    	margin: 0pt;
+    	width: 25pt;
+}
+
+textarea {
+	Font-size: 10pt;
+	border: 1pt solid #d5d5d5;
+    	padding-left: 2;
+    	width: 450pt;
+    	height: 100pt;
+}
+
+.search {
+    font-family: "Open Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-weight: bold;
+    font-size: 12px;  
+    box-sizing: border-box;
+    border: 2px solid #ccc;
+    border-radius: 4px;
+    background-color: white;
+    background-image: url('/assets/images/webapp/searchicon.png');
+    background-position: 10px 4px;
+    background-repeat: no-repeat; 
+    padding: 6px 12px 6px 40px;   
+}
+
+select {
+   -webkit-appearance: button;
+   -webkit-border-radius: 2px;
+   -webkit-box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.1);
+   -webkit-padding-end: 0px;
+   -webkit-padding-start: 0px;
+   -webkit-user-select: none;
+   background-image: url(/assets/images/webapp/15xvbd5.png), -webkit-linear-gradient(#FAFAFA, #F4F4F4 40%, #E5E5E5);
+   background-position: 97% center;
+   background-repeat: no-repeat;  
+   border: 1px solid #AAA;
+   color: #555;
+   font-family: "Open Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
+   font-weight: bold;
+   font-size: 12px;
+   margin: 0px;
+   overflow: hidden;
+   padding: 0px 0px;
+   text-overflow: ellipsis;
+   white-space: nowrap;
+   width: 200px;
+}
+
+select.search {
+    padding: 6px 12px 6px 40px;   
+}
+
+textarea {
+	Font-size: 10pt;
+	border: 1pt solid #d5d5d5;
+    	padding-left: 2;
+    	width: 450pt;
+    	height: 100pt;
+}
+
+select.small {
+	Font-size: 10pt;
+    	width: 60pt;
+}
+
+option {
+	Font-size: 10pt;
+    	padding-left: 2;
+    	width: 200pt;
+}
+
+option.small {
+	Font-size: 10pt;
+    	width: 60pt;
+}
+
+
+
+
+href.clean_href {
+	Font-size: 10pt;
+	text-decoration: None;
+}
+
+.listTable {
+	Font-size: 10pt;	
+    	border:0;
+}
+
+div.chooser {
+        Font-size: 10pt;
+        border: solid 1pt;
+        padding: 4pt;
+        visibility: hidden;
+        position: absolute;
+        background: #ffffff;
+        overflow-y: auto;  
+        overflow-x:hidden;
+        height: 400;
+}
+
+.error {
+	Font-size: 10pt;
+    	color: #ff0000;
+    	text-align: left;
+}
+
+.error ul li {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
+.spareBox, .editSpareBox, .spareBox2, .spareBox3 {
+	Font-size: 10pt;
+	margin-top: 3px;
+	margin-bottom: 3px;
+}
+.spareBox a, .editSpareBox a , .spareBox2 a, .spareBox3 a {
+	Font-size: 10pt;
+	color: black;
+	font-weight: bold;
+}
+
+table.spareBox, table.spareBox2, table.spareBox3 {
+	Font-size: 10pt;
+	width: 145px;
+	border: 0px solid #d5d5d5;
+	border-spacing: 0;
+}
+table.spareBox th, table.spareBox2 th, table.spareBox3 th {
+	Font-size: 10pt;
+	background: #d5d5d5;
+	text-align: left;
+	padding: 1px;
+}
+
+table.spareBox td, table.spareBox2 td, table.spareBox3 td {
+	Font-size: 10pt;
+	background: white;
+	text-align: left;
+	padding-top: 2px;
+	padding-left: 6px;
+	padding-bottom: 2px;
+}
+
+table.spareBox2 {
+	Font-size: 10pt;
+	border: 1px solid #d5d5d5;
+}
+table.spareBox2 th {
+	Font-size: 10pt;
+	background: #d5d5d5;
+}
+
+table.spareBox3 {
+	Font-size: 10pt;
+	border: 1px solid #ffaaaa;
+}
+table.spareBox3 th {
+	Font-size: 10pt;
+	background: #ffaaaa;
+}
+
+table.editSpareBox {
+	Font-size: 10pt;
+	width: 145px;
+	border: 1px solid #d5d5d5;
+	border-spacing: 0;
+}
+
+table.editSpareBox th {
+	Font-size: 10pt;
+	background: #d5d5d5;
+	text-align: left;
+	padding: 1px;
+}
+
+table.editSpareBox td {
+	Font-size: 10pt;
+	background: white;
+	text-align: left;
+	padding-top: 2px;
+	padding-left: 6px;
+	padding-bottom: 2px;
+}
+
+table.ecpdsSearchBox input, table.ecpdsSearchBox select, table.ecpdsSearchBox option {
+}
+
+table.toplevel a, table.destinations a {
+	Font-size: 10pt;
+	text-decoration: none;
+	color: black;
+}
+
+table.toplevel a:hover, table.products a:hover, table.destinations a:hover {
+	Font-size: 10pt;
+	text-decoration:underline;
+}
+
+table.toplevel td, table.destinations td {
+	Font-size: 10pt;
+        white-space: nowrap;
+        padding: 5px;
+}
+
+table.toplevel td.holder {
+	Font-size: 10pt;
+	vertical-align: top;
+}
+
+table.toplevel tr.titles td {
+	Font-size: 10pt;
+	background: #999999;
+	color: black;
+	text-align: center;
+	padding: 0pt;
+	margin: 0pt;
+	vertical-align: center;
+}
+table.toplevel tr.titles a {
+	Font-size: 10pt;
+}
+
+table.toplevel td.selected {
+	Font-size: 10pt;
+   	background: white;
+	padding-right: 0;
+	padding-left: 0;
+	font-weight: bold;
+	text-decoration: none;
+}
+
+table.products td {
+	background: #d5d5d5;
+}
+
+table.products td.selected {
+	Font-size: 10pt;
+	padding-right: 0;
+	padding-left: 0;
+	font-weight: bold;
+	text-decoration: none;
+}
+
+table.products td.icon {
+	background: white;
+	Font-size: 10pt;
+	padding-right: 0;
+	padding-left: 0;
+	font-weight: bold;
+	text-decoration: none;
+}
+
+table.products a {
+	Font-size: 10pt;
+	text-decoration: none;
+	color: black;
+}
+
+table.destinations {
+        border-collapse: collapse;
+	border: 1pt solid #d5d5d5;
+}
+
+table.destinations tr {
+	Font-size: 10pt;
+	vertical-align: top;
+}
+
+table.select {
+	Font-size: 10pt;
+	width: 100%;
+	border: 1pt solid #d5d5d5;
+}
+
+table.select a {
+	Font-size: 10pt;
+	text-decoration: none;
+	color:black;	
+}
+table.select a:hover {
+	Font-size: 10pt;
+	text-decoration:underline;
+}
+
+table.select td {
+	Font-size: 10pt;
+	text-align:center;
+	background: #d5d5d5;
+}
+
+table.select th {
+	Font-size: 10pt;
+	text-align:right;
+	background: white;
+	font-weight: normal;
+}
+
+table.select td.selected {
+	Font-size: 10pt;
+   	background: white;
+	padding-right: 0;
+	padding-left: 0;
+	font-weight: bold;
+	text-decoration: none;
+}
+
+table.fields {
+	Font-size: 10pt;
+	margin: 10pt;
+        border-collapse: collapse;
+}
+
+table.fields > tbody > tr > th {
+	Font-size: 10pt;
+	text-align:right;
+	background: #eeeeee;
+	vertical-align: top;
+	padding-right: 5pt;
+	padding: 6pt;
+}
+
+table.fields > tbody > tr > td {
+	Font-size: 10pt;
+	text-align:left;
+	color: grey;
+	background: white;
+	padding: 0pt;
+	padding-left: 5pt;
+	padding-right: 5pt;
+}
+
+table.fields pre {
+	Font-size: 10pt;
+	font-weight: normal;
+}
+
+table.fields > tr > td a {
+	Font-size: 10pt;
+	color: black;
+}
+
+div#filter {
+	Font-size: 10pt;
+	display:none; 
+	position: absolute; 
+	top:50pt; 
+	left:25pt;
+	border:  1pt solid #d5d5d5;
+	background: white;
+        z-index: 2147483647 !important;
+}
+
+div#filter td {
+	Font-size: 10pt;
+	vertical-align: top;
+	padding: 5pt;
+}
+div#filter th {
+	Font-size: 10pt;
+	text-align: left;
+	color: #d5d5d5;
+	border-bottom: 1pt solid  #d5d5d5;
+}
+
+div#filter div {
+	Font-size: 10pt;
+	display: block;
+	margin: 2pt;
+}
+
+div#filter div  a {
+	Font-size: 10pt;
+	color: black;
+	text-decoration: none;
+	font-weight:bold;
+}
+div#filter div.selected a {
+	Font-size: 10pt;
+	color: #aaaaaa;
+}
+
+div#filter td.foot {
+	Font-size: 10pt;
+	text-align:center;
+	border-top: 1pt solid #d5d5d5;
+}
+div#filter td.foot a {
+	Font-size: 10pt;
+	font-weight:bold;
+	color: #d5d5d5;
+}
+div#filterButton a {
+	Font-size: 10pt;
+	font-weight:bold;
+	color: #aaaaaa;
+	text-decoration:none;
+}
+div#filterButton a.selected {
+	Font-size: 10pt;
+	color: red;
+}
+
+th.header {
+	Font-size: 10pt;
+        font-weight: bold;
+        text-align: left;
+        background: #FFCE9C;
+}
+
+th.header a, th.sorted a, th.sortable a {
+	Font-size: 10pt;
+        background-repeat:no-repeat;
+        background-position: right;
+        display: block;
+        width: 100%;
+}
+
+th.sortable a {
+        background-image: url(/assets/icons/displaytag/arrow_off.png);
+}
+th.order1 a {
+        background-image: url(/assets/icons/displaytag/arrow_down.png);
+}
+th.order2 a {
+        background-image: url(/assets/icons/displaytag/arrow_up.png);
+}
+
+table.fieldsDetail {
+	Font-size: 10pt;
+    	border:0;
+    	margin: 15pt;
+}
+
+table.fieldsDetail th, table.fieldsDetail td {
+	Font-size: 10pt;
+        font-weight: normal;
+}
+
+table.fieldsDetail th {
+	Font-size: 10pt;
+        background: #d5d5d5;
+        text-align: right;
+        padding-right: 5pt;
+    	padding-left: 10pt;
+}
+
+table.fieldsDetail th.header {
+	Font-size: 10pt;
+        text-align: left;
+        font-weight: bold;
+}
+table.fieldsDetail th.header2 {
+	Font-size: 10pt;
+        text-align: left;
+}
+
+
+table.fieldsDetail td {
+	Font-size: 10pt;
+        padding-right:10pt;
+    	padding-left: 5pt;
+}
+
+A.menusubitem:link {
+    FONT-WEIGHT: bold; 
+	FONT-SIZE: 7pt; COLOR: red; FONT-FAMILY:  Arial,
+    Helvetica, sans-serif
+}
+
+A.menusubitem:visited {
+    FONT-WEIGHT: bold; FONT-SIZE: 7pt; COLOR: red; FONT-FAMILY:  Arial,
+    Helvetica, sans-serif
+}
+
+.menusubitem {
+    FONT-WEIGHT: bold; FONT-SIZE: 7pt; COLOR: red; FONT-FAMILY:  Arial,
+    Helvetica, sans-serif
+}
+
+.alert {
+    padding: 20px;
+    background-color: #f44336;
+    color: white;
+    margin-bottom: 15px;
+    font-size: 12px;
+}
+
+/* The close button */
+.closebtn {
+    margin-left: 15px;
+    color: white;
+    font-weight: bold;
+    float: right;
+    font-size: 22px;
+    line-height: 20px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.info {
+    padding: 20px;
+    background-color: #f5f092;
+    color: black;
+    margin-bottom: 15px;
+    font-size: 12px;
+}
+
+/* The close button */
+.infobtn {
+    margin-left: 15px;
+    color: black;
+    font-weight: bold;
+    float: right;
+    font-size: 22px;
+    line-height: 20px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+/* When moving the mouse over the close button */
+.closebtn:hover {
+    color: black;
+}
+
+.ui-datepicker {
+  z-index: 2147483647 !important
+}
+
+button{
+ display: inline-block;
+ border:1px solid #bfbfbf;
+ color: #8c8c8c;
+ border-radius: 5px 5px 5px 5px;
+ -webkit-border-radius: 5px 5px 5px 5px;
+ -moz-border-radius: 5px 5px 5px 5px;
+ font-family: Verdana;
+ width: auto;
+ height: auto;
+ font-size: 11px;
+ padding: 6px 25px;
+ box-shadow: inset 0 1px 0 0 #fff,inset 0 -1px 0 0 #d9d9d9,inset 0 0 0 1px #f2f2f2,0 2px 4px 0 #f2f2f2;
+ -moz-box-shadow: inset 0 1px 0 0 #fff,inset 0 -1px 0 0 #d9d9d9,inset 0 0 0 1px #f2f2f2,0 2px 4px 0 #f2f2f2;
+ -webkit-box-shadow: inset 0 1px 0 0 #fff,inset 0 -1px 0 0 #d9d9d9,inset 0 0 0 1px #f2f2f2,0 2px 4px 0 #f2f2f2;
+ text-shadow: 0 1px 0 #fff;
+ background-image: linear-gradient(to top, #f2f2f2, #f2f2f2);
+ background-color: #f2f2f2;
+}
+button:hover, button:active{
+ border:1px solid #8c8c8c;
+ color: #8c8c8c;
+ box-shadow: inset 0 1px 0 0 #ffffff,inset 0 -1px 0 0 #d9d9d9,inset 0 0 0 1px #f2f2f2;
+ -moz-box-shadow: inset 0 1px 0 0 #ffffff,inset 0 -1px 0 0 #d9d9d9,inset 0 0 0 1px #f2f2f2;
+ -webkit-box-shadow: inset 0 1px 0 0 #ffffff,inset 0 -1px 0 0 #d9d9d9,inset 0 0 0 1px #f2f2f2;
+ background-color: #f2f2f2;
+}
