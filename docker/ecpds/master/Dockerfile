@@ -1,4 +1,5 @@
-FROM ecpds/java:openjdk-22.0.1
+ARG BUILDPLATFORM=linux/amd64
+FROM --platform=${BUILDPLATFORM} ecpds/java:openjdk-22.0.1
 
 LABEL maintainer="Laurent.Gougeon@ecmwf.int"
 
