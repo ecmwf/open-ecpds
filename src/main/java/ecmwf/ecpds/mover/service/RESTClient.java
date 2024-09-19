@@ -55,9 +55,9 @@ import ecmwf.common.database.DataTransfer;
 import ecmwf.common.database.ExistingStorageDirectory;
 import ecmwf.common.database.Host;
 import ecmwf.common.database.HostLocation;
+import ecmwf.common.ecaccess.ECauthToken;
 import ecmwf.common.security.SSLSocketFactory;
 import ecmwf.common.technical.Cnf;
-import ecmwf.ecbatch.eis.rmi.client.ECauthToken;
 import ecmwf.ecpds.mover.RESTInterface;
 
 /**

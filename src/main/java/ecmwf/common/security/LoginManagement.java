@@ -36,10 +36,10 @@ import javax.management.timer.Timer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import ecmwf.common.ecaccess.EccmdException;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.technical.ThreadService.ConfigurableLoopRunnable;
 import ecmwf.common.text.Format;
-import ecmwf.ecbatch.eis.rmi.client.EccmdException;
 
 /**
  * The Class LoginManagement.

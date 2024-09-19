@@ -84,7 +84,6 @@ get-geodb: ## Fetch GeoLite2-City (MaxMind.com) CDN files
 
 inst-ext: ## Install jars and ext into the local Maven repository (**)
 	@$(call check-container-state,"",inside)
-	@mvn install:install-file -Dfile=ext/ecaccess.jar -DgroupId=ecaccess -DartifactId=ecaccess -Dversion=1.0.0 -Dpackaging=jar
 	@mvn install:install-file -Dfile=ext/ecmwf-webgrp.jar -DgroupId=ecaccess -DartifactId=ecmwf-webgrp -Dversion=1.0.0 -Dpackaging=jar
 	@mvn install:install-file -Dfile=ext/jmxtools.jar -DgroupId=ecaccess -DartifactId=jmxtools -Dversion=1.0.0 -Dpackaging=jar
 	@mvn install:install-file -Dfile=ext/ftp4j-1.7.2.jar -DgroupId=it.sauronsoftware -DartifactId=ftp4j -Dversion=1.7.2 -Dpackaging=jar

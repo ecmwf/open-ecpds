@@ -39,13 +39,13 @@ import java.net.Socket;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import ecmwf.common.ecaccess.EccmdException;
 import ecmwf.common.ecaccess.NativeAuthenticationProvider;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.technical.ProxyEvent;
 import ecmwf.common.technical.ProxySocket;
 import ecmwf.common.technical.StreamPlugThread;
 import ecmwf.common.text.Format;
-import ecmwf.ecbatch.eis.rmi.client.EccmdException;
 
 /**
  * The Class RETR.

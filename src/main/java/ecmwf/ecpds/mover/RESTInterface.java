@@ -32,7 +32,7 @@ import ecmwf.common.database.DataFile;
 import ecmwf.common.database.DataTransfer;
 import ecmwf.common.database.ExistingStorageDirectory;
 import ecmwf.common.database.Host;
-import ecmwf.ecbatch.eis.rmi.client.ECauthToken;
+import ecmwf.common.ecaccess.ECauthToken;
 import ecmwf.ecpds.mover.service.RESTClient.MonitorRequest;
 import ecmwf.ecpds.mover.service.RESTClient.UpdateDataRequest;
 

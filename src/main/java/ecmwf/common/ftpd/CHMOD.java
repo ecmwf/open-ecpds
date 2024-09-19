@@ -29,8 +29,8 @@ package ecmwf.common.ftpd;
 import java.io.FileNotFoundException;
 import java.util.StringTokenizer;
 
+import ecmwf.common.ecaccess.EccmdException;
 import ecmwf.common.technical.Cnf;
-import ecmwf.ecbatch.eis.rmi.client.EccmdException;
 
 /**
  * The Class CHMOD.

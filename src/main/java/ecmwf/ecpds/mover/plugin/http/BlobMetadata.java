@@ -34,8 +34,8 @@ import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import ecmwf.common.ecaccess.FileListElement;
 import ecmwf.common.ecaccess.StarterServer;
-import ecmwf.ecbatch.eis.rmi.client.FileListElement;
 import ecmwf.ecpds.mover.MoverServer;
 
 /**

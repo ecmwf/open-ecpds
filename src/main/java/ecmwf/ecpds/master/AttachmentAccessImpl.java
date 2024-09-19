@@ -37,10 +37,10 @@ import java.util.List;
 import javax.management.timer.Timer;
 
 import ecmwf.common.callback.CallBackObject;
+import ecmwf.common.ecaccess.FileListElement;
 import ecmwf.common.rmi.SocketConfig;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.technical.ProxySocket;
-import ecmwf.ecbatch.eis.rmi.client.FileListElement;
 import ecmwf.ecpds.master.transfer.DestinationOption;
 
 /**

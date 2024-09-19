@@ -31,7 +31,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 
-import ecmwf.ecbatch.eis.rmi.client.EccmdException;
+import ecmwf.common.ecaccess.EccmdException;
 
 /**
  * The Class MDTM.

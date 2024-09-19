@@ -28,7 +28,7 @@ package ecmwf.common.ftpd;
 
 import java.io.FileNotFoundException;
 
-import ecmwf.ecbatch.eis.rmi.client.EccmdException;
+import ecmwf.common.ecaccess.EccmdException;
 
 /**
  * The Class RMD.

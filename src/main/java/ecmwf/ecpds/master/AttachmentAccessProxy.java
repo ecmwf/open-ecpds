@@ -28,8 +28,8 @@ package ecmwf.ecpds.master;
 
 import java.io.IOException;
 
+import ecmwf.common.ecaccess.FileListElement;
 import ecmwf.common.technical.ProxySocket;
-import ecmwf.ecbatch.eis.rmi.client.FileListElement;
 
 /**
  * The Class AttachmentAccessProxy.

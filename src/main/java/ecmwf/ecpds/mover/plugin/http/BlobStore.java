@@ -38,10 +38,10 @@ import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import ecmwf.common.ecaccess.EccmdException;
+import ecmwf.common.ecaccess.FileListElement;
 import ecmwf.common.ecaccess.UserSession;
 import ecmwf.common.text.Format;
-import ecmwf.ecbatch.eis.rmi.client.EccmdException;
-import ecmwf.ecbatch.eis.rmi.client.FileListElement;
 
 /**
  * The Class BlobStore.

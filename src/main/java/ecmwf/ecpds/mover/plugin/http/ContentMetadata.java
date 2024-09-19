@@ -30,7 +30,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Date;
 
-import ecmwf.ecbatch.eis.rmi.client.FileListElement;
+import ecmwf.common.ecaccess.FileListElement;
 
 /**
  * The Class ContentMetadata.

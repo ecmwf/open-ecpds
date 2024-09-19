@@ -29,8 +29,8 @@ package ecmwf.ecpds.master;
 import java.io.IOException;
 import java.rmi.Remote;
 
+import ecmwf.common.ecaccess.FileListElement;
 import ecmwf.common.technical.ProxySocket;
-import ecmwf.ecbatch.eis.rmi.client.FileListElement;
 
 /**
  * The Interface DataAccessInterface.

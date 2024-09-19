@@ -47,6 +47,9 @@ import org.apache.logging.log4j.Logger;
 
 import ecmwf.common.database.Destination;
 import ecmwf.common.database.IncomingConnection;
+import ecmwf.common.ecaccess.ECauthToken;
+import ecmwf.common.ecaccess.EccmdException;
+import ecmwf.common.ecaccess.FileListElement;
 import ecmwf.common.ecaccess.NativeAuthenticationProvider;
 import ecmwf.common.ecaccess.StarterServer;
 import ecmwf.common.ecaccess.UserSession;
@@ -56,9 +59,6 @@ import ecmwf.common.rmi.SocketConfig;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.technical.ProxySocket;
 import ecmwf.common.technical.SessionCache;
-import ecmwf.ecbatch.eis.rmi.client.ECauthToken;
-import ecmwf.ecbatch.eis.rmi.client.EccmdException;
-import ecmwf.ecbatch.eis.rmi.client.FileListElement;
 import ecmwf.ecpds.master.IncomingProfile;
 import ecmwf.ecpds.master.MasterException;
 

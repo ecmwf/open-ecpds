@@ -111,6 +111,8 @@ import ecmwf.common.database.IncomingConnection;
 import ecmwf.common.database.MSUser;
 import ecmwf.common.database.TransferMethod;
 import ecmwf.common.ecaccess.ConnectionException;
+import ecmwf.common.ecaccess.ECauthToken;
+import ecmwf.common.ecaccess.ECauthTokenManager;
 import ecmwf.common.ecaccess.MBeanRepository;
 import ecmwf.common.ecaccess.NativeAuthenticationProvider;
 import ecmwf.common.ecaccess.StarterServer;
@@ -166,10 +168,6 @@ import ecmwf.common.text.Format;
 import ecmwf.common.text.Format.DuplicatedChooseScore;
 import ecmwf.common.text.Options;
 import ecmwf.common.version.Version;
-import ecmwf.ecbatch.eis.rmi.client.DataAccess;
-import ecmwf.ecbatch.eis.rmi.client.ECauthToken;
-import ecmwf.ecbatch.eis.rmi.client.ECauthTokenManager;
-import ecmwf.ecbatch.eis.rmi.client.EccmdException;
 import ecmwf.ecpds.master.DataAccessInterface;
 import ecmwf.ecpds.master.DownloadProgress;
 import ecmwf.ecpds.master.MasterConnection;
@@ -2865,76 +2863,6 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      */
     public MasterInterface getMasterInterface() throws ConnectionException {
         return (MasterInterface) masterManager.getConnection();
-    }
-
-    /**
-     * Gets the data access.
-     *
-     * @param root
-     *            the root
-     *
-     * @return the data access
-     *
-     * @throws NoSuchMethodException
-     *             the no such method exception
-     * @throws IllegalAccessException
-     *             the illegal access exception
-     * @throws InvocationTargetException
-     *             the invocation target exception
-     * @throws NamingException
-     *             the naming exception
-     * @throws RemoteException
-     *             the remote exception
-     * @throws EccmdException
-     *             the eccmd exception
-     * @throws LoginException
-     *             the login exception
-     * @throws ConnectionException
-     *             the connection exception
-     */
-    public DataAccess getDataAccess(final String root)
-            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, NamingException,
-            RemoteException, EccmdException, LoginException, ConnectionException {
-        DataAccess access = null;
-        final var retry = 5;
-        var start = System.currentTimeMillis();
-        for (var i = 1; i <= retry; i++) {
-            if (i > 1) {
-                _log.debug("Retry getDataAccess({})", i - 1);
-                try {
-                    Thread.sleep(1000);
-                } catch (final InterruptedException e) {
-                }
-            }
-            try {
-                start = System.currentTimeMillis();
-                access = getMasterProxy().getDataAccess(root);
-                if (access == null) {
-                    throw new EccmdException("Gateway " + root + " not found/connected");
-                }
-                access.getRoot();
-                break;
-            } catch (final UnmarshalException e) {
-                _log.warn("getDataAccess ({})", Format.formatDuration(start, System.currentTimeMillis()), e);
-                if (i == retry || e.getCause() instanceof InterruptedIOException) {
-                    throw e;
-                }
-            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException | NamingException
-                    | RemoteException | EccmdException | LoginException | ConnectionException e) {
-                _log.warn("getDataAccess ({})", Format.formatDuration(start, System.currentTimeMillis()), e);
-                if (i == retry) {
-                    throw e;
-                }
-            } catch (final Exception e) {
-                _log.warn("getDataAccess ({})", Format.formatDuration(start, System.currentTimeMillis()), e);
-                if (i == retry) {
-                    final var ce = new ConnectionException("Getting DataAccess from " + root);
-                    ce.initCause(e);
-                    throw ce;
-                }
-            }
-        }
-        return access;
     }
 
     /**

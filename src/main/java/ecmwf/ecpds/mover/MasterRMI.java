@@ -29,9 +29,8 @@ package ecmwf.ecpds.mover;
 import ecmwf.common.database.DataTransfer;
 import ecmwf.common.database.Destination;
 import ecmwf.common.database.Host;
+import ecmwf.common.ecaccess.ECauthToken;
 import ecmwf.common.monitor.MonitorManager;
-import ecmwf.ecbatch.eis.rmi.client.DataAccess;
-import ecmwf.ecbatch.eis.rmi.client.ECauthToken;
 import ecmwf.ecpds.master.DataAccessInterface;
 import ecmwf.ecpds.master.DownloadProgress;
 import ecmwf.ecpds.master.IncomingProfile;
@@ -170,22 +169,6 @@ final class MasterRMI implements MasterProxy {
     public void sendMessage(final String name, final String service, final int status, final String message)
             throws Exception {
         MonitorManager.getProvider().sendMessage(name, service, status, message);
-    }
-
-    /**
-     * Gets the data access.
-     *
-     * @param root
-     *            the root
-     *
-     * @return the data access
-     *
-     * @throws Exception
-     *             the exception
-     */
-    @Override
-    public DataAccess getDataAccess(final String root) throws Exception {
-        return _mover.getMasterInterface().getDataAccess(root);
     }
 
     /**

@@ -20,24 +20,22 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 import java.io.File;
 
 /**
- * This class is responsible for all logging bootstrapping. This is only needed
- * at the very beginning of HiveMQs lifecycle and before bootstrapping other
- * resources.
- * 
- * This is a temporary fix before a solution is found to allow redirecting
- * hivemq internal logging to log4j.
+ * This class is responsible for all logging bootstrapping. This is only needed at the very beginning of HiveMQs
+ * lifecycle and before bootstrapping other resources.
+ *
+ * This is a temporary fix before a solution is found to allow redirecting hivemq internal logging to log4j.
  */
 public class LoggingBootstrap {
 
-	public static void prepareLogging() {
-	}
+    public static void prepareLogging() {
+    }
 
-	public static void initLogging(final @NotNull File configFolder) {
-	}
+    public static void initLogging(final @NotNull File configFolder) {
+    }
 
-	public static void resetLogging() {
-	}
+    public static void resetLogging() {
+    }
 
-	public static void addLoglevelModifiers() {
-	}
+    public static void addLoglevelModifiers() {
+    }
 }

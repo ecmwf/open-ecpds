@@ -37,10 +37,9 @@ import org.apache.wink.common.RestException;
 import ecmwf.common.database.DataTransfer;
 import ecmwf.common.database.Destination;
 import ecmwf.common.database.Host;
+import ecmwf.common.ecaccess.ECauthToken;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.technical.ThreadService.ConfigurableLoopRunnable;
-import ecmwf.ecbatch.eis.rmi.client.DataAccess;
-import ecmwf.ecbatch.eis.rmi.client.ECauthToken;
 import ecmwf.ecpds.master.DataAccessInterface;
 import ecmwf.ecpds.master.DownloadProgress;
 import ecmwf.ecpds.master.IncomingProfile;
@@ -206,22 +205,6 @@ final class MasterREST implements MasterProxy {
         request.status = status;
         request.message = message;
         _rest.sendMessage(request);
-    }
-
-    /**
-     * Gets the data access. This method allow the ECaccessModule to get access to a remote Gateway.
-     *
-     * @param root
-     *            the root
-     *
-     * @return the data access
-     *
-     * @throws Exception
-     *             the exception
-     */
-    @Override
-    public DataAccess getDataAccess(final String root) throws Exception {
-        throw new RestException("No implemented");
     }
 
     /**

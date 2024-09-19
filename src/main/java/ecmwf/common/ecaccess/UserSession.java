@@ -30,8 +30,6 @@ import java.io.IOException;
 
 import ecmwf.common.ectrans.ECtransSetup;
 import ecmwf.common.technical.ProxySocket;
-import ecmwf.ecbatch.eis.rmi.client.EccmdException;
-import ecmwf.ecbatch.eis.rmi.client.FileListElement;
 
 /**
  * The Class UserSession.

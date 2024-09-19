@@ -43,9 +43,9 @@ import java.util.List;
 import ecmwf.common.database.Destination;
 import ecmwf.common.database.IncomingPermission;
 import ecmwf.common.database.IncomingUser;
+import ecmwf.common.ecaccess.EccmdException;
 import ecmwf.common.ectrans.ECtransOptions;
 import ecmwf.common.ectrans.ECtransSetup;
-import ecmwf.ecbatch.eis.rmi.client.EccmdException;
 
 /**
  * The Class IncomingProfile.

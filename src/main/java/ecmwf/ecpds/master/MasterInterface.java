@@ -40,10 +40,8 @@ import ecmwf.common.database.DataTransfer;
 import ecmwf.common.database.Destination;
 import ecmwf.common.database.Host;
 import ecmwf.common.database.IncomingConnection;
+import ecmwf.common.ecaccess.ECauthToken;
 import ecmwf.common.ecaccess.ProviderInterface;
-import ecmwf.ecbatch.eis.rmi.client.DataAccess;
-import ecmwf.ecbatch.eis.rmi.client.ECauthToken;
-import ecmwf.ecbatch.eis.rmi.client.EccmdException;
 
 /**
  * The Interface MasterInterface.
@@ -147,32 +145,6 @@ public interface MasterInterface extends ProviderInterface {
      *             the remote exception
      */
     void updateLocation(Host host) throws DataBaseException, RemoteException;
-
-    /**
-     * Gets the data access.
-     *
-     * @param root
-     *            the root
-     *
-     * @return the data access
-     *
-     * @throws NoSuchMethodException
-     *             the no such method exception
-     * @throws IllegalAccessException
-     *             the illegal access exception
-     * @throws InvocationTargetException
-     *             the invocation target exception
-     * @throws NamingException
-     *             the naming exception
-     * @throws RemoteException
-     *             the remote exception
-     * @throws LoginException
-     *             the login exception
-     * @throws EccmdException
-     *             the eccmd exception
-     */
-    DataAccess getDataAccess(String root) throws NoSuchMethodException, IllegalAccessException,
-            InvocationTargetException, NamingException, RemoteException, LoginException, EccmdException;
 
     /**
      * Gets the data file access interface.

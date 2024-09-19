@@ -28,8 +28,8 @@ package ecmwf.common.ftpd;
 
 import java.io.FileNotFoundException;
 
+import ecmwf.common.ecaccess.EccmdException;
 import ecmwf.common.text.Format;
-import ecmwf.ecbatch.eis.rmi.client.EccmdException;
 
 /**
  * The Class CWD.

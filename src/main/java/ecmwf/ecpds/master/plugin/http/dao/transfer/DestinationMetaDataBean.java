@@ -34,7 +34,7 @@ import java.util.Date;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import ecmwf.ecbatch.eis.rmi.client.FileListElement;
+import ecmwf.common.ecaccess.FileListElement;
 import ecmwf.ecpds.master.MasterException;
 import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.model.transfer.DestinationMetaData;

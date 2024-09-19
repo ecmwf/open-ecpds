@@ -32,8 +32,6 @@ import java.io.IOException;
 import ecmwf.common.database.Activity;
 import ecmwf.common.database.ECUser;
 import ecmwf.common.database.Event;
-import ecmwf.ecbatch.eis.rmi.client.ECauthToken;
-import ecmwf.ecbatch.eis.rmi.client.EccmdException;
 
 /**
  * The Class NativeAuthenticationProvider.

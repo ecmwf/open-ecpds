@@ -37,12 +37,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import ecmwf.common.ecaccess.EccmdException;
 import ecmwf.common.ecaccess.NativeAuthenticationProvider;
 import ecmwf.common.ecaccess.UserSession;
 
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.technical.ThreadService;
-import ecmwf.ecbatch.eis.rmi.client.EccmdException;
 
 /**
  * The Class PASS.

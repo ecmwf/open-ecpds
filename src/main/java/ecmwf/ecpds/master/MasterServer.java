@@ -107,7 +107,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.StringReader;
-import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.URISyntaxException;
@@ -158,9 +157,7 @@ import javax.management.MBeanRegistrationException;
 import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 import javax.management.timer.Timer;
-import javax.naming.NamingException;
 import javax.script.ScriptException;
-import javax.security.auth.login.LoginException;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -199,6 +196,9 @@ import ecmwf.common.ecaccess.AbstractTicket;
 import ecmwf.common.ecaccess.ClientInterface;
 import ecmwf.common.ecaccess.ConnectionException;
 import ecmwf.common.ecaccess.ECaccessProvider;
+import ecmwf.common.ecaccess.ECauthToken;
+import ecmwf.common.ecaccess.ECauthTokenGenerator;
+import ecmwf.common.ecaccess.EccmdException;
 import ecmwf.common.ecaccess.HandlerInterface;
 import ecmwf.common.ecaccess.MBeanScheduler;
 import ecmwf.common.ecaccess.MailMBean;
@@ -232,12 +232,6 @@ import ecmwf.common.technical.ThreadService.ConfigurableRunnable;
 import ecmwf.common.text.Format;
 import ecmwf.common.text.Options;
 import ecmwf.common.version.Version;
-import ecmwf.ecbatch.eis.rmi.client.DataAccess;
-import ecmwf.ecbatch.eis.rmi.client.DataProxy;
-import ecmwf.ecbatch.eis.rmi.client.ECauthToken;
-import ecmwf.ecbatch.eis.rmi.client.ECauthTokenGenerator;
-import ecmwf.ecbatch.eis.rmi.client.EccmdConnection;
-import ecmwf.ecbatch.eis.rmi.client.EccmdException;
 import ecmwf.ecpds.master.plugin.ecpds.ECpdsClient;
 import ecmwf.ecpds.master.transfer.DestinationOption;
 import ecmwf.ecpds.master.transfer.HostOption;
@@ -271,9 +265,6 @@ public final class MasterServer extends ECaccessProvider
 
     /** The Constant _events. */
     private static final Logger _events = LogManager.getLogger("EventLogs");
-
-    /** The eccmd connection. */
-    private final transient EccmdConnection eccmdConnection;
 
     /** The transfer scheduler. */
     private final transient TransferScheduler theTransferScheduler;
@@ -394,9 +385,6 @@ public final class MasterServer extends ECaccessProvider
     /** The send mails. */
     private transient boolean sendMails = Cnf.at("Server", "sendMails", true);
 
-    /** The use eccmd. */
-    private transient boolean useEccmd = false;
-
     /** The MQTT token used in the connect parameters. */
     private static final String MQTT_TOKEN = ";notification=mqtt";
 
@@ -439,14 +427,6 @@ public final class MasterServer extends ECaccessProvider
         _log.info("MasterServer-version: {}", Version.getFullVersion());
         NativeAuthenticationProvider.setProvider(MasterProvider.class);
         DestinationOption.getList(); // Make sure the list of options is loaded!
-        final var eccmdHost = Cnf.at("Jeccmdd", "host");
-        if (isNotEmpty(eccmdHost)) {
-            eccmdConnection = new EccmdConnection(eccmdHost, Cnf.at("Jeccmdd", "port", (short) 640));
-            useEccmd = Cnf.at("Jeccmdd", "useEccmd", useEccmd);
-        } else {
-            eccmdConnection = null;
-            useEccmd = false;
-        }
         transferServerManagement = new TransferServerManagement(this);
         if (Cnf.at("Server", "transferScheduler", true)) {
             _log.debug("Starting TransferScheduler");
@@ -2658,21 +2638,7 @@ public final class MasterServer extends ECaccessProvider
      */
     @Override
     public ECUser importECUser(final String uid) throws EccmdException, RemoteException {
-        if (eccmdConnection == null) {
-            // The Master is not connected to the ECCMD daemon
-            return null;
-        }
-        var attempts = 0;
-        while (eccmdConnection.getEccmdConnection() == null) {
-            if (attempts++ > 10) {
-                throw new EccmdException("EccmdConnection connection not ready");
-            }
-            try {
-                Thread.sleep(30 * Timer.ONE_SECOND);
-            } catch (final InterruptedException e) {
-            }
-        }
-        return eccmdConnection.getEccmdConnection().getECUser(uid);
+        return null;
     }
 
     /**
@@ -2722,8 +2688,6 @@ public final class MasterServer extends ECaccessProvider
                                 "Connected: connected to the ECcmdServer.", true, false, false),
                         new MBeanAttributeInfo("SendMails", "java.lang.Boolean",
                                 "SendMails: send mails for each user action.", true, true, false),
-                        new MBeanAttributeInfo("UseEccmd", "java.lang.Boolean",
-                                "UseEccmd: locate remote Gateways through the eccmd.", true, true, false),
                         new MBeanAttributeInfo("Trace", "java.lang.Boolean",
                                 "Trace: show remote calls from monitoring interface in logs.", true, true, false),
                         new MBeanAttributeInfo("SynchronizedCount", "java.lang.Long",
@@ -2740,10 +2704,6 @@ public final class MasterServer extends ECaccessProvider
                                         "should we include standby files?"),
                                 new MBeanParameterInfo("pattern", "java.lang.String", "pattern for file selection") },
                         "java.lang.String", MBeanOperationInfo.ACTION),
-                        new MBeanOperationInfo("getDataAccess", "getDataAccess(root): get the data access",
-                                new MBeanParameterInfo[] { new MBeanParameterInfo("root", "java.lang.String",
-                                        "root name of the data access") },
-                                "void", MBeanOperationInfo.ACTION),
                         new MBeanOperationInfo("exportDestinationsAndHosts",
                                 "exportDestinationsAndHosts(dir,type): export destinations, hosts and association to backup files in dir",
                                 new MBeanParameterInfo[] {
@@ -2869,14 +2829,8 @@ public final class MasterServer extends ECaccessProvider
             if ("SynchronizedCount".equals(attributeName)) {
                 return Synchronized.getSize();
             }
-            if ("Connected".equals(attributeName)) {
-                return eccmdConnection != null ? eccmdConnection.isConnected() : false;
-            }
             if ("SendMails".equals(attributeName)) {
                 return sendMails;
-            }
-            if ("UseEccmd".equals(attributeName)) {
-                return useEccmd;
             }
             if ("Trace".equals(attributeName)) {
                 return MonitorCall.getTrace();
@@ -2908,10 +2862,6 @@ public final class MasterServer extends ECaccessProvider
             throws InvalidAttributeValueException, MBeanException {
         if ("SendMails".equals(name)) {
             sendMails = (Boolean) value;
-            return true;
-        }
-        if ("UseEccmd".equals(name)) {
-            useEccmd = (Boolean) value;
             return true;
         }
         if ("Trace".equals(name)) {
@@ -2976,11 +2926,6 @@ public final class MasterServer extends ECaccessProvider
             }
             if ("cleanAccessControl".equals(operationName) && signature.length == 0) {
                 return AccessControl.cleanAccessControl(getECpdsBase());
-            }
-            if ("getDataAccess".equals(operationName) && signature.length == 1
-                    && "java.lang.String".equals(signature[0])) {
-                final var access = getDataAccess((String) params[0]);
-                return access != null ? "Found: " + access.getRoot() + ":" + access.getPassword() : "Not found";
             }
             if ("getTargetName".equals(operationName) && signature.length == 1
                     && "java.lang.Long".equals(signature[0])) {
@@ -3849,61 +3794,6 @@ public final class MasterServer extends ECaccessProvider
             update++;
         }
         return update;
-    }
-
-    /**
-     * Gets the data access from eccmd.
-     *
-     * @param root
-     *            the root
-     *
-     * @return the data access
-     *
-     * @throws EccmdException
-     *             the eccmd exception
-     * @throws RemoteException
-     *             the remote exception
-     */
-    private DataAccess _getDataAccessFromEccmd(final String root) throws EccmdException, RemoteException {
-        try {
-            final var access = eccmdConnection.getEccmdConnection().getDataAccess(root);
-            return access != null ? new DataProxy(access) : null;
-        } catch (EccmdException | RemoteException e) {
-            _log.warn(e);
-            throw e;
-        }
-    }
-
-    /**
-     * Gets the data access.
-     *
-     * @param root
-     *            the root
-     *
-     * @return the data access
-     *
-     * @throws NoSuchMethodException
-     *             the no such method exception
-     * @throws IllegalAccessException
-     *             the illegal access exception
-     * @throws InvocationTargetException
-     *             the invocation target exception
-     * @throws NamingException
-     *             the naming exception
-     * @throws RemoteException
-     *             the remote exception
-     * @throws LoginException
-     *             the login exception
-     * @throws EccmdException
-     *             the eccmd exception
-     */
-    @Override
-    public DataAccess getDataAccess(final String root) throws NoSuchMethodException, IllegalAccessException,
-            InvocationTargetException, NamingException, RemoteException, LoginException, EccmdException {
-        if (useEccmd) {
-            return _getDataAccessFromEccmd(root);
-        }
-        throw new EccmdException("No support for the ECaccess Network");
     }
 
     /**
@@ -4830,55 +4720,6 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * Try the local password and/or the ActivID passcode depending of the gateway.
-     *
-     * @param user
-     *            the user
-     * @param credential
-     *            the credential
-     * @param root
-     *            the root
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
-     */
-    private void _getECUser(final String user, final String credential, final String root)
-            throws MasterException, DataBaseException, RemoteException {
-        // Is it a password?
-        ECUser ecuser = null;
-        try {
-            ecuser = eccmdConnection.getEccmdConnection().getECUser(user, credential);
-        } catch (final EccmdException e) {
-        }
-        // Is it an ActivID token?
-        if (ecuser == null) {
-            try {
-                if (LoginManagement.isPasscode(credential)) {
-                    // We do the compute preauth as we only want to
-                    // check the ActivID token and we don't care if the
-                    // user is disabled on not (e.g. they can have
-                    // access to the dissemination but not to ecaccess)!
-                    eccmdConnection.getEccmdConnection().computePreAuth(user, credential, getRoot(), "monitoring");
-                    ecuser = eccmdConnection.getEccmdConnection().getECUser(user);
-                }
-            } catch (EccmdException | IOException ee) {
-                _log.warn(ee);
-                throw new MasterException(ee.getMessage());
-            }
-        }
-        // Nothing found!
-        if (ecuser == null) {
-            throw new MasterException("Authentication failed");
-        }
-        // Let's update the ECUSer in the database (latest copy from the ECCMD daemon)
-        getDataBase().store(ecuser);
-    }
-
-    /**
      * Allow getting a Web User. The credentials are checked before returning the Web User.
      *
      * @param user
@@ -4950,31 +4791,25 @@ public final class MasterServer extends ECaccessProvider
                 throw new MasterException("Authentication failed");
             }
         }
-        if (TOTP.ACTIVE || eccmdConnection == null) {
-            // No connection to the ECCMD daemon, so let's do a TOTP or local
-            // authentication!
-            if (TOTP.ACTIVE) {
-                boolean authenticated;
-                try {
-                    authenticated = TOTP.authenticate(user, credentials, isPasscode);
-                } catch (IOException | URISyntaxException e) {
-                    authenticated = false;
-                }
-                final var mode = isPasscode ? "passcode" : "password";
-                if (!authenticated) {
-                    _log.error("TOTP authentication failed for " + user + " (" + mode + ")");
-                    throw new MasterException("Authentication failed");
-                }
-                _log.debug("TOTP authentication successful for " + user + " (" + mode + ")");
-            } else if (!credentials.equals(webUser.getPassword())) {
-                _log.error("Static authentication failed for " + user);
-                throw new MasterException("Authentication failed");
-            } else {
-                _log.debug("Static authentication successful for " + user + " (WebUser)");
+        // Let's do a TOTP or local authentication!
+        if (TOTP.ACTIVE) {
+            boolean authenticated;
+            try {
+                authenticated = TOTP.authenticate(user, credentials, isPasscode);
+            } catch (IOException | URISyntaxException e) {
+                authenticated = false;
             }
+            final var mode = isPasscode ? "passcode" : "password";
+            if (!authenticated) {
+                _log.error("TOTP authentication failed for " + user + " (" + mode + ")");
+                throw new MasterException("Authentication failed");
+            }
+            _log.debug("TOTP authentication successful for " + user + " (" + mode + ")");
+        } else if (!credentials.equals(webUser.getPassword())) {
+            _log.error("Static authentication failed for " + user);
+            throw new MasterException("Authentication failed");
         } else {
-            // Let's authenticate against the ECCMD daemon
-            _getECUser(user, credentials, root);
+            _log.debug("Static authentication successful for " + user + " (WebUser)");
         }
         return webUser;
     }

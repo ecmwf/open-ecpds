@@ -31,10 +31,10 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.StringTokenizer;
 
+import ecmwf.common.ecaccess.EccmdException;
+import ecmwf.common.ecaccess.FileListElement;
 import ecmwf.common.technical.StreamPlugThread;
 import ecmwf.common.text.Format;
-import ecmwf.ecbatch.eis.rmi.client.EccmdException;
-import ecmwf.ecbatch.eis.rmi.client.FileListElement;
 
 /**
  * The Class LIST.

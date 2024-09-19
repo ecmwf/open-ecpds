@@ -32,13 +32,13 @@ import java.io.InputStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import ecmwf.common.ecaccess.EccmdException;
+import ecmwf.common.ecaccess.FileListElement;
 import ecmwf.common.ecaccess.StarterServer;
 import ecmwf.common.ecaccess.UserSession;
 import ecmwf.common.ectrans.ECtransOptions;
 import ecmwf.common.technical.MonitoredInputStream;
 import ecmwf.common.technical.ProxyEvent;
-import ecmwf.ecbatch.eis.rmi.client.EccmdException;
-import ecmwf.ecbatch.eis.rmi.client.FileListElement;
 import ecmwf.ecpds.mover.MoverServer;
 
 /**

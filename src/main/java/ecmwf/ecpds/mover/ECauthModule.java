@@ -80,6 +80,7 @@ import com.jcraft.jsch.JSchException;
 
 import ecmwf.common.database.Host;
 import ecmwf.common.ecaccess.ConnectionException;
+import ecmwf.common.ecaccess.EccmdException;
 import ecmwf.common.ecaccess.StarterServer;
 import ecmwf.common.ecauth.InteractiveSession;
 import ecmwf.common.ecauth.SSHSession;
@@ -99,7 +100,6 @@ import ecmwf.common.technical.Synchronized;
 import ecmwf.common.technical.ThreadService.ConfigurableLoopRunnable;
 import ecmwf.common.text.Format;
 import ecmwf.common.text.Format.DuplicatedChooseScore;
-import ecmwf.ecbatch.eis.rmi.client.EccmdException;
 import ecmwf.ecpds.mover.MoverServer.ECproxyCallback;
 
 /**

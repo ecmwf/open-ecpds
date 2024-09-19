@@ -29,8 +29,7 @@ package ecmwf.ecpds.mover;
 import ecmwf.common.database.DataTransfer;
 import ecmwf.common.database.Destination;
 import ecmwf.common.database.Host;
-import ecmwf.ecbatch.eis.rmi.client.DataAccess;
-import ecmwf.ecbatch.eis.rmi.client.ECauthToken;
+import ecmwf.common.ecaccess.ECauthToken;
 import ecmwf.ecpds.master.DataAccessInterface;
 import ecmwf.ecpds.master.DownloadProgress;
 import ecmwf.ecpds.master.IncomingProfile;
@@ -132,19 +131,6 @@ public interface MasterProxy {
      *             the exception
      */
     void sendMessage(String name, String service, int status, String message) throws Exception;
-
-    /**
-     * Gets the data access.
-     *
-     * @param root
-     *            the root
-     *
-     * @return the data access
-     *
-     * @throws Exception
-     *             the exception
-     */
-    DataAccess getDataAccess(String root) throws Exception;
 
     /**
      * Gets the data file access interface.
