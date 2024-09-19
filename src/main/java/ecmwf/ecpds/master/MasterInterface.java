@@ -27,12 +27,8 @@ package ecmwf.ecpds.master;
  */
 
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.rmi.RemoteException;
 import java.util.List;
-
-import javax.naming.NamingException;
-import javax.security.auth.login.LoginException;
 
 import ecmwf.common.database.Association;
 import ecmwf.common.database.DataBaseException;
