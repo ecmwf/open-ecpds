@@ -1121,8 +1121,6 @@ public final class FtpsModule extends TransferModule {
      * customFTPDataTransfer event implements this interface, and the object created with that class is registered with
      * a component using the component's <code>addCustomFTPDataTransferListener</code> method. When the
      * customFTPDataTransfer event occurs, that object's appropriate method is invoked.
-     *
-     * @see CustomFTPDataTransferEvent
      */
     public class CustomFTPDataTransferListener implements FTPDataTransferListener {
 

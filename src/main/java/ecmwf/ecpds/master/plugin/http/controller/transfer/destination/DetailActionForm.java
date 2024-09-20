@@ -387,8 +387,6 @@ public class DetailActionForm extends ECMWFActionForm {
      * "increasePriority" or "decreasePriority" to all of them at the same time
      *
      * @return A Collection of DataTransfers which will be the subject for a "group" operation.
-     *
-     * @see UpdateForm
      */
     public Collection<DataTransfer> getActionTransfers() {
         return getCache().getActionTransfers();

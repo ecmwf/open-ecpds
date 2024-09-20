@@ -138,8 +138,6 @@ public interface DataBaseInterface extends Remote {
      * @param target
      *            the target
      *
-     * @return the initial data transfer events
-     *
      * @throws RemoteException
      *             the remote exception
      */
@@ -151,8 +149,6 @@ public interface DataBaseInterface extends Remote {
      * @param target
      *            the target
      *
-     * @return the initial change host events
-     *
      * @throws RemoteException
      *             the remote exception
      */
@@ -163,8 +159,6 @@ public interface DataBaseInterface extends Remote {
      *
      * @param target
      *            the target
-     *
-     * @return the initial product status events
      *
      * @throws RemoteException
      *             the remote exception

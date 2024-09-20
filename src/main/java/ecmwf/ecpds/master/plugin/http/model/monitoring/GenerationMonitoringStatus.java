@@ -61,8 +61,6 @@ public interface GenerationMonitoringStatus extends ModelBean {
 
     /**
      * Refresh status.
-     *
-     * @return Transfer Status coming from ProductGeneration calculations
      */
     void refreshStatus();
 

@@ -622,8 +622,6 @@ public abstract class TransferModule implements Closeable {
      * @param out
      *            the out
      *
-     * @return the string
-     *
      * @throws IOException
      *             Signals that an I/O exception has occurred.
      */

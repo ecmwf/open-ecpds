@@ -50,8 +50,6 @@ import ecmwf.web.services.config.ConfigService;
  * implements this interface, and the object created with that class is registered with a component using the
  * component's <code>addPDSContextListener</code> method. When the PDSContext event occurs, that object's appropriate
  * method is invoked.
- *
- * @see PDSContextEvent
  */
 public class PDSContextListener implements ServletContextListener {
 

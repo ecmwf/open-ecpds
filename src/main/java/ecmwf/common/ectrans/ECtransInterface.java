@@ -181,8 +181,6 @@ public abstract class ECtransInterface implements Closeable {
     /**
      * Close.
      *
-     * @return true, if successful
-     *
      * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
