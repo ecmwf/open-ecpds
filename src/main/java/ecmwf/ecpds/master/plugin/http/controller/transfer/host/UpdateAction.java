@@ -23,7 +23,7 @@ package ecmwf.ecpds.master.plugin.http.controller.transfer.host;
  *
  * Update a Host.
  *
- * @author Daniel Varela Santoalla <sy8@ecmwf.int>, ECMWF.
+ * @author Daniel Varela Santoalla - sy8@ecmwf.int, ECMWF.
  * @version 6.7.7
  * @since 2004-10-09
  */

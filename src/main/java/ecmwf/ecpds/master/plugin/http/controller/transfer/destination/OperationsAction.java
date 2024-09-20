@@ -24,7 +24,7 @@ package ecmwf.ecpds.master.plugin.http.controller.transfer.destination;
  * Update data transfers or the the status within the destination, but not the
  * destination itself or its associations with other objects
  *
- * @author Daniel Varela Santoalla <sy8@ecmwf.int>, ECMWF.
+ * @author Daniel Varela Santoalla - sy8@ecmwf.int, ECMWF.
  * @version 6.7.7
  * @since 2004-10-09
  */

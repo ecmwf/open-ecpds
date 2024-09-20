@@ -25,7 +25,7 @@ package ecmwf.common.security;
  * #ioEnding methods when entering and exiting IO blocks. The #flush and #write
  * methods in this class are synchronized.
  *
- * @author Laurent Gougeon <syi@ecmwf.int>, ECMWF.
+ * @author Laurent Gougeon - syi@ecmwf.int, ECMWF.
  * @version 6.7.7
  * @since 2024-07-01
  */

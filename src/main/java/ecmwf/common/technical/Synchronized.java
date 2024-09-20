@@ -50,7 +50,7 @@ package ecmwf.common.technical;
  * The getMutex method is used to get a Mutex object associated with a key. The
  * Mutex object can be used to synchronize threads accessing the same key. *
  *
- * @author Laurent Gougeon <syi@ecmwf.int>, ECMWF.
+ * @author Laurent Gougeon - syi@ecmwf.int, ECMWF.
  * @version 6.7.7
  * @since 2024-07-01
  */

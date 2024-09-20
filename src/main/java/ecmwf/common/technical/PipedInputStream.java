@@ -25,7 +25,7 @@ package ecmwf.common.technical;
  * the check of the readSide and writeSide threads as this was breaking the
  * usage of the pipe-streams by multiple threads.
  *
- * @author Laurent Gougeon <syi@ecmwf.int>, ECMWF.
+ * @author Laurent Gougeon - syi@ecmwf.int, ECMWF.
  * @version 6.7.7
  * @since 2024-07-01
  */

@@ -23,7 +23,7 @@ package ecmwf.common.monitor;
  *
  * Used by the MonitorManager to throw monitoring exceptions.
  *
- * @author Laurent Gougeon <syi@ecmwf.int>, ECMWF.
+ * @author Laurent Gougeon - syi@ecmwf.int, ECMWF.
  *
  * @version 6.7.7
  *

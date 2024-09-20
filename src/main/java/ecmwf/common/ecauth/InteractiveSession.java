@@ -24,7 +24,7 @@ package ecmwf.common.ecauth;
  * Common interface to a telnet or ssh session. This interface is used by the
  * ECauthModules (mover and eccmd).
  *
- * @author Laurent Gougeon <syi@ecmwf.int>, ECMWF.
+ * @author Laurent Gougeon - syi@ecmwf.int, ECMWF.
  * @version 6.7.7
  * @since 2024-07-01
  */

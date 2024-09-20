@@ -26,8 +26,8 @@ package ecmwf.ecpds.master.plugin.http.dao.monitoring;
  *
  * Laurent Gougeon: added creation of the KML file(s) for the map application.
  *
- * @author Laurent Gougeon <syi@ecmwf.int>, ECMWF.
- * @author Daniel Varela Santoalla <sy8@ecmwf.int>, ECMWF.
+ * @author Laurent Gougeon - syi@ecmwf.int, ECMWF.
+ * @author Daniel Varela Santoalla - sy8@ecmwf.int, ECMWF.
  * @version 6.7.7
  * @since 2004-10-09
  */

@@ -24,7 +24,7 @@ package ecmwf.common.ecaccess;
  * The Class ECaccessException. An EctransException is usually thrown as a result of a EctransManager or EctransMonitor
  * method call.
  *
- * @author Laurent Gougeon <syi@ecmwf.int>, ECMWF.
+ * @author Laurent Gougeon - syi@ecmwf.int, ECMWF.
  *
  * @version 6.7.7
  *

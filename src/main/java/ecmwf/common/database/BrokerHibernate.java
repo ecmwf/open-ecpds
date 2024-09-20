@@ -33,7 +33,7 @@ package ecmwf.common.database;
  * interface. clearCache clears the cache used by the Hibernate session, while
  * executeQuery executes a given SQL query and returns a ResultSet.
  *
- * @author Laurent Gougeon <syi@ecmwf.int>, ECMWF.
+ * @author Laurent Gougeon - syi@ecmwf.int, ECMWF.
  * @version 6.7.7
  * @since 2024-07-01
  */

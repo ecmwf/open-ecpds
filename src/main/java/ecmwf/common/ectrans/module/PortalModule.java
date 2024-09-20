@@ -24,7 +24,7 @@ package ecmwf.common.ectrans.module;
  * The Class PortalModule. Do nothing, only there to allow triggering the
  * notification from the ECtransPut class on schedule time.
  *
- * @author Laurent Gougeon <syi@ecmwf.int>, ECMWF.
+ * @author Laurent Gougeon - syi@ecmwf.int, ECMWF.
  * @version 6.7.7
  * @since 2024-07-01
  */

@@ -21,7 +21,7 @@ package ecmwf.common.database;
 /**
  * ECMWF Product Data Store (ECPDS) Project.
  *
- * @author Laurent Gougeon <syi@ecmwf.int>, ECMWF.
+ * @author Laurent Gougeon - syi@ecmwf.int, ECMWF.
  *
  * @version 6.7.7
  *

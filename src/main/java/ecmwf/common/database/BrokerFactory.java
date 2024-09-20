@@ -23,7 +23,7 @@ package ecmwf.common.database;
  *
  * A factory for creating Broker objects. Implementations of this Class should have an empty public constructor!
  *
- * @author Laurent Gougeon <syi@ecmwf.int>, ECMWF.
+ * @author Laurent Gougeon - syi@ecmwf.int, ECMWF.
  *
  * @version 6.7.7
  *

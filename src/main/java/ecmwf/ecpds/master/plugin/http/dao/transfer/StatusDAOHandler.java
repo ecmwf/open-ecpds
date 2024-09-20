@@ -21,7 +21,7 @@ package ecmwf.ecpds.master.plugin.http.dao.transfer;
 /**
  * ECMWF Product Data Store (OpenPDS) Project
  *
- * @author Daniel Varela Santoalla <sy8@ecmwf.int>, ECMWF.
+ * @author Daniel Varela Santoalla - sy8@ecmwf.int, ECMWF.
  * @version 6.7.7
  * @since 2004-10-09
  */

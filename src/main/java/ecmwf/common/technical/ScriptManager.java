@@ -23,7 +23,7 @@ package ecmwf.common.technical;
  *
  * Allow executing javascript or python code.
  *
- * @author Laurent Gougeon <syi@ecmwf.int>, ECMWF.
+ * @author Laurent Gougeon - syi@ecmwf.int, ECMWF.
  * @version 6.7.7
  * @since 2024-07-01
  */

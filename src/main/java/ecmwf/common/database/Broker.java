@@ -24,7 +24,7 @@ package ecmwf.common.database;
  * The Interface Broker. Generic interface to allow plugging any object mapping
  * broker (e.g. OJB, Hibernate).
  *
- * @author Laurent Gougeon <syi@ecmwf.int>, ECMWF.
+ * @author Laurent Gougeon - syi@ecmwf.int, ECMWF.
  * @version 6.7.7
  * @since 2024-07-01
  */

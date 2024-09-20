@@ -23,7 +23,7 @@ package ecmwf.common.rmi.interruptible;
  *
  * Socket decorator for ServerSocket to support the interruptible RMI mechanism.
  *
- * @author Laurent Gougeon <syi@ecmwf.int>, ECMWF.
+ * @author Laurent Gougeon - syi@ecmwf.int, ECMWF.
  * @version 6.7.7
  * @since 2024-07-01
  */

@@ -25,7 +25,7 @@ package ecmwf.ecpds.master.plugin.http.home.transfer.searches;
  * date can be the Product Date or the History Date (the date where the history
  * item happened) depending on the search mode.
  *
- * @author Daniel Varela Santoalla <sy8@ecmwf.int>, ECMWF.
+ * @author Daniel Varela Santoalla - sy8@ecmwf.int, ECMWF.
  * @version 6.7.7
  * @since 2004-10-09
  */

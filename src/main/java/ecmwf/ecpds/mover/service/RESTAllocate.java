@@ -27,7 +27,7 @@ package ecmwf.ecpds.mover.service;
  * been transmitted to the requested place a commit must be sent to acknowledge
  * the success of the transmission.
  *
- * @author Laurent Gougeon <syi@ecmwf.int>, ECMWF.
+ * @author Laurent Gougeon - syi@ecmwf.int, ECMWF.
  * @version 6.7.7
  * @since 2024-07-01
  */

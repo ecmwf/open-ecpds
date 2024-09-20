@@ -25,7 +25,7 @@ package ecmwf.ecpds.master.plugin.http.dao.monitoring;
  * DestinationProductStatus when all the transfer for that Dest, Prod and Time
  * are COMPLETED.
  *
- * @author Daniel Varela Santoalla <sy8@ecmwf.int>, ECMWF.
+ * @author Daniel Varela Santoalla - sy8@ecmwf.int, ECMWF.
  * @version 6.7.7
  * @since 2004-10-09
  */

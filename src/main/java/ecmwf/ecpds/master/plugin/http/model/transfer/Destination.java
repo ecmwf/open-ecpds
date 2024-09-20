@@ -24,7 +24,7 @@ package ecmwf.ecpds.master.plugin.http.model.transfer;
  * A Destination, as it is going to be seen from Controller and View for the web
  * application
  *
- * @author Daniel Varela Santoalla <sy8@ecmwf.int>, ECMWF.
+ * @author Daniel Varela Santoalla - sy8@ecmwf.int, ECMWF.
  * @version 6.7.7
  * @since 2004-10-09
  */

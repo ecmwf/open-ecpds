@@ -24,7 +24,7 @@ package ecmwf.common.telnet;
  * Imported/modified from external API: "TelnetProtocolHandler.java,v 2.14
  * 2001/10/07 20:17:43 marcus Exp $";
  *
- * @author Laurent Gougeon <syi@ecmwf.int>, ECMWF.
+ * @author Laurent Gougeon - syi@ecmwf.int, ECMWF.
  * @version 6.7.7
  * @since 2024-07-01
  */

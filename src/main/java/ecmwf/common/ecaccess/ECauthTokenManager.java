@@ -1,21 +1,33 @@
 /*
- * ECaccess Project - ECauthTokenManager.java
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * Class: ecmwf.ecbatch.eis.rmi.client.ECauthTokenManager
- * Using JDK: 1.8.0_60
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Copyright (c) 2000-2016 Laurent Gougeon <syi@ecmwf.int>, ECMWF.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * In applying the License, ECMWF does not waive the privileges and immunities
+ * granted to it by virtue of its status as an inter-governmental organization
+ * nor does it submit to any jurisdiction.
  */
 
 package ecmwf.common.ecaccess;
 
 /**
- * The Class ECauthTokenManager. Allow managing a cache of ECauthToken. If an
- * entry has expired or is not found then a call to the abstract method
- * requestECauthToken is made to create a new token.
+ * ECMWF Product Data Store (OpenPDS) Project
  *
- * @author <a href="mailto:syi@ecmwf.int">Laurent Gougeon</a>
- * @version 4.2.0
+ * Allow managing a cache of ECauthToken. If an entry has expired or is not found
+ * then a call to the abstract method requestECauthToken is made to create a new
+ * token.
+ *
+ * @author Laurent Gougeon - syi@ecmwf.int, ECMWF.
+ * @version 6.7.7
+ * @since 2024-07-01
  */
 
 import java.io.IOException;

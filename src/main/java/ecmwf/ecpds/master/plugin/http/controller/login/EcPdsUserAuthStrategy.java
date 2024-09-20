@@ -25,7 +25,7 @@ package ecmwf.ecpds.master.plugin.http.controller.login;
  * ECPDS. This system uses NIS uids and passwords for the validation, which is
  * done via the MasterServer and a remote service.
  *
- * @author Daniel Varela Santoalla <sy8@ecmwf.int>, ECMWF.
+ * @author Daniel Varela Santoalla - sy8@ecmwf.int, ECMWF.
  * @version 6.7.7
  * @since 2004-10-09
  */

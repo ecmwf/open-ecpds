@@ -51,7 +51,7 @@ package ecmwf.common.technical;
  * all the threads to complete before returning. *
  *
  * @param <O> the generic type
- * @author Laurent Gougeon <syi@ecmwf.int>, ECMWF.
+ * @author Laurent Gougeon - syi@ecmwf.int, ECMWF.
  * @version 6.7.7
  * @since 2024-07-01
  */

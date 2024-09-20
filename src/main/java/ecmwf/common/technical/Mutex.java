@@ -28,7 +28,7 @@ package ecmwf.common.technical;
  * This class provides a way to synchronize access to a shared resource on a per-key basis, which can help prevent data
  * corruption and other synchronization-related problems. *
  *
- * @author Laurent Gougeon <syi@ecmwf.int>, ECMWF.
+ * @author Laurent Gougeon - syi@ecmwf.int, ECMWF.
  *
  * @version 6.7.7
  *

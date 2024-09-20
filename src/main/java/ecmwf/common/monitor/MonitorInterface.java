@@ -23,7 +23,7 @@ package ecmwf.common.monitor;
  *
  * This interface should be implemented by any class which implement a monitoring protocol (e.g. Nagios, Bigsister).
  *
- * @author Laurent Gougeon <syi@ecmwf.int>, ECMWF.
+ * @author Laurent Gougeon - syi@ecmwf.int, ECMWF.
  *
  * @version 6.7.7
  *

@@ -25,7 +25,7 @@ package ecmwf.common.security;
  * Password) server. Both user+password and user+passcode credentials are
  * allowed.
  *
- * @author Laurent Gougeon <syi@ecmwf.int>, ECMWF.
+ * @author Laurent Gougeon - syi@ecmwf.int, ECMWF.
  * @version 6.7.7
  * @since 2024-07-01
  */

@@ -40,7 +40,7 @@ package ecmwf.common.technical;
  *
  * @param <K> the key type
  * @param <S> the generic type
- * @author Laurent Gougeon <syi@ecmwf.int>, ECMWF.
+ * @author Laurent Gougeon - syi@ecmwf.int, ECMWF.
  * @version 6.7.7
  * @since 2024-07-01
  */

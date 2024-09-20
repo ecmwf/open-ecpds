@@ -25,7 +25,7 @@ package ecmwf.common.monitor;
  * components which requires monitoring and send notifications to the monitoring
  * application using the selected provider.
  *
- * @author Laurent Gougeon <syi@ecmwf.int>, ECMWF.
+ * @author Laurent Gougeon - syi@ecmwf.int, ECMWF.
  * @version 6.7.7
  * @since 2024-07-01
  */

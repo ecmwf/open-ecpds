@@ -23,7 +23,7 @@ package ecmwf.common.ectrans.module;
  *
  * The Class SftpModule. This is used by ECaccesss, not ECPDS.
  *
- * @author Laurent Gougeon <syi@ecmwf.int>, ECMWF.
+ * @author Laurent Gougeon - syi@ecmwf.int, ECMWF.
  *
  * @version 6.7.7
  *
