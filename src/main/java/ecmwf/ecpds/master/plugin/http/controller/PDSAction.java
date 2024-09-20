@@ -46,6 +46,7 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
+import ecmwf.common.technical.Cnf;
 import ecmwf.common.text.Format;
 import ecmwf.web.ECMWFException;
 import ecmwf.web.controller.ECMWFAction;
@@ -60,188 +61,170 @@ import ecmwf.web.model.users.User;
  */
 public abstract class PDSAction extends ECMWFAction {
 
-    /** The Constant log. */
-    private static final Logger log = LogManager.getLogger(PDSAction.class);
+	/** The Constant log. */
+	private static final Logger log = LogManager.getLogger(PDSAction.class);
 
-    /** The Constant RETURN_AFTER_LOGIN_KEY. */
-    public static final String RETURN_AFTER_LOGIN_KEY = "ecmwf.ecpds.RETURN_AFTER_LOGIN";
+	/** The Constant RETURN_AFTER_LOGIN_KEY. */
+	public static final String RETURN_AFTER_LOGIN_KEY = "ecmwf.ecpds.RETURN_AFTER_LOGIN";
 
-    /**
-     * Do authorization check and delegate to child class implementing the abstract method.
-     *
-     * @param mapping
-     *            the mapping
-     * @param form
-     *            the form
-     * @param request
-     *            the request
-     * @param response
-     *            the response
-     *
-     * @return the action forward
-     *
-     * @throws ECMWFException
-     *             the ECMWF exception
-     * @throws ClassCastException
-     *             the class cast exception
-     */
-    @Override
-    public ActionForward safePerform(final ActionMapping mapping, final ActionForm form,
-            final HttpServletRequest request, final HttpServletResponse response)
-            throws ECMWFException, ClassCastException {
-        Date preUser = null;
-        Date preExec = null;
-        Date postExec = null;
-        if (log.isDebugEnabled()) {
-            preUser = new Date();
-        }
-        ActionForward forward = null;
-        final var user = getUser(request);
-        final var currentPath = request.getContextPath() + request.getServletPath() + mapping.getPath();
-        if (user == null) {
-            // Access Denied. No User.
-            request.getSession().setAttribute(RETURN_AFTER_LOGIN_KEY, currentPath);
-            forward = mapping.findForward("login");
-        } else if (!user.hasAccess(currentPath)) {
-            // Access Denied to THIS user!!
-            request.getSession().setAttribute(RETURN_AFTER_LOGIN_KEY, currentPath);
-            if (user.getCategories().isEmpty()) {
-                request.setAttribute(Globals.ERROR_KEY, ECMWFActionForm.newErrors("errors.noAccess", user.getUid()));
-            } else {
-                request.setAttribute(Globals.ERROR_KEY,
-                        ECMWFActionForm.newErrors("errors.accessDenied", user.getUid(), currentPath));
-            }
-            // In this case don't try certificate because we're not getting
-            // anything better.
-            forward = mapping.findForward("login_noauto");
-        } else {
-            // Access Granted
-            if (log.isDebugEnabled()) {
-                preExec = new Date();
-            }
-            try {
-                forward = this.safeAuthorizedPerform(mapping, form, request, response, user);
-            } catch (final ModelException e) {
-                final var t = e.getCause();
-                throw new ECMWFActionFormException(Format.getMessage(t != null ? t : e, "Server Error", 0));
-            }
-            if (log.isDebugEnabled()) {
-                postExec = new Date();
-            }
-            if (log.isDebugEnabled()) {
-                log.debug("TIME: " + request.getServletPath() + request.getPathInfo() + " => User info: "
-                        + (preExec.getTime() - preUser.getTime()) / 1000.0 + " seconds. Data get (pre-forward): "
-                        + (postExec.getTime() - preExec.getTime()) / 1000.0 + " seconds.");
-            }
+	/**
+	 * Do authorization check and delegate to child class implementing the abstract
+	 * method.
+	 *
+	 * @param mapping  the mapping
+	 * @param form     the form
+	 * @param request  the request
+	 * @param response the response
+	 *
+	 * @return the action forward
+	 *
+	 * @throws ECMWFException     the ECMWF exception
+	 * @throws ClassCastException the class cast exception
+	 */
+	@Override
+	public ActionForward safePerform(final ActionMapping mapping, final ActionForm form,
+			final HttpServletRequest request, final HttpServletResponse response)
+			throws ECMWFException, ClassCastException {
+		Date preUser = null;
+		Date preExec = null;
+		Date postExec = null;
+		if (log.isDebugEnabled()) {
+			preUser = new Date();
+		}
+		ActionForward forward = null;
+		final var user = getUser(request);
+		final var currentPath = request.getContextPath() + request.getServletPath() + mapping.getPath();
+		if (user == null || Cnf.at("Server", "anonymousUser", "anonymous").equals(user.getUid())) {
+			// Access Denied. No User.
+			request.getSession().setAttribute(RETURN_AFTER_LOGIN_KEY, currentPath);
+			forward = mapping.findForward("login");
+		} else if (!user.hasAccess(currentPath)) {
+			// Access Denied to THIS user!!
+			request.getSession().setAttribute(RETURN_AFTER_LOGIN_KEY, currentPath);
+			if (user.getCategories().isEmpty()) {
+				request.setAttribute(Globals.ERROR_KEY, ECMWFActionForm.newErrors("errors.noAccess", user.getUid()));
+			} else {
+				request.setAttribute(Globals.ERROR_KEY,
+						ECMWFActionForm.newErrors("errors.accessDenied", user.getUid(), currentPath));
+			}
+			// In this case don't try certificate because we're not getting
+			// anything better.
+			forward = mapping.findForward("login_noauto");
+		} else {
+			// Access Granted
+			if (log.isDebugEnabled()) {
+				preExec = new Date();
+			}
+			try {
+				forward = this.safeAuthorizedPerform(mapping, form, request, response, user);
+			} catch (final ModelException e) {
+				final var t = e.getCause();
+				throw new ECMWFActionFormException(Format.getMessage(t != null ? t : e, "Server Error", 0));
+			}
+			if (log.isDebugEnabled()) {
+				postExec = new Date();
+			}
+			if (log.isDebugEnabled()) {
+				log.debug("TIME: " + request.getServletPath() + request.getPathInfo() + " => User info: "
+						+ (preExec.getTime() - preUser.getTime()) / 1000.0 + " seconds. Data get (pre-forward): "
+						+ (postExec.getTime() - preExec.getTime()) / 1000.0 + " seconds.");
+			}
 
-        }
-        return forward;
-    }
+		}
+		return forward;
+	}
 
-    /**
-     * Safe authorized perform.
-     *
-     * @param mapping
-     *            the mapping
-     * @param form
-     *            the form
-     * @param request
-     *            the request
-     * @param response
-     *            the response
-     * @param user
-     *            the user
-     *
-     * @return the action forward
-     *
-     * @throws ECMWFException
-     *             the ECMWF exception
-     * @throws ClassCastException
-     *             the class cast exception
-     */
-    public abstract ActionForward safeAuthorizedPerform(final ActionMapping mapping, final ActionForm form,
-            final HttpServletRequest request, final HttpServletResponse response, final User user)
-            throws ECMWFException, ClassCastException;
+	/**
+	 * Safe authorized perform.
+	 *
+	 * @param mapping  the mapping
+	 * @param form     the form
+	 * @param request  the request
+	 * @param response the response
+	 * @param user     the user
+	 *
+	 * @return the action forward
+	 *
+	 * @throws ECMWFException     the ECMWF exception
+	 * @throws ClassCastException the class cast exception
+	 */
+	public abstract ActionForward safeAuthorizedPerform(final ActionMapping mapping, final ActionForm form,
+			final HttpServletRequest request, final HttpServletResponse response, final User user)
+			throws ECMWFException, ClassCastException;
 
-    /**
-     * Gets the date options.
-     *
-     * @param daysBack
-     *            the days back
-     * @param all
-     *            the all
-     *
-     * @return the date options
-     */
-    public static final Collection<String> getDateOptions(final int daysBack, final boolean all) {
-        final var iso = getISOFormat();
-        final var N = daysBack + 1;
-        final List<String> l = new ArrayList<>(N + 1);
-        final var c = Calendar.getInstance();
-        c.setTime(new Date());
-        l.add(iso.format(c.getTime()));
-        for (var i = 0; i < N; i++) {
-            c.add(Calendar.DATE, -1);
-            l.add(iso.format(c.getTime()));
-        }
-        if (all) {
-            l.add("All");
-        }
-        return l;
-    }
+	/**
+	 * Gets the date options.
+	 *
+	 * @param daysBack the days back
+	 * @param all      the all
+	 *
+	 * @return the date options
+	 */
+	public static final Collection<String> getDateOptions(final int daysBack, final boolean all) {
+		final var iso = getISOFormat();
+		final var N = daysBack + 1;
+		final List<String> l = new ArrayList<>(N + 1);
+		final var c = Calendar.getInstance();
+		c.setTime(new Date());
+		l.add(iso.format(c.getTime()));
+		for (var i = 0; i < N; i++) {
+			c.add(Calendar.DATE, -1);
+			l.add(iso.format(c.getTime()));
+		}
+		if (all) {
+			l.add("All");
+		}
+		return l;
+	}
 
-    /**
-     * Gets the ISO format.
-     *
-     * @return the ISO format
-     */
-    public static final SimpleDateFormat getISOFormat() {
-        return new SimpleDateFormat("yyyy-MM-dd");
-    }
+	/**
+	 * Gets the ISO format.
+	 *
+	 * @return the ISO format
+	 */
+	public static final SimpleDateFormat getISOFormat() {
+		return new SimpleDateFormat("yyyy-MM-dd");
+	}
 
-    /**
-     * Search.
-     *
-     * @param c
-     *            the c
-     * @param search
-     *            the search
-     *
-     * @return the collection
-     */
-    public Collection<ModelBean> search(final Collection<? extends ModelBean> c, final String search) {
-        final List<ModelBean> filtered = new ArrayList<>();
-        final var bits = search.toLowerCase().split(" ");
-        var match = false;
-        for (final ModelBean b : c) {
-            match = false;
-            try {
-                for (final String bit : bits) {
-                    if (!(match = match(b, bit))) {
-                        break;
-                    }
-                }
-            } catch (final Exception e) {
-                log.error("Problem filtering bean '" + b + "'", e);
-            }
-            if (match) {
-                filtered.add(b);
-            }
-        }
-        return filtered;
-    }
+	/**
+	 * Search.
+	 *
+	 * @param c      the c
+	 * @param search the search
+	 *
+	 * @return the collection
+	 */
+	public Collection<ModelBean> search(final Collection<? extends ModelBean> c, final String search) {
+		final List<ModelBean> filtered = new ArrayList<>();
+		final var bits = search.toLowerCase().split(" ");
+		var match = false;
+		for (final ModelBean b : c) {
+			match = false;
+			try {
+				for (final String bit : bits) {
+					if (!(match = match(b, bit))) {
+						break;
+					}
+				}
+			} catch (final Exception e) {
+				log.error("Problem filtering bean '" + b + "'", e);
+			}
+			if (match) {
+				filtered.add(b);
+			}
+		}
+		return filtered;
+	}
 
-    /**
-     * Match.
-     *
-     * @param b
-     *            the b
-     * @param what
-     *            the what
-     *
-     * @return true, if successful
-     */
-    public boolean match(final ModelBean b, final String what) {
-        return b.getId().toLowerCase().contains(what);
-    }
+	/**
+	 * Match.
+	 *
+	 * @param b    the b
+	 * @param what the what
+	 *
+	 * @return true, if successful
+	 */
+	public boolean match(final ModelBean b, final String what) {
+		return b.getId().toLowerCase().contains(what);
+	}
 }
