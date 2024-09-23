@@ -69,9 +69,9 @@ public abstract class GenericFileChecker extends GenericFile {
     }
 
     /**
-     * Gets the parent file.
+     * {@inheritDoc}
      *
-     * @return the parent file
+     * Gets the parent file.
      */
     @Override
     public GenericFile getParentFile() {
@@ -79,12 +79,9 @@ public abstract class GenericFileChecker extends GenericFile {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Exists.
-     *
-     * @return true, if successful
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public boolean exists() throws IOException {
@@ -97,9 +94,9 @@ public abstract class GenericFileChecker extends GenericFile {
     }
 
     /**
-     * Gets the path.
+     * {@inheritDoc}
      *
-     * @return the path
+     * Gets the path.
      */
     @Override
     public String getPath() {
@@ -107,9 +104,9 @@ public abstract class GenericFileChecker extends GenericFile {
     }
 
     /**
-     * Gets the absolute path.
+     * {@inheritDoc}
      *
-     * @return the absolute path
+     * Gets the absolute path.
      */
     @Override
     public String getAbsolutePath() {
@@ -117,9 +114,9 @@ public abstract class GenericFileChecker extends GenericFile {
     }
 
     /**
-     * Gets the parent.
+     * {@inheritDoc}
      *
-     * @return the parent
+     * Gets the parent.
      */
     @Override
     public String getParent() {
@@ -127,9 +124,9 @@ public abstract class GenericFileChecker extends GenericFile {
     }
 
     /**
-     * Gets the name.
+     * {@inheritDoc}
      *
-     * @return the name
+     * Gets the name.
      */
     @Override
     public String getName() {
@@ -137,15 +134,9 @@ public abstract class GenericFileChecker extends GenericFile {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Rename to.
-     *
-     * @param path
-     *            the path
-     *
-     * @return true, if successful
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public boolean renameTo(final String path) throws IOException {
@@ -158,12 +149,9 @@ public abstract class GenericFileChecker extends GenericFile {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the file.
-     *
-     * @return the file
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public File getFile() throws IOException {
@@ -176,12 +164,9 @@ public abstract class GenericFileChecker extends GenericFile {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Delete.
-     *
-     * @return true, if successful
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public boolean delete() throws IOException {
@@ -194,12 +179,9 @@ public abstract class GenericFileChecker extends GenericFile {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Mkdir.
-     *
-     * @return true, if successful
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public boolean mkdir() throws IOException {
@@ -212,12 +194,9 @@ public abstract class GenericFileChecker extends GenericFile {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Mkdirs.
-     *
-     * @return true, if successful
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public boolean mkdirs() throws IOException {
@@ -230,9 +209,9 @@ public abstract class GenericFileChecker extends GenericFile {
     }
 
     /**
-     * Can read.
+     * {@inheritDoc}
      *
-     * @return true, if successful
+     * Can read.
      */
     @Override
     public boolean canRead() {
@@ -240,9 +219,9 @@ public abstract class GenericFileChecker extends GenericFile {
     }
 
     /**
-     * Can write.
+     * {@inheritDoc}
      *
-     * @return true, if successful
+     * Can write.
      */
     @Override
     public boolean canWrite() {
@@ -250,12 +229,9 @@ public abstract class GenericFileChecker extends GenericFile {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Checks if is absolute.
-     *
-     * @return true, if is absolute
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public boolean isAbsolute() throws IOException {
@@ -268,12 +244,9 @@ public abstract class GenericFileChecker extends GenericFile {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Last modified.
-     *
-     * @return the long
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public long lastModified() throws IOException {
@@ -286,15 +259,9 @@ public abstract class GenericFileChecker extends GenericFile {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the last modified.
-     *
-     * @param time
-     *            the time
-     *
-     * @return true, if successful
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public boolean setLastModified(final long time) throws IOException {
@@ -307,9 +274,9 @@ public abstract class GenericFileChecker extends GenericFile {
     }
 
     /**
-     * Sets the read only.
+     * {@inheritDoc}
      *
-     * @return true, if successful
+     * Sets the read only.
      */
     @Override
     public boolean setReadOnly() {
@@ -317,12 +284,9 @@ public abstract class GenericFileChecker extends GenericFile {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Checks if is directory.
-     *
-     * @return true, if is directory
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public boolean isDirectory() throws IOException {
@@ -335,12 +299,9 @@ public abstract class GenericFileChecker extends GenericFile {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Checks if is file.
-     *
-     * @return true, if is file
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public boolean isFile() throws IOException {
@@ -353,12 +314,9 @@ public abstract class GenericFileChecker extends GenericFile {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Length.
-     *
-     * @return the long
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public long length() throws IOException {
@@ -371,15 +329,9 @@ public abstract class GenericFileChecker extends GenericFile {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * List.
-     *
-     * @param filter
-     *            the filter
-     *
-     * @return the string[]
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public String[] list(final GenericFileFilter filter) throws IOException {
@@ -392,15 +344,9 @@ public abstract class GenericFileChecker extends GenericFile {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * List files.
-     *
-     * @param filter
-     *            the filter
-     *
-     * @return the generic file[]
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public GenericFile[] listFiles(final GenericFileFilter filter) throws IOException {
@@ -413,12 +359,9 @@ public abstract class GenericFileChecker extends GenericFile {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * List.
-     *
-     * @return the string[]
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public String[] list() throws IOException {
@@ -431,12 +374,9 @@ public abstract class GenericFileChecker extends GenericFile {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * List count.
-     *
-     * @return the long
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public long listCount() throws IOException {
@@ -449,12 +389,9 @@ public abstract class GenericFileChecker extends GenericFile {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * List size.
-     *
-     * @return the long
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public long listSize() throws IOException {
@@ -467,12 +404,9 @@ public abstract class GenericFileChecker extends GenericFile {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * List files.
-     *
-     * @return the generic file[]
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public GenericFile[] listFiles() throws IOException {
@@ -485,14 +419,9 @@ public abstract class GenericFileChecker extends GenericFile {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the input stream.
-     *
-     * @return the input stream
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
-     * @throws FileNotFoundException
-     *             the file not found exception
      */
     @Override
     public InputStream getInputStream() throws IOException, FileNotFoundException {
@@ -510,14 +439,9 @@ public abstract class GenericFileChecker extends GenericFile {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the output stream.
-     *
-     * @return the output stream
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
-     * @throws FileNotFoundException
-     *             the file not found exception
      */
     @Override
     public OutputStream getOutputStream() throws IOException, FileNotFoundException {
@@ -535,17 +459,9 @@ public abstract class GenericFileChecker extends GenericFile {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the output stream.
-     *
-     * @param append
-     *            the append
-     *
-     * @return the output stream
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
-     * @throws FileNotFoundException
-     *             the file not found exception
      */
     @Override
     public OutputStream getOutputStream(final boolean append) throws IOException, FileNotFoundException {
@@ -563,19 +479,9 @@ public abstract class GenericFileChecker extends GenericFile {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Transmit file.
-     *
-     * @param out
-     *            the out
-     * @param offset
-     *            the offset
-     *
-     * @return the long
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
-     * @throws FileNotFoundException
-     *             the file not found exception
      */
     @Override
     public long transmitFile(final OutputStream out, final long offset) throws IOException, FileNotFoundException {
@@ -588,19 +494,9 @@ public abstract class GenericFileChecker extends GenericFile {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Receive file.
-     *
-     * @param in
-     *            the in
-     * @param size
-     *            the size
-     *
-     * @return the long
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
-     * @throws FileNotFoundException
-     *             the file not found exception
      */
     @Override
     public long receiveFile(final InputStream in, final long size) throws IOException, FileNotFoundException {

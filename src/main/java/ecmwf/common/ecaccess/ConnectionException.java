@@ -27,7 +27,6 @@ package ecmwf.common.ecaccess;
  *
  * @since 2024-07-01
  */
-
 public class ConnectionException extends Exception {
     /** The Constant serialVersionUID. */
     private static final long serialVersionUID = -8611425151029401704L;

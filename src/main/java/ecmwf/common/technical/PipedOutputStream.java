@@ -55,6 +55,9 @@ public final class PipedOutputStream extends OutputStream {
      *
      * @exception IOException
      *                if an I/O error occurs.
+     *
+     * @throws java.io.IOException
+     *             if any.
      */
     public PipedOutputStream(final PipedInputStream snk) throws IOException {
         connect(snk);
@@ -94,6 +97,9 @@ public final class PipedOutputStream extends OutputStream {
      *
      * @exception IOException
      *                if an I/O error occurs.
+     *
+     * @throws java.io.IOException
+     *             if any.
      */
     public synchronized void connect(final PipedInputStream snk) throws IOException {
         if (snk == null) {
@@ -109,12 +115,11 @@ public final class PipedOutputStream extends OutputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Writes the specified <code>byte</code> to the piped output stream.
      * <p>
      * Implements the <code>write</code> method of <code>OutputStream</code>.
-     *
-     * @param b
-     *            the <code>byte</code> to be written.
      *
      * @exception IOException
      *                if the pipe is <a href=#BROKEN> broken</a>, {@link #connect(java.io.PipedInputStream)
@@ -129,15 +134,10 @@ public final class PipedOutputStream extends OutputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Writes <code>len</code> bytes from the specified byte array starting at offset <code>off</code> to this piped
      * output stream. This method blocks until all the bytes are written to the output stream.
-     *
-     * @param b
-     *            the data.
-     * @param off
-     *            the start offset in the data.
-     * @param len
-     *            the number of bytes to write.
      *
      * @exception IOException
      *                if the pipe is <a href=#BROKEN> broken</a>, {@link #connect(java.io.PipedInputStream)
@@ -159,6 +159,8 @@ public final class PipedOutputStream extends OutputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Flushes this output stream and forces any buffered output bytes to be written out. This will notify any readers
      * that bytes are waiting in the pipe.
      *
@@ -175,6 +177,8 @@ public final class PipedOutputStream extends OutputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Closes this piped output stream and releases any system resources associated with this stream. This stream may no
      * longer be used for writing bytes.
      *

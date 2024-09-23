@@ -58,7 +58,7 @@ public final class InterruptibleRMIServerSocket extends ServerSocket {
      * @param serverSocket
      *            the server socket
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public InterruptibleRMIServerSocket(final ServerSocket serverSocket) throws IOException {
@@ -98,12 +98,9 @@ public final class InterruptibleRMIServerSocket extends ServerSocket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Accept.
-     *
-     * @return the socket
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      *
      * @see ServerSocket#accept()
      */
@@ -113,15 +110,9 @@ public final class InterruptibleRMIServerSocket extends ServerSocket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Bind.
-     *
-     * @param endpoint
-     *            the endpoint
-     * @param backlog
-     *            the backlog
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      *
      * @see ServerSocket#bind(java.net.SocketAddress, int)
      */
@@ -131,13 +122,9 @@ public final class InterruptibleRMIServerSocket extends ServerSocket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Bind.
-     *
-     * @param endpoint
-     *            the endpoint
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      *
      * @see ServerSocket#bind(java.net.SocketAddress)
      */
@@ -147,10 +134,9 @@ public final class InterruptibleRMIServerSocket extends ServerSocket {
     }
 
     /**
-     * Close.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Close.
      *
      * @see ServerSocket#close()
      */
@@ -160,12 +146,9 @@ public final class InterruptibleRMIServerSocket extends ServerSocket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Returns true if the decoratee's equals method returns true.
-     *
-     * @param obj
-     *            the obj
-     *
-     * @return true, if successful
      */
     @Override
     public boolean equals(final Object obj) {
@@ -173,9 +156,9 @@ public final class InterruptibleRMIServerSocket extends ServerSocket {
     }
 
     /**
-     * Not implemented - always returns null.
+     * {@inheritDoc}
      *
-     * @return the channel
+     * Not implemented - always returns null.
      *
      * @see ServerSocket#getChannel()
      */
@@ -185,9 +168,9 @@ public final class InterruptibleRMIServerSocket extends ServerSocket {
     }
 
     /**
-     * Gets the inet address.
+     * {@inheritDoc}
      *
-     * @return the inet address
+     * Gets the inet address.
      *
      * @see ServerSocket#getInetAddress()
      */
@@ -197,9 +180,9 @@ public final class InterruptibleRMIServerSocket extends ServerSocket {
     }
 
     /**
-     * Gets the local port.
+     * {@inheritDoc}
      *
-     * @return the local port
+     * Gets the local port.
      *
      * @see ServerSocket#getLocalPort()
      */
@@ -209,9 +192,9 @@ public final class InterruptibleRMIServerSocket extends ServerSocket {
     }
 
     /**
-     * Gets the local socket address.
+     * {@inheritDoc}
      *
-     * @return the local socket address
+     * Gets the local socket address.
      *
      * @see ServerSocket#getLocalSocketAddress()
      */
@@ -221,12 +204,9 @@ public final class InterruptibleRMIServerSocket extends ServerSocket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the receive buffer size.
-     *
-     * @return the receive buffer size
-     *
-     * @throws SocketException
-     *             the socket exception
      *
      * @see ServerSocket#getReceiveBufferSize()
      */
@@ -236,12 +216,9 @@ public final class InterruptibleRMIServerSocket extends ServerSocket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the reuse address.
-     *
-     * @return the reuse address
-     *
-     * @throws SocketException
-     *             the socket exception
      *
      * @see ServerSocket#getReuseAddress()
      */
@@ -251,12 +228,9 @@ public final class InterruptibleRMIServerSocket extends ServerSocket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the so timeout.
-     *
-     * @return the so timeout
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      *
      * @see ServerSocket#getSoTimeout()
      */
@@ -266,9 +240,9 @@ public final class InterruptibleRMIServerSocket extends ServerSocket {
     }
 
     /**
-     * Return the hashcode of the decorated socket.
+     * {@inheritDoc}
      *
-     * @return the int
+     * Return the hashcode of the decorated socket.
      */
     @Override
     public int hashCode() {
@@ -276,9 +250,9 @@ public final class InterruptibleRMIServerSocket extends ServerSocket {
     }
 
     /**
-     * Checks if is bound.
+     * {@inheritDoc}
      *
-     * @return true, if is bound
+     * Checks if is bound.
      *
      * @see ServerSocket#isBound()
      */
@@ -288,9 +262,9 @@ public final class InterruptibleRMIServerSocket extends ServerSocket {
     }
 
     /**
-     * Checks if is closed.
+     * {@inheritDoc}
      *
-     * @return true, if is closed
+     * Checks if is closed.
      *
      * @see ServerSocket#isClosed()
      */
@@ -300,14 +274,9 @@ public final class InterruptibleRMIServerSocket extends ServerSocket {
     }
 
     /**
-     * Sets the performance preferences.
+     * {@inheritDoc}
      *
-     * @param connectionTime
-     *            the connection time
-     * @param latency
-     *            the latency
-     * @param bandwidth
-     *            the bandwidth
+     * Sets the performance preferences.
      *
      * @see ServerSocket#setPerformancePreferences(int, int, int)
      */
@@ -317,13 +286,9 @@ public final class InterruptibleRMIServerSocket extends ServerSocket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the receive buffer size.
-     *
-     * @param size
-     *            the new receive buffer size
-     *
-     * @throws SocketException
-     *             the socket exception
      *
      * @see ServerSocket#setReceiveBufferSize(int)
      */
@@ -333,13 +298,9 @@ public final class InterruptibleRMIServerSocket extends ServerSocket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the reuse address.
-     *
-     * @param on
-     *            the new reuse address
-     *
-     * @throws SocketException
-     *             the socket exception
      *
      * @see ServerSocket#setReuseAddress(boolean)
      */
@@ -349,13 +310,9 @@ public final class InterruptibleRMIServerSocket extends ServerSocket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the so timeout.
-     *
-     * @param timeout
-     *            the new so timeout
-     *
-     * @throws SocketException
-     *             the socket exception
      *
      * @see ServerSocket#setSoTimeout(int)
      */
@@ -365,9 +322,9 @@ public final class InterruptibleRMIServerSocket extends ServerSocket {
     }
 
     /**
-     * To string.
+     * {@inheritDoc}
      *
-     * @return the string
+     * To string.
      *
      * @see ServerSocket#toString()
      */

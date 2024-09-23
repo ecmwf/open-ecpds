@@ -49,12 +49,9 @@ import ecmwf.web.services.persistence.DAOHandler;
 public class EcUserDAOHandler extends PDSDAOBase implements DAOHandler {
 
     /**
+     * {@inheritDoc}
+     *
      * Creates the.
-     *
-     * @return the model bean
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public ModelBean create() throws DAOException {
@@ -62,15 +59,9 @@ public class EcUserDAOHandler extends PDSDAOBase implements DAOHandler {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Find by primary key.
-     *
-     * @param key
-     *            the key
-     *
-     * @return the model bean
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public ModelBean findByPrimaryKey(final String key) throws DAOException {
@@ -82,15 +73,9 @@ public class EcUserDAOHandler extends PDSDAOBase implements DAOHandler {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Find.
-     *
-     * @param search
-     *            the search
-     *
-     * @return the collection
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public Collection<EcUser> find(final ModelSearch search) throws DAOException {

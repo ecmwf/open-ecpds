@@ -99,7 +99,7 @@ public final class MBeanCenter implements NotificationListener {
      *
      * @return the MBean center
      *
-     * @throws InstanceNotFoundException
+     * @throws javax.management.InstanceNotFoundException
      *             the instance not found exception
      */
     public static MBeanCenter getMBeanCenter() throws InstanceNotFoundException {
@@ -117,13 +117,13 @@ public final class MBeanCenter implements NotificationListener {
      * @param URL
      *            the url
      *
-     * @throws NotCompliantMBeanException
+     * @throws javax.management.NotCompliantMBeanException
      *             the not compliant m bean exception
-     * @throws InstanceAlreadyExistsException
+     * @throws javax.management.InstanceAlreadyExistsException
      *             the instance already exists exception
-     * @throws MBeanRegistrationException
+     * @throws javax.management.MBeanRegistrationException
      *             the MBean registration exception
-     * @throws MalformedObjectNameException
+     * @throws javax.management.MalformedObjectNameException
      *             the malformed object name exception
      */
     public void registerMBean(final Object object, final String URL) throws NotCompliantMBeanException,
@@ -139,13 +139,13 @@ public final class MBeanCenter implements NotificationListener {
      * @param URL
      *            the url
      *
-     * @throws NotCompliantMBeanException
+     * @throws javax.management.NotCompliantMBeanException
      *             the not compliant m bean exception
-     * @throws InstanceAlreadyExistsException
+     * @throws javax.management.InstanceAlreadyExistsException
      *             the instance already exists exception
-     * @throws MBeanRegistrationException
+     * @throws javax.management.MBeanRegistrationException
      *             the MBean registration exception
-     * @throws MalformedObjectNameException
+     * @throws javax.management.MalformedObjectNameException
      *             the malformed object name exception
      */
     public synchronized void registerMBeanTimer(final String URL) throws NotCompliantMBeanException,
@@ -166,9 +166,9 @@ public final class MBeanCenter implements NotificationListener {
      * @param URL
      *            the url
      *
-     * @throws MBeanRegistrationException
+     * @throws javax.management.MBeanRegistrationException
      *             the MBean registration exception
-     * @throws InstanceNotFoundException
+     * @throws javax.management.InstanceNotFoundException
      *             the instance not found exception
      */
     public void unregisterMBean(final String URL) throws MBeanRegistrationException, InstanceNotFoundException {
@@ -228,7 +228,7 @@ public final class MBeanCenter implements NotificationListener {
      *
      * @return the integer
      *
-     * @throws InstanceNotFoundException
+     * @throws javax.management.InstanceNotFoundException
      *             the instance not found exception
      */
     public Integer scheduleNotifications(final MBeanListener listener, final Date date, final long period,
@@ -262,7 +262,7 @@ public final class MBeanCenter implements NotificationListener {
      * @param id
      *            the id
      *
-     * @throws InstanceNotFoundException
+     * @throws javax.management.InstanceNotFoundException
      *             the instance not found exception
      */
     public void removeNotifications(final Integer id) throws InstanceNotFoundException {
@@ -274,12 +274,9 @@ public final class MBeanCenter implements NotificationListener {
     }
 
     /**
-     * Handle notification.
+     * {@inheritDoc}
      *
-     * @param notification
-     *            the notification
-     * @param handback
-     *            the handback
+     * Handle notification.
      */
     @Override
     public void handleNotification(final Notification notification, final Object handback) {

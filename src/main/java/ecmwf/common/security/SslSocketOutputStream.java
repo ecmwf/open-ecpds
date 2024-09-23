@@ -71,13 +71,9 @@ class SslSocketOutputStream extends OutputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Write.
-     *
-     * @param b
-     *            the b
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      *
      * @see OutputStream#write(int)
      */
@@ -87,11 +83,10 @@ class SslSocketOutputStream extends OutputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Close the underlying OutputStream. Unlike the #flush and #write methods, this method is not synchronized, and it
      * does not call back to the listener.
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      *
      * @see OutputStream#close()
      */
@@ -101,14 +96,11 @@ class SslSocketOutputStream extends OutputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Return true if the supplied object is also an instance of InterruptibleRMISocketOutputStream, and if the delegate
      * and listener members are equal for both objects. Generally speaking IO objects do not override #equals, so this
      * method will tend to return false unless the decorated OutputStream class has overridden #equals.
-     *
-     * @param obj
-     *            the obj
-     *
-     * @return true, if successful
      */
     @Override
     public boolean equals(final Object obj) {
@@ -117,10 +109,9 @@ class SslSocketOutputStream extends OutputStream {
     }
 
     /**
-     * Flush.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Flush.
      *
      * @see OutputStream#flush()
      */
@@ -131,9 +122,9 @@ class SslSocketOutputStream extends OutputStream {
     }
 
     /**
-     * Return decoratee#hashCode() ^ listener#hashCode().
+     * {@inheritDoc}
      *
-     * @return the int
+     * Return decoratee#hashCode() ^ listener#hashCode().
      */
     @Override
     public int hashCode() {
@@ -141,9 +132,9 @@ class SslSocketOutputStream extends OutputStream {
     }
 
     /**
-     * Return this.getClass().getName() + [decoratee.toString()]
+     * {@inheritDoc}
      *
-     * @return the string
+     * Return this.getClass().getName() + [decoratee.toString()]
      */
     @Override
     public String toString() {
@@ -151,13 +142,9 @@ class SslSocketOutputStream extends OutputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Write.
-     *
-     * @param b
-     *            the b
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      *
      * @see OutputStream#write(byte[])
      */
@@ -167,17 +154,9 @@ class SslSocketOutputStream extends OutputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Write.
-     *
-     * @param b
-     *            the b
-     * @param off
-     *            the off
-     * @param len
-     *            the len
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      *
      * @see OutputStream#write(byte[], int, int)
      */

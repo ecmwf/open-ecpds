@@ -581,7 +581,7 @@ public class DetailActionForm extends ECMWFActionForm {
      *
      * @return the data transfers
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public Collection<DataTransferLightBean> getDataTransfers(final boolean hasAccess, final DataBaseCursor cursor)
@@ -644,14 +644,11 @@ public class DetailActionForm extends ECMWFActionForm {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Here we need to call setId() with the current Destination ID. This needs to be set in order to be able to select
      * the CACHE to which all setters are going to write. This will be called automatically BEFORE any setter, for EVERY
      * request, so this way we'll ensure that all the setters will find an adequate CACHE set.
-     *
-     * @param map
-     *            The struts ActionMapping for this request
-     * @param req
-     *            The request
      */
     @SuppressWarnings("null")
     @Override

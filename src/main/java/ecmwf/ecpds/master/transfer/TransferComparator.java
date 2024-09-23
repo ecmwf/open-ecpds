@@ -48,14 +48,9 @@ public final class TransferComparator implements Comparator<DataTransfer> {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Compare.
-     *
-     * @param transfer1
-     *            the transfer 1
-     * @param transfer2
-     *            the transfer 2
-     *
-     * @return the int
      */
     @Override
     public int compare(final DataTransfer transfer1, final DataTransfer transfer2) {

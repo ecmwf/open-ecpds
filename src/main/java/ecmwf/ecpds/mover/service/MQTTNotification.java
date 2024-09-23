@@ -116,21 +116,9 @@ public final class MQTTNotification implements NotificationInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Publish.
-     *
-     * @param payload
-     *            the payload
-     * @param topic
-     *            the key
-     * @param properties
-     *            the lifetime
-     * @param lifetime
-     *            the lifetime
-     *
-     * @throws IOException
-     *             the io exception
-     * @throws NumberFormatException
-     *             the number format exception
      */
     @Override
     public void notify(final String payload, final String topic, final String properties, final long lifetime)
@@ -168,10 +156,9 @@ public final class MQTTNotification implements NotificationInterface {
     }
 
     /**
-     * Close.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             the io exception
+     * Close.
      */
     @Override
     public void close() throws IOException {

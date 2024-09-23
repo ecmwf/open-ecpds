@@ -48,12 +48,9 @@ public class ECPDSMain implements ExtensionMain {
     private static final Logger log = LogManager.getLogger(ECPDSMain.class);
 
     /**
-     * Extension start.
+     * {@inheritDoc}
      *
-     * @param extensionStartInput
-     *            the extension start input
-     * @param extensionStartOutput
-     *            the extension start output
+     * Extension start.
      */
     @Override
     public void extensionStart(final @NotNull ExtensionStartInput extensionStartInput,
@@ -70,12 +67,9 @@ public class ECPDSMain implements ExtensionMain {
     }
 
     /**
-     * Extension stop.
+     * {@inheritDoc}
      *
-     * @param extensionStopInput
-     *            the extension stop input
-     * @param extensionStopOutput
-     *            the extension stop output
+     * Extension stop.
      */
     @Override
     public void extensionStop(final @NotNull ExtensionStopInput extensionStopInput,

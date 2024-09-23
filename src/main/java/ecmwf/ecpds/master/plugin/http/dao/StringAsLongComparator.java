@@ -40,14 +40,9 @@ public class StringAsLongComparator implements Comparator<String> {
     private static final Logger log = LogManager.getLogger(StringAsLongComparator.class);
 
     /**
+     * {@inheritDoc}
+     *
      * Compare.
-     *
-     * @param s1
-     *            the s 1
-     * @param s2
-     *            the s 2
-     *
-     * @return the int
      */
     @Override
     public int compare(final String s1, final String s2) {

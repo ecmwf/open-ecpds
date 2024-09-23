@@ -84,9 +84,9 @@ public class DestinationMetaDataBean extends ModelBeanBase implements Destinatio
     }
 
     /**
-     * Gets the bean interface name.
+     * {@inheritDoc}
      *
-     * @return the bean interface name
+     * Gets the bean interface name.
      */
     @Override
     public String getBeanInterfaceName() {
@@ -94,9 +94,9 @@ public class DestinationMetaDataBean extends ModelBeanBase implements Destinatio
     }
 
     /**
-     * Gets the modification date.
+     * {@inheritDoc}
      *
-     * @return the modification date
+     * Gets the modification date.
      */
     @Override
     public Date getModificationDate() {
@@ -104,9 +104,9 @@ public class DestinationMetaDataBean extends ModelBeanBase implements Destinatio
     }
 
     /**
-     * Gets the last modification date.
+     * {@inheritDoc}
      *
-     * @return the last modification date
+     * Gets the last modification date.
      */
     @Override
     public Date getLastModificationDate() {
@@ -114,9 +114,9 @@ public class DestinationMetaDataBean extends ModelBeanBase implements Destinatio
     }
 
     /**
-     * Gets the name.
+     * {@inheritDoc}
      *
-     * @return the name
+     * Gets the name.
      */
     @Override
     public String getName() {
@@ -124,9 +124,9 @@ public class DestinationMetaDataBean extends ModelBeanBase implements Destinatio
     }
 
     /**
-     * Gets the title.
+     * {@inheritDoc}
      *
-     * @return the title
+     * Gets the title.
      */
     @Override
     public String getTitle() {
@@ -134,12 +134,9 @@ public class DestinationMetaDataBean extends ModelBeanBase implements Destinatio
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the input stream.
-     *
-     * @return the input stream
-     *
-     * @throws ContentProcessorException
-     *             the content processor exception
      */
     @Override
     public InputStream getInputStream() throws ContentProcessorException {
@@ -152,9 +149,9 @@ public class DestinationMetaDataBean extends ModelBeanBase implements Destinatio
     }
 
     /**
-     * Gets the access path.
+     * {@inheritDoc}
      *
-     * @return the access path
+     * Gets the access path.
      */
     @Override
     public String getAccessPath() {
@@ -162,9 +159,9 @@ public class DestinationMetaDataBean extends ModelBeanBase implements Destinatio
     }
 
     /**
-     * Gets the base path key.
+     * {@inheritDoc}
      *
-     * @return the base path key
+     * Gets the base path key.
      */
     @Override
     public String getBasePathKey() {
@@ -172,9 +169,9 @@ public class DestinationMetaDataBean extends ModelBeanBase implements Destinatio
     }
 
     /**
-     * Gets the content type.
+     * {@inheritDoc}
      *
-     * @return the content type
+     * Gets the content type.
      */
     @Override
     public String getContentType() {
@@ -182,15 +179,9 @@ public class DestinationMetaDataBean extends ModelBeanBase implements Destinatio
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the link by name.
-     *
-     * @param name
-     *            the name
-     *
-     * @return the link by name
-     *
-     * @throws ContentProcessorException
-     *             the content processor exception
      */
     @Override
     public Content getLinkByName(final String name) throws ContentProcessorException {
@@ -198,12 +189,9 @@ public class DestinationMetaDataBean extends ModelBeanBase implements Destinatio
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the links.
-     *
-     * @return the links
-     *
-     * @throws ContentProcessorException
-     *             the content processor exception
      */
     @Override
     public Collection<?> getLinks() throws ContentProcessorException {
@@ -211,12 +199,9 @@ public class DestinationMetaDataBean extends ModelBeanBase implements Destinatio
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the resource.
-     *
-     * @return the resource
-     *
-     * @throws ContentProcessorException
-     *             the content processor exception
      */
     @Override
     public Resource getResource() throws ContentProcessorException {
@@ -224,9 +209,9 @@ public class DestinationMetaDataBean extends ModelBeanBase implements Destinatio
     }
 
     /**
-     * Gets the string representation.
+     * {@inheritDoc}
      *
-     * @return the string representation
+     * Gets the string representation.
      */
     @Override
     public String getStringRepresentation() {
@@ -234,12 +219,9 @@ public class DestinationMetaDataBean extends ModelBeanBase implements Destinatio
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the wiki word path.
-     *
-     * @return the wiki word path
-     *
-     * @throws ContentProcessorException
-     *             the content processor exception
      */
     @Override
     public String getWikiWordPath() throws ContentProcessorException {

@@ -27,7 +27,6 @@ package ecmwf.common.ectrans;
  *
  * @since 2024-07-01
  */
-
 public final class ECtransMove extends ECtransAction {
     /** The _source. */
     private final String _source;
@@ -49,9 +48,9 @@ public final class ECtransMove extends ECtransAction {
     }
 
     /**
-     * Gets the name.
+     * {@inheritDoc}
      *
-     * @return the name
+     * Gets the name.
      */
     @Override
     protected String getName() {
@@ -59,15 +58,9 @@ public final class ECtransMove extends ECtransAction {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Exec.
-     *
-     * @param module
-     *            the module
-     * @param interruptible
-     *            the interruptible
-     *
-     * @throws Exception
-     *             the exception
      */
     @Override
     protected void exec(final TransferModule module, final boolean interruptible) throws Exception {

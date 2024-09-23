@@ -77,6 +77,8 @@ public final class ForkExec extends ForkAbstract {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Close.
      */
     @Override
@@ -85,10 +87,9 @@ public final class ForkExec extends ForkAbstract {
     }
 
     /**
-     * Start.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Start.
      */
     @Override
     public void start() throws IOException {
@@ -104,9 +105,9 @@ public final class ForkExec extends ForkAbstract {
     }
 
     /**
-     * Kill.
+     * {@inheritDoc}
      *
-     * @return true, if successful
+     * Kill.
      */
     @Override
     public boolean kill() {
@@ -115,12 +116,9 @@ public final class ForkExec extends ForkAbstract {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the input stream.
-     *
-     * @return the input stream
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public InputStream getInputStream() throws IOException {
@@ -128,9 +126,9 @@ public final class ForkExec extends ForkAbstract {
     }
 
     /**
-     * Gets the command.
+     * {@inheritDoc}
      *
-     * @return the command
+     * Gets the command.
      */
     @Override
     public String getCommand() {
@@ -142,7 +140,7 @@ public final class ForkExec extends ForkAbstract {
      *
      * @return the int
      *
-     * @throws InterruptedException
+     * @throws java.lang.InterruptedException
      *             the interrupted exception
      */
     public int waitFor() throws InterruptedException {

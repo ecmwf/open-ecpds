@@ -79,7 +79,7 @@ public final class FtpPlugin extends ServerPlugin {
      * @param socket
      *            the socket
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public FtpPlugin(final String ref, final Map<String, String> params, final Socket socket) throws IOException {
@@ -99,19 +99,9 @@ public final class FtpPlugin extends ServerPlugin {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Get instance of current class.
-     *
-     * @param ref
-     *            the ref
-     * @param params
-     *            the params
-     * @param socket
-     *            the socket
-     *
-     * @return the configurable runnable
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public ConfigurableRunnable newInstance(final String ref, final Map<String, String> params, final Socket socket)
@@ -120,9 +110,9 @@ public final class FtpPlugin extends ServerPlugin {
     }
 
     /**
-     * Gets the plugin name.
+     * {@inheritDoc}
      *
-     * @return the plugin name
+     * Gets the plugin name.
      */
     @Override
     public String getPluginName() {
@@ -130,9 +120,9 @@ public final class FtpPlugin extends ServerPlugin {
     }
 
     /**
-     * Gets the port.
+     * {@inheritDoc}
      *
-     * @return the port
+     * Gets the port.
      */
     @Override
     public int getPort() {
@@ -140,9 +130,9 @@ public final class FtpPlugin extends ServerPlugin {
     }
 
     /**
-     * Gets the version.
+     * {@inheritDoc}
      *
-     * @return the version
+     * Gets the version.
      */
     @Override
     public String getVersion() {
@@ -150,9 +140,9 @@ public final class FtpPlugin extends ServerPlugin {
     }
 
     /**
-     * Gets the info.
+     * {@inheritDoc}
      *
-     * @return the info
+     * Gets the info.
      */
     @Override
     public String getInfo() {
@@ -162,10 +152,9 @@ public final class FtpPlugin extends ServerPlugin {
     }
 
     /**
-     * Caller back.
+     * {@inheritDoc}
      *
-     * @param reset
-     *            the reset
+     * Caller back.
      */
     @Override
     public void callerBack(final boolean reset) {
@@ -176,15 +165,9 @@ public final class FtpPlugin extends ServerPlugin {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Refuse connection.
-     *
-     * @param socket
-     *            the socket
-     * @param connectionsCount
-     *            the connections count
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void refuseConnection(final Socket socket, final int connectionsCount) throws IOException {
@@ -203,13 +186,9 @@ public final class FtpPlugin extends ServerPlugin {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Start connection.
-     *
-     * @param socket
-     *            the socket
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void startConnection(final Socket socket) throws IOException {
@@ -336,17 +315,9 @@ public final class FtpPlugin extends ServerPlugin {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the attribute.
-     *
-     * @param attributeName
-     *            the attribute name
-     *
-     * @return the attribute
-     *
-     * @throws AttributeNotFoundException
-     *             the attribute not found exception
-     * @throws MBeanException
-     *             the MBean exception
      */
     @Override
     public Object getAttribute(final String attributeName) throws AttributeNotFoundException, MBeanException {
@@ -362,21 +333,9 @@ public final class FtpPlugin extends ServerPlugin {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Invoke.
-     *
-     * @param operationName
-     *            the operation name
-     * @param params
-     *            the params
-     * @param signature
-     *            the signature
-     *
-     * @return the object
-     *
-     * @throws NoSuchMethodException
-     *             the no such method exception
-     * @throws MBeanException
-     *             the MBean exception
      */
     @Override
     public Object invoke(final String operationName, final Object[] params, final String[] signature)
@@ -394,9 +353,9 @@ public final class FtpPlugin extends ServerPlugin {
     }
 
     /**
-     * Gets the MBean info.
+     * {@inheritDoc}
      *
-     * @return the MBean info
+     * Gets the MBean info.
      */
     @Override
     public MBeanInfo getMBeanInfo() {

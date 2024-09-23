@@ -42,7 +42,7 @@ public interface RemoteCnf extends Remote {
      * @param group
      *            the group
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void add(String group) throws RemoteException;
@@ -57,7 +57,7 @@ public interface RemoteCnf extends Remote {
      * @param value
      *            the value
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void add(String group, String key, String value) throws RemoteException;
@@ -70,7 +70,7 @@ public interface RemoteCnf extends Remote {
      * @param table
      *            the table
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void add(String group, Hashtable<String, String> table) throws RemoteException;
@@ -83,7 +83,7 @@ public interface RemoteCnf extends Remote {
      *
      * @return the hashtable
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Hashtable<String, String> at(String group) throws RemoteException;
@@ -98,7 +98,7 @@ public interface RemoteCnf extends Remote {
      *
      * @return the string
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     String at(String group, String key) throws RemoteException;
@@ -115,7 +115,7 @@ public interface RemoteCnf extends Remote {
      *
      * @return the string
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     String at(String group, String key, String defaut) throws RemoteException;
@@ -125,7 +125,7 @@ public interface RemoteCnf extends Remote {
      *
      * @return the vector
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Vector<?> groups() throws RemoteException;
@@ -138,7 +138,7 @@ public interface RemoteCnf extends Remote {
      *
      * @return the hashtable
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Hashtable<String, Vector<String>> valuesAt(String group) throws RemoteException;
@@ -153,7 +153,7 @@ public interface RemoteCnf extends Remote {
      *
      * @return the vector
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Vector<?> valuesAt(String group, String key) throws RemoteException;
@@ -170,7 +170,7 @@ public interface RemoteCnf extends Remote {
      *
      * @return true, if successful
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     boolean booleanAt(String group, String key, boolean defaut) throws RemoteException;
@@ -180,7 +180,7 @@ public interface RemoteCnf extends Remote {
      *
      * @return the added properties
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Properties getAddedProperties() throws RemoteException;
@@ -190,7 +190,7 @@ public interface RemoteCnf extends Remote {
      *
      * @return the export
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Hashtable<String, Hashtable<String, String>> getExport() throws RemoteException;
@@ -200,7 +200,7 @@ public interface RemoteCnf extends Remote {
      *
      * @return the system properties
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Properties getSystemProperties() throws RemoteException;
@@ -211,7 +211,7 @@ public interface RemoteCnf extends Remote {
      * @param export
      *            the export
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void importFrom(Hashtable<String, Hashtable<String, String>> export) throws RemoteException;
@@ -228,7 +228,7 @@ public interface RemoteCnf extends Remote {
      *
      * @return the int
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     int intAt(String group, String key, int defaut) throws RemoteException;
@@ -243,7 +243,7 @@ public interface RemoteCnf extends Remote {
      *
      * @return the string
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     String notEmptyStringAt(String group, String key) throws RemoteException;
@@ -260,7 +260,7 @@ public interface RemoteCnf extends Remote {
      *
      * @return the string
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     String notEmptyStringAt(String group, String key, String defaut) throws RemoteException;

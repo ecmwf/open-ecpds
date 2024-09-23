@@ -34,6 +34,8 @@ import com.google.common.collect.Lists;
 
 /**
  * The Class CrossOriginResourceSharing.
+ *
+ * @author root
  */
 public final class CrossOriginResourceSharing {
 
@@ -226,12 +228,9 @@ public final class CrossOriginResourceSharing {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Equals.
-     *
-     * @param object
-     *            the object
-     *
-     * @return true, if successful
      */
     @Override
     public boolean equals(final Object object) {
@@ -247,9 +246,9 @@ public final class CrossOriginResourceSharing {
     }
 
     /**
-     * Hash code.
+     * {@inheritDoc}
      *
-     * @return the int
+     * Hash code.
      */
     @Override
     public int hashCode() {

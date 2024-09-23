@@ -128,9 +128,9 @@ public final class AzureModule extends TransferModule {
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
     /**
-     * Gets the status.
+     * {@inheritDoc}
      *
-     * @return the status
+     * Gets the status.
      */
     @Override
     public String getStatus() {
@@ -138,12 +138,9 @@ public final class AzureModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the port.
-     *
-     * @param setup
-     *            the setup
-     *
-     * @return the port
      */
     @Override
     public int getPort(final ECtransSetup setup) {
@@ -151,17 +148,9 @@ public final class AzureModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Connect.
-     *
-     * @param location
-     *            the location
-     * @param setup
-     *            the setup
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
-     * @throws URISyntaxException
-     *             the URI syntax exception
      */
     @Override
     public void connect(final String location, final ECtransSetup setup) throws IOException, URISyntaxException {
@@ -244,13 +233,9 @@ public final class AzureModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Del.
-     *
-     * @param name
-     *            the name
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void del(final String name) throws IOException {
@@ -336,21 +321,9 @@ public final class AzureModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Put.
-     *
-     * @param in
-     *            the in
-     * @param name
-     *            the name
-     * @param posn
-     *            the posn
-     * @param size
-     *            the size
-     *
-     * @return true, if successful
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public boolean put(final InputStream in, final String name, final long posn, final long size) throws IOException {
@@ -421,19 +394,9 @@ public final class AzureModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Put.
-     *
-     * @param name
-     *            the name
-     * @param posn
-     *            the posn
-     * @param size
-     *            the size
-     *
-     * @return the output stream
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public OutputStream put(final String name, final long posn, final long size) throws IOException {
@@ -490,17 +453,9 @@ public final class AzureModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the.
-     *
-     * @param name
-     *            the name
-     * @param posn
-     *            the posn
-     *
-     * @return the input stream
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public InputStream get(final String name, final long posn) throws IOException {
@@ -531,15 +486,9 @@ public final class AzureModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Check.
-     *
-     * @param sent
-     *            the sent
-     * @param checksum
-     *            the checksum
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void check(final long sent, final String checksum) throws IOException {
@@ -615,15 +564,9 @@ public final class AzureModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Size.
-     *
-     * @param name
-     *            the name
-     *
-     * @return the long
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public long size(final String name) throws IOException {
@@ -655,13 +598,9 @@ public final class AzureModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Mkdir.
-     *
-     * @param directory
-     *            the directory
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void mkdir(final String directory) throws IOException {
@@ -689,13 +628,9 @@ public final class AzureModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Rmdir.
-     *
-     * @param directory
-     *            the directory
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void rmdir(final String directory) throws IOException {
@@ -790,17 +725,9 @@ public final class AzureModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * List as string array.
-     *
-     * @param directory
-     *            the directory
-     * @param pattern
-     *            the pattern
-     *
-     * @return the string[]
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public String[] listAsStringArray(final String directory, final String pattern) throws IOException {
@@ -812,17 +739,9 @@ public final class AzureModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * List as byte array.
-     *
-     * @param directory
-     *            the directory
-     * @param pattern
-     *            the pattern
-     *
-     * @return the byte[]
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public byte[] listAsByteArray(final String directory, final String pattern) throws IOException {
@@ -938,10 +857,9 @@ public final class AzureModule extends TransferModule {
     }
 
     /**
-     * Close.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Close.
      */
     @Override
     public void close() throws IOException {

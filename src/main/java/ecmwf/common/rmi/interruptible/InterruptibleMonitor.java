@@ -66,6 +66,8 @@ final class InterruptibleMonitor extends ConfigurableLoopRunnable {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Configurable loop run.
      */
     @Override

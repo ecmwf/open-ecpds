@@ -29,7 +29,6 @@ package ecmwf.common.monitor;
  *
  * @since 2024-07-01
  */
-
 public interface MonitorCallback {
     /**
      * Gets the monitor manager.
@@ -39,7 +38,7 @@ public interface MonitorCallback {
      *
      * @return the monitor manager
      *
-     * @throws MonitorException
+     * @throws ecmwf.common.monitor.MonitorException
      *             the monitor exception
      */
     MonitorManager getMonitorManager(String name) throws MonitorException;

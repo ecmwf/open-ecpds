@@ -51,14 +51,9 @@ public class DestinationComparator implements Comparator<Destination> {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Compare.
-     *
-     * @param d1
-     *            the d 1
-     * @param d2
-     *            the d 2
-     *
-     * @return the int
      */
     @Override
     public int compare(final Destination d1, final Destination d2) {

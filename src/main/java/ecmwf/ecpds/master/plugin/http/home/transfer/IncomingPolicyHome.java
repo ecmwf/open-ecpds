@@ -58,7 +58,7 @@ public class IncomingPolicyHome extends ModelHomeBase {
      *
      * @return the incoming policy
      *
-     * @throws IncomingPolicyException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.IncomingPolicyException
      *             the incoming policy exception
      */
     public static final IncomingPolicy create() throws IncomingPolicyException {
@@ -78,7 +78,7 @@ public class IncomingPolicyHome extends ModelHomeBase {
      *
      * @return the incoming policy
      *
-     * @throws IncomingPolicyException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.IncomingPolicyException
      *             the incoming policy exception
      */
     public static final IncomingPolicy findByPrimaryKey(final String key) throws IncomingPolicyException {
@@ -98,7 +98,7 @@ public class IncomingPolicyHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws IncomingPolicyException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.IncomingPolicyException
      *             the incoming policy exception
      */
     public static final Collection<IncomingPolicy> findAssociatedToDestination(final Destination d)
@@ -114,7 +114,7 @@ public class IncomingPolicyHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws IncomingPolicyException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.IncomingPolicyException
      *             the incoming policy exception
      */
     public static final Collection<IncomingPolicy> findAssociatedToIncomingUser(final IncomingUser u)
@@ -127,7 +127,7 @@ public class IncomingPolicyHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws IncomingPolicyException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.IncomingPolicyException
      *             the incoming policy exception
      */
     public static final Collection<IncomingPolicy> findAll() throws IncomingPolicyException {
@@ -142,7 +142,7 @@ public class IncomingPolicyHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws IncomingPolicyException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.IncomingPolicyException
      *             the incoming policy exception
      */
     public static final Collection find(final ModelSearch search) throws IncomingPolicyException {

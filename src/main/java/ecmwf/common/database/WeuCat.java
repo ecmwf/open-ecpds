@@ -29,7 +29,6 @@ import java.util.Objects;
  *
  * @since 2024-07-01
  */
-
 public class WeuCat extends DataBaseObject {
     /** The Constant serialVersionUID. */
     private static final long serialVersionUID = -1610007381228128042L;
@@ -152,9 +151,9 @@ public class WeuCat extends DataBaseObject {
     }
 
     /**
-     * Hash code.
+     * {@inheritDoc}
      *
-     * @return the int
+     * Hash code.
      */
     @Override
     public int hashCode() {
@@ -162,12 +161,9 @@ public class WeuCat extends DataBaseObject {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Equals.
-     *
-     * @param obj
-     *            the obj
-     *
-     * @return true, if successful
      */
     @Override
     public boolean equals(final Object obj) {

@@ -95,19 +95,9 @@ final class AttachmentAccessImpl extends CallBackObject implements DataAccessInt
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the file last modified.
-     *
-     * @param destinationNameOrType
-     *            the destination name or type
-     * @param source
-     *            the source
-     *
-     * @return the file last modified
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public long getFileLastModified(final String destinationNameOrType, final String source)
@@ -117,19 +107,9 @@ final class AttachmentAccessImpl extends CallBackObject implements DataAccessInt
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Size.
-     *
-     * @param destinationNameOrType
-     *            the destination name or type
-     * @param source
-     *            the source
-     *
-     * @return the long
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public long size(final String destinationNameOrType, final String source) throws MasterException, IOException {
@@ -138,21 +118,9 @@ final class AttachmentAccessImpl extends CallBackObject implements DataAccessInt
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the proxy socket input.
-     *
-     * @param destinationNameOrType
-     *            the destination name or type
-     * @param source
-     *            the source
-     * @param offset
-     *            the offset
-     *
-     * @return the proxy socket input
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public ProxySocket getProxySocketInput(final String destinationNameOrType, final String source, final long offset)
@@ -172,23 +140,9 @@ final class AttachmentAccessImpl extends CallBackObject implements DataAccessInt
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the proxy socket input.
-     *
-     * @param destinationNameOrType
-     *            the destination name or type
-     * @param source
-     *            the source
-     * @param offset
-     *            the offset
-     * @param length
-     *            the length
-     *
-     * @return the proxy socket input
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public ProxySocket getProxySocketInput(final String destinationNameOrType, final String source, final long offset,
@@ -197,23 +151,9 @@ final class AttachmentAccessImpl extends CallBackObject implements DataAccessInt
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the proxy socket output.
-     *
-     * @param destinationNameOrType
-     *            the destination name or type
-     * @param target
-     *            the target
-     * @param offset
-     *            the offset
-     * @param umask
-     *            the umask
-     *
-     * @return the proxy socket output
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public ProxySocket getProxySocketOutput(final String destinationNameOrType, final String target, final long offset,
@@ -228,19 +168,9 @@ final class AttachmentAccessImpl extends CallBackObject implements DataAccessInt
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Delete.
-     *
-     * @param destinationNameOrType
-     *            the destination name or type
-     * @param source
-     *            the source
-     * @param force
-     *            the force
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void delete(final String destinationNameOrType, final String source, final boolean force)
@@ -257,17 +187,9 @@ final class AttachmentAccessImpl extends CallBackObject implements DataAccessInt
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Mkdir.
-     *
-     * @param destinationNameOrType
-     *            the destination name or type
-     * @param path
-     *            the path
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void mkdir(final String destinationNameOrType, final String path) throws MasterException, IOException {
@@ -275,17 +197,9 @@ final class AttachmentAccessImpl extends CallBackObject implements DataAccessInt
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Rmdir.
-     *
-     * @param destinationNameOrType
-     *            the destination name or type
-     * @param path
-     *            the path
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void rmdir(final String destinationNameOrType, final String path) throws MasterException, IOException {
@@ -293,19 +207,9 @@ final class AttachmentAccessImpl extends CallBackObject implements DataAccessInt
     }
 
     /**
+     * {@inheritDoc}
+     *
      * List.
-     *
-     * @param destinationNameOrType
-     *            the destination name or type
-     * @param path
-     *            the path
-     *
-     * @return the file list element[]
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public FileListElement[] list(final String destinationNameOrType, final String path)
@@ -314,23 +218,9 @@ final class AttachmentAccessImpl extends CallBackObject implements DataAccessInt
     }
 
     /**
+     * {@inheritDoc}
+     *
      * List.
-     *
-     * @param destinationNameOrType
-     *            the destination name or type
-     * @param path
-     *            the path
-     * @param sort
-     *            the sort
-     * @param order
-     *            the order
-     *
-     * @return the file list element[]
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public FileListElement[] list(final String destinationNameOrType, final String path, final int sort,
@@ -354,7 +244,7 @@ final class AttachmentAccessImpl extends CallBackObject implements DataAccessInt
      *
      * @return the file list element[]
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
      */
     public FileListElement[] list(final String destinationNameOrType, final String path, final int sort,
@@ -401,19 +291,9 @@ final class AttachmentAccessImpl extends CallBackObject implements DataAccessInt
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the.
-     *
-     * @param destinationNameOrType
-     *            the destination name or type
-     * @param path
-     *            the path
-     *
-     * @return the file list element
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public FileListElement get(final String destinationNameOrType, final String path)
@@ -435,19 +315,9 @@ final class AttachmentAccessImpl extends CallBackObject implements DataAccessInt
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Move.
-     *
-     * @param destinationNameOrType
-     *            the destination name or type
-     * @param source
-     *            the source
-     * @param target
-     *            the target
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void move(final String destinationNameOrType, final String source, final String target)
@@ -464,15 +334,9 @@ final class AttachmentAccessImpl extends CallBackObject implements DataAccessInt
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Check.
-     *
-     * @param proxy
-     *            the proxy
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void check(final ProxySocket proxy) throws MasterException, IOException {

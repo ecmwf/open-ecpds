@@ -59,15 +59,9 @@ public final class ECauthTokenGenerator extends ECauthTokenManager {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Request ECauth token.
-     *
-     * @param user
-     *            the user
-     *
-     * @return the ecauth token
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public ECauthToken requestECauthToken(final String user) throws IOException {

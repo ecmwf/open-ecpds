@@ -68,10 +68,9 @@ public abstract class ProxyModule extends TransferModule implements ECpdsProxy {
     private ConfigurableRunnable _thread = null;
 
     /**
-     * Sets the output stream.
+     * {@inheritDoc}
      *
-     * @param out
-     *            the new output stream
+     * Sets the output stream.
      */
     @Override
     public void setOutputStream(final OutputStream out) {
@@ -79,10 +78,9 @@ public abstract class ProxyModule extends TransferModule implements ECpdsProxy {
     }
 
     /**
-     * Sets the input stream.
+     * {@inheritDoc}
      *
-     * @param in
-     *            the new input stream
+     * Sets the input stream.
      */
     @Override
     public void setInputStream(final InputStream in) {
@@ -101,25 +99,15 @@ public abstract class ProxyModule extends TransferModule implements ECpdsProxy {
      * @param socket
      *            the socket
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     public abstract void put(String name, long posn, long size, ProxySocket socket) throws Exception;
 
     /**
+     * {@inheritDoc}
+     *
      * Put.
-     *
-     * @param name
-     *            the name
-     * @param posn
-     *            the posn
-     * @param size
-     *            the size
-     *
-     * @return the output stream
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public OutputStream put(final String name, final long posn, final long size) throws IOException {
@@ -164,23 +152,15 @@ public abstract class ProxyModule extends TransferModule implements ECpdsProxy {
      * @param socket
      *            the socket
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     public abstract void get(String name, long posn, ProxySocket socket) throws Exception;
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the.
-     *
-     * @param name
-     *            the name
-     * @param posn
-     *            the posn
-     *
-     * @return the input stream
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public InputStream get(final String name, final long posn) throws IOException {
@@ -221,16 +201,15 @@ public abstract class ProxyModule extends TransferModule implements ECpdsProxy {
      * @param closedOnError
      *            the closed on error
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract void remove(boolean closedOnError) throws IOException;
 
     /**
-     * Close.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Close.
      */
     @Override
     public void close() throws IOException {
@@ -245,15 +224,9 @@ public abstract class ProxyModule extends TransferModule implements ECpdsProxy {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Check.
-     *
-     * @param sent
-     *            the sent
-     * @param checksum
-     *            the checksum
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void check(final long sent, final String checksum) throws IOException {

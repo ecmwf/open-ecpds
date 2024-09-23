@@ -126,6 +126,8 @@ public class ForkECios extends ForkAbstract {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Close.
      */
     @Override
@@ -143,10 +145,9 @@ public class ForkECios extends ForkAbstract {
     }
 
     /**
-     * Start.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Start.
      */
     @Override
     public void start() throws IOException {
@@ -159,7 +160,7 @@ public class ForkECios extends ForkAbstract {
      * @param timeOut
      *            the time out
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void start(final int timeOut) throws IOException {
@@ -225,17 +226,9 @@ public class ForkECios extends ForkAbstract {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Check.
-     *
-     * @param expect
-     *            the expect
-     * @param errors
-     *            the errors
-     *
-     * @return true, if successful
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public boolean check(final String[][] expect, final String[][] errors) throws IOException {
@@ -283,9 +276,9 @@ public class ForkECios extends ForkAbstract {
     }
 
     /**
-     * Kill.
+     * {@inheritDoc}
      *
-     * @return true, if successful
+     * Kill.
      */
     @Override
     public boolean kill() {
@@ -309,12 +302,9 @@ public class ForkECios extends ForkAbstract {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the input stream.
-     *
-     * @return the input stream
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public InputStream getInputStream() throws IOException {
@@ -325,9 +315,9 @@ public class ForkECios extends ForkAbstract {
     }
 
     /**
-     * Interrupted.
+     * {@inheritDoc}
      *
-     * @return the long
+     * Interrupted.
      */
     @Override
     public long interrupted() {
@@ -335,6 +325,8 @@ public class ForkECios extends ForkAbstract {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Restarted.
      */
     @Override
@@ -343,9 +335,9 @@ public class ForkECios extends ForkAbstract {
     }
 
     /**
-     * Gets the command.
+     * {@inheritDoc}
      *
-     * @return the command
+     * Gets the command.
      */
     @Override
     public String getCommand() {

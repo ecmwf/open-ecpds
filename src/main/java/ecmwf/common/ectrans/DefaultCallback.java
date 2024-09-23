@@ -61,9 +61,9 @@ public class DefaultCallback implements ECtransCallback {
     }
 
     /**
-     * Gets the unique name.
+     * {@inheritDoc}
      *
-     * @return the unique name
+     * Gets the unique name.
      */
     @Override
     public String getUniqueName() {
@@ -71,9 +71,9 @@ public class DefaultCallback implements ECtransCallback {
     }
 
     /**
-     * Gets the ectrans setup.
+     * {@inheritDoc}
      *
-     * @return the ectrans setup
+     * Gets the ectrans setup.
      */
     @Override
     public ECtransSetup getECtransSetup() {
@@ -81,42 +81,36 @@ public class DefaultCallback implements ECtransCallback {
     }
 
     /**
-     * Sets the MS user.
+     * {@inheritDoc}
      *
-     * @param msuser
-     *            the new MS user
+     * Sets the MS user.
      */
     @Override
     public void setMSUser(final MSUser msuser) {
     }
 
     /**
-     * Retry.
+     * {@inheritDoc}
      *
-     * @param comment
-     *            the comment
+     * Retry.
      */
     @Override
     public void retry(final String comment) {
     }
 
     /**
-     * Completed.
+     * {@inheritDoc}
      *
-     * @param module
-     *            the module
+     * Completed.
      */
     @Override
     public void completed(final TransferModule module) {
     }
 
     /**
-     * Failed.
+     * {@inheritDoc}
      *
-     * @param module
-     *            the module
-     * @param comment
-     *            the comment
+     * Failed.
      */
     @Override
     public void failed(final TransferModule module, final String comment) {

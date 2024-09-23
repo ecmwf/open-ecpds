@@ -27,7 +27,6 @@ package ecmwf.ecpds.mover.plugin.http;
  *
  * @since 2024-07-01
  */
-
 public class ListContainerOptions {
 
     /** The delimiter. */
@@ -138,9 +137,9 @@ public class ListContainerOptions {
     }
 
     /**
-     * To string.
+     * {@inheritDoc}
      *
-     * @return the string
+     * To string.
      */
     @Override
     public String toString() {

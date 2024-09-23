@@ -27,7 +27,6 @@ package ecmwf.ecpds.mover;
  *
  * @since 2024-07-01
  */
-
 public interface MQTTInterface {
 
     /**

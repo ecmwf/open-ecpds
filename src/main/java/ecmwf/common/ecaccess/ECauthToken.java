@@ -29,7 +29,6 @@ import java.io.Serializable;
  *
  * @since 2024-07-01
  */
-
 public final class ECauthToken implements Serializable {
     /** The Constant serialVersionUID. */
     private static final long serialVersionUID = -1948857166613608857L;

@@ -232,11 +232,11 @@ public final class OpsViewManager {
      * @param message
      *            the message
      *
-     * @throws OpsViewManagerException
+     * @throws ecmwf.common.opsview.OpsViewManagerException
      *             the ops view manager exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
-     * @throws JSONException
+     * @throws org.apache.wink.json4j.JSONException
      *             the JSON exception
      */
     public static void detail(final String hostname, final String service, final int status, final String message)
@@ -285,11 +285,11 @@ public final class OpsViewManager {
      * @param destinations
      *            the destinations
      *
-     * @throws OpsViewManagerException
+     * @throws ecmwf.common.opsview.OpsViewManagerException
      *             the ops view manager exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
-     * @throws JSONException
+     * @throws org.apache.wink.json4j.JSONException
      *             the JSON exception
      */
     public static void sync(final Destination[] destinations)
@@ -343,11 +343,11 @@ public final class OpsViewManager {
      * @param destination
      *            the destination
      *
-     * @throws OpsViewManagerException
+     * @throws ecmwf.common.opsview.OpsViewManagerException
      *             the ops view manager exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
-     * @throws JSONException
+     * @throws org.apache.wink.json4j.JSONException
      *             the JSON exception
      */
     public static void clearNotes(final String destination) throws OpsViewManagerException, IOException, JSONException {
@@ -362,11 +362,11 @@ public final class OpsViewManager {
      * @param metadata
      *            the metadata
      *
-     * @throws OpsViewManagerException
+     * @throws ecmwf.common.opsview.OpsViewManagerException
      *             the ops view manager exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
-     * @throws JSONException
+     * @throws org.apache.wink.json4j.JSONException
      *             the JSON exception
      */
     public static void addNotes(final String destination, final String metadata)

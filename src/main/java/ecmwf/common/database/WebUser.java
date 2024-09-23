@@ -30,7 +30,6 @@ import java.util.Objects;
  *
  * @since 2024-07-01
  */
-
 public class WebUser extends DataBaseObject {
     /** The Constant serialVersionUID. */
     private static final long serialVersionUID = 3220826851489855134L;
@@ -216,9 +215,9 @@ public class WebUser extends DataBaseObject {
     }
 
     /**
-     * Hash code.
+     * {@inheritDoc}
      *
-     * @return the int
+     * Hash code.
      */
     @Override
     public int hashCode() {
@@ -226,12 +225,9 @@ public class WebUser extends DataBaseObject {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Equals.
-     *
-     * @param obj
-     *            the obj
-     *
-     * @return true, if successful
      */
     @Override
     public boolean equals(final Object obj) {

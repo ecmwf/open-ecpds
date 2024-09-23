@@ -32,6 +32,8 @@ import ecmwf.ecpds.master.plugin.http.model.transfer.TransferMonitoringParameter
 
 /**
  * The Class DataTransferHeavyBean.
+ *
+ * @author root
  */
 public class DataTransferHeavyBean extends DataTransferBaseBean {
 
@@ -67,12 +69,9 @@ public class DataTransferHeavyBean extends DataTransferBaseBean {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the data file.
-     *
-     * @return the data file
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public DataFile getDataFile() throws TransferException {
@@ -80,9 +79,9 @@ public class DataTransferHeavyBean extends DataTransferBaseBean {
     }
 
     /**
-     * Gets the arrival monitoring parameters.
+     * {@inheritDoc}
      *
-     * @return the arrival monitoring parameters
+     * Gets the arrival monitoring parameters.
      */
     @Override
     public ArrivalMonitoringParameters getArrivalMonitoringParameters() {
@@ -90,9 +89,9 @@ public class DataTransferHeavyBean extends DataTransferBaseBean {
     }
 
     /**
-     * Gets the transfer monitoring parameters.
+     * {@inheritDoc}
      *
-     * @return the transfer monitoring parameters
+     * Gets the transfer monitoring parameters.
      */
     @Override
     public TransferMonitoringParameters getTransferMonitoringParameters() {
@@ -100,12 +99,9 @@ public class DataTransferHeavyBean extends DataTransferBaseBean {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the destination.
-     *
-     * @return the destination
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Destination getDestination() throws TransferException {
@@ -113,12 +109,9 @@ public class DataTransferHeavyBean extends DataTransferBaseBean {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the host.
-     *
-     * @return the host
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Host getHost() throws TransferException {
@@ -130,12 +123,9 @@ public class DataTransferHeavyBean extends DataTransferBaseBean {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the transfer server.
-     *
-     * @return the transfer server
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public TransferServer getTransferServer() throws TransferException {

@@ -719,7 +719,7 @@ public final class Format {
      *
      * @return the duration
      *
-     * @throws NumberFormatException
+     * @throws java.lang.NumberFormatException
      *             the number format exception
      */
     public static long parseDurationWithDefaultInMillis(final String duration) throws NumberFormatException {
@@ -734,7 +734,7 @@ public final class Format {
      *
      * @return the duration
      *
-     * @throws NumberFormatException
+     * @throws java.lang.NumberFormatException
      *             the number format exception
      */
     public static long getDuration(final String duration) throws NumberFormatException {
@@ -927,7 +927,7 @@ public final class Format {
      * @param value
      *            the value
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static void replaceAllExt(final StringBuilder target, final String name, final String value)
@@ -988,7 +988,7 @@ public final class Format {
      *
      * @return the string
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static String replaceAllExt(final String target, final String name, final String value) throws IOException {
@@ -1037,7 +1037,7 @@ public final class Format {
     }
 
     /**
-     * Converts into time.
+     * Converts into long.
      *
      * @param format
      *            the format
@@ -1133,7 +1133,7 @@ public final class Format {
      *
      * @return the byte[]
      *
-     * @throws NumberFormatException
+     * @throws java.lang.NumberFormatException
      *             the number format exception
      */
     public static byte[] toBytes(final String hexa) throws NumberFormatException {
@@ -1155,7 +1155,7 @@ public final class Format {
      *
      * @return the byte[]
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static byte[] toBytes(final Object object) throws IOException {
@@ -1177,9 +1177,9 @@ public final class Format {
      *
      * @return the object
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
-     * @throws ClassNotFoundException
+     * @throws java.lang.ClassNotFoundException
      *             the class not found exception
      */
     public static Object toObject(final byte[] bytes) throws IOException, ClassNotFoundException {
@@ -1361,7 +1361,7 @@ public final class Format {
      *
      * @return the string
      *
-     * @throws UnsupportedEncodingException
+     * @throws java.io.UnsupportedEncodingException
      *             the unsupported encoding exception
      */
     public static String decode(final String s) throws UnsupportedEncodingException {
@@ -1466,9 +1466,9 @@ public final class Format {
      *
      * @return the selection
      *
-     * @throws DuplicatedChooseScore
+     * @throws ecmwf.common.text.Format.DuplicatedChooseScore
      *             the duplicated choose score
-     * @throws ScriptException
+     * @throws javax.script.ScriptException
      *             the script exception
      */
     public static String choose(final String options) throws DuplicatedChooseScore, ScriptException {
@@ -1559,7 +1559,7 @@ public final class Format {
      *
      * @return the selection or null if nothing is found
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static String choose(final String key, final String options) throws IOException {
@@ -1673,7 +1673,7 @@ public final class Format {
      *
      * @return the string
      *
-     * @throws FileNotFoundException
+     * @throws java.io.FileNotFoundException
      *             the file not found exception
      */
     public static String normalizePath(final String path) throws FileNotFoundException {
@@ -1726,7 +1726,7 @@ public final class Format {
      *
      * @return the string
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static String compress(final String str) throws IOException {
@@ -1748,7 +1748,7 @@ public final class Format {
      *
      * @return the string
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static String uncompress(final String str) throws IOException {
@@ -1766,7 +1766,7 @@ public final class Format {
      *
      * @return the string
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static String uncompress(final byte[] bytes) throws IOException {

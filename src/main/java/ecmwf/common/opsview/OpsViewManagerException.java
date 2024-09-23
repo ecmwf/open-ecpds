@@ -27,7 +27,6 @@ package ecmwf.common.opsview;
  *
  * @since 2024-07-01
  */
-
 public final class OpsViewManagerException extends Exception {
     /** The Constant serialVersionUID. */
     private static final long serialVersionUID = -3553316335710091229L;

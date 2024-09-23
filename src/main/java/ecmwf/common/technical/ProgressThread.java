@@ -53,6 +53,8 @@ final class ProgressThread extends ConfigurableLoopRunnable {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Configurable loop run.
      */
     @Override
@@ -61,6 +63,8 @@ final class ProgressThread extends ConfigurableLoopRunnable {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Configurable loop end.
      */
     @Override

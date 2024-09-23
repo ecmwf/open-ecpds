@@ -76,7 +76,7 @@ public interface Destination extends ModelBean {
      *
      * @return the completions
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     String getCompletions() throws TransferException;
@@ -86,7 +86,7 @@ public interface Destination extends ModelBean {
      *
      * @return the ec user
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     EcUser getEcUser() throws TransferException;
@@ -96,7 +96,7 @@ public interface Destination extends ModelBean {
      *
      * @return the transfer group
      *
-     * @throws DataFileException
+     * @throws ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException
      *             the data file exception
      */
     TransferGroup getTransferGroup() throws DataFileException;
@@ -149,7 +149,7 @@ public interface Destination extends ModelBean {
      *
      * @return the country
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Country getCountry() throws TransferException;
@@ -173,7 +173,7 @@ public interface Destination extends ModelBean {
      *
      * @return the host for source
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Host getHostForSource() throws TransferException;
@@ -253,7 +253,7 @@ public interface Destination extends ModelBean {
      *
      * @return the start time
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Date getStartTime() throws TransferException;
@@ -437,7 +437,7 @@ public interface Destination extends ModelBean {
      *
      * @return the associated ec users
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Collection<EcUser> getAssociatedEcUsers() throws TransferException;
@@ -447,7 +447,7 @@ public interface Destination extends ModelBean {
      *
      * @return the associated incoming policies
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Collection<IncomingPolicy> getAssociatedIncomingPolicies() throws TransferException;
@@ -476,7 +476,7 @@ public interface Destination extends ModelBean {
      *
      * @return the data transfers on date
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Collection<DataTransfer> getDataTransfersOnDate(Date d) throws TransferException;
@@ -491,7 +491,7 @@ public interface Destination extends ModelBean {
      *
      * @return the data transfers by product and time
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Collection<DataTransfer> getDataTransfersByProductAndTime(String product, String time) throws TransferException;
@@ -508,7 +508,7 @@ public interface Destination extends ModelBean {
      *
      * @return the data transfers by product and time on date
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Collection<DataTransfer> getDataTransfersByProductAndTimeOnDate(String product, String time, Date d)
@@ -522,7 +522,7 @@ public interface Destination extends ModelBean {
      *
      * @return the data transfers including retries on transmission date
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Collection<DataTransfer> getDataTransfersIncludingRetriesOnTransmissionDate(Date d) throws TransferException;
@@ -532,7 +532,7 @@ public interface Destination extends ModelBean {
      *
      * @return the bad data transfers
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Collection<DataTransfer> getBadDataTransfers() throws TransferException;
@@ -542,7 +542,7 @@ public interface Destination extends ModelBean {
      *
      * @return the bad data transfers size
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     int getBadDataTransfersSize() throws TransferException;
@@ -552,7 +552,7 @@ public interface Destination extends ModelBean {
      *
      * @return the hosts and priorities
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Collection<Pair> getHostsAndPriorities() throws TransferException;
@@ -562,7 +562,7 @@ public interface Destination extends ModelBean {
      *
      * @return the dissemination hosts and priorities
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Collection<Pair> getDisseminationHostsAndPriorities() throws TransferException;
@@ -572,7 +572,7 @@ public interface Destination extends ModelBean {
      *
      * @return the acquisition hosts and priorities
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Collection<Pair> getAcquisitionHostsAndPriorities() throws TransferException;
@@ -582,7 +582,7 @@ public interface Destination extends ModelBean {
      *
      * @return the aliases
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Collection<Destination> getAliases() throws TransferException;
@@ -592,7 +592,7 @@ public interface Destination extends ModelBean {
      *
      * @return the alias list
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Collection<Alias> getAliasList() throws TransferException;
@@ -602,7 +602,7 @@ public interface Destination extends ModelBean {
      *
      * @return the traffic list
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Collection<Traffic> getTrafficList() throws TransferException;
@@ -612,7 +612,7 @@ public interface Destination extends ModelBean {
      *
      * @return the change log list
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Collection<ChangeLog> getChangeLogList() throws TransferException;
@@ -622,7 +622,7 @@ public interface Destination extends ModelBean {
      *
      * @return the aliased from
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Collection<Destination> getAliasedFrom() throws TransferException;
@@ -632,7 +632,7 @@ public interface Destination extends ModelBean {
      *
      * @return the meta data
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Collection<DestinationMetaData> getMetaData() throws TransferException;
@@ -670,7 +670,7 @@ public interface Destination extends ModelBean {
      *
      * @return the band width
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     long getBandWidth() throws TransferException;
@@ -680,7 +680,7 @@ public interface Destination extends ModelBean {
      *
      * @return the status map for products
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Map<String, DestinationProductStatus> getStatusMapForProducts() throws TransferException;
@@ -690,7 +690,7 @@ public interface Destination extends ModelBean {
      *
      * @return the monitoring status
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     DestinationStatus getMonitoringStatus() throws TransferException;
@@ -707,7 +707,7 @@ public interface Destination extends ModelBean {
      *
      * @return the last transfer
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     DataTransfer getLastTransfer() throws TransferException;
@@ -717,7 +717,7 @@ public interface Destination extends ModelBean {
      *
      * @return the last error
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     DataTransfer getLastError() throws TransferException;
@@ -735,7 +735,7 @@ public interface Destination extends ModelBean {
      * @param u
      *            the u
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     void clean(User u) throws TransferException;
@@ -746,7 +746,7 @@ public interface Destination extends ModelBean {
      * @param u
      *            the u
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     void cleanExpired(User u) throws TransferException;
@@ -759,7 +759,7 @@ public interface Destination extends ModelBean {
      * @param u
      *            the u
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     void restart(boolean graceful, User u) throws TransferException;
@@ -772,7 +772,7 @@ public interface Destination extends ModelBean {
      * @param u
      *            the u
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     void putOnHold(boolean graceful, User u) throws TransferException;
@@ -1087,7 +1087,7 @@ public interface Destination extends ModelBean {
      *
      * @return the transfer content
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Content getTransferContent(DataTransfer t, User u) throws TransferException;

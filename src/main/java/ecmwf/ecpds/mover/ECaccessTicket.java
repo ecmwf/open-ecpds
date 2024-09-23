@@ -91,9 +91,9 @@ public final class ECaccessTicket extends AbstractTicket {
     }
 
     /**
-     * Gets the status.
+     * {@inheritDoc}
      *
-     * @return the status
+     * Gets the status.
      */
     @Override
     public String getStatus() {

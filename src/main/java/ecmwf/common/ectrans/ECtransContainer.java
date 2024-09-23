@@ -121,17 +121,9 @@ public final class ECtransContainer implements MBeanService {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the attribute.
-     *
-     * @param attributeName
-     *            the attribute name
-     *
-     * @return the attribute
-     *
-     * @throws AttributeNotFoundException
-     *             the attribute not found exception
-     * @throws MBeanException
-     *             the MBean exception
      */
     @Override
     public Object getAttribute(final String attributeName) throws AttributeNotFoundException, MBeanException {
@@ -151,9 +143,9 @@ public final class ECtransContainer implements MBeanService {
     }
 
     /**
-     * Gets the MBean info.
+     * {@inheritDoc}
      *
-     * @return the MBean info
+     * Gets the MBean info.
      */
     @Override
     public MBeanInfo getMBeanInfo() {
@@ -229,21 +221,9 @@ public final class ECtransContainer implements MBeanService {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Invoke.
-     *
-     * @param operationName
-     *            the operation name
-     * @param params
-     *            the params
-     * @param signature
-     *            the signature
-     *
-     * @return the object
-     *
-     * @throws NoSuchMethodException
-     *             the no such method exception
-     * @throws MBeanException
-     *             the MBean exception
      */
     @Override
     public Object invoke(final String operationName, final Object[] params, final String[] signature)
@@ -298,19 +278,9 @@ public final class ECtransContainer implements MBeanService {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the attribute.
-     *
-     * @param name
-     *            the name
-     * @param value
-     *            the value
-     *
-     * @return true, if successful
-     *
-     * @throws InvalidAttributeValueException
-     *             the invalid attribute value exception
-     * @throws MBeanException
-     *             the MBean exception
      */
     @Override
     public boolean setAttribute(final String name, final Object value)
@@ -417,9 +387,9 @@ public final class ECtransContainer implements MBeanService {
      * @param interruptible
      *            the interruptible
      *
-     * @throws ECtransException
+     * @throws ecmwf.common.ectrans.ECtransException
      *             the ectrans exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void syncExec(final ECtransAction action, final String cookie, final String ecuser, final String remote,
@@ -445,9 +415,9 @@ public final class ECtransContainer implements MBeanService {
      * @param interruptible
      *            the interruptible
      *
-     * @throws ECtransException
+     * @throws ecmwf.common.ectrans.ECtransException
      *             the ectrans exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void syncExec(final ECtransAction action, final String cookie, final String ecuser, final String remote,
@@ -477,9 +447,9 @@ public final class ECtransContainer implements MBeanService {
      * @param interruptible
      *            the interruptible
      *
-     * @throws ECtransException
+     * @throws ecmwf.common.ectrans.ECtransException
      *             the ectrans exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void syncExec(final RemoteProvider provider, final ECUser ecuser, final MSUser msuser,
@@ -511,9 +481,9 @@ public final class ECtransContainer implements MBeanService {
      * @param interruptible
      *            the interruptible
      *
-     * @throws ECtransException
+     * @throws ecmwf.common.ectrans.ECtransException
      *             the ectrans exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void syncExec(final RemoteProvider provider, final ECUser ecuser, final MSUser msuser,
@@ -538,7 +508,7 @@ public final class ECtransContainer implements MBeanService {
      * @param location
      *            the location
      *
-     * @throws ECtransException
+     * @throws ecmwf.common.ectrans.ECtransException
      *             the ectrans exception
      */
     public void asyncExec(final ECtransAction action, final String cookie, final String ecuser, final String remote,
@@ -564,7 +534,7 @@ public final class ECtransContainer implements MBeanService {
      * @param callback
      *            the callback
      *
-     * @throws ECtransException
+     * @throws ecmwf.common.ectrans.ECtransException
      *             the ectrans exception
      */
     public void asyncExec(final ECtransAction action, final String cookie, final String ecuser, final String remote,
@@ -591,7 +561,7 @@ public final class ECtransContainer implements MBeanService {
      * @param callback
      *            the callback
      *
-     * @throws ECtransException
+     * @throws ecmwf.common.ectrans.ECtransException
      *             the ectrans exception
      */
     public void asyncExec(final ECtransAction action, final String cookie, final String ecuser, final String remote,
@@ -619,7 +589,7 @@ public final class ECtransContainer implements MBeanService {
      * @param location
      *            the location
      *
-     * @throws ECtransException
+     * @throws ecmwf.common.ectrans.ECtransException
      *             the ectrans exception
      */
     public void asyncExec(final RemoteProvider provider, final ECUser ecuser, final MSUser msuser,
@@ -649,7 +619,7 @@ public final class ECtransContainer implements MBeanService {
      * @param callback
      *            the callback
      *
-     * @throws ECtransException
+     * @throws ecmwf.common.ectrans.ECtransException
      *             the ectrans exception
      */
     public void asyncExec(final RemoteProvider provider, final ECUser ecuser, final MSUser msuser,
@@ -676,7 +646,7 @@ public final class ECtransContainer implements MBeanService {
      *
      * @return the transfer url
      *
-     * @throws ECtransException
+     * @throws ecmwf.common.ectrans.ECtransException
      *             the ectrans exception
      */
     public TransferURL getTransferURL(final ECtransHistory history, final String ecuser, final String remote,
@@ -702,7 +672,7 @@ public final class ECtransContainer implements MBeanService {
      *
      * @return the transfer url
      *
-     * @throws ECtransException
+     * @throws ecmwf.common.ectrans.ECtransException
      *             the ectrans exception
      */
     public TransferURL getTransferURL(final RemoteProvider provider, final ECtransHistory history, final String ecuser,
@@ -782,7 +752,7 @@ public final class ECtransContainer implements MBeanService {
      *
      * @return true, if successful
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public boolean close(final String cookie, final String ecuser, final String remote, final String location)
@@ -806,7 +776,7 @@ public final class ECtransContainer implements MBeanService {
      *
      * @return true, if successful
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public boolean close(final RemoteProvider provider, final String cookie, final String ecuser, final String remote,
@@ -853,7 +823,7 @@ public final class ECtransContainer implements MBeanService {
      *
      * @return true, if successful
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public boolean close(final RemoteProvider provider, final ECUser ecuser, final MSUser msuser,
@@ -876,7 +846,7 @@ public final class ECtransContainer implements MBeanService {
     /**
      * Close.
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void close() throws IOException {
@@ -889,7 +859,7 @@ public final class ECtransContainer implements MBeanService {
      * @param provider
      *            the provider
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void close(final RemoteProvider provider) throws IOException {

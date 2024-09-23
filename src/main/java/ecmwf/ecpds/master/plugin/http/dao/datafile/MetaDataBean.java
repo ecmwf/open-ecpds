@@ -81,9 +81,9 @@ public class MetaDataBean extends ModelBeanBase implements MetaData, OjbImplemen
     }
 
     /**
-     * Gets the bean interface name.
+     * {@inheritDoc}
      *
-     * @return the bean interface name
+     * Gets the bean interface name.
      */
     @Override
     public String getBeanInterfaceName() {
@@ -91,9 +91,9 @@ public class MetaDataBean extends ModelBeanBase implements MetaData, OjbImplemen
     }
 
     /**
-     * Gets the ojb implementation.
+     * {@inheritDoc}
      *
-     * @return the ojb implementation
+     * Gets the ojb implementation.
      */
     @Override
     public DataBaseObject getOjbImplementation() {
@@ -101,9 +101,9 @@ public class MetaDataBean extends ModelBeanBase implements MetaData, OjbImplemen
     }
 
     /**
-     * Gets the name.
+     * {@inheritDoc}
      *
-     * @return the name
+     * Gets the name.
      */
     @Override
     public String getName() {
@@ -118,9 +118,9 @@ public class MetaDataBean extends ModelBeanBase implements MetaData, OjbImplemen
     }
 
     /**
-     * Gets the value.
+     * {@inheritDoc}
      *
-     * @return the value
+     * Gets the value.
      */
     @Override
     public String getValue() {
@@ -135,12 +135,9 @@ public class MetaDataBean extends ModelBeanBase implements MetaData, OjbImplemen
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the data file.
-     *
-     * @return the data file
-     *
-     * @throws DataFileException
-     *             the data file exception
      */
     @Override
     public DataFile getDataFile() throws DataFileException {
@@ -152,12 +149,9 @@ public class MetaDataBean extends ModelBeanBase implements MetaData, OjbImplemen
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Equals.
-     *
-     * @param o
-     *            the o
-     *
-     * @return true, if successful
      */
     @Override
     public boolean equals(final Object o) {
@@ -177,9 +171,9 @@ public class MetaDataBean extends ModelBeanBase implements MetaData, OjbImplemen
     }
 
     /**
-     * Hash code.
+     * {@inheritDoc}
      *
-     * @return the int
+     * Hash code.
      */
     @Override
     public int hashCode() {
@@ -187,9 +181,9 @@ public class MetaDataBean extends ModelBeanBase implements MetaData, OjbImplemen
     }
 
     /**
-     * To string.
+     * {@inheritDoc}
      *
-     * @return the string
+     * To string.
      */
     @Override
     public String toString() {

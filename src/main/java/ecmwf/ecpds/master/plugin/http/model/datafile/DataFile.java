@@ -216,7 +216,7 @@ public interface DataFile extends ModelBean, CollectionSizeBean {
      *
      * @return the meta data
      *
-     * @throws DataFileException
+     * @throws ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException
      *             the data file exception
      */
     Collection<MetaData> getMetaData() throws DataFileException;
@@ -226,7 +226,7 @@ public interface DataFile extends ModelBean, CollectionSizeBean {
      *
      * @return the data transfers
      *
-     * @throws DataFileException
+     * @throws ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException
      *             the data file exception
      */
     Collection<DataTransfer> getDataTransfers() throws DataFileException;
@@ -243,7 +243,6 @@ public interface DataFile extends ModelBean, CollectionSizeBean {
      *
      * @return The stream (data stream) of the product. Eg "OPER", "WAVE", etc
      */
-
     String getMetaStream();
 
     /**
@@ -251,7 +250,6 @@ public interface DataFile extends ModelBean, CollectionSizeBean {
      *
      * @return The target (dissemination stream) of the product. Eg "IT1", "IT2", etc
      */
-
     String getMetaTarget();
 
     /**
@@ -259,7 +257,6 @@ public interface DataFile extends ModelBean, CollectionSizeBean {
      *
      * @return The type of the product. Eg "G" for Global, "M" for Mediterranean
      */
-
     String getMetaType();
 
     // This are the DATABASE values. To force a calculation, use

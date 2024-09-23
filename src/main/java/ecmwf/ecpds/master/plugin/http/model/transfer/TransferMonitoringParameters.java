@@ -73,7 +73,7 @@ public interface TransferMonitoringParameters extends ModelBean {
      *
      * @return The best possible time, based on line capacity and ideal conditions of pressure and temperature ;-)
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Date getTransferTargetTime() throws TransferException;
@@ -83,7 +83,7 @@ public interface TransferMonitoringParameters extends ModelBean {
      *
      * @return Predicted value for arrival this time.
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Date getTransferPredictedTime() throws TransferException;
@@ -93,7 +93,7 @@ public interface TransferMonitoringParameters extends ModelBean {
      *
      * @return A calculated value based on the other three parameters.
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     int getTransferStatus() throws TransferException;
@@ -103,7 +103,7 @@ public interface TransferMonitoringParameters extends ModelBean {
      *
      * @return the transfer status hex color
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     String getTransferStatusHexColor() throws TransferException;
@@ -113,7 +113,7 @@ public interface TransferMonitoringParameters extends ModelBean {
      *
      * @return The earliest transfer finish time for a default number of days
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Date getTransferEarliestTime() throws TransferException;
@@ -123,7 +123,7 @@ public interface TransferMonitoringParameters extends ModelBean {
      *
      * @return The latest transfer finish time for a default number of days
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Date getTransferLatestTime() throws TransferException;

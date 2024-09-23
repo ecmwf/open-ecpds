@@ -57,7 +57,7 @@ final class AccessControl {
      * @param destinationName
      *            the destination name
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public static void insertAccessControl(final ECpdsBase base, final String destinationName)
@@ -99,7 +99,7 @@ final class AccessControl {
      * @param destinationName
      *            the Destination name
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public static void removeAccessControl(final ECpdsBase base, final String destinationName)
@@ -148,7 +148,7 @@ final class AccessControl {
      *
      * @return the int
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public static int cleanAccessControl(final ECpdsBase base) throws DataBaseException {

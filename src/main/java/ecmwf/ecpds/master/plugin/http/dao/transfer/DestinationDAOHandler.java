@@ -72,12 +72,9 @@ import ecmwf.web.util.bean.Pair;
 public class DestinationDAOHandler extends PDSDAOBase implements DAOHandler {
 
     /**
+     * {@inheritDoc}
+     *
      * Creates the.
-     *
-     * @return the destination
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public Destination create() throws DAOException {
@@ -85,15 +82,9 @@ public class DestinationDAOHandler extends PDSDAOBase implements DAOHandler {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Find by primary key.
-     *
-     * @param key
-     *            the key
-     *
-     * @return the destination
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public Destination findByPrimaryKey(final String key) throws DAOException {
@@ -110,7 +101,7 @@ public class DestinationDAOHandler extends PDSDAOBase implements DAOHandler {
      *
      * @return the destination
      *
-     * @throws DAOException
+     * @throws ecmwf.web.services.persistence.DAOException
      *             the DAO exception
      */
     public Destination findByPrimaryKey(final String key, final boolean useCache) throws DAOException {
@@ -122,15 +113,9 @@ public class DestinationDAOHandler extends PDSDAOBase implements DAOHandler {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Find.
-     *
-     * @param search
-     *            the search
-     *
-     * @return the collection
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public Collection<?> find(final ModelSearch search) throws DAOException {
@@ -185,15 +170,9 @@ public class DestinationDAOHandler extends PDSDAOBase implements DAOHandler {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Insert.
-     *
-     * @param b
-     *            the b
-     * @param context
-     *            the context
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public void insert(final ModelBean b, final Object context) throws DAOException {
@@ -204,15 +183,9 @@ public class DestinationDAOHandler extends PDSDAOBase implements DAOHandler {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Save.
-     *
-     * @param b
-     *            the b
-     * @param context
-     *            the context
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public void save(final ModelBean b, final Object context) throws DAOException {
@@ -282,15 +255,9 @@ public class DestinationDAOHandler extends PDSDAOBase implements DAOHandler {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Delete.
-     *
-     * @param b
-     *            the b
-     * @param context
-     *            the context
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public void delete(final ModelBean b, final Object context) throws DAOException {

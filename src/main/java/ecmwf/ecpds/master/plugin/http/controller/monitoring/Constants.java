@@ -92,7 +92,7 @@ public class Constants {
      *
      * @return the date
      *
-     * @throws ECMWFActionFormException
+     * @throws ecmwf.web.controller.ECMWFActionFormException
      *             the ECMWF action form exception
      */
     public static final Date getDate(final String date) throws ECMWFActionFormException {

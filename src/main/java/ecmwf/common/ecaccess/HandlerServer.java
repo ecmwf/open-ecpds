@@ -60,17 +60,17 @@ public final class HandlerServer extends StarterServer implements HandlerInterfa
      * @param starter
      *            the starter
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
-     * @throws InstanceAlreadyExistsException
+     * @throws javax.management.InstanceAlreadyExistsException
      *             the instance already exists exception
-     * @throws MBeanRegistrationException
+     * @throws javax.management.MBeanRegistrationException
      *             the MBean registration exception
-     * @throws NotCompliantMBeanException
+     * @throws javax.management.NotCompliantMBeanException
      *             the not compliant m bean exception
-     * @throws MalformedObjectNameException
+     * @throws javax.management.MalformedObjectNameException
      *             the malformed object name exception
-     * @throws InstanceNotFoundException
+     * @throws javax.management.InstanceNotFoundException
      *             the instance not found exception
      */
     public HandlerServer(final Starter starter)
@@ -84,9 +84,9 @@ public final class HandlerServer extends StarterServer implements HandlerInterfa
     }
 
     /**
-     * Gets the root.
+     * {@inheritDoc}
      *
-     * @return the root
+     * Gets the root.
      */
     @Override
     public String getRoot() {
@@ -94,9 +94,9 @@ public final class HandlerServer extends StarterServer implements HandlerInterfa
     }
 
     /**
-     * Gets the password.
+     * {@inheritDoc}
      *
-     * @return the password
+     * Gets the password.
      */
     @Override
     public String getPassword() {
@@ -104,9 +104,9 @@ public final class HandlerServer extends StarterServer implements HandlerInterfa
     }
 
     /**
-     * Gets the version.
+     * {@inheritDoc}
      *
-     * @return the version
+     * Gets the version.
      */
     @Override
     public String getVersion() {
@@ -114,9 +114,9 @@ public final class HandlerServer extends StarterServer implements HandlerInterfa
     }
 
     /**
-     * Gets the service.
+     * {@inheritDoc}
      *
-     * @return the service
+     * Gets the service.
      */
     @Override
     public String getService() {

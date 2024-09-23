@@ -68,23 +68,9 @@ public abstract class PDSAction extends ECMWFAction {
     public static final String RETURN_AFTER_LOGIN_KEY = "ecmwf.ecpds.RETURN_AFTER_LOGIN";
 
     /**
+     * {@inheritDoc}
+     *
      * Do authorization check and delegate to child class implementing the abstract method.
-     *
-     * @param mapping
-     *            the mapping
-     * @param form
-     *            the form
-     * @param request
-     *            the request
-     * @param response
-     *            the response
-     *
-     * @return the action forward
-     *
-     * @throws ECMWFException
-     *             the ECMWF exception
-     * @throws ClassCastException
-     *             the class cast exception
      */
     @Override
     public ActionForward safePerform(final ActionMapping mapping, final ActionForm form,
@@ -155,9 +141,9 @@ public abstract class PDSAction extends ECMWFAction {
      *
      * @return the action forward
      *
-     * @throws ECMWFException
+     * @throws ecmwf.web.ECMWFException
      *             the ECMWF exception
-     * @throws ClassCastException
+     * @throws java.lang.ClassCastException
      *             the class cast exception
      */
     public abstract ActionForward safeAuthorizedPerform(final ActionMapping mapping, final ActionForm form,

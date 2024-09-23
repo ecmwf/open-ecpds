@@ -39,31 +39,15 @@ import ecmwf.web.model.users.User;
 
 /**
  * The Class GetDestinationMetaDataAction.
+ *
+ * @author root
  */
 public class GetDestinationMetaDataAction extends PDSAction {
 
     /**
+     * {@inheritDoc}
+     *
      * Safe authorized perform.
-     *
-     * @param mapping
-     *            the mapping
-     * @param form
-     *            the form
-     * @param request
-     *            the request
-     * @param response
-     *            the response
-     * @param user
-     *            the user
-     *
-     * @return the action forward
-     *
-     * @throws ECMWFActionFormException
-     *             the ECMWF action form exception
-     * @throws TransferException
-     *             the transfer exception
-     * @throws MonitoringException
-     *             the monitoring exception
      */
     @Override
     public ActionForward safeAuthorizedPerform(final ActionMapping mapping, final ActionForm form,

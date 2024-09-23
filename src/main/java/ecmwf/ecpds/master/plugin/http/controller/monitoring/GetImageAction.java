@@ -119,25 +119,9 @@ public class GetImageAction extends PDSAction {
     private static final int EXTRA_SPACE_RIGHT = 30;
 
     /**
+     * {@inheritDoc}
+     *
      * Safe authorized perform.
-     *
-     * @param mapping
-     *            the mapping
-     * @param form
-     *            the form
-     * @param request
-     *            the request
-     * @param response
-     *            the response
-     * @param user
-     *            the user
-     *
-     * @return the action forward
-     *
-     * @throws ECMWFException
-     *             the ECMWF exception
-     * @throws ClassCastException
-     *             the class cast exception
      */
     @Override
     public ActionForward safeAuthorizedPerform(final ActionMapping mapping, final ActionForm form,

@@ -67,10 +67,9 @@ public class DataFileBean extends ModelBeanBase implements DataFile, OjbImplemen
     }
 
     /**
-     * Sets the user.
+     * {@inheritDoc}
      *
-     * @param user
-     *            the new user
+     * Sets the user.
      */
     @Override
     public void setUser(final User user) {
@@ -87,9 +86,9 @@ public class DataFileBean extends ModelBeanBase implements DataFile, OjbImplemen
     }
 
     /**
-     * Gets the index.
+     * {@inheritDoc}
      *
-     * @return the index
+     * Gets the index.
      */
     @Override
     public int getIndex() {
@@ -97,9 +96,9 @@ public class DataFileBean extends ModelBeanBase implements DataFile, OjbImplemen
     }
 
     /**
-     * Gets the caller.
+     * {@inheritDoc}
      *
-     * @return the caller
+     * Gets the caller.
      */
     @Override
     public String getCaller() {
@@ -107,9 +106,9 @@ public class DataFileBean extends ModelBeanBase implements DataFile, OjbImplemen
     }
 
     /**
-     * Gets the formatted caller.
+     * {@inheritDoc}
      *
-     * @return the formatted caller
+     * Gets the formatted caller.
      */
     @Override
     public String getFormattedCaller() {
@@ -117,9 +116,9 @@ public class DataFileBean extends ModelBeanBase implements DataFile, OjbImplemen
     }
 
     /**
-     * Gets the remote host.
+     * {@inheritDoc}
      *
-     * @return the remote host
+     * Gets the remote host.
      */
     @Override
     public String getRemoteHost() {
@@ -127,9 +126,9 @@ public class DataFileBean extends ModelBeanBase implements DataFile, OjbImplemen
     }
 
     /**
-     * Gets the gets the host.
+     * {@inheritDoc}
      *
-     * @return the gets the host
+     * Gets the gets the host.
      */
     @Override
     public String getGetHost() {
@@ -146,9 +145,9 @@ public class DataFileBean extends ModelBeanBase implements DataFile, OjbImplemen
     }
 
     /**
-     * Gets the checksum.
+     * {@inheritDoc}
      *
-     * @return the checksum
+     * Gets the checksum.
      */
     @SuppressWarnings("null")
     @Override
@@ -160,9 +159,9 @@ public class DataFileBean extends ModelBeanBase implements DataFile, OjbImplemen
     }
 
     /**
-     * Gets the gets the complete duration.
+     * {@inheritDoc}
      *
-     * @return the gets the complete duration
+     * Gets the gets the complete duration.
      */
     @Override
     public String getGetCompleteDuration() {
@@ -170,9 +169,9 @@ public class DataFileBean extends ModelBeanBase implements DataFile, OjbImplemen
     }
 
     /**
-     * Gets the gets the duration.
+     * {@inheritDoc}
      *
-     * @return the gets the duration
+     * Gets the gets the duration.
      */
     @Override
     public String getGetDuration() {
@@ -180,9 +179,9 @@ public class DataFileBean extends ModelBeanBase implements DataFile, OjbImplemen
     }
 
     /**
-     * Gets the gets the protocol overhead.
+     * {@inheritDoc}
      *
-     * @return the gets the protocol overhead
+     * Gets the gets the protocol overhead.
      */
     @Override
     public String getGetProtocolOverhead() {
@@ -190,9 +189,9 @@ public class DataFileBean extends ModelBeanBase implements DataFile, OjbImplemen
     }
 
     /**
-     * Gets the ecauth host.
+     * {@inheritDoc}
      *
-     * @return the ecauth host
+     * Gets the ecauth host.
      */
     @Override
     public String getEcauthHost() {
@@ -200,9 +199,9 @@ public class DataFileBean extends ModelBeanBase implements DataFile, OjbImplemen
     }
 
     /**
-     * Gets the ecauth user.
+     * {@inheritDoc}
      *
-     * @return the ecauth user
+     * Gets the ecauth user.
      */
     @Override
     public String getEcauthUser() {
@@ -210,9 +209,9 @@ public class DataFileBean extends ModelBeanBase implements DataFile, OjbImplemen
     }
 
     /**
-     * Gets the bean interface name.
+     * {@inheritDoc}
      *
-     * @return the bean interface name
+     * Gets the bean interface name.
      */
     @Override
     public String getBeanInterfaceName() {
@@ -220,9 +219,9 @@ public class DataFileBean extends ModelBeanBase implements DataFile, OjbImplemen
     }
 
     /**
-     * Gets the ojb implementation.
+     * {@inheritDoc}
      *
-     * @return the ojb implementation
+     * Gets the ojb implementation.
      */
     @Override
     public DataBaseObject getOjbImplementation() {
@@ -230,9 +229,9 @@ public class DataFileBean extends ModelBeanBase implements DataFile, OjbImplemen
     }
 
     /**
-     * Gets the id.
+     * {@inheritDoc}
      *
-     * @return the id
+     * Gets the id.
      */
     @Override
     public String getId() {
@@ -240,9 +239,9 @@ public class DataFileBean extends ModelBeanBase implements DataFile, OjbImplemen
     }
 
     /**
-     * Gets the arrived time.
+     * {@inheritDoc}
      *
-     * @return the arrived time
+     * Gets the arrived time.
      */
     @Override
     public Date getArrivedTime() {
@@ -250,9 +249,9 @@ public class DataFileBean extends ModelBeanBase implements DataFile, OjbImplemen
     }
 
     /**
-     * Gets the product time.
+     * {@inheritDoc}
      *
-     * @return the product time
+     * Gets the product time.
      */
     @Override
     public Date getProductTime() {
@@ -260,9 +259,9 @@ public class DataFileBean extends ModelBeanBase implements DataFile, OjbImplemen
     }
 
     /**
-     * Gets the storage path.
+     * {@inheritDoc}
      *
-     * @return the storage path
+     * Gets the storage path.
      */
     @Override
     public String getStoragePath() {
@@ -270,9 +269,9 @@ public class DataFileBean extends ModelBeanBase implements DataFile, OjbImplemen
     }
 
     /**
-     * Gets the product generation time.
+     * {@inheritDoc}
      *
-     * @return the product generation time
+     * Gets the product generation time.
      */
     @Override
     public Date getProductGenerationTime() {
@@ -280,9 +279,9 @@ public class DataFileBean extends ModelBeanBase implements DataFile, OjbImplemen
     }
 
     /**
-     * Gets the earliest time.
+     * {@inheritDoc}
      *
-     * @return the earliest time
+     * Gets the earliest time.
      */
     @Override
     public Date getEarliestTime() {
@@ -291,9 +290,9 @@ public class DataFileBean extends ModelBeanBase implements DataFile, OjbImplemen
     }
 
     /**
-     * Gets the latest time.
+     * {@inheritDoc}
      *
-     * @return the latest time
+     * Gets the latest time.
      */
     @Override
     public Date getLatestTime() {
@@ -302,9 +301,9 @@ public class DataFileBean extends ModelBeanBase implements DataFile, OjbImplemen
     }
 
     /**
-     * Gets the predicted time.
+     * {@inheritDoc}
      *
-     * @return the predicted time
+     * Gets the predicted time.
      */
     @Override
     public Date getPredictedTime() {
@@ -313,9 +312,9 @@ public class DataFileBean extends ModelBeanBase implements DataFile, OjbImplemen
     }
 
     /**
-     * Gets the collection size.
+     * {@inheritDoc}
      *
-     * @return the collection size
+     * Gets the collection size.
      */
     @Override
     public int getCollectionSize() {
@@ -323,9 +322,9 @@ public class DataFileBean extends ModelBeanBase implements DataFile, OjbImplemen
     }
 
     /**
-     * Gets the deleted.
+     * {@inheritDoc}
      *
-     * @return the deleted
+     * Gets the deleted.
      */
     @Override
     public boolean getDeleted() {
@@ -333,9 +332,9 @@ public class DataFileBean extends ModelBeanBase implements DataFile, OjbImplemen
     }
 
     /**
-     * Gets the delete original.
+     * {@inheritDoc}
      *
-     * @return the delete original
+     * Gets the delete original.
      */
     @Override
     public boolean getDeleteOriginal() {
@@ -343,9 +342,9 @@ public class DataFileBean extends ModelBeanBase implements DataFile, OjbImplemen
     }
 
     /**
-     * Gets the removed.
+     * {@inheritDoc}
      *
-     * @return the removed
+     * Gets the removed.
      */
     @Override
     public boolean getRemoved() {
@@ -353,9 +352,9 @@ public class DataFileBean extends ModelBeanBase implements DataFile, OjbImplemen
     }
 
     /**
-     * Gets the original.
+     * {@inheritDoc}
      *
-     * @return the original
+     * Gets the original.
      */
     @Override
     public String getOriginal() {
@@ -363,9 +362,9 @@ public class DataFileBean extends ModelBeanBase implements DataFile, OjbImplemen
     }
 
     /**
-     * Gets the formatted original.
+     * {@inheritDoc}
      *
-     * @return the formatted original
+     * Gets the formatted original.
      */
     @Override
     public String getFormattedOriginal() {
@@ -373,9 +372,9 @@ public class DataFileBean extends ModelBeanBase implements DataFile, OjbImplemen
     }
 
     /**
-     * Gets the size.
+     * {@inheritDoc}
      *
-     * @return the size
+     * Gets the size.
      */
     @Override
     public long getSize() {
@@ -383,9 +382,9 @@ public class DataFileBean extends ModelBeanBase implements DataFile, OjbImplemen
     }
 
     /**
-     * Gets the formatted size.
+     * {@inheritDoc}
      *
-     * @return the formatted size
+     * Gets the formatted size.
      */
     @Override
     public String getFormattedSize() {
@@ -393,9 +392,9 @@ public class DataFileBean extends ModelBeanBase implements DataFile, OjbImplemen
     }
 
     /**
-     * Gets the source.
+     * {@inheritDoc}
      *
-     * @return the source
+     * Gets the source.
      */
     @Override
     public String getSource() {
@@ -412,9 +411,9 @@ public class DataFileBean extends ModelBeanBase implements DataFile, OjbImplemen
     }
 
     /**
-     * Gets the time step.
+     * {@inheritDoc}
      *
-     * @return the time step
+     * Gets the time step.
      */
     @Override
     public long getTimeStep() {
@@ -422,12 +421,9 @@ public class DataFileBean extends ModelBeanBase implements DataFile, OjbImplemen
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the meta data.
-     *
-     * @return the meta data
-     *
-     * @throws DataFileException
-     *             the data file exception
      */
     @Override
     public Collection<MetaData> getMetaData() throws DataFileException {
@@ -445,12 +441,9 @@ public class DataFileBean extends ModelBeanBase implements DataFile, OjbImplemen
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the data transfers.
-     *
-     * @return the data transfers
-     *
-     * @throws DataFileException
-     *             the data file exception
      */
     @Override
     public Collection<DataTransfer> getDataTransfers() throws DataFileException {
@@ -462,9 +455,9 @@ public class DataFileBean extends ModelBeanBase implements DataFile, OjbImplemen
     }
 
     /**
-     * Gets the meta time.
+     * {@inheritDoc}
      *
-     * @return the meta time
+     * Gets the meta time.
      */
     @Override
     public String getMetaTime() {
@@ -472,9 +465,9 @@ public class DataFileBean extends ModelBeanBase implements DataFile, OjbImplemen
     }
 
     /**
-     * Gets the meta stream.
+     * {@inheritDoc}
      *
-     * @return the meta stream
+     * Gets the meta stream.
      */
     @Override
     public String getMetaStream() {
@@ -482,9 +475,9 @@ public class DataFileBean extends ModelBeanBase implements DataFile, OjbImplemen
     }
 
     /**
-     * Gets the meta target.
+     * {@inheritDoc}
      *
-     * @return the meta target
+     * Gets the meta target.
      */
     @Override
     public String getMetaTarget() {
@@ -492,9 +485,9 @@ public class DataFileBean extends ModelBeanBase implements DataFile, OjbImplemen
     }
 
     /**
-     * Gets the meta type.
+     * {@inheritDoc}
      *
-     * @return the meta type
+     * Gets the meta type.
      */
     @Override
     public String getMetaType() {
@@ -502,12 +495,9 @@ public class DataFileBean extends ModelBeanBase implements DataFile, OjbImplemen
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Equals.
-     *
-     * @param o
-     *            the o
-     *
-     * @return true, if successful
      */
     @Override
     public boolean equals(final Object o) {
@@ -527,9 +517,9 @@ public class DataFileBean extends ModelBeanBase implements DataFile, OjbImplemen
     }
 
     /**
-     * Hash code.
+     * {@inheritDoc}
      *
-     * @return the int
+     * Hash code.
      */
     @Override
     public int hashCode() {
@@ -537,9 +527,9 @@ public class DataFileBean extends ModelBeanBase implements DataFile, OjbImplemen
     }
 
     /**
-     * To string.
+     * {@inheritDoc}
      *
-     * @return the string
+     * To string.
      */
     @Override
     public String toString() {

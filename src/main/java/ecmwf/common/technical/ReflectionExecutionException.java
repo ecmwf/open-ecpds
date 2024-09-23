@@ -27,7 +27,6 @@ package ecmwf.common.technical;
  *
  * @since 2024-07-01
  */
-
 public class ReflectionExecutionException extends Exception {
     /** The Constant serialVersionUID. */
     private static final long serialVersionUID = -1611934261091018553L;

@@ -78,7 +78,7 @@ public class DataTransferHome extends ModelHomeBase {
      *
      * @return the data transfer
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final DataTransfer create() throws TransferException {
@@ -98,7 +98,7 @@ public class DataTransferHome extends ModelHomeBase {
      *
      * @return the data transfer
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final DataTransfer findByPrimaryKey(final String key) throws TransferException {
@@ -115,7 +115,7 @@ public class DataTransferHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<DataTransfer> findAll() throws TransferException {
@@ -132,7 +132,7 @@ public class DataTransferHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<DataTransfer> findByDestinationAndDate(final Destination d, final Date date)
@@ -150,7 +150,7 @@ public class DataTransferHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<DataTransfer> findByDestinationAndTransmissionDate(final Destination d,
@@ -170,7 +170,7 @@ public class DataTransferHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<DataTransfer> findByDestinationProductAndTime(final Destination d,
@@ -192,7 +192,7 @@ public class DataTransferHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<DataTransfer> findByDestinationProductAndTimeOnDate(final Destination d,
@@ -214,7 +214,7 @@ public class DataTransferHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<DataTransfer> findByDestinationNameProductAndTimeOnDate(final String dname,
@@ -236,7 +236,7 @@ public class DataTransferHome extends ModelHomeBase {
      *
      * @return the not done transfer count
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final int getNotDoneTransferCount(final String dname, final String product, final String time,
@@ -258,7 +258,7 @@ public class DataTransferHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<DataTransferLightBean> findByHostAndDate(final Host h, final Date date)
@@ -276,7 +276,7 @@ public class DataTransferHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<DataTransfer> findByDataFile(final DataFile d, final boolean includeDeleted)
@@ -294,7 +294,7 @@ public class DataTransferHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<DataTransfer> findByTransferServerOnDate(final TransferServer s, final Date date)
@@ -318,7 +318,7 @@ public class DataTransferHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<DataTransfer> findByStatusIdAndDate(final String id, final Date d,
@@ -339,7 +339,7 @@ public class DataTransferHome extends ModelHomeBase {
      *
      * @return A Collection of DataTransfers
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             If anything fails while searching.
      */
     public static final Collection<DataTransfer> findByDestinationAndIdentity(final String destination,
@@ -371,7 +371,7 @@ public class DataTransferHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<DataTransferLightBean> findByFilter(final String destinationName,
@@ -404,7 +404,7 @@ public class DataTransferHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<DataTransferLightBean> findByFilter(final String destinationName,
@@ -436,7 +436,7 @@ public class DataTransferHome extends ModelHomeBase {
      *
      * @return the count by filter
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<Pair> getCountByFilter(final String countOfWhat, final String destinationName,
@@ -468,7 +468,7 @@ public class DataTransferHome extends ModelHomeBase {
      *
      * @return the count by filter for non privileged users
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<Pair> getCountByFilterForNonPrivilegedUsers(final String countOfWhat,
@@ -499,7 +499,7 @@ public class DataTransferHome extends ModelHomeBase {
      *
      * @return the count by filter
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<Pair> getCountByFilter(final String countOfWhat, final String destinationName,
@@ -529,7 +529,7 @@ public class DataTransferHome extends ModelHomeBase {
      *
      * @return the count by filter for non privileged users
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<Pair> getCountByFilterForNonPrivilegedUsers(final String countOfWhat,
@@ -549,7 +549,7 @@ public class DataTransferHome extends ModelHomeBase {
      *
      * @return Collection of transfers (any day) which are deemed as problematic for this destination.
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<DataTransfer> findBadByDestination(final Destination d) throws TransferException {
@@ -564,7 +564,7 @@ public class DataTransferHome extends ModelHomeBase {
      *
      * @return the int
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final int findBadCountByDestination(final Destination d) throws TransferException {
@@ -583,7 +583,7 @@ public class DataTransferHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection find(final ModelSearch search) throws TransferException {

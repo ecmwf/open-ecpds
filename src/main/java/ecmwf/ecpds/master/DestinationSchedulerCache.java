@@ -93,7 +93,7 @@ public final class DestinationSchedulerCache implements Serializable, Cloneable 
      *
      * @return the monitor manager
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
      */
     public MonitorManager getMonitorManager() throws MasterException {
@@ -194,7 +194,7 @@ public final class DestinationSchedulerCache implements Serializable, Cloneable 
      *
      * @return the destination step
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
      */
     public int getDestinationStep() throws MasterException {
@@ -219,7 +219,7 @@ public final class DestinationSchedulerCache implements Serializable, Cloneable 
      *
      * @return the destination size
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
      */
     public int getDestinationSize() throws MasterException {
@@ -244,7 +244,7 @@ public final class DestinationSchedulerCache implements Serializable, Cloneable 
      *
      * @return the destination start date
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
      */
     public Date getDestinationStartDate() throws MasterException {
@@ -284,9 +284,9 @@ public final class DestinationSchedulerCache implements Serializable, Cloneable 
     }
 
     /**
-     * Clone.
+     * {@inheritDoc}
      *
-     * @return the object
+     * Clone.
      */
     @Override
     public Object clone() {

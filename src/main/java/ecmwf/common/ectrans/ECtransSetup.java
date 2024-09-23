@@ -1748,7 +1748,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the result of the function execution
      *
-     * @throws ScriptException
+     * @throws javax.script.ScriptException
      *             the script exception
      */
     public <T> T eval(final Class<T> clazz, final String script) throws ScriptException {
@@ -1765,7 +1765,7 @@ public final class ECtransSetup implements Serializable {
      * @param script
      *            the name of the function
      *
-     * @throws ScriptException
+     * @throws javax.script.ScriptException
      *             the script exception
      */
     public void eval(final String script) throws ScriptException {

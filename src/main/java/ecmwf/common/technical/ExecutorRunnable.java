@@ -53,12 +53,14 @@ public abstract class ExecutorRunnable implements Runnable {
     /**
      * Process.
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     public abstract void process() throws Exception;
 
     /**
+     * {@inheritDoc}
+     *
      * Run.
      */
     @Override

@@ -27,32 +27,12 @@ package ecmwf.common.database;
  *
  * @since 2024-07-01
  */
-
 public class BrokerFactoryHibernate implements BrokerFactory {
 
     /**
-     * Inits the.
+     * {@inheritDoc}
      *
-     * @param debug
-     *            the debug
-     * @param driver
-     *            the driver
-     * @param level
-     *            the level
-     * @param protocol
-     *            the protocol
-     * @param subProtocol
-     *            the sub protocol
-     * @param alias
-     *            the alias
-     * @param user
-     *            the user
-     * @param password
-     *            the password
-     * @param dbms
-     *            the dbms
-     * @param validation
-     *            the validation
+     * Inits the.
      */
     @Override
     public void init(final boolean debug, final String driver, final String level, final String protocol,
@@ -62,12 +42,9 @@ public class BrokerFactoryHibernate implements BrokerFactory {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the broker.
-     *
-     * @return the broker
-     *
-     * @throws BrokerException
-     *             Signals that a broker exception has occurred.
      */
     @Override
     public Broker getBroker() throws BrokerException {

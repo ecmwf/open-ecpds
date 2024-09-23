@@ -48,12 +48,9 @@ import ecmwf.web.services.persistence.DAOHandler;
 public class EcTransModuleDAOHandler extends PDSDAOBase implements DAOHandler {
 
     /**
+     * {@inheritDoc}
+     *
      * Creates the.
-     *
-     * @return the ec trans module
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public EcTransModule create() throws DAOException {
@@ -61,15 +58,9 @@ public class EcTransModuleDAOHandler extends PDSDAOBase implements DAOHandler {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Find by primary key.
-     *
-     * @param key
-     *            the key
-     *
-     * @return the ec trans module
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public EcTransModule findByPrimaryKey(final String key) throws DAOException {
@@ -81,15 +72,9 @@ public class EcTransModuleDAOHandler extends PDSDAOBase implements DAOHandler {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Find.
-     *
-     * @param search
-     *            the search
-     *
-     * @return the collection
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public Collection<EcTransModule> find(final ModelSearch search) throws DAOException {
@@ -110,15 +95,9 @@ public class EcTransModuleDAOHandler extends PDSDAOBase implements DAOHandler {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Delete.
-     *
-     * @param b
-     *            the b
-     * @param context
-     *            the context
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public void delete(final ModelBean b, final Object context) throws DAOException {

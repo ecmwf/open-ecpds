@@ -45,7 +45,7 @@ public interface RESTInterface {
      *
      * @return the version
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     String getVersion() throws Exception;
@@ -56,7 +56,7 @@ public interface RESTInterface {
      * @param dataFile
      *            the data file
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     void del(DataFile dataFile) throws Exception;
@@ -67,7 +67,7 @@ public interface RESTInterface {
      * @param dataTransfer
      *            the data transfer
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     void close(DataTransfer dataTransfer) throws Exception;
@@ -87,7 +87,7 @@ public interface RESTInterface {
      *
      * @return the string
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     String put(DataTransfer transfer, String fileName, long localPosn, long remotePosn) throws Exception;
@@ -98,7 +98,7 @@ public interface RESTInterface {
      * @param directories
      *            the directories
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     void purge(List<ExistingStorageDirectory> directories) throws Exception;
@@ -111,7 +111,7 @@ public interface RESTInterface {
      *
      * @return the host report
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     String getHostReport(Host host) throws Exception;
@@ -121,7 +121,7 @@ public interface RESTInterface {
      *
      * @return the mover report
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     String getMoverReport() throws Exception;
@@ -134,7 +134,7 @@ public interface RESTInterface {
      *
      * @return the ecauth token
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     ECauthToken getECauthToken(String user) throws Exception;
@@ -147,7 +147,7 @@ public interface RESTInterface {
      *
      * @return the long
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     long proxyHostIsAlive(String name) throws Exception;
@@ -159,7 +159,7 @@ public interface RESTInterface {
      * @param request
      *            the request
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     void updateDataRequest(UpdateDataRequest request) throws Exception;
@@ -171,7 +171,7 @@ public interface RESTInterface {
      * @param host
      *            the host
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     void updateData(Host host) throws Exception;
@@ -183,7 +183,7 @@ public interface RESTInterface {
      * @param host
      *            the host
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     void updateLocation(Host host) throws Exception;
@@ -194,7 +194,7 @@ public interface RESTInterface {
      * @param transfers
      *            the transfers
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     void updateDataTransfers(List<DataTransfer> transfers) throws Exception;
@@ -205,7 +205,7 @@ public interface RESTInterface {
      * @param request
      *            the request
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     void sendMessage(MonitorRequest request) throws Exception;
@@ -218,7 +218,7 @@ public interface RESTInterface {
      *
      * @return true, if is valid data file
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     boolean isValidDataFile(long dataFileId) throws Exception;

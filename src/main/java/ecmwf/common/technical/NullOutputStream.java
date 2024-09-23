@@ -59,13 +59,9 @@ public class NullOutputStream extends OutputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Write.
-     *
-     * @param i
-     *            the i
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void write(final int i) throws IOException {
@@ -82,13 +78,9 @@ public class NullOutputStream extends OutputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Write.
-     *
-     * @param b
-     *            the b
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void write(final byte b[]) throws IOException {
@@ -96,17 +88,9 @@ public class NullOutputStream extends OutputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Write.
-     *
-     * @param b
-     *            the b
-     * @param off
-     *            the off
-     * @param len
-     *            the len
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void write(final byte b[], final int off, final int len) throws IOException {
@@ -124,10 +108,9 @@ public class NullOutputStream extends OutputStream {
     }
 
     /**
-     * Close.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Close.
      */
     @Override
     public void close() throws IOException {

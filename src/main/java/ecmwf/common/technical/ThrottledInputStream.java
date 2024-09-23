@@ -83,10 +83,9 @@ public class ThrottledInputStream extends InputStream {
     }
 
     /**
-     * Close.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Close.
      */
     @Override
     public void close() throws IOException {
@@ -94,12 +93,9 @@ public class ThrottledInputStream extends InputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Read.
-     *
-     * @return the int
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int read() throws IOException {
@@ -112,15 +108,9 @@ public class ThrottledInputStream extends InputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Read.
-     *
-     * @param b
-     *            the b
-     *
-     * @return the int
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int read(final byte[] b) throws IOException {
@@ -133,19 +123,9 @@ public class ThrottledInputStream extends InputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Read.
-     *
-     * @param b
-     *            the b
-     * @param off
-     *            the off
-     * @param len
-     *            the len
-     *
-     * @return the int
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int read(final byte[] b, final int off, final int len) throws IOException {
@@ -206,9 +186,9 @@ public class ThrottledInputStream extends InputStream {
     }
 
     /**
-     * To string.
+     * {@inheritDoc}
      *
-     * @return the string
+     * To string.
      */
     @Override
     public String toString() {

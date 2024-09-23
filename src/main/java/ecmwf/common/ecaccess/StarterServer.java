@@ -111,17 +111,17 @@ public abstract class StarterServer extends CallBackObject
      * @param starter
      *            the starter
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
-     * @throws InstanceAlreadyExistsException
+     * @throws javax.management.InstanceAlreadyExistsException
      *             the instance already exists exception
-     * @throws MBeanRegistrationException
+     * @throws javax.management.MBeanRegistrationException
      *             the MBean registration exception
-     * @throws NotCompliantMBeanException
+     * @throws javax.management.NotCompliantMBeanException
      *             the not compliant m bean exception
-     * @throws MalformedObjectNameException
+     * @throws javax.management.MalformedObjectNameException
      *             the malformed object name exception
-     * @throws InstanceNotFoundException
+     * @throws javax.management.InstanceNotFoundException
      *             the instance not found exception
      */
     protected StarterServer(final Starter starter)
@@ -172,19 +172,9 @@ public abstract class StarterServer extends CallBackObject
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the attribute.
-     *
-     * @param name
-     *            the name
-     * @param value
-     *            the value
-     *
-     * @return true, if successful
-     *
-     * @throws InvalidAttributeValueException
-     *             the invalid attribute value exception
-     * @throws MBeanException
-     *             the MBean exception
      */
     @Override
     public boolean setAttribute(final String name, final Object value)
@@ -193,17 +183,9 @@ public abstract class StarterServer extends CallBackObject
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the attribute.
-     *
-     * @param attributeName
-     *            the attribute name
-     *
-     * @return the attribute
-     *
-     * @throws AttributeNotFoundException
-     *             the attribute not found exception
-     * @throws MBeanException
-     *             the MBean exception
      */
     @Override
     public Object getAttribute(final String attributeName) throws AttributeNotFoundException, MBeanException {
@@ -223,21 +205,9 @@ public abstract class StarterServer extends CallBackObject
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Invoke.
-     *
-     * @param operationName
-     *            the operation name
-     * @param params
-     *            the params
-     * @param signature
-     *            the signature
-     *
-     * @return the object
-     *
-     * @throws NoSuchMethodException
-     *             the no such method exception
-     * @throws MBeanException
-     *             the MBean exception
      */
     @Override
     public Object invoke(final String operationName, final Object[] params, final String[] signature)
@@ -281,9 +251,9 @@ public abstract class StarterServer extends CallBackObject
     }
 
     /**
-     * Gets the MBean info.
+     * {@inheritDoc}
      *
-     * @return the MBean info
+     * Gets the MBean info.
      */
     @Override
     public MBeanInfo getMBeanInfo() {
@@ -325,6 +295,8 @@ public abstract class StarterServer extends CallBackObject
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Shutdown.
      */
     @Override
@@ -386,9 +358,9 @@ public abstract class StarterServer extends CallBackObject
     }
 
     /**
-     * Gets the plugin infos.
+     * {@inheritDoc}
      *
-     * @return the plugin infos
+     * Gets the plugin infos.
      */
     @Override
     public PluginInfo[] getPluginInfos() {
@@ -405,10 +377,9 @@ public abstract class StarterServer extends CallBackObject
     }
 
     /**
-     * Handle notification.
+     * {@inheritDoc}
      *
-     * @param name
-     *            the name
+     * Handle notification.
      */
     @Override
     public void handleNotification(final String name) {

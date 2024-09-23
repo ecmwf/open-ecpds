@@ -46,15 +46,9 @@ public final class RMIServerSocketFactory extends SocketConfig
     private static final transient ServerSocketFactory _socketFactory = ServerSocketFactory.getDefault();
 
     /**
+     * {@inheritDoc}
+     *
      * Creates a new RMIServerSocket object.
-     *
-     * @param port
-     *            the port
-     *
-     * @return the server socket
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public ServerSocket createServerSocket(final int port) throws IOException {
@@ -63,12 +57,9 @@ public final class RMIServerSocketFactory extends SocketConfig
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Equals.
-     *
-     * @param o
-     *            the o
-     *
-     * @return true, if successful
      */
     @Override
     public boolean equals(final Object o) {
@@ -76,9 +67,9 @@ public final class RMIServerSocketFactory extends SocketConfig
     }
 
     /**
-     * Hash code.
+     * {@inheritDoc}
      *
-     * @return the int
+     * Hash code.
      */
     @Override
     public int hashCode() {

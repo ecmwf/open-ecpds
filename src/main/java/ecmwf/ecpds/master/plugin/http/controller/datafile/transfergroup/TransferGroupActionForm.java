@@ -352,12 +352,9 @@ public class TransferGroupActionForm extends ECMWFActionForm {
     }
 
     /**
-     * Reset.
+     * {@inheritDoc}
      *
-     * @param map
-     *            the map
-     * @param req
-     *            the req
+     * Reset.
      */
     @Override
     public void reset(final ActionMapping map, final HttpServletRequest req) {
@@ -386,7 +383,6 @@ public class TransferGroupActionForm extends ECMWFActionForm {
     /**
      * Blank the ActionForm in order to be able to insert a new element.
      */
-
     protected void resetFields() {
         this.id = "";
         this.name = "";

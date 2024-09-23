@@ -102,9 +102,9 @@ public class IncomingUserBean extends ModelBeanBase implements IncomingUser, Ojb
     }
 
     /**
-     * Gets the ojb implementation.
+     * {@inheritDoc}
      *
-     * @return the ojb implementation
+     * Gets the ojb implementation.
      */
     @Override
     public DataBaseObject getOjbImplementation() {
@@ -112,9 +112,9 @@ public class IncomingUserBean extends ModelBeanBase implements IncomingUser, Ojb
     }
 
     /**
-     * Gets the bean interface name.
+     * {@inheritDoc}
      *
-     * @return the bean interface name
+     * Gets the bean interface name.
      */
     @Override
     public String getBeanInterfaceName() {
@@ -122,9 +122,9 @@ public class IncomingUserBean extends ModelBeanBase implements IncomingUser, Ojb
     }
 
     /**
-     * Gets the id.
+     * {@inheritDoc}
      *
-     * @return the id
+     * Gets the id.
      */
     @Override
     public String getId() {
@@ -132,9 +132,9 @@ public class IncomingUserBean extends ModelBeanBase implements IncomingUser, Ojb
     }
 
     /**
-     * Gets the comment.
+     * {@inheritDoc}
      *
-     * @return the comment
+     * Gets the comment.
      */
     @Override
     public String getComment() {
@@ -142,9 +142,9 @@ public class IncomingUserBean extends ModelBeanBase implements IncomingUser, Ojb
     }
 
     /**
-     * Gets the active.
+     * {@inheritDoc}
      *
-     * @return the active
+     * Gets the active.
      */
     @Override
     public boolean getActive() {
@@ -152,9 +152,9 @@ public class IncomingUserBean extends ModelBeanBase implements IncomingUser, Ojb
     }
 
     /**
-     * Gets the checks if is synchronized.
+     * {@inheritDoc}
      *
-     * @return the checks if is synchronized
+     * Gets the checks if is synchronized.
      */
     @Override
     public boolean getIsSynchronized() {
@@ -162,9 +162,9 @@ public class IncomingUserBean extends ModelBeanBase implements IncomingUser, Ojb
     }
 
     /**
-     * Gets the last login host.
+     * {@inheritDoc}
      *
-     * @return the last login host
+     * Gets the last login host.
      */
     @Override
     public String getLastLoginHost() {
@@ -172,9 +172,9 @@ public class IncomingUserBean extends ModelBeanBase implements IncomingUser, Ojb
     }
 
     /**
-     * Gets the last login.
+     * {@inheritDoc}
      *
-     * @return the last login
+     * Gets the last login.
      */
     @Override
     public Date getLastLogin() {
@@ -182,9 +182,9 @@ public class IncomingUserBean extends ModelBeanBase implements IncomingUser, Ojb
     }
 
     /**
-     * Gets the password.
+     * {@inheritDoc}
      *
-     * @return the password
+     * Gets the password.
      */
     @Override
     public String getPassword() {
@@ -192,12 +192,9 @@ public class IncomingUserBean extends ModelBeanBase implements IncomingUser, Ojb
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the country.
-     *
-     * @return the country
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Country getCountry() throws TransferException {
@@ -205,9 +202,9 @@ public class IncomingUserBean extends ModelBeanBase implements IncomingUser, Ojb
     }
 
     /**
-     * Gets the country iso.
+     * {@inheritDoc}
      *
-     * @return the country iso
+     * Gets the country iso.
      */
     @Override
     public String getCountryIso() {
@@ -215,9 +212,9 @@ public class IncomingUserBean extends ModelBeanBase implements IncomingUser, Ojb
     }
 
     /**
-     * Gets the data.
+     * {@inheritDoc}
      *
-     * @return the data
+     * Gets the data.
      */
     @Override
     public String getData() {
@@ -225,9 +222,9 @@ public class IncomingUserBean extends ModelBeanBase implements IncomingUser, Ojb
     }
 
     /**
-     * Gets the properties.
+     * {@inheritDoc}
      *
-     * @return the properties
+     * Gets the properties.
      */
     @Override
     public String getProperties() {
@@ -235,9 +232,9 @@ public class IncomingUserBean extends ModelBeanBase implements IncomingUser, Ojb
     }
 
     /**
-     * Gets the authorized SSH keys.
+     * {@inheritDoc}
      *
-     * @return the authorized SSH keys
+     * Gets the authorized SSH keys.
      */
     @Override
     public String getAuthorizedSSHKeys() {
@@ -245,10 +242,9 @@ public class IncomingUserBean extends ModelBeanBase implements IncomingUser, Ojb
     }
 
     /**
-     * Sets the country iso.
+     * {@inheritDoc}
      *
-     * @param iso
-     *            the new country iso
+     * Sets the country iso.
      */
     @Override
     public void setCountryIso(final String iso) {
@@ -256,10 +252,9 @@ public class IncomingUserBean extends ModelBeanBase implements IncomingUser, Ojb
     }
 
     /**
-     * Sets the id.
+     * {@inheritDoc}
      *
-     * @param id
-     *            the new id
+     * Sets the id.
      */
     @Override
     public void setId(final String id) {
@@ -267,10 +262,9 @@ public class IncomingUserBean extends ModelBeanBase implements IncomingUser, Ojb
     }
 
     /**
-     * Sets the password.
+     * {@inheritDoc}
      *
-     * @param password
-     *            the new password
+     * Sets the password.
      */
     @Override
     public void setPassword(final String password) {
@@ -278,10 +272,9 @@ public class IncomingUserBean extends ModelBeanBase implements IncomingUser, Ojb
     }
 
     /**
-     * Sets the comment.
+     * {@inheritDoc}
      *
-     * @param comment
-     *            the new comment
+     * Sets the comment.
      */
     @Override
     public void setComment(final String comment) {
@@ -289,10 +282,9 @@ public class IncomingUserBean extends ModelBeanBase implements IncomingUser, Ojb
     }
 
     /**
-     * Sets the active.
+     * {@inheritDoc}
      *
-     * @param active
-     *            the new active
+     * Sets the active.
      */
     @Override
     public void setActive(final boolean active) {
@@ -300,10 +292,9 @@ public class IncomingUserBean extends ModelBeanBase implements IncomingUser, Ojb
     }
 
     /**
-     * Sets the checks if is synchronized.
+     * {@inheritDoc}
      *
-     * @param synchronised
-     *            the new checks if is synchronized
+     * Sets the checks if is synchronized.
      */
     @Override
     public void setIsSynchronized(final boolean synchronised) {
@@ -311,10 +302,9 @@ public class IncomingUserBean extends ModelBeanBase implements IncomingUser, Ojb
     }
 
     /**
-     * Sets the data.
+     * {@inheritDoc}
      *
-     * @param data
-     *            the new data
+     * Sets the data.
      */
     @Override
     public void setData(final String data) {
@@ -322,10 +312,9 @@ public class IncomingUserBean extends ModelBeanBase implements IncomingUser, Ojb
     }
 
     /**
-     * Sets the authorized SSH keys.
+     * {@inheritDoc}
      *
-     * @param authorizedSSHKeys
-     *            the new authorized SSH keys
+     * Sets the authorized SSH keys.
      */
     @Override
     public void setAuthorizedSSHKeys(final String authorizedSSHKeys) {
@@ -333,12 +322,9 @@ public class IncomingUserBean extends ModelBeanBase implements IncomingUser, Ojb
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the associated incoming policies.
-     *
-     * @return the associated incoming policies
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Collection<IncomingPolicy> getAssociatedIncomingPolicies() throws TransferException {
@@ -350,12 +336,9 @@ public class IncomingUserBean extends ModelBeanBase implements IncomingUser, Ojb
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the associated destinations.
-     *
-     * @return the associated destinations
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Collection<Destination> getAssociatedDestinations() throws TransferException {
@@ -367,12 +350,9 @@ public class IncomingUserBean extends ModelBeanBase implements IncomingUser, Ojb
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the associated operations.
-     *
-     * @return the associated operations
-     *
-     * @throws OperationException
-     *             the operation exception
      */
     @Override
     public Collection<Operation> getAssociatedOperations() throws OperationException {
@@ -388,7 +368,7 @@ public class IncomingUserBean extends ModelBeanBase implements IncomingUser, Ojb
      *
      * @return the incoming users
      *
-     * @throws IncomingUserException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.IncomingUserException
      *             the incoming user exception
      */
     public Collection<IncomingUser> getIncomingUsers() throws IncomingUserException {
@@ -396,15 +376,9 @@ public class IncomingUserBean extends ModelBeanBase implements IncomingUser, Ojb
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Close session.
-     *
-     * @param u
-     *            the u
-     * @param id
-     *            the id
-     *
-     * @throws OperationException
-     *             the operation exception
      */
     @Override
     public void closeSession(final User u, final String id) throws OperationException {
@@ -416,10 +390,9 @@ public class IncomingUserBean extends ModelBeanBase implements IncomingUser, Ojb
     }
 
     /**
-     * Adds the incoming policy.
+     * {@inheritDoc}
      *
-     * @param p
-     *            the p
+     * Adds the incoming policy.
      */
     @Override
     public void addIncomingPolicy(final IncomingPolicy p) {
@@ -427,10 +400,9 @@ public class IncomingUserBean extends ModelBeanBase implements IncomingUser, Ojb
     }
 
     /**
-     * Delete incoming policy.
+     * {@inheritDoc}
      *
-     * @param p
-     *            the p
+     * Delete incoming policy.
      */
     @Override
     public void deleteIncomingPolicy(final IncomingPolicy p) {
@@ -456,10 +428,9 @@ public class IncomingUserBean extends ModelBeanBase implements IncomingUser, Ojb
     }
 
     /**
-     * Adds the destination.
+     * {@inheritDoc}
      *
-     * @param d
-     *            the d
+     * Adds the destination.
      */
     @Override
     public void addDestination(final Destination d) {
@@ -467,10 +438,9 @@ public class IncomingUserBean extends ModelBeanBase implements IncomingUser, Ojb
     }
 
     /**
-     * Delete destination.
+     * {@inheritDoc}
      *
-     * @param d
-     *            the d
+     * Delete destination.
      */
     @Override
     public void deleteDestination(final Destination d) {
@@ -478,10 +448,9 @@ public class IncomingUserBean extends ModelBeanBase implements IncomingUser, Ojb
     }
 
     /**
-     * Adds the operation.
+     * {@inheritDoc}
      *
-     * @param o
-     *            the o
+     * Adds the operation.
      */
     @Override
     public void addOperation(final Operation o) {
@@ -489,10 +458,9 @@ public class IncomingUserBean extends ModelBeanBase implements IncomingUser, Ojb
     }
 
     /**
-     * Delete operation.
+     * {@inheritDoc}
      *
-     * @param o
-     *            the o
+     * Delete operation.
      */
     @Override
     public void deleteOperation(final Operation o) {
@@ -500,9 +468,9 @@ public class IncomingUserBean extends ModelBeanBase implements IncomingUser, Ojb
     }
 
     /**
-     * Gets the incoming connections.
+     * {@inheritDoc}
      *
-     * @return the incoming connections
+     * Gets the incoming connections.
      */
     @Override
     public Collection<IncomingConnection> getIncomingConnections() {
@@ -546,9 +514,9 @@ public class IncomingUserBean extends ModelBeanBase implements IncomingUser, Ojb
     }
 
     /**
-     * Gets the completions.
+     * {@inheritDoc}
      *
-     * @return the completions
+     * Gets the completions.
      */
     @Override
     public String getCompletions() {
@@ -556,12 +524,9 @@ public class IncomingUserBean extends ModelBeanBase implements IncomingUser, Ojb
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Equals.
-     *
-     * @param o
-     *            the o
-     *
-     * @return true, if successful
      */
     @Override
     public boolean equals(final Object o) {
@@ -581,9 +546,9 @@ public class IncomingUserBean extends ModelBeanBase implements IncomingUser, Ojb
     }
 
     /**
-     * Hash code.
+     * {@inheritDoc}
      *
-     * @return the int
+     * Hash code.
      */
     @Override
     public int hashCode() {
@@ -591,9 +556,9 @@ public class IncomingUserBean extends ModelBeanBase implements IncomingUser, Ojb
     }
 
     /**
-     * To string.
+     * {@inheritDoc}
      *
-     * @return the string
+     * To string.
      */
     @Override
     public String toString() {

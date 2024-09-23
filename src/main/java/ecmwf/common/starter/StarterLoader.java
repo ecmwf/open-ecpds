@@ -50,7 +50,7 @@ public final class StarterLoader extends ClassLoader {
      *
      * @return the class loader
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static ClassLoader getClassLoader(final String paths, final ClassLoader parent) throws IOException {
@@ -65,7 +65,7 @@ public final class StarterLoader extends ClassLoader {
      * @param parent
      *            the parent
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public StarterLoader(final String paths, final ClassLoader parent) throws IOException {
@@ -124,15 +124,9 @@ public final class StarterLoader extends ClassLoader {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Allow tracing class loading.
-     *
-     * @param name
-     *            The binary name of the class
-     *
-     * @return The resulting {@code Class} object
-     *
-     * @throws ClassNotFoundException
-     *             If the class was not found
      */
     @Override
     public Class<?> findClass(final String name) throws ClassNotFoundException {

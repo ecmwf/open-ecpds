@@ -27,7 +27,6 @@ package ecmwf.ecpds.master.plugin.http;
  *
  * @since 2024-07-01
  */
-
 public interface HandlerReceiver {
     /**
      * Register event handler.

@@ -56,13 +56,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Bind.
-     *
-     * @param bindpoint
-     *            the bindpoint
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void bind(final SocketAddress bindpoint) throws IOException {
@@ -70,10 +66,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
-     * Close.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Close.
      */
     @Override
     public void close() throws IOException {
@@ -81,13 +76,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Connect.
-     *
-     * @param endpoint
-     *            the endpoint
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void connect(final SocketAddress endpoint) throws IOException {
@@ -95,15 +86,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Connect.
-     *
-     * @param endpoint
-     *            the endpoint
-     * @param timeout
-     *            the timeout
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void connect(final SocketAddress endpoint, final int timeout) throws IOException {
@@ -111,12 +96,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Equals.
-     *
-     * @param object
-     *            the object
-     *
-     * @return true, if successful
      */
     @Override
     public boolean equals(final Object object) {
@@ -124,9 +106,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
-     * Gets the channel.
+     * {@inheritDoc}
      *
-     * @return the channel
+     * Gets the channel.
      */
     @Override
     public SocketChannel getChannel() {
@@ -134,9 +116,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
-     * Gets the inet address.
+     * {@inheritDoc}
      *
-     * @return the inet address
+     * Gets the inet address.
      */
     @Override
     public InetAddress getInetAddress() {
@@ -144,12 +126,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the input stream.
-     *
-     * @return the input stream
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public InputStream getInputStream() throws IOException {
@@ -157,12 +136,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the keep alive.
-     *
-     * @return the keep alive
-     *
-     * @throws SocketException
-     *             the socket exception
      */
     @Override
     public boolean getKeepAlive() throws SocketException {
@@ -170,9 +146,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
-     * Gets the local address.
+     * {@inheritDoc}
      *
-     * @return the local address
+     * Gets the local address.
      */
     @Override
     public InetAddress getLocalAddress() {
@@ -180,9 +156,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
-     * Gets the local port.
+     * {@inheritDoc}
      *
-     * @return the local port
+     * Gets the local port.
      */
     @Override
     public int getLocalPort() {
@@ -190,9 +166,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
-     * Gets the local socket address.
+     * {@inheritDoc}
      *
-     * @return the local socket address
+     * Gets the local socket address.
      */
     @Override
     public SocketAddress getLocalSocketAddress() {
@@ -200,12 +176,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the OOB inline.
-     *
-     * @return the OOB inline
-     *
-     * @throws SocketException
-     *             the socket exception
      */
     @Override
     public boolean getOOBInline() throws SocketException {
@@ -213,12 +186,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the output stream.
-     *
-     * @return the output stream
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public OutputStream getOutputStream() throws IOException {
@@ -226,9 +196,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
-     * Gets the port.
+     * {@inheritDoc}
      *
-     * @return the port
+     * Gets the port.
      */
     @Override
     public int getPort() {
@@ -236,12 +206,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the receive buffer size.
-     *
-     * @return the receive buffer size
-     *
-     * @throws SocketException
-     *             the socket exception
      */
     @Override
     public int getReceiveBufferSize() throws SocketException {
@@ -249,9 +216,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
-     * Gets the remote socket address.
+     * {@inheritDoc}
      *
-     * @return the remote socket address
+     * Gets the remote socket address.
      */
     @Override
     public SocketAddress getRemoteSocketAddress() {
@@ -259,12 +226,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the reuse address.
-     *
-     * @return the reuse address
-     *
-     * @throws SocketException
-     *             the socket exception
      */
     @Override
     public boolean getReuseAddress() throws SocketException {
@@ -272,12 +236,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the send buffer size.
-     *
-     * @return the send buffer size
-     *
-     * @throws SocketException
-     *             the socket exception
      */
     @Override
     public int getSendBufferSize() throws SocketException {
@@ -285,12 +246,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the so linger.
-     *
-     * @return the so linger
-     *
-     * @throws SocketException
-     *             the socket exception
      */
     @Override
     public int getSoLinger() throws SocketException {
@@ -298,12 +256,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the so timeout.
-     *
-     * @return the so timeout
-     *
-     * @throws SocketException
-     *             the socket exception
      */
     @Override
     public int getSoTimeout() throws SocketException {
@@ -311,12 +266,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the tcp no delay.
-     *
-     * @return the tcp no delay
-     *
-     * @throws SocketException
-     *             the socket exception
      */
     @Override
     public boolean getTcpNoDelay() throws SocketException {
@@ -324,12 +276,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the traffic class.
-     *
-     * @return the traffic class
-     *
-     * @throws SocketException
-     *             the socket exception
      */
     @Override
     public int getTrafficClass() throws SocketException {
@@ -337,9 +286,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
-     * Hash code.
+     * {@inheritDoc}
      *
-     * @return the int
+     * Hash code.
      */
     @Override
     public int hashCode() {
@@ -347,9 +296,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
-     * Checks if is bound.
+     * {@inheritDoc}
      *
-     * @return true, if is bound
+     * Checks if is bound.
      */
     @Override
     public boolean isBound() {
@@ -357,9 +306,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
-     * Checks if is closed.
+     * {@inheritDoc}
      *
-     * @return true, if is closed
+     * Checks if is closed.
      */
     @Override
     public boolean isClosed() {
@@ -367,9 +316,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
-     * Checks if is connected.
+     * {@inheritDoc}
      *
-     * @return true, if is connected
+     * Checks if is connected.
      */
     @Override
     public boolean isConnected() {
@@ -377,9 +326,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
-     * Checks if is input shutdown.
+     * {@inheritDoc}
      *
-     * @return true, if is input shutdown
+     * Checks if is input shutdown.
      */
     @Override
     public boolean isInputShutdown() {
@@ -387,9 +336,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
-     * Checks if is output shutdown.
+     * {@inheritDoc}
      *
-     * @return true, if is output shutdown
+     * Checks if is output shutdown.
      */
     @Override
     public boolean isOutputShutdown() {
@@ -397,13 +346,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Send urgent data.
-     *
-     * @param data
-     *            the data
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void sendUrgentData(final int data) throws IOException {
@@ -411,13 +356,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the keep alive.
-     *
-     * @param on
-     *            the new keep alive
-     *
-     * @throws SocketException
-     *             the socket exception
      */
     @Override
     public void setKeepAlive(final boolean on) throws SocketException {
@@ -425,13 +366,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the OOB inline.
-     *
-     * @param on
-     *            the new OOB inline
-     *
-     * @throws SocketException
-     *             the socket exception
      */
     @Override
     public void setOOBInline(final boolean on) throws SocketException {
@@ -439,14 +376,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
-     * Sets the performance preferences.
+     * {@inheritDoc}
      *
-     * @param connectionTime
-     *            the connection time
-     * @param latency
-     *            the latency
-     * @param bandwidth
-     *            the bandwidth
+     * Sets the performance preferences.
      */
     @Override
     public void setPerformancePreferences(final int connectionTime, final int latency, final int bandwidth) {
@@ -454,13 +386,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the receive buffer size.
-     *
-     * @param size
-     *            the new receive buffer size
-     *
-     * @throws SocketException
-     *             the socket exception
      */
     @Override
     public void setReceiveBufferSize(final int size) throws SocketException {
@@ -468,13 +396,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the reuse address.
-     *
-     * @param on
-     *            the new reuse address
-     *
-     * @throws SocketException
-     *             the socket exception
      */
     @Override
     public void setReuseAddress(final boolean on) throws SocketException {
@@ -482,13 +406,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the send buffer size.
-     *
-     * @param size
-     *            the new send buffer size
-     *
-     * @throws SocketException
-     *             the socket exception
      */
     @Override
     public void setSendBufferSize(final int size) throws SocketException {
@@ -496,15 +416,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the so linger.
-     *
-     * @param on
-     *            the on
-     * @param linger
-     *            the linger
-     *
-     * @throws SocketException
-     *             the socket exception
      */
     @Override
     public void setSoLinger(final boolean on, final int linger) throws SocketException {
@@ -512,13 +426,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the so timeout.
-     *
-     * @param timeout
-     *            the new so timeout
-     *
-     * @throws SocketException
-     *             the socket exception
      */
     @Override
     public void setSoTimeout(final int timeout) throws SocketException {
@@ -526,13 +436,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the tcp no delay.
-     *
-     * @param on
-     *            the new tcp no delay
-     *
-     * @throws SocketException
-     *             the socket exception
      */
     @Override
     public void setTcpNoDelay(final boolean on) throws SocketException {
@@ -540,13 +446,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the traffic class.
-     *
-     * @param tc
-     *            the new traffic class
-     *
-     * @throws SocketException
-     *             the socket exception
      */
     @Override
     public void setTrafficClass(final int tc) throws SocketException {
@@ -554,10 +456,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
-     * Shutdown input.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Shutdown input.
      */
     @Override
     public void shutdownInput() throws IOException {
@@ -565,10 +466,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
-     * Shutdown output.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Shutdown output.
      */
     @Override
     public void shutdownOutput() throws IOException {
@@ -576,9 +476,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
-     * To string.
+     * {@inheritDoc}
      *
-     * @return the string
+     * To string.
      */
     @Override
     public String toString() {
@@ -586,10 +486,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
-     * Adds the handshake completed listener.
+     * {@inheritDoc}
      *
-     * @param l
-     *            the l
+     * Adds the handshake completed listener.
      */
     @Override
     public void addHandshakeCompletedListener(final HandshakeCompletedListener l) {
@@ -597,9 +496,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
-     * Gets the supported protocols.
+     * {@inheritDoc}
      *
-     * @return the supported protocols
+     * Gets the supported protocols.
      */
     @Override
     public String[] getSupportedProtocols() {
@@ -607,9 +506,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
-     * Gets the enabled protocols.
+     * {@inheritDoc}
      *
-     * @return the enabled protocols
+     * Gets the enabled protocols.
      */
     @Override
     public String[] getEnabledProtocols() {
@@ -617,9 +516,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
-     * Gets the supported cipher suites.
+     * {@inheritDoc}
      *
-     * @return the supported cipher suites
+     * Gets the supported cipher suites.
      */
     @Override
     public String[] getSupportedCipherSuites() {
@@ -627,9 +526,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
-     * Gets the enabled cipher suites.
+     * {@inheritDoc}
      *
-     * @return the enabled cipher suites
+     * Gets the enabled cipher suites.
      */
     @Override
     public String[] getEnabledCipherSuites() {
@@ -637,10 +536,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
-     * Sets the enabled cipher suites.
+     * {@inheritDoc}
      *
-     * @param s
-     *            the new enabled cipher suites
+     * Sets the enabled cipher suites.
      */
     @Override
     public void setEnabledCipherSuites(final String[] s) {
@@ -648,10 +546,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
-     * Sets the enabled protocols.
+     * {@inheritDoc}
      *
-     * @param s
-     *            the new enabled protocols
+     * Sets the enabled protocols.
      */
     @Override
     public void setEnabledProtocols(final String[] s) {
@@ -659,10 +556,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
-     * Sets the use client mode.
+     * {@inheritDoc}
      *
-     * @param b
-     *            the new use client mode
+     * Sets the use client mode.
      */
     @Override
     public void setUseClientMode(final boolean b) {
@@ -670,9 +566,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
-     * Gets the use client mode.
+     * {@inheritDoc}
      *
-     * @return the use client mode
+     * Gets the use client mode.
      */
     @Override
     public boolean getUseClientMode() {
@@ -680,9 +576,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
-     * Gets the enable session creation.
+     * {@inheritDoc}
      *
-     * @return the enable session creation
+     * Gets the enable session creation.
      */
     @Override
     public boolean getEnableSessionCreation() {
@@ -690,10 +586,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
-     * Removes the handshake completed listener.
+     * {@inheritDoc}
      *
-     * @param l
-     *            the l
+     * Removes the handshake completed listener.
      */
     @Override
     public void removeHandshakeCompletedListener(final HandshakeCompletedListener l) {
@@ -701,10 +596,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
-     * Sets the enable session creation.
+     * {@inheritDoc}
      *
-     * @param b
-     *            the new enable session creation
+     * Sets the enable session creation.
      */
     @Override
     public void setEnableSessionCreation(final boolean b) {
@@ -712,10 +606,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
-     * Sets the need client auth.
+     * {@inheritDoc}
      *
-     * @param b
-     *            the new need client auth
+     * Sets the need client auth.
      */
     @Override
     public void setNeedClientAuth(final boolean b) {
@@ -723,10 +616,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
-     * Sets the want client auth.
+     * {@inheritDoc}
      *
-     * @param b
-     *            the new want client auth
+     * Sets the want client auth.
      */
     @Override
     public void setWantClientAuth(final boolean b) {
@@ -734,10 +626,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
-     * Start handshake.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Start handshake.
      */
     @Override
     public void startHandshake() throws IOException {
@@ -745,9 +636,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
-     * Gets the need client auth.
+     * {@inheritDoc}
      *
-     * @return the need client auth
+     * Gets the need client auth.
      */
     @Override
     public boolean getNeedClientAuth() {
@@ -755,9 +646,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
-     * Gets the want client auth.
+     * {@inheritDoc}
      *
-     * @return the want client auth
+     * Gets the want client auth.
      */
     @Override
     public boolean getWantClientAuth() {
@@ -765,9 +656,9 @@ public class SslSocket extends SSLSocket {
     }
 
     /**
-     * Gets the session.
+     * {@inheritDoc}
      *
-     * @return the session
+     * Gets the session.
      */
     @Override
     public SSLSession getSession() {

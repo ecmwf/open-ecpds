@@ -150,23 +150,23 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      * @param debugSqlRequests
      *            the debug sql
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
-     * @throws IllegalAccessException
+     * @throws java.lang.IllegalAccessException
      *             the illegal access exception
-     * @throws InstantiationException
+     * @throws java.lang.InstantiationException
      *             the instantiation exception
-     * @throws ClassNotFoundException
+     * @throws java.lang.ClassNotFoundException
      *             the class not found exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws IllegalArgumentException
+     * @throws java.lang.IllegalArgumentException
      *             the illegal argument exception
-     * @throws InvocationTargetException
+     * @throws java.lang.reflect.InvocationTargetException
      *             the invocation target exception
-     * @throws NoSuchMethodException
+     * @throws java.lang.NoSuchMethodException
      *             the no such method exception
-     * @throws SecurityException
+     * @throws java.lang.SecurityException
      *             the security exception
      */
     public void initialize(final String brokerProxy, final String driverClassName, final String level,
@@ -249,6 +249,8 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Close.
      */
     @Override
@@ -269,17 +271,9 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the.
-     *
-     * @param <T>
-     *            the generic type
-     * @param object
-     *            the object
-     *
-     * @return the t
-     *
-     * @throws DataBaseException
-     *             the data base exception
      */
     @Override
     protected <T extends DataBaseObject> T get(final T object) throws DataBaseException {
@@ -320,14 +314,9 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the all.
-     *
-     * @param <T>
-     *            the generic type
-     * @param target
-     *            the target
-     *
-     * @return the all
      */
     @Override
     protected <T extends DataBaseObject> DBIterator<T> getAll(final Class<T> target) {
@@ -461,12 +450,9 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
     }
 
     /**
-     * Log sql request.
+     * {@inheritDoc}
      *
-     * @param name
-     *            the name
-     * @param count
-     *            the count
+     * Log sql request.
      */
     @Override
     protected void logSqlRequest(final String name, final long count) {
@@ -483,7 +469,7 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      *
      * @return the DB result set
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
      */
     protected DBResultSet executeSelect(final String originalSql) throws SQLException {
@@ -523,9 +509,9 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      *
      * @return the byte[]
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public byte[] select(final String sql) throws SQLException, IOException {
@@ -547,7 +533,7 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      *
      * @return the string
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
      */
     public String update(final String sql) throws SQLException {
@@ -814,9 +800,9 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      *
      * @return the DB result set
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     protected DBResultSet executeSelect(final String menu, final String name) throws SQLException, IOException {
@@ -835,9 +821,9 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      *
      * @return the DB result set
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     protected DBResultSet executeSelect(final String menu, final String name, final String[] values)
@@ -859,12 +845,11 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      *
      * @return the DB iterator
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
-
     protected <T extends DataBaseObject> DBIterator<T> executeQuery(final String menu, final String name,
             final Class<T> resultClass) throws SQLException, IOException {
         return dataFile.executeQuery(menu, "query", name, resultClass);
@@ -886,12 +871,11 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      *
      * @return the DB iterator
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
-
     protected <T extends DataBaseObject> DBIterator<T> executeQuery(final String menu, final String name,
             final Class<T> resultClass, final String[] values) throws SQLException, IOException {
         return dataFile.executeQuery(menu, "query", name, resultClass, stringArrayToMapWithEscapedSQLValues(values));
@@ -907,9 +891,9 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      *
      * @return the int
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     protected int executeCountAsInt(final String menu, final String name) throws SQLException, IOException {
@@ -930,9 +914,9 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      *
      * @return the int
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     protected int executeCountAsInt(final String menu, final String name, final String[] values)
@@ -952,9 +936,9 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      *
      * @return the long
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     protected long executeCountAsLong(final String menu, final String name) throws SQLException, IOException {
@@ -975,9 +959,9 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      *
      * @return the long
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     protected long executeCountAsLong(final String menu, final String name, final String[] values)
@@ -997,9 +981,9 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      *
      * @return the int
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     protected int executeUpdate(final String menu, final String name) throws SQLException, IOException {
@@ -1018,9 +1002,9 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      *
      * @return the int
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     protected int executeUpdate(final String menu, final String name, final String[] values)
@@ -1029,17 +1013,9 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the attribute.
-     *
-     * @param attributeName
-     *            the attribute name
-     *
-     * @return the attribute
-     *
-     * @throws AttributeNotFoundException
-     *             the attribute not found exception
-     * @throws MBeanException
-     *             the MBean exception
      */
     @Override
     public Object getAttribute(final String attributeName) throws AttributeNotFoundException, MBeanException {
@@ -1074,19 +1050,9 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the attribute.
-     *
-     * @param name
-     *            the name
-     * @param value
-     *            the value
-     *
-     * @return true, if successful
-     *
-     * @throws InvalidAttributeValueException
-     *             the invalid attribute value exception
-     * @throws MBeanException
-     *             the MBean exception
      */
     @Override
     public boolean setAttribute(final String name, final Object value)
@@ -1111,9 +1077,9 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
     }
 
     /**
-     * Gets the MBean info.
+     * {@inheritDoc}
      *
-     * @return the MBean info
+     * Gets the MBean info.
      */
     @Override
     public MBeanInfo getMBeanInfo() {
@@ -1177,7 +1143,7 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      *
      * @return the time
      *
-     * @throws ParseException
+     * @throws java.text.ParseException
      *             the parse exception
      */
     public static long getTime() throws ParseException {
@@ -1194,7 +1160,7 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      *
      * @return the time
      *
-     * @throws ParseException
+     * @throws java.text.ParseException
      *             the parse exception
      */
     public static long getTime(final Date date, final Time time) throws ParseException {
@@ -1204,21 +1170,9 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Invoke.
-     *
-     * @param operationName
-     *            the operation name
-     * @param params
-     *            the params
-     * @param signature
-     *            the signature
-     *
-     * @return the object
-     *
-     * @throws NoSuchMethodException
-     *             the no such method exception
-     * @throws MBeanException
-     *             the MBean exception
      */
     @Override
     public Object invoke(final String operationName, final Object[] params, final String[] signature)
@@ -1378,7 +1332,7 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      * @param createPk
      *            the create pk
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public void insert(final DataBaseObject object, final boolean createPk) throws DataBaseException {
@@ -1395,7 +1349,7 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      * @param checkDuplicate
      *            the check duplicate
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public void insert(final DataBaseObject object, final boolean createPk, final boolean checkDuplicate)
@@ -1441,7 +1395,7 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      * @param object
      *            the object
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public void update(final DataBaseObject object) throws DataBaseException {
@@ -1526,7 +1480,7 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      * @param object
      *            the object
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public void store(final DataBaseObject object) throws DataBaseException {
@@ -1555,7 +1509,7 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      * @param object
      *            the object
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public void remove(final DataBaseObject object) throws DataBaseException {
@@ -1568,7 +1522,7 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      * @param objects
      *            the objects
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public void remove(final DataBaseObject[] objects) throws DataBaseException {
@@ -1667,7 +1621,7 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      *
      * @return the primary key values
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public Object[] getPrimaryKeyValues(final DataBaseObject object) throws DataBaseException {

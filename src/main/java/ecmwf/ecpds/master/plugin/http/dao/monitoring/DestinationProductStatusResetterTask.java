@@ -97,9 +97,9 @@ public class DestinationProductStatusResetterTask extends MBeanScheduler {
     }
 
     /**
-     * Next step.
+     * {@inheritDoc}
      *
-     * @return the int
+     * Next step.
      */
     @Override
     public int nextStep() {

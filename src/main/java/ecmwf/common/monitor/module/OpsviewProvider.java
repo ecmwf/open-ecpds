@@ -43,19 +43,9 @@ public final class OpsviewProvider implements MonitorInterface {
     private static final Logger _log = LogManager.getLogger(OpsviewProvider.class);
 
     /**
+     * {@inheritDoc}
+     *
      * Send message.
-     *
-     * @param hostname
-     *            the hostname
-     * @param service
-     *            the service
-     * @param status
-     *            the status
-     * @param message
-     *            the message
-     *
-     * @throws MonitorException
-     *             the monitor exception
      */
     @Override
     public void sendMessage(final String hostname, final String service, final int status, final String message)

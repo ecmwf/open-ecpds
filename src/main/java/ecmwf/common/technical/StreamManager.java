@@ -27,7 +27,6 @@ package ecmwf.common.technical;
  *
  * @since 2024-07-01
  */
-
 public interface StreamManager {
     /** The Constant NONE. */
     String NONE = "none";

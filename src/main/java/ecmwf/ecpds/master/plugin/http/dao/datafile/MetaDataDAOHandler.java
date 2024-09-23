@@ -57,12 +57,9 @@ public class MetaDataDAOHandler extends PDSDAOBase implements DAOHandler {
     private static final Logger log = LogManager.getLogger(MetaDataDAOHandler.class);
 
     /**
+     * {@inheritDoc}
+     *
      * Creates the.
-     *
-     * @return the meta data bean
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public MetaDataBean create() throws DAOException {
@@ -70,15 +67,9 @@ public class MetaDataDAOHandler extends PDSDAOBase implements DAOHandler {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Find by primary key.
-     *
-     * @param key
-     *            the key
-     *
-     * @return the meta data
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public MetaData findByPrimaryKey(final String key) throws DAOException {
@@ -90,15 +81,9 @@ public class MetaDataDAOHandler extends PDSDAOBase implements DAOHandler {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Find.
-     *
-     * @param search
-     *            the search
-     *
-     * @return the collection
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public Collection<MetaData> find(final ModelSearch search) throws DAOException {

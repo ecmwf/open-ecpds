@@ -79,9 +79,9 @@ public class MqttPlugin extends PluginThread {
     }
 
     /**
-     * Gets the plugin name.
+     * {@inheritDoc}
      *
-     * @return the plugin name
+     * Gets the plugin name.
      */
     @Override
     public String getPluginName() {
@@ -89,9 +89,9 @@ public class MqttPlugin extends PluginThread {
     }
 
     /**
-     * Gets the version.
+     * {@inheritDoc}
      *
-     * @return the version
+     * Gets the version.
      */
     @Override
     public String getVersion() {
@@ -99,9 +99,9 @@ public class MqttPlugin extends PluginThread {
     }
 
     /**
-     * Start.
+     * {@inheritDoc}
      *
-     * @return true, if successful
+     * Start.
      */
     @Override
     public synchronized boolean start() {
@@ -182,6 +182,8 @@ public class MqttPlugin extends PluginThread {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Stop.
      */
     @Override

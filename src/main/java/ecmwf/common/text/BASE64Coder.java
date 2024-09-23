@@ -25,6 +25,8 @@ package ecmwf.common.text;
 
 /**
  * The Class BASE64Coder.
+ *
+ * @author root
  */
 public class BASE64Coder {
 
@@ -122,7 +124,7 @@ public class BASE64Coder {
      *
      * @return A String containing the decoded data.
      *
-     * @throws IllegalArgumentException
+     * @throws java.lang.IllegalArgumentException
      *             if the input is not valid BASE64 encoded data.
      */
     public static String decodeString(final String s) {
@@ -137,7 +139,7 @@ public class BASE64Coder {
      *
      * @return An array containing the decoded data bytes.
      *
-     * @throws IllegalArgumentException
+     * @throws java.lang.IllegalArgumentException
      *             if the input is not valid BASE64 encoded data.
      */
     public static byte[] decode(final String s) {
@@ -152,7 +154,7 @@ public class BASE64Coder {
      *
      * @return An array containing the decoded data bytes.
      *
-     * @throws IllegalArgumentException
+     * @throws java.lang.IllegalArgumentException
      *             if the input is not valid BASE64 encoded data.
      */
     public static byte[] decode(final char[] in) {

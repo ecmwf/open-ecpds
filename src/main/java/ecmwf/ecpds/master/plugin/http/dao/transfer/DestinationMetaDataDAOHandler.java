@@ -51,12 +51,9 @@ import ecmwf.web.services.persistence.DAOHandler;
 public class DestinationMetaDataDAOHandler extends ReadOnlyDAOHandler implements DAOHandler {
 
     /**
+     * {@inheritDoc}
+     *
      * Creates the.
-     *
-     * @return the model bean
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public ModelBean create() throws DAOException {
@@ -64,15 +61,9 @@ public class DestinationMetaDataDAOHandler extends ReadOnlyDAOHandler implements
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Find by primary key.
-     *
-     * @param key
-     *            the key
-     *
-     * @return the model bean
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public ModelBean findByPrimaryKey(final String key) throws DAOException {
@@ -80,15 +71,9 @@ public class DestinationMetaDataDAOHandler extends ReadOnlyDAOHandler implements
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Find.
-     *
-     * @param search
-     *            the search
-     *
-     * @return the collection
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public Collection<DestinationMetaData> find(final ModelSearch search) throws DAOException {

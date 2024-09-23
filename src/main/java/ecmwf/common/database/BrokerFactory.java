@@ -64,7 +64,7 @@ interface BrokerFactory {
      *
      * @return the broker
      *
-     * @throws BrokerException
+     * @throws ecmwf.common.database.BrokerException
      *             Signals that a broker exception has occurred.
      */
     Broker getBroker() throws BrokerException;

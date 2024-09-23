@@ -224,6 +224,8 @@ public final class StreamPlugThread extends ConfigurableRunnable implements Clos
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Close.
      */
     @Override
@@ -250,7 +252,7 @@ public final class StreamPlugThread extends ConfigurableRunnable implements Clos
      * @param toClose
      *            the to close
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static void plugTogether(final Socket source, final Socket target, final Closeable... toClose)
@@ -291,7 +293,7 @@ public final class StreamPlugThread extends ConfigurableRunnable implements Clos
      * @param toClose
      *            the to close
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static void plugTogether(final Socket source, final InputStream in, final OutputStream out,
@@ -329,7 +331,7 @@ public final class StreamPlugThread extends ConfigurableRunnable implements Clos
      *
      * @return the int
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static int readFully(final InputStream in, final byte[] b, final int off, final int len) throws IOException {
@@ -356,7 +358,7 @@ public final class StreamPlugThread extends ConfigurableRunnable implements Clos
      *
      * @return the long
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static long copy(final OutputStream out, final InputStream in, final int bufferSize) throws IOException {
@@ -377,7 +379,7 @@ public final class StreamPlugThread extends ConfigurableRunnable implements Clos
      *
      * @return the long
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static long copy(final OutputStream out, final InputStream in, final int bufferSize, final long size)
@@ -402,7 +404,7 @@ public final class StreamPlugThread extends ConfigurableRunnable implements Clos
      *
      * @return the long
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static long consume(final InputStream in, final int bufferSize) throws IOException {
@@ -517,7 +519,7 @@ public final class StreamPlugThread extends ConfigurableRunnable implements Clos
     /**
      * Flush the underlying output stream.
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void flush() throws IOException {
@@ -525,6 +527,8 @@ public final class StreamPlugThread extends ConfigurableRunnable implements Clos
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Configurable run.
      */
     @Override
@@ -588,7 +592,7 @@ public final class StreamPlugThread extends ConfigurableRunnable implements Clos
     }
 
     /**
-     * Converts into close.
+     * Specify which Closeable objects should be closed when the plug is closed.
      *
      * @param toClose
      *            the close
@@ -600,7 +604,7 @@ public final class StreamPlugThread extends ConfigurableRunnable implements Clos
     }
 
     /**
-     * Converts into close.
+     * Specify which Closeable object should be closed when the plug is closed.
      *
      * @param toClose
      *            the to close

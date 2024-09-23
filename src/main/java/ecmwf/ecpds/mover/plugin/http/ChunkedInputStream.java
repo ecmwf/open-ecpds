@@ -52,12 +52,9 @@ final class ChunkedInputStream extends FilterInputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Read.
-     *
-     * @return the int
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int read() throws IOException {
@@ -82,19 +79,9 @@ final class ChunkedInputStream extends FilterInputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Read.
-     *
-     * @param b
-     *            the b
-     * @param off
-     *            the off
-     * @param len
-     *            the len
-     *
-     * @return the int
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int read(final byte[] b, final int off, final int len) throws IOException {

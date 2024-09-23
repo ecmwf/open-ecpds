@@ -55,12 +55,9 @@ public class ECPDSAuthenticator implements SimpleAuthenticator {
     private static final MoverServer mover = StarterServer.getInstance(MoverServer.class);
 
     /**
-     * On connect.
+     * {@inheritDoc}
      *
-     * @param simpleAuthInput
-     *            the simple auth input
-     * @param simpleAuthOutput
-     *            the simple auth output
+     * On connect.
      */
     @Override
     public void onConnect(final SimpleAuthInput simpleAuthInput, final SimpleAuthOutput simpleAuthOutput) {

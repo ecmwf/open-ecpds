@@ -85,7 +85,7 @@ public class TransferManager implements ProgressInterface {
      *
      * @return the int
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public int waitFor(final String acknowledgement, final ProgressHandler handler) throws IOException {
@@ -154,9 +154,9 @@ public class TransferManager implements ProgressInterface {
     }
 
     /**
-     * Gets the duration.
+     * {@inheritDoc}
      *
-     * @return the duration
+     * Gets the duration.
      */
     @Override
     public long getDuration() {
@@ -165,9 +165,9 @@ public class TransferManager implements ProgressInterface {
     }
 
     /**
-     * Gets the start time.
+     * {@inheritDoc}
      *
-     * @return the start time
+     * Gets the start time.
      */
     @Override
     public long getStartTime() {
@@ -175,9 +175,9 @@ public class TransferManager implements ProgressInterface {
     }
 
     /**
-     * Gets the byte sent.
+     * {@inheritDoc}
      *
-     * @return the byte sent
+     * Gets the byte sent.
      */
     @Override
     public long getByteSent() {
@@ -194,6 +194,8 @@ public class TransferManager implements ProgressInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Close and interrupt if required.
      */
     @Override

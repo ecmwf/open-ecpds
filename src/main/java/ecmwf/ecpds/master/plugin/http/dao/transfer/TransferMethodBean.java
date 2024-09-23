@@ -57,9 +57,9 @@ public class TransferMethodBean extends ModelBeanBase implements TransferMethod,
     }
 
     /**
-     * Gets the ojb implementation.
+     * {@inheritDoc}
      *
-     * @return the ojb implementation
+     * Gets the ojb implementation.
      */
     @Override
     public DataBaseObject getOjbImplementation() {
@@ -67,9 +67,9 @@ public class TransferMethodBean extends ModelBeanBase implements TransferMethod,
     }
 
     /**
-     * Gets the bean interface name.
+     * {@inheritDoc}
      *
-     * @return the bean interface name
+     * Gets the bean interface name.
      */
     @Override
     public String getBeanInterfaceName() {
@@ -77,9 +77,9 @@ public class TransferMethodBean extends ModelBeanBase implements TransferMethod,
     }
 
     /**
-     * Gets the id.
+     * {@inheritDoc}
      *
-     * @return the id
+     * Gets the id.
      */
     @Override
     public String getId() {
@@ -87,9 +87,9 @@ public class TransferMethodBean extends ModelBeanBase implements TransferMethod,
     }
 
     /**
-     * Gets the active.
+     * {@inheritDoc}
      *
-     * @return the active
+     * Gets the active.
      */
     @Override
     public boolean getActive() {
@@ -97,9 +97,9 @@ public class TransferMethodBean extends ModelBeanBase implements TransferMethod,
     }
 
     /**
-     * Gets the name.
+     * {@inheritDoc}
      *
-     * @return the name
+     * Gets the name.
      */
     @Override
     public String getName() {
@@ -107,9 +107,9 @@ public class TransferMethodBean extends ModelBeanBase implements TransferMethod,
     }
 
     /**
-     * Gets the resolve.
+     * {@inheritDoc}
      *
-     * @return the resolve
+     * Gets the resolve.
      */
     @Override
     public boolean getResolve() {
@@ -117,9 +117,9 @@ public class TransferMethodBean extends ModelBeanBase implements TransferMethod,
     }
 
     /**
-     * Gets the restrict.
+     * {@inheritDoc}
      *
-     * @return the restrict
+     * Gets the restrict.
      */
     @Override
     public boolean getRestrict() {
@@ -127,9 +127,9 @@ public class TransferMethodBean extends ModelBeanBase implements TransferMethod,
     }
 
     /**
-     * Gets the value.
+     * {@inheritDoc}
      *
-     * @return the value
+     * Gets the value.
      */
     @Override
     public String getValue() {
@@ -137,9 +137,9 @@ public class TransferMethodBean extends ModelBeanBase implements TransferMethod,
     }
 
     /**
-     * Gets the comment.
+     * {@inheritDoc}
      *
-     * @return the comment
+     * Gets the comment.
      */
     @Override
     public String getComment() {
@@ -147,9 +147,9 @@ public class TransferMethodBean extends ModelBeanBase implements TransferMethod,
     }
 
     /**
-     * Gets the ec trans module name.
+     * {@inheritDoc}
      *
-     * @return the ec trans module name
+     * Gets the ec trans module name.
      */
     @Override
     public String getEcTransModuleName() {
@@ -157,12 +157,9 @@ public class TransferMethodBean extends ModelBeanBase implements TransferMethod,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the ec trans module.
-     *
-     * @return the ec trans module
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public EcTransModule getEcTransModule() throws TransferException {
@@ -170,10 +167,9 @@ public class TransferMethodBean extends ModelBeanBase implements TransferMethod,
     }
 
     /**
-     * Sets the active.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new active
+     * Sets the active.
      */
     @Override
     public void setActive(final boolean param) {
@@ -181,10 +177,9 @@ public class TransferMethodBean extends ModelBeanBase implements TransferMethod,
     }
 
     /**
-     * Sets the comment.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new comment
+     * Sets the comment.
      */
     @Override
     public void setComment(final String param) {
@@ -192,10 +187,9 @@ public class TransferMethodBean extends ModelBeanBase implements TransferMethod,
     }
 
     /**
-     * Sets the name.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new name
+     * Sets the name.
      */
     @Override
     public void setName(final String param) {
@@ -203,10 +197,9 @@ public class TransferMethodBean extends ModelBeanBase implements TransferMethod,
     }
 
     /**
-     * Sets the resolve.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new resolve
+     * Sets the resolve.
      */
     @Override
     public void setResolve(final boolean param) {
@@ -214,10 +207,9 @@ public class TransferMethodBean extends ModelBeanBase implements TransferMethod,
     }
 
     /**
-     * Sets the restrict.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new restrict
+     * Sets the restrict.
      */
     @Override
     public void setRestrict(final boolean param) {
@@ -225,10 +217,9 @@ public class TransferMethodBean extends ModelBeanBase implements TransferMethod,
     }
 
     /**
-     * Sets the value.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new value
+     * Sets the value.
      */
     @Override
     public void setValue(final String param) {
@@ -236,10 +227,9 @@ public class TransferMethodBean extends ModelBeanBase implements TransferMethod,
     }
 
     /**
-     * Sets the ec trans module name.
+     * {@inheritDoc}
      *
-     * @param name
-     *            the new ec trans module name
+     * Sets the ec trans module name.
      */
     @Override
     public void setEcTransModuleName(final String name) {
@@ -247,12 +237,9 @@ public class TransferMethodBean extends ModelBeanBase implements TransferMethod,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the hosts.
-     *
-     * @return the hosts
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Collection<Host> getHosts() throws TransferException {

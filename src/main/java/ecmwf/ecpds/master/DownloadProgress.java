@@ -168,6 +168,8 @@ public final class DownloadProgress implements Serializable, Closeable {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Close.
      */
     @Override
@@ -180,9 +182,9 @@ public final class DownloadProgress implements Serializable, Closeable {
     }
 
     /**
-     * To string.
+     * {@inheritDoc}
      *
-     * @return the string
+     * To string.
      */
     @Override
     public String toString() {

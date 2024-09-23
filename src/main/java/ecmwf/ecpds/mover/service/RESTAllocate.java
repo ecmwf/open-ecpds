@@ -83,7 +83,7 @@ public final class RESTAllocate implements AllocateInterface {
      * @param properties
      *            the properties
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             the IO exception
      */
     public RESTAllocate(final String url, final Properties properties) throws IOException {
@@ -106,16 +106,10 @@ public final class RESTAllocate implements AllocateInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Execute the javascript command against the _json object (e.g. json.pathspecs[0]) and expect the outcome to be a
      * String.
-     *
-     * @param command
-     *            the command
-     *
-     * @return the string
-     *
-     * @throws ScriptException
-     *             the script exception
      */
     @Override
     public String get(final String command) throws ScriptException {
@@ -124,12 +118,9 @@ public final class RESTAllocate implements AllocateInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Commit. Send the commit request using the url specified. The original _json object is sent within the request.
-     *
-     * @param url
-     *            the url
-     *
-     * @return the int
      */
     @Override
     public int commit(final String url) {

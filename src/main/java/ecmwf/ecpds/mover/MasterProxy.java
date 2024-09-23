@@ -49,7 +49,7 @@ public interface MasterProxy {
      * @param transfers
      *            the transfers
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     void updateDataTransfers(DataTransfer[] transfers) throws Exception;
@@ -62,7 +62,7 @@ public interface MasterProxy {
      *
      * @return the list of DownloadProgress to interrupt (not found on the MasterServer)
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     DownloadProgress[] updateDownloadProgress(DownloadProgress[] progress) throws Exception;
@@ -75,7 +75,7 @@ public interface MasterProxy {
      *
      * @return the long
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     long proxyHostIsAlive(String name) throws Exception;
@@ -86,7 +86,7 @@ public interface MasterProxy {
      * @param host
      *            the host
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     void updateData(Host host) throws Exception;
@@ -99,7 +99,7 @@ public interface MasterProxy {
      * @param data
      *            the host data
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     void updateData(final String hostId, final String data) throws Exception;
@@ -110,7 +110,7 @@ public interface MasterProxy {
      * @param host
      *            the host
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     void updateLocation(Host host) throws Exception;
@@ -127,7 +127,7 @@ public interface MasterProxy {
      * @param message
      *            the message
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     void sendMessage(String name, String service, int status, String message) throws Exception;
@@ -137,7 +137,7 @@ public interface MasterProxy {
      *
      * @return the data file access interface
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     DataAccessInterface getDataFileAccessInterface() throws Exception;
@@ -150,7 +150,7 @@ public interface MasterProxy {
      *
      * @return the destination
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     Destination getDestination(String name) throws Exception;
@@ -163,7 +163,7 @@ public interface MasterProxy {
      *
      * @return true, if is valid data file
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     boolean isValidDataFile(long dataFileId) throws Exception;
@@ -180,7 +180,7 @@ public interface MasterProxy {
      *
      * @return the incoming profile
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     IncomingProfile getIncomingProfile(String incomingUser, String incomingPassword, String from) throws Exception;
@@ -193,7 +193,7 @@ public interface MasterProxy {
      *
      * @return the ecauth token
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     ECauthToken getECauthToken(String user) throws Exception;

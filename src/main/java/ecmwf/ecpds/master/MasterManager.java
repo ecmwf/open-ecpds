@@ -160,7 +160,7 @@ public final class MasterManager {
      *
      * @return the db
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public static DataBaseInterface getDB() throws DataBaseException {
@@ -177,7 +177,7 @@ public final class MasterManager {
      *
      * @return the mi
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
      */
     public static ManagementInterface getMI() throws MasterException {
@@ -194,7 +194,7 @@ public final class MasterManager {
      *
      * @return the ai
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
      */
     public static DataAccessInterface getAI() throws MasterException {
@@ -211,7 +211,7 @@ public final class MasterManager {
      *
      * @return the di
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
      */
     public static DataAccessInterface getDI() throws MasterException {
@@ -240,7 +240,7 @@ public final class MasterManager {
      *
      * @return the monitoring cache
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
      */
     protected static DestinationCache getMonitoringCache(final String destinationName) throws MasterException {

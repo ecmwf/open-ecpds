@@ -113,9 +113,9 @@ public final class AttachmentAccessTicket extends AbstractTicket {
     }
 
     /**
-     * Gets the status.
+     * {@inheritDoc}
      *
-     * @return the status
+     * Gets the status.
      */
     @Override
     public String getStatus() {

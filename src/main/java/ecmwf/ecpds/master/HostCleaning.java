@@ -61,7 +61,7 @@ final class HostCleaning {
      *
      * @return the int
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public static int cleanHosts(final ECpdsBase base) throws DataBaseException {
@@ -83,7 +83,7 @@ final class HostCleaning {
      *
      * @return the int
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public static int cleanHosts(final ECpdsBase base, final String type) throws DataBaseException {
@@ -106,7 +106,7 @@ final class HostCleaning {
      * @param host
      *            the host
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public static void cleanHost(final ECpdsBase base, final Host host) throws DataBaseException {

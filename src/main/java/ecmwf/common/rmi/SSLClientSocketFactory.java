@@ -71,7 +71,7 @@ public class SSLClientSocketFactory extends SSLSocketFactory {
     /**
      * Update statistics.
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void updateStatistics() throws IOException {
@@ -99,9 +99,9 @@ public class SSLClientSocketFactory extends SSLSocketFactory {
     }
 
     /**
-     * Gets the default cipher suites.
+     * {@inheritDoc}
      *
-     * @return the default cipher suites
+     * Gets the default cipher suites.
      */
     @Override
     public String[] getDefaultCipherSuites() {
@@ -109,9 +109,9 @@ public class SSLClientSocketFactory extends SSLSocketFactory {
     }
 
     /**
-     * Gets the supported cipher suites.
+     * {@inheritDoc}
      *
-     * @return the supported cipher suites
+     * Gets the supported cipher suites.
      */
     @Override
     public String[] getSupportedCipherSuites() {
@@ -142,21 +142,9 @@ public class SSLClientSocketFactory extends SSLSocketFactory {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Creates a new SSLClientSocket object.
-     *
-     * @param socket
-     *            the socket
-     * @param host
-     *            the host
-     * @param port
-     *            the port
-     * @param autoClose
-     *            the auto close
-     *
-     * @return the socket
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public Socket createSocket(final Socket socket, final String host, final int port, final boolean autoClose)
@@ -165,17 +153,9 @@ public class SSLClientSocketFactory extends SSLSocketFactory {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Creates a new SSLClientSocket object.
-     *
-     * @param host
-     *            the host
-     * @param port
-     *            the port
-     *
-     * @return the socket
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public Socket createSocket(final String host, final int port) throws IOException {
@@ -183,21 +163,9 @@ public class SSLClientSocketFactory extends SSLSocketFactory {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Creates a new SSLClientSocket object.
-     *
-     * @param host
-     *            the host
-     * @param port
-     *            the port
-     * @param localHost
-     *            the local host
-     * @param localPort
-     *            the local port
-     *
-     * @return the socket
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public Socket createSocket(final String host, final int port, final InetAddress localHost, final int localPort)
@@ -206,17 +174,9 @@ public class SSLClientSocketFactory extends SSLSocketFactory {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Creates a new SSLClientSocket object.
-     *
-     * @param host
-     *            the host
-     * @param port
-     *            the port
-     *
-     * @return the socket
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public Socket createSocket(final InetAddress host, final int port) throws IOException {
@@ -224,21 +184,9 @@ public class SSLClientSocketFactory extends SSLSocketFactory {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Creates a new SSLClientSocket object.
-     *
-     * @param host
-     *            the host
-     * @param port
-     *            the port
-     * @param localHost
-     *            the local host
-     * @param localPort
-     *            the local port
-     *
-     * @return the socket
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public Socket createSocket(final InetAddress host, final int port, final InetAddress localHost, final int localPort)

@@ -39,9 +39,9 @@ public class RatesBean extends ModelBeanBase implements Rates {
     private final ecmwf.common.database.Rates rates;
 
     /**
-     * Gets the bean interface name.
+     * {@inheritDoc}
      *
-     * @return the bean interface name
+     * Gets the bean interface name.
      */
     @Override
     public String getBeanInterfaceName() {
@@ -59,9 +59,9 @@ public class RatesBean extends ModelBeanBase implements Rates {
     }
 
     /**
-     * Gets the date.
+     * {@inheritDoc}
      *
-     * @return the date
+     * Gets the date.
      */
     @Override
     public String getDate() {
@@ -69,9 +69,9 @@ public class RatesBean extends ModelBeanBase implements Rates {
     }
 
     /**
-     * Gets the rate.
+     * {@inheritDoc}
      *
-     * @return the rate
+     * Gets the rate.
      */
     @Override
     public double getRate() {
@@ -79,9 +79,9 @@ public class RatesBean extends ModelBeanBase implements Rates {
     }
 
     /**
-     * Gets the formatted rate.
+     * {@inheritDoc}
      *
-     * @return the formatted rate
+     * Gets the formatted rate.
      */
     @Override
     public String getFormattedRate() {
@@ -89,9 +89,9 @@ public class RatesBean extends ModelBeanBase implements Rates {
     }
 
     /**
-     * Gets the count.
+     * {@inheritDoc}
      *
-     * @return the count
+     * Gets the count.
      */
     @Override
     public long getCount() {
@@ -99,9 +99,9 @@ public class RatesBean extends ModelBeanBase implements Rates {
     }
 
     /**
-     * Gets the bytes.
+     * {@inheritDoc}
      *
-     * @return the bytes
+     * Gets the bytes.
      */
     @Override
     public long getBytes() {
@@ -109,9 +109,9 @@ public class RatesBean extends ModelBeanBase implements Rates {
     }
 
     /**
-     * Gets the formatted bytes.
+     * {@inheritDoc}
      *
-     * @return the formatted bytes
+     * Gets the formatted bytes.
      */
     @Override
     public String getFormattedBytes() {
@@ -119,9 +119,9 @@ public class RatesBean extends ModelBeanBase implements Rates {
     }
 
     /**
-     * Gets the duration.
+     * {@inheritDoc}
      *
-     * @return the duration
+     * Gets the duration.
      */
     @Override
     public long getDuration() {
@@ -129,9 +129,9 @@ public class RatesBean extends ModelBeanBase implements Rates {
     }
 
     /**
-     * Gets the formatted duration.
+     * {@inheritDoc}
      *
-     * @return the formatted duration
+     * Gets the formatted duration.
      */
     @Override
     public String getFormattedDuration() {
@@ -139,9 +139,9 @@ public class RatesBean extends ModelBeanBase implements Rates {
     }
 
     /**
-     * Gets the transfer server name.
+     * {@inheritDoc}
      *
-     * @return the transfer server name
+     * Gets the transfer server name.
      */
     @Override
     public String getTransferServerName() {
@@ -149,9 +149,9 @@ public class RatesBean extends ModelBeanBase implements Rates {
     }
 
     /**
-     * Gets the transfer group name.
+     * {@inheritDoc}
      *
-     * @return the transfer group name
+     * Gets the transfer group name.
      */
     @Override
     public String getTransferGroupName() {
@@ -159,9 +159,9 @@ public class RatesBean extends ModelBeanBase implements Rates {
     }
 
     /**
-     * Gets the file system.
+     * {@inheritDoc}
      *
-     * @return the file system
+     * Gets the file system.
      */
     @Override
     public String getFileSystem() {

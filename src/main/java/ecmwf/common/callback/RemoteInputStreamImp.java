@@ -62,7 +62,7 @@ public final class RemoteInputStreamImp extends RemoteManagement implements Remo
      * @param in
      *            the in
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     public RemoteInputStreamImp(final InputStream in) throws RemoteException {
@@ -70,9 +70,9 @@ public final class RemoteInputStreamImp extends RemoteManagement implements Remo
     }
 
     /**
-     * Alive.
+     * {@inheritDoc}
      *
-     * @return true, if successful
+     * Alive.
      */
     @Override
     public boolean alive() {
@@ -84,12 +84,9 @@ public final class RemoteInputStreamImp extends RemoteManagement implements Remo
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Available.
-     *
-     * @return the int
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int available() throws IOException {
@@ -97,10 +94,9 @@ public final class RemoteInputStreamImp extends RemoteManagement implements Remo
     }
 
     /**
-     * Close.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Close.
      */
     @Override
     public void close() throws IOException {
@@ -112,6 +108,8 @@ public final class RemoteInputStreamImp extends RemoteManagement implements Remo
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Destroy.
      */
     @Override
@@ -120,13 +118,9 @@ public final class RemoteInputStreamImp extends RemoteManagement implements Remo
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Mark.
-     *
-     * @param readlimit
-     *            the readlimit
-     *
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public void mark(final int readlimit) throws RemoteException {
@@ -134,12 +128,9 @@ public final class RemoteInputStreamImp extends RemoteManagement implements Remo
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Mark supported.
-     *
-     * @return true, if successful
-     *
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public boolean markSupported() throws RemoteException {
@@ -147,12 +138,9 @@ public final class RemoteInputStreamImp extends RemoteManagement implements Remo
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Read.
-     *
-     * @return the int
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int read() throws IOException {
@@ -164,15 +152,9 @@ public final class RemoteInputStreamImp extends RemoteManagement implements Remo
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Read.
-     *
-     * @param len
-     *            the len
-     *
-     * @return the byte stream
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public ByteStream read(final int len) throws IOException {
@@ -185,10 +167,9 @@ public final class RemoteInputStreamImp extends RemoteManagement implements Remo
     }
 
     /**
-     * Reset.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Reset.
      */
     @Override
     public void reset() throws IOException {
@@ -196,15 +177,9 @@ public final class RemoteInputStreamImp extends RemoteManagement implements Remo
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Skip.
-     *
-     * @param n
-     *            the n
-     *
-     * @return the long
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public long skip(final long n) throws IOException {
@@ -212,10 +187,9 @@ public final class RemoteInputStreamImp extends RemoteManagement implements Remo
     }
 
     /**
-     * Finalize.
+     * {@inheritDoc}
      *
-     * @throws Throwable
-     *             the throwable
+     * Finalize.
      */
     @Override
     protected void finalize() throws Throwable {

@@ -242,7 +242,7 @@ public class UserActionForm extends ECMWFActionForm {
      * @param u
      *            the u
      *
-     * @throws ECMWFActionFormException
+     * @throws ecmwf.web.controller.ECMWFActionFormException
      *             the ECMWF action form exception
      */
     protected void populateUser(final User u) throws ECMWFActionFormException {

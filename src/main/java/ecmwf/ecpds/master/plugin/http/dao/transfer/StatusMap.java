@@ -61,12 +61,9 @@ public class StatusMap extends HashMap<String, DestinationProductStatus> {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the.
-     *
-     * @param o
-     *            the o
-     *
-     * @return the destination product status
      */
     @Override
     public DestinationProductStatus get(final Object o) {

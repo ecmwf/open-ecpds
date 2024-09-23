@@ -93,12 +93,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Rename to.
-     *
-     * @param path
-     *            the path
-     *
-     * @return true, if successful
      */
     @Override
     public boolean renameTo(final String path) {
@@ -106,9 +103,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
-     * Gets the parent.
+     * {@inheritDoc}
      *
-     * @return the parent
+     * Gets the parent.
      */
     @Override
     public String getParent() {
@@ -116,9 +113,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
-     * Gets the name.
+     * {@inheritDoc}
      *
-     * @return the name
+     * Gets the name.
      */
     @Override
     public String getName() {
@@ -126,9 +123,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
-     * Checks if is directory.
+     * {@inheritDoc}
      *
-     * @return true, if is directory
+     * Checks if is directory.
      */
     @Override
     public boolean isDirectory() {
@@ -136,9 +133,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
-     * Checks if is file.
+     * {@inheritDoc}
      *
-     * @return true, if is file
+     * Checks if is file.
      */
     @Override
     public boolean isFile() {
@@ -146,9 +143,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
-     * Exists.
+     * {@inheritDoc}
      *
-     * @return true, if successful
+     * Exists.
      */
     @Override
     public boolean exists() {
@@ -156,9 +153,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
-     * Gets the path.
+     * {@inheritDoc}
      *
-     * @return the path
+     * Gets the path.
      */
     @Override
     public String getPath() {
@@ -166,9 +163,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
-     * Gets the absolute path.
+     * {@inheritDoc}
      *
-     * @return the absolute path
+     * Gets the absolute path.
      */
     @Override
     public String getAbsolutePath() {
@@ -176,9 +173,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
-     * Gets the parent file.
+     * {@inheritDoc}
      *
-     * @return the parent file
+     * Gets the parent file.
      */
     @Override
     public GenericFile getParentFile() {
@@ -190,9 +187,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
-     * Delete.
+     * {@inheritDoc}
      *
-     * @return true, if successful
+     * Delete.
      */
     @Override
     public boolean delete() {
@@ -200,9 +197,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
-     * Can read.
+     * {@inheritDoc}
      *
-     * @return true, if successful
+     * Can read.
      */
     @Override
     public boolean canRead() {
@@ -210,9 +207,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
-     * Can write.
+     * {@inheritDoc}
      *
-     * @return true, if successful
+     * Can write.
      */
     @Override
     public boolean canWrite() {
@@ -220,9 +217,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
-     * Length.
+     * {@inheritDoc}
      *
-     * @return the long
+     * Length.
      */
     @Override
     public long length() {
@@ -230,12 +227,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Last modified.
-     *
-     * @return the long
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public long lastModified() throws IOException {
@@ -243,12 +237,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the last modified.
-     *
-     * @param time
-     *            the time
-     *
-     * @return true, if successful
      */
     @Override
     public boolean setLastModified(final long time) {
@@ -256,9 +247,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
-     * Sets the read only.
+     * {@inheritDoc}
      *
-     * @return true, if successful
+     * Sets the read only.
      */
     @Override
     public boolean setReadOnly() {
@@ -266,9 +257,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
-     * Mkdir.
+     * {@inheritDoc}
      *
-     * @return true, if successful
+     * Mkdir.
      */
     @Override
     public boolean mkdir() {
@@ -276,9 +267,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
-     * Mkdirs.
+     * {@inheritDoc}
      *
-     * @return true, if successful
+     * Mkdirs.
      */
     @Override
     public boolean mkdirs() {
@@ -286,12 +277,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * List.
-     *
-     * @param filter
-     *            the filter
-     *
-     * @return the string[]
      */
     @Override
     public String[] list(final GenericFileFilter filter) {
@@ -311,12 +299,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * List files.
-     *
-     * @param filter
-     *            the filter
-     *
-     * @return the generic file[]
      */
     @Override
     public GenericFile[] listFiles(final GenericFileFilter filter) {
@@ -332,9 +317,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
-     * Checks if is absolute.
+     * {@inheritDoc}
      *
-     * @return true, if is absolute
+     * Checks if is absolute.
      */
     @Override
     public boolean isAbsolute() {
@@ -342,12 +327,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the file.
-     *
-     * @return the file
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public File getFile() throws IOException {
@@ -355,9 +337,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
-     * List.
+     * {@inheritDoc}
      *
-     * @return the string[]
+     * List.
      */
     @Override
     public String[] list() {
@@ -365,12 +347,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * List count.
-     *
-     * @return the long
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public long listCount() throws IOException {
@@ -380,12 +359,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * List size.
-     *
-     * @return the long
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public long listSize() throws IOException {
@@ -395,9 +371,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
-     * List files.
+     * {@inheritDoc}
      *
-     * @return the generic file[]
+     * List files.
      */
     @Override
     public GenericFile[] listFiles() {
@@ -413,12 +389,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the input stream.
-     *
-     * @return the input stream
-     *
-     * @throws FileNotFoundException
-     *             the file not found exception
      */
     @Override
     public InputStream getInputStream() throws FileNotFoundException {
@@ -426,12 +399,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the output stream.
-     *
-     * @return the output stream
-     *
-     * @throws FileNotFoundException
-     *             the file not found exception
      */
     @Override
     public OutputStream getOutputStream() throws FileNotFoundException {
@@ -439,15 +409,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the output stream.
-     *
-     * @param append
-     *            the append
-     *
-     * @return the output stream
-     *
-     * @throws FileNotFoundException
-     *             the file not found exception
      */
     @Override
     public OutputStream getOutputStream(final boolean append) throws FileNotFoundException {
@@ -455,19 +419,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Transmit file.
-     *
-     * @param out
-     *            the out
-     * @param offset
-     *            the offset
-     *
-     * @return the long
-     *
-     * @throws FileNotFoundException
-     *             the file not found exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public long transmitFile(final OutputStream out, final long offset) throws IOException {
@@ -503,17 +457,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Receive file.
-     *
-     * @param in
-     *            the in
-     * @param expectedBytesCount
-     *            the expected bytes count
-     *
-     * @return the long
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public long receiveFile(final InputStream in, final long expectedBytesCount) throws IOException {

@@ -49,9 +49,9 @@ public class StatusBean extends ModelBeanBase implements Status {
     }
 
     /**
-     * Gets the bean interface name.
+     * {@inheritDoc}
      *
-     * @return the bean interface name
+     * Gets the bean interface name.
      */
     @Override
     public String getBeanInterfaceName() {
@@ -59,9 +59,9 @@ public class StatusBean extends ModelBeanBase implements Status {
     }
 
     /**
-     * Gets the id.
+     * {@inheritDoc}
      *
-     * @return the id
+     * Gets the id.
      */
     @Override
     public String getId() {
@@ -69,9 +69,9 @@ public class StatusBean extends ModelBeanBase implements Status {
     }
 
     /**
-     * Gets the name.
+     * {@inheritDoc}
      *
-     * @return the name
+     * Gets the name.
      */
     @Override
     public String getName() {

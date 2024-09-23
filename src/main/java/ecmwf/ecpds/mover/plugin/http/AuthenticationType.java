@@ -20,6 +20,8 @@ import com.google.common.base.CaseFormat;
 
 /**
  * The Enum AuthenticationType.
+ *
+ * @author root
  */
 public enum AuthenticationType {
 

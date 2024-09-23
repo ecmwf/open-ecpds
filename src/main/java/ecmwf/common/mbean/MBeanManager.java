@@ -72,15 +72,15 @@ public final class MBeanManager implements DynamicMBean {
      * @param service
      *            the service
      *
-     * @throws InstanceNotFoundException
+     * @throws javax.management.InstanceNotFoundException
      *             the instance not found exception
-     * @throws NotCompliantMBeanException
+     * @throws javax.management.NotCompliantMBeanException
      *             the not compliant m bean exception
-     * @throws InstanceAlreadyExistsException
+     * @throws javax.management.InstanceAlreadyExistsException
      *             the instance already exists exception
-     * @throws MBeanRegistrationException
+     * @throws javax.management.MBeanRegistrationException
      *             the MBean registration exception
-     * @throws MalformedObjectNameException
+     * @throws javax.management.MalformedObjectNameException
      *             the malformed object name exception
      */
     public MBeanManager(final String URL, final MBeanService service)
@@ -113,12 +113,9 @@ public final class MBeanManager implements DynamicMBean {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the attributes.
-     *
-     * @param attributeNames
-     *            the attribute names
-     *
-     * @return the attributes
      */
     @Override
     public AttributeList getAttributes(final String[] attributeNames) {
@@ -142,12 +139,9 @@ public final class MBeanManager implements DynamicMBean {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the attributes.
-     *
-     * @param attributes
-     *            the attributes
-     *
-     * @return the attribute list
      */
     @Override
     public AttributeList setAttributes(final AttributeList attributes) {
@@ -176,19 +170,9 @@ public final class MBeanManager implements DynamicMBean {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the attribute.
-     *
-     * @param attribute
-     *            the new attribute
-     *
-     * @throws AttributeNotFoundException
-     *             the attribute not found exception
-     * @throws InvalidAttributeValueException
-     *             the invalid attribute value exception
-     * @throws MBeanException
-     *             the MBean exception
-     * @throws ReflectionException
-     *             the reflection exception
      */
     @Override
     public void setAttribute(final Attribute attribute)
@@ -210,9 +194,9 @@ public final class MBeanManager implements DynamicMBean {
     }
 
     /**
-     * Gets the MBean info.
+     * {@inheritDoc}
      *
-     * @return the MBean info
+     * Gets the MBean info.
      */
     @Override
     public MBeanInfo getMBeanInfo() {
@@ -258,21 +242,9 @@ public final class MBeanManager implements DynamicMBean {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Invoke.
-     *
-     * @param operationName
-     *            the operation name
-     * @param params
-     *            the params
-     * @param signature
-     *            the signature
-     *
-     * @return the object
-     *
-     * @throws MBeanException
-     *             the MBean exception
-     * @throws ReflectionException
-     *             the reflection exception
      */
     @Override
     public Object invoke(final String operationName, final Object[] params, final String[] signature)
@@ -298,19 +270,9 @@ public final class MBeanManager implements DynamicMBean {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the attribute.
-     *
-     * @param attributeName
-     *            the attribute name
-     *
-     * @return the attribute
-     *
-     * @throws AttributeNotFoundException
-     *             the attribute not found exception
-     * @throws MBeanException
-     *             the MBean exception
-     * @throws ReflectionException
-     *             the reflection exception
      */
     @Override
     public Object getAttribute(final String attributeName)

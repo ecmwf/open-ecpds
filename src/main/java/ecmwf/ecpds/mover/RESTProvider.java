@@ -60,7 +60,7 @@ public interface RESTProvider {
      *
      * @return the REST allocate
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     RESTAllocate getRESTAllocate(final String url, Properties properties) throws IOException;
@@ -77,7 +77,7 @@ public interface RESTProvider {
      *
      * @return the REST notification
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     NotificationInterface getNotificationInterface(final String url, final String name, final String password)

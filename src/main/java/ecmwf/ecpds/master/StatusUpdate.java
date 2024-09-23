@@ -44,9 +44,9 @@ public interface StatusUpdate {
      * @param messages
      *            the messages
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     void info(String... messages) throws IOException, DataBaseException;
@@ -57,9 +57,9 @@ public interface StatusUpdate {
      * @param messages
      *            the messages
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     void warn(String... messages) throws IOException, DataBaseException;

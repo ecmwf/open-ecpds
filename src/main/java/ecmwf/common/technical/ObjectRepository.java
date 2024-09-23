@@ -117,9 +117,9 @@ public abstract class ObjectRepository {
      *
      * @return the object
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
-     * @throws ClassNotFoundException
+     * @throws java.lang.ClassNotFoundException
      *             the class not found exception
      */
     public Object get(final String key) throws IOException, ClassNotFoundException {
@@ -141,9 +141,9 @@ public abstract class ObjectRepository {
      *
      * @return the element
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
-     * @throws ClassNotFoundException
+     * @throws java.lang.ClassNotFoundException
      *             the class not found exception
      */
     public Object getElement(final File file) throws IOException, ClassNotFoundException {
@@ -188,7 +188,7 @@ public abstract class ObjectRepository {
      *
      * @return the long
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public long lastModified(final String key) throws IOException {
@@ -203,7 +203,7 @@ public abstract class ObjectRepository {
      * @param obj
      *            the obj
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void put(final String key, final Object obj) throws IOException {

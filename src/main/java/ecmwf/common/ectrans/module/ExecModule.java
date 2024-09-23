@@ -100,15 +100,9 @@ public final class ExecModule extends TransferModule {
     private ECtransSetup _setup = null;
 
     /**
+     * {@inheritDoc}
+     *
      * Connect.
-     *
-     * @param dir
-     *            the dir
-     * @param setup
-     *            the setup
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void connect(final String dir, final ECtransSetup setup) throws IOException {
@@ -133,25 +127,18 @@ public final class ExecModule extends TransferModule {
     }
 
     /**
-     * Close.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Close.
      */
     @Override
     public void close() throws IOException {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Check.
-     *
-     * @param sent
-     *            the sent
-     * @param checksum
-     *            the checksum
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void check(final long sent, final String checksum) throws IOException {
@@ -210,13 +197,9 @@ public final class ExecModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Del.
-     *
-     * @param name
-     *            the name
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void del(final String name) throws IOException {
@@ -227,19 +210,9 @@ public final class ExecModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Put.
-     *
-     * @param name
-     *            the name
-     * @param posn
-     *            the posn
-     * @param size
-     *            the size
-     *
-     * @return the output stream
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public OutputStream put(final String name, final long posn, final long size) throws IOException {
@@ -264,12 +237,9 @@ public final class ExecModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Size.
-     *
-     * @param name
-     *            the name
-     *
-     * @return the long
      */
     @Override
     public long size(final String name) {
@@ -331,17 +301,9 @@ public final class ExecModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the.
-     *
-     * @param name
-     *            the name
-     * @param posn
-     *            the posn
-     *
-     * @return the input stream
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public InputStream get(final String name, final long posn) throws IOException {

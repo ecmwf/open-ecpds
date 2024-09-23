@@ -54,7 +54,7 @@ public class EcTransModuleHome extends ModelHomeBase {
      *
      * @return the ec trans module
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final EcTransModule create() throws TransferException {
@@ -74,7 +74,7 @@ public class EcTransModuleHome extends ModelHomeBase {
      *
      * @return the ec trans module
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final EcTransModule findByPrimaryKey(final String key) throws TransferException {
@@ -91,7 +91,7 @@ public class EcTransModuleHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<EcTransModule> findAll() throws TransferException {
@@ -106,7 +106,7 @@ public class EcTransModuleHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<EcTransModule> find(final ModelSearch search) throws TransferException {

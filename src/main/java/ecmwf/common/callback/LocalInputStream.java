@@ -47,12 +47,9 @@ public final class LocalInputStream extends InputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Available.
-     *
-     * @return the int
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int available() throws IOException {
@@ -60,10 +57,9 @@ public final class LocalInputStream extends InputStream {
     }
 
     /**
-     * Close.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Close.
      */
     @Override
     public synchronized void close() throws IOException {
@@ -71,12 +67,9 @@ public final class LocalInputStream extends InputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Read.
-     *
-     * @return the int
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int read() throws IOException {
@@ -84,15 +77,9 @@ public final class LocalInputStream extends InputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Read.
-     *
-     * @param b
-     *            the b
-     *
-     * @return the int
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int read(final byte[] b) throws IOException {
@@ -100,19 +87,9 @@ public final class LocalInputStream extends InputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Read.
-     *
-     * @param b
-     *            the b
-     * @param off
-     *            the off
-     * @param len
-     *            the len
-     *
-     * @return the int
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int read(final byte[] b, final int off, int len) throws IOException {
@@ -124,10 +101,9 @@ public final class LocalInputStream extends InputStream {
     }
 
     /**
-     * Reset.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Reset.
      */
     @Override
     public void reset() throws IOException {
@@ -135,15 +111,9 @@ public final class LocalInputStream extends InputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Skip.
-     *
-     * @param n
-     *            the n
-     *
-     * @return the long
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public long skip(final long n) throws IOException {

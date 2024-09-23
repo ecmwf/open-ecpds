@@ -44,7 +44,7 @@ public class MasterConnection extends ConnectionManager {
      * @param access
      *            the access
      *
-     * @throws ConnectionException
+     * @throws ecmwf.common.ecaccess.ConnectionException
      *             the connection exception
      */
     public MasterConnection(final String host, final short port, final ClientInterface access)

@@ -104,7 +104,7 @@ public final class MonitorManager implements Serializable {
      * @param comment
      *            the comment
      *
-     * @throws MonitorException
+     * @throws ecmwf.common.monitor.MonitorException
      *             the monitor exception
      */
     public MonitorManager(final String name, final String service, final int status, final String comment)
@@ -125,7 +125,7 @@ public final class MonitorManager implements Serializable {
      * @param comment
      *            the comment
      *
-     * @throws MonitorException
+     * @throws ecmwf.common.monitor.MonitorException
      *             the monitor exception
      */
     public MonitorManager(final String name, final int status, final String comment) throws MonitorException {
@@ -174,7 +174,7 @@ public final class MonitorManager implements Serializable {
      *
      * @return the color
      *
-     * @throws MonitorException
+     * @throws ecmwf.common.monitor.MonitorException
      *             the monitor exception
      */
     public static String getColor(final int status) throws MonitorException {
@@ -245,7 +245,7 @@ public final class MonitorManager implements Serializable {
      * @param comment
      *            the comment
      *
-     * @throws MonitorException
+     * @throws ecmwf.common.monitor.MonitorException
      *             the monitor exception
      */
     public void update(final int status, final String comment) throws MonitorException {
@@ -258,7 +258,7 @@ public final class MonitorManager implements Serializable {
      * @param status
      *            the status
      *
-     * @throws MonitorException
+     * @throws ecmwf.common.monitor.MonitorException
      *             the monitor exception
      */
     public void update(final int status) throws MonitorException {
@@ -271,7 +271,7 @@ public final class MonitorManager implements Serializable {
      * @param comment
      *            the comment
      *
-     * @throws MonitorException
+     * @throws ecmwf.common.monitor.MonitorException
      *             the monitor exception
      */
     public void update(final String comment) throws MonitorException {
@@ -281,7 +281,7 @@ public final class MonitorManager implements Serializable {
     /**
      * Update.
      *
-     * @throws MonitorException
+     * @throws ecmwf.common.monitor.MonitorException
      *             the monitor exception
      */
     public void update() throws MonitorException {
@@ -330,9 +330,9 @@ public final class MonitorManager implements Serializable {
     }
 
     /**
-     * To string.
+     * {@inheritDoc}
      *
-     * @return the string
+     * To string.
      */
     @Override
     public String toString() {
@@ -345,7 +345,7 @@ public final class MonitorManager implements Serializable {
      * @param status
      *            the new status
      *
-     * @throws MonitorException
+     * @throws ecmwf.common.monitor.MonitorException
      *             the monitor exception
      */
     public void setStatus(final int status) throws MonitorException {

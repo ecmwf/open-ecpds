@@ -122,10 +122,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Sets the user.
+     * {@inheritDoc}
      *
-     * @param user
-     *            the new user
+     * Sets the user.
      */
     @Override
     public void setUser(final User user) {
@@ -133,9 +132,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the user.
+     * {@inheritDoc}
      *
-     * @return the user
+     * Gets the user.
      */
     @Override
     public User getUser() {
@@ -143,9 +142,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the bean interface name.
+     * {@inheritDoc}
      *
-     * @return the bean interface name
+     * Gets the bean interface name.
      */
     @Override
     public String getBeanInterfaceName() {
@@ -153,9 +152,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the ojb implementation.
+     * {@inheritDoc}
      *
-     * @return the ojb implementation
+     * Gets the ojb implementation.
      */
     @Override
     public DataBaseObject getOjbImplementation() {
@@ -173,9 +172,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the id.
+     * {@inheritDoc}
      *
-     * @return the id
+     * Gets the id.
      */
     @Override
     public String getId() {
@@ -183,9 +182,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the collection size.
+     * {@inheritDoc}
      *
-     * @return the collection size
+     * Gets the collection size.
      */
     @Override
     public int getCollectionSize() {
@@ -193,9 +192,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the check time.
+     * {@inheritDoc}
      *
-     * @return the check time
+     * Gets the check time.
      */
     @Override
     public Date getCheckTime() {
@@ -212,9 +211,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the check frequency.
+     * {@inheritDoc}
      *
-     * @return the check frequency
+     * Gets the check frequency.
      */
     @Override
     public long getCheckFrequency() {
@@ -222,9 +221,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the formatted check frequency.
+     * {@inheritDoc}
      *
-     * @return the formatted check frequency
+     * Gets the formatted check frequency.
      */
     @Override
     public String getFormattedCheckFrequency() {
@@ -232,9 +231,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the acquisition frequency.
+     * {@inheritDoc}
      *
-     * @return the acquisition frequency
+     * Gets the acquisition frequency.
      */
     @Override
     public long getAcquisitionFrequency() {
@@ -242,9 +241,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the formatted acquisition frequency.
+     * {@inheritDoc}
      *
-     * @return the formatted acquisition frequency
+     * Gets the formatted acquisition frequency.
      */
     @Override
     public String getFormattedAcquisitionFrequency() {
@@ -252,9 +251,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the valid.
+     * {@inheritDoc}
      *
-     * @return the valid
+     * Gets the valid.
      */
     @Override
     public boolean getValid() {
@@ -262,9 +261,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the check.
+     * {@inheritDoc}
      *
-     * @return the check
+     * Gets the check.
      */
     @Override
     public boolean getCheck() {
@@ -272,9 +271,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the check filename.
+     * {@inheritDoc}
      *
-     * @return the check filename
+     * Gets the check filename.
      */
     @Override
     public String getCheckFilename() {
@@ -282,9 +281,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the mail on success.
+     * {@inheritDoc}
      *
-     * @return the mail on success
+     * Gets the mail on success.
      */
     @Override
     public boolean getMailOnSuccess() {
@@ -292,9 +291,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the mail on error.
+     * {@inheritDoc}
      *
-     * @return the mail on error
+     * Gets the mail on error.
      */
     @Override
     public boolean getMailOnError() {
@@ -302,9 +301,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the notify once.
+     * {@inheritDoc}
      *
-     * @return the notify once
+     * Gets the notify once.
      */
     @Override
     public boolean getNotifyOnce() {
@@ -312,9 +311,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the user mail.
+     * {@inheritDoc}
      *
-     * @return the user mail
+     * Gets the user mail.
      */
     @Override
     public String getUserMail() {
@@ -322,9 +321,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the active.
+     * {@inheritDoc}
      *
-     * @return the active
+     * Gets the active.
      */
     @Override
     public boolean getActive() {
@@ -332,9 +331,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the comment.
+     * {@inheritDoc}
      *
-     * @return the comment
+     * Gets the comment.
      */
     @Override
     public String getComment() {
@@ -342,9 +341,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the connections.
+     * {@inheritDoc}
      *
-     * @return the connections
+     * Gets the connections.
      */
     @Override
     public int getConnections() {
@@ -352,9 +351,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the properties.
+     * {@inheritDoc}
      *
-     * @return the properties
+     * Gets the properties.
      */
     @Override
     public String getProperties() {
@@ -362,9 +361,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the javascript.
+     * {@inheritDoc}
      *
-     * @return the javascript
+     * Gets the javascript.
      */
     @Override
     public String getJavascript() {
@@ -372,9 +371,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the data. This is the method which is called from the JSP to get the content of the setup.
+     * {@inheritDoc}
      *
-     * @return the data
+     * Gets the data. This is the method which is called from the JSP to get the content of the setup.
      */
     @Override
     public String getData() {
@@ -382,9 +381,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the last output.
+     * {@inheritDoc}
      *
-     * @return the last output
+     * Gets the last output.
      */
     @Override
     public String getLastOutput() {
@@ -401,9 +400,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the formatted last output.
+     * {@inheritDoc}
      *
-     * @return the formatted last output
+     * Gets the formatted last output.
      */
     @Override
     public String getFormattedLastOutput() {
@@ -412,12 +411,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the ec user.
-     *
-     * @return the ec user
-     *
-     * @throws EcUserException
-     *             the ec user exception
      */
     @Override
     public EcUser getEcUser() throws EcUserException {
@@ -425,9 +421,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the EC user name.
+     * {@inheritDoc}
      *
-     * @return the EC user name
+     * Gets the EC user name.
      */
     @Override
     public String getECUserName() {
@@ -435,9 +431,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the host.
+     * {@inheritDoc}
      *
-     * @return the host
+     * Gets the host.
      */
     @Override
     public String getHost() {
@@ -445,9 +441,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the login.
+     * {@inheritDoc}
      *
-     * @return the login
+     * Gets the login.
      */
     @Override
     public String getLogin() {
@@ -455,9 +451,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the max connections.
+     * {@inheritDoc}
      *
-     * @return the max connections
+     * Gets the max connections.
      */
     @Override
     public int getMaxConnections() {
@@ -465,9 +461,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the name.
+     * {@inheritDoc}
      *
-     * @return the name
+     * Gets the name.
      */
     @Override
     public String getName() {
@@ -475,9 +471,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the passwd.
+     * {@inheritDoc}
      *
-     * @return the passwd
+     * Gets the passwd.
      */
     @Override
     public String getPasswd() {
@@ -485,9 +481,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the retry count.
+     * {@inheritDoc}
      *
-     * @return the retry count
+     * Gets the retry count.
      */
     @Override
     public int getRetryCount() {
@@ -495,9 +491,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the retry frequency.
+     * {@inheritDoc}
      *
-     * @return the retry frequency
+     * Gets the retry frequency.
      */
     @Override
     public int getRetryFrequency() {
@@ -505,9 +501,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the formatted retry frequency.
+     * {@inheritDoc}
      *
-     * @return the formatted retry frequency
+     * Gets the formatted retry frequency.
      */
     @Override
     public String getFormattedRetryFrequency() {
@@ -515,12 +511,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the transfer group.
-     *
-     * @return the transfer group
-     *
-     * @throws DataFileException
-     *             the data file exception
      */
     @Override
     public TransferGroup getTransferGroup() throws DataFileException {
@@ -528,9 +521,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the transfer group name.
+     * {@inheritDoc}
      *
-     * @return the transfer group name
+     * Gets the transfer group name.
      */
     @Override
     public String getTransferGroupName() {
@@ -538,12 +531,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the transfer method.
-     *
-     * @return the transfer method
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public TransferMethod getTransferMethod() throws TransferException {
@@ -551,9 +541,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the transfer method name.
+     * {@inheritDoc}
      *
-     * @return the transfer method name
+     * Gets the transfer method name.
      */
     @Override
     public String getTransferMethodName() {
@@ -561,12 +551,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the data transfers today.
-     *
-     * @return the data transfers today
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Collection<DataTransferLightBean> getDataTransfersToday() throws TransferException {
@@ -574,12 +561,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the allowed users.
-     *
-     * @return the allowed users
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Collection<EcUser> getAllowedUsers() throws TransferException {
@@ -591,10 +575,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Sets the check frequency.
+     * {@inheritDoc}
      *
-     * @param i
-     *            the new check frequency
+     * Sets the check frequency.
      */
     @Override
     public void setCheckFrequency(final long i) {
@@ -602,10 +585,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Sets the acquisition frequency.
+     * {@inheritDoc}
      *
-     * @param i
-     *            the new acquisition frequency
+     * Sets the acquisition frequency.
      */
     @Override
     public void setAcquisitionFrequency(final long i) {
@@ -613,10 +595,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Sets the check.
+     * {@inheritDoc}
      *
-     * @param b
-     *            the new check
+     * Sets the check.
      */
     @Override
     public void setCheck(final boolean b) {
@@ -624,10 +605,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Sets the check filename.
+     * {@inheritDoc}
      *
-     * @param s
-     *            the new check filename
+     * Sets the check filename.
      */
     @Override
     public void setCheckFilename(final String s) {
@@ -635,10 +615,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Sets the mail on success.
+     * {@inheritDoc}
      *
-     * @param b
-     *            the new mail on success
+     * Sets the mail on success.
      */
     @Override
     public void setMailOnSuccess(final boolean b) {
@@ -646,10 +625,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Sets the mail on error.
+     * {@inheritDoc}
      *
-     * @param b
-     *            the new mail on error
+     * Sets the mail on error.
      */
     @Override
     public void setMailOnError(final boolean b) {
@@ -657,10 +635,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Sets the notify once.
+     * {@inheritDoc}
      *
-     * @param b
-     *            the new notify once
+     * Sets the notify once.
      */
     @Override
     public void setNotifyOnce(final boolean b) {
@@ -668,10 +645,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Sets the user mail.
+     * {@inheritDoc}
      *
-     * @param s
-     *            the new user mail
+     * Sets the user mail.
      */
     @Override
     public void setUserMail(final String s) {
@@ -679,10 +655,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Sets the active.
+     * {@inheritDoc}
      *
-     * @param b
-     *            the new active
+     * Sets the active.
      */
     @Override
     public void setActive(final boolean b) {
@@ -690,10 +665,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Sets the comment.
+     * {@inheritDoc}
      *
-     * @param s
-     *            the new comment
+     * Sets the comment.
      */
     @Override
     public void setComment(final String s) {
@@ -701,10 +675,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Sets the data.
+     * {@inheritDoc}
      *
-     * @param s
-     *            the new data
+     * Sets the data.
      */
     @Override
     public void setData(final String s) {
@@ -712,10 +685,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Sets the EC user name.
+     * {@inheritDoc}
      *
-     * @param u
-     *            the new EC user name
+     * Sets the EC user name.
      */
     @Override
     public void setECUserName(final String u) {
@@ -723,10 +695,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Sets the host.
+     * {@inheritDoc}
      *
-     * @param s
-     *            the new host
+     * Sets the host.
      */
     @Override
     public void setHost(final String s) {
@@ -734,10 +705,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Sets the login.
+     * {@inheritDoc}
      *
-     * @param s
-     *            the new login
+     * Sets the login.
      */
     @Override
     public void setLogin(final String s) {
@@ -745,10 +715,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Sets the max connections.
+     * {@inheritDoc}
      *
-     * @param i
-     *            the new max connections
+     * Sets the max connections.
      */
     @Override
     public void setMaxConnections(final int i) {
@@ -756,10 +725,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Sets the name.
+     * {@inheritDoc}
      *
-     * @param s
-     *            the new name
+     * Sets the name.
      */
     @Override
     public void setName(final String s) {
@@ -767,10 +735,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Sets the passwd.
+     * {@inheritDoc}
      *
-     * @param s
-     *            the new passwd
+     * Sets the passwd.
      */
     @Override
     public void setPasswd(final String s) {
@@ -778,10 +745,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Sets the retry count.
+     * {@inheritDoc}
      *
-     * @param i
-     *            the new retry count
+     * Sets the retry count.
      */
     @Override
     public void setRetryCount(final int i) {
@@ -789,10 +755,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Sets the retry frequency.
+     * {@inheritDoc}
      *
-     * @param i
-     *            the new retry frequency
+     * Sets the retry frequency.
      */
     @Override
     public void setRetryFrequency(final int i) {
@@ -800,20 +765,18 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Sets the transfer method.
+     * {@inheritDoc}
      *
-     * @param m
-     *            the new transfer method
+     * Sets the transfer method.
      */
     @Override
     public void setTransferMethod(final TransferMethod m) {
     }
 
     /**
-     * Sets the transfer method name.
+     * {@inheritDoc}
      *
-     * @param s
-     *            the new transfer method name
+     * Sets the transfer method name.
      */
     @Override
     public void setTransferMethodName(final String s) {
@@ -821,20 +784,18 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Sets the transfer group.
+     * {@inheritDoc}
      *
-     * @param m
-     *            the new transfer group
+     * Sets the transfer group.
      */
     @Override
     public void setTransferGroup(final TransferGroup m) {
     }
 
     /**
-     * Sets the transfer group name.
+     * {@inheritDoc}
      *
-     * @param s
-     *            the new transfer group name
+     * Sets the transfer group name.
      */
     @Override
     public void setTransferGroupName(final String s) {
@@ -842,12 +803,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Increase priority within destination.
+     * {@inheritDoc}
      *
-     * @param d
-     *            the d
-     * @param step
-     *            the step
+     * Increase priority within destination.
      */
     @Override
     public void increasePriorityWithinDestination(final Destination d, final int step) {
@@ -856,12 +814,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Decrease priority within destination.
+     * {@inheritDoc}
      *
-     * @param d
-     *            the d
-     * @param step
-     *            the step
+     * Decrease priority within destination.
      */
     @Override
     public void decreasePriorityWithinDestination(final Destination d, final int step) {
@@ -870,10 +825,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Adds the allowed user.
+     * {@inheritDoc}
      *
-     * @param u
-     *            the u
+     * Adds the allowed user.
      */
     @Override
     public void addAllowedUser(final EcUser u) {
@@ -881,10 +835,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Delete allowed user.
+     * {@inheritDoc}
      *
-     * @param u
-     *            the u
+     * Delete allowed user.
      */
     @Override
     public void deleteAllowedUser(final EcUser u) {
@@ -892,12 +845,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Equals.
-     *
-     * @param o
-     *            the o
-     *
-     * @return true, if successful
      */
     @Override
     public boolean equals(final Object o) {
@@ -917,9 +867,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Hash code.
+     * {@inheritDoc}
      *
-     * @return the int
+     * Hash code.
      */
     @Override
     public int hashCode() {
@@ -927,9 +877,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * To string.
+     * {@inheritDoc}
      *
-     * @return the string
+     * To string.
      */
     @Override
     public String toString() {
@@ -937,9 +887,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the dir.
+     * {@inheritDoc}
      *
-     * @return the dir
+     * Gets the dir.
      */
     @Override
     public String getDir() {
@@ -947,10 +897,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Sets the dir.
+     * {@inheritDoc}
      *
-     * @param s
-     *            the new dir
+     * Sets the dir.
      */
     @Override
     public void setDir(final String s) {
@@ -958,9 +907,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the duration.
+     * {@inheritDoc}
      *
-     * @return the duration
+     * Gets the duration.
      */
     @Override
     public long getDuration() {
@@ -971,9 +920,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the formatted duration.
+     * {@inheritDoc}
      *
-     * @return the formatted duration
+     * Gets the formatted duration.
      */
     @Override
     public String getFormattedDuration() {
@@ -981,9 +930,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the sent.
+     * {@inheritDoc}
      *
-     * @return the sent
+     * Gets the sent.
      */
     @Override
     public long getSent() {
@@ -993,9 +942,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the formatted sent.
+     * {@inheritDoc}
      *
-     * @return the formatted sent
+     * Gets the formatted sent.
      */
     @Override
     public String getFormattedSent() {
@@ -1003,9 +952,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the band width.
+     * {@inheritDoc}
      *
-     * @return the band width
+     * Gets the band width.
      */
     @Override
     public long getBandWidth() {
@@ -1013,9 +962,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the formatted band width.
+     * {@inheritDoc}
      *
-     * @return the formatted band width
+     * Gets the formatted band width.
      */
     @Override
     public String getFormattedBandWidth() {
@@ -1023,9 +972,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the formatted band width in M bits per seconds.
+     * {@inheritDoc}
      *
-     * @return the formatted band width in M bits per seconds
+     * Gets the formatted band width in M bits per seconds.
      */
     @Override
     public double getFormattedBandWidthInMBitsPerSeconds() {
@@ -1033,12 +982,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the destinations.
-     *
-     * @return the destinations
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Collection<Destination> getDestinations() throws TransferException {
@@ -1046,21 +992,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Transfer.
-     *
-     * @param u
-     *            the u
-     * @param bytes
-     *            the bytes
-     * @param target
-     *            the target
-     * @param remotePos
-     *            the remote pos
-     *
-     * @return the long
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public long transfer(final User u, final byte[] bytes, final String target, final long remotePos)
@@ -1073,15 +1007,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the report.
-     *
-     * @param u
-     *            the u
-     *
-     * @return the report
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public String getReport(final User u) throws TransferException {
@@ -1093,17 +1021,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the report.
-     *
-     * @param u
-     *            the u
-     * @param proxy
-     *            the proxy
-     *
-     * @return the report
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public String getReport(final User u, final Host proxy) throws TransferException {
@@ -1116,15 +1036,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the output.
-     *
-     * @param u
-     *            the u
-     *
-     * @return the output
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public RemoteInputStream getOutput(final User u) throws TransferException {
@@ -1136,13 +1050,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Reset transfer statistics.
-     *
-     * @param u
-     *            the u
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public void resetTransferStatistics(final User u) throws TransferException {
@@ -1154,13 +1064,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Clean data window.
-     *
-     * @param u
-     *            the u
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public void cleanDataWindow(final User u) throws TransferException {
@@ -1172,12 +1078,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the change log list.
-     *
-     * @return the change log list
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Collection<ChangeLog> getChangeLogList() throws TransferException {
@@ -1185,9 +1088,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the automatic location.
+     * {@inheritDoc}
      *
-     * @return the automatic location
+     * Gets the automatic location.
      */
     @Override
     public boolean getAutomaticLocation() {
@@ -1195,10 +1098,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Sets the automatic location.
+     * {@inheritDoc}
      *
-     * @param b
-     *            the new automatic location
+     * Sets the automatic location.
      */
     @Override
     public void setAutomaticLocation(final boolean b) {
@@ -1206,9 +1108,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the latitude.
+     * {@inheritDoc}
      *
-     * @return the latitude
+     * Gets the latitude.
      */
     @Override
     public Double getLatitude() {
@@ -1216,10 +1118,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Sets the latitude.
+     * {@inheritDoc}
      *
-     * @param f
-     *            the new latitude
+     * Sets the latitude.
      */
     @Override
     public void setLatitude(final Double f) {
@@ -1227,9 +1128,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the longitude.
+     * {@inheritDoc}
      *
-     * @return the longitude
+     * Gets the longitude.
      */
     @Override
     public Double getLongitude() {
@@ -1237,10 +1138,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Sets the longitude.
+     * {@inheritDoc}
      *
-     * @param f
-     *            the new longitude
+     * Sets the longitude.
      */
     @Override
     public void setLongitude(final Double f) {
@@ -1248,9 +1148,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the nick name.
+     * {@inheritDoc}
      *
-     * @return the nick name
+     * Gets the nick name.
      */
     @Override
     public String getNickName() {
@@ -1258,10 +1158,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Sets the nick name.
+     * {@inheritDoc}
      *
-     * @param s
-     *            the new nick name
+     * Sets the nick name.
      */
     @Override
     public void setNickName(final String s) {
@@ -1269,9 +1168,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the type.
+     * {@inheritDoc}
      *
-     * @return the type
+     * Gets the type.
      */
     @Override
     public String getType() {
@@ -1279,10 +1178,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Sets the type.
+     * {@inheritDoc}
      *
-     * @param s
-     *            the new type
+     * Sets the type.
      */
     @Override
     public void setType(final String s) {
@@ -1300,9 +1198,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the filter name.
+     * {@inheritDoc}
      *
-     * @return the filter name
+     * Gets the filter name.
      */
     @Override
     public String getFilterName() {
@@ -1310,10 +1208,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Sets the filter name.
+     * {@inheritDoc}
      *
-     * @param s
-     *            the new filter name
+     * Sets the filter name.
      */
     @Override
     public void setFilterName(final String s) {
@@ -1321,9 +1218,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the network name.
+     * {@inheritDoc}
      *
-     * @return the network name
+     * Gets the network name.
      */
     @Override
     public String getNetworkName() {
@@ -1331,9 +1228,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the all networks.
+     * {@inheritDoc}
      *
-     * @return the all networks
+     * Gets the all networks.
      */
     @Override
     public List<StringPair> getAllNetworks() {
@@ -1346,12 +1243,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the transfer module names.
-     *
-     * @return the transfer module names
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public String getTransferModuleNames() throws TransferException {
@@ -1360,10 +1254,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Sets the network name.
+     * {@inheritDoc}
      *
-     * @param s
-     *            the new network name
+     * Sets the network name.
      */
     @Override
     public void setNetworkName(final String s) {
@@ -1371,9 +1264,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the network code.
+     * {@inheritDoc}
      *
-     * @return the network code
+     * Gets the network code.
      */
     @Override
     public String getNetworkCode() {
@@ -1381,10 +1274,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Sets the network code.
+     * {@inheritDoc}
      *
-     * @param s
-     *            the new network code
+     * Sets the network code.
      */
     @Override
     public void setNetworkCode(final String s) {
@@ -1437,9 +1329,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
-     * Gets the completions.
+     * {@inheritDoc}
      *
-     * @return the completions
+     * Gets the completions.
      */
     @Override
     public String getCompletions() {

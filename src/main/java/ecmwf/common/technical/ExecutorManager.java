@@ -153,7 +153,7 @@ public final class ExecutorManager<O extends ExecutorRunnable> extends Thread {
      * @param entry
      *            the entry
      *
-     * @throws InterruptedException
+     * @throws java.lang.InterruptedException
      *             the interrupted exception
      */
     public void put(final O entry) throws InterruptedException {
@@ -193,6 +193,8 @@ public final class ExecutorManager<O extends ExecutorRunnable> extends Thread {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Run.
      */
     @Override
@@ -237,7 +239,7 @@ public final class ExecutorManager<O extends ExecutorRunnable> extends Thread {
     /**
      * Stop and join.
      *
-     * @throws InterruptedException
+     * @throws java.lang.InterruptedException
      *             the interrupted exception
      */
     public void stopAndJoin() throws InterruptedException {

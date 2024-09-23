@@ -104,6 +104,9 @@ public final class PipedInputStream extends InputStream {
      *
      * @exception IOException
      *                if an I/O error occurs.
+     *
+     * @throws java.io.IOException
+     *             if any.
      */
     public PipedInputStream(final PipedOutputStream src) throws IOException {
         this(src, DEFAULT_PIPE_SIZE);
@@ -125,6 +128,9 @@ public final class PipedInputStream extends InputStream {
      *                if an I/O error occurs.
      * @exception IllegalArgumentException
      *                if <code>pipeSize <= 0</code>.
+     *
+     * @throws java.io.IOException
+     *             if any.
      */
     public PipedInputStream(final PipedOutputStream src, final int pipeSize) throws IOException {
         initPipe(pipeSize);
@@ -197,6 +203,9 @@ public final class PipedInputStream extends InputStream {
      *
      * @exception IOException
      *                if an I/O error occurs.
+     *
+     * @throws java.io.IOException
+     *             if any.
      */
     public void connect(final PipedOutputStream src) throws IOException {
         src.connect(this);
@@ -213,6 +222,9 @@ public final class PipedInputStream extends InputStream {
      * @exception IOException
      *                If the pipe is <a href=#BROKEN> <code>broken</code></a>,
      *                {@link #connect(java.io.PipedOutputStream) unconnected}, closed, or if an I/O error occurs.
+     *
+     * @throws java.io.IOException
+     *             if any.
      */
     protected synchronized void receive(final int b) throws IOException {
         checkStateForReceive();
@@ -323,11 +335,11 @@ public final class PipedInputStream extends InputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Reads the next byte of data from this piped input stream. The value byte is returned as an <code>int</code> in
      * the range <code>0</code> to <code>255</code>. This method blocks until input data is available, the end of the
      * stream is detected, or an exception is thrown.
-     *
-     * @return the next byte of data, or <code>-1</code> if the end of the stream is reached.
      *
      * @exception IOException
      *                if the pipe is {@link #connect(java.io.PipedOutputStream) unconnected}, <a href=#BROKEN>
@@ -375,21 +387,13 @@ public final class PipedInputStream extends InputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Reads up to <code>len</code> bytes of data from this piped input stream into an array of bytes. Less than
      * <code>len</code> bytes will be read if the end of the data stream is reached or if <code>len</code> exceeds the
      * pipe's buffer size. If <code>len </code> is zero, then no bytes are read and 0 is returned; otherwise, the method
      * blocks until at least 1 byte of input is available, end of the stream has been detected, or an exception is
      * thrown.
-     *
-     * @param b
-     *            the buffer into which the data is read.
-     * @param off
-     *            the start offset in the destination array <code>b</code>
-     * @param len
-     *            the maximum number of bytes read.
-     *
-     * @return the total number of bytes read into the buffer, or <code>-1</code> if there is no more data because the
-     *         end of the stream has been reached.
      *
      * @exception IOException
      *                if the pipe is <a href=#BROKEN> <code>broken</code></a>,
@@ -449,11 +453,9 @@ public final class PipedInputStream extends InputStream {
     }
 
     /**
-     * Returns the number of bytes that can be read from this input stream without blocking.
+     * {@inheritDoc}
      *
-     * @return the number of bytes that can be read from this input stream without blocking, or {@code 0} if this input
-     *         stream has been closed by invoking its {@link #close()} method, or if the pipe is
-     *         {@link #connect(java.io.PipedOutputStream) unconnected}, or <a href=#BROKEN> <code>broken</code></a>.
+     * Returns the number of bytes that can be read from this input stream without blocking.
      *
      * @since JDK1.0.2
      *
@@ -475,6 +477,8 @@ public final class PipedInputStream extends InputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Closes this piped input stream and releases any system resources associated with the stream.
      *
      * @exception IOException

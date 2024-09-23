@@ -27,7 +27,6 @@ package ecmwf.common.database;
  *
  * @since 2024-07-01
  */
-
 public class DestinationExt extends Destination {
     /** The Constant serialVersionUID. */
     private static final long serialVersionUID = 2061060538074028082L;

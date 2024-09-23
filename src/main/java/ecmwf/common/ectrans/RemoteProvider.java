@@ -73,7 +73,7 @@ public abstract class RemoteProvider {
      * @param msuser
      *            the msuser
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract void updateMSUser(MSUser msuser) throws IOException;
@@ -94,7 +94,7 @@ public abstract class RemoteProvider {
      * @param history
      *            the history
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void onClose(final ECtransHistory history) throws IOException {
@@ -134,7 +134,7 @@ public abstract class RemoteProvider {
      *
      * @return the allocate interface
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     public AllocateInterface getAllocateInterface(final String url, final Properties properties) throws Exception {
@@ -153,7 +153,7 @@ public abstract class RemoteProvider {
      *
      * @return the notification interface
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     public NotificationInterface getNotificationInterface(final String url, final String name, final String password)
@@ -169,7 +169,7 @@ public abstract class RemoteProvider {
      *
      * @return the transfer module
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     public TransferModule loadTransferModule(final ECtransModule module) throws Exception {
@@ -211,7 +211,7 @@ public abstract class RemoteProvider {
      *
      * @return the data input stream
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract InputStream getDataInputStream(Object ticket) throws IOException;
@@ -224,7 +224,7 @@ public abstract class RemoteProvider {
      *
      * @return the data output stream
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract OutputStream getDataOutputStream(Object ticket) throws IOException;
@@ -237,7 +237,7 @@ public abstract class RemoteProvider {
      *
      * @return the data input file
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public File getDataInputFile(final Object ticket) throws IOException {
@@ -252,7 +252,7 @@ public abstract class RemoteProvider {
      *
      * @return the data output file
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public File getDataOutputFile(final Object ticket) throws IOException {
@@ -267,7 +267,7 @@ public abstract class RemoteProvider {
      *
      * @return the object
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public Object getObject(final Object key) throws IOException {
@@ -282,7 +282,7 @@ public abstract class RemoteProvider {
      *
      * @return the data output file
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public String getOriginalFilename(final Object ticket) throws IOException {

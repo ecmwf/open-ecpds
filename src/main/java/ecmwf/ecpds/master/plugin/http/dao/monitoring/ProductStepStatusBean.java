@@ -95,9 +95,9 @@ public class ProductStepStatusBean extends MonitoringStatusBean implements Produ
     }
 
     /**
-     * Gets the product.
+     * {@inheritDoc}
      *
-     * @return the product
+     * Gets the product.
      */
     @Override
     public String getProduct() {
@@ -105,9 +105,9 @@ public class ProductStepStatusBean extends MonitoringStatusBean implements Produ
     }
 
     /**
-     * Gets the step.
+     * {@inheritDoc}
      *
-     * @return the step
+     * Gets the step.
      */
     @Override
     public long getStep() {
@@ -115,9 +115,9 @@ public class ProductStepStatusBean extends MonitoringStatusBean implements Produ
     }
 
     /**
-     * Gets the buffer.
+     * {@inheritDoc}
      *
-     * @return the buffer
+     * Gets the buffer.
      */
     @Override
     public long getBuffer() {
@@ -134,9 +134,9 @@ public class ProductStepStatusBean extends MonitoringStatusBean implements Produ
     }
 
     /**
-     * Gets the generation status code.
+     * {@inheritDoc}
      *
-     * @return the generation status code
+     * Gets the generation status code.
      */
     @Override
     public String getGenerationStatusCode() {
@@ -144,10 +144,9 @@ public class ProductStepStatusBean extends MonitoringStatusBean implements Produ
     }
 
     /**
-     * Sets the generation status code.
+     * {@inheritDoc}
      *
-     * @param code
-     *            the new generation status code
+     * Sets the generation status code.
      */
     @Override
     public void setGenerationStatusCode(final String code) {
@@ -155,6 +154,8 @@ public class ProductStepStatusBean extends MonitoringStatusBean implements Produ
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Refresh status.
      */
     @Override
@@ -163,10 +164,9 @@ public class ProductStepStatusBean extends MonitoringStatusBean implements Produ
     }
 
     /**
-     * Sets the generation status from code.
+     * {@inheritDoc}
      *
-     * @param code
-     *            the new generation status from code
+     * Sets the generation status from code.
      */
     @Override
     public void setGenerationStatusFromCode(final String code) {
@@ -175,9 +175,9 @@ public class ProductStepStatusBean extends MonitoringStatusBean implements Produ
     }
 
     /**
-     * Gets the minutes before schedule.
+     * {@inheritDoc}
      *
-     * @return the minutes before schedule
+     * Gets the minutes before schedule.
      */
     @Override
     public long getMinutesBeforeSchedule() {
@@ -185,10 +185,9 @@ public class ProductStepStatusBean extends MonitoringStatusBean implements Produ
     }
 
     /**
-     * Sets the last update.
+     * {@inheritDoc}
      *
-     * @param update
-     *            the new last update
+     * Sets the last update.
      */
     @Override
     public void setLastUpdate(final Date update) {
@@ -196,9 +195,9 @@ public class ProductStepStatusBean extends MonitoringStatusBean implements Produ
     }
 
     /**
-     * Gets the last update.
+     * {@inheritDoc}
      *
-     * @return the last update
+     * Gets the last update.
      */
     @Override
     public Date getLastUpdate() {
@@ -206,10 +205,9 @@ public class ProductStepStatusBean extends MonitoringStatusBean implements Produ
     }
 
     /**
-     * Sets the scheduled time.
+     * {@inheritDoc}
      *
-     * @param update
-     *            the new scheduled time
+     * Sets the scheduled time.
      */
     @Override
     public void setScheduledTime(final Date update) {
@@ -217,9 +215,9 @@ public class ProductStepStatusBean extends MonitoringStatusBean implements Produ
     }
 
     /**
-     * Gets the scheduled time.
+     * {@inheritDoc}
      *
-     * @return the scheduled time
+     * Gets the scheduled time.
      */
     @Override
     public Date getScheduledTime() {
@@ -227,9 +225,9 @@ public class ProductStepStatusBean extends MonitoringStatusBean implements Produ
     }
 
     /**
-     * Gets the generation status.
+     * {@inheritDoc}
      *
-     * @return the generation status
+     * Gets the generation status.
      */
     @Override
     public int getGenerationStatus() {
@@ -237,9 +235,9 @@ public class ProductStepStatusBean extends MonitoringStatusBean implements Produ
     }
 
     /**
-     * Gets the generation status formatted code.
+     * {@inheritDoc}
      *
-     * @return the generation status formatted code
+     * Gets the generation status formatted code.
      */
     @Override
     public String getGenerationStatusFormattedCode() {
@@ -247,10 +245,9 @@ public class ProductStepStatusBean extends MonitoringStatusBean implements Produ
     }
 
     /**
-     * Sets the generation status.
+     * {@inheritDoc}
      *
-     * @param generationStatus
-     *            the new generation status
+     * Sets the generation status.
      */
     @Override
     public void setGenerationStatus(final int generationStatus) {
@@ -258,9 +255,9 @@ public class ProductStepStatusBean extends MonitoringStatusBean implements Produ
     }
 
     /**
-     * Gets the arrival time.
+     * {@inheritDoc}
      *
-     * @return the arrival time
+     * Gets the arrival time.
      */
     @Override
     public Date getArrivalTime() {
@@ -268,9 +265,9 @@ public class ProductStepStatusBean extends MonitoringStatusBean implements Produ
     }
 
     /**
-     * Gets the type.
+     * {@inheritDoc}
      *
-     * @return the type
+     * Gets the type.
      */
     @Override
     public String getType() {
@@ -278,9 +275,9 @@ public class ProductStepStatusBean extends MonitoringStatusBean implements Produ
     }
 
     /**
-     * Gets the time.
+     * {@inheritDoc}
      *
-     * @return the time
+     * Gets the time.
      */
     @Override
     public String getTime() {
@@ -298,9 +295,9 @@ public class ProductStepStatusBean extends MonitoringStatusBean implements Produ
     }
 
     /**
-     * Gets the product time.
+     * {@inheritDoc}
      *
-     * @return the product time
+     * Gets the product time.
      */
     @Override
     public Date getProductTime() {
@@ -308,10 +305,9 @@ public class ProductStepStatusBean extends MonitoringStatusBean implements Produ
     }
 
     /**
-     * Sets the product time.
+     * {@inheritDoc}
      *
-     * @param productTime
-     *            the new product time
+     * Sets the product time.
      */
     @Override
     public void setProductTime(final Date productTime) {
@@ -319,6 +315,8 @@ public class ProductStepStatusBean extends MonitoringStatusBean implements Produ
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Reset.
      */
     @Override

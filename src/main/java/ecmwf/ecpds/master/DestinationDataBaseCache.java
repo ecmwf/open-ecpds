@@ -161,9 +161,9 @@ class DestinationDataBaseCache implements Serializable, Cloneable {
     }
 
     /**
-     * Clone.
+     * {@inheritDoc}
      *
-     * @return the object
+     * Clone.
      */
     @Override
     public Object clone() {

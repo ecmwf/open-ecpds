@@ -58,7 +58,7 @@ public abstract class ECpdsRequest implements Serializable, Cloneable {
      * @param ratio
      *            the ratio
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract void process(long ratio) throws IOException;
@@ -96,9 +96,9 @@ public abstract class ECpdsRequest implements Serializable, Cloneable {
     }
 
     /**
-     * Clone.
+     * {@inheritDoc}
      *
-     * @return the object
+     * Clone.
      */
     @Override
     public Object clone() {
@@ -111,9 +111,9 @@ public abstract class ECpdsRequest implements Serializable, Cloneable {
     }
 
     /**
-     * To string.
+     * {@inheritDoc}
      *
-     * @return the string
+     * To string.
      */
     @Override
     public String toString() {
@@ -126,7 +126,7 @@ public abstract class ECpdsRequest implements Serializable, Cloneable {
      * @param string
      *            the string
      *
-     * @throws IllegalAccessException
+     * @throws java.lang.IllegalAccessException
      *             the illegal access exception
      */
     public void fromString(final String string) throws IllegalAccessException {

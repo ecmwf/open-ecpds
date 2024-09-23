@@ -58,12 +58,9 @@ public class BoundedInputStream extends InputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Available.
-     *
-     * @return the int
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int available() throws IOException {
@@ -71,10 +68,9 @@ public class BoundedInputStream extends InputStream {
     }
 
     /**
-     * Close.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Close.
      */
     @Override
     public void close() throws IOException {
@@ -82,10 +78,9 @@ public class BoundedInputStream extends InputStream {
     }
 
     /**
-     * Mark.
+     * {@inheritDoc}
      *
-     * @param limit
-     *            the limit
+     * Mark.
      */
     @Override
     public synchronized void mark(final int limit) {
@@ -93,9 +88,9 @@ public class BoundedInputStream extends InputStream {
     }
 
     /**
-     * Mark supported.
+     * {@inheritDoc}
      *
-     * @return true, if successful
+     * Mark supported.
      */
     @Override
     public boolean markSupported() {
@@ -103,19 +98,9 @@ public class BoundedInputStream extends InputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Read.
-     *
-     * @param buf
-     *            the buf
-     * @param off
-     *            the off
-     * @param len
-     *            the len
-     *
-     * @return the int
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int read(final byte[] buf, final int off, final int len) throws IOException {
@@ -130,15 +115,9 @@ public class BoundedInputStream extends InputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Read.
-     *
-     * @param buf
-     *            the buf
-     *
-     * @return the int
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int read(final byte[] buf) throws IOException {
@@ -146,10 +125,9 @@ public class BoundedInputStream extends InputStream {
     }
 
     /**
-     * Reset.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Reset.
      */
     @Override
     public synchronized void reset() throws IOException {
@@ -157,15 +135,9 @@ public class BoundedInputStream extends InputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Skip.
-     *
-     * @param n
-     *            the n
-     *
-     * @return the long
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public long skip(final long n) throws IOException {
@@ -177,12 +149,9 @@ public class BoundedInputStream extends InputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Read.
-     *
-     * @return the int
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int read() throws IOException {

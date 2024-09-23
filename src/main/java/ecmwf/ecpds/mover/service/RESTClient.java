@@ -136,12 +136,9 @@ public final class RESTClient implements RESTInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Get the version of the remote ECaccess software (mover).
-     *
-     * @return the version
-     *
-     * @throws RestException
-     *             the rest exception
      */
     @Override
     public String getVersion() throws RestException {
@@ -151,13 +148,9 @@ public final class RESTClient implements RESTInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Delete the physical file associated to the DataFile on the mover.
-     *
-     * @param dataFile
-     *            the data file
-     *
-     * @throws RestException
-     *             the rest exception
      */
     @Override
     public void del(final DataFile dataFile) throws RestException {
@@ -178,13 +171,9 @@ public final class RESTClient implements RESTInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Stop the transmission of the DataTransfer on the mover.
-     *
-     * @param dataTransfer
-     *            the data transfer
-     *
-     * @throws RestException
-     *             the rest exception
      */
     @Override
     public void close(final DataTransfer dataTransfer) throws RestException {
@@ -210,13 +199,9 @@ public final class RESTClient implements RESTInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Purge. Request an asynchronous purge of the DataFiles on the data mover which are more than the specified date.
-     *
-     * @param directories
-     *            the directories
-     *
-     * @throws RestException
-     *             the rest exception
      */
     @Override
     public void purge(final List<ExistingStorageDirectory> directories) throws RestException {
@@ -229,15 +214,9 @@ public final class RESTClient implements RESTInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the host report. Request a report for the specified Host (e.g. traceroute, paping, mtr).
-     *
-     * @param host
-     *            the host
-     *
-     * @return the host report
-     *
-     * @throws RestException
-     *             the rest exception
      */
     @Override
     public String getHostReport(final Host host) throws RestException {
@@ -271,12 +250,9 @@ public final class RESTClient implements RESTInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the mover report. Request a report from the Data Mover (e.g. df, sar).
-     *
-     * @return the mover report
-     *
-     * @throws RestException
-     *             the rest exception
      */
     @Override
     public String getMoverReport() throws RestException {
@@ -287,21 +263,9 @@ public final class RESTClient implements RESTInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Request a transmission of the DataTransfer with the target name as specified in fileName.
-     *
-     * @param transfer
-     *            the transfer
-     * @param fileName
-     *            the file name
-     * @param localPosn
-     *            the local posn
-     * @param remotePosn
-     *            the remote posn
-     *
-     * @return the string
-     *
-     * @throws RestException
-     *             the rest exception
      */
     @Override
     public String put(final DataTransfer transfer, final String fileName, final long localPosn, final long remotePosn)
@@ -314,15 +278,9 @@ public final class RESTClient implements RESTInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Request a ecauth token to allow a connection to a ecauth compliant server.
-     *
-     * @param user
-     *            the user
-     *
-     * @return the ecauth token
-     *
-     * @throws RestException
-     *             the rest exception
      */
     @Override
     public ECauthToken getECauthToken(final String user) throws RestException {
@@ -344,15 +302,9 @@ public final class RESTClient implements RESTInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Check if the DataFile exists and is not expired.
-     *
-     * @param dataFileId
-     *            the data file id
-     *
-     * @return true, if is valid data file
-     *
-     * @throws Exception
-     *             the exception
      */
     @Override
     public boolean isValidDataFile(final long dataFileId) throws Exception {
@@ -374,15 +326,9 @@ public final class RESTClient implements RESTInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Send a live message from the ProxyHost to the Master server.
-     *
-     * @param name
-     *            the name
-     *
-     * @return the long
-     *
-     * @throws RestException
-     *             the rest exception
      */
     @Override
     public long proxyHostIsAlive(final String name) throws RestException {
@@ -405,14 +351,10 @@ public final class RESTClient implements RESTInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Request an update of the data part of the Host on the master (e.g. when the data is updated by the ectrans
      * module).
-     *
-     * @param request
-     *            the request
-     *
-     * @throws RestException
-     *             the rest exception
      */
     @Override
     public void updateDataRequest(final UpdateDataRequest request) throws RestException {
@@ -436,14 +378,10 @@ public final class RESTClient implements RESTInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Request an update of the data part of the Host on the master (e.g. when the data is updated by the ectrans
      * module).
-     *
-     * @param host
-     *            the host
-     *
-     * @throws RestException
-     *             the rest exception
      */
     @Override
     public void updateData(final Host host) throws RestException {
@@ -466,16 +404,12 @@ public final class RESTClient implements RESTInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Update location.
      *
      * Request an update of the location part of the Host on the master (e.g. when the IP is updated by the ectrans
      * module).
-     *
-     * @param host
-     *            the host
-     *
-     * @throws RestException
-     *             the rest exception
      */
     @Override
     public void updateLocation(final Host host) throws RestException {
@@ -499,13 +433,9 @@ public final class RESTClient implements RESTInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Request an update of the transfers on the master (e.g. status).
-     *
-     * @param transfers
-     *            the transfers
-     *
-     * @throws RestException
-     *             the rest exception
      */
     @Override
     public void updateDataTransfers(final List<DataTransfer> transfers) throws RestException {
@@ -530,13 +460,9 @@ public final class RESTClient implements RESTInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Send a message using Monitor.
-     *
-     * @param request
-     *            the request
-     *
-     * @throws RestException
-     *             the rest exception
      */
     @Override
     public void sendMessage(final MonitorRequest request) throws RestException {

@@ -113,7 +113,7 @@ public final class Tools {
      * @param env
      *            the env
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static void login(final Socket telnetd, final Socket client, final String login, final String password,
@@ -145,7 +145,7 @@ public final class Tools {
      * @param env
      *            the env
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static void login(final Socket telnetd, final OutputStream out, final InputStream in, final String login,
@@ -243,7 +243,7 @@ public final class Tools {
      *
      * @return the telnet wrapper
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static TelnetWrapper login(final Socket socket, final String login, final String password,
@@ -325,7 +325,7 @@ public final class Tools {
      * @param env
      *            the env
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static void ecauth(final Socket telnetd, final Socket client, final byte[] token,
@@ -347,7 +347,7 @@ public final class Tools {
      * @param env
      *            the env
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static void ecauth(final Socket telnetd, final OutputStream out, final InputStream in, final byte[] token,
@@ -489,9 +489,9 @@ public final class Tools {
      *
      * @return the x509 certificate
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
-     * @throws CertificateException
+     * @throws java.security.cert.CertificateException
      *             the certificate exception
      */
     public static X509Certificate toX509Certificate(final byte[] certificate) throws IOException, CertificateException {
@@ -506,9 +506,9 @@ public final class Tools {
      *
      * @return the x509 certificate
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
-     * @throws CertificateException
+     * @throws java.security.cert.CertificateException
      *             the certificate exception
      */
     public static X509Certificate toX509Certificate(final String certificate) throws IOException, CertificateException {
@@ -536,9 +536,9 @@ public final class Tools {
      *
      * @return the string
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
-     * @throws CertificateEncodingException
+     * @throws java.security.cert.CertificateEncodingException
      *             the certificate encoding exception
      */
     public static String toPEM(final X509Certificate certificate) throws IOException, CertificateEncodingException {
@@ -559,11 +559,11 @@ public final class Tools {
      *
      * @return the x509 certificate
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
-     * @throws CertificateEncodingException
+     * @throws java.security.cert.CertificateEncodingException
      *             the certificate encoding exception
-     * @throws CertificateException
+     * @throws java.security.cert.CertificateException
      *             the certificate exception
      */
     public static X509Certificate fromPEM(final String pem)

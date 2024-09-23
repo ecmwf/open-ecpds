@@ -107,7 +107,7 @@ public class BlobStore implements Closeable {
      *
      * @return the list
      *
-     * @throws S3Exception
+     * @throws ecmwf.ecpds.mover.plugin.http.S3Exception
      *             the s 3 exception
      */
     public List<StorageMetadata> list() throws S3Exception {
@@ -129,7 +129,7 @@ public class BlobStore implements Closeable {
      *
      * @return the list
      *
-     * @throws S3Exception
+     * @throws ecmwf.ecpds.mover.plugin.http.S3Exception
      *             the s 3 exception
      */
     public List<StorageMetadata> list(final String containerName, final ListContainerOptions options,
@@ -199,7 +199,7 @@ public class BlobStore implements Closeable {
      * @param blobNames
      *            the blob names
      *
-     * @throws S3Exception
+     * @throws ecmwf.ecpds.mover.plugin.http.S3Exception
      *             the s 3 exception
      */
     public void removeBlobs(final String containerName, final Collection<String> blobNames) throws S3Exception {
@@ -225,7 +225,7 @@ public class BlobStore implements Closeable {
      *
      * @return the blob metadata
      *
-     * @throws S3Exception
+     * @throws ecmwf.ecpds.mover.plugin.http.S3Exception
      *             the s 3 exception
      */
     public BlobMetadata blobMetadata(final String containerName, final String blobName) throws S3Exception {
@@ -252,9 +252,9 @@ public class BlobStore implements Closeable {
      *
      * @return the blob
      *
-     * @throws S3Exception
+     * @throws ecmwf.ecpds.mover.plugin.http.S3Exception
      *             the s 3 exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public Blob getBlob(final String containerName, final String blobName, final GetOptions options)
@@ -287,10 +287,9 @@ public class BlobStore implements Closeable {
     }
 
     /**
-     * Close.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Close.
      */
     @Override
     public void close() throws IOException {

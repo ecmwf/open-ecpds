@@ -67,9 +67,9 @@ public class CategoryBean extends ModelBeanBase implements WebCategory, OjbImple
     }
 
     /**
-     * Gets the bean interface name.
+     * {@inheritDoc}
      *
-     * @return the bean interface name
+     * Gets the bean interface name.
      */
     @Override
     public String getBeanInterfaceName() {
@@ -77,9 +77,9 @@ public class CategoryBean extends ModelBeanBase implements WebCategory, OjbImple
     }
 
     /**
-     * Gets the ojb implementation.
+     * {@inheritDoc}
      *
-     * @return the ojb implementation
+     * Gets the ojb implementation.
      */
     @Override
     public DataBaseObject getOjbImplementation() {
@@ -87,9 +87,9 @@ public class CategoryBean extends ModelBeanBase implements WebCategory, OjbImple
     }
 
     /**
-     * Gets the id.
+     * {@inheritDoc}
      *
-     * @return the id
+     * Gets the id.
      */
     @Override
     public String getId() {
@@ -97,9 +97,9 @@ public class CategoryBean extends ModelBeanBase implements WebCategory, OjbImple
     }
 
     /**
-     * Gets the int id.
+     * {@inheritDoc}
      *
-     * @return the int id
+     * Gets the int id.
      */
     @Override
     public int getIntId() {
@@ -107,10 +107,9 @@ public class CategoryBean extends ModelBeanBase implements WebCategory, OjbImple
     }
 
     /**
-     * Sets the id.
+     * {@inheritDoc}
      *
-     * @param id
-     *            the new id
+     * Sets the id.
      */
     @Override
     public void setId(final String id) {
@@ -118,9 +117,9 @@ public class CategoryBean extends ModelBeanBase implements WebCategory, OjbImple
     }
 
     /**
-     * Gets the name.
+     * {@inheritDoc}
      *
-     * @return the name
+     * Gets the name.
      */
     @Override
     public String getName() {
@@ -128,9 +127,9 @@ public class CategoryBean extends ModelBeanBase implements WebCategory, OjbImple
     }
 
     /**
-     * Gets the description.
+     * {@inheritDoc}
      *
-     * @return the description
+     * Gets the description.
      */
     @Override
     public String getDescription() {
@@ -138,10 +137,9 @@ public class CategoryBean extends ModelBeanBase implements WebCategory, OjbImple
     }
 
     /**
-     * Sets the description.
+     * {@inheritDoc}
      *
-     * @param d
-     *            the new description
+     * Sets the description.
      */
     @Override
     public void setDescription(final String d) {
@@ -149,10 +147,9 @@ public class CategoryBean extends ModelBeanBase implements WebCategory, OjbImple
     }
 
     /**
-     * Sets the name.
+     * {@inheritDoc}
      *
-     * @param v
-     *            the new name
+     * Sets the name.
      */
     @Override
     public void setName(final String v) {
@@ -169,12 +166,9 @@ public class CategoryBean extends ModelBeanBase implements WebCategory, OjbImple
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Checks for access.
-     *
-     * @param r
-     *            the r
-     *
-     * @return true, if successful
      */
     @Override
     public boolean hasAccess(final Resource r) {
@@ -182,12 +176,9 @@ public class CategoryBean extends ModelBeanBase implements WebCategory, OjbImple
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the users with profile.
-     *
-     * @return the users with profile
-     *
-     * @throws UserException
-     *             the user exception
      */
     @Override
     public Collection<WebUser> getUsersWithProfile() throws UserException {
@@ -195,12 +186,9 @@ public class CategoryBean extends ModelBeanBase implements WebCategory, OjbImple
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the accessible resources.
-     *
-     * @return the accessible resources
-     *
-     * @throws UserException
-     *             the user exception
      */
     @Override
     public Collection<WebResource> getAccessibleResources() throws UserException {
@@ -208,12 +196,9 @@ public class CategoryBean extends ModelBeanBase implements WebCategory, OjbImple
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Equals.
-     *
-     * @param o
-     *            the o
-     *
-     * @return true, if successful
      */
     @Override
     public boolean equals(final Object o) {
@@ -221,12 +206,9 @@ public class CategoryBean extends ModelBeanBase implements WebCategory, OjbImple
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Equals.
-     *
-     * @param c
-     *            the c
-     *
-     * @return true, if successful
      */
     @Override
     public boolean equals(final ecmwf.web.model.users.Category c) {
@@ -234,9 +216,9 @@ public class CategoryBean extends ModelBeanBase implements WebCategory, OjbImple
     }
 
     /**
-     * Hash code.
+     * {@inheritDoc}
      *
-     * @return the int
+     * Hash code.
      */
     @Override
     public int hashCode() {
@@ -244,12 +226,9 @@ public class CategoryBean extends ModelBeanBase implements WebCategory, OjbImple
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Dump.
-     *
-     * @param format
-     *            the format
-     *
-     * @return the string
      */
     @Override
     public String dump(final String format) {
@@ -257,10 +236,9 @@ public class CategoryBean extends ModelBeanBase implements WebCategory, OjbImple
     }
 
     /**
-     * Delete resource.
+     * {@inheritDoc}
      *
-     * @param cat
-     *            the cat
+     * Delete resource.
      */
     @Override
     public void deleteResource(final Resource cat) {
@@ -268,10 +246,9 @@ public class CategoryBean extends ModelBeanBase implements WebCategory, OjbImple
     }
 
     /**
-     * Adds the resource.
+     * {@inheritDoc}
      *
-     * @param res
-     *            the res
+     * Adds the resource.
      */
     @Override
     public void addResource(final Resource res) {
@@ -279,9 +256,9 @@ public class CategoryBean extends ModelBeanBase implements WebCategory, OjbImple
     }
 
     /**
-     * Gets the active.
+     * {@inheritDoc}
      *
-     * @return the active
+     * Gets the active.
      */
     @Override
     public boolean getActive() {
@@ -289,10 +266,9 @@ public class CategoryBean extends ModelBeanBase implements WebCategory, OjbImple
     }
 
     /**
-     * Sets the active.
+     * {@inheritDoc}
      *
-     * @param b
-     *            the new active
+     * Sets the active.
      */
     @Override
     public void setActive(final boolean b) {
@@ -318,9 +294,9 @@ public class CategoryBean extends ModelBeanBase implements WebCategory, OjbImple
     }
 
     /**
-     * To string.
+     * {@inheritDoc}
      *
-     * @return the string
+     * To string.
      */
     @Override
     public String toString() {

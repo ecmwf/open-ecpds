@@ -27,7 +27,6 @@ package ecmwf.common.mbean;
  *
  * @since 2024-07-01
  */
-
 public interface MBeanListener {
     /**
      * Handle notification.

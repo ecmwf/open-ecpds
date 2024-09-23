@@ -228,7 +228,7 @@ public final class ECpdsClient {
      *
      * @return the long
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static long put(final String from, final Destination destination, final String filename,
@@ -420,7 +420,7 @@ public final class ECpdsClient {
      *
      * @return the long
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static long put(final String from, final String user, final Destination destination,
@@ -488,7 +488,7 @@ public final class ECpdsClient {
      * @param req
      *            the req
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static void process(final ECpdsExpected req) throws IOException {
@@ -516,7 +516,7 @@ public final class ECpdsClient {
      * @param req
      *            the req
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static void process(final ECpdsStarted req) throws IOException {
@@ -543,7 +543,7 @@ public final class ECpdsClient {
      * @param req
      *            the req
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static void process(final ECpdsCompleted req) throws IOException {
@@ -570,7 +570,7 @@ public final class ECpdsClient {
      * @param req
      *            the req
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static void process(final ECpdsWaitForGroup req) throws IOException {
@@ -598,7 +598,7 @@ public final class ECpdsClient {
      * @param req
      *            the req
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static void process(final ECpdsSelect req) throws IOException {
@@ -642,7 +642,7 @@ public final class ECpdsClient {
      *
      * @return the long
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static long process(final ECpdsPut req, final InputStream in, final boolean fakeWrite) throws IOException {

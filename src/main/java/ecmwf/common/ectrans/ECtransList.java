@@ -123,9 +123,9 @@ public final class ECtransList extends ECtransAction {
     }
 
     /**
-     * Gets the name.
+     * {@inheritDoc}
      *
-     * @return the name
+     * Gets the name.
      */
     @Override
     protected String getName() {
@@ -133,15 +133,9 @@ public final class ECtransList extends ECtransAction {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Exec.
-     *
-     * @param module
-     *            the module
-     * @param interruptible
-     *            the interruptible
-     *
-     * @throws Exception
-     *             the exception
      */
     @Override
     protected void exec(final TransferModule module, final boolean interruptible) throws Exception {
@@ -173,7 +167,7 @@ public final class ECtransList extends ECtransAction {
      *
      * @return the list
      *
-     * @throws ECtransException
+     * @throws ecmwf.common.ectrans.ECtransException
      *             the ectrans exception
      */
     public String[] getListAsStringArray() throws ECtransException {
@@ -189,7 +183,7 @@ public final class ECtransList extends ECtransAction {
      *
      * @return the list
      *
-     * @throws ECtransException
+     * @throws ecmwf.common.ectrans.ECtransException
      *             the ectrans exception
      */
     public byte[] getListAsByteArray() throws ECtransException {

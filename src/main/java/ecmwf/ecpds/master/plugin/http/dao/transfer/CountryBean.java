@@ -38,9 +38,9 @@ public class CountryBean extends ModelBeanBase implements Country {
     private final ecmwf.common.database.Country country;
 
     /**
-     * Gets the bean interface name.
+     * {@inheritDoc}
      *
-     * @return the bean interface name
+     * Gets the bean interface name.
      */
     @Override
     public String getBeanInterfaceName() {
@@ -58,9 +58,9 @@ public class CountryBean extends ModelBeanBase implements Country {
     }
 
     /**
-     * Gets the id.
+     * {@inheritDoc}
      *
-     * @return the id
+     * Gets the id.
      */
     @Override
     public String getId() {
@@ -68,9 +68,9 @@ public class CountryBean extends ModelBeanBase implements Country {
     }
 
     /**
-     * Gets the iso.
+     * {@inheritDoc}
      *
-     * @return the iso
+     * Gets the iso.
      */
     @Override
     public String getIso() {
@@ -78,9 +78,9 @@ public class CountryBean extends ModelBeanBase implements Country {
     }
 
     /**
-     * Gets the name.
+     * {@inheritDoc}
      *
-     * @return the name
+     * Gets the name.
      */
     @Override
     public String getName() {
@@ -88,12 +88,9 @@ public class CountryBean extends ModelBeanBase implements Country {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Equals.
-     *
-     * @param o
-     *            the o
-     *
-     * @return true, if successful
      */
     @Override
     public boolean equals(final Object o) {
@@ -113,9 +110,9 @@ public class CountryBean extends ModelBeanBase implements Country {
     }
 
     /**
-     * Hash code.
+     * {@inheritDoc}
      *
-     * @return the int
+     * Hash code.
      */
     @Override
     public int hashCode() {
@@ -123,9 +120,9 @@ public class CountryBean extends ModelBeanBase implements Country {
     }
 
     /**
-     * To string.
+     * {@inheritDoc}
      *
-     * @return the string
+     * To string.
      */
     @Override
     public String toString() {

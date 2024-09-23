@@ -88,11 +88,11 @@ public interface DataBaseInterface extends Remote {
      * @param createPk
      *            the create pk
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void insert(ECpdsSession session, DataBaseObject object, boolean createPk)
@@ -106,11 +106,11 @@ public interface DataBaseInterface extends Remote {
      * @param object
      *            the object
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void update(ECpdsSession session, DataBaseObject object) throws MasterException, DataBaseException, RemoteException;
@@ -123,11 +123,11 @@ public interface DataBaseInterface extends Remote {
      * @param object
      *            the object
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void remove(ECpdsSession session, DataBaseObject object) throws MasterException, DataBaseException, RemoteException;
@@ -138,7 +138,7 @@ public interface DataBaseInterface extends Remote {
      * @param target
      *            the target
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void getInitialDataTransferEvents(String target) throws RemoteException;
@@ -149,7 +149,7 @@ public interface DataBaseInterface extends Remote {
      * @param target
      *            the target
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void getInitialChangeHostEvents(String target) throws RemoteException;
@@ -160,7 +160,7 @@ public interface DataBaseInterface extends Remote {
      * @param target
      *            the target
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void getInitialProductStatusEvents(String target) throws RemoteException;
@@ -173,9 +173,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the transfer servers
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     TransferServer[] getTransferServers(String groupName) throws DataBaseException, RemoteException;
@@ -188,9 +188,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the destination ecuser
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     ECUser[] getDestinationEcuser(String destinationName) throws DataBaseException, RemoteException;
@@ -203,9 +203,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the destination incoming policies
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     IncomingPolicy[] getDestinationIncomingPolicies(String destinationName) throws DataBaseException, RemoteException;
@@ -218,9 +218,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the incoming users
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     IncomingUser[] getIncomingUsersForIncomingPolicy(String policyId) throws DataBaseException, RemoteException;
@@ -233,9 +233,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the incoming policies
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     IncomingPolicy[] getIncomingPoliciesForIncomingUser(String userId) throws DataBaseException, RemoteException;
@@ -248,9 +248,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the operations
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Operation[] getOperationsForIncomingUser(String userId) throws DataBaseException, RemoteException;
@@ -263,9 +263,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the destinations
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Destination[] getDestinationsForIncomingUser(String userId) throws DataBaseException, RemoteException;
@@ -278,9 +278,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the destinations
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Destination[] getDestinationsForIncomingPolicy(String policyId) throws DataBaseException, RemoteException;
@@ -301,9 +301,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the statistics
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Statistics[] getStatistics(Date fromDate, Date toDate, String groupName, String status, String type)
@@ -323,9 +323,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the rates
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Rates[] getRates(Date fromDate, Date toDate, String caller, String sourceHost)
@@ -345,9 +345,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the rates per transfer server
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Rates[] getRatesPerTransferServer(Date fromDate, Date toDate, String caller, String sourceHost)
@@ -369,9 +369,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the rates per file system
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Rates[] getRatesPerFileSystem(Date fromDate, Date toDate, String transferServerName, String caller,
@@ -393,9 +393,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the data transfer count not done by product and time on date
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     int getDataTransferCountNotDoneByProductAndTimeOnDate(String destination, String product, String time, Date from,
@@ -411,9 +411,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the destination aliases
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Destination[] getDestinationAliases(String name, String mode) throws DataBaseException, RemoteException;
@@ -428,9 +428,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the aliases
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Alias[] getAliases(String name, String mode) throws DataBaseException, RemoteException;
@@ -449,9 +449,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the ecuser events
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Collection<Event> getECuserEvents(String userName, Date onIsoDate, String search, DataBaseCursor cursor)
@@ -471,9 +471,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the incoming history list
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Collection<IncomingHistory> getIncomingHistory(String incomingUserId, Date onIsoDate, String search,
@@ -491,9 +491,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the data transfers by host name
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Collection<DataTransfer> getDataTransfersByHostName(String name, Date from, Date to)
@@ -511,9 +511,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the data transfers by transfer server name
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Collection<DataTransfer> getDataTransfersByTransferServerName(String name, Date from, Date to)
@@ -537,9 +537,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the data transfers by status code and date
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Collection<DataTransfer> getDataTransfersByStatusCodeAndDate(String status, Date from, Date to, String search,
@@ -555,9 +555,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the data transfers by data file id
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Collection<DataTransfer> getDataTransfersByDataFileId(long dataFileId, boolean includeDeleted)
@@ -571,7 +571,7 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the destinations by country iso
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Destination[] getDestinationsByCountryISO(String isoCode) throws RemoteException;
@@ -596,7 +596,7 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the destinations by user
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     Destination[] getDestinationsByUser(String uid, String search, String fromToAliases, boolean asc, String status,
@@ -610,9 +610,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the destinations by host name
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Destination[] getDestinationsByHostName(String hostName) throws DataBaseException, RemoteException;
@@ -625,9 +625,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the list of transfer history associated to this dataTransfer
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     TransferHistory[] getTransferHistoryByDataTransferId(long dataTransferId) throws DataBaseException, RemoteException;
@@ -644,9 +644,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the transfer history
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     TransferHistory[] getTransferHistoryByDataTransferId(long dataTransferId, boolean afterScheduleTime,
@@ -660,9 +660,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the categories per user id
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Collection<Category> getCategoriesPerUserId(String userId) throws DataBaseException, RemoteException;
@@ -675,9 +675,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the urls per category id
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Collection<Url> getUrlsPerCategoryId(String id) throws DataBaseException, RemoteException;
@@ -690,9 +690,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the categories per resource id
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Collection<Category> getCategoriesPerResourceId(String id) throws DataBaseException, RemoteException;
@@ -713,9 +713,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the data files by meta data
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Collection<DataFile> getDataFilesByMetaData(String name, String value, Date from, Date to, DataBaseCursor cursor)
@@ -749,9 +749,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the transfer count and meta data by filter
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Collection<List<String>> getTransferCountAndMetaDataByFilter(String countBy, String destination, String target,
@@ -784,11 +784,11 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the data transfers by filter
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Collection<DataTransferWithPermissions> getDataTransfersByFilter(String destination, String target, String stream,
@@ -823,11 +823,11 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the data transfers by filter
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Collection<DataTransferWithPermissions> getDataTransfersByFilter(String destination, String target, String stream,
@@ -852,9 +852,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the hosts
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Collection<Host> getFilteredHosts(String label, String filter, String network, String type, String search,
@@ -868,9 +868,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the hosts by destination id
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Collection<Host> getHostsByDestinationId(String destId) throws DataBaseException, RemoteException;
@@ -883,9 +883,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the hosts by transfer method id
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Collection<Host> getHostsByTransferMethodId(String transferMethodId) throws DataBaseException, RemoteException;
@@ -898,9 +898,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the transfer methods by ectrans module name
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Collection<TransferMethod> getTransferMethodsByEcTransModuleName(String ecTransModuleName)
@@ -914,9 +914,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the meta data by data file id
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Collection<MetadataValue> getMetaDataByDataFileId(long dataFileId) throws DataBaseException, RemoteException;
@@ -929,9 +929,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the meta data by attribute name
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Collection<MetadataValue> getMetaDataByAttributeName(String id) throws DataBaseException, RemoteException;
@@ -946,9 +946,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the data transfers by destination and identity
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Collection<DataTransfer> getDataTransfersByDestinationAndIdentity(String destination, String identity)
@@ -962,9 +962,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the transfer count with destination and metadata value by metadata name
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Collection<List<String>> getTransferCountWithDestinationAndMetadataValueByMetadataName(String metadataName)
@@ -986,9 +986,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the data transfers by destination product and time on date
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Collection<DataTransfer> getDataTransfersByDestinationProductAndTimeOnDate(String destinationName, String product,
@@ -1006,9 +1006,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the data transfers by destination on date
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Collection<DataTransfer> getDataTransfersByDestinationOnDate(String destinationName, Date fromIsoDate,
@@ -1026,9 +1026,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the data transfers by destination on transmission date
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Collection<DataTransfer> getDataTransfersByDestinationOnTransmissionDate(String destinationName, Date fromIsoDate,
@@ -1042,9 +1042,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the bad data transfers by destination
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Collection<DataTransfer> getBadDataTransfersByDestination(String destinationName)
@@ -1058,9 +1058,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the bad data transfers by destination count
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     int getBadDataTransfersByDestinationCount(String destinationName) throws DataBaseException, RemoteException;
@@ -1079,9 +1079,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the transfer history by destination on product date
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Collection<TransferHistory> getTransferHistoryByDestinationOnProductDate(String destinationName, Date fromIsoDate,
@@ -1101,9 +1101,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the transfer history by destination on history date
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Collection<TransferHistory> getTransferHistoryByDestinationOnHistoryDate(String destinationName, Date fromIsoDate,
@@ -1117,9 +1117,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the allowed ec users by host name
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Collection<ECUser> getAllowedEcUsersByHostName(String hostName) throws DataBaseException, RemoteException;
@@ -1132,9 +1132,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the traffic
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Collection<Traffic> getTrafficByDestinationName(final String destinationName)
@@ -1150,9 +1150,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the change log
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Collection<ChangeLog> getChangeLogByKey(final String keyName, final String keyValue)
@@ -1166,9 +1166,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the data file
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     DataFile getDataFile(long dataFileId) throws DataBaseException, RemoteException;
@@ -1181,9 +1181,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the transfer group
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     TransferGroup getTransferGroup(String name) throws DataBaseException, RemoteException;
@@ -1196,9 +1196,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the metadata attribute
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     MetadataAttribute getMetadataAttribute(String name) throws DataBaseException, RemoteException;
@@ -1208,7 +1208,7 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the metadata attribute array
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     MetadataAttribute[] getMetadataAttributeArray() throws RemoteException;
@@ -1218,7 +1218,7 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the cat url array
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     CatUrl[] getCatUrlArray() throws RemoteException;
@@ -1228,7 +1228,7 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the transfer group array
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     TransferGroup[] getTransferGroupArray() throws RemoteException;
@@ -1249,9 +1249,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the product status
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     ProductStatus[] getProductStatus(String stream, String time, String type, long step, int limit)
@@ -1265,9 +1265,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the transfer server
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     TransferServer getTransferServer(String name) throws DataBaseException, RemoteException;
@@ -1277,7 +1277,7 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the transfer server array
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     TransferServer[] getTransferServerArray() throws RemoteException;
@@ -1290,9 +1290,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the EC user
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     ECUser getECUser(String name) throws DataBaseException, RemoteException;
@@ -1305,9 +1305,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the incoming policy
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     IncomingPolicy getIncomingPolicy(String name) throws DataBaseException, RemoteException;
@@ -1320,9 +1320,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the operation
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Operation getOperation(String name) throws DataBaseException, RemoteException;
@@ -1335,9 +1335,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the incoming user
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     IncomingUser getIncomingUser(String name) throws DataBaseException, RemoteException;
@@ -1347,9 +1347,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the incoming user array
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     IncomingUser[] getIncomingUserArray() throws DataBaseException, RemoteException;
@@ -1364,9 +1364,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the destination
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Destination getDestination(String name, boolean useCache) throws DataBaseException, RemoteException;
@@ -1376,7 +1376,7 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the EC user array
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     ECUser[] getECUserArray() throws RemoteException;
@@ -1386,7 +1386,7 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the incoming policy array
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     IncomingPolicy[] getIncomingPolicyArray() throws RemoteException;
@@ -1396,7 +1396,7 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the operation array
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Operation[] getOperationArray() throws RemoteException;
@@ -1409,9 +1409,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the country
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Country getCountry(String iso) throws DataBaseException, RemoteException;
@@ -1421,7 +1421,7 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the country array
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Country[] getCountryArray() throws RemoteException;
@@ -1434,9 +1434,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the data transfer
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     DataTransfer getDataTransfer(long dataTransferId) throws DataBaseException, RemoteException;
@@ -1446,7 +1446,7 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the destination array
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Destination[] getDestinationArray() throws RemoteException;
@@ -1459,9 +1459,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the destination array
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Destination[] getDestinationArray(boolean monitored) throws DataBaseException, RemoteException;
@@ -1471,9 +1471,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the destination names and comments
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Set<Map.Entry<String, String>> getDestinationNamesAndComments() throws DataBaseException, RemoteException;
@@ -1488,9 +1488,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the destination ec user
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     DestinationECUser getDestinationECUser(String destinationName, String ecuserName)
@@ -1506,9 +1506,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the association
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Association getAssociation(String destinationName, String hostName) throws DataBaseException, RemoteException;
@@ -1523,9 +1523,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the association
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     PolicyAssociation getPolicyAssociation(String destinationName, String policyId)
@@ -1541,9 +1541,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the alias
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Alias getAlias(String desName, String destinationName) throws DataBaseException, RemoteException;
@@ -1556,9 +1556,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the ectrans module
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     ECtransModule getECtransModule(String name) throws DataBaseException, RemoteException;
@@ -1568,7 +1568,7 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the ectrans module array
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     ECtransModule[] getECtransModuleArray() throws RemoteException;
@@ -1581,9 +1581,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the host
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Host getHost(String name) throws DataBaseException, RemoteException;
@@ -1593,7 +1593,7 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the host array
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Host[] getHostArray() throws RemoteException;
@@ -1606,9 +1606,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the transfer method
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     TransferMethod getTransferMethod(String name) throws DataBaseException, RemoteException;
@@ -1623,9 +1623,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the host ec user
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     HostECUser getHostECUser(String ecuserName, String hostName) throws DataBaseException, RemoteException;
@@ -1638,9 +1638,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the transfer history
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     TransferHistory getTransferHistory(long transferHistoryId) throws DataBaseException, RemoteException;
@@ -1650,7 +1650,7 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the transfer method array
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     TransferMethod[] getTransferMethodArray() throws RemoteException;
@@ -1663,9 +1663,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the category
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Category getCategory(long id) throws DataBaseException, RemoteException;
@@ -1675,7 +1675,7 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the category array
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Category[] getCategoryArray() throws RemoteException;
@@ -1690,9 +1690,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the cat url
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     CatUrl getCatUrl(long categoryId, String urlName) throws DataBaseException, RemoteException;
@@ -1702,7 +1702,7 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the url array
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Url[] getUrlArray() throws RemoteException;
@@ -1715,9 +1715,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the url
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Url getUrl(String name) throws DataBaseException, RemoteException;
@@ -1730,9 +1730,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the web user
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     WebUser getWebUser(String id) throws DataBaseException, RemoteException;
@@ -1742,7 +1742,7 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the web user array
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     WebUser[] getWebUserArray() throws RemoteException;
@@ -1757,9 +1757,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the weu cat
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     WeuCat getWeuCat(long categoryId, String webuserId) throws DataBaseException, RemoteException;
@@ -1772,9 +1772,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the users per category id
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Collection<WebUser> getUsersPerCategoryId(String categoryId) throws DataBaseException, RemoteException;
@@ -1787,9 +1787,9 @@ public interface DataBaseInterface extends Remote {
      * @param id
      *            the id
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void incomingUserDel(String user, String id) throws DataBaseException, RemoteException;
@@ -1808,9 +1808,9 @@ public interface DataBaseInterface extends Remote {
      * @param iso
      *            the iso
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void incomingUserAdd(String user, String id, String password, String email, String iso)
@@ -1830,9 +1830,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the string
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     String incomingUserAdd2(String user, String id, String email, String iso) throws DataBaseException, RemoteException;
@@ -1847,9 +1847,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the collection
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Collection<IncomingUser> incomingUserList(String user, String destination)
@@ -1865,9 +1865,9 @@ public interface DataBaseInterface extends Remote {
      * @param destination
      *            the destination
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void incomingAssociationAdd(String user, String id, String destination) throws DataBaseException, RemoteException;
@@ -1882,9 +1882,9 @@ public interface DataBaseInterface extends Remote {
      * @param categories
      *            the categories
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void incomingCategoryAdd(String user, String id, List<String> categories) throws DataBaseException, RemoteException;
@@ -1899,9 +1899,9 @@ public interface DataBaseInterface extends Remote {
      * @param destination
      *            the destination
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void incomingAssociationDel(String user, String id, String destination) throws DataBaseException, RemoteException;
@@ -1916,9 +1916,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the string[]
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     String[] incomingAssociationList(String user, String id) throws DataBaseException, RemoteException;
@@ -1937,9 +1937,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the collection
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Collection<Destination> destinationList(String user, String id, String iso, Integer type)
@@ -1961,9 +1961,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the collection
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     DestinationBackup getDestinationBackup(String user, String id, String iso, Integer type, String name)
@@ -1981,11 +1981,11 @@ public interface DataBaseInterface extends Remote {
      *
      * @return number of destinations created
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     int putDestinationBackup(String user, DestinationBackup backup, boolean copySharedHost)
@@ -1996,7 +1996,7 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the destination option list
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     List<TypeEntry> getDestinationOptionList() throws RemoteException;
@@ -2009,9 +2009,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the collection
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Collection<Country> destinationCountryList(String user) throws DataBaseException, RemoteException;
@@ -2046,9 +2046,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the long
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     long datafilePut(String user, String remoteHost, String destination, String metadata, String source,
@@ -2065,9 +2065,9 @@ public interface DataBaseInterface extends Remote {
      *
      * @return the long
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     long datafileSize(String user, Long dataFileId) throws DataBaseException, RemoteException;
@@ -2080,11 +2080,11 @@ public interface DataBaseInterface extends Remote {
      * @param dataFileId
      *            the dataFile id
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void datafileDel(String user, Long dataFileId) throws MasterException, DataBaseException, RemoteException;

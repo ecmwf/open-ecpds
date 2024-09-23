@@ -58,9 +58,9 @@ public class ArrivalMonitoringParametersBean extends MonitoringParametersBaseBea
     }
 
     /**
-     * Gets the arrival target time.
+     * {@inheritDoc}
      *
-     * @return the arrival target time
+     * Gets the arrival target time.
      */
     @Override
     public Date getArrivalTargetTime() {
@@ -68,9 +68,9 @@ public class ArrivalMonitoringParametersBean extends MonitoringParametersBaseBea
     }
 
     /**
-     * Gets the arrival predicted time.
+     * {@inheritDoc}
      *
-     * @return the arrival predicted time
+     * Gets the arrival predicted time.
      */
     @Override
     public synchronized Date getArrivalPredictedTime() {
@@ -83,9 +83,9 @@ public class ArrivalMonitoringParametersBean extends MonitoringParametersBaseBea
     }
 
     /**
-     * Gets the arrival status.
+     * {@inheritDoc}
      *
-     * @return the arrival status
+     * Gets the arrival status.
      */
     @Override
     public int getArrivalStatus() {
@@ -125,9 +125,9 @@ public class ArrivalMonitoringParametersBean extends MonitoringParametersBaseBea
     }
 
     /**
-     * Gets the arrival earliest time.
+     * {@inheritDoc}
      *
-     * @return the arrival earliest time
+     * Gets the arrival earliest time.
      */
     @Override
     public synchronized Date getArrivalEarliestTime() {
@@ -140,9 +140,9 @@ public class ArrivalMonitoringParametersBean extends MonitoringParametersBaseBea
     }
 
     /**
-     * Gets the arrival latest time.
+     * {@inheritDoc}
      *
-     * @return the arrival latest time
+     * Gets the arrival latest time.
      */
     @Override
     public synchronized Date getArrivalLatestTime() {

@@ -61,7 +61,7 @@ public class HostHome extends ModelHomeBase {
      *
      * @return the host
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Host create() throws TransferException {
@@ -81,7 +81,7 @@ public class HostHome extends ModelHomeBase {
      *
      * @return the host
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Host findByPrimaryKey(final String key) throws TransferException {
@@ -101,7 +101,7 @@ public class HostHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<ChangeLog> findChangeLogList(final Host h) throws TransferException {
@@ -113,7 +113,7 @@ public class HostHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<Host> findAll() throws TransferException {
@@ -138,7 +138,7 @@ public class HostHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<Host> findByCriteria(final String label, final String filter, final String network,
@@ -154,7 +154,7 @@ public class HostHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<Pair> findWithPriorityByDestination(final Destination d) throws TransferException {
@@ -169,7 +169,7 @@ public class HostHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<Host> findByDestination(final Destination d) throws TransferException {
@@ -184,7 +184,7 @@ public class HostHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<Host> findByTransferMethod(final TransferMethod d) throws TransferException {
@@ -199,7 +199,7 @@ public class HostHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection find(final ModelSearch search) throws TransferException {

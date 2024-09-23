@@ -81,9 +81,9 @@ public class MonitoringParametersBaseBean extends ModelBeanBase {
     }
 
     /**
-     * Gets the bean interface name.
+     * {@inheritDoc}
      *
-     * @return the bean interface name
+     * Gets the bean interface name.
      */
     @Override
     public String getBeanInterfaceName() {

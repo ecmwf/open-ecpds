@@ -60,10 +60,9 @@ public final class RAFOutputStream extends OutputStream {
     }
 
     /**
-     * Close.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Close.
      */
     @Override
     public void close() throws IOException {
@@ -75,23 +74,18 @@ public final class RAFOutputStream extends OutputStream {
     }
 
     /**
-     * Flush.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Flush.
      */
     @Override
     public void flush() throws IOException {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Write.
-     *
-     * @param b
-     *            the b
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void write(final byte[] b) throws IOException {
@@ -99,17 +93,9 @@ public final class RAFOutputStream extends OutputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Write.
-     *
-     * @param b
-     *            the b
-     * @param off
-     *            the off
-     * @param len
-     *            the len
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void write(final byte[] b, final int off, final int len) throws IOException {
@@ -117,13 +103,9 @@ public final class RAFOutputStream extends OutputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Write.
-     *
-     * @param b
-     *            the b
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void write(final int b) throws IOException {
@@ -131,10 +113,9 @@ public final class RAFOutputStream extends OutputStream {
     }
 
     /**
-     * Finalize.
+     * {@inheritDoc}
      *
-     * @throws Throwable
-     *             the throwable
+     * Finalize.
      */
     @Override
     protected void finalize() throws Throwable {

@@ -47,9 +47,9 @@ public final class RESTApplication extends Application {
     }
 
     /**
-     * Gets the classes.
+     * {@inheritDoc}
      *
-     * @return the classes
+     * Gets the classes.
      */
     @Override
     public Set<Class<?>> getClasses() {
@@ -59,9 +59,9 @@ public final class RESTApplication extends Application {
     }
 
     /**
-     * Gets the singletons.
+     * {@inheritDoc}
      *
-     * @return the singletons
+     * Gets the singletons.
      */
     @Override
     public Set<Object> getSingletons() {

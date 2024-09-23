@@ -58,7 +58,7 @@ public class DestinationMetaDataHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<DestinationMetaData> findByDestination(final Destination d)
@@ -74,7 +74,7 @@ public class DestinationMetaDataHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<DestinationMetaData> find(final ModelSearch search) throws TransferException {

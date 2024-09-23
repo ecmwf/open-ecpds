@@ -90,7 +90,7 @@ final class TransferServerManagement {
      *
      * @return the active transfer servers
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     @SuppressWarnings("null")

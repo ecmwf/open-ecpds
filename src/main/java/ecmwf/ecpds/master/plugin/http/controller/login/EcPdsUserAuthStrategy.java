@@ -62,9 +62,9 @@ public class EcPdsUserAuthStrategy implements UserAuthStrategy {
     public static final String CERT_REQUEST_KEY = "ECPDS-CERT";
 
     /**
-     * Not relevant here.
+     * {@inheritDoc}
      *
-     * @return the cookie name
+     * Not relevant here.
      */
 
     @Override
@@ -73,17 +73,9 @@ public class EcPdsUserAuthStrategy implements UserAuthStrategy {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the user.
-     *
-     * @param credential
-     *            the credential
-     *
-     * @return the user
-     *
-     * @throws UserException
-     *             the user exception
-     * @throws UnrecoverableUserException
-     *             the unrecoverable user exception
      */
     @Override
     public User getUser(final Object credential) throws UserException, UnrecoverableUserException {
@@ -128,7 +120,7 @@ public class EcPdsUserAuthStrategy implements UserAuthStrategy {
      *
      * @return the public user
      *
-     * @throws UserException
+     * @throws ecmwf.web.model.users.UserException
      *             the user exception
      */
     public User getPublicUser(final HttpServletRequest request) throws UserException {
@@ -136,9 +128,9 @@ public class EcPdsUserAuthStrategy implements UserAuthStrategy {
     }
 
     /**
-     * No such a thing here as a Fallback public user here....
+     * {@inheritDoc}
      *
-     * @return the fallback public user
+     * No such a thing here as a Fallback public user here....
      */
     @Override
     public User getFallbackPublicUser() {
@@ -179,15 +171,9 @@ public class EcPdsUserAuthStrategy implements UserAuthStrategy {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the credential.
-     *
-     * @param request
-     *            the request
-     *
-     * @return the credential
-     *
-     * @throws UserException
-     *             the user exception
      */
     @Override
     public Object getCredential(final HttpServletRequest request) throws UserException {
@@ -195,15 +181,9 @@ public class EcPdsUserAuthStrategy implements UserAuthStrategy {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the public user.
-     *
-     * @param credential
-     *            the credential
-     *
-     * @return the public user
-     *
-     * @throws UserException
-     *             the user exception
      */
     @Override
     public User getPublicUser(final Object credential) throws UserException {

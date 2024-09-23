@@ -91,6 +91,8 @@ public final class InterruptibleRMIThread extends Thread {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Interrupt this thread, even if it is in a blocking RMI IO operation. This method first invokes the superclass's
      * #interrupt method. Then, if an RMI socket has been registered as being in IO for this thread, a special marker
      * (like an EOF) is written to the socket (to help the server side shutdown its threads), and then the RMI socket is

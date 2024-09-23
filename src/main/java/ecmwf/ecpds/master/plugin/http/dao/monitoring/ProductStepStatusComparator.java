@@ -36,14 +36,9 @@ import ecmwf.ecpds.master.plugin.http.model.monitoring.ProductStepStatus;
 public class ProductStepStatusComparator implements Comparator<ProductStepStatus> {
 
     /**
+     * {@inheritDoc}
+     *
      * Compare.
-     *
-     * @param p1
-     *            the p 1
-     * @param p2
-     *            the p 2
-     *
-     * @return the int
      */
     @Override
     public int compare(final ProductStepStatus p1, final ProductStepStatus p2) {

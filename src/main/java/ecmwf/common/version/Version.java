@@ -27,7 +27,6 @@ package ecmwf.common.version;
  *
  * @since 2024-07-01
  */
-
 public final class Version {
     /** The Constant version. */
     private static final String VERSION = "6.7.7";

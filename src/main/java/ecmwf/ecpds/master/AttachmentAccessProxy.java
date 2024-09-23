@@ -49,19 +49,9 @@ final class AttachmentAccessProxy implements DataAccessInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the file last modified.
-     *
-     * @param destinationName
-     *            the destination name
-     * @param source
-     *            the source
-     *
-     * @return the file last modified
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public long getFileLastModified(final String destinationName, final String source)
@@ -73,19 +63,9 @@ final class AttachmentAccessProxy implements DataAccessInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Size.
-     *
-     * @param destinationName
-     *            the destination name
-     * @param source
-     *            the source
-     *
-     * @return the long
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public long size(final String destinationName, final String source) throws MasterException, IOException {
@@ -96,21 +76,9 @@ final class AttachmentAccessProxy implements DataAccessInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the proxy socket input.
-     *
-     * @param destinationName
-     *            the destination name
-     * @param source
-     *            the source
-     * @param offset
-     *            the offset
-     *
-     * @return the proxy socket input
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public ProxySocket getProxySocketInput(final String destinationName, final String source, final long offset)
@@ -122,23 +90,9 @@ final class AttachmentAccessProxy implements DataAccessInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the proxy socket input.
-     *
-     * @param destinationName
-     *            the destination name
-     * @param source
-     *            the source
-     * @param offset
-     *            the offset
-     * @param length
-     *            the length
-     *
-     * @return the proxy socket input
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public ProxySocket getProxySocketInput(final String destinationName, final String source, final long offset,
@@ -147,23 +101,9 @@ final class AttachmentAccessProxy implements DataAccessInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the proxy socket output.
-     *
-     * @param destinationName
-     *            the destination name
-     * @param target
-     *            the target
-     * @param offset
-     *            the offset
-     * @param umask
-     *            the umask
-     *
-     * @return the proxy socket output
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public ProxySocket getProxySocketOutput(final String destinationName, final String target, final long offset,
@@ -175,19 +115,9 @@ final class AttachmentAccessProxy implements DataAccessInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Delete.
-     *
-     * @param destinationName
-     *            the destination name
-     * @param source
-     *            the source
-     * @param force
-     *            the force
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void delete(final String destinationName, final String source, final boolean force)
@@ -199,17 +129,9 @@ final class AttachmentAccessProxy implements DataAccessInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Mkdir.
-     *
-     * @param destinationName
-     *            the destination name
-     * @param path
-     *            the path
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void mkdir(final String destinationName, final String path) throws MasterException, IOException {
@@ -220,17 +142,9 @@ final class AttachmentAccessProxy implements DataAccessInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Rmdir.
-     *
-     * @param destinationName
-     *            the destination name
-     * @param path
-     *            the path
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void rmdir(final String destinationName, final String path) throws MasterException, IOException {
@@ -241,19 +155,9 @@ final class AttachmentAccessProxy implements DataAccessInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * List.
-     *
-     * @param destinationName
-     *            the destination name
-     * @param path
-     *            the path
-     *
-     * @return the file list element[]
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public FileListElement[] list(final String destinationName, final String path) throws MasterException, IOException {
@@ -264,23 +168,9 @@ final class AttachmentAccessProxy implements DataAccessInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * List.
-     *
-     * @param destinationName
-     *            the destination name
-     * @param path
-     *            the path
-     * @param sort
-     *            the sort
-     * @param order
-     *            the order
-     *
-     * @return the file list element[]
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public FileListElement[] list(final String destinationName, final String path, final int sort, final int order)
@@ -292,19 +182,9 @@ final class AttachmentAccessProxy implements DataAccessInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the.
-     *
-     * @param destinationName
-     *            the destination name
-     * @param path
-     *            the path
-     *
-     * @return the file list element
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public FileListElement get(final String destinationName, final String path) throws MasterException, IOException {
@@ -315,19 +195,9 @@ final class AttachmentAccessProxy implements DataAccessInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Move.
-     *
-     * @param destinationName
-     *            the destination name
-     * @param source
-     *            the source
-     * @param target
-     *            the target
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void move(final String destinationName, final String source, final String target)
@@ -340,15 +210,9 @@ final class AttachmentAccessProxy implements DataAccessInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Check.
-     *
-     * @param proxy
-     *            the proxy
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void check(final ProxySocket proxy) throws MasterException, IOException {

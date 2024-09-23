@@ -36,14 +36,9 @@ import ecmwf.common.database.Host;
 public final class HostComparator implements Comparator<Host> {
 
     /**
+     * {@inheritDoc}
+     *
      * Compare.
-     *
-     * @param host1
-     *            the host 1
-     * @param host2
-     *            the host 2
-     *
-     * @return the int
      */
     @Override
     public int compare(final Host host1, final Host host2) {

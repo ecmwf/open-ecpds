@@ -130,7 +130,7 @@ public class Blob {
      *
      * @return the content range
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public String getContentRange() throws IOException {
@@ -142,7 +142,7 @@ public class Blob {
      *
      * @return the content length
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public long getContentLength() throws IOException {
@@ -154,7 +154,7 @@ public class Blob {
      *
      * @return the input stream
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public InputStream openStream() throws IOException {

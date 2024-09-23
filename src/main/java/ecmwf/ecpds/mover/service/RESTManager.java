@@ -39,16 +39,9 @@ import ecmwf.ecpds.mover.RESTProvider;
 final class RESTManager implements RESTProvider {
 
     /**
+     * {@inheritDoc}
+     *
      * Get a new instance of a RESTInterface.
-     *
-     * @param httpProxy
-     *            the http proxy
-     * @param httpMover
-     *            the http mover
-     * @param connectTimeout
-     *            the connect timeout
-     *
-     * @return the REST interface
      */
     @Override
     public RESTInterface getRESTInterface(final String httpProxy, final String httpMover, final int connectTimeout) {
@@ -56,17 +49,9 @@ final class RESTManager implements RESTProvider {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the REST allocate.
-     *
-     * @param url
-     *            the url
-     * @param properties
-     *            the properties
-     *
-     * @return the REST allocate
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public RESTAllocate getRESTAllocate(final String url, final Properties properties) throws IOException {
@@ -74,19 +59,9 @@ final class RESTManager implements RESTProvider {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the notification interface.
-     *
-     * @param url
-     *            the url
-     * @param name
-     *            the name
-     * @param password
-     *            the password
-     *
-     * @return the notification interface
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public NotificationInterface getNotificationInterface(final String url, final String name, final String password)

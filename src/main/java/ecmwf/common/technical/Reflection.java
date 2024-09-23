@@ -53,7 +53,7 @@ public final class Reflection {
      *
      * @return the object
      *
-     * @throws ReflectionExecutionException
+     * @throws ecmwf.common.technical.ReflectionExecutionException
      *             the reflection execution exception
      */
     public static Object execute(final Object aObj, final String aMethodName, final Class<?>[] aArgTypes,

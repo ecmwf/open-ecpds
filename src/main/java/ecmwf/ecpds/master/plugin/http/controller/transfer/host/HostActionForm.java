@@ -369,7 +369,7 @@ public class HostActionForm extends ECMWFActionForm {
      *
      * @return the transfer module names
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public String getTransferModuleNames() throws TransferException {

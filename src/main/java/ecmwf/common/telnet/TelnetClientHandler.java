@@ -209,7 +209,7 @@ public abstract class TelnetClientHandler {
      * @param b
      *            the b
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     protected abstract void write(byte[] b) throws IOException;
@@ -245,7 +245,7 @@ public abstract class TelnetClientHandler {
      * @param code
      *            the code
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void sendTelnetControl(final byte code) throws IOException {
@@ -288,7 +288,7 @@ public abstract class TelnetClientHandler {
     /**
      * Startup.
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void startup() throws IOException {
@@ -300,7 +300,7 @@ public abstract class TelnetClientHandler {
      * @param buf
      *            the buf
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void transpose(final byte[] buf) throws IOException {
@@ -390,7 +390,7 @@ public abstract class TelnetClientHandler {
      *
      * @return the int
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public int negotiate(final byte[] nbuf) throws IOException {
@@ -674,7 +674,7 @@ public abstract class TelnetClientHandler {
      * @param display
      *            the display
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void sendDisplayLocation(final String display) throws IOException {
@@ -698,7 +698,7 @@ public abstract class TelnetClientHandler {
      * @param value
      *            the value
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void sendEnv(final String name, final String value) throws IOException {
@@ -726,7 +726,7 @@ public abstract class TelnetClientHandler {
      * @param state
      *            the state
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void sendOption(final char option, final boolean state) throws IOException {
@@ -745,7 +745,7 @@ public abstract class TelnetClientHandler {
      * @param params
      *            the params
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void subNegotiation(final char option, final char[] params) throws IOException {
@@ -770,7 +770,7 @@ public abstract class TelnetClientHandler {
      * @param state
      *            the state
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void sendOptionRequest(final byte option, final boolean state) throws IOException {

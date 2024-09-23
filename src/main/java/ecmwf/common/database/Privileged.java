@@ -29,7 +29,6 @@ import java.util.Objects;
  *
  * @since 2024-07-01
  */
-
 public class Privileged extends DataBaseObject {
     /** The Constant serialVersionUID. */
     private static final long serialVersionUID = 6077304760023108975L;
@@ -229,9 +228,9 @@ public class Privileged extends DataBaseObject {
     }
 
     /**
-     * Hash code.
+     * {@inheritDoc}
      *
-     * @return the int
+     * Hash code.
      */
     @Override
     public int hashCode() {
@@ -239,12 +238,9 @@ public class Privileged extends DataBaseObject {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Equals.
-     *
-     * @param obj
-     *            the obj
-     *
-     * @return true, if successful
      */
     @Override
     public boolean equals(final Object obj) {

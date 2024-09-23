@@ -53,6 +53,8 @@ final class MasterRMI implements MasterProxy {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Shutdown.
      */
     @Override
@@ -61,15 +63,9 @@ final class MasterRMI implements MasterProxy {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Proxy host is alive.
-     *
-     * @param name
-     *            the name
-     *
-     * @return the long
-     *
-     * @throws Exception
-     *             the exception
      */
     @Override
     public long proxyHostIsAlive(final String name) throws Exception {
@@ -77,13 +73,9 @@ final class MasterRMI implements MasterProxy {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Update data transfers.
-     *
-     * @param transfers
-     *            the transfers
-     *
-     * @throws Exception
-     *             the exception
      */
     @Override
     public void updateDataTransfers(final DataTransfer[] transfers) throws Exception {
@@ -91,15 +83,9 @@ final class MasterRMI implements MasterProxy {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Update download progress.
-     *
-     * @param progress
-     *            the progress
-     *
-     * @return the download progress[]
-     *
-     * @throws Exception
-     *             the exception
      */
     @Override
     public DownloadProgress[] updateDownloadProgress(final DownloadProgress[] progress) throws Exception {
@@ -107,15 +93,9 @@ final class MasterRMI implements MasterProxy {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Update data.
-     *
-     * @param hostId
-     *            the host id
-     * @param data
-     *            the data
-     *
-     * @throws Exception
-     *             the exception
      */
     @Override
     public void updateData(final String hostId, final String data) throws Exception {
@@ -123,13 +103,9 @@ final class MasterRMI implements MasterProxy {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Update data.
-     *
-     * @param host
-     *            the host
-     *
-     * @throws Exception
-     *             the exception
      */
     @Override
     public void updateData(final Host host) throws Exception {
@@ -137,13 +113,9 @@ final class MasterRMI implements MasterProxy {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Update location.
-     *
-     * @param host
-     *            the host
-     *
-     * @throws Exception
-     *             the exception
      */
     @Override
     public void updateLocation(final Host host) throws Exception {
@@ -151,19 +123,9 @@ final class MasterRMI implements MasterProxy {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Send message.
-     *
-     * @param name
-     *            the name
-     * @param service
-     *            the service
-     * @param status
-     *            the status
-     * @param message
-     *            the message
-     *
-     * @throws Exception
-     *             the exception
      */
     @Override
     public void sendMessage(final String name, final String service, final int status, final String message)
@@ -172,12 +134,9 @@ final class MasterRMI implements MasterProxy {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the data file access interface.
-     *
-     * @return the data file access interface
-     *
-     * @throws Exception
-     *             the exception
      */
     @Override
     public DataAccessInterface getDataFileAccessInterface() throws Exception {
@@ -185,15 +144,9 @@ final class MasterRMI implements MasterProxy {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the destination.
-     *
-     * @param name
-     *            the name
-     *
-     * @return the destination
-     *
-     * @throws Exception
-     *             the exception
      */
     @Override
     public Destination getDestination(final String name) throws Exception {
@@ -201,15 +154,9 @@ final class MasterRMI implements MasterProxy {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Checks if is valid data file.
-     *
-     * @param dataFileId
-     *            the data file id
-     *
-     * @return true, if is valid data file
-     *
-     * @throws Exception
-     *             the exception
      */
     @Override
     public boolean isValidDataFile(final long dataFileId) throws Exception {
@@ -217,19 +164,9 @@ final class MasterRMI implements MasterProxy {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the incoming profile.
-     *
-     * @param incomingUser
-     *            the incoming user
-     * @param incomingPassword
-     *            the incoming password
-     * @param from
-     *            the from
-     *
-     * @return the incoming profile
-     *
-     * @throws Exception
-     *             the exception
      */
     @Override
     public IncomingProfile getIncomingProfile(final String incomingUser, final String incomingPassword,
@@ -238,15 +175,9 @@ final class MasterRMI implements MasterProxy {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the ecauth token.
-     *
-     * @param user
-     *            the user
-     *
-     * @return the ecauth token
-     *
-     * @throws Exception
-     *             the exception
      */
     @Override
     public ECauthToken getECauthToken(final String user) throws Exception {

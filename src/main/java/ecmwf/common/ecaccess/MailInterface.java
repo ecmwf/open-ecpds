@@ -50,7 +50,7 @@ public abstract class MailInterface {
      *
      * @return true, if successful
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     public abstract boolean received(Message message, String content) throws Exception;

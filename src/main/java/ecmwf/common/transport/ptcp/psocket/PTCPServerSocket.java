@@ -75,7 +75,7 @@ public class PTCPServerSocket {
      * @param serverSocket
      *            the server socket
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public PTCPServerSocket(final ServerSocket serverSocket) throws IOException {
@@ -91,7 +91,7 @@ public class PTCPServerSocket {
      * @param port
      *            the port
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public PTCPServerSocket(final int port) throws IOException {
@@ -106,7 +106,7 @@ public class PTCPServerSocket {
      * @param backlog
      *            the backlog
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public PTCPServerSocket(final int port, final int backlog) throws IOException {
@@ -123,7 +123,7 @@ public class PTCPServerSocket {
      * @param bindAddr
      *            the bind addr
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public PTCPServerSocket(final int port, final int backlog, final InetAddress bindAddr) throws IOException {
@@ -136,7 +136,7 @@ public class PTCPServerSocket {
      * @param timeout
      *            the new so timeout
      *
-     * @throws SocketException
+     * @throws java.net.SocketException
      *             the socket exception
      */
     public void setSoTimeout(final int timeout) throws SocketException {
@@ -157,7 +157,7 @@ public class PTCPServerSocket {
      *
      * @return the normal socket header
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static byte[] getNormalSocketHeader() throws IOException {
@@ -174,7 +174,7 @@ public class PTCPServerSocket {
      *
      * @return the socket
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public Socket accept() throws IOException {
@@ -299,7 +299,7 @@ public class PTCPServerSocket {
      * @param serverSocketOnly
      *            the server socket only
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void close(final boolean serverSocketOnly) throws IOException {
@@ -319,7 +319,7 @@ public class PTCPServerSocket {
     /**
      * Close.
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void close() throws IOException {

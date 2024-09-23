@@ -148,15 +148,15 @@ public final class Util {
      *
      * @return the object
      *
-     * @throws ClassNotFoundException
+     * @throws java.lang.ClassNotFoundException
      *             the class not found exception
-     * @throws NoSuchMethodException
+     * @throws java.lang.NoSuchMethodException
      *             the no such method exception
-     * @throws InstantiationException
+     * @throws java.lang.InstantiationException
      *             the instantiation exception
-     * @throws IllegalAccessException
+     * @throws java.lang.IllegalAccessException
      *             the illegal access exception
-     * @throws InvocationTargetException
+     * @throws java.lang.reflect.InvocationTargetException
      *             the invocation target exception
      */
     public static Object exec(final Class<?> caller, final CurrentContext currentContext, final String request,
@@ -187,7 +187,7 @@ public final class Util {
      *
      * @return the class
      *
-     * @throws ClassNotFoundException
+     * @throws java.lang.ClassNotFoundException
      *             the class not found exception
      */
     public static Class<?> getClass(final CurrentContext currentContext, String command, final boolean alias,
@@ -254,7 +254,7 @@ public final class Util {
      *
      * @return the int
      *
-     * @throws NumberFormatException
+     * @throws java.lang.NumberFormatException
      *             the number format exception
      */
     public static int parseMode(String mode) throws NumberFormatException {
@@ -308,7 +308,7 @@ public final class Util {
      *
      * @return the path
      *
-     * @throws FileNotFoundException
+     * @throws java.io.FileNotFoundException
      *             the file not found exception
      */
     public static String getPath(final CurrentContext currentContext, String path, final boolean update,

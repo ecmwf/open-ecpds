@@ -34,14 +34,9 @@ import java.util.Comparator;
 public final class EventComparator implements Comparator<PluginEvent<?>> {
 
     /**
+     * {@inheritDoc}
+     *
      * Compare.
-     *
-     * @param event1
-     *            the event 1
-     * @param event2
-     *            the event 2
-     *
-     * @return the int
      */
     @Override
     public int compare(final PluginEvent<?> event1, final PluginEvent<?> event2) {

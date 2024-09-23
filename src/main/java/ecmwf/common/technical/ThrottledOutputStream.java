@@ -84,13 +84,9 @@ public class ThrottledOutputStream extends OutputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Write.
-     *
-     * @param arg0
-     *            the arg 0
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void write(final int arg0) throws IOException {
@@ -100,17 +96,9 @@ public class ThrottledOutputStream extends OutputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Write.
-     *
-     * @param b
-     *            the b
-     * @param off
-     *            the off
-     * @param len
-     *            the len
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void write(final byte[] b, final int off, final int len) throws IOException {
@@ -138,13 +126,9 @@ public class ThrottledOutputStream extends OutputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Write.
-     *
-     * @param b
-     *            the b
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void write(final byte[] b) throws IOException {
@@ -154,7 +138,7 @@ public class ThrottledOutputStream extends OutputStream {
     /**
      * Throttle.
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void throttle() throws IOException {
@@ -182,9 +166,9 @@ public class ThrottledOutputStream extends OutputStream {
     }
 
     /**
-     * To string.
+     * {@inheritDoc}
      *
-     * @return the string
+     * To string.
      */
     @Override
     public String toString() {
@@ -193,10 +177,9 @@ public class ThrottledOutputStream extends OutputStream {
     }
 
     /**
-     * Close.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Close.
      */
     @Override
     public void close() throws IOException {

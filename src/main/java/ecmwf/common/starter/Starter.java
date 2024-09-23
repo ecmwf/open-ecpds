@@ -206,19 +206,9 @@ public final class Starter implements DynamicMBean {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the attribute.
-     *
-     * @param attributeName
-     *            the attribute name
-     *
-     * @return the attribute
-     *
-     * @throws AttributeNotFoundException
-     *             the attribute not found exception
-     * @throws MBeanException
-     *             the MBean exception
-     * @throws ReflectionException
-     *             the reflection exception
      */
     @Override
     public Object getAttribute(final String attributeName)
@@ -256,12 +246,9 @@ public final class Starter implements DynamicMBean {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the attributes.
-     *
-     * @param attributeNames
-     *            the attribute names
-     *
-     * @return the attributes
      */
     @Override
     public AttributeList getAttributes(final String[] attributeNames) {
@@ -298,9 +285,9 @@ public final class Starter implements DynamicMBean {
     }
 
     /**
-     * Gets the MBean info.
+     * {@inheritDoc}
      *
-     * @return the MBean info
+     * Gets the MBean info.
      */
     @Override
     public MBeanInfo getMBeanInfo() {
@@ -344,21 +331,9 @@ public final class Starter implements DynamicMBean {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Invoke.
-     *
-     * @param operationName
-     *            the operation name
-     * @param params
-     *            the params
-     * @param signature
-     *            the signature
-     *
-     * @return the object
-     *
-     * @throws MBeanException
-     *             the MBean exception
-     * @throws ReflectionException
-     *             the reflection exception
      */
     @Override
     public Object invoke(final String operationName, final Object[] params, final String[] signature)
@@ -434,19 +409,9 @@ public final class Starter implements DynamicMBean {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the attribute.
-     *
-     * @param attribute
-     *            the new attribute
-     *
-     * @throws AttributeNotFoundException
-     *             the attribute not found exception
-     * @throws InvalidAttributeValueException
-     *             the invalid attribute value exception
-     * @throws MBeanException
-     *             the MBean exception
-     * @throws ReflectionException
-     *             the reflection exception
      */
     @Override
     public void setAttribute(final Attribute attribute)
@@ -468,12 +433,9 @@ public final class Starter implements DynamicMBean {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the attributes.
-     *
-     * @param attributes
-     *            the attributes
-     *
-     * @return the attribute list
      */
     @Override
     public AttributeList setAttributes(final AttributeList attributes) {

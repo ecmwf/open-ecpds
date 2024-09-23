@@ -76,7 +76,7 @@ public class TimeRange {
      *
      * @return the time range
      *
-     * @throws DateTimeParseException
+     * @throws java.time.format.DateTimeParseException
      *             the date time parse exception
      */
     public static TimeRange parse(final String timeRange) throws DateTimeParseException {
@@ -106,9 +106,9 @@ public class TimeRange {
     }
 
     /**
-     * To string.
+     * {@inheritDoc}
      *
-     * @return the string
+     * To string.
      */
     @Override
     public String toString() {

@@ -99,7 +99,6 @@ public interface MonitoringStatus extends ModelBean {
      *
      * @return Transfer Status coming from ECPDS calculations
      */
-
     int getTransferStatus();
 
     /**
@@ -116,7 +115,6 @@ public interface MonitoringStatus extends ModelBean {
      * @return Transfer Status coming from ECPDS calculation, but in "realtime" version, that is, once the product is
      *         transferred the status will be set to OK, no matter what happened before
      */
-
     int getRealTimeTransferStatus();
 
     /**

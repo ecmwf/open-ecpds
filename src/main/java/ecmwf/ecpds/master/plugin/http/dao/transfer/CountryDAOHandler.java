@@ -45,12 +45,9 @@ import ecmwf.web.services.persistence.DAOHandler;
 public class CountryDAOHandler extends PDSDAOBase implements DAOHandler {
 
     /**
+     * {@inheritDoc}
+     *
      * Creates the.
-     *
-     * @return the country
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public Country create() throws DAOException {
@@ -58,15 +55,9 @@ public class CountryDAOHandler extends PDSDAOBase implements DAOHandler {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Find by primary key.
-     *
-     * @param key
-     *            the key
-     *
-     * @return the country
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public Country findByPrimaryKey(final String key) throws DAOException {
@@ -78,15 +69,9 @@ public class CountryDAOHandler extends PDSDAOBase implements DAOHandler {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Find.
-     *
-     * @param search
-     *            the search
-     *
-     * @return the collection
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public Collection<Country> find(final ModelSearch search) throws DAOException {

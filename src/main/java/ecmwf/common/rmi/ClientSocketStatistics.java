@@ -98,7 +98,7 @@ public class ClientSocketStatistics {
      * @param startTime
      *            the start time
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     protected void add(final Socket socket, final long startTime) throws IOException {
@@ -131,9 +131,9 @@ public class ClientSocketStatistics {
     }
 
     /**
-     * To string.
+     * {@inheritDoc}
      *
-     * @return the string
+     * To string.
      */
     @Override
     public String toString() {

@@ -72,9 +72,9 @@ public final class TestModule extends TransferModule {
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
     /**
-     * Gets the status.
+     * {@inheritDoc}
      *
-     * @return the status
+     * Gets the status.
      */
     @Override
     public String getStatus() {
@@ -82,15 +82,9 @@ public final class TestModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Connect.
-     *
-     * @param location
-     *            the location
-     * @param setup
-     *            the setup
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void connect(final String location, final ECtransSetup setup) throws IOException {
@@ -102,13 +96,9 @@ public final class TestModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Del.
-     *
-     * @param name
-     *            the name
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void del(final String name) throws IOException {
@@ -118,19 +108,9 @@ public final class TestModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Put.
-     *
-     * @param name
-     *            the name
-     * @param posn
-     *            the posn
-     * @param size
-     *            the size
-     *
-     * @return the output stream
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public OutputStream put(final String name, final long posn, final long size) throws IOException {
@@ -146,19 +126,9 @@ public final class TestModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Copy.
-     *
-     * @param source
-     *            the source
-     * @param target
-     *            the target
-     * @param posn
-     *            the posn
-     * @param size
-     *            the size
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void copy(final String source, final String target, final long posn, final long size) throws IOException {
@@ -177,17 +147,9 @@ public final class TestModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the.
-     *
-     * @param name
-     *            the name
-     * @param posn
-     *            the posn
-     *
-     * @return the input stream
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public InputStream get(final String name, final long posn) throws IOException {
@@ -195,15 +157,9 @@ public final class TestModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Size.
-     *
-     * @param name
-     *            the name
-     *
-     * @return the long
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public long size(final String name) throws IOException {
@@ -256,10 +212,9 @@ public final class TestModule extends TransferModule {
     }
 
     /**
-     * Close.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Close.
      */
     @Override
     public void close() throws IOException {

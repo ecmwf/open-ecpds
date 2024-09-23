@@ -199,7 +199,7 @@ public class CategoryActionForm extends ECMWFActionForm {
      * @param category
      *            the category
      *
-     * @throws ECMWFActionFormException
+     * @throws ecmwf.web.controller.ECMWFActionFormException
      *             the ECMWF action form exception
      */
     protected void populateCategory(final Category category) throws ECMWFActionFormException {
@@ -218,7 +218,7 @@ public class CategoryActionForm extends ECMWFActionForm {
      * @param category
      *            the category
      *
-     * @throws ECMWFActionFormException
+     * @throws ecmwf.web.controller.ECMWFActionFormException
      *             the ECMWF action form exception
      */
     protected void populateFromCategory(final Category category) throws ECMWFActionFormException {

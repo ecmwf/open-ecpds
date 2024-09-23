@@ -382,7 +382,7 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
      * @param socket
      *            the socket
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public ECpdsPlugin(final String name, final Map<String, String> params, final Socket socket) throws IOException {
@@ -415,19 +415,9 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Get instance of current class.
-     *
-     * @param ref
-     *            the ref
-     * @param params
-     *            the params
-     * @param socket
-     *            the socket
-     *
-     * @return the configurable runnable
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public ConfigurableRunnable newInstance(final String ref, final Map<String, String> params, final Socket socket)
@@ -436,9 +426,9 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     }
 
     /**
-     * Gets the plugin name.
+     * {@inheritDoc}
      *
-     * @return the plugin name
+     * Gets the plugin name.
      */
     @Override
     public String getPluginName() {
@@ -446,9 +436,9 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     }
 
     /**
-     * Gets the port.
+     * {@inheritDoc}
      *
-     * @return the port
+     * Gets the port.
      */
     @Override
     public int getPort() {
@@ -456,9 +446,9 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     }
 
     /**
-     * Gets the version.
+     * {@inheritDoc}
      *
-     * @return the version
+     * Gets the version.
      */
     @Override
     public String getVersion() {
@@ -466,9 +456,9 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     }
 
     /**
-     * Gets the info.
+     * {@inheritDoc}
      *
-     * @return the info
+     * Gets the info.
      */
     @Override
     public String getInfo() {
@@ -476,9 +466,9 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     }
 
     /**
-     * Gets the data file id.
+     * {@inheritDoc}
      *
-     * @return the data file id
+     * Gets the data file id.
      */
     @Override
     public long getDataFileId() {
@@ -486,9 +476,9 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     }
 
     /**
-     * Gets the root.
+     * {@inheritDoc}
      *
-     * @return the root
+     * Gets the root.
      */
     @Override
     public String getRoot() {
@@ -496,9 +486,9 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     }
 
     /**
-     * Gets the byte sent.
+     * {@inheritDoc}
      *
-     * @return the byte sent
+     * Gets the byte sent.
      */
     @Override
     public long getByteSent() {
@@ -506,12 +496,9 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     }
 
     /**
-     * Update.
+     * {@inheritDoc}
      *
-     * @param root
-     *            the root
-     * @param byteSent
-     *            the byte sent
+     * Update.
      */
     @Override
     public void update(final String root, final long byteSent) {
@@ -520,12 +507,9 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Parses the command.
-     *
-     * @param command
-     *            the command
-     *
-     * @return the string
      */
     @Override
     public String parseCommand(final String command) {
@@ -701,7 +685,7 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
      * @param parameters
      *            the parameters
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      * @throws ParameterException
      *             the parameter exception
@@ -1441,12 +1425,9 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     }
 
     /**
-     * Release connection.
+     * {@inheritDoc}
      *
-     * @param socket
-     *            the socket
-     * @param close
-     *            the close
+     * Release connection.
      */
     @Override
     public void releaseConnection(final Socket socket, final boolean close) {
@@ -1537,7 +1518,7 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     /**
      * Reset req.
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void resetReq() throws IOException {
@@ -2583,7 +2564,7 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     /**
      * Destinationstart req.
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void destinationstartReq() throws IOException {
@@ -2604,7 +2585,7 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     /**
      * Destinationstop req.
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void destinationstopReq() throws IOException {
@@ -2625,7 +2606,7 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     /**
      * Schedulerstart req.
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void schedulerstartReq() throws IOException {
@@ -2646,7 +2627,7 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     /**
      * Schedulerstop req.
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void schedulerstopReq() throws IOException {
@@ -2667,7 +2648,7 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     /**
      * Schedulercheck req.
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void schedulercheckReq() throws IOException {
@@ -2702,9 +2683,9 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
      *
      * @throws ParameterException
      *             the parameter exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public void waitforgroupReq(final String[] parameters) throws ParameterException, IOException, DataBaseException {

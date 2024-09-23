@@ -54,9 +54,9 @@ public class UserDataBean implements UserData {
     }
 
     /**
-     * To string.
+     * {@inheritDoc}
      *
-     * @return the string
+     * To string.
      */
     @Override
     public String toString() {
@@ -64,15 +64,9 @@ public class UserDataBean implements UserData {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the attribute.
-     *
-     * @param name
-     *            the name
-     *
-     * @return the attribute
-     *
-     * @throws ModelException
-     *             the model exception
      */
     @Override
     public String getAttribute(final String name) throws ModelException {
@@ -80,14 +74,9 @@ public class UserDataBean implements UserData {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the attribute.
-     *
-     * @param name
-     *            the name
-     * @param defaultValue
-     *            the default value
-     *
-     * @return the attribute
      */
     @Override
     public String getAttribute(final String name, final String defaultValue) {
@@ -95,12 +84,9 @@ public class UserDataBean implements UserData {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the safe attribute.
-     *
-     * @param name
-     *            the name
-     *
-     * @return the safe attribute
      */
     @Override
     public String getSafeAttribute(final String name) {
@@ -108,18 +94,9 @@ public class UserDataBean implements UserData {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the attribute.
-     *
-     * @param name
-     *            the name
-     * @param defaultValue
-     *            the default value
-     * @param prefix
-     *            the prefix
-     * @param suffix
-     *            the suffix
-     *
-     * @return the attribute
      */
     @Override
     public String getAttribute(final String name, final String defaultValue, final String prefix, final String suffix) {
@@ -127,12 +104,9 @@ public class UserDataBean implements UserData {
     }
 
     /**
-     * Sets the attribute.
+     * {@inheritDoc}
      *
-     * @param name
-     *            the name
-     * @param value
-     *            the value
+     * Sets the attribute.
      */
     @Override
     public void setAttribute(final String name, final String value) {
@@ -140,12 +114,9 @@ public class UserDataBean implements UserData {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Dump.
-     *
-     * @param mode
-     *            the mode
-     *
-     * @return the string
      */
     @Override
     public String dump(final int mode) {
@@ -153,19 +124,18 @@ public class UserDataBean implements UserData {
     }
 
     /**
-     * Sets the id.
+     * {@inheritDoc}
      *
-     * @param id
-     *            the new id
+     * Sets the id.
      */
     @Override
     public void setId(final String id) {
     }
 
     /**
-     * Gets the id.
+     * {@inheritDoc}
      *
-     * @return the id
+     * Gets the id.
      */
     @Override
     public String getId() {
@@ -173,9 +143,9 @@ public class UserDataBean implements UserData {
     }
 
     /**
-     * Gets the int id.
+     * {@inheritDoc}
      *
-     * @return the int id
+     * Gets the int id.
      */
     @Override
     public int getIntId() {
@@ -183,9 +153,9 @@ public class UserDataBean implements UserData {
     }
 
     /**
-     * Checks if is new.
+     * {@inheritDoc}
      *
-     * @return true, if is new
+     * Checks if is new.
      */
     @Override
     public boolean isNew() {
@@ -193,15 +163,9 @@ public class UserDataBean implements UserData {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the attribute value.
-     *
-     * @param name
-     *            the name
-     *
-     * @return the attribute value
-     *
-     * @throws ModelException
-     *             the model exception
      */
     @Override
     public Object getAttributeValue(final String name) throws ModelException {
@@ -209,9 +173,9 @@ public class UserDataBean implements UserData {
     }
 
     /**
-     * Gets the bean interface name.
+     * {@inheritDoc}
      *
-     * @return the bean interface name
+     * Gets the bean interface name.
      */
     @Override
     public String getBeanInterfaceName() {
@@ -219,9 +183,9 @@ public class UserDataBean implements UserData {
     }
 
     /**
-     * Gets the attrs.
+     * {@inheritDoc}
      *
-     * @return the attrs
+     * Gets the attrs.
      */
     @Override
     public Map<String, String> getAttrs() {
@@ -231,81 +195,63 @@ public class UserDataBean implements UserData {
     }
 
     /**
-     * Save.
+     * {@inheritDoc}
      *
-     * @throws ModelException
-     *             the model exception
+     * Save.
      */
     @Override
     public void save() throws ModelException {
     }
 
     /**
-     * Insert.
+     * {@inheritDoc}
      *
-     * @throws ModelException
-     *             the model exception
+     * Insert.
      */
     @Override
     public void insert() throws ModelException {
     }
 
     /**
-     * Delete.
+     * {@inheritDoc}
      *
-     * @throws ModelException
-     *             the model exception
+     * Delete.
      */
     @Override
     public void delete() throws ModelException {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Save.
-     *
-     * @param context
-     *            the context
-     *
-     * @throws ModelException
-     *             the model exception
      */
     @Override
     public void save(final Object context) throws ModelException {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Insert.
-     *
-     * @param context
-     *            the context
-     *
-     * @throws ModelException
-     *             the model exception
      */
     @Override
     public void insert(final Object context) throws ModelException {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Delete.
-     *
-     * @param context
-     *            the context
-     *
-     * @throws ModelException
-     *             the model exception
      */
     @Override
     public void delete(final Object context) throws ModelException {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Checks for attribute.
-     *
-     * @param name
-     *            the name
-     *
-     * @return true, if successful
      */
     @Override
     public boolean hasAttribute(final String name) {
@@ -313,9 +259,9 @@ public class UserDataBean implements UserData {
     }
 
     /**
-     * Gets the attribute names.
+     * {@inheritDoc}
      *
-     * @return the attribute names
+     * Gets the attribute names.
      */
     @Override
     public Iterator<?> getAttributeNames() {

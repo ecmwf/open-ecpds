@@ -64,9 +64,9 @@ public class TransferServerBean extends ModelBeanBase implements TransferServer,
     }
 
     /**
-     * Gets the bean interface name.
+     * {@inheritDoc}
      *
-     * @return the bean interface name
+     * Gets the bean interface name.
      */
     @Override
     public String getBeanInterfaceName() {
@@ -74,9 +74,9 @@ public class TransferServerBean extends ModelBeanBase implements TransferServer,
     }
 
     /**
-     * Gets the ojb implementation.
+     * {@inheritDoc}
      *
-     * @return the ojb implementation
+     * Gets the ojb implementation.
      */
     @Override
     public DataBaseObject getOjbImplementation() {
@@ -84,9 +84,9 @@ public class TransferServerBean extends ModelBeanBase implements TransferServer,
     }
 
     /**
-     * Gets the id.
+     * {@inheritDoc}
      *
-     * @return the id
+     * Gets the id.
      */
     @Override
     public String getId() {
@@ -94,9 +94,9 @@ public class TransferServerBean extends ModelBeanBase implements TransferServer,
     }
 
     /**
-     * Gets the active.
+     * {@inheritDoc}
      *
-     * @return the active
+     * Gets the active.
      */
     @Override
     public boolean getActive() {
@@ -104,9 +104,9 @@ public class TransferServerBean extends ModelBeanBase implements TransferServer,
     }
 
     /**
-     * Gets the check.
+     * {@inheritDoc}
      *
-     * @return the check
+     * Gets the check.
      */
     @Override
     public boolean getCheck() {
@@ -114,9 +114,9 @@ public class TransferServerBean extends ModelBeanBase implements TransferServer,
     }
 
     /**
-     * Gets the last update.
+     * {@inheritDoc}
      *
-     * @return the last update
+     * Gets the last update.
      */
     @Override
     public long getLastUpdate() {
@@ -124,9 +124,9 @@ public class TransferServerBean extends ModelBeanBase implements TransferServer,
     }
 
     /**
-     * Gets the last update date.
+     * {@inheritDoc}
      *
-     * @return the last update date
+     * Gets the last update date.
      */
     @Override
     public Date getLastUpdateDate() {
@@ -135,9 +135,9 @@ public class TransferServerBean extends ModelBeanBase implements TransferServer,
     }
 
     /**
-     * Gets the last update duration.
+     * {@inheritDoc}
      *
-     * @return the last update duration
+     * Gets the last update duration.
      */
     @Override
     public String getLastUpdateDuration() {
@@ -146,9 +146,9 @@ public class TransferServerBean extends ModelBeanBase implements TransferServer,
     }
 
     /**
-     * Gets the max inactivity.
+     * {@inheritDoc}
      *
-     * @return the max inactivity
+     * Gets the max inactivity.
      */
     @Override
     public int getMaxInactivity() {
@@ -156,9 +156,9 @@ public class TransferServerBean extends ModelBeanBase implements TransferServer,
     }
 
     /**
-     * Gets the max transfers.
+     * {@inheritDoc}
      *
-     * @return the max transfers
+     * Gets the max transfers.
      */
     @Override
     public int getMaxTransfers() {
@@ -166,9 +166,9 @@ public class TransferServerBean extends ModelBeanBase implements TransferServer,
     }
 
     /**
-     * Gets the name.
+     * {@inheritDoc}
      *
-     * @return the name
+     * Gets the name.
      */
     @Override
     public String getName() {
@@ -176,12 +176,9 @@ public class TransferServerBean extends ModelBeanBase implements TransferServer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the data transfers today.
-     *
-     * @return the data transfers today
-     *
-     * @throws DataFileException
-     *             the data file exception
      */
     @Override
     public Collection<DataTransfer> getDataTransfersToday() throws DataFileException {
@@ -193,10 +190,9 @@ public class TransferServerBean extends ModelBeanBase implements TransferServer,
     }
 
     /**
-     * Sets the active.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new active
+     * Sets the active.
      */
     @Override
     public void setActive(final boolean param) {
@@ -204,10 +200,9 @@ public class TransferServerBean extends ModelBeanBase implements TransferServer,
     }
 
     /**
-     * Sets the check.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new check
+     * Sets the check.
      */
     @Override
     public void setCheck(final boolean param) {
@@ -215,10 +210,9 @@ public class TransferServerBean extends ModelBeanBase implements TransferServer,
     }
 
     /**
-     * Sets the last update.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new last update
+     * Sets the last update.
      */
     @Override
     public void setLastUpdate(final int param) {
@@ -226,10 +220,9 @@ public class TransferServerBean extends ModelBeanBase implements TransferServer,
     }
 
     /**
-     * Sets the max inactivity.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new max inactivity
+     * Sets the max inactivity.
      */
     @Override
     public void setMaxInactivity(final int param) {
@@ -237,10 +230,9 @@ public class TransferServerBean extends ModelBeanBase implements TransferServer,
     }
 
     /**
-     * Sets the max transfers.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new max transfers
+     * Sets the max transfers.
      */
     @Override
     public void setMaxTransfers(final int param) {
@@ -248,10 +240,9 @@ public class TransferServerBean extends ModelBeanBase implements TransferServer,
     }
 
     /**
-     * Sets the name.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new name
+     * Sets the name.
      */
     @Override
     public void setName(final String param) {
@@ -259,9 +250,9 @@ public class TransferServerBean extends ModelBeanBase implements TransferServer,
     }
 
     /**
-     * Gets the host.
+     * {@inheritDoc}
      *
-     * @return the host
+     * Gets the host.
      */
     @Override
     public String getHost() {
@@ -269,9 +260,9 @@ public class TransferServerBean extends ModelBeanBase implements TransferServer,
     }
 
     /**
-     * Gets the port.
+     * {@inheritDoc}
      *
-     * @return the port
+     * Gets the port.
      */
     @Override
     public int getPort() {
@@ -279,10 +270,9 @@ public class TransferServerBean extends ModelBeanBase implements TransferServer,
     }
 
     /**
-     * Sets the host.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new host
+     * Sets the host.
      */
     @Override
     public void setHost(final String param) {
@@ -290,10 +280,9 @@ public class TransferServerBean extends ModelBeanBase implements TransferServer,
     }
 
     /**
-     * Sets the port.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new port
+     * Sets the port.
      */
     @Override
     public void setPort(final int param) {
@@ -301,9 +290,9 @@ public class TransferServerBean extends ModelBeanBase implements TransferServer,
     }
 
     /**
-     * Gets the load.
+     * {@inheritDoc}
      *
-     * @return the load
+     * Gets the load.
      */
     @Override
     public long getLoad() {
@@ -311,9 +300,9 @@ public class TransferServerBean extends ModelBeanBase implements TransferServer,
     }
 
     /**
-     * Gets the transfer group name.
+     * {@inheritDoc}
      *
-     * @return the transfer group name
+     * Gets the transfer group name.
      */
     @Override
     public String getTransferGroupName() {
@@ -321,10 +310,9 @@ public class TransferServerBean extends ModelBeanBase implements TransferServer,
     }
 
     /**
-     * Sets the transfer group name.
+     * {@inheritDoc}
      *
-     * @param name
-     *            the new transfer group name
+     * Sets the transfer group name.
      */
     @Override
     public void setTransferGroupName(final String name) {
@@ -332,9 +320,9 @@ public class TransferServerBean extends ModelBeanBase implements TransferServer,
     }
 
     /**
-     * Gets the transfer group.
+     * {@inheritDoc}
      *
-     * @return the transfer group
+     * Gets the transfer group.
      */
     @Override
     public TransferGroup getTransferGroup() {
@@ -342,9 +330,9 @@ public class TransferServerBean extends ModelBeanBase implements TransferServer,
     }
 
     /**
-     * Gets the host for replication.
+     * {@inheritDoc}
      *
-     * @return the host for replication
+     * Gets the host for replication.
      */
     @Override
     public Host getHostForReplication() {
@@ -352,9 +340,9 @@ public class TransferServerBean extends ModelBeanBase implements TransferServer,
     }
 
     /**
-     * Gets the host for replication name.
+     * {@inheritDoc}
      *
-     * @return the host for replication name
+     * Gets the host for replication name.
      */
     @Override
     public String getHostForReplicationName() {
@@ -362,10 +350,9 @@ public class TransferServerBean extends ModelBeanBase implements TransferServer,
     }
 
     /**
-     * Sets the host for replication name.
+     * {@inheritDoc}
      *
-     * @param name
-     *            the new host for replication name
+     * Sets the host for replication name.
      */
     @Override
     public void setHostForReplicationName(final String name) {
@@ -373,10 +360,9 @@ public class TransferServerBean extends ModelBeanBase implements TransferServer,
     }
 
     /**
-     * Sets the replicate.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new replicate
+     * Sets the replicate.
      */
     @Override
     public void setReplicate(final boolean param) {
@@ -384,9 +370,9 @@ public class TransferServerBean extends ModelBeanBase implements TransferServer,
     }
 
     /**
-     * Gets the replicate.
+     * {@inheritDoc}
      *
-     * @return the replicate
+     * Gets the replicate.
      */
     @Override
     public boolean getReplicate() {
@@ -394,15 +380,9 @@ public class TransferServerBean extends ModelBeanBase implements TransferServer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the report.
-     *
-     * @param u
-     *            the u
-     *
-     * @return the report
-     *
-     * @throws DataFileException
-     *             the data file exception
      */
     @Override
     public String getReport(final User u) throws DataFileException {
@@ -415,12 +395,9 @@ public class TransferServerBean extends ModelBeanBase implements TransferServer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Equals.
-     *
-     * @param o
-     *            the o
-     *
-     * @return true, if successful
      */
     @Override
     public boolean equals(final Object o) {
@@ -440,9 +417,9 @@ public class TransferServerBean extends ModelBeanBase implements TransferServer,
     }
 
     /**
-     * Hash code.
+     * {@inheritDoc}
      *
-     * @return the int
+     * Hash code.
      */
     @Override
     public int hashCode() {
@@ -450,9 +427,9 @@ public class TransferServerBean extends ModelBeanBase implements TransferServer,
     }
 
     /**
-     * To string.
+     * {@inheritDoc}
      *
-     * @return the string
+     * To string.
      */
     @Override
     public String toString() {

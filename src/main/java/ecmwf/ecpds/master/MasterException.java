@@ -27,7 +27,6 @@ package ecmwf.ecpds.master;
  *
  * @since 2024-07-01
  */
-
 public final class MasterException extends Exception {
     /** The Constant serialVersionUID. */
     private static final long serialVersionUID = -2458163018073088020L;

@@ -62,7 +62,7 @@ public class ProductStatusHome extends ModelHomeBase {
      *
      * @return the product status
      *
-     * @throws MonitoringException
+     * @throws ecmwf.ecpds.master.plugin.http.model.monitoring.MonitoringException
      *             the monitoring exception
      */
     public static final ProductStatus findByProduct(final String product, final String time)
@@ -80,7 +80,7 @@ public class ProductStatusHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws MonitoringException
+     * @throws ecmwf.ecpds.master.plugin.http.model.monitoring.MonitoringException
      *             the monitoring exception
      */
     public static final Collection<Pair> findAllProductNameTimePairs() throws MonitoringException {
@@ -99,7 +99,7 @@ public class ProductStatusHome extends ModelHomeBase {
      *
      * @return the map
      *
-     * @throws MonitoringException
+     * @throws ecmwf.ecpds.master.plugin.http.model.monitoring.MonitoringException
      *             the monitoring exception
      */
     public static final Map<String, ProductStatus> findFromMemory() throws MonitoringException {

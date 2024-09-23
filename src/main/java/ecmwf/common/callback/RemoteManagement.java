@@ -38,7 +38,7 @@ public abstract class RemoteManagement extends CallBackObject {
     /**
      * Instantiates a new remote management.
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     protected RemoteManagement() throws RemoteException {

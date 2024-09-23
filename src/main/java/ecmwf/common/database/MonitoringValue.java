@@ -183,9 +183,9 @@ public class MonitoringValue extends DataBaseObject {
     }
 
     /**
-     * Hash code.
+     * {@inheritDoc}
      *
-     * @return the int
+     * Hash code.
      */
     @Override
     public int hashCode() {
@@ -193,12 +193,9 @@ public class MonitoringValue extends DataBaseObject {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Equals.
-     *
-     * @param obj
-     *            the obj
-     *
-     * @return true, if successful
      */
     @Override
     public boolean equals(final Object obj) {

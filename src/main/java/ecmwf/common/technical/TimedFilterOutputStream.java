@@ -80,13 +80,9 @@ public class TimedFilterOutputStream extends FilterOutputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Write.
-     *
-     * @param b
-     *            the b
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void write(final int b) throws IOException {
@@ -96,17 +92,9 @@ public class TimedFilterOutputStream extends FilterOutputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Write.
-     *
-     * @param b
-     *            the b
-     * @param off
-     *            the off
-     * @param len
-     *            the len
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void write(final byte[] b, final int off, final int len) throws IOException {

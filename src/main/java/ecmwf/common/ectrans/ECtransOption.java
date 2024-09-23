@@ -36,6 +36,8 @@ import ecmwf.common.technical.TimeRange;
  *
  * @param <T>
  *            the generic type
+ *
+ * @author root
  */
 public class ECtransOption<T> {
 

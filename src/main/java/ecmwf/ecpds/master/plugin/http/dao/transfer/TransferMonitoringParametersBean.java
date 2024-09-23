@@ -64,9 +64,9 @@ public class TransferMonitoringParametersBean extends MonitoringParametersBaseBe
     }
 
     /**
-     * Gets the transfer predicted time.
+     * {@inheritDoc}
      *
-     * @return the transfer predicted time
+     * Gets the transfer predicted time.
      */
     @Override
     public Date getTransferPredictedTime() {
@@ -91,9 +91,9 @@ public class TransferMonitoringParametersBean extends MonitoringParametersBaseBe
     }
 
     /**
-     * Gets the transfer status.
+     * {@inheritDoc}
      *
-     * @return the transfer status
+     * Gets the transfer status.
      */
     @Override
     public int getTransferStatus() {
@@ -163,9 +163,9 @@ public class TransferMonitoringParametersBean extends MonitoringParametersBaseBe
     }
 
     /**
-     * Gets the transfer status hex color.
+     * {@inheritDoc}
      *
-     * @return the transfer status hex color
+     * Gets the transfer status hex color.
      */
     @Override
     public String getTransferStatusHexColor() {
@@ -173,9 +173,9 @@ public class TransferMonitoringParametersBean extends MonitoringParametersBaseBe
     }
 
     /**
-     * Gets the transfer earliest time.
+     * {@inheritDoc}
      *
-     * @return the transfer earliest time
+     * Gets the transfer earliest time.
      */
     @Override
     public synchronized Date getTransferEarliestTime() {
@@ -188,9 +188,9 @@ public class TransferMonitoringParametersBean extends MonitoringParametersBaseBe
     }
 
     /**
-     * Gets the transfer latest time.
+     * {@inheritDoc}
      *
-     * @return the transfer latest time
+     * Gets the transfer latest time.
      */
     @Override
     public synchronized Date getTransferLatestTime() {
@@ -203,9 +203,9 @@ public class TransferMonitoringParametersBean extends MonitoringParametersBaseBe
     }
 
     /**
-     * Gets the transfer target time.
+     * {@inheritDoc}
      *
-     * @return the transfer target time
+     * Gets the transfer target time.
      */
     @Override
     public synchronized Date getTransferTargetTime() {

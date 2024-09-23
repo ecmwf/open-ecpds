@@ -46,9 +46,9 @@ public interface DataAccessInterface extends Remote {
      *
      * @return the file last modified
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     long getFileLastModified(String destinationNameOrType, String source) throws MasterException, IOException;
@@ -63,9 +63,9 @@ public interface DataAccessInterface extends Remote {
      *
      * @return the long
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     long size(String destinationNameOrType, String source) throws MasterException, IOException;
@@ -80,9 +80,9 @@ public interface DataAccessInterface extends Remote {
      *
      * @return the file list element
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     FileListElement get(String destinationNameOrType, String source) throws MasterException, IOException;
@@ -99,9 +99,9 @@ public interface DataAccessInterface extends Remote {
      *
      * @return the proxy socket input
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     ProxySocket getProxySocketInput(String destinationNameOrType, String source, long offset)
@@ -121,9 +121,9 @@ public interface DataAccessInterface extends Remote {
      *
      * @return the proxy socket input
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     ProxySocket getProxySocketInput(String destinationNameOrType, String source, long offset, long length)
@@ -143,9 +143,9 @@ public interface DataAccessInterface extends Remote {
      *
      * @return the proxy socket output
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     ProxySocket getProxySocketOutput(String destinationNameOrType, String target, long offset, int umask)
@@ -161,9 +161,9 @@ public interface DataAccessInterface extends Remote {
      * @param force
      *            the force
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     void delete(String destinationNameOrType, String source, boolean force) throws MasterException, IOException;
@@ -176,9 +176,9 @@ public interface DataAccessInterface extends Remote {
      * @param path
      *            the path
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     void mkdir(String destinationNameOrType, String path) throws MasterException, IOException;
@@ -191,9 +191,9 @@ public interface DataAccessInterface extends Remote {
      * @param path
      *            the path
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     void rmdir(String destinationNameOrType, String path) throws MasterException, IOException;
@@ -212,9 +212,9 @@ public interface DataAccessInterface extends Remote {
      *
      * @return the file list element[]
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     FileListElement[] list(String destinationNameOrType, String path, int sort, int order)
@@ -230,9 +230,9 @@ public interface DataAccessInterface extends Remote {
      *
      * @return the file list element[]
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     FileListElement[] list(String destinationNameOrType, String path) throws MasterException, IOException;
@@ -247,9 +247,9 @@ public interface DataAccessInterface extends Remote {
      * @param target
      *            the target
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     void move(String destinationNameOrType, String source, String target) throws MasterException, IOException;
@@ -260,9 +260,9 @@ public interface DataAccessInterface extends Remote {
      * @param proxy
      *            the proxy
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     void check(ProxySocket proxy) throws MasterException, IOException;

@@ -210,6 +210,8 @@ public final class TransferScheduler extends MBeanScheduler {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Initialize.
      */
     @Override
@@ -300,7 +302,7 @@ public final class TransferScheduler extends MBeanScheduler {
      *
      * @return the destination thread
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
      */
     public DestinationThread getDestinationThread(final String destinationName) throws MasterException {
@@ -382,7 +384,7 @@ public final class TransferScheduler extends MBeanScheduler {
      * @param host
      *            the host
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public void updateHost(final Host host) throws DataBaseException {
@@ -424,7 +426,7 @@ public final class TransferScheduler extends MBeanScheduler {
      * @param graceful
      *            the graceful
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public void holdDestination(final String userName, final String destinationName, final String status,
@@ -453,7 +455,7 @@ public final class TransferScheduler extends MBeanScheduler {
      * @param graceful
      *            the graceful
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public void holdAllDestinations(final String userName, final String status, final boolean graceful)
@@ -471,7 +473,7 @@ public final class TransferScheduler extends MBeanScheduler {
      *
      * @return the destination status
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public String getDestinationStatus(final String destinationName) throws DataBaseException {
@@ -488,7 +490,7 @@ public final class TransferScheduler extends MBeanScheduler {
      *
      * @return the destination status
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public String getDestinationStatus(final String destinationName, String statusCode) throws DataBaseException {
@@ -517,7 +519,7 @@ public final class TransferScheduler extends MBeanScheduler {
      * @param reset
      *            the reset
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public void restartDestination(final String userName, final String comment, final String destinationName,
@@ -544,7 +546,7 @@ public final class TransferScheduler extends MBeanScheduler {
      * @param graceful
      *            the graceful
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public void restartAllDestinations(final String userName, final boolean graceful) throws DataBaseException {
@@ -558,7 +560,7 @@ public final class TransferScheduler extends MBeanScheduler {
      *
      * @return the monitoring thread
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
      */
     public MonitoringThread getMonitoringThread() throws MasterException {
@@ -569,9 +571,9 @@ public final class TransferScheduler extends MBeanScheduler {
     }
 
     /**
-     * Next step.
+     * {@inheritDoc}
      *
-     * @return the int
+     * Next step.
      */
     @Override
     public int nextStep() {
@@ -657,9 +659,9 @@ public final class TransferScheduler extends MBeanScheduler {
     }
 
     /**
-     * Gets the activity.
+     * {@inheritDoc}
      *
-     * @return the activity
+     * Gets the activity.
      */
     @Override
     public String getActivity() {
@@ -701,7 +703,7 @@ public final class TransferScheduler extends MBeanScheduler {
      *
      * @return the transfer server name
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static TransferServer getTransferServerName(final boolean debug, final String transferGroupName,
@@ -951,7 +953,7 @@ public final class TransferScheduler extends MBeanScheduler {
      *
      * @return the proxy socket
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
      */
     public static ProxySocket put(final TransferServer server, final Host host, final String target,
@@ -988,7 +990,7 @@ public final class TransferScheduler extends MBeanScheduler {
      *
      * @return the proxy socket
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
      */
     public static ProxySocket get(final TransferServer server, final Host host, final String source,
@@ -1019,9 +1021,9 @@ public final class TransferScheduler extends MBeanScheduler {
      *
      * @return the proxy socket
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
      */
     public static ProxySocket get(final DataTransfer transfer, final long remotePosn, final long length)
@@ -1108,7 +1110,7 @@ public final class TransferScheduler extends MBeanScheduler {
      * @param proxySocket
      *            the proxy socket
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static void check(final ProxySocket proxySocket) throws IOException {
@@ -1134,7 +1136,7 @@ public final class TransferScheduler extends MBeanScheduler {
      *
      * @return the long
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
      */
     public static long size(final TransferServer server, final Host host, final String source) throws MasterException {
@@ -1166,7 +1168,7 @@ public final class TransferScheduler extends MBeanScheduler {
      *
      * @return the string[]
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
      */
     public static String[] list(final TransferServer server, final Host host, final String source, final String pattern)
@@ -1195,7 +1197,7 @@ public final class TransferScheduler extends MBeanScheduler {
      * @param source
      *            the source
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
      */
     public static void del(final TransferServer server, final Host host, final String source) throws MasterException {
@@ -1221,7 +1223,7 @@ public final class TransferScheduler extends MBeanScheduler {
      * @param ticket
      *            the ticket
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
      */
     public static void check(final TransferServer server, final long ticket) throws MasterException {
@@ -1248,7 +1250,7 @@ public final class TransferScheduler extends MBeanScheduler {
      * @param dir
      *            the dir
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
      */
     public static void mkdir(final TransferServer server, final Host host, final String dir) throws MasterException {
@@ -1276,7 +1278,7 @@ public final class TransferScheduler extends MBeanScheduler {
      * @param dir
      *            the dir
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
      */
     public static void rmdir(final TransferServer server, final Host host, final String dir) throws MasterException {
@@ -1318,7 +1320,7 @@ public final class TransferScheduler extends MBeanScheduler {
      * @param target
      *            the target
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
      */
     public static void move(final TransferServer server, final Host host, final String source, final String target)
@@ -1646,7 +1648,7 @@ public final class TransferScheduler extends MBeanScheduler {
      *
      * @return the backup result
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public static BackupResult backup(final Host hostForBackup, final TransferServer[] servers,
@@ -1772,11 +1774,11 @@ public final class TransferScheduler extends MBeanScheduler {
      *
      * @return the acquisition result
      *
-     * @throws TransferServerException
+     * @throws ecmwf.ecpds.master.transfer.TransferServerProvider.TransferServerException
      *             the transfer server exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static AcquisitionResult acquisition(final StatusUpdate out, final String destinationName, final Host host,
@@ -1861,11 +1863,11 @@ public final class TransferScheduler extends MBeanScheduler {
      *
      * @return the execution result
      *
-     * @throws TransferServerException
+     * @throws ecmwf.ecpds.master.transfer.TransferServerProvider.TransferServerException
      *             the transfer server exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static ExecutionResult execution(final StatusUpdate out, final String destinationName, final Host host,
@@ -2025,9 +2027,9 @@ public final class TransferScheduler extends MBeanScheduler {
      *
      * @return the download result
      *
-     * @throws TransferServerException
+     * @throws ecmwf.ecpds.master.transfer.TransferServerProvider.TransferServerException
      *             the transfer server exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public static DownloadResult download(final DataTransfer transfer, final Host hostForSource,
@@ -2258,9 +2260,9 @@ public final class TransferScheduler extends MBeanScheduler {
      *
      * @return the mover report
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static String getMoverReport(final Host proxyHost) throws DataBaseException, IOException {
@@ -2288,9 +2290,9 @@ public final class TransferScheduler extends MBeanScheduler {
      *
      * @return the host report
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static String getHostReport(final Host proxyHost, final Host host) throws DataBaseException, IOException {
@@ -2309,6 +2311,8 @@ public final class TransferScheduler extends MBeanScheduler {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Shutdown.
      */
     @Override
@@ -2335,9 +2339,9 @@ public final class TransferScheduler extends MBeanScheduler {
     }
 
     /**
-     * Gets the MBean info.
+     * {@inheritDoc}
      *
-     * @return the MBean info
+     * Gets the MBean info.
      */
     @Override
     public MBeanInfo getMBeanInfo() {
@@ -2349,17 +2353,9 @@ public final class TransferScheduler extends MBeanScheduler {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the attribute.
-     *
-     * @param attributeName
-     *            the attribute name
-     *
-     * @return the attribute
-     *
-     * @throws AttributeNotFoundException
-     *             the attribute not found exception
-     * @throws MBeanException
-     *             the MBean exception
      */
     @Override
     public Object getAttribute(final String attributeName) throws AttributeNotFoundException, MBeanException {
@@ -2375,19 +2371,9 @@ public final class TransferScheduler extends MBeanScheduler {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the attribute.
-     *
-     * @param name
-     *            the name
-     * @param value
-     *            the value
-     *
-     * @return true, if successful
-     *
-     * @throws InvalidAttributeValueException
-     *             the invalid attribute value exception
-     * @throws MBeanException
-     *             the MBean exception
      */
     @Override
     public boolean setAttribute(final String name, final Object value)
@@ -3132,7 +3118,7 @@ public final class TransferScheduler extends MBeanScheduler {
         }
 
         /**
-         * Converts into be reseted.
+         * Signal is should be reset.
          *
          * @return true, if successful
          */
@@ -4180,7 +4166,7 @@ public final class TransferScheduler extends MBeanScheduler {
         }
 
         /**
-         * Converts into be reseted.
+         * Signal if should be reset.
          *
          * @return true, if successful
          */

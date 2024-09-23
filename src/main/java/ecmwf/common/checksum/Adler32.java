@@ -77,9 +77,9 @@ final class Adler32 extends Checksum {
     }
 
     /**
-     * Gets the input stream.
+     * {@inheritDoc}
      *
-     * @return the input stream
+     * Gets the input stream.
      */
     @Override
     public InputStream getInputStream() {
@@ -87,9 +87,9 @@ final class Adler32 extends Checksum {
     }
 
     /**
-     * Gets the native input stream.
+     * {@inheritDoc}
      *
-     * @return the native input stream
+     * Gets the native input stream.
      */
     @Override
     protected InputStream getNativeInputStream() {
@@ -97,9 +97,9 @@ final class Adler32 extends Checksum {
     }
 
     /**
-     * Gets the output stream.
+     * {@inheritDoc}
      *
-     * @return the output stream
+     * Gets the output stream.
      */
     @Override
     public OutputStream getOutputStream() {
@@ -107,9 +107,9 @@ final class Adler32 extends Checksum {
     }
 
     /**
-     * Gets the native output stream.
+     * {@inheritDoc}
      *
-     * @return the native output stream
+     * Gets the native output stream.
      */
     @Override
     protected OutputStream getNativeOutputStream() {
@@ -117,9 +117,9 @@ final class Adler32 extends Checksum {
     }
 
     /**
-     * Gets the value.
+     * {@inheritDoc}
      *
-     * @return the value
+     * Gets the value.
      */
     @Override
     public String getValue() {

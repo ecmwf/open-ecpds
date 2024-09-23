@@ -24,18 +24,43 @@ import java.io.File;
  * lifecycle and before bootstrapping other resources.
  *
  * This is a temporary fix before a solution is found to allow redirecting hivemq internal logging to log4j.
+ *
+ * @author root
  */
 public class LoggingBootstrap {
 
+    /**
+     * <p>
+     * prepareLogging.
+     * </p>
+     */
     public static void prepareLogging() {
     }
 
+    /**
+     * <p>
+     * initLogging.
+     * </p>
+     *
+     * @param configFolder
+     *            a {@link java.io.File} object
+     */
     public static void initLogging(final @NotNull File configFolder) {
     }
 
+    /**
+     * <p>
+     * resetLogging.
+     * </p>
+     */
     public static void resetLogging() {
     }
 
+    /**
+     * <p>
+     * addLoglevelModifiers.
+     * </p>
+     */
     public static void addLoglevelModifiers() {
     }
 }

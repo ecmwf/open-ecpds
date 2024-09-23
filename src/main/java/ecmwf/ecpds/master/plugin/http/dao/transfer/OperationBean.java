@@ -54,9 +54,9 @@ public class OperationBean extends ModelBeanBase implements Operation, OjbImplem
     }
 
     /**
-     * Gets the ojb implementation.
+     * {@inheritDoc}
      *
-     * @return the ojb implementation
+     * Gets the ojb implementation.
      */
     @Override
     public DataBaseObject getOjbImplementation() {
@@ -64,9 +64,9 @@ public class OperationBean extends ModelBeanBase implements Operation, OjbImplem
     }
 
     /**
-     * Gets the bean interface name.
+     * {@inheritDoc}
      *
-     * @return the bean interface name
+     * Gets the bean interface name.
      */
     @Override
     public String getBeanInterfaceName() {
@@ -74,9 +74,9 @@ public class OperationBean extends ModelBeanBase implements Operation, OjbImplem
     }
 
     /**
-     * Gets the id.
+     * {@inheritDoc}
      *
-     * @return the id
+     * Gets the id.
      */
     @Override
     public String getId() {
@@ -84,9 +84,9 @@ public class OperationBean extends ModelBeanBase implements Operation, OjbImplem
     }
 
     /**
-     * Gets the name.
+     * {@inheritDoc}
      *
-     * @return the name
+     * Gets the name.
      */
     @Override
     public String getName() {
@@ -94,9 +94,9 @@ public class OperationBean extends ModelBeanBase implements Operation, OjbImplem
     }
 
     /**
-     * Gets the comment.
+     * {@inheritDoc}
      *
-     * @return the comment
+     * Gets the comment.
      */
     @Override
     public String getComment() {
@@ -108,7 +108,7 @@ public class OperationBean extends ModelBeanBase implements Operation, OjbImplem
      *
      * @return the operations
      *
-     * @throws OperationException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.OperationException
      *             the operation exception
      */
     public Collection<Operation> getOperations() throws OperationException {
@@ -116,12 +116,9 @@ public class OperationBean extends ModelBeanBase implements Operation, OjbImplem
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Equals.
-     *
-     * @param o
-     *            the o
-     *
-     * @return true, if successful
      */
     @Override
     public boolean equals(final Object o) {
@@ -141,9 +138,9 @@ public class OperationBean extends ModelBeanBase implements Operation, OjbImplem
     }
 
     /**
-     * Hash code.
+     * {@inheritDoc}
      *
-     * @return the int
+     * Hash code.
      */
     @Override
     public int hashCode() {
@@ -151,9 +148,9 @@ public class OperationBean extends ModelBeanBase implements Operation, OjbImplem
     }
 
     /**
-     * To string.
+     * {@inheritDoc}
      *
-     * @return the string
+     * To string.
      */
     @Override
     public String toString() {

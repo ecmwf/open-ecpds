@@ -27,7 +27,6 @@ package ecmwf.ecpds.master;
  *
  * @since 2024-07-01
  */
-
 public final class DestinationStep {
     /** The Constant DESTINATION_STEP_INIT. */
     public static final int DESTINATION_STEP_INIT = 0;

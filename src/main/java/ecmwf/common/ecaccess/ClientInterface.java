@@ -38,7 +38,7 @@ public interface ClientInterface extends Remote {
      *
      * @return the password
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     String getPassword() throws RemoteException;
@@ -48,7 +48,7 @@ public interface ClientInterface extends Remote {
      *
      * @return the root
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     String getRoot() throws RemoteException;
@@ -58,7 +58,7 @@ public interface ClientInterface extends Remote {
      *
      * @return the service
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     String getService() throws RemoteException;

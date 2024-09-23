@@ -90,9 +90,9 @@ class DBIterator<E extends DataBaseObject> implements Iterator<E> {
     }
 
     /**
-     * Checks for next.
+     * {@inheritDoc}
      *
-     * @return true, if successful
+     * Checks for next.
      */
     @Override
     public boolean hasNext() {
@@ -109,9 +109,9 @@ class DBIterator<E extends DataBaseObject> implements Iterator<E> {
     }
 
     /**
-     * Next.
+     * {@inheritDoc}
      *
-     * @return the e
+     * Next.
      */
     @Override
     public E next() {
@@ -131,6 +131,8 @@ class DBIterator<E extends DataBaseObject> implements Iterator<E> {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * This method has a different behavior, as instead of removing the latest element it is closing the underlying
      * database connection. This allow releasing the underlying resources even when using a standard iterator interface.
      *

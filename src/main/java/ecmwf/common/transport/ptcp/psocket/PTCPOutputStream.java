@@ -74,7 +74,6 @@ public class PTCPOutputStream extends OutputStream {
      * @param streams
      *            the streams
      */
-
     public PTCPOutputStream(final OutputStream[] streams) {
         _doneSynchro = new Object();
         _out = new ByteArrayOutputStream();
@@ -90,12 +89,11 @@ public class PTCPOutputStream extends OutputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Closes this output stream and releases any system resources associated with this stream. The general contract of
      * close is that it closes the output stream. A closed stream cannot perform output operations and cannot be
      * reopened.
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void close() throws IOException {
@@ -134,12 +132,11 @@ public class PTCPOutputStream extends OutputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Flushes this output stream and forces any buffered output bytes to be written out. The general contract of flush
      * is that calling it is an indication that, if any bytes previously written have been buffered by the
      * implementation of the output stream, such bytes should immediately be written to their intended destination.
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void flush() throws IOException {
@@ -187,17 +184,9 @@ public class PTCPOutputStream extends OutputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Write.
-     *
-     * @param b
-     *            the b
-     * @param off
-     *            the off
-     * @param len
-     *            the len
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void write(final byte[] b, final int off, final int len) throws IOException {
@@ -278,17 +267,13 @@ public class PTCPOutputStream extends OutputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Writes the specified byte to this output stream. The general contract for write is that one byte is written to
      * the output stream. The byte to be written is the eight low-order bits of the argument b. The 24 high-order bits
      * of b are ignored.
      *
      * This single byte will travel on command stream
-     *
-     * @param b
-     *            the b
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void write(final int b) throws IOException {
@@ -296,16 +281,12 @@ public class PTCPOutputStream extends OutputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Writes b.length bytes from the specified byte array to this output stream. The general contract for write(b) is
      * that it should have exactly the same effect as the call write(b, 0, b.length).
      *
      * This is a parallel write.
-     *
-     * @param b
-     *            the b
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void write(final byte[] b) throws IOException {

@@ -91,9 +91,9 @@ public class TOTP {
      *
      * @return true, if successful
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
-     * @throws URISyntaxException
+     * @throws java.net.URISyntaxException
      *             the URI syntax exception
      */
     public static boolean authenticate(final String user, final String credentials, final boolean isPasscode)

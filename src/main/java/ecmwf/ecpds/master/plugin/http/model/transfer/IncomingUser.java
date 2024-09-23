@@ -53,15 +53,15 @@ public interface IncomingUser extends ModelBean {
      *
      * @return the country
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Country getCountry() throws TransferException;
 
     /**
-     * Gets the id.
+     * {@inheritDoc}
      *
-     * @return the id
+     * Gets the id.
      */
     @Override
     String getId();
@@ -145,10 +145,9 @@ public interface IncomingUser extends ModelBean {
     void setCountryIso(String iso);
 
     /**
-     * Sets the id.
+     * {@inheritDoc}
      *
-     * @param id
-     *            the new id
+     * Sets the id.
      */
     @Override
     void setId(String id);
@@ -257,7 +256,7 @@ public interface IncomingUser extends ModelBean {
      * @param id
      *            the id
      *
-     * @throws OperationException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.OperationException
      *             the operation exception
      */
     void closeSession(final User u, String id) throws OperationException;
@@ -274,7 +273,7 @@ public interface IncomingUser extends ModelBean {
      *
      * @return the associated incoming policies
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Collection<IncomingPolicy> getAssociatedIncomingPolicies() throws TransferException;
@@ -284,7 +283,7 @@ public interface IncomingUser extends ModelBean {
      *
      * @return the associated destinations
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Collection<Destination> getAssociatedDestinations() throws TransferException;
@@ -294,7 +293,7 @@ public interface IncomingUser extends ModelBean {
      *
      * @return the associated operations
      *
-     * @throws OperationException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.OperationException
      *             the operation exception
      */
     Collection<Operation> getAssociatedOperations() throws OperationException;

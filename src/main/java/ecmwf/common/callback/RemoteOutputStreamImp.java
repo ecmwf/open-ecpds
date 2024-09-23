@@ -62,7 +62,7 @@ public final class RemoteOutputStreamImp extends RemoteManagement implements Rem
      * @param out
      *            the out
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     public RemoteOutputStreamImp(final OutputStream out) throws RemoteException {
@@ -78,7 +78,7 @@ public final class RemoteOutputStreamImp extends RemoteManagement implements Rem
      * @param out
      *            the out
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     public RemoteOutputStreamImp(final Closeable toClose, final OutputStream out) throws RemoteException {
@@ -87,9 +87,9 @@ public final class RemoteOutputStreamImp extends RemoteManagement implements Rem
     }
 
     /**
-     * Alive.
+     * {@inheritDoc}
      *
-     * @return true, if successful
+     * Alive.
      */
     @Override
     public boolean alive() {
@@ -104,10 +104,9 @@ public final class RemoteOutputStreamImp extends RemoteManagement implements Rem
     }
 
     /**
-     * Close.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Close.
      */
     @Override
     public void close() throws IOException {
@@ -120,6 +119,8 @@ public final class RemoteOutputStreamImp extends RemoteManagement implements Rem
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Destroy.
      */
     @Override
@@ -128,10 +129,9 @@ public final class RemoteOutputStreamImp extends RemoteManagement implements Rem
     }
 
     /**
-     * Flush.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Flush.
      */
     @Override
     public void flush() throws IOException {
@@ -139,13 +139,9 @@ public final class RemoteOutputStreamImp extends RemoteManagement implements Rem
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Write.
-     *
-     * @param b
-     *            the b
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void write(final byte[] b) throws IOException {
@@ -153,17 +149,9 @@ public final class RemoteOutputStreamImp extends RemoteManagement implements Rem
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Write.
-     *
-     * @param b
-     *            the b
-     * @param off
-     *            the off
-     * @param len
-     *            the len
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void write(final byte[] b, final int off, final int len) throws IOException {
@@ -171,13 +159,9 @@ public final class RemoteOutputStreamImp extends RemoteManagement implements Rem
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Write.
-     *
-     * @param b
-     *            the b
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void write(final int b) throws IOException {
@@ -185,10 +169,9 @@ public final class RemoteOutputStreamImp extends RemoteManagement implements Rem
     }
 
     /**
-     * Finalize.
+     * {@inheritDoc}
      *
-     * @throws Throwable
-     *             the throwable
+     * Finalize.
      */
     @Override
     protected void finalize() throws Throwable {

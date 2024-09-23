@@ -29,7 +29,6 @@ package ecmwf.common.monitor;
  *
  * @since 2024-07-01
  */
-
 public final class MonitorException extends Exception {
     /** The Constant serialVersionUID. */
     private static final long serialVersionUID = 8707157562536844297L;

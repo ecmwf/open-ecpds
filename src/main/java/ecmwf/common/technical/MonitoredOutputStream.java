@@ -89,10 +89,9 @@ public class MonitoredOutputStream extends FilterOutputStream implements StreamM
     }
 
     /**
-     * Close.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Close.
      */
     @Override
     public void close() throws IOException {
@@ -120,13 +119,9 @@ public class MonitoredOutputStream extends FilterOutputStream implements StreamM
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Write.
-     *
-     * @param b
-     *            the b
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void write(final byte[] b) throws IOException {
@@ -138,17 +133,9 @@ public class MonitoredOutputStream extends FilterOutputStream implements StreamM
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Write.
-     *
-     * @param b
-     *            the b
-     * @param off
-     *            the off
-     * @param len
-     *            the len
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void write(final byte[] b, final int off, final int len) throws IOException {
@@ -160,13 +147,9 @@ public class MonitoredOutputStream extends FilterOutputStream implements StreamM
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Write.
-     *
-     * @param b
-     *            the b
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void write(final int b) throws IOException {
@@ -178,9 +161,9 @@ public class MonitoredOutputStream extends FilterOutputStream implements StreamM
     }
 
     /**
-     * Gets the byte sent.
+     * {@inheritDoc}
      *
-     * @return the byte sent
+     * Gets the byte sent.
      */
     @Override
     public long getByteSent() {
@@ -188,9 +171,9 @@ public class MonitoredOutputStream extends FilterOutputStream implements StreamM
     }
 
     /**
-     * Gets the rate.
+     * {@inheritDoc}
      *
-     * @return the rate
+     * Gets the rate.
      */
     @Override
     public String getRate() {
@@ -202,9 +185,9 @@ public class MonitoredOutputStream extends FilterOutputStream implements StreamM
     }
 
     /**
-     * Gets the simplified rate.
+     * {@inheritDoc}
      *
-     * @return the simplified rate
+     * Gets the simplified rate.
      */
     @Override
     public String getSimplifiedRate() {
@@ -215,9 +198,9 @@ public class MonitoredOutputStream extends FilterOutputStream implements StreamM
     }
 
     /**
-     * Gets the start time.
+     * {@inheritDoc}
      *
-     * @return the start time
+     * Gets the start time.
      */
     @Override
     public long getStartTime() {
@@ -225,9 +208,9 @@ public class MonitoredOutputStream extends FilterOutputStream implements StreamM
     }
 
     /**
-     * Gets the duration.
+     * {@inheritDoc}
      *
-     * @return the duration
+     * Gets the duration.
      */
     @Override
     public long getDuration() {
@@ -235,6 +218,8 @@ public class MonitoredOutputStream extends FilterOutputStream implements StreamM
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Close and interrupt if required.
      */
     @Override

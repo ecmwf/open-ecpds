@@ -39,9 +39,9 @@ public interface RemoteInputStream extends Remote {
      *
      * @return the int
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     int available() throws IOException, RemoteException;
@@ -49,9 +49,9 @@ public interface RemoteInputStream extends Remote {
     /**
      * Close.
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void close() throws IOException, RemoteException;
@@ -62,7 +62,7 @@ public interface RemoteInputStream extends Remote {
      * @param readlimit
      *            the readlimit
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void mark(int readlimit) throws RemoteException;
@@ -72,7 +72,7 @@ public interface RemoteInputStream extends Remote {
      *
      * @return true, if successful
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     boolean markSupported() throws RemoteException;
@@ -82,9 +82,9 @@ public interface RemoteInputStream extends Remote {
      *
      * @return the int
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     int read() throws IOException, RemoteException;
@@ -97,9 +97,9 @@ public interface RemoteInputStream extends Remote {
      *
      * @return the byte stream
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     ByteStream read(int len) throws IOException, RemoteException;
@@ -107,9 +107,9 @@ public interface RemoteInputStream extends Remote {
     /**
      * Reset.
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void reset() throws IOException, RemoteException;
@@ -122,9 +122,9 @@ public interface RemoteInputStream extends Remote {
      *
      * @return the long
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     long skip(long n) throws IOException, RemoteException;

@@ -37,9 +37,9 @@ public interface RemoteOutputStream extends Remote {
     /**
      * Close.
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void close() throws IOException, RemoteException;
@@ -47,9 +47,9 @@ public interface RemoteOutputStream extends Remote {
     /**
      * Flush.
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void flush() throws IOException, RemoteException;
@@ -60,9 +60,9 @@ public interface RemoteOutputStream extends Remote {
      * @param b
      *            the b
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void write(byte[] b) throws IOException, RemoteException;
@@ -77,9 +77,9 @@ public interface RemoteOutputStream extends Remote {
      * @param len
      *            the len
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void write(byte[] b, int off, int len) throws IOException, RemoteException;
@@ -90,9 +90,9 @@ public interface RemoteOutputStream extends Remote {
      * @param b
      *            the b
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void write(int b) throws IOException, RemoteException;

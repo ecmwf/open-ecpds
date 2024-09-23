@@ -56,12 +56,9 @@ public abstract class InputStreamChecker extends FilterInputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Read.
-     *
-     * @return the int
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int read() throws IOException {
@@ -74,15 +71,9 @@ public abstract class InputStreamChecker extends FilterInputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Read.
-     *
-     * @param b
-     *            the b
-     *
-     * @return the int
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int read(final byte b[]) throws IOException {
@@ -95,19 +86,9 @@ public abstract class InputStreamChecker extends FilterInputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Read.
-     *
-     * @param b
-     *            the b
-     * @param off
-     *            the off
-     * @param len
-     *            the len
-     *
-     * @return the int
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int read(final byte b[], final int off, final int len) throws IOException {
@@ -120,15 +101,9 @@ public abstract class InputStreamChecker extends FilterInputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Skip.
-     *
-     * @param n
-     *            the n
-     *
-     * @return the long
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public long skip(final long n) throws IOException {
@@ -141,12 +116,9 @@ public abstract class InputStreamChecker extends FilterInputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Available.
-     *
-     * @return the int
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int available() throws IOException {
@@ -159,10 +131,9 @@ public abstract class InputStreamChecker extends FilterInputStream {
     }
 
     /**
-     * Close.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Close.
      */
     @Override
     public void close() throws IOException {
@@ -175,10 +146,9 @@ public abstract class InputStreamChecker extends FilterInputStream {
     }
 
     /**
-     * Reset.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Reset.
      */
     @Override
     public synchronized void reset() throws IOException {

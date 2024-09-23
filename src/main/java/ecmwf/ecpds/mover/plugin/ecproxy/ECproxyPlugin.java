@@ -97,7 +97,7 @@ public final class ECproxyPlugin extends SimplePlugin {
      * @param socket
      *            the socket
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public ECproxyPlugin(final String name, final Map<String, String> params, final Socket socket) throws IOException {
@@ -118,19 +118,9 @@ public final class ECproxyPlugin extends SimplePlugin {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Get instance of current class.
-     *
-     * @param ref
-     *            the ref
-     * @param params
-     *            the params
-     * @param socket
-     *            the socket
-     *
-     * @return the configurable runnable
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public ConfigurableRunnable newInstance(final String ref, final Map<String, String> params, final Socket socket)
@@ -139,9 +129,9 @@ public final class ECproxyPlugin extends SimplePlugin {
     }
 
     /**
-     * Gets the plugin name.
+     * {@inheritDoc}
      *
-     * @return the plugin name
+     * Gets the plugin name.
      */
     @Override
     public String getPluginName() {
@@ -149,9 +139,9 @@ public final class ECproxyPlugin extends SimplePlugin {
     }
 
     /**
-     * Gets the port.
+     * {@inheritDoc}
      *
-     * @return the port
+     * Gets the port.
      */
     @Override
     public int getPort() {
@@ -159,9 +149,9 @@ public final class ECproxyPlugin extends SimplePlugin {
     }
 
     /**
-     * Gets the version.
+     * {@inheritDoc}
      *
-     * @return the version
+     * Gets the version.
      */
     @Override
     public String getVersion() {
@@ -169,13 +159,9 @@ public final class ECproxyPlugin extends SimplePlugin {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Customize socket.
-     *
-     * @param socket
-     *            the socket
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void customizeSocket(final Socket socket) throws IOException {
@@ -236,7 +222,7 @@ public final class ECproxyPlugin extends SimplePlugin {
      * @param parameters
      *            the parameters
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      * @throws ParameterException
      *             the parameter exception
@@ -254,7 +240,7 @@ public final class ECproxyPlugin extends SimplePlugin {
      * @param parameters
      *            the parameters
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      * @throws ParameterException
      *             the parameter exception
@@ -269,7 +255,7 @@ public final class ECproxyPlugin extends SimplePlugin {
      * @param parameters
      *            the parameters
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      * @throws ParameterException
      *             the parameter exception
@@ -412,12 +398,9 @@ public final class ECproxyPlugin extends SimplePlugin {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Parses the command.
-     *
-     * @param command
-     *            the command
-     *
-     * @return the string
      */
     @Override
     public String parseCommand(final String command) {
@@ -450,7 +433,7 @@ public final class ECproxyPlugin extends SimplePlugin {
      * @param parameters
      *            the parameters
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     public void ticketReq(final String[] parameters) throws Exception {

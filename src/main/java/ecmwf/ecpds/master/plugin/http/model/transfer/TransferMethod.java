@@ -82,7 +82,7 @@ public interface TransferMethod extends ModelBean {
      *
      * @return the ec trans module
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     EcTransModule getEcTransModule() throws TransferException;
@@ -99,7 +99,7 @@ public interface TransferMethod extends ModelBean {
      *
      * @return the hosts
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Collection<Host> getHosts() throws TransferException;

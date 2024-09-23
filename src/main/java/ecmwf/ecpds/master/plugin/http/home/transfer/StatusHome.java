@@ -57,7 +57,7 @@ public class StatusHome extends ModelHomeBase {
      *
      * @return the status
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Status findByPrimaryKey(final String key) throws TransferException {
@@ -74,7 +74,7 @@ public class StatusHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<Status> findAll() throws TransferException {
@@ -89,7 +89,7 @@ public class StatusHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<Status> find(final ModelSearch search) throws TransferException {
@@ -102,12 +102,9 @@ public class StatusHome extends ModelHomeBase {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the default search.
-     *
-     * @param query
-     *            the query
-     *
-     * @return the default search
      */
     public static final ModelSearch getDefaultSearch(final String query) {
         final var search = ModelHomeBase.getDefaultSearch(query);

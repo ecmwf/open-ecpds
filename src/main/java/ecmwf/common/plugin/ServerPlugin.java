@@ -105,7 +105,7 @@ public abstract class ServerPlugin extends PluginThread {
      * @param socket
      *            the socket
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public ServerPlugin(final String ref, final Map<String, String> params, final Socket socket) throws IOException {
@@ -175,7 +175,7 @@ public abstract class ServerPlugin extends PluginThread {
      * @param socket
      *            the socket
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void customizeSocket(final Socket socket) throws IOException {
@@ -193,13 +193,15 @@ public abstract class ServerPlugin extends PluginThread {
      *
      * @return the configurable runnable
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract ConfigurableRunnable newInstance(final String ref, final Map<String, String> params,
             final Socket socket) throws IOException;
 
     /**
+     * {@inheritDoc}
+     *
      * Configurable run.
      */
     @Override
@@ -301,10 +303,9 @@ public abstract class ServerPlugin extends PluginThread {
     }
 
     /**
-     * Caller back.
+     * {@inheritDoc}
      *
-     * @param reset
-     *            the reset
+     * Caller back.
      */
     @Override
     public void callerBack(final boolean reset) {
@@ -313,6 +314,8 @@ public abstract class ServerPlugin extends PluginThread {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Caller gone.
      */
     @Override
@@ -397,9 +400,9 @@ public abstract class ServerPlugin extends PluginThread {
     }
 
     /**
-     * Start.
+     * {@inheritDoc}
      *
-     * @return true, if successful
+     * Start.
      */
     @Override
     public boolean start() {
@@ -434,7 +437,7 @@ public abstract class ServerPlugin extends PluginThread {
      * @param socket
      *            the socket
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract void startConnection(Socket socket) throws IOException;
@@ -447,12 +450,14 @@ public abstract class ServerPlugin extends PluginThread {
      * @param connectionsCount
      *            the connections count
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract void refuseConnection(Socket socket, int connectionsCount) throws IOException;
 
     /**
+     * {@inheritDoc}
+     *
      * Stop.
      */
     @Override
@@ -469,17 +474,9 @@ public abstract class ServerPlugin extends PluginThread {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the attribute.
-     *
-     * @param attributeName
-     *            the attribute name
-     *
-     * @return the attribute
-     *
-     * @throws AttributeNotFoundException
-     *             the attribute not found exception
-     * @throws MBeanException
-     *             the MBean exception
      */
     @Override
     public Object getAttribute(final String attributeName) throws AttributeNotFoundException, MBeanException {
@@ -523,9 +520,9 @@ public abstract class ServerPlugin extends PluginThread {
     }
 
     /**
-     * Gets the MBean info.
+     * {@inheritDoc}
      *
-     * @return the MBean info
+     * Gets the MBean info.
      */
     @Override
     public MBeanInfo getMBeanInfo() {
@@ -577,21 +574,9 @@ public abstract class ServerPlugin extends PluginThread {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Invoke.
-     *
-     * @param operationName
-     *            the operation name
-     * @param params
-     *            the params
-     * @param signature
-     *            the signature
-     *
-     * @return the object
-     *
-     * @throws NoSuchMethodException
-     *             the no such method exception
-     * @throws MBeanException
-     *             the MBean exception
      */
     @Override
     public Object invoke(final String operationName, final Object[] params, final String[] signature)

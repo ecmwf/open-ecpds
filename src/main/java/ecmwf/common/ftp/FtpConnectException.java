@@ -27,7 +27,6 @@ package ecmwf.common.ftp;
  *
  * @since 2024-07-01
  */
-
 public final class FtpConnectException extends FtpProtocolException {
     /** The Constant serialVersionUID. */
     private static final long serialVersionUID = 8896240919894345382L;

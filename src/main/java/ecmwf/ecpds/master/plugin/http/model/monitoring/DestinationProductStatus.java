@@ -75,6 +75,8 @@ public interface DestinationProductStatus extends MonitoringStatus, GenerationMo
     void setIsExpected();
 
     /**
+     * {@inheritDoc}
+     *
      * Reset.
      */
     @Override

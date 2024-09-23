@@ -178,7 +178,7 @@ public class SessionCache<K, S> {
      * @param session
      *            the session
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void update(final S session) throws IOException {

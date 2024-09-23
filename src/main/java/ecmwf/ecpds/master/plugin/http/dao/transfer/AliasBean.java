@@ -50,9 +50,9 @@ public class AliasBean extends ModelBeanBase implements Alias, OjbImplementedBea
     }
 
     /**
-     * Gets the ojb implementation.
+     * {@inheritDoc}
      *
-     * @return the ojb implementation
+     * Gets the ojb implementation.
      */
     @Override
     public DataBaseObject getOjbImplementation() {
@@ -60,9 +60,9 @@ public class AliasBean extends ModelBeanBase implements Alias, OjbImplementedBea
     }
 
     /**
-     * Gets the bean interface name.
+     * {@inheritDoc}
      *
-     * @return the bean interface name
+     * Gets the bean interface name.
      */
     @Override
     public String getBeanInterfaceName() {
@@ -70,9 +70,9 @@ public class AliasBean extends ModelBeanBase implements Alias, OjbImplementedBea
     }
 
     /**
-     * Gets the id.
+     * {@inheritDoc}
      *
-     * @return the id
+     * Gets the id.
      */
     @Override
     public String getId() {
@@ -80,9 +80,9 @@ public class AliasBean extends ModelBeanBase implements Alias, OjbImplementedBea
     }
 
     /**
-     * Gets the des name.
+     * {@inheritDoc}
      *
-     * @return the des name
+     * Gets the des name.
      */
     @Override
     public String getDesName() {
@@ -90,9 +90,9 @@ public class AliasBean extends ModelBeanBase implements Alias, OjbImplementedBea
     }
 
     /**
-     * Gets the destination name.
+     * {@inheritDoc}
      *
-     * @return the destination name
+     * Gets the destination name.
      */
     @Override
     public String getDestinationName() {
@@ -100,12 +100,9 @@ public class AliasBean extends ModelBeanBase implements Alias, OjbImplementedBea
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Equals.
-     *
-     * @param o
-     *            the o
-     *
-     * @return true, if successful
      */
     @Override
     public boolean equals(final Object o) {
@@ -125,9 +122,9 @@ public class AliasBean extends ModelBeanBase implements Alias, OjbImplementedBea
     }
 
     /**
-     * Hash code.
+     * {@inheritDoc}
      *
-     * @return the int
+     * Hash code.
      */
     @Override
     public int hashCode() {
@@ -135,9 +132,9 @@ public class AliasBean extends ModelBeanBase implements Alias, OjbImplementedBea
     }
 
     /**
-     * To string.
+     * {@inheritDoc}
      *
-     * @return the string
+     * To string.
      */
     @Override
     public String toString() {

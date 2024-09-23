@@ -168,9 +168,9 @@ public class ExistingStorageDirectory extends DataBaseObject {
     }
 
     /**
-     * To string.
+     * {@inheritDoc}
      *
-     * @return the string
+     * To string.
      */
     @Override
     public String toString() {

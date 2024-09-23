@@ -86,9 +86,9 @@ public class DestinationProductStatusBean extends MonitoringStatusBean implement
     }
 
     /**
-     * Gets the product.
+     * {@inheritDoc}
      *
-     * @return the product
+     * Gets the product.
      */
     @Override
     public String getProduct() {
@@ -96,9 +96,9 @@ public class DestinationProductStatusBean extends MonitoringStatusBean implement
     }
 
     /**
-     * Gets the time.
+     * {@inheritDoc}
      *
-     * @return the time
+     * Gets the time.
      */
     @Override
     public String getTime() {
@@ -106,9 +106,9 @@ public class DestinationProductStatusBean extends MonitoringStatusBean implement
     }
 
     /**
-     * Gets the destination name.
+     * {@inheritDoc}
      *
-     * @return the destination name
+     * Gets the destination name.
      */
     @Override
     public String getDestinationName() {
@@ -116,10 +116,9 @@ public class DestinationProductStatusBean extends MonitoringStatusBean implement
     }
 
     /**
-     * Sets the when received last done.
+     * {@inheritDoc}
      *
-     * @param date
-     *            the new when received last done
+     * Sets the when received last done.
      */
     @Override
     public void setWhenReceivedLastDone(final Date date) {
@@ -127,9 +126,9 @@ public class DestinationProductStatusBean extends MonitoringStatusBean implement
     }
 
     /**
-     * Gets the when received last done.
+     * {@inheritDoc}
      *
-     * @return the when received last done
+     * Gets the when received last done.
      */
     @Override
     public Date getWhenReceivedLastDone() {
@@ -137,9 +136,9 @@ public class DestinationProductStatusBean extends MonitoringStatusBean implement
     }
 
     /**
-     * Gets the arrival time.
+     * {@inheritDoc}
      *
-     * @return the arrival time
+     * Gets the arrival time.
      */
     @Override
     public Date getArrivalTime() {
@@ -147,9 +146,9 @@ public class DestinationProductStatusBean extends MonitoringStatusBean implement
     }
 
     /**
-     * Gets the generation status.
+     * {@inheritDoc}
      *
-     * @return the generation status
+     * Gets the generation status.
      */
     @Override
     public int getGenerationStatus() {
@@ -157,9 +156,9 @@ public class DestinationProductStatusBean extends MonitoringStatusBean implement
     }
 
     /**
-     * Gets the generation status code.
+     * {@inheritDoc}
      *
-     * @return the generation status code
+     * Gets the generation status code.
      */
     @Override
     public String getGenerationStatusCode() {
@@ -167,9 +166,9 @@ public class DestinationProductStatusBean extends MonitoringStatusBean implement
     }
 
     /**
-     * Gets the generation status formatted code.
+     * {@inheritDoc}
      *
-     * @return the generation status formatted code
+     * Gets the generation status formatted code.
      */
     @Override
     public String getGenerationStatusFormattedCode() {
@@ -177,9 +176,9 @@ public class DestinationProductStatusBean extends MonitoringStatusBean implement
     }
 
     /**
-     * Gets the last update.
+     * {@inheritDoc}
      *
-     * @return the last update
+     * Gets the last update.
      */
     @Override
     public Date getLastUpdate() {
@@ -187,9 +186,9 @@ public class DestinationProductStatusBean extends MonitoringStatusBean implement
     }
 
     /**
-     * Gets the minutes before schedule.
+     * {@inheritDoc}
      *
-     * @return the minutes before schedule
+     * Gets the minutes before schedule.
      */
     @Override
     public long getMinutesBeforeSchedule() {
@@ -197,9 +196,9 @@ public class DestinationProductStatusBean extends MonitoringStatusBean implement
     }
 
     /**
-     * Gets the product time.
+     * {@inheritDoc}
      *
-     * @return the product time
+     * Gets the product time.
      */
     @Override
     public Date getProductTime() {
@@ -207,9 +206,9 @@ public class DestinationProductStatusBean extends MonitoringStatusBean implement
     }
 
     /**
-     * Gets the scheduled time.
+     * {@inheritDoc}
      *
-     * @return the scheduled time
+     * Gets the scheduled time.
      */
     @Override
     public Date getScheduledTime() {
@@ -217,6 +216,8 @@ public class DestinationProductStatusBean extends MonitoringStatusBean implement
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Refresh status.
      */
     @Override
@@ -224,9 +225,9 @@ public class DestinationProductStatusBean extends MonitoringStatusBean implement
     }
 
     /**
-     * To string.
+     * {@inheritDoc}
      *
-     * @return the string
+     * To string.
      */
     @Override
     public String toString() {
@@ -234,10 +235,9 @@ public class DestinationProductStatusBean extends MonitoringStatusBean implement
     }
 
     /**
-     * Sets the generation status.
+     * {@inheritDoc}
      *
-     * @param i
-     *            the new generation status
+     * Sets the generation status.
      */
     @Override
     public void setGenerationStatus(final int i) {
@@ -245,10 +245,9 @@ public class DestinationProductStatusBean extends MonitoringStatusBean implement
     }
 
     /**
-     * Sets the generation status code.
+     * {@inheritDoc}
      *
-     * @param code
-     *            the new generation status code
+     * Sets the generation status code.
      */
     @Override
     public void setGenerationStatusCode(final String code) {
@@ -256,10 +255,9 @@ public class DestinationProductStatusBean extends MonitoringStatusBean implement
     }
 
     /**
-     * Sets the generation status from code.
+     * {@inheritDoc}
      *
-     * @param code
-     *            the new generation status from code
+     * Sets the generation status from code.
      */
     @Override
     public void setGenerationStatusFromCode(final String code) {
@@ -268,10 +266,9 @@ public class DestinationProductStatusBean extends MonitoringStatusBean implement
     }
 
     /**
-     * Sets the last update.
+     * {@inheritDoc}
      *
-     * @param date
-     *            the new last update
+     * Sets the last update.
      */
     @Override
     public void setLastUpdate(final Date date) {
@@ -279,10 +276,9 @@ public class DestinationProductStatusBean extends MonitoringStatusBean implement
     }
 
     /**
-     * Sets the product time.
+     * {@inheritDoc}
      *
-     * @param date
-     *            the new product time
+     * Sets the product time.
      */
     @Override
     public void setProductTime(final Date date) {
@@ -290,10 +286,9 @@ public class DestinationProductStatusBean extends MonitoringStatusBean implement
     }
 
     /**
-     * Sets the scheduled time.
+     * {@inheritDoc}
      *
-     * @param date
-     *            the new scheduled time
+     * Sets the scheduled time.
      */
     @Override
     public void setScheduledTime(final Date date) {

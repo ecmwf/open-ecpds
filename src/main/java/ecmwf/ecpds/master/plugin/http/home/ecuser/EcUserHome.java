@@ -58,7 +58,7 @@ public class EcUserHome extends ModelHomeBase {
      *
      * @return the ec user
      *
-     * @throws EcUserException
+     * @throws ecmwf.ecpds.master.plugin.http.model.ecuser.EcUserException
      *             the ec user exception
      */
     public static final EcUser create() throws EcUserException {
@@ -78,7 +78,7 @@ public class EcUserHome extends ModelHomeBase {
      *
      * @return the ec user
      *
-     * @throws EcUserException
+     * @throws ecmwf.ecpds.master.plugin.http.model.ecuser.EcUserException
      *             the ec user exception
      */
     public static final EcUser findByPrimaryKey(final String key) throws EcUserException {
@@ -98,7 +98,7 @@ public class EcUserHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws EcUserException
+     * @throws ecmwf.ecpds.master.plugin.http.model.ecuser.EcUserException
      *             the ec user exception
      */
     public static final Collection<EcUser> findAssociatedToDestination(final Destination d) throws EcUserException {
@@ -113,7 +113,7 @@ public class EcUserHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws EcUserException
+     * @throws ecmwf.ecpds.master.plugin.http.model.ecuser.EcUserException
      *             the ec user exception
      */
     public static final Collection<EcUser> findByHost(final Host host) throws EcUserException {
@@ -128,7 +128,7 @@ public class EcUserHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws EcUserException
+     * @throws ecmwf.ecpds.master.plugin.http.model.ecuser.EcUserException
      *             the ec user exception
      */
     public static final Collection<EcUser> findByHostName(final String hostName) throws EcUserException {
@@ -140,7 +140,7 @@ public class EcUserHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws EcUserException
+     * @throws ecmwf.ecpds.master.plugin.http.model.ecuser.EcUserException
      *             the ec user exception
      */
     public static final Collection<EcUser> findAll() throws EcUserException {
@@ -155,7 +155,7 @@ public class EcUserHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws EcUserException
+     * @throws ecmwf.ecpds.master.plugin.http.model.ecuser.EcUserException
      *             the ec user exception
      */
     public static final Collection find(final ModelSearch search) throws EcUserException {

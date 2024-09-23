@@ -27,7 +27,6 @@ package ecmwf.common.database;
  *
  * @since 2024-07-01
  */
-
 public class Url extends DataBaseObject {
     /** The Constant serialVersionUID. */
     private static final long serialVersionUID = -9208846357249003796L;

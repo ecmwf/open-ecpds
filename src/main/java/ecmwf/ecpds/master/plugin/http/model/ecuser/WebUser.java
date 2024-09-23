@@ -40,10 +40,9 @@ import ecmwf.web.model.users.User;
 public interface WebUser extends User {
 
     /**
-     * Sets the id.
+     * {@inheritDoc}
      *
-     * @param id
-     *            the new id
+     * Sets the id.
      */
     @Override
     void setId(String id);

@@ -84,7 +84,7 @@ public class PTCPReceiverThread extends ConfigurableRunnable {
     /**
      * Close.
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void close() throws IOException {
@@ -123,6 +123,8 @@ public class PTCPReceiverThread extends ConfigurableRunnable {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Configurable run.
      */
     @Override

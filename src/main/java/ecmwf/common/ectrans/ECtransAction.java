@@ -147,7 +147,7 @@ abstract class ECtransAction {
      * @param interruptible
      *            the interruptible
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     protected abstract void exec(TransferModule module, boolean interruptible) throws Exception;
@@ -162,7 +162,7 @@ abstract class ECtransAction {
      * @param asynchronous
      *            the asynchronous
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     protected void close(final TransferModule module, final long timeout, final boolean asynchronous)

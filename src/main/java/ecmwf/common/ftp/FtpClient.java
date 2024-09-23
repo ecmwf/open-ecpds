@@ -240,7 +240,7 @@ public final class FtpClient {
      * @param host
      *            the host
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void connect(final String host) throws IOException {
@@ -256,7 +256,7 @@ public final class FtpClient {
      * @param port
      *            the port
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void connect(final String host, final int port) throws IOException {
@@ -266,7 +266,7 @@ public final class FtpClient {
     /**
      * Retry login.
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void retryLogin() throws IOException {
@@ -278,9 +278,9 @@ public final class FtpClient {
     }
 
     /**
-     * To string.
+     * {@inheritDoc}
      *
-     * @return the string
+     * To string.
      */
     @Override
     public String toString() {
@@ -714,7 +714,7 @@ public final class FtpClient {
      * @param filters
      *            the new input filters
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void setInputFilters(final String filters) throws IOException {
@@ -731,7 +731,7 @@ public final class FtpClient {
      * @param filters
      *            the new output filters
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void setOutputFilters(final String filters) throws IOException {
@@ -744,7 +744,7 @@ public final class FtpClient {
     /**
      * Delegate checksum.
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void delegateChecksum() throws IOException {
@@ -762,7 +762,7 @@ public final class FtpClient {
      * @param fileName
      *            the file name
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void dumpChecksum(final String checksum, final String fileName) throws IOException {
@@ -986,7 +986,7 @@ public final class FtpClient {
      * @param cmd
      *            the cmd
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void issueCommandCheck(final String cmd) throws IOException {
@@ -1001,7 +1001,7 @@ public final class FtpClient {
      * @param isError
      *            the is error
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void issueCommandCheck(final String cmd, final boolean isError) throws IOException {
@@ -1019,7 +1019,7 @@ public final class FtpClient {
      *
      * @return the string
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public String dissCommandCheck(final String cmd) throws IOException {
@@ -1363,7 +1363,7 @@ public final class FtpClient {
      * @param password
      *            the password
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void login(final String user, final String password) throws IOException {
@@ -1397,7 +1397,7 @@ public final class FtpClient {
      *
      * @return the input stream
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public InputStream get(final String filename, final long posn, final int streamsCount) throws IOException {
@@ -1427,7 +1427,7 @@ public final class FtpClient {
      *
      * @return the output stream
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public OutputStream put(final String filename, final long posn, final long size, final boolean append,
@@ -1462,7 +1462,7 @@ public final class FtpClient {
      *
      * @return the int
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public int checkPendingReply() throws IOException {
@@ -1538,7 +1538,7 @@ public final class FtpClient {
      *
      * @return the buffered reader
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public BufferedReader nlist(final String remoteDirectory) throws IOException {
@@ -1553,7 +1553,7 @@ public final class FtpClient {
      *
      * @return the buffered reader
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public BufferedReader list(final String remoteDirectory) throws IOException {
@@ -1566,7 +1566,7 @@ public final class FtpClient {
      * @param remoteDirectory
      *            the remote directory
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void cd(final String remoteDirectory) throws IOException {
@@ -1581,7 +1581,7 @@ public final class FtpClient {
      * @param newFile
      *            the new file
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void rename(final String oldFile, final String newFile) throws IOException {
@@ -1595,7 +1595,7 @@ public final class FtpClient {
      * @param params
      *            the params
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void site(final String params) throws IOException {
@@ -1605,7 +1605,7 @@ public final class FtpClient {
     /**
      * Binary.
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void binary() throws IOException {
@@ -1615,7 +1615,7 @@ public final class FtpClient {
     /**
      * Ascii.
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void ascii() throws IOException {
@@ -1625,7 +1625,7 @@ public final class FtpClient {
     /**
      * Abort.
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void abort() throws IOException {
@@ -1635,7 +1635,7 @@ public final class FtpClient {
     /**
      * Cdup.
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void cdup() throws IOException {
@@ -1648,7 +1648,7 @@ public final class FtpClient {
      * @param s
      *            the s
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void mkdir(final String s) throws IOException {
@@ -1661,7 +1661,7 @@ public final class FtpClient {
      * @param s
      *            the s
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void rmdir(final String s) throws IOException {
@@ -1674,7 +1674,7 @@ public final class FtpClient {
      * @param s
      *            the s
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void delete(final String s) throws IOException {
@@ -1684,7 +1684,7 @@ public final class FtpClient {
     /**
      * Pwd.
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void pwd() throws IOException {
@@ -1694,7 +1694,7 @@ public final class FtpClient {
     /**
      * Syst.
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void syst() throws IOException {
@@ -1704,7 +1704,7 @@ public final class FtpClient {
     /**
      * Noop.
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void noop() throws IOException {
@@ -1731,7 +1731,7 @@ public final class FtpClient {
      * @param s
      *            the s
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void size(final String s) throws IOException {
@@ -1744,7 +1744,7 @@ public final class FtpClient {
      * @param s
      *            the s
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void mdtm(final String s) throws IOException {
@@ -1757,7 +1757,7 @@ public final class FtpClient {
      * @param s
      *            the s
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void empty(final String s) throws IOException {

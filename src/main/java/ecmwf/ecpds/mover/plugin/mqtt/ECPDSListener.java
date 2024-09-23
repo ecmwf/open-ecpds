@@ -37,57 +37,56 @@ import com.hivemq.extension.sdk.api.events.client.parameters.DisconnectEventInpu
 import com.hivemq.extension.sdk.api.packets.general.MqttVersion;
 
 /**
- * The listener interface for receiving ECPDS events. The class that is
- * interested in processing a ECPDS event implements this interface, and the
- * object created with that class is registered with a component using the
- * component's <code>addECPDSListener</code> method. When the ECPDS event
- * occurs, that object's appropriate method is invoked.
+ * The listener interface for receiving ECPDS events. The class that is interested in processing a ECPDS event
+ * implements this interface, and the object created with that class is registered with a component using the
+ * component's <code>addECPDSListener</code> method. When the ECPDS event occurs, that object's appropriate method is
+ * invoked.
  */
 public class ECPDSListener implements ClientLifecycleEventListener {
 
-	/** The Constant log. */
-	private static final Logger log = LogManager.getLogger(ECPDSListener.class);
+    /** The Constant log. */
+    private static final Logger log = LogManager.getLogger(ECPDSListener.class);
 
-	/**
-	 * On mqtt connection start.
-	 *
-	 * @param connectionStartInput the connection start input
-	 */
-	@Override
-	public void onMqttConnectionStart(final @NotNull ConnectionStartInput connectionStartInput) {
-		final MqttVersion version = connectionStartInput.getConnectPacket().getMqttVersion();
-		final String clientId = connectionStartInput.getClientInformation().getClientId();
-		switch (version) {
-		case V_5:
-			log.debug("MQTT 5 client connected with id: {}", clientId);
-			break;
-		case V_3_1_1:
-			log.debug("MQTT 3.1.1 client connected with id: {}", clientId);
-			break;
-		case V_3_1:
-			log.debug("MQTT 3.1 client connected with id: {}", clientId);
-			break;
-		}
-	}
+    /**
+     * {@inheritDoc}
+     *
+     * On mqtt connection start.
+     */
+    @Override
+    public void onMqttConnectionStart(final @NotNull ConnectionStartInput connectionStartInput) {
+        final MqttVersion version = connectionStartInput.getConnectPacket().getMqttVersion();
+        final String clientId = connectionStartInput.getClientInformation().getClientId();
+        switch (version) {
+        case V_5:
+            log.debug("MQTT 5 client connected with id: {}", clientId);
+            break;
+        case V_3_1_1:
+            log.debug("MQTT 3.1.1 client connected with id: {}", clientId);
+            break;
+        case V_3_1:
+            log.debug("MQTT 3.1 client connected with id: {}", clientId);
+            break;
+        }
+    }
 
-	/**
-	 * On authentication successful.
-	 *
-	 * @param authenticationSuccessfulInput the authentication successful input
-	 */
-	@Override
-	public void onAuthenticationSuccessful(final @NotNull AuthenticationSuccessfulInput authenticationSuccessfulInput) {
-		log.info("Client authenticated with id: {}",
-				authenticationSuccessfulInput.getClientInformation().getClientId());
-	}
+    /**
+     * {@inheritDoc}
+     *
+     * On authentication successful.
+     */
+    @Override
+    public void onAuthenticationSuccessful(final @NotNull AuthenticationSuccessfulInput authenticationSuccessfulInput) {
+        log.info("Client authenticated with id: {}",
+                authenticationSuccessfulInput.getClientInformation().getClientId());
+    }
 
-	/**
-	 * On disconnect.
-	 *
-	 * @param disconnectEventInput the disconnect event input
-	 */
-	@Override
-	public void onDisconnect(final @NotNull DisconnectEventInput disconnectEventInput) {
-		log.info("Client disconnected with id: {}", disconnectEventInput.getClientInformation().getClientId());
-	}
+    /**
+     * {@inheritDoc}
+     *
+     * On disconnect.
+     */
+    @Override
+    public void onDisconnect(final @NotNull DisconnectEventInput disconnectEventInput) {
+        log.info("Client disconnected with id: {}", disconnectEventInput.getClientInformation().getClientId());
+    }
 }

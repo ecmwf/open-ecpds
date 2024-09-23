@@ -27,7 +27,6 @@ package ecmwf.common.database;
  *
  * @since 2024-07-01
  */
-
 public final class Traffic extends DataBaseObject {
 
     /** The Constant serialVersionUID. */

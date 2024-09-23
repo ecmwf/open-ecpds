@@ -135,7 +135,7 @@ public class StorageMetadata {
      *
      * @return the e tag
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public String getETag() throws IOException {

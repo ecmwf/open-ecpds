@@ -56,7 +56,7 @@ public class OperationHome extends ModelHomeBase {
      *
      * @return the operation
      *
-     * @throws OperationException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.OperationException
      *             the operation exception
      */
     public static final Operation create() throws OperationException {
@@ -76,7 +76,7 @@ public class OperationHome extends ModelHomeBase {
      *
      * @return the operation
      *
-     * @throws OperationException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.OperationException
      *             the operation exception
      */
     public static final Operation findByPrimaryKey(final String key) throws OperationException {
@@ -96,7 +96,7 @@ public class OperationHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws OperationException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.OperationException
      *             the operation exception
      */
     public static final Collection<Operation> findAssociatedToIncomingUser(final IncomingUser u)
@@ -109,7 +109,7 @@ public class OperationHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws OperationException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.OperationException
      *             the operation exception
      */
     public static final Collection<Operation> findAll() throws OperationException {
@@ -124,7 +124,7 @@ public class OperationHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws OperationException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.OperationException
      *             the operation exception
      */
     public static final Collection<Operation> find(final ModelSearch search) throws OperationException {

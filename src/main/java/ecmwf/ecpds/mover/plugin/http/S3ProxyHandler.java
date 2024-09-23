@@ -59,7 +59,11 @@ import com.google.common.net.PercentEscaper;
 import ecmwf.common.ecaccess.ConnectionException;
 import ecmwf.common.technical.StreamPlugThread;
 
-/** HTTP server-independent handler for S3 requests. */
+/**
+ * HTTP server-independent handler for S3 requests.
+ *
+ * @author root
+ */
 public class S3ProxyHandler {
 
     /** The Constant logger. */
@@ -187,9 +191,9 @@ public class S3ProxyHandler {
      * @param is
      *            the is
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
-     * @throws S3Exception
+     * @throws ecmwf.ecpds.mover.plugin.http.S3Exception
      *             the s 3 exception
      */
     public final void doHandle(final HttpServletRequest baseRequest, final HttpServletRequest request,
@@ -1741,7 +1745,7 @@ public class S3ProxyHandler {
      * @param elements
      *            the elements
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     protected final void sendSimpleErrorResponse(final HttpServletRequest request, final HttpServletResponse response,

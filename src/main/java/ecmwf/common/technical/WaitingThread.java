@@ -53,7 +53,7 @@ public abstract class WaitingThread extends ConfigurableRunnable {
     /**
      * Action.
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     public abstract void action() throws Exception;
@@ -108,6 +108,8 @@ public abstract class WaitingThread extends ConfigurableRunnable {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Configurable run.
      */
     @Override
@@ -122,7 +124,7 @@ public abstract class WaitingThread extends ConfigurableRunnable {
     /**
      * Completed.
      *
-     * @throws Throwable
+     * @throws java.lang.Throwable
      *             the throwable
      */
     public void completed() throws Throwable {

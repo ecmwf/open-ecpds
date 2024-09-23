@@ -27,7 +27,6 @@ package ecmwf.ecpds.mover.plugin.http;
  *
  * @since 2024-07-01
  */
-
 public enum ContainerAccess {
 
     /** The private. */

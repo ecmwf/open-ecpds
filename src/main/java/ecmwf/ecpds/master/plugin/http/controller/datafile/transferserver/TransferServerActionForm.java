@@ -356,12 +356,9 @@ public class TransferServerActionForm extends ECMWFActionForm {
     }
 
     /**
-     * Reset.
+     * {@inheritDoc}
      *
-     * @param mapping
-     *            the mapping
-     * @param request
-     *            the request
+     * Reset.
      */
     @Override
     public void reset(final ActionMapping mapping, final HttpServletRequest request) {

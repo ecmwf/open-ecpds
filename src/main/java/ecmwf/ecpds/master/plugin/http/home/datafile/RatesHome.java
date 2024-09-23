@@ -56,7 +56,7 @@ public class RatesHome extends ModelHomeBase {
      *
      * @return the rates
      *
-     * @throws DataFileException
+     * @throws ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException
      *             the data file exception
      */
     public static final Rates create() throws DataFileException {
@@ -76,7 +76,7 @@ public class RatesHome extends ModelHomeBase {
      *
      * @return the rates
      *
-     * @throws DataFileException
+     * @throws ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException
      *             the data file exception
      */
     public static final Rates findByPrimaryKey(final String key) throws DataFileException {
@@ -105,7 +105,7 @@ public class RatesHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws DataFileException
+     * @throws ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException
      *             the data file exception
      */
     public static final Collection<Rates> findByDates(final Date fromDate, final Date toDate,
@@ -129,7 +129,7 @@ public class RatesHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws DataFileException
+     * @throws ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException
      *             the data file exception
      */
     public static final Collection<Rates> findByDates(final Date fromDate, final Date toDate,
@@ -145,7 +145,7 @@ public class RatesHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws DataFileException
+     * @throws ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException
      *             the data file exception
      */
     public static final Collection<Rates> find(final ModelSearch search) throws DataFileException {

@@ -27,7 +27,6 @@ package ecmwf.ecpds.master;
  *
  * @since 2024-07-01
  */
-
 public final class ResetDestinationProductEvent extends ResetProductEvent {
     /** The Constant serialVersionUID. */
     private static final long serialVersionUID = 500275739755464953L;

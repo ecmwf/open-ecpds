@@ -60,12 +60,9 @@ public final class RAFInputStream extends InputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Available.
-     *
-     * @return the int
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int available() throws IOException {
@@ -73,10 +70,9 @@ public final class RAFInputStream extends InputStream {
     }
 
     /**
-     * Close.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Close.
      */
     @Override
     public void close() throws IOException {
@@ -88,12 +84,9 @@ public final class RAFInputStream extends InputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Read.
-     *
-     * @return the int
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int read() throws IOException {
@@ -101,15 +94,9 @@ public final class RAFInputStream extends InputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Read.
-     *
-     * @param b
-     *            the b
-     *
-     * @return the int
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int read(final byte[] b) throws IOException {
@@ -117,19 +104,9 @@ public final class RAFInputStream extends InputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Read.
-     *
-     * @param b
-     *            the b
-     * @param off
-     *            the off
-     * @param len
-     *            the len
-     *
-     * @return the int
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int read(final byte[] b, final int off, final int len) throws IOException {
@@ -137,10 +114,9 @@ public final class RAFInputStream extends InputStream {
     }
 
     /**
-     * Reset.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Reset.
      */
     @Override
     public void reset() throws IOException {
@@ -148,15 +124,9 @@ public final class RAFInputStream extends InputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Skip.
-     *
-     * @param n
-     *            the n
-     *
-     * @return the long
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public long skip(final long n) throws IOException {
@@ -165,10 +135,9 @@ public final class RAFInputStream extends InputStream {
     }
 
     /**
-     * Finalize.
+     * {@inheritDoc}
      *
-     * @throws Throwable
-     *             the throwable
+     * Finalize.
      */
     @Override
     protected void finalize() throws Throwable {

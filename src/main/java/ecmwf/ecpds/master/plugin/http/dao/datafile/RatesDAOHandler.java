@@ -51,12 +51,9 @@ public class RatesDAOHandler extends PDSDAOBase implements DAOHandler {
     private static final Logger log = LogManager.getLogger(RatesDAOHandler.class);
 
     /**
+     * {@inheritDoc}
+     *
      * Creates the.
-     *
-     * @return the rates
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public Rates create() throws DAOException {
@@ -64,15 +61,9 @@ public class RatesDAOHandler extends PDSDAOBase implements DAOHandler {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Find by primary key.
-     *
-     * @param key
-     *            the key
-     *
-     * @return the rates
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public Rates findByPrimaryKey(final String key) throws DAOException {
@@ -80,15 +71,9 @@ public class RatesDAOHandler extends PDSDAOBase implements DAOHandler {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Find.
-     *
-     * @param search
-     *            the search
-     *
-     * @return the collection
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public Collection<Rates> find(final ModelSearch search) throws DAOException {

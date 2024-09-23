@@ -72,7 +72,7 @@ public class DestinationHome extends ModelHomeBase {
      *
      * @return the destination
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Destination create() throws TransferException {
@@ -92,7 +92,7 @@ public class DestinationHome extends ModelHomeBase {
      *
      * @return the destination
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Destination findByPrimaryKey(final String key) throws TransferException {
@@ -112,7 +112,7 @@ public class DestinationHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<Destination> findAssociatedToIncomingUser(final IncomingUser u)
@@ -128,7 +128,7 @@ public class DestinationHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<Destination> findAssociatedToIncomingPolicy(final IncomingPolicy p)
@@ -144,7 +144,7 @@ public class DestinationHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<Destination> findByCountry(final Country country) throws TransferException {
@@ -159,7 +159,7 @@ public class DestinationHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<Destination> findByHost(final Host host) throws TransferException {
@@ -186,7 +186,7 @@ public class DestinationHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<Destination> findByUser(final User user, final String search,
@@ -203,7 +203,7 @@ public class DestinationHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<Alias> findAliasList(final Destination d) throws TransferException {
@@ -218,7 +218,7 @@ public class DestinationHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<Destination> findAliases(final Destination d) throws TransferException {
@@ -233,7 +233,7 @@ public class DestinationHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<Traffic> findTrafficList(final Destination d) throws TransferException {
@@ -248,7 +248,7 @@ public class DestinationHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<ChangeLog> findChangeLogList(final Destination d) throws TransferException {
@@ -263,7 +263,7 @@ public class DestinationHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<Destination> findAliasedFrom(final Destination d) throws TransferException {
@@ -275,7 +275,7 @@ public class DestinationHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<Destination> findAll() throws TransferException {
@@ -287,7 +287,7 @@ public class DestinationHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<Pair> findAllNamesAndComments() throws TransferException {
@@ -299,7 +299,7 @@ public class DestinationHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<Destination> findAllShowingInMonitor() throws TransferException {
@@ -314,7 +314,7 @@ public class DestinationHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection find(final ModelSearch search) throws TransferException {

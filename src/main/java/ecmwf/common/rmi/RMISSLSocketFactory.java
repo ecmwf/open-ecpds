@@ -48,17 +48,9 @@ public final class RMISSLSocketFactory extends SocketConfig
     private static final transient SocketFactory _socketFactory = SSLSocketFactory.getSSLSocketFactory();
 
     /**
+     * {@inheritDoc}
+     *
      * Creates a new RMISSLSocket object.
-     *
-     * @param host
-     *            the host
-     * @param port
-     *            the port
-     *
-     * @return the socket
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public Socket createSocket(final String host, final int port) throws IOException {
@@ -67,12 +59,9 @@ public final class RMISSLSocketFactory extends SocketConfig
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Equals.
-     *
-     * @param o
-     *            the o
-     *
-     * @return true, if successful
      */
     @Override
     public boolean equals(final Object o) {
@@ -80,9 +69,9 @@ public final class RMISSLSocketFactory extends SocketConfig
     }
 
     /**
-     * Hash code.
+     * {@inheritDoc}
      *
-     * @return the int
+     * Hash code.
      */
     @Override
     public int hashCode() {

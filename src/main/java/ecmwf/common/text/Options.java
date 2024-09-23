@@ -214,7 +214,7 @@ public final class Options {
      *
      * @return the string builder
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public StringBuilder replace(final StringBuilder target) throws IOException {

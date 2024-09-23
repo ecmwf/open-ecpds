@@ -58,7 +58,7 @@ public class DestinationStatusHome extends ModelHomeBase {
      *
      * @return the destination status
      *
-     * @throws MonitoringException
+     * @throws ecmwf.ecpds.master.plugin.http.model.monitoring.MonitoringException
      *             the monitoring exception
      */
     public static final DestinationStatus findByName(final String destinationName) throws MonitoringException {
@@ -75,7 +75,7 @@ public class DestinationStatusHome extends ModelHomeBase {
      *
      * @return the map
      *
-     * @throws MonitoringException
+     * @throws ecmwf.ecpds.master.plugin.http.model.monitoring.MonitoringException
      *             the monitoring exception
      */
     public static final Map<String, DestinationStatus> findFromMemory() throws MonitoringException {

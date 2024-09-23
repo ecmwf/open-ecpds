@@ -47,12 +47,9 @@ public class FileModule extends TransferModule {
     private File _dir = null;
 
     /**
-     * Connect.
+     * {@inheritDoc}
      *
-     * @param location
-     *            the location
-     * @param setup
-     *            the setup
+     * Connect.
      */
     @Override
     public void connect(final String location, final ECtransSetup setup) {
@@ -60,6 +57,8 @@ public class FileModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Close.
      */
     @Override
@@ -67,13 +66,9 @@ public class FileModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Del.
-     *
-     * @param name
-     *            the name
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void del(final String name) throws IOException {
@@ -84,17 +79,9 @@ public class FileModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the.
-     *
-     * @param name
-     *            the name
-     * @param posn
-     *            the posn
-     *
-     * @return the input stream
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public InputStream get(final String name, final long posn) throws IOException {
@@ -107,19 +94,9 @@ public class FileModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Put.
-     *
-     * @param name
-     *            the name
-     * @param posn
-     *            the posn
-     * @param size
-     *            the size
-     *
-     * @return the output stream
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public OutputStream put(final String name, final long posn, final long size) throws IOException {
@@ -138,15 +115,9 @@ public class FileModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Size.
-     *
-     * @param name
-     *            the name
-     *
-     * @return the long
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public long size(final String name) throws IOException {

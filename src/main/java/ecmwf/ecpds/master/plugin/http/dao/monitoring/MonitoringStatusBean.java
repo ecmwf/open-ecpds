@@ -65,9 +65,9 @@ public class MonitoringStatusBean extends ModelBeanBase implements MonitoringSta
     }
 
     /**
-     * Gets the bean interface name.
+     * {@inheritDoc}
      *
-     * @return the bean interface name
+     * Gets the bean interface name.
      */
     @Override
     public String getBeanInterfaceName() {
@@ -75,9 +75,9 @@ public class MonitoringStatusBean extends ModelBeanBase implements MonitoringSta
     }
 
     /**
-     * Gets the arrival status.
+     * {@inheritDoc}
      *
-     * @return the arrival status
+     * Gets the arrival status.
      */
     @Override
     public int getArrivalStatus() {
@@ -85,10 +85,9 @@ public class MonitoringStatusBean extends ModelBeanBase implements MonitoringSta
     }
 
     /**
-     * Sets the arrival status.
+     * {@inheritDoc}
      *
-     * @param arrivalStatus
-     *            the new arrival status
+     * Sets the arrival status.
      */
     @Override
     public void setArrivalStatus(final int arrivalStatus) {
@@ -96,9 +95,9 @@ public class MonitoringStatusBean extends ModelBeanBase implements MonitoringSta
     }
 
     /**
-     * Checks if is calculated.
+     * {@inheritDoc}
      *
-     * @return true, if is calculated
+     * Checks if is calculated.
      */
     @Override
     public boolean isCalculated() {
@@ -106,10 +105,9 @@ public class MonitoringStatusBean extends ModelBeanBase implements MonitoringSta
     }
 
     /**
-     * Sets the calculated.
+     * {@inheritDoc}
      *
-     * @param calculated
-     *            the new calculated
+     * Sets the calculated.
      */
     @Override
     public void setCalculated(final boolean calculated) {
@@ -117,9 +115,9 @@ public class MonitoringStatusBean extends ModelBeanBase implements MonitoringSta
     }
 
     /**
-     * Checks if is present.
+     * {@inheritDoc}
      *
-     * @return true, if is present
+     * Checks if is present.
      */
     @Override
     public boolean isPresent() {
@@ -127,10 +125,9 @@ public class MonitoringStatusBean extends ModelBeanBase implements MonitoringSta
     }
 
     /**
-     * Sets the present.
+     * {@inheritDoc}
      *
-     * @param present
-     *            the new present
+     * Sets the present.
      */
     @Override
     public void setPresent(final boolean present) {
@@ -138,9 +135,9 @@ public class MonitoringStatusBean extends ModelBeanBase implements MonitoringSta
     }
 
     /**
-     * Gets the real time arrival status.
+     * {@inheritDoc}
      *
-     * @return the real time arrival status
+     * Gets the real time arrival status.
      */
     @Override
     public int getRealTimeArrivalStatus() {
@@ -148,10 +145,9 @@ public class MonitoringStatusBean extends ModelBeanBase implements MonitoringSta
     }
 
     /**
-     * Sets the real time arrival status.
+     * {@inheritDoc}
      *
-     * @param realTimeArrivalStatus
-     *            the new real time arrival status
+     * Sets the real time arrival status.
      */
     @Override
     public void setRealTimeArrivalStatus(final int realTimeArrivalStatus) {
@@ -159,9 +155,9 @@ public class MonitoringStatusBean extends ModelBeanBase implements MonitoringSta
     }
 
     /**
-     * Gets the real time transfer status.
+     * {@inheritDoc}
      *
-     * @return the real time transfer status
+     * Gets the real time transfer status.
      */
     @Override
     public int getRealTimeTransferStatus() {
@@ -169,10 +165,9 @@ public class MonitoringStatusBean extends ModelBeanBase implements MonitoringSta
     }
 
     /**
-     * Sets the real time transfer status.
+     * {@inheritDoc}
      *
-     * @param realTimeTransferStatus
-     *            the new real time transfer status
+     * Sets the real time transfer status.
      */
     @Override
     public void setRealTimeTransferStatus(final int realTimeTransferStatus) {
@@ -180,9 +175,9 @@ public class MonitoringStatusBean extends ModelBeanBase implements MonitoringSta
     }
 
     /**
-     * Gets the transfer status.
+     * {@inheritDoc}
      *
-     * @return the transfer status
+     * Gets the transfer status.
      */
     @Override
     public int getTransferStatus() {
@@ -190,10 +185,9 @@ public class MonitoringStatusBean extends ModelBeanBase implements MonitoringSta
     }
 
     /**
-     * Sets the transfer status.
+     * {@inheritDoc}
      *
-     * @param transferStatus
-     *            the new transfer status
+     * Sets the transfer status.
      */
     @Override
     public void setTransferStatus(final int transferStatus) {

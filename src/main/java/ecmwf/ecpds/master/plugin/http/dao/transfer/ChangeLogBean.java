@@ -144,9 +144,9 @@ public class ChangeLogBean extends ModelBeanBase implements ChangeLog {
     private final String currentObject;
 
     /**
-     * Gets the bean interface name.
+     * {@inheritDoc}
      *
-     * @return the bean interface name
+     * Gets the bean interface name.
      */
     @Override
     public String getBeanInterfaceName() {
@@ -167,9 +167,9 @@ public class ChangeLogBean extends ModelBeanBase implements ChangeLog {
     }
 
     /**
-     * Gets the change log id.
+     * {@inheritDoc}
      *
-     * @return the change log id
+     * Gets the change log id.
      */
     @Override
     public long getChangeLogId() {
@@ -177,9 +177,9 @@ public class ChangeLogBean extends ModelBeanBase implements ChangeLog {
     }
 
     /**
-     * Gets the key name.
+     * {@inheritDoc}
      *
-     * @return the key name
+     * Gets the key name.
      */
     @Override
     public String getKeyName() {
@@ -187,9 +187,9 @@ public class ChangeLogBean extends ModelBeanBase implements ChangeLog {
     }
 
     /**
-     * Gets the key value.
+     * {@inheritDoc}
      *
-     * @return the key value
+     * Gets the key value.
      */
     @Override
     public String getKeyValue() {
@@ -197,9 +197,9 @@ public class ChangeLogBean extends ModelBeanBase implements ChangeLog {
     }
 
     /**
-     * Gets the web user id.
+     * {@inheritDoc}
      *
-     * @return the web user id
+     * Gets the web user id.
      */
     @Override
     public String getWebUserId() {
@@ -207,9 +207,9 @@ public class ChangeLogBean extends ModelBeanBase implements ChangeLog {
     }
 
     /**
-     * Gets the date.
+     * {@inheritDoc}
      *
-     * @return the date
+     * Gets the date.
      */
     @Override
     public Date getDate() {
@@ -217,9 +217,9 @@ public class ChangeLogBean extends ModelBeanBase implements ChangeLog {
     }
 
     /**
-     * Gets the old object.
+     * {@inheritDoc}
      *
-     * @return the old object
+     * Gets the old object.
      */
     @Override
     public String getOldObject() {
@@ -227,9 +227,9 @@ public class ChangeLogBean extends ModelBeanBase implements ChangeLog {
     }
 
     /**
-     * Gets the new object.
+     * {@inheritDoc}
      *
-     * @return the new object
+     * Gets the new object.
      */
     @Override
     public String getNewObject() {

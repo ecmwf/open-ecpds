@@ -247,9 +247,9 @@ public final class CBZip2InputStream extends InputStream implements BZip2Constan
     }
 
     /**
-     * Read.
+     * {@inheritDoc}
      *
-     * @return the int
+     * Read.
      */
     @Override
     public int read() {

@@ -92,9 +92,9 @@ public final class ProxySocket implements Serializable, Closeable {
     private transient SocketConfig _socketConfig = null;
 
     /**
-     * To string.
+     * {@inheritDoc}
      *
-     * @return the string
+     * To string.
      */
     @Override
     public String toString() {
@@ -156,7 +156,7 @@ public final class ProxySocket implements Serializable, Closeable {
      * @param target
      *            the target
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public ProxySocket(final String source, final String target) throws IOException {
@@ -173,7 +173,7 @@ public final class ProxySocket implements Serializable, Closeable {
      * @param target
      *            the target
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public ProxySocket(final SocketConfig socketConfig, final String source, final String target) throws IOException {
@@ -232,8 +232,6 @@ public final class ProxySocket implements Serializable, Closeable {
      *
      * @param maxBytesPerSec
      *            the new max bytes per sec
-     *
-     * @return the socket config
      */
     public void setMaxBytesPerSec(final long maxBytesPerSec) {
         _maxBytesPerSec = maxBytesPerSec;
@@ -266,7 +264,7 @@ public final class ProxySocket implements Serializable, Closeable {
      *
      * @return the data socket
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public Socket getDataSocket() throws IOException {
@@ -281,7 +279,7 @@ public final class ProxySocket implements Serializable, Closeable {
      *
      * @return the data socket
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public Socket getDataSocket(final SocketConfig socketConfig) throws IOException {
@@ -378,6 +376,8 @@ public final class ProxySocket implements Serializable, Closeable {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Close.
      */
     @Override
@@ -422,7 +422,7 @@ public final class ProxySocket implements Serializable, Closeable {
      *
      * @return the data input stream
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static InputStream getDataInputStream(final long ticket) throws IOException {
@@ -451,7 +451,7 @@ public final class ProxySocket implements Serializable, Closeable {
      *
      * @return the data input stream
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public InputStream getDataInputStream() throws IOException {
@@ -468,7 +468,7 @@ public final class ProxySocket implements Serializable, Closeable {
      *
      * @return the data output stream
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static OutputStream getDataOutputStream(final long ticket) throws IOException {
@@ -501,7 +501,7 @@ public final class ProxySocket implements Serializable, Closeable {
      *
      * @return the data output stream
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public OutputStream getDataOutputStream() throws IOException {
@@ -544,7 +544,7 @@ public final class ProxySocket implements Serializable, Closeable {
      *
      * @return the socket
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public Socket getSocket() throws IOException {
@@ -585,7 +585,7 @@ public final class ProxySocket implements Serializable, Closeable {
     /**
      * Open.
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void open() throws IOException {
@@ -598,7 +598,7 @@ public final class ProxySocket implements Serializable, Closeable {
      * @param socketConfig
      *            the socket config
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void open(final SocketConfig socketConfig) throws IOException {
@@ -630,7 +630,7 @@ public final class ProxySocket implements Serializable, Closeable {
      * @param aPort
      *            the a port
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void tunnel(final String aHost, final int aPort) throws IOException {
@@ -647,7 +647,7 @@ public final class ProxySocket implements Serializable, Closeable {
      * @param aPort
      *            the a port
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void tunnel(final SocketConfig socketConfig, final String aHost, final int aPort) throws IOException {

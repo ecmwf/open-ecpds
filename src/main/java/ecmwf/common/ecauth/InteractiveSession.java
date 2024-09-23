@@ -41,7 +41,7 @@ public interface InteractiveSession {
      * @param cmd
      *            the cmd
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     void send(String cmd) throws IOException;
@@ -54,7 +54,7 @@ public interface InteractiveSession {
      *
      * @return the string
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     String waitfor(String... searchElements) throws IOException;

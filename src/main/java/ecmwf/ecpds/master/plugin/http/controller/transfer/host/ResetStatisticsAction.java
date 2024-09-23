@@ -46,25 +46,9 @@ import ecmwf.web.model.users.User;
 public class ResetStatisticsAction extends PDSAction {
 
     /**
+     * {@inheritDoc}
+     *
      * Safe authorized perform.
-     *
-     * @param mapping
-     *            the mapping
-     * @param form
-     *            the form
-     * @param request
-     *            the request
-     * @param response
-     *            the response
-     * @param user
-     *            the user
-     *
-     * @return the action forward
-     *
-     * @throws TransferException
-     *             the transfer exception
-     * @throws ECMWFActionFormException
-     *             the ECMWF action form exception
      */
     @Override
     public ActionForward safeAuthorizedPerform(final ActionMapping mapping, final ActionForm form,

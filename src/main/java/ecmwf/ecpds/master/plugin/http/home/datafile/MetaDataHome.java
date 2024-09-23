@@ -56,7 +56,7 @@ public class MetaDataHome extends ModelHomeBase {
      *
      * @return the meta data
      *
-     * @throws DataFileException
+     * @throws ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException
      *             the data file exception
      */
     public static final MetaData create() throws DataFileException {
@@ -76,7 +76,7 @@ public class MetaDataHome extends ModelHomeBase {
      *
      * @return the meta data
      *
-     * @throws DataFileException
+     * @throws ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException
      *             the data file exception
      */
     public static final MetaData findByPrimaryKey(final String key) throws DataFileException {
@@ -93,7 +93,7 @@ public class MetaDataHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws DataFileException
+     * @throws ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException
      *             the data file exception
      */
     public static final Collection<MetaData> findAllMetaDataNames() throws DataFileException {
@@ -108,7 +108,7 @@ public class MetaDataHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws DataFileException
+     * @throws ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException
      *             the data file exception
      */
     public static final Collection<MetaData> findByDataFile(final DataFile d) throws DataFileException {
@@ -123,7 +123,7 @@ public class MetaDataHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws DataFileException
+     * @throws ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException
      *             the data file exception
      */
     public static final Collection<MetaData> findByDataFileId(final String id) throws DataFileException {
@@ -138,7 +138,7 @@ public class MetaDataHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws DataFileException
+     * @throws ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException
      *             the data file exception
      */
     public static final Collection<MetaData> findByAttributeName(final String attribute) throws DataFileException {
@@ -150,7 +150,7 @@ public class MetaDataHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws DataFileException
+     * @throws ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException
      *             the data file exception
      */
     public static final Collection<MetaData> findAll() throws DataFileException {
@@ -165,7 +165,7 @@ public class MetaDataHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws DataFileException
+     * @throws ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException
      *             the data file exception
      */
     public static final Collection<MetaData> find(final ModelSearch search) throws DataFileException {

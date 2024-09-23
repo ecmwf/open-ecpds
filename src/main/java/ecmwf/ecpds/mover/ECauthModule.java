@@ -236,15 +236,9 @@ public final class ECauthModule extends ProxyModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the port.
-     *
-     * @param setup
-     *            the setup
-     *
-     * @return the port
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int getPort(final ECtransSetup setup) throws IOException {
@@ -255,21 +249,9 @@ public final class ECauthModule extends ProxyModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Connect.
-     *
-     * @param location
-     *            the location
-     * @param setup
-     *            the setup
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
-     * @throws ConnectionException
-     *             the connection exception
-     * @throws EccmdException
-     *             the eccmd exception
-     * @throws JSchException
-     *             the j sch exception
      */
     @Override
     public void connect(final String location, final ECtransSetup setup)
@@ -496,17 +478,9 @@ public final class ECauthModule extends ProxyModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the.
-     *
-     * @param name
-     *            the name
-     * @param posn
-     *            the posn
-     * @param socket
-     *            the socket
-     *
-     * @throws Exception
-     *             the exception
      */
     @Override
     public void get(final String name, final long posn, final ProxySocket socket) throws Exception {
@@ -524,19 +498,9 @@ public final class ECauthModule extends ProxyModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Put.
-     *
-     * @param name
-     *            the name
-     * @param posn
-     *            the posn
-     * @param size
-     *            the size
-     * @param socket
-     *            the socket
-     *
-     * @throws Exception
-     *             the exception
      */
     @Override
     public void put(final String name, final long posn, final long size, final ProxySocket socket) throws Exception {
@@ -549,19 +513,9 @@ public final class ECauthModule extends ProxyModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Copy.
-     *
-     * @param source
-     *            the source
-     * @param target
-     *            the target
-     * @param posn
-     *            the posn
-     * @param size
-     *            the size
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void copy(final String source, final String target, final long posn, final long size) throws IOException {
@@ -757,13 +711,9 @@ public final class ECauthModule extends ProxyModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Del.
-     *
-     * @param name
-     *            the name
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void del(final String name) throws IOException {
@@ -772,13 +722,9 @@ public final class ECauthModule extends ProxyModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Mkdir.
-     *
-     * @param dir
-     *            the dir
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void mkdir(final String dir) throws IOException {
@@ -787,13 +733,9 @@ public final class ECauthModule extends ProxyModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Rmdir.
-     *
-     * @param dir
-     *            the dir
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void rmdir(final String dir) throws IOException {
@@ -802,15 +744,9 @@ public final class ECauthModule extends ProxyModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Size.
-     *
-     * @param name
-     *            the name
-     *
-     * @return the long
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public long size(final String name) throws IOException {
@@ -819,15 +755,9 @@ public final class ECauthModule extends ProxyModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Move.
-     *
-     * @param source
-     *            the source
-     * @param target
-     *            the target
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void move(final String source, final String target) throws IOException {
@@ -836,17 +766,9 @@ public final class ECauthModule extends ProxyModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * List as string array.
-     *
-     * @param directory
-     *            the directory
-     * @param pattern
-     *            the pattern
-     *
-     * @return the string[]
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public String[] listAsStringArray(final String directory, final String pattern) throws IOException {
@@ -873,7 +795,7 @@ public final class ECauthModule extends ProxyModule {
      * @param command
      *            the command
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void exec(final String command) throws IOException {
@@ -899,13 +821,9 @@ public final class ECauthModule extends ProxyModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Removes the.
-     *
-     * @param closedOnError
-     *            the closed on error
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void remove(final boolean closedOnError) throws IOException {
@@ -962,9 +880,9 @@ public final class ECauthModule extends ProxyModule {
     }
 
     /**
-     * Gets the status.
+     * {@inheritDoc}
      *
-     * @return the status
+     * Gets the status.
      */
     @Override
     public String getStatus() {

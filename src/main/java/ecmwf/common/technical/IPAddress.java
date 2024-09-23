@@ -26,6 +26,8 @@ import org.apache.logging.log4j.Logger;
 
 /**
  * The Class IPAddress.
+ *
+ * @author root
  */
 public final class IPAddress {
     /** The Constant _log. */

@@ -36,14 +36,9 @@ import ecmwf.common.database.Association;
 public final class AssociationComparator implements Comparator<Association> {
 
     /**
+     * {@inheritDoc}
+     *
      * Compare.
-     *
-     * @param assoc1
-     *            the assoc 1
-     * @param host2
-     *            the host 2
-     *
-     * @return the int
      */
     @Override
     public int compare(final Association assoc1, final Association host2) {

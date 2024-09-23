@@ -284,15 +284,9 @@ public final class MoverProvider extends NativeAuthenticationProvider {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Checks if is registred user.
-     *
-     * @param user
-     *            the user
-     *
-     * @return true, if is registred user
-     *
-     * @throws Exception
-     *             the exception
      */
     @Override
     public boolean isRegistredUser(final String user) throws Exception {
@@ -300,23 +294,9 @@ public final class MoverProvider extends NativeAuthenticationProvider {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the user session.
-     *
-     * @param host
-     *            the host
-     * @param user
-     *            the user
-     * @param password
-     *            the password
-     * @param profile
-     *            the profile
-     * @param closeable
-     *            the closeable
-     *
-     * @return the user session
-     *
-     * @throws Exception
-     *             the exception
      */
     @Override
     public UserSession getUserSession(final String host, final String user, final String password, final String profile,
@@ -327,23 +307,9 @@ public final class MoverProvider extends NativeAuthenticationProvider {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the user session.
-     *
-     * @param host
-     *            the host
-     * @param user
-     *            the user
-     * @param token
-     *            the token
-     * @param profile
-     *            the profile
-     * @param closeable
-     *            the closeable
-     *
-     * @return the user session
-     *
-     * @throws Exception
-     *             the exception
      */
     @Override
     public UserSession getUserSession(final String host, final String user, final ECauthToken token,
@@ -352,21 +318,9 @@ public final class MoverProvider extends NativeAuthenticationProvider {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the user session.
-     *
-     * @param host
-     *            the host
-     * @param ticket
-     *            the ticket
-     * @param profile
-     *            the profile
-     * @param closeable
-     *            the closeable
-     *
-     * @return the user session
-     *
-     * @throws Exception
-     *             the exception
      */
     @Override
     public UserSession getUserSession(final String host, final String ticket, final String profile,
@@ -375,9 +329,9 @@ public final class MoverProvider extends NativeAuthenticationProvider {
     }
 
     /**
-     * Support tickets.
+     * {@inheritDoc}
      *
-     * @return true, if successful
+     * Support tickets.
      */
     @Override
     public boolean supportTickets() {
@@ -385,14 +339,9 @@ public final class MoverProvider extends NativeAuthenticationProvider {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Checks if is password.
-     *
-     * @param user
-     *            the user
-     * @param password
-     *            the password
-     *
-     * @return true, if is password
      */
     @Override
     public boolean isPassword(final String user, final String password) {
@@ -400,12 +349,9 @@ public final class MoverProvider extends NativeAuthenticationProvider {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the root.
-     *
-     * @return the root
-     *
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public String getRoot() throws RemoteException {

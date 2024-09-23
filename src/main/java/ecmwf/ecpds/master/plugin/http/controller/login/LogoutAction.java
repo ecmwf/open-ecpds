@@ -47,23 +47,9 @@ import ecmwf.web.model.users.User;
 public class LogoutAction extends ECMWFAction {
 
     /**
+     * {@inheritDoc}
+     *
      * Safe perform.
-     *
-     * @param mapping
-     *            the mapping
-     * @param form
-     *            the form
-     * @param request
-     *            the request
-     * @param response
-     *            the response
-     *
-     * @return the action forward
-     *
-     * @throws ECMWFException
-     *             the ECMWF exception
-     * @throws ClassCastException
-     *             the class cast exception
      */
     @Override
     public ActionForward safePerform(final ActionMapping mapping, final ActionForm form,

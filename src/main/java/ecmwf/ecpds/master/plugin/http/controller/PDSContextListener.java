@@ -63,10 +63,9 @@ public class PDSContextListener implements ServletContextListener {
     private DestinationProductStatusResetterTask _destinationProductTask = null;
 
     /**
-     * Context destroyed.
+     * {@inheritDoc}
      *
-     * @param event
-     *            the event
+     * Context destroyed.
      */
     @Override
     public void contextDestroyed(final ServletContextEvent event) {
@@ -78,10 +77,9 @@ public class PDSContextListener implements ServletContextListener {
     }
 
     /**
-     * Context initialized.
+     * {@inheritDoc}
      *
-     * @param event
-     *            the event
+     * Context initialized.
      */
     @Override
     public void contextInitialized(final ServletContextEvent event) {

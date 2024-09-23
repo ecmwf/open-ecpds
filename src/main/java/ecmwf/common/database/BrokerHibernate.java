@@ -255,15 +255,10 @@ final class BrokerHibernate implements Broker {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Remove objects from the the Hibernate second level cache regions of the specified Class with the specified
      * primary keys or all objects if no primary keys are specified.
-     *
-     * @param <T>
-     *            the generic type
-     * @param mappedClass
-     *            the mapped class
-     * @param primaryKeys
-     *            the primary keys
      */
     @Override
     public <T extends DataBaseObject> void clearCache(final Class<T> mappedClass, final List<Object> primaryKeys) {
@@ -271,15 +266,10 @@ final class BrokerHibernate implements Broker {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Remove objects from the the Hibernate second level cache regions of the specified table name with the specified
      * primary keys or all objects if no primary keys are specified.
-     *
-     * @param tableName
-     *            the table name
-     * @param columnName
-     *            the column name
-     * @param primaryKeys
-     *            the primary keys
      */
     @Override
     public void clearCache(final String tableName, final String columnName, final List<Object> primaryKeys) {
@@ -348,6 +338,8 @@ final class BrokerHibernate implements Broker {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Remove all objects from the the Hibernate second level cache regions.
      *
      * @see ecmwf.common.database.Broker#clearCache()
@@ -359,6 +351,8 @@ final class BrokerHibernate implements Broker {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * This method takes an SQL query as input and returns a ResultSet.
      *
      * Before executing the query, it sets the connection to read-only mode and sets the session's default read-only
@@ -367,16 +361,6 @@ final class BrokerHibernate implements Broker {
      *
      * If the query execution results in an exception, the method catches the exception, logs it, and throws a
      * BrokerException.
-     *
-     * @param sql
-     *            the sql
-     *
-     * @return the result set
-     *
-     * @throws BrokerException
-     *             the broker exception
-     * @throws SQLException
-     *             the SQL exception
      *
      * @see ecmwf.common.database.Broker#executeQuery(java.lang.String)
      */
@@ -397,22 +381,14 @@ final class BrokerHibernate implements Broker {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * This method takes a SQL query as input and executes it against the database. It sets the session to be not
      * read-only, then creates a StringBuilder instance to keep track of the number of rows affected by the query. It
      * then executes the query by creating a Statement instance from the database connection and calling its
      * executeUpdate method, which returns an integer representing the number of rows affected. Finally, it clears the
      * session and returns the number of rows as an integer. If any errors occur during the execution of the query, it
      * logs an error message and throws a SQLException. *
-     *
-     * @param sql
-     *            the sql
-     *
-     * @return the int
-     *
-     * @throws BrokerException
-     *             the broker exception
-     * @throws SQLException
-     *             the SQL exception
      *
      * @see ecmwf.common.database.Broker#executeUpdate(java.lang.String)
      */
@@ -436,6 +412,8 @@ final class BrokerHibernate implements Broker {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * This is a method that retrieves a specific object from the database using its primary key. It takes an object as
      * a parameter and returns an object of the same type.
      *
@@ -443,13 +421,6 @@ final class BrokerHibernate implements Broker {
      * primary key value of the input object using the getObjectIdentifier method. Finally, it uses the session.get
      * method to retrieve the object with the specified primary key from the database. If the object is not found, it
      * returns null.
-     *
-     * @param <T>
-     *            the generic type
-     * @param object
-     *            the object
-     *
-     * @return the t
      *
      * @see ecmwf.common.database.Broker#get(ecmwf.common.database.DataBaseObject)
      */
@@ -467,18 +438,13 @@ final class BrokerHibernate implements Broker {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * This method returns an iterator for all instances of a given class (specified by the target parameter) that are
      * currently persisted in the database. It sets the session to read-only mode and creates a CriteriaQuery object to
      * build the query. Then, it creates a Query object from the CriteriaQuery and executes the query to get the list of
      * results. Finally, it returns an iterator for the list of results. If there is any error, it logs the error and
      * throws a HibernateException.
-     *
-     * @param <T>
-     *            the generic type
-     * @param target
-     *            the target
-     *
-     * @return the iterator
      *
      * @see ecmwf.common.database.Broker#getIterator(java.lang.Class)
      */
@@ -499,6 +465,8 @@ final class BrokerHibernate implements Broker {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * This method returns an iterator over a list of database objects of a specific type, based on a given SQL query.
      * The SQL query is passed as a string parameter, and the type of the objects to be retrieved is passed as a generic
      * type parameter.
@@ -509,15 +477,6 @@ final class BrokerHibernate implements Broker {
      * executing the query using the list() method of the query object.
      *
      * If any HibernateException occurs, it logs an error message and throws the exception.
-     *
-     * @param <T>
-     *            the generic type
-     * @param target
-     *            the target
-     * @param sql
-     *            the sql
-     *
-     * @return the iterator
      *
      * @see ecmwf.common.database.Broker#getIterator(java.lang.Class, java.lang.String)
      */
@@ -537,25 +496,13 @@ final class BrokerHibernate implements Broker {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * This method is retrieving the primary key values of a given DataBaseObject instance. It first gets the Class
      * object of the object and then retrieves the ListIterator of the columns that make up the primary key of the
      * database table associated with the object. It then iterates over the primary key columns and gets the
      * corresponding field from the object using reflection. The value of each field is added to a List of keys, which
      * is then converted to an array of String and returned.
-     *
-     * @param object
-     *            the object
-     *
-     * @return the primary key values
-     *
-     * @throws IllegalArgumentException
-     *             the illegal argument exception
-     * @throws IllegalAccessException
-     *             the illegal access exception
-     * @throws NoSuchFieldException
-     *             the no such field exception
-     * @throws SecurityException
-     *             the security exception
      *
      * @see ecmwf.common.database.Broker#getPrimaryKeyValues(ecmwf.common.database. DataBaseObject)
      */
@@ -573,10 +520,9 @@ final class BrokerHibernate implements Broker {
     }
 
     /**
-     * This method performs a delete of the given object.
+     * {@inheritDoc}
      *
-     * @param object
-     *            the object
+     * This method performs a delete of the given object.
      *
      * @see ecmwf.common.database.Broker#delete(ecmwf.common.database.DataBaseObject)
      */
@@ -586,10 +532,9 @@ final class BrokerHibernate implements Broker {
     }
 
     /**
-     * This method performs a save (if the object is new) or update (if the object already exists) of the given object.
+     * {@inheritDoc}
      *
-     * @param object
-     *            the object
+     * This method performs a save (if the object is new) or update (if the object already exists) of the given object.
      *
      * @see ecmwf.common.database.Broker#store(ecmwf.common.database.DataBaseObject)
      */
@@ -599,12 +544,9 @@ final class BrokerHibernate implements Broker {
     }
 
     /**
-     * This method performs a save or update of the given object depending on the update parameter.
+     * {@inheritDoc}
      *
-     * @param object
-     *            the object
-     * @param update
-     *            the update
+     * This method performs a save or update of the given object depending on the update parameter.
      *
      * @see ecmwf.common.database.Broker#store(ecmwf.common.database.DataBaseObject, boolean)
      */
@@ -697,9 +639,9 @@ final class BrokerHibernate implements Broker {
     }
 
     /**
-     * This method is checking if the underlying hibernate session is closed.
+     * {@inheritDoc}
      *
-     * @return true, if is closed
+     * This method is checking if the underlying hibernate session is closed.
      *
      * @see ecmwf.common.database.Broker#isClosed()
      */
@@ -709,10 +651,9 @@ final class BrokerHibernate implements Broker {
     }
 
     /**
-     * This method is closing the underlying hibernate session.
+     * {@inheritDoc}
      *
-     * @param success
-     *            the success
+     * This method is closing the underlying hibernate session.
      *
      * @see ecmwf.common.database.Broker#release(boolean)
      */

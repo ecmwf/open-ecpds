@@ -27,7 +27,6 @@ package ecmwf.common.database;
  *
  * @since 2024-07-01
  */
-
 public class TransferECUser extends DataBaseObject {
     /** The Constant serialVersionUID. */
     private static final long serialVersionUID = -8786338171671060155L;

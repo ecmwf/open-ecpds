@@ -185,6 +185,7 @@
 							<detectJavaApiLink>false</detectJavaApiLink>
 							<doclint>none</doclint>
 							<source>${maven.compiler.target}</source>
+							<quiet>true</quiet>
 						</configuration>
 					</execution>
 				</executions>

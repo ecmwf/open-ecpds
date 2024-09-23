@@ -138,9 +138,9 @@ public class SSLSocketFactory {
      *
      * @return the SSL context
      *
-     * @throws KeyManagementException
+     * @throws java.security.KeyManagementException
      *             the key management exception
-     * @throws NoSuchAlgorithmException
+     * @throws java.security.NoSuchAlgorithmException
      *             the no such algorithm exception
      */
     public static SSLContext getSSLContext() throws KeyManagementException, NoSuchAlgorithmException {
@@ -159,9 +159,9 @@ public class SSLSocketFactory {
      *
      * @return the SSL context
      *
-     * @throws NoSuchAlgorithmException
+     * @throws java.security.NoSuchAlgorithmException
      *             the no such algorithm exception
-     * @throws KeyManagementException
+     * @throws java.security.KeyManagementException
      *             the key management exception
      */
     public static SSLContext getSSLContext(final TrustManager[] trustManagers, final KeyManager[] keyManagers)
@@ -265,9 +265,9 @@ public class SSLSocketFactory {
     /**
      * Sets the https url connection trust all certs.
      *
-     * @throws NoSuchAlgorithmException
+     * @throws java.security.NoSuchAlgorithmException
      *             the no such algorithm exception
-     * @throws KeyManagementException
+     * @throws java.security.KeyManagementException
      *             the key management exception
      */
     public static void setHttpsURLConnectionTrustAllCerts() throws NoSuchAlgorithmException, KeyManagementException {

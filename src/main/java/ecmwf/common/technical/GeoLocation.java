@@ -119,7 +119,7 @@ public final class GeoLocation {
      *
      * @return the string
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static String createKML(final String name, final GeoEntry[] entries) throws IOException {
@@ -138,7 +138,7 @@ public final class GeoLocation {
      * @param entries
      *            the entries
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static void createKML(final String filename, final String name, final GeoEntry[] entries)
@@ -156,7 +156,7 @@ public final class GeoLocation {
      * @param entries
      *            the entries
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static void createKML(final OutputStream out, final String name, final GeoEntry[] entries)

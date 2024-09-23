@@ -71,7 +71,7 @@ public class ProductStepStatusHome extends ModelHomeBase {
      *
      * @return the product step status
      *
-     * @throws MonitoringException
+     * @throws ecmwf.ecpds.master.plugin.http.model.monitoring.MonitoringException
      *             the monitoring exception
      */
     public static final ProductStepStatus findByProductAndStep(final String product, final String time,
@@ -96,7 +96,7 @@ public class ProductStepStatusHome extends ModelHomeBase {
      * @param time
      *            the time
      *
-     * @throws MonitoringException
+     * @throws ecmwf.ecpds.master.plugin.http.model.monitoring.MonitoringException
      *             the monitoring exception
      */
     public static final void cleanProduct(final String product, final String time) throws MonitoringException {
@@ -119,7 +119,7 @@ public class ProductStepStatusHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws MonitoringException
+     * @throws ecmwf.ecpds.master.plugin.http.model.monitoring.MonitoringException
      *             the monitoring exception
      */
     public static final Collection<ProductStepStatus> findAll(final String product, final String time)
@@ -166,7 +166,7 @@ public class ProductStepStatusHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws MonitoringException
+     * @throws ecmwf.ecpds.master.plugin.http.model.monitoring.MonitoringException
      *             the monitoring exception
      */
     public static final Collection<ProductStepStatus> findHistory(final String product, final String time,
@@ -188,7 +188,7 @@ public class ProductStepStatusHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws MonitoringException
+     * @throws ecmwf.ecpds.master.plugin.http.model.monitoring.MonitoringException
      *             the monitoring exception
      */
     public static final Collection<ProductStepStatus> findAll() throws MonitoringException {
@@ -201,12 +201,9 @@ public class ProductStepStatusHome extends ModelHomeBase {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the default search.
-     *
-     * @param query
-     *            the query
-     *
-     * @return the default search
      */
     public static final ModelSearch getDefaultSearch(final String query) {
         final var search = getDefaultSearch();

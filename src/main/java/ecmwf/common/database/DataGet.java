@@ -80,7 +80,7 @@ public abstract class DataGet {
      *
      * @return the incoming user
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public IncomingUser getIncomingUser(final String id) throws DataBaseException {
@@ -111,7 +111,7 @@ public abstract class DataGet {
      *
      * @return the activity
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public Activity getActivity(final long id) throws DataBaseException {
@@ -142,7 +142,7 @@ public abstract class DataGet {
      *
      * @return the activity
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public Activity getActivity(final String id) throws DataBaseException {
@@ -168,7 +168,7 @@ public abstract class DataGet {
      *
      * @return the alias
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public Alias getAlias(final String desName, final String destinationName) throws DataBaseException {
@@ -233,7 +233,7 @@ public abstract class DataGet {
      *
      * @return the association
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public Association getAssociation(final String destinationName, final String hostName) throws DataBaseException {
@@ -253,7 +253,7 @@ public abstract class DataGet {
      *
      * @return the policy association
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public PolicyAssociation getPolicyAssociation(final String destinationName, final String policyId)
@@ -315,7 +315,7 @@ public abstract class DataGet {
      *
      * @return the category
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public Category getCategory(final long id) throws DataBaseException {
@@ -374,7 +374,7 @@ public abstract class DataGet {
      *
      * @return the cat url
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public CatUrl getCatUrl(final long categoryId, final String urlName) throws DataBaseException {
@@ -435,7 +435,7 @@ public abstract class DataGet {
      *
      * @return the country
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public Country getCountry(final String iso) throws DataBaseException {
@@ -495,7 +495,7 @@ public abstract class DataGet {
      *
      * @return the data file
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public DataFile getDataFile(final long id) throws DataBaseException {
@@ -526,7 +526,7 @@ public abstract class DataGet {
      *
      * @return the data file
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public DataFile getDataFile(final String id) throws DataBaseException {
@@ -550,7 +550,7 @@ public abstract class DataGet {
      *
      * @return the data transfer
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public DataTransfer getDataTransfer(final long id) throws DataBaseException {
@@ -590,7 +590,7 @@ public abstract class DataGet {
      *
      * @return the destination
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public Destination getDestination(final String name) throws DataBaseException {
@@ -712,7 +712,7 @@ public abstract class DataGet {
      *
      * @return the destination ecuser
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public DestinationECUser getDestinationECUser(final String destinationName, final String ecuserName)
@@ -774,7 +774,7 @@ public abstract class DataGet {
      *
      * @return the EC session
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public ECSession getECSession(final int id) throws DataBaseException {
@@ -805,7 +805,7 @@ public abstract class DataGet {
      *
      * @return the EC session
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public ECSession getECSession(final String id) throws DataBaseException {
@@ -829,7 +829,7 @@ public abstract class DataGet {
      *
      * @return the ectrans destination
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public ECtransDestination getECtransDestination(final String name) throws DataBaseException {
@@ -890,7 +890,7 @@ public abstract class DataGet {
      *
      * @return the ectrans accounting
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public ECtransAccounting getECtransAccounting(final int id) throws DataBaseException {
@@ -921,7 +921,7 @@ public abstract class DataGet {
      *
      * @return the ectrans accounting
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public ECtransAccounting getECtransAccounting(final String id) throws DataBaseException {
@@ -945,7 +945,7 @@ public abstract class DataGet {
      *
      * @return the ectrans module
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public ECtransModule getECtransModule(final String name) throws DataBaseException {
@@ -1005,7 +1005,7 @@ public abstract class DataGet {
      *
      * @return the EC user
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public ECUser getECUser(final String name) throws DataBaseException {
@@ -1065,7 +1065,7 @@ public abstract class DataGet {
      *
      * @return the incoming policy
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public IncomingPolicy getIncomingPolicy(final String id) throws DataBaseException {
@@ -1124,7 +1124,7 @@ public abstract class DataGet {
      *
      * @return the event
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public Event getEvent(final long id) throws DataBaseException {
@@ -1155,7 +1155,7 @@ public abstract class DataGet {
      *
      * @return the event
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public Event getEvent(final String id) throws DataBaseException {
@@ -1179,7 +1179,7 @@ public abstract class DataGet {
      *
      * @return the publication
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public Publication getPublication(final int id) throws DataBaseException {
@@ -1210,7 +1210,7 @@ public abstract class DataGet {
      *
      * @return the publication
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public Publication getPublication(final String id) throws DataBaseException {
@@ -1234,7 +1234,7 @@ public abstract class DataGet {
      *
      * @return the host
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public Host getHost(final String name) throws DataBaseException {
@@ -1268,7 +1268,7 @@ public abstract class DataGet {
      *
      * @return the host and its output.
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public Host getHostWithOutput(final String name) throws DataBaseException {
@@ -1330,7 +1330,7 @@ public abstract class DataGet {
      *
      * @return the host
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public HostStats getHostStats(final int id) throws DataBaseException {
@@ -1361,7 +1361,7 @@ public abstract class DataGet {
      *
      * @return the host
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public HostLocation getHostLocation(final int id) throws DataBaseException {
@@ -1392,7 +1392,7 @@ public abstract class DataGet {
      *
      * @return the host
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public HostOutput getHostOutput(final int id) throws DataBaseException {
@@ -1425,7 +1425,7 @@ public abstract class DataGet {
      *
      * @return the host ecuser
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public HostECUser getHostECUser(final String ecuserName, final String hostName) throws DataBaseException {
@@ -1470,7 +1470,7 @@ public abstract class DataGet {
      *
      * @return the metadata attribute
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public MetadataAttribute getMetadataAttribute(final String name) throws DataBaseException {
@@ -1531,7 +1531,7 @@ public abstract class DataGet {
      *
      * @return the monitoring value
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public MonitoringValue getMonitoringValue(final long id) throws DataBaseException {
@@ -1562,7 +1562,7 @@ public abstract class DataGet {
      *
      * @return the monitoring value
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public MonitoringValue getMonitoringValue(final String id) throws DataBaseException {
@@ -1597,7 +1597,7 @@ public abstract class DataGet {
      *
      * @return the authorised ecuser
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public AuthorizedECUser getAuthorizedECUser(final String ecuserName, final String msuserName)
@@ -1643,7 +1643,7 @@ public abstract class DataGet {
      *
      * @return the notification
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public Notification getNotification(final int id) throws DataBaseException {
@@ -1674,7 +1674,7 @@ public abstract class DataGet {
      *
      * @return the notification
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public Notification getNotification(final String id) throws DataBaseException {
@@ -1698,7 +1698,7 @@ public abstract class DataGet {
      *
      * @return the operation
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public Operation getOperation(final String name) throws DataBaseException {
@@ -1761,7 +1761,7 @@ public abstract class DataGet {
      *
      * @return the permission
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public Permission getPermission(final String ecuserName, final String operationName) throws DataBaseException {
@@ -1808,7 +1808,7 @@ public abstract class DataGet {
      *
      * @return the privileged
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public Privileged getPrivileged(final String ecuserName, final int notificationId) throws DataBaseException {
@@ -1853,7 +1853,7 @@ public abstract class DataGet {
      *
      * @return the product status
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public ProductStatus getProductStatus(final long id) throws DataBaseException {
@@ -1884,7 +1884,7 @@ public abstract class DataGet {
      *
      * @return the product status
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public ProductStatus getProductStatus(final String id) throws DataBaseException {
@@ -1924,7 +1924,7 @@ public abstract class DataGet {
      *
      * @return the reception
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public Reception getReception(final int id) throws DataBaseException {
@@ -1955,7 +1955,7 @@ public abstract class DataGet {
      *
      * @return the reception
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public Reception getReception(final String id) throws DataBaseException {
@@ -1979,7 +1979,7 @@ public abstract class DataGet {
      *
      * @return the scheduler value
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public SchedulerValue getSchedulerValue(final int id) throws DataBaseException {
@@ -2010,7 +2010,7 @@ public abstract class DataGet {
      *
      * @return the scheduler value
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public SchedulerValue getSchedulerValue(final String id) throws DataBaseException {
@@ -2034,7 +2034,7 @@ public abstract class DataGet {
      *
      * @return the spool
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public Spool getSpool(final int id) throws DataBaseException {
@@ -2065,7 +2065,7 @@ public abstract class DataGet {
      *
      * @return the spool
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public Spool getSpool(final String id) throws DataBaseException {
@@ -2089,7 +2089,7 @@ public abstract class DataGet {
      *
      * @return the transfer group
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public TransferGroup getTransferGroup(final String name) throws DataBaseException {
@@ -2149,7 +2149,7 @@ public abstract class DataGet {
      *
      * @return the transfer history
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public TransferHistory getTransferHistory(final long id) throws DataBaseException {
@@ -2180,7 +2180,7 @@ public abstract class DataGet {
      *
      * @return the transfer history
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public TransferHistory getTransferHistory(final String id) throws DataBaseException {
@@ -2195,7 +2195,7 @@ public abstract class DataGet {
      *
      * @return the transfer method
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public TransferMethod getTransferMethod(final String name) throws DataBaseException {
@@ -2255,7 +2255,7 @@ public abstract class DataGet {
      *
      * @return the transfer module
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public TransferModule getTransferModule(final String name) throws DataBaseException {
@@ -2314,7 +2314,7 @@ public abstract class DataGet {
      *
      * @return the transfer server
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public TransferServer getTransferServer(final String name) throws DataBaseException {
@@ -2376,7 +2376,7 @@ public abstract class DataGet {
      *
      * @return the transfer ecuser
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public TransferECUser getTransferECUser(final String ecuserName, final String transfermethodName)
@@ -2422,7 +2422,7 @@ public abstract class DataGet {
      *
      * @return the url
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public Url getUrl(final String name) throws DataBaseException {
@@ -2482,7 +2482,7 @@ public abstract class DataGet {
      *
      * @return the web user
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public WebUser getWebUser(final String id) throws DataBaseException {
@@ -2544,7 +2544,7 @@ public abstract class DataGet {
      *
      * @return the weu cat
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public WeuCat getWeuCat(final long categoryId, final String webuserId) throws DataBaseException {

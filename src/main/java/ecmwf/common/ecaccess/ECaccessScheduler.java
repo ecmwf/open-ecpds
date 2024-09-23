@@ -173,9 +173,9 @@ public abstract class ECaccessScheduler extends WakeupThread implements MonitorC
     }
 
     /**
-     * Checks if is on hold.
+     * {@inheritDoc}
      *
-     * @return true, if is on hold
+     * Checks if is on hold.
      */
     @Override
     public boolean isOnHold() {
@@ -183,6 +183,8 @@ public abstract class ECaccessScheduler extends WakeupThread implements MonitorC
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Wakeup.
      */
     @Override
@@ -192,10 +194,9 @@ public abstract class ECaccessScheduler extends WakeupThread implements MonitorC
     }
 
     /**
-     * Sets the onhold.
+     * {@inheritDoc}
      *
-     * @param hold
-     *            the new onhold
+     * Sets the onhold.
      */
     @Override
     public void setOnhold(final boolean hold) {
@@ -322,15 +323,9 @@ public abstract class ECaccessScheduler extends WakeupThread implements MonitorC
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the monitor manager.
-     *
-     * @param name
-     *            the name
-     *
-     * @return the monitor manager
-     *
-     * @throws MonitorException
-     *             the monitor exception
      */
     @Override
     public MonitorManager getMonitorManager(final String name) throws MonitorException {
@@ -402,6 +397,8 @@ public abstract class ECaccessScheduler extends WakeupThread implements MonitorC
     public abstract int nextStep();
 
     /**
+     * {@inheritDoc}
+     *
      * Configurable run.
      */
     @Override

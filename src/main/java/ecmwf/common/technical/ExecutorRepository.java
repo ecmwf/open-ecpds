@@ -144,7 +144,7 @@ public abstract class ExecutorRepository<O> {
      * @param object
      *            the object
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     public abstract void exec(final O object) throws Exception;

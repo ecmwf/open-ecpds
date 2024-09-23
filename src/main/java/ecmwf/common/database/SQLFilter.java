@@ -35,14 +35,9 @@ import java.io.FilenameFilter;
 public class SQLFilter implements FilenameFilter {
 
     /**
+     * {@inheritDoc}
+     *
      * Accept.
-     *
-     * @param dir
-     *            the dir
-     * @param name
-     *            the name
-     *
-     * @return true, if successful
      */
     @Override
     public boolean accept(final File dir, final String name) {

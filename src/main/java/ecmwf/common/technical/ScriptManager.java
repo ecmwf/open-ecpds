@@ -118,7 +118,7 @@ public final class ScriptManager implements AutoCloseable {
      *
      * @return the t
      *
-     * @throws ScriptException
+     * @throws javax.script.ScriptException
      *             the script exception
      */
     public static <T> T exec(final Class<T> clazz, final String defaultLanguage, final String script)
@@ -150,7 +150,7 @@ public final class ScriptManager implements AutoCloseable {
      * @param script
      *            the script
      *
-     * @throws ScriptException
+     * @throws javax.script.ScriptException
      *             the script exception
      */
     public static void exec(final String defaultLanguage, final String script) throws ScriptException {
@@ -194,7 +194,7 @@ public final class ScriptManager implements AutoCloseable {
      *
      * @return the t
      *
-     * @throws ScriptException
+     * @throws javax.script.ScriptException
      *             the script exception
      */
     public <T> T eval(final Class<T> clazz, final String script) throws ScriptException {
@@ -220,7 +220,7 @@ public final class ScriptManager implements AutoCloseable {
      * @param script
      *            the script
      *
-     * @throws ScriptException
+     * @throws javax.script.ScriptException
      *             the script exception
      */
     public void eval(final String script) throws ScriptException {
@@ -235,7 +235,7 @@ public final class ScriptManager implements AutoCloseable {
      * @param value
      *            the value
      *
-     * @throws ScriptException
+     * @throws javax.script.ScriptException
      *             the script exception
      */
     public void put(final String key, final Object value) throws ScriptException {
@@ -252,7 +252,7 @@ public final class ScriptManager implements AutoCloseable {
      * @param context
      *            the context
      *
-     * @throws ScriptException
+     * @throws javax.script.ScriptException
      *             the script exception
      */
     public void put(final Map<String, Object> context) throws ScriptException {
@@ -275,7 +275,7 @@ public final class ScriptManager implements AutoCloseable {
      *
      * @return the t
      *
-     * @throws ScriptException
+     * @throws javax.script.ScriptException
      *             the script exception
      */
     public <T> T get(final Class<T> clazz, final String name, final Object... args) throws ScriptException {
@@ -342,7 +342,7 @@ public final class ScriptManager implements AutoCloseable {
      *
      * @return the properties
      *
-     * @throws ScriptException
+     * @throws javax.script.ScriptException
      *             the script exception
      */
     public Map<String, String> getProperties() throws ScriptException {
@@ -417,7 +417,7 @@ public final class ScriptManager implements AutoCloseable {
      *
      * @return true, if successful
      *
-     * @throws ScriptException
+     * @throws javax.script.ScriptException
      *             the script exception
      */
     public boolean exists(final String name) throws ScriptException {
@@ -447,6 +447,8 @@ public final class ScriptManager implements AutoCloseable {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Close.
      */
     @Override

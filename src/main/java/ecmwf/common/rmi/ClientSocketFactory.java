@@ -65,7 +65,7 @@ public class ClientSocketFactory extends SocketFactory {
     /**
      * Update statistics.
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void updateStatistics() throws IOException {
@@ -122,7 +122,7 @@ public class ClientSocketFactory extends SocketFactory {
      *
      * @return the configured wrapper
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public Socket getConfiguredWrapper(final Socket socket) throws IOException {
@@ -132,17 +132,9 @@ public class ClientSocketFactory extends SocketFactory {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Creates a new ClientSocket object.
-     *
-     * @param host
-     *            the host
-     * @param port
-     *            the port
-     *
-     * @return the socket
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public Socket createSocket(final String host, final int port) throws IOException {
@@ -150,21 +142,9 @@ public class ClientSocketFactory extends SocketFactory {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Creates a new ClientSocket object.
-     *
-     * @param host
-     *            the host
-     * @param port
-     *            the port
-     * @param localHost
-     *            the local host
-     * @param localPort
-     *            the local port
-     *
-     * @return the socket
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public Socket createSocket(final String host, final int port, final InetAddress localHost, final int localPort)
@@ -174,17 +154,9 @@ public class ClientSocketFactory extends SocketFactory {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Creates a new ClientSocket object.
-     *
-     * @param host
-     *            the host
-     * @param port
-     *            the port
-     *
-     * @return the socket
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public Socket createSocket(final InetAddress host, final int port) throws IOException {
@@ -192,21 +164,9 @@ public class ClientSocketFactory extends SocketFactory {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Creates a new ClientSocket object.
-     *
-     * @param host
-     *            the host
-     * @param port
-     *            the port
-     * @param localHost
-     *            the local host
-     * @param localPort
-     *            the local port
-     *
-     * @return the socket
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public Socket createSocket(final InetAddress host, final int port, final InetAddress localHost, final int localPort)

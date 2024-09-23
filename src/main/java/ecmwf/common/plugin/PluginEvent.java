@@ -135,9 +135,9 @@ public class PluginEvent<T> implements Serializable {
     }
 
     /**
-     * To string.
+     * {@inheritDoc}
      *
-     * @return the string
+     * To string.
      */
     @Override
     public String toString() {

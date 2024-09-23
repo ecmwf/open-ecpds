@@ -61,7 +61,7 @@ public interface MetaData extends ModelBean {
      *
      * @return the data file
      *
-     * @throws DataFileException
+     * @throws ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException
      *             the data file exception
      */
     DataFile getDataFile() throws DataFileException;

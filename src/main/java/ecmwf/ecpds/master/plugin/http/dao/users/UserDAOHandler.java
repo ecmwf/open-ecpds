@@ -68,12 +68,9 @@ public class UserDAOHandler extends PDSDAOBase implements DAOHandler {
     private static final Logger log = LogManager.getLogger(UserDAOHandler.class);
 
     /**
+     * {@inheritDoc}
+     *
      * Creates the.
-     *
-     * @return the web user
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public WebUser create() throws DAOException {
@@ -81,15 +78,9 @@ public class UserDAOHandler extends PDSDAOBase implements DAOHandler {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Find by primary key.
-     *
-     * @param key
-     *            the key
-     *
-     * @return the web user
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public WebUser findByPrimaryKey(final String key) throws DAOException {
@@ -101,15 +92,9 @@ public class UserDAOHandler extends PDSDAOBase implements DAOHandler {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Find.
-     *
-     * @param search
-     *            the search
-     *
-     * @return the collection
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public Collection<?> find(final ModelSearch search) throws DAOException {
@@ -172,15 +157,9 @@ public class UserDAOHandler extends PDSDAOBase implements DAOHandler {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Save.
-     *
-     * @param b
-     *            the b
-     * @param context
-     *            the context
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public void save(final ModelBean b, final Object context) throws DAOException {
@@ -214,15 +193,9 @@ public class UserDAOHandler extends PDSDAOBase implements DAOHandler {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Insert.
-     *
-     * @param b
-     *            the b
-     * @param context
-     *            the context
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public void insert(final ModelBean b, final Object context) throws DAOException {
@@ -241,15 +214,9 @@ public class UserDAOHandler extends PDSDAOBase implements DAOHandler {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Delete.
-     *
-     * @param b
-     *            the b
-     * @param context
-     *            the context
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public void delete(final ModelBean b, final Object context) throws DAOException {

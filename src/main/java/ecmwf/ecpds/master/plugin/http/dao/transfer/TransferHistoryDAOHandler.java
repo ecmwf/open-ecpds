@@ -49,12 +49,9 @@ import ecmwf.web.services.persistence.DAOHandler;
 public class TransferHistoryDAOHandler extends PDSDAOBase implements DAOHandler {
 
     /**
+     * {@inheritDoc}
+     *
      * Creates the.
-     *
-     * @return the transfer history
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public TransferHistory create() throws DAOException {
@@ -62,15 +59,9 @@ public class TransferHistoryDAOHandler extends PDSDAOBase implements DAOHandler 
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Find by primary key.
-     *
-     * @param key
-     *            the key
-     *
-     * @return the transfer history
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public TransferHistory findByPrimaryKey(final String key) throws DAOException {
@@ -84,15 +75,9 @@ public class TransferHistoryDAOHandler extends PDSDAOBase implements DAOHandler 
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Find.
-     *
-     * @param search
-     *            the search
-     *
-     * @return the collection
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public Collection<TransferHistory> find(final ModelSearch search) throws DAOException {
@@ -141,15 +126,9 @@ public class TransferHistoryDAOHandler extends PDSDAOBase implements DAOHandler 
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Save.
-     *
-     * @param bean
-     *            the bean
-     * @param context
-     *            the context
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public void save(final ModelBean bean, final Object context) throws DAOException {
@@ -157,15 +136,9 @@ public class TransferHistoryDAOHandler extends PDSDAOBase implements DAOHandler 
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Insert.
-     *
-     * @param bean
-     *            the bean
-     * @param context
-     *            the context
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public void insert(final ModelBean bean, final Object context) throws DAOException {
@@ -173,15 +146,9 @@ public class TransferHistoryDAOHandler extends PDSDAOBase implements DAOHandler 
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Delete.
-     *
-     * @param bean
-     *            the bean
-     * @param context
-     *            the context
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public void delete(final ModelBean bean, final Object context) throws DAOException {

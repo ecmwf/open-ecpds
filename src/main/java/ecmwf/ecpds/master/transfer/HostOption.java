@@ -27,7 +27,6 @@ package ecmwf.ecpds.master.transfer;
  *
  * @since 2024-07-01
  */
-
 public final class HostOption {
     /** The Constant networkName. */
     public static final String[] networkName = { "Internet", "RMDCN", "Leased Line", "LAN", "ECaccess" };

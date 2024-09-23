@@ -64,7 +64,7 @@ public final class Util {
      *
      * @return the ecpds session from object
      *
-     * @throws ModelException
+     * @throws ecmwf.web.model.ModelException
      *             the model exception
      */
     public static ECpdsSession getECpdsSessionFromObject(final Object u) throws ModelException {

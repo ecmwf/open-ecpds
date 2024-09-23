@@ -69,14 +69,16 @@ public interface ProductStepStatus extends MonitoringStatus, GenerationMonitorin
     String getType();
 
     /**
-     * Gets the arrival time.
+     * {@inheritDoc}
      *
-     * @return the arrival time
+     * Gets the arrival time.
      */
     @Override
     Date getArrivalTime();
 
     /**
+     * {@inheritDoc}
+     *
      * Reset.
      */
     @Override

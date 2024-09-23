@@ -266,9 +266,9 @@ public class MonitoringRequest {
      * @param ses
      *            the ses
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
-     * @throws MonitoringException
+     * @throws ecmwf.ecpds.master.plugin.http.model.monitoring.MonitoringException
      *             the monitoring exception
      */
     public MonitoringRequest(final HttpServletRequest req, final MonitoringSessionActionForm ses)
@@ -412,9 +412,9 @@ public class MonitoringRequest {
     /**
      * Simplified constructors that only creates a basic unparametrised "productWindow".
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
-     * @throws MonitoringException
+     * @throws ecmwf.ecpds.master.plugin.http.model.monitoring.MonitoringException
      *             the monitoring exception
      */
     public MonitoringRequest() throws TransferException, MonitoringException {

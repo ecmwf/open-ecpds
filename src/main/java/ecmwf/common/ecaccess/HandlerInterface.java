@@ -40,7 +40,7 @@ public interface HandlerInterface extends ClientInterface {
      * @param events
      *            the events
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void handle(PluginEvent<?>[] events) throws RemoteException;
@@ -51,7 +51,7 @@ public interface HandlerInterface extends ClientInterface {
      * @param event
      *            the event
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void handle(PluginEvent<?> event) throws RemoteException;

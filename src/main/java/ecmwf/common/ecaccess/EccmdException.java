@@ -29,7 +29,6 @@ import ecmwf.common.text.Format;
  *
  * @since 2024-07-01
  */
-
 public class EccmdException extends Exception {
     /** The Constant serialVersionUID. */
     private static final long serialVersionUID = 1909068326708015315L;

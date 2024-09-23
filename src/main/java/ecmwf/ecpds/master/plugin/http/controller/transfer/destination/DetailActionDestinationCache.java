@@ -519,7 +519,7 @@ public class DetailActionDestinationCache {
      *
      * @return the data transfers
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public Collection<DataTransferLightBean> getDataTransfers(final boolean hasAccess, final DataBaseCursor cursor)
@@ -541,7 +541,7 @@ public class DetailActionDestinationCache {
      *
      * @return the data transfers
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public Collection<DataTransferLightBean> getDataTransfers(final boolean hasAccess) throws TransferException {

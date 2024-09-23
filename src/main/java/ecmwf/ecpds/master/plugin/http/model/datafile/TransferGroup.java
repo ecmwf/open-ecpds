@@ -43,7 +43,7 @@ public interface TransferGroup extends ModelBean {
      *
      * @return the host for backup
      *
-     * @throws DataFileException
+     * @throws ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException
      *             the data file exception
      */
     Host getHostForBackup() throws DataFileException;
@@ -233,7 +233,7 @@ public interface TransferGroup extends ModelBean {
      *
      * @return the transfer servers
      *
-     * @throws DataFileException
+     * @throws ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException
      *             the data file exception
      */
     Collection<TransferServer> getTransferServers() throws DataFileException;

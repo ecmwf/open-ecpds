@@ -29,7 +29,6 @@ import java.io.Serializable;
  *
  * @since 2024-07-01
  */
-
 public final class FileListElement implements Serializable, Cloneable {
     /** The Constant serialVersionUID. */
     private static final long serialVersionUID = -6826982990410695017L;
@@ -259,9 +258,9 @@ public final class FileListElement implements Serializable, Cloneable {
     }
 
     /**
-     * Return the filename, path included.
+     * {@inheritDoc}
      *
-     * @return the string
+     * Return the filename, path included.
      */
     @Override
     public String toString() {
@@ -269,9 +268,9 @@ public final class FileListElement implements Serializable, Cloneable {
     }
 
     /**
-     * Clone.
+     * {@inheritDoc}
      *
-     * @return the object
+     * Clone.
      */
     @Override
     public Object clone() {

@@ -271,9 +271,9 @@ public abstract class ScriptFile {
      *
      * @return the object
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public Object executeRequest(final File file) throws SQLException, IOException {
@@ -434,9 +434,9 @@ public abstract class ScriptFile {
      *
      * @return the DB result set
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public DBResultSet executeQuery(final String menu, final String group, final String name,
@@ -462,9 +462,9 @@ public abstract class ScriptFile {
      *
      * @return the DB iterator
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public <T extends DataBaseObject> DBIterator<T> executeQuery(final String menu, final String group,
@@ -485,9 +485,9 @@ public abstract class ScriptFile {
      *
      * @return the DB result set
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public DBResultSet executeQuery(final String menu, final String group, final String name)
@@ -511,9 +511,9 @@ public abstract class ScriptFile {
      *
      * @return the DB iterator
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public <T extends DataBaseObject> DBIterator<T> executeQuery(final String menu, final String group,
@@ -529,7 +529,7 @@ public abstract class ScriptFile {
      *
      * @return the DB result set
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
      */
     public abstract DBResultSet executeQuery(String sql) throws SQLException;
@@ -546,7 +546,7 @@ public abstract class ScriptFile {
      *
      * @return the DB iterator
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
      */
     public abstract <T extends DataBaseObject> DBIterator<T> executeQuery(Class<T> resultClass, String sql)
@@ -566,9 +566,9 @@ public abstract class ScriptFile {
      *
      * @return the int
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public int executeUpdate(final String menu, final String group, final String name, final Map<String, String> values)
@@ -588,9 +588,9 @@ public abstract class ScriptFile {
      *
      * @return the int
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public int executeUpdate(final String menu, final String group, final String name)
@@ -606,9 +606,9 @@ public abstract class ScriptFile {
      *
      * @return the int
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract int executeUpdate(String sql) throws SQLException, IOException;
@@ -821,7 +821,7 @@ public abstract class ScriptFile {
      * @param name
      *            the name
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void updateScriptContent(final String menu, final String group, final String name) throws IOException {

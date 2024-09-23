@@ -375,7 +375,7 @@ public final class CBZip2OutputStream extends OutputStream implements BZip2Const
      * @param inStream
      *            the in stream
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public CBZip2OutputStream(final OutputStream inStream) throws IOException {
@@ -390,7 +390,7 @@ public final class CBZip2OutputStream extends OutputStream implements BZip2Const
      * @param inBlockSize
      *            the in block size
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public CBZip2OutputStream(final OutputStream inStream, int inBlockSize) throws IOException {
@@ -415,13 +415,9 @@ public final class CBZip2OutputStream extends OutputStream implements BZip2Const
     }
 
     /**
+     * {@inheritDoc}
+     *
      * modified by Oliver Merkel, 010128.
-     *
-     * @param bv
-     *            the bv
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void write(final int bv) throws IOException {
@@ -501,10 +497,9 @@ public final class CBZip2OutputStream extends OutputStream implements BZip2Const
     private boolean closed = false;
 
     /**
-     * Finalize.
+     * {@inheritDoc}
      *
-     * @throws Throwable
-     *             the throwable
+     * Finalize.
      */
     @Override
     protected void finalize() throws Throwable {
@@ -514,10 +509,9 @@ public final class CBZip2OutputStream extends OutputStream implements BZip2Const
     }
 
     /**
-     * Close.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Close.
      */
     @Override
     public void close() throws IOException {
@@ -537,10 +531,9 @@ public final class CBZip2OutputStream extends OutputStream implements BZip2Const
     }
 
     /**
-     * Flush.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Flush.
      */
     @Override
     public void flush() throws IOException {

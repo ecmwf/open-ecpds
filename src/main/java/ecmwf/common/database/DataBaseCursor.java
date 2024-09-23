@@ -113,9 +113,9 @@ public class DataBaseCursor implements Serializable {
     }
 
     /**
-     * To string.
+     * {@inheritDoc}
      *
-     * @return the string
+     * To string.
      */
     @Override
     public String toString() {

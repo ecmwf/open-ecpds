@@ -100,7 +100,7 @@ public interface EcTransModule extends ModelBean {
      *
      * @return the transfer methods
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Collection getTransferMethods() throws TransferException;

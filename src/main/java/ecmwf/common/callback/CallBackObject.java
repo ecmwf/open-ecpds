@@ -64,7 +64,7 @@ public abstract class CallBackObject extends UnicastRemoteObject {
     /**
      * Instantiates a new call back object.
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     protected CallBackObject() throws RemoteException {
@@ -154,7 +154,7 @@ public abstract class CallBackObject extends UnicastRemoteObject {
      *
      * @return the registry
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     public static Registry createOrGetRegistry() throws RemoteException {

@@ -55,9 +55,9 @@ public class EcTransModuleBean extends ModelBeanBase implements EcTransModule, O
     }
 
     /**
-     * Gets the bean interface name.
+     * {@inheritDoc}
      *
-     * @return the bean interface name
+     * Gets the bean interface name.
      */
     @Override
     public String getBeanInterfaceName() {
@@ -65,9 +65,9 @@ public class EcTransModuleBean extends ModelBeanBase implements EcTransModule, O
     }
 
     /**
-     * Gets the ojb implementation.
+     * {@inheritDoc}
      *
-     * @return the ojb implementation
+     * Gets the ojb implementation.
      */
     @Override
     public DataBaseObject getOjbImplementation() {
@@ -75,9 +75,9 @@ public class EcTransModuleBean extends ModelBeanBase implements EcTransModule, O
     }
 
     /**
-     * Gets the id.
+     * {@inheritDoc}
      *
-     * @return the id
+     * Gets the id.
      */
     @Override
     public String getId() {
@@ -85,9 +85,9 @@ public class EcTransModuleBean extends ModelBeanBase implements EcTransModule, O
     }
 
     /**
-     * Gets the active.
+     * {@inheritDoc}
      *
-     * @return the active
+     * Gets the active.
      */
     @Override
     public boolean getActive() {
@@ -95,9 +95,9 @@ public class EcTransModuleBean extends ModelBeanBase implements EcTransModule, O
     }
 
     /**
-     * Gets the archive.
+     * {@inheritDoc}
      *
-     * @return the archive
+     * Gets the archive.
      */
     @Override
     public String getArchive() {
@@ -105,9 +105,9 @@ public class EcTransModuleBean extends ModelBeanBase implements EcTransModule, O
     }
 
     /**
-     * Gets the classe.
+     * {@inheritDoc}
      *
-     * @return the classe
+     * Gets the classe.
      */
     @Override
     public String getClasse() {
@@ -115,9 +115,9 @@ public class EcTransModuleBean extends ModelBeanBase implements EcTransModule, O
     }
 
     /**
-     * Gets the name.
+     * {@inheritDoc}
      *
-     * @return the name
+     * Gets the name.
      */
     @Override
     public String getName() {
@@ -125,10 +125,9 @@ public class EcTransModuleBean extends ModelBeanBase implements EcTransModule, O
     }
 
     /**
-     * Sets the active.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new active
+     * Sets the active.
      */
     @Override
     public void setActive(final boolean param) {
@@ -136,10 +135,9 @@ public class EcTransModuleBean extends ModelBeanBase implements EcTransModule, O
     }
 
     /**
-     * Sets the archive.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new archive
+     * Sets the archive.
      */
     @Override
     public void setArchive(final String param) {
@@ -147,10 +145,9 @@ public class EcTransModuleBean extends ModelBeanBase implements EcTransModule, O
     }
 
     /**
-     * Sets the classe.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new classe
+     * Sets the classe.
      */
     @Override
     public void setClasse(final String param) {
@@ -158,10 +155,9 @@ public class EcTransModuleBean extends ModelBeanBase implements EcTransModule, O
     }
 
     /**
-     * Sets the name.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new name
+     * Sets the name.
      */
     @Override
     public void setName(final String param) {
@@ -169,12 +165,9 @@ public class EcTransModuleBean extends ModelBeanBase implements EcTransModule, O
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the transfer methods.
-     *
-     * @return the transfer methods
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Collection<TransferMethod> getTransferMethods() throws TransferException {
@@ -182,12 +175,9 @@ public class EcTransModuleBean extends ModelBeanBase implements EcTransModule, O
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Equals.
-     *
-     * @param o
-     *            the o
-     *
-     * @return true, if successful
      */
     @Override
     public boolean equals(final Object o) {
@@ -207,9 +197,9 @@ public class EcTransModuleBean extends ModelBeanBase implements EcTransModule, O
     }
 
     /**
-     * Hash code.
+     * {@inheritDoc}
      *
-     * @return the int
+     * Hash code.
      */
     @Override
     public int hashCode() {
@@ -217,9 +207,9 @@ public class EcTransModuleBean extends ModelBeanBase implements EcTransModule, O
     }
 
     /**
-     * To string.
+     * {@inheritDoc}
      *
-     * @return the string
+     * To string.
      */
     @Override
     public String toString() {

@@ -84,9 +84,9 @@ public final class AliasesParser {
      * @param event
      *            the event
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public AliasesParser(final Destination destination, final String target, final String lifetime, final long delay,

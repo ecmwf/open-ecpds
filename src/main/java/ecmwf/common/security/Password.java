@@ -47,9 +47,9 @@ public final class Password {
      *
      * @return the string
      *
-     * @throws NoSuchAlgorithmException
+     * @throws java.security.NoSuchAlgorithmException
      *             the no such algorithm exception
-     * @throws InvalidKeySpecException
+     * @throws java.security.spec.InvalidKeySpecException
      *             the invalid key spec exception
      */
     public static String generateHash(final String password) throws NoSuchAlgorithmException, InvalidKeySpecException {
@@ -72,9 +72,9 @@ public final class Password {
      *
      * @return true, if successful
      *
-     * @throws NoSuchAlgorithmException
+     * @throws java.security.NoSuchAlgorithmException
      *             the no such algorithm exception
-     * @throws InvalidKeySpecException
+     * @throws java.security.spec.InvalidKeySpecException
      *             the invalid key spec exception
      */
     public static boolean check(final String password, final String storedHash)

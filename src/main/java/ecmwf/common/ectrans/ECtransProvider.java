@@ -51,7 +51,7 @@ public abstract class ECtransProvider extends RemoteProvider {
      *
      * @return the MS user
      *
-     * @throws ECtransException
+     * @throws ecmwf.common.ectrans.ECtransException
      *             the ectrans exception
      */
     public abstract MSUser getMSUser(String ecuser, String msuser) throws ECtransException;

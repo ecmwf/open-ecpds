@@ -73,9 +73,9 @@ public class IncomingPolicyBean extends ModelBeanBase implements IncomingPolicy,
     }
 
     /**
-     * Gets the ojb implementation.
+     * {@inheritDoc}
      *
-     * @return the ojb implementation
+     * Gets the ojb implementation.
      */
     @Override
     public DataBaseObject getOjbImplementation() {
@@ -83,9 +83,9 @@ public class IncomingPolicyBean extends ModelBeanBase implements IncomingPolicy,
     }
 
     /**
-     * Gets the bean interface name.
+     * {@inheritDoc}
      *
-     * @return the bean interface name
+     * Gets the bean interface name.
      */
     @Override
     public String getBeanInterfaceName() {
@@ -93,9 +93,9 @@ public class IncomingPolicyBean extends ModelBeanBase implements IncomingPolicy,
     }
 
     /**
-     * Gets the id.
+     * {@inheritDoc}
      *
-     * @return the id
+     * Gets the id.
      */
     @Override
     public String getId() {
@@ -103,9 +103,9 @@ public class IncomingPolicyBean extends ModelBeanBase implements IncomingPolicy,
     }
 
     /**
-     * Gets the comment.
+     * {@inheritDoc}
      *
-     * @return the comment
+     * Gets the comment.
      */
     @Override
     public String getComment() {
@@ -113,9 +113,9 @@ public class IncomingPolicyBean extends ModelBeanBase implements IncomingPolicy,
     }
 
     /**
-     * Gets the active.
+     * {@inheritDoc}
      *
-     * @return the active
+     * Gets the active.
      */
     @Override
     public boolean getActive() {
@@ -123,9 +123,9 @@ public class IncomingPolicyBean extends ModelBeanBase implements IncomingPolicy,
     }
 
     /**
-     * Gets the data.
+     * {@inheritDoc}
      *
-     * @return the data
+     * Gets the data.
      */
     @Override
     public String getData() {
@@ -133,9 +133,9 @@ public class IncomingPolicyBean extends ModelBeanBase implements IncomingPolicy,
     }
 
     /**
-     * Gets the properties.
+     * {@inheritDoc}
      *
-     * @return the properties
+     * Gets the properties.
      */
     @Override
     public String getProperties() {
@@ -143,9 +143,9 @@ public class IncomingPolicyBean extends ModelBeanBase implements IncomingPolicy,
     }
 
     /**
-     * Gets the completions.
+     * {@inheritDoc}
      *
-     * @return the completions
+     * Gets the completions.
      */
     @Override
     public String getCompletions() {
@@ -153,10 +153,9 @@ public class IncomingPolicyBean extends ModelBeanBase implements IncomingPolicy,
     }
 
     /**
-     * Sets the id.
+     * {@inheritDoc}
      *
-     * @param id
-     *            the new id
+     * Sets the id.
      */
     @Override
     public void setId(final String id) {
@@ -164,10 +163,9 @@ public class IncomingPolicyBean extends ModelBeanBase implements IncomingPolicy,
     }
 
     /**
-     * Sets the comment.
+     * {@inheritDoc}
      *
-     * @param comment
-     *            the new comment
+     * Sets the comment.
      */
     @Override
     public void setComment(final String comment) {
@@ -175,10 +173,9 @@ public class IncomingPolicyBean extends ModelBeanBase implements IncomingPolicy,
     }
 
     /**
-     * Sets the active.
+     * {@inheritDoc}
      *
-     * @param active
-     *            the new active
+     * Sets the active.
      */
     @Override
     public void setActive(final boolean active) {
@@ -186,10 +183,9 @@ public class IncomingPolicyBean extends ModelBeanBase implements IncomingPolicy,
     }
 
     /**
-     * Sets the data.
+     * {@inheritDoc}
      *
-     * @param data
-     *            the new data
+     * Sets the data.
      */
     @Override
     public void setData(final String data) {
@@ -201,7 +197,7 @@ public class IncomingPolicyBean extends ModelBeanBase implements IncomingPolicy,
      *
      * @return the incoming policies
      *
-     * @throws IncomingPolicyException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.IncomingPolicyException
      *             the incoming policy exception
      */
     public Collection<IncomingPolicy> getIncomingPolicies() throws IncomingPolicyException {
@@ -209,10 +205,9 @@ public class IncomingPolicyBean extends ModelBeanBase implements IncomingPolicy,
     }
 
     /**
-     * Adds the destination.
+     * {@inheritDoc}
      *
-     * @param d
-     *            the d
+     * Adds the destination.
      */
     @Override
     public void addDestination(final Destination d) {
@@ -220,10 +215,9 @@ public class IncomingPolicyBean extends ModelBeanBase implements IncomingPolicy,
     }
 
     /**
-     * Delete destination.
+     * {@inheritDoc}
      *
-     * @param d
-     *            the d
+     * Delete destination.
      */
     @Override
     public void deleteDestination(final Destination d) {
@@ -249,12 +243,9 @@ public class IncomingPolicyBean extends ModelBeanBase implements IncomingPolicy,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the associated destinations.
-     *
-     * @return the associated destinations
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Collection<Destination> getAssociatedDestinations() throws TransferException {
@@ -266,12 +257,9 @@ public class IncomingPolicyBean extends ModelBeanBase implements IncomingPolicy,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Equals.
-     *
-     * @param o
-     *            the o
-     *
-     * @return true, if successful
      */
     @Override
     public boolean equals(final Object o) {
@@ -291,9 +279,9 @@ public class IncomingPolicyBean extends ModelBeanBase implements IncomingPolicy,
     }
 
     /**
-     * Hash code.
+     * {@inheritDoc}
      *
-     * @return the int
+     * Hash code.
      */
     @Override
     public int hashCode() {
@@ -301,9 +289,9 @@ public class IncomingPolicyBean extends ModelBeanBase implements IncomingPolicy,
     }
 
     /**
-     * To string.
+     * {@inheritDoc}
      *
-     * @return the string
+     * To string.
      */
     @Override
     public String toString() {

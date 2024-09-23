@@ -60,7 +60,7 @@ public class DataFileHome extends ModelHomeBase {
      *
      * @return the data file
      *
-     * @throws DataFileException
+     * @throws ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException
      *             the data file exception
      */
     public static final DataFile findByPrimaryKey(final String key) throws DataFileException {
@@ -86,7 +86,7 @@ public class DataFileHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws DataFileException
+     * @throws ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException
      *             the data file exception
      */
     public static final Collection<DataFile> findByMetaDataAndDate(final String name, final String value,
@@ -102,7 +102,7 @@ public class DataFileHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws DataFileException
+     * @throws ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException
      *             the data file exception
      */
     public static final Collection<DataFile> find(final ModelSearch search) throws DataFileException {

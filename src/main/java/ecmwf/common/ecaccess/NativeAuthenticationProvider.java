@@ -112,7 +112,7 @@ public abstract class NativeAuthenticationProvider {
      *
      * @return the root
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     public abstract String getRoot() throws Exception;
@@ -140,7 +140,7 @@ public abstract class NativeAuthenticationProvider {
      *
      * @return the new certificate
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     public byte[] getNewCertificate(final String user, final String passcode, final String profile,
@@ -160,7 +160,7 @@ public abstract class NativeAuthenticationProvider {
      *
      * @return the new token
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     public String[] getNewToken(final byte[] certificate, final String profile, final String remoteHost)
@@ -182,7 +182,7 @@ public abstract class NativeAuthenticationProvider {
      *
      * @return the new token
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     public String[] getNewToken(final String user, final String passcode, final String profile, final String remoteHost)
@@ -198,7 +198,7 @@ public abstract class NativeAuthenticationProvider {
      *
      * @return true, if is registred user
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     public abstract boolean isRegistredUser(String user) throws Exception;
@@ -242,7 +242,7 @@ public abstract class NativeAuthenticationProvider {
      *
      * @return the user session
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     public abstract UserSession getUserSession(String host, String ticket, String profile, Closeable closeable)
@@ -264,7 +264,7 @@ public abstract class NativeAuthenticationProvider {
      *
      * @return the user session
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     public abstract UserSession getUserSession(String host, String user, String password, String profile,
@@ -286,7 +286,7 @@ public abstract class NativeAuthenticationProvider {
      *
      * @return the user session
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     public abstract UserSession getUserSession(String host, String user, ECauthToken token, String profile,
@@ -307,7 +307,7 @@ public abstract class NativeAuthenticationProvider {
      *
      * @return single instance of NativeAuthenticationProvider
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static NativeAuthenticationProvider getInstance() throws IOException {

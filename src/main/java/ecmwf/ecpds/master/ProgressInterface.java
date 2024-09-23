@@ -27,7 +27,6 @@ package ecmwf.ecpds.master;
  *
  * @since 2024-07-01
  */
-
 public interface ProgressInterface {
     /**
      * Gets the data file id.

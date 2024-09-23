@@ -137,13 +137,9 @@ public final class ECpdsPut extends ECpdsRequest {
     protected String _FORMAT;
 
     /**
+     * {@inheritDoc}
+     *
      * Process.
-     *
-     * @param ratio
-     *            the ratio
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void process(final long ratio) throws IOException {
@@ -172,7 +168,7 @@ public final class ECpdsPut extends ECpdsRequest {
      * @param in
      *            the in
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void process(final InputStream in) throws IOException {
@@ -180,9 +176,9 @@ public final class ECpdsPut extends ECpdsRequest {
     }
 
     /**
-     * Gets the timestamp.
+     * {@inheritDoc}
      *
-     * @return the timestamp
+     * Gets the timestamp.
      */
     @Override
     public long getTIMESTAMP() {
@@ -190,10 +186,9 @@ public final class ECpdsPut extends ECpdsRequest {
     }
 
     /**
-     * Sets the timestamp.
+     * {@inheritDoc}
      *
-     * @param tIMESTAMP
-     *            the new timestamp
+     * Sets the timestamp.
      */
     @Override
     public void setTIMESTAMP(final long tIMESTAMP) {
@@ -201,9 +196,9 @@ public final class ECpdsPut extends ECpdsRequest {
     }
 
     /**
-     * Gets the type.
+     * {@inheritDoc}
      *
-     * @return the type
+     * Gets the type.
      */
     @Override
     public String getTYPE() {
@@ -253,7 +248,7 @@ public final class ECpdsPut extends ECpdsRequest {
      * @param line
      *            the line
      *
-     * @throws IllegalAccessException
+     * @throws java.lang.IllegalAccessException
      *             the illegal access exception
      */
     public ECpdsPut(final String line) throws IllegalAccessException {

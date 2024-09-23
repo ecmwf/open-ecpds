@@ -45,29 +45,9 @@ import ecmwf.web.model.users.User;
 public class InsertFormAction extends PDSAction {
 
     /**
+     * {@inheritDoc}
+     *
      * Safe authorized perform.
-     *
-     * @param mapping
-     *            the mapping
-     * @param form
-     *            the form
-     * @param request
-     *            the request
-     * @param response
-     *            the response
-     * @param user
-     *            the user
-     *
-     * @return the action forward
-     *
-     * @throws ECMWFException
-     *             the ECMWF exception
-     * @throws ModelException
-     *             the model exception
-     * @throws ClassCastException
-     *             the class cast exception
-     * @throws ECMWFActionFormException
-     *             the ECMWF action form exception
      */
     @Override
     public ActionForward safeAuthorizedPerform(final ActionMapping mapping, final ActionForm form,

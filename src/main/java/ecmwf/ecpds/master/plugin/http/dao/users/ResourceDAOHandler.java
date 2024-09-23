@@ -59,12 +59,9 @@ public class ResourceDAOHandler extends PDSDAOBase implements DAOHandler {
     private static final Logger log = LogManager.getLogger(ResourceDAOHandler.class);
 
     /**
+     * {@inheritDoc}
+     *
      * Creates the.
-     *
-     * @return the web resource
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public WebResource create() throws DAOException {
@@ -72,15 +69,9 @@ public class ResourceDAOHandler extends PDSDAOBase implements DAOHandler {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Find by primary key.
-     *
-     * @param key
-     *            the key
-     *
-     * @return the web resource
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public WebResource findByPrimaryKey(final String key) throws DAOException {
@@ -89,15 +80,9 @@ public class ResourceDAOHandler extends PDSDAOBase implements DAOHandler {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Find.
-     *
-     * @param search
-     *            the search
-     *
-     * @return the collection
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public Collection<WebResource> find(final ModelSearch search) throws DAOException {
@@ -146,15 +131,9 @@ public class ResourceDAOHandler extends PDSDAOBase implements DAOHandler {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Save.
-     *
-     * @param b
-     *            the b
-     * @param context
-     *            the context
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public void save(final ModelBean b, final Object context) throws DAOException {
@@ -175,15 +154,9 @@ public class ResourceDAOHandler extends PDSDAOBase implements DAOHandler {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Delete.
-     *
-     * @param b
-     *            the b
-     * @param context
-     *            the context
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public void delete(final ModelBean b, final Object context) throws DAOException {
@@ -237,7 +210,7 @@ public class ResourceDAOHandler extends PDSDAOBase implements DAOHandler {
      *
      * @return the web resource
      *
-     * @throws DAOException
+     * @throws ecmwf.web.services.persistence.DAOException
      *             the DAO exception
      */
     public static final WebResource findAuthoritative(final String path) throws DAOException {
@@ -277,7 +250,7 @@ public class ResourceDAOHandler extends PDSDAOBase implements DAOHandler {
      *
      * @return the url
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public static final Url getUrl(final CatUrl[] catUrls, final String name) throws DataBaseException {

@@ -84,9 +84,9 @@ interface Broker {
      *
      * @return the result set
      *
-     * @throws BrokerException
+     * @throws ecmwf.common.database.BrokerException
      *             the broker exception
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
      */
     ResultSet executeQuery(String sql) throws BrokerException, SQLException;
@@ -99,9 +99,9 @@ interface Broker {
      *
      * @return the number of fields processed
      *
-     * @throws BrokerException
+     * @throws ecmwf.common.database.BrokerException
      *             the broker exception
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
      */
     int executeUpdate(String sql) throws BrokerException, SQLException;
@@ -152,11 +152,11 @@ interface Broker {
      *
      * @return the primary key values
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
-     * @throws SecurityException
+     * @throws java.lang.SecurityException
      *             the security exception
-     * @throws IllegalArgumentException
+     * @throws java.lang.IllegalArgumentException
      *             the illegal argument exception
      */
     Object[] getPrimaryKeyValues(DataBaseObject object) throws Exception;

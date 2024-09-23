@@ -56,12 +56,9 @@ import ecmwf.web.util.search.elements.EqualElement;
 public class CategoryDAOHandler extends PDSDAOBase implements DAOHandler {
 
     /**
+     * {@inheritDoc}
+     *
      * Creates the.
-     *
-     * @return the model bean
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public ModelBean create() throws DAOException {
@@ -69,15 +66,9 @@ public class CategoryDAOHandler extends PDSDAOBase implements DAOHandler {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Find by primary key.
-     *
-     * @param key
-     *            the key
-     *
-     * @return the model bean
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public ModelBean findByPrimaryKey(final String key) throws DAOException {
@@ -91,15 +82,9 @@ public class CategoryDAOHandler extends PDSDAOBase implements DAOHandler {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Find.
-     *
-     * @param search
-     *            the search
-     *
-     * @return the collection
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public Collection<CategoryBean> find(final ModelSearch search) throws DAOException {
@@ -145,15 +130,9 @@ public class CategoryDAOHandler extends PDSDAOBase implements DAOHandler {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Save.
-     *
-     * @param b
-     *            the b
-     * @param context
-     *            the context
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public void save(final ModelBean b, final Object context) throws DAOException {
@@ -175,15 +154,9 @@ public class CategoryDAOHandler extends PDSDAOBase implements DAOHandler {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Delete.
-     *
-     * @param b
-     *            the b
-     * @param context
-     *            the context
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public void delete(final ModelBean b, final Object context) throws DAOException {

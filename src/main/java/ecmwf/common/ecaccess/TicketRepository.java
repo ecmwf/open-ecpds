@@ -176,7 +176,7 @@ public class TicketRepository extends StorageRepository<AbstractTicket> {
      *
      * @return the abstract ticket
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public AbstractTicket check(final long id, final long wait) throws IOException {
@@ -199,7 +199,7 @@ public class TicketRepository extends StorageRepository<AbstractTicket> {
      *
      * @return the abstract ticket
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public AbstractTicket check(final long id, final boolean wait) throws IOException {
@@ -245,12 +245,9 @@ public class TicketRepository extends StorageRepository<AbstractTicket> {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the key.
-     *
-     * @param ticket
-     *            the ticket
-     *
-     * @return the key
      */
     @Override
     public String getKey(final AbstractTicket ticket) {
@@ -258,12 +255,9 @@ public class TicketRepository extends StorageRepository<AbstractTicket> {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the status.
-     *
-     * @param ticket
-     *            the ticket
-     *
-     * @return the status
      */
     @Override
     public String getStatus(final AbstractTicket ticket) {
@@ -271,12 +265,9 @@ public class TicketRepository extends StorageRepository<AbstractTicket> {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Expired.
-     *
-     * @param ticket
-     *            the ticket
-     *
-     * @return true, if successful
      */
     @Override
     public boolean expired(final AbstractTicket ticket) {
@@ -297,10 +288,9 @@ public class TicketRepository extends StorageRepository<AbstractTicket> {
     }
 
     /**
-     * Update.
+     * {@inheritDoc}
      *
-     * @param ticket
-     *            the ticket
+     * Update.
      */
     @Override
     public void update(final AbstractTicket ticket) {

@@ -96,7 +96,7 @@ public class PTCPBuffer {
      * @param o
      *            the o
      *
-     * @throws InterruptedException
+     * @throws java.lang.InterruptedException
      *             the interrupted exception
      */
     public synchronized void write(final int index, final Object o) throws InterruptedException {
@@ -116,7 +116,7 @@ public class PTCPBuffer {
      *
      * @return the byte[]
      *
-     * @throws InterruptedException
+     * @throws java.lang.InterruptedException
      *             the interrupted exception
      */
     public synchronized byte[] read() throws InterruptedException {

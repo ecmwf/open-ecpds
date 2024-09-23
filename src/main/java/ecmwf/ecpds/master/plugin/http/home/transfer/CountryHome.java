@@ -57,7 +57,7 @@ public class CountryHome extends ModelHomeBase {
      *
      * @return the country
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Country findByPrimaryKey(final String key) throws TransferException {
@@ -74,7 +74,7 @@ public class CountryHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<Country> findAll() throws TransferException {
@@ -89,7 +89,7 @@ public class CountryHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<Country> find(final ModelSearch search) throws TransferException {

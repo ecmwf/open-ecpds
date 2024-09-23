@@ -236,9 +236,9 @@ public class JSftpModule extends TransferModule {
     }
 
     /**
-     * Gets the status.
+     * {@inheritDoc}
      *
-     * @return the status
+     * Gets the status.
      */
     @Override
     public String getStatus() {
@@ -246,12 +246,9 @@ public class JSftpModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the port.
-     *
-     * @param setup
-     *            the setup
-     *
-     * @return the port
      */
     @Override
     public int getPort(final ECtransSetup setup) {
@@ -259,10 +256,9 @@ public class JSftpModule extends TransferModule {
     }
 
     /**
-     * Update socket statistics.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Update socket statistics.
      */
     @Override
     public void updateSocketStatistics() throws IOException {
@@ -272,15 +268,9 @@ public class JSftpModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Connect.
-     *
-     * @param location
-     *            the location
-     * @param setup
-     *            the setup
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void connect(final String location, final ECtransSetup setup) throws IOException {
@@ -547,13 +537,9 @@ public class JSftpModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Del.
-     *
-     * @param name
-     *            the name
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void del(final String name) throws IOException {
@@ -604,7 +590,7 @@ public class JSftpModule extends TransferModule {
      * @param dir
      *            the dir
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void mkdirs(final String dir) throws IOException {
@@ -635,13 +621,9 @@ public class JSftpModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Mkdir.
-     *
-     * @param dir
-     *            the dir
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void mkdir(final String dir) throws IOException {
@@ -656,13 +638,9 @@ public class JSftpModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Rmdir.
-     *
-     * @param dir
-     *            the dir
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void rmdir(final String dir) throws IOException {
@@ -677,15 +655,9 @@ public class JSftpModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Size.
-     *
-     * @param name
-     *            the name
-     *
-     * @return the long
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public long size(final String name) throws IOException {
@@ -701,15 +673,9 @@ public class JSftpModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Move.
-     *
-     * @param source
-     *            the source
-     * @param target
-     *            the target
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void move(final String source, final String target) throws IOException {
@@ -724,19 +690,9 @@ public class JSftpModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Pre put.
-     *
-     * @param name
-     *            the name
-     * @param tmpName
-     *            the tmp name
-     * @param posn
-     *            the posn
-     *
-     * @return the string
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public String prePut(final String name, final String tmpName, final long posn) throws IOException {
@@ -770,19 +726,9 @@ public class JSftpModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Put.
-     *
-     * @param name
-     *            the name
-     * @param posn
-     *            the posn
-     * @param size
-     *            the size
-     *
-     * @return the output stream
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public OutputStream put(String name, final long posn, final long size) throws IOException {
@@ -802,21 +748,9 @@ public class JSftpModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Put.
-     *
-     * @param in
-     *            the in
-     * @param name
-     *            the name
-     * @param posn
-     *            the posn
-     * @param size
-     *            the size
-     *
-     * @return true, if successful
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public boolean put(final InputStream in, String name, final long posn, final long size) throws IOException {
@@ -885,15 +819,9 @@ public class JSftpModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Check.
-     *
-     * @param sent
-     *            the sent
-     * @param checksum
-     *            the checksum
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void check(final long sent, final String checksum) throws IOException {
@@ -1015,9 +943,9 @@ public class JSftpModule extends TransferModule {
      *
      * @return the int
      *
-     * @throws JSchException
+     * @throws com.jcraft.jsch.JSchException
      *             the j sch exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public int exec(final String command) throws JSchException, IOException {
@@ -1064,15 +992,9 @@ public class JSftpModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Pre get.
-     *
-     * @param name
-     *            the name
-     * @param posn
-     *            the posn
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void preGet(final String name, final long posn) throws IOException {
@@ -1082,17 +1004,9 @@ public class JSftpModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the.
-     *
-     * @param name
-     *            the name
-     * @param posn
-     *            the posn
-     *
-     * @return the input stream
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public InputStream get(final String name, final long posn) throws IOException {
@@ -1100,19 +1014,9 @@ public class JSftpModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the.
-     *
-     * @param out
-     *            the out
-     * @param name
-     *            the name
-     * @param posn
-     *            the posn
-     *
-     * @return true, if successful
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public boolean get(final OutputStream out, final String name, final long posn) throws IOException {
@@ -1133,17 +1037,9 @@ public class JSftpModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * List as string array.
-     *
-     * @param directory
-     *            the directory
-     * @param pattern
-     *            the pattern
-     *
-     * @return the string[]
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public String[] listAsStringArray(final String directory, final String pattern) throws IOException {
@@ -1373,10 +1269,9 @@ public class JSftpModule extends TransferModule {
     }
 
     /**
-     * Close.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Close.
      */
     @Override
     public void close() throws IOException {

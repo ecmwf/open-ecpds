@@ -66,13 +66,9 @@ abstract class InterruptibleRMISocket extends Socket {
     abstract void ioEnding();
 
     /**
+     * {@inheritDoc}
+     *
      * Bind.
-     *
-     * @param bindpoint
-     *            the bindpoint
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      *
      * @see Socket#bind(java.net.SocketAddress)
      */
@@ -82,10 +78,9 @@ abstract class InterruptibleRMISocket extends Socket {
     }
 
     /**
-     * Close.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Close.
      *
      * @see Socket#close()
      */
@@ -95,13 +90,9 @@ abstract class InterruptibleRMISocket extends Socket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Connect.
-     *
-     * @param endpoint
-     *            the endpoint
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      *
      * @see Socket#connect(java.net.SocketAddress)
      */
@@ -111,15 +102,9 @@ abstract class InterruptibleRMISocket extends Socket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Connect.
-     *
-     * @param endpoint
-     *            the endpoint
-     * @param timeout
-     *            the timeout
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      *
      * @see Socket#connect(java.net.SocketAddress, int)
      */
@@ -129,13 +114,10 @@ abstract class InterruptibleRMISocket extends Socket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Return true if the object is an instance of InterruptibleRMIClientSocket and decoratee.equals(object) returns
      * true.
-     *
-     * @param object
-     *            the object
-     *
-     * @return true, if successful
      */
     @Override
     public boolean equals(final Object object) {
@@ -144,9 +126,9 @@ abstract class InterruptibleRMISocket extends Socket {
     }
 
     /**
-     * This decorator does not implement a decorated SocketChannel. This method will always return null.
+     * {@inheritDoc}
      *
-     * @return the channel
+     * This decorator does not implement a decorated SocketChannel. This method will always return null.
      */
     @Override
     public SocketChannel getChannel() {
@@ -154,9 +136,9 @@ abstract class InterruptibleRMISocket extends Socket {
     }
 
     /**
-     * Gets the inet address.
+     * {@inheritDoc}
      *
-     * @return the inet address
+     * Gets the inet address.
      *
      * @see Socket#getInetAddress()
      */
@@ -166,13 +148,10 @@ abstract class InterruptibleRMISocket extends Socket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Return an instance of {@link InterruptibleRMISocketInputStream} that decorates the InputStream returned by
      * decoratee#getInputStream.
-     *
-     * @return the input stream
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      *
      * @see Socket#getInputStream()
      */
@@ -182,12 +161,9 @@ abstract class InterruptibleRMISocket extends Socket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the keep alive.
-     *
-     * @return the keep alive
-     *
-     * @throws SocketException
-     *             the socket exception
      *
      * @see Socket#getKeepAlive()
      */
@@ -197,9 +173,9 @@ abstract class InterruptibleRMISocket extends Socket {
     }
 
     /**
-     * Gets the local address.
+     * {@inheritDoc}
      *
-     * @return the local address
+     * Gets the local address.
      *
      * @see Socket#getLocalAddress()
      */
@@ -209,9 +185,9 @@ abstract class InterruptibleRMISocket extends Socket {
     }
 
     /**
-     * Gets the local port.
+     * {@inheritDoc}
      *
-     * @return the local port
+     * Gets the local port.
      *
      * @see Socket#getLocalPort()
      */
@@ -221,9 +197,9 @@ abstract class InterruptibleRMISocket extends Socket {
     }
 
     /**
-     * Gets the local socket address.
+     * {@inheritDoc}
      *
-     * @return the local socket address
+     * Gets the local socket address.
      *
      * @see Socket#getLocalSocketAddress()
      */
@@ -233,12 +209,9 @@ abstract class InterruptibleRMISocket extends Socket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the OOB inline.
-     *
-     * @return the OOB inline
-     *
-     * @throws SocketException
-     *             the socket exception
      *
      * @see Socket#getOOBInline()
      */
@@ -248,13 +221,10 @@ abstract class InterruptibleRMISocket extends Socket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Return an instance of {@link InterruptibleRMISocketOutputStream} that decorates the OutputStream returned by
      * decoratee#getOutputStream.
-     *
-     * @return the output stream
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      *
      * @see Socket#getInputStream()
      */
@@ -264,9 +234,9 @@ abstract class InterruptibleRMISocket extends Socket {
     }
 
     /**
-     * Gets the port.
+     * {@inheritDoc}
      *
-     * @return the port
+     * Gets the port.
      *
      * @see Socket#getPort()
      */
@@ -276,12 +246,9 @@ abstract class InterruptibleRMISocket extends Socket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the receive buffer size.
-     *
-     * @return the receive buffer size
-     *
-     * @throws SocketException
-     *             the socket exception
      *
      * @see Socket#getReceiveBufferSize()
      */
@@ -291,9 +258,9 @@ abstract class InterruptibleRMISocket extends Socket {
     }
 
     /**
-     * Gets the remote socket address.
+     * {@inheritDoc}
      *
-     * @return the remote socket address
+     * Gets the remote socket address.
      *
      * @see Socket#getRemoteSocketAddress()
      */
@@ -303,12 +270,9 @@ abstract class InterruptibleRMISocket extends Socket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the reuse address.
-     *
-     * @return the reuse address
-     *
-     * @throws SocketException
-     *             the socket exception
      *
      * @see Socket#getReuseAddress()
      */
@@ -318,12 +282,9 @@ abstract class InterruptibleRMISocket extends Socket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the send buffer size.
-     *
-     * @return the send buffer size
-     *
-     * @throws SocketException
-     *             the socket exception
      *
      * @see Socket#getSendBufferSize()
      */
@@ -333,12 +294,9 @@ abstract class InterruptibleRMISocket extends Socket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the so linger.
-     *
-     * @return the so linger
-     *
-     * @throws SocketException
-     *             the socket exception
      *
      * @see Socket#getSoLinger()
      */
@@ -348,12 +306,9 @@ abstract class InterruptibleRMISocket extends Socket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the so timeout.
-     *
-     * @return the so timeout
-     *
-     * @throws SocketException
-     *             the socket exception
      *
      * @see Socket#getSoTimeout()
      */
@@ -363,12 +318,9 @@ abstract class InterruptibleRMISocket extends Socket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the tcp no delay.
-     *
-     * @return the tcp no delay
-     *
-     * @throws SocketException
-     *             the socket exception
      *
      * @see Socket#getTcpNoDelay()
      */
@@ -378,12 +330,9 @@ abstract class InterruptibleRMISocket extends Socket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the traffic class.
-     *
-     * @return the traffic class
-     *
-     * @throws SocketException
-     *             the socket exception
      *
      * @see Socket#getTrafficClass()
      */
@@ -393,9 +342,9 @@ abstract class InterruptibleRMISocket extends Socket {
     }
 
     /**
-     * Return decoratee#hashCode().
+     * {@inheritDoc}
      *
-     * @return the int
+     * Return decoratee#hashCode().
      */
     @Override
     public int hashCode() {
@@ -403,9 +352,9 @@ abstract class InterruptibleRMISocket extends Socket {
     }
 
     /**
-     * Checks if is bound.
+     * {@inheritDoc}
      *
-     * @return true, if is bound
+     * Checks if is bound.
      *
      * @see Socket#isBound()
      */
@@ -415,9 +364,9 @@ abstract class InterruptibleRMISocket extends Socket {
     }
 
     /**
-     * Checks if is closed.
+     * {@inheritDoc}
      *
-     * @return true, if is closed
+     * Checks if is closed.
      *
      * @see Socket#isClosed()
      */
@@ -427,9 +376,9 @@ abstract class InterruptibleRMISocket extends Socket {
     }
 
     /**
-     * Checks if is connected.
+     * {@inheritDoc}
      *
-     * @return true, if is connected
+     * Checks if is connected.
      *
      * @see Socket#isConnected()
      */
@@ -439,9 +388,9 @@ abstract class InterruptibleRMISocket extends Socket {
     }
 
     /**
-     * Checks if is input shutdown.
+     * {@inheritDoc}
      *
-     * @return true, if is input shutdown
+     * Checks if is input shutdown.
      *
      * @see Socket#isInputShutdown()
      */
@@ -451,9 +400,9 @@ abstract class InterruptibleRMISocket extends Socket {
     }
 
     /**
-     * Checks if is output shutdown.
+     * {@inheritDoc}
      *
-     * @return true, if is output shutdown
+     * Checks if is output shutdown.
      *
      * @see Socket#isOutputShutdown()
      */
@@ -463,13 +412,9 @@ abstract class InterruptibleRMISocket extends Socket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Send urgent data.
-     *
-     * @param data
-     *            the data
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      *
      * @see Socket#sendUrgentData(int)
      */
@@ -479,13 +424,9 @@ abstract class InterruptibleRMISocket extends Socket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the keep alive.
-     *
-     * @param on
-     *            the new keep alive
-     *
-     * @throws SocketException
-     *             the socket exception
      *
      * @see Socket#setKeepAlive(boolean)
      */
@@ -495,13 +436,9 @@ abstract class InterruptibleRMISocket extends Socket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the OOB inline.
-     *
-     * @param on
-     *            the new OOB inline
-     *
-     * @throws SocketException
-     *             the socket exception
      *
      * @see Socket#setOOBInline(boolean)
      */
@@ -511,14 +448,9 @@ abstract class InterruptibleRMISocket extends Socket {
     }
 
     /**
-     * Sets the performance preferences.
+     * {@inheritDoc}
      *
-     * @param connectionTime
-     *            the connection time
-     * @param latency
-     *            the latency
-     * @param bandwidth
-     *            the bandwidth
+     * Sets the performance preferences.
      *
      * @see Socket#setPerformancePreferences(int, int, int)
      */
@@ -528,13 +460,9 @@ abstract class InterruptibleRMISocket extends Socket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the receive buffer size.
-     *
-     * @param size
-     *            the new receive buffer size
-     *
-     * @throws SocketException
-     *             the socket exception
      *
      * @see Socket#setReceiveBufferSize(int)
      */
@@ -544,13 +472,9 @@ abstract class InterruptibleRMISocket extends Socket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the reuse address.
-     *
-     * @param on
-     *            the new reuse address
-     *
-     * @throws SocketException
-     *             the socket exception
      *
      * @see Socket#setReuseAddress(boolean)
      */
@@ -560,13 +484,9 @@ abstract class InterruptibleRMISocket extends Socket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the send buffer size.
-     *
-     * @param size
-     *            the new send buffer size
-     *
-     * @throws SocketException
-     *             the socket exception
      *
      * @see Socket#setSendBufferSize(int)
      */
@@ -576,15 +496,9 @@ abstract class InterruptibleRMISocket extends Socket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the so linger.
-     *
-     * @param on
-     *            the on
-     * @param linger
-     *            the linger
-     *
-     * @throws SocketException
-     *             the socket exception
      *
      * @see Socket#setSoLinger(boolean, int)
      */
@@ -594,13 +508,9 @@ abstract class InterruptibleRMISocket extends Socket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the so timeout.
-     *
-     * @param timeout
-     *            the new so timeout
-     *
-     * @throws SocketException
-     *             the socket exception
      *
      * @see Socket#setSoTimeout(int)
      */
@@ -610,13 +520,9 @@ abstract class InterruptibleRMISocket extends Socket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the tcp no delay.
-     *
-     * @param on
-     *            the new tcp no delay
-     *
-     * @throws SocketException
-     *             the socket exception
      *
      * @see Socket#setTcpNoDelay(boolean)
      */
@@ -626,13 +532,9 @@ abstract class InterruptibleRMISocket extends Socket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the traffic class.
-     *
-     * @param tc
-     *            the new traffic class
-     *
-     * @throws SocketException
-     *             the socket exception
      *
      * @see Socket#setTrafficClass(int)
      */
@@ -642,10 +544,9 @@ abstract class InterruptibleRMISocket extends Socket {
     }
 
     /**
-     * Shutdown input.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Shutdown input.
      *
      * @see Socket#shutdownInput()
      */
@@ -655,10 +556,9 @@ abstract class InterruptibleRMISocket extends Socket {
     }
 
     /**
-     * Shutdown output.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Shutdown output.
      *
      * @see Socket#shutdownOutput()
      */
@@ -668,9 +568,9 @@ abstract class InterruptibleRMISocket extends Socket {
     }
 
     /**
-     * Return decoratee#toString().
+     * {@inheritDoc}
      *
-     * @return the string
+     * Return decoratee#toString().
      */
     @Override
     public String toString() {

@@ -171,7 +171,7 @@ public interface GenerationMonitoringStatus extends ModelBean {
     /**
      * We are changing to another Time period, reset monitoring values.
      *
-     * @throws MonitoringException
+     * @throws ecmwf.ecpds.master.plugin.http.model.monitoring.MonitoringException
      *             the monitoring exception
      */
     void reset() throws MonitoringException;

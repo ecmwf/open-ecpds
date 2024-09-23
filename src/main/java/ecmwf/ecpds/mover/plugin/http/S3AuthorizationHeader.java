@@ -112,9 +112,9 @@ final class S3AuthorizationHeader {
     }
 
     /**
-     * To string.
+     * {@inheritDoc}
      *
-     * @return the string
+     * To string.
      */
     @Override
     public String toString() {

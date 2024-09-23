@@ -181,9 +181,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the ojb implementation.
+     * {@inheritDoc}
      *
-     * @return the ojb implementation
+     * Gets the ojb implementation.
      */
     @Override
     public DataBaseObject getOjbImplementation() {
@@ -191,9 +191,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the bean interface name.
+     * {@inheritDoc}
      *
-     * @return the bean interface name
+     * Gets the bean interface name.
      */
     @Override
     public String getBeanInterfaceName() {
@@ -201,9 +201,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the id.
+     * {@inheritDoc}
      *
-     * @return the id
+     * Gets the id.
      */
     @Override
     public String getId() {
@@ -211,9 +211,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the name.
+     * {@inheritDoc}
      *
-     * @return the name
+     * Gets the name.
      */
     @Override
     public String getName() {
@@ -221,9 +221,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the properties.
+     * {@inheritDoc}
      *
-     * @return the properties
+     * Gets the properties.
      */
     @Override
     public String getProperties() {
@@ -231,9 +231,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the javascript.
+     * {@inheritDoc}
      *
-     * @return the javascript
+     * Gets the javascript.
      */
     @Override
     public String getJavascript() {
@@ -241,9 +241,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the data.
+     * {@inheritDoc}
      *
-     * @return the data
+     * Gets the data.
      */
     @Override
     public String getData() {
@@ -251,9 +251,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the data alias.
+     * {@inheritDoc}
      *
-     * @return the data alias
+     * Gets the data alias.
      */
     @Override
     public String getDataAlias() {
@@ -261,10 +261,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Sets the data.
+     * {@inheritDoc}
      *
-     * @param data
-     *            the new data
+     * Sets the data.
      */
     @Override
     public void setData(final String data) {
@@ -273,9 +272,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the active.
+     * {@inheritDoc}
      *
-     * @return the active
+     * Gets the active.
      */
     @Override
     public boolean getActive() {
@@ -283,9 +282,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the backup.
+     * {@inheritDoc}
      *
-     * @return the backup
+     * Gets the backup.
      */
     @Override
     public boolean getBackup() {
@@ -293,9 +292,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the acquisition.
+     * {@inheritDoc}
      *
-     * @return the acquisition
+     * Gets the acquisition.
      */
     @Override
     public boolean getAcquisition() {
@@ -303,12 +302,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the ec user.
-     *
-     * @return the ec user
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public EcUser getEcUser() throws TransferException {
@@ -320,12 +316,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the transfer group.
-     *
-     * @return the transfer group
-     *
-     * @throws DataFileException
-     *             the data file exception
      */
     @Override
     public TransferGroup getTransferGroup() throws DataFileException {
@@ -333,9 +326,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the transfer group name.
+     * {@inheritDoc}
      *
-     * @return the transfer group name
+     * Gets the transfer group name.
      */
     @Override
     public String getTransferGroupName() {
@@ -343,10 +336,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Sets the transfer group.
+     * {@inheritDoc}
      *
-     * @param m
-     *            the new transfer group
+     * Sets the transfer group.
      */
     @Override
     public void setTransferGroup(final TransferGroup m) {
@@ -354,10 +346,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Sets the transfer group name.
+     * {@inheritDoc}
      *
-     * @param s
-     *            the new transfer group name
+     * Sets the transfer group name.
      */
     @Override
     public void setTransferGroupName(final String s) {
@@ -365,12 +356,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the associated ec users.
-     *
-     * @return the associated ec users
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Collection<EcUser> getAssociatedEcUsers() throws TransferException {
@@ -382,12 +370,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the associated incoming policies.
-     *
-     * @return the associated incoming policies
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Collection<IncomingPolicy> getAssociatedIncomingPolicies() throws TransferException {
@@ -399,9 +384,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the ec user name.
+     * {@inheritDoc}
      *
-     * @return the ec user name
+     * Gets the ec user name.
      */
     @Override
     public String getEcUserName() {
@@ -409,12 +394,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the country.
-     *
-     * @return the country
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Country getCountry() throws TransferException {
@@ -422,9 +404,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the country iso.
+     * {@inheritDoc}
      *
-     * @return the country iso
+     * Gets the country iso.
      */
     @Override
     public String getCountryIso() {
@@ -432,12 +414,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the host for source.
-     *
-     * @return the host for source
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Host getHostForSource() throws TransferException {
@@ -446,9 +425,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the host for source name.
+     * {@inheritDoc}
      *
-     * @return the host for source name
+     * Gets the host for source name.
      */
     @Override
     public String getHostForSourceName() {
@@ -456,9 +435,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the if target exist.
+     * {@inheritDoc}
      *
-     * @return the if target exist
+     * Gets the if target exist.
      */
     @Override
     public int getIfTargetExist() {
@@ -466,9 +445,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the on host failure.
+     * {@inheritDoc}
      *
-     * @return the on host failure
+     * Gets the on host failure.
      */
     @Override
     public int getOnHostFailure() {
@@ -476,9 +455,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the keep in spool.
+     * {@inheritDoc}
      *
-     * @return the keep in spool
+     * Gets the keep in spool.
      */
     @Override
     public int getKeepInSpool() {
@@ -486,9 +465,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the if target exist text.
+     * {@inheritDoc}
      *
-     * @return the if target exist text
+     * Gets the if target exist text.
      */
     @Override
     public String getIfTargetExistText() {
@@ -496,9 +475,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the on host failure text.
+     * {@inheritDoc}
      *
-     * @return the on host failure text
+     * Gets the on host failure text.
      */
     @Override
     public String getOnHostFailureText() {
@@ -506,9 +485,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the keep in spool text.
+     * {@inheritDoc}
      *
-     * @return the keep in spool text
+     * Gets the keep in spool text.
      */
     @Override
     public String getKeepInSpoolText() {
@@ -516,9 +495,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the mail on end.
+     * {@inheritDoc}
      *
-     * @return the mail on end
+     * Gets the mail on end.
      */
     @Override
     public boolean getMailOnEnd() {
@@ -526,9 +505,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the mail on error.
+     * {@inheritDoc}
      *
-     * @return the mail on error
+     * Gets the mail on error.
      */
     @Override
     public boolean getMailOnError() {
@@ -536,9 +515,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the mail on start.
+     * {@inheritDoc}
      *
-     * @return the mail on start
+     * Gets the mail on start.
      */
     @Override
     public boolean getMailOnStart() {
@@ -546,9 +525,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the user mail.
+     * {@inheritDoc}
      *
-     * @return the user mail
+     * Gets the user mail.
      */
     @Override
     public String getUserMail() {
@@ -556,9 +535,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the max start.
+     * {@inheritDoc}
      *
-     * @return the max start
+     * Gets the max start.
      */
     @Override
     public int getMaxStart() {
@@ -566,9 +545,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the start frequency.
+     * {@inheritDoc}
      *
-     * @return the start frequency
+     * Gets the start frequency.
      */
     @Override
     public int getStartFrequency() {
@@ -576,9 +555,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the formatted start frequency.
+     * {@inheritDoc}
      *
-     * @return the formatted start frequency
+     * Gets the formatted start frequency.
      */
     @Override
     public String getFormattedStartFrequency() {
@@ -586,9 +565,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the max inactivity.
+     * {@inheritDoc}
      *
-     * @return the max inactivity
+     * Gets the max inactivity.
      */
     @Override
     public int getMaxInactivity() {
@@ -596,9 +575,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the formatted max inactivity.
+     * {@inheritDoc}
      *
-     * @return the formatted max inactivity
+     * Gets the formatted max inactivity.
      */
     @Override
     public String getFormattedMaxInactivity() {
@@ -606,10 +585,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Sets the max inactivity.
+     * {@inheritDoc}
      *
-     * @param i
-     *            the new max inactivity
+     * Sets the max inactivity.
      */
     @Override
     public void setMaxInactivity(final int i) {
@@ -617,9 +595,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the reset frequency.
+     * {@inheritDoc}
      *
-     * @return the reset frequency
+     * Gets the reset frequency.
      */
     @Override
     public long getResetFrequency() {
@@ -627,10 +605,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Sets the max file size.
+     * {@inheritDoc}
      *
-     * @param i
-     *            the new max file size
+     * Sets the max file size.
      */
     @Override
     public void setMaxFileSize(final long i) {
@@ -638,9 +615,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the formatted reset frequency.
+     * {@inheritDoc}
      *
-     * @return the formatted reset frequency
+     * Gets the formatted reset frequency.
      */
     @Override
     public String getFormattedResetFrequency() {
@@ -648,10 +625,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Sets the max start.
+     * {@inheritDoc}
      *
-     * @param i
-     *            the new max start
+     * Sets the max start.
      */
     @Override
     public void setMaxStart(final int i) {
@@ -659,10 +635,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Sets the max requeue.
+     * {@inheritDoc}
      *
-     * @param i
-     *            the new max requeue
+     * Sets the max requeue.
      */
     @Override
     public void setMaxRequeue(final int i) {
@@ -670,10 +645,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Sets the start frequency.
+     * {@inheritDoc}
      *
-     * @param i
-     *            the new start frequency
+     * Sets the start frequency.
      */
     @Override
     public void setStartFrequency(final int i) {
@@ -681,10 +655,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Sets the reset frequency.
+     * {@inheritDoc}
      *
-     * @param i
-     *            the new reset frequency
+     * Sets the reset frequency.
      */
     @Override
     public void setResetFrequency(final long i) {
@@ -692,9 +665,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the group by date.
+     * {@inheritDoc}
      *
-     * @return the group by date
+     * Gets the group by date.
      */
     @Override
     public boolean getGroupByDate() {
@@ -702,10 +675,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Sets the group by date.
+     * {@inheritDoc}
      *
-     * @param b
-     *            the new group by date
+     * Sets the group by date.
      */
     @Override
     public void setGroupByDate(final boolean b) {
@@ -713,9 +685,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the date format.
+     * {@inheritDoc}
      *
-     * @return the date format
+     * Gets the date format.
      */
     @Override
     public String getDateFormat() {
@@ -723,10 +695,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Sets the date format.
+     * {@inheritDoc}
      *
-     * @param format
-     *            the new date format
+     * Sets the date format.
      */
     @Override
     public void setDateFormat(final String format) {
@@ -734,15 +705,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the data transfers on date.
-     *
-     * @param d
-     *            the d
-     *
-     * @return the data transfers on date
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Collection<DataTransfer> getDataTransfersOnDate(final Date d) throws TransferException {
@@ -757,7 +722,7 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
      *
      * @return the data transfers on transmission date
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public Collection<DataTransfer> getDataTransfersOnTransmissionDate(final Date d) throws TransferException {
@@ -765,15 +730,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the data transfers including retries on transmission date.
-     *
-     * @param d
-     *            the d
-     *
-     * @return the data transfers including retries on transmission date
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Collection<DataTransfer> getDataTransfersIncludingRetriesOnTransmissionDate(final Date d)
@@ -782,17 +741,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the data transfers by product and time.
-     *
-     * @param product
-     *            the product
-     * @param time
-     *            the time
-     *
-     * @return the data transfers by product and time
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Collection<DataTransfer> getDataTransfersByProductAndTime(final String product, final String time)
@@ -801,19 +752,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the data transfers by product and time on date.
-     *
-     * @param product
-     *            the product
-     * @param time
-     *            the time
-     * @param d
-     *            the d
-     *
-     * @return the data transfers by product and time on date
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Collection<DataTransfer> getDataTransfersByProductAndTimeOnDate(final String product, final String time,
@@ -822,12 +763,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the hosts and priorities.
-     *
-     * @return the hosts and priorities
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Collection<Pair> getHostsAndPriorities() throws TransferException {
@@ -856,12 +794,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the dissemination hosts and priorities.
-     *
-     * @return the dissemination hosts and priorities
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Collection<Pair> getDisseminationHostsAndPriorities() throws TransferException {
@@ -869,12 +804,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the acquisition hosts and priorities.
-     *
-     * @return the acquisition hosts and priorities
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Collection<Pair> getAcquisitionHostsAndPriorities() throws TransferException {
@@ -886,7 +818,7 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
      *
      * @return the proxy hosts and priorities
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public Collection<Pair> getProxyHostsAndPriorities() throws TransferException {
@@ -894,12 +826,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the aliases.
-     *
-     * @return the aliases
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Collection<Destination> getAliases() throws TransferException {
@@ -907,12 +836,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the alias list.
-     *
-     * @return the alias list
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Collection<Alias> getAliasList() throws TransferException {
@@ -920,12 +846,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the traffic list.
-     *
-     * @return the traffic list
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Collection<Traffic> getTrafficList() throws TransferException {
@@ -933,12 +856,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the change log list.
-     *
-     * @return the change log list
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Collection<ChangeLog> getChangeLogList() throws TransferException {
@@ -946,12 +866,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the aliased from.
-     *
-     * @return the aliased from
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Collection<Destination> getAliasedFrom() throws TransferException {
@@ -959,12 +876,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the meta data.
-     *
-     * @return the meta data
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Collection<DestinationMetaData> getMetaData() throws TransferException {
@@ -972,10 +886,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Sets the active.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new active
+     * Sets the active.
      */
     @Override
     public void setActive(final boolean param) {
@@ -983,10 +896,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Sets the backup.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new backup
+     * Sets the backup.
      */
     @Override
     public void setBackup(final boolean param) {
@@ -994,10 +906,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Sets the acquisition.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new acquisition
+     * Sets the acquisition.
      */
     @Override
     public void setAcquisition(final boolean param) {
@@ -1005,10 +916,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Sets the country iso.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new country iso
+     * Sets the country iso.
      */
     @Override
     public void setCountryIso(final String param) {
@@ -1016,10 +926,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Sets the host for source name.
+     * {@inheritDoc}
      *
-     * @param name
-     *            the new host for source name
+     * Sets the host for source name.
      */
     @Override
     public void setHostForSourceName(final String name) {
@@ -1027,10 +936,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Sets the ec user name.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new ec user name
+     * Sets the ec user name.
      */
     @Override
     public void setEcUserName(final String param) {
@@ -1038,10 +946,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Sets the if target exist.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new if target exist
+     * Sets the if target exist.
      */
     @Override
     public void setIfTargetExist(final int param) {
@@ -1049,10 +956,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Sets the on host failure.
+     * {@inheritDoc}
      *
-     * @param i
-     *            the new on host failure
+     * Sets the on host failure.
      */
     @Override
     public void setOnHostFailure(final int i) {
@@ -1060,10 +966,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Sets the keep in spool.
+     * {@inheritDoc}
      *
-     * @param i
-     *            the new keep in spool
+     * Sets the keep in spool.
      */
     @Override
     public void setKeepInSpool(final int i) {
@@ -1071,10 +976,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Sets the mail on end.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new mail on end
+     * Sets the mail on end.
      */
     @Override
     public void setMailOnEnd(final boolean param) {
@@ -1082,10 +986,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Sets the mail on error.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new mail on error
+     * Sets the mail on error.
      */
     @Override
     public void setMailOnError(final boolean param) {
@@ -1093,10 +996,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Sets the mail on start.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new mail on start
+     * Sets the mail on start.
      */
     @Override
     public void setMailOnStart(final boolean param) {
@@ -1104,10 +1006,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Sets the name.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new name
+     * Sets the name.
      */
     @Override
     public void setName(final String param) {
@@ -1115,10 +1016,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Sets the user mail.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new user mail
+     * Sets the user mail.
      */
     @Override
     public void setUserMail(final String param) {
@@ -1126,10 +1026,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Adds the associated ec user.
+     * {@inheritDoc}
      *
-     * @param u
-     *            the u
+     * Adds the associated ec user.
      */
     @Override
     public synchronized void addAssociatedEcUser(final EcUser u) {
@@ -1137,10 +1036,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Delete associated ec user.
+     * {@inheritDoc}
      *
-     * @param u
-     *            the u
+     * Delete associated ec user.
      */
     @Override
     public synchronized void deleteAssociatedEcUser(final EcUser u) {
@@ -1148,10 +1046,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Adds the host.
+     * {@inheritDoc}
      *
-     * @param h
-     *            the h
+     * Adds the host.
      */
     @Override
     public synchronized void addHost(final Host h) {
@@ -1159,10 +1056,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Adds the incoming policy.
+     * {@inheritDoc}
      *
-     * @param p
-     *            the p
+     * Adds the incoming policy.
      */
     @Override
     public synchronized void addIncomingPolicy(final IncomingPolicy p) {
@@ -1170,10 +1066,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Delete host.
+     * {@inheritDoc}
      *
-     * @param h
-     *            the h
+     * Delete host.
      */
     @Override
     public synchronized void deleteHost(final Host h) {
@@ -1181,10 +1076,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Delete incoming policy.
+     * {@inheritDoc}
      *
-     * @param p
-     *            the p
+     * Delete incoming policy.
      */
     @Override
     public synchronized void deleteIncomingPolicy(final IncomingPolicy p) {
@@ -1192,10 +1086,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Adds the alias.
+     * {@inheritDoc}
      *
-     * @param d
-     *            the d
+     * Adds the alias.
      */
     @Override
     public synchronized void addAlias(final Destination d) {
@@ -1203,10 +1096,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Delete alias.
+     * {@inheritDoc}
      *
-     * @param d
-     *            the d
+     * Delete alias.
      */
     @Override
     public synchronized void deleteAlias(final Destination d) {
@@ -1214,10 +1106,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Delete metadata file.
+     * {@inheritDoc}
      *
-     * @param fileName
-     *            the file name
+     * Delete metadata file.
      */
     @Override
     public void deleteMetadataFile(final String fileName) {
@@ -1225,9 +1116,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the filter name.
+     * {@inheritDoc}
      *
-     * @return the filter name
+     * Gets the filter name.
      */
     @Override
     public String getFilterName() {
@@ -1235,10 +1126,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Sets the filter name.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new filter name
+     * Sets the filter name.
      */
     @Override
     public void setFilterName(final String param) {
@@ -1246,9 +1136,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the comment.
+     * {@inheritDoc}
      *
-     * @return the comment
+     * Gets the comment.
      */
     @Override
     public String getComment() {
@@ -1256,10 +1146,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Sets the comment.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new comment
+     * Sets the comment.
      */
     @Override
     public void setComment(final String param) {
@@ -1267,9 +1156,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Checks if is dirty.
+     * {@inheritDoc}
      *
-     * @return true, if is dirty
+     * Checks if is dirty.
      */
     @Override
     public boolean isDirty() {
@@ -1288,9 +1177,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the max connections.
+     * {@inheritDoc}
      *
-     * @return the max connections
+     * Gets the max connections.
      */
     @Override
     public int getMaxConnections() {
@@ -1298,9 +1187,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the retry count.
+     * {@inheritDoc}
      *
-     * @return the retry count
+     * Gets the retry count.
      */
     @Override
     public int getRetryCount() {
@@ -1308,9 +1197,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the retry frequency.
+     * {@inheritDoc}
      *
-     * @return the retry frequency
+     * Gets the retry frequency.
      */
     @Override
     public int getRetryFrequency() {
@@ -1318,9 +1207,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the formatted retry frequency.
+     * {@inheritDoc}
      *
-     * @return the formatted retry frequency
+     * Gets the formatted retry frequency.
      */
     @Override
     public String getFormattedRetryFrequency() {
@@ -1328,9 +1217,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the formatted status.
+     * {@inheritDoc}
      *
-     * @return the formatted status
+     * Gets the formatted status.
      */
     @Override
     public String getFormattedStatus() {
@@ -1343,9 +1232,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the last transfer.
+     * {@inheritDoc}
      *
-     * @return the last transfer
+     * Gets the last transfer.
      */
     @Override
     public DataTransfer getLastTransfer() {
@@ -1359,9 +1248,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the last error.
+     * {@inheritDoc}
      *
-     * @return the last error
+     * Gets the last error.
      */
     @Override
     public DataTransfer getLastError() {
@@ -1375,9 +1264,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the queue size.
+     * {@inheritDoc}
      *
-     * @return the queue size
+     * Gets the queue size.
      */
     @Override
     public int getQueueSize() {
@@ -1390,15 +1279,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Restart.
-     *
-     * @param graceful
-     *            the graceful
-     * @param u
-     *            the u
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public void restart(final boolean graceful, final User u) throws TransferException {
@@ -1410,15 +1293,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Put on hold.
-     *
-     * @param graceful
-     *            the graceful
-     * @param u
-     *            the u
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public void putOnHold(final boolean graceful, final User u) throws TransferException {
@@ -1430,13 +1307,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Clean.
-     *
-     * @param u
-     *            the u
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public void clean(final User u) throws TransferException {
@@ -1448,13 +1321,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Clean expired.
-     *
-     * @param u
-     *            the u
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public void cleanExpired(final User u) throws TransferException {
@@ -1466,10 +1335,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Sets the max connections.
+     * {@inheritDoc}
      *
-     * @param i
-     *            the new max connections
+     * Sets the max connections.
      */
     @Override
     public void setMaxConnections(final int i) {
@@ -1477,10 +1345,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Sets the retry count.
+     * {@inheritDoc}
      *
-     * @param i
-     *            the new retry count
+     * Sets the retry count.
      */
     @Override
     public void setRetryCount(final int i) {
@@ -1488,10 +1355,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Sets the retry frequency.
+     * {@inheritDoc}
      *
-     * @param i
-     *            the new retry frequency
+     * Sets the retry frequency.
      */
     @Override
     public void setRetryFrequency(final int i) {
@@ -1499,10 +1365,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Sets the type.
+     * {@inheritDoc}
      *
-     * @param i
-     *            the new type
+     * Sets the type.
      */
     @Override
     public void setType(final int i) {
@@ -1510,9 +1375,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the type.
+     * {@inheritDoc}
      *
-     * @return the type
+     * Gets the type.
      */
     @Override
     public int getType() {
@@ -1520,9 +1385,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the type text.
+     * {@inheritDoc}
      *
-     * @return the type text
+     * Gets the type text.
      */
     @Override
     public String getTypeText() {
@@ -1530,9 +1395,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the status map for products.
+     * {@inheritDoc}
      *
-     * @return the status map for products
+     * Gets the status map for products.
      */
     @Override
     public Map<String, DestinationProductStatus> getStatusMapForProducts() {
@@ -1540,12 +1405,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the monitoring status.
-     *
-     * @return the monitoring status
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public DestinationStatus getMonitoringStatus() throws TransferException {
@@ -1557,12 +1419,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the band width.
-     *
-     * @return the band width
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public long getBandWidth() throws TransferException {
@@ -1584,9 +1443,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the max requeue.
+     * {@inheritDoc}
      *
-     * @return the max requeue
+     * Gets the max requeue.
      */
     @Override
     public int getMaxRequeue() {
@@ -1594,12 +1453,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the bad data transfers.
-     *
-     * @return the bad data transfers
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Collection<DataTransfer> getBadDataTransfers() throws TransferException {
@@ -1607,12 +1463,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the bad data transfers size.
-     *
-     * @return the bad data transfers size
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public int getBadDataTransfersSize() throws TransferException {
@@ -1620,9 +1473,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the stop if dirty.
+     * {@inheritDoc}
      *
-     * @return the stop if dirty
+     * Gets the stop if dirty.
      */
     @Override
     public boolean getStopIfDirty() {
@@ -1630,10 +1483,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Sets the stop if dirty.
+     * {@inheritDoc}
      *
-     * @param b
-     *            the new stop if dirty
+     * Sets the stop if dirty.
      */
     @Override
     public void setStopIfDirty(final boolean b) {
@@ -1641,9 +1493,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the max pending.
+     * {@inheritDoc}
      *
-     * @return the max pending
+     * Gets the max pending.
      */
     @Override
     public int getMaxPending() {
@@ -1651,9 +1503,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the max file size.
+     * {@inheritDoc}
      *
-     * @return the max file size
+     * Gets the max file size.
      */
     @Override
     public long getMaxFileSize() {
@@ -1661,10 +1513,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Sets the max pending.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new max pending
+     * Sets the max pending.
      */
     @Override
     public void setMaxPending(final int param) {
@@ -1672,9 +1523,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the show in monitors.
+     * {@inheritDoc}
      *
-     * @return the show in monitors
+     * Gets the show in monitors.
      */
     @Override
     public boolean getShowInMonitors() {
@@ -1682,10 +1533,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Sets the show in monitors.
+     * {@inheritDoc}
      *
-     * @param b
-     *            the new show in monitors
+     * Sets the show in monitors.
      */
     @Override
     public void setShowInMonitors(final boolean b) {
@@ -1693,12 +1543,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the start time.
-     *
-     * @return the start time
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Date getStartTime() throws TransferException {
@@ -1710,17 +1557,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the transfer content.
-     *
-     * @param t
-     *            the t
-     * @param u
-     *            the u
-     *
-     * @return the transfer content
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Content getTransferContent(final DataTransfer t, final User u) throws TransferException {
@@ -1762,9 +1601,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Gets the all types.
+     * {@inheritDoc}
      *
-     * @return the all types
+     * Gets the all types.
      */
     @Override
     public List<StringPair> getAllTypes() {
@@ -1924,12 +1763,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the completions.
-     *
-     * @return the completions
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public String getCompletions() throws TransferException {
@@ -1988,12 +1824,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Equals.
-     *
-     * @param o
-     *            the o
-     *
-     * @return true, if successful
      */
     @Override
     public boolean equals(final Object o) {
@@ -2013,9 +1846,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * Hash code.
+     * {@inheritDoc}
      *
-     * @return the int
+     * Hash code.
      */
     @Override
     public int hashCode() {
@@ -2023,9 +1856,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
-     * To string.
+     * {@inheritDoc}
      *
-     * @return the string
+     * To string.
      */
     @Override
     public String toString() {

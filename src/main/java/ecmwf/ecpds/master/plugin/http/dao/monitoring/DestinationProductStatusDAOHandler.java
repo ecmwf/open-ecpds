@@ -47,12 +47,9 @@ import ecmwf.web.services.persistence.DAOHandler;
 public class DestinationProductStatusDAOHandler extends ReadOnlyDAOHandler implements DAOHandler {
 
     /**
+     * {@inheritDoc}
+     *
      * Creates the.
-     *
-     * @return the model bean
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public ModelBean create() throws DAOException {
@@ -60,17 +57,11 @@ public class DestinationProductStatusDAOHandler extends ReadOnlyDAOHandler imple
     }
 
     /**
+     * {@inheritDoc}
+     *
      * This method should only be called when the CacheService entry is empty, like with every other Bean. The
      * difference here is that the Cache will be filled externally by MonitoringStatusCalculatorTask, so the bean
      * provided here is only intended to stand as a "provisional" value.
-     *
-     * @param key
-     *            the key
-     *
-     * @return the model bean
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public ModelBean findByPrimaryKey(final String key) throws DAOException {
@@ -85,15 +76,9 @@ public class DestinationProductStatusDAOHandler extends ReadOnlyDAOHandler imple
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Find.
-     *
-     * @param search
-     *            the search
-     *
-     * @return the collection
-     *
-     * @throws DAOException
-     *             the DAO exception
      */
     @Override
     public Collection<?> find(final ModelSearch search) throws DAOException {

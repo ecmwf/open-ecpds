@@ -63,7 +63,7 @@ public class PDSDAOBase {
      * @param bean
      *            the bean
      *
-     * @throws DAOException
+     * @throws ecmwf.web.services.persistence.DAOException
      *             the DAO exception
      */
     public void insert(final ModelBean bean) throws DAOException {
@@ -76,7 +76,7 @@ public class PDSDAOBase {
      * @param bean
      *            the bean
      *
-     * @throws DAOException
+     * @throws ecmwf.web.services.persistence.DAOException
      *             the DAO exception
      */
     public void save(final ModelBean bean) throws DAOException {
@@ -89,7 +89,7 @@ public class PDSDAOBase {
      * @param bean
      *            the bean
      *
-     * @throws DAOException
+     * @throws ecmwf.web.services.persistence.DAOException
      *             the DAO exception
      */
     public void delete(final ModelBean bean) throws DAOException {
@@ -104,7 +104,7 @@ public class PDSDAOBase {
      * @param context
      *            the context
      *
-     * @throws DAOException
+     * @throws ecmwf.web.services.persistence.DAOException
      *             the DAO exception
      */
     public void save(final ModelBean bean, final Object context) throws DAOException {
@@ -124,7 +124,7 @@ public class PDSDAOBase {
      * @param context
      *            the context
      *
-     * @throws DAOException
+     * @throws ecmwf.web.services.persistence.DAOException
      *             the DAO exception
      */
     public void insert(final ModelBean bean, final Object context) throws DAOException {
@@ -144,7 +144,7 @@ public class PDSDAOBase {
      * @param context
      *            the context
      *
-     * @throws DAOException
+     * @throws ecmwf.web.services.persistence.DAOException
      *             the DAO exception
      */
     public void delete(final ModelBean bean, final Object context) throws DAOException {
@@ -164,9 +164,9 @@ public class PDSDAOBase {
      *
      * @return the equality clause leaves from expression
      *
-     * @throws BooleanExpressionException
+     * @throws ecmwf.web.util.search.BooleanExpressionException
      *             the boolean expression exception
-     * @throws ClassCastException
+     * @throws java.lang.ClassCastException
      *             the class cast exception
      */
     public static final Map<String, String> getEqualityClauseLeavesFromExpression(final ModelSearch search)

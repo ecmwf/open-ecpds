@@ -98,9 +98,9 @@ public final class SSHSession implements InteractiveSession {
     private final boolean debug;
 
     /**
-     * Gets the debug.
+     * {@inheritDoc}
      *
-     * @return the debug
+     * Gets the debug.
      */
     @Override
     public boolean getDebug() {
@@ -108,13 +108,9 @@ public final class SSHSession implements InteractiveSession {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Send.
-     *
-     * @param cmd
-     *            the cmd
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void send(final String cmd) throws IOException {
@@ -142,15 +138,9 @@ public final class SSHSession implements InteractiveSession {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Waitfor.
-     *
-     * @param searchElements
-     *            the search elements
-     *
-     * @return the string
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public String waitfor(final String... searchElements) throws IOException {
@@ -193,9 +183,9 @@ public final class SSHSession implements InteractiveSession {
     }
 
     /**
-     * Checks if is connected.
+     * {@inheritDoc}
      *
-     * @return true, if is connected
+     * Checks if is connected.
      */
     @Override
     public boolean isConnected() {
@@ -203,6 +193,8 @@ public final class SSHSession implements InteractiveSession {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Disconnect.
      */
     @Override
@@ -236,9 +228,9 @@ public final class SSHSession implements InteractiveSession {
      * @param debug
      *            the debug
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
-     * @throws JSchException
+     * @throws com.jcraft.jsch.JSchException
      *             the jsch exception
      */
     public SSHSession(final ECtransSetup setup, final String hostname, final int port, final int sessionTimeOut,
@@ -331,7 +323,7 @@ public final class SSHSession implements InteractiveSession {
      * @param token
      *            the token
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void login(final byte[] token) throws IOException {

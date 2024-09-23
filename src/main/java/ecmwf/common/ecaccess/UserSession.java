@@ -116,9 +116,9 @@ public abstract class UserSession {
      * @param path
      *            the path
      *
-     * @throws EccmdException
+     * @throws ecmwf.common.ecaccess.EccmdException
      *             the eccmd exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void chmod(final int mode, final String path) throws EccmdException, IOException {
@@ -133,9 +133,9 @@ public abstract class UserSession {
      *
      * @return the file size
      *
-     * @throws EccmdException
+     * @throws ecmwf.common.ecaccess.EccmdException
      *             the eccmd exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract long getFileSize(String source) throws EccmdException, IOException;
@@ -148,9 +148,9 @@ public abstract class UserSession {
      * @param force
      *            the force
      *
-     * @throws EccmdException
+     * @throws ecmwf.common.ecaccess.EccmdException
      *             the eccmd exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void deleteFile(final String source, final boolean force) throws EccmdException, IOException {
@@ -165,9 +165,9 @@ public abstract class UserSession {
      *
      * @return the file list
      *
-     * @throws EccmdException
+     * @throws ecmwf.common.ecaccess.EccmdException
      *             the eccmd exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract FileListElement[] getFileList(String path) throws EccmdException, IOException;
@@ -182,9 +182,9 @@ public abstract class UserSession {
      *
      * @return the file list
      *
-     * @throws EccmdException
+     * @throws ecmwf.common.ecaccess.EccmdException
      *             the eccmd exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract FileListElement[] getFileList(String path, String options) throws EccmdException, IOException;
@@ -197,9 +197,9 @@ public abstract class UserSession {
      *
      * @return the file list element
      *
-     * @throws EccmdException
+     * @throws ecmwf.common.ecaccess.EccmdException
      *             the eccmd exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract FileListElement getFileListElement(String path) throws EccmdException, IOException;
@@ -212,9 +212,9 @@ public abstract class UserSession {
      *
      * @return the file last modified
      *
-     * @throws EccmdException
+     * @throws ecmwf.common.ecaccess.EccmdException
      *             the eccmd exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract long getFileLastModified(String source) throws EccmdException, IOException;
@@ -225,9 +225,9 @@ public abstract class UserSession {
      * @param dir
      *            the dir
      *
-     * @throws EccmdException
+     * @throws ecmwf.common.ecaccess.EccmdException
      *             the eccmd exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void mkdir(final String dir) throws EccmdException, IOException {
@@ -240,9 +240,9 @@ public abstract class UserSession {
      * @param dir
      *            the dir
      *
-     * @throws EccmdException
+     * @throws ecmwf.common.ecaccess.EccmdException
      *             the eccmd exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void rmdir(final String dir) throws EccmdException, IOException {
@@ -257,9 +257,9 @@ public abstract class UserSession {
      * @param target
      *            the target
      *
-     * @throws EccmdException
+     * @throws ecmwf.common.ecaccess.EccmdException
      *             the eccmd exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void moveFile(final String source, final String target) throws EccmdException, IOException {
@@ -276,9 +276,9 @@ public abstract class UserSession {
      * @param erase
      *            the erase
      *
-     * @throws EccmdException
+     * @throws ecmwf.common.ecaccess.EccmdException
      *             the eccmd exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void copyFile(final String source, final String target, final boolean erase)
@@ -291,9 +291,9 @@ public abstract class UserSession {
      *
      * @return the temp file
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
-     * @throws EccmdException
+     * @throws ecmwf.common.ecaccess.EccmdException
      *             the eccmd exception
      */
     public String getTempFile() throws IOException, EccmdException {
@@ -310,9 +310,9 @@ public abstract class UserSession {
      *
      * @return the proxy socket input
      *
-     * @throws EccmdException
+     * @throws ecmwf.common.ecaccess.EccmdException
      *             the eccmd exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract ProxySocket getProxySocketInput(String source, long offset) throws EccmdException, IOException;
@@ -329,9 +329,9 @@ public abstract class UserSession {
      *
      * @return the proxy socket input
      *
-     * @throws EccmdException
+     * @throws ecmwf.common.ecaccess.EccmdException
      *             the eccmd exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract ProxySocket getProxySocketInput(String source, long offset, long length)
@@ -349,9 +349,9 @@ public abstract class UserSession {
      *
      * @return the proxy socket output
      *
-     * @throws EccmdException
+     * @throws ecmwf.common.ecaccess.EccmdException
      *             the eccmd exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract ProxySocket getProxySocketOutput(String target, long offset, int umask)
@@ -363,9 +363,9 @@ public abstract class UserSession {
      * @param proxy
      *            the proxy
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
-     * @throws EccmdException
+     * @throws ecmwf.common.ecaccess.EccmdException
      *             the eccmd exception
      */
     public abstract void check(ProxySocket proxy) throws IOException, EccmdException;

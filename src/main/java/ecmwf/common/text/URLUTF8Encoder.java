@@ -3,6 +3,8 @@ package ecmwf.common.text;
 /**
  * Provides a method to encode any string into a URL-safe form. Non-ASCII characters are first encoded as sequences of
  * two or three bytes, using the UTF-8 algorithm, before being encoded as %HH escapes.
+ *
+ * @author root
  */
 public final class URLUTF8Encoder {
 

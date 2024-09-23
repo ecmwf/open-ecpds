@@ -115,6 +115,8 @@ class StorageThread<O> extends WakeupThread {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Configurable run.
      */
     @Override

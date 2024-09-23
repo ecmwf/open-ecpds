@@ -62,7 +62,7 @@ public interface DataTransfer extends CollectionSizeBean, ArrivalMonitoringParam
      *
      * @return the data file
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     DataFile getDataFile() throws TransferException;
@@ -142,7 +142,7 @@ public interface DataTransfer extends CollectionSizeBean, ArrivalMonitoringParam
      *
      * @return the backup host
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Host getBackupHost() throws TransferException;
@@ -152,7 +152,7 @@ public interface DataTransfer extends CollectionSizeBean, ArrivalMonitoringParam
      *
      * @return the proxy host
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Host getProxyHost() throws TransferException;
@@ -190,7 +190,7 @@ public interface DataTransfer extends CollectionSizeBean, ArrivalMonitoringParam
      *
      * @return the destination
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Destination getDestination() throws TransferException;
@@ -221,7 +221,7 @@ public interface DataTransfer extends CollectionSizeBean, ArrivalMonitoringParam
      *
      * @return the host
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Host getHost() throws TransferException;
@@ -326,7 +326,7 @@ public interface DataTransfer extends CollectionSizeBean, ArrivalMonitoringParam
      *
      * @return the status
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     String getStatus() throws TransferException;
@@ -336,7 +336,7 @@ public interface DataTransfer extends CollectionSizeBean, ArrivalMonitoringParam
      *
      * @return the formatted status
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     String getFormattedStatus() throws TransferException;
@@ -346,7 +346,7 @@ public interface DataTransfer extends CollectionSizeBean, ArrivalMonitoringParam
      *
      * @return the member state formatted status
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     String getMemberStateFormattedStatus() throws TransferException;
@@ -356,7 +356,7 @@ public interface DataTransfer extends CollectionSizeBean, ArrivalMonitoringParam
      *
      * @return the detailed status
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     String getDetailedStatus() throws TransferException;
@@ -366,7 +366,7 @@ public interface DataTransfer extends CollectionSizeBean, ArrivalMonitoringParam
      *
      * @return the member state detailed status
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     String getMemberStateDetailedStatus() throws TransferException;
@@ -390,7 +390,7 @@ public interface DataTransfer extends CollectionSizeBean, ArrivalMonitoringParam
      *
      * @return the retrieval progress
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     String getRetrievalProgress() throws TransferException;
@@ -400,7 +400,7 @@ public interface DataTransfer extends CollectionSizeBean, ArrivalMonitoringParam
      *
      * @return the progress
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     int getProgress() throws TransferException;
@@ -410,7 +410,7 @@ public interface DataTransfer extends CollectionSizeBean, ArrivalMonitoringParam
      *
      * @return the sent
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     long getSent() throws TransferException;
@@ -420,7 +420,7 @@ public interface DataTransfer extends CollectionSizeBean, ArrivalMonitoringParam
      *
      * @return the formatted sent
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     String getFormattedSent() throws TransferException;
@@ -430,7 +430,7 @@ public interface DataTransfer extends CollectionSizeBean, ArrivalMonitoringParam
      *
      * @return the duration
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     long getDuration() throws TransferException;
@@ -440,7 +440,7 @@ public interface DataTransfer extends CollectionSizeBean, ArrivalMonitoringParam
      *
      * @return the formatted duration
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     String getFormattedDuration() throws TransferException;
@@ -450,7 +450,7 @@ public interface DataTransfer extends CollectionSizeBean, ArrivalMonitoringParam
      *
      * @return the transfer rate
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     long getTransferRate() throws TransferException;
@@ -460,7 +460,7 @@ public interface DataTransfer extends CollectionSizeBean, ArrivalMonitoringParam
      *
      * @return the formatted transfer rate
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     String getFormattedTransferRate() throws TransferException;
@@ -470,7 +470,7 @@ public interface DataTransfer extends CollectionSizeBean, ArrivalMonitoringParam
      *
      * @return the formatted transfer rate in M bits per seconds
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     double getFormattedTransferRateInMBitsPerSeconds() throws TransferException;
@@ -502,7 +502,7 @@ public interface DataTransfer extends CollectionSizeBean, ArrivalMonitoringParam
      *
      * @return the transfer server
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     TransferServer getTransferServer() throws TransferException;
@@ -519,7 +519,7 @@ public interface DataTransfer extends CollectionSizeBean, ArrivalMonitoringParam
      *
      * @return the transfer history
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Collection<TransferHistory> getTransferHistory() throws TransferException;
@@ -529,7 +529,7 @@ public interface DataTransfer extends CollectionSizeBean, ArrivalMonitoringParam
      *
      * @return the transfer history after scheduled time
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Collection<TransferHistory> getTransferHistoryAfterScheduledTime() throws TransferException;
@@ -539,7 +539,7 @@ public interface DataTransfer extends CollectionSizeBean, ArrivalMonitoringParam
      *
      * @return the older transfers for same data file
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Collection<DataTransfer> getOlderTransfersForSameDataFile() throws TransferException;
@@ -600,7 +600,7 @@ public interface DataTransfer extends CollectionSizeBean, ArrivalMonitoringParam
      * @param u
      *            the u
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     void setPriority(int p, User u) throws TransferException;
@@ -613,7 +613,7 @@ public interface DataTransfer extends CollectionSizeBean, ArrivalMonitoringParam
      * @param u
      *            the u
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     void setExpiryDate(Date date, User u) throws TransferException;
@@ -688,7 +688,7 @@ public interface DataTransfer extends CollectionSizeBean, ArrivalMonitoringParam
      * @param u
      *            the u
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     void interruptRetrieval(User u) throws TransferException;
@@ -699,7 +699,7 @@ public interface DataTransfer extends CollectionSizeBean, ArrivalMonitoringParam
      * @param u
      *            the u
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     void requeue(User u) throws TransferException;
@@ -710,7 +710,7 @@ public interface DataTransfer extends CollectionSizeBean, ArrivalMonitoringParam
      * @param u
      *            the u
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     void putOnHold(User u) throws TransferException;
@@ -721,7 +721,7 @@ public interface DataTransfer extends CollectionSizeBean, ArrivalMonitoringParam
      * @param u
      *            the u
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     void stop(User u) throws TransferException;
@@ -732,7 +732,7 @@ public interface DataTransfer extends CollectionSizeBean, ArrivalMonitoringParam
      * @param u
      *            the u
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     void scheduleNow(User u) throws TransferException;

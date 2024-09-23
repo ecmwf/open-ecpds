@@ -114,7 +114,7 @@ public abstract class ForkAbstract implements Closeable {
      *
      * @return true, if successful
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public boolean check() throws IOException {
@@ -129,7 +129,7 @@ public abstract class ForkAbstract implements Closeable {
      *
      * @return true, if successful
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public boolean check(final String[][] errors) throws IOException {
@@ -146,7 +146,7 @@ public abstract class ForkAbstract implements Closeable {
      *
      * @return true, if successful
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public boolean check(final String[][] expect, final String[][] errors) throws IOException {
@@ -195,6 +195,8 @@ public abstract class ForkAbstract implements Closeable {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Close.
      */
     @Override
@@ -228,7 +230,7 @@ public abstract class ForkAbstract implements Closeable {
     /**
      * Start.
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract void start() throws IOException;
@@ -245,7 +247,7 @@ public abstract class ForkAbstract implements Closeable {
      *
      * @return the input stream
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract InputStream getInputStream() throws IOException;
@@ -273,7 +275,7 @@ public abstract class ForkAbstract implements Closeable {
      *
      * @return the int
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public int writeInto(final OutputStream out) throws IOException {

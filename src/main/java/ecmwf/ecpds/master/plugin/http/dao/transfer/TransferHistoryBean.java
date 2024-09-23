@@ -50,10 +50,9 @@ public class TransferHistoryBean extends ModelBeanBase implements TransferHistor
     private User user;
 
     /**
-     * Sets the user.
+     * {@inheritDoc}
      *
-     * @param user
-     *            the new user
+     * Sets the user.
      */
     @Override
     public void setUser(final User user) {
@@ -61,9 +60,9 @@ public class TransferHistoryBean extends ModelBeanBase implements TransferHistor
     }
 
     /**
-     * Gets the user.
+     * {@inheritDoc}
      *
-     * @return the user
+     * Gets the user.
      */
     @Override
     public User getUser() {
@@ -84,9 +83,9 @@ public class TransferHistoryBean extends ModelBeanBase implements TransferHistor
     }
 
     /**
-     * Gets the collection size.
+     * {@inheritDoc}
      *
-     * @return the collection size
+     * Gets the collection size.
      */
     @Override
     public int getCollectionSize() {
@@ -104,9 +103,9 @@ public class TransferHistoryBean extends ModelBeanBase implements TransferHistor
     }
 
     /**
-     * Gets the bean interface name.
+     * {@inheritDoc}
      *
-     * @return the bean interface name
+     * Gets the bean interface name.
      */
     @Override
     public String getBeanInterfaceName() {
@@ -114,9 +113,9 @@ public class TransferHistoryBean extends ModelBeanBase implements TransferHistor
     }
 
     /**
-     * Gets the id.
+     * {@inheritDoc}
      *
-     * @return the id
+     * Gets the id.
      */
     @Override
     public String getId() {
@@ -124,9 +123,9 @@ public class TransferHistoryBean extends ModelBeanBase implements TransferHistor
     }
 
     /**
-     * Gets the comment.
+     * {@inheritDoc}
      *
-     * @return the comment
+     * Gets the comment.
      */
     @Override
     public String getComment() {
@@ -134,9 +133,9 @@ public class TransferHistoryBean extends ModelBeanBase implements TransferHistor
     }
 
     /**
-     * Gets the formatted comment.
+     * {@inheritDoc}
      *
-     * @return the formatted comment
+     * Gets the formatted comment.
      */
     @Override
     public String getFormattedComment() {
@@ -144,9 +143,9 @@ public class TransferHistoryBean extends ModelBeanBase implements TransferHistor
     }
 
     /**
-     * Gets the data transfer.
+     * {@inheritDoc}
      *
-     * @return the data transfer
+     * Gets the data transfer.
      */
     @Override
     public DataTransfer getDataTransfer() {
@@ -154,9 +153,9 @@ public class TransferHistoryBean extends ModelBeanBase implements TransferHistor
     }
 
     /**
-     * Gets the data transfer id.
+     * {@inheritDoc}
      *
-     * @return the data transfer id
+     * Gets the data transfer id.
      */
     @Override
     public long getDataTransferId() {
@@ -164,9 +163,9 @@ public class TransferHistoryBean extends ModelBeanBase implements TransferHistor
     }
 
     /**
-     * Gets the date.
+     * {@inheritDoc}
      *
-     * @return the date
+     * Gets the date.
      */
     @Override
     public Date getDate() {
@@ -174,9 +173,9 @@ public class TransferHistoryBean extends ModelBeanBase implements TransferHistor
     }
 
     /**
-     * Gets the sent.
+     * {@inheritDoc}
      *
-     * @return the sent
+     * Gets the sent.
      */
     @Override
     public long getSent() {
@@ -184,9 +183,9 @@ public class TransferHistoryBean extends ModelBeanBase implements TransferHistor
     }
 
     /**
-     * Gets the formatted sent.
+     * {@inheritDoc}
      *
-     * @return the formatted sent
+     * Gets the formatted sent.
      */
     @Override
     public String getFormattedSent() {
@@ -194,9 +193,9 @@ public class TransferHistoryBean extends ModelBeanBase implements TransferHistor
     }
 
     /**
-     * Gets the status.
+     * {@inheritDoc}
      *
-     * @return the status
+     * Gets the status.
      */
     @Override
     public String getStatus() {
@@ -204,9 +203,9 @@ public class TransferHistoryBean extends ModelBeanBase implements TransferHistor
     }
 
     /**
-     * Gets the formatted status.
+     * {@inheritDoc}
      *
-     * @return the formatted status
+     * Gets the formatted status.
      */
     @Override
     public String getFormattedStatus() {
@@ -214,9 +213,9 @@ public class TransferHistoryBean extends ModelBeanBase implements TransferHistor
     }
 
     /**
-     * Gets the error.
+     * {@inheritDoc}
      *
-     * @return the error
+     * Gets the error.
      */
     @Override
     public boolean getError() {
@@ -224,12 +223,9 @@ public class TransferHistoryBean extends ModelBeanBase implements TransferHistor
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the host.
-     *
-     * @return the host
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Host getHost() throws TransferException {
@@ -241,9 +237,9 @@ public class TransferHistoryBean extends ModelBeanBase implements TransferHistor
     }
 
     /**
-     * Gets the host nick name.
+     * {@inheritDoc}
      *
-     * @return the host nick name
+     * Gets the host nick name.
      */
     @Override
     public String getHostNickName() {
@@ -255,9 +251,9 @@ public class TransferHistoryBean extends ModelBeanBase implements TransferHistor
     }
 
     /**
-     * Gets the host name.
+     * {@inheritDoc}
      *
-     * @return the host name
+     * Gets the host name.
      */
     @Override
     public String getHostName() {
@@ -265,12 +261,9 @@ public class TransferHistoryBean extends ModelBeanBase implements TransferHistor
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Equals.
-     *
-     * @param o
-     *            the o
-     *
-     * @return true, if successful
      */
     @Override
     public boolean equals(final Object o) {
@@ -290,9 +283,9 @@ public class TransferHistoryBean extends ModelBeanBase implements TransferHistor
     }
 
     /**
-     * Hash code.
+     * {@inheritDoc}
      *
-     * @return the int
+     * Hash code.
      */
     @Override
     public int hashCode() {
@@ -300,9 +293,9 @@ public class TransferHistoryBean extends ModelBeanBase implements TransferHistor
     }
 
     /**
-     * To string.
+     * {@inheritDoc}
      *
-     * @return the string
+     * To string.
      */
     @Override
     public String toString() {

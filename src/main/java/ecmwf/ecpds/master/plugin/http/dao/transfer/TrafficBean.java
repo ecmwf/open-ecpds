@@ -39,9 +39,9 @@ public class TrafficBean extends ModelBeanBase implements Traffic {
     private final ecmwf.common.database.Traffic traffic;
 
     /**
-     * Gets the bean interface name.
+     * {@inheritDoc}
      *
-     * @return the bean interface name
+     * Gets the bean interface name.
      */
     @Override
     public String getBeanInterfaceName() {
@@ -59,9 +59,9 @@ public class TrafficBean extends ModelBeanBase implements Traffic {
     }
 
     /**
-     * Gets the date.
+     * {@inheritDoc}
      *
-     * @return the date
+     * Gets the date.
      */
     @Override
     public String getDate() {
@@ -69,9 +69,9 @@ public class TrafficBean extends ModelBeanBase implements Traffic {
     }
 
     /**
-     * Gets the rate.
+     * {@inheritDoc}
      *
-     * @return the rate
+     * Gets the rate.
      */
     @Override
     public double getRate() {
@@ -79,9 +79,9 @@ public class TrafficBean extends ModelBeanBase implements Traffic {
     }
 
     /**
-     * Gets the formatted rate.
+     * {@inheritDoc}
      *
-     * @return the formatted rate
+     * Gets the formatted rate.
      */
     @Override
     public String getFormattedRate() {
@@ -89,9 +89,9 @@ public class TrafficBean extends ModelBeanBase implements Traffic {
     }
 
     /**
-     * Gets the bytes.
+     * {@inheritDoc}
      *
-     * @return the bytes
+     * Gets the bytes.
      */
     @Override
     public long getBytes() {
@@ -99,9 +99,9 @@ public class TrafficBean extends ModelBeanBase implements Traffic {
     }
 
     /**
-     * Gets the formatted bytes.
+     * {@inheritDoc}
      *
-     * @return the formatted bytes
+     * Gets the formatted bytes.
      */
     @Override
     public String getFormattedBytes() {
@@ -109,9 +109,9 @@ public class TrafficBean extends ModelBeanBase implements Traffic {
     }
 
     /**
-     * Gets the duration.
+     * {@inheritDoc}
      *
-     * @return the duration
+     * Gets the duration.
      */
     @Override
     public long getDuration() {
@@ -119,9 +119,9 @@ public class TrafficBean extends ModelBeanBase implements Traffic {
     }
 
     /**
-     * Gets the formatted duration.
+     * {@inheritDoc}
      *
-     * @return the formatted duration
+     * Gets the formatted duration.
      */
     @Override
     public String getFormattedDuration() {
@@ -129,9 +129,9 @@ public class TrafficBean extends ModelBeanBase implements Traffic {
     }
 
     /**
-     * Gets the files.
+     * {@inheritDoc}
      *
-     * @return the files
+     * Gets the files.
      */
     @Override
     public int getFiles() {

@@ -85,7 +85,7 @@ public final class DataSocket implements Closeable {
      *
      * @return the input stream
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public synchronized InputStream getInputStream() throws IOException {
@@ -116,7 +116,7 @@ public final class DataSocket implements Closeable {
      *
      * @return the output stream
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public synchronized OutputStream getOutputStream(final long size) throws IOException {
@@ -141,10 +141,9 @@ public final class DataSocket implements Closeable {
     }
 
     /**
-     * Close.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Close.
      */
     @Override
     public void close() throws IOException {
@@ -161,7 +160,7 @@ public final class DataSocket implements Closeable {
      * @param force
      *            the force
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void close(final boolean force) throws IOException {
@@ -172,10 +171,9 @@ public final class DataSocket implements Closeable {
     }
 
     /**
-     * Finalize.
+     * {@inheritDoc}
      *
-     * @throws Throwable
-     *             the throwable
+     * Finalize.
      */
     @Override
     protected void finalize() throws Throwable {
@@ -196,9 +194,9 @@ public final class DataSocket implements Closeable {
     }
 
     /**
-     * To string.
+     * {@inheritDoc}
      *
-     * @return the string
+     * To string.
      */
     @Override
     public String toString() {

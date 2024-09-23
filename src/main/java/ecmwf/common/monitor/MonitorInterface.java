@@ -29,7 +29,6 @@ package ecmwf.common.monitor;
  *
  * @since 2024-07-01
  */
-
 public interface MonitorInterface {
     /**
      * Sends the message.
@@ -43,7 +42,7 @@ public interface MonitorInterface {
      * @param message
      *            the message
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     void sendMessage(String name, String service, int status, String message) throws Exception;

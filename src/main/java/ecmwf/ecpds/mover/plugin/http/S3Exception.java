@@ -24,6 +24,8 @@ import com.google.common.collect.ImmutableMap;
 
 /**
  * The Class S3Exception.
+ *
+ * @author root
  */
 @SuppressWarnings("serial")
 public final class S3Exception extends Exception {
@@ -120,9 +122,9 @@ public final class S3Exception extends Exception {
     }
 
     /**
-     * Gets the message.
+     * {@inheritDoc}
      *
-     * @return the message
+     * Gets the message.
      */
     @Override
     public String getMessage() {

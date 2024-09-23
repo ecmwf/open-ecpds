@@ -86,7 +86,7 @@ public interface ArrivalMonitoringParameters extends ModelBean {
      *
      * @return Schedule time - OFFSET (=75m). This is a general target arbitrarily assigned my management
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Date getArrivalTargetTime() throws TransferException;
@@ -96,7 +96,7 @@ public interface ArrivalMonitoringParameters extends ModelBean {
      *
      * @return Predicted value for arrival this time.
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Date getArrivalPredictedTime() throws TransferException;
@@ -106,7 +106,7 @@ public interface ArrivalMonitoringParameters extends ModelBean {
      *
      * @return A status calculated as a function of all other four values
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     int getArrivalStatus() throws TransferException;
@@ -116,7 +116,7 @@ public interface ArrivalMonitoringParameters extends ModelBean {
      *
      * @return The earliest file arrival time for a default number of days
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Date getArrivalEarliestTime() throws TransferException;
@@ -126,7 +126,7 @@ public interface ArrivalMonitoringParameters extends ModelBean {
      *
      * @return The latest file arrival time for a default number of days
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Date getArrivalLatestTime() throws TransferException;

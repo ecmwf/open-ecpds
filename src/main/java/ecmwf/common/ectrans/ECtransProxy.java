@@ -57,15 +57,9 @@ final class ECtransProxy extends ECtransInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Del.
-     *
-     * @param name
-     *            the name
-     *
-     * @throws ECtransException
-     *             the ectrans exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void del(final String name) throws ECtransException, IOException {
@@ -73,21 +67,9 @@ final class ECtransProxy extends ECtransInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Put.
-     *
-     * @param name
-     *            the name
-     * @param ticket
-     *            the ticket
-     * @param posn
-     *            the posn
-     * @param size
-     *            the size
-     *
-     * @throws ECtransException
-     *             the ectrans exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void put(final String name, final long ticket, final long posn, final long size)
@@ -97,17 +79,9 @@ final class ECtransProxy extends ECtransInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Size.
-     *
-     * @param name
-     *            the name
-     *
-     * @return the long
-     *
-     * @throws ECtransException
-     *             the ectrans exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public long size(final String name) throws ECtransException, IOException {
@@ -117,19 +91,9 @@ final class ECtransProxy extends ECtransInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the.
-     *
-     * @param name
-     *            the name
-     * @param ticket
-     *            the ticket
-     * @param posn
-     *            the posn
-     *
-     * @throws ECtransException
-     *             the ectrans exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void get(final String name, final long ticket, final long posn) throws ECtransException, IOException {
@@ -138,17 +102,9 @@ final class ECtransProxy extends ECtransInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the attribute.
-     *
-     * @param key
-     *            the key
-     * @param value
-     *            the value
-     *
-     * @throws ECtransException
-     *             the ectrans exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void setAttribute(final Object key, final Object value) throws ECtransException, IOException {
@@ -157,17 +113,9 @@ final class ECtransProxy extends ECtransInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the attribute.
-     *
-     * @param key
-     *            the key
-     *
-     * @return the attribute
-     *
-     * @throws ECtransException
-     *             the ectrans exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public Object getAttribute(final Object key) throws ECtransException, IOException {
@@ -177,21 +125,9 @@ final class ECtransProxy extends ECtransInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Invoke.
-     *
-     * @param method
-     *            the method
-     * @param argTypes
-     *            the arg types
-     * @param args
-     *            the args
-     *
-     * @return the object
-     *
-     * @throws ECtransException
-     *             the ectrans exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public Object invoke(final String method, final Class<?>[] argTypes, final Object[] args)
@@ -229,10 +165,9 @@ final class ECtransProxy extends ECtransInterface {
     }
 
     /**
-     * Close.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Close.
      */
     @Override
     public void close() throws IOException {

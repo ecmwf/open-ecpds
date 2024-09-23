@@ -84,9 +84,9 @@ public abstract class DataBaseObject implements Serializable, Cloneable {
     }
 
     /**
-     * Clone.
+     * {@inheritDoc}
      *
-     * @return the object
+     * Clone.
      */
     @Override
     public Object clone() {
@@ -99,9 +99,9 @@ public abstract class DataBaseObject implements Serializable, Cloneable {
     }
 
     /**
-     * To string.
+     * {@inheritDoc}
      *
-     * @return the string
+     * To string.
      */
     @Override
     public String toString() {

@@ -340,7 +340,7 @@ public abstract class AbstractTicket implements Serializable, Closeable {
     }
 
     /**
-     * Converts into close.
+     * Specify which Closeable objects should be closed when the ticket is closed.
      *
      * @param toNotify
      *            the to notify
@@ -352,7 +352,7 @@ public abstract class AbstractTicket implements Serializable, Closeable {
     }
 
     /**
-     * Converts into close.
+     * Specify which Closeable object should be closed when the ticket is closed.
      *
      * @param toClose
      *            the to close
@@ -364,6 +364,8 @@ public abstract class AbstractTicket implements Serializable, Closeable {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Close.
      */
     @Override

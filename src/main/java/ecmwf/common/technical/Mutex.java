@@ -34,7 +34,6 @@ package ecmwf.common.technical;
  *
  * @since 2024-07-01
  */
-
 public final class Mutex {
     /** The sync. */
     private final Synchronized sync;

@@ -276,7 +276,7 @@ public abstract class TransferModule implements Closeable {
      * @param setup
      *            the setup
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     public abstract void connect(String location, ECtransSetup setup) throws Exception;
@@ -289,7 +289,7 @@ public abstract class TransferModule implements Closeable {
      *
      * @return the port
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public int getPort(final ECtransSetup setup) throws IOException {
@@ -302,7 +302,7 @@ public abstract class TransferModule implements Closeable {
      * @param name
      *            the name
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract void del(String name) throws IOException;
@@ -313,7 +313,7 @@ public abstract class TransferModule implements Closeable {
      * @param dir
      *            the dir
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void mkdir(final String dir) throws IOException {
@@ -326,7 +326,7 @@ public abstract class TransferModule implements Closeable {
      * @param dir
      *            the dir
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void rmdir(final String dir) throws IOException {
@@ -341,7 +341,7 @@ public abstract class TransferModule implements Closeable {
      * @param target
      *            the target
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void move(final String source, final String target) throws IOException {
@@ -356,7 +356,7 @@ public abstract class TransferModule implements Closeable {
      * @param posn
      *            the posn
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void preGet(final String name, final long posn) throws IOException {
@@ -373,7 +373,7 @@ public abstract class TransferModule implements Closeable {
      *
      * @return the input stream
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract InputStream get(String name, long posn) throws IOException;
@@ -391,7 +391,7 @@ public abstract class TransferModule implements Closeable {
      *
      * @return true, if successful
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public boolean get(final OutputStream out, final String name, final long posn) throws IOException {
@@ -410,7 +410,7 @@ public abstract class TransferModule implements Closeable {
      *
      * @return the string
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public String prePut(final String name, final String tmpName, final long posn) throws IOException {
@@ -423,7 +423,7 @@ public abstract class TransferModule implements Closeable {
      * @param filter
      *            the new input filter
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void setInputFilter(final String filter) throws IOException {
@@ -436,7 +436,7 @@ public abstract class TransferModule implements Closeable {
      * @param size
      *            the new input size
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void setInputSize(final long size) throws IOException {
@@ -448,7 +448,7 @@ public abstract class TransferModule implements Closeable {
      * @param md5
      *            the new input md5
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void setInputMd5(final String md5) throws IOException {
@@ -460,7 +460,7 @@ public abstract class TransferModule implements Closeable {
      * @param filter
      *            the new output filter
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void setOutputFilter(final String filter) throws IOException {
@@ -470,7 +470,7 @@ public abstract class TransferModule implements Closeable {
     /**
      * Instruct the transfer module that the checksum is delegated.
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void delegateChecksum() throws IOException {
@@ -489,7 +489,7 @@ public abstract class TransferModule implements Closeable {
      *
      * @return the output stream
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract OutputStream put(String name, long posn, long size) throws IOException;
@@ -509,7 +509,7 @@ public abstract class TransferModule implements Closeable {
      *
      * @return true, if successful
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public boolean put(final InputStream in, final String name, final long posn, final long size) throws IOException {
@@ -519,7 +519,7 @@ public abstract class TransferModule implements Closeable {
     /**
      * Force an update of the statistics from the underlying socket.
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void updateSocketStatistics() throws IOException {
@@ -537,7 +537,7 @@ public abstract class TransferModule implements Closeable {
      * @param size
      *            the size
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void copy(final String source, final String target, final long posn, final long size) throws IOException {
@@ -553,7 +553,7 @@ public abstract class TransferModule implements Closeable {
      * @param checksum
      *            the checksum
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void check(final long sent, final String checksum) throws IOException {
@@ -567,7 +567,7 @@ public abstract class TransferModule implements Closeable {
      *
      * @return the long
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract long size(String name) throws IOException;
@@ -582,7 +582,7 @@ public abstract class TransferModule implements Closeable {
      *
      * @return the string[]
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public String[] listAsStringArray(final String directory, final String pattern) throws IOException {
@@ -600,7 +600,7 @@ public abstract class TransferModule implements Closeable {
      *
      * @return the bytes
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public byte[] listAsByteArray(final String directory, final String pattern) throws IOException {
@@ -622,7 +622,7 @@ public abstract class TransferModule implements Closeable {
      * @param out
      *            the out
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void list(final String directory, final String pattern, final OutputStream out) throws IOException {

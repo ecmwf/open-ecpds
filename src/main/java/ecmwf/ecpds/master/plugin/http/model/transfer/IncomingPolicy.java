@@ -39,9 +39,9 @@ import ecmwf.web.model.ModelBean;
 public interface IncomingPolicy extends ModelBean {
 
     /**
-     * Gets the id.
+     * {@inheritDoc}
      *
-     * @return the id
+     * Gets the id.
      */
     @Override
     String getId();
@@ -82,10 +82,9 @@ public interface IncomingPolicy extends ModelBean {
     String getCompletions();
 
     /**
-     * Sets the id.
+     * {@inheritDoc}
      *
-     * @param id
-     *            the new id
+     * Sets the id.
      */
     @Override
     void setId(String id);
@@ -135,7 +134,7 @@ public interface IncomingPolicy extends ModelBean {
      *
      * @return the associated destinations
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Collection<Destination> getAssociatedDestinations() throws TransferException;

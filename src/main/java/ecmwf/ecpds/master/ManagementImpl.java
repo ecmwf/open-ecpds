@@ -155,14 +155,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the contacts.
-     *
-     * @return the contacts
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public Map<String, String> getContacts() throws MasterException, IOException {
@@ -170,19 +165,11 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the destination names for contact.
      *
      * Get the destination names which follow the provided rules for the email addresses in their contacts!
-     *
-     * @param rules
-     *            the rules
-     * @param caseSensitive
-     *            the case sensitive
-     *
-     * @return the destination names for contact
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public List<String> getDestinationNamesForContact(final List<Map.Entry<String, String>> rules,
@@ -251,11 +238,11 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
      *
      * @return the list
      *
-     * @throws ParserConfigurationException
+     * @throws javax.xml.parsers.ParserConfigurationException
      *             the parser configuration exception
-     * @throws SAXException
+     * @throws org.xml.sax.SAXException
      *             the SAX exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static List<String> collectEmails(final File contactXml, final String... tagNames)
@@ -425,18 +412,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the destination caches.
-     *
-     * @return the destination caches
-     *
-     * @throws MonitorException
-     *             the monitor exception
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Map<String, DestinationCache> getDestinationCaches()
@@ -454,27 +432,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the ecpds session.
-     *
-     * @param user
-     *            the user
-     * @param password
-     *            the password
-     * @param host
-     *            the host
-     * @param agent
-     *            the agent
-     * @param comment
-     *            the comment
-     *
-     * @return the ecpds session
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public ECpdsSession getECpdsSession(final String user, final String password, final String host, final String agent,
@@ -491,19 +451,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Save web user.
-     *
-     * @param session
-     *            the session
-     * @param webUser
-     *            the web user
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public void saveWebUser(final ECpdsSession session, final WebUser webUser)
@@ -529,23 +479,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Copy host.
-     *
-     * @param session
-     *            the session
-     * @param destinationName
-     *            the destination name
-     * @param hostName
-     *            the host name
-     *
-     * @return the destination cache
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public DestinationCache copyHost(final ECpdsSession session, final String destinationName, final String hostName)
@@ -568,27 +504,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Copy destination.
-     *
-     * @param session
-     *            the session
-     * @param fromDestination
-     *            the from destination
-     * @param toDestination
-     *            the to destination
-     * @param label
-     *            the label
-     * @param copySharedHost
-     *            the copy shared host
-     *
-     * @return the destination cache
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public DestinationCache copyDestination(final ECpdsSession session, final String fromDestination,
@@ -626,23 +544,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Export destination.
-     *
-     * @param session
-     *            the session
-     * @param targetMaster
-     *            the target master
-     * @param fromDestination
-     *            the from destination
-     * @param copySharedHost
-     *            the copy shared host
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public void exportDestination(final ECpdsSession session, final String targetMaster, final String fromDestination,
@@ -670,15 +574,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Close E cpds session.
-     *
-     * @param session
-     *            the session
-     * @param expired
-     *            the expired
-     *
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public void closeECpdsSession(final ECpdsSession session, final boolean expired) throws RemoteException {
@@ -689,15 +587,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Close incoming connection.
-     *
-     * @param session
-     *            the session
-     * @param id
-     *            the id
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void closeIncomingConnection(final ECpdsSession session, final String id) throws IOException {
@@ -708,21 +600,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Restart destination.
-     *
-     * @param session
-     *            the session
-     * @param destinationName
-     *            the destination name
-     * @param graceful
-     *            the graceful
-     *
-     * @return the destination scheduler cache
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws MasterException
-     *             the master exception
      */
     @Override
     public DestinationSchedulerCache restartDestination(final ECpdsSession session, final String destinationName,
@@ -749,15 +629,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Restart all destinations.
-     *
-     * @param session
-     *            the session
-     * @param graceful
-     *            the graceful
-     *
-     * @throws MasterException
-     *             the master exception
      */
     @Override
     public void restartAllDestinations(final ECpdsSession session, final boolean graceful) throws MasterException {
@@ -782,17 +656,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Shutdown.
-     *
-     * @param session
-     *            the session
-     * @param graceful
-     *            the graceful
-     * @param restart
-     *            the restart
-     *
-     * @throws MasterException
-     *             the master exception
      */
     @Override
     public void shutdown(final ECpdsSession session, final boolean graceful, final boolean restart)
@@ -815,15 +681,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the retrieved.
-     *
-     * @param dataFileId
-     *            the data file id
-     *
-     * @return the retrieved
-     *
-     * @throws DataBaseException
-     *             the data base exception
      */
     @Override
     public long getRetrieved(final long dataFileId) throws DataBaseException {
@@ -832,15 +692,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the transfer server name.
-     *
-     * @param dataFileId
-     *            the data file id
-     *
-     * @return the transfer server name
-     *
-     * @throws DataBaseException
-     *             the data base exception
      */
     @Override
     public String getTransferServerName(final long dataFileId) throws DataBaseException {
@@ -849,17 +703,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the destination status.
-     *
-     * @param destinationName
-     *            the destination name
-     *
-     * @return the destination status
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
      */
     @Override
     public String getDestinationStatus(final String destinationName) throws MasterException, DataBaseException {
@@ -868,17 +714,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the monitor manager.
-     *
-     * @param destinationName
-     *            the destination name
-     *
-     * @return the monitor manager
-     *
-     * @throws MonitorException
-     *             the monitor exception
-     * @throws MasterException
-     *             the master exception
      */
     @Override
     public MonitorManager getMonitorManager(final String destinationName) throws MonitorException, MasterException {
@@ -887,15 +725,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the destination size.
-     *
-     * @param destinationName
-     *            the destination name
-     *
-     * @return the destination size
-     *
-     * @throws MasterException
-     *             the master exception
      */
     @Override
     public int getDestinationSize(final String destinationName) throws MasterException {
@@ -904,15 +736,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the destination start date.
-     *
-     * @param destinationName
-     *            the destination name
-     *
-     * @return the destination start date
-     *
-     * @throws MasterException
-     *             the master exception
      */
     @Override
     public Date getDestinationStartDate(final String destinationName) throws MasterException {
@@ -921,15 +747,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the pending data transfers count.
-     *
-     * @param destinationName
-     *            the destination name
-     *
-     * @return the pending data transfers count
-     *
-     * @throws MasterException
-     *             the master exception
      */
     @Override
     public int getPendingDataTransfersCount(final String destinationName) throws MasterException {
@@ -938,15 +758,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the destination last transfer.
-     *
-     * @param destinationName
-     *            the destination name
-     *
-     * @return the destination last transfer
-     *
-     * @throws MasterException
-     *             the master exception
      */
     @Override
     public DataTransfer getDestinationLastTransfer(final String destinationName) throws MasterException {
@@ -955,15 +769,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the destination last failed transfer.
-     *
-     * @param destinationName
-     *            the destination name
-     *
-     * @return the destination last failed transfer
-     *
-     * @throws MasterException
-     *             the master exception
      */
     @Override
     public DataTransfer getDestinationLastFailedTransfer(final String destinationName) throws MasterException {
@@ -975,21 +783,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Hold destination.
-     *
-     * @param session
-     *            the session
-     * @param destinationName
-     *            the destination name
-     * @param graceful
-     *            the graceful
-     *
-     * @return the destination scheduler cache
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws MasterException
-     *             the master exception
      */
     @Override
     public DestinationSchedulerCache holdDestination(final ECpdsSession session, final String destinationName,
@@ -1033,15 +829,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Hold all destinations.
-     *
-     * @param session
-     *            the session
-     * @param graceful
-     *            the graceful
-     *
-     * @throws MasterException
-     *             the master exception
      */
     @Override
     public void holdAllDestinations(final ECpdsSession session, final boolean graceful) throws MasterException {
@@ -1086,17 +876,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Removes the destination.
-     *
-     * @param session
-     *            the session
-     * @param destinationName
-     *            the destination name
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
      */
     @Override
     public void removeDestination(final ECpdsSession session, final String destinationName)
@@ -1146,21 +928,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Removes the destination.
-     *
-     * @param session
-     *            the session
-     * @param destinationName
-     *            the destination name
-     * @param cleanOnly
-     *            the clean only
-     * @param removeAll
-     *            the remove all
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
      */
     @Override
     public void removeDestination(final ECpdsSession session, final String destinationName, final boolean cleanOnly,
@@ -1327,21 +1097,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Clean destination.
-     *
-     * @param session
-     *            the session
-     * @param destinationName
-     *            the destination name
-     * @param days
-     *            the days
-     *
-     * @return the string
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
      */
     @Override
     public String cleanDestination(final ECpdsSession session, final String destinationName, final long days)
@@ -1387,17 +1145,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Removes the host.
-     *
-     * @param session
-     *            the session
-     * @param host
-     *            the host
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
      */
     @Override
     public void removeHost(final ECpdsSession session, final Host host) throws MasterException, DataBaseException {
@@ -1426,17 +1176,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Removes the incoming user.
-     *
-     * @param session
-     *            the session
-     * @param user
-     *            the user
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
      */
     @Override
     public void removeIncomingUser(final ECpdsSession session, final IncomingUser user)
@@ -1466,17 +1208,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Removes the incoming policy.
-     *
-     * @param session
-     *            the session
-     * @param policy
-     *            the policy
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
      */
     @Override
     public void removeIncomingPolicy(final ECpdsSession session, final IncomingPolicy policy)
@@ -1506,17 +1240,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Removes the transfer method.
-     *
-     * @param session
-     *            the session
-     * @param method
-     *            the method
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
      */
     @Override
     public void removeTransferMethod(final ECpdsSession session, final TransferMethod method)
@@ -1547,17 +1273,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Removes the E ctrans module.
-     *
-     * @param session
-     *            the session
-     * @param module
-     *            the module
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
      */
     @Override
     public void removeECtransModule(final ECpdsSession session, final ECtransModule module)
@@ -1589,17 +1307,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Removes the transfer group.
-     *
-     * @param session
-     *            the session
-     * @param group
-     *            the group
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
      */
     @Override
     public void removeTransferGroup(final ECpdsSession session, final TransferGroup group)
@@ -1632,17 +1342,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Removes the transfer server.
-     *
-     * @param session
-     *            the session
-     * @param server
-     *            the server
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
      */
     @Override
     public void removeTransferServer(final ECpdsSession session, final TransferServer server)
@@ -1698,19 +1400,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Shutdown transfer server.
-     *
-     * @param session
-     *            the session
-     * @param server
-     *            the server
-     * @param graceful
-     *            the graceful
-     * @param restart
-     *            the restart
-     *
-     * @throws MasterException
-     *             the master exception
      */
     @Override
     public void shutdownTransferServer(final ECpdsSession session, final TransferServer server, final boolean graceful,
@@ -1742,17 +1434,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Removes the data transfer.
-     *
-     * @param session
-     *            the session
-     * @param transfer
-     *            the transfer
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
      */
     @Override
     public void removeDataTransfer(final ECpdsSession session, final DataTransfer transfer)
@@ -1778,19 +1462,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Interrupt data transfer retrieval.
-     *
-     * @param session
-     *            the session
-     * @param id
-     *            the id
-     *
-     * @return true, if successful
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws MasterException
-     *             the master exception
      */
     @Override
     public boolean interruptDataTransferRetrieval(final ECpdsSession session, final long id)
@@ -1815,17 +1489,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Removes the data file.
-     *
-     * @param session
-     *            the session
-     * @param file
-     *            the file
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
      */
     @Override
     public void removeDataFile(final ECpdsSession session, final DataFile file)
@@ -1853,17 +1519,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Removes the web user.
-     *
-     * @param session
-     *            the session
-     * @param user
-     *            the user
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
      */
     @Override
     public void removeWebUser(final ECpdsSession session, final WebUser user)
@@ -1893,17 +1551,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Removes the category.
-     *
-     * @param session
-     *            the session
-     * @param category
-     *            the category
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
      */
     @Override
     public void removeCategory(final ECpdsSession session, final Category category)
@@ -1929,17 +1579,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Removes the url.
-     *
-     * @param session
-     *            the session
-     * @param url
-     *            the url
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
      */
     @Override
     public void removeUrl(final ECpdsSession session, final Url url) throws MasterException, DataBaseException {
@@ -1963,19 +1605,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Update transfer priority.
-     *
-     * @param session
-     *            the session
-     * @param id
-     *            the id
-     * @param priority
-     *            the priority
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
      */
     @Override
     public void updateTransferPriority(final ECpdsSession session, final long id, final int priority)
@@ -2011,21 +1643,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Update expiry time.
-     *
-     * @param session
-     *            the session
-     * @param id
-     *            the id
-     * @param timestamp
-     *            the timestamp
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public void updateExpiryTime(final ECpdsSession session, final long id, final Timestamp timestamp)
@@ -2063,17 +1683,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Update transfer monitoring value.
-     *
-     * @param session
-     *            the session
-     * @param value
-     *            the value
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
      */
     @Override
     public void updateTransferMonitoringValue(final ECpdsSession session, final MonitoringValue value)
@@ -2093,17 +1705,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Update file monitoring value.
-     *
-     * @param session
-     *            the session
-     * @param value
-     *            the value
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
      */
     @Override
     public void updateFileMonitoringValue(final ECpdsSession session, final MonitoringValue value)
@@ -2123,17 +1727,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Reset transfer schedule date.
-     *
-     * @param session
-     *            the session
-     * @param id
-     *            the id
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
      */
     @Override
     public void resetTransferScheduleDate(final ECpdsSession session, final long id)
@@ -2172,19 +1768,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Update host.
-     *
-     * @param session
-     *            the session
-     * @param host
-     *            the host
-     *
-     * @return the host
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
      */
     @Override
     public Host updateHost(final ECpdsSession session, final Host host) throws MasterException, DataBaseException {
@@ -2208,27 +1794,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Transfer.
-     *
-     * @param session
-     *            the session
-     * @param bytes
-     *            the bytes
-     * @param host
-     *            the host
-     * @param target
-     *            the target
-     * @param remotePosn
-     *            the remote posn
-     *
-     * @return the long
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public long transfer(final ECpdsSession session, final byte[] bytes, final Host host, final String target,
@@ -2258,21 +1826,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the report.
-     *
-     * @param session
-     *            the session
-     * @param host
-     *            the host
-     *
-     * @return the report
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public String getReport(final ECpdsSession session, final Host host)
@@ -2296,21 +1852,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the output.
-     *
-     * @param session
-     *            the session
-     * @param host
-     *            the host
-     *
-     * @return the output
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public RemoteInputStream getOutput(final ECpdsSession session, final Host host)
@@ -2334,23 +1878,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the host report.
-     *
-     * @param session
-     *            the session
-     * @param proxy
-     *            the proxy
-     * @param host
-     *            the host
-     *
-     * @return the host report
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public String getHostReport(final ECpdsSession session, final Host proxy, final Host host)
@@ -2375,19 +1905,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Clean data window.
-     *
-     * @param session
-     *            the session
-     * @param host
-     *            the host
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void cleanDataWindow(final ECpdsSession session, final Host host)
@@ -2413,19 +1933,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Reset transfer statistics.
-     *
-     * @param session
-     *            the session
-     * @param host
-     *            the host
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void resetTransferStatistics(final ECpdsSession session, final Host host)
@@ -2451,21 +1961,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the mover report.
-     *
-     * @param session
-     *            the session
-     * @param proxy
-     *            the proxy
-     *
-     * @return the mover report
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public String getMoverReport(final ECpdsSession session, final Host proxy)
@@ -2490,21 +1988,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the report.
-     *
-     * @param session
-     *            the session
-     * @param server
-     *            the server
-     *
-     * @return the report
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public String getReport(final ECpdsSession session, final TransferServer server)
@@ -2529,17 +2015,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Transfer status update allowed.
-     *
-     * @param id
-     *            the id
-     * @param code
-     *            the code
-     *
-     * @return true, if successful
-     *
-     * @throws MasterException
-     *             the master exception
      */
     @Override
     public boolean transferStatusUpdateAllowed(final long id, final String code) throws MasterException {
@@ -2548,19 +2026,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Update transfer status.
-     *
-     * @param session
-     *            the session
-     * @param id
-     *            the id
-     * @param code
-     *            the code
-     *
-     * @return true, if successful
-     *
-     * @throws MasterException
-     *             the master exception
      */
     @Override
     public boolean updateTransferStatus(final ECpdsSession session, final long id, final String code)
@@ -2599,12 +2067,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
-     * Resend data transfer events.
+     * {@inheritDoc}
      *
-     * @param root
-     *            the root
-     * @param dataTransferEventRequests
-     *            the data transfer event requests
+     * Resend data transfer events.
      */
     @Override
     public void resendDataTransferEvents(final String root,
@@ -2651,23 +2116,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Exec.
-     *
-     * @param session
-     *            the session
-     * @param environment
-     *            the environment
-     * @param request
-     *            the request
-     * @param service
-     *            the service
-     *
-     * @return the byte[]
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public byte[] exec(final ECpdsSession session, final Map<String, String> environment, final byte[] request,
@@ -2712,29 +2163,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Send E cpds message.
-     *
-     * @param session
-     *            the session
-     * @param from
-     *            the from
-     * @param to
-     *            the to
-     * @param cc
-     *            the cc
-     * @param subject
-     *            the subject
-     * @param content
-     *            the content
-     * @param attachmentName
-     *            the attachment name
-     * @param attachmentContent
-     *            the attachment content
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void sendECpdsMessage(final ECpdsSession session, final String from, final String to, final String cc,
@@ -2747,17 +2178,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the destination scheduler cache.
-     *
-     * @param destinationName
-     *            the destination name
-     *
-     * @return the destination scheduler cache
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public DestinationSchedulerCache getDestinationSchedulerCache(final String destinationName)
@@ -2777,29 +2200,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Compute filter efficiency.
-     *
-     * @param session
-     *            the session
-     * @param destinationName
-     *            the destination name
-     * @param email
-     *            the email
-     * @param filter
-     *            the filter
-     * @param date
-     *            the date
-     * @param includeStdby
-     *            the include stdby
-     * @param pattern
-     *            the pattern
-     *
-     * @return the string
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws MasterException
-     *             the master exception
      */
     @Override
     public String computeFilterEfficiency(final ECpdsSession session, final String destinationName, final String email,

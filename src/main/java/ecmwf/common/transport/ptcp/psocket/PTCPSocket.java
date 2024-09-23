@@ -99,9 +99,9 @@ public class PTCPSocket extends Socket {
      * @param num
      *            the num
      *
-     * @throws UnknownHostException
+     * @throws java.net.UnknownHostException
      *             the unknown host exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public PTCPSocket(final String host, final int port, final int num) throws UnknownHostException, IOException {
@@ -120,9 +120,9 @@ public class PTCPSocket extends Socket {
      * @param num
      *            the num
      *
-     * @throws UnknownHostException
+     * @throws java.net.UnknownHostException
      *             the unknown host exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public PTCPSocket(final InetAddress address, final int port, final int num)
@@ -146,9 +146,9 @@ public class PTCPSocket extends Socket {
      * @param num
      *            the num
      *
-     * @throws UnknownHostException
+     * @throws java.net.UnknownHostException
      *             the unknown host exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public PTCPSocket(final String host, final int port, final InetAddress localAddr, final int localPort,
@@ -172,9 +172,9 @@ public class PTCPSocket extends Socket {
      * @param num
      *            the num
      *
-     * @throws UnknownHostException
+     * @throws java.net.UnknownHostException
      *             the unknown host exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public PTCPSocket(final InetAddress address, final int port, final InetAddress localAddr, final int localPort,
@@ -185,9 +185,9 @@ public class PTCPSocket extends Socket {
     }
 
     /**
-     * Returns the address to which the socket is connected.
+     * {@inheritDoc}
      *
-     * @return the inet address
+     * Returns the address to which the socket is connected.
      */
     @Override
     public InetAddress getInetAddress() {
@@ -195,12 +195,9 @@ public class PTCPSocket extends Socket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Returns an input stream for this socket.
-     *
-     * @return the input stream
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public InputStream getInputStream() throws IOException {
@@ -217,13 +214,9 @@ public class PTCPSocket extends Socket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Enable/disable SO_KEEPALIVE.
-     *
-     * @param on
-     *            the new keep alive
-     *
-     * @throws SocketException
-     *             the socket exception
      */
     @Override
     public void setKeepAlive(final boolean on) throws SocketException {
@@ -238,12 +231,9 @@ public class PTCPSocket extends Socket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Tests if SO_KEEPALIVE is enabled.
-     *
-     * @return the keep alive
-     *
-     * @throws SocketException
-     *             the socket exception
      */
     @Override
     public boolean getKeepAlive() throws SocketException {
@@ -251,9 +241,9 @@ public class PTCPSocket extends Socket {
     }
 
     /**
-     * Gets the local address to which the socket is bound.
+     * {@inheritDoc}
      *
-     * @return the local address
+     * Gets the local address to which the socket is bound.
      */
     @Override
     public InetAddress getLocalAddress() {
@@ -261,9 +251,9 @@ public class PTCPSocket extends Socket {
     }
 
     /**
-     * Returns the local port to which this socket is bound.
+     * {@inheritDoc}
      *
-     * @return the local port
+     * Returns the local port to which this socket is bound.
      */
     @Override
     public int getLocalPort() {
@@ -271,12 +261,9 @@ public class PTCPSocket extends Socket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Returns an output stream for this socket.
-     *
-     * @return the output stream
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public OutputStream getOutputStream() throws IOException {
@@ -293,9 +280,9 @@ public class PTCPSocket extends Socket {
     }
 
     /**
-     * Returns the remote port to which this socket is connected.
+     * {@inheritDoc}
      *
-     * @return the port
+     * Returns the remote port to which this socket is connected.
      */
     @Override
     public int getPort() {
@@ -303,6 +290,8 @@ public class PTCPSocket extends Socket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the SO_RCVBUF option to the specified value for this Socket. The SO_RCVBUF option is used by the platform's
      * networking code as a hint for the size to set the underlying network I/O buffers.
      *
@@ -312,12 +301,6 @@ public class PTCPSocket extends Socket {
      *
      * Because SO_RCVBUF is a hint, applications that want to verify what size the buffers were set to should call
      * getReceiveBufferSize().
-     *
-     * @param size
-     *            the new receive buffer size
-     *
-     * @throws SocketException
-     *             the socket exception
      */
     @Override
     public void setReceiveBufferSize(final int size) throws SocketException {
@@ -338,13 +321,10 @@ public class PTCPSocket extends Socket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the value of the SO_RCVBUF option for this Socket, that is the buffer size used by the platform for input on
      * this Socket.
-     *
-     * @return the receive buffer size
-     *
-     * @throws SocketException
-     *             the socket exception
      */
     @Override
     public int getReceiveBufferSize() throws SocketException {
@@ -352,6 +332,8 @@ public class PTCPSocket extends Socket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the SO_SNDBUF option to the specified value for this Socket. The SO_SNDBUF option is used by the platform's
      * networking code as a hint for the size to set the underlying network I/O buffers.
      *
@@ -361,12 +343,6 @@ public class PTCPSocket extends Socket {
      *
      * Because SO_SNDBUF is a hint, applications that want to verify what size the buffers were set to should call
      * getSendBufferSize(). Parameters:
-     *
-     * @param size
-     *            the new send buffer size
-     *
-     * @throws SocketException
-     *             the socket exception
      */
     @Override
     public void setSendBufferSize(final int size) throws SocketException {
@@ -387,13 +363,10 @@ public class PTCPSocket extends Socket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Get value of the SO_SNDBUF option for this Socket, that is the buffer size used by the platform for output on
      * this Socket.
-     *
-     * @return the send buffer size
-     *
-     * @throws SocketException
-     *             the socket exception
      */
     @Override
     public int getSendBufferSize() throws SocketException {
@@ -401,16 +374,10 @@ public class PTCPSocket extends Socket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Enable/disable SO_LINGER with the specified linger time in seconds. The maximum timeout value is platform
      * specific. The setting only affects socket close.
-     *
-     * @param on
-     *            the on
-     * @param linger
-     *            the linger
-     *
-     * @throws SocketException
-     *             the socket exception
      */
     @Override
     public void setSoLinger(final boolean on, final int linger) throws SocketException {
@@ -425,13 +392,10 @@ public class PTCPSocket extends Socket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Returns setting for SO_LINGER. -1 returns implies that the option is disabled. The setting only affects socket
      * close.
-     *
-     * @return the so linger
-     *
-     * @throws SocketException
-     *             the socket exception
      */
     @Override
     public int getSoLinger() throws SocketException {
@@ -439,17 +403,13 @@ public class PTCPSocket extends Socket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Enable/disable SO_TIMEOUT with the specified timeout, in milliseconds. With this option set to a non-zero
      * timeout, a read() call on the InputStream associated with this Socket will block for only this amount of time. If
      * the timeout expires, a java.io.InterruptedIOException is raised, though the Socket is still valid. The option
      * must be enabled prior to entering the blocking operation to have effect. The timeout must be > 0. A timeout of
      * zero is interpreted as an infinite timeout.
-     *
-     * @param timeout
-     *            the new so timeout
-     *
-     * @throws SocketException
-     *             the socket exception
      */
     @Override
     public void setSoTimeout(final int timeout) throws SocketException {
@@ -464,12 +424,9 @@ public class PTCPSocket extends Socket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Returns setting for SO_TIMEOUT. 0 returns implies that the option is disabled (i.e., timeout of infinity).
-     *
-     * @return the so timeout
-     *
-     * @throws SocketException
-     *             the socket exception
      */
     @Override
     public int getSoTimeout() throws SocketException {
@@ -477,12 +434,9 @@ public class PTCPSocket extends Socket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Tests if TCP_NODELAY is enabled.
-     *
-     * @return the tcp no delay
-     *
-     * @throws SocketException
-     *             the socket exception
      */
     @Override
     public boolean getTcpNoDelay() throws SocketException {
@@ -490,13 +444,9 @@ public class PTCPSocket extends Socket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Enable/disable TCP_NODELAY (disable/enable Nagle's algorithm).
-     *
-     * @param on
-     *            the new tcp no delay
-     *
-     * @throws SocketException
-     *             the socket exception
      */
     @Override
     public void setTcpNoDelay(final boolean on) throws SocketException {
@@ -535,12 +485,11 @@ public class PTCPSocket extends Socket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Places the input stream for this socket at "end of stream". Any data sent to the input stream side of the socket
      * is acknowledged and then silently discarded. If you read from a socket input stream after invoking
      * shutdownInput() on the socket, the stream will return EOF.
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void shutdownInput() throws IOException {
@@ -548,12 +497,11 @@ public class PTCPSocket extends Socket {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Disables the output stream for this socket. For a TCP socket, any previously written data will be sent followed
      * by TCP's normal connection termination sequence. If you write to a socket output stream after invoking
      * shutdownOutput() on the socket, the stream will throw an IOException.
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void shutdownOutput() throws IOException {
@@ -561,9 +509,9 @@ public class PTCPSocket extends Socket {
     }
 
     /**
-     * Converts this socket to a String.
+     * {@inheritDoc}
      *
-     * @return the string
+     * Converts this socket to a String.
      */
     @Override
     public String toString() {
@@ -571,9 +519,9 @@ public class PTCPSocket extends Socket {
     }
 
     /**
-     * Returns the connection state of the socket.
+     * {@inheritDoc}
      *
-     * @return true if the socket successfuly connected to a server TODO: Implement this java.net.Socket method
+     * Returns the connection state of the socket.
      */
     @Override
     public boolean isConnected() {
@@ -581,10 +529,9 @@ public class PTCPSocket extends Socket {
     }
 
     /**
-     * Close.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Close.
      */
     @Override
     public void close() throws IOException {

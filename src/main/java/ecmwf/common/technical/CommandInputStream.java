@@ -66,7 +66,7 @@ public final class CommandInputStream extends FilterInputStream {
      * @param process
      *            the process
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public CommandInputStream(final InputStream in, final Process process) throws IOException {
@@ -88,7 +88,7 @@ public final class CommandInputStream extends FilterInputStream {
      * @param cmd
      *            the cmd
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public CommandInputStream(final InputStream in, final String[] cmd) throws IOException {
@@ -96,10 +96,9 @@ public final class CommandInputStream extends FilterInputStream {
     }
 
     /**
-     * Close.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Close.
      */
     @Override
     public void close() throws IOException {
@@ -135,7 +134,7 @@ public final class CommandInputStream extends FilterInputStream {
     /**
      * Flush.
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void flush() throws IOException {
@@ -143,12 +142,9 @@ public final class CommandInputStream extends FilterInputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Available.
-     *
-     * @return the int
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int available() throws IOException {
@@ -156,12 +152,9 @@ public final class CommandInputStream extends FilterInputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Read.
-     *
-     * @return the int
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int read() throws IOException {
@@ -169,15 +162,9 @@ public final class CommandInputStream extends FilterInputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Read.
-     *
-     * @param b
-     *            the b
-     *
-     * @return the int
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int read(final byte[] b) throws IOException {
@@ -185,19 +172,9 @@ public final class CommandInputStream extends FilterInputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Read.
-     *
-     * @param b
-     *            the b
-     * @param off
-     *            the off
-     * @param len
-     *            the len
-     *
-     * @return the int
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int read(final byte[] b, final int off, final int len) throws IOException {
@@ -205,15 +182,9 @@ public final class CommandInputStream extends FilterInputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Skip.
-     *
-     * @param n
-     *            the n
-     *
-     * @return the long
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public long skip(final long n) throws IOException {
@@ -221,19 +192,18 @@ public final class CommandInputStream extends FilterInputStream {
     }
 
     /**
-     * Mark.
+     * {@inheritDoc}
      *
-     * @param readlimit
-     *            the readlimit
+     * Mark.
      */
     @Override
     public void mark(final int readlimit) {
     }
 
     /**
-     * Mark supported.
+     * {@inheritDoc}
      *
-     * @return true, if successful
+     * Mark supported.
      */
     @Override
     public boolean markSupported() {
@@ -241,6 +211,8 @@ public final class CommandInputStream extends FilterInputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Reset.
      */
     @Override
@@ -248,10 +220,9 @@ public final class CommandInputStream extends FilterInputStream {
     }
 
     /**
-     * Finalize.
+     * {@inheritDoc}
      *
-     * @throws Throwable
-     *             the throwable
+     * Finalize.
      */
     @Override
     public void finalize() throws Throwable {

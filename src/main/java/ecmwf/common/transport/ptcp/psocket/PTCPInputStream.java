@@ -71,10 +71,9 @@ public class PTCPInputStream extends InputStream {
      * @param streams
      *            the streams
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
-
     public PTCPInputStream(final InputStream[] streams) throws IOException {
         _doneSynchro = new Object();
         _out = new ByteArrayOutputStream();
@@ -90,10 +89,9 @@ public class PTCPInputStream extends InputStream {
     }
 
     /**
-     * Closes this input stream and releases any system resources associated with the stream.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Closes this input stream and releases any system resources associated with the stream.
      */
     @Override
     public void close() throws IOException {
@@ -139,6 +137,8 @@ public class PTCPInputStream extends InputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Reads the next byte of data from the input stream. The value byte is returned as an int in the range 0 to 255. If
      * no byte is available because the end of the stream has been reached, the value -1 is returned. This method blocks
      * until input data is available, the end of thestream is detected, or an exception is thrown.
@@ -147,11 +147,6 @@ public class PTCPInputStream extends InputStream {
      * be thrown.
      *
      * Returns: the next byte of data, or -1 if the end of the stream is reached.
-     *
-     * @return the int
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
 
     @Override
@@ -166,19 +161,13 @@ public class PTCPInputStream extends InputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Reads some number of bytes from the input stream and stores them into the buffer array b. The number of bytes
      * actually read is returned as an integer. This method blocks until input data is available, end of file is
      * detected, or an exception is thrown.
      *
      * If size of b is less than data size from input stream, an IOException will be thrown.
-     *
-     * @param b
-     *            the b
-     *
-     * @return the int
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int read(final byte[] b) throws IOException {
@@ -186,6 +175,8 @@ public class PTCPInputStream extends InputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Reads up to len bytes of data from the input stream into an array of bytes. An attempt is made to read as many as
      * len bytes, but a smaller number may be read, possibly zero. The number of bytes actually read is returned as an
      * integer.
@@ -193,18 +184,6 @@ public class PTCPInputStream extends InputStream {
      * This method blocks until input data is available, end of file is detected, or an exception is thrown.
      *
      * The parameter len must be larger than the size of data being sent over, or an IOException is thrown.
-     *
-     * @param b
-     *            - the data.
-     * @param off
-     *            - the start offset in the data.
-     * @param length
-     *            - the maximum number of bytes to read.
-     *
-     * @return the int
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int read(final byte[] b, final int off, int length) throws IOException {

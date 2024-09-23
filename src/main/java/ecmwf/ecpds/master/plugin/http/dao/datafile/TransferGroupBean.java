@@ -64,9 +64,9 @@ public class TransferGroupBean extends ModelBeanBase implements TransferGroup, O
     }
 
     /**
-     * Gets the host for backup.
+     * {@inheritDoc}
      *
-     * @return the host for backup
+     * Gets the host for backup.
      */
     @Override
     public Host getHostForBackup() {
@@ -74,9 +74,9 @@ public class TransferGroupBean extends ModelBeanBase implements TransferGroup, O
     }
 
     /**
-     * Gets the host for backup name.
+     * {@inheritDoc}
      *
-     * @return the host for backup name
+     * Gets the host for backup name.
      */
     @Override
     public String getHostForBackupName() {
@@ -84,10 +84,9 @@ public class TransferGroupBean extends ModelBeanBase implements TransferGroup, O
     }
 
     /**
-     * Sets the host for backup name.
+     * {@inheritDoc}
      *
-     * @param name
-     *            the new host for backup name
+     * Sets the host for backup name.
      */
     @Override
     public void setHostForBackupName(final String name) {
@@ -95,9 +94,9 @@ public class TransferGroupBean extends ModelBeanBase implements TransferGroup, O
     }
 
     /**
-     * Gets the bean interface name.
+     * {@inheritDoc}
      *
-     * @return the bean interface name
+     * Gets the bean interface name.
      */
     @Override
     public String getBeanInterfaceName() {
@@ -105,9 +104,9 @@ public class TransferGroupBean extends ModelBeanBase implements TransferGroup, O
     }
 
     /**
-     * Gets the ojb implementation.
+     * {@inheritDoc}
      *
-     * @return the ojb implementation
+     * Gets the ojb implementation.
      */
     @Override
     public DataBaseObject getOjbImplementation() {
@@ -115,9 +114,9 @@ public class TransferGroupBean extends ModelBeanBase implements TransferGroup, O
     }
 
     /**
-     * Gets the id.
+     * {@inheritDoc}
      *
-     * @return the id
+     * Gets the id.
      */
     @Override
     public String getId() {
@@ -125,9 +124,9 @@ public class TransferGroupBean extends ModelBeanBase implements TransferGroup, O
     }
 
     /**
-     * Gets the min filtering count.
+     * {@inheritDoc}
      *
-     * @return the min filtering count
+     * Gets the min filtering count.
      */
     @Override
     public int getMinFilteringCount() {
@@ -135,9 +134,9 @@ public class TransferGroupBean extends ModelBeanBase implements TransferGroup, O
     }
 
     /**
-     * Gets the min replication count.
+     * {@inheritDoc}
      *
-     * @return the min replication count
+     * Gets the min replication count.
      */
     @Override
     public int getMinReplicationCount() {
@@ -145,9 +144,9 @@ public class TransferGroupBean extends ModelBeanBase implements TransferGroup, O
     }
 
     /**
-     * Gets the cluster weight.
+     * {@inheritDoc}
      *
-     * @return the cluster weight
+     * Gets the cluster weight.
      */
     @Override
     public int getClusterWeight() {
@@ -155,9 +154,9 @@ public class TransferGroupBean extends ModelBeanBase implements TransferGroup, O
     }
 
     /**
-     * Gets the volume count.
+     * {@inheritDoc}
      *
-     * @return the volume count
+     * Gets the volume count.
      */
     @Override
     public int getVolumeCount() {
@@ -165,9 +164,9 @@ public class TransferGroupBean extends ModelBeanBase implements TransferGroup, O
     }
 
     /**
-     * Gets the active.
+     * {@inheritDoc}
      *
-     * @return the active
+     * Gets the active.
      */
     @Override
     public boolean getActive() {
@@ -175,9 +174,9 @@ public class TransferGroupBean extends ModelBeanBase implements TransferGroup, O
     }
 
     /**
-     * Gets the backup.
+     * {@inheritDoc}
      *
-     * @return the backup
+     * Gets the backup.
      */
     @Override
     public boolean getBackup() {
@@ -185,9 +184,9 @@ public class TransferGroupBean extends ModelBeanBase implements TransferGroup, O
     }
 
     /**
-     * Gets the replicate.
+     * {@inheritDoc}
      *
-     * @return the replicate
+     * Gets the replicate.
      */
     @Override
     public boolean getReplicate() {
@@ -195,9 +194,9 @@ public class TransferGroupBean extends ModelBeanBase implements TransferGroup, O
     }
 
     /**
-     * Gets the filter.
+     * {@inheritDoc}
      *
-     * @return the filter
+     * Gets the filter.
      */
     @Override
     public boolean getFilter() {
@@ -205,9 +204,9 @@ public class TransferGroupBean extends ModelBeanBase implements TransferGroup, O
     }
 
     /**
-     * Gets the comment.
+     * {@inheritDoc}
      *
-     * @return the comment
+     * Gets the comment.
      */
     @Override
     public String getComment() {
@@ -215,9 +214,9 @@ public class TransferGroupBean extends ModelBeanBase implements TransferGroup, O
     }
 
     /**
-     * Gets the name.
+     * {@inheritDoc}
      *
-     * @return the name
+     * Gets the name.
      */
     @Override
     public String getName() {
@@ -225,9 +224,9 @@ public class TransferGroupBean extends ModelBeanBase implements TransferGroup, O
     }
 
     /**
-     * Gets the cluster name.
+     * {@inheritDoc}
      *
-     * @return the cluster name
+     * Gets the cluster name.
      */
     @Override
     public String getClusterName() {
@@ -235,12 +234,9 @@ public class TransferGroupBean extends ModelBeanBase implements TransferGroup, O
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the transfer servers.
-     *
-     * @return the transfer servers
-     *
-     * @throws DataFileException
-     *             the data file exception
      */
     @Override
     public Collection<TransferServer> getTransferServers() throws DataFileException {
@@ -248,10 +244,9 @@ public class TransferGroupBean extends ModelBeanBase implements TransferGroup, O
     }
 
     /**
-     * Adds the transfer server.
+     * {@inheritDoc}
      *
-     * @param h
-     *            the h
+     * Adds the transfer server.
      */
     @Override
     public synchronized void addTransferServer(final TransferServer h) {
@@ -259,10 +254,9 @@ public class TransferGroupBean extends ModelBeanBase implements TransferGroup, O
     }
 
     /**
-     * Delete transfer server.
+     * {@inheritDoc}
      *
-     * @param h
-     *            the h
+     * Delete transfer server.
      */
     @Override
     public synchronized void deleteTransferServer(final TransferServer h) {
@@ -270,10 +264,9 @@ public class TransferGroupBean extends ModelBeanBase implements TransferGroup, O
     }
 
     /**
-     * Sets the min filtering count.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new min filtering count
+     * Sets the min filtering count.
      */
     @Override
     public void setMinFilteringCount(final int param) {
@@ -281,10 +274,9 @@ public class TransferGroupBean extends ModelBeanBase implements TransferGroup, O
     }
 
     /**
-     * Sets the volume count.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new volume count
+     * Sets the volume count.
      */
     @Override
     public void setVolumeCount(final int param) {
@@ -292,10 +284,9 @@ public class TransferGroupBean extends ModelBeanBase implements TransferGroup, O
     }
 
     /**
-     * Sets the min replication count.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new min replication count
+     * Sets the min replication count.
      */
     @Override
     public void setMinReplicationCount(final int param) {
@@ -303,10 +294,9 @@ public class TransferGroupBean extends ModelBeanBase implements TransferGroup, O
     }
 
     /**
-     * Sets the cluster weight.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new cluster weight
+     * Sets the cluster weight.
      */
     @Override
     public void setClusterWeight(final int param) {
@@ -314,10 +304,9 @@ public class TransferGroupBean extends ModelBeanBase implements TransferGroup, O
     }
 
     /**
-     * Sets the active.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new active
+     * Sets the active.
      */
     @Override
     public void setActive(final boolean param) {
@@ -325,10 +314,9 @@ public class TransferGroupBean extends ModelBeanBase implements TransferGroup, O
     }
 
     /**
-     * Sets the replicate.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new replicate
+     * Sets the replicate.
      */
     @Override
     public void setReplicate(final boolean param) {
@@ -336,10 +324,9 @@ public class TransferGroupBean extends ModelBeanBase implements TransferGroup, O
     }
 
     /**
-     * Sets the filter.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new filter
+     * Sets the filter.
      */
     @Override
     public void setFilter(final boolean param) {
@@ -347,10 +334,9 @@ public class TransferGroupBean extends ModelBeanBase implements TransferGroup, O
     }
 
     /**
-     * Sets the backup.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new backup
+     * Sets the backup.
      */
     @Override
     public void setBackup(final boolean param) {
@@ -358,10 +344,9 @@ public class TransferGroupBean extends ModelBeanBase implements TransferGroup, O
     }
 
     /**
-     * Sets the comment.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new comment
+     * Sets the comment.
      */
     @Override
     public void setComment(final String param) {
@@ -369,10 +354,9 @@ public class TransferGroupBean extends ModelBeanBase implements TransferGroup, O
     }
 
     /**
-     * Sets the name.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new name
+     * Sets the name.
      */
     @Override
     public void setName(final String param) {
@@ -380,10 +364,9 @@ public class TransferGroupBean extends ModelBeanBase implements TransferGroup, O
     }
 
     /**
-     * Sets the cluster name.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new cluster name
+     * Sets the cluster name.
      */
     @Override
     public void setClusterName(final String param) {
@@ -409,12 +392,9 @@ public class TransferGroupBean extends ModelBeanBase implements TransferGroup, O
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Equals.
-     *
-     * @param o
-     *            the o
-     *
-     * @return true, if successful
      */
     @Override
     public boolean equals(final Object o) {
@@ -434,9 +414,9 @@ public class TransferGroupBean extends ModelBeanBase implements TransferGroup, O
     }
 
     /**
-     * Hash code.
+     * {@inheritDoc}
      *
-     * @return the int
+     * Hash code.
      */
     @Override
     public int hashCode() {
@@ -444,9 +424,9 @@ public class TransferGroupBean extends ModelBeanBase implements TransferGroup, O
     }
 
     /**
-     * To string.
+     * {@inheritDoc}
      *
-     * @return the string
+     * To string.
      */
     @Override
     public String toString() {

@@ -75,9 +75,9 @@ public class DestinationProductStatusCalculatorTask extends MBeanScheduler {
     }
 
     /**
-     * Next step.
+     * {@inheritDoc}
      *
-     * @return the int
+     * Next step.
      */
     @Override
     public int nextStep() {

@@ -236,7 +236,7 @@ public final class TelnetHandler {
      * @param socket
      *            the socket
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public TelnetHandler(final Socket socket) throws IOException {
@@ -253,7 +253,7 @@ public final class TelnetHandler {
      * @param out
      *            the out
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public TelnetHandler(final InputStream in, final OutputStream out) throws IOException {
@@ -274,7 +274,7 @@ public final class TelnetHandler {
      *
      * @return the char
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public char nextChar() throws IOException {
@@ -318,7 +318,7 @@ public final class TelnetHandler {
     /**
      * Flush.
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void flush() throws IOException {
@@ -336,7 +336,7 @@ public final class TelnetHandler {
      * @param c
      *            the c
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void send(final char c) throws IOException {
@@ -350,7 +350,7 @@ public final class TelnetHandler {
      * @param c
      *            the c
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void print(final char c) throws IOException {
@@ -375,7 +375,7 @@ public final class TelnetHandler {
     /**
      * Println.
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void println() throws IOException {
@@ -389,7 +389,7 @@ public final class TelnetHandler {
      * @param s
      *            the s
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void print(final String s) throws IOException {
@@ -407,7 +407,7 @@ public final class TelnetHandler {
      * @param s
      *            the s
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void println(final String s) throws IOException {
@@ -423,7 +423,7 @@ public final class TelnetHandler {
      * @param state
      *            the state
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void sendOption(final char option, final boolean state) throws IOException {
@@ -440,7 +440,7 @@ public final class TelnetHandler {
      * @param state
      *            the state
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void sendOptionRequest(final char option, final boolean state) throws IOException {
@@ -495,7 +495,7 @@ public final class TelnetHandler {
      *
      * @return the input stream
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public InputStream getInputStream() throws IOException {
@@ -507,7 +507,7 @@ public final class TelnetHandler {
      *
      * @return the output stream
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public OutputStream getOutputStream() throws IOException {
@@ -638,7 +638,7 @@ public final class TelnetHandler {
      *
      * @return the string
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public String readLine(final int size, final String set) throws IOException {
@@ -657,7 +657,7 @@ public final class TelnetHandler {
      *
      * @return the string
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public String readLine(final int echo, final int size, final String set) throws IOException {
@@ -731,7 +731,7 @@ public final class TelnetHandler {
      *
      * @return the string
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public String readString(final String message, final int size, final String set) throws IOException {
@@ -752,7 +752,7 @@ public final class TelnetHandler {
      *
      * @return the string
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public String readString(final String message, final int size, final String set, final String[] values)
@@ -776,7 +776,7 @@ public final class TelnetHandler {
      *
      * @return the string
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     @SuppressWarnings("null")
@@ -816,7 +816,7 @@ public final class TelnetHandler {
      *
      * @return the password
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public String getPassword(final int size, final String set, final String message, final File help)
@@ -840,7 +840,7 @@ public final class TelnetHandler {
      *
      * @return the password
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public String getPassword(final int size, final String set, final String message, final String verify,
@@ -888,7 +888,7 @@ public final class TelnetHandler {
      *
      * @return the char
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public char readChar(final String message, final String[] values) throws IOException {
@@ -909,7 +909,7 @@ public final class TelnetHandler {
      *
      * @return the string
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public String readString(final String message, final int size, final String[] values, final int defaultValue)
@@ -937,7 +937,7 @@ public final class TelnetHandler {
      * @param param
      *            the param
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void subNegotiation(final char option, final char param) throws IOException {
@@ -952,7 +952,7 @@ public final class TelnetHandler {
      * @param params
      *            the params
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void subNegotiation(final char option, final char[] params) throws IOException {

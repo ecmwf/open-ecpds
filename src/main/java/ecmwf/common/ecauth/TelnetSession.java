@@ -51,9 +51,9 @@ public final class TelnetSession implements InteractiveSession {
     private final boolean _debug;
 
     /**
-     * Gets the debug.
+     * {@inheritDoc}
      *
-     * @return the debug
+     * Gets the debug.
      */
     @Override
     public boolean getDebug() {
@@ -61,13 +61,9 @@ public final class TelnetSession implements InteractiveSession {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Send.
-     *
-     * @param cmd
-     *            the cmd
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void send(final String cmd) throws IOException {
@@ -75,15 +71,9 @@ public final class TelnetSession implements InteractiveSession {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Waitfor.
-     *
-     * @param searchElements
-     *            the search elements
-     *
-     * @return the string
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public String waitfor(final String... searchElements) throws IOException {
@@ -91,9 +81,9 @@ public final class TelnetSession implements InteractiveSession {
     }
 
     /**
-     * Checks if is connected.
+     * {@inheritDoc}
      *
-     * @return true, if is connected
+     * Checks if is connected.
      */
     @Override
     public boolean isConnected() {
@@ -101,6 +91,8 @@ public final class TelnetSession implements InteractiveSession {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Disconnect.
      */
     @Override
@@ -122,7 +114,7 @@ public final class TelnetSession implements InteractiveSession {
      * @param debug
      *            the debug
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public TelnetSession(final Socket socket, final String login, final String password, final byte[] token,

@@ -74,7 +74,7 @@ public abstract class SimplePlugin extends ServerPlugin {
      * @param socket
      *            the socket
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public SimplePlugin(final String ref, final Map<String, String> params, final Socket socket) throws IOException {
@@ -114,28 +114,18 @@ public abstract class SimplePlugin extends ServerPlugin {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Refuse connection.
-     *
-     * @param socket
-     *            the socket
-     * @param connectionsCount
-     *            the connections count
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void refuseConnection(final Socket socket, final int connectionsCount) throws IOException {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Start connection.
-     *
-     * @param socket
-     *            the socket
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void startConnection(final Socket socket) throws IOException {
@@ -186,7 +176,7 @@ public abstract class SimplePlugin extends ServerPlugin {
      * @param parameters
      *            the parameters
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     public void invoke(final String command, final String[] parameters) throws Exception {
@@ -196,12 +186,9 @@ public abstract class SimplePlugin extends ServerPlugin {
     }
 
     /**
-     * Release connection.
+     * {@inheritDoc}
      *
-     * @param socket
-     *            the socket
-     * @param close
-     *            the close
+     * Release connection.
      */
     @Override
     public void releaseConnection(final Socket socket, final boolean close) {
@@ -231,7 +218,7 @@ public abstract class SimplePlugin extends ServerPlugin {
      *
      * @return the string
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     protected String readLine() throws IOException {
@@ -269,7 +256,7 @@ public abstract class SimplePlugin extends ServerPlugin {
      * @param parameters
      *            the parameters
      *
-     * @throws ParameterException
+     * @throws ecmwf.common.plugin.SimplePlugin.ParameterException
      *             the parameter exception
      */
     public void optsReq(final String[] parameters) throws ParameterException {
@@ -319,7 +306,7 @@ public abstract class SimplePlugin extends ServerPlugin {
      * @param message
      *            the message
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     protected void print(final String message) throws IOException {
@@ -333,7 +320,7 @@ public abstract class SimplePlugin extends ServerPlugin {
      * @param message
      *            the message
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     protected void println(final String message) throws IOException {
@@ -360,7 +347,7 @@ public abstract class SimplePlugin extends ServerPlugin {
      * @param message
      *            the message
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     protected void send(final String message) throws IOException {
@@ -373,7 +360,7 @@ public abstract class SimplePlugin extends ServerPlugin {
      * @param message
      *            the message
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     protected void wait(final String message) throws IOException {
@@ -390,7 +377,7 @@ public abstract class SimplePlugin extends ServerPlugin {
      * @param message
      *            the message
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     protected void send(final long message) throws IOException {
@@ -423,7 +410,7 @@ public abstract class SimplePlugin extends ServerPlugin {
      *
      * @return the parameter
      *
-     * @throws ParameterException
+     * @throws ecmwf.common.plugin.SimplePlugin.ParameterException
      *             the parameter exception
      */
     protected static String getParameter(final String[] parameters) throws ParameterException {

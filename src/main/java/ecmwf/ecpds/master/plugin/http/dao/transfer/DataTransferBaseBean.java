@@ -86,10 +86,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Sets the user.
+     * {@inheritDoc}
      *
-     * @param user
-     *            the new user
+     * Sets the user.
      */
     @Override
     public void setUser(final User user) {
@@ -97,9 +96,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the user.
+     * {@inheritDoc}
      *
-     * @return the user
+     * Gets the user.
      */
     @Override
     public User getUser() {
@@ -107,9 +106,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the bean interface name.
+     * {@inheritDoc}
      *
-     * @return the bean interface name
+     * Gets the bean interface name.
      */
     @Override
     public String getBeanInterfaceName() {
@@ -117,9 +116,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the id.
+     * {@inheritDoc}
      *
-     * @return the id
+     * Gets the id.
      */
     @Override
     public String getId() {
@@ -127,9 +126,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the backup.
+     * {@inheritDoc}
      *
-     * @return the backup
+     * Gets the backup.
      */
     @Override
     public boolean getBackup() {
@@ -137,9 +136,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the proxy.
+     * {@inheritDoc}
      *
-     * @return the proxy
+     * Gets the proxy.
      */
     @Override
     public boolean getProxy() {
@@ -147,9 +146,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the backup host name.
+     * {@inheritDoc}
      *
-     * @return the backup host name
+     * Gets the backup host name.
      */
     @Override
     public String getBackupHostName() {
@@ -157,9 +156,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the proxy host name.
+     * {@inheritDoc}
      *
-     * @return the proxy host name
+     * Gets the proxy host name.
      */
     @Override
     public String getProxyHostName() {
@@ -167,12 +166,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the backup host.
-     *
-     * @return the backup host
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Host getBackupHost() throws TransferException {
@@ -184,12 +180,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the proxy host.
-     *
-     * @return the proxy host
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Host getProxyHost() throws TransferException {
@@ -201,9 +194,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the replicated.
+     * {@inheritDoc}
      *
-     * @return the replicated
+     * Gets the replicated.
      */
     @Override
     public boolean getReplicated() {
@@ -211,9 +204,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the unique key.
+     * {@inheritDoc}
      *
-     * @return the unique key
+     * Gets the unique key.
      */
     @Override
     public String getUniqueKey() {
@@ -221,9 +214,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the comment.
+     * {@inheritDoc}
      *
-     * @return the comment
+     * Gets the comment.
      */
     @Override
     public String getComment() {
@@ -231,9 +224,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the formatted comment.
+     * {@inheritDoc}
      *
-     * @return the formatted comment
+     * Gets the formatted comment.
      */
     @Override
     public String getFormattedComment() {
@@ -241,9 +234,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the identity.
+     * {@inheritDoc}
      *
-     * @return the identity
+     * Gets the identity.
      */
     @Override
     public String getIdentity() {
@@ -251,9 +244,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the ojb implementation.
+     * {@inheritDoc}
      *
-     * @return the ojb implementation
+     * Gets the ojb implementation.
      */
     @Override
     public DataBaseObject getOjbImplementation() {
@@ -261,12 +254,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the data file.
-     *
-     * @return the data file
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public DataFile getDataFile() throws TransferException {
@@ -278,7 +268,7 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
      *
      * @return the arrival monitoring parameters
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public ArrivalMonitoringParameters getArrivalMonitoringParameters() throws TransferException {
@@ -290,7 +280,7 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
      *
      * @return the transfer monitoring parameters
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public TransferMonitoringParameters getTransferMonitoringParameters() throws TransferException {
@@ -298,9 +288,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the data file id.
+     * {@inheritDoc}
      *
-     * @return the data file id
+     * Gets the data file id.
      */
     @Override
     public long getDataFileId() {
@@ -308,9 +298,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the deleted.
+     * {@inheritDoc}
      *
-     * @return the deleted
+     * Gets the deleted.
      */
     @Override
     public boolean getDeleted() {
@@ -318,12 +308,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the destination.
-     *
-     * @return the destination
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Destination getDestination() throws TransferException {
@@ -331,9 +318,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the destination name.
+     * {@inheritDoc}
      *
-     * @return the destination name
+     * Gets the destination name.
      */
     @Override
     public String getDestinationName() {
@@ -341,9 +328,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the expiry date.
+     * {@inheritDoc}
      *
-     * @return the expiry date
+     * Gets the expiry date.
      */
     @Override
     public Date getExpiryDate() {
@@ -351,9 +338,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the expired.
+     * {@inheritDoc}
      *
-     * @return the expired
+     * Gets the expired.
      */
     @Override
     public boolean getExpired() {
@@ -362,12 +349,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the host.
-     *
-     * @return the host
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Host getHost() throws TransferException {
@@ -379,9 +363,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the host nick name.
+     * {@inheritDoc}
      *
-     * @return the host nick name
+     * Gets the host nick name.
      */
     @Override
     public String getHostNickName() {
@@ -393,9 +377,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the collection size.
+     * {@inheritDoc}
      *
-     * @return the collection size
+     * Gets the collection size.
      */
     @Override
     public int getCollectionSize() {
@@ -403,9 +387,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the host name.
+     * {@inheritDoc}
      *
-     * @return the host name
+     * Gets the host name.
      */
     @Override
     public String getHostName() {
@@ -413,9 +397,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the priority.
+     * {@inheritDoc}
      *
-     * @return the priority
+     * Gets the priority.
      */
     @Override
     public int getPriority() {
@@ -433,7 +417,7 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
      * @param i
      *            the new priority
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public void setPriority(final int i) throws TransferException {
@@ -441,9 +425,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the start time.
+     * {@inheritDoc}
      *
-     * @return the start time
+     * Gets the start time.
      */
     @Override
     public Date getStartTime() {
@@ -451,9 +435,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the retry time.
+     * {@inheritDoc}
      *
-     * @return the retry time
+     * Gets the retry time.
      */
     @Override
     public Date getRetryTime() {
@@ -461,9 +445,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the failed time.
+     * {@inheritDoc}
      *
-     * @return the failed time
+     * Gets the failed time.
      */
     @Override
     public Date getFailedTime() {
@@ -471,12 +455,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the scheduled time minus minutes.
-     *
-     * @param minutesBefore
-     *            the minutes before
-     *
-     * @return the scheduled time minus minutes
      */
     @Override
     public Date getScheduledTimeMinusMinutes(final int minutesBefore) {
@@ -484,9 +465,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the finish time.
+     * {@inheritDoc}
      *
-     * @return the finish time
+     * Gets the finish time.
      */
     @Override
     public Date getFinishTime() {
@@ -494,9 +475,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the real finish time.
+     * {@inheritDoc}
      *
-     * @return the real finish time
+     * Gets the real finish time.
      */
     @Override
     public Date getRealFinishTime() {
@@ -504,9 +485,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the scheduled time.
+     * {@inheritDoc}
      *
-     * @return the scheduled time
+     * Gets the scheduled time.
      */
     @Override
     public Date getScheduledTime() {
@@ -514,9 +495,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the queue time.
+     * {@inheritDoc}
      *
-     * @return the queue time
+     * Gets the queue time.
      */
     @Override
     public Date getQueueTime() {
@@ -524,9 +505,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the predicted time.
+     * {@inheritDoc}
      *
-     * @return the predicted time
+     * Gets the predicted time.
      */
     @Override
     public Date getPredictedTime() {
@@ -535,9 +516,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the earliest time.
+     * {@inheritDoc}
      *
-     * @return the earliest time
+     * Gets the earliest time.
      */
     @Override
     public Date getEarliestTime() {
@@ -546,9 +527,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the latest time.
+     * {@inheritDoc}
      *
-     * @return the latest time
+     * Gets the latest time.
      */
     @Override
     public Date getLatestTime() {
@@ -557,9 +538,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the target time.
+     * {@inheritDoc}
      *
-     * @return the target time
+     * Gets the target time.
      */
     @Override
     public Date getTargetTime() {
@@ -568,9 +549,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the start count.
+     * {@inheritDoc}
      *
-     * @return the start count
+     * Gets the start count.
      */
     @Override
     public int getStartCount() {
@@ -578,9 +559,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the requeue count.
+     * {@inheritDoc}
      *
-     * @return the requeue count
+     * Gets the requeue count.
      */
     @Override
     public int getRequeueCount() {
@@ -588,10 +569,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Sets the start count.
+     * {@inheritDoc}
      *
-     * @param i
-     *            the new start count
+     * Sets the start count.
      */
     @Override
     public void setStartCount(final int i) {
@@ -599,12 +579,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the status.
-     *
-     * @return the status
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public String getStatus() throws TransferException {
@@ -612,12 +589,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the formatted status.
-     *
-     * @return the formatted status
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public String getFormattedStatus() throws TransferException {
@@ -625,12 +599,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the member state formatted status.
-     *
-     * @return the member state formatted status
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public String getMemberStateFormattedStatus() throws TransferException {
@@ -638,12 +609,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the detailed status.
-     *
-     * @return the detailed status
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public String getDetailedStatus() throws TransferException {
@@ -651,12 +619,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the member state detailed status.
-     *
-     * @return the member state detailed status
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public String getMemberStateDetailedStatus() throws TransferException {
@@ -664,9 +629,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the status code.
+     * {@inheritDoc}
      *
-     * @return the status code
+     * Gets the status code.
      */
     @Override
     public String getStatusCode() {
@@ -674,9 +639,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the target.
+     * {@inheritDoc}
      *
-     * @return the target
+     * Gets the target.
      */
     @Override
     public String getTarget() {
@@ -684,12 +649,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the transfer server.
-     *
-     * @return the transfer server
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public TransferServer getTransferServer() throws TransferException {
@@ -701,12 +663,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the transfer history.
-     *
-     * @return the transfer history
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Collection<TransferHistory> getTransferHistory() throws TransferException {
@@ -714,12 +673,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the transfer history after scheduled time.
-     *
-     * @return the transfer history after scheduled time
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Collection<TransferHistory> getTransferHistoryAfterScheduledTime() throws TransferException {
@@ -734,12 +690,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the older transfers for same data file.
-     *
-     * @return the older transfers for same data file
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Collection<DataTransfer> getOlderTransfersForSameDataFile() throws TransferException {
@@ -747,10 +700,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Sets the data file id.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new data file id
+     * Sets the data file id.
      */
     @Override
     public void setDataFileId(final long param) {
@@ -768,10 +720,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Sets the destination name.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new destination name
+     * Sets the destination name.
      */
     @Override
     public void setDestinationName(final String param) {
@@ -779,10 +730,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Sets the expiry date.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new expiry date
+     * Sets the expiry date.
      */
     @Override
     public void setExpiryDate(final Date param) {
@@ -790,10 +740,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Sets the host name.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new host name
+     * Sets the host name.
      */
     @Override
     public void setHostName(final String param) {
@@ -801,10 +750,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Sets the backup host name.
+     * {@inheritDoc}
      *
-     * @param name
-     *            the new backup host name
+     * Sets the backup host name.
      */
     @Override
     public void setBackupHostName(final String name) {
@@ -812,10 +760,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Sets the proxy host name.
+     * {@inheritDoc}
      *
-     * @param name
-     *            the new proxy host name
+     * Sets the proxy host name.
      */
     @Override
     public void setProxyHostName(final String name) {
@@ -823,15 +770,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the priority.
-     *
-     * @param param
-     *            the param
-     * @param u
-     *            the u
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public void setPriority(final int param, final User u) throws TransferException {
@@ -845,15 +786,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the expiry date.
-     *
-     * @param date
-     *            the date
-     * @param u
-     *            the u
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public void setExpiryDate(final Date date, final User u) throws TransferException {
@@ -868,10 +803,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Sets the start time.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new start time
+     * Sets the start time.
      */
     @Override
     public void setStartTime(final Date param) {
@@ -879,10 +813,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Sets the finish time.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new finish time
+     * Sets the finish time.
      */
     @Override
     public void setFinishTime(final Date param) {
@@ -890,20 +823,18 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Sets the status.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new status
+     * Sets the status.
      */
     @Override
     public void setStatus(final String param) {
     }
 
     /**
-     * Sets the target.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new target
+     * Sets the target.
      */
     @Override
     public void setTarget(final String param) {
@@ -911,10 +842,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Sets the transfer server name.
+     * {@inheritDoc}
      *
-     * @param param
-     *            the new transfer server name
+     * Sets the transfer server name.
      */
     @Override
     public void setTransferServerName(final String param) {
@@ -922,12 +852,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the retrieval progress.
-     *
-     * @return the retrieval progress
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public String getRetrievalProgress() throws TransferException {
@@ -945,9 +872,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the transfer server name.
+     * {@inheritDoc}
      *
-     * @return the transfer server name
+     * Gets the transfer server name.
      */
     @Override
     public String getTransferServerName() {
@@ -962,12 +889,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the progress.
-     *
-     * @return the progress
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public int getProgress() throws TransferException {
@@ -979,12 +903,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the sent.
-     *
-     * @return the sent
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public long getSent() throws TransferException {
@@ -992,9 +913,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the duration.
+     * {@inheritDoc}
      *
-     * @return the duration
+     * Gets the duration.
      */
     @Override
     public long getDuration() {
@@ -1002,9 +923,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the asap.
+     * {@inheritDoc}
      *
-     * @return the asap
+     * Gets the asap.
      */
     @Override
     public boolean getAsap() {
@@ -1012,12 +933,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the transfer rate.
-     *
-     * @return the transfer rate
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public long getTransferRate() throws TransferException {
@@ -1027,12 +945,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the formatted transfer rate.
-     *
-     * @return the formatted transfer rate
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public String getFormattedTransferRate() throws TransferException {
@@ -1040,12 +955,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the formatted transfer rate in M bits per seconds.
-     *
-     * @return the formatted transfer rate in M bits per seconds
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public double getFormattedTransferRateInMBitsPerSeconds() throws TransferException {
@@ -1053,12 +965,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the formatted duration.
-     *
-     * @return the formatted duration
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public String getFormattedDuration() throws TransferException {
@@ -1066,12 +975,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the formatted sent.
-     *
-     * @return the formatted sent
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public String getFormattedSent() throws TransferException {
@@ -1079,10 +985,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Sets the sent.
+     * {@inheritDoc}
      *
-     * @param l
-     *            the new sent
+     * Sets the sent.
      */
     @Override
     public void setSent(final long l) {
@@ -1090,10 +995,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Sets the duration.
+     * {@inheritDoc}
      *
-     * @param l
-     *            the new duration
+     * Sets the duration.
      */
     @Override
     public void setDuration(final long l) {
@@ -1101,9 +1005,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the size.
+     * {@inheritDoc}
      *
-     * @return the size
+     * Gets the size.
      */
     @Override
     public long getSize() {
@@ -1111,9 +1015,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the formatted size.
+     * {@inheritDoc}
      *
-     * @return the formatted size
+     * Gets the formatted size.
      */
     @Override
     public String getFormattedSize() {
@@ -1121,9 +1025,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Checks if is retry.
+     * {@inheritDoc}
      *
-     * @return true, if is retry
+     * Checks if is retry.
      */
     @Override
     public boolean isRetry() {
@@ -1131,10 +1035,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Sets the retry.
+     * {@inheritDoc}
      *
-     * @param retry
-     *            the new retry
+     * Sets the retry.
      */
     @Override
     public void setRetry(final boolean retry) {
@@ -1142,12 +1045,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the arrival target time.
-     *
-     * @return the arrival target time
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Date getArrivalTargetTime() throws TransferException {
@@ -1156,12 +1056,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the arrival predicted time.
-     *
-     * @return the arrival predicted time
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Date getArrivalPredictedTime() throws TransferException {
@@ -1170,12 +1067,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the arrival status.
-     *
-     * @return the arrival status
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public int getArrivalStatus() throws TransferException {
@@ -1184,12 +1078,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the arrival earliest time.
-     *
-     * @return the arrival earliest time
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Date getArrivalEarliestTime() throws TransferException {
@@ -1198,12 +1089,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the arrival latest time.
-     *
-     * @return the arrival latest time
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Date getArrivalLatestTime() throws TransferException {
@@ -1212,12 +1100,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the transfer target time.
-     *
-     * @return the transfer target time
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Date getTransferTargetTime() throws TransferException {
@@ -1225,12 +1110,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the transfer predicted time.
-     *
-     * @return the transfer predicted time
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Date getTransferPredictedTime() throws TransferException {
@@ -1238,12 +1120,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the transfer status.
-     *
-     * @return the transfer status
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public int getTransferStatus() throws TransferException {
@@ -1251,12 +1130,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the transfer status hex color.
-     *
-     * @return the transfer status hex color
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public String getTransferStatusHexColor() throws TransferException {
@@ -1264,12 +1140,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the transfer earliest time.
-     *
-     * @return the transfer earliest time
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Date getTransferEarliestTime() throws TransferException {
@@ -1277,12 +1150,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the transfer latest time.
-     *
-     * @return the transfer latest time
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Date getTransferLatestTime() throws TransferException {
@@ -1290,9 +1160,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the copy.
+     * {@inheritDoc}
      *
-     * @return the copy
+     * Gets the copy.
      */
     @Override
     public DataTransfer getCopy() {
@@ -1300,13 +1170,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Put on hold.
-     *
-     * @param u
-     *            the u
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public void putOnHold(final User u) throws TransferException {
@@ -1319,13 +1185,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Stop.
-     *
-     * @param u
-     *            the u
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public void stop(final User u) throws TransferException {
@@ -1350,13 +1212,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Schedule now.
-     *
-     * @param u
-     *            the u
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public void scheduleNow(final User u) throws TransferException {
@@ -1368,9 +1226,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the can be put on hold.
+     * {@inheritDoc}
      *
-     * @return the can be put on hold
+     * Gets the can be put on hold.
      */
     @Override
     public boolean getCanBePutOnHold() {
@@ -1383,9 +1241,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the can be stopped.
+     * {@inheritDoc}
      *
-     * @return the can be stopped
+     * Gets the can be stopped.
      */
     @Override
     public boolean getCanBeStopped() {
@@ -1398,9 +1256,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the can be downloaded.
+     * {@inheritDoc}
      *
-     * @return the can be downloaded
+     * Gets the can be downloaded.
      */
     @Override
     public boolean getCanBeDownloaded() {
@@ -1408,13 +1266,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Interrupt retrieval.
-     *
-     * @param u
-     *            the u
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public void interruptRetrieval(final User u) throws TransferException {
@@ -1436,13 +1290,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Requeue.
-     *
-     * @param u
-     *            the u
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public void requeue(final User u) throws TransferException {
@@ -1464,9 +1314,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Gets the can be requeued.
+     * {@inheritDoc}
      *
-     * @return the can be requeued
+     * Gets the can be requeued.
      */
     @Override
     public boolean getCanBeRequeued() {
@@ -1479,12 +1329,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Equals.
-     *
-     * @param o
-     *            the o
-     *
-     * @return true, if successful
      */
     @Override
     public boolean equals(final Object o) {
@@ -1504,9 +1351,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * Hash code.
+     * {@inheritDoc}
      *
-     * @return the int
+     * Hash code.
      */
     @Override
     public int hashCode() {
@@ -1514,9 +1361,9 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
     }
 
     /**
-     * To string.
+     * {@inheritDoc}
      *
-     * @return the string
+     * To string.
      */
     @Override
     public String toString() {

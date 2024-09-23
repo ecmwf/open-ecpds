@@ -162,7 +162,7 @@ final class DBResultSet implements Closeable {
      *
      * @return true, if successful
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
      */
     public boolean next() throws SQLException {
@@ -179,6 +179,8 @@ final class DBResultSet implements Closeable {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Close.
      */
     @Override
@@ -232,7 +234,7 @@ final class DBResultSet implements Closeable {
      *
      * @return true, if successful
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
      */
     public boolean wasNull() throws SQLException {
@@ -256,7 +258,7 @@ final class DBResultSet implements Closeable {
      *
      * @return the string
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
      */
     public String getString(final int columnIndex) throws SQLException {
@@ -280,7 +282,7 @@ final class DBResultSet implements Closeable {
      *
      * @return the boolean
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
      */
     public boolean getBoolean(final int columnIndex) throws SQLException {
@@ -304,7 +306,7 @@ final class DBResultSet implements Closeable {
      *
      * @return the integer
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
      */
     public Integer getInteger(final int columnIndex) throws SQLException {
@@ -332,7 +334,7 @@ final class DBResultSet implements Closeable {
      *
      * @return the object
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
      */
     public Object getObject(final int columnIndex) throws SQLException {
@@ -356,7 +358,7 @@ final class DBResultSet implements Closeable {
      *
      * @return the int
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
      */
     public int getInt(final int columnIndex) throws SQLException {
@@ -380,7 +382,7 @@ final class DBResultSet implements Closeable {
      *
      * @return the long
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
      */
     public long getLong(final int columnIndex) throws SQLException {
@@ -404,7 +406,7 @@ final class DBResultSet implements Closeable {
      *
      * @return the string
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
      */
     public String getString(final String columnName) throws SQLException {
@@ -428,7 +430,7 @@ final class DBResultSet implements Closeable {
      *
      * @return the boolean
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
      */
     public boolean getBoolean(final String columnName) throws SQLException {
@@ -452,7 +454,7 @@ final class DBResultSet implements Closeable {
      *
      * @return the boolean
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
      */
     public BigDecimal getBigDecimal(final String columnName) throws SQLException {
@@ -476,7 +478,7 @@ final class DBResultSet implements Closeable {
      *
      * @return the integer
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
      */
     public Integer getInteger(final String columnName) throws SQLException {
@@ -504,7 +506,7 @@ final class DBResultSet implements Closeable {
      *
      * @return the object
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
      */
     public Object getObject(final String columnName) throws SQLException {
@@ -528,7 +530,7 @@ final class DBResultSet implements Closeable {
      *
      * @return the int
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
      */
     public int getInt(final String columnName) throws SQLException {
@@ -552,7 +554,7 @@ final class DBResultSet implements Closeable {
      *
      * @return the date
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
      */
     public Date getDate(final String columnName) throws SQLException {
@@ -576,7 +578,7 @@ final class DBResultSet implements Closeable {
      *
      * @return the timestamp
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
      */
     public Timestamp getTimestamp(final String columnName) throws SQLException {
@@ -605,7 +607,7 @@ final class DBResultSet implements Closeable {
      *
      * @return the time
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
      */
     public Time getTime(final String columnName) throws SQLException {
@@ -629,7 +631,7 @@ final class DBResultSet implements Closeable {
      *
      * @return the long
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
      */
     public long getLong(final String columnName) throws SQLException {
@@ -653,7 +655,7 @@ final class DBResultSet implements Closeable {
      *
      * @return the float
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
      */
     public float getFloat(final String columnName) throws SQLException {
@@ -677,7 +679,7 @@ final class DBResultSet implements Closeable {
      *
      * @return the int
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
      */
     public int findColumn(final String columnName) throws SQLException {
@@ -701,7 +703,7 @@ final class DBResultSet implements Closeable {
      *
      * @return the column type
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
      */
     public int getColumnType(final int columnIndex) throws SQLException {
@@ -726,7 +728,7 @@ final class DBResultSet implements Closeable {
      *
      * @return the column type
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
      */
     public String getColumnName(final int columnIndex) throws SQLException {

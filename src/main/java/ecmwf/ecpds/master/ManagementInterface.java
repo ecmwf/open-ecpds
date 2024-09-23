@@ -84,7 +84,7 @@ public interface ManagementInterface extends Remote {
      *
      * @return the destination names
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     List<String> getDestinationNamesForContact(List<Map.Entry<String, String>> emailPattern, boolean caseSensitive)
@@ -95,9 +95,9 @@ public interface ManagementInterface extends Remote {
      *
      * @return the contacts
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     Map<String, String> getContacts() throws MasterException, IOException;
@@ -107,13 +107,13 @@ public interface ManagementInterface extends Remote {
      *
      * @return the destination caches
      *
-     * @throws MonitorException
+     * @throws ecmwf.common.monitor.MonitorException
      *             the monitor exception
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Map<String, DestinationCache> getDestinationCaches()
@@ -127,11 +127,11 @@ public interface ManagementInterface extends Remote {
      *
      * @return the monitor manager
      *
-     * @throws MonitorException
+     * @throws ecmwf.common.monitor.MonitorException
      *             the monitor exception
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     MonitorManager getMonitorManager(String destinationName) throws MonitorException, MasterException, RemoteException;
@@ -144,11 +144,11 @@ public interface ManagementInterface extends Remote {
      *
      * @return the destination status
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     String getDestinationStatus(String destinationName) throws MasterException, DataBaseException, RemoteException;
@@ -161,9 +161,9 @@ public interface ManagementInterface extends Remote {
      *
      * @return the destination size
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     int getDestinationSize(String destinationName) throws MasterException, RemoteException;
@@ -176,9 +176,9 @@ public interface ManagementInterface extends Remote {
      *
      * @return the destination start date
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Date getDestinationStartDate(String destinationName) throws MasterException, RemoteException;
@@ -191,9 +191,9 @@ public interface ManagementInterface extends Remote {
      *
      * @return the pending data transfers count
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     int getPendingDataTransfersCount(String destinationName) throws MasterException, RemoteException;
@@ -206,9 +206,9 @@ public interface ManagementInterface extends Remote {
      *
      * @return the destination last transfer
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     DataTransfer getDestinationLastTransfer(String destinationName) throws MasterException, RemoteException;
@@ -221,9 +221,9 @@ public interface ManagementInterface extends Remote {
      *
      * @return the destination last failed transfer
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     DataTransfer getDestinationLastFailedTransfer(String destinationName) throws MasterException, RemoteException;
@@ -236,9 +236,9 @@ public interface ManagementInterface extends Remote {
      *
      * @return the retrieved
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     long getRetrieved(long dataFileId) throws DataBaseException, RemoteException;
@@ -251,9 +251,9 @@ public interface ManagementInterface extends Remote {
      *
      * @return the transfer server name
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     String getTransferServerName(long dataFileId) throws DataBaseException, RemoteException;
@@ -274,11 +274,11 @@ public interface ManagementInterface extends Remote {
      *
      * @return the ecpds session
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     ECpdsSession getECpdsSession(String user, String password, String host, String agent, String comment)
@@ -292,11 +292,11 @@ public interface ManagementInterface extends Remote {
      * @param webUser
      *            the web user
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void saveWebUser(ECpdsSession session, WebUser webUser) throws MasterException, DataBaseException, RemoteException;
@@ -317,11 +317,11 @@ public interface ManagementInterface extends Remote {
      *
      * @return the destination cache
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     DestinationCache copyDestination(ECpdsSession session, String fromDestination, String toDestination, String label,
@@ -339,11 +339,11 @@ public interface ManagementInterface extends Remote {
      *
      * @return the destination cache
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     DestinationCache copyHost(final ECpdsSession session, final String destinationName, final String hostName)
@@ -361,11 +361,11 @@ public interface ManagementInterface extends Remote {
      * @param copySharedHost
      *            the copy shared host
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void exportDestination(ECpdsSession session, String targetMaster, String fromDestination, boolean copySharedHost)
@@ -379,7 +379,7 @@ public interface ManagementInterface extends Remote {
      * @param expired
      *            the expired
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void closeECpdsSession(ECpdsSession session, boolean expired) throws RemoteException;
@@ -392,9 +392,9 @@ public interface ManagementInterface extends Remote {
      * @param id
      *            the id
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void closeIncomingConnection(ECpdsSession session, String id) throws IOException, RemoteException;
@@ -411,11 +411,11 @@ public interface ManagementInterface extends Remote {
      *
      * @return the destination scheduler cache
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     DestinationSchedulerCache restartDestination(ECpdsSession session, String destinationName, boolean graceful)
@@ -429,9 +429,9 @@ public interface ManagementInterface extends Remote {
      * @param graceful
      *            the graceful
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void restartAllDestinations(ECpdsSession session, boolean graceful) throws MasterException, RemoteException;
@@ -448,9 +448,9 @@ public interface ManagementInterface extends Remote {
      * @param restart
      *            the restart
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void shutdownTransferServer(ECpdsSession session, TransferServer server, boolean graceful, boolean restart)
@@ -468,11 +468,11 @@ public interface ManagementInterface extends Remote {
      *
      * @return the destination scheduler cache
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     DestinationSchedulerCache holdDestination(ECpdsSession session, String destinationName, boolean graceful)
@@ -490,11 +490,11 @@ public interface ManagementInterface extends Remote {
      *
      * @return the string
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     String cleanDestination(ECpdsSession session, String destinationName, long days)
@@ -508,9 +508,9 @@ public interface ManagementInterface extends Remote {
      * @param graceful
      *            the graceful
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void holdAllDestinations(ECpdsSession session, boolean graceful) throws MasterException, RemoteException;
@@ -525,9 +525,9 @@ public interface ManagementInterface extends Remote {
      *
      * @return true, if successful
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     boolean transferStatusUpdateAllowed(long id, String code) throws MasterException, RemoteException;
@@ -544,9 +544,9 @@ public interface ManagementInterface extends Remote {
      *
      * @return true, if successful
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     boolean updateTransferStatus(ECpdsSession session, long id, String code) throws MasterException, RemoteException;
@@ -559,11 +559,11 @@ public interface ManagementInterface extends Remote {
      * @param id
      *            the id
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void resetTransferScheduleDate(ECpdsSession session, long id)
@@ -579,11 +579,11 @@ public interface ManagementInterface extends Remote {
      * @param priority
      *            the priority
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void updateTransferPriority(ECpdsSession session, long id, int priority)
@@ -599,11 +599,11 @@ public interface ManagementInterface extends Remote {
      * @param timetamp
      *            the timetamp
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void updateExpiryTime(ECpdsSession session, long id, Timestamp timetamp)
@@ -625,13 +625,13 @@ public interface ManagementInterface extends Remote {
      *
      * @return the long
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     long transfer(ECpdsSession session, byte[] bytes, Host host, String target, long remotePosn)
@@ -647,13 +647,13 @@ public interface ManagementInterface extends Remote {
      *
      * @return the mover report
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     String getMoverReport(ECpdsSession session, Host proxyHost)
@@ -671,13 +671,13 @@ public interface ManagementInterface extends Remote {
      *
      * @return the host report
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     String getHostReport(ECpdsSession session, Host proxyHost, Host host)
@@ -691,13 +691,13 @@ public interface ManagementInterface extends Remote {
      * @param host
      *            the host
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     void cleanDataWindow(ECpdsSession session, Host host)
@@ -711,13 +711,13 @@ public interface ManagementInterface extends Remote {
      * @param host
      *            the host
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     void resetTransferStatistics(ECpdsSession session, Host host)
@@ -733,13 +733,13 @@ public interface ManagementInterface extends Remote {
      *
      * @return the report
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     String getReport(ECpdsSession session, Host host)
@@ -755,13 +755,13 @@ public interface ManagementInterface extends Remote {
      *
      * @return the report
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     RemoteInputStream getOutput(ECpdsSession session, Host host)
@@ -777,13 +777,13 @@ public interface ManagementInterface extends Remote {
      *
      * @return the report
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     String getReport(ECpdsSession session, TransferServer server)
@@ -799,11 +799,11 @@ public interface ManagementInterface extends Remote {
      *
      * @return the host
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     Host updateHost(ECpdsSession session, Host host) throws MasterException, DataBaseException, RemoteException;
@@ -816,11 +816,11 @@ public interface ManagementInterface extends Remote {
      * @param value
      *            the monitoring value
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void updateTransferMonitoringValue(ECpdsSession session, MonitoringValue value)
@@ -834,11 +834,11 @@ public interface ManagementInterface extends Remote {
      * @param value
      *            the monitoring value
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void updateFileMonitoringValue(ECpdsSession session, MonitoringValue value)
@@ -854,9 +854,9 @@ public interface ManagementInterface extends Remote {
      * @param restart
      *            the restart
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void shutdown(ECpdsSession session, boolean graceful, boolean restart) throws MasterException, RemoteException;
@@ -869,11 +869,11 @@ public interface ManagementInterface extends Remote {
      * @param method
      *            the method
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void removeTransferMethod(ECpdsSession session, TransferMethod method)
@@ -887,11 +887,11 @@ public interface ManagementInterface extends Remote {
      * @param module
      *            the module
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void removeECtransModule(ECpdsSession session, ECtransModule module)
@@ -905,11 +905,11 @@ public interface ManagementInterface extends Remote {
      * @param group
      *            the group
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void removeTransferGroup(ECpdsSession session, TransferGroup group)
@@ -923,11 +923,11 @@ public interface ManagementInterface extends Remote {
      * @param destinationName
      *            the Destination name
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void removeDestination(ECpdsSession session, String destinationName)
@@ -945,11 +945,11 @@ public interface ManagementInterface extends Remote {
      * @param removeAll
      *            remove all files or only deleted, expired, stopped and failed ones if clean only
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void removeDestination(final ECpdsSession session, final String destinationName, final boolean cleanOnly,
@@ -963,11 +963,11 @@ public interface ManagementInterface extends Remote {
      * @param server
      *            the server
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void removeTransferServer(ECpdsSession session, TransferServer server)
@@ -981,11 +981,11 @@ public interface ManagementInterface extends Remote {
      * @param host
      *            the host
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void removeHost(ECpdsSession session, Host host) throws MasterException, DataBaseException, RemoteException;
@@ -998,11 +998,11 @@ public interface ManagementInterface extends Remote {
      * @param user
      *            the incoming user
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void removeIncomingUser(ECpdsSession session, IncomingUser user)
@@ -1016,11 +1016,11 @@ public interface ManagementInterface extends Remote {
      * @param policy
      *            the policy
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void removeIncomingPolicy(ECpdsSession session, IncomingPolicy policy)
@@ -1034,11 +1034,11 @@ public interface ManagementInterface extends Remote {
      * @param transfer
      *            the transfer
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void removeDataTransfer(ECpdsSession session, DataTransfer transfer)
@@ -1054,11 +1054,11 @@ public interface ManagementInterface extends Remote {
      *
      * @return true, if successful
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     boolean interruptDataTransferRetrieval(ECpdsSession session, long id)
@@ -1072,11 +1072,11 @@ public interface ManagementInterface extends Remote {
      * @param file
      *            the file
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void removeDataFile(ECpdsSession session, DataFile file) throws MasterException, DataBaseException, RemoteException;
@@ -1089,11 +1089,11 @@ public interface ManagementInterface extends Remote {
      * @param user
      *            the web user
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void removeWebUser(ECpdsSession session, WebUser user) throws MasterException, DataBaseException, RemoteException;
@@ -1106,11 +1106,11 @@ public interface ManagementInterface extends Remote {
      * @param category
      *            the category
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void removeCategory(ECpdsSession session, Category category)
@@ -1124,11 +1124,11 @@ public interface ManagementInterface extends Remote {
      * @param url
      *            the url
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void removeUrl(ECpdsSession session, Url url) throws MasterException, DataBaseException, RemoteException;
@@ -1141,7 +1141,7 @@ public interface ManagementInterface extends Remote {
      * @param dataTransferEventRequests
      *            the data transfer event requests
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void resendDataTransferEvents(String root, DataTransferEventRequest[] dataTransferEventRequests)
@@ -1161,11 +1161,11 @@ public interface ManagementInterface extends Remote {
      *
      * @return the byte[]
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     byte[] exec(ECpdsSession session, Map<String, String> environment, byte[] request, String service)
@@ -1191,11 +1191,11 @@ public interface ManagementInterface extends Remote {
      * @param attachmentContent
      *            the attachment content
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     void sendECpdsMessage(ECpdsSession session, final String from, final String to, final String cc,
@@ -1210,9 +1210,9 @@ public interface ManagementInterface extends Remote {
      *
      * @return the destination scheduler cache
      *
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     DestinationSchedulerCache getDestinationSchedulerCache(String destinationName)
@@ -1238,11 +1238,11 @@ public interface ManagementInterface extends Remote {
      *
      * @return the string
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws MasterException
+     * @throws ecmwf.ecpds.master.MasterException
      *             the master exception
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     String computeFilterEfficiency(final ECpdsSession session, final String destinationName, final String email,

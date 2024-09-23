@@ -118,12 +118,9 @@ public class MailMBean extends MBeanRepository<MailMessage> {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the status.
-     *
-     * @param message
-     *            the message
-     *
-     * @return the status
      */
     @Override
     public String getStatus(final MailMessage message) {
@@ -188,6 +185,8 @@ public class MailMBean extends MBeanRepository<MailMessage> {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Initialize.
      */
     @Override
@@ -203,9 +202,9 @@ public class MailMBean extends MBeanRepository<MailMessage> {
     }
 
     /**
-     * Next step.
+     * {@inheritDoc}
      *
-     * @return the int
+     * Next step.
      */
     @Override
     public int nextStep() {
@@ -243,6 +242,8 @@ public class MailMBean extends MBeanRepository<MailMessage> {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Shutdown.
      */
     @Override

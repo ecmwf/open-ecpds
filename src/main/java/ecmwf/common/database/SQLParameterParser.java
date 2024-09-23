@@ -103,7 +103,7 @@ public class SQLParameterParser {
      * @param otherOptions
      *            the other options
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public SQLParameterParser(final String search, final String defaultOption, final String... otherOptions)
@@ -481,7 +481,7 @@ public class SQLParameterParser {
      *
      * @return the string
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public String get(final int keyPosition, final String... dataBaseFieldNames) throws IOException {
@@ -510,7 +510,7 @@ public class SQLParameterParser {
      *
      * @return the string
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public String get(final String keyName, final String... dataBaseFieldNames) throws IOException {
@@ -547,7 +547,7 @@ public class SQLParameterParser {
      * @param args
      *            the arguments
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static void main(final String[] args) throws IOException {

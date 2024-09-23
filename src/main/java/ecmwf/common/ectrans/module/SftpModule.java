@@ -29,6 +29,5 @@ package ecmwf.common.ectrans.module;
  *
  * @since 2024-07-01
  */
-
 public final class SftpModule extends JSftpModule {
 }

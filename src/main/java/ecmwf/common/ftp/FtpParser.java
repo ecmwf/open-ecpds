@@ -136,7 +136,7 @@ public final class FtpParser {
      *
      * @return the file entry[]
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static FileEntry[] parseDir(final String regexFormat, final String systemKey, final String defaultDateFormat,
@@ -226,7 +226,7 @@ public final class FtpParser {
      * @param args
      *            the arguments
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static void main(final String[] args) throws IOException {

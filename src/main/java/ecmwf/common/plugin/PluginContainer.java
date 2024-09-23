@@ -118,15 +118,9 @@ public final class PluginContainer implements MBeanService, MonitorCallback {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the monitor manager.
-     *
-     * @param name
-     *            the name
-     *
-     * @return the monitor manager
-     *
-     * @throws MonitorException
-     *             the monitor exception
      */
     @Override
     public MonitorManager getMonitorManager(final String name) throws MonitorException {
@@ -345,17 +339,9 @@ public final class PluginContainer implements MBeanService, MonitorCallback {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the attribute.
-     *
-     * @param attributeName
-     *            the attribute name
-     *
-     * @return the attribute
-     *
-     * @throws AttributeNotFoundException
-     *             the attribute not found exception
-     * @throws MBeanException
-     *             the MBean exception
      */
     @Override
     public Object getAttribute(final String attributeName) throws AttributeNotFoundException, MBeanException {
@@ -382,9 +368,9 @@ public final class PluginContainer implements MBeanService, MonitorCallback {
     }
 
     /**
-     * Gets the MBean info.
+     * {@inheritDoc}
      *
-     * @return the MBean info
+     * Gets the MBean info.
      */
     @Override
     public MBeanInfo getMBeanInfo() {
@@ -450,21 +436,9 @@ public final class PluginContainer implements MBeanService, MonitorCallback {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Invoke.
-     *
-     * @param operationName
-     *            the operation name
-     * @param params
-     *            the params
-     * @param signature
-     *            the signature
-     *
-     * @return the object
-     *
-     * @throws NoSuchMethodException
-     *             the no such method exception
-     * @throws MBeanException
-     *             the MBean exception
      */
     @Override
     public Object invoke(final String operationName, final Object[] params, final String[] signature)
@@ -545,14 +519,9 @@ public final class PluginContainer implements MBeanService, MonitorCallback {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the attribute.
-     *
-     * @param name
-     *            the name
-     * @param value
-     *            the value
-     *
-     * @return true, if successful
      */
     @Override
     public boolean setAttribute(final String name, final Object value) {

@@ -39,7 +39,7 @@ interface ECaccessInterface extends ProviderInterface {
      *
      * @return the management interface
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     ManagementInterface getManagementInterface() throws RemoteException;
@@ -49,7 +49,7 @@ interface ECaccessInterface extends ProviderInterface {
      *
      * @return the data base interface
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     DataBaseInterface getDataBaseInterface() throws RemoteException;
@@ -59,7 +59,7 @@ interface ECaccessInterface extends ProviderInterface {
      *
      * @return the attachment access interface
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     DataAccessInterface getAttachmentAccessInterface() throws RemoteException;
@@ -69,7 +69,7 @@ interface ECaccessInterface extends ProviderInterface {
      *
      * @return the data file access interface
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     DataAccessInterface getDataFileAccessInterface() throws RemoteException;

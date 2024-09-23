@@ -56,7 +56,7 @@ public class TransferServerHome extends ModelHomeBase {
      *
      * @return the transfer server
      *
-     * @throws DataFileException
+     * @throws ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException
      *             the data file exception
      */
     public static final TransferServer create() throws DataFileException {
@@ -76,7 +76,7 @@ public class TransferServerHome extends ModelHomeBase {
      *
      * @return the transfer server
      *
-     * @throws DataFileException
+     * @throws ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException
      *             the data file exception
      */
     public static final TransferServer findByPrimaryKey(final String key) throws DataFileException {
@@ -93,7 +93,7 @@ public class TransferServerHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws DataFileException
+     * @throws ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException
      *             the data file exception
      */
     public static final Collection<TransferServer> findAll() throws DataFileException {
@@ -108,7 +108,7 @@ public class TransferServerHome extends ModelHomeBase {
      *
      * @return the transfer server
      *
-     * @throws DataFileException
+     * @throws ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException
      *             the data file exception
      */
     public static final TransferServer findByDataTransfer(final DataTransfer transfer) throws DataFileException {
@@ -127,7 +127,7 @@ public class TransferServerHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws DataFileException
+     * @throws ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException
      *             the data file exception
      */
     public static final Collection<TransferServer> findByTransferGroup(final TransferGroup group)
@@ -143,7 +143,7 @@ public class TransferServerHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws DataFileException
+     * @throws ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException
      *             the data file exception
      */
     public static final Collection<TransferServer> find(final ModelSearch search) throws DataFileException {

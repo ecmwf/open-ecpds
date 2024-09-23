@@ -89,7 +89,7 @@ public final class MonitorThread extends ConfigurableLoopRunnable {
      *
      * @return single instance of MonitorThread
      *
-     * @throws MonitorException
+     * @throws ecmwf.common.monitor.MonitorException
      *             the monitor exception
      */
     public static synchronized MonitorThread getInstance() throws MonitorException {
@@ -165,6 +165,8 @@ public final class MonitorThread extends ConfigurableLoopRunnable {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Configurable loop run.
      */
     @Override
@@ -204,6 +206,8 @@ public final class MonitorThread extends ConfigurableLoopRunnable {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Configurable loop end.
      */
     @Override

@@ -83,9 +83,9 @@ public class UserBean extends ModelBeanBase implements WebUser, OjbImplementedBe
     }
 
     /**
-     * Gets the bean interface name.
+     * {@inheritDoc}
      *
-     * @return the bean interface name
+     * Gets the bean interface name.
      */
     @Override
     public String getBeanInterfaceName() {
@@ -93,9 +93,9 @@ public class UserBean extends ModelBeanBase implements WebUser, OjbImplementedBe
     }
 
     /**
-     * Gets the ojb implementation.
+     * {@inheritDoc}
      *
-     * @return the ojb implementation
+     * Gets the ojb implementation.
      */
     @Override
     public DataBaseObject getOjbImplementation() {
@@ -103,9 +103,9 @@ public class UserBean extends ModelBeanBase implements WebUser, OjbImplementedBe
     }
 
     /**
-     * Gets the id.
+     * {@inheritDoc}
      *
-     * @return the id
+     * Gets the id.
      */
     @Override
     public String getId() {
@@ -113,9 +113,9 @@ public class UserBean extends ModelBeanBase implements WebUser, OjbImplementedBe
     }
 
     /**
-     * Gets the uid.
+     * {@inheritDoc}
      *
-     * @return the uid
+     * Gets the uid.
      */
     @Override
     public String getUid() {
@@ -123,9 +123,9 @@ public class UserBean extends ModelBeanBase implements WebUser, OjbImplementedBe
     }
 
     /**
-     * Gets the remote user.
+     * {@inheritDoc}
      *
-     * @return the remote user
+     * Gets the remote user.
      */
     @Override
     public String getRemoteUser() {
@@ -133,19 +133,18 @@ public class UserBean extends ModelBeanBase implements WebUser, OjbImplementedBe
     }
 
     /**
-     * Sets the remote user.
+     * {@inheritDoc}
      *
-     * @param v
-     *            the new remote user
+     * Sets the remote user.
      */
     @Override
     public void setRemoteUser(final String v) {
     }
 
     /**
-     * Gets the common name.
+     * {@inheritDoc}
      *
-     * @return the common name
+     * Gets the common name.
      */
     @Override
     public String getCommonName() {
@@ -153,9 +152,9 @@ public class UserBean extends ModelBeanBase implements WebUser, OjbImplementedBe
     }
 
     /**
-     * Gets the friendly name.
+     * {@inheritDoc}
      *
-     * @return the friendly name
+     * Gets the friendly name.
      */
     @Override
     public String getFriendlyName() {
@@ -163,12 +162,9 @@ public class UserBean extends ModelBeanBase implements WebUser, OjbImplementedBe
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the category.
-     *
-     * @return the category
-     *
-     * @throws UserException
-     *             the user exception
      */
     @Override
     public Category getCategory() throws UserException {
@@ -176,12 +172,9 @@ public class UserBean extends ModelBeanBase implements WebUser, OjbImplementedBe
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the categories.
-     *
-     * @return the categories
-     *
-     * @throws UserException
-     *             the user exception
      */
     @Override
     public Collection<?> getCategories() throws UserException {
@@ -190,9 +183,9 @@ public class UserBean extends ModelBeanBase implements WebUser, OjbImplementedBe
     }
 
     /**
-     * Gets the authentication method.
+     * {@inheritDoc}
      *
-     * @return the authentication method
+     * Gets the authentication method.
      */
     @Override
     public String getAuthenticationMethod() {
@@ -200,10 +193,9 @@ public class UserBean extends ModelBeanBase implements WebUser, OjbImplementedBe
     }
 
     /**
-     * Sets the authentication method.
+     * {@inheritDoc}
      *
-     * @param authenticationMethod
-     *            the new authentication method
+     * Sets the authentication method.
      */
     @Override
     public void setAuthenticationMethod(final int authenticationMethod) {
@@ -211,19 +203,18 @@ public class UserBean extends ModelBeanBase implements WebUser, OjbImplementedBe
     }
 
     /**
-     * Sets the user data.
+     * {@inheritDoc}
      *
-     * @param data
-     *            the new user data
+     * Sets the user data.
      */
     @Override
     public void setUserData(final UserData data) {
     }
 
     /**
-     * Gets the user data.
+     * {@inheritDoc}
      *
-     * @return the user data
+     * Gets the user data.
      */
     @Override
     public UserData getUserData() {
@@ -234,15 +225,9 @@ public class UserBean extends ModelBeanBase implements WebUser, OjbImplementedBe
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Checks for access.
-     *
-     * @param path
-     *            the path
-     *
-     * @return true, if successful
-     *
-     * @throws UserException
-     *             the user exception
      */
     @Override
     public boolean hasAccess(final String path) throws UserException {
@@ -250,17 +235,9 @@ public class UserBean extends ModelBeanBase implements WebUser, OjbImplementedBe
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Checks for access.
-     *
-     * @param host
-     *            the host
-     * @param path
-     *            the path
-     *
-     * @return true, if successful
-     *
-     * @throws UserException
-     *             the user exception
      */
     @Override
     public boolean hasAccess(final String host, final String path) throws UserException {
@@ -268,15 +245,9 @@ public class UserBean extends ModelBeanBase implements WebUser, OjbImplementedBe
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Checks for access.
-     *
-     * @param r
-     *            the r
-     *
-     * @return true, if successful
-     *
-     * @throws UserException
-     *             the user exception
      */
     @Override
     public boolean hasAccess(final Resource r) throws UserException {
@@ -298,10 +269,9 @@ public class UserBean extends ModelBeanBase implements WebUser, OjbImplementedBe
     }
 
     /**
-     * Sets the user data.
+     * {@inheritDoc}
      *
-     * @param s
-     *            the new user data
+     * Sets the user data.
      */
     @Override
     public void setUserData(final String s) {
@@ -318,9 +288,9 @@ public class UserBean extends ModelBeanBase implements WebUser, OjbImplementedBe
     }
 
     /**
-     * Gets the credentials.
+     * {@inheritDoc}
      *
-     * @return the credentials
+     * Gets the credentials.
      */
     @Override
     public Object getCredentials() {
@@ -328,10 +298,9 @@ public class UserBean extends ModelBeanBase implements WebUser, OjbImplementedBe
     }
 
     /**
-     * Sets the credentials.
+     * {@inheritDoc}
      *
-     * @param o
-     *            the new credentials
+     * Sets the credentials.
      */
     @Override
     public void setCredentials(final Object o) {
@@ -339,9 +308,9 @@ public class UserBean extends ModelBeanBase implements WebUser, OjbImplementedBe
     }
 
     /**
-     * Gets the password.
+     * {@inheritDoc}
      *
-     * @return the password
+     * Gets the password.
      */
     @Override
     public String getPassword() {
@@ -349,10 +318,9 @@ public class UserBean extends ModelBeanBase implements WebUser, OjbImplementedBe
     }
 
     /**
-     * Sets the password.
+     * {@inheritDoc}
      *
-     * @param p
-     *            the new password
+     * Sets the password.
      */
     @Override
     public void setPassword(final String p) {
@@ -360,9 +328,9 @@ public class UserBean extends ModelBeanBase implements WebUser, OjbImplementedBe
     }
 
     /**
-     * Gets the last credential check.
+     * {@inheritDoc}
      *
-     * @return the last credential check
+     * Gets the last credential check.
      */
     @Override
     public Date getLastCredentialCheck() {
@@ -370,10 +338,9 @@ public class UserBean extends ModelBeanBase implements WebUser, OjbImplementedBe
     }
 
     /**
-     * Sets the last credential check.
+     * {@inheritDoc}
      *
-     * @param d
-     *            the new last credential check
+     * Sets the last credential check.
      */
     @Override
     public void setLastCredentialCheck(final Date d) {
@@ -381,12 +348,9 @@ public class UserBean extends ModelBeanBase implements WebUser, OjbImplementedBe
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Compare to.
-     *
-     * @param o
-     *            the o
-     *
-     * @return the int
      */
     @Override
     public int compareTo(final Object o) {
@@ -394,12 +358,9 @@ public class UserBean extends ModelBeanBase implements WebUser, OjbImplementedBe
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Equals.
-     *
-     * @param o
-     *            the o
-     *
-     * @return true, if successful
      */
     @Override
     public boolean equals(final Object o) {
@@ -407,9 +368,9 @@ public class UserBean extends ModelBeanBase implements WebUser, OjbImplementedBe
     }
 
     /**
-     * Hash code.
+     * {@inheritDoc}
      *
-     * @return the int
+     * Hash code.
      */
     @Override
     public int hashCode() {
@@ -417,9 +378,9 @@ public class UserBean extends ModelBeanBase implements WebUser, OjbImplementedBe
     }
 
     /**
-     * Gets the duplicate.
+     * {@inheritDoc}
      *
-     * @return the duplicate
+     * Gets the duplicate.
      */
     @Override
     public User getDuplicate() {
@@ -427,6 +388,8 @@ public class UserBean extends ModelBeanBase implements WebUser, OjbImplementedBe
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the as fallback public.
      */
     @Override
@@ -434,9 +397,9 @@ public class UserBean extends ModelBeanBase implements WebUser, OjbImplementedBe
     }
 
     /**
-     * Checks if is anonymous.
+     * {@inheritDoc}
      *
-     * @return true, if is anonymous
+     * Checks if is anonymous.
      */
     @Override
     public boolean isAnonymous() {
@@ -444,12 +407,9 @@ public class UserBean extends ModelBeanBase implements WebUser, OjbImplementedBe
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Dump.
-     *
-     * @param format
-     *            the format
-     *
-     * @return the string
      */
     @Override
     public String dump(final String format) {
@@ -457,10 +417,9 @@ public class UserBean extends ModelBeanBase implements WebUser, OjbImplementedBe
     }
 
     /**
-     * Sets the common name.
+     * {@inheritDoc}
      *
-     * @param name
-     *            the new common name
+     * Sets the common name.
      */
     @Override
     public void setCommonName(final String name) {
@@ -468,9 +427,9 @@ public class UserBean extends ModelBeanBase implements WebUser, OjbImplementedBe
     }
 
     /**
-     * Gets the name.
+     * {@inheritDoc}
      *
-     * @return the name
+     * Gets the name.
      */
     @Override
     public String getName() {
@@ -478,10 +437,9 @@ public class UserBean extends ModelBeanBase implements WebUser, OjbImplementedBe
     }
 
     /**
-     * Sets the uid.
+     * {@inheritDoc}
      *
-     * @param uid
-     *            the new uid
+     * Sets the uid.
      */
     @Override
     public void setUid(final String uid) {
@@ -489,10 +447,9 @@ public class UserBean extends ModelBeanBase implements WebUser, OjbImplementedBe
     }
 
     /**
-     * Delete category.
+     * {@inheritDoc}
      *
-     * @param cat
-     *            the cat
+     * Delete category.
      */
     @Override
     public void deleteCategory(final Category cat) {
@@ -500,10 +457,9 @@ public class UserBean extends ModelBeanBase implements WebUser, OjbImplementedBe
     }
 
     /**
-     * Adds the category.
+     * {@inheritDoc}
      *
-     * @param cat
-     *            the cat
+     * Adds the category.
      */
     @Override
     public void addCategory(final Category cat) {
@@ -511,9 +467,9 @@ public class UserBean extends ModelBeanBase implements WebUser, OjbImplementedBe
     }
 
     /**
-     * Gets the active.
+     * {@inheritDoc}
      *
-     * @return the active
+     * Gets the active.
      */
     @Override
     public boolean getActive() {
@@ -521,10 +477,9 @@ public class UserBean extends ModelBeanBase implements WebUser, OjbImplementedBe
     }
 
     /**
-     * Sets the active.
+     * {@inheritDoc}
      *
-     * @param b
-     *            the new active
+     * Sets the active.
      */
     @Override
     public void setActive(final boolean b) {
@@ -550,15 +505,9 @@ public class UserBean extends ModelBeanBase implements WebUser, OjbImplementedBe
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Can read.
-     *
-     * @param r
-     *            the r
-     *
-     * @return true, if successful
-     *
-     * @throws UserException
-     *             the user exception
      */
     @Override
     public boolean canRead(final Resource r) throws UserException {
@@ -566,15 +515,9 @@ public class UserBean extends ModelBeanBase implements WebUser, OjbImplementedBe
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Can write.
-     *
-     * @param r
-     *            the r
-     *
-     * @return true, if successful
-     *
-     * @throws UserException
-     *             the user exception
      */
     @Override
     public boolean canWrite(final Resource r) throws UserException {
@@ -582,12 +525,9 @@ public class UserBean extends ModelBeanBase implements WebUser, OjbImplementedBe
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the policies.
-     *
-     * @return the policies
-     *
-     * @throws UserException
-     *             the user exception
      */
     @Override
     public Collection<?> getPolicies() throws UserException {
@@ -595,15 +535,9 @@ public class UserBean extends ModelBeanBase implements WebUser, OjbImplementedBe
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Checks for policy.
-     *
-     * @param name
-     *            the name
-     *
-     * @return true, if successful
-     *
-     * @throws UserException
-     *             the user exception
      */
     @Override
     public boolean hasPolicy(final String name) throws UserException {

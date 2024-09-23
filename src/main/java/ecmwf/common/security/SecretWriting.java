@@ -182,23 +182,23 @@ public class SecretWriting {
      *
      * @return the string
      *
-     * @throws UnrecoverableKeyException
+     * @throws java.security.UnrecoverableKeyException
      *             the unrecoverable key exception
-     * @throws InvalidKeyException
+     * @throws java.security.InvalidKeyException
      *             the invalid key exception
-     * @throws KeyStoreException
+     * @throws java.security.KeyStoreException
      *             the key store exception
-     * @throws NoSuchAlgorithmException
+     * @throws java.security.NoSuchAlgorithmException
      *             the no such algorithm exception
-     * @throws CertificateException
+     * @throws java.security.cert.CertificateException
      *             the certificate exception
-     * @throws NoSuchPaddingException
+     * @throws javax.crypto.NoSuchPaddingException
      *             the no such padding exception
-     * @throws IllegalBlockSizeException
+     * @throws javax.crypto.IllegalBlockSizeException
      *             the illegal block size exception
-     * @throws BadPaddingException
+     * @throws javax.crypto.BadPaddingException
      *             the bad padding exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static String encrypt(final String data)
@@ -263,23 +263,23 @@ public class SecretWriting {
      *
      * @return the string
      *
-     * @throws UnrecoverableKeyException
+     * @throws java.security.UnrecoverableKeyException
      *             the unrecoverable key exception
-     * @throws KeyStoreException
+     * @throws java.security.KeyStoreException
      *             the key store exception
-     * @throws NoSuchAlgorithmException
+     * @throws java.security.NoSuchAlgorithmException
      *             the no such algorithm exception
-     * @throws CertificateException
+     * @throws java.security.cert.CertificateException
      *             the certificate exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
-     * @throws NoSuchPaddingException
+     * @throws javax.crypto.NoSuchPaddingException
      *             the no such padding exception
-     * @throws InvalidKeyException
+     * @throws java.security.InvalidKeyException
      *             the invalid key exception
-     * @throws IllegalBlockSizeException
+     * @throws javax.crypto.IllegalBlockSizeException
      *             the illegal block size exception
-     * @throws BadPaddingException
+     * @throws javax.crypto.BadPaddingException
      *             the bad padding exception
      */
     public static String encrypt(final byte[] data)
@@ -300,19 +300,19 @@ public class SecretWriting {
      *
      * @return the string
      *
-     * @throws UnrecoverableKeyException
+     * @throws java.security.UnrecoverableKeyException
      *             the unrecoverable key exception
-     * @throws KeyStoreException
+     * @throws java.security.KeyStoreException
      *             the key store exception
-     * @throws NoSuchAlgorithmException
+     * @throws java.security.NoSuchAlgorithmException
      *             the no such algorithm exception
-     * @throws CertificateException
+     * @throws java.security.cert.CertificateException
      *             the certificate exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
-     * @throws NoSuchPaddingException
+     * @throws javax.crypto.NoSuchPaddingException
      *             the no such padding exception
-     * @throws InvalidKeyException
+     * @throws java.security.InvalidKeyException
      *             the invalid key exception
      */
     public static String decrypt(final String data) throws UnrecoverableKeyException, KeyStoreException,
@@ -373,19 +373,19 @@ public class SecretWriting {
      *
      * @return the string
      *
-     * @throws UnrecoverableKeyException
+     * @throws java.security.UnrecoverableKeyException
      *             the unrecoverable key exception
-     * @throws InvalidKeyException
+     * @throws java.security.InvalidKeyException
      *             the invalid key exception
-     * @throws KeyStoreException
+     * @throws java.security.KeyStoreException
      *             the key store exception
-     * @throws NoSuchAlgorithmException
+     * @throws java.security.NoSuchAlgorithmException
      *             the no such algorithm exception
-     * @throws CertificateException
+     * @throws java.security.cert.CertificateException
      *             the certificate exception
-     * @throws NoSuchPaddingException
+     * @throws javax.crypto.NoSuchPaddingException
      *             the no such padding exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static String decrypt(final byte[] data) throws UnrecoverableKeyException, InvalidKeyException,

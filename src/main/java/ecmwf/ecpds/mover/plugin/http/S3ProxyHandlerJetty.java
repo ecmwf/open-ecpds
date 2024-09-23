@@ -81,19 +81,9 @@ final class S3ProxyHandlerJetty extends AbstractHandler {
     public static final String ATTRIBUTE_QUERY_ENCODING = "queryEncoding";
 
     /**
+     * {@inheritDoc}
+     *
      * Handle.
-     *
-     * @param target
-     *            the target
-     * @param baseRequest
-     *            the base request
-     * @param request
-     *            the request
-     * @param response
-     *            the response
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void handle(final String target, final Request baseRequest, final HttpServletRequest request,

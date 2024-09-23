@@ -667,7 +667,7 @@ public class SocketConfig {
      * @param socket
      *            the new TCP options
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void setTCPOptions(final Socket socket) throws IOException {
@@ -1036,7 +1036,7 @@ public class SocketConfig {
      *
      * @return the socket
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public Socket getSocket() throws IOException {
@@ -1051,7 +1051,7 @@ public class SocketConfig {
      *
      * @return the socket
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public Socket getSocket(final SocketFactory factory) throws IOException {
@@ -1066,7 +1066,7 @@ public class SocketConfig {
      *
      * @return the socket
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public Socket getSocket(final int localPort) throws IOException {
@@ -1083,7 +1083,7 @@ public class SocketConfig {
      *
      * @return the socket
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public Socket getSocket(final SocketFactory factory, final int localPort) throws IOException {
@@ -1100,7 +1100,7 @@ public class SocketConfig {
      *
      * @return the socket
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public Socket getSocket(final String host, final int port) throws IOException {
@@ -1119,7 +1119,7 @@ public class SocketConfig {
      *
      * @return the socket
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public Socket getSocket(final SocketFactory factory, final String host, final int port) throws IOException {
@@ -1159,7 +1159,7 @@ public class SocketConfig {
      *
      * @return the socket
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public Socket getSocket(final String host, final int port, final int localPort) throws IOException {
@@ -1180,7 +1180,7 @@ public class SocketConfig {
      *
      * @return the socket
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public Socket getSocket(final SocketFactory factory, final String host, final int port, final int localPort)
@@ -1235,7 +1235,7 @@ public class SocketConfig {
      *
      * @return the socket
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public Socket getSocket(final ServerSocket serverSocket) throws IOException {
@@ -1289,9 +1289,7 @@ public class SocketConfig {
      * @param socket
      *            the socket
      *
-     * @return the socket
-     *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     protected void configureConnectedSocket(final Socket socket) throws IOException {
@@ -1320,7 +1318,7 @@ public class SocketConfig {
      *
      * @return the server socket
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public ServerSocket getServerSocket() throws IOException {
@@ -1347,7 +1345,7 @@ public class SocketConfig {
      *
      * @return the server socket
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public ServerSocket getServerSocket(final int port) throws IOException {
@@ -1364,7 +1362,7 @@ public class SocketConfig {
      *
      * @return the server socket
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public ServerSocket getServerSocket(final ServerSocketFactory factory, final int port) throws IOException {
@@ -1485,7 +1483,7 @@ public class SocketConfig {
      *
      * @return the string
      *
-     * @throws SocketException
+     * @throws java.net.SocketException
      *             the socket exception
      */
     public String configToString(final Socket socket) throws SocketException {
@@ -1516,7 +1514,7 @@ public class SocketConfig {
      *
      * @return the string
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public String configToString(final ServerSocket socket) throws IOException {
@@ -1580,9 +1578,9 @@ public class SocketConfig {
      *
      * @return the SSL socket factory
      *
-     * @throws KeyManagementException
+     * @throws java.security.KeyManagementException
      *             the key management exception
-     * @throws NoSuchAlgorithmException
+     * @throws java.security.NoSuchAlgorithmException
      *             the no such algorithm exception
      */
     public SSLClientSocketFactory getSSLSocketFactory(final String protocol, final boolean sslValidation)
@@ -1620,9 +1618,9 @@ public class SocketConfig {
      *
      * @return the blindly trusting SSL context
      *
-     * @throws NoSuchAlgorithmException
+     * @throws java.security.NoSuchAlgorithmException
      *             the no such algorithm exception
-     * @throws KeyManagementException
+     * @throws java.security.KeyManagementException
      *             the key management exception
      */
     public static SSLContext getBlindlyTrustingSSLContext(final String protocol)

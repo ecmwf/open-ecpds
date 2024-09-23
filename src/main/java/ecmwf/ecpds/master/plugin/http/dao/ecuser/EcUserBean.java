@@ -51,9 +51,9 @@ public class EcUserBean extends ModelBeanBase implements EcUser, OjbImplementedB
     }
 
     /**
-     * Gets the bean interface name.
+     * {@inheritDoc}
      *
-     * @return the bean interface name
+     * Gets the bean interface name.
      */
     @Override
     public String getBeanInterfaceName() {
@@ -61,9 +61,9 @@ public class EcUserBean extends ModelBeanBase implements EcUser, OjbImplementedB
     }
 
     /**
-     * Gets the ojb implementation.
+     * {@inheritDoc}
      *
-     * @return the ojb implementation
+     * Gets the ojb implementation.
      */
     @Override
     public DataBaseObject getOjbImplementation() {
@@ -71,9 +71,9 @@ public class EcUserBean extends ModelBeanBase implements EcUser, OjbImplementedB
     }
 
     /**
-     * Gets the id.
+     * {@inheritDoc}
      *
-     * @return the id
+     * Gets the id.
      */
     @Override
     public String getId() {
@@ -81,9 +81,9 @@ public class EcUserBean extends ModelBeanBase implements EcUser, OjbImplementedB
     }
 
     /**
-     * Gets the name.
+     * {@inheritDoc}
      *
-     * @return the name
+     * Gets the name.
      */
     @Override
     public String getName() {
@@ -91,9 +91,9 @@ public class EcUserBean extends ModelBeanBase implements EcUser, OjbImplementedB
     }
 
     /**
-     * Gets the dir.
+     * {@inheritDoc}
      *
-     * @return the dir
+     * Gets the dir.
      */
     @Override
     public String getDir() {
@@ -101,9 +101,9 @@ public class EcUserBean extends ModelBeanBase implements EcUser, OjbImplementedB
     }
 
     /**
-     * Gets the gid.
+     * {@inheritDoc}
      *
-     * @return the gid
+     * Gets the gid.
      */
     @Override
     public long getGid() {
@@ -111,9 +111,9 @@ public class EcUserBean extends ModelBeanBase implements EcUser, OjbImplementedB
     }
 
     /**
-     * Gets the shell.
+     * {@inheritDoc}
      *
-     * @return the shell
+     * Gets the shell.
      */
     @Override
     public String getShell() {
@@ -121,9 +121,9 @@ public class EcUserBean extends ModelBeanBase implements EcUser, OjbImplementedB
     }
 
     /**
-     * Gets the uid.
+     * {@inheritDoc}
      *
-     * @return the uid
+     * Gets the uid.
      */
     @Override
     public long getUid() {
@@ -131,9 +131,9 @@ public class EcUserBean extends ModelBeanBase implements EcUser, OjbImplementedB
     }
 
     /**
-     * Gets the comment.
+     * {@inheritDoc}
      *
-     * @return the comment
+     * Gets the comment.
      */
     @Override
     public String getComment() {
@@ -141,12 +141,9 @@ public class EcUserBean extends ModelBeanBase implements EcUser, OjbImplementedB
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Equals.
-     *
-     * @param o
-     *            the o
-     *
-     * @return true, if successful
      */
     @Override
     public boolean equals(final Object o) {
@@ -166,9 +163,9 @@ public class EcUserBean extends ModelBeanBase implements EcUser, OjbImplementedB
     }
 
     /**
-     * Hash code.
+     * {@inheritDoc}
      *
-     * @return the int
+     * Hash code.
      */
     @Override
     public int hashCode() {
@@ -176,9 +173,9 @@ public class EcUserBean extends ModelBeanBase implements EcUser, OjbImplementedB
     }
 
     /**
-     * To string.
+     * {@inheritDoc}
      *
-     * @return the string
+     * To string.
      */
     @Override
     public String toString() {

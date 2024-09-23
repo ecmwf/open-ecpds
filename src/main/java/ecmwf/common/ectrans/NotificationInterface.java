@@ -46,7 +46,7 @@ public interface NotificationInterface extends Closeable {
      * @param lifetime
      *            the lifetime
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             the io exception
      */
     void notify(final String url, final String key, final String value, final long lifetime) throws IOException;

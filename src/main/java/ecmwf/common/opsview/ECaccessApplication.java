@@ -55,9 +55,9 @@ public final class ECaccessApplication extends Application {
     private static final Logger _log = LogManager.getLogger(ECaccessApplication.class);
 
     /**
-     * Gets the classes.
+     * {@inheritDoc}
      *
-     * @return the classes
+     * Gets the classes.
      */
     @Override
     public Set<Class<?>> getClasses() {
@@ -65,9 +65,9 @@ public final class ECaccessApplication extends Application {
     }
 
     /**
-     * Gets the singletons.
+     * {@inheritDoc}
      *
-     * @return the singletons
+     * Gets the singletons.
      */
     @SuppressWarnings("deprecation")
     @Override

@@ -108,6 +108,8 @@ final class ECpdsParser extends ConfigurableLoopRunnable {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Configurable loop run.
      */
     @Override
@@ -152,7 +154,7 @@ final class ECpdsParser extends ConfigurableLoopRunnable {
      *
      * @return the long
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     public long process(final Long lastModified, final File file) throws Exception {

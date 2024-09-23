@@ -40,7 +40,7 @@ public interface RemoteServer extends Remote {
      *
      * @return the plugin infos
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     PluginInfo[] getPluginInfos() throws RemoteException;

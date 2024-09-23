@@ -27,7 +27,6 @@ package ecmwf.common.technical;
  *
  * @since 2024-07-01
  */
-
 public class ByteSize {
 
     /** The Constant ZERO. */
@@ -191,9 +190,9 @@ public class ByteSize {
     }
 
     /**
-     * To string.
+     * {@inheritDoc}
      *
-     * @return the string
+     * To string.
      */
     @Override
     public String toString() {

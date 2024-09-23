@@ -27,7 +27,6 @@ package ecmwf.common.starter;
  *
  * @since 2024-07-01
  */
-
 public interface ToBeStarted {
     /**
      * Shutdown.

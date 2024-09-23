@@ -154,9 +154,9 @@ public final class TransferServerProvider {
      * @param primaryHost
      *            allow forcing the primary host
      *
-     * @throws TransferServerException
+     * @throws ecmwf.ecpds.master.transfer.TransferServerProvider.TransferServerException
      *             the transfer server exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public TransferServerProvider(final String caller, boolean checkCluster, final Integer allocatedFileSystem,

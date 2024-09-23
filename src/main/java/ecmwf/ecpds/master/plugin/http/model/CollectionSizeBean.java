@@ -27,7 +27,6 @@ package ecmwf.ecpds.master.plugin.http.model;
  *
  * @since 2024-07-01
  */
-
 public interface CollectionSizeBean {
 
     /**

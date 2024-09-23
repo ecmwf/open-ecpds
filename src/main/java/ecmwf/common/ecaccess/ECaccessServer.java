@@ -78,27 +78,27 @@ public abstract class ECaccessServer extends StarterServer {
      * @param starter
      *            the starter
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
-     * @throws IllegalAccessException
+     * @throws java.lang.IllegalAccessException
      *             the illegal access exception
-     * @throws InstantiationException
+     * @throws java.lang.InstantiationException
      *             the instantiation exception
-     * @throws ClassNotFoundException
+     * @throws java.lang.ClassNotFoundException
      *             the class not found exception
-     * @throws InstanceAlreadyExistsException
+     * @throws javax.management.InstanceAlreadyExistsException
      *             the instance already exists exception
-     * @throws MBeanRegistrationException
+     * @throws javax.management.MBeanRegistrationException
      *             the MBean registration exception
-     * @throws NotCompliantMBeanException
+     * @throws javax.management.NotCompliantMBeanException
      *             the not compliant m bean exception
-     * @throws MalformedObjectNameException
+     * @throws javax.management.MalformedObjectNameException
      *             the malformed object name exception
-     * @throws InstanceNotFoundException
+     * @throws javax.management.InstanceNotFoundException
      *             the instance not found exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public ECaccessServer(final Starter starter) throws SQLException, IOException, IllegalAccessException,
@@ -115,27 +115,27 @@ public abstract class ECaccessServer extends StarterServer {
      * @param starter
      *            the starter
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
-     * @throws IllegalAccessException
+     * @throws java.lang.IllegalAccessException
      *             the illegal access exception
-     * @throws InstantiationException
+     * @throws java.lang.InstantiationException
      *             the instantiation exception
-     * @throws ClassNotFoundException
+     * @throws java.lang.ClassNotFoundException
      *             the class not found exception
-     * @throws InstanceAlreadyExistsException
+     * @throws javax.management.InstanceAlreadyExistsException
      *             the instance already exists exception
-     * @throws MBeanRegistrationException
+     * @throws javax.management.MBeanRegistrationException
      *             the MBean registration exception
-     * @throws NotCompliantMBeanException
+     * @throws javax.management.NotCompliantMBeanException
      *             the not compliant m bean exception
-     * @throws MalformedObjectNameException
+     * @throws javax.management.MalformedObjectNameException
      *             the malformed object name exception
-     * @throws InstanceNotFoundException
+     * @throws javax.management.InstanceNotFoundException
      *             the instance not found exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     protected ECaccessServer(final DataBase dataBase, final Starter starter)
@@ -286,21 +286,9 @@ public abstract class ECaccessServer extends StarterServer {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Invoke.
-     *
-     * @param operationName
-     *            the operation name
-     * @param params
-     *            the params
-     * @param signature
-     *            the signature
-     *
-     * @return the object
-     *
-     * @throws NoSuchMethodException
-     *             the no such method exception
-     * @throws MBeanException
-     *             the MBean exception
      */
     @Override
     public Object invoke(final String operationName, final Object[] params, final String[] signature)
@@ -332,9 +320,9 @@ public abstract class ECaccessServer extends StarterServer {
     }
 
     /**
-     * Gets the MBean info.
+     * {@inheritDoc}
      *
-     * @return the MBean info
+     * Gets the MBean info.
      */
     @Override
     public MBeanInfo getMBeanInfo() {
@@ -363,19 +351,9 @@ public abstract class ECaccessServer extends StarterServer {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the attribute.
-     *
-     * @param name
-     *            the name
-     * @param value
-     *            the value
-     *
-     * @return true, if successful
-     *
-     * @throws InvalidAttributeValueException
-     *             the invalid attribute value exception
-     * @throws MBeanException
-     *             the MBean exception
      */
     @Override
     public boolean setAttribute(final String name, final Object value)
@@ -388,17 +366,9 @@ public abstract class ECaccessServer extends StarterServer {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the attribute.
-     *
-     * @param attributeName
-     *            the attribute name
-     *
-     * @return the attribute
-     *
-     * @throws AttributeNotFoundException
-     *             the attribute not found exception
-     * @throws MBeanException
-     *             the MBean exception
      */
     @Override
     public Object getAttribute(final String attributeName) throws AttributeNotFoundException, MBeanException {
@@ -417,6 +387,8 @@ public abstract class ECaccessServer extends StarterServer {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Shutdown.
      */
     @Override
@@ -529,7 +501,7 @@ public abstract class ECaccessServer extends StarterServer {
      *
      * @return the EC user
      *
-     * @throws Exception
+     * @throws java.lang.Exception
      *             the exception
      */
     public abstract ECUser importECUser(String user) throws Exception;

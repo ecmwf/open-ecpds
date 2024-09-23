@@ -86,7 +86,7 @@ public abstract class Checksum {
      *
      * @return the algorithm
      *
-     * @throws NoSuchAlgorithmException
+     * @throws java.security.NoSuchAlgorithmException
      *             the no such algorithm exception
      */
     public static Algorithm getAlgorithm(final String name) throws NoSuchAlgorithmException {
@@ -108,7 +108,7 @@ public abstract class Checksum {
      *
      * @return the checksum
      *
-     * @throws NoSuchAlgorithmException
+     * @throws java.security.NoSuchAlgorithmException
      *             the no such algorithm exception
      */
     public static Checksum getChecksum(final Algorithm algorithm, final InputStream in)
@@ -126,7 +126,7 @@ public abstract class Checksum {
      *
      * @return the checksum
      *
-     * @throws NoSuchAlgorithmException
+     * @throws java.security.NoSuchAlgorithmException
      *             the no such algorithm exception
      */
     public static Checksum getChecksum(final Algorithm algorithm, final OutputStream out)
@@ -146,7 +146,7 @@ public abstract class Checksum {
      *
      * @return the checksum
      *
-     * @throws NoSuchAlgorithmException
+     * @throws java.security.NoSuchAlgorithmException
      *             the no such algorithm exception
      */
     public static Checksum getChecksum(final String value, final Algorithm algorithm, final InputStream in)
@@ -173,7 +173,7 @@ public abstract class Checksum {
      *
      * @return the checksum
      *
-     * @throws NoSuchAlgorithmException
+     * @throws java.security.NoSuchAlgorithmException
      *             the no such algorithm exception
      */
     public static Checksum getChecksum(final String value, final Algorithm algorithm, final OutputStream out)

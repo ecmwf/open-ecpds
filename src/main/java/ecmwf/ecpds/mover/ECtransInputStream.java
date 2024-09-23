@@ -91,7 +91,7 @@ final class ECtransInputStream extends InputStream {
      * @param posn
      *            the posn
      *
-     * @throws SourceNotAvailableException
+     * @throws ecmwf.ecpds.mover.SourceNotAvailableException
      *             the source not available exception
      */
     public ECtransInputStream(final Host[] hostsForSource, final DataFile dataFile, final long posn)
@@ -302,12 +302,9 @@ final class ECtransInputStream extends InputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Available.
-     *
-     * @return the int
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int available() throws IOException {
@@ -318,12 +315,9 @@ final class ECtransInputStream extends InputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Read.
-     *
-     * @return the int
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int read() throws IOException {
@@ -334,15 +328,9 @@ final class ECtransInputStream extends InputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Read.
-     *
-     * @param b
-     *            the b
-     *
-     * @return the int
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int read(final byte b[]) throws IOException {
@@ -353,19 +341,9 @@ final class ECtransInputStream extends InputStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Read.
-     *
-     * @param b
-     *            the b
-     * @param off
-     *            the off
-     * @param len
-     *            the len
-     *
-     * @return the int
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int read(final byte b[], final int off, final int len) throws IOException {
@@ -376,10 +354,9 @@ final class ECtransInputStream extends InputStream {
     }
 
     /**
-     * Close.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Close.
      */
     @Override
     public void close() throws IOException {
@@ -391,10 +368,9 @@ final class ECtransInputStream extends InputStream {
     }
 
     /**
-     * Finalize.
+     * {@inheritDoc}
      *
-     * @throws Throwable
-     *             the throwable
+     * Finalize.
      */
     @Override
     protected void finalize() throws Throwable {

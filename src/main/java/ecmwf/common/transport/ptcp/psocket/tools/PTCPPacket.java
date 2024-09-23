@@ -27,7 +27,6 @@ package ecmwf.common.transport.ptcp.psocket.tools;
  *
  * @since 2024-07-01
  */
-
 public class PTCPPacket {
 
     /** The data. */
@@ -91,9 +90,9 @@ public class PTCPPacket {
     }
 
     /**
-     * To string.
+     * {@inheritDoc}
      *
-     * @return the string
+     * To string.
      */
     @Override
     public String toString() {

@@ -110,21 +110,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Insert.
-     *
-     * @param session
-     *            the session
-     * @param object
-     *            the object
-     * @param createPk
-     *            the create pk
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public void insert(final ECpdsSession session, final DataBaseObject object, final boolean createPk)
@@ -140,19 +128,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Update.
-     *
-     * @param session
-     *            the session
-     * @param object
-     *            the object
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public void update(final ECpdsSession session, final DataBaseObject object)
@@ -168,19 +146,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Removes the.
-     *
-     * @param session
-     *            the session
-     * @param object
-     *            the object
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public void remove(final ECpdsSession session, final DataBaseObject object)
@@ -196,15 +164,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the initial data transfer events.
-     *
-     * @param target
-     *            the target
-     *
-     * @return the initial data transfer events
-     *
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public void getInitialDataTransferEvents(final String target) throws RemoteException {
@@ -214,15 +176,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the initial change host events.
-     *
-     * @param target
-     *            the target
-     *
-     * @return the initial change host events
-     *
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public void getInitialChangeHostEvents(final String target) throws RemoteException {
@@ -232,25 +188,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the statistics.
-     *
-     * @param fromDate
-     *            the from date
-     * @param toDate
-     *            the to date
-     * @param groupName
-     *            the group name
-     * @param status
-     *            the status
-     * @param type
-     *            the type
-     *
-     * @return the statistics
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Statistics[] getStatistics(final Date fromDate, final Date toDate, final String groupName,
@@ -264,23 +204,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the rates.
-     *
-     * @param fromDate
-     *            the from date
-     * @param toDate
-     *            the to date
-     * @param caller
-     *            the caller
-     * @param sourceHost
-     *            the source host
-     *
-     * @return the rates
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Rates[] getRates(final Date fromDate, final Date toDate, final String caller, final String sourceHost)
@@ -294,23 +220,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the rates per transfer server.
-     *
-     * @param fromDate
-     *            the from date
-     * @param toDate
-     *            the to date
-     * @param caller
-     *            the caller
-     * @param sourceHost
-     *            the source host
-     *
-     * @return the rates per transfer server
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Rates[] getRatesPerTransferServer(final Date fromDate, final Date toDate, final String caller,
@@ -324,25 +236,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the rates per file system.
-     *
-     * @param fromDate
-     *            the from date
-     * @param toDate
-     *            the to date
-     * @param transferServerName
-     *            the transfer server name
-     * @param caller
-     *            the caller
-     * @param sourceHost
-     *            the source host
-     *
-     * @return the rates per file system
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Rates[] getRatesPerFileSystem(final Date fromDate, final Date toDate, final String transferServerName,
@@ -357,15 +253,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the initial product status events.
-     *
-     * @param target
-     *            the target
-     *
-     * @return the initial product status events
-     *
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public void getInitialProductStatusEvents(final String target) throws RemoteException {
@@ -375,17 +265,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the transfer servers.
-     *
-     * @param groupName
-     *            the group name
-     *
-     * @return the transfer servers
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public TransferServer[] getTransferServers(final String groupName) throws DataBaseException, RemoteException {
@@ -397,17 +279,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the destination ecuser.
-     *
-     * @param destinationName
-     *            the destination name
-     *
-     * @return the destination ecuser
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public ECUser[] getDestinationEcuser(final String destinationName) throws DataBaseException, RemoteException {
@@ -419,17 +293,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the destination incoming policies.
-     *
-     * @param destinationName
-     *            the destination name
-     *
-     * @return the destination incoming policies
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public IncomingPolicy[] getDestinationIncomingPolicies(final String destinationName)
@@ -442,17 +308,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the incoming users for incoming policy.
-     *
-     * @param policyId
-     *            the policy id
-     *
-     * @return the incoming users for incoming policy
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public IncomingUser[] getIncomingUsersForIncomingPolicy(final String policyId)
@@ -465,17 +323,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the incoming policies for incoming user.
-     *
-     * @param userId
-     *            the user id
-     *
-     * @return the incoming policies for incoming user
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public IncomingPolicy[] getIncomingPoliciesForIncomingUser(final String userId)
@@ -488,17 +338,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the operations for incoming user.
-     *
-     * @param userId
-     *            the user id
-     *
-     * @return the operations for incoming user
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Operation[] getOperationsForIncomingUser(final String userId) throws DataBaseException, RemoteException {
@@ -510,17 +352,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the destinations for incoming user.
-     *
-     * @param userId
-     *            the user id
-     *
-     * @return the destinations for incoming user
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Destination[] getDestinationsForIncomingUser(final String userId) throws DataBaseException, RemoteException {
@@ -532,17 +366,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the destinations for incoming policy.
-     *
-     * @param policyId
-     *            the policy id
-     *
-     * @return the destinations for incoming policy
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Destination[] getDestinationsForIncomingPolicy(final String policyId)
@@ -555,25 +381,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the data transfer count not done by product and time on date.
-     *
-     * @param destination
-     *            the destination
-     * @param product
-     *            the product
-     * @param time
-     *            the time
-     * @param from
-     *            the from
-     * @param to
-     *            the to
-     *
-     * @return the data transfer count not done by product and time on date
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public int getDataTransferCountNotDoneByProductAndTimeOnDate(final String destination, final String product,
@@ -588,19 +398,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the destination aliases.
-     *
-     * @param name
-     *            the name
-     * @param mode
-     *            the mode
-     *
-     * @return the destination aliases
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Destination[] getDestinationAliases(final String name, final String mode)
@@ -613,19 +413,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the aliases.
-     *
-     * @param name
-     *            the name
-     * @param mode
-     *            the mode
-     *
-     * @return the aliases
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Alias[] getAliases(final String name, final String mode) throws DataBaseException, RemoteException {
@@ -637,23 +427,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the e cuser events.
-     *
-     * @param userName
-     *            the user name
-     * @param onIsoDate
-     *            the on iso date
-     * @param search
-     *            the search
-     * @param cursor
-     *            the cursor
-     *
-     * @return the e cuser events
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Collection<Event> getECuserEvents(final String userName, final Date onIsoDate, final String search,
@@ -666,23 +442,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the incoming history.
-     *
-     * @param userName
-     *            the user name
-     * @param onIsoDate
-     *            the on iso date
-     * @param search
-     *            the search
-     * @param cursor
-     *            the cursor
-     *
-     * @return the incoming history
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Collection<IncomingHistory> getIncomingHistory(final String userName, final Date onIsoDate,
@@ -695,21 +457,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the data transfers by host name.
-     *
-     * @param name
-     *            the name
-     * @param from
-     *            the from
-     * @param to
-     *            the to
-     *
-     * @return the data transfers by host name
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Collection<DataTransfer> getDataTransfersByHostName(final String name, final Date from, final Date to)
@@ -722,21 +472,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the data transfers by transfer server name.
-     *
-     * @param name
-     *            the name
-     * @param from
-     *            the from
-     * @param to
-     *            the to
-     *
-     * @return the data transfers by transfer server name
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Collection<DataTransfer> getDataTransfersByTransferServerName(final String name, final Date from,
@@ -750,27 +488,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the data transfers by status code and date.
-     *
-     * @param status
-     *            the status
-     * @param from
-     *            the from
-     * @param to
-     *            the to
-     * @param search
-     *            the search
-     * @param type
-     *            the type
-     * @param cursor
-     *            the cursor
-     *
-     * @return the data transfers by status code and date
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Collection<DataTransfer> getDataTransfersByStatusCodeAndDate(final String status, final Date from,
@@ -786,19 +506,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the data transfers by data file id.
-     *
-     * @param dataFileId
-     *            the data file id
-     * @param includeDeleted
-     *            the include deleted
-     *
-     * @return the data transfers by data file id
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Collection<DataTransfer> getDataTransfersByDataFileId(final long dataFileId, final boolean includeDeleted)
@@ -811,15 +521,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the destinations by country ISO.
-     *
-     * @param isoCode
-     *            the iso code
-     *
-     * @return the destinations by country ISO
-     *
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Destination[] getDestinationsByCountryISO(final String isoCode) throws RemoteException {
@@ -845,27 +549,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the destinations by user.
-     *
-     * @param uid
-     *            the uid
-     * @param search
-     *            the search
-     * @param fromToAliases
-     *            the from to aliases
-     * @param asc
-     *            the asc
-     * @param status
-     *            the status
-     * @param type
-     *            the type
-     * @param filter
-     *            the filter
-     *
-     * @return the destinations by user
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public Destination[] getDestinationsByUser(final String uid, final String search, final String fromToAliases,
@@ -880,17 +566,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the destinations by host name.
-     *
-     * @param hostName
-     *            the host name
-     *
-     * @return the destinations by host name
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Destination[] getDestinationsByHostName(final String hostName) throws DataBaseException, RemoteException {
@@ -915,17 +593,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the transfer history by data transfer id.
-     *
-     * @param dataTransferId
-     *            the data transfer id
-     *
-     * @return the transfer history by data transfer id
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public TransferHistory[] getTransferHistoryByDataTransferId(final long dataTransferId)
@@ -938,21 +608,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the transfer history by data transfer id.
-     *
-     * @param dataTransferId
-     *            the data transfer id
-     * @param afterScheduleTime
-     *            the after schedule time
-     * @param cursor
-     *            the cursor
-     *
-     * @return the transfer history by data transfer id
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public TransferHistory[] getTransferHistoryByDataTransferId(final long dataTransferId,
@@ -963,17 +621,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the categories per user id.
-     *
-     * @param userId
-     *            the user id
-     *
-     * @return the categories per user id
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Collection<Category> getCategoriesPerUserId(final String userId) throws DataBaseException, RemoteException {
@@ -985,17 +635,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the urls per category id.
-     *
-     * @param id
-     *            the id
-     *
-     * @return the urls per category id
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Collection<Url> getUrlsPerCategoryId(final String id) throws DataBaseException, RemoteException {
@@ -1021,17 +663,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the categories per resource id.
-     *
-     * @param id
-     *            the id
-     *
-     * @return the categories per resource id
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Collection<Category> getCategoriesPerResourceId(final String id) throws DataBaseException, RemoteException {
@@ -1056,25 +690,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the data files by meta data.
-     *
-     * @param name
-     *            the name
-     * @param value
-     *            the value
-     * @param from
-     *            the from
-     * @param to
-     *            the to
-     * @param cursor
-     *            the cursor
-     *
-     * @return the data files by meta data
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Collection<DataFile> getDataFilesByMetaData(final String name, final String value, final Date from,
@@ -1088,37 +706,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the transfer count and meta data by filter.
-     *
-     * @param countBy
-     *            the count by
-     * @param destination
-     *            the destination
-     * @param target
-     *            the target
-     * @param stream
-     *            the stream
-     * @param time
-     *            the time
-     * @param status
-     *            the status
-     * @param fileName
-     *            the file name
-     * @param from
-     *            the from
-     * @param to
-     *            the to
-     * @param privilegedUser
-     *            the privileged user
-     * @param scheduledBefore
-     *            the scheduled before
-     *
-     * @return the transfer count and meta data by filter
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Collection<List<String>> getTransferCountAndMetaDataByFilter(final String countBy, final String destination,
@@ -1140,39 +730,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the data transfers by filter.
-     *
-     * @param destination
-     *            the destination
-     * @param target
-     *            the target
-     * @param stream
-     *            the stream
-     * @param time
-     *            the time
-     * @param status
-     *            the status
-     * @param privilegedUser
-     *            the privileged user
-     * @param scheduledBefore
-     *            the scheduled before
-     * @param fileName
-     *            the file name
-     * @param from
-     *            the from
-     * @param to
-     *            the to
-     * @param cursor
-     *            the cursor
-     *
-     * @return the data transfers by filter
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Collection<DataTransferWithPermissions> getDataTransfersByFilter(final String destination,
@@ -1190,37 +750,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the data transfers by filter.
-     *
-     * @param destination
-     *            the destination
-     * @param target
-     *            the target
-     * @param stream
-     *            the stream
-     * @param time
-     *            the time
-     * @param status
-     *            the status
-     * @param privilegedUser
-     *            the privileged user
-     * @param scheduledBefore
-     *            the scheduled before
-     * @param fileName
-     *            the file name
-     * @param from
-     *            the from
-     * @param to
-     *            the to
-     *
-     * @return the data transfers by filter
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Collection<DataTransferWithPermissions> getDataTransfersByFilter(final String destination,
@@ -1238,27 +770,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the filtered hosts.
-     *
-     * @param label
-     *            the label
-     * @param filter
-     *            the filter
-     * @param network
-     *            the network
-     * @param type
-     *            the type
-     * @param search
-     *            the search
-     * @param cursor
-     *            the cursor
-     *
-     * @return the filtered hosts
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Collection<Host> getFilteredHosts(final String label, final String filter, final String network,
@@ -1270,17 +784,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the hosts by destination id.
-     *
-     * @param destId
-     *            the dest id
-     *
-     * @return the hosts by destination id
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Collection<Host> getHostsByDestinationId(final String destId) throws DataBaseException, RemoteException {
@@ -1292,17 +798,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the hosts by transfer method id.
-     *
-     * @param transferMethodId
-     *            the transfer method id
-     *
-     * @return the hosts by transfer method id
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Collection<Host> getHostsByTransferMethodId(final String transferMethodId)
@@ -1315,17 +813,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the transfer methods by ec trans module name.
-     *
-     * @param ecTransModuleName
-     *            the ec trans module name
-     *
-     * @return the transfer methods by ec trans module name
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Collection<TransferMethod> getTransferMethodsByEcTransModuleName(final String ecTransModuleName)
@@ -1338,17 +828,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the meta data by data file id.
-     *
-     * @param dataFileId
-     *            the data file id
-     *
-     * @return the meta data by data file id
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Collection<MetadataValue> getMetaDataByDataFileId(final long dataFileId)
@@ -1361,17 +843,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the meta data by attribute name.
-     *
-     * @param id
-     *            the id
-     *
-     * @return the meta data by attribute name
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Collection<MetadataValue> getMetaDataByAttributeName(final String id)
@@ -1384,19 +858,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the data transfers by destination and identity.
-     *
-     * @param destination
-     *            the destination
-     * @param identity
-     *            the identity
-     *
-     * @return the data transfers by destination and identity
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Collection<DataTransfer> getDataTransfersByDestinationAndIdentity(final String destination,
@@ -1410,17 +874,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the transfer count with destination and metadata value by metadata name.
-     *
-     * @param metadataName
-     *            the metadata name
-     *
-     * @return the transfer count with destination and metadata value by metadata name
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Collection<List<String>> getTransferCountWithDestinationAndMetadataValueByMetadataName(
@@ -1436,25 +892,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the data transfers by destination product and time on date.
-     *
-     * @param destinationName
-     *            the destination name
-     * @param product
-     *            the product
-     * @param time
-     *            the time
-     * @param fromIsoDate
-     *            the from iso date
-     * @param toIsoDate
-     *            the to iso date
-     *
-     * @return the data transfers by destination product and time on date
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Collection<DataTransfer> getDataTransfersByDestinationProductAndTimeOnDate(final String destinationName,
@@ -1470,21 +910,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the data transfers by destination on date.
-     *
-     * @param destinationName
-     *            the destination name
-     * @param fromIsoDate
-     *            the from iso date
-     * @param toIsoDate
-     *            the to iso date
-     *
-     * @return the data transfers by destination on date
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Collection<DataTransfer> getDataTransfersByDestinationOnDate(final String destinationName,
@@ -1499,21 +927,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the data transfers by destination on transmission date.
-     *
-     * @param destinationName
-     *            the destination name
-     * @param fromIsoDate
-     *            the from iso date
-     * @param toIsoDate
-     *            the to iso date
-     *
-     * @return the data transfers by destination on transmission date
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Collection<DataTransfer> getDataTransfersByDestinationOnTransmissionDate(final String destinationName,
@@ -1529,17 +945,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the bad data transfers by destination.
-     *
-     * @param destinationName
-     *            the destination name
-     *
-     * @return the bad data transfers by destination
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Collection<DataTransfer> getBadDataTransfersByDestination(final String destinationName)
@@ -1552,17 +960,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the bad data transfers by destination count.
-     *
-     * @param destinationName
-     *            the destination name
-     *
-     * @return the bad data transfers by destination count
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public int getBadDataTransfersByDestinationCount(final String destinationName)
@@ -1579,23 +979,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the transfer history by destination on product date.
-     *
-     * @param destinationName
-     *            the destination name
-     * @param fromIsoDate
-     *            the from iso date
-     * @param toIsoDate
-     *            the to iso date
-     * @param cursor
-     *            the cursor
-     *
-     * @return the transfer history by destination on product date
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Collection<TransferHistory> getTransferHistoryByDestinationOnProductDate(final String destinationName,
@@ -1611,23 +997,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the transfer history by destination on history date.
-     *
-     * @param destinationName
-     *            the destination name
-     * @param fromIsoDate
-     *            the from iso date
-     * @param toIsoDate
-     *            the to iso date
-     * @param cursor
-     *            the cursor
-     *
-     * @return the transfer history by destination on history date
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Collection<TransferHistory> getTransferHistoryByDestinationOnHistoryDate(final String destinationName,
@@ -1643,17 +1015,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the allowed ec users by host name.
-     *
-     * @param hostName
-     *            the host name
-     *
-     * @return the allowed ec users by host name
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Collection<ECUser> getAllowedEcUsersByHostName(final String hostName)
@@ -1666,17 +1030,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the traffic by destination name.
-     *
-     * @param destinationName
-     *            the destination name
-     *
-     * @return the traffic by destination name
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Collection<Traffic> getTrafficByDestinationName(final String destinationName)
@@ -1689,19 +1045,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the change log by key.
-     *
-     * @param keyName
-     *            the key name
-     * @param keyValue
-     *            the key value
-     *
-     * @return the change log by key
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Collection<ChangeLog> getChangeLogByKey(final String keyName, final String keyValue)
@@ -1714,17 +1060,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the data file.
-     *
-     * @param dataFileId
-     *            the data file id
-     *
-     * @return the data file
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public DataFile getDataFile(final long dataFileId) throws DataBaseException, RemoteException {
@@ -1736,17 +1074,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the transfer group.
-     *
-     * @param name
-     *            the name
-     *
-     * @return the transfer group
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public TransferGroup getTransferGroup(final String name) throws DataBaseException, RemoteException {
@@ -1758,17 +1088,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the metadata attribute.
-     *
-     * @param name
-     *            the name
-     *
-     * @return the metadata attribute
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public MetadataAttribute getMetadataAttribute(final String name) throws DataBaseException, RemoteException {
@@ -1780,12 +1102,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the metadata attribute array.
-     *
-     * @return the metadata attribute array
-     *
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public MetadataAttribute[] getMetadataAttributeArray() throws RemoteException {
@@ -1794,12 +1113,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the cat url array.
-     *
-     * @return the cat url array
-     *
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public CatUrl[] getCatUrlArray() throws RemoteException {
@@ -1813,12 +1129,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the transfer group array.
-     *
-     * @return the transfer group array
-     *
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public TransferGroup[] getTransferGroupArray() throws RemoteException {
@@ -1827,25 +1140,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the product status.
-     *
-     * @param stream
-     *            the stream
-     * @param time
-     *            the time
-     * @param type
-     *            the type
-     * @param step
-     *            the step
-     * @param limit
-     *            the limit
-     *
-     * @return the product status
-     *
-     * @throws RemoteException
-     *             the remote exception
-     * @throws DataBaseException
-     *             the data base exception
      */
     @Override
     public ProductStatus[] getProductStatus(final String stream, final String time, final String type, final long step,
@@ -1859,17 +1156,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the transfer server.
-     *
-     * @param name
-     *            the name
-     *
-     * @return the transfer server
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public TransferServer getTransferServer(final String name) throws DataBaseException, RemoteException {
@@ -1881,12 +1170,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the transfer server array.
-     *
-     * @return the transfer server array
-     *
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public TransferServer[] getTransferServerArray() throws RemoteException {
@@ -1895,17 +1181,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the EC user.
-     *
-     * @param name
-     *            the name
-     *
-     * @return the EC user
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public ECUser getECUser(final String name) throws DataBaseException, RemoteException {
@@ -1921,17 +1199,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the incoming policy.
-     *
-     * @param name
-     *            the name
-     *
-     * @return the incoming policy
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public IncomingPolicy getIncomingPolicy(final String name) throws DataBaseException, RemoteException {
@@ -1943,17 +1213,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the operation.
-     *
-     * @param name
-     *            the name
-     *
-     * @return the operation
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Operation getOperation(final String name) throws DataBaseException, RemoteException {
@@ -1965,17 +1227,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the incoming user.
-     *
-     * @param name
-     *            the name
-     *
-     * @return the incoming user
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public IncomingUser getIncomingUser(final String name) throws DataBaseException, RemoteException {
@@ -1987,14 +1241,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the incoming user array.
-     *
-     * @return the incoming user array
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public IncomingUser[] getIncomingUserArray() throws DataBaseException, RemoteException {
@@ -2003,12 +1252,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the operation array.
-     *
-     * @return the operation array
-     *
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Operation[] getOperationArray() throws RemoteException {
@@ -2017,19 +1263,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the destination.
-     *
-     * @param name
-     *            the name
-     * @param useCache
-     *            the use cache
-     *
-     * @return the destination
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Destination getDestination(final String name, final boolean useCache)
@@ -2057,12 +1293,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the EC user array.
-     *
-     * @return the EC user array
-     *
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public ECUser[] getECUserArray() throws RemoteException {
@@ -2071,12 +1304,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the incoming policy array.
-     *
-     * @return the incoming policy array
-     *
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public IncomingPolicy[] getIncomingPolicyArray() throws RemoteException {
@@ -2085,17 +1315,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the country.
-     *
-     * @param iso
-     *            the iso
-     *
-     * @return the country
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Country getCountry(final String iso) throws DataBaseException, RemoteException {
@@ -2117,12 +1339,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the country array.
-     *
-     * @return the country array
-     *
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Country[] getCountryArray() throws RemoteException {
@@ -2131,17 +1350,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the data transfer.
-     *
-     * @param dataTransferId
-     *            the data transfer id
-     *
-     * @return the data transfer
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public DataTransfer getDataTransfer(final long dataTransferId) throws DataBaseException, RemoteException {
@@ -2158,12 +1369,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the destination array.
-     *
-     * @return the destination array
-     *
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Destination[] getDestinationArray() throws RemoteException {
@@ -2183,15 +1391,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the destination array.
-     *
-     * @param monitored
-     *            the monitored
-     *
-     * @return the destination array
-     *
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Destination[] getDestinationArray(final boolean monitored) throws RemoteException {
@@ -2214,14 +1416,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the destination names and comments.
-     *
-     * @return the destination names and comments
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Set<Map.Entry<String, String>> getDestinationNamesAndComments() throws DataBaseException, RemoteException {
@@ -2243,19 +1440,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the destination EC user.
-     *
-     * @param destinationName
-     *            the destination name
-     * @param ecuserName
-     *            the ecuser name
-     *
-     * @return the destination EC user
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public DestinationECUser getDestinationECUser(final String destinationName, final String ecuserName)
@@ -2273,19 +1460,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the association.
-     *
-     * @param destinationName
-     *            the destination name
-     * @param hostName
-     *            the host name
-     *
-     * @return the association
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Association getAssociation(final String destinationName, final String hostName)
@@ -2302,19 +1479,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the policy association.
-     *
-     * @param destinationName
-     *            the destination name
-     * @param policyId
-     *            the policy id
-     *
-     * @return the policy association
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public PolicyAssociation getPolicyAssociation(final String destinationName, final String policyId)
@@ -2327,19 +1494,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the alias.
-     *
-     * @param desName
-     *            the des name
-     * @param destinationName
-     *            the destination name
-     *
-     * @return the alias
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Alias getAlias(final String desName, final String destinationName)
@@ -2352,17 +1509,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the ectrans module.
-     *
-     * @param name
-     *            the name
-     *
-     * @return the ectrans module
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public ECtransModule getECtransModule(final String name) throws DataBaseException, RemoteException {
@@ -2374,12 +1523,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the ectrans module array.
-     *
-     * @return the ectrans module array
-     *
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public ECtransModule[] getECtransModuleArray() throws RemoteException {
@@ -2388,17 +1534,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the host.
-     *
-     * @param name
-     *            the name
-     *
-     * @return the host
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Host getHost(final String name) throws DataBaseException, RemoteException {
@@ -2410,12 +1548,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the host array.
-     *
-     * @return the host array
-     *
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Host[] getHostArray() throws RemoteException {
@@ -2424,17 +1559,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the transfer method.
-     *
-     * @param name
-     *            the name
-     *
-     * @return the transfer method
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public TransferMethod getTransferMethod(final String name) throws DataBaseException, RemoteException {
@@ -2446,19 +1573,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the host EC user.
-     *
-     * @param ecuserName
-     *            the ecuser name
-     * @param hostName
-     *            the host name
-     *
-     * @return the host EC user
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public HostECUser getHostECUser(final String ecuserName, final String hostName)
@@ -2471,17 +1588,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the transfer history.
-     *
-     * @param transferHistoryId
-     *            the transfer history id
-     *
-     * @return the transfer history
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public TransferHistory getTransferHistory(final long transferHistoryId) throws DataBaseException, RemoteException {
@@ -2493,12 +1602,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the transfer method array.
-     *
-     * @return the transfer method array
-     *
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public TransferMethod[] getTransferMethodArray() throws RemoteException {
@@ -2507,17 +1613,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the category.
-     *
-     * @param id
-     *            the id
-     *
-     * @return the category
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Category getCategory(final long id) throws DataBaseException, RemoteException {
@@ -2539,12 +1637,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the category array.
-     *
-     * @return the category array
-     *
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Category[] getCategoryArray() throws RemoteException {
@@ -2553,19 +1648,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the cat url.
-     *
-     * @param categoryId
-     *            the category id
-     * @param urlName
-     *            the url name
-     *
-     * @return the cat url
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public CatUrl getCatUrl(final long categoryId, final String urlName) throws DataBaseException, RemoteException {
@@ -2586,12 +1671,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the url array.
-     *
-     * @return the url array
-     *
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Url[] getUrlArray() throws RemoteException {
@@ -2600,17 +1682,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the url.
-     *
-     * @param name
-     *            the name
-     *
-     * @return the url
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Url getUrl(final String name) throws DataBaseException, RemoteException {
@@ -2636,17 +1710,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the web user.
-     *
-     * @param id
-     *            the id
-     *
-     * @return the web user
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public WebUser getWebUser(final String id) throws DataBaseException, RemoteException {
@@ -2658,12 +1724,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the web user array.
-     *
-     * @return the web user array
-     *
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public WebUser[] getWebUserArray() throws RemoteException {
@@ -2672,19 +1735,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the weu cat.
-     *
-     * @param categoryId
-     *            the category id
-     * @param webuserId
-     *            the webuser id
-     *
-     * @return the weu cat
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public WeuCat getWeuCat(final long categoryId, final String webuserId) throws DataBaseException, RemoteException {
@@ -2696,17 +1749,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the users per category id.
-     *
-     * @param categoryId
-     *            the category id
-     *
-     * @return the users per category id
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Collection<WebUser> getUsersPerCategoryId(final String categoryId)
@@ -2719,17 +1764,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Incoming user del.
-     *
-     * @param user
-     *            the user
-     * @param id
-     *            the id
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public void incomingUserDel(final String user, final String id) throws DataBaseException, RemoteException {
@@ -2742,23 +1779,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Incoming user add.
-     *
-     * @param user
-     *            the user
-     * @param id
-     *            the id
-     * @param password
-     *            the password
-     * @param email
-     *            the email
-     * @param iso
-     *            the iso
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public void incomingUserAdd(final String user, final String id, final String password, final String email,
@@ -2773,19 +1796,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Incoming association add.
-     *
-     * @param user
-     *            the user
-     * @param id
-     *            the id
-     * @param destination
-     *            the destination
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public void incomingAssociationAdd(final String user, final String id, final String destination)
@@ -2799,19 +1812,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Incoming category add.
-     *
-     * @param user
-     *            the user
-     * @param id
-     *            the id
-     * @param categories
-     *            the categories
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public void incomingCategoryAdd(final String user, final String id, final List<String> categories)
@@ -2825,23 +1828,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Incoming user add 2.
-     *
-     * @param user
-     *            the user
-     * @param id
-     *            the id
-     * @param email
-     *            the email
-     * @param iso
-     *            the iso
-     *
-     * @return the string
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public String incomingUserAdd2(final String user, final String id, final String email, final String iso)
@@ -2854,19 +1843,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Incoming user list.
-     *
-     * @param user
-     *            the user
-     * @param destination
-     *            the destination
-     *
-     * @return the collection
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Collection<IncomingUser> incomingUserList(final String user, final String destination)
@@ -2879,19 +1858,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Incoming association del.
-     *
-     * @param user
-     *            the user
-     * @param id
-     *            the id
-     * @param destination
-     *            the destination
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public void incomingAssociationDel(final String user, final String id, final String destination)
@@ -2905,19 +1874,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Incoming association list.
-     *
-     * @param user
-     *            the user
-     * @param id
-     *            the id
-     *
-     * @return the string[]
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public String[] incomingAssociationList(final String user, final String id)
@@ -2930,23 +1889,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Destination list.
-     *
-     * @param user
-     *            the user
-     * @param id
-     *            the id
-     * @param iso
-     *            the iso
-     * @param type
-     *            the type
-     *
-     * @return the collection
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Collection<Destination> destinationList(final String user, final String id, final String iso,
@@ -2959,25 +1904,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the destination backup.
-     *
-     * @param user
-     *            the user
-     * @param id
-     *            the id
-     * @param iso
-     *            the iso
-     * @param type
-     *            the type
-     * @param name
-     *            the name
-     *
-     * @return the destination backup
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public DestinationBackup getDestinationBackup(final String user, final String id, final String iso,
@@ -2991,23 +1920,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Put destination backup.
-     *
-     * @param user
-     *            the user
-     * @param backup
-     *            the backup
-     * @param copySharedHost
-     *            the copy shared host
-     *
-     * @return the int
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws MasterException
-     *             the master exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public int putDestinationBackup(final String user, final DestinationBackup backup, final boolean copySharedHost)
@@ -3020,17 +1935,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Destination country list.
-     *
-     * @param user
-     *            the user
-     *
-     * @return the collection
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public Collection<Country> destinationCountryList(final String user) throws DataBaseException, RemoteException {
@@ -3042,12 +1949,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the destination option list.
-     *
-     * @return the destination option list
-     *
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public List<TypeEntry> getDestinationOptionList() throws RemoteException {
@@ -3056,39 +1960,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Datafile put.
-     *
-     * @param user
-     *            the user
-     * @param remoteHost
-     *            the remote host
-     * @param destination
-     *            the destination
-     * @param metadata
-     *            the metadata
-     * @param source
-     *            the source
-     * @param uniqueName
-     *            the unique name
-     * @param target
-     *            the target
-     * @param priority
-     *            the priority
-     * @param lifeTime
-     *            the life time
-     * @param at
-     *            the at
-     * @param standby
-     *            the standby
-     * @param force
-     *            the force
-     *
-     * @return the long
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public long datafilePut(final String user, final String remoteHost, final String destination, final String metadata,
@@ -3107,19 +1981,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Datafile size.
-     *
-     * @param user
-     *            the user
-     * @param dataFileId
-     *            the data file id
-     *
-     * @return the long
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public long datafileSize(final String user, final Long dataFileId) throws DataBaseException, RemoteException {
@@ -3131,19 +1995,9 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Datafile del.
-     *
-     * @param user
-     *            the user
-     * @param dataFileId
-     *            the data file id
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     @Override
     public void datafileDel(final String user, final Long dataFileId)

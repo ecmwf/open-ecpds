@@ -27,7 +27,6 @@ package ecmwf.common.database;
  *
  * @since 2024-07-01
  */
-
 public class MSUser extends DataBaseObject {
     /** The Constant serialVersionUID. */
     private static final long serialVersionUID = 845086690856940617L;

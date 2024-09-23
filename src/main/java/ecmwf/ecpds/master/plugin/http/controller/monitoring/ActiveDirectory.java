@@ -100,7 +100,7 @@ class ActiveDirectory {
      * @param contactsFileName
      *            the contacts file name
      *
-     * @throws NamingException
+     * @throws javax.naming.NamingException
      *             the naming exception
      */
     public static void synchronize(final String contactsFileName) throws NamingException {
@@ -132,7 +132,7 @@ class ActiveDirectory {
      * @param extension
      *            the extension
      *
-     * @throws NamingException
+     * @throws javax.naming.NamingException
      *             the naming exception
      */
     public static void synchronize(final String username, final String password, final String domainName,
@@ -878,9 +878,9 @@ class ActiveDirectory {
      * @param args
      *            the arguments
      *
-     * @throws NumberFormatException
+     * @throws java.lang.NumberFormatException
      *             the number format exception
-     * @throws NamingException
+     * @throws javax.naming.NamingException
      *             the naming exception
      */
     public static void main(final String[] args) throws NumberFormatException, NamingException {

@@ -40,7 +40,7 @@ public final class ECaccessInit {
      *
      * @return the host name
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public String getHostName() throws IOException {
@@ -53,7 +53,7 @@ public final class ECaccessInit {
      *
      * @return the host address
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public String getHostAddress() throws IOException {
@@ -66,7 +66,7 @@ public final class ECaccessInit {
      *
      * @return the ECMWF server
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public String getECServer() throws IOException {
@@ -79,7 +79,7 @@ public final class ECaccessInit {
      *
      * @return the password
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public String getPassword() throws IOException {

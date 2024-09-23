@@ -84,9 +84,9 @@ public class DestinationStatusBean extends MonitoringStatusBean implements Desti
     }
 
     /**
-     * Gets the monitoring date.
+     * {@inheritDoc}
      *
-     * @return Returns the monitoringDate.
+     * Gets the monitoring date.
      */
     @Override
     public Date getMonitoringDate() {
@@ -94,10 +94,9 @@ public class DestinationStatusBean extends MonitoringStatusBean implements Desti
     }
 
     /**
-     * Sets the monitoring date.
+     * {@inheritDoc}
      *
-     * @param monitoringDate
-     *            The monitoringDate to set.
+     * Sets the monitoring date.
      */
     @Override
     public void setMonitoringDate(final Date monitoringDate) {
@@ -105,9 +104,9 @@ public class DestinationStatusBean extends MonitoringStatusBean implements Desti
     }
 
     /**
-     * Gets the calculation date.
+     * {@inheritDoc}
      *
-     * @return Returns the calculationDate.
+     * Gets the calculation date.
      */
     @Override
     public Date getCalculationDate() {
@@ -115,10 +114,9 @@ public class DestinationStatusBean extends MonitoringStatusBean implements Desti
     }
 
     /**
-     * Sets the calculation date.
+     * {@inheritDoc}
      *
-     * @param calculationDate
-     *            The calculationDate to set.
+     * Sets the calculation date.
      */
     @Override
     public void setCalculationDate(final Date calculationDate) {
@@ -126,9 +124,9 @@ public class DestinationStatusBean extends MonitoringStatusBean implements Desti
     }
 
     /**
-     * Gets the bad data transfers size.
+     * {@inheritDoc}
      *
-     * @return Returns the badDataTransfersSize.
+     * Gets the bad data transfers size.
      */
     @Override
     public int getBadDataTransfersSize() {
@@ -136,10 +134,9 @@ public class DestinationStatusBean extends MonitoringStatusBean implements Desti
     }
 
     /**
-     * Sets the bad data transfers size.
+     * {@inheritDoc}
      *
-     * @param badDataTransfersSize
-     *            The badDataTransfersSize to set.
+     * Sets the bad data transfers size.
      */
     @Override
     public void setBadDataTransfersSize(final int badDataTransfersSize) {
@@ -147,9 +144,9 @@ public class DestinationStatusBean extends MonitoringStatusBean implements Desti
     }
 
     /**
-     * Gets the last transfer.
+     * {@inheritDoc}
      *
-     * @return Returns the lastTransfer.
+     * Gets the last transfer.
      */
     @Override
     public DataTransfer getLastTransfer() {
@@ -157,10 +154,9 @@ public class DestinationStatusBean extends MonitoringStatusBean implements Desti
     }
 
     /**
-     * Sets the last transfer.
+     * {@inheritDoc}
      *
-     * @param lastTransfer
-     *            The lastTransfer to set.
+     * Sets the last transfer.
      */
     @Override
     public void setLastTransfer(final DataTransfer lastTransfer) {
@@ -168,9 +164,9 @@ public class DestinationStatusBean extends MonitoringStatusBean implements Desti
     }
 
     /**
-     * Gets the queue size.
+     * {@inheritDoc}
      *
-     * @return Returns the queueSize.
+     * Gets the queue size.
      */
     @Override
     public int getQueueSize() {
@@ -178,10 +174,9 @@ public class DestinationStatusBean extends MonitoringStatusBean implements Desti
     }
 
     /**
-     * Sets the queue size.
+     * {@inheritDoc}
      *
-     * @param queueSize
-     *            The queueSize to set.
+     * Sets the queue size.
      */
     @Override
     public void setQueueSize(final int queueSize) {
@@ -189,9 +184,9 @@ public class DestinationStatusBean extends MonitoringStatusBean implements Desti
     }
 
     /**
-     * Gets the status.
+     * {@inheritDoc}
      *
-     * @return Returns the status.
+     * Gets the status.
      */
     @Override
     public String getStatus() {
@@ -199,10 +194,9 @@ public class DestinationStatusBean extends MonitoringStatusBean implements Desti
     }
 
     /**
-     * Sets the status.
+     * {@inheritDoc}
      *
-     * @param status
-     *            The status to set.
+     * Sets the status.
      */
     @Override
     public void setStatus(final String status) {
@@ -210,9 +204,9 @@ public class DestinationStatusBean extends MonitoringStatusBean implements Desti
     }
 
     /**
-     * Gets the using internet.
+     * {@inheritDoc}
      *
-     * @return Returns the usingInternet.
+     * Gets the using internet.
      */
     @Override
     public boolean getUsingInternet() {
@@ -220,9 +214,9 @@ public class DestinationStatusBean extends MonitoringStatusBean implements Desti
     }
 
     /**
-     * Gets the primary host.
+     * {@inheritDoc}
      *
-     * @return the primary host
+     * Gets the primary host.
      */
     @Override
     public Host getPrimaryHost() {
@@ -230,10 +224,9 @@ public class DestinationStatusBean extends MonitoringStatusBean implements Desti
     }
 
     /**
-     * Sets the primary host.
+     * {@inheritDoc}
      *
-     * @param h
-     *            the new primary host
+     * Sets the primary host.
      */
     @Override
     public void setPrimaryHost(final Host h) {
@@ -241,9 +234,9 @@ public class DestinationStatusBean extends MonitoringStatusBean implements Desti
     }
 
     /**
-     * Gets the currently used host name.
+     * {@inheritDoc}
      *
-     * @return the currently used host name
+     * Gets the currently used host name.
      */
     @Override
     public String getCurrentlyUsedHostName() {
@@ -251,10 +244,9 @@ public class DestinationStatusBean extends MonitoringStatusBean implements Desti
     }
 
     /**
-     * Sets the currently used host name.
+     * {@inheritDoc}
      *
-     * @param h
-     *            the new currently used host name
+     * Sets the currently used host name.
      */
     @Override
     public void setCurrentlyUsedHostName(final String h) {
@@ -262,9 +254,9 @@ public class DestinationStatusBean extends MonitoringStatusBean implements Desti
     }
 
     /**
-     * Checks if is using primary host.
+     * {@inheritDoc}
      *
-     * @return true, if is using primary host
+     * Checks if is using primary host.
      */
     @Override
     public boolean isUsingPrimaryHost() {
@@ -273,9 +265,9 @@ public class DestinationStatusBean extends MonitoringStatusBean implements Desti
     }
 
     /**
-     * Gets the big sister status.
+     * {@inheritDoc}
      *
-     * @return the big sister status
+     * Gets the big sister status.
      */
     @Override
     public int getBigSisterStatus() {
@@ -283,10 +275,9 @@ public class DestinationStatusBean extends MonitoringStatusBean implements Desti
     }
 
     /**
-     * Sets the big sister status.
+     * {@inheritDoc}
      *
-     * @param i
-     *            the new big sister status
+     * Sets the big sister status.
      */
     @Override
     public void setBigSisterStatus(final int i) {
@@ -294,9 +285,9 @@ public class DestinationStatusBean extends MonitoringStatusBean implements Desti
     }
 
     /**
-     * Gets the big sister status comment.
+     * {@inheritDoc}
      *
-     * @return the big sister status comment
+     * Gets the big sister status comment.
      */
     @Override
     public String getBigSisterStatusComment() {
@@ -304,10 +295,9 @@ public class DestinationStatusBean extends MonitoringStatusBean implements Desti
     }
 
     /**
-     * Sets the big sister status comment.
+     * {@inheritDoc}
      *
-     * @param s
-     *            the new big sister status comment
+     * Sets the big sister status comment.
      */
     @Override
     public void setBigSisterStatusComment(final String s) {
@@ -315,9 +305,9 @@ public class DestinationStatusBean extends MonitoringStatusBean implements Desti
     }
 
     /**
-     * To string.
+     * {@inheritDoc}
      *
-     * @return the string
+     * To string.
      */
     @Override
     public String toString() {

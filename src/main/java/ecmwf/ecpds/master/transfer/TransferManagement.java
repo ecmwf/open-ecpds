@@ -151,9 +151,9 @@ public final class TransferManagement {
      *
      * @return the target name
      *
-     * @throws DirectoryException
+     * @throws ecmwf.ecpds.master.transfer.DirectoryException
      *             the directory exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public static String getTargetName(final DataTransfer transfer, final String template)
@@ -173,9 +173,9 @@ public final class TransferManagement {
      *
      * @return the target name
      *
-     * @throws DirectoryException
+     * @throws ecmwf.ecpds.master.transfer.DirectoryException
      *             the directory exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public static String getTargetName(final DataTransfer transfer, final String template, final String message)
@@ -199,9 +199,9 @@ public final class TransferManagement {
      *
      * @return the target name
      *
-     * @throws DirectoryException
+     * @throws ecmwf.ecpds.master.transfer.DirectoryException
      *             the directory exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public static String getTargetName(final DataTransfer transfer, final String template, final String message,
@@ -346,7 +346,7 @@ public final class TransferManagement {
      *
      * @return the connect options
      *
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public static String getConnectOptions(final DataTransfer transfer, final String targetName, final String moverName,
@@ -488,15 +488,15 @@ public final class TransferManagement {
      *
      * @return the data transfer
      *
-     * @throws DirectoryException
+     * @throws ecmwf.ecpds.master.transfer.DirectoryException
      *             the directory exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
-     * @throws SourceNotAvailableException
+     * @throws ecmwf.ecpds.mover.SourceNotAvailableException
      *             the source not available exception
-     * @throws ECtransException
+     * @throws ecmwf.common.ectrans.ECtransException
      *             the ectrans exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static DataTransfer put(final String moverName, final MoverInterface mover, final Host[] hostsForSource,
@@ -550,9 +550,9 @@ public final class TransferManagement {
      *
      * @return the proxy socket
      *
-     * @throws ECtransException
+     * @throws ecmwf.common.ectrans.ECtransException
      *             the ectrans exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static ProxySocket put(final String moverName, final MoverInterface mover, final Host host,
@@ -587,9 +587,9 @@ public final class TransferManagement {
      *
      * @return the proxy socket
      *
-     * @throws ECtransException
+     * @throws ecmwf.common.ectrans.ECtransException
      *             the ectrans exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static ProxySocket get(final String moverName, final MoverInterface mover, final Host host,
@@ -625,9 +625,9 @@ public final class TransferManagement {
      *
      * @return the proxy socket
      *
-     * @throws SourceNotAvailableException
+     * @throws ecmwf.ecpds.mover.SourceNotAvailableException
      *             the source not available exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static ProxySocket get(final String moverName, final MoverInterface mover, final Host[] hostsForSource,
@@ -659,9 +659,9 @@ public final class TransferManagement {
      *
      * @return the long
      *
-     * @throws ECtransException
+     * @throws ecmwf.common.ectrans.ECtransException
      *             the ectrans exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static long size(final String moverName, final MoverInterface mover, final Host host, final String source)
@@ -694,9 +694,9 @@ public final class TransferManagement {
      *
      * @return the string[]
      *
-     * @throws ECtransException
+     * @throws ecmwf.common.ectrans.ECtransException
      *             the ectrans exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static String[] list(final String moverName, final MoverInterface mover, final Host host,
@@ -725,9 +725,9 @@ public final class TransferManagement {
      * @param source
      *            the source
      *
-     * @throws ECtransException
+     * @throws ecmwf.common.ectrans.ECtransException
      *             the ectrans exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static void del(final String moverName, final MoverInterface mover, final Host host, final String source)
@@ -756,9 +756,9 @@ public final class TransferManagement {
      * @param dir
      *            the dir
      *
-     * @throws ECtransException
+     * @throws ecmwf.common.ectrans.ECtransException
      *             the ectrans exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static void mkdir(final String moverName, final MoverInterface mover, final Host host, final String dir)
@@ -787,9 +787,9 @@ public final class TransferManagement {
      * @param dir
      *            the dir
      *
-     * @throws ECtransException
+     * @throws ecmwf.common.ectrans.ECtransException
      *             the ectrans exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static void rmdir(final String moverName, final MoverInterface mover, final Host host, final String dir)
@@ -820,9 +820,9 @@ public final class TransferManagement {
      * @param target
      *            the target
      *
-     * @throws ECtransException
+     * @throws ecmwf.common.ectrans.ECtransException
      *             the ectrans exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static void move(final String moverName, final MoverInterface mover, final Host host, final String source,
@@ -849,9 +849,9 @@ public final class TransferManagement {
      * @param ticket
      *            the ticket
      *
-     * @throws ECtransException
+     * @throws ecmwf.common.ectrans.ECtransException
      *             the ectrans exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static void check(final String moverName, final MoverInterface mover, final long ticket)

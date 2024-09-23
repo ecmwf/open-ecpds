@@ -56,23 +56,9 @@ public class LoginAction extends ECMWFAction {
     private static final Logger log = LogManager.getLogger(LoginAction.class);
 
     /**
+     * {@inheritDoc}
+     *
      * Safe perform.
-     *
-     * @param mapping
-     *            the mapping
-     * @param form
-     *            the form
-     * @param request
-     *            the request
-     * @param response
-     *            the response
-     *
-     * @return the action forward
-     *
-     * @throws ECMWFException
-     *             the ECMWF exception
-     * @throws ClassCastException
-     *             the class cast exception
      */
     @Override
     public ActionForward safePerform(final ActionMapping mapping, final ActionForm form,

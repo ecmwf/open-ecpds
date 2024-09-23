@@ -110,9 +110,9 @@ public final class HttpPlugin extends PluginThread {
     }
 
     /**
-     * Gets the plugin name.
+     * {@inheritDoc}
      *
-     * @return the plugin name
+     * Gets the plugin name.
      */
     @Override
     public String getPluginName() {
@@ -120,9 +120,9 @@ public final class HttpPlugin extends PluginThread {
     }
 
     /**
-     * Gets the version.
+     * {@inheritDoc}
      *
-     * @return the version
+     * Gets the version.
      */
     @Override
     public String getVersion() {
@@ -130,9 +130,9 @@ public final class HttpPlugin extends PluginThread {
     }
 
     /**
-     * Start.
+     * {@inheritDoc}
      *
-     * @return true, if successful
+     * Start.
      */
     @Override
     public synchronized boolean start() {
@@ -383,6 +383,8 @@ public final class HttpPlugin extends PluginThread {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Stop.
      */
     @Override
@@ -399,17 +401,9 @@ public final class HttpPlugin extends PluginThread {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the attribute.
-     *
-     * @param attributeName
-     *            the attribute name
-     *
-     * @return the attribute
-     *
-     * @throws AttributeNotFoundException
-     *             the attribute not found exception
-     * @throws MBeanException
-     *             the MBean exception
      */
     @Override
     public Object getAttribute(final String attributeName) throws AttributeNotFoundException, MBeanException {
@@ -447,9 +441,9 @@ public final class HttpPlugin extends PluginThread {
     }
 
     /**
-     * Gets the MBean info.
+     * {@inheritDoc}
      *
-     * @return the MBean info
+     * Gets the MBean info.
      */
     @Override
     public MBeanInfo getMBeanInfo() {
@@ -494,21 +488,9 @@ public final class HttpPlugin extends PluginThread {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Invoke.
-     *
-     * @param operationName
-     *            the operation name
-     * @param params
-     *            the params
-     * @param signature
-     *            the signature
-     *
-     * @return the object
-     *
-     * @throws NoSuchMethodException
-     *             the no such method exception
-     * @throws MBeanException
-     *             the MBean exception
      */
     @Override
     public Object invoke(final String operationName, final Object[] params, final String[] signature)

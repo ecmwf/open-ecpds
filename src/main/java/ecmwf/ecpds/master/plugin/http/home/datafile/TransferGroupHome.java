@@ -54,7 +54,7 @@ public class TransferGroupHome extends ModelHomeBase {
      *
      * @return the transfer group
      *
-     * @throws DataFileException
+     * @throws ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException
      *             the data file exception
      */
     public static final TransferGroup create() throws DataFileException {
@@ -74,7 +74,7 @@ public class TransferGroupHome extends ModelHomeBase {
      *
      * @return the transfer group
      *
-     * @throws DataFileException
+     * @throws ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException
      *             the data file exception
      */
     public static final TransferGroup findByPrimaryKey(final String key) throws DataFileException {
@@ -91,7 +91,7 @@ public class TransferGroupHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws DataFileException
+     * @throws ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException
      *             the data file exception
      */
     public static final Collection<TransferGroup> findAll() throws DataFileException {
@@ -106,7 +106,7 @@ public class TransferGroupHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws DataFileException
+     * @throws ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException
      *             the data file exception
      */
     public static final Collection<TransferGroup> find(final ModelSearch search) throws DataFileException {

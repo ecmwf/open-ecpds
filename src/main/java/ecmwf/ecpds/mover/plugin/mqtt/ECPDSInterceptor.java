@@ -45,12 +45,9 @@ public class ECPDSInterceptor implements PublishInboundInterceptor, PublishOutbo
     private static final Logger log = LogManager.getLogger(ECPDSInterceptor.class);
 
     /**
-     * On inbound publish.
+     * {@inheritDoc}
      *
-     * @param publishInboundInput
-     *            the publish inbound input
-     * @param publishInboundOutput
-     *            the publish inbound output
+     * On inbound publish.
      */
     @Override
     public void onInboundPublish(final @NotNull PublishInboundInput publishInboundInput,
@@ -59,12 +56,9 @@ public class ECPDSInterceptor implements PublishInboundInterceptor, PublishOutbo
     }
 
     /**
-     * On outbound publish.
+     * {@inheritDoc}
      *
-     * @param publishOutboundInput
-     *            the publish outbound input
-     * @param publishOutboundOutput
-     *            the publish outbound output
+     * On outbound publish.
      */
     @Override
     public void onOutboundPublish(@NotNull final PublishOutboundInput publishOutboundInput,

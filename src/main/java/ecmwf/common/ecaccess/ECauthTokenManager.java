@@ -65,7 +65,7 @@ public abstract class ECauthTokenManager {
      *
      * @return the ecauth token
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract ECauthToken requestECauthToken(String user) throws IOException;
@@ -78,7 +78,7 @@ public abstract class ECauthTokenManager {
      *
      * @return the ecauth token
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public ECauthToken getECauthToken(final String user) throws IOException {

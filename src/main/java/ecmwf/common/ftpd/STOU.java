@@ -40,15 +40,15 @@ final class STOU {
      * @param parameter
      *            the parameter
      *
-     * @throws ClassNotFoundException
+     * @throws java.lang.ClassNotFoundException
      *             the class not found exception
-     * @throws NoSuchMethodException
+     * @throws java.lang.NoSuchMethodException
      *             the no such method exception
-     * @throws InstantiationException
+     * @throws java.lang.InstantiationException
      *             the instantiation exception
-     * @throws IllegalAccessException
+     * @throws java.lang.IllegalAccessException
      *             the illegal access exception
-     * @throws InvocationTargetException
+     * @throws java.lang.reflect.InvocationTargetException
      *             the invocation target exception
      */
     public STOU(final CurrentContext currentContext, final String parameter) throws ClassNotFoundException,

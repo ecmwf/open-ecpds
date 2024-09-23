@@ -180,7 +180,7 @@ public final class StreamManagerImp implements StreamManager {
      *
      * @return the filters
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static OutputStream getFilters(OutputStream out, final String filters, final int size) throws IOException {
@@ -279,7 +279,7 @@ public final class StreamManagerImp implements StreamManager {
      *
      * @return the filters
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static InputStream getFilters(InputStream in, final String filters, final int size) throws IOException {
@@ -339,7 +339,7 @@ public final class StreamManagerImp implements StreamManager {
      *
      * @return the extension
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static String getExtension(final String filters) throws IOException {
@@ -402,7 +402,7 @@ public final class StreamManagerImp implements StreamManager {
      *
      * @return the filters
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public static String getFilters(final String filters, final long size) throws IOException {

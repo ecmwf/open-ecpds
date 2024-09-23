@@ -63,7 +63,7 @@ public class TransferHistoryHome extends ModelHomeBase {
      *
      * @return the transfer history
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final TransferHistory findByPrimaryKey(final String key) throws TransferException {
@@ -89,7 +89,7 @@ public class TransferHistoryHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<TransferHistory> findByDestinationNameAndProductDate(final User user,
@@ -112,7 +112,7 @@ public class TransferHistoryHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<TransferHistory> findByDestinationNameAndHistoryDate(final User user,
@@ -129,7 +129,7 @@ public class TransferHistoryHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<TransferHistory> findByDataTransfer(final DataTransfer data)
@@ -149,7 +149,7 @@ public class TransferHistoryHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<TransferHistory> findByDataTransfer(final DataTransfer data,
@@ -165,7 +165,7 @@ public class TransferHistoryHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     public static final Collection<TransferHistory> find(final ModelSearch search) throws TransferException {

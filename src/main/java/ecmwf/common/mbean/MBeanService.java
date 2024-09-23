@@ -52,9 +52,9 @@ public interface MBeanService {
      *
      * @return true, if successful
      *
-     * @throws InvalidAttributeValueException
+     * @throws javax.management.InvalidAttributeValueException
      *             the invalid attribute value exception
-     * @throws MBeanException
+     * @throws javax.management.MBeanException
      *             the MBean exception
      */
     boolean setAttribute(String name, Object value) throws InvalidAttributeValueException, MBeanException;
@@ -67,9 +67,9 @@ public interface MBeanService {
      *
      * @return the attribute
      *
-     * @throws AttributeNotFoundException
+     * @throws javax.management.AttributeNotFoundException
      *             the attribute not found exception
-     * @throws MBeanException
+     * @throws javax.management.MBeanException
      *             the MBean exception
      */
     Object getAttribute(String attributeName) throws AttributeNotFoundException, MBeanException;
@@ -86,9 +86,9 @@ public interface MBeanService {
      *
      * @return the object
      *
-     * @throws NoSuchMethodException
+     * @throws java.lang.NoSuchMethodException
      *             the no such method exception
-     * @throws MBeanException
+     * @throws javax.management.MBeanException
      *             the MBean exception
      */
     Object invoke(String operationName, Object[] params, String[] signature)

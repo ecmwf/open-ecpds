@@ -38,14 +38,9 @@ import ecmwf.common.database.Destination;
 public final class DestinationComparator implements Comparator<Destination> {
 
     /**
+     * {@inheritDoc}
+     *
      * Compare.
-     *
-     * @param destination1
-     *            the destination 1
-     * @param destination2
-     *            the destination 2
-     *
-     * @return the int
      */
     @Override
     public int compare(final Destination destination1, final Destination destination2) {

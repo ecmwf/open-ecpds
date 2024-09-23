@@ -195,7 +195,7 @@ public final class LoginManagement {
      * @param passcode
      *            the passcode
      *
-     * @throws EccmdException
+     * @throws ecmwf.common.ecaccess.EccmdException
      *             the eccmd exception
      */
     public static void check(final String host, final String user, final String passcode) throws EccmdException {

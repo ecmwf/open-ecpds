@@ -253,9 +253,9 @@ public final class FtpModule extends TransferModule {
     private boolean useAppend = false;
 
     /**
-     * Gets the status.
+     * {@inheritDoc}
      *
-     * @return the status
+     * Gets the status.
      */
     @Override
     public String getStatus() {
@@ -263,12 +263,9 @@ public final class FtpModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the port.
-     *
-     * @param setup
-     *            the setup
-     *
-     * @return the port
      */
     @Override
     public int getPort(final ECtransSetup setup) {
@@ -276,15 +273,9 @@ public final class FtpModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Connect.
-     *
-     * @param location
-     *            the location
-     * @param setup
-     *            the setup
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void connect(final String location, final ECtransSetup setup) throws IOException {
@@ -459,13 +450,9 @@ public final class FtpModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Del.
-     *
-     * @param name
-     *            the name
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void del(final String name) throws IOException {
@@ -548,13 +535,9 @@ public final class FtpModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Mkdir.
-     *
-     * @param dir
-     *            the dir
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void mkdir(final String dir) throws IOException {
@@ -564,13 +547,9 @@ public final class FtpModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Rmdir.
-     *
-     * @param dir
-     *            the dir
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void rmdir(final String dir) throws IOException {
@@ -580,15 +559,9 @@ public final class FtpModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Move.
-     *
-     * @param source
-     *            the source
-     * @param target
-     *            the target
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void move(final String source, final String target) throws IOException {
@@ -598,19 +571,9 @@ public final class FtpModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Pre put.
-     *
-     * @param name
-     *            the name
-     * @param tmpName
-     *            the tmp name
-     * @param posn
-     *            the posn
-     *
-     * @return the string
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public String prePut(final String name, final String tmpName, final long posn) throws IOException {
@@ -643,19 +606,9 @@ public final class FtpModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Put.
-     *
-     * @param name
-     *            the name
-     * @param posn
-     *            the posn
-     * @param size
-     *            the size
-     *
-     * @return the output stream
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public OutputStream put(String name, final long posn, final long size) throws IOException {
@@ -671,15 +624,9 @@ public final class FtpModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Check.
-     *
-     * @param sent
-     *            the sent
-     * @param checksum
-     *            the checksum
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void check(final long sent, final String checksum) throws IOException {
@@ -774,15 +721,9 @@ public final class FtpModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Pre get.
-     *
-     * @param name
-     *            the name
-     * @param posn
-     *            the posn
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void preGet(final String name, final long posn) throws IOException {
@@ -800,17 +741,9 @@ public final class FtpModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the.
-     *
-     * @param name
-     *            the name
-     * @param posn
-     *            the posn
-     *
-     * @return the input stream
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public InputStream get(final String name, final long posn) throws IOException {
@@ -826,15 +759,9 @@ public final class FtpModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Size.
-     *
-     * @param name
-     *            the name
-     *
-     * @return the long
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public long size(final String name) throws IOException {
@@ -863,7 +790,7 @@ public final class FtpModule extends TransferModule {
      *
      * @return the long
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public long modificationTime(final String name) throws IOException {
@@ -885,17 +812,9 @@ public final class FtpModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * List as string array.
-     *
-     * @param directory
-     *            the directory
-     * @param pattern
-     *            the pattern
-     *
-     * @return the string[]
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public String[] listAsStringArray(String directory, final String pattern) throws IOException {
@@ -963,13 +882,9 @@ public final class FtpModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the input filter.
-     *
-     * @param filters
-     *            the new input filter
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void setInputFilter(final String filters) throws IOException {
@@ -985,13 +900,9 @@ public final class FtpModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the output filter.
-     *
-     * @param filters
-     *            the new output filter
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void setOutputFilter(final String filters) throws IOException {
@@ -1007,13 +918,9 @@ public final class FtpModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the input md 5.
-     *
-     * @param md5
-     *            the new input md 5
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void setInputMd5(final String md5) throws IOException {
@@ -1022,10 +929,9 @@ public final class FtpModule extends TransferModule {
     }
 
     /**
-     * Delegate checksum.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Delegate checksum.
      */
     @Override
     public void delegateChecksum() throws IOException {
@@ -1042,10 +948,9 @@ public final class FtpModule extends TransferModule {
     }
 
     /**
-     * Close.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Close.
      */
     @Override
     public void close() throws IOException {

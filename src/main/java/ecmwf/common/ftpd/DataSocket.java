@@ -204,6 +204,8 @@ public final class DataSocket implements Closeable {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Close data socket.
      */
     @Override

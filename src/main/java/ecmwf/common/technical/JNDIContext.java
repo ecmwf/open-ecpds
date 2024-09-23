@@ -117,11 +117,11 @@ public final class JNDIContext implements Closeable {
      *
      * @return the object
      *
-     * @throws NoSuchMethodException
+     * @throws java.lang.NoSuchMethodException
      *             the no such method exception
-     * @throws IllegalAccessException
+     * @throws java.lang.IllegalAccessException
      *             the illegal access exception
-     * @throws InvocationTargetException
+     * @throws java.lang.reflect.InvocationTargetException
      *             the invocation target exception
      */
     public static Object invokeBean(final Object bean, final String method, final Class<?>[] types,
@@ -195,13 +195,13 @@ public final class JNDIContext implements Closeable {
      *
      * @return the object
      *
-     * @throws NoSuchMethodException
+     * @throws java.lang.NoSuchMethodException
      *             the no such method exception
-     * @throws IllegalAccessException
+     * @throws java.lang.IllegalAccessException
      *             the illegal access exception
-     * @throws InvocationTargetException
+     * @throws java.lang.reflect.InvocationTargetException
      *             the invocation target exception
-     * @throws NamingException
+     * @throws javax.naming.NamingException
      *             the naming exception
      */
     public Object createBean(final String bean)
@@ -219,13 +219,13 @@ public final class JNDIContext implements Closeable {
      *
      * @return the object
      *
-     * @throws NoSuchMethodException
+     * @throws java.lang.NoSuchMethodException
      *             the no such method exception
-     * @throws IllegalAccessException
+     * @throws java.lang.IllegalAccessException
      *             the illegal access exception
-     * @throws InvocationTargetException
+     * @throws java.lang.reflect.InvocationTargetException
      *             the invocation target exception
-     * @throws NamingException
+     * @throws javax.naming.NamingException
      *             the naming exception
      */
     public Object createBean(final String bean, final String token)
@@ -237,7 +237,7 @@ public final class JNDIContext implements Closeable {
     /**
      * Login.
      *
-     * @throws LoginException
+     * @throws javax.security.auth.login.LoginException
      *             the login exception
      */
     public synchronized void login() throws LoginException {
@@ -266,7 +266,7 @@ public final class JNDIContext implements Closeable {
     /**
      * Logout.
      *
-     * @throws LoginException
+     * @throws javax.security.auth.login.LoginException
      *             the login exception
      */
     public synchronized void logout() throws LoginException {
@@ -289,6 +289,8 @@ public final class JNDIContext implements Closeable {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Close.
      */
     @Override

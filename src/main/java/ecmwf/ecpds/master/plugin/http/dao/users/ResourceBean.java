@@ -69,9 +69,9 @@ public class ResourceBean extends ModelBeanBase implements WebResource, OjbImple
     }
 
     /**
-     * Gets the bean interface name.
+     * {@inheritDoc}
      *
-     * @return the bean interface name
+     * Gets the bean interface name.
      */
     @Override
     public String getBeanInterfaceName() {
@@ -79,9 +79,9 @@ public class ResourceBean extends ModelBeanBase implements WebResource, OjbImple
     }
 
     /**
-     * Gets the ojb implementation.
+     * {@inheritDoc}
      *
-     * @return the ojb implementation
+     * Gets the ojb implementation.
      */
     @Override
     public DataBaseObject getOjbImplementation() {
@@ -89,9 +89,9 @@ public class ResourceBean extends ModelBeanBase implements WebResource, OjbImple
     }
 
     /**
-     * Gets the id.
+     * {@inheritDoc}
      *
-     * @return the id
+     * Gets the id.
      */
     @Override
     public String getId() {
@@ -99,9 +99,9 @@ public class ResourceBean extends ModelBeanBase implements WebResource, OjbImple
     }
 
     /**
-     * Gets the host.
+     * {@inheritDoc}
      *
-     * @return the host
+     * Gets the host.
      */
     @Override
     public String getHost() {
@@ -109,19 +109,18 @@ public class ResourceBean extends ModelBeanBase implements WebResource, OjbImple
     }
 
     /**
-     * Sets the host.
+     * {@inheritDoc}
      *
-     * @param v
-     *            the new host
+     * Sets the host.
      */
     @Override
     public void setHost(final String v) {
     }
 
     /**
-     * Gets the path.
+     * {@inheritDoc}
      *
-     * @return the path
+     * Gets the path.
      */
     @Override
     public String getPath() {
@@ -129,10 +128,9 @@ public class ResourceBean extends ModelBeanBase implements WebResource, OjbImple
     }
 
     /**
-     * Sets the path.
+     * {@inheritDoc}
      *
-     * @param v
-     *            the new path
+     * Sets the path.
      */
     @Override
     public void setPath(final String v) {
@@ -140,12 +138,9 @@ public class ResourceBean extends ModelBeanBase implements WebResource, OjbImple
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the categories.
-     *
-     * @return the categories
-     *
-     * @throws UserException
-     *             the user exception
      */
     @Override
     public Collection<Category> getCategories() throws UserException {
@@ -153,12 +148,9 @@ public class ResourceBean extends ModelBeanBase implements WebResource, OjbImple
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Equals.
-     *
-     * @param o
-     *            the o
-     *
-     * @return true, if successful
      */
     @Override
     public boolean equals(final Object o) {
@@ -178,9 +170,9 @@ public class ResourceBean extends ModelBeanBase implements WebResource, OjbImple
     }
 
     /**
-     * Hash code.
+     * {@inheritDoc}
      *
-     * @return the int
+     * Hash code.
      */
     @Override
     public int hashCode() {
@@ -188,10 +180,9 @@ public class ResourceBean extends ModelBeanBase implements WebResource, OjbImple
     }
 
     /**
-     * Delete category.
+     * {@inheritDoc}
      *
-     * @param cat
-     *            the cat
+     * Delete category.
      */
     @Override
     public void deleteCategory(final Category cat) {
@@ -199,10 +190,9 @@ public class ResourceBean extends ModelBeanBase implements WebResource, OjbImple
     }
 
     /**
-     * Adds the category.
+     * {@inheritDoc}
      *
-     * @param cat
-     *            the cat
+     * Adds the category.
      */
     @Override
     public void addCategory(final Category cat) {
@@ -228,12 +218,9 @@ public class ResourceBean extends ModelBeanBase implements WebResource, OjbImple
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the read ACL.
-     *
-     * @return the read ACL
-     *
-     * @throws UserException
-     *             the user exception
      */
     @Override
     public ACL getReadACL() throws UserException {
@@ -241,12 +228,9 @@ public class ResourceBean extends ModelBeanBase implements WebResource, OjbImple
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the write ACL.
-     *
-     * @return the write ACL
-     *
-     * @throws UserException
-     *             the user exception
      */
     @Override
     public ACL getWriteACL() throws UserException {
@@ -254,13 +238,9 @@ public class ResourceBean extends ModelBeanBase implements WebResource, OjbImple
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the read ACL.
-     *
-     * @param acl
-     *            the new read ACL
-     *
-     * @throws IllegalAccessException
-     *             the illegal access exception
      */
     @Override
     public void setReadACL(final ACL acl) throws IllegalAccessException {

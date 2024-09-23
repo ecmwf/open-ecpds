@@ -128,7 +128,7 @@ public final class IncomingProfile implements Serializable {
      * @param filename
      *            the filename
      *
-     * @throws EccmdException
+     * @throws ecmwf.common.ecaccess.EccmdException
      *             the eccmd exception
      */
     public void checkPermission(final String permission, final String filename) throws EccmdException {

@@ -84,27 +84,27 @@ public abstract class ECaccessProvider extends ECaccessServer implements Provide
      * @param starter
      *            the starter
      *
-     * @throws SQLException
+     * @throws java.sql.SQLException
      *             the SQL exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
-     * @throws IllegalAccessException
+     * @throws java.lang.IllegalAccessException
      *             the illegal access exception
-     * @throws InstantiationException
+     * @throws java.lang.InstantiationException
      *             the instantiation exception
-     * @throws ClassNotFoundException
+     * @throws java.lang.ClassNotFoundException
      *             the class not found exception
-     * @throws InstanceAlreadyExistsException
+     * @throws javax.management.InstanceAlreadyExistsException
      *             the instance already exists exception
-     * @throws MBeanRegistrationException
+     * @throws javax.management.MBeanRegistrationException
      *             the MBean registration exception
-     * @throws NotCompliantMBeanException
+     * @throws javax.management.NotCompliantMBeanException
      *             the not compliant m bean exception
-     * @throws MalformedObjectNameException
+     * @throws javax.management.MalformedObjectNameException
      *             the malformed object name exception
-     * @throws InstanceNotFoundException
+     * @throws javax.management.InstanceNotFoundException
      *             the instance not found exception
-     * @throws DataBaseException
+     * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
     public ECaccessProvider(final DataBase dataBase, final Starter starter)
@@ -224,6 +224,8 @@ public abstract class ECaccessProvider extends ECaccessServer implements Provide
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Shutdown.
      */
     @Override
@@ -237,17 +239,9 @@ public abstract class ECaccessProvider extends ECaccessServer implements Provide
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Subscribe.
-     *
-     * @param access
-     *            the access
-     *
-     * @return the long
-     *
-     * @throws RemoteException
-     *             the remote exception
-     * @throws ConnectionException
-     *             the connection exception
      */
     @Override
     public long subscribe(final ClientInterface access) throws RemoteException, ConnectionException {
@@ -288,15 +282,9 @@ public abstract class ECaccessProvider extends ECaccessServer implements Provide
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the monitor manager.
-     *
-     * @param name
-     *            the name
-     *
-     * @return the monitor manager
-     *
-     * @throws MonitorException
-     *             the monitor exception
      */
     @Override
     public MonitorManager getMonitorManager(final String name) throws MonitorException {
@@ -352,14 +340,9 @@ public abstract class ECaccessProvider extends ECaccessServer implements Provide
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Checks if is registred.
-     *
-     * @param root
-     *            the root
-     * @param service
-     *            the service
-     *
-     * @return the long
      */
     @Override
     public long isRegistred(final String root, final String service) {

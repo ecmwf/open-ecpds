@@ -40,7 +40,7 @@ public interface AllocateInterface {
      *
      * @return the string
      *
-     * @throws ScriptException
+     * @throws javax.script.ScriptException
      *             the script exception
      */
     String get(final String command) throws ScriptException;

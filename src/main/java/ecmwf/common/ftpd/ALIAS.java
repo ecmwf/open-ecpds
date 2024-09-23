@@ -96,7 +96,7 @@ final class ALIAS {
      * @param target
      *            the target
      *
-     * @throws ClassNotFoundException
+     * @throws java.lang.ClassNotFoundException
      *             the class not found exception
      */
     public static void setAliases(final CurrentContext currentContext, final String alias, final String target)

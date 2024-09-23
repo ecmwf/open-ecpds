@@ -27,7 +27,6 @@ package ecmwf.common.telnet;
  *
  * @since 2024-07-01
  */
-
 public final class ScriptHandler {
     /** The match pos. */
     private int matchPos; // current position in the match

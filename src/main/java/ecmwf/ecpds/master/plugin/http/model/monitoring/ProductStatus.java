@@ -48,9 +48,9 @@ public interface ProductStatus extends MonitoringStatus, GenerationMonitoringSta
     String getTime();
 
     /**
-     * Gets the arrival time.
+     * {@inheritDoc}
      *
-     * @return the arrival time
+     * Gets the arrival time.
      */
     @Override
     Date getArrivalTime();

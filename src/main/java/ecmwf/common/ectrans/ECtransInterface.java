@@ -70,9 +70,9 @@ public abstract class ECtransInterface implements Closeable {
      * @param name
      *            the name
      *
-     * @throws ECtransException
+     * @throws ecmwf.common.ectrans.ECtransException
      *             the ectrans exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract void del(String name) throws ECtransException, IOException;
@@ -89,9 +89,9 @@ public abstract class ECtransInterface implements Closeable {
      * @param size
      *            the size
      *
-     * @throws ECtransException
+     * @throws ecmwf.common.ectrans.ECtransException
      *             the ectrans exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract void put(String name, long ticket, long posn, long size) throws ECtransException, IOException;
@@ -104,9 +104,9 @@ public abstract class ECtransInterface implements Closeable {
      *
      * @return the long
      *
-     * @throws ECtransException
+     * @throws ecmwf.common.ectrans.ECtransException
      *             the ectrans exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract long size(String name) throws ECtransException, IOException;
@@ -121,9 +121,9 @@ public abstract class ECtransInterface implements Closeable {
      * @param posn
      *            the posn
      *
-     * @throws ECtransException
+     * @throws ecmwf.common.ectrans.ECtransException
      *             the ectrans exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract void get(String name, long ticket, long posn) throws ECtransException, IOException;
@@ -136,9 +136,9 @@ public abstract class ECtransInterface implements Closeable {
      * @param value
      *            the value
      *
-     * @throws ECtransException
+     * @throws ecmwf.common.ectrans.ECtransException
      *             the ectrans exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract void setAttribute(Object key, Object value) throws ECtransException, IOException;
@@ -151,9 +151,9 @@ public abstract class ECtransInterface implements Closeable {
      *
      * @return the attribute
      *
-     * @throws ECtransException
+     * @throws ecmwf.common.ectrans.ECtransException
      *             the ectrans exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract Object getAttribute(Object key) throws ECtransException, IOException;
@@ -170,19 +170,18 @@ public abstract class ECtransInterface implements Closeable {
      *
      * @return the object
      *
-     * @throws ECtransException
+     * @throws ecmwf.common.ectrans.ECtransException
      *             the ectrans exception
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract Object invoke(String method, Class<?>[] argTypes, Object[] args)
             throws ECtransException, IOException;
 
     /**
-     * Close.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Close.
      */
     @Override
     public void close() throws IOException {

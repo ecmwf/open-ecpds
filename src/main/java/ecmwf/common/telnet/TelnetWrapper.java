@@ -144,7 +144,7 @@ public final class TelnetWrapper extends TelnetClientHandler {
      * @param port
      *            the port
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void connect(final String host, final int port) throws IOException {
@@ -158,7 +158,7 @@ public final class TelnetWrapper extends TelnetClientHandler {
      * @param socket
      *            the socket
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void connect(final Socket socket) throws IOException {
@@ -186,7 +186,7 @@ public final class TelnetWrapper extends TelnetClientHandler {
      * @param out
      *            the out
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void connect(final InputStream in, final OutputStream out) throws IOException {
@@ -212,6 +212,8 @@ public final class TelnetWrapper extends TelnetClientHandler {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Notify end of record.
      */
     @Override
@@ -226,7 +228,7 @@ public final class TelnetWrapper extends TelnetClientHandler {
      * @param pwd
      *            the pwd
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void login(final String user, final String pwd) throws IOException {
@@ -254,7 +256,7 @@ public final class TelnetWrapper extends TelnetClientHandler {
      *
      * @return the string
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public String send(final String cmd) throws IOException {
@@ -273,7 +275,7 @@ public final class TelnetWrapper extends TelnetClientHandler {
      *
      * @return the string
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public String waitfor(final String... searchElements) throws IOException {
@@ -321,7 +323,7 @@ public final class TelnetWrapper extends TelnetClientHandler {
      *
      * @return the int
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public int read(final byte[] b) throws IOException {
@@ -352,13 +354,9 @@ public final class TelnetWrapper extends TelnetClientHandler {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Write.
-     *
-     * @param b
-     *            the b
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void write(final byte[] b) throws IOException {
@@ -371,9 +369,9 @@ public final class TelnetWrapper extends TelnetClientHandler {
     }
 
     /**
-     * Gets the terminal type.
+     * {@inheritDoc}
      *
-     * @return the terminal type
+     * Gets the terminal type.
      */
     @Override
     public String getTerminalType() {
@@ -381,9 +379,9 @@ public final class TelnetWrapper extends TelnetClientHandler {
     }
 
     /**
-     * Gets the window size.
+     * {@inheritDoc}
      *
-     * @return the window size
+     * Gets the window size.
      */
     @Override
     public TelnetDimension getWindowSize() {
@@ -400,10 +398,9 @@ public final class TelnetWrapper extends TelnetClientHandler {
     }
 
     /**
-     * Sets the local echo.
+     * {@inheritDoc}
      *
-     * @param echo
-     *            the new local echo
+     * Sets the local echo.
      */
     @Override
     public void setLocalEcho(final boolean echo) {

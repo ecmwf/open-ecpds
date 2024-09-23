@@ -130,9 +130,9 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver {
     }
 
     /**
-     * Gets the plugin name.
+     * {@inheritDoc}
      *
-     * @return the plugin name
+     * Gets the plugin name.
      */
     @Override
     public String getPluginName() {
@@ -140,9 +140,9 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver {
     }
 
     /**
-     * Gets the version.
+     * {@inheritDoc}
      *
-     * @return the version
+     * Gets the version.
      */
     @Override
     public String getVersion() {
@@ -150,9 +150,9 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver {
     }
 
     /**
-     * Start.
+     * {@inheritDoc}
      *
-     * @return true, if successful
+     * Start.
      */
     @Override
     public synchronized boolean start() {
@@ -457,10 +457,9 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver {
     }
 
     /**
-     * Register event handler.
+     * {@inheritDoc}
      *
-     * @param eventHandler
-     *            the event handler
+     * Register event handler.
      */
     @Override
     public void registerEventHandler(final EventHandler eventHandler) {
@@ -473,7 +472,7 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver {
      * @param initialiseEventHandler
      *            the initialise event handler
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
      */
     public void waitForMasterConnection(final boolean initialiseEventHandler) throws RemoteException {
@@ -515,6 +514,8 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Stop.
      */
     @Override
@@ -536,17 +537,9 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the attribute.
-     *
-     * @param attributeName
-     *            the attribute name
-     *
-     * @return the attribute
-     *
-     * @throws AttributeNotFoundException
-     *             the attribute not found exception
-     * @throws MBeanException
-     *             the MBean exception
      */
     @Override
     public Object getAttribute(final String attributeName) throws AttributeNotFoundException, MBeanException {
@@ -585,9 +578,9 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver {
     }
 
     /**
-     * Gets the MBean info.
+     * {@inheritDoc}
      *
-     * @return the MBean info
+     * Gets the MBean info.
      */
     @Override
     public MBeanInfo getMBeanInfo() {
@@ -628,21 +621,9 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Invoke.
-     *
-     * @param operationName
-     *            the operation name
-     * @param params
-     *            the params
-     * @param signature
-     *            the signature
-     *
-     * @return the object
-     *
-     * @throws NoSuchMethodException
-     *             the no such method exception
-     * @throws MBeanException
-     *             the MBean exception
      */
     @Override
     public Object invoke(final String operationName, final Object[] params, final String[] signature)
@@ -662,10 +643,9 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver {
     }
 
     /**
-     * Handle.
+     * {@inheritDoc}
      *
-     * @param event
-     *            the event
+     * Handle.
      */
     @Override
     public void handle(final PluginEvent<?> event) {

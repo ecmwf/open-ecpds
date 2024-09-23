@@ -51,9 +51,9 @@ public final class GeoIP2Helper {
      *
      * @return the city response
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
-     * @throws GeoIp2Exception
+     * @throws com.maxmind.geoip2.exception.GeoIp2Exception
      *             Signals that a GeoIP2 exception has occurred.
      */
     public static CityResponse getCityResponse(final String hostName) throws IOException, GeoIp2Exception {

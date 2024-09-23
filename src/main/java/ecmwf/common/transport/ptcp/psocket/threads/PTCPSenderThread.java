@@ -80,7 +80,7 @@ public class PTCPSenderThread extends ConfigurableRunnable {
     /**
      * Close.
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void close() throws IOException {
@@ -91,7 +91,7 @@ public class PTCPSenderThread extends ConfigurableRunnable {
     /**
      * Flush.
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public void flush() throws IOException {
@@ -99,6 +99,8 @@ public class PTCPSenderThread extends ConfigurableRunnable {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Configurable run.
      */
     @Override
@@ -121,7 +123,7 @@ public class PTCPSenderThread extends ConfigurableRunnable {
     /**
      * Send.
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public synchronized void send() throws IOException {
@@ -157,7 +159,7 @@ public class PTCPSenderThread extends ConfigurableRunnable {
      * @param packet
      *            the packet
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public synchronized void wakeup(final PTCPPacket packet) throws IOException {

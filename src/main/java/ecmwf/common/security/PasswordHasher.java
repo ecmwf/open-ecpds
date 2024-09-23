@@ -59,6 +59,21 @@ public class PasswordHasher {
     // Method to create a combined string with salt and hashed password. The actual
     // length will always be 108 characters for the provided configuration of salt
     // and hash sizes.
+    /**
+     * <p>
+     * generateSaltAndHash.
+     * </p>
+     *
+     * @param password
+     *            a {@link java.lang.String} object
+     *
+     * @return a {@link java.lang.String} object
+     *
+     * @throws java.security.NoSuchAlgorithmException
+     *             if any.
+     * @throws java.security.spec.InvalidKeySpecException
+     *             if any.
+     */
     public static String generateSaltAndHash(final String password)
             throws NoSuchAlgorithmException, InvalidKeySpecException {
         // Generate new salt
@@ -76,6 +91,23 @@ public class PasswordHasher {
     }
 
     // Method to verify the password
+    /**
+     * <p>
+     * verifyPassword.
+     * </p>
+     *
+     * @param password
+     *            a {@link java.lang.String} object
+     * @param storedSaltAndHash
+     *            a {@link java.lang.String} object
+     *
+     * @return a boolean
+     *
+     * @throws java.security.NoSuchAlgorithmException
+     *             if any.
+     * @throws java.security.spec.InvalidKeySpecException
+     *             if any.
+     */
     public static boolean verifyPassword(final String password, final String storedSaltAndHash)
             throws NoSuchAlgorithmException, InvalidKeySpecException {
         // Decode the stored salt+hash Base64 string
@@ -102,6 +134,17 @@ public class PasswordHasher {
         return diff == 0;
     }
 
+    /**
+     * <p>
+     * main.
+     * </p>
+     *
+     * @param args
+     *            an array of {@link java.lang.String} objects
+     *
+     * @throws java.lang.Exception
+     *             if any.
+     */
     public static void main(String[] args) throws Exception {
         // Example usage
         String password = "SecurePassword123";

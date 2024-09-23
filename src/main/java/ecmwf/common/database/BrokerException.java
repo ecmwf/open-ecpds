@@ -27,7 +27,6 @@ package ecmwf.common.database;
  *
  * @since 2024-07-01
  */
-
 public class BrokerException extends DataBaseException {
     /** The Constant serialVersionUID. */
     private static final long serialVersionUID = 1L;

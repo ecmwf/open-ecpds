@@ -49,12 +49,9 @@ public class ECPDSAuthenticatorProvider implements AuthenticatorProvider {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the authenticator.
-     *
-     * @param authenticatorProviderInput
-     *            the authenticator provider input
-     *
-     * @return the authenticator
      */
     @Override
     public Authenticator getAuthenticator(final AuthenticatorProviderInput authenticatorProviderInput) {

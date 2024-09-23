@@ -58,12 +58,9 @@ public class DataTransferLightBean extends DataTransferBaseBean {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the destination.
-     *
-     * @return the destination
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public Destination getDestination() throws TransferException {
@@ -71,12 +68,9 @@ public class DataTransferLightBean extends DataTransferBaseBean {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the transfer server.
-     *
-     * @return the transfer server
-     *
-     * @throws TransferException
-     *             the transfer exception
      */
     @Override
     public TransferServer getTransferServer() throws TransferException {
@@ -88,9 +82,9 @@ public class DataTransferLightBean extends DataTransferBaseBean {
     }
 
     /**
-     * Gets the can be requeued.
+     * {@inheritDoc}
      *
-     * @return the can be requeued
+     * Gets the can be requeued.
      */
     @Override
     public boolean getCanBeRequeued() {
@@ -98,9 +92,9 @@ public class DataTransferLightBean extends DataTransferBaseBean {
     }
 
     /**
-     * Gets the can be put on hold.
+     * {@inheritDoc}
      *
-     * @return the can be put on hold
+     * Gets the can be put on hold.
      */
     @Override
     public boolean getCanBePutOnHold() {
@@ -108,9 +102,9 @@ public class DataTransferLightBean extends DataTransferBaseBean {
     }
 
     /**
-     * Gets the can be stopped.
+     * {@inheritDoc}
      *
-     * @return the can be stopped
+     * Gets the can be stopped.
      */
     @Override
     public boolean getCanBeStopped() {

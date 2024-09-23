@@ -72,9 +72,9 @@ public final class ECpdsApplication extends Application {
     private static final Logger _log = LogManager.getLogger(ECpdsApplication.class);
 
     /**
-     * Gets the classes.
+     * {@inheritDoc}
      *
-     * @return the classes
+     * Gets the classes.
      */
     @Override
     public Set<Class<?>> getClasses() {
@@ -84,9 +84,9 @@ public final class ECpdsApplication extends Application {
     }
 
     /**
-     * Gets the singletons.
+     * {@inheritDoc}
      *
-     * @return the singletons
+     * Gets the singletons.
      */
     @SuppressWarnings("deprecation")
     @Override

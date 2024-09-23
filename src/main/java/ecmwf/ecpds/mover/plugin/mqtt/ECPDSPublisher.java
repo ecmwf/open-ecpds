@@ -68,22 +68,9 @@ public class ECPDSPublisher implements MQTTInterface {
     }
 
     /**
-     * Publish.
+     * {@inheritDoc}
      *
-     * @param topic
-     *            the topic
-     * @param qos
-     *            the qos
-     * @param expiryInterval
-     *            the expiry interval
-     * @param contentType
-     *            the content type
-     * @param clientId
-     *            the client id
-     * @param payload
-     *            the payload
-     * @param retain
-     *            the retain
+     * Publish.
      */
     @Override
     public void publish(final String topic, final int qos, final long expiryInterval, final String contentType,
@@ -144,10 +131,9 @@ public class ECPDSPublisher implements MQTTInterface {
     }
 
     /**
-     * Removes the.
+     * {@inheritDoc}
      *
-     * @param topic
-     *            the topic
+     * Removes the.
      */
     @Override
     public void remove(final String topic) {
@@ -161,9 +147,9 @@ public class ECPDSPublisher implements MQTTInterface {
     }
 
     /**
-     * Clients count.
+     * {@inheritDoc}
      *
-     * @return the int
+     * Clients count.
      */
     @Override
     public int clientsCount() {

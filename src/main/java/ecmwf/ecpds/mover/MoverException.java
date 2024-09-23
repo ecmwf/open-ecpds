@@ -27,7 +27,6 @@ package ecmwf.ecpds.mover;
  *
  * @since 2024-07-01
  */
-
 public final class MoverException extends Exception {
     /** The Constant serialVersionUID. */
     private static final long serialVersionUID = -1865582988943296722L;

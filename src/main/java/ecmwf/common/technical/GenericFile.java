@@ -80,7 +80,7 @@ public abstract class GenericFile {
      *
      * @return true, if successful
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract boolean exists() throws IOException;
@@ -121,7 +121,7 @@ public abstract class GenericFile {
      *
      * @return true, if successful
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract boolean renameTo(String path) throws IOException;
@@ -131,7 +131,7 @@ public abstract class GenericFile {
      *
      * @return the file
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract File getFile() throws IOException;
@@ -148,7 +148,7 @@ public abstract class GenericFile {
      *
      * @return true, if successful
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract boolean delete() throws IOException;
@@ -161,7 +161,7 @@ public abstract class GenericFile {
      *
      * @return true, if successful
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public boolean delete(final boolean recursive) throws IOException {
@@ -182,7 +182,7 @@ public abstract class GenericFile {
      *
      * @return true, if successful
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract boolean mkdir() throws IOException;
@@ -192,7 +192,7 @@ public abstract class GenericFile {
      *
      * @return true, if successful
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract boolean mkdirs() throws IOException;
@@ -216,7 +216,7 @@ public abstract class GenericFile {
      *
      * @return true, if is absolute
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract boolean isAbsolute() throws IOException;
@@ -226,7 +226,7 @@ public abstract class GenericFile {
      *
      * @return the long
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract long lastModified() throws IOException;
@@ -239,7 +239,7 @@ public abstract class GenericFile {
      *
      * @return true, if successful
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract boolean setLastModified(long time) throws IOException;
@@ -256,7 +256,7 @@ public abstract class GenericFile {
      *
      * @return true, if is directory
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract boolean isDirectory() throws IOException;
@@ -266,7 +266,7 @@ public abstract class GenericFile {
      *
      * @return true, if is file
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract boolean isFile() throws IOException;
@@ -276,7 +276,7 @@ public abstract class GenericFile {
      *
      * @return the long
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract long length() throws IOException;
@@ -289,7 +289,7 @@ public abstract class GenericFile {
      *
      * @return the string[]
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract String[] list(GenericFileFilter filter) throws IOException;
@@ -299,7 +299,7 @@ public abstract class GenericFile {
      *
      * @return the string[]
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract String[] list() throws IOException;
@@ -309,7 +309,7 @@ public abstract class GenericFile {
      *
      * @return the long
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract long listCount() throws IOException;
@@ -319,7 +319,7 @@ public abstract class GenericFile {
      *
      * @return the long
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract long listSize() throws IOException;
@@ -332,7 +332,7 @@ public abstract class GenericFile {
      *
      * @return the generic file[]
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract GenericFile[] listFiles(GenericFileFilter filter) throws IOException;
@@ -342,7 +342,7 @@ public abstract class GenericFile {
      *
      * @return the generic file[]
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract GenericFile[] listFiles() throws IOException;
@@ -352,7 +352,7 @@ public abstract class GenericFile {
      *
      * @return the input stream
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract InputStream getInputStream() throws IOException;
@@ -362,7 +362,7 @@ public abstract class GenericFile {
      *
      * @return the output stream
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract OutputStream getOutputStream() throws IOException;
@@ -375,7 +375,7 @@ public abstract class GenericFile {
      *
      * @return the output stream
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract OutputStream getOutputStream(boolean append) throws IOException;
@@ -390,7 +390,7 @@ public abstract class GenericFile {
      *
      * @return the long
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract long transmitFile(OutputStream out, long offset) throws IOException;
@@ -405,7 +405,7 @@ public abstract class GenericFile {
      *
      * @return the long
      *
-     * @throws IOException
+     * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
     public abstract long receiveFile(InputStream in, long size) throws IOException;

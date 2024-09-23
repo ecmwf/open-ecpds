@@ -65,9 +65,9 @@ public class C3P0MBeanService implements MBeanService {
      * @param name
      *            the name
      *
-     * @throws NullPointerException
+     * @throws java.lang.NullPointerException
      *             the null pointer exception
-     * @throws Exception
+     * @throws java.lang.NullPointerException
      *             the exception
      */
     public C3P0MBeanService(final String name) throws NullPointerException, Exception {
@@ -79,9 +79,9 @@ public class C3P0MBeanService implements MBeanService {
     }
 
     /**
-     * Gets the MBean info.
+     * {@inheritDoc}
      *
-     * @return the MBean info
+     * Gets the MBean info.
      */
     @Override
     public MBeanInfo getMBeanInfo() {
@@ -89,19 +89,9 @@ public class C3P0MBeanService implements MBeanService {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the attribute.
-     *
-     * @param name
-     *            the name
-     * @param value
-     *            the value
-     *
-     * @return true, if successful
-     *
-     * @throws InvalidAttributeValueException
-     *             the invalid attribute value exception
-     * @throws MBeanException
-     *             the MBean exception
      */
     @Override
     public boolean setAttribute(final String name, final Object value)
@@ -116,19 +106,9 @@ public class C3P0MBeanService implements MBeanService {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Invoke.
-     *
-     * @param operationName
-     *            the operation name
-     * @param params
-     *            the params
-     * @param signature
-     *            the signature
-     *
-     * @return the object
-     *
-     * @throws MBeanException
-     *             the MBean exception
      */
     @Override
     public Object invoke(final String operationName, final Object[] params, final String[] signature)
@@ -143,17 +123,9 @@ public class C3P0MBeanService implements MBeanService {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the attribute.
-     *
-     * @param attributeName
-     *            the attribute name
-     *
-     * @return the attribute
-     *
-     * @throws AttributeNotFoundException
-     *             the attribute not found exception
-     * @throws MBeanException
-     *             the MBean exception
      */
     @Override
     public Object getAttribute(final String attributeName) throws AttributeNotFoundException, MBeanException {

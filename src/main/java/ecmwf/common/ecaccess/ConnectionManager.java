@@ -94,7 +94,7 @@ public class ConnectionManager {
      * @param client
      *            the client
      *
-     * @throws ConnectionException
+     * @throws ecmwf.common.ecaccess.ConnectionException
      *             the connection exception
      */
     public ConnectionManager(final Class<?> name, final String host, final short port, final boolean replace,
@@ -128,7 +128,7 @@ public class ConnectionManager {
      * @param replace
      *            the replace
      *
-     * @throws ConnectionException
+     * @throws ecmwf.common.ecaccess.ConnectionException
      *             the connection exception
      */
     public ConnectionManager(final Class<?> name, final String host, final short port, final boolean replace)
@@ -141,7 +141,7 @@ public class ConnectionManager {
      *
      * @return the connection
      *
-     * @throws ConnectionException
+     * @throws ecmwf.common.ecaccess.ConnectionException
      *             the connection exception
      */
     public ProviderInterface getConnection() throws ConnectionException {
@@ -173,13 +173,13 @@ public class ConnectionManager {
      * @param host
      *            the host
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
-     * @throws ServerNotActiveException
+     * @throws java.rmi.server.ServerNotActiveException
      *             the server not active exception
-     * @throws NotBoundException
+     * @throws java.rmi.NotBoundException
      *             the not bound exception
-     * @throws ConnectionException
+     * @throws ecmwf.common.ecaccess.ConnectionException
      *             the connection exception
      */
     protected synchronized void connect(final String host)

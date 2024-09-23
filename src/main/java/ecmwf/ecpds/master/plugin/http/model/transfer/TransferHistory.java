@@ -66,7 +66,7 @@ public interface TransferHistory extends CollectionSizeBean, ModelBean {
      *
      * @return the host
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Host getHost() throws TransferException;

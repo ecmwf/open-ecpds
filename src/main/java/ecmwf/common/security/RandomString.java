@@ -27,7 +27,6 @@ package ecmwf.common.security;
  *
  * @since 2024-07-01
  */
-
 public class RandomString {
 
     /** The _alphanumerics. */

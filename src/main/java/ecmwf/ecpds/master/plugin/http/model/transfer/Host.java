@@ -208,7 +208,7 @@ public interface Host extends ModelBean, CollectionSizeBean {
      *
      * @return the transfer module names
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     String getTransferModuleNames() throws TransferException;
@@ -425,7 +425,7 @@ public interface Host extends ModelBean, CollectionSizeBean {
      *
      * @return the ec user
      *
-     * @throws EcUserException
+     * @throws ecmwf.ecpds.master.plugin.http.model.ecuser.EcUserException
      *             the ec user exception
      */
     EcUser getEcUser() throws EcUserException;
@@ -464,7 +464,7 @@ public interface Host extends ModelBean, CollectionSizeBean {
      *
      * @return the allowed users
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Collection<EcUser> getAllowedUsers() throws TransferException;
@@ -602,7 +602,7 @@ public interface Host extends ModelBean, CollectionSizeBean {
      *
      * @return the transfer method
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     TransferMethod getTransferMethod() throws TransferException;
@@ -612,7 +612,7 @@ public interface Host extends ModelBean, CollectionSizeBean {
      *
      * @return the change log list
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Collection<ChangeLog> getChangeLogList() throws TransferException;
@@ -645,7 +645,7 @@ public interface Host extends ModelBean, CollectionSizeBean {
      *
      * @return the transfer group
      *
-     * @throws DataFileException
+     * @throws ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException
      *             the data file exception
      */
     TransferGroup getTransferGroup() throws DataFileException;
@@ -762,7 +762,7 @@ public interface Host extends ModelBean, CollectionSizeBean {
      *
      * @return the data transfers today
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Collection<DataTransferLightBean> getDataTransfersToday() throws TransferException;
@@ -772,7 +772,7 @@ public interface Host extends ModelBean, CollectionSizeBean {
      *
      * @return the destinations
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     Collection<Destination> getDestinations() throws TransferException;
@@ -783,7 +783,7 @@ public interface Host extends ModelBean, CollectionSizeBean {
      * @param u
      *            the u
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     void resetTransferStatistics(User u) throws TransferException;
@@ -794,7 +794,7 @@ public interface Host extends ModelBean, CollectionSizeBean {
      * @param u
      *            the u
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     void cleanDataWindow(User u) throws TransferException;
@@ -807,7 +807,7 @@ public interface Host extends ModelBean, CollectionSizeBean {
      *
      * @return the report
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     String getReport(User u) throws TransferException;
@@ -822,7 +822,7 @@ public interface Host extends ModelBean, CollectionSizeBean {
      *
      * @return the report
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     String getReport(User u, Host proxy) throws TransferException;
@@ -835,7 +835,7 @@ public interface Host extends ModelBean, CollectionSizeBean {
      *
      * @return the output
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     RemoteInputStream getOutput(final User u) throws TransferException;
@@ -854,7 +854,7 @@ public interface Host extends ModelBean, CollectionSizeBean {
      *
      * @return the long
      *
-     * @throws TransferException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
      *             the transfer exception
      */
     long transfer(User u, byte[] bytes, String target, long remotePos) throws TransferException;

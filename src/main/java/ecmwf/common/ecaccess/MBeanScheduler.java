@@ -98,9 +98,9 @@ public abstract class MBeanScheduler extends ECaccessScheduler implements MBeanS
     }
 
     /**
-     * Gets the monitor name.
+     * {@inheritDoc}
      *
-     * @return the monitor name
+     * Gets the monitor name.
      */
     @Override
     public String getMonitorName() {
@@ -108,9 +108,9 @@ public abstract class MBeanScheduler extends ECaccessScheduler implements MBeanS
     }
 
     /**
-     * Gets the MBean info.
+     * {@inheritDoc}
      *
-     * @return the MBean info
+     * Gets the MBean info.
      */
     @Override
     public MBeanInfo getMBeanInfo() {
@@ -151,17 +151,9 @@ public abstract class MBeanScheduler extends ECaccessScheduler implements MBeanS
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Gets the attribute.
-     *
-     * @param attributeName
-     *            the attribute name
-     *
-     * @return the attribute
-     *
-     * @throws AttributeNotFoundException
-     *             the attribute not found exception
-     * @throws MBeanException
-     *             the MBean exception
      */
     @Override
     public Object getAttribute(final String attributeName) throws AttributeNotFoundException, MBeanException {
@@ -208,19 +200,9 @@ public abstract class MBeanScheduler extends ECaccessScheduler implements MBeanS
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Sets the attribute.
-     *
-     * @param name
-     *            the name
-     * @param value
-     *            the value
-     *
-     * @return true, if successful
-     *
-     * @throws InvalidAttributeValueException
-     *             the invalid attribute value exception
-     * @throws MBeanException
-     *             the MBean exception
      */
     @Override
     public boolean setAttribute(final String name, final Object value)
@@ -237,21 +219,9 @@ public abstract class MBeanScheduler extends ECaccessScheduler implements MBeanS
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Invoke.
-     *
-     * @param operationName
-     *            the operation name
-     * @param params
-     *            the params
-     * @param signature
-     *            the signature
-     *
-     * @return the object
-     *
-     * @throws NoSuchMethodException
-     *             the no such method exception
-     * @throws MBeanException
-     *             the MBean exception
      */
     @Override
     public Object invoke(final String operationName, final Object[] params, final String[] signature)
@@ -281,6 +251,8 @@ public abstract class MBeanScheduler extends ECaccessScheduler implements MBeanS
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Close.
      */
     @Override
@@ -291,6 +263,8 @@ public abstract class MBeanScheduler extends ECaccessScheduler implements MBeanS
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Shutdown.
      */
     @Override

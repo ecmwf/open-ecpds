@@ -80,10 +80,9 @@ public class MonitoringEventHandler implements EventHandler {
     }
 
     /**
-     * Handle.
+     * {@inheritDoc}
      *
-     * @param ev
-     *            the ev
+     * Handle.
      */
     @Override
     public void handle(final PluginEvent<?> ev) {

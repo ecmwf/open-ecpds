@@ -101,10 +101,9 @@ public class MonitoredInputStream extends FilterInputStream implements StreamMon
     }
 
     /**
-     * Close.
+     * {@inheritDoc}
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * Close.
      */
     @Override
     public void close() throws IOException {
@@ -137,12 +136,9 @@ public class MonitoredInputStream extends FilterInputStream implements StreamMon
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Read.
-     *
-     * @return the int
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int read() throws IOException {
@@ -163,15 +159,9 @@ public class MonitoredInputStream extends FilterInputStream implements StreamMon
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Read.
-     *
-     * @param b
-     *            the b
-     *
-     * @return the int
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int read(final byte[] b) throws IOException {
@@ -179,19 +169,9 @@ public class MonitoredInputStream extends FilterInputStream implements StreamMon
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Read.
-     *
-     * @param b
-     *            the b
-     * @param off
-     *            the off
-     * @param len
-     *            the len
-     *
-     * @return the int
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int read(final byte[] b, final int off, final int len) throws IOException {
@@ -222,9 +202,9 @@ public class MonitoredInputStream extends FilterInputStream implements StreamMon
     }
 
     /**
-     * Gets the byte sent.
+     * {@inheritDoc}
      *
-     * @return the byte sent
+     * Gets the byte sent.
      */
     @Override
     public long getByteSent() {
@@ -232,9 +212,9 @@ public class MonitoredInputStream extends FilterInputStream implements StreamMon
     }
 
     /**
-     * Gets the start time.
+     * {@inheritDoc}
      *
-     * @return the start time
+     * Gets the start time.
      */
     @Override
     public long getStartTime() {
@@ -242,9 +222,9 @@ public class MonitoredInputStream extends FilterInputStream implements StreamMon
     }
 
     /**
-     * Gets the rate.
+     * {@inheritDoc}
      *
-     * @return the rate
+     * Gets the rate.
      */
     @Override
     public String getRate() {
@@ -269,9 +249,9 @@ public class MonitoredInputStream extends FilterInputStream implements StreamMon
     }
 
     /**
-     * Gets the simplified rate.
+     * {@inheritDoc}
      *
-     * @return the simplified rate
+     * Gets the simplified rate.
      */
     @Override
     public String getSimplifiedRate() {
@@ -294,9 +274,9 @@ public class MonitoredInputStream extends FilterInputStream implements StreamMon
     }
 
     /**
-     * Gets the duration.
+     * {@inheritDoc}
      *
-     * @return the duration
+     * Gets the duration.
      */
     @Override
     public long getDuration() {
@@ -315,6 +295,8 @@ public class MonitoredInputStream extends FilterInputStream implements StreamMon
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Close and interrupt if required.
      */
     @Override

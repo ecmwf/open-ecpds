@@ -56,7 +56,7 @@ public class IncomingUserHome extends ModelHomeBase {
      *
      * @return the incoming user
      *
-     * @throws IncomingUserException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.IncomingUserException
      *             the incoming user exception
      */
     public static final IncomingUser create() throws IncomingUserException {
@@ -76,7 +76,7 @@ public class IncomingUserHome extends ModelHomeBase {
      *
      * @return the incoming user
      *
-     * @throws IncomingUserException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.IncomingUserException
      *             the incoming user exception
      */
     public static final IncomingUser findByPrimaryKey(final String key) throws IncomingUserException {
@@ -96,7 +96,7 @@ public class IncomingUserHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws IncomingUserException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.IncomingUserException
      *             the incoming user exception
      */
     public static final Collection<IncomingUser> findAssociatedToIncomingPolicy(final IncomingPolicy p)
@@ -109,7 +109,7 @@ public class IncomingUserHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws IncomingUserException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.IncomingUserException
      *             the incoming user exception
      */
     public static final Collection<IncomingUser> findAll() throws IncomingUserException {
@@ -124,7 +124,7 @@ public class IncomingUserHome extends ModelHomeBase {
      *
      * @return the collection
      *
-     * @throws IncomingUserException
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.IncomingUserException
      *             the incoming user exception
      */
     public static final Collection<IncomingUser> find(final ModelSearch search) throws IncomingUserException {

@@ -121,7 +121,7 @@ public interface TransferServer extends ModelBean {
      *
      * @return the data transfers today
      *
-     * @throws DataFileException
+     * @throws ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException
      *             the data file exception
      */
     Collection<DataTransfer> getDataTransfersToday() throws DataFileException;
@@ -131,7 +131,7 @@ public interface TransferServer extends ModelBean {
      *
      * @return the transfer group
      *
-     * @throws DataFileException
+     * @throws ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException
      *             the data file exception
      */
     TransferGroup getTransferGroup() throws DataFileException;
@@ -148,7 +148,7 @@ public interface TransferServer extends ModelBean {
      *
      * @return the host for replication
      *
-     * @throws DataFileException
+     * @throws ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException
      *             the data file exception
      */
     Host getHostForReplication() throws DataFileException;
@@ -263,7 +263,7 @@ public interface TransferServer extends ModelBean {
      *
      * @return the report
      *
-     * @throws DataFileException
+     * @throws ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException
      *             the data file exception
      */
     String getReport(User u) throws DataFileException;

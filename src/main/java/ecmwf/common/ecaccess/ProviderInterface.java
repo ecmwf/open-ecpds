@@ -42,11 +42,11 @@ public interface ProviderInterface extends Remote {
      *
      * @return the long
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
-     * @throws ServerNotActiveException
+     * @throws java.rmi.server.ServerNotActiveException
      *             the server not active exception
-     * @throws ConnectionException
+     * @throws ecmwf.common.ecaccess.ConnectionException
      *             the connection exception
      */
     long subscribe(ClientInterface access) throws RemoteException, ServerNotActiveException, ConnectionException;
@@ -61,9 +61,9 @@ public interface ProviderInterface extends Remote {
      *
      * @return the long
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
-     * @throws ServerNotActiveException
+     * @throws java.rmi.server.ServerNotActiveException
      *             the server not active exception
      */
     long isRegistred(String root, String service) throws RemoteException, ServerNotActiveException;
@@ -73,9 +73,9 @@ public interface ProviderInterface extends Remote {
      *
      * @return the long
      *
-     * @throws RemoteException
+     * @throws java.rmi.RemoteException
      *             the remote exception
-     * @throws ServerNotActiveException
+     * @throws java.rmi.server.ServerNotActiveException
      *             the server not active exception
      */
     long isAvailable() throws RemoteException, ServerNotActiveException;
