@@ -39,8 +39,7 @@ import com.hivemq.extension.sdk.api.packets.general.MqttVersion;
 /**
  * The listener interface for receiving ECPDS events. The class that is interested in processing a ECPDS event
  * implements this interface, and the object created with that class is registered with a component using the
- * component's <code>addECPDSListener</code> method. When the ECPDS event occurs, that object's appropriate method is
- * invoked.
+ * component's addECPDSListener method. When the ECPDS event occurs, that object's appropriate method is invoked.
  */
 public class ECPDSListener implements ClientLifecycleEventListener {
 

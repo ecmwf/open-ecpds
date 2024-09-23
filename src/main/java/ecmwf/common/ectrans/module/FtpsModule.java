@@ -1037,8 +1037,8 @@ public final class FtpsModule extends TransferModule {
     /**
      * The listener interface for receiving customFTPDataTransfer events. The class that is interested in processing a
      * customFTPDataTransfer event implements this interface, and the object created with that class is registered with
-     * a component using the component's <code>addCustomFTPDataTransferListener</code> method. When the
-     * customFTPDataTransfer event occurs, that object's appropriate method is invoked.
+     * a component using the component's addCustomFTPDataTransferListener method. When the customFTPDataTransfer event
+     * occurs, that object's appropriate method is invoked.
      */
     public class CustomFTPDataTransferListener implements FTPDataTransferListener {
 

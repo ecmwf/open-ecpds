@@ -48,7 +48,7 @@ public final class PipedOutputStream extends OutputStream {
 
     /**
      * Creates a piped output stream connected to the specified piped input stream. Data bytes written to this stream
-     * will then be available as input from <code>snk</code>.
+     * will then be available as input from snk.
      *
      * @param snk
      *            The piped input stream to connect to.
@@ -75,10 +75,10 @@ public final class PipedOutputStream extends OutputStream {
 
     /**
      * Connects this piped output stream to a receiver. If this object is already connected to some other piped input
-     * stream, an <code>IOException</code> is thrown.
+     * stream, an IOException is thrown.
      * <p>
-     * If <code>snk</code> is an unconnected piped input stream and <code>src</code> is an unconnected piped output
-     * stream, they may be connected by either the call: <blockquote>
+     * If snk is an unconnected piped input stream and src is an unconnected piped output stream, they may be connected
+     * by either the call: <blockquote>
      *
      * <pre>
      * src.connect(snk)
@@ -117,9 +117,9 @@ public final class PipedOutputStream extends OutputStream {
     /**
      * {@inheritDoc}
      *
-     * Writes the specified <code>byte</code> to the piped output stream.
+     * Writes the specified byte to the piped output stream.
      * <p>
-     * Implements the <code>write</code> method of <code>OutputStream</code>.
+     * Implements the write method of OutputStream.
      *
      * @exception IOException
      *                if the pipe is <a href=#BROKEN> broken</a>, {@link #connect(java.io.PipedInputStream)
@@ -136,8 +136,8 @@ public final class PipedOutputStream extends OutputStream {
     /**
      * {@inheritDoc}
      *
-     * Writes <code>len</code> bytes from the specified byte array starting at offset <code>off</code> to this piped
-     * output stream. This method blocks until all the bytes are written to the output stream.
+     * Writes len bytes from the specified byte array starting at offset off to this piped output stream. This method
+     * blocks until all the bytes are written to the output stream.
      *
      * @exception IOException
      *                if the pipe is <a href=#BROKEN> broken</a>, {@link #connect(java.io.PipedInputStream)

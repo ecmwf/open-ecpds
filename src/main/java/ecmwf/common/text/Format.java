@@ -1544,13 +1544,11 @@ public final class Format {
     }
 
     /**
-     * The options are in the following format: <code>
-     * 	(.= /readme.txt) standby=yes
-     * 	(== {avhrr_n.*}) standby=never;delay=2h
-     * </code> And this method looks for the first line which apply to the selected key. For example, if the key is
-     * /etc/readme.txt then the first line will be selected and the method will return "standby=yes". The operator for
-     * comparison are the following: ".=" starts with; "==" equals to, if the second part is between {} then it is
-     * considered as a regular expression (regex); "=." ends with; "!=" different than.
+     * The options are in the following format: (.= /readme.txt) standby=yes (== {avhrr_n.*}) standby=never;delay=2h And
+     * this method looks for the first line which apply to the selected key. For example, if the key is /etc/readme.txt
+     * then the first line will be selected and the method will return "standby=yes". The operator for comparison are
+     * the following: ".=" starts with; "==" equals to, if the second part is between {} then it is considered as a
+     * regular expression (regex); "=." ends with; "!=" different than.
      *
      * @param key
      *            the key to look for.

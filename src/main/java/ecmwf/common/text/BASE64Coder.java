@@ -88,7 +88,7 @@ public class BASE64Coder {
      * @param in
      *            an array containing the data bytes to be encoded.
      * @param iLen
-     *            number of bytes to process in <code>in</code>.
+     *            number of bytes to process in in.
      *
      * @return A character array with the BASE64 encoded data.
      */
