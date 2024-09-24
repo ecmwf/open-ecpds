@@ -20,7 +20,7 @@
 		<packager.name>Laurent Gougeon</packager.name>
 		<packager.email>laurent.gougeon@ecmwf.int</packager.email>
 		<packager.distribution>OpenPDS</packager.distribution>
-		<build.number>24102024</build.number>
+		<build.number>14052024</build.number>
 	</properties>
 	<licenses>
 		<license>
@@ -91,19 +91,17 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-antrun-plugin</artifactId>
-				<version>3.0.0</version>
+				<version>3.1.0</version>
 				<executions>
 					<execution>
 						<id>convert-eol</id>
 						<phase>prepare-package</phase>
 						<configuration>
-							<tasks>
-								<exec executable="dos2unix">
-									<arg value="etc/master/sh/*" />
-									<arg value="etc/monitor/sh/*" />
-									<arg value="etc/mover/sh/*" />
-								</exec>
-							</tasks>
+							<target>
+								<fixcrlf
+									srcdir="etc"
+									eol="unix" includes="**/sh/*" />
+							</target>
 						</configuration>
 						<goals>
 							<goal>run</goal>
