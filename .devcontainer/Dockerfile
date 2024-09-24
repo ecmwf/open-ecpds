@@ -7,7 +7,8 @@ LABEL maintainer="Laurent.Gougeon@ecmwf.int"
 # Install base packages
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive && \
 	apt-get -y install --no-install-recommends \
-	  make rpm binutils joe file apt-transport-https ca-certificates curl ftp gnupg-agent software-properties-common awscli iputils-ping telnet
+	make rpm binutils joe file apt-transport-https \
+	ca-certificates curl ftp gnupg-agent software-properties-common awscli iputils-ping telnet dos2unix
 
 # Configure awscli (s3)
 RUN mkdir /root/.aws
