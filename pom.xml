@@ -178,14 +178,10 @@
 							<goal>jar</goal>
 						</goals>
 						<configuration>
-							<includeDependencySources>false</includeDependencySources>
+							<doclint>none</doclint>
 							<dependencySourceIncludes>
 								<dependencySourceInclude>ecmwf:*</dependencySourceInclude>
 							</dependencySourceIncludes>
-							<detectJavaApiLink>false</detectJavaApiLink>
-							<doclint>none</doclint>
-							<source>${maven.compiler.target}</source>
-							<quiet>true</quiet>
 						</configuration>
 					</execution>
 				</executions>
@@ -463,6 +459,12 @@
 			</plugin>
 		</plugins>
 	</build>
+	<repositories>
+		<repository>
+			<id>local-repo</id>
+			<url>file:${project.basedir}/ext</url>
+		</repository>
+	</repositories>
 	<dependencies>
 		<dependency>
 			<groupId>com.sun.mail</groupId>
@@ -650,7 +652,7 @@
 			<version>1.0.0</version>
 		</dependency>
 		<dependency>
-			<groupId>ecaccess</groupId>
+			<groupId>com.sun.jdmk</groupId>
 			<artifactId>jmxtools</artifactId>
 			<version>1.0.0</version>
 		</dependency>

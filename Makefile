@@ -46,7 +46,7 @@ check-container-state = \
   fi
 
 # Conditional targets based on the environment
-.PHONY: dev build run login rm-cntnr rm-image get-geodb inst-ext make clean info
+.PHONY: dev build run login rm-cntnr rm-image get-geodb make clean info
 dev: build run login ## Build, run and login into the dev-container (*)
 
 build: ## Build the dev-container (*)
@@ -75,19 +75,12 @@ rm-cntnr: ## Stop and remove the dev-container (*)
 
 rm-image: ## Remove the dev-image (*)
 	@$(call check-container-state,true,outside)
-	@$(DOCKER) rmi $(IMAGE_NAME) || exit 1
+	@$(DOCKER) rmi -f $(IMAGE_NAME) || exit 1
 
-get-geodb: ## Fetch GeoLite2-City (MaxMind.com) CDN files
+get-geodb: ## Fetch latest GeoLite2-City (MaxMind.com) CDN files
 	@$(call check-container-state,"",inside)
 	wget -qO- https://cdn.jsdelivr.net/npm/geolite2-city/GeoLite2-City.mmdb.gz | \
 		gunzip -c > etc/master/conf/GeoLite2-City.mmdb
-
-inst-ext: ## Install jars and ext into the local Maven repository (**)
-	@$(call check-container-state,"",inside)
-	@mvn install:install-file -Dfile=ext/ecmwf-webgrp.jar -DgroupId=ecaccess -DartifactId=ecmwf-webgrp -Dversion=1.0.0 -Dpackaging=jar
-	@mvn install:install-file -Dfile=ext/jmxtools.jar -DgroupId=ecaccess -DartifactId=jmxtools -Dversion=1.0.0 -Dpackaging=jar
-	@mvn install:install-file -Dfile=ext/ftp4j-1.7.2.jar -DgroupId=it.sauronsoftware -DartifactId=ftp4j -Dversion=1.7.2 -Dpackaging=jar
-	@mvn install:install-file -Dfile=ext/jackson-all-1.9.11.jar -DgroupId=org.codehaus.jackson -DartifactId=jackson-all -Dversion=1.9.11 -Dpackaging=jar
 
 make: ## Compile java sources into JARs, create RPMs and Docker images (**)
 	@$(call check-container-state,"",inside)
