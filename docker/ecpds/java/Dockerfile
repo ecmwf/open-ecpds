@@ -15,12 +15,12 @@ RUN yum install -d1 -y findutils procps-ng fontconfig urw-fonts net-tools iputil
 
 # Donwload and install GraalVM
 RUN mkdir /usr/lib/jvm && cd /usr/lib/jvm && \
-        wget https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-22.0.1/graalvm-community-jdk-22.0.1_linux-x64_bin.tar.gz && \
-        tar -xzf graalvm-community-jdk-22.0.1_linux-x64_bin.tar.gz && \
-        rm -f graalvm-community-jdk-22.0.1_linux-x64_bin.tar.gz
+        wget https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-23.0.0/graalvm-community-jdk-23.0.0_linux-x64_bin.tar.gz && \
+        tar -xzf graalvm-community-jdk-23.0.0_linux-x64_bin.tar.gz && \
+        rm -f graalvm-community-jdk-23.0.0_linux-x64_bin.tar.gz
 
 # Define environment parameters for the JVM
-ENV JAVA_HOME=/usr/lib/jvm/graalvm-community-openjdk-22.0.1+8.1
+ENV JAVA_HOME=/usr/lib/jvm/graalvm-community-openjdk-23+37.1
 ENV PATH=$JAVA_HOME/bin:$PATH
 
 # Create the JDK Class-Data Archive

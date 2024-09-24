@@ -12,8 +12,8 @@
 	<packaging>jar</packaging>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<maven.compiler.target>22</maven.compiler.target>
-		<maven.compiler.source>22</maven.compiler.source>
+		<maven.compiler.target>23</maven.compiler.target>
+		<maven.compiler.source>23</maven.compiler.source>
 		<java.home>${java.home}</java.home>
 		<graalvm.version>24.0.1</graalvm.version>
 		<packager.id>syi</packager.id>

@@ -1,5 +1,5 @@
 ARG BUILDPLATFORM=linux/amd64
-FROM --platform=${BUILDPLATFORM} ecpds/java:openjdk-22.0.1
+FROM --platform=${BUILDPLATFORM} ecpds/java:openjdk-23.0.0
 
 LABEL maintainer="Laurent.Gougeon@ecmwf.int"
 
