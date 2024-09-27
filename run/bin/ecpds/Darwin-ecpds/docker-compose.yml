@@ -71,7 +71,7 @@ services:
       # Miscellaneous parameters
       RETRIEVAL_MAX_SPOOL_SIZE: 50 # Maximum number of parallel retrievals
       # Java Virtual Machine options
-      JAVA_OPTS: -XX:+UseZGC # The Z Garbage Collector
+      JAVA_OPTS: -XX:+UseG1GC # The ZG1 Garbage Collector
     image: ${ECPDS_REPOSITORY:-ecpds}/master:${TAG:-latest}
     restart: unless-stopped
     ports:
@@ -126,7 +126,7 @@ services:
       MASTER_URL_LIST:
       DEFAULT_SOURCE_HOST_ID:
       # Java Virtual Machine options
-      JAVA_OPTS: -XX:+UseZGC # The Z Garbage Collector
+      JAVA_OPTS: -XX:+UseG1GC # The ZG1 Garbage Collector
     image: ${ECPDS_REPOSITORY:-ecpds}/monitor:${TAG:-latest}
     restart: unless-stopped
     ports:
@@ -181,7 +181,7 @@ services:
       # Miscellaneous parameters
       OPERATION: "yes" # Set to 'no' to produce random data for missing files (for testing purpose only)
       # Java Virtual Machine options
-      JAVA_OPTS: -XX:+UseZGC # The Z Garbage Collector
+      JAVA_OPTS: -XX:+UseG1GC # The ZG1 Garbage Collector
     image: ${ECPDS_REPOSITORY:-ecpds}/mover:${TAG:-latest}
     restart: unless-stopped
     ports:
