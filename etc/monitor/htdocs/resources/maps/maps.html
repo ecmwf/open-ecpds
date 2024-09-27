@@ -95,15 +95,6 @@
       var raster = new ol.layer.Tile({
         source: new ol.source.OSM()
       });
-      var ecmwf = new ol.layer.Vector({
-        title: 'ECMWF',
-        source: new ol.source.Vector({
-          url: 'ecmwf.kml',
-          format: new ol.format.KML({
- 	    showPointNames: false
-	  })
-        })
-      });
       var dissemination = new ol.layer.Vector({
         title: 'Dissemination',
         source: new ol.source.Vector({
@@ -152,7 +143,6 @@
       map.addControl(layerSwitcher);
       overlayGroup.getLayers().push(dissemination);
       overlayGroup.getLayers().push(acquisition);
-      overlayGroup.getLayers().push(ecmwf);
       var displayFeatureInfo = function(pixel,coordinate) {
         content.innerHTML = '';
         var cnt = 0;
