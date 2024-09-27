@@ -219,7 +219,8 @@ public class HostDAOHandler extends PDSDAOBase implements DAOHandler {
      *
      * @return the collection
      */
-    private static final Collection<Host> convertArrayToModelBeanCollection(final ecmwf.common.database.Host[] hosts) {
+    @SuppressWarnings("null")
+	private static final Collection<Host> convertArrayToModelBeanCollection(final ecmwf.common.database.Host[] hosts) {
         final var length = hosts != null ? hosts.length : 0;
         final List<Host> results = new ArrayList<>(length);
         for (var i = 0; i < length; i++) {

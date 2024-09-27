@@ -105,6 +105,7 @@ public class EcUserDAOHandler extends PDSDAOBase implements DAOHandler {
      *
      * @return the collection
      */
+    @SuppressWarnings("null")
     private static final Collection<EcUser> convertArrayToModelBeanCollection(final ECUser[] ecusers) {
         final var length = ecusers != null ? ecusers.length : 0;
         final List<EcUser> results = new ArrayList<>(length);

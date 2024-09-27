@@ -171,6 +171,7 @@ public class IncomingPolicyDAOHandler extends PDSDAOBase implements DAOHandler {
      *
      * @return the collection
      */
+    @SuppressWarnings("null")
     private static final Collection<IncomingPolicy> convertArrayToModelBeanCollection(
             final ecmwf.common.database.IncomingPolicy[] incomingPolicy) {
         final var length = incomingPolicy != null ? incomingPolicy.length : 0;

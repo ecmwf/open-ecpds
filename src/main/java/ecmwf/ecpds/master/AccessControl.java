@@ -151,7 +151,8 @@ final class AccessControl {
      * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      */
-    public static int cleanAccessControl(final ECpdsBase base) throws DataBaseException {
+    @SuppressWarnings("null")
+	public static int cleanAccessControl(final ECpdsBase base) throws DataBaseException {
         var processed = 0;
         final List<String> destinations = new ArrayList<>();
         // Build the destination list from the Url found

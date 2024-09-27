@@ -68,7 +68,8 @@ public final class ECtransException extends Exception {
      *
      * @return the string
      */
-    private static String _getMessage(final boolean useParentheses, final Throwable throwable) {
+    @SuppressWarnings("null")
+	private static String _getMessage(final boolean useParentheses, final Throwable throwable) {
         final var message = throwable != null ? throwable.getMessage() : null;
         return isNotEmpty(message) ? useParentheses ? " (" + message.trim() + ")" : message.trim() : "";
     }

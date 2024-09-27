@@ -186,6 +186,7 @@ public class IncomingUserDAOHandler extends PDSDAOBase implements DAOHandler {
      *
      * @return the collection
      */
+    @SuppressWarnings("null")
     private static final Collection<IncomingUser> convertArrayToModelBeanCollection(
             final ecmwf.common.database.IncomingUser[] incomingUser) {
         final var length = incomingUser != null ? incomingUser.length : 0;

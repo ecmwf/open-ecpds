@@ -1676,10 +1676,10 @@ public final class HttpModule extends TransferModule {
                     getResponse = execute(targetHttpHost, request, 200);
                     final var entity = getResponse.getEntity();
                     if ((entity == null) || (entity.getContentLength() >= maxSize)) {
-                        throw new IOException("Couldn't get list from: " + request.getRequestUri() + entity != null
+                        throw new IOException("Couldn't get list from: " + request.getRequestUri() + (entity != null
                                 ? " (length is " + entity.getContentLength() + " bytes > " + Format.formatSize(maxSize)
                                         + ")"
-                                : "");
+                                : ""));
                     }
                     final var select = getSetup().getString(HOST_HTTP_SELECT);
                     final String html;

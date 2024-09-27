@@ -177,6 +177,7 @@ public class CategoryDAOHandler extends PDSDAOBase implements DAOHandler {
      *
      * @return the collection
      */
+    @SuppressWarnings("null")
     private static final Collection<CategoryBean> convertArrayToModelBeanCollection(final Category[] cats) {
         final var length = cats != null ? cats.length : 0;
         final List<CategoryBean> results = new ArrayList<>(length);

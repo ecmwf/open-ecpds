@@ -115,12 +115,11 @@ public abstract class PDSAction extends ECMWFAction {
             if (log.isDebugEnabled()) {
                 postExec = new Date();
             }
-            if (log.isDebugEnabled()) {
+            if (log.isDebugEnabled() && postExec != null && preExec != null && preUser != null) {
                 log.debug("TIME: " + request.getServletPath() + request.getPathInfo() + " => User info: "
                         + (preExec.getTime() - preUser.getTime()) / 1000.0 + " seconds. Data get (pre-forward): "
                         + (postExec.getTime() - preExec.getTime()) / 1000.0 + " seconds.");
             }
-
         }
         return forward;
     }

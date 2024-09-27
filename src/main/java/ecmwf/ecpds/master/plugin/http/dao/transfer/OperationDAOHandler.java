@@ -99,6 +99,7 @@ public class OperationDAOHandler extends PDSDAOBase implements DAOHandler {
      *
      * @return the collection
      */
+    @SuppressWarnings("null")
     private static final Collection<Operation> convertArrayToModelBeanCollection(
             final ecmwf.common.database.Operation[] incomingPolicy) {
         final var length = incomingPolicy != null ? incomingPolicy.length : 0;
