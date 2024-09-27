@@ -36,6 +36,7 @@ import org.jdom.CDATA;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.Namespace;
+import org.jdom.output.Format;
 import org.jdom.output.XMLOutputter;
 
 /**
@@ -210,9 +211,9 @@ public final class GeoLocation {
             pmCoordinates.setText(line.longitude + "," + line.latitude + ",0");
             pmPoint.addContent(pmCoordinates);
         }
-        // Write the XML file
-        final var outputter = new XMLOutputter();
-        outputter.output(kmlDocument, out);
-        out.flush();
+		// Write the XML file
+		final var outputter = new XMLOutputter(Format.getPrettyFormat());
+		outputter.output(kmlDocument, out);
+		out.flush();
     }
 }
