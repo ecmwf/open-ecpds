@@ -1084,8 +1084,11 @@ public enum ECtransOptions {
     /** The host azure url. */
     HOST_AZURE_URL("url", String.class, STRING_NONE),
 
-    /** The host azure sas token. */
-    HOST_AZURE_SAS_TOKEN("sasToken", String.class, ""),
+	/** The host azure sas url. */
+	HOST_AZURE_SAS_URL("sasUrl", String.class, ""),
+
+	/** The host azure sas subscription key. */
+	HOST_AZURE_SAS_SUBSCRIPTION_KEY("sasSubscriptionKey", String.class, ""),
 
     /** The host azure mk container. */
     HOST_AZURE_MK_CONTAINER("mkContainer", Boolean.class, false),
