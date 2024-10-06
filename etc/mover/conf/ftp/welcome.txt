@@ -1,9 +1,0 @@
-Authorized access only.
-
-**********************************************
-FTP Server
-
-Use this FTP server to download files from the
-ECMWF Dissemination System (OpenPDS).
-**********************************************
-
