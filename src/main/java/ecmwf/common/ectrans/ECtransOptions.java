@@ -2090,8 +2090,8 @@ public enum ECtransOptions {
 	}
 
 	/**
-	 * The Class MarkdownGenerator is used from Maven to generate a markdown file
-	 * with the ECtransOptions API.
+	 * The Class MarkdownGenerator is used from the building process to generate a
+	 * markdown file with the ECtransOptions API.
 	 */
 	public static class MarkdownGenerator {
 
