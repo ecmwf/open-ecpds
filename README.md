@@ -107,6 +107,18 @@ make up
 
 This will start the OpenPDS master, monitor, mover, and database services.
 
+It might take a few seconds for all the services to start. Once they are up, you can access the following URLs (please update them if you changed the configuration in the compose file):
+
+##### Monitoring interface
+
+**[https://127.0.0.1:3443](https://127.0.0.1:3443)**  
+*(Log in using `admin/admin2021`)*
+
+##### Data Portal
+
+**[https://127.0.0.1:4443](https://127.0.0.1:4443)**  
+*(Log in using `test/test2021`)*
+
 #### Checking the Containers and Logs
 
 To verify that the containers are running, use:
