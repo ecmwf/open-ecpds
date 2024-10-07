@@ -159,6 +159,6 @@ make clean
 
 ## Support Materials
 
-You can access the Javadoc API documentation for OpenPDS at the following link: [Javadocs](target/apidocs/index.html) *(will be available when published to gh-pages)*. This comprehensive documentation provides detailed information about the classes, methods, and functionalities available, serving as a valuable resource for developers.
+You can access the Javadoc API documentation for OpenPDS at the following link: [Javadocs](https://laurentgougeon.github.io/maven-ecpds/index.html) *(will be available when published to gh-pages)*. This comprehensive documentation provides detailed information about the classes, methods, and functionalities available, serving as a valuable resource for developers.
 
 Additionally, you can find the OpenPDS options for various editors at this link: [OpenPDS Options](API.md). This documentation outlines the configurable options available in the OpenPDS editors, helping users to customize their experience and optimize their workflow effectively.
