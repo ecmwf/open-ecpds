@@ -115,9 +115,5 @@ li {
                 </ul>
 	</auth:then>
   </auth:if>
-  <c:set var="requirementsUrl" value='<%=System.getProperty("requirements.url")%>'/>
-  <c:if test="${not empty requirementsUrl}">
-    <a href='${requirementsUrl}'><h3 class="menu">Requirements</h3></a>
-  </c:if>
 </div>
 </div>

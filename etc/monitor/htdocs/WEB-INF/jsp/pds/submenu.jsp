@@ -27,10 +27,4 @@
               		</tr>
 		</auth:then>
 	      </auth:if>
-  	      <c:set var="requirementsUrl" value='<%=System.getProperty("requirements.url")%>'/>
-              <c:if test="${not empty requirementsUrl}">
-                <tr>
-                  <td><a href="${requirementsUrl}">Requirements</a></td>
-                </tr>
-              </c:if>
 </table>
