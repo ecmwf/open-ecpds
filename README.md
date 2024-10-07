@@ -124,7 +124,7 @@ It might take a few seconds for all the services to start. Once they are up, you
 ##### MQTT Broker
 
 **[mqtt://127.0.0.1:4883](mqtt://127.0.0.1:4883)**  
-*(Log in using `test/test2021` - deactivate certificate validation)*
+*(Log in using `test/test2021`)*
 
 #### Checking the Containers and Logs
 
