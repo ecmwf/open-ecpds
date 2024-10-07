@@ -46,7 +46,7 @@ check-container-state = \
   fi
 
 # Conditional targets based on the environment
-.PHONY: dev build run login rm-cntnr rm-image get-geodb make clean info
+.PHONY: dev build run login rm-cntnr rm-image get-geodb build clean info
 dev: build run login ## Build, run and login into the dev-container (*)
 
 build: ## Build the dev-container (*)
@@ -82,7 +82,7 @@ get-geodb: ## Fetch latest GeoLite2-City (MaxMind.com) CDN files
 	wget -qO- https://cdn.jsdelivr.net/npm/geolite2-city/GeoLite2-City.mmdb.gz | \
 		gunzip -c > etc/master/conf/GeoLite2-City.mmdb
 
-make: ## Compile java sources into JARs, create RPMs and Docker images (**)
+build: ## Compile java sources into JARs, create RPMs and Docker images (**)
 	@$(call check-container-state,"",inside)
 	@mvn package
 	@cd docker && $(MAKE) all

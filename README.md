@@ -1,5 +1,7 @@
 <img src="OpenPDS.svg" alt="SVG Image" width="300">
 
+## Introduction
+
 OpenPDS has been designed as a multi-purpose repository, hereafter referred to as the **Data Store**, delivering three strategic data-related services:
 
 - **Data Acquisition**: the automatic discovery and retrieval of data from data providers.
@@ -7,6 +9,15 @@ OpenPDS has been designed as a multi-purpose repository, hereafter referred to a
 - **Data Portal**: the pulling and pushing of data initiated by remote sites.
 
 Data Acquisition and Data Dissemination are active services initiated by OpenPDS, whereas the Data Portal is a passive service triggered by incoming requests from remote sites. The Data Portal service provides interactive access to the Data Dissemination and Data Acquisition services.
+
+- [Data Storage and Retrieval](#data-storage-and-retrieval)
+- [Protocols and Connections](#protocols-and-connections)
+- [Object Storage](#object-storage)
+- [Additional Features](#additional-features)
+- [Getting Started](#getting-started)
+- [Support Materials](#support-materials)
+
+OpenPDS enhances data services by integrating innovative technologies to streamline the acquisition, dissemination, and storage of data across diverse environments and protocols.
 
 ## Data Storage and Retrieval
 
@@ -43,7 +54,96 @@ The object storage system in OpenPDS is hierarchy-free but can emulate directory
 - **Garbage Collection**: Automatically removes expired data, with no limit on expiry dates.
 - **Data Backup**: Can be configured to map data sets in OpenPDS to existing archiving systems.
 
-## Conclusion
+## Getting Started
 
-OpenPDS enhances data services by integrating innovative technologies to streamline the acquisition, dissemination, and storage of data across diverse environments and protocols.
+### Building and Running OpenPDS
 
+OpenPDS requires Docker to be installed and fully functional, with the default Docker socket enabled (Settings -> Advanced -> "Allow the default Docker socket to be used"). The build and run process has been tested on Linux and macOS (Intel/Apple Silicon) using Docker Desktop v4.34.2. It has also been reported to work on Windows with the WSL 2 backend.
+
+A `Makefile` located at the root of the directory can be used to create the development container that installs all the necessary tools for building the application. The Java classes are compiled, packaged into RPM files, and used to build Docker images for each OpenPDS component.
+
+#### Creating and Login in to the Development Container:
+
+To build the development container:
+
+```bash
+make dev
+```
+
+If successful, you should be logged inside the development container.
+
+#### Building and Configuring OpenPDS:
+
+From there, you can run the following command to compile the Java classes, package the RPM files, and build the OpenPDS Docker images:
+
+```bash
+make build
+```
+
+Once the build process is complete, navigate to the following directory:
+
+```
+cd run/bin/ecpds
+```
+
+The services are started using Docker Compose. The `docker-compose.yml` file contains all the necessary configurations to launch and manage the different components of OpenPDS. You can find this file in the appropriate directory for your OS (`Darwin-ecpds` for macOS or `Linux-ecpds` for Linux).
+
+To verify the configuration and understand how Docker Compose interprets the settings before running the services, use the following command:
+
+```
+make config
+```
+
+For advanced configurations, you can fine-tune the options by modifying the default values in the Compose file. Each parameter is documented within the file itself to provide a better understanding of its function and how it impacts the system's behavior. By reviewing the Compose file, you can tailor the setup to your environment’s specific requirements.
+
+#### Running OpenPDS:
+
+To start the application:
+
+```
+make up
+```
+
+This will start the OpenPDS master, monitor, mover, and database services.
+
+#### Checking the Containers and Logs:
+
+To verify that the containers are running, use:
+
+```
+make ps
+```
+
+To view the output logs, use:
+
+```
+make logs
+```
+
+#### Additional Makefile Options:
+
+To log in to the database:
+
+```
+make mysql
+```
+
+To log in to the master container (use the same for monitor, mover, and database):
+
+```
+make connect container=master
+```
+
+#### Stopping the Application:
+
+To stop the application, run:
+
+```
+make down
+```
+
+## Support Materials
+
+You can access the Javadoc API documentation for OpenPDS at the following link: [Javadocs](target/apidocs/index.html). This comprehensive documentation provides detailed information about the classes, methods, and functionalities available, serving as a valuable resource for developers.
+
+Additionally, you can find the OpenPDS options for various editors at this link: [OpenPDS Options](target/API.md). This documentation outlines the configurable options available in the OpenPDS editors, helping users to customize their experience and optimize their workflow effectively.
