@@ -55,14 +55,11 @@ services:
       LOG_ROLLOVER_DATE_KEEP: 10d # Keep backup files which are newer than the specified duration
       # Log levels for log4j2 (off, fatal, error, warn, info, debug, trace, all)
       LOG_LEVEL: debug
-      # Interactions with various ECMWF services (smtp, opsview, nagios, ecaccess, eccmd)
+      # Interactions with various services (smtp, opsview)
       METADATA_MISSING_CONTACTS_MAIL:
       SMTP_HOST:
       SMTP_FROM:
       OPSVIEW_HOST:
-      ECACCESS_ADDRESS:
-      ECCMD_ADDRESS:
-      PORT_ECCMD: 640
       # Miscellaneous parameters
       RETRIEVAL_MAX_SPOOL_SIZE: 50 # Maximum number of parallel retrievals
       # Java Virtual Machine options
@@ -107,8 +104,6 @@ services:
       MONITOR_NICKNAME: "PDS"
       MONITOR_TITLE: "Personal Data Store"
       MONITOR_COLOR: "#0079d3"
-      # Interactions with various ECMWF services (requirements, nagios)
-      REQUIREMENTS_URL:
       # Miscellaneous parameters
       USE_CACHE: "no"
       MASTER_URL_LIST:
