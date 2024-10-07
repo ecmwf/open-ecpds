@@ -109,35 +109,49 @@
 					</execution>
 				</executions>
 			</plugin>
-
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>exec-maven-plugin</artifactId>
 				<version>3.4.1</version>
 				<executions>
 					<execution>
+						<id>generate-api-docs</id>
+						<goals>
+							<goal>java</goal>
+						</goals>
+						<phase>prepare-package</phase>
+						<configuration>
+							<mainClass>
+								ecmwf.common.ectrans.ECtransOptions$MarkdownGenerator</mainClass>
+							<arguments>
+								<argument>${project.build.directory}/API.md</argument>
+							</arguments>
+						</configuration>
+					</execution>
+					<execution>
 						<id>compile-native</id>
 						<goals>
 							<goal>exec</goal>
 						</goals>
 						<phase>package</phase>
+						<configuration>
+							<executable>gcc</executable>
+							<arguments>
+								<argument>-shared</argument>
+								<argument>-O2</argument>
+								<argument>-D_GNU_SOURCE</argument>
+								<argument>-D_FILE_OFFSET_BITS=64</argument>
+								<argument>-olibsocketoptions.so</argument>
+								<argument>-I${java.home}/include</argument>
+								<argument>-I${java.home}/include/linux</argument>
+								<argument>-fPIC</argument>
+								<argument>
+									${project.basedir}/src/main/c/SocketOptions.c</argument>
+							</arguments>
+							<workingDirectory>${project.build.directory}</workingDirectory>
+						</configuration>
 					</execution>
 				</executions>
-				<configuration>
-					<executable>gcc</executable>
-					<arguments>
-						<argument>-shared</argument>
-						<argument>-O2</argument>
-						<argument>-D_GNU_SOURCE</argument>
-						<argument>-D_FILE_OFFSET_BITS=64</argument>
-						<argument>-olibsocketoptions.so</argument>
-						<argument>-I${java.home}/include</argument>
-						<argument>-I${java.home}/include/linux</argument>
-						<argument>-fPIC</argument>
-						<argument>${project.basedir}/src/main/c/SocketOptions.c</argument>
-					</arguments>
-					<workingDirectory>${project.build.directory}</workingDirectory>
-				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
