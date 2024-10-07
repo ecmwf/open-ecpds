@@ -49,6 +49,7 @@ The object storage system in OpenPDS is hierarchy-free but can emulate directory
 
 ## Additional Features
 
+- **Notification System**: Provides an embedded MQTT broker to publish notifications and an MQTT client to subscribe to data providers.
 - **Data Compression**: Supports various algorithms (lzma, zip, gzip, bzip2, lbzip2, lz4, snappy) to reduce dissemination time and enable faster access to data.
 - **Data Checksumming**: Provides MD5 for data integrity checks on the remote sites, and ADLER32 for data integrity checks in the data store.
 - **Garbage Collection**: Automatically removes expired data, with no limit on expiry dates.
