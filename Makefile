@@ -1,3 +1,4 @@
+
 # Use bash by default
 SHELL=/bin/bash
 
@@ -46,10 +47,10 @@ check-container-state = \
   fi
 
 # Conditional targets based on the environment
-.PHONY: dev build run login rm-cntnr rm-image get-geodb build clean info
-dev: build run login ## Build, run and login into the dev-container (*)
+.PHONY: dev dev-cntnr run login rm-cntnr rm-image get-geodb build clean info
+dev: dev-cntnr run login ## Build, run and login into the dev-container (*)
 
-build: ## Build the dev-container (*)
+dev-cntnr: ## Build the dev-container (*)
 	@$(call check-container-state,true,outside)
 	cd .devcontainer && $(DOCKER) build -f Dockerfile -t $(IMAGE_NAME) .
 
