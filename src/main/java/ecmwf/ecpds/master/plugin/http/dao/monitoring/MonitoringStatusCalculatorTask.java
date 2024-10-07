@@ -224,9 +224,9 @@ public class MonitoringStatusCalculatorTask extends MBeanScheduler {
                 location.longitude = host.getLongitude();
                 if (location.latitude == null || location.latitude == 0 || location.longitude == null
                         || location.longitude == 0) {
-					log.debug("Skiping kml processing for Host-{}: {} -> latitude={}, longitude={}", host.getName(),
-							host.getHost(), location.latitude, location.longitude);
-					return;
+                    log.debug("Skiping kml processing for Host-{}: {} -> latitude={}, longitude={}", host.getName(),
+                            host.getHost(), location.latitude, location.longitude);
+                    return;
                 }
                 final var s = ds.getBigSisterStatus();
                 final var desName = destination.getName();

@@ -211,9 +211,9 @@ public final class GeoLocation {
             pmCoordinates.setText(line.longitude + "," + line.latitude + ",0");
             pmPoint.addContent(pmCoordinates);
         }
-		// Write the XML file
-		final var outputter = new XMLOutputter(Format.getPrettyFormat());
-		outputter.output(kmlDocument, out);
-		out.flush();
+        // Write the XML file
+        final var outputter = new XMLOutputter(Format.getPrettyFormat());
+        outputter.output(kmlDocument, out);
+        out.flush();
     }
 }

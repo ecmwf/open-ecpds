@@ -152,7 +152,7 @@ final class AccessControl {
      *             the data base exception
      */
     @SuppressWarnings("null")
-	public static int cleanAccessControl(final ECpdsBase base) throws DataBaseException {
+    public static int cleanAccessControl(final ECpdsBase base) throws DataBaseException {
         var processed = 0;
         final List<String> destinations = new ArrayList<>();
         // Build the destination list from the Url found
