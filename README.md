@@ -143,7 +143,7 @@ To log in to the master container (use the same for monitor, mover, and database
 make connect container=master
 ```
 
-#### Stopping OpenPDS:
+#### Stopping OpenPDS
 
 To stop the application, run:
 
