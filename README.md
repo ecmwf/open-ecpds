@@ -62,7 +62,7 @@ OpenPDS requires Docker to be installed and fully functional, with the default D
 
 A `Makefile` located at the root of the directory can be used to create the development container that installs all the necessary tools for building the application. The Java classes are compiled, packaged into RPM files, and used to build Docker images for each OpenPDS component.
 
-#### Creating and Login in to the Development Container:
+#### Creating and Logging into the Development Container
 
 To build the development container:
 
@@ -70,9 +70,9 @@ To build the development container:
 make dev
 ```
 
-If successful, you should be logged inside the development container.
+If successful, you should be logged into the development container.
 
-#### Building and Configuring OpenPDS:
+#### Building and Configuring OpenPDS
 
 From there, you can run the following command to compile the Java classes, package the RPM files, and build the OpenPDS Docker images:
 
@@ -96,7 +96,7 @@ make config
 
 For advanced configurations, you can fine-tune the options by modifying the default values in the Compose file. Each parameter is documented within the file itself to provide a better understanding of its function and how it impacts the system's behavior. By reviewing the Compose file, you can tailor the setup to your environment’s specific requirements.
 
-#### Running OpenPDS:
+#### Starting OpenPDS
 
 To start the application:
 
@@ -106,7 +106,7 @@ make up
 
 This will start the OpenPDS master, monitor, mover, and database services.
 
-#### Checking the Containers and Logs:
+#### Checking the Containers and Logs
 
 To verify that the containers are running, use:
 
@@ -120,7 +120,7 @@ To view the output logs, use:
 make logs
 ```
 
-#### Additional Makefile Options:
+#### Additional Makefile Options
 
 To log in to the database:
 
@@ -134,7 +134,7 @@ To log in to the master container (use the same for monitor, mover, and database
 make connect container=master
 ```
 
-#### Stopping the Application:
+#### Stopping OpenPDS:
 
 To stop the application, run:
 
