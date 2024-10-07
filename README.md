@@ -107,7 +107,9 @@ make up
 
 This will start the OpenPDS master, monitor, mover, and database services.
 
-It might take a few seconds for all the services to start. Once they are up, you can access the following URLs (please update them if you changed the configuration in the compose file):
+It might take a few seconds for all the services to start. Once they are up, you can access the following URLs (please update them if you changed the configuration in the compose files):
+
+>**Warning:** Certificate validation should be disabled, as the test environment uses a self-signed certificate.
 
 ##### Monitoring interface
 
@@ -118,6 +120,11 @@ It might take a few seconds for all the services to start. Once they are up, you
 
 **[https://127.0.0.1:4443](https://127.0.0.1:4443)**  
 *(Log in using `test/test2021`)*
+
+##### MQTT Broker
+
+**[mqtt://127.0.0.1:4883](mqtt://127.0.0.1:4883)**  
+*(Log in using `test/test2021` - deactivate certificate validation)*
 
 #### Checking the Containers and Logs
 
