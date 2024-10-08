@@ -70,5 +70,8 @@ RUN cd /usr/local && wget https://dlcdn.apache.org/maven/maven-3/3.9.8/binaries/
 ENV MAVEN_HOME=/usr/local/apache-maven-3.9.8
 ENV PATH=$MAVEN_HOME/bin:$PATH
 
+# Required for macOS Apple Silicon
+ENV DOCKER_DEFAULT_PLATFORM=linux/amd64
+
 # We are in the dev-container
 ENV IN_DEV_CONTAINER=true

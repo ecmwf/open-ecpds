@@ -1,6 +1,9 @@
 # Use bash by default
 SHELL=/bin/bash
 
+# Required for macOS Apple Silicon
+export DOCKER_DEFAULT_PLATFORM=linux/amd64
+
 # Define variables for paths and container names
 PROJECT_NAME := $(shell basename $(PWD))
 WORKSPACE := $(realpath ..)
