@@ -227,6 +227,10 @@
 				<artifactId>license-maven-plugin</artifactId>
 				<version>2.4.0</version>
 				<configuration>
+					<failOnBlacklist>true</failOnBlacklist>
+					<includedLicenses>
+						<includedLicense>Apache-2.0</includedLicense>
+					</includedLicenses>
 					<licenseName>apache_v2</licenseName>
 					<organizationName>ECMWF</organizationName>
 					<inceptionYear>2004</inceptionYear>
