@@ -19,7 +19,7 @@
 package ecmwf.common.technical;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * This is a class that provides a synchronized mechanism for locking objects
  * based on their keys. It provides methods for acquiring and releasing locks on

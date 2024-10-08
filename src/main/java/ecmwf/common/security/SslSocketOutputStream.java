@@ -19,7 +19,7 @@
 package ecmwf.common.security;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * Decorator object for OutputStream that invokes the listener's #ioStarting and
  * #ioEnding methods when entering and exiting IO blocks. The #flush and #write

@@ -19,7 +19,7 @@
 package ecmwf.common.monitor;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * This interface should be implemented by any component which requires monitoring.
  *

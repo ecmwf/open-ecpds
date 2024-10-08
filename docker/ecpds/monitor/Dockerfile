@@ -7,7 +7,7 @@ LABEL maintainer="Laurent.Gougeon@ecmwf.int"
 ENV CONTAINER=podman
 ENV CONSOLE_LOG_LEVEL=off
 
-# OpenPDS Monitor Profile
+# OpenECPDS Monitor Profile
 ENV ALLOCATED_MEMORY=1G
 ENV EXTERNAL_ADDRESS=0.0.0.0
 ENV INTERNAL_ADDRESS=localhost
@@ -27,10 +27,10 @@ ENV LOG_ROLLOVER_SIZE_MAX=100MB
 ENV LOG_ROLLOVER_SIZE_KEEP=20
 ENV LOG_LEVEL=warn
 
-# Add OpenPDS rpms
+# Add OpenECPDS rpms
 COPY rpms/ecpds-monitor-*.noarch.rpm .
 
-# Install OpenPDS rpms
+# Install OpenECPDS rpms
 RUN yum install -d1 -y ecpds-monitor-*.noarch.rpm && \
     yum clean all && rm -f ecpds-*.rpm
 
@@ -42,5 +42,5 @@ VOLUME /var/lib/ecpds/monitor
 # Expose the ports
 EXPOSE 8062 8600 8080 8443
 
-# Start OpenPDS services
+# Start OpenECPDS services
 ENTRYPOINT ["/usr/local/ecpds/monitor/sh/monitor","start"]

@@ -22,7 +22,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * @author Laurent Gougeon - syi@ecmwf.int, ECMWF.
  * @version 6.7.7

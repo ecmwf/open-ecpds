@@ -19,7 +19,7 @@
 package ecmwf.ecpds.master.plugin.http.controller.transfer.host;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * Form bean for Host
  *

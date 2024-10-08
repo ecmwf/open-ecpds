@@ -7,7 +7,7 @@ LABEL maintainer="Laurent.Gougeon@ecmwf.int"
 ENV CONTAINER=podman
 ENV CONSOLE_LOG_LEVEL=off
 
-# OpenPDS Master-Server Profile
+# OpenECPDS Master-Server Profile
 ENV ALLOCATED_MEMORY=1G
 ENV EXTERNAL_ADDRESS=0.0.0.0
 ENV INTERNAL_ADDRESS=localhost
@@ -32,10 +32,10 @@ ENV LOG_ROLLOVER_DATE_PATTERN=dd-MM-yyyy
 ENV LOG_ROLLOVER_DATE_KEEP=10d
 ENV LOG_LEVEL=warn
 
-# Add OpenPDS rpms
+# Add OpenECPDS rpms
 COPY rpms/ecpds-master-*.noarch.rpm .
 
-# Install OpenPDS rpms
+# Install OpenECPDS rpms
 RUN yum install -d1 -y ecpds-master-*.noarch.rpm && \
 	yum clean all && rm -f ecpds-*.rpm
 
@@ -47,5 +47,5 @@ VOLUME /var/lib/ecpds/master
 # Expose the ports
 EXPOSE 9062 9600 9640 9021
 
-# Start OpenPDS services
+# Start OpenECPDS services
 ENTRYPOINT ["/usr/local/ecpds/master/sh/master","start"]

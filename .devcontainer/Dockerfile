@@ -1,7 +1,7 @@
 ARG BUILDPLATFORM=linux/amd64
 FROM --platform=${BUILDPLATFORM} mcr.microsoft.com/vscode/devcontainers/base:latest
 
-# Development container for OpenPDS
+# Development container for OpenECPDS
 LABEL maintainer="Laurent.Gougeon@ecmwf.int"
 
 # Install base packages

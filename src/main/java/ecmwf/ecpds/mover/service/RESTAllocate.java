@@ -19,7 +19,7 @@
 package ecmwf.ecpds.mover.service;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * The Class RESTAllocate. Allow connecting to a REST service in order to
  * allocate a host and a directory to dispatch a file. If the request is

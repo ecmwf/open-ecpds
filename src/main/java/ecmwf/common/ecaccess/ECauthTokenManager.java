@@ -19,7 +19,7 @@
 package ecmwf.common.ecaccess;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * Allow managing a cache of ECauthToken. If an entry has expired or is not found
  * then a call to the abstract method requestECauthToken is made to create a new

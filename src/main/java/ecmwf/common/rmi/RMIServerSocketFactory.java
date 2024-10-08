@@ -19,7 +19,7 @@
 package ecmwf.common.rmi;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * A factory for creating RMIServerSocket objects.
  *

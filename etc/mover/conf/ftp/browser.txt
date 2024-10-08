@@ -4,6 +4,6 @@ Authorized access only.
 FTP Server
 
 Use this FTP server to download files from the
-ECMWF Production Data Store (OpenPDS).
+ECMWF Production Data Store (OpenECPDS).
 **********************************************
 

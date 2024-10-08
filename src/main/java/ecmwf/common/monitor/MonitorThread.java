@@ -19,7 +19,7 @@
 package ecmwf.common.monitor;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * The Class MonitorThread. This thread is constantly checking internal
  * components which requires monitoring and send notifications to the monitoring

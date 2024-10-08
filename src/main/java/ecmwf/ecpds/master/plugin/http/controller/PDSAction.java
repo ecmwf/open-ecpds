@@ -19,7 +19,7 @@
 package ecmwf.ecpds.master.plugin.http.controller;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * Base Action for all PDS actions. If performs authorization before handling
  * the request to a subclass.

@@ -73,7 +73,7 @@
 
 <tr><td colspan="5"> </td></tr>
 
-  <tr><th colspan="5" class="header">OpenPDS Contact</th></tr>
+  <tr><th colspan="5" class="header">OpenECPDS Contact</th></tr>
   <xsl:call-template name="block"><xsl:with-param name="elements" select="ci:ecpdsContact"/></xsl:call-template>
 
 </xsl:if>

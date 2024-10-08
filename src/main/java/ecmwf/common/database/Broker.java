@@ -19,7 +19,7 @@
 package ecmwf.common.database;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * The Interface Broker. Generic interface to allow plugging any object mapping
  * broker (e.g. OJB, Hibernate).

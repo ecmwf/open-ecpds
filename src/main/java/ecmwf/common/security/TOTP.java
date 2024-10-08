@@ -19,7 +19,7 @@
 package ecmwf.common.security;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * The Class TOTP to allow authenticating against the TOTP (Time-based One-time
  * Password) server. Both user+password and user+passcode credentials are

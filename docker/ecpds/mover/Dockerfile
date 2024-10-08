@@ -7,7 +7,7 @@ LABEL maintainer="Laurent.Gougeon@ecmwf.int"
 ENV CONTAINER=podman
 ENV CONSOLE_LOG_LEVEL=off
 
-# OpenPDS Data-Mover Profile
+# OpenECPDS Data-Mover Profile
 ENV ALLOCATED_MEMORY=1G
 ENV EXTERNAL_ADDRESS=0.0.0.0
 ENV INTERNAL_ADDRESS=localhost
@@ -30,10 +30,10 @@ ENV LOG_ROLLOVER_SIZE_MAX=100MB
 ENV LOG_ROLLOVER_SIZE_KEEP=20
 ENV LOG_LEVEL=warn
 
-# Add OpenPDS rpms
+# Add OpenECPDS rpms
 COPY rpms/ecpds-mover-*.noarch.rpm .
 
-# Install OpenPDS rpms and lbzip2
+# Install OpenECPDS rpms and lbzip2
 RUN yum install -d1 -y lbzip2 && \
     yum install -d1 -y ecpds-mover-*.noarch.rpm && \
     yum clean all && rm -f ecpds-*.rpm
@@ -47,5 +47,5 @@ VOLUME /var/lib/ecpds/mover/data
 # Expose the ports
 EXPOSE 7062 7600 7080 7443 7640 7021 7022
 
-# Start OpenPDS services
+# Start OpenECPDS services
 ENTRYPOINT ["/usr/local/ecpds/mover/sh/mover","start"]

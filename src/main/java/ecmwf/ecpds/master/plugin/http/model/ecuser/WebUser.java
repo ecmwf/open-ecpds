@@ -19,7 +19,7 @@
 package ecmwf.ecpds.master.plugin.http.model.ecuser;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * This is an extention to the generic ecmwf.web.model.users.User interface to
  * enable setting of properties. The generic one doesn't provide it because its

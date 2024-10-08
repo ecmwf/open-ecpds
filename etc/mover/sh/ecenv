@@ -3,13 +3,13 @@
 #
 # File ecenv
 #
-# Purpose: Data-Mover common environment variables (OpenPDS)
+# Purpose: Data-Mover common environment variables (OpenECPDS)
 #
 # (c) Copyright ECMWF 2011-2024 - Laurent Gougeon (syi@ecmwf.int)
 #
 
 ######################
-## OpenPDS directories
+## OpenECPDS directories
 ######################
 ECPDS_APP="/usr/local/ecpds"
 ECPDS_LOG="/var/log/ecpds"
@@ -46,7 +46,7 @@ ulimit=ulimit
 wc=wc
 
 #####################################
-## Set values for OpenPDS directories
+## Set values for OpenECPDS directories
 #####################################
 dir_etc="/etc/ecpds/mover"
 dir_mover="$ECPDS_APP/mover"

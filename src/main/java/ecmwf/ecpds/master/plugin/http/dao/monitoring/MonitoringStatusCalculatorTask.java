@@ -19,7 +19,7 @@
 package ecmwf.ecpds.master.plugin.http.dao.monitoring;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * Takes in consideration PRODUCT_STATUS information to generate
  * monitoring information.

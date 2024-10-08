@@ -19,7 +19,7 @@
 package ecmwf.ecpds.master.plugin.http.dao.users;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * Simplified implementation that just takes a String as data.
  *

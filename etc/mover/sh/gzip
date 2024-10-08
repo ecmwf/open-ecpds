@@ -3,7 +3,7 @@
 #
 # File gzip
 #
-# Purpose: Helper for gzip (OpenPDS)
+# Purpose: Helper for gzip (OpenECPDS)
 #
 # (c) Copyright ECMWF 2010-2022 - Laurent Gougeon (syi@ecmwf.int)
 #

@@ -19,7 +19,7 @@
 		<packager.id>syi</packager.id>
 		<packager.name>Laurent Gougeon</packager.name>
 		<packager.email>laurent.gougeon@ecmwf.int</packager.email>
-		<packager.distribution>OpenPDS</packager.distribution>
+		<packager.distribution>OpenECPDS</packager.distribution>
 		<build.number>17092024</build.number>
 	</properties>
 	<licenses>

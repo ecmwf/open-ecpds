@@ -19,7 +19,7 @@
 package ecmwf.common.ecauth;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * Common interface to a telnet or ssh session. This interface is used by the
  * ECauthModules (mover and eccmd).

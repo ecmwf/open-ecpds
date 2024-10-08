@@ -1,7 +1,7 @@
 #
 # File docker-compose.yml
 #
-# Purpose: Docker compose for deploying the OpenPDS infrastructure in the MAC environment.
+# Purpose: Docker compose for deploying the OpenECPDS infrastructure in the MAC environment.
 #
 # In adition to the options configured in this file please also check the following:
 #
@@ -17,7 +17,7 @@ networks:
   backbone:
 
 services:
-  # The OpenPDS Database (MariaDB) enables persistent storage for configurations, metadata and history
+  # The OpenECPDS Database (MariaDB) enables persistent storage for configurations, metadata and history
   database:
     container_name: database
     hostname: ecpds-database
@@ -31,7 +31,7 @@ services:
     networks:
       - backbone
 
-  # The OpenPDS Master-Server (backend) implements the business logic of the application
+  # The OpenECPDS Master-Server (backend) implements the business logic of the application
   # Also check the following configuration file: 'etc/ecpds/master/ecmwf.properties'
   master:
     container_name: master

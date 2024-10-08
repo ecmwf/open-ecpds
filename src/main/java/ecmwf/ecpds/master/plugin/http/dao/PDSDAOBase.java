@@ -19,7 +19,7 @@
 package ecmwf.ecpds.master.plugin.http.dao;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * Since all the save, insert and delete methods are similar I implemented them here.
  *

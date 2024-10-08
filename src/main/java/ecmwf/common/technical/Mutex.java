@@ -19,7 +19,7 @@
 package ecmwf.common.technical;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * The Mutex class represents a mutual exclusion lock for a specific key. It has a reference to a Synchronized object,
  * which is used to manage locks on a per-key basis. The lock() method of the Mutex object acquires the lock for the

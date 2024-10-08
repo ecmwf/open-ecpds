@@ -6,7 +6,7 @@
         metadata-complete="false"
         version="3.1">
 
-  <display-name>OpenPDS</display-name>
+  <display-name>OpenECPDS</display-name>
 
   <listener>
     <listener-class>ecmwf.ecpds.master.plugin.http.controller.PDSContextListener</listener-class>

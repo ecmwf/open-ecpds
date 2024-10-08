@@ -19,7 +19,7 @@
 package ecmwf.common.ectrans.module;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * The Class SftpModule. This is used by ECaccesss, not ECPDS.
  *

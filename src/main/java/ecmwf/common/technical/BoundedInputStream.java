@@ -19,7 +19,7 @@
 package ecmwf.common.technical;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * An {@code InputStream} wrapper that provides up to a maximum number of
  * bytes from the underlying stream.  Does not support mark/reset, even

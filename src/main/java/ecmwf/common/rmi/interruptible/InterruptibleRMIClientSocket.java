@@ -19,7 +19,7 @@
 package ecmwf.common.rmi.interruptible;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * Decorator for an RMI client socket to support interruptible RMI.
  *

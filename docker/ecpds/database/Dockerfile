@@ -5,7 +5,7 @@ LABEL maintainer="Laurent.Gougeon@ecmwf.int"
 # Root password to connect to the database
 ENV MYSQL_ROOT_PASSWORD=ecpds2020!
 
-# Init script to create the OpenPDS database
+# Init script to create the OpenECPDS database
 COPY ecpds.sql.gz /docker-entrypoint-initdb.d/
 
 # Make it readable to mysql

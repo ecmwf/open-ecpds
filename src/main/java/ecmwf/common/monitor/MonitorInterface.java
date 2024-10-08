@@ -19,7 +19,7 @@
 package ecmwf.common.monitor;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * This interface should be implemented by any class which implement a monitoring protocol (e.g. Nagios, Bigsister).
  *

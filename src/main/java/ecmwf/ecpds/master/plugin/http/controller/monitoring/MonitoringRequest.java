@@ -19,7 +19,7 @@
 package ecmwf.ecpds.master.plugin.http.controller.monitoring;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * Bean that provides an access point for monitoring data during a particular
  * request.

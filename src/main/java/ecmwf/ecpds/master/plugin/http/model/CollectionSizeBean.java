@@ -19,7 +19,7 @@
 package ecmwf.ecpds.master.plugin.http.model;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project.
+ * ECMWF Product Data Store (OpenECPDS) Project.
  *
  * @author Laurent Gougeon - syi@ecmwf.int, ECMWF.
  *

@@ -19,7 +19,7 @@
 package ecmwf.common.technical;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * This class is used by the external commands running on ECPDS to gather
  * statistics. This replace the usage of curl or sendmail which are platform

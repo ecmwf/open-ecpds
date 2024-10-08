@@ -19,7 +19,7 @@
 package ecmwf.common.technical;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * This class manages a pool of threads that execute tasks.
  *

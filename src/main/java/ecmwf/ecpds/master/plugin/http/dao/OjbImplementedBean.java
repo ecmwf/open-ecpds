@@ -19,7 +19,7 @@
 package ecmwf.ecpds.master.plugin.http.dao;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * A bean whose methods are delegated to a Hibernate object.
  *

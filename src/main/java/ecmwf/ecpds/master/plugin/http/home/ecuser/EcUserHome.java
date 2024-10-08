@@ -19,7 +19,7 @@
 package ecmwf.ecpds.master.plugin.http.home.ecuser;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * @author Daniel Varela Santoalla - sy8@ecmwf.int, ECMWF.
  * @version 6.7.7

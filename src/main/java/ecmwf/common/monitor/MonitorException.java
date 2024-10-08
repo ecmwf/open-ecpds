@@ -19,7 +19,7 @@
 package ecmwf.common.monitor;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * Used by the MonitorManager to throw monitoring exceptions.
  *

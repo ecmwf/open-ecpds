@@ -19,7 +19,7 @@
 package ecmwf.common.ectrans.module;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * The Class PortalModule. Do nothing, only there to allow triggering the
  * notification from the ECtransPut class on schedule time.

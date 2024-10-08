@@ -19,7 +19,7 @@
 package ecmwf.common.database;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * A factory for creating Broker objects. Implementations of this Class should have an empty public constructor!
  *

@@ -19,7 +19,7 @@
 package ecmwf.ecpds.master.plugin.http.home.transfer.searches;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * Search object to get TransferHistory for a given destination and date. The
  * date can be the Product Date or the History Date (the date where the history

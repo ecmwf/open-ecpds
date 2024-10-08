@@ -19,7 +19,7 @@
 package ecmwf.common.text;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * Provides utilities methods.
  *

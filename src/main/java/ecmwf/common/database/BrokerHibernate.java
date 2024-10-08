@@ -19,7 +19,7 @@
 package ecmwf.common.database;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * This class implements the Broker interface. It uses the Hibernate framework
  * to interact with a database.

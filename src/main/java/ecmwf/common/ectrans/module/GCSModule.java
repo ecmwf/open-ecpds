@@ -19,7 +19,7 @@
 package ecmwf.common.ectrans.module;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * @author Cristina-Iulia Bucur - cristina-iulia.bucur@ecmwf.int, ECMWF.
  * @version 6.7.7

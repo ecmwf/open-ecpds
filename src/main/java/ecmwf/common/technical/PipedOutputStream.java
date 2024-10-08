@@ -19,7 +19,7 @@
 package ecmwf.common.technical;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * The Class PipedOutputStream. I have imported this class from the JDK to
  * remove the check of the readSide and writeSide threads as this was breaking

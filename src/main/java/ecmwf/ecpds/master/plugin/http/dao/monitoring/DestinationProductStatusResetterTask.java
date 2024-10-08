@@ -19,7 +19,7 @@
 package ecmwf.ecpds.master.plugin.http.dao.monitoring;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * Switches to GREEN the RealTimeTransferStatus parameter of a
  * DestinationProductStatus when all the transfer for that Dest, Prod and Time

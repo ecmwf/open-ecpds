@@ -19,7 +19,7 @@
 package ecmwf.ecpds.master.plugin.http.model.datafile;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * Every one of the files that is going to be transfered by the dissemination
  * system. This is the unit for transfers, so far we know nothing about

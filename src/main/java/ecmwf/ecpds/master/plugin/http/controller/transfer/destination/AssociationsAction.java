@@ -19,7 +19,7 @@
 package ecmwf.ecpds.master.plugin.http.controller.transfer.destination;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * Change associations between the destination and another objects which have a
  * N-M relationship with it (ie, no foreign key).

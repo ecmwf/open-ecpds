@@ -19,7 +19,7 @@
 package ecmwf.ecpds.master.plugin.http.controller.user.policy;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * @author Laurent Gougeon <sy8iecmwf.int>, ECMWF.
  * @version 6.7.7

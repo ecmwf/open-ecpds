@@ -19,7 +19,7 @@
 package ecmwf.ecpds.mover.service;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * The Class RESTNotification. Allow notifying an MQTT broker that a file has
  * been transmitted successfully.

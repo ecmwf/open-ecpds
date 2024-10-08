@@ -19,7 +19,7 @@
 package ecmwf.ecpds.master.plugin.http.dao.transfer;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * Strategy to calculate Earliest, Latest, Predicted arrivals for a Data
  * Transfer

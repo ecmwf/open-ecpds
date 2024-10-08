@@ -19,7 +19,7 @@
 package ecmwf.ecpds.master.plugin.http.controller.transfer.method;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * Update a Method.
  *

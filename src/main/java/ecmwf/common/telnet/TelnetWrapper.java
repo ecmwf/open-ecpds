@@ -19,7 +19,7 @@
 package ecmwf.common.telnet;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * Imported/modified from external API: "TelnetProtocolHandler.java,v 2.14
  * 2001/10/07 20:17:43 marcus Exp $";

@@ -19,7 +19,7 @@
 package ecmwf.common.ecauth;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * Telnet implementation of the session.
  *

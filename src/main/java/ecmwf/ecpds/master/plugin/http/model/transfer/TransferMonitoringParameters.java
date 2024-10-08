@@ -19,7 +19,7 @@
 package ecmwf.ecpds.master.plugin.http.model.transfer;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * Different parameters regarding the transfer of a file, which are relevant for
  * monitoring issues.

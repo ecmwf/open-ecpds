@@ -19,7 +19,7 @@
 package ecmwf.ecpds.master.plugin.http.model.transfer;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * An Alias, as it is going to be seen from Controller and View for the web
  * application

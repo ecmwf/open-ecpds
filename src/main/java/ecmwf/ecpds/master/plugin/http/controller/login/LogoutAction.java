@@ -19,7 +19,7 @@
 package ecmwf.ecpds.master.plugin.http.controller.login;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * Log out.
  *

@@ -19,7 +19,7 @@
 package ecmwf.ecpds.master.plugin.http.model.datafile;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * Set of TransferServers which are viewed as resilient unit.
  *

@@ -19,7 +19,7 @@
 package ecmwf.ecpds.master.plugin.http.controller.login;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * Strategy which implements authentication via the specific system designed for
  * ECPDS. This system uses NIS uids and passwords for the validation, which is

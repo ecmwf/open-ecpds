@@ -19,7 +19,7 @@
 package ecmwf.common.ecaccess;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * The Class ECaccessException. An EctransException is usually thrown as a result of a EctransManager or EctransMonitor
  * method call.

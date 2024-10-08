@@ -22,7 +22,7 @@ import java.math.BigDecimal;
 import java.util.Objects;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project.
+ * ECMWF Product Data Store (OpenECPDS) Project.
  *
  * @author Laurent Gougeon - syi@ecmwf.int, ECMWF.
  *

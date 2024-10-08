@@ -19,7 +19,7 @@
 package ecmwf.ecpds.master.plugin.http.dao;
 
 /**
- * ECMWF Product Data Store (OpenPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * syi: added methods to allow processing links into comments.
  *
