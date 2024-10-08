@@ -1,4 +1,5 @@
-FROM docker.io/library/mariadb:10.11.4
+ARG BUILDPLATFORM=linux/amd64
+FROM --platform=${BUILDPLATFORM} docker.io/library/mariadb:10.11.4
 
 LABEL maintainer="Laurent.Gougeon@ecmwf.int"
 
