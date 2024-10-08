@@ -1,4 +1,3 @@
-
 # Use bash by default
 SHELL=/bin/bash
 
@@ -89,6 +88,7 @@ get-licenses: ## Fetch license information for all dependencies (**)
 
 build: ## Compile java sources into JARs, create RPMs and Docker images (**)
 	@$(call check-container-state,"",inside)
+	@echo "$(TAG)" > VERSION
 	@mvn package
 	@cd docker && $(MAKE) all
 
