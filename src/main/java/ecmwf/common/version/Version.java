@@ -18,6 +18,9 @@
 
 package ecmwf.common.version;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+
 /**
  * ECMWF Product Data Store (OpenECPDS) Project.
  *
@@ -29,10 +32,27 @@ package ecmwf.common.version;
  */
 public final class Version {
     /** The Constant version. */
-    private static final String VERSION = "6.7.7";
+    private static final String VERSION_NUMBER;
 
     /** The Constant build (ddmmyyyy). */
-    private static final String BUILD = "14052024";
+    private static final String BUILD_NUMBER;
+
+    static {
+        var version = "0.0.0";
+        var build = "ddmmyyyy";
+        try (final var inputStream = Version.class.getResourceAsStream("/VERSION");
+                var reader = new BufferedReader(new InputStreamReader(inputStream))) {
+            final var versionNumber = reader.readLine().split("-");
+            if (versionNumber.length == 2) {
+                version = versionNumber[0];
+                build = versionNumber[1];
+            }
+        } catch (Throwable e) {
+            // Use defaults
+        }
+        VERSION_NUMBER = version;
+        BUILD_NUMBER = build;
+    }
 
     /**
      * Gets the version.
@@ -40,16 +60,16 @@ public final class Version {
      * @return the version
      */
     public static String getVersion() {
-        return VERSION;
+        return VERSION_NUMBER;
     }
 
     /**
-     * Gets the builds the.
+     * Gets the build number.
      *
-     * @return the builds the
+     * @return the build number
      */
     public static String getBuild() {
-        return BUILD;
+        return BUILD_NUMBER;
     }
 
     /**
@@ -58,7 +78,7 @@ public final class Version {
      * @return the full version
      */
     public static String getFullVersion() {
-        return VERSION + "-" + BUILD;
+        return VERSION_NUMBER + "-" + BUILD_NUMBER;
     }
 
     /**
@@ -69,11 +89,11 @@ public final class Version {
      *
      * @return the version number
      */
-    public static int getVersionNumber(final String version) {
+    public static int getVersionNumber(String version) {
         try {
             return Integer.parseInt(version.substring(0, 1)) * 100 + Integer.parseInt(version.substring(2, 3)) * 10
                     + Integer.parseInt(version.substring(4, 5));
-        } catch (final NumberFormatException e) {
+        } catch (NumberFormatException e) {
             return -1;
         }
     }
@@ -84,7 +104,7 @@ public final class Version {
      * @param args
      *            the arguments
      */
-    public static void main(final String[] args) {
+    public static void main(String[] args) {
         System.out.println(getFullVersion());
     }
 }
