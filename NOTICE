@@ -1,0 +1,14 @@
+OpenECPDS
+=========
+
+Copyright 2004- ECMWF
+
+This product is developed by the
+
+  Development Section, European Centre for Medium-Range Weather Forecasts (ECMWF) - http://www.ecmwf.int
+
+Below is a list of software packages which are used inside OpenECPDS:
+
+- S3Proxy (https://github.com/gaul/s3proxy)
+    Copyright (C) 2014-2021 Andrew Gaul
+    Apache License 2.0 (http://www.apache.org/licenses/)

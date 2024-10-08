@@ -1,0 +1,23 @@
+OpenECPDS authors
+=================
+
+The main development of OpenECPDS is done at the European Centre for Medium-Range Weather Forecasts (ECMWF - http://www.ecmwf.int)
+
+Current developers
+==================
+Laurent Gougeon
+Cristina-Iulia Bucur
+
+Past developers
+===============
+Daniel Varela Santoalla
+
+Thanks for contributions from:
+==============================
+
+List of software packages which are contributed inside OpenECPDS:
+=================================================================
+
+- S3Proxy (https://github.com/gaul/s3proxy)
+    Copyright (C) 2014-2021 Andrew Gaul
+    Apache License 2.0 (http://www.apache.org/licenses/)
