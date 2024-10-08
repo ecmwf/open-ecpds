@@ -111,16 +111,16 @@ It might take a few seconds for all the services to start. Once they are up, you
 
 >**Warning:** Certificate validation should be disabled when relevant, as the test environment uses a self-signed certificate. Also, a database update is in progress to add sample configurations with notification triggers.
 
-| Interface             | URL                                          | Login Details         |
-|-----------------------|----------------------------------------------|-----------------------|
-| **Monitoring**        | [https://127.0.0.1:3443](https://127.0.0.1:3443) | admin/admin2021       |
-| **Data Portal**       | [https://127.0.0.1:4443](https://127.0.0.1:4443) | test/test2021         |
-|                       | [ftp://127.0.0.1:4021](ftp://127.0.0.1:4021) | test/test2021         |
-| **MQTT Broker**       | [mqtt://127.0.0.1:4883](mqtt://127.0.0.1:4883)  | test/test2021         |
-| **Virtual FTP Server**| [ftp://127.0.0.1:2021](ftp://127.0.0.1:2021)   | admin/admin2021       |
-| **JMX Interfaces**    | [http://127.0.0.1:2062](http://127.0.0.1:2062) | master/admin          |
-|                       | [http://127.0.0.1:3062](http://127.0.0.1:3062) | monitor/admin         |
-|                       | [http://127.0.0.1:4062](http://127.0.0.1:4062) | mover/admin           |
+| Interface             | URL                                              | Login Details         |
+|-----------------------|--------------------------------------------------|-----------------------|
+| Monitoring            | [https://127.0.0.1:3443](https://127.0.0.1:3443) | admin/admin2021       |
+| Data Portal           | [https://127.0.0.1:4443](https://127.0.0.1:4443) | test/test2021         |
+|                       | [ftp://127.0.0.1:4021](ftp://127.0.0.1:4021)     | test/test2021         |
+| MQTT Broker           | [mqtt://127.0.0.1:4883](mqtt://127.0.0.1:4883)   | test/test2021         |
+| Virtual FTP Server    | [ftp://127.0.0.1:2021](ftp://127.0.0.1:2021)     | admin/admin2021       |
+| JMX Interfaces        | [http://127.0.0.1:2062](http://127.0.0.1:2062)   | master/admin          |
+|                       | [http://127.0.0.1:3062](http://127.0.0.1:3062)   | monitor/admin         |
+|                       | [http://127.0.0.1:4062](http://127.0.0.1:4062)   | mover/admin           |
 
 #### Checking the Containers and Logs
 
