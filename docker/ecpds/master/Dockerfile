@@ -1,6 +1,9 @@
 ARG BUILDPLATFORM=linux/amd64
 FROM --platform=${BUILDPLATFORM} ecpds/java:openjdk-23.0.0
 
+ARG TAG
+ENV TAG=${TAG}
+
 LABEL maintainer="Laurent.Gougeon@ecmwf.int"
 
 # Container specific
@@ -33,11 +36,11 @@ ENV LOG_ROLLOVER_DATE_KEEP=10d
 ENV LOG_LEVEL=warn
 
 # Add OpenECPDS rpms
-COPY rpms/ecpds-master-*.noarch.rpm .
+COPY rpms/ecpds-master-${TAG}.noarch.rpm .
 
 # Install OpenECPDS rpms
-RUN yum install -d1 -y ecpds-master-*.noarch.rpm && \
-	yum clean all && rm -f ecpds-*.rpm
+RUN yum install -d1 -y ecpds-master-${TAG}.noarch.rpm && \
+	yum clean all && rm -f ecpds-master-${TAG}.noarch.rpm
 
 # Mountable volumes
 VOLUME /var/log/ecpds/master

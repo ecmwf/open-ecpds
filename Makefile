@@ -36,25 +36,25 @@ DOCKER_VERSION = $(shell $(DOCKER) --version)
 
 # Default target
 .PHONY: help
-help: ## Show this help message (*=outside **=inside the dev-container)
+help: ## Show this help message (*=outside **=inside the development container)
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-12s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-# Common function to check if inside or outside the dev-container
+# Common function to check if inside or outside the development container
 check-container-state = \
   if [ "$$IN_DEV_CONTAINER" = "$(1)" ]; then \
-    printf "$(RED)Error: This target can only be run $(2) the dev-container$(RESET)\n"; \
+    printf "$(RED)Error: This target can only be run $(2) the development container$(RESET)\n"; \
     exit 1; \
   fi
 
 # Conditional targets based on the environment
-.PHONY: dev dev-cntnr run login rm-cntnr rm-image get-geodb build clean info
-dev: dev-cntnr run login ## Build, run and login into the dev-container (*)
+.PHONY: dev .dev-cntnr run login .rm-cntnr rm-dev get-geodb get-licenses build clean info
+dev: .dev-cntnr .run login ## Build, run and login into the development container (*)
 
-dev-cntnr: ## Build the dev-container (*)
+.dev-cntnr: ## Build the development container (*)
 	@$(call check-container-state,true,outside)
 	cd .devcontainer && $(DOCKER) build -f Dockerfile -t $(IMAGE_NAME) .
 
-run: ## Run the dev-container (*)
+run: ## Run the development container (*)
 	@$(call check-container-state,true,outside)
 	@$(DOCKER) run -d \
 		-v /var/run/docker.sock:/var/run/docker.sock \
@@ -65,16 +65,16 @@ run: ## Run the dev-container (*)
 		$(IMAGE_NAME) \
 		sleep infinity
 
-login: ## Login into the running dev-container (*)
+login: ## Log in to the running development container (*)
 	@$(call check-container-state,true,outside)
 	@$(DOCKER) exec -it -w $(WORKDIR) $(CONTAINER_NAME) /bin/bash
 
-rm-cntnr: ## Stop and remove the dev-container (*)
+.rm-cntnr: ## Stop and remove the development container (*)
 	@$(call check-container-state,true,outside)
 	@$(DOCKER) stop $(CONTAINER_NAME) || true
 	@$(DOCKER) rm $(CONTAINER_NAME) || true
 
-rm-image: ## Remove the dev-image (*)
+rm-dev: .rm-cntnr ## Stop the development container, then remove both its container and image. (*)
 	@$(call check-container-state,true,outside)
 	@$(DOCKER) rmi -f $(IMAGE_NAME) || exit 1
 
@@ -82,6 +82,10 @@ get-geodb: ## Fetch latest GeoLite2-City (MaxMind.com) CDN files
 	@$(call check-container-state,"",inside)
 	wget -qO- https://cdn.jsdelivr.net/npm/geolite2-city/GeoLite2-City.mmdb.gz | \
 		gunzip -c > etc/master/conf/GeoLite2-City.mmdb
+
+get-licenses: ## Fetch license information for all dependencies (**)
+	@$(call check-container-state,"",inside)
+	@mvn license:download-licenses
 
 build: ## Compile java sources into JARs, create RPMs and Docker images (**)
 	@$(call check-container-state,"",inside)
@@ -97,9 +101,9 @@ clean: ## Stop containers, remove images, JARs, RPMs and dependencies (**)
 
 info: ## Output the configuration
 	@if [ -n "$(IN_DEV_CONTAINER)" ]; then \
-		printf "$(GREEN)** You are INSIDE the dev-container **$(RESET)\n"; \
+		printf "$(GREEN)** You are INSIDE the development container **$(RESET)\n"; \
 	else \
-		printf "$(RED)** You are OUTSIDE the dev-container **$(RESET)\n"; \
+		printf "$(RED)** You are OUTSIDE the development container **$(RESET)\n"; \
 	fi
 	@echo "Software tag number: $(TAG)"
 	@echo "Docker host/current OS: $(DOCKER_HOST_OS)/$(DOCKER_GUEST_OS)"

@@ -1,6 +1,9 @@
 ARG BUILDPLATFORM=linux/amd64
 FROM --platform=${BUILDPLATFORM} ecpds/java:openjdk-23.0.0
 
+ARG TAG
+ENV TAG=${TAG}
+
 LABEL maintainer="Laurent.Gougeon@ecmwf.int"
 
 # Container specific
@@ -31,12 +34,12 @@ ENV LOG_ROLLOVER_SIZE_KEEP=20
 ENV LOG_LEVEL=warn
 
 # Add OpenECPDS rpms
-COPY rpms/ecpds-mover-*.noarch.rpm .
+COPY rpms/ecpds-mover-${TAG}.noarch.rpm .
 
 # Install OpenECPDS rpms and lbzip2
 RUN yum install -d1 -y lbzip2 && \
-    yum install -d1 -y ecpds-mover-*.noarch.rpm && \
-    yum clean all && rm -f ecpds-*.rpm
+    yum install -d1 -y ecpds-mover-${TAG}.noarch.rpm && \
+    yum clean all && rm -f ecpds-mover-${TAG}.noarch.rpm
 
 # Mountable volumes
 VOLUME /var/log/ecpds/mover
