@@ -6,19 +6,19 @@
 -source
 '23'
 -sourcepath
-'/Users/laurentgougeon/git/maven-ecpds/src/main/java'
+'/Users/laurentgougeon/git/open-ecpds/src/main/java'
 -author
 -bottom
 'Copyright &#169; 2024. All rights reserved.'
 -charset
 'UTF-8'
 -d
-'/Users/laurentgougeon/git/maven-ecpds/target/site/apidocs'
+'/Users/laurentgougeon/git/open-ecpds/target/site/apidocs'
 -docencoding
 'UTF-8'
 -doctitle
-'Product Data Store (PDS) 6.7.7 API'
+'Product Data Store (PDS) 6.7.8 API'
 -use
 -version
 -windowtitle
-'Product Data Store (PDS) 6.7.7 API'
+'Product Data Store (PDS) 6.7.8 API'
