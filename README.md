@@ -110,7 +110,7 @@ This will start the OpenECPDS master, monitor, mover, and database services.
 
 It might take a few seconds for all the services to start. Once they are up, you can access the following URLs (please update them if you changed the configuration in the compose files):
 
->**Warning:** Certificate validation should be disabled when relevant, as the test environment uses a self-signed certificate. Also, a database update is in progress to add sample configurations with notification triggers.
+>**Warning:** Certificate validation should be disabled when relevant, as the test environment uses a self-signed certificate.
 
 | Interface             | URL                                              | Login Details         |
 |-----------------------|--------------------------------------------------|-----------------------|
