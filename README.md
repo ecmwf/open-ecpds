@@ -175,8 +175,6 @@ make clean
 
 ## Support Materials
 
-You can access the Javadoc API documentation for OpenECPDS at the following link: [Javadocs](https://laurentgougeon.github.io/maven-ecpds/index.html). This comprehensive documentation provides detailed information about the classes, methods, and functionalities available, serving as a valuable resource for developers.
-
->**Warning:** The Javadoc API documentation will be available once it is published to gh-pages, which is only possible for public repositories.
+You can access the Javadoc API documentation for OpenECPDS at the following link: [Javadocs](https://ecmwf.github.io/open-ecpds/apidocs/). This comprehensive documentation provides detailed information about the classes, methods, and functionalities available, serving as a valuable resource for developers.
 
 Additionally, you can find the OpenECPDS options for various editors at this link: [OpenECPDS Options](API.md). This documentation outlines the configurable options available in the OpenECPDS editors, helping users to customize their experience and optimize their workflow effectively.
