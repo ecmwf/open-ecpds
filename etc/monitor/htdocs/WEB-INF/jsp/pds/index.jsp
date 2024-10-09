@@ -54,8 +54,8 @@ li {
 <h3>Data-Retrieval / Data-Distribution / Data-Portal</h3>
 <p>The <%=System.getProperty("monitor.title")%> (<%=System.getProperty("monitor.nickName")%>) is a persistent repository which allow:<br><li>Retrieving Observational Data from Data Providers.</li><li>Distributing Meteorological Products to our Member States and other Destinations.</li></p>
 <p>Data Retrieval and Data Distribution can be initiated by <%=System.getProperty("monitor.nickName")%> using various protocols such as:<li>ftp, sftp, ftps, http/s, Amazon S3, Microsoft Azure, dissftp and ECaccess/ECtrans.</li></p>
-<p><%=System.getProperty("monitor.nickName")%> also implement a Data Portal which is accessible via:<li>ftp, sftp, scp, https and Amazon S3.</li></p>
-<p>Data User credentials are required to access this service. Key-Based Authentication is allowed with sftp and scp.</p>
+<p><%=System.getProperty("monitor.nickName")%> also implement a Data Portal which is accessible via:<li>ftp, https and Amazon S3.</li></p>
+<p>Data User credentials are required to access this service.</p>
 <h3>Your Options</h3>
 <p>You are currently logged as <auth:info property="commonName"/> (<auth:info property="uid"/>) and your profile gives you access to the options below.</p>
 <p>If you feel you should have access to more items please contact your administrator.</p>
