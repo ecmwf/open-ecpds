@@ -52,7 +52,6 @@ JAVA_OPTS=$JAVA_OPTS" -Dmetadata.missingContactsMail='$METADATA_MISSING_CONTACTS
 JAVA_OPTS=$JAVA_OPTS" -Dport.ecpds='$PORT_ECPDS'"
 JAVA_OPTS=$JAVA_OPTS" -Dport.ftp='$PORT_FTP'"
 JAVA_OPTS=$JAVA_OPTS" -Dport.callback='$PORT_CALLBACK'"
-JAVA_OPTS=$JAVA_OPTS" -Dport.eccmd='$PORT_ECCMD'"
 
 #######################################################
 ## Deal with roll-over strategy and level for log files
