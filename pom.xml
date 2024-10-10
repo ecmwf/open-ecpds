@@ -150,7 +150,7 @@
 							<mainClass>
 								ecmwf.common.ectrans.ECtransOptions$MarkdownGenerator</mainClass>
 							<arguments>
-								<argument>${project.build.directory}/API.md</argument>
+								<argument>${basedir}/Options.md</argument>
 							</arguments>
 						</configuration>
 					</execution>
@@ -261,6 +261,18 @@
 							<overWriteIfNewer>true</overWriteIfNewer>
 							<excludeGroupIds>ecmwf</excludeGroupIds>
 						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.owasp</groupId>
+				<artifactId>dependency-check-maven</artifactId>
+				<version>10.0.4</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>check</goal>
+						</goals>
 					</execution>
 				</executions>
 			</plugin>
@@ -498,6 +510,16 @@
 	</repositories>
 	<dependencies>
 		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>2.18.0</version>
+		</dependency>
+		<dependency>
+			<groupId>commons-collections</groupId>
+			<artifactId>commons-collections</artifactId>
+			<version>3.2.2</version>
+		</dependency>
+		<dependency>
 			<groupId>com.sun.mail</groupId>
 			<artifactId>javax.mail</artifactId>
 			<version>1.6.2</version>
@@ -511,6 +533,12 @@
 			<groupId>displaytag</groupId>
 			<artifactId>displaytag</artifactId>
 			<version>1.2</version>
+			<exclusions>
+				<exclusion>
+					<groupId>log4j</groupId>
+					<artifactId>log4j</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.graalvm.shadowed</groupId>
@@ -627,6 +655,11 @@
 			<version>2.24.0</version>
 		</dependency>
 		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-1.2-api</artifactId>
+			<version>2.24.0</version>
+		</dependency>
+		<dependency>
 			<groupId>org.apache.sling</groupId>
 			<artifactId>org.apache.sling.commons.threads</artifactId>
 			<version>3.2.22</version>
@@ -639,7 +672,7 @@
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-compress</artifactId>
-			<version>1.18</version>
+			<version>1.27.1</version>
 		</dependency>
 		<dependency>
 			<groupId>commons-io</groupId>
@@ -689,53 +722,64 @@
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.jetty</groupId>
+			<artifactId>apache-jsp</artifactId>
+			<version>10.0.24</version>
+		</dependency>
+		<dependency>
+			<groupId>org.eclipse.jetty</groupId>
+			<artifactId>apache-jstl</artifactId>
+			<version>10.0.24</version>
+			<type>pom</type>
+		</dependency>
+		<dependency>
+			<groupId>org.eclipse.jetty</groupId>
 			<artifactId>jetty-deploy</artifactId>
-			<version>10.0.18</version>
+			<version>10.0.24</version>
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.jetty</groupId>
 			<artifactId>jetty-annotations</artifactId>
-			<version>10.0.18</version>
+			<version>10.0.24</version>
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.jetty</groupId>
 			<artifactId>jetty-http</artifactId>
-			<version>10.0.18</version>
+			<version>10.0.24</version>
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.jetty</groupId>
 			<artifactId>jetty-io</artifactId>
-			<version>10.0.18</version>
+			<version>10.0.24</version>
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.jetty</groupId>
 			<artifactId>jetty-rewrite</artifactId>
-			<version>10.0.18</version>
+			<version>10.0.24</version>
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.jetty</groupId>
 			<artifactId>jetty-security</artifactId>
-			<version>10.0.18</version>
+			<version>10.0.24</version>
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.jetty</groupId>
 			<artifactId>jetty-server</artifactId>
-			<version>10.0.18</version>
+			<version>10.0.24</version>
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.jetty</groupId>
 			<artifactId>jetty-servlet</artifactId>
-			<version>10.0.18</version>
+			<version>10.0.24</version>
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.jetty</groupId>
 			<artifactId>jetty-util</artifactId>
-			<version>10.0.18</version>
+			<version>10.0.24</version>
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.jetty</groupId>
 			<artifactId>jetty-webapp</artifactId>
-			<version>10.0.18</version>
+			<version>10.0.24</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.wink</groupId>
@@ -750,6 +794,10 @@
 				<exclusion>
 					<groupId>org.glassfish.jaxb</groupId>
 					<artifactId>jaxb-runtime</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.eclipse.jetty</groupId>
+					<artifactId>jetty-server</artifactId>
 				</exclusion>
 			</exclusions>
 		</dependency>
@@ -767,6 +815,12 @@
 			<groupId>org.hibernate</groupId>
 			<artifactId>hibernate-ehcache</artifactId>
 			<version>5.6.15.Final</version>
+			<exclusions>
+				<exclusion>
+					<groupId>net.sf.ehcache</groupId>
+					<artifactId>ehcache</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.hibernate</groupId>
@@ -794,11 +848,6 @@
 			<version>3.4.1</version>
 		</dependency>
 		<dependency>
-			<groupId>org.eclipse.jetty</groupId>
-			<artifactId>jetty-jspc-maven-plugin</artifactId>
-			<version>10.0.18</version>
-		</dependency>
-		<dependency>
 			<groupId>io.github.java-diff-utils</groupId>
 			<artifactId>java-diff-utils</artifactId>
 			<version>4.12</version>
@@ -815,6 +864,10 @@
 				<exclusion>
 					<groupId>xalan</groupId>
 					<artifactId>xalan</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>commons-fileupload</groupId>
+					<artifactId>commons-fileupload</artifactId>
 				</exclusion>
 			</exclusions>
 		</dependency>
@@ -837,27 +890,27 @@
 		<dependency>
 			<groupId>com.amazonaws</groupId>
 			<artifactId>aws-java-sdk-bundle</artifactId>
-			<version>1.12.547</version>
+			<version>1.12.773</version>
 		</dependency>
 		<dependency>
 			<groupId>com.azure</groupId>
 			<artifactId>azure-core</artifactId>
-			<version>1.24.1</version>
+			<version>1.53.0</version>
 		</dependency>
 		<dependency>
 			<groupId>com.azure</groupId>
 			<artifactId>azure-core-http-netty</artifactId>
-			<version>1.11.6</version>
+			<version>1.15.5</version>
 		</dependency>
 		<dependency>
 			<groupId>com.azure</groupId>
 			<artifactId>azure-storage-blob</artifactId>
-			<version>12.14.3</version>
+			<version>12.28.1</version>
 		</dependency>
 		<dependency>
 			<groupId>com.azure</groupId>
 			<artifactId>azure-storage-common</artifactId>
-			<version>12.14.2</version>
+			<version>12.27.1</version>
 		</dependency>
 		<dependency>
 			<groupId>com.google.api</groupId>
@@ -927,7 +980,7 @@
 		<dependency>
 			<groupId>com.github.mwiede</groupId>
 			<artifactId>jsch</artifactId>
-			<version>0.2.17</version>
+			<version>0.2.20</version>
 		</dependency>
 		<dependency>
 			<groupId>org.jsoup</groupId>
