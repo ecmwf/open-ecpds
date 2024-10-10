@@ -43,7 +43,6 @@ done
 JAVA_OPTS=$JAVA_OPTS" -Decaccess.hostName='$EXTERNAL_ADDRESS'"
 JAVA_OPTS=$JAVA_OPTS" -Dmaster.internalAddress='$INTERNAL_ADDRESS'"
 JAVA_OPTS=$JAVA_OPTS" -Decaccess.address='$ECACCESS_ADDRESS'"
-JAVA_OPTS=$JAVA_OPTS" -Deccmd.address='$ECCMD_ADDRESS'"
 JAVA_OPTS=$JAVA_OPTS" -Ddatabase.alias='$DATABASE_ALIAS'"
 JAVA_OPTS=$JAVA_OPTS" -Dhibernate.minPoolSize='$DATABASE_MIN_SPOOL_SIZE'"
 JAVA_OPTS=$JAVA_OPTS" -Dhibernate.maxPoolSize='$DATABASE_MAX_SPOOL_SIZE'"
