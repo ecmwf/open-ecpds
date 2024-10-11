@@ -971,10 +971,16 @@ public final class AmazonS3Module extends TransferModule {
                                 _log.warn("Cannot set listen address: {}", listenAddress, ignored);
                             }
                         }
-                        final var clientSocketFactory = tcpConfig.getSSLSocketFactory(protocol, sslValidation);
-                        clientConfiguration.getApacheHttpClientConfig()
-                                .withSslSocketFactory(new SSLConnectionSocketFactory(clientSocketFactory,
-                                        !strict ? NoopHostnameVerifier.INSTANCE : null));
+                        final SSLClientSocketFactory clientSocketFactory;
+                        if (acceleration) {
+                            // Acceleration is not working with the tweaked SSL socket factory!
+                            clientSocketFactory = null;
+                        } else {
+                            clientSocketFactory = tcpConfig.getSSLSocketFactory(protocol, sslValidation);
+                            clientConfiguration.getApacheHttpClientConfig()
+                                    .withSslSocketFactory(new SSLConnectionSocketFactory(clientSocketFactory,
+                                            !strict ? NoopHostnameVerifier.INSTANCE : null));
+                        }
                         builder.withCredentials(
                                 loadCredentials(user, password, region, clientConfiguration, roleArn, roleSessionName))
                                 .withClientConfiguration(clientConfiguration)
@@ -1097,7 +1103,8 @@ public final class AmazonS3Module extends TransferModule {
          *             Signals that an I/O exception has occurred.
          */
         void updateStatistics() throws IOException {
-            socketFactory.updateStatistics();
+			if (socketFactory != null)
+				socketFactory.updateStatistics();
         }
 
         /**
