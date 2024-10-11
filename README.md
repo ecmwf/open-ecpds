@@ -35,7 +35,7 @@ Data products can be searched by name or metadata and either pushed by the Data 
 OpenECPDS interacts with a variety of environments and supports multiple standard protocols:
 
 - **Outgoing connections** (Data Acquisition & Dissemination): FTP, SFTP, FTPS, HTTP/S, AmazonS3, Azure and Google Cloud Storage.
-- **Incoming connections** (Data Portal): FTP, HTTPS (SFTP and SCP soon available).
+- **Incoming connections** (Data Portal): FTP, HTTPS, S3 (SFTP and SCP soon available).
 
 Protocol configurations vary based on authentication and connection methods (e.g., password vs. key-based authentication, parallel vs. serial connections).
 
