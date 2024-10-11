@@ -32,7 +32,7 @@
 	<scm>
 		<connection>scm:git:git@github.com:ecmwf/open-ecpds.git</connection>
 		<developerConnection>scm:git:ssh@github.com:ecmwf/open-ecpds.git</developerConnection>
-		<url>https://github.com/ecmwf/openpds.git</url>
+		<url>https://github.com/ecmwf/open-ecpds.git</url>
 		<tag>HEAD</tag>
 	</scm>
 	<developers>
