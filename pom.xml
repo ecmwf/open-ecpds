@@ -58,18 +58,6 @@
 			<organizationUrl>https://www.ecmwf.int</organizationUrl>
 		</developer>
 	</developers>
-	<distributionManagement>
-		<repository>
-			<id>github</id>
-			<name>GitHub Packages</name>
-			<url>https://maven.pkg.github.com/ecmwf/openpds</url>
-		</repository>
-		<snapshotRepository>
-			<id>github-snapshots</id>
-			<name>GitHub Packages Snapshots</name>
-			<url>https://maven.pkg.github.com/ecmwf/openpds</url>
-		</snapshotRepository>
-	</distributionManagement>
 	<build>
 		<finalName>ecmwf-${project.version}-${build.number}</finalName>
 		<resources>
