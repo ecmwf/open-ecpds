@@ -420,7 +420,11 @@ public final class ECtransSetup implements Serializable {
     public boolean matches(final String name, final String value, final String defaultRegex) {
         final var regex = get(name, defaultRegex);
         try {
-            return regex != null && value != null && value.matches(regex);
+            final boolean result = regex != null && value != null && value.matches(regex);
+            if (debug) {
+                _log.debug("Regex matching '{}' '{}': {}", value, regex, result);
+            }
+            return result;
         } catch (final PatternSyntaxException e) {
             _log.warn("Pattern matching {} -> {}", value, regex, e);
             return false;
@@ -456,7 +460,11 @@ public final class ECtransSetup implements Serializable {
     public boolean matches(final ECtransOptions option, final String value, final String defaultRegex) {
         final var regex = get(option.getModule(), option.getName(), defaultRegex);
         try {
-            return regex != null && value != null && value.matches(regex);
+            final boolean result = regex != null && value != null && value.matches(regex);
+            if (debug) {
+                _log.debug("Regex matching '{}' '{}': {}", value, regex, result);
+            }
+            return result;
         } catch (final PatternSyntaxException e) {
             _log.warn("Pattern matching {} -> {}", value, regex, e);
             return false;
