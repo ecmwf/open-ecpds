@@ -21,7 +21,7 @@ select {
 							<tr>
 								<td colspan="2" style="width: 80%;"><input class="search"
 									name="hostSearch" type="text"
-									placeholder="e.g. enabled=yes module=*Http hostname=*.test.fr options=*mqtt* nickname=Test_0? case=i"
+									placeholder="e.g. enabled=yes method=*Http hostname=*.test.fr options=*mqtt* nickname=Test_0? case=i"
 									title="Default search is by nickname. Conduct extended searches using id, hostname, login, password, nickname, comment, dir, enabled, method, email and options (Properties & JavaScript) rules."
 									style="width: 100%" value='<c:out value="${hostSearch}"/>'></td>
 								<td style="width: 20%;"><select name="hostType"
@@ -76,7 +76,7 @@ select {
 						  No Hosts found based on these criteria! Default search is by nickname.<p>
 					</c:if>
 						You can conduct an extensive search using the id, hostname, login, password, nickname, comment, dir, enabled, method, email and options (Properties & JavaScript) rules.<p>
-						For instance: enabled=yes module=*Http hostname=*.test.fr
+						For instance: enabled=yes method=*Http hostname=*.test.fr
 						id&gt;=100 options=*mqtt* nickname=Test_0? case=i
 					<p>
 					<li>The 'case' option allows 's' for case-sensitive (default)
