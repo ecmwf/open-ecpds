@@ -1103,8 +1103,8 @@ public final class AmazonS3Module extends TransferModule {
          *             Signals that an I/O exception has occurred.
          */
         void updateStatistics() throws IOException {
-			if (socketFactory != null)
-				socketFactory.updateStatistics();
+            if (socketFactory != null)
+                socketFactory.updateStatistics();
         }
 
         /**
