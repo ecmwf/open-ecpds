@@ -1,5 +1,4 @@
-ARG BUILDPLATFORM=linux/amd64
-FROM --platform=${BUILDPLATFORM} ecpds/java:openjdk-23.0.0
+FROM ecpds/java:graalvm-23
 
 ARG TAG
 ENV TAG=${TAG}

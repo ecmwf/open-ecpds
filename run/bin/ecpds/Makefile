@@ -1,7 +1,10 @@
 #
-# File Makefile
-#
-# Purpose: Include native docker and docker compose commands to manage the services
+# Makefile for managing Docker containers using Docker Compose for the OpenECPDS application.
+# This file provides commands to:
+# - Start Docker containers using specified Docker Compose files.
+# - Log in to the running containers for interactive use.
+# - Monitor the logs and status of the containers.
+# - Initiate a backup of the database.
 #
 # (c) Copyright ECMWF 2019-2024 - Laurent Gougeon (syi@ecmwf.int)
 #
@@ -35,9 +38,6 @@ DOCKER_VERSION = $(shell $(DOCKER) --version)
 
 # Set the run path to be used inside the Makefile
 LOCAL_ROOT_PATH = $(realpath ../..)
-
-# Set the default platform for docker compose
-DOCKER_DEFAULT_PLATFORM=linux/amd64
 
 # Set the run path (export to be available in the compose file)
 ifndef DOCKER_HOST_WORKSPACE

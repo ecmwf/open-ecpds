@@ -1,3 +1,11 @@
+#
+# Makefile for building Docker images for the OpenECPDS application.
+# This file provides commands to streamline the process of creating
+# and managing Docker images for deployment and testing.
+#
+# (c) Copyright ECMWF 2019-2024 - Laurent Gougeon (syi@ecmwf.int)
+#
+
 # Use bash by default
 SHELL=/bin/bash
 
@@ -56,7 +64,7 @@ get-rpms: ## Get RPMs from the RPMS directory in rpmbuild
 
 build: .https-access ## Build database, Java, and service images
 	@$(MAKE) .build app=database tag=$(TAG)
-	@$(MAKE) .build app=java tag=openjdk-23.0.0
+	@$(MAKE) .build app=java tag=graalvm-23
 	@$(MAKE) .build app=mover tag=$(TAG)
 	@$(MAKE) .build app=master tag=$(TAG)
 	@$(MAKE) .build app=monitor tag=$(TAG)

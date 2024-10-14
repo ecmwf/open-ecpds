@@ -1,5 +1,4 @@
-ARG BUILDPLATFORM=linux/amd64
-FROM --platform=${BUILDPLATFORM} docker.io/library/rockylinux:9.3
+FROM docker.io/library/rockylinux:9.3
 
 LABEL maintainer="Laurent.Gougeon@ecmwf.int"
 
@@ -9,18 +8,16 @@ RUN cd /etc/yum.repos.d && \
     sed -i 's/#baseurl=http:/baseurl=https:/g' *
 
 # Install required rpms
-RUN yum install -d1 -y findutils procps-ng fontconfig urw-fonts net-tools iputils iperf3 iproute wget diffutils epel-release && /usr/bin/crb enable && \
+RUN yum install -d1 -y zip unzip findutils procps-ng fontconfig urw-fonts net-tools iputils iperf3 iproute wget diffutils epel-release && /usr/bin/crb enable && \
     yum install -d1 -y joe && \
     yum clean all
 
-# Donwload and install GraalVM
-RUN mkdir /usr/lib/jvm && cd /usr/lib/jvm && \
-        wget https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-23.0.0/graalvm-community-jdk-23.0.0_linux-x64_bin.tar.gz && \
-        tar -xzf graalvm-community-jdk-23.0.0_linux-x64_bin.tar.gz && \
-        rm -f graalvm-community-jdk-23.0.0_linux-x64_bin.tar.gz
+# Install GraalVM using SDKMAN
+RUN curl -s "https://get.sdkman.io" | bash && \
+    bash -c "source $HOME/.sdkman/bin/sdkman-init.sh && sdk install java 23-graalce"
 
 # Define environment parameters for the JVM
-ENV JAVA_HOME=/usr/lib/jvm/graalvm-community-openjdk-23+37.1
+ENV JAVA_HOME=/root/.sdkman/candidates/java/current
 ENV PATH=$JAVA_HOME/bin:$PATH
 
 # Create the JDK Class-Data Archive

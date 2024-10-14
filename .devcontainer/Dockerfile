@@ -1,5 +1,4 @@
-ARG BUILDPLATFORM=linux/amd64
-FROM --platform=${BUILDPLATFORM} mcr.microsoft.com/vscode/devcontainers/base:latest
+FROM mcr.microsoft.com/vscode/devcontainers/base:latest
 
 # Development container for OpenECPDS
 LABEL maintainer="Laurent.Gougeon@ecmwf.int"
@@ -36,14 +35,12 @@ RUN apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugi
 # Some cleaning
 RUN apt-get autoremove -y && apt-get clean -y
 
-# Donwload and install GraalVM
-RUN mkdir /usr/lib/jvm && cd /usr/lib/jvm && \
-    wget https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-23.0.0/graalvm-community-jdk-23.0.0_linux-x64_bin.tar.gz && \
-    tar -xzf graalvm-community-jdk-23.0.0_linux-x64_bin.tar.gz && \
-    rm -f graalvm-community-jdk-23.0.0_linux-x64_bin.tar.gz
+# Install GraalVM using SDKMAN
+RUN curl -s "https://get.sdkman.io" | bash && \
+    bash -c "source $HOME/.sdkman/bin/sdkman-init.sh && sdk install java 23-graalce"
 
 # Define environment parameters for the JVM
-ENV JAVA_HOME=/usr/lib/jvm/graalvm-community-openjdk-23+37.1
+ENV JAVA_HOME=/root/.sdkman/candidates/java/current
 ENV PATH=$JAVA_HOME/bin:$PATH
 
 # Create the JDK Class-Data Archive
@@ -54,15 +51,12 @@ COPY java.security $JAVA_HOME/conf/security/.
 
 # Download and install Maven
 RUN cd /usr/local && wget https://dlcdn.apache.org/maven/maven-3/3.9.8/binaries/apache-maven-3.9.8-bin.tar.gz && \
-	tar -xzf apache-maven-3.9.8-bin.tar.gz && \
-	rm -f apache-maven-3.9.8-bin.tar.gz
+  tar -xzf apache-maven-3.9.8-bin.tar.gz && \
+  rm -f apache-maven-3.9.8-bin.tar.gz
 
 # Define environment parameters for Maven
 ENV MAVEN_HOME=/usr/local/apache-maven-3.9.8
 ENV PATH=$MAVEN_HOME/bin:$PATH
-
-# Required for macOS Apple Silicon
-ENV DOCKER_DEFAULT_PLATFORM=linux/amd64
 
 # We are in the dev-container
 ENV IN_DEV_CONTAINER=true

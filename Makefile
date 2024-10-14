@@ -1,8 +1,15 @@
+#
+# Makefile for setting up and using a development container for the OpenECPDS application.
+# This file provides commands to:
+# - Create and log in to the development container.
+# - When executed inside the development container, compile the Java sources, 
+#   build JAR files, create RPM packages, and generate Docker images.
+#
+# (c) Copyright ECMWF 2019-2024 - Laurent Gougeon (syi@ecmwf.int)
+#
+
 # Use bash by default
 SHELL=/bin/bash
-
-# Required for macOS Apple Silicon
-export DOCKER_DEFAULT_PLATFORM=linux/amd64
 
 # Define variables for paths and container names
 PROJECT_NAME := $(shell basename $(PWD))
