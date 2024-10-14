@@ -52,15 +52,6 @@ RUN java -Xshare:dump
 # Re-enable disabled algorithms to allow connecting to low security sites
 COPY java.security $JAVA_HOME/conf/security/.
 
-# Download and install Ant
-RUN cd /usr/local && wget https://www-eu.apache.org/dist/ant/binaries/apache-ant-1.10.14-bin.tar.gz && \
-	tar -xzf apache-ant-1.10.14-bin.tar.gz && \
-	rm -f apache-ant-1.10.14-bin.tar.gz
-
-# Define environment parameters for Ant
-ENV ANT_HOME=/usr/local/apache-ant-1.10.14
-ENV PATH=$ANT_HOME/bin:$PATH
-
 # Download and install Maven
 RUN cd /usr/local && wget https://dlcdn.apache.org/maven/maven-3/3.9.8/binaries/apache-maven-3.9.8-bin.tar.gz && \
 	tar -xzf apache-maven-3.9.8-bin.tar.gz && \
