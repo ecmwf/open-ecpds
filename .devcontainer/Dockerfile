@@ -58,5 +58,20 @@ RUN cd /usr/local && wget https://dlcdn.apache.org/maven/maven-3/3.9.8/binaries/
 ENV MAVEN_HOME=/usr/local/apache-maven-3.9.8
 ENV PATH=$MAVEN_HOME/bin:$PATH
 
+# Set environment variables for Kompose and Kubectl versions
+ENV KOMPOSE_VERSION=1.34.0
+ENV KUBECTL_VERSION=1.31.1
+
+# Download and install Kompose and Kubectl based on the platform
+RUN if [ "$(uname -m)" = "aarch64" ]; then \
+    curl -s -L https://github.com/kubernetes/kompose/releases/download/v${KOMPOSE_VERSION}/kompose-linux-arm64 -o /usr/local/bin/kompose; \
+    curl -s -L https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/arm64/kubectl -o /usr/local/bin/kubectl; \
+  else \
+    curl -s -L https://github.com/kubernetes/kompose/releases/download/v${KOMPOSE_VERSION}/kompose-linux-amd64 -o /usr/local/bin/kompose; \
+    curl -s -L https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl -o /usr/local/bin/kubectl; \
+  fi; \
+  chmod +x /usr/local/bin/kompose || true && \
+  chmod +x /usr/local/bin/kubectl || true
+
 # We are in the dev-container
 ENV IN_DEV_CONTAINER=true
