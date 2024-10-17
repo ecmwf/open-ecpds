@@ -1,0 +1,237 @@
+#
+# File docker-compose.yml
+#
+# This Docker Compose file is used as an input for Kompose to set up Kubernetes resources for OpenECPDS.
+# Kompose is a conversion tool that takes a Docker Compose file and translates it into Kubernetes resource files.
+# For more information on Kompose, visit: https://kompose.io
+#
+# In adition to the options configured in this file please also check the following:
+#
+# - etc/ecpds/database/mysqld.cnf
+# - etc/ecpds/master/ecmwf.properties
+# - etc/ecpds/monitor/ecmwf.properties
+# - etc/ecpds/mover/ecmwf.properties
+#
+# (c) Copyright ECMWF 2019-2024 - Laurent Gougeon (syi@ecmwf.int)
+#
+
+networks:
+  backbone:
+
+services:
+  # The OpenECPDS Database (MariaDB) enables persistent storage for configurations, metadata and history
+  database:
+    container_name: ecpds-database
+    hostname: ecpds-database
+    labels:
+     kompose.controller.type: StatefulSet
+     kompose.service.type: NodePort
+     kompose.service.replicas: 1
+     kompose.volume.type: persistentVolumeClaim
+    image: ${ECPDS_REPOSITORY:-ecpds}/database:${TAG:-latest}
+    restart: on-failure
+    ports:
+      - "3309:3309" # Mysqld port must be the same as in 'etc/ecpds/database/mysqld.cnf'
+    volumes:
+      - "var-lib-ecpds-database:/var/lib/mysql"
+      - "etc-ecpds-database:/etc/mysql/conf.d"
+    networks:
+      - backbone
+  # The OpenECPDS Master-Server (backend) implements the business logic of the application
+  # Also check the following configuration file: 'etc/ecpds/master/ecmwf.properties'
+  master:
+    container_name: ecpds-master
+    hostname: ecpds-master
+    labels:
+     kompose.controller.type: StatefulSet
+     kompose.service.type: NodePort
+     kompose.service.replicas: 1
+     kompose.volume.type: persistentVolumeClaim
+     kompose.volume.storage-class-name: manual
+    image: ${ECPDS_REPOSITORY:-ecpds}/master:${TAG:-latest}
+    restart: on-failure
+    environment:
+      # Setting maximum heap size for the Master-Server
+      ALLOCATED_MEMORY: 1G
+      # Exposed IP address used to bind the public services (ecpds, ftp)
+      EXTERNAL_ADDRESS: 0.0.0.0
+      # Dedicated to data traffic between the internal components (jmx, rmi)
+      INTERNAL_ADDRESS: 0.0.0.0
+      # Ports for the Master-Server services
+      PORT_JMX: 2062 # Java Management Extensions (monitoring & management)
+      PORT_CALLBACK: 2600 # Java Remote Method Invocation (communication between components)
+      PORT_ECPDS: 2640 # Dedicated service for ecpds command
+      PORT_FTP: 2021 # Virtual FTP Server
+      # Database related parameters (database interface/port must be the same as in 'etc/ecpds/database/mysqld.cnf')
+      DATABASE_ALIAS: sequential://ecpds-database:3309/ecpds
+      DATABASE_MIN_SPOOL_SIZE: 5
+      DATABASE_MAX_SPOOL_SIZE: 50
+      # Define rollover strategy for master.log
+      LOG_ROLLOVER_SIZE_MAX: 100MB # Maximum size the log file is allowed to reach before being rolled over
+      LOG_ROLLOVER_SIZE_KEEP: 20 # Maximum number of backup files to keep
+      # Define rollover strategy for request.log, operator.log, event.log & splunk.log
+      LOG_ROLLOVER_DATE_PATTERN: dd-MM-yyyy # Date pattern for renaming current log file after rollover
+      LOG_ROLLOVER_DATE_KEEP: 10d # Keep backup files which are newer than the specified duration
+      # Log levels for log4j2 (off, fatal, error, warn, info, debug, trace, all)
+      LOG_LEVEL: debug
+      # Interactions with various services (smtp, opsview)
+      METADATA_MISSING_CONTACTS_MAIL:
+      SMTP_HOST:
+      SMTP_FROM:
+      OPSVIEW_HOST:
+      # Miscellaneous parameters
+      RETRIEVAL_MAX_SPOOL_SIZE: 50 # Maximum number of parallel retrievals
+      # Java Virtual Machine options
+      JAVA_OPTS: -XX:+UseG1GC # The G1 Garbage Collector
+    ports:
+      - "2062:2062" # JMX
+      - "2021:2021" # ftp
+      - "60000-60009:60000-60009" # ftp (passive mode)
+      - "2640:2640" # ECpds
+      - "2600:2600" # RMI
+    volumes:
+      - "var-log-ecpds-master:/var/log/ecpds/master"
+      - "var-tmp-ecpds-master:/var/tmp/ecpds/master"
+      - "var-lib-ecpds-master:/var/lib/ecpds/master"
+      - "etc-ecpds-master:/etc/ecpds"
+    networks:
+      - backbone
+    depends_on:
+      - database
+  # The Monitoring interface (frontend) allow monitoring, controlling and administrating the application
+  monitor:
+    container_name: ecpds-monitor
+    hostname: ecpds-monitor
+    labels:
+     kompose.controller.type: StatefulSet
+     kompose.service.type: NodePort
+     kompose.service.replicas: 1
+     kompose.volume.type: persistentVolumeClaim
+     kompose.volume.storage-class-name: manual
+    image: ${ECPDS_REPOSITORY:-ecpds}/monitor:${TAG:-latest}
+    restart: on-failure
+    environment:
+      # Setting maximum heap size for the Monitor-Server
+      ALLOCATED_MEMORY: 1G
+      # Exposed IP address used to bind the public services (http/s)
+      EXTERNAL_ADDRESS: ecpds-monitor
+      # Dedicated to data traffic between the internal components (jmx, rmi)
+      INTERNAL_ADDRESS: ecpds-monitor
+      # Ports for the Monitor-Server services
+      PORT_JMX: 3062 # Java Management Extensions (monitoring & management)
+      PORT_CALLBACK: 3600 # Java Remote Method Invocation (communication between components)
+      PORT_HTTPS: 3443 # Web monitoring interface (https)
+      # Connectivity to the Master-Server
+      MASTER_ADDRESS: ecpds-master
+      PORT_MASTER: 2600
+      # Define rollover strategy for monitor.log
+      LOG_ROLLOVER_SIZE_MAX: 100MB # Maximum size the log file is allowed to reach before being rolled over
+      LOG_ROLLOVER_SIZE_KEEP: 20 # Maximum number of backup files to keep
+      # Log levels for log4j2 (off, fatal, error, warn, info, debug, trace, all)
+      LOG_LEVEL: debug
+      # Password to unlock the 'etc/ecpds/monitor/ecpds-monitor.pfx' keystore
+      KEYSTORE_PASSWORD: s5w8g771
+      # Personalisation of monitoring web interface
+      MONITOR_NICKNAME: "PDS"
+      MONITOR_TITLE: "Personal Data Store"
+      MONITOR_COLOR: "#0079d3"
+      # Miscellaneous parameters
+      USE_CACHE: "no"
+      MASTER_URL_LIST:
+      DEFAULT_SOURCE_HOST_ID:
+      # Java Virtual Machine options
+      JAVA_OPTS: -XX:+UseG1GC # The G1 Garbage Collector
+    ports:
+      - "3062:3062" # JMX
+      - "3443:3443" # https
+      - "3600:3600" # RMI
+    volumes:
+      - "var-log-ecpds-monitor:/var/log/ecpds/monitor"
+      - "var-tmp-ecpds-monitor:/var/tmp/ecpds/monitor"
+      - "etc-ecpds-monitor:/etc/ecpds"
+    networks:
+      - backbone
+    depends_on:
+      - master
+  # The Data-Mover (frontend) make it possible to store objects and to perform incoming and outgoing
+  # data transfers
+  mover:
+    container_name: ecpds-mover
+    hostname: ecpds-mover
+    labels:
+     kompose.controller.type: StatefulSet
+     kompose.service.type: NodePort
+     kompose.service.replicas: 1
+     kompose.volume.type: persistentVolumeClaim
+     kompose.volume.storage-class-name: manual
+    image: ${ECPDS_REPOSITORY:-ecpds}/mover:${TAG:-latest}
+    restart: on-failure
+    environment:
+      # Setting maximum heap size for the Mover-Server
+      ALLOCATED_MEMORY: 1G
+      # Exposed IP address used to bind the public services (http/s, ftp, sftp, ecproxy)
+      EXTERNAL_ADDRESS: ecpds-mover
+      # Dedicated to data traffic between the internal components (jmx, rmi)
+      INTERNAL_ADDRESS: ecpds-mover
+      # Ports for the Monitor-Server services
+      PORT_JMX: 4062 # Java Management Extensions (monitoring & management)
+      PORT_CALLBACK: 4600 # Java Remote Method Invocation (communication between components)
+      PORT_HTTP: 4080 # Web data-portal interface (http)
+      PORT_HTTPS: 4443 # Web data-portal interface (https)
+      PORT_MQTT: 4183 # MQTT interface (mqtt)
+      PORT_MQTTS: 4883 # MQTT interface (mqtts)
+      PORT_FTP: 4021 # Data-portal interface (ftp)
+      PORT_SSH: 4022 # Data-portal interface (sftp/scp)
+      PORT_ECPROXY: 4640 # Dedicated service for ecpds command
+      # Connectivity to the Master-Server
+      MASTER_ADDRESS: ecpds-master
+      PORT_MASTER: 2600
+      # Define rollover strategy for mover.log
+      LOG_ROLLOVER_SIZE_MAX: 100MB # Maximum size the log file is allowed to reach before being rolled over
+      LOG_ROLLOVER_SIZE_KEEP: 20 # Maximum number of backup files to keep
+      # Log levels for log4j2 (off, fatal, error, warn, info, debug, trace, all)
+      LOG_LEVEL: debug
+      # Password to unlock the 'etc/ecpds/mover/ecpds-mover.pfx' keystore
+      KEYSTORE_PASSWORD: s5w8g771
+      # Personalisation of monitoring web interface
+      MOVER_TITLE: "Personal Data Store (PDS)"
+      MOVER_COLOR: "#0079d3"
+      # Miscellaneous parameters
+      OPERATION: "yes" # Set to 'no' to produce random data for missing files (for testing purpose only)
+      # Java Virtual Machine options
+      JAVA_OPTS: -XX:+UseG1GC # The G1 Garbage Collector
+    ports:
+      - "4062:4062" # JMX
+      - "4080:4080" # http
+      - "4443:4443" # https
+      - "4183:4183" # mqtt
+      - "4883:4883" # mqtts
+      - "4021:4021" # ftp
+      - "60010-60019:60010-60019" # ftp (Passive mode)
+      - "4022:4022" # sftp
+      - "4640:4640" # ECproxy
+      - "4600:4600" # RMI
+    volumes:
+      - "var-log-ecpds-mover:/var/log/ecpds/mover"
+      - "var-tmp-ecpds-mover:/var/tmp/ecpds/mover"
+      - "var-lib-ecpds-mover:/var/lib/ecpds/mover"
+      - "etc-ecpds-mover:/etc/ecpds"
+    networks:
+      - backbone
+    depends_on:
+      - master
+
+volumes:
+    var-lib-ecpds-database:
+    etc-ecpds-database:
+    var-log-ecpds-master:
+    var-tmp-ecpds-master:
+    var-lib-ecpds-master:
+    etc-ecpds-master:
+    var-log-ecpds-monitor:
+    var-tmp-ecpds-monitor:
+    etc-ecpds-monitor:
+    var-log-ecpds-mover:
+    var-tmp-ecpds-mover:
+    var-lib-ecpds-mover:
+    etc-ecpds-mover:

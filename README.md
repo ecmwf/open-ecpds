@@ -15,6 +15,7 @@ Data Acquisition and Data Dissemination are active services initiated by OpenECP
 - [Object Storage](#object-storage)
 - [Additional Features](#additional-features)
 - [Getting Started](#getting-started)
+- [Deployment](#deployment)
 - [Support Materials](#support-materials)
 
 OpenECPDS enhances data services by integrating innovative technologies to streamline the acquisition, dissemination, and storage of data across diverse environments and protocols.
@@ -60,6 +61,8 @@ The object storage system in OpenECPDS is hierarchy-free but can emulate directo
 ### Building and Running OpenECPDS
 
 OpenECPDS requires Docker to be installed and fully functional, with the default Docker socket enabled (Settings -> Advanced -> "Allow the default Docker socket to be used"). The build and run process has been tested on Linux and macOS (Intel/Apple Silicon) using Docker Desktop v4.34.2. It has also been reported to work on Windows with the WSL 2 backend and the host networking option enabled.
+
+To test the deployment of OpenECPDS containers to a Kubernetes cluster, Kubernetes must be enabled in Docker (Settings -> Kubernetes -> "Enable Kubernetes").
 
 The default setup needs a minimum of 3GB of available RAM. The disk space required depends on the size of the data you expect to handle, but at least 15GB is essential for the development and application containers.
 
@@ -179,6 +182,46 @@ To clean the logs and data:
 
 ```
 make clean
+```
+
+## Deployment
+
+If you have successfully built the OpenECPDS containers and enabled Kubernetes in Docker, navigate to the following directory where another [Makefile](run/bin/ecpds/Kubernetes/Makefile) is available:
+
+```
+cd run/bin/ecpds/Kubernetes
+```
+
+To convert the [docker-compose.yml](run/bin/ecpds/Kubernetes/docker-compose.yml) file into Kubernetes YAML files in the  `k8s-configs` directory and start the pods, run:
+
+```
+make build
+```
+
+If successful, use the following command to get the port mappings needed to connect from outside the cluster:
+
+```
+make ports
+```
+
+If the default port for the monitoring interface has not been updated in the `docker-compose.yml` file, you can find the external port by checking the redirection for port 3443, for example:
+
+3443 -> 32034/TCP
+
+You can then use your browser to access the monitoring interface at:
+
+https://127.0.0.1:32034
+
+To get the YAML files for all pods, PVs, and PVCs (you can redirect the output to capture the full configuration), run:
+
+```
+make yaml
+```
+
+To delete all Kubernetes resources and stop the pods:
+
+```
+make delete
 ```
 
 ## Support Materials
