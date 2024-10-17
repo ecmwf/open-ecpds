@@ -67,6 +67,7 @@ dev: .dev-cntnr .run login ## Build, run and login into the development containe
 	@$(call check-container-state,true,outside)
 	@$(DOCKER) run -d \
 		-v /var/run/docker.sock:/var/run/docker.sock \
+		-v $(HOME)/.kube:/root/.kube \
 		-v $(WORKSPACE):/workspaces \
 		-e DOCKER_HOST_WORKSPACE=$(DOCKER_HOST_WORKSPACE) \
 		-e DOCKER_HOST_OS=$(DOCKER_HOST_OS) \
