@@ -188,13 +188,13 @@ make clean
 
 ## Deployment
 
-If you have successfully built the OpenECPDS containers and enabled Kubernetes in Docker, navigate to the following directory where another [Makefile](run/bin/ecpds/Kubernetes/Makefile) is available:
+If you have successfully built the OpenECPDS containers and enabled Kubernetes in Docker, navigate to the following directory where a [Makefile](deploy/kubernetes/Makefile) is available:
 
 ```
-cd run/bin/ecpds/Kubernetes
+cd deploy/kubernetes
 ```
 
-To convert the [docker-compose.yml](run/bin/ecpds/Kubernetes/docker-compose.yml) file into Kubernetes YAML files in the  `k8s-configs` directory and start the pods, run:
+To convert the [docker-compose.yml](deploy/kubernetes/docker-compose.yml) file into Kubernetes YAML files in the  `k8s-configs` directory and start the pods, run:
 
 ```
 make build

@@ -45,14 +45,14 @@ ETC_ECPDS_MOVER_SIZE=50Mi
 SHELL=/bin/bash
 
 # Extract the version and build number from the Maven file
-VERSION=$(shell grep '<version>' ../../../../pom.xml | head -n 1 | sed 's/.*>\(.*\)<.*/\1/')
-BUILD=$(shell grep '<build.number>' ../../../../pom.xml | head -n 1 | sed 's/.*>\(.*\)<.*/\1/')
+VERSION=$(shell grep '<version>' ../../pom.xml | head -n 1 | sed 's/.*>\(.*\)<.*/\1/')
+BUILD=$(shell grep '<build.number>' ../../pom.xml | head -n 1 | sed 's/.*>\(.*\)<.*/\1/')
 
 # Set the TAG (export to be available in the compose file)
 export TAG=$(VERSION)-$(BUILD)
 
 # Set the run path to be used inside the Makefile
-LOCAL_ROOT_PATH = $(realpath ../../..)
+LOCAL_ROOT_PATH = $(realpath ../../run)
 
 # Output the help for each task
 .PHONY: help build .volume volumes kompose start yaml ports clean info
