@@ -56,7 +56,7 @@ check-container-state = \
   fi
 
 # Conditional targets based on the environment
-.PHONY: dev .dev-cntnr run login .rm-cntnr rm-dev get-geodb get-licenses build clean info
+.PHONY: dev .dev-cntnr .run login .rm-cntnr rm-dev get-geodb get-licenses build clean info
 dev: .dev-cntnr .run login ## Build, run and login into the development container (*)
 
 .dev-cntnr: ## Build the development container (*)
