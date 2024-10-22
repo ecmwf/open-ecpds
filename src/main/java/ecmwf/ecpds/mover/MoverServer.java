@@ -2404,6 +2404,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             gzip.close();
             return new RemoteInputStreamImp(new ByteArrayInputStream(out.toByteArray()));
         } catch (final Throwable t) {
+            _log.debug("Cannot execute: {}", script, t);
             throw new IOException(Format.getMessage(t));
         }
     }
