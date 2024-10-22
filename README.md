@@ -17,6 +17,7 @@ Data Acquisition and Data Dissemination are active services initiated by OpenECP
 - [Getting Started](#getting-started)
 - [Deployment](#deployment)
 - [Support Materials](#support-materials)
+- [Notes](#notes)
 
 OpenECPDS enhances data services by integrating innovative technologies to streamline the acquisition, dissemination, and storage of data across diverse environments and protocols.
 
@@ -231,3 +232,17 @@ make delete
 You can access the Javadoc API documentation for OpenECPDS at the following link: [Javadocs](https://ecmwf.github.io/open-ecpds/apidocs/). This comprehensive documentation provides detailed information about the classes, methods, and functionalities available, serving as a valuable resource for developers.
 
 Additionally, you can find the OpenECPDS options for various editors at this link: [OpenECPDS Options](Options.md). This documentation outlines the configurable options available in the OpenECPDS editors, helping users to customize their experience and optimize their workflow effectively.
+
+## Notes
+
+![GraalVM](https://img.shields.io/badge/GraalVM-23.0.1-brightgreen)
+![Maven](https://img.shields.io/badge/Maven-3.9.8-brightgreen)
+![Docker](https://img.shields.io/badge/Docker-27.2.0-blue)
+![Kompose](https://img.shields.io/badge/Kompose-1.34.0-blue)
+![Kubectl](https://img.shields.io/badge/Kubectl-1.31.1-blue)
+
+This project automates the downloading of specific tools (GraalVM, Maven, Docker, Kompose, Kubectl, Rocky Linux). Additionally, it leverages external APIs downloaded via Maven. For licenses and details on these dependencies, please refer to their respective documentation. You can retrieve the licenses from the development container using:
+
+```bash
+mvn dependency:copy-dependencies
+```
