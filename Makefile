@@ -109,6 +109,7 @@ clean: ## Stop containers, remove images, JARs, RPMs and dependencies (**)
 	@cd docker && $(MAKE) -s rm-images  || exit 1
 	@cd docker && $(MAKE) clean  || exit 1
 	@mvn clean  || exit 1
+	@rm -f lib/*.jar lib/*.pom || exit 1
 
 info: ## Output the configuration
 	@if [ -n "$(IN_DEV_CONTAINER)" ]; then \
