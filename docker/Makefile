@@ -70,7 +70,7 @@ build: .https-access ## Build database, Java, and service images
 	@$(MAKE) .build app=monitor tag=$(TAG)
 
 .build: # Build the image (args: app, tag)
-	$(DOCKER) build $(BUILD_OPTS) --build-arg TAG=$(tag) --label "app=$(app)" --label "tag=$(tag)" -t ecpds/$(app):$(tag) ecpds/$(app)
+	$(DOCKER) build $(BUILD_OPTS) --build-arg SDKMAN_JDK=$(SDKMAN_JDK) --build-arg TAG=$(tag) --label "app=$(app)" --label "tag=$(tag)" -t ecpds/$(app):$(tag) ecpds/$(app)
 
 images: ## List images
 	@$(DOCKER) images --format "{{.ID}}@{{.Repository}}:{{.Tag}}" | grep 'ecpds/$(app)' | grep ':$(tag)' | awk -F'[@/]' '{print $$1 "@" $$(NF-1)":"$$NF}' | sed 's/:/-/g' | egrep -v '\-latest$$' | uniq
