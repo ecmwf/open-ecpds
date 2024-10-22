@@ -11,7 +11,7 @@
 	"customizations": {
 		"vscode": {
 			"settings": {
-				"java.jdt.ls.java.home": "/usr/lib/jvm/graalvm-community-openjdk-23+37.1"
+				"java.jdt.ls.java.home": "/root/.sdkman/candidates/java/current"
 			},
 			"extensions": [
 				"vscjava.vscode-java-pack",
