@@ -1,5 +1,8 @@
 FROM docker.io/library/rockylinux:9.3
 
+ARG SDKMAN_JDK
+ENV SDKMAN_JDK=${SDKMAN_JDK}
+
 LABEL maintainer="Laurent.Gougeon@ecmwf.int"
 
 # Force https only for yum
@@ -14,7 +17,7 @@ RUN yum install -d1 -y zip unzip findutils procps-ng fontconfig urw-fonts net-to
 
 # Install GraalVM using SDKMAN
 RUN curl -s "https://get.sdkman.io" | bash && \
-    bash -c "source $HOME/.sdkman/bin/sdkman-init.sh && sdk install java 23-graalce"
+    bash -c "source $HOME/.sdkman/bin/sdkman-init.sh && sdk install java ${SDKMAN_JDK}"
 
 # Define environment parameters for the JVM
 ENV JAVA_HOME=/root/.sdkman/candidates/java/current
