@@ -1,4 +1,4 @@
-FROM ecpds/java:graalvm-23
+FROM ecpds/java:graalvm
 
 ARG TAG
 ENV TAG=${TAG}

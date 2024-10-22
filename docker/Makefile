@@ -64,7 +64,7 @@ get-rpms: ## Get RPMs from the RPMS directory in rpmbuild
 
 build: .https-access ## Build database, Java, and service images
 	@$(MAKE) .build app=database tag=$(TAG)
-	@$(MAKE) .build app=java tag=graalvm-23
+	@$(MAKE) .build app=java tag=graalvm
 	@$(MAKE) .build app=mover tag=$(TAG)
 	@$(MAKE) .build app=master tag=$(TAG)
 	@$(MAKE) .build app=monitor tag=$(TAG)
