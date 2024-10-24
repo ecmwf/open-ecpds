@@ -280,26 +280,6 @@ A destination can be a dissemination destination, an acquisition destination or 
 
 There is also the concept of destination **aliases**, which makes it possible to link two or more destinations together, so that whatever data transfer is queued to one destination is also queued to the others. This mechanism enables processing the same set of data transfers to different sites with different schedules and/or transfer mechanisms defined on a destination basis. Conditional aliasing is also possible in order to alias only a subset of data transfers.
 
-## Software components
-
-OpenECPDS is a distributed application with four main software components:
-
-- the **Master Server** implements the business logic of the application
-- the **Monitor** implements the web interface for management and monitoring
-- the **MariaDB Database** enables persistent storage for configurations, metadata and history
-- **Data Movers** make it possible to store objects and to perform incoming and outgoing data transfers.
-
-The key components are the Master Server, the Monitor, the MariaDB database and the Data Movers.
-The MasterServer and MariaDB Database should both run in a highly resilient environment. The Data Movers currently run on physical servers deployed in their own secure environment. There are currently 37 Data Movers available for a total capacity of 1.2 petabytes.
-
-In order to prevent downtime and data loss, which is a critical requirement of ECMWF’s Member and Co-operating States and is needed for the real-time running of the forecasting system at ECMWF, the following mechanisms have been implemented:
-
-The ECPDS Master and MySQL Database are each replicated on three servers in an active/passive mode: one active instance handles requests and two passive instances are on standby. When the active instance fails or requires maintenance, one of the passive instances takes over and the service resumes as normal.
-Each Data Mover group includes multiple servers. In order to guarantee the availability of the files in a group, a replication process is run to copy the files across the Data Movers (each file is replicated three times). If relevant, replication is also performed between ECMWF Data Movers and Data Movers located in the cloud on other continents.
-A load balancer is configured to distribute incoming requests to the ECPDS Data Portal amongst the Data Movers. The use of multiple Data Movers and load balancing increases availability through redundancy.
-
-ECMWF upgrades its forecasting system on a regular basis, and such upgrades are usually accompanied by a large increase in the volume of data to distribute. The way to scale up ECPDS in this situation is by adding more Data Movers. Each Data Mover adds CPU and I/O capability and disk space resources. More Data Movers can handle a bigger workload and more data.
-
 ## Support Materials
 
 You can access the Javadoc API documentation for OpenECPDS at the following link: [Javadocs](https://ecmwf.github.io/open-ecpds/apidocs/). This comprehensive documentation provides detailed information about the classes, methods, and functionalities available, serving as a valuable resource for developers.
