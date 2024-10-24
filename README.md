@@ -241,7 +241,7 @@ Additionally, you can find the OpenECPDS options for various editors at this lin
 ![Kompose](https://img.shields.io/badge/Kompose-1.34.0-blue)
 ![Kubectl](https://img.shields.io/badge/Kubectl-1.31.1-blue)
 
-This project automates the downloading of specific tools (GraalVM, Maven, Docker, Kompose, Kubectl, Rocky Linux). Additionally, it uses external APIs that are downloaded via Maven. For licenses and details on these dependencies, please refer to their respective documentation. You can retrieve the licenses from the development container using:
+This project automates the downloading of specific tools (GraalVM, Maven, Docker, Kompose, Kubectl). Additionally, it uses external APIs that are downloaded via Maven. For licenses and details on these dependencies, please refer to their respective documentation. You can retrieve the licenses from the development container using:
 
 ```bash
 mvn dependency:copy-dependencies
