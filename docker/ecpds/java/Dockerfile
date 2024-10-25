@@ -4,7 +4,8 @@ ARG SDKMAN_JDK
 ENV SDKMAN_JDK=${SDKMAN_JDK}
 
 LABEL maintainer="Laurent.Gougeon@ecmwf.int"
-LABEL org.opencontainers.image.source=https://github.com/ecmwf/open-ecpds
+LABEL org.opencontainers.image.source="https://github.com/ecmwf/open-ecpds"
+LABEL org.opencontainers.image.description="OpenECPDS JDK"
 
 # Force https only for yum
 RUN cd /etc/yum.repos.d && \
