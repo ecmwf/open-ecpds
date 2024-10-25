@@ -9,10 +9,18 @@
 # Use bash by default
 SHELL=/bin/bash
 
+# Gets repository credentials for login/push targets (CR_URL, CR_UID & CR_PWD)
+-include ../.settings/.cr-credentials
+
 # Extract the tag number from the Maven file
 VERSION=$(shell grep '<version>' ../pom.xml | head -n 1 | sed 's/.*>\(.*\)<.*/\1/')
 BUILD=$(shell grep '<build.number>' ../pom.xml | head -n 1 | sed 's/.*>\(.*\)<.*/\1/')
 TAG="$(VERSION)-$(BUILD)"
+
+# Define color codes
+GREEN := \033[32m
+RED := \033[31m
+RESET := \033[0m
 
 # The docker host and current OS
 DOCKER_HOST_OS ?= $(shell uname -s)
@@ -51,7 +59,7 @@ all: ## Get RPMs, and build images
 
 .https-access: ## Check HTTPS access (required to build images)
 	@if [ "$(HTTPS_ACCESS)" != "2" -a "$(HTTPS_ACCESS)" != "3" ]; then \
-        	echo "HTTPS connectivity is down" && exit 1; \
+		printf "$(RED)** HTTPS connectivity is down **$(RESET)\n" && exit 1; \
 	fi
 
 get-rpms: ## Get RPMs from the RPMS directory in rpmbuild
@@ -89,6 +97,26 @@ rm-images: ## Remove images (args: app, tag)
 		echo "Removing image $$id ..."; \
 		$(DOCKER) rmi -f $$id; \
 	done
+
+.checkcr: ## Check if the credentials are configured
+	@if [ "$(CR_URL)" == "" -o "$(CR_UID)" == "" -o "$(CR_PWD)" == "" ]; then \
+		printf "$(RED)** No CR credentials found (CR_URL, CR_UID & CR_PWD) **$(RESET)\n" && exit 1; \
+	fi
+
+login: .checkcr ## Log in to the CR registry (according to '../.settings/.cr-credential')
+	@echo -n "$(CR_PWD)" | $(DOCKER) login -u '$(CR_UID)' --password-stdin $(CR_URL); \
+
+push: .checkcr ## Push images to CR
+	@$(MAKE) .push app=database tag=$(TAG)
+	@$(MAKE) .push app=mover tag=$(TAG)
+	@$(MAKE) .push app=master tag=$(TAG)
+	@$(MAKE) .push app=monitor tag=$(TAG)
+
+.push: ## Push image and tag as latest (args: from, to, app, tag)
+	$(DOCKER) tag ecpds/$(app):$(tag) $(CR_URL)/$(app):$(tag)
+	$(DOCKER) tag ecpds/$(app):$(tag) $(CR_URL)/$(app)
+	$(DOCKER) push $(CR_URL)/$(app):$(tag)
+	$(DOCKER) push $(CR_URL)/$(app)
 
 clean: ## Remove all RPMs
 	@$(MAKE) .clean app=mover
