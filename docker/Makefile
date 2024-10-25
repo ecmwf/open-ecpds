@@ -9,7 +9,7 @@
 # Use bash by default
 SHELL=/bin/bash
 
-# Gets repository credentials for login/push targets (CR_URL, CR_UID & CR_PWD)
+# Gets credentials for container registry (CR_URL, CR_UID & CR_PWD)
 -include ../.settings/.cr-credentials
 
 # Extract the tag number from the Maven file
@@ -104,7 +104,7 @@ rm-images: ## Remove images (args: app, tag)
 	fi
 
 login: .checkcr ## Log in to the CR registry (according to '../.settings/.cr-credential')
-	@echo -n "$(CR_PWD)" | $(DOCKER) login -u '$(CR_UID)' --password-stdin $(CR_URL); \
+	@echo -n '$(CR_PWD)' | $(DOCKER) login -u '$(CR_UID)' --password-stdin $(CR_URL);
 
 push: .checkcr ## Push images to CR
 	@$(MAKE) .push app=database tag=$(TAG)
