@@ -1,6 +1,7 @@
 FROM docker.io/library/mariadb:10.11.4
 
 LABEL maintainer="Laurent.Gougeon@ecmwf.int"
+LABEL org.opencontainers.image.source=https://github.com/ecmwf/open-ecpds
 
 # Root password to connect to the database
 ENV MYSQL_ROOT_PASSWORD=ecpds2020!

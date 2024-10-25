@@ -4,6 +4,7 @@ ARG TAG
 ENV TAG=${TAG}
 
 LABEL maintainer="Laurent.Gougeon@ecmwf.int"
+LABEL org.opencontainers.image.source=https://github.com/ecmwf/open-ecpds
 
 # Container specific
 ENV CONTAINER=podman
