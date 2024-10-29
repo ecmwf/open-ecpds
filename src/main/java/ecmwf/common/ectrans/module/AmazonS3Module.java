@@ -986,7 +986,7 @@ public final class AmazonS3Module extends TransferModule {
                                 .withClientConfiguration(clientConfiguration)
                                 .withForceGlobalBucketAccessEnabled(forceGlobalBucketAccess)
                                 .withAccelerateModeEnabled(acceleration).withDualstackEnabled(dualstack);
-                        if (acceleration && isEmpty(url)) {
+                        if (acceleration || isEmpty(url)) {
                             builder.withRegion(region);
                         } else {
                             builder.withEndpointConfiguration(new EndpointConfiguration(url, region));
