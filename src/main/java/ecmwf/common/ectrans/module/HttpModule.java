@@ -548,7 +548,7 @@ public final class HttpModule extends TransferModule {
             throw new IOException("Append PUT not supported by the " + getSetup().getModuleName() + " module");
         }
         final var endPoint = getSetup().getString(HOST_HTTP_UPLOAD_END_POINT);
-        final var pr = new PrepareRequest(endPoint);
+		final var pr = new PrepareRequest(isEmpty(endPoint) ? filename : endPoint);
         final var uri = encodePath(getSetup().getBoolean(HOST_HTTP_ENCODE_URL), pr.getPath());
         final var request = getSetup().getBoolean(HOST_HTTP_USE_POST) ? new HttpPost(uri) : new HttpPut(uri);
         request.setEntity(getHttpPutOrPostEntity(input, filename));
