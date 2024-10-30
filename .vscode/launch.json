@@ -1,0 +1,58 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"type": "java",
+			"name": "OpenECPDS Master Server",
+			"request": "launch",
+			"mainClass": "ecmwf.common.starter.Starter",
+			"vmArgs": [
+				"@run/etc/ecpds/master/argfile"
+			],
+			"classPaths": [
+				"${workspaceFolder}/target/classes",
+				"${workspaceFolder}/lib/*"
+			],
+			"shortenCommandLine": "none"
+		},
+		{
+			"type": "java",
+			"name": "OpenECPDS Mover Server",
+			"request": "launch",
+			"mainClass": "ecmwf.common.starter.Starter",
+			"vmArgs": [
+				"@run/etc/ecpds/mover/argfile"
+			],
+			"classPaths": [
+				"${workspaceFolder}/target/classes",
+				"${workspaceFolder}/lib/*"
+			],
+			"shortenCommandLine": "none"
+		},
+		{
+			"type": "java",
+			"name": "OpenECPDS Monitor Server",
+			"request": "launch",
+			"mainClass": "ecmwf.common.starter.Starter",
+			"vmArgs": [
+				"@run/etc/ecpds/monitor/argfile"
+			],
+			"classPaths": [
+				"${workspaceFolder}/target/classes",
+				"${workspaceFolder}/lib/*"
+			],
+			"shortenCommandLine": "none"
+		}
+	],
+	"compounds": [
+		{
+			"name": "OpenECPDS Stack",
+			"configurations": [
+				"OpenECPDS Master Server",
+				"OpenECPDS Mover Server",
+				"OpenECPDS Monitor Server"
+			],
+			"stopAll": true
+		}
+	]
+}
