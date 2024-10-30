@@ -48,23 +48,41 @@ DOCKER_VERSION = $(shell $(DOCKER) --version)
 help: ## Show this help message (*=outside **=inside the development container)
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-12s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-# Common function to check if inside or outside the development container
-check-container-state = \
+# Check if inside or outside the development container
+is-dev-container = \
   if [ "$$IN_DEV_CONTAINER" = "$(1)" ]; then \
     printf "$(RED)Error: This target can only be run $(2) the development container$(RESET)\n"; \
     exit 1; \
   fi
 
+# Check if the development container exists and is running
+check-dev-container = \
+  @if [ -z "$(shell $(DOCKER) ps -a -q -f name=$(CONTAINER_NAME))" ]; then \
+    printf "$(RED)Error: The development container '$(CONTAINER_NAME)' does not exist.$(RESET)\n"; \
+    exit 1; \
+  elif [ -z "$(shell $(DOCKER) ps -q -f name=$(CONTAINER_NAME))" ]; then \
+    printf "$(RED)Error: The development container '$(CONTAINER_NAME)' is not running.$(RESET)\n"; \
+    exit 1; \
+  fi
+
+# Check if the development container exists
+dev-container-exists = \
+  @if [ "$(shell $(DOCKER) ps -a -q -f name=$(CONTAINER_NAME))" ]; then \
+      printf "$(RED)Error: The development container '$(CONTAINER_NAME)' already exists.$(RESET)\n"; \
+      exit 1; \
+  fi
+
 # Conditional targets based on the environment
-.PHONY: dev .dev-cntnr .run login .rm-cntnr rm-dev get-geodb get-licenses build clean info
+.PHONY: dev .dev-cntnr .run login rm-dev get-geodb get-licenses build clean info
 dev: .dev-cntnr .run login ## Build, run and login into the development container (*)
 
 .dev-cntnr: ## Build the development container (*)
-	@$(call check-container-state,true,outside)
+	@$(call is-dev-container,true,outside)
+	@$(call dev-container-exists)
 	cd .devcontainer && $(DOCKER) build -f Dockerfile -t $(IMAGE_NAME) .
 
 .run: ## Run the development container (*)
-	@$(call check-container-state,true,outside)
+	@$(call is-dev-container,true,outside)
 	@$(DOCKER) run -d \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v $(HOME)/.kube:/root/.kube \
@@ -76,35 +94,34 @@ dev: .dev-cntnr .run login ## Build, run and login into the development containe
 		sleep infinity
 
 login: ## Log in to the running development container (*)
-	@$(call check-container-state,true,outside)
+	@$(call is-dev-container,true,outside)
+	@$(call check-dev-container)
 	@$(DOCKER) exec -it -w $(WORKDIR) $(CONTAINER_NAME) /bin/bash
 
-.rm-cntnr: ## Stop and remove the development container (*)
-	@$(call check-container-state,true,outside)
+rm-dev: ## Stop the development container, then remove both its container and image. (*)
+	@$(call is-dev-container,true,outside)
+	@$(call check-dev-container)
 	@$(DOCKER) stop $(CONTAINER_NAME) || true
 	@$(DOCKER) rm $(CONTAINER_NAME) || true
-
-rm-dev: .rm-cntnr ## Stop the development container, then remove both its container and image. (*)
-	@$(call check-container-state,true,outside)
 	@$(DOCKER) rmi -f $(IMAGE_NAME) || exit 1
 
 get-geodb: ## Fetch latest GeoLite2-City (MaxMind.com) CDN files
-	@$(call check-container-state,"",inside)
+	@$(call is-dev-container,"",inside)
 	wget -qO- https://cdn.jsdelivr.net/npm/geolite2-city/GeoLite2-City.mmdb.gz | \
 		gunzip -c > etc/master/conf/GeoLite2-City.mmdb
 
 get-licenses: ## Fetch license information for all dependencies (**)
-	@$(call check-container-state,"",inside)
+	@$(call is-dev-container,"",inside)
 	@mvn license:download-licenses
 
 build: ## Compile java sources into JARs, create RPMs and Docker images (**)
-	@$(call check-container-state,"",inside)
+	@$(call is-dev-container,"",inside)
 	@echo "$(TAG)" > VERSION
 	@mvn package
 	@cd docker && $(MAKE) all
 
 clean: ## Stop containers, remove images, JARs, RPMs and dependencies (**)
-	@$(call check-container-state,"",inside)
+	@$(call is-dev-container,"",inside)
 	@cd run/bin/ecpds && $(MAKE) -s down clean  || exit 1
 	@cd docker && $(MAKE) -s rm-images  || exit 1
 	@cd docker && $(MAKE) clean  || exit 1
