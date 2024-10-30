@@ -102,7 +102,7 @@ dump-conf: check-yaml ## Dump only configuration data from the database to stdou
 	@$(COMPOSE) -f ${DOCKER_HOST_OS}-ecpds/docker-compose.yml exec database sh -c 'mysqldump -p"$$MYSQL_ROOT_PASSWORD" ecpds --ignore-table=ecpds.ACTIVITY --ignore-table=ecpds.BANDWIDTH --ignore-table=ecpds.DATA_FILE --ignore-table=ecpds.DATA_TRANSFER --ignore-table=ecpds.DISK_USAGE --ignore-table=ecpds.EVENT --ignore-table=ecpds.INCOMING_HISTORY --ignore-table=ecpds.METADATA_ATTRIBUTE --ignore-table=ecpds.METADATA_VALUE --ignore-table=ecpds.MONITORING_HISTORY --ignore-table=ecpds.MONITORING_VALUE --ignore-table=ecpds.PRODUCT_STATUS --ignore-table=ecpds.PUBLICATION --ignore-table=ecpds.Q2DISS_REPORT --ignore-table=ecpds.STATISTICS --ignore-table=ecpds.TRANSFER_HISTORY --ignore-table=ecpds.UPLOAD_HISTORY'
 	@$(COMPOSE) -f ${DOCKER_HOST_OS}-ecpds/docker-compose.yml exec database sh -c 'mysqldump -p"$$MYSQL_ROOT_PASSWORD" -d ecpds ACTIVITY BANDWIDTH DATA_FILE DATA_TRANSFER DISK_USAGE EVENT INCOMING_HISTORY METADATA_ATTRIBUTE METADATA_VALUE MONITORING_HISTORY MONITORING_VALUE PRODUCT_STATUS PUBLICATION Q2DISS_REPORT STATISTICS TRANSFER_HISTORY UPLOAD_HISTORY CHANGE_LOG'
 
-clean: down .clean-log .clean-lib .clean-tmp .fix-perms ## Remove all logs, persistent data, and fix database permissions
+clean: down .clean-log .clean-lib .clean-tmp .clean-kml .fix-perms ## Remove all logs, persistent data, and fix database permissions
 
 .clean-log: # Remove all logs (master, monitor and mover)
 	cd ${LOCAL_ROOT_PATH}/var/log/ecpds ; rm -f master/* monitor/* mover/*
@@ -112,6 +112,9 @@ clean: down .clean-log .clean-lib .clean-tmp .fix-perms ## Remove all logs, pers
 
 .clean-tmp: # Remove all temporary files
 	cd ${LOCAL_ROOT_PATH}/var/tmp/ecpds ; rm -fr master/* monitor/* mover/*
+
+.clean-kml: # Remove all kml files
+	cd ${LOCAL_ROOT_PATH}/../etc/monitor/htdocs/resources/maps ; rm -f *.kml
 
 .fix-perms: # Fix permissions for the database directories
 	cd ${LOCAL_ROOT_PATH}/var/lib/ecpds ; chown -R $(shell id -u):$(shell id -g) database/ ; chmod -R 755 database/
