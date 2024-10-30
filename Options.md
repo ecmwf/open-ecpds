@@ -866,7 +866,7 @@ If enabled, enforce hostname verification for SSL connections.
 This parameter defines which protocols can be used during the SSL handshake process to establish a secure connection with the HTTPS server.
 
 ### http.uploadEndPoint
-In the context of a file upload (PUT or POST), this option allow specifying the URL or route on the remote server that expects incoming data using the PUT or POST method for uploading purposes. This endpoint is designed to handle and process the incoming data according to the server logic or application requirements.
+In the context of a file upload (PUT or POST), this option allow specifying the URL or route on the remote server that expects incoming data using the PUT or POST method for uploading purposes. This endpoint is designed to handle and process the incoming data according to the server logic or application requirements. By default the name of the target file is used.
 
 ### http.urldir
 When performing a listing, a "/" is appended to the end of the URL if it lacks parameters (i.e. no "?" is found in the URL) or does not end with an extension such as ".html", ".htm", or ".txt". This option allows overriding the default behavior and enforcing a specific choice.
