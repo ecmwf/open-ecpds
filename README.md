@@ -297,5 +297,7 @@ Additionally, you can find the OpenECPDS options for various editors at this lin
 This project automates the downloading of specific tools (GraalVM, Maven, Docker, Kompose, Kubectl). Additionally, it uses external APIs that are downloaded via Maven. For licenses and details on these dependencies, please refer to their respective documentation. You can retrieve the licenses from the development container using:
 
 ```bash
-mvn dependency:copy-dependencies
+make get-licenses
 ```
+
+If successful, the licenses will be available in the `target/generated-resources` directory. These licenses are also included in the root directory of the container images, along with the `AUTHORS`, `LICENSE.txt`, `NOTICE` and `VERSION` files.

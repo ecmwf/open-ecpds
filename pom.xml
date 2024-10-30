@@ -5,10 +5,9 @@
 	<groupId>ecmwf</groupId>
 	<artifactId>product-data-store</artifactId>
 	<version>6.7.9</version>
-	<name>Product Data Store (PDS)</name>
+	<name>Product Data Store (OpenECPDS)</name>
 	<description>Product Data Store for Acquisition and Dissemination activities</description>
-	<url>
-		https://www.ecmwf.int/en/newsletter/159/computing/ecmwf-production-data-store</url>
+	<url>https://github.com/ecmwf/open-ecpds</url>
 	<packaging>jar</packaging>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -214,23 +213,6 @@
 				</executions>
 			</plugin>
 			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>license-maven-plugin</artifactId>
-				<version>2.4.0</version>
-				<configuration>
-					<failOnBlacklist>true</failOnBlacklist>
-					<includedLicenses>
-						<includedLicense>Apache-2.0</includedLicense>
-					</includedLicenses>
-					<licenseName>apache_v2</licenseName>
-					<organizationName>ECMWF</organizationName>
-					<inceptionYear>2004</inceptionYear>
-					<includes>
-						<include>**/*.java</include>
-					</includes>
-				</configuration>
-			</plugin>
-			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-dependency-plugin</artifactId>
 				<executions>
@@ -249,6 +231,35 @@
 							<overWriteIfNewer>true</overWriteIfNewer>
 							<excludeGroupIds>ecmwf</excludeGroupIds>
 						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>license-maven-plugin</artifactId>
+				<version>2.4.0</version>
+				<dependencies>
+					<dependency>
+						<groupId>org.apache.logging.log4j</groupId>
+						<artifactId>log4j-core</artifactId>
+						<version>2.24.0</version>
+					</dependency>
+					<dependency>
+						<groupId>org.apache.logging.log4j</groupId>
+						<artifactId>log4j-api</artifactId>
+						<version>2.24.0</version>
+					</dependency>
+				</dependencies>
+				<configuration>
+					<errorRemedy>ignore</errorRemedy>
+				</configuration>
+				<executions>
+					<execution>
+						<id>download-licenses</id>
+						<phase>prepare-package</phase>
+						<goals>
+							<goal>download-licenses</goal>
+						</goals>
 					</execution>
 				</executions>
 			</plugin>

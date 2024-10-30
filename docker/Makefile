@@ -26,8 +26,9 @@ RESET := \033[0m
 DOCKER_HOST_OS ?= $(shell uname -s)
 DOCKER_GUEST_OS := $(shell uname -s)
 
-# How to get the rpms?
-COPY := cp ../target/rpm
+# Source directories for the rpms and licences
+RPM_DIR := ../target/rpm
+LICENSES_DIR := ../target/generated-resources
 
 # Detect container manager (Docker or Podman)
 ifeq ($(shell command -v podman 2> /dev/null),)
@@ -45,7 +46,7 @@ DOCKER_VERSION := $(shell $(DOCKER) --version)
 HTTPS_ACCESS := $(shell curl -s --max-time 2 -I https://google.com | sed 's/^[^ ]*  *\([0-9]\).*/\1/; 1q')
 
 # Output the help for each task
-.PHONY: help all get-rpms build images bk-images rm-images clean .clean info
+.PHONY: help all get-rpms get-licenses build images bk-images rm-images clean .clean info
 
 help: ## Show this help message
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-15s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -53,8 +54,9 @@ help: ## Show this help message
 # Display help by default
 .DEFAULT_GOAL := help
 
-all: ## Get RPMs, and build images
+all: ## Get RPMs, licenses and build images
 	@$(MAKE) get-rpms
+	@$(MAKE) get-licenses
 	@$(MAKE) build
 
 .https-access: ## Check HTTPS access (required to build images)
@@ -62,13 +64,17 @@ all: ## Get RPMs, and build images
 		printf "$(RED)** HTTPS connectivity is down **$(RESET)\n" && exit 1; \
 	fi
 
-get-rpms: ## Get RPMs from the RPMS directory in rpmbuild
+get-rpms: ## Get RPMs from the source RPM directories
 	@$(MAKE) .get-rpm app=mover rpm=mover arch=noarch
 	@$(MAKE) .get-rpm app=master rpm=master arch=noarch
 	@$(MAKE) .get-rpm app=monitor rpm=monitor arch=noarch
 
 .get-rpm: # Create the target directory and get the specified RPM (args: app, rpm, arch)
-	mkdir -p ecpds/$(app)/rpms && $(COPY)/ecpds-$(rpm)/RPMS/$(arch)/ecpds-$(rpm)-$(TAG).$(arch).rpm ecpds/$(app)/rpms/.
+	mkdir -p ecpds/$(app)/rpms && cp -f $(RPM_DIR)/ecpds-$(rpm)/RPMS/$(arch)/ecpds-$(rpm)-$(TAG).$(arch).rpm ecpds/$(app)/rpms/.
+
+get-licenses: ## Get the licenses for the java image
+	cp -fr $(LICENSES_DIR)/licenses* ecpds/java/.
+	cp -f ../AUTHORS  ../LICENSE.txt ../NOTICE ../VERSION ecpds/java/.
 
 build: .https-access ## Build database, Java, and service images
 	@$(MAKE) .build app=database tag=$(TAG)
@@ -118,10 +124,11 @@ push: .checkcr ## Push images to CR
 	$(DOCKER) push $(CR_URL)/$(app):$(tag)
 	$(DOCKER) push $(CR_URL)/$(app)
 
-clean: ## Remove all RPMs
+clean: ## Remove all RPMs and licenses
 	@$(MAKE) .clean app=mover
 	@$(MAKE) .clean app=master
 	@$(MAKE) .clean app=monitor
+	cd ecpds/java && rm -fr AUTHORS LICENSE.txt NOTICE VERSION licenses*
 
 .clean: # Remove RPMs for the specified app (arg: app)
 	rm -f ecpds/$(app)/rpms/ecpds-*-*.*.rpm

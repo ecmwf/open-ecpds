@@ -30,3 +30,7 @@ RUN java -Xshare:dump
 
 # Re-enable disabled algorithms to allow connecting to low security sites
 COPY java.security $JAVA_HOME/conf/security/.
+
+# Copy licences and related files
+COPY AUTHORS LICENSE.txt NOTICE VERSION licenses.xml .
+COPY licenses /licenses
