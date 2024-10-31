@@ -29,12 +29,14 @@ package ecmwf.ecpds.master.plugin.ecpds;
 import static ecmwf.common.ectrans.ECtransGroups.Module.DESTINATION_SCHEDULER;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_SCHEDULER_ASAP;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_SCHEDULER_DELAY;
+import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_SCHEDULER_DATE_FORMAT;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_SCHEDULER_FORCE;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_SCHEDULER_FORCE_STOP;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_SCHEDULER_LIFETIME;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_SCHEDULER_NO_RETRIEVAL;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_SCHEDULER_STANDBY;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_SCHEDULER_TRANSFERGROUP;
+import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_SCHEDULER_VERSION;
 import static ecmwf.common.text.Util.isNotEmpty;
 import static ecmwf.common.text.Util.nullToNone;
 import static ecmwf.ecpds.master.DataFilePath.getPath;
@@ -1940,45 +1942,85 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
             putReq.setASAP(currentAsap);
             putReq.setEVENT(currentEvent);
         }
-        key = TransferManagement.getUniqueKey(standBy, selectedDestination, currentTarget, uniqueName);
-        final Object object = MASTER.lockTransfer(key, this);
-        if (object != null) {
-            if (object instanceof final ECpdsPlugin plugin) {
-                // We found that this transfer request is already processed in a
-                // different instance of the ECpdsPlugin!
-                stopAndError("Already processed by " + plugin.getInfo() + " (" + plugin.version + ") from "
-                        + plugin.getRemoteHost() + ":" + plugin.getSocket().getPort() + " (uniqueKey=" + key + ",alive="
-                        + plugin.isAlive() + ")");
+        try {
+            // Get the current Destination!
+            final var currentDestination = DATABASE.getDestinationObject(selectedDestination);
+            if (currentDestination == null) {
+                // The Destination is not found in the database!
+                final var error = "Destination " + selectedDestination + " not found";
+                if (groupBy != null && !Cnf.at("ECpdsPlugin", "failOnDestinationNotFound", true)) {
+                    // We are on the test system in the retrieval mode, just
+                    // report the error but don't fail!
+                    _log.error("Ignore request for Destination {} (not found)", selectedDestination);
+                    send("MESSAGE " + error + " (metadata ignored)");
+                } else {
+                    // Fail on Destination not found!
+                    stopAndError(error);
+                }
                 return;
             }
-            // This transfer request is locked by something else than the
-            // ECpdsPlugin!
-            stopAndError("Already processed by " + Format.getClassName(object) + " (uniqueKey=" + key + ")");
-            return;
-        }
-        if (requestId == -1 && (selectedDestination == null || original == null)) {
-            stopAndError("Missing parameters (reqid or destination and source)");
-            return;
-        }
-        currentProductDate = getProductDate();
-        if (_log.isDebugEnabled()) {
-            _log.debug("Product date: {}", Format.formatTime(currentProductDate));
-        }
-        final var date = System.currentTimeMillis();
-        if (currentTarget == null) {
-            currentTarget = source == null ? original : source;
-        }
-        at = at == -1 ? date : at;
-        var startAtWithDelay = at + currentDelay;
-        var expiry = startAtWithDelay + lifeTime;
-        if (expiry < date) {
-            stopAndError("The request has already expired (please review -at and/or -delay options)");
-            return;
-        }
-        if (identity == null) {
-            identity = currentTarget;
-        }
-        try {
+            final var setup = DESTINATION_SCHEDULER.getECtransSetup(currentDestination.getData());
+            // Let's look at the scheduler.force options!
+            final var forceOptions = setup.getOptions(DESTINATION_SCHEDULER_FORCE, currentTarget, null);
+            {
+                // Check if the uniqueName (version option of the ecpds/mspds command) is not
+                // forced in the Destination?
+                final var defaultUniqueName = setup.getString(DESTINATION_SCHEDULER_VERSION);
+                final var newUniqueName = forceOptions.matches("pattern", currentTarget, ".*")
+                        && !forceOptions.matches("ignore", currentTarget)
+                                ? forceOptions.get(DESTINATION_SCHEDULER_VERSION.getName(), defaultUniqueName)
+                                : defaultUniqueName;
+                if (newUniqueName != null) {
+                    final var format = setup.getString(DESTINATION_SCHEDULER_DATE_FORMAT);
+                    final var sb = new StringBuilder(newUniqueName);
+                    Format.replaceAll(sb, "$date", Format.formatTime(format, System.currentTimeMillis()));
+                    Format.replaceAll(sb, "$timestamp", System.currentTimeMillis());
+                    Format.replaceAll(sb, "$destination", selectedDestination);
+                    Format.replaceAll(sb, "$target", currentTarget);
+                    Format.replaceAll(sb, "$original", original);
+                    Format.replaceAll(sb, "$timefile", timeFile);
+                    uniqueName = sb.toString();
+                    _log.debug("Version forced by scheduler option in {} ({})", selectedDestination, newUniqueName);
+                }
+            }
+            key = TransferManagement.getUniqueKey(standBy, selectedDestination, currentTarget, uniqueName);
+            final Object object = MASTER.lockTransfer(key, this);
+            if (object != null) {
+                if (object instanceof final ECpdsPlugin plugin) {
+                    // We found that this transfer request is already processed in a
+                    // different instance of the ECpdsPlugin!
+                    stopAndError("Already processed by " + plugin.getInfo() + " (" + plugin.version + ") from "
+                            + plugin.getRemoteHost() + ":" + plugin.getSocket().getPort() + " (uniqueKey=" + key
+                            + ",alive=" + plugin.isAlive() + ")");
+                    return;
+                }
+                // This transfer request is locked by something else than the
+                // ECpdsPlugin!
+                stopAndError("Already processed by " + Format.getClassName(object) + " (uniqueKey=" + key + ")");
+                return;
+            }
+            if (requestId == -1 && (selectedDestination == null || original == null)) {
+                stopAndError("Missing parameters (reqid or destination and source)");
+                return;
+            }
+            currentProductDate = getProductDate();
+            if (_log.isDebugEnabled()) {
+                _log.debug("Product date: {}", Format.formatTime(currentProductDate));
+            }
+            final var date = System.currentTimeMillis();
+            if (currentTarget == null) {
+                currentTarget = source == null ? original : source;
+            }
+            at = at == -1 ? date : at;
+            var startAtWithDelay = at + currentDelay;
+            var expiry = startAtWithDelay + lifeTime;
+            if (expiry < date) {
+                stopAndError("The request has already expired (please review -at and/or -delay options)");
+                return;
+            }
+            if (identity == null) {
+                identity = currentTarget;
+            }
             if (requestId != -1) {
                 transfersList = MASTER.getDataTransfers(requestId);
             } else {
@@ -2110,31 +2152,13 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
             dataFile.setDeleted(false);
             dataFile.setRemoved(false);
             dataFile.setTimeFile(new Timestamp(timeFile));
-            // Get the current Destination!
-            final var currentDestination = DATABASE.getDestinationObject(selectedDestination);
-            if (currentDestination == null) {
-                // The Destination is not found in the database!
-                final var error = "Destination " + selectedDestination + " not found";
-                if (groupBy != null && !Cnf.at("ECpdsPlugin", "failOnDestinationNotFound", true)) {
-                    // We are on the test system in the retrieval mode, just
-                    // report the error but don't fail!
-                    _log.error("Ignore request for Destination {} (not found)", selectedDestination);
-                    send("MESSAGE " + error + " (metadata ignored)");
-                } else {
-                    // Fail on Destination not found!
-                    stopAndError(error);
-                }
-                return;
-            }
-            // Let's look at the scheduler.force options!
-            final var setup = DESTINATION_SCHEDULER.getECtransSetup(currentDestination.getData());
-            final var forceOptions = setup.getOptions(DESTINATION_SCHEDULER_FORCE, currentTarget, null);
             {
                 // Check if the lifetime is not forced in the Destination?
                 final var defaultDuration = setup.getDuration(DESTINATION_SCHEDULER_LIFETIME);
                 final var newDuration = forceOptions.matches("pattern", currentTarget, ".*")
                         && !forceOptions.matches("ignore", currentTarget)
-                                ? forceOptions.getDuration("lifetime", defaultDuration) : defaultDuration;
+                                ? forceOptions.getDuration(DESTINATION_SCHEDULER_LIFETIME.getName(), defaultDuration)
+                                : defaultDuration;
                 if (newDuration != null && newDuration.isPositive()) {
                     try {
                         final var newLifeTime = newDuration.toMillis();
@@ -2160,7 +2184,8 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
                 final var defaultDuration = setup.getDuration(DESTINATION_SCHEDULER_DELAY);
                 final var newDuration = forceOptions.matches("pattern", currentTarget, ".*")
                         && !forceOptions.matches("ignore", currentTarget)
-                                ? forceOptions.getDuration("delay", defaultDuration) : defaultDuration;
+                                ? forceOptions.getDuration(DESTINATION_SCHEDULER_DELAY.getName(), defaultDuration)
+                                : defaultDuration;
                 if (newDuration != null && newDuration.isPositive()) {
                     final var newDelay = newDuration.toMillis();
                     _log.debug("Delay forced by scheduler option in {} ({})", selectedDestination, newDuration);
@@ -2174,7 +2199,8 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
                 final var defaultBoolean = setup.getBooleanObject(DESTINATION_SCHEDULER_NO_RETRIEVAL);
                 final var newBoolean = forceOptions.matches("pattern", currentTarget, ".*")
                         && !forceOptions.matches("ignore", currentTarget)
-                                ? forceOptions.getBoolean("noRetrieval", defaultBoolean) : defaultBoolean;
+                                ? forceOptions.getBoolean(DESTINATION_SCHEDULER_NO_RETRIEVAL.getName(), defaultBoolean)
+                                : defaultBoolean;
                 // We only set the boolean is a value is forced!
                 if (newBoolean != null && noRetrieval != newBoolean) {
                     _log.debug("NoRetrieval forced by scheduler option in {} ({})", selectedDestination, newBoolean);
@@ -2187,7 +2213,8 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
                 final var defaultBoolean = setup.getBooleanObject(DESTINATION_SCHEDULER_ASAP);
                 final var newBoolean = forceOptions.matches("pattern", currentTarget, ".*")
                         && !forceOptions.matches("ignore", currentTarget)
-                                ? forceOptions.getBoolean("asap", defaultBoolean) : defaultBoolean;
+                                ? forceOptions.getBoolean(DESTINATION_SCHEDULER_ASAP.getName(), defaultBoolean)
+                                : defaultBoolean;
                 if (newBoolean != null && currentAsap != newBoolean) {
                     _log.debug("Asap forced by scheduler option in {} ({})", selectedDestination, newBoolean);
                     currentAsap = newBoolean;
@@ -2198,7 +2225,8 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
                 final var defaultTransferGroupName = setup.getString(DESTINATION_SCHEDULER_TRANSFERGROUP);
                 final var newTransferGroupName = forceOptions.matches("pattern", currentTarget, ".*")
                         && !forceOptions.matches("ignore", currentTarget)
-                                ? forceOptions.get("transfergroup", defaultTransferGroupName)
+                                ? forceOptions.get(DESTINATION_SCHEDULER_TRANSFERGROUP.getName(),
+                                        defaultTransferGroupName)
                                 : defaultTransferGroupName;
                 if (newTransferGroupName != null) {
                     _log.debug("TransferGroup forced by scheduler option in {} ({})", selectedDestination,
@@ -2347,7 +2375,7 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
                                 }
                             }
                             comment.append(" aliased from Destination=").append(selectedDestination)
-                                    .append(viaMessage.toString());
+                                    .append(viaMessage.length() > 4 ? viaMessage.toString() : "");
                         } else {
                             _log.warn("No rules for {}?", destinationName);
                         }
