@@ -141,8 +141,8 @@ public enum ECtransOptions {
     /** The destination scheduler active time range. */
     DESTINATION_SCHEDULER_ACTIVE_TIME_RANGE("activeTimeRange", TimeRange.class, TIME_RANGE_NONE),
 
-	/** The destination scheduler date format. */
-	DESTINATION_SCHEDULER_DATE_FORMAT("dateformat", String.class, "yyyyMMdd"),
+    /** The destination scheduler date format. */
+    DESTINATION_SCHEDULER_DATE_FORMAT("dateformat", String.class, "yyyyMMdd"),
 
     /** The destination scheduler standby. */
     DESTINATION_SCHEDULER_STANDBY("standby", String.class, "", Arrays.asList("yes", "no", "never")),
@@ -171,8 +171,8 @@ public enum ECtransOptions {
     /** The destination scheduler transfergroup. */
     DESTINATION_SCHEDULER_TRANSFERGROUP("transfergroup", String.class, STRING_NONE),
 
-	/** The destination scheduler version. */
-	DESTINATION_SCHEDULER_VERSION("version", String.class, STRING_NONE),
+    /** The destination scheduler version. */
+    DESTINATION_SCHEDULER_VERSION("version", String.class, STRING_NONE),
 
     /** The destination scheduler requeueon. */
     DESTINATION_SCHEDULER_REQUEUEON("requeueon", String.class, STRING_NONE),
