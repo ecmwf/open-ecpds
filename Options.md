@@ -1200,6 +1200,9 @@ Allow the specification of a list of time ranges, separated by commas, during wh
 ### scheduler.asap
 Enabling this option schedules a data transfer submitted to this destination to start immediately (as soon as possible) by setting the schedule time to the current time. It is important to note that this action will override any option specified in the ecpds command (-asap option). Please be aware that the transfer may not start immediately if there are other pending files in the queue. Additionally, priorities will also influence the scheduling.
 
+### scheduler.dateformat
+Allow specifying the date format when using the "$date" parameter in the "scheduler.version" option.
+
 ### scheduler.delay
 Allow adding a delay to the scheduled time of a data transfer submitted to this destination. This delay will be in addition to any existing delay already set up through the ecpds (-delay) command or the "incoming.delay" option for this destination.
 
@@ -1235,6 +1238,9 @@ This option allows for changing the "standby" flag of any data transfer request 
 
 ### scheduler.transfergroup
 This option allows for changing the "transfergroup" of any data transfer request submitted to this destination.
+
+### scheduler.version
+Allow specifying an optional version number for any data transfer request submitted to this destination.  Use placeholders like "$date", "$timestamp", "$destination", "$target", "$original", and "$timefile" within the version, which will be substituted by their respective values.
 
 ## Sftp Options
 
