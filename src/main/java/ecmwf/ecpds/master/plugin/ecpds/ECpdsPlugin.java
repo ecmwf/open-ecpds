@@ -1980,7 +1980,7 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
                     Format.replaceAll(sb, "$original", original);
                     Format.replaceAll(sb, "$timefile", timeFile);
                     uniqueName = sb.toString();
-                    _log.debug("Version forced by scheduler option in {} ({})", selectedDestination, newUniqueName);
+                    _log.debug("Version forced by scheduler option in {} ({})", selectedDestination, uniqueName);
                 }
             }
             key = TransferManagement.getUniqueKey(standBy, selectedDestination, currentTarget, uniqueName);
