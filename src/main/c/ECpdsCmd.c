@@ -1507,7 +1507,6 @@ int main(int argc, char *argv[])
 	/* Let's check the source file */
 	if (waitfor == NULL && !scheduler && !purge && !completed && !expected && !started && !reset)
 	{
-
 		uid_t uid = getuid();
 		uid_t euid = geteuid();
 
