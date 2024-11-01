@@ -843,7 +843,7 @@ int usage(void)
 	fprintf(stdout, " -version     {arg} - optional version associated with the DataFile\n");
 	fprintf(stdout, " -reqid       {arg} - optional DataFileId for the requeue/purge option\n");
 	fprintf(stdout, " -groupby     {arg} - organise transfers by groups\n");
-	fprintf(stdout, " -echost      {arg} - dns name of service or one of acq, diss, aux, xacq or xdiss\n");
+	fprintf(stdout, " -echost      {arg} - dns name of the Master\n");
 	fprintf(stdout, " -streams     {arg} - maximum number of retrieval streams (scheduler/check)\n");
 	fprintf(stdout, " -timeout     {arg} - timeout for each retrieval stream (scheduler/check)\n");
 	fprintf(stdout, " -index             - in groupby mode source file is index of source files\n");
@@ -1439,31 +1439,6 @@ int main(int argc, char *argv[])
 	if (ecport == NULL)
 	{
 		ecport = ECPORT;
-	}
-
-	/**
-	 * Set the correct DNS names if echost is one of the shortcuts.
-	 * This block maps shortcut names to their corresponding DNS names.
-	 */
-	if (strcmp(echost, "acq") == 0)
-	{
-		echost = "bodh1ecpmas-01.ecmwf.int,bodh2ecpmas-01.ecmwf.int";
-	}
-	else if (strcmp(echost, "diss") == 0)
-	{
-		echost = "bodh1ecpmas-02.ecmwf.int,bodh2ecpmas-02.ecmwf.int";
-	}
-	else if (strcmp(echost, "aux") == 0)
-	{
-		echost = "bodh1ecpmas-03.ecmwf.int,bodh2ecpmas-03.ecmwf.int";
-	}
-	else if (strcmp(echost, "xacq") == 0)
-	{
-		echost = "bodh1ecpmas-04.ecmwf.int,bodh2ecpmas-04.ecmwf.int";
-	}
-	else if (strcmp(echost, "xdiss") == 0)
-	{
-		echost = "bodh1ecpmas-05.ecmwf.int,bodh2ecpmas-05.ecmwf.int";
 	}
 
 	/**
