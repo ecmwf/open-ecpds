@@ -34,6 +34,7 @@
 #include <time.h>
 #include <sys/types.h>
 #include <netinet/tcp.h>
+#include <openssl/sha.h>
 
 /**
  * ECMWF Product Data Store (OpenECPDS) Project
@@ -71,6 +72,15 @@
 /* Maximum number of hostnames in the list */
 #define MAX_HOSTNAMES 10
 
+/* Secret concatenated with the challenge to compute the response hash */
+#define SECRET getenv("ECPDS_SHARED_SECRET")
+
+/* Number of bytes in the challenge sent by the server */
+#define CHALLENGE_SIZE 32
+
+/* Length of the SHA-256 hash, which is the output size of the SHA-256 algorithm */
+#define RESPONSE_SIZE SHA256_DIGEST_LENGTH
+
 /* Connect timeout used when connecting to Masters/Movers */
 int CONNECT_TIMEOUT_IN_SECONDS = 10;
 
@@ -94,6 +104,20 @@ char localHostName[256];
 
 /* Used in debug/warn messages */
 char date[20];
+
+/**
+ * Computes a SHA-256 hash response based on a given challenge and a shared secret.
+ * This function concatenates the provided challenge with a predefined secret,
+ * then computes the SHA-256 hash of the concatenated string and stores the result in the response buffer.
+ *
+ * @param challenge The challenge string provided by the server.
+ * @param response The buffer where the computed SHA-256 hash will be stored.
+ */
+void compute_response(const char *challenge, unsigned char *response) {
+    char buffer[CHALLENGE_SIZE + strlen(SECRET) + 1];   
+    snprintf(buffer, sizeof(buffer), "%s%s", challenge, SECRET);
+    SHA256((unsigned char *)buffer, strlen(buffer), response);
+}
 
 /**
  * Shuffles an array of strings using the Fisher-Yates shuffle algorithm.
