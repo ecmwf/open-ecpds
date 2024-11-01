@@ -164,6 +164,25 @@
 							<workingDirectory>${project.build.directory}</workingDirectory>
 						</configuration>
 					</execution>
+					<execution>
+						<id>compile-ecpds</id>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+						<phase>package</phase>
+						<configuration>
+							<executable>gcc</executable>
+							<arguments>
+								<argument>-O2</argument>
+								<argument>-D_GNU_SOURCE</argument>
+								<argument>-D_FILE_OFFSET_BITS=64</argument>
+								<argument>-oecpds</argument>
+								<argument>
+									${project.basedir}/src/main/c/ECpdsCmd.c</argument>
+							</arguments>
+							<workingDirectory>${project.build.directory}</workingDirectory>
+						</configuration>
+					</execution>
 				</executions>
 			</plugin>
 			<plugin>
