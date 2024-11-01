@@ -1670,7 +1670,7 @@ int main(int argc, char *argv[])
 
 	/* Let's open the connection to the master and authenticate */
 	char versionAndPid[512];
-	sprintf(versionAndPid, "%s (cmd=ecpds,host=%s,user=%s,pid=%d,req=%s)", VERSION, getHostName(), ecuser, getpid(), originalechost);
+	sprintf(versionAndPid, "%s (cmd=ecpds,node=%s,user=%s,pid=%d,req=%s)", VERSION, getHostName(), ecuser, getpid(), originalechost);
 	if ((sd = tryConnection(echost, ecport, CONNECT_TIMEOUT_IN_SECONDS)) == -1 || sendCommand(sd, "VERSION", versionAndPid) == -1 || sendCommand(sd, "USER", ecuser) == -1 || sendCommand(sd, "OPTS", opts) == -1 || sendCommand(sd, "CALLER", caller) == -1 || receiveCommand(sd, "MESSAGE", message, 512) == -1)
 	{
 		goto clean;
