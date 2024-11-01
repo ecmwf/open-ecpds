@@ -878,7 +878,7 @@ int usage(void)
 	fprintf(stdout, " -reset             - the task is identified with the metadata(s)\n");
 	fprintf(stdout, " -buffer            - the task is identified with the metadata(s) (*****)\n");
 	fprintf(stdout, " -asap              - send file as soon as possible (******)\n");
-	fprintf(stdout, " -event             - notification triggered once data is available (e.g. aviso)\n");
+	fprintf(stdout, " -event             - notification triggered once data is available (e.g. mqtt)\n");
 	fprintf(stdout, " -standby           - spool the data file only\n");
 	fprintf(stdout, " -remove            - remove source when transfer successful\n");
 	fprintf(stdout, " -requeue           - requeue a dataFile and reset the related transfer(s)\n");
