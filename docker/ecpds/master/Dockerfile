@@ -36,11 +36,11 @@ ENV LOG_ROLLOVER_DATE_KEEP=10d
 ENV LOG_LEVEL=warn
 
 # Add OpenECPDS rpms
-COPY rpms/ecpds-master-${TAG}.noarch.rpm .
+COPY rpms/ecpds-master-${TAG}.*.rpm .
 
 # Install OpenECPDS rpms
-RUN yum install -d1 -y ecpds-master-${TAG}.noarch.rpm && \
-	yum clean all && rm -f ecpds-master-${TAG}.noarch.rpm
+RUN yum install -d1 -y ecpds-master-${TAG}.*.rpm && \
+	yum clean all && rm -f ecpds-master-${TAG}.*.rpm
 
 # Mountable volumes
 VOLUME /var/log/ecpds/master

@@ -65,8 +65,8 @@ all: ## Get RPMs, licenses and build images
 	fi
 
 get-rpms: ## Get RPMs from the source RPM directories
-	@$(MAKE) .get-rpm app=mover rpm=mover arch=noarch
-	@$(MAKE) .get-rpm app=master rpm=master arch=noarch
+	@$(MAKE) .get-rpm app=mover rpm=mover arch=$(shell uname -m)
+	@$(MAKE) .get-rpm app=master rpm=master arch=$(shell uname -m)
 	@$(MAKE) .get-rpm app=monitor rpm=monitor arch=noarch
 
 .get-rpm: # Create the target directory and get the specified RPM (args: app, rpm, arch)

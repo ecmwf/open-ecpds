@@ -315,6 +315,7 @@
 							<packager>${packager.name} - ${packager.email}</packager>
 							<distribution>${packager.distribution}</distribution>
 							<license>Apache License 2.0</license>
+							<needarch>true</needarch>
 							<requires>
 								<require>java >= ${maven.compiler.target}</require>
 							</requires>
@@ -354,6 +355,17 @@
 										<source>
 											<location>
 												${project.build.directory}/ecmwf-${project.version}-${build.number}.jar</location>
+										</source>
+									</sources>
+								</mapping>
+								<mapping>
+									<directory>/usr/local/bin</directory>
+									<filemode>0755</filemode>
+									<dirmode>0755</dirmode>
+									<sources>
+										<source>
+											<location>
+												${project.build.directory}/ecpds</location>
 										</source>
 									</sources>
 								</mapping>
@@ -448,6 +460,7 @@
 							<packager>${packager.name} - ${packager.email}</packager>
 							<distribution>${packager.distribution}</distribution>
 							<license>Apache License 2.0</license>
+							<needarch>true</needarch>
 							<requires>
 								<require>java >= ${maven.compiler.target}</require>
 							</requires>
@@ -512,7 +525,6 @@
 										</source>
 									</sources>
 								</mapping>
-
 							</mappings>
 						</configuration>
 					</execution>
