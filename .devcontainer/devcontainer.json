@@ -1,5 +1,5 @@
 {
-	"name": "ECAC",
+	"name": "OpenECPDS",
 	"build": {
 		"dockerfile": "Dockerfile"
 	},
@@ -21,6 +21,7 @@
 		}
 	},
 	"mounts": [
-		"source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+		"source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
+		"source=${env:HOME}/.kube,target=/root/.kube,type=bind"
 	]
 }
