@@ -22,10 +22,6 @@ GREEN := \033[32m
 RED := \033[31m
 RESET := \033[0m
 
-# The docker host and current OS
-DOCKER_HOST_OS ?= $(shell uname -s)
-DOCKER_GUEST_OS := $(shell uname -s)
-
 # Source directories for the rpms and licences
 RPM_DIR := ../target/rpm
 LICENSES_DIR := ../target/generated-resources
@@ -135,7 +131,6 @@ clean: ## Remove all RPMs and licenses
 
 info: ## Output the configuration
 	@echo "Software tag number: $(TAG)"
-	@echo "Docker host/current OS: $(DOCKER_HOST_OS)/$(DOCKER_GUEST_OS)"
 	@echo "Docker command: $(DOCKER) ($(DOCKER_VERSION))"
 	@if [ -n "$(BUILD_OPTS)" ]; then \
 		echo "Docker options: $(BUILD_OPTS)"; \
