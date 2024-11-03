@@ -9,10 +9,6 @@
 			"vmArgs": [
 				"@run/etc/ecpds/master/argfile"
 			],
-			"classPaths": [
-				"${workspaceFolder}/target/classes",
-				"${workspaceFolder}/lib/*"
-			],
 			"shortenCommandLine": "none"
 		},
 		{
@@ -23,10 +19,6 @@
 			"vmArgs": [
 				"@run/etc/ecpds/mover/argfile"
 			],
-			"classPaths": [
-				"${workspaceFolder}/target/classes",
-				"${workspaceFolder}/lib/*"
-			],
 			"shortenCommandLine": "none"
 		},
 		{
@@ -36,10 +28,6 @@
 			"mainClass": "ecmwf.common.starter.Starter",
 			"vmArgs": [
 				"@run/etc/ecpds/monitor/argfile"
-			],
-			"classPaths": [
-				"${workspaceFolder}/target/classes",
-				"${workspaceFolder}/lib/*"
 			],
 			"shortenCommandLine": "none"
 		}
