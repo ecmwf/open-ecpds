@@ -120,6 +120,10 @@ build: ## Compile java sources into JARs, create RPMs and Docker images (**)
 	@mvn package
 	@cd docker && $(MAKE) all
 
+start-db: ## Build and run the database for VS Code and Eclipse debugging/running
+	@cd docker && $(MAKE) build-db
+	@cd run/bin/ecpds && $(MAKE) up container=database
+
 clean: ## Stop containers, remove images, JARs, RPMs and dependencies (**)
 	@$(call is-dev-container,"",inside)
 	@cd run/bin/ecpds && $(MAKE) -s down clean  || exit 1
