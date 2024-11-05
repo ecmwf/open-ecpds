@@ -234,7 +234,7 @@ To access the Debug and Run configurations:
 - Type **Run and Debug** in the **Command Palette** to find the **Run and Debug** view.
 - Select **Run and Debug** in the sidebar or access it through the **Debug icon** in the Activity Bar on the left side of VS Code.
 
-This view displays the available Run and Debug configurations: **OpenECPDS Master Server**, **OpenECPDS Mover Server**, **OpenECPDS Monitor Server**, or **OpenECPDS Stack** to start them all at once.
+This view displays the available **Run and Debug** configurations: **OpenECPDS Master Server**, **OpenECPDS Mover Server**, **OpenECPDS Monitor Server**, or **OpenECPDS Stack** to start them all at once.
 
 ### Eclipse
 
