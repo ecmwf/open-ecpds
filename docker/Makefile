@@ -42,7 +42,7 @@ DOCKER_VERSION := $(shell $(DOCKER) --version)
 HTTPS_ACCESS := $(shell curl -s --max-time 2 -I https://google.com | sed 's/^[^ ]*  *\([0-9]\).*/\1/; 1q')
 
 # Output the help for each task
-.PHONY: help all get-rpms get-licenses build images bk-images rm-images clean .clean info
+.PHONY: help all get-rpms get-licenses build-db build images bk-images rm-images clean .clean info
 
 help: ## Show this help message
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-15s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -72,8 +72,10 @@ get-licenses: ## Get the licenses for the java image
 	cp -fr $(LICENSES_DIR)/licenses* ecpds/java/.
 	cp -f ../AUTHORS  ../LICENSE.txt ../NOTICE ../VERSION ecpds/java/.
 
-build: .https-access ## Build database, Java, and service images
+build-db: .https-access ## Build database only for VS Code and Eclipse debugging/running
 	@$(MAKE) .build app=database tag=$(TAG)
+
+build: build-db ## Build database, Java, and service images
 	@$(MAKE) .build app=java tag=graalvm
 	@$(MAKE) .build app=mover tag=$(TAG)
 	@$(MAKE) .build app=master tag=$(TAG)
