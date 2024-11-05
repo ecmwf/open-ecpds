@@ -1190,8 +1190,8 @@ public enum ECtransOptions {
     /** The host http encode url. */
     HOST_HTTP_ENCODE_URL("encodeURL", Boolean.class, false),
 
-	/** The host http has parameters. */
-	HOST_HTTP_HAS_PARAMETERS("hasParameters", Boolean.class, false),
+    /** The host http has parameters. */
+    HOST_HTTP_HAS_PARAMETERS("hasParameters", Boolean.class, false),
 
     /** The host http use post. */
     HOST_HTTP_USE_POST("usePost", Boolean.class, false),

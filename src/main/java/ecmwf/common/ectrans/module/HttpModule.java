@@ -489,8 +489,8 @@ public final class HttpModule extends TransferModule {
     public void del(final String name) throws IOException {
         _log.debug("Del file {}", name);
         final var pr = new PrepareRequest(name);
-		final var request = new HttpDelete(encodePath(getSetup().getBoolean(HOST_HTTP_ENCODE_URL),
-				getSetup().getBoolean(HOST_HTTP_HAS_PARAMETERS) ? name : pr.getPath()));
+        final var request = new HttpDelete(encodePath(getSetup().getBoolean(HOST_HTTP_ENCODE_URL),
+                getSetup().getBoolean(HOST_HTTP_HAS_PARAMETERS) ? name : pr.getPath()));
         ClassicHttpResponse delResponse = null;
         try {
             delResponse = execute(pr.getHttpHost(), request, 200);
@@ -548,11 +548,11 @@ public final class HttpModule extends TransferModule {
         if (posn > 0) {
             throw new IOException("Append PUT not supported by the " + getSetup().getModuleName() + " module");
         }
-		final var endPoint = getSetup().getString(HOST_HTTP_UPLOAD_END_POINT);
-		final var name = isEmpty(endPoint) ? filename : endPoint;
-		final var pr = new PrepareRequest(name);
-		final var uri = encodePath(getSetup().getBoolean(HOST_HTTP_ENCODE_URL),
-				getSetup().getBoolean(HOST_HTTP_HAS_PARAMETERS) ? name : pr.getPath());
+        final var endPoint = getSetup().getString(HOST_HTTP_UPLOAD_END_POINT);
+        final var name = isEmpty(endPoint) ? filename : endPoint;
+        final var pr = new PrepareRequest(name);
+        final var uri = encodePath(getSetup().getBoolean(HOST_HTTP_ENCODE_URL),
+                getSetup().getBoolean(HOST_HTTP_HAS_PARAMETERS) ? name : pr.getPath());
         final var request = getSetup().getBoolean(HOST_HTTP_USE_POST) ? new HttpPost(uri) : new HttpPut(uri);
         request.setEntity(getHttpPutOrPostEntity(input, filename));
         ClassicHttpResponse putResponse = null;
@@ -603,8 +603,8 @@ public final class HttpModule extends TransferModule {
             throw new IOException("Resume not supported by the " + getSetup().getModuleName() + " module");
         }
         final var pr = new PrepareRequest(name);
-		final HttpUriRequestBase request = new HttpGet(encodePath(getSetup().getBoolean(HOST_HTTP_ENCODE_URL),
-				getSetup().getBoolean(HOST_HTTP_HAS_PARAMETERS) ? name : pr.getPath()));
+        final HttpUriRequestBase request = new HttpGet(encodePath(getSetup().getBoolean(HOST_HTTP_ENCODE_URL),
+                getSetup().getBoolean(HOST_HTTP_HAS_PARAMETERS) ? name : pr.getPath()));
         response = execute(pr.getHttpHost(), request, 200);
         final var entity = response.getEntity();
         if (entity == null) {
@@ -628,8 +628,8 @@ public final class HttpModule extends TransferModule {
         _log.debug("Size {}", name);
         setStatus("SIZE");
         final var pr = new PrepareRequest(name);
-		final var uri = encodePath(getSetup().getBoolean(HOST_HTTP_ENCODE_URL),
-				getSetup().getBoolean(HOST_HTTP_HAS_PARAMETERS) ? name : pr.getPath());
+        final var uri = encodePath(getSetup().getBoolean(HOST_HTTP_ENCODE_URL),
+                getSetup().getBoolean(HOST_HTTP_HAS_PARAMETERS) ? name : pr.getPath());
         final var request = getSetup().getBoolean(HOST_HTTP_USE_HEAD) ? new HttpHead(uri) : new HttpGet(uri);
         ClassicHttpResponse sizeResponse = null;
         try {
@@ -963,8 +963,8 @@ public final class HttpModule extends TransferModule {
     private FtpEntry getElement(final String directory, final String name) throws IOException {
         final var pr = new PrepareRequest(name);
         final var path = pr.getPath();
-		final var fullName = encodePath(getSetup().getBoolean(HOST_HTTP_ENCODE_URL),
-				getFullName(directory, getSetup().getBoolean(HOST_HTTP_HAS_PARAMETERS) ? name : pr.getPath()));
+        final var fullName = encodePath(getSetup().getBoolean(HOST_HTTP_ENCODE_URL),
+                getFullName(directory, getSetup().getBoolean(HOST_HTTP_HAS_PARAMETERS) ? name : pr.getPath()));
         final var request = getSetup().getBoolean(HOST_HTTP_USE_HEAD) ? new HttpHead(fullName) : new HttpGet(fullName);
         final var ownerUser = isNotEmpty(username) ? username : "nouser";
         final var ownerGroup = isNotEmpty(username) ? username : "nogroup";
