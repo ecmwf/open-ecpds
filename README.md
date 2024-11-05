@@ -226,8 +226,6 @@ Before opening the project, make sure to edit [.devcontainer/devcontainer.json](
 
 Once you open the OpenECPDS folder, VS Code will prompt you to reopen the project within a container: **Reopen in Container**. If you choose to proceed, VS Code will use the [.devcontainer/Dockerfile](.devcontainer/Dockerfile) to build the container image and launch a development container. This container will be preconfigured with all the tools, dependencies, and settings specified in [.devcontainer/devcontainer.json](.devcontainer/devcontainer.json), ensuring a consistent and fully-equipped development environment right from the start.
 
-Once the development container is set up, open a terminal within it to begin building as described in the Getting Started section.
-
 For more information on working with development containers in Visual Studio Code, please visit the [Visual Studio Code website](https://code.visualstudio.com/docs/devcontainers/containers).
 
 To access the Debug and Run configurations:
@@ -236,7 +234,7 @@ To access the Debug and Run configurations:
 - Type **Run and Debug** in the **Command Palette** to find the **Run and Debug** view.
 - Select **Run and Debug** in the sidebar or access it through the **Debug icon** in the Activity Bar on the left side of VS Code.
 
-This view displays the available Run and Debug configurations, including those defined for the OpenECPDS Master, Mover, and Monitor components.
+This view displays the available Run and Debug configurations: **OpenECPDS Master Server**, **OpenECPDS Mover Server**, **OpenECPDS Monitor Server**, or **OpenECPDS Stack** to start them all at once.
 
 ### Eclipse
 
