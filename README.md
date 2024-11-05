@@ -245,11 +245,18 @@ To open the OpenECPDS project in Eclipse:
 - Go to **File > Import...**
 - In the import dialog, select **Existing Maven Projects** under the **Maven category** and click **Next**.
 - Browse to the location of your OpenECPDS project folder on your system and select it. Eclipse will automatically detect the project files.
-- Once the project is detected, click **Finish** to complete the import. Eclipse will set up the project and download dependencies.
+- Once the project is detected, click **Finish** to complete the import.
+
+To build the application from the source, follow these steps:
+
+- Select the [pom.xml](pom.xml) file in the **Project Explorer** view.
+- In the contextual menu, choose **Run As > Maven build...**
+- Enter the following goals: clean compile
+- Click **Run**.
+
+The application can now be started within Eclipse using the preconfigured Debug and Run options available: **OpenECPDS Master Server**, **OpenECPDS Mover Server**, and **OpenECPDS Monitor Server**. These configurations are accessible under **Run > Run Configurations...** and **Run > Debug Configurations...**
 
 After completing these steps, the OpenECPDS project should be ready to work with in Eclipse, with access to any required dependencies and configurations.
-
-Preconfigured **Debug** and **Run** options are available for key components: **Master**, **Mover**, and **Monitor**. These configurations can be accessed under **Run > Run Configurations...** and **Run > Debug Configurations...**
 
 ## Deployment
 
