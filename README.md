@@ -224,7 +224,7 @@ When working with OpenECPDS in Visual Studio Code, the **Dev Containers extensio
 
 Before opening the project, make sure to edit `.devcontainer/devcontainer.json` to update the DOCKER_HOST_OS environment parameter according to your Docker host operating system (the default is set to Darwin for macOS).
 
-Once you open the OpenECPDS folder, VS Code will prompt you to reopen the project within a container: **Reopen in Container**. If you choose to proceed, VS Code will use the `.devcontainer/Dockerfile` to build the container image and launch a development container. This container will be preconfigured with all the tools, dependencies, and settings specified in `.devcontainer/devcontainer.json`, ensuring a consistent and fully-equipped development environment right from the start.
+Once you open the OpenECPDS folder, VS Code will prompt you to reopen the project within a container: **Reopen in Container**. If this option is selected, VS Code uses the `.devcontainer/Dockerfile` to build the container image, adding necessary tools and dependencies specified for OpenECPDS. The `.devcontainer/devcontainer.json` file configures additional settings, such as environment variables and workspace mounting, ensuring the container is fully tailored to the project. This setup provides a consistent and fully-equipped development environment from the start.
 
 For more information on working with development containers in Visual Studio Code, please visit the [Visual Studio Code website](https://code.visualstudio.com/docs/devcontainers/containers).
 
