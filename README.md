@@ -222,9 +222,9 @@ This command will start only the database service, while the Master, Monitor, an
 
 When working with OpenECPDS in Visual Studio Code, the **Dev Containers extension** is required and will automatically detect the presence of a `.devcontainer` directory within the project folder. This directory contains key configuration files, such as [devcontainer.json](.devcontainer/devcontainer.json) and a [Dockerfile](.devcontainer/Dockerfile), which collectively define the development environment for OpenECPDS.
 
-Before opening the project, make sure to edit [.devcontainer/devcontainer.json](.devcontainer/devcontainer.json) to update the DOCKER_HOST_OS environment parameter according to your Docker host operating system (the default is set to Darwin for macOS).
+Before opening the project, make sure to edit `.devcontainer/devcontainer.json` to update the DOCKER_HOST_OS environment parameter according to your Docker host operating system (the default is set to Darwin for macOS).
 
-Once you open the OpenECPDS folder, VS Code will prompt you to reopen the project within a container: **Reopen in Container**. If you choose to proceed, VS Code will use the [.devcontainer/Dockerfile](.devcontainer/Dockerfile) to build the container image and launch a development container. This container will be preconfigured with all the tools, dependencies, and settings specified in [.devcontainer/devcontainer.json](.devcontainer/devcontainer.json), ensuring a consistent and fully-equipped development environment right from the start.
+Once you open the OpenECPDS folder, VS Code will prompt you to reopen the project within a container: **Reopen in Container**. If you choose to proceed, VS Code will use the `.devcontainer/Dockerfile` to build the container image and launch a development container. This container will be preconfigured with all the tools, dependencies, and settings specified in `.devcontainer/devcontainer.json`, ensuring a consistent and fully-equipped development environment right from the start.
 
 For more information on working with development containers in Visual Studio Code, please visit the [Visual Studio Code website](https://code.visualstudio.com/docs/devcontainers/containers).
 
