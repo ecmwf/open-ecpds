@@ -937,7 +937,8 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
             final boolean removeAll) throws MasterException, DataBaseException {
         final var monitor = new MonitorCall(
                 "removeDestination(" + session.getWebUser().getName() + "," + destinationName + "," + cleanOnly + ")");
-        final var action = master.startECpdsAction(session, "remove", base.getDestination(destinationName));
+        final var action = master.startECpdsAction(session, cleanOnly ? "clean" : "remove",
+                base.getDestination(destinationName));
         Exception exception = null;
         try {
             try {
