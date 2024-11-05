@@ -210,13 +210,13 @@ make clean
 
 OpenECPDS includes configuration files for both Visual Studio Code and Eclipse, so you can choose the development environment you are most comfortable with. Simply select your preferred IDE, and you will find ready-to-use settings tailored to streamline your work with OpenECPDS.
 
-After completing the following steps, it will be possible to start and debug the OpenECPDS Java program within the IDE. An instance of the OpenECPDS database is required for the Master service to function. To set this up, build the application as outlined in the Getting Started section, then start only the database component with the following command:
+Before following the guidelines to start OpenECPDS in your IDE, ensure that an instance of the OpenECPDS database is running. This can be done either within or outside the development container. To set it up, run:
 
 ```
-make up container=database
+make start-db
 ```
 
-This command will start only the database service, while the other services can be launched directly from the IDE.
+This command will start only the database service, while the Master, Monitor, and Mover services can be launched directly from the IDE.
 
 ### Visual Studio Code
 
