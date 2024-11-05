@@ -10,6 +10,18 @@
 	},
 	"customizations": {
 		"vscode": {
+			"forwardPorts": [
+				2021,
+				2640,
+				2062,
+				3062,
+				3443,
+				4062,
+				4443,
+				4080,
+				4183,
+				4883
+			],
 			"settings": {
 				"java.jdt.ls.java.home": "/root/.sdkman/candidates/java/current"
 			},
