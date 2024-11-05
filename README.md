@@ -108,7 +108,7 @@ If successful, you should be logged into the development container.
 
 #### Building and Configuring OpenECPDS
 
-From there, you can run the following command to compile the Java classes, package the RPM files, and build the OpenECPDS Docker images:
+Once inside the development container, you can run the following command to compile the Java classes, package the RPM files, and build the OpenECPDS Docker images:
 
 ```bash
 make build
@@ -236,6 +236,8 @@ To access the Debug and Run configurations:
 
 This view displays the available **Run and Debug** configurations: **OpenECPDS Master Server**, **OpenECPDS Mover Server**, **OpenECPDS Monitor Server**, or **OpenECPDS Stack** to start them all at once.
 
+To build the OpenECPDS Docker images, open a terminal in the development container by selecting **Terminal > New Terminal** from the top menu, and follow the instructions provided in the [Building and Configuring OpenECPDS](#building-and-configuring-openecpds) section.
+
 ### Eclipse
 
 To open the OpenECPDS project in Eclipse:
@@ -255,6 +257,8 @@ To build the application from the source, follow these steps:
 The application can now be started within Eclipse using the preconfigured Debug and Run options available: **OpenECPDS Master Server**, **OpenECPDS Mover Server**, and **OpenECPDS Monitor Server**. These configurations are accessible under **Run > Run Configurations...** and **Run > Debug Configurations...**
 
 After completing these steps, the OpenECPDS project should be ready to work with in Eclipse, with access to any required dependencies and configurations.
+
+Eclipse does not natively support development containers, and this is not required for simply running and debugging OpenECPDS within Eclipse. To build the OpenECPDS Docker images, the development container can be manually created as outlined in the [Getting Started](#getting-started) section.
 
 ## Deployment
 
