@@ -4893,41 +4893,45 @@ public final class MasterServer extends ECaccessProvider
         _log.debug("DataTransferEvent(s) notified with " + i + " element(s)");
     }
 
-	/**
-	 * Submit the initial product status events to the handler specified by its
-	 * target name and optionally stream and/or time.
-	 *
-	 * @param target the target
-	 * @param stream the stream
-	 * @param time the time
-	 * @return the initial product status events
-	 */
-	public void getInitialProductStatusEvents(final String target, final String stream, final String time) {
-		Iterator<ProductStatus> it = null;
-		var i = 0;
-		try {
-			it = getECpdsBase().getInitialProductStatusEventsIterator();
-			final List<PluginEvent<?>> events = new ArrayList<>();
-			while (it.hasNext()) {
-				final ProductStatus ps = it.next();
-				if ((stream == null || stream.equals(ps.getStream())) && (time == null || time.equals(ps.getTime()))) {
-					final var event = new ProductStatusEvent(ps);
-					event.setTarget(target);
-					events.add(event);
-					_updatePluginEvents(events, 100);
-					i++;
-				}
-			}
-			_updatePluginEvents(events, 0);
-		} catch (final Throwable e) {
-			_log.warn("ProductStatusEvents cache not initialized for " + target, e);
-		} finally {
-			if (it != null) {
-				it.remove();
-			}
-		}
-		_log.debug("ProductStatusEvent(s) notified with " + i + " element(s)");
-	}
+    /**
+     * Submit the initial product status events to the handler specified by its target name and optionally stream and/or
+     * time.
+     *
+     * @param target
+     *            the target
+     * @param stream
+     *            the stream
+     * @param time
+     *            the time
+     *
+     * @return the initial product status events
+     */
+    public void getInitialProductStatusEvents(final String target, final String stream, final String time) {
+        Iterator<ProductStatus> it = null;
+        var i = 0;
+        try {
+            it = getECpdsBase().getInitialProductStatusEventsIterator();
+            final List<PluginEvent<?>> events = new ArrayList<>();
+            while (it.hasNext()) {
+                final ProductStatus ps = it.next();
+                if ((stream == null || stream.equals(ps.getStream())) && (time == null || time.equals(ps.getTime()))) {
+                    final var event = new ProductStatusEvent(ps);
+                    event.setTarget(target);
+                    events.add(event);
+                    _updatePluginEvents(events, 100);
+                    i++;
+                }
+            }
+            _updatePluginEvents(events, 0);
+        } catch (final Throwable e) {
+            _log.warn("ProductStatusEvents cache not initialized for " + target, e);
+        } finally {
+            if (it != null) {
+                it.remove();
+            }
+        }
+        _log.debug("ProductStatusEvent(s) notified with " + i + " element(s)");
+    }
 
     /**
      * Submit the initial change host events to the handler specified by its target name.

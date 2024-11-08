@@ -1538,10 +1538,10 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
         } catch (final DataBaseException e) {
             _log.warn(e);
         }
-		MASTER.handle(new ResetProductEvent(domain + metaStream, metaTime));
-		MASTER.getInitialProductStatusEvents(null, domain + metaStream, metaTime); // Update the monitoring display
-		_log.debug("Notification reveived: reset product {}-{}{}-{}", metaTime, domain, metaStream, timeStep);
-		send("MESSAGE Product status reseted");
+        MASTER.handle(new ResetProductEvent(domain + metaStream, metaTime));
+        MASTER.getInitialProductStatusEvents(null, domain + metaStream, metaTime); // Update the monitoring display
+        _log.debug("Notification reveived: reset product {}-{}{}-{}", metaTime, domain, metaStream, timeStep);
+        send("MESSAGE Product status reseted");
     }
 
     /**
