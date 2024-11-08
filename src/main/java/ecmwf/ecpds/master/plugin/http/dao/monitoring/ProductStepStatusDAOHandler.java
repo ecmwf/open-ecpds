@@ -172,23 +172,22 @@ public class ProductStepStatusDAOHandler extends ReadOnlyDAOHandler implements D
      * @throws DAOException
      *             the DAO exception
      */
-    private static final void cleanSteps(final String product, final String time) throws DAOException {
-        try {
-            final var klass = ProductStepStatus.class.getName();
-            final Iterator<?> i = CacheService.getKeysIterator(klass);
-            while (i.hasNext()) {
-                final var key = i.next().toString();
-                final var pss = (ProductStepStatus) CacheService.get(klass, key);
-                if (product.equals(pss.getProduct()) && time.equals(pss.getTime())) {
-                    // Completely DELETE this entry, the same step might not be available for next
-                    // iteration pss.reset();
-                    CacheService.remove(klass, key);
-                }
-            }
-        } catch (final Exception e) {
-            throw new DAOException("Problem cleaning ProductStatus", e);
-        }
-    }
+	private static final void cleanSteps(final String product, final String time) throws DAOException {
+		try {
+			final var klass = ProductStepStatus.class.getName();
+			final Iterator<?> i = CacheService.getKeysIterator(klass);
+			while (i.hasNext()) {
+				final var key = i.next().toString();
+				final var pss = (ProductStepStatus) CacheService.get(klass, key);
+				if (product.equals(pss.getProduct()) && time.equals(pss.getTime())) {
+					// Completely DELETE this entry as the same step might not be available for next iteration
+					CacheService.remove(klass, key);
+				}
+			}
+		} catch (final Exception e) {
+			throw new DAOException("Problem cleaning ProductStatus", e);
+		}
+	}
 
     /**
      * Gets the step.

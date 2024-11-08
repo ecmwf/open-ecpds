@@ -307,7 +307,7 @@ public class MonitoringEventHandler implements EventHandler {
             pStatus.setPresent(true);
             pStatus.setCalculated(true);
             // ProductStepStatus: Information for the product at one step
-            if (pStatus.getProductTime() != null && pStatus.getProductTime().equals(eventStatus.getTimeBase())) {
+			if (pStatus.getProductTime() == null || pStatus.getProductTime().equals(eventStatus.getTimeBase())) {
                 final var pSStatus = ProductStepStatusHome.findByProductAndStep(eventStatus.getStream(),
                         eventStatus.getTime(), eventStatus.getBuffer(), eventStatus.getStep(), eventStatus.getType());
                 if (pSStatus.getLastUpdate() == null

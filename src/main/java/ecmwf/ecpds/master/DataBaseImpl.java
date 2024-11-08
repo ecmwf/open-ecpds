@@ -364,7 +364,7 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
     @Override
     public void getInitialProductStatusEvents(final String target) throws RemoteException {
         final var monitor = new MonitorCall("getInitialProductStatusEvents()");
-        master.getInitialProductStatusEvents(target);
+        master.getInitialProductStatusEvents(target, null, null);
         monitor.done();
     }
 
