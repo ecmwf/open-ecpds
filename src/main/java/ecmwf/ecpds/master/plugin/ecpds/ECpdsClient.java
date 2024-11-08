@@ -43,10 +43,14 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.StringTokenizer;
+
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -78,10 +82,70 @@ public final class ECpdsClient {
     /** The Constant _port. */
     private static final int PORT = Cnf.at("ECpdsPlugin", "port", Cnf.at("Ports", "ecpds", 6640));
 
+    /** The Constant SECRET. */
+    private static final String SECRET = Cnf.at("Security", "sharedSecret", "");
+
+    /** The Constant CHALLENGE_SIZE. */
+    private static final int CHALLENGE_SIZE = 32;
+
     /**
      * Hide the default constructor!
      */
     private ECpdsClient() {
+    }
+
+    /**
+     * Computes the HMAC-SHA256 response based on the provided challenge.
+     *
+     * This method takes a byte array representing the challenge received from the server, initializes the HMAC with a
+     * predefined secret key, and computes the HMAC digest. The resulting byte array is returned as the response.
+     *
+     * @param challenge
+     *            A byte array containing the challenge data from the server.
+     *
+     * @return A byte array containing the computed HMAC response. Returns an empty array if an error occurs during
+     *         computation.
+     */
+    private static byte[] computeResponse(byte[] challenge) {
+        try {
+            var mac = Mac.getInstance("HmacSHA256");
+            var secretKeySpec = new SecretKeySpec(SECRET.getBytes(), "HmacSHA256");
+            mac.init(secretKeySpec);
+            return mac.doFinal(challenge); // Compute HMAC using the challenge
+        } catch (Exception e) {
+            return new byte[0]; // Return an empty array on error
+        }
+    }
+
+    /**
+     * Handles the challenge-response authentication process with the server.
+     *
+     * This method reads a challenge from the server, computes the corresponding HMAC response using the predefined
+     * secret key, and sends the response back to the server. It ensures that the entire challenge is read before
+     * proceeding with the computation.
+     *
+     * @param input
+     *            The InputStream to read the challenge from the server.
+     * @param output
+     *            The OutputStream to send the computed response back to the server.
+     *
+     * @throws IOException
+     */
+    private static void handleChallenge(final InputStream input, final OutputStream output) throws IOException {
+        if (!SECRET.isEmpty()) {
+            // Receive challenge from server
+            byte[] challenge = new byte[CHALLENGE_SIZE];
+            int bytesRead = input.read(challenge);
+            if (bytesRead != CHALLENGE_SIZE) {
+                // The challenge is not fully read
+                throw new IOException("Incomplete challenge");
+            }
+            // Compute response
+            byte[] response = computeResponse(challenge);
+            // Send response to server
+            output.write(response);
+            output.flush();
+        }
     }
 
     /**
@@ -238,10 +302,13 @@ public final class ECpdsClient {
             long fileSize = -1;
             masterSocket = new Socket(HOST, PORT);
             _log.debug("Connected to master {}:{}", HOST, PORT);
+            final var masterInput = masterSocket.getInputStream();
+            final var masterOutput = masterSocket.getOutputStream();
+            handleChallenge(masterInput, masterOutput);
             final var destinationName = destination.getName();
             final var setup = DESTINATION_INCOMING.getECtransSetup(destination.getData());
-            final var master = new PrintStream(masterSocket.getOutputStream());
-            final var masterIn = new BufferedReader(new InputStreamReader(masterSocket.getInputStream()));
+            final var master = new PrintStream(masterOutput);
+            final var masterIn = new BufferedReader(new InputStreamReader(masterInput));
             // The order VERSION, FROM, USER, MESSAGE and REMOTEIP matters!
             write(master, "VERSION " + Version.getFullVersion() + " ("
                     + (DestinationOption.isAcquisition(destination.getType()) ? "acquisition" : "other") + ")");
@@ -322,8 +389,11 @@ public final class ECpdsClient {
                         ecproxyAddress = ecproxyAddress.substring(0, index);
                         moverSocket = new Socket(ecproxyAddress, ecproxyPort);
                         _log.debug("Connected to mover {}:{}", ecproxyAddress, ecproxyPort);
-                        final var mover = new PrintStream(moverSocket.getOutputStream());
-                        final var moverIn = new BufferedReader(new InputStreamReader(moverSocket.getInputStream()));
+                        final var moverInput = moverSocket.getInputStream();
+                        final var moverOutput = moverSocket.getOutputStream();
+                        handleChallenge(moverInput, moverOutput);
+                        final var mover = new PrintStream(moverOutput);
+                        final var moverIn = new BufferedReader(new InputStreamReader(moverInput));
                         write(mover, "ECPDS " + Version.getFullVersion());
                         write(mover, "TARGET " + target);
                         read(moverIn, "CONNECT");
@@ -433,8 +503,11 @@ public final class ECpdsClient {
         try {
             masterSocket = new Socket(HOST, PORT);
             _log.debug("Connected to master {}:{}", HOST, PORT);
-            final var master = new PrintStream(masterSocket.getOutputStream());
-            final var masterIn = new BufferedReader(new InputStreamReader(masterSocket.getInputStream()));
+            final var masterInput = masterSocket.getInputStream();
+            final var masterOutput = masterSocket.getOutputStream();
+            handleChallenge(masterInput, masterOutput);
+            final var master = new PrintStream(masterOutput);
+            final var masterIn = new BufferedReader(new InputStreamReader(masterInput));
             // The order VERSION, FROM, USER, MESSAGE and REMOTEIP matters!
             write(master, "VERSION " + Version.getFullVersion() + " (acquisition)");
             write(master, "FROM " + from);
@@ -496,8 +569,11 @@ public final class ECpdsClient {
         try {
             masterSocket = new Socket(HOST, PORT);
             _log.debug("Connected to master {}:{}", HOST, PORT);
-            final var master = new PrintStream(masterSocket.getOutputStream());
-            final var masterIn = new BufferedReader(new InputStreamReader(masterSocket.getInputStream()));
+            final var masterInput = masterSocket.getInputStream();
+            final var masterOutput = masterSocket.getOutputStream();
+            handleChallenge(masterInput, masterOutput);
+            final var master = new PrintStream(masterOutput);
+            final var masterIn = new BufferedReader(new InputStreamReader(masterInput));
             write(master, "VERSION", req.getVERSION());
             write(master, "USER", req.getUSER());
             write(master, "METADATA \"" + req.getMETADATA() + "\"");
@@ -524,8 +600,11 @@ public final class ECpdsClient {
         try {
             masterSocket = new Socket(HOST, PORT);
             _log.debug("Connected to master {}:{}", HOST, PORT);
-            final var master = new PrintStream(masterSocket.getOutputStream());
-            final var masterIn = new BufferedReader(new InputStreamReader(masterSocket.getInputStream()));
+            final var masterInput = masterSocket.getInputStream();
+            final var masterOutput = masterSocket.getOutputStream();
+            handleChallenge(masterInput, masterOutput);
+            final var master = new PrintStream(masterOutput);
+            final var masterIn = new BufferedReader(new InputStreamReader(masterInput));
             write(master, "VERSION", req.getVERSION());
             write(master, "USER", req.getUSER());
             write(master, "METADATA \"" + req.getMETADATA() + "\"");
@@ -551,8 +630,11 @@ public final class ECpdsClient {
         try {
             masterSocket = new Socket(HOST, PORT);
             _log.debug("Connected to master {}:{}", HOST, PORT);
-            final var master = new PrintStream(masterSocket.getOutputStream());
-            final var masterIn = new BufferedReader(new InputStreamReader(masterSocket.getInputStream()));
+            final var masterInput = masterSocket.getInputStream();
+            final var masterOutput = masterSocket.getOutputStream();
+            handleChallenge(masterInput, masterOutput);
+            final var master = new PrintStream(masterOutput);
+            final var masterIn = new BufferedReader(new InputStreamReader(masterInput));
             write(master, "VERSION", req.getVERSION());
             write(master, "USER", req.getUSER());
             write(master, "METADATA \"" + req.getMETADATA() + "\"");
@@ -578,8 +660,11 @@ public final class ECpdsClient {
         try {
             masterSocket = new Socket(HOST, PORT);
             _log.debug("Connected to master {}:{}", HOST, PORT);
-            final var master = new PrintStream(masterSocket.getOutputStream());
-            final var masterIn = new BufferedReader(new InputStreamReader(masterSocket.getInputStream()));
+            final var masterInput = masterSocket.getInputStream();
+            final var masterOutput = masterSocket.getOutputStream();
+            handleChallenge(masterInput, masterOutput);
+            final var master = new PrintStream(masterOutput);
+            final var masterIn = new BufferedReader(new InputStreamReader(masterInput));
             write(master, "VERSION", req.getVERSION());
             write(master, "USER", req.getUSER());
             write(master, "WAITFORGROUP", req.getWAITFORGROUP());
@@ -606,8 +691,11 @@ public final class ECpdsClient {
         try {
             masterSocket = new Socket(HOST, PORT);
             _log.debug("Connected to master {}:{}", HOST, PORT);
-            final var master = new PrintStream(masterSocket.getOutputStream());
-            final var masterIn = new BufferedReader(new InputStreamReader(masterSocket.getInputStream()));
+            final var masterInput = masterSocket.getInputStream();
+            final var masterOutput = masterSocket.getOutputStream();
+            handleChallenge(masterInput, masterOutput);
+            final var master = new PrintStream(masterOutput);
+            final var masterIn = new BufferedReader(new InputStreamReader(masterInput));
             final var select = req.getSELECT();
             write(master, "VERSION", req.getVERSION());
             write(master, "USER", req.getUSER());
@@ -650,8 +738,11 @@ public final class ECpdsClient {
         try {
             masterSocket = new Socket(HOST, PORT);
             _log.debug("Connected to master {}:{}", HOST, PORT);
-            final var master = new PrintStream(masterSocket.getOutputStream());
-            final var masterIn = new BufferedReader(new InputStreamReader(masterSocket.getInputStream()));
+            final var masterInput = masterSocket.getInputStream();
+            final var masterOutput = masterSocket.getOutputStream();
+            handleChallenge(masterInput, masterOutput);
+            final var master = new PrintStream(masterOutput);
+            final var masterIn = new BufferedReader(new InputStreamReader(masterInput));
             // The order VERSION, FROM, USER, MESSAGE and REMOTEIP matters!
             write(master, "VERSION", req.getVERSION());
             final var from = req.getFROM();
@@ -709,8 +800,11 @@ public final class ECpdsClient {
                             ecproxyAddress = ecproxyAddress.substring(0, pos);
                             moverSocket = new Socket(ecproxyAddress, ecproxyPort);
                             _log.debug("Connected to mover {}:{}", ecproxyAddress, ecproxyPort);
-                            final var mover = new PrintStream(moverSocket.getOutputStream());
-                            final var moverIn = new BufferedReader(new InputStreamReader(moverSocket.getInputStream()));
+                            final var moverInput = moverSocket.getInputStream();
+                            final var moverOutput = moverSocket.getOutputStream();
+                            handleChallenge(moverInput, moverOutput);
+                            final var mover = new PrintStream(moverOutput);
+                            final var moverIn = new BufferedReader(new InputStreamReader(moverInput));
                             write(mover, "ECPDS " + Version.getFullVersion());
                             if (fakeWrite) {
                                 write(mover, "OPTS", "ecproxy.fakeWrite=yes");

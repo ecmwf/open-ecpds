@@ -32,13 +32,21 @@ import java.io.InterruptedIOException;
 import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import ecmwf.common.technical.Cnf;
 import ecmwf.common.technical.StreamPlugThread;
 import ecmwf.common.text.Format;
 
@@ -48,6 +56,15 @@ import ecmwf.common.text.Format;
 public abstract class SimplePlugin extends ServerPlugin {
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(SimplePlugin.class);
+
+    /** The Constant SECRET. */
+    private static final String SECRET = Cnf.at("Security", "sharedSecret", "");
+
+    /** The Constant CHALLENGE_SIZE. */
+    private static final int CHALLENGE_SIZE = 32;
+
+    /** The Constant RESPONSE_SIZE. */
+    private static final int RESPONSE_SIZE = 32;
 
     /** The _in. */
     private InputStream _in = null;
@@ -136,6 +153,42 @@ public abstract class SimplePlugin extends ServerPlugin {
         } catch (final IOException e) {
             _log.debug("Can't open input/output streams", e);
             return;
+        }
+        if (!SECRET.isEmpty()) {
+            _log.debug("Challenge-response authentication");
+            // Generate challenge
+            var challenge = new byte[CHALLENGE_SIZE];
+            var secureRandom = new SecureRandom();
+            secureRandom.nextBytes(challenge);
+            var challengeStr = Base64.getEncoder().encodeToString(challenge);
+            // Send challenge to client
+            _out.write(challengeStr.getBytes(StandardCharsets.UTF_8));
+            _out.flush();
+            // Receive response from client
+            var response = new byte[RESPONSE_SIZE];
+            int bytesRead = _in.read(response);
+            if (bytesRead != RESPONSE_SIZE) {
+                _log.warn("Expected {} bytes, but received {} bytes", RESPONSE_SIZE, bytesRead);
+                socket.close();
+                return;
+            }
+            // Compute expected response using HMAC
+            try {
+                var mac = Mac.getInstance("HmacSHA256");
+                var secretKeySpec = new SecretKeySpec(SECRET.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+                mac.init(secretKeySpec);
+                byte[] expectedResponse = mac.doFinal(challenge); // Use the raw challenge bytes
+                // Compare responses
+                if (!MessageDigest.isEqual(response, expectedResponse)) {
+                    _log.warn("Authentication failed (challenge mismatch)");
+                    socket.close();
+                } else {
+                    _log.warn("Authentication successful");
+                }
+            } catch (final Exception e) {
+                _log.error("Error during HMAC computation", e);
+                socket.close();
+            }
         }
         String command = null;
         String message = null;

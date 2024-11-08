@@ -34,7 +34,11 @@
 #include <time.h>
 #include <sys/types.h>
 #include <netinet/tcp.h>
+#include <openssl/hmac.h>
 #include <openssl/sha.h>
+#include <openssl/bio.h>
+#include <openssl/evp.h>
+#include <openssl/buffer.h>
 
 /**
  * ECMWF Product Data Store (OpenECPDS) Project
@@ -73,10 +77,13 @@
 #define MAX_HOSTNAMES 10
 
 /* Secret concatenated with the challenge to compute the response hash */
-#define SECRET getenv("ECPDS_SHARED_SECRET")
+#define SECRET (getenv("ECPDS_SHARED_SECRET") ? getenv("ECPDS_SHARED_SECRET") : "")
 
 /* Number of bytes in the challenge sent by the server */
 #define CHALLENGE_SIZE 32
+
+/* Number of bytes in the base64 challenge */
+#define BASE64_ENCODED_SIZE ((CHALLENGE_SIZE + 2) / 3) * 4
 
 /* Length of the SHA-256 hash, which is the output size of the SHA-256 algorithm */
 #define RESPONSE_SIZE SHA256_DIGEST_LENGTH
@@ -106,17 +113,61 @@ char localHostName[256];
 char date[20];
 
 /**
- * Computes a SHA-256 hash response based on a given challenge and a shared secret.
- * This function concatenates the provided challenge with a predefined secret,
- * then computes the SHA-256 hash of the concatenated string and stores the result in the response buffer.
+ * Computes the HMAC-SHA256 response based on the provided challenge.
  *
- * @param challenge The challenge string provided by the server.
- * @param response The buffer where the computed SHA-256 hash will be stored.
+ * This function takes a challenge string and generates a corresponding
+ * HMAC response using a predefined secret key. The response is stored
+ * in the provided output buffer.
+ *
+ * @param challenge A pointer to the challenge string received from the server.
+ * @param response A pointer to the buffer where the computed HMAC response will be stored.
  */
 void compute_response(const char *challenge, unsigned char *response) {
-    char buffer[CHALLENGE_SIZE + strlen(SECRET) + 1];   
-    snprintf(buffer, sizeof(buffer), "%s%s", challenge, SECRET);
-    SHA256((unsigned char *)buffer, strlen(buffer), response);
+    unsigned int len = RESPONSE_SIZE;
+    HMAC(EVP_sha256(), SECRET, strlen(SECRET), (unsigned char *)challenge, CHALLENGE_SIZE, response, &len);
+}
+
+/**
+ * Encodes the given byte array (challenge) in Base64 format and returns it as a string.
+ *
+ * @param challenge Pointer to the byte array containing the challenge.
+ * @param size The size of the byte array (number of bytes to encode).
+ * @return A pointer to a dynamically allocated string containing the Base64 encoded challenge.
+ *         The caller is responsible for freeing the allocated memory.
+ *
+ * This function utilizes OpenSSL's BIO (Basic Input/Output) interface to encode
+ * the provided challenge byte array into Base64 format. It creates a memory BIO
+ * to hold the encoded data and ensures that no newlines are added to the output.
+ * After encoding, it retrieves the encoded string and returns it.
+ */
+char* encode_challenge_as_base64(const unsigned char *challenge, size_t size) {
+    BIO *bio, *b64;
+    char *base64String;
+    BUF_MEM *bufferPtr;
+
+    // Create a new Base64 BIO and a memory BIO
+    b64 = BIO_new(BIO_f_base64());
+    bio = BIO_new(BIO_s_mem());
+    bio = BIO_push(b64, bio);
+
+    // Set flags to avoid newlines in the output
+    BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL);
+    BIO_write(bio, challenge, size);
+    BIO_flush(bio);
+
+    // Get the pointer to the memory buffer
+    BIO_get_mem_ptr(bio, &bufferPtr);
+    BIO_set_close(bio, BIO_NOCLOSE);
+    BIO_free_all(bio);
+
+    // Allocate memory for the Base64 string and copy the data
+    base64String = (char *)malloc(bufferPtr->length + 1);
+    if (base64String) {
+        memcpy(base64String, bufferPtr->data, bufferPtr->length);
+        base64String[bufferPtr->length] = '\0'; // Null-terminate the string
+    }
+
+    return base64String; // Return the Base64 encoded string
 }
 
 /**
@@ -239,14 +290,14 @@ int connect_wait(int sockno, struct sockaddr *addr, size_t addrlen, struct timev
 	// Get socket flags
 	if ((opt = fcntl(sockno, F_GETFL, NULL)) < 0)
 	{
-		perror("fcntl F_GETFL");
+		error("fcntl F_GETFL");
 		return -1;
 	}
 
 	// Set socket non-blocking
 	if (fcntl(sockno, F_SETFL, opt | O_NONBLOCK) < 0)
 	{
-		perror("fcntl F_SETFL O_NONBLOCK");
+		error("fcntl F_SETFL O_NONBLOCK");
 		return -1;
 	}
 
@@ -280,14 +331,14 @@ int connect_wait(int sockno, struct sockaddr *addr, size_t addrlen, struct timev
 	// Reset socket flags
 	if (fcntl(sockno, F_SETFL, opt) < 0)
 	{
-		perror("fcntl F_SETFL reset");
+		error("fcntl F_SETFL reset");
 		return -1;
 	}
 
 	// An error occurred in connect or select
 	if (res < 0)
 	{
-		perror("connect/select error");
+		error("connect/select error");
 		return -1;
 	}
 	else if (res == 0)
@@ -303,7 +354,7 @@ int connect_wait(int sockno, struct sockaddr *addr, size_t addrlen, struct timev
 		// Check for errors in socket layer
 		if (getsockopt(sockno, SOL_SOCKET, SO_ERROR, &opt, &len) < 0)
 		{
-			perror("getsockopt");
+			error("getsockopt");
 			return -1;
 		}
 
@@ -490,7 +541,9 @@ int openConnection(char *hostname, char *port, int timeout_seconds)
  * Attempts to establish a connection to one of the provided hostnames on the specified port.
  * The function tries to connect to each hostname in a randomized order, with a retry mechanism
  * that includes a delay between attempts. If a connection is successfully established, the socket
- * descriptor is returned. If all attempts fail, the function returns -1.
+ * descriptor is returned. If all attempts fail, the function returns -1. If the connection is
+ * successfull, this function receive a challenge from the server, compute and send the response
+ * back.
  *
  * @param hostnames A comma-separated string of hostnames to attempt connections to.
  * @param port The port number to connect to, as a string.
@@ -532,7 +585,79 @@ int tryConnection(char *hostnames, char *port, int timeout_seconds)
 			if (s != -1)
 			{
 				free(buff); // Free the buffer before returning
-				return s;
+
+				if (strlen(SECRET) > 0) {
+					if (debug)
+					{
+						fprintf(stderr, "[%.19s] DEBUG: challenge-response authentication\n", getTime());
+					}
+
+					// Receive challenge from server
+    				char encodedChallenge[BASE64_ENCODED_SIZE];
+    				ssize_t total_bytes_read = 0;
+    				ssize_t bytes_read;
+
+    				while (total_bytes_read < BASE64_ENCODED_SIZE) {
+						bytes_read = read(s, encodedChallenge + total_bytes_read, BASE64_ENCODED_SIZE - total_bytes_read);
+
+						if (bytes_read <= 0) {
+							error("Reading challenge from server (connection closed)");
+							return -1; // Indicate failure
+						}
+
+					total_bytes_read += bytes_read;
+					}
+
+					// Validate challenge length
+					if (total_bytes_read != BASE64_ENCODED_SIZE) {
+						error("Reading challenge from server (incorrect response)");
+						return -1; // Indicate failure
+					}
+					
+					encodedChallenge[bytes_read] = '\0'; // Null-terminate
+
+					// Decode the Base64 string to get the original byte array
+					unsigned char challenge[CHALLENGE_SIZE];
+					BIO *b64 = BIO_new(BIO_f_base64());
+					BIO *bio = BIO_new_mem_buf(encodedChallenge, -1);
+					bio = BIO_push(b64, bio);
+					BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL);
+					int decodedSize = BIO_read(bio, challenge, CHALLENGE_SIZE);
+					BIO_free_all(bio);
+
+					if (decodedSize != CHALLENGE_SIZE) {
+						error("Decoded challenge size mismatch");
+						return -1; // Indicate failure
+					}
+					
+					// Compute response
+					unsigned char response[RESPONSE_SIZE];
+					compute_response(challenge, response);
+
+					// Send response to server
+					ssize_t total_bytes_written = 0;
+					ssize_t bytes_written;
+
+					while (total_bytes_written < RESPONSE_SIZE) {
+						bytes_written = write(s, response + total_bytes_written, RESPONSE_SIZE - total_bytes_written);
+
+						if (bytes_written < 0) {
+							error("Error sending response to server (connection closed)");
+							break;
+						}
+
+						total_bytes_written += bytes_written;
+					}
+
+					if (total_bytes_written != RESPONSE_SIZE) {
+						error("Error sending response to server (incorrect response)");
+					} else {
+						if (debug)
+							fprintf(stderr, "[%.19s] DEBUG: authentication successful\n", getTime());
+					}
+				}
+    
+				return s; // Return the socket descriptor
 			}
 		}
 		if (i + 1 < TRY_COUNT)
@@ -711,7 +836,7 @@ int receiveCommand(int sd, char *key, char *value, int length)
 		{
 			if ((err = read(sd, buf + i, 1)) != 1)
 			{
-				error("receiving message from server (read)");
+				errno = 0; error("receiving message from server (read)");
 				return -1;
 			}
 			i++;
@@ -728,7 +853,7 @@ int receiveCommand(int sd, char *key, char *value, int length)
 	char *c = NULL;
 	if (buf[0] == '-')
 	{
-		error(buf + 1); // Handle error message from server
+		errno = 0; error(buf + 1); // Handle error message from server
 		return -1;
 	}
 	else
@@ -821,7 +946,7 @@ void handler(int sig)
  */
 void sig_alarm(int sig)
 {
-	error("timeout occurred while reading from stdin");
+	errno = 0; error("timeout occurred while reading from stdin");
 	/* If the source file is defined then let's remove it (temporary file) */
 	if (source != NULL)
 	{
@@ -1672,7 +1797,6 @@ int main(int argc, char *argv[])
 		{
 			if (fsize < 0 && filelen > abs(fsize))
 			{
-				errno = 0;
 				error("size of file exceeds maximum specified");
 				goto clean;
 			}
@@ -1680,7 +1804,6 @@ int main(int argc, char *argv[])
 			{
 				if (fsize > 0 && fsize != filelen)
 				{
-					errno = 0;
 					error("size of file differs from specified value");
 					goto clean;
 				}
@@ -1750,7 +1873,7 @@ int main(int argc, char *argv[])
 		{
 			if (buf[0] == '-')
 			{
-				error(buf + 1);
+				errno = 0; error(buf + 1);
 				goto clean;
 			}
 			else
