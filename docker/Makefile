@@ -51,6 +51,7 @@ help: ## Show this help message
 .DEFAULT_GOAL := help
 
 all: ## Get RPMs, licenses and build images
+	@$(MAKE) clean
 	@$(MAKE) get-rpms
 	@$(MAKE) get-licenses
 	@$(MAKE) build
