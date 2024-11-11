@@ -749,7 +749,7 @@ When enabled (default), a GET request is processed to retrieve the listing outpu
 If content compression is enabled (default), it means that the HTTP client requests compressed content from the server, aiming to reduce data transfer size and improve performance. This allows the HTTP client to handle compressed content from the server, if available and supported.
 
 ### http.encodeURL
-If enabled, encode URL strings according to the URL encoding rules defined in the UTF-8 character set. This method replaces certain characters in the string with their respective hexadecimal representation, making the string safe for use in a URL.
+This option cleans up paths by removing unnecessary segments (e.g. /./) and ensures that the path is properly formatted for URL use.
 
 ### http.failOnEmptySymlink
 When enabled and a symbolic link is detected (URL does not end with "/" and no "Content-Length" found in header) with no "filename" attribute found in the "Content-Disposition" header, force the listing task to fail.
@@ -765,6 +765,9 @@ When "http.ftpLike" option is selected allow forcing a group name in the listing
 
 ### http.ftpuser
 When "http.ftpLike" option is selected allow forcing a user name in the listing output. Default user name is the login name.
+
+### http.hasParameters
+By default, URL strings are encoded using URL encoding rules based on the UTF-8 character set. This encoding replaces certain characters in the string with their hexadecimal representations, making the string safe for use in a URL. This option allows encoding to be disabled if needed and should be enabled if the URL contains placeholders with '$' characters.
 
 ### http.headers
 Allow the specification of additional headers to be included in the header list, alongside standard headers such as "User-Agent", "Accept" and authentication headers (if "http.authheader" is set). These headers will be sent to the HTTP server with every request.
