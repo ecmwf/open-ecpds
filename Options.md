@@ -690,6 +690,12 @@ Allow empty bucket names (no "gcs.bucketName" option). In that case the prefix a
 ### gcs.bucketName
 This option allows for the provision of the GCS bucket name. If the bucket name is not explicitly defined, it is extracted from the path specified in the directory field.
 
+### gcs.clientEmail
+Allows specifying the client email associated with a Google service account. This client email enables a service account to interact with GCS buckets securely, supporting automation and access control in Google Cloud. 
+
+### gcs.clientId
+Allows specifying the client id, a 21 digit numeric identifier associated with a Google service account. If the value is not specified, then it is using the entry from the "login" field.
+
 ### gcs.ftpgroup
 Allow forcing a group name in the listing output. Default group name is the login name.
 
@@ -704,6 +710,15 @@ Allow specifying the port number of the remote GCS endpoint to connect to.
 
 ### gcs.prefix
 Allow specifying a prefix, which refers to a part of an object name that comes before the object name itself and is used to organize and categorize objects within a bucket.
+
+### gcs.privateKey
+Allows specifying a private key that is part of a public-private key pair associated with a Google service account. It is stored in a JSON key file that can be downloaded when the key is created.
+
+### gcs.privateKeyId
+Allows specifying a unique identifier (40-character alphanumeric string) for the private key within a Google service account key file. If the value is not specified then it is using the entry from the "password" field.
+
+### gcs.projectId
+Allows specifying the unique identifier for the project in which your Google Cloud Storage (GCS) bucket is created.
 
 ### gcs.protocol
 Allows the selection of the SSL/TLS (Secure Sockets Layer/Transport Layer Security) protocol to use.
