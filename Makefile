@@ -14,7 +14,7 @@ SHELL=/bin/bash
 # Define variables for paths and container names
 PROJECT_NAME := $(shell basename $(PWD))
 WORKSPACE := $(realpath ..)
-DOCKER_HOST_WORKSPACE := $(realpath .)
+DOCKER_HOST_WORKSPACE ?= $(realpath .)
 DOCKER_HOST_OS ?= $(shell uname -s)
 DOCKER_GUEST_OS := $(shell uname -s)
 IMAGE_NAME := node-$(PROJECT_NAME)-dev
