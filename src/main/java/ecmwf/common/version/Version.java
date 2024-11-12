@@ -19,7 +19,10 @@
 package ecmwf.common.version;
 
 import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
+import java.time.LocalDate;
 
 /**
  * ECMWF Product Data Store (OpenECPDS) Project.
@@ -38,20 +41,45 @@ public final class Version {
     private static final String BUILD_NUMBER;
 
     static {
-        var version = "0.0.0";
-        var build = "ddmmyyyy";
-        try (final var inputStream = Version.class.getResourceAsStream("/VERSION");
-                var reader = new BufferedReader(new InputStreamReader(inputStream))) {
-            final var versionNumber = reader.readLine().split("-");
-            if (versionNumber.length == 2) {
-                version = versionNumber[0];
-                build = versionNumber[1];
-            }
-        } catch (Throwable e) {
-            // Use defaults
+        // Attempt to read the version and build numbers
+        final String[] versionInfo = readVersionInfo("VERSION");
+        if (versionInfo.length != 2) {
+            VERSION_NUMBER = "1.0.0";
+            BUILD_NUMBER = LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyyyy"));
+        } else {
+            VERSION_NUMBER = versionInfo[0];
+            BUILD_NUMBER = versionInfo[1];
         }
-        VERSION_NUMBER = version;
-        BUILD_NUMBER = build;
+    }
+
+    /**
+     * Attempts to read the version information from the specified resource. First checks the classpath, then falls back
+     * to the current directory.
+     *
+     * @param resourceName
+     *            the name of the resource file to read from
+     *
+     * @return an array containing the version and build numbers, or an empty array if not found
+     */
+    private static String[] readVersionInfo(String resourceName) {
+        // Try to read from the classpath
+        try (var inputStream = Version.class.getResourceAsStream("/" + resourceName)) {
+            if (inputStream != null) {
+                try (var reader = new BufferedReader(new InputStreamReader(inputStream))) {
+                    return reader.readLine().split("-");
+                }
+            }
+        } catch (IOException e) {
+            // Ignored
+        }
+        // If not found, try to read from the current directory
+        try (var fileReader = new BufferedReader(new FileReader(resourceName))) {
+            return fileReader.readLine().split("-");
+        } catch (IOException e) {
+            // Ignored
+        }
+        // Return an empty array if neither source was successful
+        return new String[0];
     }
 
     /**
