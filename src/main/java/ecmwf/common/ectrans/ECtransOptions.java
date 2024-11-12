@@ -1051,41 +1051,53 @@ public enum ECtransOptions {
     /** The host s3 ftpgroup. */
     HOST_S3_FTPGROUP("ftpgroup", String.class, STRING_NONE),
 
-    /** The host gcs port. */
-    HOST_GCS_PORT("port", Integer.class, 443),
+	/** The host gcs port. */
+	HOST_GCS_PORT("port", Integer.class, 443),
 
-    /** The host gcs scheme. */
-    HOST_GCS_SCHEME("scheme", String.class, "http"),
+	/** The host gcs scheme. */
+	HOST_GCS_SCHEME("scheme", String.class, "http"),
 
-    /** The host gcs bucket name. */
-    HOST_GCS_BUCKET_NAME("bucketName", String.class, STRING_NONE),
+	/** The host gcs bucket name. */
+	HOST_GCS_BUCKET_NAME("bucketName", String.class, STRING_NONE),
 
-    /** The host gcs prefix. */
-    HOST_GCS_PREFIX("prefix", String.class, ""),
+	/** The host gcs prefix. */
+	HOST_GCS_PREFIX("prefix", String.class, ""),
 
-    /** The host gcs region. */
-    HOST_GCS_REGION("region", String.class, ""),
+	/** The host gcs url. */
+	HOST_GCS_URL("url", String.class, STRING_NONE),
 
-    /** The host gcs url. */
-    HOST_GCS_URL("url", String.class, STRING_NONE),
+	/** The host gcs project id */
+	HOST_GCS_PROJECT_ID("projectId", String.class, STRING_NONE),
 
-    /** The host gcs ssl validation. */
-    HOST_GCS_SSL_VALIDATION("sslValidation", Boolean.class, false),
+	/** The host gcs client id */
+	HOST_GCS_CLIENT_ID("clientId", String.class, STRING_NONE),
 
-    /** The host gcs protocol. */
-    HOST_GCS_PROTOCOL("protocol", String.class, "TLS"),
+	/** The host private key id */
+	HOST_GCS_PRIVATE_KEY_ID("privateKeyId", String.class, STRING_NONE),
 
-    /** The host gcs mk bucket. */
-    HOST_GCS_MK_BUCKET("mkBucket", Boolean.class, false),
+	/** The host private key */
+	HOST_GCS_PRIVATE_KEY("privateKey", String.class, STRING_NONE),
 
-    /** The host gcs allow empty bucket name. */
-    HOST_GCS_ALLOW_EMPTY_BUCKET_NAME("allowEmptyBucketName", Boolean.class, false),
+	/** The host client email */
+	HOST_GCS_CLIENT_EMAIL("clientEmail", String.class, STRING_NONE),
 
-    /** The host gcs ftpuser. */
-    HOST_GCS_FTPUSER("ftpuser", String.class, STRING_NONE),
+	/** The host gcs ssl validation. */
+	HOST_GCS_SSL_VALIDATION("sslValidation", Boolean.class, false),
 
-    /** The host gcs ftpgroup. */
-    HOST_GCS_FTPGROUP("ftpgroup", String.class, STRING_NONE),
+	/** The host gcs protocol. */
+	HOST_GCS_PROTOCOL("protocol", String.class, "TLS"),
+
+	/** The host gcs mk bucket. */
+	HOST_GCS_MK_BUCKET("mkBucket", Boolean.class, false),
+
+	/** The host gcs allow empty bucket name. */
+	HOST_GCS_ALLOW_EMPTY_BUCKET_NAME("allowEmptyBucketName", Boolean.class, false),
+
+	/** The host gcs ftpuser. */
+	HOST_GCS_FTPUSER("ftpuser", String.class, STRING_NONE),
+
+	/** The host gcs ftpgroup. */
+	HOST_GCS_FTPGROUP("ftpgroup", String.class, STRING_NONE),
 
     /** The host azure port. */
     HOST_AZURE_PORT("port", Integer.class, 443),
