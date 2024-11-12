@@ -1,4 +1,4 @@
-FROM docker.io/library/mariadb:10.11.4
+FROM docker.io/library/mariadb:11.4
 
 LABEL maintainer="Laurent.Gougeon@ecmwf.int"
 LABEL org.opencontainers.image.source="https://github.com/ecmwf/open-ecpds"

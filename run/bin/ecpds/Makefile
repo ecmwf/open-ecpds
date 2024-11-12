@@ -92,15 +92,15 @@ config: check-yaml ## Validate and view the Compose file
 connect: check-yaml ## Open a bash session in a running container (arg: container)
 	@$(COMPOSE) -f ${DOCKER_HOST_OS}-ecpds/docker-compose.yml exec $(container) bash
 
-mysql: check-yaml ## Connect to the database
-	@$(COMPOSE) -f ${DOCKER_HOST_OS}-ecpds/docker-compose.yml exec database sh -c 'mysql ecpds -p"$$MYSQL_ROOT_PASSWORD"'
+mariadb: check-yaml ## Connect to the database
+	@$(COMPOSE) -f ${DOCKER_HOST_OS}-ecpds/docker-compose.yml exec database sh -c 'mariadb ecpds -p"$$MYSQL_ROOT_PASSWORD"'
 
 dump-full: check-yaml ## Perform a full dump of the database to stdout
-	@$(COMPOSE) -f ${DOCKER_HOST_OS}-ecpds/docker-compose.yml exec database sh -c 'mysqldump -A -p"$$MYSQL_ROOT_PASSWORD"'
+	@$(COMPOSE) -f ${DOCKER_HOST_OS}-ecpds/docker-compose.yml exec database sh -c 'mariadb-dump -A -p"$$MYSQL_ROOT_PASSWORD"'
 
 dump-conf: check-yaml ## Dump only configuration data from the database to stdout
-	@$(COMPOSE) -f ${DOCKER_HOST_OS}-ecpds/docker-compose.yml exec database sh -c 'mysqldump -p"$$MYSQL_ROOT_PASSWORD" ecpds --ignore-table=ecpds.ACTIVITY --ignore-table=ecpds.BANDWIDTH --ignore-table=ecpds.DATA_FILE --ignore-table=ecpds.DATA_TRANSFER --ignore-table=ecpds.DISK_USAGE --ignore-table=ecpds.EVENT --ignore-table=ecpds.INCOMING_HISTORY --ignore-table=ecpds.METADATA_ATTRIBUTE --ignore-table=ecpds.METADATA_VALUE --ignore-table=ecpds.MONITORING_HISTORY --ignore-table=ecpds.MONITORING_VALUE --ignore-table=ecpds.PRODUCT_STATUS --ignore-table=ecpds.PUBLICATION --ignore-table=ecpds.Q2DISS_REPORT --ignore-table=ecpds.STATISTICS --ignore-table=ecpds.TRANSFER_HISTORY --ignore-table=ecpds.UPLOAD_HISTORY'
-	@$(COMPOSE) -f ${DOCKER_HOST_OS}-ecpds/docker-compose.yml exec database sh -c 'mysqldump -p"$$MYSQL_ROOT_PASSWORD" -d ecpds ACTIVITY BANDWIDTH DATA_FILE DATA_TRANSFER DISK_USAGE EVENT INCOMING_HISTORY METADATA_ATTRIBUTE METADATA_VALUE MONITORING_HISTORY MONITORING_VALUE PRODUCT_STATUS PUBLICATION Q2DISS_REPORT STATISTICS TRANSFER_HISTORY UPLOAD_HISTORY CHANGE_LOG'
+	@$(COMPOSE) -f ${DOCKER_HOST_OS}-ecpds/docker-compose.yml exec database sh -c 'mariadb-dump -p"$$MYSQL_ROOT_PASSWORD" ecpds --ignore-table=ecpds.ACTIVITY --ignore-table=ecpds.BANDWIDTH --ignore-table=ecpds.DATA_FILE --ignore-table=ecpds.DATA_TRANSFER --ignore-table=ecpds.DISK_USAGE --ignore-table=ecpds.EVENT --ignore-table=ecpds.INCOMING_HISTORY --ignore-table=ecpds.METADATA_ATTRIBUTE --ignore-table=ecpds.METADATA_VALUE --ignore-table=ecpds.MONITORING_HISTORY --ignore-table=ecpds.MONITORING_VALUE --ignore-table=ecpds.PRODUCT_STATUS --ignore-table=ecpds.PUBLICATION --ignore-table=ecpds.Q2DISS_REPORT --ignore-table=ecpds.STATISTICS --ignore-table=ecpds.TRANSFER_HISTORY --ignore-table=ecpds.UPLOAD_HISTORY'
+	@$(COMPOSE) -f ${DOCKER_HOST_OS}-ecpds/docker-compose.yml exec database sh -c 'mariadb-dump -p"$$MYSQL_ROOT_PASSWORD" -d ecpds ACTIVITY BANDWIDTH DATA_FILE DATA_TRANSFER DISK_USAGE EVENT INCOMING_HISTORY METADATA_ATTRIBUTE METADATA_VALUE MONITORING_HISTORY MONITORING_VALUE PRODUCT_STATUS PUBLICATION Q2DISS_REPORT STATISTICS TRANSFER_HISTORY UPLOAD_HISTORY CHANGE_LOG'
 
 clean: down .clean-log .clean-lib .clean-tmp .clean-kml .fix-perms ## Remove all logs, persistent data, and fix database permissions
 

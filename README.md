@@ -183,7 +183,7 @@ run/var/log/ecpds/mover
 To log in to the database:
 
 ```
-make mysql
+make mariadb
 ```
 
 To log in to the master container (use the same for monitor, mover, and database):
