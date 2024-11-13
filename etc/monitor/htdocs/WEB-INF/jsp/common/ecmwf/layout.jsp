@@ -1,3 +1,5 @@
+<!DOCTYPE html>
+
 <%@ page session="true" import ="ecmwf.web.view.taglibs.util.TagUtils"%>
 
 <%@ taglib uri="/WEB-INF/tld/struts-tiles.tld" prefix="tiles" %>
