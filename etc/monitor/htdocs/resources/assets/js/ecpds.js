@@ -5,7 +5,8 @@ var Range = ace.require("ace/range").Range;
 
 // Hide a layer
 function hide(layerName) {
-	document.getElementById(layerName).style.visibility = 'hidden';
+	if (layerName != null)
+		document.getElementById(layerName).style.visibility = 'hidden';
 }
 
 // Show a layer, hiding other.
