@@ -197,7 +197,9 @@ public class DestinationDAOHandler extends PDSDAOBase implements DAOHandler {
             final var imp = (ecmwf.common.database.Destination) bean.getOjbImplementation();
             imp.setECUser(db.getECUser(imp.getECUserName()));
             imp.setCountry(db.getCountry(imp.getCountryIso()));
-            imp.setHostForSource(db.getHost(imp.getHostForSourceName()));
+            final var hostForSourceName = imp.getHostForSourceName();
+            if (hostForSourceName != null && hostForSourceName.length() > 0)
+                imp.setHostForSource(db.getHost(hostForSourceName));
             // Deal with the ECtransSetup of the acquisition!
             final var setup = DESTINATION_ALIAS.getECtransSetup(bean.getData());
             // Now save the associations!
