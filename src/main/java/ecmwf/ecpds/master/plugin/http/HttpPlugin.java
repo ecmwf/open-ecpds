@@ -232,7 +232,7 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver {
             rewrite.addRule(getRule("*", "X-XSS-Protection", "1; mode=block"));
             rewrite.addRule(getRule("*", "X-Content-Type-Options", "nosniff"));
             rewrite.addRule(getRule("*", "Content-Security-Policy",
-                    "script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'"));
+            		"script-src 'self' 'unsafe-inline' blob:; style-src 'self' 'unsafe-inline';"));
             rewrite.addRule(getRule("*", "X-Frame-Options", "SAMEORIGIN"));
             rewrite.addRule(getRule("*", "Strict-Transport-Security", "max-age=31536000;includeSubDomains"));
             // Add all the handlers to the server!
