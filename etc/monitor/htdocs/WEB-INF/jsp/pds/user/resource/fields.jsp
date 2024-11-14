@@ -18,7 +18,8 @@ function validate(path,message) {
         }
 }
 function hideChoosers(layerName) {
-        if (layerName!='categoryChooser') hide('categoryChooser');
+        if (layerName!='categoryChooser')
+			hide('categoryChooser');
 }
 </script>
 
@@ -74,10 +75,25 @@ function hideChoosers(layerName) {
 
 <c:if test="${isInsert != 'true'}">
 	<display:table id="category" name="${resourceActionForm.categories}" requestURI="" class="listing">
-    	<display:column	property="name" sortable="true" title="Name"/>
- 	<display:column property="description" title="Description"/>
-	<display:column><a href="javascript:validate('<bean:message key="resource.basepath"/>/edit/update/<c:out value="${resourceActionForm.id}"/>/deleteCategory/<c:out value="${category.id}"/>','<bean:message key="ecpds.resource.deleteCategory.warning" arg0="${category.name}" arg1="${resourceActionForm.path}"/>')"><content:icon key="icon.small.delete" titleKey="button.delete" altKey="button.delete" writeFullTag="true"/></a></display:column>
-	<display:caption>Associated Web Categories <a href="#" onClick="toggle_in_place(event,'categoryChooser','');"><content:icon key="icon.small.insert" titleKey="button.insert" altKey="button.insert" writeFullTag="true"/></a></display:caption>
+		<display:setProperty name="basic.msg.empty_list">
+			<table class="listing" id="category">
+				<caption style="white-space: nowrap;">No Associated Web Categories <a
+					href="#"
+					onClick="toggle_in_place(event,'categoryChooser','');"><content:icon
+					key="icon.small.insert" titleKey="button.insert"
+					altKey="button.insert" writeFullTag="true"/></a>
+				</caption>
+			</table>
+		</display:setProperty>
+	    <display:column	property="name" sortable="true" title="Name"/>
+ 		<display:column property="description" title="Description"/>
+		<display:column><a href="javascript:validate('<bean:message key="resource.basepath"/>/edit/update/<c:out value="${resourceActionForm.id}"/>/deleteCategory/<c:out value="${category.id}"/>','<bean:message key="ecpds.resource.deleteCategory.warning" arg0="${category.name}" arg1="${resourceActionForm.path}"/>')"><content:icon key="icon.small.delete" titleKey="button.delete" altKey="button.delete" writeFullTag="true"/></a></display:column>
+		<display:caption>Associated Web Categories <a
+			href="#"
+			onClick="toggle_in_place(event,'categoryChooser','');"><content:icon
+			key="icon.small.insert" titleKey="button.insert"
+			altKey="button.insert" writeFullTag="true"/></a>
+		</display:caption>
 	</display:table>
 </c:if>
 

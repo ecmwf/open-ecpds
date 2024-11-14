@@ -101,9 +101,9 @@
 				</table>
 			</display:column>
 		</c:if>
-
-
 		<display:caption>Dissemination Host(s)</display:caption>
+		<display:setProperty name="basic.msg.empty_list">
+		</display:setProperty>
 	</display:table>
 
 	</td>
@@ -131,13 +131,13 @@
 						<a
 							title="This Host is Activated (id=${acquisitionHost.name.name})"
 							href="/do/transfer/host/${acquisitionHost.name.name}">${acquisitionHost.name.nickName}</a>${acquisitionHostname}
-	</c:if>
+					</c:if>
 					<c:if test="${!acquisitionHost.name.active}">
 						<a
 							title="This Host is NOT Activated (id=${acquisitionHost.name.name})"
 							href="/do/transfer/host/${acquisitionHost.name.name}"><font
 							color="grey">${acquisitionHost.name.nickName}</font></a>${acquisitionHostname}
-	</c:if>
+					</c:if>
 				</display:column>
 
 				<display:column property="value" title="Priority" sortable="true" />
@@ -195,9 +195,9 @@
 						</table>
 					</display:column>
 				</c:if>
-
-
 				<display:caption>Acquisition Host(s)</display:caption>
+				<display:setProperty name="basic.msg.empty_list">
+				</display:setProperty>
 			</display:table></td>
 
 	</c:if>

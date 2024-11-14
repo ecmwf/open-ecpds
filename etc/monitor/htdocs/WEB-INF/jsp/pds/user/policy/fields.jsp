@@ -135,6 +135,15 @@
 				<display:table id="destination"
 					name="${incomingPolicyActionForm.destinations}" requestURI=""
 					class="listing">
+					<display:setProperty name="basic.msg.empty_list">
+						<table class="listing" id="destination">
+							<caption style="white-space: nowrap;">No Associated Destinations <a href="#"
+								onClick="hideChoosers('destinationChooser');toggle_in_place(event,'destinationChooser','');"><content:icon
+								key="icon.small.insert" titleKey="button.insert"
+								altKey="button.insert" writeFullTag="true" /></a>
+							</caption>
+						</table>
+					</display:setProperty>
 					<display:column property="id" sortable="true" title="Name" />
 					<display:column property="comment" sortable="true" title="Comment" />
 					<display:column>

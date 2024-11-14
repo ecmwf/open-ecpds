@@ -451,6 +451,15 @@
 				<display:table id="host"
 					name="${destinationActionForm.disseminationHostsAndPriorities}"
 					requestURI="" class="listing">
+					<display:setProperty name="basic.msg.empty_list">
+						<table class="listing" id="host">
+							<caption style="white-space: nowrap;">No Dissemination Hosts <a href="#"
+								onClick="hideChoosers('disseminationHostChooser');toggle_in_place(event,'disseminationHostChooser','none');"><content:icon
+								key="icon.small.insert" titleKey="button.insert"
+								altKey="button.insert" writeFullTag="true" /></a>
+							</caption>
+						</table>
+					</display:setProperty>
 					<c:if test="${not empty host.name.comment}">
 						<display:column sortable="true" title="Host">
 							<span title="${host.name.comment}">${host.name.nickName}</span>
@@ -494,6 +503,15 @@
 				<display:table id="host"
 					name="${destinationActionForm.acquisitionHostsAndPriorities}"
 					requestURI="" class="listing">
+					<display:setProperty name="basic.msg.empty_list">
+						<table class="listing" id="host">
+							<caption style="white-space: nowrap;">No Acquisition Hosts <a href="#"
+								onClick="hideChoosers('acquisitionHostChooser');toggle_in_place(event,'acquisitionHostChooser','none');"><content:icon
+								key="icon.small.insert" titleKey="button.insert"
+								altKey="button.insert" writeFullTag="true" /></a>
+							</caption>
+						</table>
+					</display:setProperty>
 					<c:if test="${not empty host.name.comment}">
 						<display:column sortable="true" title="Host">
 							<span title="${host.name.comment}">${host.name.nickName}</span>
@@ -537,6 +555,15 @@
 				<display:table id="host"
 					name="${destinationActionForm.proxyHostsAndPriorities}"
 					requestURI="" class="listing">
+					<display:setProperty name="basic.msg.empty_list">
+						<table class="listing" id="host">
+							<caption style="white-space: nowrap;">No Proxy Hosts <a href="#"
+								onClick="hideChoosers('proxyHostChooser');toggle_in_place(event,'proxyHostChooser','none');"><content:icon
+								key="icon.small.insert" titleKey="button.insert"
+								altKey="button.insert" writeFullTag="true" /></a>
+							</caption>
+						</table>
+					</display:setProperty>
 					<c:if test="${not empty host.name.comment}">
 						<display:column sortable="true" title="Host">
 							<span title="${host.name.comment}">${host.name.nickName}</span>
@@ -580,6 +607,16 @@
 				<display:table id="user"
 					name="${destinationActionForm.associatedEcUsers}" requestURI=""
 					class="listing">
+					<display:setProperty name="basic.msg.empty_list">
+						<table class="listing" id="user">
+							<caption style="white-space: nowrap;">No Authorized Web Users (mspds) <a
+								href="#"
+								onClick="hideChoosers('userChooser');toggle_in_place(event,'userChooser','none');"><content:icon
+								key="icon.small.insert" titleKey="button.insert"
+								altKey="button.insert" writeFullTag="true" /></a>
+							</caption>
+						</table>					
+					</display:setProperty>
 					<c:if test="${not empty user.comment}">
 						<display:column sortable="true" title="Name">
 							<span title="${user.comment}">${user.id}</span>
@@ -605,6 +642,15 @@
 				<display:table id="policy"
 					name="${destinationActionForm.associatedIncomingPolicies}"
 					requestURI="" class="listing">
+					<display:setProperty name="basic.msg.empty_list">
+						<table class="listing" id="policy">
+							<caption style="white-space: nowrap;">No Authorized Data Policies <a href="#"
+								onClick="hideChoosers('policyChooser');toggle_in_place(event,'policyChooser','none');"><content:icon
+								key="icon.small.insert" titleKey="button.insert"
+								altKey="button.insert" writeFullTag="true" /></a>
+							</caption>
+						</table>
+					</display:setProperty>
 					<c:if test="${not empty policy.comment}">
 						<display:column sortable="true" title="Name">
 							<span title="${policy.comment}">${policy.id}
@@ -619,16 +665,24 @@
 								key="icon.small.delete" titleKey="button.delete"
 								altKey="button.delete" writeFullTag="true" /></a>
 					</display:column>
-					<display:caption>Authorized Data Policies (EMS) <a
-							href="#"
-							onClick="hideChoosers('policyChooser');toggle_in_place(event,'policyChooser','none');"><content:icon
-								key="icon.small.insert" titleKey="button.insert"
-								altKey="button.insert" writeFullTag="true" /></a>
+					<display:caption>Authorized Data Policies <a href="#"
+						onClick="hideChoosers('policyChooser');toggle_in_place(event,'policyChooser','none');"><content:icon
+						key="icon.small.insert" titleKey="button.insert"
+						altKey="button.insert" writeFullTag="true" /></a>
 					</display:caption>
 				</display:table>
 				<br />
 				<display:table id="alias" name="${destinationActionForm.aliases}"
 					requestURI="" class="listing">
+					<display:setProperty name="basic.msg.empty_list">
+						<table class="listing" id="alias">
+							<caption style="white-space: nowrap;">No Destination Aliases <a href="#"
+								onClick="hideChoosers('aliasChooser');toggle_in_place(event,'aliasChooser','none');"><content:icon
+								key="icon.small.insert" titleKey="button.insert"
+								altKey="button.insert" writeFullTag="true" /></a>
+							</caption>
+						</table>
+					</display:setProperty>
 					<c:if test="${not empty alias.comment}">
 						<display:column sortable="true" title="Name">
 							<span title="${alias.comment}">${alias.name}</span>
@@ -653,6 +707,11 @@
 				<display:table id="file"
 					name="${destinationActionForm.metadataFiles}" requestURI=""
 					class="listing">
+					<display:setProperty name="basic.msg.empty_list">
+						<table class="listing" id="policy">
+							<caption style="white-space: nowrap;">No Metadata Files</caption>
+						</table>
+					</display:setProperty>
 					<display:column property="name" sortable="true" title="Name" />
 					<display:column>
 						<a

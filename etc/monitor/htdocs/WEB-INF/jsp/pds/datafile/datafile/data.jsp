@@ -96,9 +96,14 @@
 	<th>Timestep</th><td valign="top">${datafile.timeStep}</td>
 	<td valign="top" rowspan="5" colspan="2">
 		<display:table id="metadata" name="${datafile.metaData}" requestURI="" class="listing">
-		  <display:column sortable="true" title="Name"><a href="/do/datafile/metadata/attribute/${metadata.name}">${metadata.name}</a></display:column>
-		  <display:column property="value"/>    				
-		  <display:caption>Meta Data for ${datafile.id}</display:caption>
+			<display:setProperty name="basic.msg.empty_list">
+				<table class="listing" id="metadata">
+					<caption style="white-space: nowrap;">No Meta Data for ${datafile.id}</caption>
+				</table>
+			</display:setProperty>
+		 	<display:column sortable="true" title="Name"><a href="/do/datafile/metadata/attribute/${metadata.name}">${metadata.name}</a></display:column>
+		 	<display:column property="value"/>    				
+		 	<display:caption>Meta Data for ${datafile.id}</display:caption>
 		</display:table>
 	</td>
 	</tr>

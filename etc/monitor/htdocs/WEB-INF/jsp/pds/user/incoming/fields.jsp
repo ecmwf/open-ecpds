@@ -250,6 +250,15 @@
 				<display:table id="policy"
 					name="${incomingUserActionForm.incomingPolicies}" requestURI=""
 					class="listing">
+					<display:setProperty name="basic.msg.empty_list">
+						<table class="listing" id="policy">
+							<caption style="white-space: nowrap;">No Associated Data Policies <a href="#"
+								onClick="hideChoosers('policyChooser');toggle_in_place(event,'policyChooser','');"><content:icon
+								key="icon.small.insert" titleKey="button.insert"
+								altKey="button.insert" writeFullTag="true" /></a>
+							</caption>
+						</table>
+					</display:setProperty>
 					<display:column property="id" sortable="true" title="Name" />
 					<display:column property="comment" sortable="true" title="Comment" />
 					<display:column>
@@ -272,6 +281,15 @@
 				<display:table id="destination"
 					name="${incomingUserActionForm.destinations}" requestURI=""
 					class="listing">
+					<display:setProperty name="basic.msg.empty_list">
+						<table class="listing" id="destination">
+							<caption style="white-space: nowrap;">No Associated Destinations <a href="#"
+								onClick="hideChoosers('destinationChooser');toggle_in_place(event,'destinationChooser','');"><content:icon
+								key="icon.small.insert" titleKey="button.insert"
+								altKey="button.insert" writeFullTag="true" /></a>
+							</caption>
+						</table>
+					</display:setProperty>
 					<display:column property="name" sortable="true" title="Name" />
 					<display:column property="comment" sortable="true" title="Comment" />
 					<display:column>
@@ -294,6 +312,15 @@
 				<display:table id="operation"
 					name="${incomingUserActionForm.operations}" requestURI=""
 					class="listing">
+					<display:setProperty name="basic.msg.empty_list">
+						<table class="listing" id="operation">
+							<caption style="white-space: nowrap;">No Associated Permissions <a href="#"
+								onClick="hideChoosers('operationChooser');toggle_in_place(event,'operationChooser','');"><content:icon
+								key="icon.small.insert" titleKey="button.insert"
+								altKey="button.insert" writeFullTag="true" /></a>
+							</caption>
+						</table>
+					</display:setProperty>
 					<display:column property="id" sortable="true" title="Name" />
 					<display:column property="comment" sortable="true" title="Comment" />
 					<display:column>
@@ -315,6 +342,13 @@
 				<display:table id="mySession"
 					name="${incomingUserActionForm.incomingUser.incomingConnections}"
 					requestURI="" class="listing">
+					<display:setProperty name="basic.msg.empty_list">
+						<table class="listing" id="mySession">
+							<caption style="white-space: nowrap;">
+								No Current Sessions
+							</caption>
+						</table>
+					</display:setProperty>
 					<display:column title="Mover Name">${mySession.dataMoverName}</display:column>
 					<display:column title="Protocol">${mySession.protocol}</display:column>
 					<display:column title="Remote Address">${mySession.remoteIpAddress}</display:column>
