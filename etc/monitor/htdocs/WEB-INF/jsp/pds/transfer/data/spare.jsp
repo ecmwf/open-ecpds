@@ -16,33 +16,33 @@
 <c:if
 	test="${!datatransfer.deleted || not empty showScheduleNow || datatransfer.canBeDownloaded || datatransfer.statusCode == 'FETC'}">
 	<c:if test="${not empty showTable}">
-		<table class="editSparebox">
+		<table class="editSpareBox">
 			<c:if test="${!datatransfer.deleted}">
 				<tr>
 					<td><auth:link basePathKey="destination.basepath"
 							href="/deletions/${datatransfer.destinationName}/deleteTransferForm/${datatransfer.id}"
-							imageKey="icon.small.delete"> Delete</auth:link></td>
+							imageKey="icon.small.delete">&nbsp;&nbsp;Delete</auth:link></td>
 				</tr>
 			</c:if>
 			<c:if test="${not empty showScheduleNow}">
 				<tr>
 					<td><auth:link basePathKey="destination.basepath"
 							href="/operations/${datatransfer.destinationName}/scheduleNow/${datatransfer.id}"
-							imageKey="icon.scheduleNow" ignoreAccessControl="true"> Schedule Now</auth:link></td>
+							imageKey="icon.scheduleNow" ignoreAccessControl="true">&nbsp;&nbsp;Schedule Now</auth:link></td>
 				</tr>
 			</c:if>
 			<c:if test="${datatransfer.canBeDownloaded}">
 				<tr>
 					<td><auth:link basePathKey="destination.basepath"
 							href="/operations/${datatransfer.destinationName}/download/${datatransfer.id}"
-							imageKey="icon.download" ignoreAccessControl="true"> Download</auth:link></td>
+							imageKey="icon.download" ignoreAccessControl="true">&nbsp;&nbsp;Download</auth:link></td>
 				</tr>
 			</c:if>
 			<c:if test="${datatransfer.statusCode == 'FETC'}">
 				<tr>
 					<td><auth:link basePathKey="destination.basepath"
 							href="/operations/${datatransfer.destinationName}/interrupt/${datatransfer.id}"
-							imageKey="icon.download" ignoreAccessControl="true"> Interrupt</auth:link></td>
+							imageKey="icon.download" ignoreAccessControl="true">&nbsp;&nbsp;Interrupt</auth:link></td>
 				</tr>
 			</c:if>
 		</table>
