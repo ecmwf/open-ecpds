@@ -5,8 +5,6 @@
 request.setAttribute("jsp_date_before", new java.util.Date());
 %>
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-
 <html>
 <head>
 
