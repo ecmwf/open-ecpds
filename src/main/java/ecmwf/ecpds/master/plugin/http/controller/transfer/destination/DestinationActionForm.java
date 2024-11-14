@@ -1060,7 +1060,7 @@ public class DestinationActionForm extends ECMWFActionForm {
      * @return the hosts and priorities
      */
     public synchronized Collection<Pair> getHostsAndPriorities() {
-        if (hostsAndPriorities == null) {
+        if (hostsAndPriorities == null && destination != null) {
             try {
                 hostsAndPriorities = destination.getHostsAndPriorities();
             } catch (final TransferException e) {
@@ -1123,11 +1123,12 @@ public class DestinationActionForm extends ECMWFActionForm {
      */
     public Collection<EcUser> getAssociatedEcUsers() {
         try {
-            return destination.getAssociatedEcUsers();
+            if (destination != null)
+                return destination.getAssociatedEcUsers();
         } catch (final TransferException e) {
             log.error("Problem getting EcUsers", e);
-            return new ArrayList<>(0);
         }
+        return new ArrayList<>(0);
     }
 
     /**
@@ -1137,11 +1138,12 @@ public class DestinationActionForm extends ECMWFActionForm {
      */
     public Collection<IncomingPolicy> getAssociatedIncomingPolicies() {
         try {
-            return destination.getAssociatedIncomingPolicies();
+            if (destination != null)
+                return destination.getAssociatedIncomingPolicies();
         } catch (final TransferException e) {
             log.error("Problem getting IncomingPolicies", e);
-            return new ArrayList<>(0);
         }
+        return new ArrayList<>(0);
     }
 
     /**
@@ -1151,11 +1153,12 @@ public class DestinationActionForm extends ECMWFActionForm {
      */
     public Collection<Destination> getAliases() {
         try {
-            return destination.getAliases();
+            if (destination != null)
+                destination.getAliases();
         } catch (final TransferException e) {
             log.error("Problem getting Aliases", e);
-            return new ArrayList<>(0);
         }
+        return new ArrayList<>(0);
     }
 
     /**
@@ -1165,11 +1168,12 @@ public class DestinationActionForm extends ECMWFActionForm {
      */
     public Collection<Alias> getAliasList() {
         try {
-            return destination.getAliasList();
+            if (destination != null)
+                return destination.getAliasList();
         } catch (final TransferException e) {
             log.error("Problem getting AliasList", e);
-            return new ArrayList<>(0);
         }
+        return new ArrayList<>(0);
     }
 
     /**
@@ -1179,11 +1183,12 @@ public class DestinationActionForm extends ECMWFActionForm {
      */
     public Collection<Traffic> getTrafficList() {
         try {
-            return destination.getTrafficList();
+            if (destination != null)
+                return destination.getTrafficList();
         } catch (final TransferException e) {
             log.error("Problem getting Traffic", e);
-            return new ArrayList<>(0);
         }
+        return new ArrayList<>(0);
     }
 
     /**
@@ -1225,11 +1230,12 @@ public class DestinationActionForm extends ECMWFActionForm {
      */
     public Collection<DestinationMetaData> getMetadataFiles() {
         try {
-            return destination.getMetaData();
+            if (destination != null)
+                return destination.getMetaData();
         } catch (final TransferException e) {
             log.error("Problem getting Alias options", e);
-            return new ArrayList<>(0);
         }
+        return new ArrayList<>(0);
     }
 
     /**
