@@ -183,8 +183,6 @@
 					</td>
 				</tr>
 
-				<auth:if basePathKey="transferhistory.basepath" paths="/">
-					<auth:then>
 
 						<tr>
 							<td colspan="3">&nbsp;</td>
@@ -218,6 +216,9 @@
 								</div>
 							</td>
 						</tr>
+
+						<auth:if basePathKey="transferhistory.basepath" paths="/">
+							<auth:then>
 
 						<tr>
 							<td colspan="3">&nbsp;</td>
@@ -331,9 +332,6 @@
 		var editorDir = getEditorProperties(true, false, "dir", "toml");
 		makeResizable(editorDir);
 
-		<auth:if basePathKey="transferhistory.basepath" paths="/">
-		<auth:then>
-
 		var editorProperties = getEditorProperties(true, false, "properties", "crystal");
 		
 		// Get the completions from the bean!
@@ -432,14 +430,9 @@
 		makeResizable(editorProperties);
 		makeResizable(editorJavascript);
 
-		</auth:then>
-		<auth:else>
-
-		</auth:else>
 		$('#istext').prop('disabled', true);
 		$('#isjs').prop('disabled', true);
 		$('#ispython').prop('disabled', true);
-		</auth:if>
 
 		var dirType = getEditorType(editorDir);
 		$('#is' + dirType).prop('checked', true);
