@@ -19,13 +19,13 @@
 							(Disabled)
 						</c:if> </span></th>
 			</tr>
+			<tr>
+				<td><auth:link styleClass="menuitem"
+						basePathKey="host.basepath" href="/${host.id}?mode=changelog"
+						ignoreAccessControl="true">Changes Log</auth:link></td>
+			</tr>
 			<auth:if basePathKey="transferhistory.basepath" paths="/">
 				<auth:then>
-					<tr>
-						<td><auth:link styleClass="menuitem"
-								basePathKey="host.basepath" href="/${host.id}?mode=changelog"
-								ignoreAccessControl="true">Changes Log</auth:link></td>
-					</tr>
 					<tr>
 						<td><auth:link styleClass="menuitem"
 								basePathKey="host.basepath"

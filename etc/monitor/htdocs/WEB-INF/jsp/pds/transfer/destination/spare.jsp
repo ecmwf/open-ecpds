@@ -75,17 +75,13 @@
 							Rates</a></td>
 				</tr>
 
-				<auth:if basePathKey="transferhistory.basepath" paths="/">
-					<auth:then>
-						<tr>
-							<td valign="top"><search:icon key="icon.konqueror"
-									writeFullTag="true" /></td>
-							<td colspan="2"><a
-								href="<bean:message key="destination.basepath"/>/${destination.id}?mode=changelog">Changes
-									Log</a></td>
-						</tr>
-					</auth:then>
-				</auth:if>
+				<tr>
+					<td valign="top"><search:icon key="icon.konqueror"
+							writeFullTag="true" /></td>
+					<td colspan="2"><a
+						href="<bean:message key="destination.basepath"/>/${destination.id}?mode=changelog">Changes
+							Log</a></td>
+				</tr>
 
 				<tr>
 					<td valign="top"><search:icon key="icon.arrow.left"
