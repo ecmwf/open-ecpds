@@ -7211,10 +7211,10 @@ public final class MasterServer extends ECaccessProvider
                                 "MetaType=" + nullToNone(dataFile.getMetaType()), "MetaTime=" + dataFile.getMetaTime(),
                                 "TimeBase=" + dataFile.getTimeBase(), "TimeStep=" + dataFile.getTimeStep(),
                                 "Duration=" + duration, "CountryCode=" + destination.getCountryIso(),
-								"Target=" + (isEmpty(target) ? "-" : target.replaceAll("DataMover=", "")),
-								"TransferServer=" + _sourceMover, "Caller=" + nullToNone(dataFile.getCaller()),
-								"ExpiryTime=" + _transfer.getExpiryTime(), "FileSystem=" + dataFile.getFileSystem(),
-								"Status=" + complete, "Message=" + nullToNone(rr.message), "Action=replicate");
+                                "Target=" + (isEmpty(target) ? "-" : target.replaceAll("DataMover=", "")),
+                                "TransferServer=" + _sourceMover, "Caller=" + nullToNone(dataFile.getCaller()),
+                                "ExpiryTime=" + _transfer.getExpiryTime(), "FileSystem=" + dataFile.getFileSystem(),
+                                "Status=" + complete, "Message=" + nullToNone(rr.message), "Action=replicate");
                 } catch (final Throwable t) {
                     _log.warn("Running ReplicateThread " + key, t);
                 } finally {
@@ -8278,12 +8278,12 @@ public final class MasterServer extends ECaccessProvider
                                 "MetaType=" + nullToNone(dataFile.getMetaType()), "MetaTime=" + dataFile.getMetaTime(),
                                 "TimeBase=" + dataFile.getTimeBase(), "TimeStep=" + dataFile.getTimeStep(),
                                 "Duration=" + duration, "CountryCode=" + destination.getCountryIso(),
-								"Target=" + (rr.hostForBackup == null ? "-" : rr.hostForBackup.getNickname()),
-								"TransferServer=" + (isEmpty(rr.transferServer) ? "-"
-										: rr.transferServer.replaceAll("DataMover=", "")),
-								"Caller=" + nullToNone(dataFile.getCaller()), "ExpiryTime=" + _transfer.getExpiryTime(),
-								"FileSystem=" + dataFile.getFileSystem(), "Status=" + complete,
-								"Message=" + nullToNone(rr.message), "Action=proxy");
+                                "Target=" + (rr.hostForBackup == null ? "-" : rr.hostForBackup.getNickname()),
+                                "TransferServer=" + (isEmpty(rr.transferServer) ? "-"
+                                        : rr.transferServer.replaceAll("DataMover=", "")),
+                                "Caller=" + nullToNone(dataFile.getCaller()), "ExpiryTime=" + _transfer.getExpiryTime(),
+                                "FileSystem=" + dataFile.getFileSystem(), "Status=" + complete,
+                                "Message=" + nullToNone(rr.message), "Action=proxy");
                 } catch (final Throwable t) {
                     _log.warn("Running ProxyThread " + key, t);
                 } finally {
