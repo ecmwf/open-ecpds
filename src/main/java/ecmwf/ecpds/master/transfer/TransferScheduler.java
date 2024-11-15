@@ -1526,7 +1526,8 @@ public final class TransferScheduler extends MBeanScheduler {
      *
      * @return the replicate result
      */
-    public static ReplicateResult replicate(final TransferServer[] serversList, final DataTransfer transfer) {
+    public static ReplicateResult replicate(final String sourceMoverName, final TransferServer[] serversList,
+            final DataTransfer transfer) {
         final var rr = new ReplicateResult();
         rr.dataFile = transfer.getDataFile();
         final var group = rr.dataFile.getTransferGroup();
@@ -1538,7 +1539,6 @@ public final class TransferScheduler extends MBeanScheduler {
         final var expiry = transfer.getExpiryTime();
         final var expired = expiry != null && expiry.before(new Date(System.currentTimeMillis()));
         if (!expired) {
-            final var sourceMoverName = getTransferServerUsedForRetrieval(transfer);
             final var sourceMover = MASTER.getDataMoverInterface(sourceMoverName);
             if (sourceMover == null) {
                 rr.message = "Source DataMover " + sourceMoverName + " not available for replication";

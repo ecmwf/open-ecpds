@@ -7173,7 +7173,7 @@ public final class MasterServer extends ECaccessProvider
                     final var start = System.currentTimeMillis();
                     _log.info("Starting replication for DataTransfer " + _transfer.getId());
                     final var list = _getTransferServers(_transfer.getDataFile());
-                    final var rr = TransferScheduler.replicate(list, _transfer);
+                    final var rr = TransferScheduler.replicate(_sourceMover, list, _transfer);
                     final var duration = System.currentTimeMillis() - start;
                     final var base = getDataBase();
                     _transfer = base.getDataTransfer(_transfer.getId());
