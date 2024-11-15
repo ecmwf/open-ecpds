@@ -1086,7 +1086,7 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
                             if (_splunk.isInfoEnabled() && setup != null
                                     && setup.getBoolean(USER_PORTAL_RECORD_SPLUNK)) {
                                 final var destination = transfer.getDestination();
-                                _splunk.info("INH;{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{}",
+                                _splunk.info("INH;{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{}",
                                         "Monitored=" + destination.getMonitor(),
                                         "DataTransferId=" + history.getDataTransferId(),
                                         "DestinationName=" + destination.getName(),
@@ -1103,6 +1103,8 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
                                         "BytesSent=" + history.getSent(), "TransferProtocol=" + history.getProtocol(),
                                         "TransferServer=" + history.getTransferServer(),
                                         "HostAddress=" + history.getHostAddress(),
+                                        "ExpiryTime=" + transfer.getExpiryTime(),
+                                        "FileSystem=" + file.getFileSystem(),
                                         "Action=" + (history.getUpload() ? "upload" : "download"));
                             }
                         } catch (final Throwable t) {

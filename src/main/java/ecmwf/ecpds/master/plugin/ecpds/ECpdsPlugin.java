@@ -1766,7 +1766,7 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
                         // For the accounting!
                         final var destination = transfer.getDestination();
                         final var ecuser = DATABASE.getECUserObject(userName);
-                        _splunk.info("INH;{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{}",
+                        _splunk.info("INH;{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{}",
                                 "Monitored=" + destination.getMonitor(),
                                 "DataTransferId=" + history.getDataTransferId(),
                                 "DestinationName=" + destination.getName(),
@@ -1781,6 +1781,8 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
                                 "UserDescription=" + (ecuser != null ? ecuser.getComment() : ""),
                                 "BytesSent=" + history.getSent(), "TransferProtocol=" + history.getProtocol(),
                                 "TransferServer=" + history.getTransferServer(),
+                                "ExpiryTime=" + transfer.getExpiryTime(),
+                                "FileSystem=" + dataFile.getFileSystem(),
                                 "HostAddress=" + history.getHostAddress(), "Action=upload");
                     }
                     _log.debug("IncomingHistory created for DataTransfer {}", transfer.getId());
