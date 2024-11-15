@@ -23,4 +23,6 @@ request.setAttribute("jsp_date_before", new java.util.Date());
 <script src="/jquery/jquery-3.7.0.min.js"></script>
 <script src="/jquery/jquery-ui.min.js"></script>
 
+<link rel="icon" type="image/x-icon" href="/assets/images/favicon.ico">
+
 </head>
