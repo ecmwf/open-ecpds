@@ -7174,6 +7174,7 @@ public final class MasterServer extends ECaccessProvider
                     _log.info("Starting replication for DataTransfer " + _transfer.getId());
                     final var list = _getTransferServers(_transfer.getDataFile());
                     final var rr = TransferScheduler.replicate(list, _transfer);
+                    final var duration = System.currentTimeMillis() - start;
                     final var base = getDataBase();
                     _transfer = base.getDataTransfer(_transfer.getId());
                     _transfer.setReplicateTime(new Timestamp(System.currentTimeMillis()));
@@ -7186,17 +7187,34 @@ public final class MasterServer extends ECaccessProvider
                         file.setDownloaded(downloaded);
                     }
                     base.update(_transfer);
+                    final var target = Format.toList(rr.transferServers);
                     if (complete = rr.complete) {
                         // Add a new history to inform about the replication!
                         if (rr.transferServers.isEmpty()) {
                             _transfer.setComment("No replication required (only one copy stored)");
                         } else {
-                            _transfer.setComment("Replication completed in "
-                                    + Format.formatDuration(System.currentTimeMillis() - start) + " from DataMover="
-                                    + _sourceMover + " to " + Format.toList(rr.transferServers));
+                            _transfer.setComment("Replication completed in " + Format.formatDuration(duration)
+                                    + " from DataMover=" + _sourceMover + " to " + target);
                         }
                         addTransferHistory(_transfer);
                     }
+                    final var destination = _transfer.getDestination();
+                    final var dataFile = _transfer.getDataFile();
+                    if (_splunk.isInfoEnabled() && !(complete && target.isEmpty()))
+                        _splunk.info("ACT;{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{}",
+                                "Monitored=" + destination.getMonitor(), "DataTransferId=" + _transfer.getId(),
+                                "DestinationName=" + destination.getName(),
+                                "DestinationType=" + DestinationOption.getLabel(destination.getType()),
+                                "FileName=" + _transfer.getTarget(), "FileSize=" + dataFile.getSize(),
+                                "ScheduledTime=" + _transfer.getScheduledTime(), "StartTime=" + start,
+                                "MetaStream=" + nullToNone(dataFile.getMetaStream()),
+                                "MetaType=" + nullToNone(dataFile.getMetaType()), "MetaTime=" + dataFile.getMetaTime(),
+                                "TimeBase=" + dataFile.getTimeBase(), "TimeStep=" + dataFile.getTimeStep(),
+                                "Duration=" + duration, "CountryCode=" + destination.getCountryIso(),
+                                "Target=" + target, "TransferServer=" + _sourceMover,
+                                "Caller=" + nullToNone(dataFile.getCaller()), "ExpiryTime=" + _transfer.getExpiryTime(),
+                                "FileSystem=" + dataFile.getFileSystem(), "Status=" + complete,
+                                "Message=" + nullToNone(rr.message), "Action=replicate");
                 } catch (final Throwable t) {
                     _log.warn("Running ReplicateThread " + key, t);
                 } finally {
@@ -8214,6 +8232,7 @@ public final class MasterServer extends ECaccessProvider
                     }
                     // Did we find any HostForProxy available for the
                     // transmission? (good or bad)
+                    final long duration = System.currentTimeMillis() - start;
                     if (rr == null) {
                         // Maybe next time!
                         if (_debug) {
@@ -8238,15 +8257,31 @@ public final class MasterServer extends ECaccessProvider
                     if (complete) {
                         // Add a new history to inform about the successful
                         // transmissions to the Proxy!
-                        _transfer.setComment(
-                                "Replication completed in " + Format.formatDuration(System.currentTimeMillis() - start)
-                                        + " from " + rr.transferServer + " to Proxy Host=" + rr.hostForBackup.getName()
-                                        + " (" + rr.hostForBackup.getNickname() + ")");
+                        _transfer.setComment("Replication completed in " + Format.formatDuration(duration) + " from "
+                                + rr.transferServer + " to Proxy Host=" + rr.hostForBackup.getName() + " ("
+                                + rr.hostForBackup.getNickname() + ")");
                         addTransferHistory(_transfer);
                     } else if (isNotEmpty(rr.message)) {
                         // Add a new history to inform about the failure!
                         addTransferHistory(_transfer, StatusFactory.STOP, rr.message);
                     }
+                    final var destination = _transfer.getDestination();
+                    final var dataFile = _transfer.getDataFile();
+                    if (_splunk.isInfoEnabled())
+                        _splunk.info("ACT;{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{}",
+                                "Monitored=" + destination.getMonitor(), "DataTransferId=" + _transfer.getId(),
+                                "DestinationName=" + destination.getName(),
+                                "DestinationType=" + DestinationOption.getLabel(destination.getType()),
+                                "FileName=" + _transfer.getTarget(), "FileSize=" + dataFile.getSize(),
+                                "ScheduledTime=" + _transfer.getScheduledTime(), "StartTime=" + start,
+                                "MetaStream=" + nullToNone(dataFile.getMetaStream()),
+                                "MetaType=" + nullToNone(dataFile.getMetaType()), "MetaTime=" + dataFile.getMetaTime(),
+                                "TimeBase=" + dataFile.getTimeBase(), "TimeStep=" + dataFile.getTimeStep(),
+                                "Duration=" + duration, "CountryCode=" + destination.getCountryIso(),
+                                "Target=" + rr.hostForBackup.getNickname(), "TransferServer=" + rr.transferServer,
+                                "Caller=" + nullToNone(dataFile.getCaller()), "ExpiryTime=" + _transfer.getExpiryTime(),
+                                "FileSystem=" + dataFile.getFileSystem(), "Status=" + complete,
+                                "Message=" + nullToNone(rr.message), "Action=proxy");
                 } catch (final Throwable t) {
                     _log.warn("Running ProxyThread " + key, t);
                 } finally {

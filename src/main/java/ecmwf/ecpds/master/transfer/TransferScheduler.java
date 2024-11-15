@@ -1503,8 +1503,14 @@ public final class TransferScheduler extends MBeanScheduler {
         /** The transfer servers. */
         public final List<String> transferServers = new ArrayList<>();
 
+        /** The transfer server. */
+        public String transferServer = null;
+
         /** The data file. */
         public DataFile dataFile = null;
+
+        /** The message. */
+        public String message = null;
 
         /** The complete. */
         public boolean complete = false;
@@ -1535,7 +1541,8 @@ public final class TransferScheduler extends MBeanScheduler {
             final var sourceMoverName = getTransferServerUsedForRetrieval(transfer);
             final var sourceMover = MASTER.getDataMoverInterface(sourceMoverName);
             if (sourceMover == null) {
-                _log.warn("Source DataMover " + sourceMoverName + " not available for replication");
+                rr.message = "Source DataMover " + sourceMoverName + " not available for replication";
+                _log.warn(rr.message);
             } else {
                 final var servers = _getSortedList(sourceMoverName, serversList);
                 final List<Host> hostsForSource = new ArrayList<>();
@@ -1569,18 +1576,21 @@ public final class TransferScheduler extends MBeanScheduler {
                         continue;
                     }
                     if (!targetMover.getReplicate()) {
-                        _log.debug("Target DataMover " + targetMoverName + " not configured for replication");
+                        rr.message = "Target DataMover " + targetMoverName + " not configured for replication";
+                        _log.debug(rr.message);
                         continue;
                     }
                     if (!MASTER.existsClientInterface(targetMoverName, "DataMover")) {
-                        _log.warn("Target DataMover " + targetMoverName + " not available for replication");
+                        rr.message = "Target DataMover " + targetMoverName + " not available for replication";
+                        _log.warn(rr.message);
                         continue;
                     }
                     final List<Host> hostsForSourceList = new ArrayList<>(hostsForSource);
                     final var hostForReplication = targetMover.getHostForReplication();
                     var replicated = false;
                     if (!hostsForSourceList.remove(hostForReplication)) {
-                        _log.warn("Current HostForReplication not found?");
+                        rr.message = "Current HostForReplication not found?";
+                        _log.warn(rr.message);
                     }
                     try {
                         _log.debug("Replicating DataFile " + rr.dataFile.getId() + " from " + sourceMoverName + " to "
@@ -1592,10 +1602,12 @@ public final class TransferScheduler extends MBeanScheduler {
                     } catch (final Throwable t) {
                         final var message = "Replicating DataFile " + rr.dataFile.getId() + " on " + targetMoverName;
                         if (Thread.interrupted()) {
-                            _log.warn(message + " interrupted");
+                            rr.message = message + " interrupted";
+                            _log.warn(rr.message);
                             break;
                         } else {
-                            _log.warn(message, t);
+                            rr.message = message;
+                            _log.warn(rr.message, t);
                             continue;
                         }
                     } finally {
@@ -1606,12 +1618,14 @@ public final class TransferScheduler extends MBeanScheduler {
                 }
             }
         } else {
-            _log.warn("DataTransfer " + transfer.getId() + " is expired (not replicated)");
+            rr.message = "DataTransfer " + transfer.getId() + " is expired (not replicated)";
+            _log.warn(rr.message);
         }
         rr.complete = rr.transferServers.size() + 1 >= minReplicationCount;
         if (!expired && !rr.complete) {
-            _log.warn("Replication for DataTransfer " + transfer.getId() + " not complete (only "
-                    + (rr.transferServers.size() + 1) + "/" + minReplicationCount + " instances of the file)");
+            rr.message = "Replication for DataTransfer " + transfer.getId() + " not complete (only "
+                    + (rr.transferServers.size() + 1) + "/" + minReplicationCount + " instances of the file)";
+            _log.warn(rr.message);
         }
         return rr;
     }
