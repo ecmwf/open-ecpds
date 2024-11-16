@@ -7201,7 +7201,7 @@ public final class MasterServer extends ECaccessProvider
                     final var destination = _transfer.getDestination();
                     final var dataFile = _transfer.getDataFile();
                     if (_splunk.isInfoEnabled() && !(complete && target.isEmpty()))
-                        _splunk.info("ACT;{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{}",
+                        _splunk.info("CPY;{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{}",
                                 "Monitored=" + destination.getMonitor(), "DataTransferId=" + _transfer.getId(),
                                 "DestinationName=" + destination.getName(),
                                 "DestinationType=" + DestinationOption.getLabel(destination.getType()),
@@ -8268,7 +8268,7 @@ public final class MasterServer extends ECaccessProvider
                     final var destination = _transfer.getDestination();
                     final var dataFile = _transfer.getDataFile();
                     if (_splunk.isInfoEnabled())
-                        _splunk.info("ACT;{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{}",
+                        _splunk.info("CPY;{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{}",
                                 "Monitored=" + destination.getMonitor(), "DataTransferId=" + _transfer.getId(),
                                 "DestinationName=" + destination.getName(),
                                 "DestinationType=" + DestinationOption.getLabel(destination.getType()),
