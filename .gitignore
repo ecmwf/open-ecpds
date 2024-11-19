@@ -3,5 +3,6 @@
 /docker/ecpds/mover/rpms/
 /etc/master/conf/GeoLite2-City.mmdb
 /etc/monitor/htdocs/resources/maps/*.kml
+/etc/monitor/htdocs/resources/maps/contacts.txt
 /lib/
 /target/
