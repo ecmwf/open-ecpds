@@ -440,6 +440,12 @@
 									<sources>
 										<source>
 											<location>etc/monitor/htdocs</location>
+											<excludes>
+												<exclude>
+													etc/monitor/htdocs/resources/maps/*.kml</exclude>
+												<exclude>
+													/etc/monitor/htdocs/resources/maps/contacts.txt</exclude>
+											</excludes>
 										</source>
 									</sources>
 								</mapping>
