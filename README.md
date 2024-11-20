@@ -250,9 +250,7 @@ To open the OpenECPDS project in Eclipse:
 To build the application from the source, follow these steps:
 
 - Select the [pom.xml](pom.xml) file in the **Project Explorer** view.
-- In the contextual menu, choose **Run As > Maven build...**
-- Enter the following goals: clean compile
-- Click **Run**.
+- In the contextual menu, choose **Run As > OpenECPDS Clean Compile**
 
 The application can now be started within Eclipse using the preconfigured Debug and Run options available: **OpenECPDS Master Server**, **OpenECPDS Mover Server**, and **OpenECPDS Monitor Server**. These configurations are accessible under **Run > Run Configurations...** and **Run > Debug Configurations...**
 
