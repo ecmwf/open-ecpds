@@ -403,7 +403,7 @@ public class SQLParameterParser {
     }
 
     /**
-     * Gets the position for key.
+     * Gets the position for key. Return -1 if not found.
      *
      * @param keyName
      *            the key name
@@ -411,7 +411,7 @@ public class SQLParameterParser {
      * @return the position for key
      */
     private int getPositionForKey(final String keyName) {
-        return IntStream.range(0, params.size()).filter(i -> params.keySet().toArray()[i].equals(keyName)).findFirst()
+        return IntStream.range(0, allowedOptions.size()).filter(i -> allowedOptions.get(i).equals(keyName)).findAny()
                 .orElse(-1);
     }
 
