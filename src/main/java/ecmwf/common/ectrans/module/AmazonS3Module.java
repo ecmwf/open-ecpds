@@ -90,9 +90,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.Deflater;
 import java.util.zip.GZIPOutputStream;
 
@@ -139,7 +137,6 @@ import ecmwf.common.rmi.SSLClientSocketFactory;
 import ecmwf.common.rmi.SocketConfig;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.technical.StreamPlugThread;
-import ecmwf.common.technical.Synchronized;
 import ecmwf.common.text.Format;
 
 /**
@@ -162,8 +159,8 @@ public final class AmazonS3Module extends TransferModule {
     /** The prefix. */
     private String s3prefix = "";
 
-    /** The s 3. */
-    private AmazonS3Cache s3 = null;
+    /** The s3. */
+    private Session s3 = null;
 
     /** The setup. */
     private ECtransSetup currentSetup = null;
@@ -184,8 +181,7 @@ public final class AmazonS3Module extends TransferModule {
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
     /**
-     * Allow adding alternative data and time patterns for the date conversion extracted from XML and skipping the MD5
-     * check for GET and PUT
+     * Allow skipping the MD5 check for GET and PUT.
      **/
     static {
         if (Cnf.at("AmazonS3", "skipMd5CheckStrategy", false)) {
@@ -290,12 +286,12 @@ public final class AmazonS3Module extends TransferModule {
         setup.setBooleanIfPresent(HOST_ECTRANS_TCP_LINGER_ENABLE, enable -> setup
                 .setIntegerIfPresent(HOST_ECTRANS_TCP_LINGER_TIME, time -> socketConfig.setTCPLinger(enable, time)));
         try {
-            s3 = AmazonS3Cache.getAmazonS3Cache(user, password, setup.getString(HOST_S3_LISTEN_ADDRESS), socketConfig,
+            s3 = Session.getSession(user, password, setup.getString(HOST_S3_LISTEN_ADDRESS), socketConfig,
                     setup.getString(HOST_S3_PROTOCOL), setup.getBoolean(HOST_S3_SSL_VALIDATION),
                     setup.getBoolean(HOST_S3_STRICT), setup.getBoolean(HOST_S3_ACCELERATION),
                     setup.getBoolean(HOST_S3_DUALSTACK), setup.getBoolean(HOST_S3_FORCE_GLOBAL_BUCKET_ACCESS),
                     setup.getBoolean(HOST_S3_DISABLE_CHUNKED_ENCODING),
-                    setup.getBoolean(HOST_S3_ENABLE_PATH_STYLE_ACCESS), bucketName, url, s3prefix,
+                    setup.getBoolean(HOST_S3_ENABLE_PATH_STYLE_ACCESS), bucketName, url,
                     isNotEmpty(region) ? region : Regions.DEFAULT_REGION.getName(), setup.getBoolean(HOST_S3_MK_BUCKET),
                     setup.getString(HOST_S3_ROLE_ARN), setup.getString(HOST_S3_ROLE_SESSION_NAME), getDebug());
             connected = true;
@@ -846,9 +842,8 @@ public final class AmazonS3Module extends TransferModule {
             _log.debug("Close connection");
             currentStatus = "CLOSE";
             StreamPlugThread.closeQuietly(s3input);
-            if (s3 != null) {
-                s3.shutdown();
-            }
+            if (s3 != null)
+                s3.getAmazonS3().shutdown();
             _log.debug("Close completed");
         } else {
             _log.debug("Already closed");
@@ -873,30 +868,31 @@ public final class AmazonS3Module extends TransferModule {
     }
 
     /**
-     * The Class AmazonS3Cache.
+     * The Class Session.
      */
-    private static class AmazonS3Cache {
-
-        /** The Constant instances. */
-        private static final Map<String, AmazonS3Cache> instances = new ConcurrentHashMap<>();
-
-        /** The Constant s3mutex. */
-        private static final Synchronized s3mutex = new Synchronized();
+    private static class Session {
 
         /** The amazon S 3. */
         private final AmazonS3 amazonS3;
-
-        /** The s 3 key. */
-        final String s3key;
-
-        /** The lock count. */
-        final AtomicInteger lockCount = new AtomicInteger();
 
         /** The socket factory. */
         final SSLClientSocketFactory socketFactory;
 
         /**
-         * Gets the amazon S 3 cache.
+         * Instantiates a new session.
+         *
+         * @param s3
+         *            the s 3
+         * @param clientSocketFactory
+         *            the client socket factory
+         */
+        Session(final AmazonS3 s3, final SSLClientSocketFactory clientSocketFactory) {
+            amazonS3 = s3;
+            socketFactory = clientSocketFactory;
+        }
+
+        /**
+         * Gets the Session.
          *
          * @param user
          *            the user
@@ -926,8 +922,6 @@ public final class AmazonS3Module extends TransferModule {
          *            the bucket name
          * @param url
          *            the url
-         * @param prefix
-         *            the prefix
          * @param region
          *            the region
          * @param mkBucket
@@ -939,152 +933,117 @@ public final class AmazonS3Module extends TransferModule {
          * @param debug
          *            the debug
          *
-         * @return the amazon S 3 cache
+         * @return the session
          *
          * @throws NoSuchAlgorithmException
          *             the no such algorithm exception
          * @throws KeyManagementException
          *             the key management exception
          */
-        static AmazonS3Cache getAmazonS3Cache(final String user, final String password, final String listenAddress,
+        static Session getSession(final String user, final String password, final String listenAddress,
                 final SocketConfig tcpConfig, final String protocol, final boolean sslValidation, final boolean strict,
                 final boolean acceleration, final boolean dualstack, final boolean forceGlobalBucketAccess,
                 final boolean disableChunkedEncoding, final boolean enablePathStyleAccess, final String bucketName,
-                final String url, final String prefix, final String region, final boolean mkBucket,
-                final String roleArn, final String roleSessionName, final boolean debug)
+                final String url, final String region, final boolean mkBucket, final String roleArn,
+                final String roleSessionName, final boolean debug)
                 throws NoSuchAlgorithmException, KeyManagementException {
-            final var key = new StringBuilder(user).append(password).append(listenAddress).append(strict)
-                    .append(acceleration).append(dualstack).append(forceGlobalBucketAccess)
-                    .append(disableChunkedEncoding).append(enablePathStyleAccess).append(bucketName).append(url)
-                    .append(prefix).append(region).append(mkBucket).append(roleArn).append(roleSessionName).toString();
-            final var mutex = s3mutex.getMutex(key);
-            synchronized (mutex.lock()) {
+            final var builder = AmazonS3ClientBuilder.standard();
+            final var clientConfiguration = new ClientConfiguration();
+            if (isNotEmpty(listenAddress)) {
                 try {
-                    var s3Cache = instances.get(key);
-                    if (s3Cache == null) {
-                        final var builder = AmazonS3ClientBuilder.standard();
-                        final var clientConfiguration = new ClientConfiguration();
-                        if (isNotEmpty(listenAddress)) {
-                            try {
-                                clientConfiguration.setLocalAddress(InetAddress.getByName(listenAddress));
-                            } catch (final UnknownHostException ignored) {
-                                _log.warn("Cannot set listen address: {}", listenAddress, ignored);
-                            }
-                        }
-                        final SSLClientSocketFactory clientSocketFactory;
-                        if (acceleration) {
-                            // Acceleration is not working with the tweaked SSL socket factory!
-                            clientSocketFactory = null;
-                        } else {
-                            clientSocketFactory = tcpConfig.getSSLSocketFactory(protocol, sslValidation);
-                            clientConfiguration.getApacheHttpClientConfig()
-                                    .withSslSocketFactory(new SSLConnectionSocketFactory(clientSocketFactory,
-                                            !strict ? NoopHostnameVerifier.INSTANCE : null));
-                        }
-                        builder.withCredentials(
-                                loadCredentials(user, password, region, clientConfiguration, roleArn, roleSessionName))
-                                .withClientConfiguration(clientConfiguration)
-                                .withForceGlobalBucketAccessEnabled(forceGlobalBucketAccess)
-                                .withAccelerateModeEnabled(acceleration).withDualstackEnabled(dualstack);
-                        if (acceleration || isEmpty(url)) {
-                            builder.withRegion(region);
-                        } else {
-                            builder.withEndpointConfiguration(new EndpointConfiguration(url, region));
-                        }
-                        if (disableChunkedEncoding) {
-                            builder.disableChunkedEncoding();
-                        }
-                        if (enablePathStyleAccess) {
-                            builder.enablePathStyleAccess();
-                        }
-                        if (debug) {
-                            builder.withRequestHandlers(new RequestHandler2() {
-                                @Override
-                                public void afterResponse(final Request<?> request, final Response<?> response) {
-                                    final var headers2 = response.getHttpResponse().getHttpRequest().getAllHeaders();
-                                    for (final Header header : headers2) {
-                                        _log.debug("Request Headers: {}:{}", header.getName(), header.getValue());
-                                    }
-                                    final var header1 = response.getHttpResponse().getAllHeaders();
-                                    for (final Map.Entry<String, List<String>> entry : header1.entrySet()) {
-                                        final var sb = new StringBuilder();
-                                        for (final String value : entry.getValue()) {
-                                            sb.append((sb.length() > 0 ? "," : "") + value);
-                                        }
-                                        _log.debug("Response Headers: {}:{}", entry.getKey(), sb);
-                                    }
-                                }
-
-                                @Override
-                                public void beforeRequest(final Request<?> request) {
-                                    final var parameters = request.getParameters();
-                                    for (final Map.Entry<String, List<String>> entry : parameters.entrySet()) {
-                                        final var sb = new StringBuilder();
-                                        for (final String key : entry.getValue()) {
-                                            sb.append((sb.length() > 0 ? "," : "") + key);
-                                        }
-                                        _log.debug("Request Parameters: {}:{}", entry.getKey(), sb);
-                                    }
-                                    final var headers = request.getHeaders();
-                                    for (final Map.Entry<String, String> entry : headers.entrySet()) {
-                                        _log.debug("Request Headers: {},{}", entry.getKey(), entry.getValue());
-                                    }
-                                }
-                            });
-                        }
-                        var connected = false;
-                        AmazonS3 s3 = null;
-                        try {
-                            s3 = builder.build();
-                            if (isNotEmpty(bucketName) && mkBucket) {
-                                // The user has configured a Bucket Name!
-                                var bucketFound = false;
-                                for (final Bucket bucket : s3.listBuckets()) {
-                                    if (bucketName.equals(bucket.getName())) {
-                                        bucketFound = true;
-                                        break;
-                                    }
-                                }
-                                if (!bucketFound) {
-                                    s3.createBucket(bucketName);
-                                }
-                            }
-                            connected = true;
-                        } finally {
-                            if (!connected && s3 != null) {
-                                try {
-                                    s3.shutdown();
-                                } catch (final Throwable t) {
-                                    // Ignore!
-                                }
-                            }
-                        }
-                        s3Cache = new AmazonS3Cache(key, s3, clientSocketFactory);
-                        instances.put(key, s3Cache);
-                    }
-                    s3Cache.lock();
-                    return s3Cache;
-                } finally {
-                    mutex.free();
+                    clientConfiguration.setLocalAddress(InetAddress.getByName(listenAddress));
+                } catch (final UnknownHostException ignored) {
+                    _log.warn("Cannot set listen address: {}", listenAddress, ignored);
                 }
             }
-        }
+            final SSLClientSocketFactory clientSocketFactory;
+            if (acceleration) {
+                // Acceleration is not working with the tweaked SSL socket factory!
+                clientSocketFactory = null;
+            } else {
+                clientSocketFactory = tcpConfig.getSSLSocketFactory(protocol, sslValidation);
+                clientConfiguration.getApacheHttpClientConfig().withSslSocketFactory(new SSLConnectionSocketFactory(
+                        clientSocketFactory, !strict ? NoopHostnameVerifier.INSTANCE : null));
+            }
+            builder.withCredentials(
+                    loadCredentials(user, password, region, clientConfiguration, roleArn, roleSessionName))
+                    .withClientConfiguration(clientConfiguration)
+                    .withForceGlobalBucketAccessEnabled(forceGlobalBucketAccess).withAccelerateModeEnabled(acceleration)
+                    .withDualstackEnabled(dualstack);
+            if (acceleration || isEmpty(url)) {
+                builder.withRegion(region);
+            } else {
+                builder.withEndpointConfiguration(new EndpointConfiguration(url, region));
+            }
+            if (disableChunkedEncoding) {
+                builder.disableChunkedEncoding();
+            }
+            if (enablePathStyleAccess) {
+                builder.enablePathStyleAccess();
+            }
+            if (debug) {
+                builder.withRequestHandlers(new RequestHandler2() {
+                    @Override
+                    public void afterResponse(final Request<?> request, final Response<?> response) {
+                        final var headers2 = response.getHttpResponse().getHttpRequest().getAllHeaders();
+                        for (final Header header : headers2) {
+                            _log.debug("Request Headers: {}:{}", header.getName(), header.getValue());
+                        }
+                        final var header1 = response.getHttpResponse().getAllHeaders();
+                        for (final Map.Entry<String, List<String>> entry : header1.entrySet()) {
+                            final var sb = new StringBuilder();
+                            for (final String value : entry.getValue()) {
+                                sb.append((sb.length() > 0 ? "," : "") + value);
+                            }
+                            _log.debug("Response Headers: {}:{}", entry.getKey(), sb);
+                        }
+                    }
 
-        /**
-         * Instantiates a new amazon S 3 cache.
-         *
-         * @param key
-         *            the key
-         * @param s3
-         *            the s 3
-         * @param clientSocketFactory
-         *            the client socket factory
-         */
-        AmazonS3Cache(final String key, final AmazonS3 s3, final SSLClientSocketFactory clientSocketFactory) {
-            s3key = key;
-            amazonS3 = s3;
-            socketFactory = clientSocketFactory;
-            _log.debug("Cache {}", key);
+                    @Override
+                    public void beforeRequest(final Request<?> request) {
+                        final var parameters = request.getParameters();
+                        for (final Map.Entry<String, List<String>> entry : parameters.entrySet()) {
+                            final var sb = new StringBuilder();
+                            for (final String key : entry.getValue()) {
+                                sb.append((sb.length() > 0 ? "," : "") + key);
+                            }
+                            _log.debug("Request Parameters: {}:{}", entry.getKey(), sb);
+                        }
+                        final var headers = request.getHeaders();
+                        for (final Map.Entry<String, String> entry : headers.entrySet()) {
+                            _log.debug("Request Headers: {},{}", entry.getKey(), entry.getValue());
+                        }
+                    }
+                });
+            }
+            var connected = false;
+            AmazonS3 s3 = null;
+            try {
+                s3 = builder.build();
+                if (isNotEmpty(bucketName) && mkBucket) {
+                    // The user has configured a Bucket Name!
+                    var bucketFound = false;
+                    for (final Bucket bucket : s3.listBuckets()) {
+                        if (bucketName.equals(bucket.getName())) {
+                            bucketFound = true;
+                            break;
+                        }
+                    }
+                    if (!bucketFound) {
+                        s3.createBucket(bucketName);
+                    }
+                }
+                connected = true;
+            } finally {
+                if (!connected && s3 != null) {
+                    try {
+                        s3.shutdown();
+                    } catch (final Throwable t) {
+                        // Ignore!
+                    }
+                }
+            }
+            return new Session(s3, clientSocketFactory);
         }
 
         /**
@@ -1105,37 +1064,6 @@ public final class AmazonS3Module extends TransferModule {
         void updateStatistics() throws IOException {
             if (socketFactory != null)
                 socketFactory.updateStatistics();
-        }
-
-        /**
-         * Lock.
-         */
-        void lock() {
-            final var count = lockCount.addAndGet(1);
-            _log.debug("Lock {}:{}", s3key, count);
-        }
-
-        /**
-         * Shutdown.
-         */
-        void shutdown() {
-            var close = false;
-            final var mutex = s3mutex.getMutex(s3key);
-            synchronized (mutex.lock()) {
-                final var count = lockCount.addAndGet(-1);
-                try {
-                    if (close = count <= 0) {
-                        instances.remove(s3key);
-                    }
-                } finally {
-                    mutex.free();
-                }
-                _log.debug("Free {}:{}", s3key, count);
-            }
-            if (close) {
-                _log.debug("Shutdown {}", s3key);
-                amazonS3.shutdown();
-            }
         }
 
         /**
