@@ -936,7 +936,7 @@
 		<dependency>
 			<groupId>com.amazonaws</groupId>
 			<artifactId>aws-java-sdk-bundle</artifactId>
-			<version>1.12.773</version>
+			<version>1.12.778</version>
 		</dependency>
 		<dependency>
 			<groupId>com.azure</groupId>
