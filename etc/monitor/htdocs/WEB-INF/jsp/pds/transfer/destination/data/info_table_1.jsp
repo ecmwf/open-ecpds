@@ -86,14 +86,22 @@
 </table>
 
 <script>
-	var refresh = $
-	{
-		destinationDetailActionForm.refreshPeriod
-	}
+	var refresh = ${destinationDetailActionForm.refreshPeriod};
 	if (refresh > 0) {
-		setTimeout("window.location.reload(true)", refresh * 1000)
-		setTimeout("window.location.reload(true)", refresh * 1000 * 5)
-		setTimeout("window.location.reload(true)", refresh * 1000 * 15)
-		setTimeout("window.location.reload(true)", refresh * 1000 * 30)
+		setTimeout(function() {
+			window.location.reload(true);
+		}, refresh * 1000);
+
+		setTimeout(function() {
+			window.location.reload(true);
+		}, refresh * 1000 * 5);
+
+		setTimeout(function() {
+			window.location.reload(true);
+		}, refresh * 1000 * 15);
+
+		setTimeout(function() {
+			window.location.reload(true);
+		}, refresh * 1000 * 30);
 	}
 </script>

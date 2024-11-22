@@ -37,9 +37,11 @@
 
 <script>
 	var refresh = '${param["refreshPeriod"]}';
-	if (refresh != '' && refresh > 0) {
-		setTimeout("window.location.reload(true)", refresh * 1000)
-	}
+		if (refresh != '' && refresh > 0) {
+			setTimeout(function() {
+				window.location.reload(true);
+			}, refresh * 1000);
+		}
 </script>
 
 <br />

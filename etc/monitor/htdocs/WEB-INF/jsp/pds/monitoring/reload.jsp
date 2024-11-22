@@ -3,12 +3,11 @@
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth" %>
 
 <script>
-	// Refresh the page with the given period. Set other later three reloads in case the server is down
+	// Refresh the page with the given period. Set additional reloads in case the server is down.
 	var refresh = ${monSesForm.refreshPeriod};
-	setTimeout("window.location.reload(true)",refresh*1000)
-	//setTimeout("window.location.reload(true)",refresh*1000*5)
-	//setTimeout("window.location.reload(true)",refresh*1000*15)
-	//setTimeout("window.location.reload(true)",refresh*1000*30)
+	setTimeout(function() {
+		window.location.reload(true);
+	}, refresh * 1000);
 </script>
 
 	<table border="0" cellspacing="2" cellpadding="2">
