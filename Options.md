@@ -687,6 +687,9 @@ These options help fine-tune the Google Cloud Storage transfer module (gcs) and 
 ### gcs.allowEmptyBucketName
 Allow empty bucket names (no "gcs.bucketName" option). In that case the prefix and path specified in the directory field are used.
 
+### gcs.bucketLocation
+Allows specifying a bucket's geographic location. This is taken into account only when creating a new bucket, as this is non-editable metadata (together with the bucket name).
+
 ### gcs.bucketName
 This option allows for the provision of the GCS bucket name. If the bucket name is not explicitly defined, it is extracted from the path specified in the directory field.
 

@@ -22,13 +22,11 @@ package ecmwf.common.ectrans.module;
  * ECMWF Product Data Store (ECPDS) Project
  *
  * @author Cristina-Iulia Bucur <cristina-iulia.bucur@ecmwf.int>, ECMWF.
- * @version 6.7.7
+ * @version 6.7.9
  * @since 2024-07-01
  */
 
-import com.google.api.gax.paging.Page;
 import com.google.auth.oauth2.ServiceAccountCredentials;
-import com.google.cloud.storage.Acl.Entity;
 import com.google.cloud.storage.Storage.BlobListOption;
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.BlobId;
@@ -73,7 +71,7 @@ import static ecmwf.common.text.Util.isNotEmpty;
 import static ecmwf.common.ectrans.ECtransOptions.*;
 
 /**
- * The Class GCSModule.
+ * The Class GcsModule.
  */
 public final class GcsModule extends TransferModule {
 
@@ -141,8 +139,9 @@ public final class GcsModule extends TransferModule {
      */
     @Override
     public void updateSocketStatistics() throws IOException {
-        if (socketFactory != null)
+        if (socketFactory != null) {
             socketFactory.updateStatistics();
+        }
     }
 
     /**
@@ -156,6 +155,7 @@ public final class GcsModule extends TransferModule {
      * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
+    @Override
     public void connect(final String location, final ECtransSetup setup) throws IOException {
 
         // The location is: user:password@host/bucketName
@@ -169,27 +169,28 @@ public final class GcsModule extends TransferModule {
         if ((pos = location.lastIndexOf("@")) == -1) {
             throw new IOException("Malformed URL ('@' not found)");
         }
-        String host = location.substring(pos + 1);
-        String user = location.substring(0, pos);
+        var host = location.substring(pos + 1);
+        var user = location.substring(0, pos);
         if ((pos = user.indexOf(":")) == -1) {
             throw new IOException("Malformed URL (':' not found)");
         }
-        final String password = user.substring(pos + 1);
+        final var password = user.substring(pos + 1);
         user = user.substring(0, pos);
         if ((pos = host.indexOf("/")) != -1) {
             bucketName = host.substring(pos + 1);
             host = host.substring(0, pos);
         }
-        final int port = getPort(getSetup());
+        final var port = getPort(getSetup());
 
         scheme = setup.getString(HOST_GCS_SCHEME);
         bucketName = setup.getString(HOST_GCS_BUCKET_NAME);
         gcsprefix = setup.getString(HOST_GCS_PREFIX).trim();
 
-        if (isNotEmpty(gcsprefix) && !gcsprefix.endsWith("/"))
+        if (isNotEmpty(gcsprefix) && !gcsprefix.endsWith("/")) {
             gcsprefix += "/";
+        }
 
-        final String url = setup.get(HOST_GCS_URL, scheme + "://" + host + (port != 80 ? ":" + port : ""));
+        final var url = setup.get(HOST_GCS_URL, scheme + "://" + host + (port != 80 ? ":" + port : ""));
         _log.debug("GCS connection on {} ({})", url, user);
 
         setAttribute("remote.hostName", host);
@@ -202,7 +203,7 @@ public final class GcsModule extends TransferModule {
         } else {
             statistics = null;
         }
-        final SocketConfig socketConfig = new SocketConfig(statistics, "GCSSocketConfig");
+        final var socketConfig = new SocketConfig(statistics, "GCSSocketConfig");
         socketConfig.setDebug(getDebug());
         setup.getOptionalBoolean(HOST_ECTRANS_TCP_NO_DELAY).ifPresent(socketConfig::setTcpNoDelay);
         setup.getOptionalBoolean(HOST_ECTRANS_TCP_KEEP_ALIVE).ifPresent(socketConfig::setKeepAlive);
@@ -221,15 +222,15 @@ public final class GcsModule extends TransferModule {
             });
         });
 
-        boolean connected = false;
+        var connected = false;
 
         ServiceAccountCredentials credentials = null;
 
         projectId = setup.getString(HOST_GCS_PROJECT_ID);
-        final String clientId = isNotEmpty(user) ? user : setup.getString(HOST_GCS_CLIENT_ID);
-        final String privateKeyId = isNotEmpty(password) ? password : setup.getString(HOST_GCS_PRIVATE_KEY_ID);
-        final String privateKey = setup.getString(HOST_GCS_PRIVATE_KEY); // RSA private key in PKCS8 format
-        final String clientEmail = setup.getString(HOST_GCS_CLIENT_EMAIL);
+        final var clientId = isNotEmpty(user) ? user : setup.getString(HOST_GCS_CLIENT_ID);
+        final var privateKeyId = isNotEmpty(password) ? password : setup.getString(HOST_GCS_PRIVATE_KEY_ID);
+        final var privateKey = setup.getString(HOST_GCS_PRIVATE_KEY); // RSA private key in PKCS8 format
+        final var clientEmail = setup.getString(HOST_GCS_CLIENT_EMAIL);
 
         try {
             credentials = ServiceAccountCredentials.newBuilder().setClientId(clientId).setClientEmail(clientEmail)
@@ -248,7 +249,7 @@ public final class GcsModule extends TransferModule {
 
             if (isNotEmpty(bucketName) && setup.getBoolean(HOST_GCS_MK_BUCKET)) {
                 // The user has configured a Bucket Name!
-                boolean bucketFound = false;
+                var bucketFound = false;
 
                 for (final Bucket bucket : gcs.list().iterateAll()) {
                     if (bucketName.equals(bucket.getName())) {
@@ -256,8 +257,16 @@ public final class GcsModule extends TransferModule {
                         break;
                     }
                 }
-                if (!bucketFound)
-                    gcs.create(BucketInfo.of(bucketName));
+                if (!bucketFound) {
+                    final var region = setup.getString(HOST_GCS_BUCKET_LOCATION);
+                    // gcs.create(BucketInfo.of(bucketName));
+                    if (isNotEmpty(region)) {
+                        gcs.create(BucketInfo.newBuilder(bucketName).setLocation(region).build());
+                    } else {
+                        gcs.create(BucketInfo.newBuilder(bucketName).build());
+                    }
+
+                }
             }
 
             connected = true;
@@ -288,15 +297,15 @@ public final class GcsModule extends TransferModule {
      *             Signals that an I/O exception has occurred.
      */
     private String[] getBucketNameAndObjectName(final String name) throws IOException {
-        final StringTokenizer token = new StringTokenizer(name == null ? "" : name.replace('\\', '/'), "/");
-        final int count = token.countTokens();
+        final var token = new StringTokenizer(name == null ? "" : name.replace('\\', '/'), "/");
+        final var count = token.countTokens();
         final String[] result;
         if (isNotEmpty(bucketName)) {
             // The bucket name is defined in the setup, not the path!
             if (count == 0) {
                 throw new IOException("No object name specified (filename)");
             } else {
-                final String fileName = token.nextToken("\0");
+                final var fileName = token.nextToken("\0");
                 result = new String[] { bucketName, gcsprefix + fileName };
             }
         } else {
@@ -309,16 +318,17 @@ public final class GcsModule extends TransferModule {
                 } else if (count == 1) {
                     throw new IOException("No object specified (filename)");
                 } else {
-                    final String extractedBucketName = token.nextToken();
+                    final var extractedBucketName = token.nextToken();
                     // final String blobName = token.nextToken("\0").substring(1);
-                    final String fileName = token.nextToken("\0");
+                    final var fileName = token.nextToken("\0");
                     result = new String[] { extractedBucketName, gcsprefix + fileName };
                 }
             }
         }
         result[1] = processKey(result[1]);
-        if (getDebug())
+        if (getDebug()) {
             _log.debug("BucketName: {}, BlobName: {}", result[0], result[1]);
+        }
         return result;
     }
 
@@ -343,15 +353,16 @@ public final class GcsModule extends TransferModule {
      * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
+    @Override
     public void del(final String name) throws IOException { // name can be a folder name, prefix or object name
         _log.debug("Del file {}", name);
         setStatus("DEL");
-        final String[] bucketNameAndObject = getBucketNameAndObjectName(name);
+        final var bucketNameAndObject = getBucketNameAndObjectName(name);
         try {
-            Blob blob = gcs.get(bucketNameAndObject[0], bucketNameAndObject[1]);
+            var blob = gcs.get(bucketNameAndObject[0], bucketNameAndObject[1]);
 
             // for avoiding race conditions, 412 error if precondition does not match
-            Storage.BlobSourceOption precondition = Storage.BlobSourceOption.generationMatch(blob.getGeneration());
+            var precondition = Storage.BlobSourceOption.generationMatch(blob.getGeneration());
 
             gcs.delete(blob.getBucket(), blob.getName(), precondition);
 
@@ -378,19 +389,21 @@ public final class GcsModule extends TransferModule {
      * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
+    @Override
     public boolean put(final InputStream in, final String name, final long posn, final long size) throws IOException {
         _log.debug("Put file {} ({})", name, posn);
         setStatus("PUT");
-        final String[] bucketNameAndObject = getBucketNameAndObjectName(name);
-        if (posn > 0)
+        final var bucketNameAndObject = getBucketNameAndObjectName(name);
+        if (posn > 0) {
             throw new IOException("Resume not supported by the " + getSetup().getModuleName() + " module");
+        }
 
         try {
-            String bucketName = bucketNameAndObject[0];
-            String objectName = bucketNameAndObject[1];
+            var bucketName = bucketNameAndObject[0];
+            var objectName = bucketNameAndObject[1];
 
-            BlobId objectId = BlobId.of(bucketName, objectName);
-            BlobInfo objectInfo = BlobInfo.newBuilder(objectId).build();
+            var objectId = BlobId.of(bucketName, objectName);
+            var objectInfo = BlobInfo.newBuilder(objectId).build();
 
             // set to avoid potential race
             // request returns a 412 error if preconditions are not met
@@ -432,19 +445,21 @@ public final class GcsModule extends TransferModule {
      * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
+    @Override
     public OutputStream put(final String name, final long posn, final long size) throws IOException {
         _log.warn("Fake put of: {} (posn={})", name, posn);
         setStatus("PUT");
 
-        final String[] bucketNameAndObject = getBucketNameAndObjectName(name);
-        if (posn > 0)
+        final var bucketNameAndObject = getBucketNameAndObjectName(name);
+        if (posn > 0) {
             throw new IOException("Resume not supported by the " + getSetup().getModuleName() + " module");
+        }
         _log.debug("Using GCS put");
 
         try {
 
-            BlobId objectId = BlobId.of(bucketNameAndObject[0], bucketNameAndObject[1]);
-            BlobInfo objectInfo = BlobInfo.newBuilder(objectId).build();
+            var objectId = BlobId.of(bucketNameAndObject[0], bucketNameAndObject[1]);
+            var objectInfo = BlobInfo.newBuilder(objectId).build();
 
             return Channels.newOutputStream(gcs.writer(objectInfo));
 
@@ -468,13 +483,14 @@ public final class GcsModule extends TransferModule {
      * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
+    @Override
     public InputStream get(String name, long posn) throws IOException {
         _log.debug("Get file " + name);
         setStatus("GET");
         if (posn > 0) {
             throw new IOException("Resume not supported by the " + getSetup().getModuleName() + " module");
         }
-        final String[] bucketNameAndObject = getBucketNameAndObjectName(name);
+        final var bucketNameAndObject = getBucketNameAndObjectName(name);
 
         try {
             gcsInput = Channels.newInputStream(gcs.reader(bucketNameAndObject[0], bucketNameAndObject[1]));
@@ -497,10 +513,11 @@ public final class GcsModule extends TransferModule {
      * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
+    @Override
     public long size(final String name) throws IOException {
         _log.debug("Size {}", name);
         setStatus("SIZE");
-        final String[] bucketNameAndObject = getBucketNameAndObjectName(name);
+        final var bucketNameAndObject = getBucketNameAndObjectName(name);
         try {
             // content length of the data in bytes
             return gcs.get(bucketNameAndObject[0], bucketNameAndObject[1],
@@ -520,20 +537,29 @@ public final class GcsModule extends TransferModule {
      * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
+    @Override
     public void mkdir(final String directory) throws IOException {
         _log.debug("Mkdir {}", directory);
         setStatus("MKDIR");
-        if (isNotEmpty(bucketName))
+        if (isNotEmpty(bucketName)) {
             throw new IOException(
                     "Mkdir not allowed when parameter " + getSetup().getModuleName() + ".bucketName is set");
-        final StringTokenizer token = new StringTokenizer(directory == null ? "" : directory.replace('\\', '/'), "/");
-        final int count = token.countTokens();
+        }
+        final var token = new StringTokenizer(directory == null ? "" : directory.replace('\\', '/'), "/");
+        final var count = token.countTokens();
         if (count == 0) {
             throw new IOException("Invalid directory specified: empty");
         } else if (count == 1) {
             try {
-                gcs.create(BucketInfo.newBuilder(token.nextToken()).build());
+                final var newBucketName = token.nextToken();
+                final var region = currentSetup.getString(HOST_GCS_BUCKET_LOCATION);
+                // gcs.create(BucketInfo.newBuilder(token.nextToken()).build());
                 // gcs.create(BucketInfo.of(token.nextToken())); // alternative
+                if (isNotEmpty(region)) {
+                    gcs.create(BucketInfo.newBuilder(newBucketName).setLocation(region).build());
+                } else {
+                    gcs.create(BucketInfo.newBuilder(newBucketName).build());
+                }
 
             } catch (Exception e) {
                 _log.debug("createBucket", e);
@@ -553,14 +579,16 @@ public final class GcsModule extends TransferModule {
      * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
+    @Override
     public void rmdir(final String directory) throws IOException {
         _log.debug("Rmdir {}", directory);
         setStatus("RMDIR");
-        if (isNotEmpty(bucketName))
+        if (isNotEmpty(bucketName)) {
             throw new IOException(
                     "Rmdir not allowed when parameter " + getSetup().getModuleName() + ".bucketName is set");
-        final StringTokenizer token = new StringTokenizer(directory == null ? "" : directory.replace('\\', '/'), "/");
-        final int count = token.countTokens();
+        }
+        final var token = new StringTokenizer(directory == null ? "" : directory.replace('\\', '/'), "/");
+        final var count = token.countTokens();
         if (count == 0) {
             throw new IOException("Invalid directory specified: empty");
         } else if (count == 1) {
@@ -606,11 +634,12 @@ public final class GcsModule extends TransferModule {
      *             Signals that an I/O exception has occurred.
      */
     private void list(final ListOutput output, final String directory, final String pattern) throws IOException {
-        if (getDebug())
+        if (getDebug()) {
             _log.debug("list: {},{}", directory, pattern);
+        }
 
-        final StringTokenizer token = new StringTokenizer(directory == null ? "" : directory.replace('\\', '/'), "/");
-        final int count = token.countTokens();
+        final var token = new StringTokenizer(directory == null ? "" : directory.replace('\\', '/'), "/");
+        final var count = token.countTokens();
         try {
             if (isNotEmpty(bucketName)) {
                 // We have a Bucket defined in the setup!
@@ -626,7 +655,7 @@ public final class GcsModule extends TransferModule {
                     // We have to display the list of Buckets!
                     listBuckets(output, null, pattern);
                 } else if (count == 1) {
-                    final String extractedBucketName = token.nextToken();
+                    final var extractedBucketName = token.nextToken();
                     if (extractedBucketName.contains("*") || extractedBucketName.contains("?")) {
                         // the name contains wildcards so we will show the list!
                         listBuckets(output, bucketName, pattern);
@@ -636,7 +665,7 @@ public final class GcsModule extends TransferModule {
                     }
                 } else {
                     // We have a file name specified!
-                    final String extractedBucketName = token.nextToken();
+                    final var extractedBucketName = token.nextToken();
                     listObjects(output, extractedBucketName, processKey(token.nextToken("\0")), pattern);
                 }
             }
@@ -663,6 +692,7 @@ public final class GcsModule extends TransferModule {
      * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
+    @Override
     public String[] listAsStringArray(final String directory, final String pattern) throws IOException {
         _log.debug("listAsStringArray: {},{}", directory, pattern);
         setStatus("LIST");
@@ -685,11 +715,12 @@ public final class GcsModule extends TransferModule {
      * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
+    @Override
     public byte[] listAsByteArray(final String directory, final String pattern) throws IOException {
         _log.debug("listAsByteArray: {},{}", directory, pattern);
         setStatus("LIST");
-        final ByteArrayOutputStream out = new ByteArrayOutputStream();
-        final GZIPOutputStream gzip = new GZIPOutputStream(out, Deflater.BEST_COMPRESSION);
+        final var out = new ByteArrayOutputStream();
+        final var gzip = new GZIPOutputStream(out, Deflater.BEST_COMPRESSION);
 
         list(line -> gzip.write(line.concat("\n").getBytes()), directory, pattern);
         gzip.close();
@@ -711,24 +742,26 @@ public final class GcsModule extends TransferModule {
      */
     private void listBuckets(final ListOutput output, final String bucketName, final String pattern)
             throws IOException {
-        if (getDebug())
+        if (getDebug()) {
             _log.debug("listBuckets: {},{}", bucketName, pattern);
+        }
 
-        Page<Bucket> buckets = gcs.list();
+        var buckets = gcs.list();
         for (final Bucket bucket : buckets.iterateAll()) {
             if (bucket != null) {
-                final Entity owner = bucket.getOwner();
-                final String ownerName = owner != null ? owner.toString() : "unknown";
-                final String name = bucket.getName();
+                final var owner = bucket.getOwner();
+                final var ownerName = owner != null ? owner.toString() : "unknown";
+                final var name = bucket.getName();
 
                 if ((pattern == null || name.matches(pattern))
-                        && (bucketName == null || new WildcardFileFilter(bucketName).accept(new File(name))))
+                        && (bucketName == null || new WildcardFileFilter(bucketName).accept(new File(name)))) {
                     output.add(Format.getFtpList("drw-r--r--", getSetup().get(HOST_GCS_FTPUSER, ownerName),
                             getSetup().get(HOST_GCS_FTPGROUP, ownerName), "2048",
                             bucket.getCreateTimeOffsetDateTime() != null
                                     ? (bucket.getCreateTimeOffsetDateTime().toEpochSecond() * 1000)
                                     : new Date().getTime(),
                             name));
+                }
 
             }
         }
@@ -751,10 +784,11 @@ public final class GcsModule extends TransferModule {
      */
     private void listObjects(final ListOutput output, final String bucketName, final String fileName,
             final String pattern) throws IOException {
-        if (getDebug())
+        if (getDebug()) {
             _log.debug("listObjects: {},{},{}", bucketName, fileName, pattern);
+        }
 
-        final String prefix = gcsprefix + (fileName != null ? fileName : "");
+        final var prefix = gcsprefix + (fileName != null ? fileName : "");
 
         if (isNotEmpty(prefix)) { // prefix cannot be null, but it can be blank
             if (getDebug()) {
@@ -763,32 +797,34 @@ public final class GcsModule extends TransferModule {
         }
 
         // listing current level directories and files
-        final Iterable<Blob> blobs = gcs
+        final var blobs = gcs
                 .list(bucketName, BlobListOption.currentDirectory(),
                         Storage.BlobListOption
                                 .prefix(prefix.isBlank() ? "" : (prefix.endsWith("/") ? prefix : prefix + "/")))
                 .iterateAll();
 
         for (final Blob blob : blobs) {
-            String name = blob.getName();
-            if (getDebug())
+            var name = blob.getName();
+            if (getDebug()) {
                 _log.debug("Processing prefix+filename: {}", name);
+            }
             if (isNotEmpty(prefix)) {
                 // one of the entries will be an empty one; e.g. prefix = "folder_1/" => name=""
                 name = name.substring(prefix.length());
-                if (getDebug())
+                if (getDebug()) {
                     _log.debug("Name: {} ({})", name, pattern);
+                }
             }
 
             if (pattern == null || name.matches(pattern)) {
                 // blob.isDirectory() considers root folder as file when a prefix is given
-                final boolean isDirectory = name.endsWith("/");
-                final Entity owner = blob.getOwner();
-                final String ownerName = owner != null ? owner.toString() : "unknown";
+                final var isDirectory = name.endsWith("/");
+                final var owner = blob.getOwner();
+                final var ownerName = owner != null ? owner.toString() : "unknown";
 
                 if (!name.isBlank()) {
 
-                    final String entry = Format.getFtpList((isDirectory ? "d" : "-") + "rw-r--r--",
+                    final var entry = Format.getFtpList((isDirectory ? "d" : "-") + "rw-r--r--",
                             getSetup().get(HOST_GCS_FTPUSER, ownerName), getSetup().get(HOST_GCS_FTPGROUP, ownerName),
                             String.valueOf(blob.getSize()),
                             blob.getUpdateTimeOffsetDateTime() != null
@@ -796,8 +832,9 @@ public final class GcsModule extends TransferModule {
                                     : new Date().getTime(),
                             (isDirectory ? name.substring(0, name.length() - 1) : name));
                     output.add(entry);
-                    if (getDebug())
+                    if (getDebug()) {
                         _log.debug("Adding entry: {}", entry);
+                    }
                 }
             }
         }
@@ -812,8 +849,9 @@ public final class GcsModule extends TransferModule {
      *             Signals that an I/O exception has occurred.
      */
     private ECtransSetup getSetup() throws IOException {
-        if (closed.get())
+        if (closed.get()) {
             throw new IOException("Module closed");
+        }
         return currentSetup;
     }
 
@@ -823,18 +861,20 @@ public final class GcsModule extends TransferModule {
      * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
+    @Override
     public void close() throws IOException {
         if (closed.compareAndSet(false, true)) {
             _log.debug("Close connection");
             currentStatus = "CLOSE";
             StreamPlugThread.closeQuietly(gcsInput);
-            if (gcs != null)
+            if (gcs != null) {
                 try {
                     gcs.close();
                 } catch (Exception e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
+            }
             _log.debug("Close completed");
         } else {
             _log.debug("Already closed");
@@ -852,8 +892,9 @@ public final class GcsModule extends TransferModule {
      */
     private void setStatus(final String status) throws IOException {
         _log.debug("Status set to: {}", status);
-        if (closed.get())
+        if (closed.get()) {
             throw new IOException("Module closed");
+        }
         currentStatus = status;
     }
 
