@@ -39,7 +39,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import ecmwf.common.ecaccess.AbstractTicket;
-import ecmwf.common.ecaccess.StarterServer;
 import ecmwf.common.plugin.SimplePlugin;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.technical.GenericFile;
@@ -63,14 +62,14 @@ public final class ECproxyPlugin extends SimplePlugin {
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(ECproxyPlugin.class);
 
+    /** The mover. */
+    private static final MoverServer _mover = getCaller(MoverServer.class);
+
     /** The Constant _NAME. */
     private static final String _NAME = "ECproxyPlugin";
 
     /** The Constant _VERSION. */
     private static final String _VERSION = Version.getFullVersion();
-
-    /** The Constant _mover. */
-    private static final MoverServer _mover = StarterServer.getInstance(MoverServer.class);
 
     /** The _target. */
     private GenericFile _target = null;

@@ -41,7 +41,6 @@ import com.hivemq.embedded.EmbeddedExtension;
 import com.hivemq.embedded.EmbeddedHiveMQ;
 import com.hivemq.embedded.EmbeddedHiveMQBuilder;
 
-import ecmwf.common.ecaccess.StarterServer;
 import ecmwf.common.plugin.PluginThread;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.version.Version;
@@ -54,8 +53,8 @@ public class MqttPlugin extends PluginThread {
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(MqttPlugin.class);
 
-    /** The Constant mover. */
-    private static final MoverServer mover = StarterServer.getInstance(MoverServer.class);
+    /** The mover. */
+    private static final MoverServer mover = getCaller(MoverServer.class);
 
     /** The Constant NAME. */
     private static final String NAME = "MqttPlugin";
