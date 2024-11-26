@@ -42,6 +42,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.jetty.http.HttpVersion;
+import org.eclipse.jetty.http.UriCompliance;
 import org.eclipse.jetty.rewrite.handler.HeaderPatternRule;
 import org.eclipse.jetty.rewrite.handler.RewriteHandler;
 import org.eclipse.jetty.security.ConstraintMapping;
@@ -159,6 +160,7 @@ public final class HttpPlugin extends PluginThread {
             server.manage(threadPool);
             // Http configuration
             final var httpConfig = new HttpConfiguration();
+            httpConfig.setUriCompliance(UriCompliance.RFC3986);
             httpConfig.setSecureScheme("https");
             httpConfig.setSecurePort(httpsPort);
             httpConfig.setOutputBufferSize(Cnf.at("HttpPlugin", "outputBufferSize", 32768));
