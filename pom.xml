@@ -19,7 +19,7 @@
 		<packager.name>Laurent Gougeon</packager.name>
 		<packager.email>laurent.gougeon@ecmwf.int</packager.email>
 		<packager.distribution>OpenECPDS</packager.distribution>
-		<build.number>22102024</build.number>
+		<build.number>09112024</build.number>
 	</properties>
 	<licenses>
 		<license>
@@ -1049,9 +1049,24 @@
 			<version>2024.7</version>
 		</dependency>
 		<dependency>
+			<groupId>net.i2p.crypto</groupId>
+			<artifactId>eddsa</artifactId>
+			<version>0.3.0</version>
+		</dependency>
+		<dependency>
 			<groupId>com.github.mwiede</groupId>
 			<artifactId>jsch</artifactId>
 			<version>0.2.20</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.sshd</groupId>
+			<artifactId>sshd-sftp</artifactId>
+			<version>2.14.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.sshd</groupId>
+			<artifactId>sshd-scp</artifactId>
+			<version>2.14.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.jsoup</groupId>
