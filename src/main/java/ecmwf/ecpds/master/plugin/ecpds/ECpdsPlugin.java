@@ -1732,13 +1732,15 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
                 transfer.setComment(errorMessage);
             }
             currentStatus = StatusFactory.FAIL;
-        } else if (groupBy == null && recordUploadHistory) {
+        } else if (recordUploadHistory) {
             // We have to create an history for the standard push!
             final var command = version.indexOf("cmd=mspds") != -1 ? "mspds" : "ecpds";
-            final var uploadMessage = "Uploaded by " + userName + " from " + getRemoteHost() + " using " + command
-                    + " command " + version + " (" + Format.getMBitsPerSeconds(currentSize, duration) + " Mbits/s)";
+            final var uploadMessage = (groupBy == null ? "Uploaded" : "Scheduled") + " by " + userName + " from "
+                    + getRemoteHost() + " using " + command + " command " + version + " ("
+                    + Format.getMBitsPerSeconds(currentSize, duration) + " Mbits/s)";
             for (final DataTransfer transfer : transfersList) {
-                MASTER.addTransferHistory(transfer, null, currentStatus, uploadMessage, false);
+                if (groupBy == null)
+                    MASTER.addTransferHistory(transfer, null, currentStatus, uploadMessage, false);
                 // Create a new IncomingHistory!
                 try {
                     final var history = new IncomingHistory();
@@ -1760,8 +1762,9 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
                     history.setProtocol(command);
                     history.setTransferServer(MASTER.getRoot());
                     history.setHostAddress(getRemoteHost());
-                    history.setUpload(true);
-                    DATABASE.insert(history, true);
+                    history.setUpload(groupBy == null);
+                    if (groupBy == null)
+                        DATABASE.insert(history, true);
                     if (_splunk.isInfoEnabled()) {
                         // For the accounting!
                         final var destination = transfer.getDestination();
@@ -1783,7 +1786,7 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
                                 "TransferServer=" + history.getTransferServer(),
                                 "Caller=" + nullToNone(dataFile.getCaller()), "ExpiryTime=" + transfer.getExpiryTime(),
                                 "FileSystem=" + dataFile.getFileSystem(), "HostAddress=" + history.getHostAddress(),
-                                "Action=upload");
+                                "Action=" + (groupBy == null ? "upload" : "scheduled"));
                     }
                     _log.debug("IncomingHistory created for DataTransfer {}", transfer.getId());
                 } catch (final Throwable t) {
