@@ -35,97 +35,80 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class DiskIOManager {
-    private static int numDisks;
-    private static double maxDiskUsage;
-    private static String baseDir;
-    private static int minFileSize;
-    private static int maxFileSize;
-
     private static final AtomicLong totalWriteTime = new AtomicLong();
     private static final AtomicLong totalReadTime = new AtomicLong();
     private static final AtomicLong writeCount = new AtomicLong();
     private static final AtomicLong readCount = new AtomicLong();
-    private static AtomicLong[] bytesWritten;
-
     private static final List<Integer> fileSizes = new ArrayList<>();
-    private static int fileSizeIndex = 0;
+    private static final AtomicBoolean startFlag = new AtomicBoolean(false);
+    private static AtomicLong[] bytesWritten;
+    private static List<File>[] fileNames;
+    private static long maxDiskUsage;
+    private static int minFileSize;
+    private static int maxFileSize;
 
+    @SuppressWarnings("unchecked")
     public static void main(String[] args) throws InterruptedException, IOException, ExecutionException {
         if (args.length < 7) {
-            System.out.println(
-                    """
-                            Usage: java DiskIOManager <testDurationInSec> <numDisks> <numThreads> <minFileSizeKB> <maxFileSizeMB> <baseDir> <maxDiskUsage>
-                            e.g. java DiskIOManager 3600 2 10 500 800 /path/to/disk{} 0.8
-                            """);
+            log("""
+                    Usage: java DiskIOManager <testDurationInSec> <numDisks> <numThreadsPerDisk> <minFileSizeKB> <maxFileSizeMB> <baseDir> <maxDiskUsageInGB>
+                    e.g. java DiskIOManager 3600 2 10 500 800 /path/to/disk{} 80
+                    """);
             return;
         }
-
         var testDuration = Long.parseLong(args[0]) * 1000; // Convert seconds to milliseconds
-        numDisks = Integer.parseInt(args[1]);
-        var numThreads = Integer.parseInt(args[2]);
+        var numDisks = Integer.parseInt(args[1]);
+        fileNames = new List[numDisks];
+        bytesWritten = new AtomicLong[numDisks];
+        var numThreadsPerDisk = Integer.parseInt(args[2]);
         minFileSize = Integer.parseInt(args[3]) * 1024; // Convert KB to bytes
         maxFileSize = Integer.parseInt(args[4]) * 1024 * 1024; // Convert MB to bytes
-        baseDir = args[5];
-        maxDiskUsage = Double.parseDouble(args[6]);
-
-        bytesWritten = new AtomicLong[numDisks];
-        for (var i = 0; i < numDisks; i++) {
+        var baseDir = args[5];
+        maxDiskUsage = Long.parseLong(args[6]) * 1024 * 1024 * 1024; // Convert GB to bytes
+        for (var i = 0; i < numDisks; i++)
             bytesWritten[i] = new AtomicLong();
-        }
-
         // Generate or read file sizes
-        generateFileSizes("file_sizes.json");
-
-        var executor = Executors.newFixedThreadPool(numThreads);
-        List<Future<?>> futures = new ArrayList<>();
-
-        for (var i = 0; i < numDisks; i++) {
-            var diskPath = baseDir.contains("{}") ? baseDir.replace("{}", String.valueOf(i)) : baseDir + i;
-            futures.add(executor.submit(new DiskTask(diskPath, true, testDuration, i))); // Writing threads
-            futures.add(executor.submit(new DiskTask(diskPath, false, testDuration, i))); // Reading threads
-        }
-
+        generateFileSizes("file_sizes.cnf");
+        var totalThreadNumber = numDisks * numThreadsPerDisk;
         // Progress reporting thread
         var progressThread = new Thread(() -> {
             var startTime = System.currentTimeMillis();
             while (System.currentTimeMillis() - startTime < testDuration) {
                 try {
                     Thread.sleep(60000); // Sleep for 1 minute
-                    var elapsedTime = (System.currentTimeMillis() - startTime) / 1000;
-                    var avgWriteTime = writeCount.get() > 0 ? totalWriteTime.get() / writeCount.get() : 0;
-                    var avgReadTime = readCount.get() > 0 ? totalReadTime.get() / readCount.get() : 0;
-                    System.out.println("Progress: " + elapsedTime + " seconds elapsed.");
-                    System.out.println("Intermediate Metrics: Average Write Time: " + avgWriteTime
-                            + " ms, Average Read Time: " + avgReadTime + " ms");
-
-                    for (var i = 0; i < numDisks; i++) {
-                        var diskPath = baseDir.contains("{}") ? baseDir.replace("{}", String.valueOf(i)) : baseDir + i;
-                        var disk = new File(diskPath);
-                        var totalSpace = disk.getTotalSpace();
-                        var usableSpace = disk.getUsableSpace();
-                        var usage = (double) (totalSpace - usableSpace) / totalSpace * 100;
-                        var files = disk.listFiles();
-                        var fileCount = files != null ? files.length : 0;
-                        var writtenBytes = bytesWritten[i].get();
-                        var writtenSize = writtenBytes > 1024 * 1024 * 1024
-                                ? (writtenBytes / (1024 * 1024 * 1024)) + " GB"
-                                : (writtenBytes / (1024 * 1024)) + " MB";
-
-                        System.out.println("Disk " + i + ": Usage: " + String.format("%.2f", usage) + "%, Files: "
-                                + fileCount + ", Data Written: " + writtenSize);
+                    if (!startFlag.get()) {
+                        startFlag.set(true); // Start!
+                    } else {
+                        var elapsedTime = System.currentTimeMillis() - startTime;
+                        var avgWriteTime = writeCount.get() > 0 ? totalWriteTime.get() / writeCount.get() : 0;
+                        var avgReadTime = readCount.get() > 0 ? totalReadTime.get() / readCount.get() : 0;
+                        log("Progress: " + formatElapsedTime(elapsedTime) + " elapsed, Threads: " + totalThreadNumber
+                                + ", WriteCount: " + writeCount.get() + ", ReadCount: " + readCount.get());
+                        log("Intermediate Metrics: Average Write Time: " + avgWriteTime + " ms, Average Read Time: "
+                                + avgReadTime + " ms");
+                        for (var i = 0; i < numDisks; i++) {
+                            var totalFileZize = getTotalFileSize(i);
+                            var usage = ((double) totalFileZize / maxDiskUsage) * 100;
+                            var fileCount = fileNames[i].size();
+                            var writtenBytes = bytesWritten[i].get();
+                            var writtenSize = writtenBytes > 1024 * 1024 * 1024
+                                    ? (writtenBytes / (1024 * 1024 * 1024)) + " GB"
+                                    : (writtenBytes / (1024 * 1024)) + " MB";
+                            log("Disk " + i + ": Usage: " + String.format("%.2f", usage) + "%, Files: " + fileCount
+                                    + ", Data Written: " + writtenSize);
+                        }
                     }
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
@@ -133,17 +116,31 @@ public class DiskIOManager {
             }
         });
         progressThread.start();
-
+        var executor = Executors.newFixedThreadPool(totalThreadNumber);
+        List<Future<?>> futures = new ArrayList<>();
+        for (var i = 0; i < numDisks; i++) {
+            var diskPath = baseDir.contains("{}") ? baseDir.replace("{}", String.valueOf(i)) : baseDir + i;
+            fileNames[i] = Collections.synchronizedList(new ArrayList<>());
+            // Half the threads for writes, half for reads
+            var writeThreads = numThreadsPerDisk / 2;
+            var readThreads = numThreadsPerDisk - writeThreads; // Handle odd numbers
+            // Submit write tasks
+            for (var j = 0; j < writeThreads; j++) {
+                futures.add(executor.submit(new DiskTask(diskPath, true, testDuration, i)));
+            }
+            // Submit read tasks
+            for (var j = 0; j < readThreads; j++) {
+                futures.add(executor.submit(new DiskTask(diskPath, false, testDuration, i)));
+            }
+        }
         for (Future<?> future : futures) {
             future.get();
         }
-
         executor.shutdown();
         executor.awaitTermination(1, TimeUnit.HOURS);
         progressThread.interrupt();
-
-        System.out.println("Average Write Time: " + (totalWriteTime.get() / writeCount.get()) + " ms");
-        System.out.println("Average Read Time: " + (totalReadTime.get() / readCount.get()) + " ms");
+        log("Average Write Time: " + (totalWriteTime.get() / writeCount.get()) + " ms");
+        log("Average Read Time: " + (totalReadTime.get() / readCount.get()) + " ms");
     }
 
     private static void generateFileSizes(String filename) throws IOException {
@@ -151,18 +148,16 @@ public class DiskIOManager {
         if (Files.exists(path)) {
             // Read file sizes from the file
             var lines = Files.readAllLines(path);
-            for (String line : lines) {
+            for (String line : lines)
                 fileSizes.add(Integer.parseInt(line));
-            }
-            System.out.println("File sizes loaded from " + filename);
-        } else {
+        }
+        if (fileSizes.isEmpty()) {
             // Generate file sizes based on predefined distribution
-            var random = new Random();
+            var random = ThreadLocalRandom.current();
             var totalFiles = 1000; // Total number of files to generate
             var smallFiles = totalFiles / 3; // 1/3 small files
             var mediumFiles = totalFiles / 3; // 1/3 medium files
             var largeFiles = totalFiles / 3; // 1/3 large files
-
             for (var i = 0; i < smallFiles; i++) {
                 fileSizes.add(minFileSize + random.nextInt((minFileSize * 2) - minFileSize + 1)); // Small files
             }
@@ -173,16 +168,16 @@ public class DiskIOManager {
             for (var i = 0; i < largeFiles; i++) {
                 fileSizes.add((maxFileSize / 2) + random.nextInt(maxFileSize - (maxFileSize / 2) + 1)); // Large files
             }
-
             Collections.shuffle(fileSizes); // Shuffle to randomize the order
-
             // Save the generated file sizes to the file
             List<String> lines = new ArrayList<>();
             for (int size : fileSizes) {
                 lines.add(String.valueOf(size));
             }
             Files.write(path, lines);
-            System.out.println("Generated and saved file sizes to " + filename);
+            log("Generated and saved file sizes to " + filename + " (" + fileSizes.size() + " entries)");
+        } else {
+            log("File sizes loaded from " + filename + " (" + fileSizes.size() + " entries)");
         }
     }
 
@@ -191,6 +186,7 @@ public class DiskIOManager {
         private final boolean isWriter;
         private final long testDuration;
         private final int diskIndex;
+        private static int fileSizeIndex = 0;
 
         DiskTask(String diskPath, boolean isWriter, long testDuration, int diskIndex) {
             this.diskPath = diskPath;
@@ -201,6 +197,11 @@ public class DiskIOManager {
 
         @Override
         public void run() {
+            while (!startFlag.get()) {
+                Thread.yield(); // Give control back to other threads while waiting
+            }
+            log("Starting " + (isWriter ? " writer " : " reader ") + " thread (" + Thread.currentThread().getName()
+                    + ")");
             var endTime = System.currentTimeMillis() + testDuration;
             try {
                 while (System.currentTimeMillis() < endTime) {
@@ -209,10 +210,7 @@ public class DiskIOManager {
                     } else {
                         readFile();
                     }
-
-                    if (getDiskUsage(diskPath) > maxDiskUsage) {
-                        deleteSomeFiles(diskPath);
-                    }
+                    deleteSomeFilesIfRequired();
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -222,68 +220,85 @@ public class DiskIOManager {
         private void writeFile() throws IOException {
             var startTime = System.currentTimeMillis();
             var file = new File(diskPath, UUID.randomUUID().toString() + ".txt");
-
-            if (fileSizes.isEmpty()) {
-                System.err.println("No more file sizes available. Consider regenerating the file sizes.");
-                return;
-            }
-
             int fileSize = fileSizes.get(fileSizeIndex); // Get the next file size from the list
             fileSizeIndex = (fileSizeIndex + 1) % fileSizes.size(); // Move to the next index, wrap around if needed
             var data = new byte[fileSize];
-            new Random().nextBytes(data);
-
+            ThreadLocalRandom.current().nextBytes(data);
             try (var bos = new BufferedOutputStream(new FileOutputStream(file))) {
                 bos.write(data);
             }
-
             var endTime = System.currentTimeMillis();
             totalWriteTime.addAndGet(endTime - startTime);
             writeCount.incrementAndGet();
             bytesWritten[diskIndex].addAndGet(fileSize);
+            fileNames[diskIndex].add(file);
+        }
+
+        private File getRandomFile() {
+            final var files = fileNames[diskIndex];
+            synchronized (files) {
+                if (!files.isEmpty()) {
+                    return files.get(ThreadLocalRandom.current().nextInt(files.size()));
+                } else
+                    return null;
+            }
         }
 
         private void readFile() throws IOException {
-            var startTime = System.currentTimeMillis();
-            var files = new File(diskPath).listFiles();
-            if (files != null && files.length > 0) {
-                var file = files[new Random().nextInt(files.length)];
-                try (var bis = new BufferedInputStream(new FileInputStream(file))) {
+            var randomFile = getRandomFile();
+            if (randomFile != null) {
+                var startTime = System.currentTimeMillis();
+                try (var bis = new BufferedInputStream(new FileInputStream(randomFile))) {
                     while (bis.read() != -1) {
                         // Reading file
                     }
                 }
+                var endTime = System.currentTimeMillis();
+                totalReadTime.addAndGet(endTime - startTime);
+                readCount.incrementAndGet();
             }
-            var endTime = System.currentTimeMillis();
-            totalReadTime.addAndGet(endTime - startTime);
-            readCount.incrementAndGet();
         }
 
-        private double getDiskUsage(String path) {
-            var file = new File(path);
-            var totalSpace = file.getTotalSpace();
-            var usableSpace = file.getUsableSpace();
-            return (double) (totalSpace - usableSpace) / totalSpace;
+        private void deleteSomeFilesIfRequired() {
+            while (getTotalFileSize(diskIndex) > maxDiskUsage) {
+                var file = fileNames[diskIndex].remove(0);
+                if (file.delete())
+                    log(">> Deleted file: " + file.getName());
+            }
         }
+    }
 
-        private void deleteSomeFiles(String path) {
-            var files = new File(path).listFiles();
-            if (files != null && files.length > 0) {
-                Arrays.sort(files, Comparator.comparingLong(File::lastModified));
-                var totalSpace = new File(path).getTotalSpace();
-                var spaceToFree = (long) ((getDiskUsage(path) - maxDiskUsage) * totalSpace);
-                var freedSpace = 0L;
-
+    private static long getTotalFileSize(final int diskId) {
+        final var files = fileNames[diskId];
+        var totalSize = 0L;
+        if (files != null)
+            synchronized (files) {
                 for (var file : files) {
-                    if (file.delete()) {
-                        freedSpace += file.length();
-                        System.out.println(">> Deleted file: " + file.getName());
-                    }
-                    if (freedSpace >= spaceToFree) {
-                        break;
-                    }
+                    totalSize += file.length(); // Add the file size to the total
                 }
             }
-        }
+        return totalSize;
+    }
+
+    public static String formatElapsedTime(long elapsedTimeMillis) {
+        var hours = elapsedTimeMillis / (1000 * 60 * 60);
+        var remainingMillis = elapsedTimeMillis % (1000 * 60 * 60);
+        var minutes = remainingMillis / (1000 * 60);
+        remainingMillis %= (1000 * 60);
+        var seconds = remainingMillis / 1000;
+        var milliseconds = remainingMillis % 1000;
+        var result = new StringBuilder();
+        if (hours > 0)
+            result.append(hours).append(hours == 1 ? " hour, " : " hours, ");
+        if (minutes > 0 || hours > 0)
+            result.append(minutes).append(minutes == 1 ? " minute, " : " minutes, ");
+        result.append(seconds).append(seconds == 1 ? " second, " : " seconds, ");
+        result.append(milliseconds).append(milliseconds == 1 ? " millisecond" : " milliseconds");
+        return result.toString();
+    }
+
+    private static void log(final String message) {
+        System.out.println(message);
+        System.out.flush();
     }
 }
