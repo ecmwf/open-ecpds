@@ -245,13 +245,14 @@ public class DiskIOManager {
 							buffer.clear(); // Prepare buffer for the next write
 							offset += length;
 						}
+						fos.getFD().sync();
 					}
 				} else {
 					try (var bos = new BufferedOutputStream(fos)) {
 						bos.write(data);
+						fos.getFD().sync();
 					}
 				}
-				fos.getFD().sync();
 			}
 			var endTime = System.currentTimeMillis();
 			totalWriteTime.addAndGet(endTime - startTime);
@@ -279,8 +280,10 @@ public class DiskIOManager {
 						final ByteBuffer buffer = ByteBuffer.allocate(byteBufferSize); // 1 MB buffer
 						while (fileChannel.read(buffer) != -1) {
 							buffer.flip(); // Prepare the buffer for writing
-							while (buffer.hasRemaining())
-								buffer.get(); // Read the byte from the buffer (simulate)
+							while (buffer.hasRemaining()) {
+								byte bytes[] = new byte[65536];
+								buffer.get(bytes); // Read the byte from the buffer (simulate)
+							}
 							buffer.clear(); // Prepare the buffer for the next read
 						}
 					}
