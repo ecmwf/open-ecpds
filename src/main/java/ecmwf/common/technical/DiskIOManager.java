@@ -45,9 +45,12 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class DiskIOManager {
+    private static final AtomicLong totalWriteSize = new AtomicLong();
+    private static final AtomicLong totalReadSize = new AtomicLong();
     private static final AtomicLong totalWriteTime = new AtomicLong();
     private static final AtomicLong totalReadTime = new AtomicLong();
     private static final AtomicLong writeCount = new AtomicLong();
@@ -99,18 +102,16 @@ public class DiskIOManager {
                         var avgReadTime = readCount.get() > 0 ? totalReadTime.get() / readCount.get() : 0;
                         log("Progress: " + formatElapsedTime(elapsedTime) + " elapsed, Threads: " + totalThreadNumber
                                 + ", WriteCount: " + writeCount.get() + ", ReadCount: " + readCount.get());
-                        log("Intermediate Metrics: Average Write Time: " + avgWriteTime + " ms, Average Read Time: "
-                                + avgReadTime + " ms");
+                        log("Intermediate Metrics: Total Write Size: " + getReadableSize(totalWriteSize.get())
+                                + ", Average Write Time: " + avgWriteTime + " ms, Total Read Size: "
+                                + getReadableSize(totalReadSize.get()) + ", Average Read Time: " + avgReadTime + " ms");
                         for (var i = 0; i < numDisks; i++) {
                             var totalFileZize = getTotalFileSize(i);
                             var usage = ((double) totalFileZize / maxDiskUsage) * 100;
                             var fileCount = fileNames[i].size();
                             var writtenBytes = bytesWritten[i].get();
-                            var writtenSize = writtenBytes > 1024 * 1024 * 1024
-                                    ? (writtenBytes / (1024 * 1024 * 1024)) + " GB"
-                                    : (writtenBytes / (1024 * 1024)) + " MB";
                             log("Disk " + i + ": Usage: " + String.format("%.2f", usage) + "%, Files: " + fileCount
-                                    + ", Data Written: " + writtenSize);
+                                    + ", Data Written: " + getReadableSize(writtenBytes));
                         }
                     }
                 } catch (InterruptedException e) {
@@ -142,6 +143,9 @@ public class DiskIOManager {
         executor.shutdown();
         executor.awaitTermination(1, TimeUnit.HOURS);
         progressThread.interrupt();
+        log("Data Written: " + getReadableSize(totalWriteSize.get()));
+        log("Data Read: " + getReadableSize(totalReadSize.get()));
+        log("Average Read Time: " + (totalReadTime.get() / readCount.get()) + " ms");
         log("Average Write Time: " + (totalWriteTime.get() / writeCount.get()) + " ms");
         log("Average Read Time: " + (totalReadTime.get() / readCount.get()) + " ms");
     }
@@ -185,11 +189,11 @@ public class DiskIOManager {
     }
 
     static class DiskTask implements Runnable {
+        private final AtomicInteger fileSizeIndex = new AtomicInteger(0);
         private final String diskPath;
         private final boolean isWriter;
         private final long testDuration;
         private final int diskIndex;
-        private static int fileSizeIndex = 0;
         private final boolean useByteBuffers;
 
         DiskTask(String diskPath, boolean isWriter, long testDuration, int diskIndex, boolean useByteBuffers) {
@@ -225,8 +229,8 @@ public class DiskIOManager {
         private void writeFile(boolean useByteBuffers) throws IOException {
             var startTime = System.currentTimeMillis();
             var file = new File(diskPath, UUID.randomUUID().toString() + ".txt");
-            var fileSize = fileSizes.get(fileSizeIndex); // Get the next file size from the list
-            fileSizeIndex = (fileSizeIndex + 1) % fileSizes.size(); // Move to the next index, wrap around if needed
+            int index = fileSizeIndex.getAndUpdate(i -> (i + 1) % fileSizes.size());
+            var fileSize = fileSizes.get(index); // Get the next file size from the list
             try (var fos = new FileOutputStream(file)) {
                 if (useByteBuffers) {
                     try (final var fileChannel = fos.getChannel()) {
@@ -235,9 +239,9 @@ public class DiskIOManager {
                         while (offset < fileSize) {
                             var length = Math.min(byteBufferSize, fileSize - offset);
                             buffer.clear(); // Prepare buffer for the next write
-                            var tempBuffer = new byte[length];
-                            ThreadLocalRandom.current().nextBytes(tempBuffer); // Generate random bytes
-                            buffer.put(tempBuffer); // Write data to the buffer
+                            for (int i = 0; i < length; i++) {
+                                buffer.put((byte) ThreadLocalRandom.current().nextInt(256)); // Generate random byte
+                            }
                             buffer.flip(); // Prepare buffer for writing
                             while (buffer.hasRemaining()) {
                                 fileChannel.write(buffer); // Write buffer to the file channel
@@ -261,6 +265,7 @@ public class DiskIOManager {
                 }
             }
             var endTime = System.currentTimeMillis();
+            totalWriteSize.addAndGet(fileSize);
             totalWriteTime.addAndGet(endTime - startTime);
             writeCount.incrementAndGet();
             bytesWritten[diskIndex].addAndGet(fileSize);
@@ -300,6 +305,7 @@ public class DiskIOManager {
                     }
                 }
                 var endTime = System.currentTimeMillis();
+                totalReadSize.addAndGet(randomFile.length());
                 totalReadTime.addAndGet(endTime - startTime);
                 readCount.incrementAndGet();
             }
@@ -324,6 +330,14 @@ public class DiskIOManager {
                 }
             }
         return totalSize;
+    }
+
+    public static String getReadableSize(long writtenBytes) {
+        if (writtenBytes > 1024 * 1024 * 1024) {
+            return (writtenBytes / (1024 * 1024 * 1024)) + " GB";
+        } else {
+            return (writtenBytes / (1024 * 1024)) + " MB";
+        }
     }
 
     public static String formatElapsedTime(long elapsedTimeMillis) {
