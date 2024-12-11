@@ -33,7 +33,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -226,30 +225,37 @@ public class DiskIOManager {
         private void writeFile(boolean useByteBuffers) throws IOException {
             var startTime = System.currentTimeMillis();
             var file = new File(diskPath, UUID.randomUUID().toString() + ".txt");
-            int fileSize = fileSizes.get(fileSizeIndex); // Get the next file size from the list
+            var fileSize = fileSizes.get(fileSizeIndex); // Get the next file size from the list
             fileSizeIndex = (fileSizeIndex + 1) % fileSizes.size(); // Move to the next index, wrap around if needed
-            var data = new byte[fileSize];
-            ThreadLocalRandom.current().nextBytes(data);
             try (var fos = new FileOutputStream(file)) {
                 if (useByteBuffers) {
-                    try (FileChannel fileChannel = fos.getChannel()) {
+                    try (final var fileChannel = fos.getChannel()) {
                         final var buffer = ByteBuffer.allocateDirect(byteBufferSize); // Allocate a direct byte buffer
                         int offset = 0;
                         while (offset < fileSize) {
-                            int length = Math.min(byteBufferSize, fileSize - offset);
-                            buffer.put(data, offset, length); // Write data to the buffer
+                            var length = Math.min(byteBufferSize, fileSize - offset);
+                            buffer.clear(); // Prepare buffer for the next write
+                            var tempBuffer = new byte[length];
+                            ThreadLocalRandom.current().nextBytes(tempBuffer); // Generate random bytes
+                            buffer.put(tempBuffer); // Write data to the buffer
                             buffer.flip(); // Prepare buffer for writing
                             while (buffer.hasRemaining()) {
                                 fileChannel.write(buffer); // Write buffer to the file channel
                             }
-                            buffer.clear(); // Prepare buffer for the next write
                             offset += length;
                         }
                         fos.getFD().sync();
                     }
                 } else {
                     try (var bos = new BufferedOutputStream(fos)) {
-                        bos.write(data);
+                        var buffer = new byte[byteBufferSize];
+                        int offset = 0;
+                        while (offset < fileSize) {
+                            var length = Math.min(byteBufferSize, fileSize - offset);
+                            ThreadLocalRandom.current().nextBytes(buffer); // Generate random bytes
+                            bos.write(buffer, 0, length);
+                            offset += length;
+                        }
                         fos.getFD().sync();
                     }
                 }
