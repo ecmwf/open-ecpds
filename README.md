@@ -359,8 +359,8 @@ For the **Message Broker**, the process is simpler: upon receiving a notificatio
 
 A few key points about the MQTT Broker:
 
-- **Industry Standard Compliance**: MQTT is the de facto standard for IoT communication, and our Broker is fully compliant with all three MQTT specifications. This ensures OpenECPDS is compatible with all MQTT clients available on the market.
-- **Integration with OpenECPDS**: The Broker is embedded within OpenECPDS and is based on the [Community Edition of the HiveMQ Broker](https://github.com/hivemq/hivemq-community-edition).
+- **Industry Standard Compliance**: MQTT is the de facto standard for IoT communication. Our Broker and Client are fully compliant with all three MQTT specifications, ensuring that OpenECPDS is compatible with all MQTT brokers and clients available on the market.
+- **Integration with OpenECPDS**: The Broker and Client are embedded within OpenECPDS and are based on the [Community Edition of the HiveMQ Broker](https://github.com/hivemq/hivemq-community-edition) and the [Eclipse Paho Client](https://github.com/eclipse-paho/paho.mqtt.java).
 
 ## Support Materials
 
