@@ -334,6 +334,17 @@ A destination can be a dissemination destination, an acquisition destination or 
 
 There is also the concept of destination **aliases**, which makes it possible to link two or more destinations together, so that whatever data transfer is queued to one destination is also queued to the others. This mechanism enables processing the same set of data transfers to different sites with different schedules and/or transfer mechanisms defined on a destination basis. Conditional aliasing is also possible in order to alias only a subset of data transfers.
 
+### Failover Mechanism in Host Selection
+
+The diagram below illustrates how the system manages failures by dynamically switching between available hosts. OpenECPDS sequentially attempts to connect to each host in the list, moving to the next one if a failure occurs.
+
+<img src="img/Figure5.jpg" alt="The OpenECPDS Failover Mechanism in Host Selection" width="400"/>
+
+The behavior of the failover mechanism depends on the configuration of the transfer scheduler:
+
+- It can either continue using the first successfully connected host or revert to the primary host once it becomes available.
+- The switch can occur immediately after a successful transfer or after a predefined time interval.
+
 ## Notification System (MQTT)
 
 ### Functional Overview of the Notification System
