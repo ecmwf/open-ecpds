@@ -307,7 +307,7 @@ This section provides a high-level overview of the physical infrastructure suppo
 
 Each service is dedicated to a specific function but retains the same core capabilities. This separation primarily helps distribute workloads based on peak usage periods. For instance, the Acquisition service operates continuously, while the Dissemination and Auxiliary services experience peak activity three times a day, particularly during forecast deliveries.
 
-The current infrastructure comprises 80 bare-metal systems with a total storage capacity of 2 petabytes. Storage capacity is regularly reassessed, especially when new processing cycles are introduced—for example, the recent upgrade for cycle 49r1. Additionally, eight new data movers will be integrated into the system in the coming weeks to enhance data transfer capabilities.
+The current infrastructure comprises 80 bare-metal systems with a total storage capacity of 2 petabytes. Storage capacity is regularly reassessed, especially when new processing cycles are introduced.
 
 ## Concepts for Users
 
