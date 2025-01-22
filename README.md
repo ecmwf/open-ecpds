@@ -299,6 +299,16 @@ To delete all Kubernetes resources and stop the pods:
 make delete
 ```
 
+### Infrastructure
+
+This section provides a high-level overview of the physical infrastructure supporting OpenECPDS at ECMWF. The deployment consists of three distinct services: Acquisition (ACQ), Dissemination (DISS), and Auxiliary (AUX). While this serves as an example of a possible physical infrastructure, the actual setup may vary depending on the specific requirements of each site.
+
+<img src="img/Figure6.jpg" alt="Example of OpenECPDS Deployment" width="650"/>
+
+Each service is dedicated to a specific function but retains the same core capabilities. This separation primarily helps distribute workloads based on peak usage periods. For instance, the Acquisition service operates continuously, while the Dissemination and Auxiliary services experience peak activity three times a day, particularly during forecast deliveries.
+
+The current infrastructure comprises 80 bare-metal systems with a total storage capacity of 2 petabytes. Storage capacity is regularly reassessed, especially when new processing cycles are introduced—for example, the recent upgrade for cycle 49r1. Additionally, eight new data movers will be integrated into the system in the coming weeks to enhance data transfer capabilities.
+
 ## Concepts for Users
 
 Understanding some key OpenECPDS concepts will help users to benefit fully from the tool’s capabilities:
