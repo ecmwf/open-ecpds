@@ -19,7 +19,7 @@ Data Acquisition and Data Dissemination are active services initiated by OpenECP
 - [For Developers](#for-developers)
 - [Deployment](#deployment)
 - [Concepts for Users](#concepts-for-users)
-- [Notification System (IoT)](#notification-system-iot)
+- [Notification System (MQTT)](#notification-system-mqtt)
 - [Support Materials](#support-materials)
 - [Notes](#notes)
 
@@ -334,7 +334,7 @@ A destination can be a dissemination destination, an acquisition destination or 
 
 There is also the concept of destination **aliases**, which makes it possible to link two or more destinations together, so that whatever data transfer is queued to one destination is also queued to the others. This mechanism enables processing the same set of data transfers to different sites with different schedules and/or transfer mechanisms defined on a destination basis. Conditional aliasing is also possible in order to alias only a subset of data transfers.
 
-## Notification System (IoT)
+## Notification System (MQTT)
 
 ### Functional Overview of the Notification System
 
