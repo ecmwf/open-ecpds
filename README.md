@@ -338,7 +338,7 @@ There is also the concept of destination **aliases**, which makes it possible to
 
 ### Functional Overview of the Notification System
 
-<img src="img/Figure3.jpg" alt="The OpenECPDS notification system overview" width="400"/>
+<img src="img/Figure3.jpg" alt="The OpenECPDS notification system overview" width="600"/>
 
 This functional view of the Notification System illustrates the key components involved in product notifications. The **Product Data Store** is depicted in dark blue at the top right, while the **Dissemination and Acquisition Systems** appear in sky blue at the top left. The **MQTT and Message Brokers** are shown at the bottom left and right, outlined in red.
 
@@ -359,7 +359,7 @@ For the **Message Broker**, the process is simpler: upon receiving a notificatio
 
 The MQTT-based notification system follows a structured interaction between three key components: the **MQTT Client**, the **MQTT Broker**, and the **OpenECPDS Data Store**.
 
-<img src="img/Figure4.jpg" alt="MQTT interaction between a Client, a Broker, and the Data Store" width="600"/>
+<img src="img/Figure4.jpg" alt="MQTT interaction between a Client, a Broker, and the Data Store" width="550"/>
 
 - **Connection Establishment**: The process begins with the Client initiating a connection to the Broker by sending a **CONNECT** message. The Broker acknowledges the connection by responding with a **CONNACK** message.
 
