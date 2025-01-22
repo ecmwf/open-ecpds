@@ -338,7 +338,7 @@ There is also the concept of destination **aliases**, which makes it possible to
 
 ### Functional Overview of the Notification System
 
-<img src="img/Figure3.jpg" alt="The OpenECPDS notification system overview" width="600"/>
+<img src="img/Figure3.jpg" alt="The OpenECPDS notification system overview" width="400"/>
 
 This functional view of the Notification System illustrates the key components involved in product notifications. The **Product Data Store** is depicted in dark blue at the top right, while the **Dissemination and Acquisition Systems** appear in sky blue at the top left. The **MQTT and Message Brokers** are shown at the bottom left and right, outlined in red.
 
@@ -355,9 +355,29 @@ If the **MQTT Broker** is notified, it checks whether any MQTT clients have subs
 
 For the **Message Broker**, the process is simpler: upon receiving a notification, it directly forwards it to the configured clients.
 
+### Typical Interaction in the ECPDS Notification System
+
+The MQTT-based notification system follows a structured interaction between three key components: the **MQTT Client**, the **MQTT Broker**, and the **OpenECPDS Data Store**.
+
+<img src="img/Figure4.jpg" alt="MQTT interaction between a Client, a Broker, and the Data Store" width="600"/>
+
+- **Connection Establishment**: The process begins with the Client initiating a connection to the Broker by sending a **CONNECT** message. The Broker acknowledges the connection by responding with a **CONNACK** message.
+
+- **Subscription to a Topic**: Once connected, the Client registers its interest in a specific topic by sending a **SUBSCRIBE** message to the Broker. The Broker then listens for relevant **PUBLISH** messages from the Data Store that match the subscribed topic.
+
+- **Message Delivery and Product Retrieval**: When the Data Store generates a **PUBLISH** message for a subscribed topic, the Broker forwards it to all Clients that have subscribed to that topic. The Client then extracts the file location from the message and proceeds to fetch the product using one of the available protocols on the OpenECPDS Portal: **HTTPS, S3, SFTP, or FTP**.
+
+### Retained Messages and Late Client Connections
+
+In this example, the **retain flag** is enabled in the MQTT message. This ensures that even if the Data Store sends a **PUBLISH** message before the Client is connected, the message remains available for delivery. As a result, when the Client connects later, it still receives the retained message, ensuring no critical notifications are missed.
+
+### Configuration and Access Control
+
+The MQTT configuration can be fine-tuned at the **Destination level**, allowing for greater flexibility in how notifications are handled. Additionally, **access control** mechanisms can be configured at the **data user** level, ensuring secure and controlled distribution of messages.
+
 ### MQTT Broker in OpenECPDS
 
-A few key points about the MQTT Broker:
+A few key points about the MQTT Broker and Client:
 
 - **Industry Standard Compliance**: MQTT is the de facto standard for IoT communication. Our Broker and Client are fully compliant with all three MQTT specifications, ensuring that OpenECPDS is compatible with all MQTT brokers and clients available on the market.
 - **Integration with OpenECPDS**: The Broker and Client are embedded within OpenECPDS and are based on the [Community Edition of the HiveMQ Broker](https://github.com/hivemq/hivemq-community-edition) and the [Eclipse Paho Client](https://github.com/eclipse-paho/paho.mqtt.java).
