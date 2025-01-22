@@ -19,6 +19,7 @@ Data Acquisition and Data Dissemination are active services initiated by OpenECP
 - [For Developers](#for-developers)
 - [Deployment](#deployment)
 - [Concepts for Users](#concepts-for-users)
+- [Notification System](#notification-system)
 - [Support Materials](#support-materials)
 - [Notes](#notes)
 
@@ -332,6 +333,34 @@ A destination can also be associated with a list of **acquisition hosts**, indic
 A destination can be a dissemination destination, an acquisition destination or both. It will be a dissemination destination as long as at least one dissemination host is defined, and it will be an acquisition destination as long as at least one acquisition host is defined. When both are defined, then the destination can be used to automatically discover and retrieve data from one place and transmit it to another, with or without storing the data in the Data Store, depending on the destination configuration. This is a popular way of using OpenECPDS. For example, this mechanism is used for the delivery of some regional near-real-time ensemble air quality forecasts produced at ECMWF for the EU-funded Copernicus Atmospheric Monitoring Service implemented by the Centre.
 
 There is also the concept of destination **aliases**, which makes it possible to link two or more destinations together, so that whatever data transfer is queued to one destination is also queued to the others. This mechanism enables processing the same set of data transfers to different sites with different schedules and/or transfer mechanisms defined on a destination basis. Conditional aliasing is also possible in order to alias only a subset of data transfers.
+
+## Notification System
+
+### Functional Overview of the Notification System
+
+<img src="img/Figure3.jpg" alt="The OpenECPDS notification system overview" width="600"/>
+
+This functional view of the Notification System illustrates the key components involved in product notifications. The **Product Data Store** is depicted in dark blue at the top right, while the **Dissemination and Acquisition Systems** appear in sky blue at the top left. The **MQTT and Message Brokers** are shown at the bottom left and right, outlined in red.
+
+Below the Data Store, **OpenECPDS Destinations** serve to organize and manage products for each customer. These Destinations include various configuration parameters, including an MQTT topic used for message identification and routing to the appropriate MQTT subscribers.
+
+A **notification** is triggered each time a product is added to the Data Store via the Acquisition System. The product may either be made available through the Portal or pushed to a remote site by the Dissemination System. In both cases, the user receiving the notification will extract the product’s location from the message. If the product is on the Portal, the user must retrieve it before processing. If it has been pushed to a remote site, it is immediately available for processing.
+
+The number of notifications triggered when a new product is added depends on the **Destination's configuration**:
+
+- **No notification** is sent if the Destination is not configured to report updates.
+- **One or two notifications** are sent if the Destination is configured to notify one or both Brokers.
+
+If the **MQTT Broker** is notified, it checks whether any MQTT clients have subscribed to the Destination's topic. If a matching subscription exists, the client receives the notification along with the associated payload.
+
+For the **Message Broker**, the process is simpler: upon receiving a notification, it directly forwards it to the configured clients.
+
+### MQTT Broker in OpenECPDS
+
+A few key points about the MQTT Broker:
+
+- **Industry Standard Compliance**: MQTT is the de facto standard for IoT communication, and our Broker is fully compliant with all three MQTT specifications. This ensures OpenECPDS is compatible with all MQTT clients available on the market.
+- **Integration with OpenECPDS**: The Broker is embedded within OpenECPDS and is based on the [Community Edition of the HiveMQ Broker](https://github.com/hivemq/hivemq-community-edition).
 
 ## Support Materials
 
