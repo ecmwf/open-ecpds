@@ -35,7 +35,7 @@ Data Acquisition and Data Dissemination are active services initiated by OpenECP
   - [Failover Mechanism in Host Selection](#failover-mechanism-in-host-selection)
 - [Notification System (MQTT)](#notification-system-mqtt)
   - [Functional Overview of the Notification System](#functional-overview-of-the-notification-system)
-  - [Typical Interaction in the ECPDS Notification System](#typical-interaction-in-the-ecpds-notification-system)
+  - [Typical Interaction in the OpenECPDS Notification System](#typical-interaction-in-the-openecpds-notification-system)
   - [Retained Messages and Late Client Connections](#retained-messages-and-late-client-connections)
   - [Configuration and Access Control](#configuration-and-access-control)
   - [MQTT Broker in OpenECPDS](#mqtt-broker-in-openecpds)
@@ -46,11 +46,11 @@ OpenECPDS enhances data services by integrating innovative technologies to strea
 
 ### Driving Forces
 
-To ensure ECMWF's forecasts reach Member and Co-operating States promptly, efficient data collection and dissemination are crucial. To address this, ECMWF has developed the ECMWF Production Data Store (ECPDS) in-house, which has been operational for many years. This mature solution has greatly enhanced the efficiency and productivity of data services, providing a portable and adaptable tool for various environments.
+To ensure ECMWF's forecasts reach Member and Co-operating States promptly, efficient data collection and dissemination are crucial. To address this, ECMWF has developed the ECMWF Product Data Store (ECPDS) in-house, which has been operational for many years. This mature solution has greatly enhanced the efficiency and productivity of data services, providing a portable and adaptable tool for various environments.
 
 The picture below shows the essential role of ECPDS in the ECMWF Numerical Weather Prediction (NWP) system.
 
-<img src="img/Figure1.svg" alt="ECMWF acquisition and dissemination system" width="450"/>
+<img src="img/Figure1.svg" alt="ECMWF Product Data Store (ECPDS)" width="450"/>
 
 Recently, ECPDS has been rolled out to some Member States and is now in use within the United Weather Centers (UWC) West consortium. Building on the success of these deployments and following requests from our Member States, OpenECPDS was launched to encourage collaboration with other organizations, strengthen integration efforts, and enhance data service capabilities through community contributions.
 
@@ -399,7 +399,7 @@ If the **MQTT Broker** is notified, it checks whether any MQTT clients have subs
 
 For the **Message Broker**, the process is simpler: upon receiving a notification, it directly forwards it to the configured clients.
 
-### Typical Interaction in the ECPDS Notification System
+### Typical Interaction in the OpenECPDS Notification System
 
 The MQTT-based notification system follows a structured interaction between three key components: the **MQTT Client**, the **MQTT Broker**, and the **OpenECPDS Data Store**.
 
