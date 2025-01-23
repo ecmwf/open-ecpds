@@ -303,7 +303,7 @@ make delete
 
 This section provides a high-level overview of the physical infrastructure supporting OpenECPDS at ECMWF. The deployment consists of three distinct services: Acquisition (ACQ), Dissemination (DISS), and Auxiliary (AUX). While this serves as an example of a possible physical infrastructure, the actual setup may vary depending on the specific requirements of each site.
 
-<img src="img/Figure6.jpg" alt="Example of OpenECPDS Deployment" width="650"/>
+<img src="img/Figure6.svg" alt="Example of OpenECPDS Deployment" width="650"/>
 
 Each service is dedicated to a specific function but retains the same core capabilities. This separation primarily helps distribute workloads based on peak usage periods. For instance, the Acquisition service operates continuously, while the Dissemination and Auxiliary services experience peak activity three times a day, particularly during forecast deliveries.
 
@@ -348,7 +348,7 @@ There is also the concept of destination **aliases**, which makes it possible to
 
 The diagram below illustrates how the system manages failures by dynamically switching between available hosts. OpenECPDS sequentially attempts to connect to each host in the list, moving to the next one if a failure occurs.
 
-<img src="img/Figure5.jpg" alt="The OpenECPDS Failover Mechanism in Host Selection" width="400"/>
+<img src="img/Figure5.svg" alt="The OpenECPDS Failover Mechanism in Host Selection" width="400"/>
 
 The behavior of the failover mechanism depends on the configuration of the transfer scheduler:
 
@@ -359,7 +359,7 @@ The behavior of the failover mechanism depends on the configuration of the trans
 
 ### Functional Overview of the Notification System
 
-<img src="img/Figure3.jpg" alt="The OpenECPDS notification system overview" width="600"/>
+<img src="img/Figure3.svg" alt="The OpenECPDS notification system overview" width="600"/>
 
 This functional view of the Notification System illustrates the key components involved in product notifications. The **Product Data Store** is depicted in dark blue at the top right, while the **Dissemination and Acquisition Systems** appear in sky blue at the top left. The **MQTT and Message Brokers** are shown at the bottom left and right, outlined in red.
 
@@ -380,7 +380,7 @@ For the **Message Broker**, the process is simpler: upon receiving a notificatio
 
 The MQTT-based notification system follows a structured interaction between three key components: the **MQTT Client**, the **MQTT Broker**, and the **OpenECPDS Data Store**.
 
-<img src="img/Figure4.jpg" alt="MQTT interaction between a Client, a Broker, and the Data Store" width="550"/>
+<img src="img/Figure4.svg" alt="MQTT interaction between a Client, a Broker, and the Data Store" width="550"/>
 
 - **Connection Establishment**: The process begins with the Client initiating a connection to the Broker by sending a **CONNECT** message. The Broker acknowledges the connection by responding with a **CONNACK** message.
 
