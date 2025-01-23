@@ -24,7 +24,7 @@ Data Acquisition and Data Dissemination are active services initiated by OpenECP
   - [Checking the Containers and Logs](#checking-the-containers-and-logs)
   - [Additional Makefile Options](#additional-makefile-options)
   - [Stopping OpenECPDS](#stopping-openecpds)
-- [For Developers](#for-developers)
+- [IDE Setup for OpenECPDS Development](#ide-setup-for-openecpds-development)
   - [Visual Studio Code](#visual-studio-code)
   - [Eclipse](#eclipse)
 - [Deployment](#deployment)
@@ -226,9 +226,9 @@ To clean the logs and data:
 make clean
 ```
 
-## For Developers
+## IDE Setup for OpenECPDS Development
 
-OpenECPDS includes configuration files for both Visual Studio Code and Eclipse, so you can choose the development environment you are most comfortable with. Simply select your preferred IDE, and you will find ready-to-use settings tailored to streamline your work with OpenECPDS.
+OpenECPDS includes configuration files for both **Visual Studio Code** and **Eclipse**, so you can choose the development environment you are most comfortable with. Simply select your preferred IDE, and you will find ready-to-use settings tailored to streamline your work with OpenECPDS.
 
 Before following the guidelines to start OpenECPDS in your IDE, ensure that an instance of the OpenECPDS database is running. This can be done either within or outside the development container. To set it up, run:
 
