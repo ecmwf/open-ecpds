@@ -10,17 +10,25 @@ OpenECPDS has been designed as a multi-purpose repository, hereafter referred to
 
 Data Acquisition and Data Dissemination are active services initiated by OpenECPDS, whereas the Data Portal is a passive service triggered by incoming requests from remote sites. The Data Portal service provides interactive access to the Data Dissemination and Data Acquisition services.
 
-- [Driving Forces](#driving-forces)
-- [Data Storage and Retrieval](#data-storage-and-retrieval)
-- [Protocols and Connections](#protocols-and-connections)
-- [Object Storage](#object-storage)
-- [Additional Features](#additional-features)
+- [Introduction to OpenECPDS](#introduction)
+  - [Driving Forces](#driving-forces)
+  - [Data Storage and Retrieval](#data-storage-and-retrieval)
+  - [Protocols and Connections](#protocols-and-connections)
+  - [Object Storage](#object-storage)
+  - [Additional Features](#additional-features)
 - [Getting Started](#getting-started)
-  - [Building and Running OpenECPDS](#building-and-running-openecpds)
+  - [System Requirements and Setup](#system-requirements-and-setup)
+  - [Creating and Logging into the Development Container](#creating-and-logging-into-the-development-container)
+  - [Building and Configuring OpenECPDS](#building-and-configuring-openecpds)
+  - [Starting OpenECPDS](#starting-openecpds)
+  - [Checking the Containers and Logs](#checking-the-containers-and-logs)
+  - [Additional Makefile Options](#additional-makefile-options)
+  - [Stopping OpenECPDS](#stopping-openecpds)
 - [For Developers](#for-developers)
   - [Visual Studio Code](#visual-studio-code)
   - [Eclipse](#eclipse)
 - [Deployment](#deployment)
+  - [Deploying OpenECPDS on Kubernetes](#deploying-openecpds-on-kubernetes)
   - [Infrastructure](#infrastructure)
 - [Concepts for Users](#concepts-for-users)
   - [Failover Mechanism in Host Selection](#failover-mechanism-in-host-selection)
@@ -35,7 +43,7 @@ Data Acquisition and Data Dissemination are active services initiated by OpenECP
 
 OpenECPDS enhances data services by integrating innovative technologies to streamline the acquisition, dissemination, and storage of data across diverse environments and protocols.
 
-## Driving Forces
+### Driving Forces
 
 To ensure ECMWF's forecasts reach Member and Co-operating States promptly, efficient data collection and dissemination are crucial. To address this, ECMWF has developed the ECMWF Production Data Store (ECPDS) in-house, which has been operational for many years. This mature solution has greatly enhanced the efficiency and productivity of data services, providing a portable and adaptable tool for various environments.
 
@@ -51,7 +59,7 @@ The software is designed for ease of building, using a development container tha
  
 The launch of OpenECPDS signifies a commitment to ongoing maintenance and updates, focusing on long-term sustainability and continuous improvement to meet evolving user needs.
 
-## Data Storage and Retrieval
+### Data Storage and Retrieval
 
 Unlike a conventional data store, OpenECPDS does not necessarily physically store the data in its persistent repository but rather works like a search engine, crawling and indexing metadata from data providers. However, OpenECPDS can cache data in its Data Store to ensure availability without relying on instant access to data providers.
 
@@ -62,7 +70,7 @@ Data can be fed into the Data Store via:
 
 Data products can be searched by name or metadata and either pushed by the Data Dissemination service or pulled from the Data Portal by users. OpenECPDS streams data on the fly or sends it from the Data Store if it was previously fetched.
 
-## Protocols and Connections
+### Protocols and Connections
 
 OpenECPDS interacts with a variety of environments and supports multiple standard protocols:
 
@@ -73,13 +81,13 @@ Protocol configurations vary based on authentication and connection methods (e.g
 
 The OpenECPDS software is modular, supporting new protocols through extensions.
 
-## Object Storage
+### Object Storage
 
 OpenECPDS stores data as objects, combining data, metadata, and a globally unique identifier. It employs a file-system-based solution with replication across multiple locations to ensure continuous data availability. For example, data can be replicated across local storage systems and cloud platforms to bring data closer to users and enhance performance.
 
 The object storage system in OpenECPDS is hierarchy-free but can emulate directory structures when necessary, based on metadata provided by data providers. OpenECPDS presents different views of the same data, depending on user preferences.
 
-## Additional Features
+### Additional Features
 
 - **Notification System**: Provides an embedded MQTT broker to publish notifications and an MQTT client to subscribe to data providers.
 - **Data Compression**: Supports various algorithms (lzma, zip, gzip, bzip2, lbzip2, lz4, snappy) to reduce dissemination time and enable faster access to data.
@@ -89,7 +97,7 @@ The object storage system in OpenECPDS is hierarchy-free but can emulate directo
 
 ## Getting Started
 
-### Building and Running OpenECPDS
+### System Requirements and Setup
 
 OpenECPDS requires Docker to be installed and fully functional, with the default Docker socket enabled (Settings -> Advanced -> "Allow the default Docker socket to be used"). The build and run process has been tested on Linux and macOS (Intel/Apple Silicon) using Docker Desktop v4.34.2. It has also been reported to work on Windows with the WSL 2 backend and the host networking option enabled.
 
@@ -107,7 +115,7 @@ curl -L -o master.zip https://github.com/ecmwf/open-ecpds/archive/refs/heads/mas
 
 A [Makefile](Makefile) located in the `open-ecpds-master` directory can be used to create the development container that installs all the necessary tools for building the application. The Java classes are compiled, packaged into RPM files, and used to build Docker images for each OpenECPDS component.
 
-#### Creating and Logging into the Development Container
+### Creating and Logging into the Development Container
 
 To build the development container:
 
@@ -117,7 +125,7 @@ make dev
 
 If successful, you should be logged into the development container.
 
-#### Building and Configuring OpenECPDS
+### Building and Configuring OpenECPDS
 
 Once inside the development container, you can run the following command to compile the Java classes, package the RPM files, and build the OpenECPDS Docker images:
 
@@ -142,7 +150,7 @@ make config
 
 For advanced configurations, you can fine-tune the options by modifying the default values in the Compose file. Each parameter is documented within the file itself to provide a better understanding of its function and how it impacts the system's behavior. By reviewing the Compose file, you can tailor the setup to your environment’s specific requirements.
 
-#### Starting OpenECPDS
+### Starting OpenECPDS
 
 To start the application:
 
@@ -167,7 +175,7 @@ It might take a few seconds for all the services to start. Once they are up, you
 |                       | [http://127.0.0.1:3062](http://127.0.0.1:3062)   | monitor/admin         |
 |                       | [http://127.0.0.1:4062](http://127.0.0.1:4062)   | mover/admin           |
 
-#### Checking the Containers and Logs
+### Checking the Containers and Logs
 
 To verify that the containers are running, use:
 
@@ -189,7 +197,7 @@ run/var/log/ecpds/monitor
 run/var/log/ecpds/mover
 ```
 
-#### Additional Makefile Options
+### Additional Makefile Options
 
 To log in to the database:
 
@@ -203,7 +211,7 @@ To log in to the master container (use the same for monitor, mover, and database
 make connect container=master
 ```
 
-#### Stopping OpenECPDS
+### Stopping OpenECPDS
 
 To stop the application, run:
 
@@ -270,6 +278,8 @@ After completing these steps, the OpenECPDS project should be ready to work with
 Eclipse does not natively support development containers, and this is not required for simply running and debugging OpenECPDS within Eclipse. To build the OpenECPDS Docker images, the development container can be manually created as outlined in the [Getting Started](#getting-started) section.
 
 ## Deployment
+
+### Deploying OpenECPDS on Kubernetes
 
 If you have successfully built the OpenECPDS containers and enabled Kubernetes in Docker, navigate to the following directory where a [Makefile](deploy/kubernetes/Makefile) is available:
 
