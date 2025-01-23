@@ -29,8 +29,9 @@ Data Acquisition and Data Dissemination are active services initiated by OpenECP
   - [Eclipse](#eclipse)
 - [Deployment](#deployment)
   - [Deploying OpenECPDS on Kubernetes](#deploying-openecpds-on-kubernetes)
-  - [Infrastructure](#infrastructure)
+  - [Physical Infrastructure](#physical-infrastructure)
 - [Concepts for Users](#concepts-for-users)
+  - [OpenECPDS Entities](#openecpds-entities)
   - [Failover Mechanism in Host Selection](#failover-mechanism-in-host-selection)
 - [Notification System (MQTT)](#notification-system-mqtt)
   - [Functional Overview of the Notification System](#functional-overview-of-the-notification-system)
@@ -319,7 +320,7 @@ To delete all Kubernetes resources and stop the pods:
 make delete
 ```
 
-### Infrastructure
+### Physical Infrastructure
 
 This section provides a high-level overview of the physical infrastructure supporting OpenECPDS at ECMWF. The deployment consists of three distinct services: Acquisition (ACQ), Dissemination (DISS), and Auxiliary (AUX). While this serves as an example of a possible physical infrastructure, the actual setup may vary depending on the specific requirements of each site.
 
@@ -330,6 +331,8 @@ Each service is dedicated to a specific function but retains the same core capab
 The current infrastructure comprises 80 bare-metal systems with a total storage capacity of 2 petabytes. Storage capacity is regularly reassessed, especially when new processing cycles are introduced.
 
 ## Concepts for Users
+
+### OpenECPDS Entities
 
 Understanding some key OpenECPDS concepts will help users to benefit fully from the tool’s capabilities:
 
