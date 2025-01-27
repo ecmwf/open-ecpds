@@ -33,6 +33,11 @@ Data Acquisition and Data Dissemination are active services initiated by OpenECP
 - [Concepts for Users](#concepts-for-users)
   - [OpenECPDS Entities](#openecpds-entities)
   - [Failover Mechanism in Host Selection](#failover-mechanism-in-host-selection)
+- [Workflow for various Use Cases](#workflow-for-various-use-cases)
+  - [ECPDS command-line](#ecpds-command-line)
+  - [Data Portal](#data-portal)
+  - [Dissemination](#dissemination)
+  - [Acquisition](#acquisition)
 - [Notification System (MQTT)](#notification-system-mqtt)
   - [Functional Overview of the Notification System](#functional-overview-of-the-notification-system)
   - [Typical Interaction in the OpenECPDS Notification System](#typical-interaction-in-the-openecpds-notification-system)
@@ -50,7 +55,7 @@ To ensure ECMWF's forecasts reach Member and Co-operating States promptly, effic
 
 The picture below shows the essential role of ECPDS in the ECMWF Numerical Weather Prediction (NWP) system.
 
-<img src="img/Figure1.svg" alt="ECMWF Product Data Store (ECPDS)" width="450"/>
+<img src="img/Figure01.svg" alt="ECMWF Product Data Store (ECPDS)" width="450"/>
 
 Recently, ECPDS has been rolled out to some Member States and is now in use within the United Weather Centers (UWC) West consortium. Building on the success of these deployments and following requests from our Member States, OpenECPDS was launched to encourage collaboration with other organizations, strengthen integration efforts, and enhance data service capabilities through community contributions.
 
@@ -324,7 +329,7 @@ make delete
 
 This section provides a high-level overview of the physical infrastructure supporting OpenECPDS at ECMWF. The deployment consists of three distinct services: Acquisition (ACQ), Dissemination (DISS), and Auxiliary (AUX). While this serves as an example of a possible physical infrastructure, the actual setup may vary depending on the specific requirements of each site.
 
-<img src="img/Figure6.svg" alt="Example of OpenECPDS Deployment" width="650"/>
+<img src="img/Figure06.svg" alt="Example of OpenECPDS Deployment" width="650"/>
 
 Each service is dedicated to a specific function but retains the same core capabilities. This separation primarily helps distribute workloads based on peak usage periods. For instance, the Acquisition service operates continuously, while the Dissemination and Auxiliary services experience peak activity three times a day, particularly during forecast deliveries.
 
@@ -349,7 +354,7 @@ A **data transfer** is linked to a unique data file and represents a transfer re
 
 A **destination** should be understood as a place where data transfers are queued and processed in order to deliver data to a unique remote place, hence the name ‘destination’. It specifies the information the Data Dissemination service needs to disseminate the content of a data file to a particular remote site.
 
-<img src="img/Figure2.jpg" alt="The OpenECPDS interface for internal and external user" width="600"/>
+<img src="img/Figure02.jpg" alt="The OpenECPDS interface for internal and external user" width="600"/>
 
 A breadcrumb trail at the top shows where a user currently is in the tool. In this case, a user has created a destination called EC1. Users with the right credentials can see the status of this destination and can review the progress of data transmission. They can manage the destination by, for example, requesting data transfers, changing priorities and stopping or starting data transmissions.
 
@@ -371,18 +376,54 @@ There is also the concept of destination **aliases**, which makes it possible to
 
 The diagram below illustrates how the system manages failures by dynamically switching between available hosts. OpenECPDS sequentially attempts to connect to each host in the list, moving to the next one if a failure occurs.
 
-<img src="img/Figure5.svg" alt="The OpenECPDS Failover Mechanism in Host Selection" width="400"/>
+<img src="img/Figure05.svg" alt="The OpenECPDS Failover Mechanism in Host Selection" width="400"/>
 
 The behavior of the failover mechanism depends on the configuration of the transfer scheduler:
 
 - It can either continue using the first successfully connected host or revert to the primary host once it becomes available.
 - The switch can occur immediately after a successful transfer or after a predefined time interval.
 
+## Workflow for various Use Cases
+
+### ECPDS command-line
+
+#### Synchronous Push
+
+<img src="img/Figure07.svg" alt="ECPDS command-line - Synchronous Push" width="450"/>
+
+#### Asynchronous Push
+
+<img src="img/Figure08.svg" alt="ECPDS command-line - Asynchronous Push" width="450"/>
+
+### Data Portal
+
+#### Synchronous Push
+
+<img src="img/Figure10.svg" alt="Data Portal - Synchronous Push" width="450"/>
+
+#### Synchronous Pull
+
+<img src="img/Figure11.svg" alt="Data Portal - Synchronous Pull" width="450"/>
+
+### Dissemination
+
+<img src="img/Figure12.svg" alt="Dissemination" width="450"/>
+
+### Acquisition
+
+#### Discovery
+
+<img src="img/Figure13.svg" alt="Acquisition - Discovery" width="450"/>
+
+#### Pull
+
+<img src="img/Figure14.svg" alt="Acquisition - Pull" width="450"/>
+
 ## Notification System (MQTT)
 
 ### Functional Overview of the Notification System
 
-<img src="img/Figure3.svg" alt="The OpenECPDS notification system overview" width="600"/>
+<img src="img/Figure03.svg" alt="The OpenECPDS notification system overview" width="600"/>
 
 This functional view of the Notification System illustrates the key components involved in product notifications. The **Product Data Store** is depicted in dark blue at the top right, while the **Dissemination and Acquisition Systems** appear in sky blue at the top left. The **MQTT and Message Brokers** are shown at the bottom left and right, outlined in red.
 
@@ -403,7 +444,7 @@ For the **Message Broker**, the process is simpler: upon receiving a notificatio
 
 The MQTT-based notification system follows a structured interaction between three key components: the **MQTT Client**, the **MQTT Broker**, and the **OpenECPDS Data Store**.
 
-<img src="img/Figure4.svg" alt="MQTT interaction between a Client, a Broker, and the Data Store" width="550"/>
+<img src="img/Figure04.svg" alt="MQTT interaction between a Client, a Broker, and the Data Store" width="550"/>
 
 - **Connection Establishment**: The process begins with the Client initiating a connection to the Broker by sending a **CONNECT** message. The Broker acknowledges the connection by responding with a **CONNACK** message.
 
