@@ -395,13 +395,11 @@ This is the default mode for submitting data files to OpenECPDS. It allows both 
 
 <img src="img/Figure07.svg" alt="ECPDS command-line - Synchronous Push" width="450"/>
 
-The workflow is as follows:
-
-1) The `ecpds` command connects to the Master Server, authenticates, and sends the metadata (e.g., hostname, user ID, filename, location, size) to the Master Server.
-2) The Master Server allocates a DataFileID for the file and assigns a Data Mover to receive its content. It then returns the hostname and port of the selected Data Mover.
+1) The `ecpds` command connects to the Master Server, authenticates, and sends metadata (e.g., source hostname, user ID, filename, location, size) to the Master Server.
+2) The Master Server allocates a **DataFileID** for the file and assigns a Data Mover to receive its content. It then returns the hostname and port of the selected Data Mover, along with the **DataFileID**, to the `ecpds` command.
 3) The `ecpds` command connects to the Data Mover using the provided hostname and port and transfers the file content.
-4) The Data Mover sends an acknowledgment of the file reception to the Master Server.
-5) The Master Server sends the acknowledgment to the `ecpds` command along with the DataFileID.
+4) The Data Mover sends an acknowledgment of file reception to the Master Server.
+5) The Master Server sends the acknowledgment to the `ecpds` command, including the **DataFileID**.
 
 #### Asynchronous Push
 
@@ -409,13 +407,16 @@ The asynchronous mode is recommended when handling a large number of data files 
 
 <img src="img/Figure08.svg" alt="ECPDS command-line - Asynchronous Push" width="450"/>
 
-The workflow is as follows:
+The workflow for submitting the request is as follows (in blue):
 
-1) The `ecpds` command connects to the Master Server, authenticates, and sends the metadata (e.g., hostname, user ID, filename, location, size) to the Master Server.
-2) The Master Server allocates a DataFileID for the file and assigns a Data Mover to receive its content. It then forwards the metadata to the Data Mover.
-3) The Data Mover, using the provided metadata, connects to the source host with the user ID and retrieves the content of the file based on its filename and location.
+1) The `ecpds` command connects to the Master Server, authenticates, and sends metadata (e.g., source hostname, user ID, filename, location, size) to the Master Server.
+2) The Master Server allocates a **DataFileID** for the file and assigns a Data Mover to receive its content. It then sends an acknowledgment to the `ecpds` command, including the **DataFileID**.
+
+The workflow for retrieving the file content is triggered by the Transfer Scheduler and is as follows (in red):
+
+3) The Master contact the allocated Data Mover and request for the data file to be retrieved.
+4) Using the provided metadata, the Data Mover connects to the source host with the user ID and retrieves the content of the file based on its filename and location.
 4) After the retrieval is successfully completed, the Data Mover sends an acknowledgment to the Master Server.
-5) The Master Server sends an acknowledgment to the ecpds command along with the DataFileID.
 
 ### Data Portal
 
