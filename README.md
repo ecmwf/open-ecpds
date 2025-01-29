@@ -438,7 +438,7 @@ The `ftp`, `sftp`, `scp`, and `wget/curl` command-line tools can be used to tran
 
 In this workflow:
 
- - The **User Data Mover** is the server where the customer connects using FTP, SFTP, SCP, or wget/curl to upload a file.
+ - The **User Data Mover** is the server where the customer connects using FTP, SFTP, SCP, or HTTPS to upload a file.
  - The **Target Data Mover** is the server where the file will be stored.
 
 In a multi-mover setup:
