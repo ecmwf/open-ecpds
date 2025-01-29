@@ -400,13 +400,22 @@ The workflow is as follows:
 1) The `ecpds` command connects to the Master Server, authenticates, and sends the metadata (e.g., hostname, user ID, filename, location, size) to the Master Server.
 2) The Master Server allocates a DataFileID for the file and assigns a Data Mover to receive its content. It then returns the hostname and port of the selected Data Mover.
 3) The `ecpds` command connects to the Data Mover using the provided hostname and port and transfers the file content.
-4) The Data Mover sends an acknowledgment of the file reception to the Master Server, which then forwards it to the `ecpds` command along with the DataFileID.
+4) The Data Mover sends an acknowledgment of the file reception to the Master Server.
+5) The Master Server sends the acknowledgment to the `ecpds` command along with the DataFileID.
 
 #### Asynchronous Push
 
 The asynchronous mode is recommended when handling a large number of data files or high data volumes. In the first phase, metadata, including the file location and the source host for retrieval, is registered in OpenECPDS. In the second phase, OpenECPDS initiates the file downloads from the Data Movers. Typically, multiple files are registered at once, organised into groups, and retrieved in parallel streams managed by OpenECPDS. This approach enhances performance by using a load-balancing mechanism to distribute the workload across Data Movers and source hosts.
 
 <img src="img/Figure08.svg" alt="ECPDS command-line - Asynchronous Push" width="450"/>
+
+The workflow is as follows:
+
+1) The `ecpds` command connects to the Master Server, authenticates, and sends the metadata (e.g., hostname, user ID, filename, location, size) to the Master Server.
+2) The Master Server allocates a DataFileID for the file and assigns a Data Mover to receive its content. It then forwards the metadata to the Data Mover.
+3) The Data Mover, using the provided metadata, connects to the source host with the user ID and retrieves the content of the file based on its filename and location.
+4) After the retrieval is successfully completed, the Data Mover sends an acknowledgment to the Master Server.
+5) The Master Server sends an acknowledgment to the ecpds command along with the DataFileID.
 
 ### Data Portal
 
