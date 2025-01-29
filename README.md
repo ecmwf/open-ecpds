@@ -424,6 +424,10 @@ The diagram below provides a complete overview of the retrieval mechanism used i
 
 <img src="img/Figure15.svg" alt="ECPDS command-line - Asynchronous Push at ECMWF" width="500"/>
 
+The forecast is produced and stored on the supercomputer (HPC) across multiple data nodes. Some submission tasks register these files with the OpenECPDS Master. The Master then records the requests, and the transfer scheduler asynchronously load-balances the data file retrievals across multiple data movers in each hall. This enables high parallelism between the HPC data nodes and the OpenECPDS data movers, maximizing the use of the local network.
+
+The maximum number of simultaneous data retrievals is configurable in OpenECPDS.
+
 ### Data Portal
 
 #### Synchronous Push
