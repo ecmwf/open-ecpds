@@ -422,7 +422,7 @@ After submitting the request with the `ecpds` command, the status can be checked
 
 The diagram below provides a complete overview of the retrieval mechanism used in OpenECPDS at ECMWF.
 
-<img src="img/Figure15.svg" alt="ECPDS command-line - Asynchronous Push" width="500"/>
+<img src="img/Figure15.svg" alt="ECPDS command-line - Asynchronous Push at ECMWF" width="500"/>
 
 ### Data Portal
 
