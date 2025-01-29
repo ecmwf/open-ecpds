@@ -418,6 +418,8 @@ The workflow for retrieving the file content is triggered by the Transfer Schedu
 4) Using the provided metadata, the Data Mover connects to the source host with the user ID and retrieves the content of the file based on its filename and location.
 4) After the retrieval is successfully completed, the Data Mover sends an acknowledgment to the Master Server.
 
+After submitting the request with the `ecpds` command, the status can be checked using the `ecpds` command and the **DataFileID** to track the data file retrieval. Tracking can also be done through the OpenECPDS monitoring interface.
+
 ### Data Portal
 
 #### Synchronous Push
