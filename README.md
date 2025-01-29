@@ -34,7 +34,7 @@ Data Acquisition and Data Dissemination are active services initiated by OpenECP
   - [OpenECPDS Entities](#openecpds-entities)
   - [Failover Mechanism in Host Selection](#failover-mechanism-in-host-selection)
 - [Workflow for various Use Cases](#workflow-for-various-use-cases)
-  - [ECPDS command-line](#ecpds-command-line)
+  - [ECPDS command-line Tool](#ecpds-command-line-tool)
   - [Data Portal](#data-portal)
   - [Dissemination](#dissemination)
   - [Acquisition](#acquisition)
