@@ -420,6 +420,10 @@ The workflow for retrieving the file content is triggered by the Transfer Schedu
 
 After submitting the request with the `ecpds` command, the status can be checked using the `ecpds` command and the **DataFileID** to track the data file retrieval. Tracking can also be done through the OpenECPDS monitoring interface.
 
+The diagram below provides a complete overview of the retrieval mechanism used in OpenECPDS at ECMWF.
+
+<img src="img/Figure15.svg" alt="ECPDS command-line - Asynchronous Push" width="500"/>
+
 ### Data Portal
 
 #### Synchronous Push
