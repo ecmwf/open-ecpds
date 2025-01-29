@@ -387,11 +387,11 @@ The behavior of the failover mechanism depends on the configuration of the trans
 
 ### ECPDS command-line Tool
 
-The `ecpds` command-line tool is designed to submit local data files to a specified destination on OpenECPDS. It provides several options to fine-tune transfer requests, monitor transfer statuses, and manage scheduled transfers. In this section, we will examine the workflow for submitting a local file in both synchronous and asynchronous modes.
+The `ecpds` command-line is designed to submit local data files to a specified destination on OpenECPDS. It provides several options to fine-tune transfer requests, monitor transfer statuses, and manage scheduled transfers. In this section, we will examine the workflow for submitting a local file in both synchronous and asynchronous modes.
 
 #### Synchronous Push
 
-This is the default mode for submitting data files to OpenECPDS. It allows both file transfer and metadata registration in a single execution of the `ecpds` command-line tool. Once OpenECPDS has successfully processed the file, it returns a DataFileID, which can be used to track the file via the OpenECPDS monitoring interface. The returned DataFileID guarantees that the file has been correctly registered and stored in the Data Store.
+This is the default mode for submitting data files to OpenECPDS. It allows both file transfer and metadata registration in a single execution of the `ecpds` command-line. Once OpenECPDS has successfully processed the file, it returns a DataFileID, which can be used to track the file via the OpenECPDS monitoring interface. The returned DataFileID guarantees that the file has been correctly registered and stored in the Data Store.
 
 <img src="img/Figure07.svg" alt="ECPDS command-line - Synchronous Push" width="450"/>
 
