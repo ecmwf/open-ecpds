@@ -434,6 +434,27 @@ Data submission requests to OpenECPDS are grouped under a specific name. At the 
 
 <img src="img/Figure10.svg" alt="Data Portal - Synchronous Push" width="450"/>
 
+In this workflow:
+
+ - The **User Data Mover** is the server where the customer connects using FTP, SFTP, SCP, or wget/curl to upload a file.
+ - The **Target Data Mover** is the server where the file will be stored.
+
+In a multi-mover setup:
+
+ - The **User Data Mover** is selected by a Load Balancer, which distributes requests across available Data Movers.
+ - The **Target Data Mover** is allocated by the Master Server, considering available storage and system load.
+
+Thus, the **User Data Mover** and **Target Data Mover** may not be the same.
+
+Workflow Steps:
+
+1) The client connects to the **User Data Mover** via FTP, SFTP, SCP, or wget/curl and uploads a file.
+2) The **User Data Mover** extracts the target path, filename, and metadata (e.g., user ID) and sends a request to the Master Server.
+3) The Master Server determines the target destination based on the filename and user configuration. It then assigns a DataFileID and selects a **Target Data Mover**.
+4) The **User Data Mover** connects to the **Target Data Mover** and streams the file directly from the client.
+5) Once the transfer is complete, the **Target Data Mover** sends an acknowledgment to the Master Server.
+6) The Master Server notifies the **User Data Mover**, which then closes the connection with the client.
+
 #### Synchronous Pull
 
 <img src="img/Figure11.svg" alt="Data Portal - Synchronous Pull" width="450"/>
