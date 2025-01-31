@@ -478,9 +478,9 @@ The acquisition system is designed to connect to data providers to first discove
 
 <img src="img/Figure13.svg" alt="Acquisition - Discovery" width="450"/>
 
-#### Pull
+#### Retrieval
 
-<img src="img/Figure14.svg" alt="Acquisition - Pull" width="450"/>
+<img src="img/Figure14.svg" alt="Acquisition - Retrieval" width="450"/>
 
 ### Dissemination
 
