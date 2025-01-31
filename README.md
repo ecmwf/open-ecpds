@@ -432,14 +432,10 @@ Data submission requests to OpenECPDS are grouped under a specific name. At the 
 
 The `ftp`, `sftp`, `scp`, `s3`, and `wget/curl` command-line tools can be used to transfer data to and from OpenECPDS. These standard tools facilitate connections and file transfers via the OpenECPDS data portal. In this section, we examine the workflow for uploading and downloading files using these methods.
 
-#### Synchronous Push
+In these workflows:
 
-<img src="img/Figure10.svg" alt="Data Portal - Synchronous Push" width="450"/>
-
-In this workflow:
-
- - The **User Data Mover** is the server where the customer connects using FTP, SFTP, SCP, S3 or HTTPS to upload a file.
- - The **Target Data Mover** is the server where the file will be stored.
+ - The **User Data Mover** is the server where the customer connects using FTP, SFTP, SCP, S3 or HTTPS to upload or download a file.
+ - The **Target Data Mover** is the server where the file is stored.
 
 In a multi-mover setup:
 
@@ -447,6 +443,10 @@ In a multi-mover setup:
  - The **Target Data Mover** is allocated by the Master Server, considering available storage and system load.
 
 Thus, the **User Data Mover** and **Target Data Mover** may not be the same.
+
+#### Synchronous Push
+
+<img src="img/Figure10.svg" alt="Data Portal - Synchronous Push" width="450"/>
 
 Workflow Steps:
 
