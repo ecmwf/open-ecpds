@@ -81,7 +81,7 @@ Data products can be searched by name or metadata and either pushed by the Data 
 OpenECPDS interacts with a variety of environments and supports multiple standard protocols:
 
 - **Outgoing connections** (Data Acquisition & Dissemination): FTP, SFTP, FTPS, HTTP/S, AmazonS3, Azure and Google Cloud Storage.
-- **Incoming connections** (Data Portal): FTP, HTTPS, S3 (SFTP and SCP soon available).
+- **Incoming connections** (Data Portal): FTP, HTTPS, S3 (at the moment, **SFTP** and **SCP** are available exclusively through a Commercial API).
 
 Protocol configurations vary based on authentication and connection methods (e.g., password vs. key-based authentication, parallel vs. serial connections).
 
@@ -434,7 +434,7 @@ The `ftp`, `sftp`, `scp`, `s3`, and `wget/curl` command-line tools can be used t
 
 In these workflows:
 
- - The **User Data Mover** is the server where the customer connects using FTP, SFTP, SCP, S3 or HTTPS to upload or download a file.
+ - The **User Data Mover** is the server where the customer connects using FTP, SFTP, SCP, HTTPS or S3 to upload or download a file.
  - The **Target Data Mover** is the server where the file is stored.
 
 In a multi-mover setup:
@@ -450,16 +450,25 @@ Thus, the **User Data Mover** and **Target Data Mover** may not be the same.
 
 Workflow Steps:
 
-1) The client connects to the **User Data Mover** via FTP, SFTP, SCP, S3 or HTTPS and uploads a file.
+1) The client connects to the **User Data Mover** via FTP, SFTP, SCP, HTTPS or S3 and uploads a file.
 2) The **User Data Mover** extracts the target path, filename, and metadata (e.g., user ID) and sends a request to the Master Server.
 3) The Master Server determines the target destination based on the filename and user configuration. It then assigns a DataFileID and selects a **Target Data Mover**.
 4) The **User Data Mover** connects to the **Target Data Mover** and streams the file directly from the client.
-5) Once the transfer is complete, the **Target Data Mover** sends an acknowledgment to the Master Server.
-6) The Master Server notifies the **User Data Mover**, which then closes the connection with the client.
+5) Once the transfer is complete, the **Target Data Mover** sends an acknowledgment to the **Master Server**.
+6) The **Master Server** notifies the **User Data Mover**, which then closes the connection with the client.
 
 #### Synchronous Pull
 
 <img src="img/Figure11.svg" alt="Data Portal - Synchronous Pull" width="450"/>
+
+Workflow Steps:
+
+1) The client connects to the **User Data Mover** via FTP, SFTP, SCP, HTTPS, or S3 and downloads a file.
+2) The **User Data Mover** extracts the target path, filename, and metadata (e.g., user ID) and sends a request to the **Master Server**.
+3) The **Master Server** determines the target destination and DataFileID based on the filename and user configuration, allowing it to locate the **Target Data Mover** where the data file is stored.
+4) The **User Data Mover** connects to the **Target Data Mover** and requests the data file using its DataFileID.
+5) The **Target Data Mover** streams the file content to the **User Data Mover**.
+6) The **User Data Mover** streams the file content directly to the client.
 
 ### Dissemination
 
