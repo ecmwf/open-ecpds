@@ -36,8 +36,8 @@ Data Acquisition and Data Dissemination are active services initiated by OpenECP
 - [Workflow for various Use Cases](#workflow-for-various-use-cases)
   - [ECPDS command-line Tool](#ecpds-command-line-tool)
   - [Data Portal](#data-portal)
-  - [Dissemination](#dissemination)
   - [Acquisition](#acquisition)
+  - [Dissemination](#dissemination)
 - [Notification System (MQTT)](#notification-system-mqtt)
   - [Functional Overview of the Notification System](#functional-overview-of-the-notification-system)
   - [Typical Interaction in the OpenECPDS Notification System](#typical-interaction-in-the-openecpds-notification-system)
@@ -470,11 +470,9 @@ Workflow Steps:
 5) The **Target Data Mover** streams the file content to the **User Data Mover**.
 6) The **User Data Mover** streams the file content directly to the client.
 
-### Dissemination
-
-<img src="img/Figure12.svg" alt="Dissemination" width="450"/>
-
 ### Acquisition
+
+The acquisition system is designed to connect to data providers to first discover the available data, then select the relevant data, and finally retrieve it in a second phase. Each phase occurs asynchronously: first, the discovery phase, followed by the retrieval phase. The corresponding workflows are explained below.
 
 #### Discovery
 
@@ -483,6 +481,12 @@ Workflow Steps:
 #### Pull
 
 <img src="img/Figure14.svg" alt="Acquisition - Pull" width="450"/>
+
+### Dissemination
+
+After a file has been registered and stored in OpenECPDS, whether it was submitted and pushed via the ECPDS command-line, uploaded through the Data Portal, or acquired via the acquisition system, it can then be disseminated to a remote site.
+
+<img src="img/Figure12.svg" alt="Dissemination" width="450"/>
 
 ## Notification System (MQTT)
 
