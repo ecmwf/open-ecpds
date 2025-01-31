@@ -472,19 +472,23 @@ Workflow Steps:
 
 ### Acquisition
 
-The acquisition system is designed to connect to data providers to first discover the available data, then select the relevant data, and finally retrieve it in a second phase. Each phase occurs asynchronously: first, the discovery phase, followed by the retrieval phase. The corresponding workflows are explained below.
+The **Acquisition System** is designed to connect to data providers to first discover the available data, then select the relevant data, and finally retrieve it in a second phase. Each phase occurs asynchronously: first, the **Discovery** phase, followed by the **Retrieval** phase. The corresponding workflows are explained below.
 
 #### Discovery
+
+The **Acquisition Scheduler** processes all acquisition hosts for each destination, connecting to their respective remote servers to list directories and select files based on predefined rules.
 
 <img src="img/Figure13.svg" alt="Acquisition - Discovery" width="450"/>
 
 #### Retrieval
 
+The **Retrieval Scheduler** processes all files registered in OpenECPDS during the Discovery phase and triggers the retrieval of their content from the Data Providers.
+
 <img src="img/Figure14.svg" alt="Acquisition - Retrieval" width="450"/>
 
 ### Dissemination
 
-After a file has been registered and stored in OpenECPDS, whether it was submitted and pushed via the ECPDS command-line, uploaded through the Data Portal, or acquired via the acquisition system, it can then be disseminated to a remote site.
+After a file has been registered and stored in OpenECPDS, whether it was submitted and pushed via the `ecpds` command, uploaded through the **Data Portal**, or acquired via the **Acquisition System**, it can then be disseminated to a remote site via the **Dissemination System**.
 
 <img src="img/Figure12.svg" alt="Dissemination" width="450"/>
 
