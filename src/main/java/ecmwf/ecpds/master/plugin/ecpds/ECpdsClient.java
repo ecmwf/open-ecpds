@@ -668,10 +668,10 @@ public final class ECpdsClient {
             write(master, "VERSION", req.getVERSION());
             write(master, "USER", req.getUSER());
             write(master, "WAITFORGROUP", req.getWAITFORGROUP());
-            final var message = read(masterIn);
-            while (!"QUIT".equals(message)) {
-                _log.debug(message);
-            }
+			String message;
+			while (!(message = read(masterIn)).equals("QUIT")) {
+			    _log.debug(message);
+			}
         } finally {
             StreamPlugThread.closeQuietly(masterSocket);
         }
