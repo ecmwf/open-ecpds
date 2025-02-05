@@ -64,9 +64,6 @@ public final class ThreadService {
     /** The Constant USE_THREAD_SPOOL. */
     private static final boolean USE_THREAD_SPOOL = Cnf.at("Server", "useThreadSpool", true);
 
-    /** The Constant USE_VIRTUAL_THREAD. */
-    private static final boolean USE_VIRTUAL_THREAD = Cnf.at("Server", "useVirtualThread", true);
-
     /** The Constant configurablePool. */
     private static final ExecutorService configurablePool = ConfigurableThreadFactory.getExecutorService(false);
 
@@ -89,7 +86,7 @@ public final class ThreadService {
      */
     public static boolean setCookieIfNotAlreadySet(final String name) {
         final var current = ThreadContext.peek();
-        if (current == null || current.length() == 0) {
+        if (current == null || current.isEmpty()) {
             setCookie(name);
             return true;
         }
@@ -637,8 +634,8 @@ public final class ThreadService {
                 }
             }
             if (startedFrom != null) {
-                _log.debug("Thread started from {} in {}ms (interruptible={},virtual={})", startedFrom,
-                        System.currentTimeMillis() - startTime, interruptible, current.isVirtual());
+                _log.debug("Thread started from {} in {}ms (interruptible={})", startedFrom,
+                        System.currentTimeMillis() - startTime, interruptible);
             } else {
                 _log.debug("Thread NOT started with ConfigurableRunnable.execute()");
             }
@@ -737,10 +734,9 @@ public final class ThreadService {
             if (interruptibleRMIThread) { // Need a redesign to allow using virtual threads!
                 t = new InterruptibleRMIThread(group, runnable, name, 0);
             } else {
-                t = USE_VIRTUAL_THREAD ? Thread.ofVirtual().name(name).unstarted(runnable)
-                        : Thread.ofPlatform().group(group).name(name).unstarted(runnable);
+                t = new Thread(group, runnable, name, 0);
             }
-            if (!USE_VIRTUAL_THREAD && t.isDaemon()) {
+            if (t.isDaemon()) {
                 _log.debug("Deactivate daemon flag for Thread: {}", name);
                 t.setDaemon(false);
             }
