@@ -33,6 +33,7 @@ Data Acquisition and Data Dissemination are active services initiated by OpenECP
 - [Concepts for Users](#concepts-for-users)
   - [OpenECPDS Entities](#openecpds-entities)
   - [Failover Mechanism in Host Selection](#failover-mechanism-in-host-selection)
+  - [Lifecycle of a Data Transfer](#lifecycle-of-a-data-transfer)
 - [Workflow for various Use Cases](#workflow-for-various-use-cases)
   - [ECPDS command-line Tool](#ecpds-command-line-tool)
   - [Data Portal](#data-portal)
@@ -382,6 +383,12 @@ The behavior of the failover mechanism depends on the configuration of the trans
 
 - It can either continue using the first successfully connected host or revert to the primary host once it becomes available.
 - The switch can occur immediately after a successful transfer or after a predefined time interval.
+
+### Lifecycle of a Data Transfer
+
+Each data transfer in OpenECPDS follows a well-defined lifecycle, transitioning through different statuses from initiation to completion. This diagram illustrates the various states a transfer can go through, including successful deliveries, retries, and failure handling. Understanding these transitions helps in diagnosing issues, optimizing performance, and ensuring reliable data distribution across the system.
+
+<img src="img/Figure16.svg" alt="Lifecycle of a Data Transfer" width="400"/>
 
 ## Workflow for various Use Cases
 
