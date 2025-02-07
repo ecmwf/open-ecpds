@@ -418,6 +418,20 @@ Once a data transfer request has been registered in OpenECPDS, it will be proces
 - **Transferring** – The data is currently being disseminated to the remote site.
 - **Done** – The data transmission has been successfully completed.
 
+#### Failure Handling
+
+At every stage of processing, an error can occur. When an error occurs, the data transfer request is assigned a specific status depending on the nature of the error. Once the error has been recorded, the transfer scheduler has two options: either retry the request or remain in the error state, depending on the destination or host configuration (e.g., maximum number of retries, unrecoverable error).
+
+1) **Error State** - the file has failed to complete successfully the processing phase.
+
+- **Failed** - The dissemination to the remote site has failed.
+- **Interrupted** - The processing has been interrupted (e.g., destination or OpenECPDS restart).
+- **Stopped** - The processing was stopped either manually through the monitoring interface, due to an unrecoverable error, or because the maximum number of retries was reached.
+
+2) **Retry The Request** -
+
+- **Requeued** - The file has entered an error state but was requeued because the error was not considered unrecoverable. A file can also be manually requeued by a user through the monitoring interface. In the case of an automatic retry, the file can be rescheduled for a later time to prevent retries from occurring too frequently. A maximum number of retries can also be configured, with settings available at both the destination and host levels.
+
 ## Workflow for various Use Cases
 
 ### ECPDS command-line Tool
