@@ -412,9 +412,9 @@ Once a data transfer request has been registered in OpenECPDS, it will be proces
 - **StandBy** - The data transfer request was submitted with the standby option, causing it to be ignored by the **Data Transfer Scheduler**.
 - **Done** – The data file has been successfully downloaded.
 
-2) **Dissemination to a Remote Site** - The data transfer is in the queue, waiting for the scheduled time to pass.
+2) **Dissemination to a Remote Site** - The data transfer request is in the queue, waiting for the scheduled time to pass.
 
-- **Queued** – The data transfer is waiting to be picked up by the **Data Transfer Scheduler**.
+- **Queued** – The data transfer request is waiting to be picked up by the **Data Transfer Scheduler**.
 - **Transferring** – The data is currently being disseminated to the remote site.
 - **Done** – The data transmission has been successfully completed.
 
