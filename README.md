@@ -390,7 +390,7 @@ Each data transfer in OpenECPDS follows a well-defined lifecycle, transitioning 
 
 <img src="img/Figure16.svg" alt="Lifecycle of a Data Transfer" width="400"/>
 
-#### Data Submission
+#### Submission
 
 This phase involves submitting a data file to the OpenECPDS data store and registering a data transfer request for it. There are two submission modes, each with its associated statuses:
 
@@ -400,8 +400,23 @@ This phase involves submitting a data file to the OpenECPDS data store and regis
 
 2) **Fetch Mode** – The metadata is submitted first, and the file content is retrieved asynchronously.
 
-- **Preset** – The metadata has been registered, and the data retrieval has been scheduled, awaiting processing by the data retrieval scheduler.
-- **Fetching** – The data retrieval scheduler is actively retrieving the file content into the data store.
+- **Preset** – The metadata has been registered, and the data retrieval has been scheduled, awaiting processing by the **Data Retrieval Scheduler**.
+- **Fetching** – The **Data Retrieval Scheduler** is actively retrieving the file content into the Data Store.
+
+#### Processing
+
+Once a data transfer request has been registered in OpenECPDS, it will be processed by various OpenECPDS schedulers and transition through multiple statuses. The data file associated with the transfer request can either be downloaded through the data portal or disseminated to a remote site. Each mode has its own set of statuses:
+
+1) **Data Portal** - The file is in the destination queue, waiting to be retrieved.
+
+- **StandBy** - The data transfer request was submitted with the standby option, causing it to be ignored by the **Data Transfer Scheduler**.
+- **Done** – The data file has been successfully downloaded.
+
+2) **Dissemination to a Remote Site** - The data transfer is in the queue, waiting for the scheduled time to pass.
+
+- **Queued** – The data transfer is waiting to be picked up by the **Data Transfer Scheduler**.
+- **Transferring** – The data is currently being disseminated to the remote site.
+- **Done** – The data transmission has been successfully completed.
 
 ## Workflow for various Use Cases
 
