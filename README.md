@@ -392,20 +392,16 @@ Each data transfer in OpenECPDS follows a well-defined lifecycle, transitioning 
 
 #### Data Submission
 
-This phase involves submitting a data file to the OpenECPDS data store and registering a data transfer request for this file. There are two submission modes:
+This phase involves submitting a data file to the OpenECPDS data store and registering a data transfer request for it. There are two submission modes, each with its associated statuses:
 
-1) **Push Mode**
+1) **Push Mode** – Both the metadata and the file content are pushed directly.
 
-Both the metadata and the file content are pushed directly:
+- **Arriving** – The metadata has been registered, and the file content is currently being uploaded to the data store.
 
-- Status: **Arriving** – The metadata has been registered, and the file content is currently being uploaded to the data store.
+2) **Fetch Mode** – The metadata is submitted first, and the file content is retrieved asynchronously.
 
-2) **Fetch Mode**
-
-First, the metadata is submitted, and then the file content is retrieved asynchronously:
-
-- Status: **Preset** – The metadata has been registered, and the data retrieval has been scheduled, awaiting processing by the data retrieval scheduler.
-- Status: **Fetching** – The data retrieval scheduler is actively retrieving the file content into the data store.
+- **Preset** – The metadata has been registered, and the data retrieval has been scheduled, awaiting processing by the data retrieval scheduler.
+- **Fetching** – The data retrieval scheduler is actively retrieving the file content into the data store.
 
 ## Workflow for various Use Cases
 
