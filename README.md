@@ -525,9 +525,15 @@ The **Acquisition System** is designed to connect to data providers to first dis
 
 #### Discovery
 
-The **Acquisition Scheduler** processes all acquisition hosts for each destination, connecting to their respective remote servers to list directories and select files based on predefined rules.
+The **Acquisition Scheduler** checks each acquisition host and triggers a discovery of remote files based on a timeline configured at the destination and host level.
 
 <img src="img/Figure13.svg" alt="Acquisition - Discovery" width="450"/>
+
+When a discovery is triggered, the following steps occur:
+
+1) The Master allocates a Data Mover and connects to it to initiate a connection to the remote host and request a file listing.
+2) The Data Mover selects the appropriate transfer module based on the protocol defined in the host configuration, and using the selected module, connects to the remote site and issues a listing request.
+3) The listing output is sent back to the Master Server, which registers the selected data transfers.
 
 #### Retrieval
 
