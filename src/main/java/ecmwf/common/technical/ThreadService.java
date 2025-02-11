@@ -64,6 +64,9 @@ public final class ThreadService {
     /** The Constant USE_THREAD_SPOOL. */
     private static final boolean USE_THREAD_SPOOL = Cnf.at("Server", "useThreadSpool", true);
 
+    /** The Constant USE_VIRTUAL_THREAD. */
+    private static final boolean USE_VIRTUAL_THREAD = Cnf.at("Server", "useVirtualThread", false);
+
     /** The Constant configurablePool. */
     private static final ExecutorService configurablePool = ConfigurableThreadFactory.getExecutorService(false);
 
@@ -634,8 +637,8 @@ public final class ThreadService {
                 }
             }
             if (startedFrom != null) {
-                _log.debug("Thread started from {} in {}ms (interruptible={})", startedFrom,
-                        System.currentTimeMillis() - startTime, interruptible);
+                _log.debug("Thread started from {} in {}ms (interruptible={},virtual={})", startedFrom,
+                        System.currentTimeMillis() - startTime, interruptible, current.isVirtual());
             } else {
                 _log.debug("Thread NOT started with ConfigurableRunnable.execute()");
             }
@@ -734,9 +737,10 @@ public final class ThreadService {
             if (interruptibleRMIThread) { // Need a redesign to allow using virtual threads!
                 t = new InterruptibleRMIThread(group, runnable, name, 0);
             } else {
-                t = new Thread(group, runnable, name, 0);
+                t = USE_VIRTUAL_THREAD ? Thread.ofVirtual().name(name).unstarted(runnable)
+                        : Thread.ofPlatform().group(group).name(name).unstarted(runnable);
             }
-            if (t.isDaemon()) {
+            if (!USE_VIRTUAL_THREAD && t.isDaemon()) {
                 _log.debug("Deactivate daemon flag for Thread: {}", name);
                 t.setDaemon(false);
             }
