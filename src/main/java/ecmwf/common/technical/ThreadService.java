@@ -563,7 +563,7 @@ public final class ThreadService {
                     }
                 }
                 final var cookieName = (Format.trimString(user, "") + " " + Format.trimString(context, "")).trim();
-                if (cookieName.length() > 0) {
+                if (!cookieName.isEmpty()) {
                     cookie = cookieName;
                 }
             }
