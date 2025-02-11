@@ -546,7 +546,7 @@ When a retrieval is triggered, the following steps occur:
 1) The **Master Server** allocates a **User Data Mover** to connect to the remote site and forwards the **Data File ID** and the address of the **Target Data Mover**, which was allocated for storing the data file.
 2) The **User Data Mover** connects to the **Target Data Mover**, forwards the **Data File ID**, and requests a stream for storing the file's content.
 3) The **User Data Mover** locates the transfer module configured for the remote site, initiates a connection, and requests the file content.
-4)The file content is streamed from the remote site to the **Target Data Mover**.
+4) The file content is streamed from the remote site to the **Target Data Mover**.
 
 ### Dissemination
 
