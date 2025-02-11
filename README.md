@@ -440,40 +440,40 @@ The `ecpds` command-line is designed to submit local data files to a specified d
 
 #### Synchronous Push
 
-This is the default mode for submitting data files to OpenECPDS. It allows both file transfer and metadata registration in a single execution of the `ecpds` command-line. Once OpenECPDS has successfully processed the file, it returns a DataFileID, which can be used to track the file via the OpenECPDS monitoring interface. The returned DataFileID guarantees that the file has been correctly registered and stored in the Data Store.
+This is the default mode for submitting data files to OpenECPDS. It allows both file transfer and metadata registration in a single execution of the `ecpds` command-line. Once OpenECPDS has successfully processed the file, it returns a **Data File ID**, which can be used to track the file via the OpenECPDS monitoring interface. The returned **Data File ID** guarantees that the file has been correctly registered and stored in the Data Store.
 
 <img src="img/Figure07.svg" alt="ECPDS command-line - Synchronous Push" width="450"/>
 
-1) The `ecpds` command connects to the Master Server, authenticates, and sends metadata (e.g., source hostname, user ID, filename, location, size) to the Master Server.
-2) The Master Server allocates a **DataFileID** for the file and assigns a Data Mover to receive its content. It then returns the hostname and port of the selected Data Mover, along with the **DataFileID**, to the `ecpds` command.
-3) The `ecpds` command connects to the Data Mover using the provided hostname and port and transfers the file content.
-4) The Data Mover sends an acknowledgment of file reception to the Master Server.
-5) The Master Server sends the acknowledgment to the `ecpds` command, including the **DataFileID**.
+1) The `ecpds` command connects to the **Master Server**, authenticates, and sends metadata (e.g., source hostname, user ID, filename, location, size).
+2) The **Master Server** allocates a **Data File ID** for the file and assigns a **Data Mover** to receive its content. It then returns the hostname and port of the selected **Data Mover**, along with the **Data File ID**, to the `ecpds` command.
+3) The `ecpds` command connects to the **Data Mover** using the provided hostname and port and transfers the file content.
+4) The **Data Mover** sends an acknowledgment of file reception to the **Master Server**.
+5) The **Master Server** sends the acknowledgment to the `ecpds` command, including the **Data File ID**.
 
 #### Asynchronous Push
 
-The asynchronous mode is recommended when handling a large number of data files or high data volumes. In the first phase, metadata, including the file location and the source host for retrieval, is registered in OpenECPDS. In the second phase, OpenECPDS initiates the file downloads from the Data Movers. Typically, multiple files are registered at once, organised into groups, and retrieved in parallel streams managed by OpenECPDS. This approach enhances performance by using a load-balancing mechanism to distribute the workload across Data Movers and source hosts.
+The asynchronous mode is recommended when handling a large number of data files or high data volumes. In the first phase, metadata, including the file location and the source host for retrieval, is registered in OpenECPDS. In the second phase, OpenECPDS initiates the file downloads from the **Data Movers**. Typically, multiple files are registered at once, organised into groups, and retrieved in parallel streams managed by OpenECPDS. This approach enhances performance by using a load-balancing mechanism to distribute the workload across **Data Movers** and source hosts.
 
 <img src="img/Figure08.svg" alt="ECPDS command-line - Asynchronous Push" width="450"/>
 
 The workflow for submitting the request is as follows (in blue):
 
-1) The `ecpds` command connects to the Master Server, authenticates, and sends metadata (e.g., source hostname, user ID, filename, location, size) to the Master Server.
-2) The Master Server allocates a **DataFileID** for the file and assigns a Data Mover to receive its content. It then sends an acknowledgment to the `ecpds` command, including the **DataFileID**.
+1) The `ecpds` command connects to the **Master Server**, authenticates, and sends metadata (e.g., source hostname, user ID, filename, location, size).
+2) The Master Server allocates a **Data File ID** for the file and assigns a **Data Mover** to receive its content. It then sends an acknowledgment to the `ecpds` command, including the **Data File ID**.
 
-The workflow for retrieving the file content is triggered by the Transfer Scheduler and is as follows (in red):
+The workflow for retrieving the file content is triggered by the **Transfer Scheduler** and is as follows (in red):
 
-3) The Master contact the allocated Data Mover and request for the data file to be retrieved.
-4) Using the provided metadata, the Data Mover connects to the source host with the user ID and retrieves the content of the file based on its filename and location.
-4) After the retrieval is successfully completed, the Data Mover sends an acknowledgment to the Master Server.
+3) The **Master Server** contact the allocated **Data Mover** and request for the data file to be retrieved.
+4) Using the provided metadata, the **Data Mover** connects to the source host with the user ID and retrieves the content of the file based on its filename and location.
+4) After the retrieval is successfully completed, the **Data Mover** sends an acknowledgment to the **Master Server**.
 
-After submitting the request with the `ecpds` command, the status can be checked using the `ecpds` command and the **DataFileID** to track the data file retrieval. Tracking can also be done through the OpenECPDS monitoring interface.
+After submitting the request with the `ecpds` command, the status can be checked using the `ecpds` command and the **Data File ID** to track the data file retrieval. Tracking can also be done through the OpenECPDS monitoring interface.
 
 The diagram below provides a complete overview of the retrieval mechanism used in OpenECPDS at ECMWF.
 
 <img src="img/Figure15.svg" alt="ECPDS command-line - Asynchronous Push at ECMWF" width="500"/>
 
-The forecast is produced and stored on the supercomputer (HPC) across multiple data nodes. Some submission tasks register these files with the OpenECPDS Master. The Master then records the requests, and the transfer scheduler asynchronously load-balances the data file retrievals across multiple data movers in each hall. This enables high parallelism between the HPC data nodes and the OpenECPDS data movers, maximizing the use of the local network. The maximum number of simultaneous data retrievals is configurable in OpenECPDS.
+The forecast is produced and stored on the supercomputer (HPC) across multiple data nodes. Some submission tasks register these files with the OpenECPDS Master. The **Master Server** then records the requests, and the **Transfer Scheduler** asynchronously load-balances the data file retrievals across multiple **Data Movers** in each hall. This enables high parallelism between the HPC data nodes and the OpenECPDS **Data Movers**, maximizing the use of the local network. The maximum number of simultaneous data retrievals is configurable in OpenECPDS.
 
 Data submission requests to OpenECPDS are grouped under a specific name. At the end of a batch submission, an `ecpds` command is executed to track the retrieval of all files in the group. Once all files have been successfully retrieved, the `ecpds` command returns.
 
