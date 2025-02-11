@@ -18,9 +18,13 @@
 
 package ecmwf.common.rmi;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.Socket;
 import java.nio.file.Path;
+import java.util.Scanner;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,221 +34,230 @@ import org.apache.logging.log4j.Logger;
  */
 class SocketOptions {
 
-    /** The Constant _log. */
-    private static final Logger _log = LogManager.getLogger(SocketOptions.class);
+	/** The Constant _log. */
+	private static final Logger _log = LogManager.getLogger(SocketOptions.class);
 
-    /** The loaded. */
-    private static boolean loaded = false;
+	/** The loaded. */
+	private static boolean loaded = false;
 
-    static {
-        final var libraryFile = Path.of(System.getProperty("java.jni.path", "") + "/libsocketoptions.so").toFile();
-        final var absolutePath = libraryFile.getAbsolutePath();
-        if (libraryFile.exists() && libraryFile.canRead()) {
-            try {
-                System.load(absolutePath);
-                loaded = true;
-            } catch (final UnsatisfiedLinkError e) {
-                _log.error("Failed to load native library: {}", absolutePath, e);
-            }
-        } else {
-            _log.error("Failed to load native library: {} (exists={},canRead={})", absolutePath, libraryFile.exists(),
-                    libraryFile.canRead());
-        }
-    }
+	/** SS available. */
+	private static boolean ssAvailable = isCommandAvailable("ss");
 
-    /**
-     * Instantiates a new socket options.
-     */
-    private SocketOptions() {
-        // Hiding constructor!
-    }
+	static {
+		final var libraryFile = Path.of(System.getProperty("java.jni.path", "") + "/libsocketoptions.so").toFile();
+		final var absolutePath = libraryFile.getAbsolutePath();
+		if (libraryFile.exists() && libraryFile.canRead()) {
+			try {
+				System.load(absolutePath);
+				loaded = true;
+			} catch (final UnsatisfiedLinkError e) {
+				_log.error("Failed to load native library: {}", absolutePath, e);
+			}
+		} else {
+			_log.error("Failed to load native library: {} (exists={},canRead={})", absolutePath, libraryFile.exists(),
+					libraryFile.canRead());
+		}
+	}
 
-    /**
-     * Checks if is accessible.
-     *
-     * @param socket
-     *            the socket
-     *
-     * @return true, if is accessible
-     */
-    static boolean isAccessible(final Socket socket) {
-        return loaded && socket.isConnected();
-    }
+	/**
+	 * Instantiates a new socket options.
+	 */
+	private SocketOptions() {
+		// Hiding constructor!
+	}
 
-    /**
-     * Sets the TCP congestion.
-     *
-     * @param socket
-     *            the socket
-     * @param algorithm
-     *            the algorithm
-     *
-     * @return the int
-     */
-    static native int setTCPCongestion(final Socket socket, final String algorithm);
+	/**
+	 * Checks if is accessible.
+	 *
+	 * @param socket the socket
+	 *
+	 * @return true, if is accessible
+	 */
+	static boolean isAccessible(final Socket socket) {
+		return loaded && socket.isConnected();
+	}
 
-    /**
-     * Sets the SO max pacing rate.
-     *
-     * @param socket
-     *            the socket
-     * @param pacingRate
-     *            the pacing rate
-     *
-     * @return the int
-     */
-    static native int setSOMaxPacingRate(final Socket socket, final int pacingRate);
+	/**
+	 * Sets the TCP congestion.
+	 *
+	 * @param socket    the socket
+	 * @param algorithm the algorithm
+	 *
+	 * @return the int
+	 */
+	static native int setTCPCongestion(final Socket socket, final String algorithm);
 
-    /**
-     * Sets the TCP max segment.
-     *
-     * @param socket
-     *            the socket
-     * @param maxSegmentSize
-     *            the max segment size
-     *
-     * @return the int
-     */
-    static native int setTCPMaxSegment(final Socket socket, final int maxSegmentSize);
+	/**
+	 * Sets the SO max pacing rate.
+	 *
+	 * @param socket     the socket
+	 * @param pacingRate the pacing rate
+	 *
+	 * @return the int
+	 */
+	static native int setSOMaxPacingRate(final Socket socket, final int pacingRate);
 
-    /**
-     * Sets the TCP time stamp.
-     *
-     * @param socket
-     *            the socket
-     * @param enable
-     *            the enable
-     *
-     * @return the int
-     */
-    static native int setTCPTimeStamp(final Socket socket, final boolean enable);
+	/**
+	 * Sets the TCP max segment.
+	 *
+	 * @param socket         the socket
+	 * @param maxSegmentSize the max segment size
+	 *
+	 * @return the int
+	 */
+	static native int setTCPMaxSegment(final Socket socket, final int maxSegmentSize);
 
-    /**
-     * Sets the TCP window clamp.
-     *
-     * @param socket
-     *            the socket
-     * @param windowSize
-     *            the window size
-     *
-     * @return the int
-     */
-    static native int setTCPWindowClamp(final Socket socket, final int windowSize);
+	/**
+	 * Sets the TCP time stamp.
+	 *
+	 * @param socket the socket
+	 * @param enable the enable
+	 *
+	 * @return the int
+	 */
+	static native int setTCPTimeStamp(final Socket socket, final boolean enable);
 
-    /**
-     * Sets the TCP keep alive time.
-     *
-     * @param socket
-     *            the socket
-     * @param keepAliveTime
-     *            the keep alive time
-     *
-     * @return the int
-     */
-    static native int setTCPKeepAliveTime(final Socket socket, final int keepAliveTime);
+	/**
+	 * Sets the TCP window clamp.
+	 *
+	 * @param socket     the socket
+	 * @param windowSize the window size
+	 *
+	 * @return the int
+	 */
+	static native int setTCPWindowClamp(final Socket socket, final int windowSize);
 
-    /**
-     * Sets the TCP keep alive interval.
-     *
-     * @param socket
-     *            the socket
-     * @param keepAliveInterval
-     *            the keep alive interval
-     *
-     * @return the int
-     */
-    static native int setTCPKeepAliveInterval(final Socket socket, final int keepAliveInterval);
+	/**
+	 * Sets the TCP keep alive time.
+	 *
+	 * @param socket        the socket
+	 * @param keepAliveTime the keep alive time
+	 *
+	 * @return the int
+	 */
+	static native int setTCPKeepAliveTime(final Socket socket, final int keepAliveTime);
 
-    /**
-     * Sets the TCP keep alive probes.
-     *
-     * @param socket
-     *            the socket
-     * @param keepAliveProbes
-     *            the keep alive probes
-     *
-     * @return the int
-     */
-    static native int setTCPKeepAliveProbes(final Socket socket, final int keepAliveProbes);
+	/**
+	 * Sets the TCP keep alive interval.
+	 *
+	 * @param socket            the socket
+	 * @param keepAliveInterval the keep alive interval
+	 *
+	 * @return the int
+	 */
+	static native int setTCPKeepAliveInterval(final Socket socket, final int keepAliveInterval);
 
-    /**
-     * Sets the TCP linger.
-     *
-     * @param socket
-     *            the socket
-     * @param enable
-     *            the enable
-     * @param lingerTime
-     *            the linger time
-     *
-     * @return the int
-     */
-    static native int setTCPLinger(final Socket socket, boolean enable, final int lingerTime);
+	/**
+	 * Sets the TCP keep alive probes.
+	 *
+	 * @param socket          the socket
+	 * @param keepAliveProbes the keep alive probes
+	 *
+	 * @return the int
+	 */
+	static native int setTCPKeepAliveProbes(final Socket socket, final int keepAliveProbes);
 
-    /**
-     * Sets the TCP user timeout.
-     *
-     * @param socket
-     *            the socket
-     * @param userTimeout
-     *            the user timeout
-     *
-     * @return the int
-     */
-    static native int setTCPUserTimeout(final Socket socket, final int userTimeout);
+	/**
+	 * Sets the TCP linger.
+	 *
+	 * @param socket     the socket
+	 * @param enable     the enable
+	 * @param lingerTime the linger time
+	 *
+	 * @return the int
+	 */
+	static native int setTCPLinger(final Socket socket, boolean enable, final int lingerTime);
 
-    /**
-     * Sets the TCP quick ack.
-     *
-     * @param socket
-     *            the socket
-     * @param enable
-     *            the enable
-     *
-     * @return the int
-     */
-    static native int setTCPQuickAck(final Socket socket, final boolean enable);
+	/**
+	 * Sets the TCP user timeout.
+	 *
+	 * @param socket      the socket
+	 * @param userTimeout the user timeout
+	 *
+	 * @return the int
+	 */
+	static native int setTCPUserTimeout(final Socket socket, final int userTimeout);
 
-    /**
-     * Gets the SS output.
-     *
-     * @param localPort
-     *            the local port
-     * @param port
-     *            the port
-     *
-     * @return the SS output
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
-     */
-    static native String getSSOutput(final int localPort, final int port) throws IOException;
+	/**
+	 * Sets the TCP quick ack.
+	 *
+	 * @param socket the socket
+	 * @param enable the enable
+	 *
+	 * @return the int
+	 */
+	static native int setTCPQuickAck(final Socket socket, final boolean enable);
 
-    /**
-     * Gets the socket descriptor.
-     *
-     * @param socket
-     *            the socket
-     *
-     * @return the socket descriptor
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
-     */
-    static native int getSocketDescriptor(final Socket socket) throws IOException;
+	/**
+	 * Gets the socket descriptor.
+	 *
+	 * @param socket the socket
+	 *
+	 * @return the socket descriptor
+	 *
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	static native int getSocketDescriptor(final Socket socket) throws IOException;
 
-    /**
-     * Gets the SS output.
-     *
-     * @param socket
-     *            the socket
-     *
-     * @return the SS output
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
-     */
-    static String getSSOutput(final Socket socket) throws IOException {
-        return getSSOutput(socket.getLocalPort(), socket.getPort());
-    }
+	/**
+	 * Gets the SS output.
+	 *
+	 * @param socket the socket
+	 *
+	 * @return the SS output
+	 *
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	static String getSSOutput(final Socket socket) throws IOException {
+		if (ssAvailable) {
+			final String[] command = { "/bin/sh", "-c", "ss -ntepi state established --inet-sockopt -O -H | grep -E ']:"
+					+ socket.getLocalPort() + " .*]:" + socket.getPort() + " '" };
+			final var processBuilder = new ProcessBuilder(command);
+			try {
+				final var process = processBuilder.start();
+				final var output = new StringBuilder();
+				final var outputThread = new Thread(() -> {
+					try (var reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+						String line;
+						while ((line = reader.readLine()) != null) {
+							output.append(line).append("\n");
+						}
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				});
+				outputThread.start();
+				// Wait for the process to finish within the timeout
+				var finished = process.waitFor(5, TimeUnit.SECONDS);
+				if (!finished) {
+					process.destroy();
+					process.waitFor(2, TimeUnit.SECONDS);
+					if (process.isAlive()) {
+						process.destroyForcibly();
+					}
+					return "exception:timeout";
+				}
+				outputThread.join(); // Ensure output reading is finished
+				return output.toString();
+			} catch (IOException | InterruptedException e) {
+				_log.warn("Running SS command", e);
+				return "exception:" + e.getClass().getName();
+			}
+		} else {
+			return "exception:ss-not-found";
+		}
+	}
+
+	private static boolean isCommandAvailable(final String command) {
+		try {
+			try (var scanner = new Scanner(Runtime.getRuntime()
+					.exec(System.getProperty("os.name").toLowerCase().startsWith("win") ? "where " + command
+							: "which " + command)
+					.getInputStream())) {
+				return scanner.hasNext(); // If there is output, the command exists
+			}
+		} catch (IOException e) {
+			return false;
+		}
+	}
 }
