@@ -554,6 +554,13 @@ After a file has been registered and stored in OpenECPDS, whether it was submitt
 
 <img src="img/Figure12.svg" alt="Dissemination" width="450"/>
 
+When a request for disseminating a file is triggered, the following steps occur:
+
+1) The **Master Server** allocates a **User Data Mover** to handle the dissemination of the selected file, providing the **Data File ID** and the address of the **Target Data Mover** where the file is stored.
+2) The **User Data Mover** forwards a request to the **Target Data Mover** containing the **Data File ID**.
+3) The **Target Data Mover** locates the file and returns a stream to allow the **User Data Mover** to download its content.
+4) The **User Data Mover** connects to the remote site using the configured transfer module and uploads the file's content directly from the **Target Data Mover**.
+
 ## Notification System (MQTT)
 
 ### Functional Overview of the Notification System
