@@ -541,6 +541,13 @@ The **Retrieval Scheduler** processes all files registered in OpenECPDS during t
 
 <img src="img/Figure14.svg" alt="Acquisition - Retrieval" width="450"/>
 
+When a retrieval is triggered, the following steps occur:
+
+1) The **Master Server** allocates a **User Data Mover** to connect to the remote site and forwards the **Data File ID** and the address of the **Target Data Mover**, which was allocated for storing the data file.
+2) The **User Data Mover** connects to the **Target Data Mover**, forwards the **Data File ID**, and requests a stream for storing the file's content.
+3) The **User Data Mover** locates the transfer module configured for the remote site, initiates a connection, and requests the file content.
+4)The file content is streamed from the remote site to the **Target Data Mover**.
+
 ### Dissemination
 
 After a file has been registered and stored in OpenECPDS, whether it was submitted and pushed via the `ecpds` command, uploaded through the **Data Portal**, or acquired via the **Acquisition System**, it can then be disseminated to a remote site via the **Dissemination System**.
