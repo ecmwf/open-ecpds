@@ -336,6 +336,12 @@ Each service is dedicated to a specific function but retains the same core capab
 
 The current infrastructure comprises 80 bare-metal systems with a total storage capacity of 2 petabytes. Storage capacity is regularly reassessed, especially when new processing cycles are introduced.
 
+The following figure illustrates the main data flows for OpenECPDS and its various processes: first, the **Data Submission** from the HPC to OpenECPDS; then, the **Data Replication** between the Data Movers; and finally, the **Data Dissemination** to the Internet and RMDCN networks over the WAN.
+
+<img src="img/Figure17.svg" alt="OpenECPDS Data Flows" width="650"/>
+
+The HPC and OpenECPDS are each within their respective security zones, and the traffic represented by the yellow arrows between these zones passes through a firewall.
+
 ## Concepts for Users
 
 ### OpenECPDS Entities
