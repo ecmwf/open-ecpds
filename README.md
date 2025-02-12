@@ -756,6 +756,8 @@ The UPH category records events whenever a file is disseminated from OpenECPDS t
 - **Compressed**: Specifies whether the file was sent in a compressed format.
 - **CompressedOnTheFly**: Indicates whether the file was pre-compressed before transmission or compressed on the fly during the transfer.
 
+If a problem occurs during dissemination, an **ERR** event will be triggered instead of a **UPH** event to provide error details.
+
 #### INH (INcoming History) Fields
 Description of fields for INH events.
 
