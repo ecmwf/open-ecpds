@@ -720,7 +720,41 @@ These fields give a comprehensive overview of the retrieval process and help mon
 
 #### UPH (UPload History) Fields
 
-Description of fields for UPH events.
+The UPH category records events whenever a file is disseminated from OpenECPDS to a remote site. Each event captures details about the data transfer, including scheduling, execution, and completion status.
+
+- **Monitored**: Indicates whether the destination responsible for the data transfer is tracked in the top monitoring display (same as in RET).
+- **DataTransferId**: Unique identifier of the data transfer request (same as in RET).
+- **DestinationName**: Name of the OpenECPDS destination for this data transfer request (same as in RET).
+- **DestinationType**: Type of the destination (same as in RET).
+- **FileName**: Full name of the file (same as in RET).
+- **FileSize**: Size of the file (same as in RET).
+- **MetaStream**: Metadata stream associated with the data file (same as in RET).
+- **MetaType**: Metadata type associated with the data file (same as in RET).
+- **MetaTime**: Metadata time associated with the data file (same as in RET).
+- **Priority**: Priority level assigned to the data transfer request in the destination queue.
+- **QueueTime**: The requested time for starting the dissemination. Initially set to the scheduled time but may change if the file has been re-queued or automatically retried.
+- **RequeueCount**: The number of times the data transfer request has been re-queued.
+- **ScheduledTime**: The scheduled time when the data transfer request is expected to be processed (same as in RET).
+- **StartTime**: The most recent time when the dissemination process started.
+- **PutTime**: The time when the connection to the destination was established, and the input stream was ready to be read.
+- **Duration**: The total time taken for data dissemination from the moment the input stream started until it reached the end.
+- **DurationOnClose**: The total time taken for data dissemination, considering the moment when the output stream was fully flushed and closed. This can be longer than Duration if the transfer module uses large buffers for output.
+- **BytesSent**: The number of bytes sent during transmission. This may differ from the original file size if the transfer was incomplete, the file was compressed, or the transfer was resumed.
+- **StatusCode**: The final status of the transfer request can be one of the following: **Done** - Transfer successfully completed, **Stopped** – Transfer was intentionally stopped, **Failed** – Transfer failed, **Requeued** – Transfer was re-queued for another attempt, **Interrupted** – Transfer was interrupted.
+- **RetrievalTime**: The time when the data retrieval process started.
+- **TimeBase**: The time base associated with the data file (same as in RET).
+- **TimeStep**: The time step associated with the data file (same as in RET).
+- **FinishTime**: The time when the data transmission was completed.
+- **TransferProtocol**: The protocol used for the transfer (e.g., FTP, SFTP, HTTPS, S3, GCS).
+- **TransferServer**: The name of the Data Mover responsible for connecting to the host and processing the data dissemination.
+- **NetworkCode**: The network code has configured in the host entity (e.g., Internet, RMDCN).
+- **HostAddress**: The address or hostname of the target host.
+- **PreSchedule**: If set to true, the scheduled time is ignored, and the file is sent as soon as possible.
+- **ProxyHost**: If the transfer request was handled by a Continental Data Mover, this field contains the identifier of the proxy host used.
+- **Proxied**: Indicates whether the transfer request was processed through a Continental Data Mover.
+- **SocketStatistics**: If the target host was configured to collect socket statistics before closing the data connection, this field contains the output of the SS command.
+- **Compressed**: Specifies whether the file was sent in a compressed format.
+- **CompressedOnTheFly**: Indicates whether the file was pre-compressed before transmission or compressed on the fly during the transfer.
 
 #### INH (INcoming History) Fields
 Description of fields for INH events.
