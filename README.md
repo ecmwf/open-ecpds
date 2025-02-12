@@ -340,6 +340,8 @@ The following figure illustrates the main data flows for OpenECPDS and its vario
 
 <img src="img/Figure17.svg" alt="OpenECPDS Data Flows" width="650"/>
 
+This refers to **Data Dissemination** in a broad sense, including both uploads to remote sites from OpenECPDS and downloads by customers through the OpenECPDS data portal.
+
 The HPC and OpenECPDS are each within their respective security zones, and the traffic represented by the yellow arrows between these zones passes through a firewall.
 
 ## Concepts for Users
