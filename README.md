@@ -815,7 +815,32 @@ The ERR event is triggered when a data transfer fails in the context of dissemin
 - **Message** – Detailed error message explaining the reason for the failure.
 
 #### CPY (CoPY / Replication) Fields
-Description of fields for CPY events.
+
+The CPY event records details about file replication within OpenECPDS. It tracks when a file is duplicated either internally within an OpenECPDS Data Mover or transferred from an internal Data Mover to a Continental Data Mover. This event captures key metadata, transfer details, and any errors encountered during replication, ensuring traceability and monitoring of data movement across the system.
+
+- **Monitored** – Indicates whether the destination responsible for the data transfer is tracked in the top-level monitoring display (same as REP).
+- **DataTransferId** – Unique identifier of the data transfer request (same as REP).
+- **DestinationName** – Name of the OpenECPDS destination handling the data transfer request (same as REP).
+- **DestinationType** – Type of the destination (same as REP).
+- **FileName** – Full name of the transferred file (same as REP).
+- **FileSize** – Size of the transferred file (same as REP).
+- **ScheduledTime** – Scheduled time for processing the data transfer request (same as REP).
+- **StartTime** – Timestamp when the data transfer began (same as REP).
+- **MetaStream** – Metadata stream associated with the data file (same as RET).
+- **MetaType** – Metadata type associated with the data file (same as RET).
+- **MetaTime** – Metadata time associated with the data file (same as RET).
+- **TimeBase** – Time base associated with the data file (same as RET).
+- **TimeStep** – Time step associated with the data file (same as RET).
+- **Duration** – Total duration of the data transmission.
+- **CountryCode** – Country code assigned to the destination entity.
+- **Target** – File name on the target site after dissemination.
+- **TransferServer** – Name of the server handling the data transfer (same as RET).
+- **Caller** – Identifies the caller initiating the transfer (same as INH).
+- **ExpiryTime** – Expiry time associated with the data transfer request.
+- **FileSystem** – Identifier of the file system allocated for storing the data file.
+- **Status** – Indicates whether the replication was successful (`true`) or not (`false`).
+- **Message** – Error message providing details in case of a replication failure.
+- **Action** – Specifies whether the replication was internal within the OpenECPDS Data Mover (`replicate`) or between an internal Data Mover and a Continental Data Mover (`proxy`).
 
 ## Support Materials
 
