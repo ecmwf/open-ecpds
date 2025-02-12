@@ -405,14 +405,14 @@ Each data transfer in OpenECPDS follows a well-defined lifecycle, transitioning 
 
 This phase involves submitting a data file to the OpenECPDS data store and registering a data transfer request for it. There are two submission modes, each with its associated statuses:
 
-1) **Push Mode** – Both the metadata and the file content are pushed directly.
+1) **Push Mode** - Both the metadata and the file content are pushed directly.
 
-- **Arriving** – The metadata has been registered, and the file content is currently being uploaded to the data store.
+- **Arriving** - The metadata has been registered, and the file content is currently being uploaded to the data store.
 
-2) **Fetch Mode** – The metadata is submitted first, and the file content is retrieved asynchronously.
+2) **Fetch Mode** - The metadata is submitted first, and the file content is retrieved asynchronously.
 
-- **Preset** – The metadata has been registered, and the data retrieval has been scheduled, awaiting processing by the **Data Retrieval Scheduler**.
-- **Fetching** – The **Data Retrieval Scheduler** is actively retrieving the file content into the Data Store.
+- **Preset** - The metadata has been registered, and the data retrieval has been scheduled, awaiting processing by the **Data Retrieval Scheduler**.
+- **Fetching** - The **Data Retrieval Scheduler** is actively retrieving the file content into the Data Store.
 
 #### Processing
 
@@ -421,13 +421,13 @@ Once a data transfer request has been registered in OpenECPDS, it will be proces
 1) **Data Portal** - The file is in the destination queue, waiting to be retrieved.
 
 - **StandBy** - The data transfer request was submitted with the standby option, causing it to be ignored by the **Data Transfer Scheduler**.
-- **Done** – The data file has been successfully downloaded.
+- **Done** - The data file has been successfully downloaded.
 
 2) **Dissemination to a Remote Site** - The data transfer request is in the queue, waiting for the scheduled time to pass.
 
-- **Queued** – The data transfer request is waiting to be picked up by the **Data Transfer Scheduler**.
-- **Transferring** – The data is currently being disseminated to the remote site.
-- **Done** – The data transmission has been successfully completed.
+- **Queued** - The data transfer request is waiting to be picked up by the **Data Transfer Scheduler**.
+- **Transferring** - The data is currently being disseminated to the remote site.
+- **Done** - The data transmission has been successfully completed.
 
 #### Failure Handling
 
@@ -664,7 +664,7 @@ Each PRS event records a specific moment in the processing of a product, capturi
 PRS;StatusCode=EXEC;DataStream=GWAEF;TimeStep=144;TimeBase=2025-02-12 06:00:00.0;Type=EF;ScheduleTime=2025-02-12 13:04:00.0;LastUpdate=2025-02-12 12:28:44.353
 ```
 
-- **StatusCode**: This field represents the status of the product at a given stage of processing, which can be one of three options: **expected** (indicating the product has been scheduled but not yet started), **started** (indicating the processing has begun), or **completed** (indicating the processing has finished). This status is determined based on the flags used with the `ecpds` command-line tool, namely -expected, -started, or -completed.
+- **StatusCode**: This field represents the status of the product at a given stage of processing, which can be one of three options: **expected** (indicating the product has been scheduled but not yet started), **started** (indicating the processing has begun), or **completed** (indicating the processing has finished). This status is determined based on the flags used with the `ecpds` command-line tool, namely `-expected`, `-started`, or `-completed`.
 
 - **DataStream**: This field identifies the data stream associated with the product. It is used to group and identify the family of products being processed together, making it easier to categorize and manage them within the system.
 
@@ -783,7 +783,7 @@ The INH event records details whenever a new file is pushed to or retrieved from
 - **TransferProtocol**: If the request originates from the `ecpds` command, this field is set to **ecpds**. Otherwise, it records the protocol used to connect to the data portal (e.g., FTP, SFTP, HTTPS).
 - **TransferServer**: If the request was registered via the `ecpds` command-line tool, this field contains the Master Server name. Otherwise, it holds the name of the Data Mover handling the data processing.
 - **HostAddress**: IP address of the client submitting the request. If the request was initiated via `ecpds`, this is the IP of the host where the command was executed. If it was submitted through the data portal, this is the address of the Master Server.
-- **Caller**: If the request comes from the `ecpds` command-line, this field can be set using the -caller flag. If the flag is not provided, `ecpds` will attempt to retrieve the value from the system variable `EC_job_stdout`. If not found, or if the request originates from the data portal, this field remains empty.
+- **Caller**: If the request comes from the `ecpds` command-line, this field can be set using the `-caller` flag. If the flag is not provided, `ecpds` will attempt to retrieve the value from the system variable `EC_job_stdout`. If not found, or if the request originates from the data portal, this field remains empty.
 - **ExpiryTime**: Expiry time associated with the data transfer request.
 - **FileSystem**: Identifier of the file system allocated for storing the data file.
 - **Action**: Specifies whether the transfer request was related to an upload or a download.
