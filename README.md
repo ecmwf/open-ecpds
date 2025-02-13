@@ -39,6 +39,10 @@ Data Acquisition and Data Dissemination are active services initiated by OpenECP
   - [Data Portal](#data-portal)
   - [Acquisition](#acquisition)
   - [Dissemination](#dissemination)
+- [Continental Data Movers](#continental-data-movers)
+  - [Main Factors Affecting Data Transfer Speeds](#main-factors-affecting-data-transfer-speeds)
+  - [Key Functionalities of a Continental Data Mover](#key-functionalities-of-a-continental-data-mover)
+  - [Steps to Optimize Data Transfers](#steps-to-optimize-data-transfers)
 - [Notification System (MQTT)](#notification-system-mqtt)
   - [Functional Overview of the Notification System](#functional-overview-of-the-notification-system)
   - [Typical Interaction in the OpenECPDS Notification System](#typical-interaction-in-the-openecpds-notification-system)
@@ -571,6 +575,53 @@ When a request for disseminating a file is triggered, the following steps occur:
 2) The **User Data Mover** forwards a request to the **Target Data Mover** containing the **Data File ID**.
 3) The **Target Data Mover** locates the file and returns a stream to allow the **User Data Mover** to download its content.
 4) The **User Data Mover** connects to the remote site using the configured transfer module and uploads the file's content directly from the **Target Data Mover**.
+
+## Continental Data Movers
+
+Efficient data dissemination is crucial for ensuring timely access to critical information, especially when dealing with large datasets and geographically distributed users. A **Continental Data Mover** helps optimize data transfers by reducing network latency, balancing server load, and improving overall reliability. To maximize its benefits, several key strategies are implemented, including strategic deployment, network optimization and pre-replication of data.
+
+### Main Factors Affecting Data Transfer Speeds
+
+Several key factors influence the speed at which data is transferred:
+
+- **Data File Size & Network Capability**: The larger the file and the more limited the network bandwidth, the longer the transfer duration.
+- **Geographic Proximity**: The physical distance between the source and destination impacts transfer latency. The farther the data must travel, the greater the potential delay.
+- **Early Data Availability**: In most cases, data products become available before their scheduled dissemination time, allowing for potential optimizations in the transfer process.
+
+### Key Functionalities of a Continental Data Mover
+
+Continental Data Movers play a crucial role in the OpenECPDS dissemination system by ensuring reliable and efficient data transfers across multiple locations. Their main functionalities include:
+
+- **Seamless Dissemination Across Supported Protocols**: Continental Data Movers support all transfer protocols used within OpenECPDS, ensuring compatibility across different network environments and client systems.
+- **Efficient Connection Management**: Control connections to the OpenECPDS Master Server are load-balanced through OpenECPDS Movers, optimizing accessibility and reliability. Communication occurs via secure HTTPS requests using a REST/JSON interface, ensuring robust and scalable data handling.
+
+### Steps to Optimize Data Transfers
+
+To ensure efficient and timely data dissemination, a Continental Data Mover is set up and optimized through the following key steps:
+
+1) **Deploying a Continental Data Mover Near the Target Sites** - A Continental Data Mover is installed geographically closer to the intended recipients (e.g., in the US for North American users) to reduce latency and improve transfer speeds by minimizing long-distance network hops. The chosen location must have reliable infrastructure to support high-speed data transfers.
+
+2) **Optimizing Internet Connectivity to the Continental Data Mover** - High-bandwidth, low-latency network connections are used to link the OpenECPDS Master Server to the Continental Data Mover, ensuring fast and stable transfers. Redundant network paths are established to minimize the risk of disruptions. Where possible, direct peering agreements with major Internet providers or dedicated network links (e.g., RMDCN for institutional users) are used to enhance performance.
+
+3) **Pre-Replicating Data Before Peak Times** - Data is replicated onto the Continental Data Mover before the official schedule time to avoid congestion and delays. This ensures availability ahead of peak demand, reducing competition for bandwidth during dissemination. Replication is ideally scheduled during off-peak hours to take advantage of lower network usage.
+
+4) **Disseminating Data Directly from the Continental Mover** - Users receive data from the Continental Data Mover instead of the OpenECPDS Data Movers, reducing the load on the primary dissemination system and improving delivery speeds. The Continental Data Mover is configured to support all required OpenECPDS dissemination protocols (e.g., FTP, SFTP, HTTPS, S3) to ensure seamless access.
+
+The following diagram illustrates the data transfer flows between OpenECPDS, a Continental Data Mover and a target destination.
+
+<img src="img/Figure18.svg" alt="Continental Data Mover - Data Transfer Flows" width="450"/>
+
+The data files are proactively replicated from one of the **OpenECPDS Data Movers** to the **Continental Data Mover** ahead of the scheduled dissemination time. This pre-replication ensures that the data is readily available, minimizing delays when dissemination begins.
+
+Once the scheduled time arrives, the **OpenECPDS Master Server** instructs the **Continental Data Mover** to initiate the transfer to the designated target host. This process is illustrated in the diagram using green arrows, representing the primary dissemination workflow.
+
+However, if the **Continental Data Mover** encounters an issue, such as a disconnection or malfunction, a fallback mechanism is in place. In such cases, the dissemination is automatically handled by one of the **OpenECPDS Data Movers**, ensuring continuity of service. This backup process is depicted in the diagram with red arrows.
+
+The map below illustrates the OpenECPDS infrastructure deployed in Italy, alongside the **Continental Data Mover** installed in New York. The diagram shows the data transfer flows, highlighting the global reach and efficient data dissemination across geographically distributed locations.
+
+<img src="img/Figure19.svg" alt="Continental Data Mover - Data Transfer Flows" width="450"/>
+
+In OpenECPDS terminology, a **Continental Data Mover** is essentially a standard **OpenECPDS Data Mover** with limited functionalities and an alternative communication module designed to receive instructions from the **OpenECPDS Master Server**. To set up a **Continental Data Mover** within OpenECPDS, it is necessary to define a Proxy Host and associate it with a specific Destination. OpenECPDS will then use this Proxy Host to manage pre-replication tasks and facilitate communication with the **Continental Data Mover**.
 
 ## Notification System (MQTT)
 
