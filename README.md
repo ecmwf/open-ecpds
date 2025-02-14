@@ -916,7 +916,7 @@ The OpenECPDS infrastructure supports a vast network of over 1,000 destinations 
 
 To further optimize performance and reduce latency for transatlantic transfers, a Continental Data Mover has been deployed in the United States, strategically positioned to enhance data delivery to North American recipients.
 
-The following map, taken from the OpenECPDS Web Interface, illustrates the global infrastructure for data dissemination, highlighting all served destinations. It provides a clear visual representation of the system’s extensive reach.
+The following map, taken from the OpenECPDS Web Interface, illustrates the global infrastructure for data dissemination, highlighting all served destinations. It provides a clear visual representation of the system’s extensive reach. Please note that in areas with a high concentration of destinations within a small region, a single pin on the map may represent multiple destinations.
 
 <img src="img/Figure20.svg" alt="Global Reach of OpenECPDS Data Dissemination" width="550"/>
 
