@@ -912,7 +912,7 @@ CPY;Monitored=true;DataTransferId=123456789;DestinationName=MyDestination;Destin
 
 ## Global Reach of OpenECPDS
 
-The OpenECPDS infrastructure serves a vast network of destinations, with just under 1,000 destinations for acquisition and dissemination. These destinations cover over 80 countries, ensuring continuous around-the-clock data exchange. A live map, accessible from the OpenECPDS Web Interface, provides real-time monitoring of both dissemination and acquisition activities.
+The OpenECPDS infrastructure supports a vast network of over 1,000 destinations for acquisition and dissemination, marking a significant milestone in its expansion. Spanning more than 80 countries, this network enables continuous, around-the-clock data exchange. A live map, available through the OpenECPDS Web Interface, provides real-time monitoring of both dissemination and acquisition activities.
 
 To further optimize performance and reduce latency for transatlantic transfers, a Continental Data Mover has been deployed in the United States, strategically positioned to enhance data delivery to North American recipients.
 
