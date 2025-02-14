@@ -52,6 +52,7 @@ Data Acquisition and Data Dissemination are active services initiated by OpenECP
 - [Event Logging in OpenECPDS](#event-logging-in-openecpds)
   - [Event Categories](#event-categories)
   - [Fields by Category](#fields-by-category)
+- [Global Reach of OpenECPDS](#global-reach-of-openecpds)
 - [Support Materials](#support-materials)
 - [Notes](#notes)
 
@@ -908,6 +909,18 @@ CPY;Monitored=true;DataTransferId=123456789;DestinationName=MyDestination;Destin
 - **Status** – Indicates whether the replication was successful (`true`) or not (`false`).
 - **Message** – Error message providing details in case of a replication failure.
 - **Action** – Specifies whether the replication was internal within the OpenECPDS Data Mover (`replicate`) or between an internal Data Mover and a Continental Data Mover (`proxy`).
+
+## Global Reach of OpenECPDS
+
+The OpenECPDS infrastructure serves a vast network of destinations, with just under 1,000 destinations for acquisition and dissemination. These destinations cover over 80 countries, ensuring continuous around-the-clock data exchange. A live map, accessible from the OpenECPDS Web Interface, provides real-time monitoring of both dissemination and acquisition activities.
+
+To further optimize performance and reduce latency for transatlantic transfers, a Continental Data Mover has been deployed in the United States, strategically positioned to enhance data delivery to North American recipients.
+
+The following map, taken from the OpenECPDS Web Interface, illustrates the global infrastructure for data dissemination, highlighting all served destinations. It provides a clear visual representation of the system’s extensive reach.
+
+<img src="img/Figure20.svg" alt="Global Reach of OpenECPDS Data Dissemination" width="550"/>
+
+A corresponding view is available for the acquisition service.
 
 ## Support Materials
 
