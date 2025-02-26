@@ -735,7 +735,7 @@ PRS;StatusCode=EXEC;DataStream=GWAEF;TimeStep=144;TimeBase=2025-02-12 06:00:00.0
 The RET category includes the following fields, which provide detailed information about the data retrieval process:
 
 ```
-RET;Monitored=true;DataTransferId=123456789;DestinationName=MyDestination;DestinationType=Gold;FileName=/my/home/datafile.bin;FileSize=9426076326;ScheduledTime=2025-02-12 13:04:00.0;StartTime=2025-02-12 12:29:43.98;MetaStream=GENFO;MetaType=EF;MetaTime=06;TimeBase=2025-02-12 06:00:00.0;TimeStep=144;Duration=40781;HostId=123456;HostLogin=login;HostAddress=my.host.it;TransferProtocol=sftp;MoverName=my.mover.name.it;UserId=uid;RequestAddress=X.X.X.X;DataOnlyDuration=40189;StandBy=false;RemoteHost=my.remote.host.it
+RET;Monitored=true;DataTransferId=123456789;DestinationName=MyDestination;DestinationType=Gold;FileName=/my/home/datafile-260225.bin;FileSize=9426076326;Identity=/my/home/datafile.bin;ScheduledTime=2025-02-12 13:04:00.0;StartTime=2025-02-12 12:29:43.98;MetaStream=GENFO;MetaType=EF;MetaTime=06;TimeBase=2025-02-12 06:00:00.0;TimeStep=144;Duration=40781;HostId=123456;HostLogin=login;HostAddress=my.host.it;TransferProtocol=sftp;MoverName=my.mover.name.it;UserId=uid;RequestAddress=X.X.X.X;DataOnlyDuration=40189;StandBy=false;RemoteHost=my.remote.host.it
 ```
 
 - **Monitored**: A flag that indicates whether the destination responsible for processing the data transfer is monitored in the top monitoring display.
@@ -744,6 +744,7 @@ RET;Monitored=true;DataTransferId=123456789;DestinationName=MyDestination;Destin
 - **DestinationType**: The type of Destination for the data transfer.
 - **FileName**: The full name of the file being transferred, including its path and extension.
 - **FileSize**: The size of the file in bytes, which helps assess the scope of the transfer.
+- **Identity**: This is a string that allows the identification of recurring data transfers. It enables ECPDS to track the same data transfer that runs periodically and monitor the sending time over multiple days. Typically, if the target name includes a date and time, the identity would be the target name without them.
 - **ScheduledTime**: The scheduled time when the data transfer request is expected to start processing. This is based on the transfer schedule.
 - **StartTime**: The actual time when the retrieval of the data file started, which helps monitor delays or discrepancies compared to the scheduled time.
 - **MetaStream**: The meta stream associated with the data file, used for categorizing or identifying a specific subset of data.
@@ -775,7 +776,7 @@ These fields give a comprehensive overview of the retrieval process and help mon
 The UPH category records events whenever a file is disseminated from OpenECPDS to a remote site. Each event captures details about the data transfer, including scheduling, execution, and completion status.
 
 ```
-UPH;Monitored=false;DataTransferId=123456789;DestinationName=MyDestination;DestinationType=Gold;FileName=/my/home/datafile.bin;FileSize=131259312;MetaStream=GENFO;MetaType=EF;MetaTime=00;Priority=69;QueueTime=2025-02-13 06:53:10.0;RequeueCount=0;ScheduledTime=2025-02-13 06:53:10.0;StartTime=2025-02-13 09:00:53.139;PutTime=2025-02-13 09:00:56.015;Duration=16471;DurationOnClose=18534;BytesSent=131259312;StatusCode=DONE;RetrievalTime=2025-02-13 05:42:01.694;TimeBase=2025-02-13 00:00:00.0;TimeStep=79;FinishTime=2025-02-13 09:01:14.584;TransferProtocol=sftp;TransferServer=my.mover.name.it;NetworkCode=Internet;HostAddress=my.host.it;PreSchedule=false;ProxyHost=X.X.X.X;Proxied=true;SocketStatistics=start:1739437253611 end:1739437274560 0 0 [::ffff:X.X.X.X]:47699 [::ffff:X.X.X.X]:22 timer:(keepalive,119min,0) ino:760715359 sk:32bcfe cgroup:/ inet-sockopt: ( is_icsk mc_loop) sack cubic wscale:8,7 rto:411 rtt:210.21/10.545 ato:40 mss:1374 pmtu:1500 rcvmss:1374 advmss:1460 cwnd:3215 bytes_sent:131602845 bytes_acked:131602846 bytes_received:437502 segs_out:97675 segs_in:19212 data_segs_out:96883 data_segs_in:3763 send:168114172bps lastsnd:1866 lastrcv:8 lastack:8 pacing_rate:336228136bps delivery_rate:85580864bps delivered:96884 app_limited busy:18696ms rwnd_limited:6989ms(37.4%) reordering:6 rcv_rtt:1053.2 rcv_space:37632 rcv_ssthresh:296449 minrtt:203.539 snd_wnd:2598144;Compressed=-;CompressedOnTheFly=false
+UPH;Monitored=false;DataTransferId=123456789;DestinationName=MyDestination;DestinationType=Gold;FileName=/my/home/datafile-260225.bin;FileSize=131259312;Identity=/my/home/datafile.bin;MetaStream=GENFO;MetaType=EF;MetaTime=00;Priority=69;QueueTime=2025-02-13 06:53:10.0;RequeueCount=0;ScheduledTime=2025-02-13 06:53:10.0;StartTime=2025-02-13 09:00:53.139;PutTime=2025-02-13 09:00:56.015;Duration=16471;DurationOnClose=18534;BytesSent=131259312;StatusCode=DONE;RetrievalTime=2025-02-13 05:42:01.694;TimeBase=2025-02-13 00:00:00.0;TimeStep=79;FinishTime=2025-02-13 09:01:14.584;TransferProtocol=sftp;TransferServer=my.mover.name.it;NetworkCode=Internet;HostAddress=my.host.it;PreSchedule=false;ProxyHost=X.X.X.X;Proxied=true;SocketStatistics=start:1739437253611 end:1739437274560 0 0 [::ffff:X.X.X.X]:47699 [::ffff:X.X.X.X]:22 timer:(keepalive,119min,0) ino:760715359 sk:32bcfe cgroup:/ inet-sockopt: ( is_icsk mc_loop) sack cubic wscale:8,7 rto:411 rtt:210.21/10.545 ato:40 mss:1374 pmtu:1500 rcvmss:1374 advmss:1460 cwnd:3215 bytes_sent:131602845 bytes_acked:131602846 bytes_received:437502 segs_out:97675 segs_in:19212 data_segs_out:96883 data_segs_in:3763 send:168114172bps lastsnd:1866 lastrcv:8 lastack:8 pacing_rate:336228136bps delivery_rate:85580864bps delivered:96884 app_limited busy:18696ms rwnd_limited:6989ms(37.4%) reordering:6 rcv_rtt:1053.2 rcv_space:37632 rcv_ssthresh:296449 minrtt:203.539 snd_wnd:2598144;Compressed=-;CompressedOnTheFly=false
 ```
 
 - **Monitored**: Indicates whether the destination responsible for the data transfer is tracked in the top monitoring display (same as in RET).
@@ -784,6 +785,7 @@ UPH;Monitored=false;DataTransferId=123456789;DestinationName=MyDestination;Desti
 - **DestinationType**: Type of the destination (same as in RET).
 - **FileName**: Full name of the file (same as in RET).
 - **FileSize**: Size of the file (same as in RET).
+- **Identity**: This is a string that allows the identification of recurring data transfers (same as in RET).
 - **MetaStream**: Metadata stream associated with the data file (same as in RET).
 - **MetaType**: Metadata type associated with the data file (same as in RET).
 - **MetaTime**: Metadata time associated with the data file (same as in RET).
