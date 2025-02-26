@@ -5350,11 +5350,12 @@ public final class MasterServer extends ECaccessProvider
                         final var retryTime = transfer.getRetryTime();
                         final var startTime = transfer.getStartTime();
                         _splunk.info(
-                                "UPH;{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{}",
+                                "UPH;{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{}",
                                 "Monitored=" + destination.getMonitor(), "DataTransferId=" + upload.getDataTransferId(),
                                 "DestinationName=" + destination.getName(),
                                 "DestinationType=" + DestinationOption.getLabel(destination.getType()),
                                 "FileName=" + upload.getFileName(), "FileSize=" + upload.getFileSize(),
+                                "Identity=" + transfer.getIdentity(),
                                 "MetaStream=" + nullToNone(upload.getMetaStream()),
                                 "MetaType=" + nullToNone(upload.getMetaType()), "MetaTime=" + upload.getMetaTime(),
                                 "Priority=" + upload.getPriority(), "QueueTime=" + upload.getQueueTime(),
@@ -10805,11 +10806,12 @@ public final class MasterServer extends ECaccessProvider
                                 final var login = _source.getLogin();
                                 final var host = _source.getHost();
                                 _splunk.info(
-                                        "RET;{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{}",
+                                        "RET;{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{}",
                                         "Monitored=" + destination.getMonitor(), "DataTransferId=" + transfer.getId(),
                                         "DestinationName=" + destination.getName(),
                                         "DestinationType=" + DestinationOption.getLabel(destination.getType()),
                                         "FileName=" + dataFile.getOriginal(), "FileSize=" + dataFile.getSize(),
+                                        "Identity=" + transfer.getIdentity(),
                                         "ScheduledTime=" + transfer.getScheduledTime(),
                                         "StartTime=" + dataFile.getGetTime(),
                                         "MetaStream=" + nullToNone(dataFile.getMetaStream()),
