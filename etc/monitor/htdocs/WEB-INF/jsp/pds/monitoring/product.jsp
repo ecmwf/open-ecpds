@@ -173,26 +173,57 @@ table.fields td {
 <c:set var="ECMWFProducts"
 	value="Dear colleagues,%0D%0A%0D%0AI am pleased to inform you that the problems we encountered earlier%0D%0Awithin the operational production have been resolved and the dissemination of products has started.%0D%0A%0D%0AOur sincere apologies for the inconvenience caused by this delay.%0D%0A%0D%0AKind regards%0D%0A%0D%0AECMWF Duty Manager%0D%0A" />
 <c:choose>
-	<c:when test="${not empty emails}">
-		<a title="Open Outlook" style="text-decoration: none" target="_blank"
-			id="delayEmail">Products Delay Email for
-			${productStatus.time}-${productStatus.product}</a>&nbsp;
-    	<a title="Open Outlook" style="text-decoration: none"
-			target="_blank" id="productEmail">Products Email for
-			${productStatus.time}-${productStatus.product}</a>
-		<script>
-			setHrefForSendingEmail(
-					document.getElementById('delayEmail'),
-					'op_delay_ecmwf@lists.ecmwf.int,ecpds-product-${productStatus.time}-${productStatus.product}@ecmwf.int',
-					'ECMWF Products Delay (${productStatus.time}-${productStatus.product})',
-					'${ECMWFProductsDelay}');
-			setHrefForSendingEmail(
-					document.getElementById('productEmail'),
-					'op_delay_ecmwf@lists.ecmwf.int,ecpds-product-${productStatus.time}-${productStatus.product}@ecmwf.int',
-					'ECMWF Products (${productStatus.time}-${productStatus.product})',
-					'${ECMWFProducts}');
-		</script>
-	</c:when>
-	<c:otherwise>
-	</c:otherwise>
+    <c:when test="${not empty emails}">
+        <img src="/assets/icons/ecpds/mail.png" alt="Emails">
+
+        <a title="Open Outlook" style="text-decoration: none" target="_blank"
+            id="delayEmail">Products Delay Email for
+            ${productStatus.time}-${productStatus.product}</a>&nbsp;|&nbsp;
+
+        <a title="Open Outlook" style="text-decoration: none"
+            target="_blank" id="productEmail">Products Email for
+            ${productStatus.time}-${productStatus.product}</a>&nbsp;|&nbsp;
+
+        <a href="javascript:void(0);" 
+            title="Click to copy CC Emails" 
+            onclick="copyToClipboard('<c:out value="${emails}" />')">
+            Copy CC Emails</a>
+
+        <script>
+            function copyToClipboard(text) {
+                if (!text || text.trim() === 'undefined') {
+                    alert("No emails to copy!");
+                    return;
+                }
+
+                const emailArray = text.split(','); // Split the emails by comma
+                const emailCount = emailArray.length; // Count the number of emails
+
+                // Create a textarea element for copying the emails
+                const textarea = document.createElement("textarea");
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand("copy");
+                document.body.removeChild(textarea);
+
+                // Show the number of emails copied
+                alert("Number of emails copied to clipboard: " + emailCount);
+            }
+
+            setHrefForSendingEmail(
+                document.getElementById('delayEmail'),
+                'op_delay_ecmwf@lists.ecmwf.int,ecpds-product-${productStatus.time}-${productStatus.product}@ecmwf.int',
+                'ECMWF Products Delay (${productStatus.time}-${productStatus.product})',
+                '${ECMWFProductsDelay}');
+
+            setHrefForSendingEmail(
+                document.getElementById('productEmail'),
+                'op_delay_ecmwf@lists.ecmwf.int,ecpds-product-${productStatus.time}-${productStatus.product}@ecmwf.int',
+                'ECMWF Products (${productStatus.time}-${productStatus.product})',
+                '${ECMWFProducts}');
+        </script>
+    </c:when>
+    <c:otherwise>
+    </c:otherwise>
 </c:choose>
