@@ -4,7 +4,7 @@
 <div id="bottomfooter" class="bottomfooter">
       <table border=0 height="40" border="0" cellspacing="0" cellpadding="0" width="100%">
         <tr>
-          <td bgcolor="#000000" width="30%" align="left" valign="middle"><div class="footer_simple_title"><%=System.getProperty("monitor.title")%> (<%=System.getProperty("monitor.nickName")%>)</div></td>
+          <td bgcolor="#000000" width="30%" align="left" valign="middle"><div class="footer_simple_title">Powered by <a href="https://github.com/ecmwf/open-ecpds" target="_blank">OpenECPDS</a></div></td>
           <td bgcolor="#000000" align="middle" valign="middle">
               <a href="/do/user/detailer"><img alt="Page Details" title="Page Details" src="/assets/images/webapp/detailer.gif" border="0" width="18" height="18"></a>
           </td>
