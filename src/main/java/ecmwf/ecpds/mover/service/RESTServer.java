@@ -1217,9 +1217,10 @@ public final class RESTServer {
             final var sb = new StringBuilder().append(anonymous ? getTemplateContent(homeContent, HOME_FILE)
                     : getTemplateContent(portalContent, PORTAL_FILE));
             // Fill the parameters in the template
-            final var title = System.getProperty("mover.title", "ECMWF Production Data Store (ECPDS)");
+            final var title = System.getProperty("mover.title", "Data Store for Acquisition & Dissemination");
             final var tab = System.getProperty("mover.tab", title);
-            final var footer = System.getProperty("mover.footer", title);
+            final var footer = System.getProperty("mover.footer",
+                    "Powered by <a href=\"https://github.com/ecmwf/open-ecpds\" target=\"_blank\">OpenECPDS</a>");
             final var color = System.getProperty("mover.color", "#000000");
             final var warning = System.getProperty("mover.warning", "");
             final var msgTop = System.getProperty("mover.msgTop", "");
