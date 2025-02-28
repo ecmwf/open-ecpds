@@ -39,52 +39,55 @@ th {
 			alert("Error" + e);
 		}
 	}
+	function isDuration(value) {
+	    return /^-?\d+m$/.test(value);  // Matches strings like "-10m" or "300m"
+	}
+	function getDuration(value) {
+	    var match = value.match(/^(-?\d+)(m)$/);  // Matches number followed by "m"
+	    if (match) {
+	        return parseInt(match[1], 10);  // Return the numeric value (in minutes)
+	    }
+	    return 0;  // Default to 0 if it's not a valid duration
+	}
 	function sortTable(columnIndex) {
 	    // Get all tables with the class '.sortableTable'
 	    var tables = document.querySelectorAll('.sortableTable');
 	    var rows = [];
-
 	    // Collect all rows (excluding headers) from all tables
 	    tables.forEach(table => {
 	        var tableRows = Array.prototype.slice.call(table.rows, 1); // Exclude the header row
 	        rows = rows.concat(tableRows); // Merge all rows into the rows array
 	    });
-
 	    // Determine if sorting should be ascending or descending
 	    var isAscending = tables[0].rows[0].cells[columnIndex].getAttribute("data-order") === "asc";
-
 	    // Sort rows based on the column index
 	    rows.sort(function (rowA, rowB) {
 	        var cellA = rowA.cells[columnIndex].innerText.trim();
 	        var cellB = rowB.cells[columnIndex].innerText.trim();
-
+			if (isDuration(cellA) && isDuration(cellB)) {
+			    return isAscending ? getDuration(cellA) - getDuration(cellB) : getDuration(cellB) - getDuration(cellA);
+			}
 	        if (!isNaN(cellA) && !isNaN(cellB)) {
 	            return isAscending ? cellA - cellB : cellB - cellA;
 	        }
 	        return isAscending ? cellA.localeCompare(cellB) : cellB.localeCompare(cellA);
 	    });
-
 	    // Toggle the sorting direction on the header cell
 	    tables[0].rows[0].cells[columnIndex].setAttribute("data-order", isAscending ? "desc" : "asc");
-
 	    // Empty the tables (excluding the header)
 	    tables.forEach(table => {
 	        while (table.rows.length > 1) {
 	            table.deleteRow(1);
 	        }
 	    });
-
 	    // Maintain the correct row distribution logic after sorting
 	    var totalRows = rows.length;
 	    var halfSize = Math.floor(totalRows / 2); // Ensure consistency with JSP logic
-
 	    if (totalRows % 2 !== 0) {
 	        halfSize += 1; // Ensure first table has the extra row when odd
 	    }
-
 	    var table1Fragment = document.createDocumentFragment(); // For the first table
 	    var table2Fragment = document.createDocumentFragment(); // For the second table
-
 	    // Append sorted rows into two fragments (based on the index of the row)
 	    rows.forEach((row, index) => {
 	        row.className = (index % 2 === 0) ? 'even' : 'odd'; // Add alternating classes
@@ -94,7 +97,6 @@ th {
 	            table2Fragment.appendChild(row); // Second table
 	        }
 	    });
-
 	    // Append the fragments to the respective tables
 	    tables[0].appendChild(table1Fragment);
 	    if (tables.length > 1) {
