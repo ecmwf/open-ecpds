@@ -4,6 +4,7 @@
 <%@ taglib uri="/WEB-INF/tld/struts-tiles.tld" prefix="tiles"%>
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content"%>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 
 <style>
 table.listing td {
@@ -17,6 +18,10 @@ table.fields {
 
 table.fields td {
 	padding: 1pt;
+}
+
+th {
+    cursor: pointer;
 }
 </style>
 
@@ -33,6 +38,68 @@ table.fields td {
 		} catch (e) {
 			alert("Error" + e);
 		}
+	}
+	function sortTable(columnIndex) {
+	    // Get all tables with the class '.sortableTable'
+	    var tables = document.querySelectorAll('.sortableTable');
+	    var rows = [];
+
+	    // Collect all rows (excluding headers) from all tables
+	    tables.forEach(table => {
+	        var tableRows = Array.prototype.slice.call(table.rows, 1); // Exclude the header row
+	        rows = rows.concat(tableRows); // Merge all rows into the rows array
+	    });
+
+	    // Determine if sorting should be ascending or descending
+	    var isAscending = tables[0].rows[0].cells[columnIndex].getAttribute("data-order") === "asc";
+
+	    // Sort rows based on the column index
+	    rows.sort(function (rowA, rowB) {
+	        var cellA = rowA.cells[columnIndex].innerText.trim();
+	        var cellB = rowB.cells[columnIndex].innerText.trim();
+
+	        if (!isNaN(cellA) && !isNaN(cellB)) {
+	            return isAscending ? cellA - cellB : cellB - cellA;
+	        }
+	        return isAscending ? cellA.localeCompare(cellB) : cellB.localeCompare(cellA);
+	    });
+
+	    // Toggle the sorting direction on the header cell
+	    tables[0].rows[0].cells[columnIndex].setAttribute("data-order", isAscending ? "desc" : "asc");
+
+	    // Empty the tables (excluding the header)
+	    tables.forEach(table => {
+	        while (table.rows.length > 1) {
+	            table.deleteRow(1);
+	        }
+	    });
+
+	    // Maintain the correct row distribution logic after sorting
+	    var totalRows = rows.length;
+	    var halfSize = Math.floor(totalRows / 2); // Ensure consistency with JSP logic
+
+	    if (totalRows % 2 !== 0) {
+	        halfSize += 1; // Ensure first table has the extra row when odd
+	    }
+
+	    var table1Fragment = document.createDocumentFragment(); // For the first table
+	    var table2Fragment = document.createDocumentFragment(); // For the second table
+
+	    // Append sorted rows into two fragments (based on the index of the row)
+	    rows.forEach((row, index) => {
+	        row.className = (index % 2 === 0) ? 'even' : 'odd'; // Add alternating classes
+	        if (index < halfSize) {
+	            table1Fragment.appendChild(row); // First table
+	        } else {
+	            table2Fragment.appendChild(row); // Second table
+	        }
+	    });
+
+	    // Append the fragments to the respective tables
+	    tables[0].appendChild(table1Fragment);
+	    if (tables.length > 1) {
+	        tables[1].appendChild(table2Fragment);
+	    }
 	}
 </script>
 
@@ -58,102 +125,108 @@ table.fields td {
 			<td><img width="12" height="12"
 				src="/assets/images/ecpds/g${productStatus.generationStatus}.png"
 				border="0"
-				title="(${productStatus.generationStatus}) - <bean:message key="ecpds.monitoring.productStatus.${productStatus.generationStatus}"/>">
+				title="(${productStatus.generationStatus}) - <bean:message key='ecpds.monitoring.productStatus.${productStatus.generationStatus}'/>">
 				${productStatus.generationStatusFormattedCode}</td>
 	</table>
 	<table>
-		<tr>
-			<td style="vertical-align: top"><c:if test="${empty step}">
-					<c:set var="arrival">Arrival</c:set>
-				</c:if> <c:if test="${not empty step}">
-					<c:set var="arrival">Update</c:set>
-				</c:if>
-				<table class="listing">
-					<tr>
-						<th>T</th>
-						<th>Step</th>
-						<th>Type</th>
-						<th>Notification</th>
-						<th>${arrival}</th>
-						<th>Schedule</th>
-						<th>Before</th>
-						<th></th>
-					</tr>
+	    <tr>
+	        <td style="vertical-align: top">
+	            <c:if test="${empty step}">
+	                <c:set var="arrival">Arrival</c:set>
+	            </c:if>
+	            <c:if test="${not empty step}">
+	                <c:set var="arrival">Update</c:set>
+	            </c:if>
+	            <table class="sortableTable listing">
+	                <tr>
+	                    <th onclick="sortTable(0)" data-order="asc" title="Sort by Time">T</th>
+	                    <th onclick="sortTable(1)" data-order="asc" title="Sort by Step">Step</th>
+	                    <th onclick="sortTable(2)" data-order="asc" title="Sort by Type">Type</th>
+	                    <th onclick="sortTable(3)" data-order="asc" title="Sort by Notification">Notification</th>
+	                    <th onclick="sortTable(4)" data-order="asc" title="Sort by Arrival Time">${arrival}</th>
+	                    <th onclick="sortTable(5)" data-order="asc" title="Sort by Schedule Time">Schedule</th>
+	                    <th onclick="sortTable(6)" data-order="asc" title="Sort by Before Time">Before</th>
+	                    <th></th>
+	                </tr>
 
-					<c:forEach var="stepStatus" items="${productStepStatii}"
-						varStatus="status">
+					<c:set var="totalSteps" value="${fn:length(productStepStatii)}" />
+					<c:set var="splitIndex" value="${(totalSteps / 2) >= 0 ? Math.floor(totalSteps / 2) : Math.ceil(totalSteps / 2)}" />
 
-						<c:if test="${(status.count % 2) > 0 }">
-							<tr class="even">
-						</c:if>
-						<c:if test="${(status.count % 2) == 0 }">
-							<tr class="odd">
-						</c:if>
+					<c:forEach var="stepStatus" items="${productStepStatii}" varStatus="status">
+					    <c:if test="${status.index == splitIndex}">
+					        </table>
+					        </td>
+					        <td style="vertical-align: top">
+					        <table class="sortableTable listing">
+					        <tr>
+								<th onclick="sortTable(0)" data-order="asc" title="Sort by Time">T</th>
+								<th onclick="sortTable(1)" data-order="asc" title="Sort by Step">Step</th>
+								<th onclick="sortTable(2)" data-order="asc" title="Sort by Type">Type</th>
+								<th onclick="sortTable(3)" data-order="asc" title="Sort by Notification">Notification</th>
+								<th onclick="sortTable(4)" data-order="asc" title="Sort by Arrival Time">${arrival}</th>
+								<th onclick="sortTable(5)" data-order="asc" title="Sort by Schedule Time">Schedule</th>
+								<th onclick="sortTable(6)" data-order="asc" title="Sort by Before Time">Before</th>
+					            <th></th>
+					        </tr>
+					    </c:if>
+						
+					    <!-- Alternate row styling -->
+					    <c:choose>
+					        <c:when test="${(status.count % 2) > 0}">
+					            <tr class="even">
+					        </c:when>
+					        <c:otherwise>
+					            <tr class="odd">
+					        </c:otherwise>
+					    </c:choose>
 
-						<td>${stepStatus.time}</td>
-						<td><a title="See history for Product, Time, Step and Type"
-							href="<bean:message key="monitoring.basepath"/>/summary/${stepStatus.product}/${stepStatus.time}/${stepStatus.step}/${stepStatus.type}">${stepStatus.step}</a></td>
-						<td><a title="See history for Product, Time, Step and Type"
-							href="<bean:message key="monitoring.basepath"/>/summary/${stepStatus.product}/${stepStatus.time}/${stepStatus.step}/${stepStatus.type}">${stepStatus.type}</a></td>
-
-						<td>${stepStatus.generationStatusFormattedCode}</td>
-						<td><c:if test="${not empty stepStatus.arrivalTime}">
-								<content:content name="stepStatus.arrivalTime"
-									dateFormatKey="date.format.long.iso" ignoreNull="true"
-									defaultValue="***" />
-							</c:if> <c:if
-								test="${empty stepStatus.arrivalTime and empty step and stepStatus.generationStatusCode!=''}">
-								<i>Didn't Arrive Yet</i>
-							</c:if> <c:if
-								test="${empty step and stepStatus.generationStatusCode==''}">
-								<i>Notification Missing</i>
-							</c:if> <c:if test="${empty stepStatus.arrivalTime and not empty step}">
-								<i><content:content name="stepStatus.lastUpdate"
-										dateFormatKey="date.format.long.iso" ignoreNull="true"
-										defaultValue="***" /></i>
-							</c:if></td>
-						<td><content:content name="stepStatus.scheduledTime"
-								dateFormatKey="date.format.long.iso" ignoreNull="true"
-								defaultValue="***" /></td>
-						<td><c:if
-								test="${(empty step or stepStatus.generationStatusCode=='DONE') and stepStatus.generationStatusCode!=''}">
-		${stepStatus.minutesBeforeSchedule}m
-		</c:if></td>
-
-						<td><c:if
-								test="${empty step or stepStatus.generationStatusCode=='DONE'}">
-								<img width="12" height="12"
-									src="/assets/images/ecpds/g${stepStatus.generationStatus}.png"
-									border="0"
-									title="(${stepStatus.generationStatus}) - <bean:message key="ecpds.monitoring.productStatus.${stepStatus.generationStatus}"/>">
-							</c:if></td>
-						</tr>
-
-						<c:if
-							test="${(status.index % stepsPerColumn)==(stepsPerColumn - 1) && !status.last}">
-				</table></td>
-			<td style="vertical-align: top">
-				<table class="listing">
-					<tr>
-						<th>T</th>
-						<th>Step</th>
-						<th>Type</th>
-						<th>Notification
-						</td>
-						<th>${arrival}</th>
-						<th>Schedule
-						</td>
-						<th>Before
-						</td>
-						<th>
-						</td>
-					</tr>
-
-					</c:if>
+					    <td>${stepStatus.time}</td>
+					    <td><a title="See history for Product, Time, Step and Type"
+					        href="<bean:message key="monitoring.basepath"/>/summary/${stepStatus.product}/${stepStatus.time}/${stepStatus.step}/${stepStatus.type}">${stepStatus.step}</a></td>
+					    <td><a title="See history for Product, Time, Step and Type"
+					        href="<bean:message key="monitoring.basepath"/>/summary/${stepStatus.product}/${stepStatus.time}/${stepStatus.step}/${stepStatus.type}">${stepStatus.type}</a></td>
+					    <td>${stepStatus.generationStatusFormattedCode}</td>
+					    <td>
+					        <c:choose>
+					            <c:when test="${not empty stepStatus.arrivalTime}">
+					                <content:content name="stepStatus.arrivalTime"
+					                    dateFormatKey="date.format.long.iso" ignoreNull="true"
+					                    defaultValue="***" />
+					            </c:when>
+					            <c:when test="${empty stepStatus.arrivalTime and empty step and stepStatus.generationStatusCode!=''}">
+					                <i>Didn't Arrive Yet</i>
+					            </c:when>
+					            <c:when test="${empty step and stepStatus.generationStatusCode==''}">
+					                <i>Notification Missing</i>
+					            </c:when>
+					            <c:when test="${empty stepStatus.arrivalTime and not empty step}">
+					                <i><content:content name="stepStatus.lastUpdate"
+					                        dateFormatKey="date.format.long.iso" ignoreNull="true"
+					                        defaultValue="***" /></i>
+					            </c:when>
+					        </c:choose>
+					    </td>
+					    <td><content:content name="stepStatus.scheduledTime"
+					            dateFormatKey="date.format.long.iso" ignoreNull="true"
+					            defaultValue="***" /></td>
+					    <td>
+					        <c:if test="${(empty step or stepStatus.generationStatusCode=='DONE') and stepStatus.generationStatusCode!=''}">
+					            ${stepStatus.minutesBeforeSchedule}m
+					        </c:if>
+					    </td>
+					    <td>
+					        <c:if test="${empty step or stepStatus.generationStatusCode=='DONE'}">
+					            <img width="12" height="12"
+					                src="/assets/images/ecpds/g${stepStatus.generationStatus}.png"
+					                border="0"
+					                title="(${stepStatus.generationStatus}) - <bean:message key='ecpds.monitoring.productStatus.${stepStatus.generationStatus}'/>">
+					        </c:if>
+					    </td>
+					    </tr>
 					</c:forEach>
-				</table>
-			</td>
-		</tr>
+	            </table>
+	        </td>
+	    </tr>
 	</table>
 </c:if>
 
