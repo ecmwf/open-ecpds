@@ -28,7 +28,7 @@ WHERE
 #fi
 #if ('$runnable' == 'true')
   AND NOT DAT.STA_CODE = 'INIT'
-  AND DAT.DAT_SCHEDULED_TIME < $currentTimeMillis
+  AND DAT.DAT_QUEUE_TIME < $currentTimeMillis
   AND DAT.DAT_DELETED = 0
 #fi
 ORDER BY
