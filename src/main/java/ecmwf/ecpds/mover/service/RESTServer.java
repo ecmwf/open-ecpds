@@ -1428,6 +1428,22 @@ public final class RESTServer {
         // Get content type by file name and set content disposition.
         var contentType = URLConnection.getFileNameMap().getContentTypeFor(fileName);
         var disposition = "inline";
+		var setup = session.getECtransSetup();
+		if (setup != null) {
+			for (final var entry : setup.getOptions(ECtransOptions.USER_PORTAL_HEADER_REGISTRY, filename, null)
+					.getProperties().entrySet()) {
+				final var key = entry.getKey().toString();
+				final var value = entry.getValue().toString();
+				if (key.equalsIgnoreCase("Content-Type")) {
+					contentType = value;
+				} else {
+					if (List.of("Accept-Ranges", "Content-Disposition", "ETag", "Last-Modified").stream()
+							.noneMatch(s -> s.equalsIgnoreCase(key))) {
+						builder.header(entry.getKey().toString(), entry.getValue());
+					}
+				}
+			}
+		}
         // If content type is unknown, then set the default value.
         // For all content types, see: http://www.w3schools.com/media/media_mimeref.asp
         // To add new content types, add new mime-mapping entry in web.xml.
