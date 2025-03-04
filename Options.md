@@ -1013,6 +1013,9 @@ This option accepts a list (separated by a comma) of continents, country ISO cod
 ### portal.getPathPermRegex
 Allow the configuration of a regular expression (regex) to control whether the "get" operation is permitted. The regex is applied to the full path, including the domain name. A valid value could be: "(.*):/data/incoming/(.*)".
 
+### portal.headerRegistry
+Files served through the data portal can have specific headers based on their file extension. For example, MIME types defined through the Content-Type header are standard, but in some situations, one might want to define a custom MIME type for a specific extension. This option allows overwriting a default MIME type or creating a new one for a file extension. Accepts a value spanning multiple lines, with each line following this format: ({operator} {value}) {header-name1=value1;header-name2=value2 ...}. The {operator} can be '==', '!=', '.=', or '=.'. For example, a line might be: (== {*.grib}) Content-Type=application/grib. Please note the headers Accept-Ranges, Content-Disposition, ETag and Last-Modified cannot be modified.
+
 ### portal.maxConnections
 Define the maximum concurrent connections allowed for this user.
 
