@@ -1533,8 +1533,8 @@ public enum ECtransOptions {
     /** The user portal mtime path perm regex. */
     USER_PORTAL_MTIME_PATH_PERM_REGEX("mtimePathPermRegex", String.class, STRING_NONE),
 
-	/** The user portal header registry. */
-	USER_PORTAL_HEADER_REGISTRY("headerRegistry", String.class, STRING_NONE);
+    /** The user portal header registry. */
+    USER_PORTAL_HEADER_REGISTRY("headerRegistry", String.class, STRING_NONE);
 
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(ECtransOptions.class);
