@@ -386,16 +386,6 @@ public interface DataTransfer extends CollectionSizeBean, ArrivalMonitoringParam
     String getTarget();
 
     /**
-     * Gets the retrieval progress.
-     *
-     * @return the retrieval progress
-     *
-     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
-     *             the transfer exception
-     */
-    String getRetrievalProgress() throws TransferException;
-
-    /**
      * Gets the progress.
      *
      * @return the progress

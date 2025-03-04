@@ -28,7 +28,10 @@
 	<auth:else>${datatransfer.transferServerName}</auth:else>
 	</auth:if>
 </td>
-<th>Dissemination Progress</th><td class="number">${datatransfer.progress}%</td>
+<auth:if basePathKey="nonmemberstate.basepath" paths="">
+<auth:then><th>Status</th><td class="number"><c:if test="${datatransfer.deleted}"><font color="red"></c:if>${datatransfer.detailedStatus}<c:if test="${datatransfer.deleted}"></font></c:if></td></auth:then>
+<auth:else><th>Status</th><td class="number"><c:if test="${datatransfer.deleted}"><font color="red"></c:if>${datatransfer.memberStateDetailedStatus}<c:if test="${datatransfer.deleted}"></font></c:if></td></auth:else>
+</auth:if>
 </tr>
 
 <auth:if basePathKey="datafile.basepath" paths="/${datatransfer.dataFileId}">
@@ -36,7 +39,7 @@
 
 <tr>
 <th>Product</th><td>${datafile.metaTime}-${datafile.metaStream} ${datafile.metaType} (${datafile.metaTarget})</td>
-<th>Acquisition Progress</th><td>${datatransfer.retrievalProgress}</td>
+<th>Progress</th><td>${datatransfer.progress}%</td>
 </tr>
 
 <tr>
@@ -73,10 +76,6 @@
 
 <tr>
 <th>Sent</th><td class="number" colspan="1"><a STYLE="TEXT-DECORATION: NONE" title="Sent: ${datatransfer.formattedSent}">${datatransfer.sent} bytes</a></td>
-<auth:if basePathKey="nonmemberstate.basepath" paths="">
-<auth:then><th>Status</th><td class="number"><c:if test="${datatransfer.deleted}"><font color="red"></c:if>${datatransfer.detailedStatus}<c:if test="${datatransfer.deleted}"></font></c:if></td></auth:then>
-<auth:else><th>Status</th><td class="number"><c:if test="${datatransfer.deleted}"><font color="red"></c:if>${datatransfer.memberStateDetailedStatus}<c:if test="${datatransfer.deleted}"></font></c:if></td></auth:else>
-</auth:if>
 </tr>
 
 <tr>
