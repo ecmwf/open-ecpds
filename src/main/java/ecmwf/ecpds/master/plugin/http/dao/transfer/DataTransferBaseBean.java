@@ -875,27 +875,27 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
      */
     @Override
     public int getProgress() throws TransferException {
-		final var statusCode = transfer.getStatusCode();
-		final var fileSize = getSize();
-		if (StatusFactory.FETC.equals(statusCode) || StatusFactory.INIT.equals(statusCode)) {
-			// This is acquisition
-			if (fileSize != 0) {
-				try {
-					return fileSize == -1 ? -1
-							: (int) (MasterManager.getMI().getRetrieved(transfer.getDataFileId()) * 100 / fileSize);
-				} catch (final Exception e) {
-					throw new TransferException("Error getting retrieval progress of '" + transfer.getId() + "'", e);
-				}
-			} else {
-				return transfer.getDataFile().getDownloaded() ? 100 : 0;
-			}
-		} else {
-			// This is dissemination
-			if (StatusFactory.DONE.equals(statusCode)) {
-				return 100;
-			}
-			return fileSize == 0 ? 0 : (int) (getSent() * transfer.getRatio() * 100 / fileSize);
-		}
+        final var statusCode = transfer.getStatusCode();
+        final var fileSize = getSize();
+        if (StatusFactory.FETC.equals(statusCode) || StatusFactory.INIT.equals(statusCode)) {
+            // This is acquisition
+            if (fileSize != 0) {
+                try {
+                    return fileSize == -1 ? -1
+                            : (int) (MasterManager.getMI().getRetrieved(transfer.getDataFileId()) * 100 / fileSize);
+                } catch (final Exception e) {
+                    throw new TransferException("Error getting retrieval progress of '" + transfer.getId() + "'", e);
+                }
+            } else {
+                return transfer.getDataFile().getDownloaded() ? 100 : 0;
+            }
+        } else {
+            // This is dissemination
+            if (StatusFactory.DONE.equals(statusCode)) {
+                return 100;
+            }
+            return fileSize == 0 ? 0 : (int) (getSent() * transfer.getRatio() * 100 / fileSize);
+        }
     }
 
     /**
