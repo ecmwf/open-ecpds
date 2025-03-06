@@ -2237,7 +2237,7 @@ public final class MasterServer extends ECaccessProvider
                     throw new MasterException(e.getMessage());
                 }
                 if (StatusFactory.RETR.equals(code) && theTransferScheduler != null) {
-                    theTransferScheduler.notifyRequeue();
+                    theTransferScheduler.notifyRequeue(transfer);
                     _log.debug("Requeue notification sent to TransferScheduler");
                 }
             }
