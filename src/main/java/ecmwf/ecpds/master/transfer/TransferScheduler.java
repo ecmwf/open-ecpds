@@ -175,7 +175,7 @@ public final class TransferScheduler extends MBeanScheduler {
         final var destination = transfer.getDestination();
         final var thread = _threads.get(destination.getName());
         if (thread == null) {
-			_log.warn("DestinationThread {} not found (completion notification ignored)", destination.getName());
+            _log.warn("DestinationThread {} not found (completion notification ignored)", destination.getName());
         } else {
             thread.updateCount(transfer, false);
             thread.wakeup();
@@ -204,13 +204,13 @@ public final class TransferScheduler extends MBeanScheduler {
     /**
      * Notify requeue.
      */
-	public void notifyRequeue(final DataTransfer transfer) {
-		final var thread = _threads.get(transfer.getDestination().getName());
-		if (thread != null)
-			thread.removeValue(transfer);
-		_notified = true;
-		wakeup();
-	}
+    public void notifyRequeue(final DataTransfer transfer) {
+        final var thread = _threads.get(transfer.getDestination().getName());
+        if (thread != null)
+            thread.removeValue(transfer);
+        _notified = true;
+        wakeup();
+    }
 
     /**
      * {@inheritDoc}

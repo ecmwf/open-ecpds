@@ -8397,6 +8397,7 @@ public final class MasterServer extends ECaccessProvider
         public boolean interruptAcquisitionFor(final Host host) {
             final var thread = _acquisitionThreads.get(_getKey(host));
             if (thread != null && thread.isAlive()) {
+                _log.debug("Interrupting AcquisitionThread for Host-{}", host.getName());
                 try {
                     thread.interrupt();
                     thread._time = System.currentTimeMillis();

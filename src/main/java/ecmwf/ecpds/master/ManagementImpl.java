@@ -93,6 +93,7 @@ import ecmwf.common.technical.ExecutorRunnable;
 import ecmwf.common.technical.StreamPlugThread;
 import ecmwf.common.text.Format;
 import ecmwf.ecpds.master.transfer.DestinationOption;
+import ecmwf.ecpds.master.transfer.HostOption;
 import ecmwf.ecpds.master.transfer.StatusFactory;
 
 /**
@@ -610,10 +611,30 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
         final var monitor = new MonitorCall(
                 "restartDestination(" + session.getWebUser().getName() + "," + destinationName + "," + graceful + ")");
         final var action = master.startECpdsAction(session, "restart", base.getDestination(destinationName));
+        final var webUser = session.getWebUser();
         Exception exception = null;
         try {
             master.getTransferScheduler().restartDestination(action.getWebUserId(), action.getWebUserId(),
                     destinationName, graceful, true);
+            if (!graceful) {
+                // We might have some retrieval going on for this Destination? If it is graceful
+                // we let them complete otherwise we have to interrupt the retrievals!
+                final var message = "Retrieval interrupted by WebUser=" + webUser.getId() + " (" + webUser.getName()
+                        + ") following immediate stop of Destination=" + destinationName;
+                try {
+                    master.getDownloadScheduler(false).interruptAllDownload(destinationName, message);
+                } catch (final MasterException e) {
+                    // The download scheduler is not started!
+                }
+                try {
+                    master.getDownloadScheduler(true).interruptAllDownload(destinationName, message);
+                } catch (final MasterException e) {
+                    // The acquisition scheduler is not started!
+                }
+                // We might have some listing going on for this Destination?
+                for (var host : master.getECpdsBase().getDestinationHost(destinationName, HostOption.ACQUISITION))
+                    master.updateHost(host);
+            }
             return monitor.done(master.getDestinationSchedulerCache(destinationName));
         } catch (final MasterException e) {
             exception = e;
@@ -813,6 +834,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
                 } catch (final MasterException e) {
                     // The acquisition scheduler is not started!
                 }
+                // We might have some listing going on for this Destination?
+                for (var host : master.getECpdsBase().getDestinationHost(destinationName, HostOption.ACQUISITION))
+                    master.updateHost(host);
             }
             return monitor.done(master.getDestinationSchedulerCache(destinationName));
         } catch (final MasterException e) {
