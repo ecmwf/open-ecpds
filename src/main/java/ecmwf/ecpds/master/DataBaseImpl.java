@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 import org.apache.logging.log4j.LogManager;
@@ -111,10 +112,13 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
     /** The Constant _log. */
     private static final transient Logger _log = LogManager.getLogger(DataBaseImpl.class);
 
-    /** The _ecpds. */
+	/** The email pattern **/
+	private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+
+    /** The ecpds. */
     private final transient ECpdsBase ecpds;
 
-    /** The _master. */
+    /** The master. */
     private final transient MasterServer master;
 
     /**
@@ -615,9 +619,15 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
     @Override
     public Destination[] getDestinationsByUser(final String uid, final String search, final String fromToAliases,
             final boolean asc, final String status, final String type, final String filter) throws IOException {
-        final var monitor = new MonitorCall("getDestinationsByUser(" + uid + "," + search + "," + fromToAliases + ","
+		final String searchString;
+		if (EMAIL_PATTERN.matcher(search).matches()) {
+			searchString = "email=" + search;
+		} else {
+			searchString = search;
+		}
+        final var monitor = new MonitorCall("getDestinationsByUser(" + uid + "," + searchString + "," + fromToAliases + ","
                 + asc + "," + status + "," + type + "," + filter + ")");
-        final var options = new SQLParameterParser(search, "name", "comment", "country", "options", "enabled=?",
+        final var options = new SQLParameterParser(searchString, "name", "comment", "country", "options", "enabled=?",
                 "monitor=?", "backup=?", "email");
         final var email = options.remove("email");
         final var foundDestinations = ecpds.getDestinationsByUser(uid, options, fromToAliases, asc, status, type,

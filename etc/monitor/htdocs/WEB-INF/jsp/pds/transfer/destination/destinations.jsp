@@ -79,14 +79,14 @@ select {
 		<c:if test="${empty columns}">
 			<div class="alert">
 				<c:if test="${!hasDestinationSearch}">
-								No Destinations found based on these criteria!<p>
+								No Destinations found matching these criteria!<p>
 				</c:if>
 				<c:if test="${hasDestinationSearch}">
 					<c:if test="${!empty getDestinationsError}">
 						  		  Error in your query: ${getDestinationsError}<p>
 					</c:if>
 					<c:if test="${empty getDestinationsError}">
-								  No Destinations found based on these criteria! Default search is by name.<p>
+						No Destinations found matching these criteria! The default search is by Destination name or email address, if the format matches.<p>
 					</c:if>
 								You can conduct an extensive search using the name, comment, country, email, enabled, monitor, backup and options (Properties & JavaScript) rules.<p>
 						For instance: enabled=yes name=des0?_a* email=*@meteo.ms
