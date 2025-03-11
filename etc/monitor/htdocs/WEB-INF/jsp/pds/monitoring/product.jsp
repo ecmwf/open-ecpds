@@ -103,6 +103,9 @@ th {
 	        tables[1].appendChild(table2Fragment);
 	    }
 	}
+	document.addEventListener("DOMContentLoaded", function () {
+		sortTable(2); // Sort by 'Type' column when the page loads
+	});
 </script>
 
 <c:if test="${productStatus.calculated}">
