@@ -127,10 +127,10 @@ select {
 									<c:set var="desName" value="${fn:substring(desName,0,31)} ..." />
 								</c:if> <c:if test="${d.showInMonitors}">
 									<b><a href="/do/transfer/destination/${d.id}"
-										title="${d.comment}">${desName}</a></b>
+										title="[${d.typeText}] ${d.comment}">${desName}</a></b>
 								</c:if> <c:if test="${not d.showInMonitors}">
 									<i><a href="/do/transfer/destination/${d.id}"
-										title="${d.id} is currently NOT shown in the Monitor Display">${desName}</a></i>
+										title="[${d.typeText}] ${d.id} is currently NOT shown in the Monitor Display">${desName}</a></i>
 								</c:if></td>
 							<td>${d.formattedStatus}</td>
 							<c:if test="${fn:length(destinations) < 200}">
