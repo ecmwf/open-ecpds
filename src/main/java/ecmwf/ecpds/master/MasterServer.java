@@ -752,7 +752,9 @@ public final class MasterServer extends ECaccessProvider
         final var base = getECpdsBase();
         final var user = base.getIncomingUserObject(incomingUser);
         if (user == null) {
-            throw new MasterException("Login failed for " + incomingUser);
+			if (_splunk.isInfoEnabled())
+				_splunk.info("DEA;UserId={};Message=Not found", incomingUser);
+			throw new MasterException("Login failed");
         }
         // Let's get the data from the user and the data policies!
         final var setup = USER_PORTAL.getECtransSetup(base.getDataFromUserPolicies(user));
@@ -784,11 +786,15 @@ public final class MasterServer extends ECaccessProvider
             }
         }
         if (blocked) {
-            throw new MasterException("Connection failed for user " + incomingUser);
+			if (_splunk.isInfoEnabled())
+				_splunk.info("DEA;UserId={};Message=Geolocation restriction", incomingUser);
+			throw new MasterException("Login failed");
         }
         if (!user.getActive()) {
-            throw new MasterException("User " + incomingUser + " not active");
-        }
+			if (_splunk.isInfoEnabled())
+				_splunk.info("DEA;UserId={};Message=Disabled", incomingUser);
+			throw new MasterException("Login failed");
+       }
         if (setup.getBoolean(USER_PORTAL_ANONYMOUS)) {
             // This is an anonymous user so no authentication required!
         } else if (incomingPassword != null) {
@@ -802,19 +808,25 @@ public final class MasterServer extends ECaccessProvider
                     authenticated = false;
                 }
                 if (!authenticated) {
-                    throw new MasterException("Login failed for " + incomingUser);
+					if (_splunk.isInfoEnabled())
+						_splunk.info("DEA;UserId={};Message=TOTP authentication failed", incomingUser);
+					throw new MasterException("Login failed");
                 }
             } else {
                 // User/password authentication against the database
                 final var localPassword = user.getPassword();
                 if (localPassword != null && !localPassword.equals(incomingPassword)
                         && !_getIncomingUserHash(user).equals(incomingPassword)) {
-                    throw new MasterException("Login failed for " + incomingUser);
+					if (_splunk.isInfoEnabled())
+						_splunk.info("DEA;UserId={};Message=Password authentication failed", incomingUser);
+					throw new MasterException("Login failed");
                 }
                 if (localPassword == null) {
                     // There was no password set for this user!
-                    _log.debug("No password set for incoming user {}", incomingUser);
-                    throw new MasterException("Login failed for " + incomingUser);
+					if (_splunk.isInfoEnabled())
+						_splunk.info("DEA;UserId={};Message=Password not set", incomingUser);
+					_log.debug("Password not set for IncomingUser {}", incomingUser);
+					throw new MasterException("Login failed");
                 }
             }
         }
@@ -823,7 +835,9 @@ public final class MasterServer extends ECaccessProvider
         final var count = _getIncomingConnectionCountFor(incomingUser);
         if (count >= setup.getInteger(USER_PORTAL_MAX_CONNECTIONS)) {
             final var message = "Maximum number of connections exceeded (" + count + ")";
-            _log.warn("{} for {}", message, incomingUser);
+			if (_splunk.isInfoEnabled())
+				_splunk.info("DEA;UserId={};Message={}", incomingUser, message);
+			_log.warn("{} for IncomingUser {}", message, incomingUser);
             throw new MasterException(message);
         }
         // Look for the Destinations accessible to this user!
@@ -835,12 +849,16 @@ public final class MasterServer extends ECaccessProvider
             }
         }
         if (destinations.isEmpty()) {
-            throw new MasterException("User " + incomingUser + " has no Destination");
+			if (_splunk.isInfoEnabled())
+				_splunk.info("DEA;UserId={};Message=No associated Destinations", incomingUser);
+			throw new MasterException("Login failed");
         }
         // Look for the Permissions associated to this user!
         final var permissions = base.getIncomingPermissionsForIncomingUser(incomingUser);
         if (permissions.isEmpty()) {
-            throw new MasterException("User " + incomingUser + " has no permission");
+			if (_splunk.isInfoEnabled())
+				_splunk.info("DEA;UserId={};Message=No associated Permissions", incomingUser);
+			throw new MasterException("Login failed");
         }
         // Let's update with the last login informations!
         user.setLastLogin(new Timestamp(System.currentTimeMillis()));
