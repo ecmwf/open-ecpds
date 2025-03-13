@@ -923,7 +923,7 @@ The DEA event records authentication and authorization failures within OpenECPDS
 DEA;UserId=uid;Message=Maximum number of connections exceeded (20)
 ```
 
-- **UserId**: holds the identifier of the underlying data user.
+- **UserId** - holds the identifier of the underlying data user.
 - **Message** – Error message providing details of the failure.
 
 Here are the descriptions of the possible errors:
