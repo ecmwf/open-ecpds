@@ -936,9 +936,9 @@ Here are the descriptions of the possible errors:
 
 - **TOTP authentication failed**: The provided Time-Based One-Time Password (TOTP) code is incorrect or has expired. This typically happens when a user enters an invalid 2FA (Two-Factor Authentication) code or if there is a time synchronization issue.
 
-- **Password authentication failed**: The provided password is incorrect. This could be due to a typo, an expired password, or an attempted unauthorized access.
+- **Password authentication failed**: The provided password is incorrect. This could be due to a typo or an attempted unauthorized access.
 
-- **Password not set**: The user has not set a password for their account, preventing authentication via password-based login. This may occur when an account is newly created but not yet configured.
+- **Password not set**: The administrator has not set a password for the data user, preventing authentication via password-based login. This may occur when an account is newly created but not yet configured.
 
 - **Maximum number of connections exceeded**: The number of simultaneous connections has reached the system-defined limit. Additional connection attempts are denied until existing connections are closed or the limit is increased. This is often used to prevent server overload.
 
