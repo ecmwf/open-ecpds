@@ -702,6 +702,9 @@ The ERR category captures error events, specifically when a file fails to be dis
 - **CPY** (CoPY / Replication):
 The CPY category tracks file replication between different data movers in OpenECPDS. Each event records whether the replication was successful or if an issue occurred during the transfer.
 
+- **DEA** (DEnied Access):
+The DEA category captures events that highlight unauthorized access attempts, helping administrators identify potential security threats, misconfigurations, or unexpected system behaviors.
+
 ### Fields by Category
 
 Each event logged by OpenECPDS follows a structured format, with fields that provide detailed information about the recorded operation. The fields vary depending on the event category, capturing relevant attributes such as timestamps, file identifiers, processing statuses, and transfer details.
@@ -911,6 +914,39 @@ CPY;Monitored=true;DataTransferId=123456789;DestinationName=MyDestination;Destin
 - **Status** – Indicates whether the replication was successful (`true`) or not (`false`).
 - **Message** – Error message providing details in case of a replication failure.
 - **Action** – Specifies whether the replication was internal within the OpenECPDS Data Mover (`replicate`) or between an internal Data Mover and a Continental Data Mover (`proxy`).
+
+#### DEA (DEnied Access) Fields
+
+The DEA event records authentication and authorization failures within OpenECPDS. These events are generated whenever a data user attempts to access OpenECPDS but is denied due to insufficient permissions, invalid credentials, or failed authentication mechanisms such as TOTP (Time-Based One-Time Password).
+
+```
+DEA;UserId=uid;Message=Maximum number of connections exceeded (20)
+```
+
+- **UserId**: holds the identifier of the underlying data user.
+- **Message** – Error message providing details of the failure.
+
+Here are the descriptions of the possible errors:
+
+- **Not found**: This error occurs when the requested data user does not exist or is no longer available. It may be due to an incorrect user identifier or a deleted data user.
+
+- **Geolocation restriction**: Access to the requested resource is blocked based on the user's geographical location. This restriction may be enforced due to compliance, licensing agreements, or security policies that limit access to specific regions or countries.
+
+- **Disabled**: The data user account has been deactivated. This may occur due to administrative action or security reasons.
+
+- **TOTP authentication failed**: The provided Time-Based One-Time Password (TOTP) code is incorrect or has expired. This typically happens when a user enters an invalid 2FA (Two-Factor Authentication) code or if there is a time synchronization issue.
+
+- **Password authentication failed**: The provided password is incorrect. This could be due to a typo, an expired password, or an attempted unauthorized access.
+
+- **Password not set**: The user has not set a password for their account, preventing authentication via password-based login. This may occur when an account is newly created but not yet configured.
+
+- **Maximum number of connections exceeded**: The number of simultaneous connections has reached the system-defined limit. Additional connection attempts are denied until existing connections are closed or the limit is increased. This is often used to prevent server overload.
+
+- **No associated Destinations**: The data user does not have any configured destinations. This may indicate a misconfiguration or an incomplete setup.
+
+- **No associated Permissions**: The data user lacks the required permissions to perform any action once logged in. This may indicate a misconfiguration or an incomplete setup.
+
+These logs can be used for security monitoring, auditing, and troubleshooting access-related issues within OpenECPDS.
 
 ## Global Reach of OpenECPDS
 
