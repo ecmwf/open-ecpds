@@ -112,8 +112,8 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
     /** The Constant _log. */
     private static final transient Logger _log = LogManager.getLogger(DataBaseImpl.class);
 
-	/** The email pattern **/
-	private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+    /** The email pattern **/
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
 
     /** The ecpds. */
     private final transient ECpdsBase ecpds;
@@ -619,14 +619,14 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
     @Override
     public Destination[] getDestinationsByUser(final String uid, final String search, final String fromToAliases,
             final boolean asc, final String status, final String type, final String filter) throws IOException {
-		final String searchString;
-		if (EMAIL_PATTERN.matcher(search).matches()) {
-			searchString = "email=" + search;
-		} else {
-			searchString = search;
-		}
-        final var monitor = new MonitorCall("getDestinationsByUser(" + uid + "," + searchString + "," + fromToAliases + ","
-                + asc + "," + status + "," + type + "," + filter + ")");
+        final String searchString;
+        if (EMAIL_PATTERN.matcher(search).matches()) {
+            searchString = "email=" + search;
+        } else {
+            searchString = search;
+        }
+        final var monitor = new MonitorCall("getDestinationsByUser(" + uid + "," + searchString + "," + fromToAliases
+                + "," + asc + "," + status + "," + type + "," + filter + ")");
         final var options = new SQLParameterParser(searchString, "name", "comment", "country", "options", "enabled=?",
                 "monitor=?", "backup=?", "email");
         final var email = options.remove("email");
