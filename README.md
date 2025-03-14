@@ -920,11 +920,12 @@ CPY;Monitored=true;DataTransferId=123456789;DestinationName=MyDestination;Destin
 The DEA event records authentication and authorization failures within OpenECPDS. These events are generated whenever a data user attempts to access OpenECPDS but is denied due to insufficient permissions, invalid credentials, or failed authentication mechanisms such as TOTP (Time-Based One-Time Password).
 
 ```
-DEA;UserId=uid;Message=Maximum number of connections exceeded (20)
+DEA;UserId=uid;Message=Maximum number of connections exceeded (20);Context=Using https on DataMover=my.mover.name.it from uid@my.host.it
 ```
 
 - **UserId** - holds the identifier of the underlying data user.
 - **Message** – Error message providing details of the failure.
+- **Context** - Capture both the method (e.g., ftp, https, sftp, s3, mqtt) and the source (e.g., Data Mover and hostname).
 
 Here are the descriptions of the possible errors:
 
