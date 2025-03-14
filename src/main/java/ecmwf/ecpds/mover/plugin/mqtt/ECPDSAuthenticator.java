@@ -125,7 +125,7 @@ public class ECPDSAuthenticator implements SimpleAuthenticator {
      */
     private static List<String> validate(final InetAddress inetAddress, final String username,
             final ByteBuffer password) {
-        final var from = "Using MQTT on DataMover=" + mover.getRoot() + " from " + username + "@"
+        final var from = "Using mqtt on DataMover=" + mover.getRoot() + " from " + username + "@"
                 + inetAddress.getHostAddress();
         try {
             final var profile = mover.getMasterProxy().getIncomingProfile(username,
