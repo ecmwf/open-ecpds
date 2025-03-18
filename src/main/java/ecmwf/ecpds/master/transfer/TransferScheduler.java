@@ -3314,6 +3314,7 @@ public final class TransferScheduler extends MBeanScheduler {
             final var acquisition = isAcquisition(_currentTransfer);
             final var currentTime = System.currentTimeMillis();
             final var expiryTime = _currentTransfer.getExpiryTime().getTime();
+            final var currentStatus = _currentTransfer.getUserStatus();
             if (!StatusFactory.EXEC.equals(status) && expiryTime < currentTime) {
                 _log.info("Stopping DataTransfer " + _currentTransfer.getId() + " (expired)");
                 _currentTransfer.setStatusCode(StatusFactory.FAIL);
@@ -3325,38 +3326,31 @@ public final class TransferScheduler extends MBeanScheduler {
                 return NEXT_STEP_CONTINUE;
             }
             if (StatusFactory.RETR.equals(status) && acquisition) {
-                final var currentStatus = _currentTransfer.getUserStatus();
-                if (isNotEmpty(currentStatus)) {
-                    // The retry was triggered by a user action (e.g. requeue)
-                    // Make sure it will not be triggered again unless the file
-                    // is already on the data movers!
-                    _currentTransfer.setUserStatus(null);
-                } else // Was this file already downloaded by the
-                // DownloadScheduler?
-    				if (!_currentTransfer.getDataFile().getDownloaded()) {
-    					// The file was not downloaded so the source acquisition
-    					// Host was configured to not retrieve the file on the
-    					// data movers.
-    					final Host host = getHost();
-    					if (host == null || !HOST_ACQUISITION.getECtransSetup(host.getData())
-    							.getBoolean(HOST_ACQUISITION_REQUEUE_ON_FAILURE)) {
-    						// In this case we don't want to restart
-    						// the transmission as it should be forced only by a
-    						// re-queue from the acquisition Destination!
-    						_log.info("Cancelling retry for DataTransfer " + _currentTransfer.getId()
-    								+ " (not found on remote site)");
-    						_currentTransfer.setStatusCode(StatusFactory.FAIL);
-    						// The original error was already set in the comment in
-    						// the last history message!
-    						_currentTransfer.setComment(
-    								"No automatic retry (manual requeue or rediscovery from Acquisition Scheduler required)");
-    						_currentTransfer.setFinishTime(new Timestamp(System.currentTimeMillis()));
-    						MASTER.addTransferHistory(_currentTransfer);
-    						_setLastFailedTransfer(_currentTransfer);
-    						_update(_currentTransfer, true);
-    						return NEXT_STEP_CONTINUE;
-    					}
-    				}
+                // Was this file already downloaded by the DownloadScheduler?
+                if (!isNotEmpty(currentStatus) && !_currentTransfer.getDataFile().getDownloaded()) {
+                    // The file was not downloaded so the source acquisition
+                    // Host was configured to not retrieve the file on the
+                    // data movers.
+                    final Host host = getHost();
+                    if (host == null || !HOST_ACQUISITION.getECtransSetup(host.getData())
+                            .getBoolean(HOST_ACQUISITION_REQUEUE_ON_FAILURE)) {
+                        // In this case we don't want to restart
+                        // the transmission as it should be forced only by a
+                        // re-queue from the acquisition Destination!
+                        _log.info("Cancelling retry for DataTransfer " + _currentTransfer.getId()
+                                + " (not found on remote site)");
+                        _currentTransfer.setStatusCode(StatusFactory.FAIL);
+                        // The original error was already set in the comment in
+                        // the last history message!
+                        _currentTransfer.setComment(
+                                "No automatic retry (manual requeue or rediscovery from Acquisition Scheduler required)");
+                        _currentTransfer.setFinishTime(new Timestamp(System.currentTimeMillis()));
+                        MASTER.addTransferHistory(_currentTransfer);
+                        _setLastFailedTransfer(_currentTransfer);
+                        _update(_currentTransfer, true);
+                        return NEXT_STEP_CONTINUE;
+                    }
+                }
             }
             final var maxStart = _destination.getMaxStart();
             final var queueTime = _currentTransfer.getQueueTime().getTime();
@@ -3405,10 +3399,15 @@ public final class TransferScheduler extends MBeanScheduler {
             var retry = false;
             if (StatusFactory.RETR.equals(_currentTransfer.getStatusCode())) {
                 _destinationStep = DestinationStep.DESTINATION_STEP_PROCESS_RETR;
-                _log.info("Retrying DataTransfer " + _currentTransfer.getId());
                 if ((_currentTransfer.getHost() != null) && (!_provider.next(_currentTransfer) || !isRunning())) {
                     return NEXT_STEP_CONTINUE;
                 }
+                _log.info("Retrying DataTransfer " + _currentTransfer.getId());
+                if (isNotEmpty(currentStatus) && acquisition)
+                    // The retry was triggered by a user action (e.g. re-queue)
+                    // Make sure it will not be triggered again unless the file
+                    // is already on the data movers!
+                    _currentTransfer.setUserStatus(null);
                 _currentTransfer.setStatusCode(StatusFactory.WAIT);
                 _currentTransfer.setFinishTime(null);
                 _currentTransfer.setComment(null);
