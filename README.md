@@ -679,7 +679,7 @@ OpenECPDS includes an embedded MQTT client within its HTTP transfer module, enab
 
 Upon receiving an MQTT message, OpenECPDS offers two configurable options for data retrieval:
 
-- **Link Extraction for Scheduled Download** – The system can extract a link from the received MQTT message and register it for later download through the acquisition scheduler, ensuring efficient and automated data retrieval.
+- **Link Extraction for Scheduled Download** – The system can extract a link from the received MQTT message and register it for later download, triggered by the acquisition scheduler, ensuring efficient and automated data retrieval.
 - **Inline Data Extraction** – Alternatively, the system can extract the data content directly from the MQTT message itself, allowing immediate processing without requiring a separate download step.
 
 To ensure flexibility, OpenECPDS provides dedicated MQTT configuration parameters, allowing fine-tuning of various protocol options such as connection settings, message handling behavior, and retry mechanisms. This ensures optimal performance and adaptability across different use cases and infrastructures.
