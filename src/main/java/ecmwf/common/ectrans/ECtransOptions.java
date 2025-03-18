@@ -502,6 +502,9 @@ public enum ECtransOptions {
     /** The host acquisition interrupt slow. */
     HOST_ACQUISITION_INTERRUPT_SLOW("interruptSlow", Boolean.class, BOOLEAN_NONE),
 
+	/** The host acquisition requeue on failure. */
+	HOST_ACQUISITION_REQUEUE_ON_FAILURE("requeueOnFailure", Boolean.class, false),
+
     /** The host proxy http proxy url. */
     HOST_PROXY_HTTP_PROXY_URL("httpProxyUrl", String.class, STRING_NONE),
 

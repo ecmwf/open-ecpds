@@ -28,6 +28,7 @@ package ecmwf.ecpds.master.transfer;
 
 import static ecmwf.common.ectrans.ECtransGroups.Module.DESTINATION_SCHEDULER;
 import static ecmwf.common.ectrans.ECtransGroups.Module.HOST_ECPDS;
+import static ecmwf.common.ectrans.ECtransGroups.Module.HOST_ACQUISITION;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_SCHEDULER_ACTIVE_TIME_RANGE;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_SCHEDULER_REQUEUEIGNORE;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_SCHEDULER_REQUEUEON;
@@ -35,6 +36,7 @@ import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_SCHEDULER_REQUEUEP
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECPDS_MOVER_LIST_FOR_BACKUP;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECPDS_MOVER_LIST_FOR_SOURCE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_DEBUG;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_ACQUISITION_REQUEUE_ON_FAILURE;
 import static ecmwf.common.text.Util.isNotEmpty;
 import static ecmwf.common.text.Util.nullToNone;
 
@@ -3331,25 +3333,30 @@ public final class TransferScheduler extends MBeanScheduler {
                     _currentTransfer.setUserStatus(null);
                 } else // Was this file already downloaded by the
                 // DownloadScheduler?
-                if (!_currentTransfer.getDataFile().getDownloaded()) {
-                    // The file was not downloaded so the source acquisition
-                    // Host was configured to not retrieve the file on the
-                    // data movers. In this case we don't want to restart
-                    // the transmission as it should be forced only by a
-                    // re-queue from the acquisition Destination!
-                    _log.info("Cancelling retry for DataTransfer " + _currentTransfer.getId()
-                            + " (not found on remote site)");
-                    _currentTransfer.setStatusCode(StatusFactory.FAIL);
-                    // The original error was already set in the comment in
-                    // the last history message!
-                    _currentTransfer.setComment(
-                            "No automatic retry (manual requeue or rediscovery from Acquisition Scheduler required)");
-                    _currentTransfer.setFinishTime(new Timestamp(System.currentTimeMillis()));
-                    MASTER.addTransferHistory(_currentTransfer);
-                    _setLastFailedTransfer(_currentTransfer);
-                    _update(_currentTransfer, true);
-                    return NEXT_STEP_CONTINUE;
-                }
+    				if (!_currentTransfer.getDataFile().getDownloaded()) {
+    					// The file was not downloaded so the source acquisition
+    					// Host was configured to not retrieve the file on the
+    					// data movers.
+    					final Host host = getHost();
+    					if (host == null || !HOST_ACQUISITION.getECtransSetup(host.getData())
+    							.getBoolean(HOST_ACQUISITION_REQUEUE_ON_FAILURE)) {
+    						// In this case we don't want to restart
+    						// the transmission as it should be forced only by a
+    						// re-queue from the acquisition Destination!
+    						_log.info("Cancelling retry for DataTransfer " + _currentTransfer.getId()
+    								+ " (not found on remote site)");
+    						_currentTransfer.setStatusCode(StatusFactory.FAIL);
+    						// The original error was already set in the comment in
+    						// the last history message!
+    						_currentTransfer.setComment(
+    								"No automatic retry (manual requeue or rediscovery from Acquisition Scheduler required)");
+    						_currentTransfer.setFinishTime(new Timestamp(System.currentTimeMillis()));
+    						MASTER.addTransferHistory(_currentTransfer);
+    						_setLastFailedTransfer(_currentTransfer);
+    						_update(_currentTransfer, true);
+    						return NEXT_STEP_CONTINUE;
+    					}
+    				}
             }
             final var maxStart = _destination.getMaxStart();
             final var queueTime = _currentTransfer.getQueueTime().getTime();
