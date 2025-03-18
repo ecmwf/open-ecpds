@@ -44,11 +44,10 @@ Data Acquisition and Data Dissemination are active services initiated by OpenECP
   - [Key Functionalities of a Continental Data Mover](#key-functionalities-of-a-continental-data-mover)
   - [Steps to Optimize Data Transfers](#steps-to-optimize-data-transfers)
 - [Notification System (MQTT)](#notification-system-mqtt)
-  - [Functional Overview of the Notification System](#functional-overview-of-the-notification-system)
-  - [Typical Interaction in the OpenECPDS Notification System](#typical-interaction-in-the-openecpds-notification-system)
-  - [Retained Messages and Late Client Connections](#retained-messages-and-late-client-connections)
-  - [Configuration and Access Control](#configuration-and-access-control)
-  - [MQTT Broker in OpenECPDS](#mqtt-broker-in-openecpds)
+  - [Real-Time Data Dissemination with MQTT Broker](#real-time-data-dissemination-with-mqtt-broker)
+  - [Automated Data Acquisition with MQTT Client](#automated-data-acquisition-with-mqtt-client)
+  - [MQTT Integration and Implementation Details](#mqtt-integration-and-implementation-details)
+  - [Integration with WMO WIS2 Using MQTT](#integration-with-wmo-wis2-using-mqtt)
 - [Event Logging in OpenECPDS](#event-logging-in-openecpds)
   - [Event Categories](#event-categories)
   - [Fields by Category](#fields-by-category)
@@ -626,7 +625,16 @@ In OpenECPDS terminology, a **Continental Data Mover** is essentially a standard
 
 ## Notification System (MQTT)
 
-### Functional Overview of the Notification System
+OpenECPDS integrates both an MQTT Broker and an MQTT Client to enhance data dissemination and acquisition workflows.
+
+- **The MQTT Broker** - enables users of the dissemination service to subscribe to notifications, ensuring they are alerted as soon as new products become available in the data store. This allows for efficient and automated downstream processing.
+- **The MQTT Client** - facilitates data acquisition by registering with external data providers. When new data becomes available, the client processes the received notifications and automatically retrieves the data into the data store, ensuring seamless integration with external sources.
+
+By supporting MQTT, OpenECPDS improves real-time data distribution and acquisition, enhancing overall system efficiency and responsiveness. This is because notifications are sent instantly when new data becomes available, allowing for immediate processing and reducing delays.
+
+### Real-Time Data Dissemination with MQTT Broker
+
+#### Functional Overview of the Notification System
 
 <img src="img/Figure03.svg" alt="The OpenECPDS notification system overview" width="600"/>
 
@@ -645,7 +653,7 @@ If the **MQTT Broker** is notified, it checks whether any MQTT clients have subs
 
 For the **Message Broker**, the process is simpler: upon receiving a notification, it directly forwards it to the configured clients.
 
-### Typical Interaction in the OpenECPDS Notification System
+#### Typical Interaction in the OpenECPDS Notification System
 
 The MQTT-based notification system follows a structured interaction between three key components: the **MQTT Client**, the **MQTT Broker**, and the **OpenECPDS Data Store**.
 
@@ -657,15 +665,30 @@ The MQTT-based notification system follows a structured interaction between thre
 
 - **Message Delivery and Product Retrieval**: When the Data Store generates a **PUBLISH** message for a subscribed topic, the Broker forwards it to all Clients that have subscribed to that topic. The Client then extracts the file location from the message and proceeds to fetch the product using one of the available protocols on the OpenECPDS Portal: **HTTPS, S3, SFTP, or FTP**.
 
-### Retained Messages and Late Client Connections
+#### Retained Messages and Late Client Connections
 
 In this example, the **retain flag** is enabled in the MQTT message. This ensures that even if the Data Store sends a **PUBLISH** message before the Client is connected, the message remains available for delivery. As a result, when the Client connects later, it still receives the retained message, ensuring no critical notifications are missed.
 
-### Configuration and Access Control
+#### Configuration and Access Control
 
 The MQTT configuration can be fine-tuned at the **Destination level**, allowing for greater flexibility in how notifications are handled. Additionally, **access control** mechanisms can be configured at the **data user** level, ensuring secure and controlled distribution of messages.
 
-### MQTT Broker in OpenECPDS
+### Automated Data Acquisition with MQTT Client
+
+OpenECPDS includes an embedded MQTT client within its HTTP transfer module, enabling seamless integration with remote data providers. When enabled on an acquisition host, this client can be configured to subscribe to specific topics on a remote MQTT broker, allowing OpenECPDS to receive real-time notifications when new data becomes available.
+
+Upon receiving an MQTT message, OpenECPDS offers two configurable options for data retrieval:
+
+- **Link Extraction for Scheduled Download** – The system can extract a link from the received MQTT message and register it for later download through the acquisition scheduler, ensuring efficient and automated data retrieval.
+- **Inline Data Extraction** – Alternatively, the system can extract the data content directly from the MQTT message itself, allowing immediate processing without requiring a separate download step.
+
+To ensure flexibility, OpenECPDS provides dedicated MQTT configuration parameters, allowing fine-tuning of various protocol options such as connection settings, message handling behavior, and retry mechanisms. This ensures optimal performance and adaptability across different use cases and infrastructures.
+
+### Integration with WMO WIS2 Using MQTT
+
+Thanks to this MQTT implementation, OpenECPDS has been successfully integrated with the WMO WIS2 infrastructure, which also relies on MQTT. This allows OpenECPDS to function both as a WIS2 data provider, publishing data to the network, and as a WIS2 client, subscribing to relevant data streams. This dual role ensures seamless interoperability with WIS2 and enhances the exchange of meteorological data within the global community.
+
+### MQTT Integration and Implementation Details
 
 A few key points about the MQTT Broker and Client:
 
