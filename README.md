@@ -44,6 +44,7 @@ Data Acquisition and Data Dissemination are active services initiated by OpenECP
   - [Key Functionalities of a Continental Data Mover](#key-functionalities-of-a-continental-data-mover)
   - [Steps to Optimize Data Transfers](#steps-to-optimize-data-transfers)
 - [Notification System (MQTT)](#notification-system-mqtt)
+  - [Understanding MQTT Concepts Using a Filesystem Analogy](#understanding-mqtt-concepts-using-a-filesystem-analogy)
   - [Real-Time Data Dissemination with MQTT Broker](#real-time-data-dissemination-with-mqtt-broker)
   - [Automated Data Acquisition with MQTT Client](#automated-data-acquisition-with-mqtt-client)
   - [MQTT Integration and Implementation Details](#mqtt-integration-and-implementation-details)
@@ -632,7 +633,7 @@ OpenECPDS integrates both an MQTT Broker and an MQTT Client to enhance data diss
 
 By supporting MQTT, OpenECPDS improves real-time data distribution and acquisition, enhancing overall system efficiency and responsiveness. This is because notifications are sent instantly when new data becomes available, allowing for immediate processing and reducing delays.
 
-### Understanding MQTT Topics and the Retain Flag Using a Filesystem Analogy
+### Understanding MQTT Concepts Using a Filesystem Analogy
 
 Let’s use a filesystem analogy to explain MQTT topics, wildcards, and the retain flag.
 
