@@ -73,6 +73,7 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_ACQUISITION_REMOVE_PARAME
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ACQUISITION_REQUEUEON;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ACQUISITION_REQUEUEONSAMESIZE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ACQUISITION_REQUEUEONUPDATE;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_ACQUISITION_REQUEUE_ON_FAILURE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ACQUISITION_SERVER_LANGUAGE_CODE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ACQUISITION_SERVER_TIME_ZONE_ID;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ACQUISITION_SHORT_MONTH_NAMES;
@@ -10951,7 +10952,12 @@ public final class MasterServer extends ECaccessProvider
                                 // otherwise it would be retried (the FAIL
                                 // status will be set in the Transfer
                                 // Scheduler)!
-                                currentStatus = StatusFactory.RETR;
+                                if (HOST_ACQUISITION.getECtransSetup(_source.getData())
+                                        .getBoolean(HOST_ACQUISITION_REQUEUE_ON_FAILURE)) {
+                                    currentStatus = StatusFactory.SCHE;
+                                } else {
+                                    currentStatus = StatusFactory.RETR;
+                                }
                             } else if (Cnf.at("Other", "dontRetryDownloads", false)) {
                                 // We don't want to retry the download of the
                                 // files which are not on the super computer any
