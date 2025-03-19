@@ -638,8 +638,8 @@ Let’s use a filesystem analogy to explain MQTT topics, wildcards, and the reta
 
 Imagine a directory structure where you can register interest in files stored within a specific directory, or even within that directory and all its subdirectories. To do this, you specify the full path of the directory. MQTT works similarly, but instead of file paths, we use topics. Topics allow clients to subscribe to messages, and they can include wildcards to match multiple levels:
 
-- + (single-level wildcard): Matches any one directory level.
-- # (multi-level wildcard): Matches everything from that point downward in the hierarchy.
+- `+` (single-level wildcard): Matches any one directory level.
+- `#` (multi-level wildcard): Matches everything from that point downward in the hierarchy.
 
 Instead of files, MQTT deals with notifications, each carrying a payload. This payload may contain the actual data (like the file itself) or a link (href) that allows the subscriber to retrieve the content elsewhere. These notifications are published by a data provider that wants to share information, and each one is sent to a specific topic.
 
