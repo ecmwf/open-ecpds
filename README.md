@@ -652,11 +652,14 @@ Now, let’s go back to our filesystem analogy. If a file is saved again in the 
 With MQTT, the same principle applies: if the topic name includes a timestamp or unique identifier, each notification remains distinct, allowing subscribers to access different versions.
 
 #### Retained Messages in MQTT
-A key feature of MQTT is the retain flag. If a message is published with this flag enabled, it remains available for new subscribers, even if they connect later. This means that when a subscriber reconnects, it will immediately receive the most recent retained message for that topic.
 
-However, retained messages are not a history log—only the most recent retained message is stored. If a subscriber disconnects and multiple messages are published in the meantime, it will not receive all missed messages upon reconnecting. If message history is needed, persistent sessions with QoS 1 or QoS 2 should be used instead.
+A key feature of MQTT is the retain flag. When a message is published with this flag enabled, it remains available for new subscribers, even if they connect later. This ensures that when a subscriber reconnects, it immediately receives the most recent retained message for that topic.
 
-Additionally, in MQTT 5.0, messages can have an expiration time. Once a message expires, it is automatically deleted from the broker, ensuring that outdated information is not delivered.
+However, retained messages do not provide a history log; only the most recent retained message is stored. If a subscriber disconnects and multiple messages are published in the meantime, it will not receive all missed messages upon reconnecting. For true message history, persistent sessions with QoS 1 or QoS 2 should be used instead.
+
+That said, if a topic includes a timestamp or unique identifier, it can function as a form of history log. Each message is stored under a distinct topic (e.g., forecasts/data/20250320T1200), allowing clients to subscribe to specific time-based patterns to retrieve past messages.
+
+Additionally, MQTT 5.0 introduces message expiration. Once a message expires, it is automatically deleted from the broker, ensuring outdated information is not delivered.
 
 ### Real-Time Data Dissemination with MQTT Broker
 
