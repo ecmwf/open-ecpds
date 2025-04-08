@@ -110,6 +110,9 @@ This option allows setting a regex to filter the files returned in the transfer 
 ### acquisition.removeParameters
 When processing the listing output with URLs in place of filenames, this option allows for the removal of HTTP options, including the "?" symbol and anything following it, from the filenames.
 
+### acquisition.requeueOnFailure
+Usually, when a data retrieval fails, the data transfer request is set to Failed, and the retrieval is not retried. The retrieval will only be requeued after the file is rediscovered. This behavior prevents endless retries in situations where a file is discovered but then disappears from the remote site. However, there are cases when we do want to requeue a failed data transmission. For example, if the discovery frequency is long and we don't want to wait, or when the acquisition is based on MQTT. In the case of MQTT, notifications are only sent once, meaning that if the notification fails, the data will never be rediscovered and therefore not retried.
+
 ### acquisition.requeueon
 When encountering a previously registered file during discovery, enable the specification of actions to take. This involves a JavaScript expression expected to yield a boolean result. Several placeholders are accessible for use within this expression: "$size1" represents the original file size, "$size2" indicates the size from the most recent listing output, "$time1" denotes the original file timestamp, and "$time2" represents the timestamp from the latest listing (e.g. "$time2 &gt; $time1 && $size2 != $size1"). Additionally, the placeholders "$destination," "$target," and "$original" are available for use.
 
@@ -821,7 +824,7 @@ Sets the "Clean Start" flag for the MQTT connection. True indicates a new sessio
 Set the maximum time that the client will wait for the MQTT connection to be established.
 
 ### http.mqttHref
-The MQTT messages are expected to be in JSON format, and this option allows specifying which field to use in the JSON message for extracting the file reference.
+This option allows specifying the HREF to be used for retrieving the data content related to the received notification. This is typically a field in the returned message (e.g., for WIS2, the 'links[0].href' field of the JSON message). If the output is empty, the notification is ignored. When configured as a function in the script editor, a parameter must be specified. ECPDS will assign this parameter the content of the notification message (e.g., the JSON message in the case of WIS2).
 
 ### http.mqttKeepAliveInterval
 Set the interval at which the client should send a "keep alive" message to the MQTT broker. "Keep alive" messages are used to maintain the connection between the client and the broker. If there is no other communication between the client and the broker within the specified interval, the client sends a "keep alive" message to ensure the connection remains active.
