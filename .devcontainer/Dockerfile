@@ -37,7 +37,7 @@ RUN apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugi
 RUN apt-get autoremove -y && apt-get clean -y
 
 # SDKMAN Java Development Kit
-ENV SDKMAN_JDK=23.0.2-graal
+ENV SDKMAN_JDK=24-graal
 
 # Install GraalVM using SDKMAN
 RUN curl -s "https://get.sdkman.io" | bash && \
@@ -54,12 +54,12 @@ RUN java -Xshare:dump
 COPY java.security $JAVA_HOME/conf/security/.
 
 # Download and install Maven
-RUN cd /usr/local && wget https://dlcdn.apache.org/maven/maven-3/3.9.8/binaries/apache-maven-3.9.8-bin.tar.gz && \
-  tar -xzf apache-maven-3.9.8-bin.tar.gz && \
-  rm -f apache-maven-3.9.8-bin.tar.gz
+RUN cd /usr/local && wget https://dlcdn.apache.org/maven/maven-3/3.9.9/binaries/apache-maven-3.9.9-bin.tar.gz && \
+  tar -xzf apache-maven-3.9.9-bin.tar.gz && \
+  rm -f apache-maven-3.9.9-bin.tar.gz
 
 # Define environment parameters for Maven
-ENV MAVEN_HOME=/usr/local/apache-maven-3.9.8
+ENV MAVEN_HOME=/usr/local/apache-maven-3.9.9
 ENV PATH=$MAVEN_HOME/bin:$PATH
 
 # Set environment variables for Kompose and Kubectl versions
