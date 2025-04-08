@@ -1278,7 +1278,7 @@ public enum ECtransOptions {
     HOST_HTTP_MQTT_PERSISTENCE_DIRECTORY("mqttPersistenceDirectory", String.class, STRING_NONE),
 
     /** The host http mqtt href. */
-    HOST_HTTP_MQTT_HREF("mqttHref", String.class, "links[0].href"),
+    HOST_HTTP_MQTT_HREF("mqttHref", String.class, STRING_NONE),
 
     /** The host http mqtt qos. */
     HOST_HTTP_MQTT_QOS("mqttQos", Integer.class, 1),

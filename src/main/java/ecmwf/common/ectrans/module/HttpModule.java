@@ -182,6 +182,8 @@ import org.jsoup.nodes.TextNode;
 import org.jsoup.select.NodeTraversor;
 import org.jsoup.select.NodeVisitor;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import ecmwf.common.ectrans.ECtransSetup;
 import ecmwf.common.ectrans.TransferModule;
 import ecmwf.common.rmi.ClientSocketFactory;
@@ -192,7 +194,6 @@ import ecmwf.common.technical.ExecutorManager;
 import ecmwf.common.technical.ExecutorRunnable;
 import ecmwf.common.technical.PipedInputStream;
 import ecmwf.common.technical.PipedOutputStream;
-import ecmwf.common.technical.ScriptManager;
 import ecmwf.common.technical.StreamPlugThread;
 import ecmwf.common.text.Format;
 import ecmwf.common.version.Version;
@@ -393,7 +394,7 @@ public final class HttpModule extends TransferModule {
             poolManager.setMaxTotal(maxTotal);
             builder.setConnectionManager(poolManager);
             builder.setKeepAliveStrategy(_keepAliveStrategy);
-            if (username.length() > 0) {
+            if (!username.isEmpty()) {
                 if (getSetup().getBoolean(HOST_HTTP_AUTHHEADER)) {
                     final var auth = username + ":" + password;
                     final var encodedAuth = Base64.getEncoder()
@@ -762,7 +763,7 @@ public final class HttpModule extends TransferModule {
      * @return the string
      */
     private static String getFullName(final String directory, final String name) {
-        return directory.length() > 0 && directory.equals(name) ? name
+        return !directory.isEmpty() && directory.equals(name) ? name
                 : directory + (!isURL(name) && !directory.endsWith("/") && !name.startsWith("/") ? "/" : "") + name;
     }
 
@@ -1277,7 +1278,7 @@ public final class HttpModule extends TransferModule {
     @Override
     public void list(final String directory, final String pattern, final OutputStream out) throws IOException {
         final ProcessEntry resultList = new ProcessEntryAsOutput(out);
-        _log.debug("List{}{}{}", directory.length() > 0 ? " " + directory : "",
+        _log.debug("List{}{}{}", !directory.isEmpty() ? " " + directory : "",
                 isNotEmpty(pattern) ? " (" + pattern + ")" : "",
                 getSetup().getBoolean(HOST_HTTP_MQTT_MODE) ? " (MQTT)" : "");
         setStatus("LIST");
@@ -1311,7 +1312,7 @@ public final class HttpModule extends TransferModule {
     public String[] listAsStringArray(final String directory, final String pattern) throws IOException {
         final var resultList = new ProcessEntryAsList();
         if (_log.isDebugEnabled()) {
-            _log.debug("List{}{}{}", directory.length() > 0 ? " " + directory : "",
+            _log.debug("List{}{}{}", !directory.isEmpty() ? " " + directory : "",
                     isNotEmpty(pattern) ? " (" + pattern + ")" : "",
                     getSetup().getBoolean(HOST_HTTP_MQTT_MODE) ? " (MQTT)" : "");
         }
@@ -1363,26 +1364,6 @@ public final class HttpModule extends TransferModule {
                     _log.warn("Consuming entity", t);
                 }
             }
-        }
-    }
-
-    /**
-     * Execute.
-     *
-     * @param json
-     *            the json
-     * @param field
-     *            the field
-     *
-     * @return the string
-     */
-    private static String execute(final String json, final String field) {
-        try {
-            return String.valueOf(
-                    ScriptManager.exec(Object.class, ScriptManager.JS, "var json = " + json + "; json." + field));
-        } catch (final Throwable e) {
-            _log.warn("Extracting href", e);
-            return null;
         }
     }
 
@@ -1588,18 +1569,24 @@ public final class HttpModule extends TransferModule {
                     }
 
                     @Override
-                    public void messageArrived(final String topic, final MqttMessage message) throws Exception {
-                        if (getDebug()) {
-                            _log.debug("messageArrived: {} -> {}", topic, message.toDebugString());
-                        }
-                        final var href = execute(new String(message.getPayload()),
-                                getSetup().getString(HOST_HTTP_MQTT_HREF));
-                        receivedSignal.countDown();
-                        if (isNotEmpty(href)) {
-                            addEntry(manager, resultList, rootDirectory, targetDirectory, href, level, pattern,
-                                    counter);
-                        }
-                    }
+					public void messageArrived(final String topic, final MqttMessage message) throws Exception {
+						if (getDebug()) {
+							_log.debug("messageArrived: {} -> {}", topic, message.toDebugString());
+						}
+						try {
+							final var href = getSetup().getString(HOST_HTTP_MQTT_HREF, Map.of("mqttPayload",
+									new ObjectMapper().readValue(new String(message.getPayload()), Map.class)));
+							receivedSignal.countDown();
+							if (isNotEmpty(href)) {
+								addEntry(manager, resultList, rootDirectory, targetDirectory, href, level, pattern,
+										counter);
+							} else {
+								_log.debug("Notification ignored (no href found): {}", topic);
+							}
+						} catch (Throwable t) {
+							_log.debug("Notification ignored (href resolution error): {}", topic, t);
+						}
+					}
 
                     @Override
                     public void disconnected(final MqttDisconnectResponse arg0) {
@@ -1667,7 +1654,7 @@ public final class HttpModule extends TransferModule {
                 }
             }
             // At this stage the directory should have a correct format!
-            _log.debug("List{}{}", directory.length() > 0 ? " " + directory : "",
+            _log.debug("List{}{}", !directory.isEmpty() ? " " + directory : "",
                     isNotEmpty(pattern) ? " (" + pattern + ")" : "");
             if (getSetup().getBoolean(HOST_HTTP_DODIR)) {
                 // We have to do a listing of the files with a GET!
@@ -1694,7 +1681,7 @@ public final class HttpModule extends TransferModule {
                     if (getDebug()) {
                         _log.debug("Content: {}", html);
                     }
-                    if (select.length() == 0) {
+                    if (select.isEmpty()) {
                         // We are just processing line by line (e.g. ftp view with file names only)
                         _log.debug("Parsing html and extracting {} tags", select);
                         BufferedReader br = null;
@@ -1729,7 +1716,7 @@ public final class HttpModule extends TransferModule {
                                 break;
                             }
                             final var line = getSetup().getString(HOST_HTTP_ALTERNATIVE_PATH)
-                                    + (attribute.length() > 0 ? element.attr(attribute) : element.text());
+                                    + (!attribute.isEmpty() ? element.attr(attribute) : element.text());
                             listSize++;
                             addEntry(manager, resultList, rootDirectory, directory, line, level, pattern, counter);
                         }
