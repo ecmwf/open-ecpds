@@ -1569,24 +1569,24 @@ public final class HttpModule extends TransferModule {
                     }
 
                     @Override
-					public void messageArrived(final String topic, final MqttMessage message) throws Exception {
-						if (getDebug()) {
-							_log.debug("messageArrived: {} -> {}", topic, message.toDebugString());
-						}
-						try {
-							final var href = getSetup().getString(HOST_HTTP_MQTT_HREF, Map.of("mqttPayload",
-									new ObjectMapper().readValue(new String(message.getPayload()), Map.class)));
-							receivedSignal.countDown();
-							if (isNotEmpty(href)) {
-								addEntry(manager, resultList, rootDirectory, targetDirectory, href, level, pattern,
-										counter);
-							} else {
-								_log.debug("Notification ignored (no href found): {}", topic);
-							}
-						} catch (Throwable t) {
-							_log.debug("Notification ignored (href resolution error): {}", topic, t);
-						}
-					}
+                    public void messageArrived(final String topic, final MqttMessage message) throws Exception {
+                        if (getDebug()) {
+                            _log.debug("messageArrived: {} -> {}", topic, message.toDebugString());
+                        }
+                        try {
+                            final var href = getSetup().getString(HOST_HTTP_MQTT_HREF, Map.of("mqttPayload",
+                                    new ObjectMapper().readValue(new String(message.getPayload()), Map.class)));
+                            receivedSignal.countDown();
+                            if (isNotEmpty(href)) {
+                                addEntry(manager, resultList, rootDirectory, targetDirectory, href, level, pattern,
+                                        counter);
+                            } else {
+                                _log.debug("Notification ignored (no href found): {}", topic);
+                            }
+                        } catch (Throwable t) {
+                            _log.debug("Notification ignored (href resolution error): {}", topic, t);
+                        }
+                    }
 
                     @Override
                     public void disconnected(final MqttDisconnectResponse arg0) {
