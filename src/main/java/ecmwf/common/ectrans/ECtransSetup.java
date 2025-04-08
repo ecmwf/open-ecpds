@@ -869,6 +869,20 @@ public final class ECtransSetup implements Serializable {
     }
 
     /**
+     * Gets the boolean.
+     *
+     * @param option
+     *            the option
+     * @param bindings
+     *            the bindings
+     *
+     * @return the object of type class
+     */
+    public boolean getBoolean(final ECtransOptions option, final Map<String, Object> bindings) {
+        return Boolean.TRUE.equals(get(option, Boolean.class, bindings));
+    }
+
+    /**
      * Gets the boolean object.
      *
      * @param option
@@ -878,6 +892,20 @@ public final class ECtransSetup implements Serializable {
      */
     public Boolean getBooleanObject(final ECtransOptions option) {
         return get(option, Boolean.class);
+    }
+
+    /**
+     * Gets the boolean object.
+     *
+     * @param option
+     *            the option
+     * @param bindings
+     *            the bindings
+     *
+     * @return the object of type class
+     */
+    public Boolean getBooleanObject(final ECtransOptions option, final Map<String, Object> bindings) {
+        return get(option, Boolean.class, bindings);
     }
 
     /**
@@ -929,6 +957,20 @@ public final class ECtransSetup implements Serializable {
     }
 
     /**
+     * Gets the string.
+     *
+     * @param option
+     *            the option
+     * @param bindings
+     *            the bindings
+     *
+     * @return the object of type class
+     */
+    public String getString(final ECtransOptions option, final Map<String, Object> bindings) {
+        return get(option, String.class, bindings);
+    }
+
+    /**
      * Gets the optional string.
      *
      * @param option
@@ -974,6 +1016,20 @@ public final class ECtransSetup implements Serializable {
      */
     public Integer getInteger(final ECtransOptions option) {
         return get(option, Integer.class);
+    }
+
+    /**
+     * Gets the integer.
+     *
+     * @param option
+     *            the option
+     * @param bindings
+     *            the bindings
+     *
+     * @return the object of type class
+     */
+    public Integer getInteger(final ECtransOptions option, final Map<String, Object> bindings) {
+        return get(option, Integer.class, bindings);
     }
 
     /**
@@ -1025,6 +1081,20 @@ public final class ECtransSetup implements Serializable {
     }
 
     /**
+     * Gets the long.
+     *
+     * @param option
+     *            the option
+     * @param bindings
+     *            the bindings
+     *
+     * @return the object of type class
+     */
+    public Long getLong(final ECtransOptions option, final Map<String, Object> bindings) {
+        return get(option, Long.class, bindings);
+    }
+
+    /**
      * Gets the optional long.
      *
      * @param option
@@ -1073,6 +1143,20 @@ public final class ECtransSetup implements Serializable {
     }
 
     /**
+     * Gets the double.
+     *
+     * @param option
+     *            the option
+     * @param bindings
+     *            the bindings
+     *
+     * @return the object of type class
+     */
+    public Double getDouble(final ECtransOptions option, final Map<String, Object> bindings) {
+        return get(option, Double.class, bindings);
+    }
+
+    /**
      * Gets the optional double.
      *
      * @param option
@@ -1118,6 +1202,20 @@ public final class ECtransSetup implements Serializable {
      */
     public ByteSize getByteSize(final ECtransOptions option) {
         return get(option, ByteSize.class);
+    }
+
+    /**
+     * Gets the byte size.
+     *
+     * @param option
+     *            the option
+     * @param bindings
+     *            the bindings
+     *
+     * @return the object of type class
+     */
+    public ByteSize getByteSize(final ECtransOptions option, final Map<String, Object> bindings) {
+        return get(option, ByteSize.class, bindings);
     }
 
     /**
@@ -1217,6 +1315,20 @@ public final class ECtransSetup implements Serializable {
     }
 
     /**
+     * Gets the time range.
+     *
+     * @param option
+     *            the option
+     * @param bindings
+     *            the bindings
+     *
+     * @return the time range
+     */
+    public TimeRange getTimeRange(final ECtransOptions option, final Map<String, Object> bindings) {
+        return get(option, TimeRange.class, bindings);
+    }
+
+    /**
      * Gets the optional time range.
      *
      * @param option
@@ -1255,10 +1367,31 @@ public final class ECtransSetup implements Serializable {
      * @return the object of type class
      */
     private <T> T get(final ECtransOptions option, final Class<T> clazz) {
+        return get(option, clazz, Map.of());
+    }
+
+    /**
+     * Gets the option in the specified type. If the option is configured as a script, then invoke the function with the
+     * given name if it exists. If the function does not exists or the script fails then switch back to the properties
+     * to find the value. A set of arguments can also be provided, to be passed to the function.
+     *
+     * @param <T>
+     *            the generic type
+     * @param option
+     *            the option
+     * @param clazz
+     *            the clazz
+     * @param bindings
+     *            the bindings
+     *
+     * @return the object of type class
+     */
+    private <T> T get(final ECtransOptions option, final Class<T> clazz, final Map<String, Object> bindings) {
         final var content = resolve(scriptContent.toString());
         if (!content.isBlank() && exists(option, content)) {
             try (final var manager = new ScriptManager(get("script", "limit", 0),
                     get("script", "language", ScriptManager.JS))) {
+                manager.put(bindings);
                 manager.eval(content);
                 final var parameter = option.getModule() + "." + option.getName();
                 if (manager.exists(parameter)) { // Checking the variable itself through the manager
