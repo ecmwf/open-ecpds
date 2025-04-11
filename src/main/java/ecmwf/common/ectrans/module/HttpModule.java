@@ -68,6 +68,9 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_AWAIT;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_CLEAN_START;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_CONNECTION_TIMEOUT;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_HREF;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_ALTERNATIVE_NAME;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_SIZE;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_TIME;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_KEEP_ALIVE_INTERVAL;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_MAX_FILES;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_MODE;
@@ -114,13 +117,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -166,8 +169,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.eclipse.paho.mqttv5.client.IMqttToken;
-import org.eclipse.paho.mqttv5.client.MqttAsyncClient;
 import org.eclipse.paho.mqttv5.client.MqttCallback;
+import org.eclipse.paho.mqttv5.client.MqttClient;
 import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
 import org.eclipse.paho.mqttv5.client.MqttDisconnectResponse;
 import org.eclipse.paho.mqttv5.client.persist.MemoryPersistence;
@@ -189,6 +192,7 @@ import ecmwf.common.rmi.ClientSocketFactory;
 import ecmwf.common.rmi.ClientSocketStatistics;
 import ecmwf.common.rmi.SSLClientSocketFactory;
 import ecmwf.common.rmi.SocketConfig;
+import ecmwf.common.technical.ByteSize;
 import ecmwf.common.technical.ExecutorManager;
 import ecmwf.common.technical.ExecutorRunnable;
 import ecmwf.common.technical.PipedInputStream;
@@ -206,9 +210,6 @@ public final class HttpModule extends TransferModule {
 
     /** The currentStatus. */
     private String currentStatus = "INIT";
-
-    /** The response. */
-    private ClassicHttpResponse response;
 
     /** The in. */
     private InputStream httpInput;
@@ -251,6 +252,12 @@ public final class HttpModule extends TransferModule {
 
     /** The ssl socket factory. */
     private SSLClientSocketFactory sslSocketFactory = null;
+
+    /** The mqtt subscriber. */
+    private MqttClient mqttSubscriber = null;
+
+    /** The executor manager. */
+    private ExecutorManager<ListThread> manager = null;
 
     /**
      * {@inheritDoc}
@@ -605,17 +612,34 @@ public final class HttpModule extends TransferModule {
         final var pr = new PrepareRequest(name);
         final HttpUriRequestBase request = new HttpGet(encodePath(getSetup().getBoolean(HOST_HTTP_ENCODE_URL),
                 getSetup().getBoolean(HOST_HTTP_HAS_PARAMETERS) ? name : pr.getPath()));
-        response = execute(pr.getHttpHost(), request, 200);
-        final var entity = response.getEntity();
-        if (entity == null) {
-            throw new IOException("Couldn't get file: " + request.getRequestUri());
+        ClassicHttpResponse response = null;
+        try {
+            response = execute(pr.getHttpHost(), request, 200);
+            final var entity = response.getEntity();
+            if (entity == null) {
+                throw new IOException("Couldn't get file: " + request.getRequestUri());
+            }
+            if (getDebug()) {
+                try {
+                    _log.debug("Get: {}", request.getRequestUri());
+                } catch (Throwable t) {
+                    _log.warn("Logging request URI", t);
+                }
+            }
+            httpInput = entity.getContent();
+            setAttribute("remote.fileName", name);
+            return httpInput;
+        } catch (IOException | RuntimeException ex) {
+            // Clean up response if something went wrong
+            if (response != null) {
+                try {
+                    EntityUtils.consumeQuietly(response.getEntity());
+                } catch (Exception cleanupEx) {
+                    _log.warn("Error while cleaning up entity", cleanupEx);
+                }
+            }
+            throw ex;
         }
-        if (getDebug()) {
-            _log.debug("Get: {}", request.getRequestUri());
-        }
-        httpInput = entity.getContent();
-        setAttribute("remote.fileName", name);
-        return httpInput;
     }
 
     /**
@@ -960,14 +984,13 @@ public final class HttpModule extends TransferModule {
      * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    private FtpEntry getElement(final String directory, final String name) throws IOException {
+    private FtpEntry getElement(final String directory, final String name, final String ownerUser,
+            final String ownerGroup) throws IOException {
         final var pr = new PrepareRequest(name);
         final var path = pr.getPath();
         final var fullName = encodePath(getSetup().getBoolean(HOST_HTTP_ENCODE_URL),
                 getFullName(directory, getSetup().getBoolean(HOST_HTTP_HAS_PARAMETERS) ? name : pr.getPath()));
         final var request = getSetup().getBoolean(HOST_HTTP_USE_HEAD) ? new HttpHead(fullName) : new HttpGet(fullName);
-        final var ownerUser = isNotEmpty(username) ? username : "nouser";
-        final var ownerGroup = isNotEmpty(username) ? username : "nogroup";
         ClassicHttpResponse getResponse = null;
         try {
             getResponse = execute(pr.getHttpHost(), request, 200);
@@ -1281,7 +1304,7 @@ public final class HttpModule extends TransferModule {
                 isNotEmpty(pattern) ? " (" + pattern + ")" : "",
                 getSetup().getBoolean(HOST_HTTP_MQTT_MODE) ? " (MQTT)" : "");
         setStatus("LIST");
-        final ExecutorManager<ListThread> manager = getSetup().getBoolean(HOST_HTTP_FTP_LIKE)
+        manager = getSetup().getBoolean(HOST_HTTP_FTP_LIKE)
                 ? new ExecutorManager<>(getSetup().getInteger(HOST_HTTP_LIST_MAX_WAITING),
                         getSetup().getInteger(HOST_HTTP_LIST_MAX_THREADS))
                 : null;
@@ -1316,7 +1339,7 @@ public final class HttpModule extends TransferModule {
                     getSetup().getBoolean(HOST_HTTP_MQTT_MODE) ? " (MQTT)" : "");
         }
         setStatus("LIST");
-        final ExecutorManager<ListThread> manager = getSetup().getBoolean(HOST_HTTP_FTP_LIKE)
+        manager = getSetup().getBoolean(HOST_HTTP_FTP_LIKE)
                 ? new ExecutorManager<>(getSetup().getInteger(HOST_HTTP_LIST_MAX_WAITING),
                         getSetup().getInteger(HOST_HTTP_LIST_MAX_THREADS))
                 : null;
@@ -1385,10 +1408,15 @@ public final class HttpModule extends TransferModule {
      *            the pattern
      * @param counter
      *            the counter
+     * @param size
+     *            the size
+     * @param date
+     *            the date
      */
     private void addEntry(final ExecutorManager<ListThread> manager, final ProcessEntry resultList,
             final String rootDirectory, final String directory, final String line, final int level,
-            final String pattern, final AtomicInteger counter) {
+            final String pattern, final AtomicInteger counter, final String alternativeName, final ByteSize size,
+            final Long date) {
         try {
             if (isEmpty(pattern) || line.matches(pattern)) {
                 // We don't want to have duplicated lines!
@@ -1403,7 +1431,7 @@ public final class HttpModule extends TransferModule {
                         // Let's create a new list task and add it to the list manager queue!
                         try {
                             manager.put(new ListThread(manager, resultList, rootDirectory, directory, line, level,
-                                    pattern));
+                                    pattern, alternativeName, size, date));
                         } catch (final InterruptedException e) {
                         }
                     } else {
@@ -1532,7 +1560,6 @@ public final class HttpModule extends TransferModule {
             // file references!
             final var brokerUrl = getSetup().get(HOST_HTTP_MQTT_URL, getSetup().getString(HOST_HTTP_MQTT_SCHEME) + "://"
                     + host + ":" + getSetup().getInteger(HOST_HTTP_MQTT_PORT));
-            MqttAsyncClient subscriber = null;
             var disconnected = false;
             try {
                 final var connOpts = new MqttConnectionOptions();
@@ -1555,13 +1582,13 @@ public final class HttpModule extends TransferModule {
                         (int) getSetup().getDuration(HOST_HTTP_MQTT_KEEP_ALIVE_INTERVAL).getSeconds());
                 final var receivedSignal = new CountDownLatch(getSetup().getInteger(HOST_HTTP_MQTT_MAX_FILES));
                 final var persistenceMode = getSetup().getString(HOST_HTTP_MQTT_PERSISTENCE_MODE);
-                subscriber = new MqttAsyncClient(brokerUrl,
+                mqttSubscriber = new MqttClient(brokerUrl,
                         getSetup().get(HOST_HTTP_MQTT_SUBSCRIBER_ID, UUID.randomUUID().toString()),
                         getSetup().getBoolean(HOST_HTTP_MQTT_PERSISTENCE) ? "file".equalsIgnoreCase(persistenceMode)
                                 ? new MqttDefaultFilePersistence(getSetup().get(HOST_HTTP_MQTT_PERSISTENCE_DIRECTORY,
                                         System.getProperty("java.io.tmpdir")))
                                 : "memory".equalsIgnoreCase(persistenceMode) ? new MemoryPersistence() : null : null);
-                subscriber.setCallback(new MqttCallback() {
+                mqttSubscriber.setCallback(new MqttCallback() {
                     @Override
                     public void mqttErrorOccurred(final MqttException e) {
                         _log.warn("MQTT error", e);
@@ -1569,16 +1596,26 @@ public final class HttpModule extends TransferModule {
 
                     @Override
                     public void messageArrived(final String topic, final MqttMessage message) throws Exception {
+                        receivedSignal.countDown();
                         if (getDebug()) {
                             _log.debug("messageArrived: {} -> {}", topic, message.toDebugString());
                         }
                         try {
-                            final var href = getSetup().getString(HOST_HTTP_MQTT_HREF, Map.of("mqttPayload",
-                                    new ObjectMapper().readValue(new String(message.getPayload()), Map.class)));
-                            receivedSignal.countDown();
+                            final var bindings = new HashMap<>(Map.of("mqttPayload",
+                                    new ObjectMapper().readValue(
+                                            new String(message.getPayload(), StandardCharsets.UTF_8), Map.class),
+                                    "mqttTopic", topic));
+                            final var href = getSetup().getString(HOST_HTTP_MQTT_HREF, bindings);
+                            _log.debug("payload: {} : bindings: {} ; href: {}", new String(message.getPayload()),
+                                    bindings, href);
                             if (isNotEmpty(href)) {
+                                final var alternativeName = getSetup().getString(HOST_HTTP_MQTT_ALTERNATIVE_NAME,
+                                        bindings);
+                                final var size = getSetup().getByteSize(HOST_HTTP_MQTT_SIZE, bindings);
+                                final var time = getSetup().getLong(HOST_HTTP_MQTT_TIME, bindings);
+                                _log.debug("{} : {} : {} : {} : {}", bindings, href, alternativeName, size, time);
                                 addEntry(manager, resultList, rootDirectory, targetDirectory, href, level, pattern,
-                                        counter);
+                                        counter, alternativeName, size, time);
                             } else {
                                 _log.debug("Notification ignored (no href found): {}", topic);
                             }
@@ -1612,15 +1649,10 @@ public final class HttpModule extends TransferModule {
                     }
                 });
                 _log.debug("Connecting to broker {}", brokerUrl);
-                subscriber.connect(connOpts).waitForCompletion();
-                subscriber.subscribe(directory, getSetup().getInteger(HOST_HTTP_MQTT_QOS)); // QoS=1
-                if (!receivedSignal.await(getSetup().getDuration(HOST_HTTP_MQTT_AWAIT).getSeconds(),
-                        TimeUnit.SECONDS)) {
-                    _log.debug("Count did not reache 0");
-                }
-                _log.debug("Waiting for subscriber to complete");
-                final var disconnectToken = subscriber.disconnect();
-                disconnectToken.waitForCompletion();
+                mqttSubscriber.connect(connOpts);
+                mqttSubscriber.subscribe(directory, getSetup().getInteger(HOST_HTTP_MQTT_QOS)); // QoS=1
+                Thread.sleep(getSetup().getDuration(HOST_HTTP_MQTT_AWAIT).toMillis());
+                mqttSubscriber.disconnect();
                 disconnected = true;
                 _log.debug("Disconnected from broker");
             } catch (final Throwable e) {
@@ -1628,9 +1660,9 @@ public final class HttpModule extends TransferModule {
                 final var cause = e.getCause();
                 throw new IOException((cause != null ? cause : e).getMessage());
             } finally {
-                if (subscriber != null) {
+                if (mqttSubscriber != null) {
                     try {
-                        subscriber.close(!disconnected);
+                        mqttSubscriber.close(!disconnected);
                     } catch (final Throwable t) {
                         _log.warn("Closing broker {}", brokerUrl, t);
                     }
@@ -1696,7 +1728,7 @@ public final class HttpModule extends TransferModule {
                                 } else {
                                     listSize++;
                                     addEntry(manager, resultList, rootDirectory, directory, line, level, pattern,
-                                            counter);
+                                            counter, null, null, null);
                                 }
                             }
                         } finally {
@@ -1717,7 +1749,8 @@ public final class HttpModule extends TransferModule {
                             final var line = getSetup().getString(HOST_HTTP_ALTERNATIVE_PATH)
                                     + (!attribute.isEmpty() ? element.attr(attribute) : element.text());
                             listSize++;
-                            addEntry(manager, resultList, rootDirectory, directory, line, level, pattern, counter);
+                            addEntry(manager, resultList, rootDirectory, directory, line, level, pattern, counter, null,
+                                    null, null);
                         }
                     }
                 } finally {
@@ -1728,7 +1761,8 @@ public final class HttpModule extends TransferModule {
                 if (getDebug()) {
                     _log.debug("Adding directory: {}", directory);
                 }
-                addEntry(manager, resultList, rootDirectory, directory, directory, level, pattern, counter);
+                addEntry(manager, resultList, rootDirectory, directory, directory, level, pattern, counter, null, null,
+                        null);
             }
         }
         // Now we have the listing!
@@ -1761,6 +1795,15 @@ public final class HttpModule extends TransferModule {
         /** The pattern. */
         final String pattern;
 
+        /** The alternativeName. */
+        final String alternativeName;
+
+        /** The size. */
+        final ByteSize size;
+
+        /** The date. */
+        final Long date;
+
         /**
          * Instantiates a new list thread.
          *
@@ -1778,9 +1821,16 @@ public final class HttpModule extends TransferModule {
          *            the level
          * @param pattern
          *            the pattern
+         * @param alternativeName
+         *            the alternativeName
+         * @param size
+         *            the size
+         * @param date
+         *            the date
          */
         ListThread(final ExecutorManager<ListThread> manager, final ProcessEntry resultList, final String rootDirectory,
-                final String currentDirectory, final String currentName, final int level, final String pattern) {
+                final String currentDirectory, final String currentName, final int level, final String pattern,
+                final String alternativeName, final ByteSize size, final Long date) {
             super(manager);
             this.manager = manager;
             this.resultList = resultList;
@@ -1789,6 +1839,9 @@ public final class HttpModule extends TransferModule {
             this.currentName = currentName;
             this.level = level;
             this.pattern = pattern;
+            this.alternativeName = alternativeName;
+            this.size = size;
+            this.date = date;
         }
 
         /**
@@ -1815,7 +1868,22 @@ public final class HttpModule extends TransferModule {
             if (getDebug()) {
                 _log.debug("Listing path={}, name={}", path, currentName);
             }
-            final var entry = getElement(path, filename);
+            final FtpEntry entry;
+            final var ownerUser = isNotEmpty(username) ? username : "nouser";
+            final var ownerGroup = isNotEmpty(username) ? username : "nogroup";
+            if (size != null && date != null) {
+                // If the date and size is available, we already have the information required
+                // to build the entry, no need to connect to retrieve the date and size.
+                final var pr = new PrepareRequest(filename);
+                final var symLink = isNotEmpty(alternativeName);
+                entry = new FtpEntry(path, symLink ? "lrwxrwxrwx" : "-rw-r--r--",
+                        getSetup().get(HOST_HTTP_FTPUSER, ownerUser), getSetup().get(HOST_HTTP_FTPGROUP, ownerGroup),
+                        String.valueOf(size.size()), date,
+                        (pr.isAlternativeHost() ? filename : pr.getPath()) + (symLink ? " -> " + alternativeName : ""),
+                        null);
+            } else {
+                entry = getElement(path, filename, ownerUser, ownerGroup);
+            }
             if (!entry.hasError() && !getSetup().getBoolean(HOST_HTTP_MQTT_MODE)
                     && getSetup().getBoolean(HOST_HTTP_DODIR)) {
                 if (getSetup().getBoolean(HOST_HTTP_LIST_RECURSIVE) && entry.permission.startsWith("d")
@@ -1952,10 +2020,21 @@ public final class HttpModule extends TransferModule {
         if (closed.compareAndSet(false, true)) {
             _log.debug("Closing module");
             currentStatus = "CLOSE";
-            closeResponse(response);
+            if (manager != null) {
+                manager.stopRun();
+                manager = null;
+            }
             StreamPlugThread.closeQuietly(httpInput);
             StreamPlugThread.closeQuietly(poolManager);
             StreamPlugThread.closeQuietly(httpClient);
+            if (mqttSubscriber != null && mqttSubscriber.isConnected()) {
+                try {
+                    mqttSubscriber.disconnectForcibly();
+                    _log.debug("MQTT subscriber disconnected forcibly");
+                } catch (Throwable t) {
+                    _log.debug("Closing MQTT subscriber", t);
+                }
+            }
             _log.debug("Close completed");
         } else {
             _log.debug("Already closed");
