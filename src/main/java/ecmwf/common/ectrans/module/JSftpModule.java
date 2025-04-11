@@ -1639,78 +1639,85 @@ public class JSftpModule extends TransferModule {
     }
 
     /**
-	 * The Class JSftpLogger.
-	 */
-	public static final class JSftpLogger implements com.jcraft.jsch.Logger {
+     * The Class JSftpLogger.
+     */
+    public static final class JSftpLogger implements com.jcraft.jsch.Logger {
 
-		/**
-		 * Always enabled.
-		 *
-		 * @param level the level
-		 * @return true, if is enabled
-		 */
-		@Override
-		public boolean isEnabled(final int level) {
-			return true;
-		}
+        /**
+         * Always enabled.
+         *
+         * @param level
+         *            the level
+         *
+         * @return true, if is enabled
+         */
+        @Override
+        public boolean isEnabled(final int level) {
+            return true;
+        }
 
-		/**
-		 * Log.
-		 *
-		 * @param level   the level
-		 * @param message the message
-		 */
-		@Override
-		public void log(final int level, final String message) {
-			switch (level) {
-			case DEBUG:
-				_log.debug(message);
-				break;
-			case INFO:
-				_log.info(message);
-				break;
-			case WARN:
-				_log.warn(message);
-				break;
-			case ERROR:
-				_log.error(message);
-				break;
-			case FATAL:
-				_log.fatal(message);
-				break;
-			default:
-				break;
-			}
-		}
+        /**
+         * Log.
+         *
+         * @param level
+         *            the level
+         * @param message
+         *            the message
+         */
+        @Override
+        public void log(final int level, final String message) {
+            switch (level) {
+            case DEBUG:
+                _log.debug(message);
+                break;
+            case INFO:
+                _log.info(message);
+                break;
+            case WARN:
+                _log.warn(message);
+                break;
+            case ERROR:
+                _log.error(message);
+                break;
+            case FATAL:
+                _log.fatal(message);
+                break;
+            default:
+                break;
+            }
+        }
 
-		/**
-		 * Log.
-		 *
-		 * @param level   the level
-		 * @param message the message
-		 * @param cause   the exception
-		 */
-		@Override
-		public void log(final int level, final String message, final Throwable cause) {
-			switch (level) {
-			case DEBUG:
-				_log.debug(message, cause);
-				break;
-			case INFO:
-				_log.info(message, cause);
-				break;
-			case WARN:
-				_log.warn(message, cause);
-				break;
-			case ERROR:
-				_log.error(message, cause);
-				break;
-			case FATAL:
-				_log.fatal(message, cause);
-				break;
-			default:
-				break;
-			}
-		}
-	}
+        /**
+         * Log.
+         *
+         * @param level
+         *            the level
+         * @param message
+         *            the message
+         * @param cause
+         *            the exception
+         */
+        @Override
+        public void log(final int level, final String message, final Throwable cause) {
+            switch (level) {
+            case DEBUG:
+                _log.debug(message, cause);
+                break;
+            case INFO:
+                _log.info(message, cause);
+                break;
+            case WARN:
+                _log.warn(message, cause);
+                break;
+            case ERROR:
+                _log.error(message, cause);
+                break;
+            case FATAL:
+                _log.fatal(message, cause);
+                break;
+            default:
+                break;
+            }
+        }
+    }
 }
