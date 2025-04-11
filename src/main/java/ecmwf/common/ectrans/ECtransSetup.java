@@ -1450,31 +1450,48 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the object of type class
      */
-    @SuppressWarnings({ "unchecked" })
     private <T> T getFromProperties(final ECtransOptions option, final Class<T> clazz) {
         final var found = get(option.getModule(), option.getName(), null);
         if (found == null || found.isBlank() && clazz != String.class) {
             // Nothing in the configuration or empty value, let's use the default!
             return option.getDefaultValue(clazz);
+        } else {
+            return cast(found, clazz);
         }
+    }
+
+    /**
+     * Cast the string in the specified type.
+     *
+     * @param <T>
+     *            the generic type
+     * @param value
+     *            the value
+     * @param clazz
+     *            the clazz
+     *
+     * @return the object of type class
+     */
+    @SuppressWarnings({ "unchecked" })
+    private static <T> T cast(final String value, final Class<T> clazz) {
         if (clazz == String.class) {
-            return (T) found;
+            return (T) value;
         } else if (clazz == Integer.class) {
-            return (T) Integer.valueOf(found);
+            return (T) Integer.valueOf(value);
         } else if (clazz == Double.class) {
-            return (T) Double.valueOf(found);
+            return (T) Double.valueOf(value);
         } else if (clazz == Long.class) {
-            return (T) Long.valueOf(found);
+            return (T) Long.valueOf(value);
         } else if (clazz == Boolean.class) {
-            return (T) Boolean.valueOf("true".equalsIgnoreCase(found) || "yes".equalsIgnoreCase(found));
+            return (T) Boolean.valueOf("true".equalsIgnoreCase(value) || "yes".equalsIgnoreCase(value));
         } else if (clazz == ByteSize.class) {
-            return (T) ByteSize.parse(found);
+            return (T) ByteSize.parse(value);
         } else if (clazz == Duration.class) {
-            return (T) Duration.ofMillis(Format.parseDurationWithDefaultInMillis(found));
+            return (T) Duration.ofMillis(Format.parseDurationWithDefaultInMillis(value));
         } else if (clazz == Period.class) {
-            return (T) Period.parse(found);
+            return (T) Period.parse(value);
         } else if (clazz == TimeRange.class) {
-            return (T) TimeRange.parse(found);
+            return (T) TimeRange.parse(value);
         } else {
             // No matching conversion is found, return null
             _log.warn("Unsuported option type: {}", clazz);
@@ -1494,33 +1511,50 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the list of object of type class
      */
-    @SuppressWarnings({ "unchecked" })
     private <T> List<T> list(final ECtransOptions option, final Class<T> clazz) {
         final var found = get(option.getModule(), option.getName(), null);
         if (found == null || found.isBlank() && clazz != String.class) {
             // Nothing in the configuration or empty value, let's use the default!
             return option.getDefaultValues(clazz);
+        } else {
+            return castList(found, clazz);
         }
+    }
+
+    /**
+     * Gets the list of options in the specified type.
+     *
+     * @param <T>
+     *            the generic type
+     * @param value
+     *            the value
+     * @param clazz
+     *            the clazz
+     *
+     * @return the list of object of type class
+     */
+    @SuppressWarnings({ "unchecked" })
+    private static <T> List<T> castList(final String value, final Class<T> clazz) {
         if (clazz == String.class) {
-            return (List<T>) Arrays.asList(found.split(","));
+            return (List<T>) Arrays.asList(value.split(","));
         } else if (clazz == Integer.class) {
-            return (List<T>) Arrays.stream(found.split(",")).map(Integer::valueOf).toList();
+            return (List<T>) Arrays.stream(value.split(",")).map(Integer::valueOf).toList();
         } else if (clazz == Double.class) {
-            return (List<T>) Arrays.stream(found.split(",")).map(Double::valueOf).toList();
+            return (List<T>) Arrays.stream(value.split(",")).map(Double::valueOf).toList();
         } else if (clazz == Long.class) {
-            return (List<T>) Arrays.stream(found.split(",")).map(Long::valueOf).toList();
+            return (List<T>) Arrays.stream(value.split(",")).map(Long::valueOf).toList();
         } else if (clazz == Boolean.class) {
-            return (List<T>) Arrays.stream(found.split(","))
+            return (List<T>) Arrays.stream(value.split(","))
                     .map(entry -> "true".equalsIgnoreCase(entry) || "yes".equalsIgnoreCase(entry)).toList();
         } else if (clazz == ByteSize.class) {
-            return (List<T>) Arrays.stream(found.split(",")).map(ByteSize::parse).toList();
+            return (List<T>) Arrays.stream(value.split(",")).map(ByteSize::parse).toList();
         } else if (clazz == Duration.class) {
-            return (List<T>) Arrays.stream(found.split(","))
+            return (List<T>) Arrays.stream(value.split(","))
                     .map(entry -> Duration.ofMillis(Format.parseDurationWithDefaultInMillis(entry))).toList();
         } else if (clazz == Period.class) {
-            return (List<T>) Arrays.stream(found.split(",")).map(Period::parse).toList();
+            return (List<T>) Arrays.stream(value.split(",")).map(Period::parse).toList();
         } else if (clazz == TimeRange.class) {
-            return (List<T>) Arrays.stream(found.split(",")).map(TimeRange::parse).toList();
+            return (List<T>) Arrays.stream(value.split(",")).map(TimeRange::parse).toList();
         } else {
             // No matching conversion is found!
             _log.warn("Unsuported option type: {}", clazz);

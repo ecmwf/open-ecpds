@@ -31,6 +31,8 @@ package ecmwf.common.technical;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.time.Duration;
+import java.time.Period;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -395,17 +397,52 @@ public final class ScriptManager implements AutoCloseable {
      */
     private static <T> T cast(final Class<T> clazz, final Value value) throws ScriptException {
         // No return requested (void)
-        if (clazz == null) {
+        if (clazz == null || value.isNull()) {
             return null;
         }
-        // No object defined?
-        if (value.isNull()) {
-            throw new ScriptException("No output from script");
-        }
         try {
-            return value.as(clazz);
+            return cast(value, clazz);
         } catch (final ClassCastException e) {
-            throw new ScriptException("Not a " + clazz.getSimpleName() + " output");
+            throw new ScriptException("Not a " + clazz.getSimpleName() + " output (" + value.toString() + ")");
+        }
+    }
+
+    /**
+     * Cast the value in the requested type.
+     *
+     * @param <T>
+     *            the generic type
+     * @param value
+     *            the value
+     * @param clazz
+     *            the clazz
+     *
+     * @return the object of type class
+     */
+    @SuppressWarnings({ "unchecked" })
+    private static <T> T cast(final Value value, final Class<T> clazz) {
+        if (clazz == String.class) {
+            return (T) value.asString();
+        } else if (clazz == Integer.class) {
+            return (T) Integer.valueOf(value.asInt());
+        } else if (clazz == Double.class) {
+            return (T) Double.valueOf(value.asDouble());
+        } else if (clazz == Long.class) {
+            return (T) Long.valueOf(value.asLong());
+        } else if (clazz == Boolean.class) {
+            return (T) Boolean.valueOf(value.asBoolean());
+        } else if (clazz == ByteSize.class) {
+            return (T) ByteSize.of(value.asLong());
+        } else if (clazz == Duration.class) {
+            return (T) Duration.ofMillis(value.asLong());
+        } else if (clazz == Period.class) {
+            return (T) Period.parse(value.asString());
+        } else if (clazz == TimeRange.class) {
+            return (T) TimeRange.parse(value.asString());
+        } else {
+            // No matching conversion is found, return null
+            _log.warn("Unsuported option type: {}", clazz);
+            return null;
         }
     }
 
