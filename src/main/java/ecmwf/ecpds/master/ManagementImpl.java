@@ -980,7 +980,7 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
             } catch (final Throwable t) {
                 _log.warn("interrupting Acquisition", t);
             }
-            final var manager = new ExecutorManager<CleanThread>(100, 20);
+            final var manager = new ExecutorManager<CleanThread>(100, 50);
             Iterator<DataTransfer> it = null;
             try {
                 it = base.getDataTransfersByDestination(destinationName);
