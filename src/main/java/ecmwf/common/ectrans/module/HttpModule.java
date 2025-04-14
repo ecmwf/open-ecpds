@@ -1205,7 +1205,7 @@ public final class HttpModule extends TransferModule {
     /**
      * The Class ProcessEntryAsOutput.
      */
-	private class ProcessEntryAsOutput implements ProcessEntry, Closeable {
+    private class ProcessEntryAsOutput implements ProcessEntry, Closeable {
 
         /** The count. */
         final AtomicInteger count = new AtomicInteger(0);
@@ -1232,25 +1232,25 @@ public final class HttpModule extends TransferModule {
          * @throws IOException
          *             Signals that an I/O exception has occurred.
          */
-		@Override
-		public void add(final String line) throws IOException {
-			if (getDebug()) {
-				_log.debug("Writing new line: {}", line);
-			}
-			boolean successful = false;
-			try {
-				out.write((line + "\n").getBytes());
-				out.flush();
-				successful = true;
-				count.addAndGet(1);
-			} finally {
-				if (!successful) {
-					_log.warn("Underlying output not healthy");
-					StreamPlugThread.closeQuietly(ProcessEntryAsOutput.this);
-					StreamPlugThread.closeQuietly(HttpModule.this);
-				}
-			}
-		}
+        @Override
+        public void add(final String line) throws IOException {
+            if (getDebug()) {
+                _log.debug("Writing new line: {}", line);
+            }
+            boolean successful = false;
+            try {
+                out.write((line + "\n").getBytes());
+                out.flush();
+                successful = true;
+                count.addAndGet(1);
+            } finally {
+                if (!successful) {
+                    _log.warn("Underlying output not healthy");
+                    StreamPlugThread.closeQuietly(ProcessEntryAsOutput.this);
+                    StreamPlugThread.closeQuietly(HttpModule.this);
+                }
+            }
+        }
 
         /**
          * Adds the all.
@@ -1608,8 +1608,8 @@ public final class HttpModule extends TransferModule {
                     @Override
                     public void messageArrived(final String topic, final MqttMessage message) throws Exception {
                         receivedSignal.countDown();
-						if (getDebug())
-							_log.debug("messageArrived: topic={} ; debugString={}", topic, message.toDebugString());
+                        if (getDebug())
+                            _log.debug("messageArrived: topic={} ; debugString={}", topic, message.toDebugString());
                         try {
                             final var bindings = new HashMap<>(Map.of("mqttPayload",
                                     new ObjectMapper().readValue(
