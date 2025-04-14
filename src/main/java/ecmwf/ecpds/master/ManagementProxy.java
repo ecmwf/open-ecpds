@@ -503,22 +503,6 @@ final class ManagementProxy implements ManagementInterface {
     /**
      * {@inheritDoc}
      *
-     * Clean destination.
-     */
-    @Override
-    public String cleanDestination(final ECpdsSession session, final String destinationName, final long days)
-            throws MasterException, DataBaseException, RemoteException {
-        if (session == null || isEmpty(destinationName) || days < 0) {
-            throw new MasterException("Invalid parameter(s) for cleanDestination");
-        }
-        final var monitor = new MonitorCall(
-                "cleanDestination(" + session.getWebUser().getName() + "," + destinationName + "," + days + ")");
-        return monitor.done(managementInterface.cleanDestination(session, destinationName, days));
-    }
-
-    /**
-     * {@inheritDoc}
-     *
      * Hold all destinations.
      */
     @Override

@@ -479,28 +479,6 @@ public interface ManagementInterface extends Remote {
             throws MasterException, RemoteException, DataBaseException;
 
     /**
-     * Clean destination.
-     *
-     * @param session
-     *            the session
-     * @param destinationName
-     *            the destination name
-     * @param days
-     *            the days
-     *
-     * @return the string
-     *
-     * @throws ecmwf.ecpds.master.MasterException
-     *             the master exception
-     * @throws ecmwf.common.database.DataBaseException
-     *             the data base exception
-     * @throws java.rmi.RemoteException
-     *             the remote exception
-     */
-    String cleanDestination(ECpdsSession session, String destinationName, long days)
-            throws MasterException, DataBaseException, RemoteException;
-
-    /**
      * Hold all destinations.
      *
      * @param session
