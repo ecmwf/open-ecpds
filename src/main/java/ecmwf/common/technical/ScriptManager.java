@@ -396,14 +396,14 @@ public final class ScriptManager implements AutoCloseable {
      *             the script exception
      */
     private static <T> T cast(final Class<T> clazz, final Value value) throws ScriptException {
-		// No return requested (void)
-		if (clazz == null) {
-			return null;
-		}
-		// No object defined?
-		if (value.isNull()) {
-			throw new ScriptException("No output from script");
-		}
+        // No return requested (void)
+        if (clazz == null) {
+            return null;
+        }
+        // No object defined?
+        if (value.isNull()) {
+            throw new ScriptException("No output from script");
+        }
         try {
             return cast(value, clazz);
         } catch (final ClassCastException e) {
@@ -444,7 +444,7 @@ public final class ScriptManager implements AutoCloseable {
         } else if (clazz == TimeRange.class) {
             return (T) TimeRange.parse(value.asString());
         } else {
-			// No matching conversion is found, return default casting!
+            // No matching conversion is found, return default casting!
             _log.warn("Unsuported option type: {}", clazz);
             return value.as(clazz);
         }
