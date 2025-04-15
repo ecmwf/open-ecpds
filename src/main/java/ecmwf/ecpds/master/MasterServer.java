@@ -9517,7 +9517,7 @@ public final class MasterServer extends ECaccessProvider
                                     if (error.indexOf("DataFile already exist") != -1) {
                                         // already exists and submitted between
                                         // the check and the insert!
-                                        return "not-selected: " + error.substring(8);
+                                        return "not-selected:" + error.substring(8);
                                     } else {
                                         _log.warn("Registration error", t);
                                         return "not-selected: registration error (" + error + ")";
