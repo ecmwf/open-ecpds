@@ -9498,7 +9498,7 @@ public final class MasterServer extends ECaccessProvider
                                                     + ") on DataMover=" + ar.server.getName() + " for Destination="
                                                     + _desName,
                                             _host.getLogin(), destination, _host.getName(), metadata, original,
-                                            uniqueName, endTarget, entry.time, symlink ? -1 : entry.size,
+                                            uniqueName, endTarget, entry.time, entry.size >= 0 ? entry.size : -1,
                                             _getBoolean(HOST_ACQUISITION_EVENT), _getInt(HOST_ACQUISITION_PRIORITY),
                                             _getString(HOST_ACQUISITION_LIFETIME), null, standby,
                                             _getString(HOST_ACQUISITION_GROUPBY,
