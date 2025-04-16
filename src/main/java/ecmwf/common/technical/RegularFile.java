@@ -529,6 +529,7 @@ public final class RegularFile extends GenericFile {
     private long receiveFileStandard(final InputStream in, final long expectedBytesCount) throws IOException {
         var closeCompleted = false;
         var fileAvailable = false;
+        var synchronised = false;
         ReadableByteChannel inChannel = null;
         FileChannel outChannel = null;
         FileOutputStream outFile = null;
@@ -555,6 +556,7 @@ public final class RegularFile extends GenericFile {
                     outChannel = outFile.getChannel();
                     if (CHANNEL_FORCE) {
                         outChannel.force(CHANNEL_FORCE_METADATA);
+                        synchronised = true;
                     }
                     break;
                 } catch (final FileNotFoundException e1) {
@@ -578,7 +580,7 @@ public final class RegularFile extends GenericFile {
                     expectedBytesCount >= 0 ? expectedBytesCount : Long.MAX_VALUE);
             _log.debug("Transfer duration: " + Format.formatDuration(start, System.currentTimeMillis()));
             final var fdstart = System.currentTimeMillis();
-            if (outFile != null && FD_SYNC) {
+            if (!synchronised && outFile != null && FD_SYNC) {
                 outFile.getFD().sync();
                 _log.debug("Sync: " + Format.formatDuration(fdstart, System.currentTimeMillis()));
             }
