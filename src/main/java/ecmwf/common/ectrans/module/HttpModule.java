@@ -320,9 +320,10 @@ public final class HttpModule extends TransferModule {
             // Ignore dir (not used)
             host = host.substring(0, pos);
         }
-        // Default user agent!
+        // Add the minimum required headers!
         headersList.put("User-Agent", "ecpds/" + Version.getFullVersion());
-        // Let's get the headers!
+        headersList.put("Accept", "*/*");
+        // And the ones in the configuration (possibly overwriting User-Agent & Accept)
         final var headers = new BufferedReader(new StringReader(getSetup().getString(HOST_HTTP_HEADERS)));
         String line;
         while ((line = headers.readLine()) != null) {
@@ -331,8 +332,6 @@ public final class HttpModule extends TransferModule {
                 headersList.put(line.substring(0, index).trim(), line.substring(index + 1).trim());
             }
         }
-        // Add standard headers!
-        headersList.put("Accept", "*/*");
         final var port = getPort(getSetup());
         scheme = getSetup().getString(HOST_HTTP_SCHEME);
         _log.debug("Connection on {}://{}:{}{}", scheme, host, port, isNotEmpty(username) ? " (" + username + ")" : "");
