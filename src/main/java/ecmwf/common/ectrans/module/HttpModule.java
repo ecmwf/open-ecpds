@@ -320,6 +320,8 @@ public final class HttpModule extends TransferModule {
             // Ignore dir (not used)
             host = host.substring(0, pos);
         }
+        // Default user agent!
+        headersList.put("User-Agent", "ecpds/" + Version.getFullVersion());
         // Let's get the headers!
         final var headers = new BufferedReader(new StringReader(getSetup().getString(HOST_HTTP_HEADERS)));
         String line;
@@ -330,7 +332,6 @@ public final class HttpModule extends TransferModule {
             }
         }
         // Add standard headers!
-        headersList.put("User-Agent", "ecpds/" + Version.getFullVersion());
         headersList.put("Accept", "*/*");
         final var port = getPort(getSetup());
         scheme = getSetup().getString(HOST_HTTP_SCHEME);
