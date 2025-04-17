@@ -6907,7 +6907,7 @@ public final class MasterServer extends ECaccessProvider
         private int _maxReplicateThreads = Cnf.at("Scheduler", "maxReplicateThreads", 200);
 
         /** The _max replicate threads per mover. */
-        private final int _maxReplicateThreadsPerMover = Cnf.at("Scheduler", "maxReplicateThreadsPerMover", 10);
+        private int _maxReplicateThreadsPerMover = Cnf.at("Scheduler", "maxReplicateThreadsPerMover", 10);
 
         /** The _replicate threads. */
         private final Map<Long, ReplicateThread> _replicateThreads = new ConcurrentHashMap<>();
@@ -7018,6 +7018,9 @@ public final class MasterServer extends ECaccessProvider
                             new MBeanAttributeInfo("MaximumReplicateThreads", "int",
                                     "MaximumReplicateThreads: maximum number of parallel replications.", true, true,
                                     false),
+                            new MBeanAttributeInfo("MaximumReplicateThreadsPerMover", "int",
+                                    "MaximumReplicateThreads: maximum number of parallel replications per data mover.",
+                                    true, true, false),
                             new MBeanAttributeInfo("TimeOutReplicateThreads", "long",
                                     "TimeOutReplicateThreads: timeout for each replication thread (-1 to deactivate).",
                                     true, true, false),
@@ -7051,6 +7054,9 @@ public final class MasterServer extends ECaccessProvider
                 if ("MaximumReplicateThreads".equals(attributeName)) {
                     return _maxReplicateThreads;
                 }
+                if ("MaximumReplicateThreadsPerMover".equals(attributeName)) {
+                    return _maxReplicateThreadsPerMover;
+                }
                 if ("TimeOutReplicateThreads".equals(attributeName)) {
                     return _timeOutReplicateThread;
                 }
@@ -7081,6 +7087,10 @@ public final class MasterServer extends ECaccessProvider
                 throws InvalidAttributeValueException, MBeanException {
             if ("MaximumReplicateThreads".equals(name)) {
                 _maxReplicateThreads = (Integer) value;
+                return true;
+            }
+            if ("MaximumReplicateThreadsPerMover".equals(name)) {
+                _maxReplicateThreadsPerMover = (Integer) value;
                 return true;
             }
             if ("TimeOutReplicateThreads".equals(name)) {
