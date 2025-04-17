@@ -143,8 +143,10 @@ public class DirectByteBufferPool {
                 }
             }
             final var durationMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
-            _log.debug("Cleanup done in {} ms. Before: {}, Removed: {}, After: {}", durationMs, before, removed,
-                    pool.size());
+            _log.debug(
+                    "Cleanup done in {} ms (Before: {}, Removed: {}, After: {}) - Total (Allocated: {}, Reused: {}, Released: {})",
+                    durationMs, before, removed, pool.size(), totalAllocated.get(), totalReused.get(),
+                    totalReleased.get());
         }, 1, 1, TimeUnit.MINUTES);
     }
 
