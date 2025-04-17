@@ -22,13 +22,22 @@ for envfile in default/mover.cnf mover.cnf; do
   fi
 done
 
+####################################################
+## Set memory options from ALLOCATED_MEMORY if unset
+####################################################
+if [ -z "$INITIAL_MEMORY" ] && [ -z "$MAX_MEMORY" ] && [ -z "$SOFT_MAX_MEMORY" ] && [ -n "$ALLOCATED_MEMORY" ]; then
+  INITIAL_MEMORY="$ALLOCATED_MEMORY"
+  MAX_MEMORY="$ALLOCATED_MEMORY"
+  SOFT_MAX_MEMORY="$ALLOCATED_MEMORY"
+fi
+
 ###########################
 ## Java command and options
 ###########################
-JAVA_OPTS="-server -XX:+CrashOnOutOfMemoryError -XX:+HeapDumpOnOutOfMemoryError \
-  -XX:HeapDumpPath='$dir_log' -Xms$ALLOCATED_MEMORY -Xmx$ALLOCATED_MEMORY \
-  -Xlog:gc*:file='$dir_log/mover-gc.log':time,uptime,tags:filesize=100M,filecount=5 \
-  -XX:+DisableExplicitGC "$JAVA_OPTS
+JAVA_OPTS="-XX:+CrashOnOutOfMemoryError -XX:+HeapDumpOnOutOfMemoryError \
+  -XX:+UseZGC -Xms$INITIAL_MEMORY -Xmx$MAX_MEMORY -XX:SoftMaxHeapSize=$SOFT_MAX_MEMORY \
+  -XX:HeapDumpPath='$dir_log' -Xlog:gc*:file='$dir_log/mover-gc.log':time,uptime,tags:filesize=100M,filecount=5 \
+  -XX:+DisableExplicitGC -XX:+UseCompressedOops -XX:+UseCompressedClassPointers "$JAVA_OPTS
 
 ####################
 ## Set the classpath
