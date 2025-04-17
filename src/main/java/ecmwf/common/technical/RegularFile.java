@@ -39,11 +39,14 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
+import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import org.apache.logging.log4j.LogManager;
@@ -63,19 +66,26 @@ public final class RegularFile extends GenericFile {
     private static final boolean FD_SYNC = Cnf.at("IO", "fdSync", true);
 
     /** The Constant CHANNEL_FORCE. */
-    private static final boolean CHANNEL_FORCE = Cnf.at("IO", "channelForce", false);
+    private static final boolean CHANNEL_FORCE = Cnf.at("IO", "channelForce", true);
+
+    /** The Constant BYTE_BUFFER_POOL. */
+    private static final boolean BYTE_BUFFER_POOL = Cnf.at("IO", "byteBufferPool", true);
 
     /** The Constant BYTE_BUFFER_USE. */
-    private static final boolean BYTE_BUFFER_USE = Cnf.at("IO", "byteBufferUse", false);
+    private static final boolean BYTE_BUFFER_USE = Cnf.at("IO", "byteBufferUse", true);
 
     /** The Constant BYTE_BUFFER_DIRECT. */
     private static final boolean BYTE_BUFFER_DIRECT = Cnf.at("IO", "byteBufferDirect", true);
 
-    /** The Constant BYTE_BUFFER_SIZE_IN_MB. */
-    private static final int BYTE_BUFFER_SIZE_IN_MB = Cnf.at("IO", "byteBufferSizeInMb", 1);
+    /** The Constant BYTE_BUFFER_SIZE_IN_BYTES. */
+    private static final int BYTE_BUFFER_SIZE_IN_BYTES = 1024 * 1024 * Cnf.at("IO", "byteBufferSizeInMb", 1);
 
     /** The Constant CHANNEL_FORCE_METADATA. */
-    private static final boolean CHANNEL_FORCE_METADATA = Cnf.at("IO", "channelForceMetadata", false);
+    private static final boolean CHANNEL_FORCE_METADATA = Cnf.at("IO", "channelForceMetadata", true);
+
+    /** The Constant pool. */
+    private static DirectByteBufferPool pool = new DirectByteBufferPool(BYTE_BUFFER_SIZE_IN_BYTES,
+            TimeUnit.SECONDS.toSeconds(Cnf.at("IO", "byteBufferPoolMaxIdleSec", 30)));
 
     /** The underlyingFile. */
     private final File underlyingFile;
@@ -203,7 +213,7 @@ public final class RegularFile extends GenericFile {
      */
     @Override
     public boolean delete() {
-        return underlyingFile.delete();
+        return deleteIfExists(underlyingFile);
     }
 
     /**
@@ -448,6 +458,19 @@ public final class RegularFile extends GenericFile {
         return BYTE_BUFFER_USE ? transmitFileWithByteBuffer(out, offset) : transmitFileStandard(out, offset);
     }
 
+    /**
+     * Transmit file standard.
+     *
+     * @param out
+     *            the out
+     * @param offset
+     *            the offset
+     *
+     * @return the long
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     */
     private long transmitFileStandard(final OutputStream out, final long offset) throws IOException {
         var closeCompleted = false;
         FileChannel inChannel = null;
@@ -465,7 +488,9 @@ public final class RegularFile extends GenericFile {
             file.close();
             closeCompleted = true;
             final var duration = System.currentTimeMillis() - start;
-            _log.info("File " + underlyingFile + " transmitted: " + Format.formatRate(transmittedBytesCount, duration));
+            if (_log.isInfoEnabled())
+                _log.info("File {} transmitted: {}", underlyingFile,
+                        Format.formatRate(transmittedBytesCount, duration));
             if (transmittedBytesCount != expectedBytesCount) {
                 throw new IncorrectTransmittedSize("Incorrect transmitted size: " + transmittedBytesCount
                         + " byte(s) (instead of " + expectedBytesCount + " expected byte(s))");
@@ -480,17 +505,30 @@ public final class RegularFile extends GenericFile {
         }
     }
 
+    /**
+     * Transmit file with byte buffer.
+     *
+     * @param out
+     *            the out
+     * @param offset
+     *            the offset
+     *
+     * @return the long
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     */
     private long transmitFileWithByteBuffer(final OutputStream out, final long offset) throws IOException {
+        final long count = underlyingFile.length() - offset;
+        final ByteBuffer buffer = getByteBuffer(count);
         try (final FileInputStream inFile = new FileInputStream(underlyingFile);
                 final FileChannel inChannel = inFile.getChannel();
                 final WritableByteChannel outChannel = Channels.newChannel(out)) {
             long position = offset;
-            final long count = underlyingFile.length() - offset;
-            final var buffer = getByteBuffer(count);
             final var start = System.currentTimeMillis();
             while (position < count) {
                 buffer.clear(); // Prepare buffer for writing
-                final var bytesRead = inChannel.read(buffer, position);
+                final int bytesRead = inChannel.read(buffer, position);
                 if (bytesRead == -1)
                     break; // End of file
                 buffer.flip(); // Prepare buffer for reading
@@ -504,6 +542,9 @@ public final class RegularFile extends GenericFile {
                 throw new IncorrectTransmittedSize("Incorrect transmitted size: " + (position - offset)
                         + " byte(s) (instead of " + count + " expected byte(s))");
             return duration;
+        } finally {
+            // Important: release buffer to the pool
+            release(buffer);
         }
     }
 
@@ -526,6 +567,19 @@ public final class RegularFile extends GenericFile {
                 : receiveFileStandard(in, expectedBytesCount);
     }
 
+    /**
+     * Receive file standard.
+     *
+     * @param in
+     *            the in
+     * @param expectedBytesCount
+     *            the expected bytes count
+     *
+     * @return the long
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     */
     private long receiveFileStandard(final InputStream in, final long expectedBytesCount) throws IOException {
         var closeCompleted = false;
         var fileAvailable = false;
@@ -543,13 +597,11 @@ public final class RegularFile extends GenericFile {
             final var suffix = "." + new RandomString(3).next();
             tmpFile = new File(parent, underlyingFile.getName() + suffix);
             if (expectedBytesCount >= 0) {
-                _log.info("Waiting for " + expectedBytesCount + " byte(s) for file " + tmpFile.getAbsolutePath());
+                _log.info("Waiting for {} byte(s) for file {}", expectedBytesCount, tmpFile.getAbsolutePath());
             } else {
-                _log.info("Waiting byte(s) for file " + tmpFile.getAbsolutePath());
+                _log.info("Waiting byte(s) for file {}", tmpFile.getAbsolutePath());
             }
-            if (tmpFile.exists() && !tmpFile.delete()) {
-                _log.warn("Couldn't delete existing temporary file: " + tmpFile.getAbsolutePath());
-            }
+            deleteIfExists(tmpFile);
             for (var i = 0; i < 3; i++) {
                 try {
                     outFile = new FileOutputStream(tmpFile);
@@ -568,6 +620,7 @@ public final class RegularFile extends GenericFile {
                         try {
                             Thread.sleep(1000);
                         } catch (final InterruptedException e2) {
+                            Thread.currentThread().interrupt();
                         }
                     }
                 }
@@ -578,11 +631,13 @@ public final class RegularFile extends GenericFile {
             final var start = System.currentTimeMillis();
             final var receivedBytesCount = outChannel.transferFrom(inChannel, 0,
                     expectedBytesCount >= 0 ? expectedBytesCount : Long.MAX_VALUE);
-            _log.debug("Transfer duration: " + Format.formatDuration(start, System.currentTimeMillis()));
+            if (_log.isInfoEnabled())
+                _log.debug("Transfer duration: {}", Format.formatDuration(start, System.currentTimeMillis()));
             final var fdstart = System.currentTimeMillis();
             if (!synchronised && outFile != null && FD_SYNC) {
                 outFile.getFD().sync();
-                _log.debug("Sync: " + Format.formatDuration(fdstart, System.currentTimeMillis()));
+                if (_log.isInfoEnabled())
+                    _log.debug("Sync: {}", Format.formatDuration(fdstart, System.currentTimeMillis()));
             }
             outChannel.close();
             inChannel.close();
@@ -590,7 +645,8 @@ public final class RegularFile extends GenericFile {
                 outFile.close();
             closeCompleted = true;
             final var duration = System.currentTimeMillis() - start;
-            _log.info("File " + underlyingFile + " downloaded: " + Format.formatRate(receivedBytesCount, duration));
+            if (_log.isInfoEnabled())
+                _log.info("File {} downloaded: {}", underlyingFile, Format.formatRate(receivedBytesCount, duration));
             final var length = tmpFile.length();
             if (receivedBytesCount != length) {
                 throw new IncorrectFileSize("Incorrect file size: " + length + " byte(s) (instead of "
@@ -600,9 +656,7 @@ public final class RegularFile extends GenericFile {
                 throw new UnexpectedFileSize("Unexpected file size: " + length + " byte(s) (instead of "
                         + expectedBytesCount + " expected byte(s))");
             } else {
-                if (underlyingFile.exists() && !underlyingFile.delete()) {
-                    _log.warn("Couldn't delete existing file: " + underlyingFile.getAbsolutePath());
-                }
+                deleteIfExists(underlyingFile);
                 if (!tmpFile.renameTo(underlyingFile)) {
                     throw new IOException("Rename operation unsuccessful for " + tmpFile.getAbsolutePath() + " ("
                             + underlyingFile.getAbsolutePath() + ")");
@@ -616,12 +670,24 @@ public final class RegularFile extends GenericFile {
                 StreamPlugThread.closeQuietly(inChannel);
                 StreamPlugThread.closeQuietly(outFile);
             }
-            if (!fileAvailable && (tmpFile != null && tmpFile.exists() && !tmpFile.delete())) {
-                _log.warn("Couldn't delete temporary file: " + underlyingFile.getAbsolutePath());
-            }
+            if (!fileAvailable)
+                deleteIfExists(tmpFile);
         }
     }
 
+    /**
+     * Receive file with byte buffer.
+     *
+     * @param in
+     *            the in
+     * @param expectedBytesCount
+     *            the expected bytes count
+     *
+     * @return the long
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     */
     private long receiveFileWithByteBuffer(final InputStream in, final long expectedBytesCount) throws IOException {
         var fileAvailable = false;
         try (final ReadableByteChannel inChannel = Channels.newChannel(in)) {
@@ -636,14 +702,12 @@ public final class RegularFile extends GenericFile {
             } else {
                 _log.info("Waiting byte(s) for file {}", tmpFile.getAbsolutePath());
             }
-            if (tmpFile.exists() && !tmpFile.delete()) {
-                _log.warn("Couldn't delete existing temporary file: {}", tmpFile.getAbsolutePath());
-            }
+            deleteIfExists(tmpFile);
+            final ByteBuffer buffer = getByteBuffer(expectedBytesCount);
             try (final FileOutputStream outFile = new FileOutputStream(tmpFile);
                     final FileChannel outChannel = createFileChannel(outFile)) {
                 long position = 0;
                 long count = expectedBytesCount >= 0 ? expectedBytesCount : Long.MAX_VALUE;
-                final var buffer = getByteBuffer(count);
                 final var start = System.currentTimeMillis();
                 while (position < count) {
                     buffer.clear(); // Prepare buffer for writing
@@ -666,38 +730,99 @@ public final class RegularFile extends GenericFile {
                 if (_log.isInfoEnabled())
                     _log.info("File {} downloaded: {}", underlyingFile, Format.formatRate(position, duration));
                 final var length = tmpFile.length();
-                if (position != length) {
+                if (position != length)
                     throw new IncorrectFileSize("Incorrect file size: " + length + " byte(s) (instead of " + position
                             + " received byte(s))");
-                }
                 if (expectedBytesCount >= 0 && position != expectedBytesCount) {
                     throw new UnexpectedFileSize("Unexpected file size: " + length + " byte(s) (instead of "
                             + expectedBytesCount + " expected byte(s))");
                 } else {
-                    if (underlyingFile.exists() && !underlyingFile.delete()) {
-                        _log.warn("Couldn't delete existing file: {}", underlyingFile.getAbsolutePath());
-                    }
-                    if (!tmpFile.renameTo(underlyingFile)) {
+                    deleteIfExists(underlyingFile);
+                    if (!tmpFile.renameTo(underlyingFile))
                         throw new IOException("Rename operation unsuccessful for " + tmpFile.getAbsolutePath() + " ("
                                 + underlyingFile.getAbsolutePath() + ")");
-                    }
                 }
                 fileAvailable = true;
                 return duration;
             } finally {
-                if (!fileAvailable && (tmpFile != null && tmpFile.exists() && !tmpFile.delete())) {
-                    _log.warn("Couldn't delete temporary file: {}", underlyingFile.getAbsolutePath());
-                }
+                // Return buffer to pool even in case of exception
+                release(buffer);
+                // Clean up temp file if download failed
+                if (!fileAvailable)
+                    deleteIfExists(tmpFile);
             }
         }
     }
 
-    private static ByteBuffer getByteBuffer(final long length) {
-        final var originalSize = 1024L * 1024L * BYTE_BUFFER_SIZE_IN_MB;
-        final var size = (int) Math.min(originalSize, length);
-        return BYTE_BUFFER_DIRECT ? ByteBuffer.allocateDirect(size) : ByteBuffer.allocate(size);
+    /**
+     * Attempts to delete a file using NIO, with detailed logging on failure.
+     *
+     * @param file
+     *            the file to delete
+     *
+     * @return true if the file was successfully deleted or did not exist, false otherwise
+     */
+    public static boolean deleteIfExists(final File file) {
+        if (file == null)
+            return false;
+        final var path = file.toPath();
+        try {
+            var deleted = Files.deleteIfExists(path);
+            if (deleted && _log.isDebugEnabled()) {
+                _log.debug("Deleted file: {}", path);
+            } else if (!deleted) {
+                _log.warn("File did not exist: {}", path);
+            }
+            return deleted;
+        } catch (NoSuchFileException e) {
+            _log.warn("File not found during deletion: {}", path);
+        } catch (DirectoryNotEmptyException e) {
+            _log.warn("Directory not empty: {}", path);
+        } catch (IOException e) {
+            _log.warn("I/O error while deleting file {}: {}", path, e.toString());
+        }
+        return false;
     }
 
+    /**
+     * Gets the byte buffer.
+     *
+     * @param length
+     *            the length
+     *
+     * @return the byte buffer
+     */
+    private static ByteBuffer getByteBuffer(final long length) {
+        // Only use the pool if the file is large enough and the pool is enabled
+        if (BYTE_BUFFER_POOL && length >= BYTE_BUFFER_SIZE_IN_BYTES)
+            return pool.acquire(); // Uses a pooled buffer
+        // For small files or when pool is disabled, allocate a new buffer
+        final int bufferSize = (int) Math.min(BYTE_BUFFER_SIZE_IN_BYTES, length < 0 ? 0 : length);
+        return BYTE_BUFFER_DIRECT ? ByteBuffer.allocateDirect(bufferSize) : ByteBuffer.allocate(bufferSize);
+    }
+
+    /**
+     * Release.
+     *
+     * @param buffer
+     *            the buffer
+     */
+    private static void release(final ByteBuffer buffer) {
+        if (BYTE_BUFFER_POOL)
+            pool.release(buffer);
+    }
+
+    /**
+     * Creates the file channel.
+     *
+     * @param outFile
+     *            the out file
+     *
+     * @return the file channel
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     */
     private static FileChannel createFileChannel(final FileOutputStream outFile) throws IOException {
         for (var i = 0; i < 3; i++)
             try {
