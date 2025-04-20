@@ -127,6 +127,11 @@ fi
 #############################################
 JAVA_OPTS=$JAVA_OPTS" --add-opens java.base/java.lang=ALL-UNNAMED"
 
+############################################################################
+## java.lang.System::load required by com.oracle.truffle.polyglot.JDKSupport
+############################################################################
+JAVA_OPTS=$JAVA_OPTS" --enable-native-access=ALL-UNNAMED"
+
 #########################################
 ## Let's find out if the pid is available
 #########################################
