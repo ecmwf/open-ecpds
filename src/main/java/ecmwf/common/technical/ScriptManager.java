@@ -60,6 +60,9 @@ public final class ScriptManager implements AutoCloseable {
     /** The Constant LONG_RUNNING_TIME. */
     public static final long LONG_RUNNING_TIME = Cnf.at("ScriptManager", "longRunningTime", 1000L);
 
+    /** The Constant ALLOW_EXPERIMENTAL_OPTIONS. */
+    public static final boolean ALLOW_EXPERIMENTAL_OPTIONS = Cnf.at("ScriptManager", "allowExperimentalOptions", false);
+
     /** The Constant JS. */
     public static final String JS = "js";
 
@@ -313,6 +316,9 @@ public final class ScriptManager implements AutoCloseable {
             builder.useSystemExit(false);
             if (resourceLimits != null) {
                 builder.resourceLimits(resourceLimits);
+            }
+            if (ALLOW_EXPERIMENTAL_OPTIONS) {
+                builder.allowExperimentalOptions(true).option("engine.WarnVirtualThreadSupport", "false");
             }
             final var context = builder.allowHostAccess(HostAccess.ALL).allowHostClassLookup(ScriptManager::check)
                     .build();
