@@ -37,7 +37,7 @@ fi
 JAVA_OPTS="-XX:+CrashOnOutOfMemoryError -XX:+HeapDumpOnOutOfMemoryError \
   -XX:+UseZGC -Xms$INITIAL_MEMORY -Xmx$MAX_MEMORY -XX:SoftMaxHeapSize=$SOFT_MAX_MEMORY \
   -XX:HeapDumpPath='$dir_log' -Xlog:gc*:file='$dir_log/mover-gc.log':time,uptime,tags:filesize=100M,filecount=5 \
-  -XX:+DisableExplicitGC -XX:+UseCompressedOops -XX:+UseCompressedClassPointers "$JAVA_OPTS
+  -XX:+DisableExplicitGC -XX:+UseCompressedClassPointers "$JAVA_OPTS
 
 ####################
 ## Set the classpath
