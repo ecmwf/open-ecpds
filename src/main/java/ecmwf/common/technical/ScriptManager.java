@@ -61,7 +61,7 @@ public final class ScriptManager implements AutoCloseable {
     public static final long LONG_RUNNING_TIME = Cnf.at("ScriptManager", "longRunningTime", 1000L);
 
     /** The Constant ALLOW_EXPERIMENTAL_OPTIONS. */
-    public static final boolean ALLOW_EXPERIMENTAL_OPTIONS = Cnf.at("ScriptManager", "allowExperimentalOptions", false);
+    public static final boolean ALLOW_EXPERIMENTAL_OPTIONS = Cnf.at("ScriptManager", "allowExperimentalOptions", true);
 
     /** The Constant JS. */
     public static final String JS = "js";
