@@ -9440,7 +9440,8 @@ public final class MasterServer extends ECaccessProvider
                                             dataFile.getTimeFile().getTime());
                                     requeueon = Format.replaceAll(requeueon, "$size1", dataFile.getSize());
                                     requeueon = Format.replaceAll(requeueon, "$time2", entry.time / 1000L * 1000L);
-                                    requeueon = Format.replaceAll(requeueon, "$size2", !symlink ? entry.size : -1);
+                                    requeueon = Format.replaceAll(requeueon, "$size2",
+                                            entry.size >= 0 ? entry.size : -1);
                                     requeueon = Format.replaceAllExt(requeueon, "$destination", destination.getName());
                                     requeueon = Format.replaceAllExt(requeueon, "$target", target);
                                     requeueon = Format.replaceAllExt(requeueon, "$original", original);
