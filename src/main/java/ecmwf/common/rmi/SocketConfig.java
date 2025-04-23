@@ -30,6 +30,7 @@ import static ecmwf.common.text.Util.isEmpty;
 import static ecmwf.common.text.Util.isNotEmpty;
 
 import java.io.IOException;
+import java.net.BindException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -1205,13 +1206,13 @@ public class SocketConfig {
                     socket.bind(new InetSocketAddress(localPort));
                 }
                 socket.connect(new InetSocketAddress(InetAddress.getByName(host), port), currentConnectTimeOut);
-            } catch (final SocketTimeoutException e) {
-                StreamPlugThread.closeQuietly(socket);
+            } catch (SocketTimeoutException | BindException e) {
+                // Socket timeout or binding failed due to port conflict or invalid address; not
+                // retrying!
                 throw e;
             } catch (final Throwable t) {
-                // Unbound sockets may not be implemented (socket options ignored)!
-                _log.warn("Unbound sockets implemented? connecting to {}:{} (listenAddress={},localPort={})", host,
-                        port, currentListenAddress, localPort, t);
+                _log.warn("Initial socket binding failed. Falling back to legacy constructor for {}:{} (backLog={})",
+                        currentListenAddress, port, currentBackLog, t);
                 StreamPlugThread.closeQuietly(socket);
                 socket = factory.createSocket(host, port,
                         isNotEmpty(currentListenAddress) ? InetAddress.getByName(currentListenAddress) : null,
@@ -1383,10 +1384,12 @@ public class SocketConfig {
                 } else {
                     serverSocket.bind(new InetSocketAddress(port), currentBackLog);
                 }
+            } catch (final BindException e) {
+                // Binding failed due to port conflict or invalid address; not retrying.
+                throw e;
             } catch (final Throwable t) {
-                // Unbound server sockets may not be implemented (socket options ignored)!
-                _log.warn("Unbound server sockets implemented? waiting on {}:{} (backLog={})", currentListenAddress,
-                        port, currentBackLog, t);
+                _log.warn("Initial socket binding failed. Falling back to legacy constructor for {}:{} (backLog={})",
+                        currentListenAddress, port, currentBackLog, t);
                 StreamPlugThread.closeQuietly(serverSocket);
                 if (isNotEmpty(currentListenAddress)) {
                     serverSocket = factory.createServerSocket(port, currentBackLog,
