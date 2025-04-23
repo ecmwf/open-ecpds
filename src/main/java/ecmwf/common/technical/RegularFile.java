@@ -797,7 +797,7 @@ public final class RegularFile extends GenericFile {
         if (BYTE_BUFFER_POOL && length >= BYTE_BUFFER_SIZE_IN_BYTES)
             return pool.acquire(); // Uses a pooled buffer
         // For small files or when pool is disabled, allocate a new buffer
-        final int bufferSize = (int) Math.min(BYTE_BUFFER_SIZE_IN_BYTES, length < 0 ? 0 : length);
+        final int bufferSize = (int) Math.min(BYTE_BUFFER_SIZE_IN_BYTES, length < 0 ? Long.MAX_VALUE : length);
         return BYTE_BUFFER_DIRECT ? ByteBuffer.allocateDirect(bufferSize) : ByteBuffer.allocate(bufferSize);
     }
 
