@@ -9357,7 +9357,7 @@ public final class MasterServer extends ECaccessProvider
                 // Check if this is an absolute or relative entry name
                 final var name = Format.cleanTextContent(entry.name);
                 final var lower = name.toLowerCase();
-                final String target;
+                final String initialTarget;
                 final String original;
                 var windows = false;
                 var url = false;
@@ -9372,21 +9372,40 @@ public final class MasterServer extends ECaccessProvider
                         if (_getBoolean(HOST_ACQUISITION_REMOVE_PARAMETERS)) {
                             final var index = urlName.indexOf("?");
                             // If we detect a ? then let's remove the parameters!
-                            target = index != -1 ? urlName.substring(0, index) : urlName;
+                            initialTarget = index != -1 ? urlName.substring(0, index) : urlName;
                         } else {
-                            target = urlName;
+                            initialTarget = urlName;
                         }
                     } else {
                         // Is it UNIX or Windows?
                         final var index = name.lastIndexOf(windows ? "\\" : "/");
                         // If we detect a file separator then let's remove the
                         // parent directory!
-                        target = index != -1 ? name.substring(index + 1) : name;
+                        initialTarget = index != -1 ? name.substring(index + 1) : name;
                     }
                 } else {
                     // This is a relative entry name
-                    target = name;
-                    original = currentPath + target;
+                    initialTarget = name;
+                    original = currentPath + initialTarget;
+                }
+                // Which target should be used effectively?
+                var effectiveTarget = _getString(HOST_ACQUISITION_TARGET);
+                final var filename = new File(initialTarget).getName();
+                try {
+                    effectiveTarget = Format.replaceAllExt(effectiveTarget, "$destination", destination.getName());
+                    effectiveTarget = Format.replaceAllExt(effectiveTarget, "$name", filename);
+                    effectiveTarget = Format.replaceAllExt(effectiveTarget, "$target", initialTarget);
+                    effectiveTarget = Format.replaceAllExt(effectiveTarget, "$original", original);
+                    effectiveTarget = Format.replaceAllExt(effectiveTarget, "$link", entry.link);
+                    effectiveTarget = _replaceDate("$dirdate", effectiveTarget, true);
+                    effectiveTarget = _replaceDate("$date", effectiveTarget, false);
+                    effectiveTarget = Format.replaceAll(effectiveTarget, "$timestamp", entry.time / 1000L * 1000L);
+                    if (effectiveTarget.startsWith("$(") && effectiveTarget.endsWith(")")) {
+                        // This is a script so we just evaluate it!
+                        effectiveTarget = _setup.eval(String.class,
+                                effectiveTarget.substring(2, effectiveTarget.length() - 1));
+                    }
+                } catch (IOException e) {
                 }
                 // Let's check the size and age options. We obviously only check
                 // the time if it is valid!
@@ -9412,7 +9431,7 @@ public final class MasterServer extends ECaccessProvider
                         // file or as different files? If we don't know the time
                         // then we just use the original name.
                         final var uniqueName = (_getBoolean(HOST_ACQUISITION_UNIQUE_BY_TARGET_ONLY) ? ""
-                                : _getBoolean(HOST_ACQUISITION_USE_TARGET_AS_UNIQUE_NAME) ? target : original)
+                                : _getBoolean(HOST_ACQUISITION_USE_TARGET_AS_UNIQUE_NAME) ? initialTarget : original)
                                 + (entry.time == -1 || !_getBoolean(HOST_ACQUISITION_UNIQUE_BY_NAME_AND_TIME) ? ""
                                         : "." + entry.time);
                         if ("queue".equals(action)) {
@@ -9420,7 +9439,8 @@ public final class MasterServer extends ECaccessProvider
                             // already in the database?
                             final var standby = _getBoolean(HOST_ACQUISITION_STANDBY);
                             final var transfers = base.getScheduledDataTransfer(
-                                    TransferManagement.getUniqueKey(standby, _desName, target, uniqueName), _desName);
+                                    TransferManagement.getUniqueKey(standby, _desName, initialTarget, uniqueName),
+                                    _desName);
                             final var found = transfers.length > 0;
                             var force = false;
                             if (found) {
@@ -9443,7 +9463,7 @@ public final class MasterServer extends ECaccessProvider
                                     requeueon = Format.replaceAll(requeueon, "$size2",
                                             entry.size >= 0 ? entry.size : -1);
                                     requeueon = Format.replaceAllExt(requeueon, "$destination", destination.getName());
-                                    requeueon = Format.replaceAllExt(requeueon, "$target", target);
+                                    requeueon = Format.replaceAllExt(requeueon, "$target", initialTarget);
                                     requeueon = Format.replaceAllExt(requeueon, "$original", original);
                                     // Should we requeue it?
                                     force = ScriptManager.exec(Boolean.class, ScriptManager.JS, requeueon);
@@ -9475,25 +9495,10 @@ public final class MasterServer extends ECaccessProvider
                                 // database or should be re-queued. Let's
                                 // schedule it for retrieval
                                 var metadata = _getString(HOST_ACQUISITION_METADATA);
-                                var endTarget = _getString(HOST_ACQUISITION_TARGET);
                                 try {
-                                    final var filename = new File(target).getName();
-                                    endTarget = Format.replaceAllExt(endTarget, "$destination", destination.getName());
-                                    endTarget = Format.replaceAllExt(endTarget, "$name", filename);
-                                    endTarget = Format.replaceAllExt(endTarget, "$target", target);
-                                    endTarget = Format.replaceAllExt(endTarget, "$original", original);
-                                    endTarget = Format.replaceAllExt(endTarget, "$link", entry.link);
-                                    endTarget = _replaceDate("$dirdate", endTarget, true);
-                                    endTarget = _replaceDate("$date", endTarget, false);
-                                    endTarget = Format.replaceAll(endTarget, "$timestamp", entry.time / 1000L * 1000L);
-                                    if (endTarget.startsWith("$(") && endTarget.endsWith(")")) {
-                                        // This is a script so we just evaluate it!
-                                        endTarget = _setup.eval(String.class,
-                                                endTarget.substring(2, endTarget.length() - 1));
-                                    }
                                     metadata = Format.replaceAllExt(metadata, "$destination", destination.getName());
                                     metadata = Format.replaceAllExt(metadata, "$name", filename);
-                                    metadata = Format.replaceAllExt(metadata, "$target", target);
+                                    metadata = Format.replaceAllExt(metadata, "$target", initialTarget);
                                     metadata = Format.replaceAllExt(metadata, "$original", original);
                                     metadata = Format.replaceAllExt(metadata, "$link", entry.link);
                                     metadata = _replaceDate("$dirdate", metadata, true);
@@ -9509,7 +9514,7 @@ public final class MasterServer extends ECaccessProvider
                                                     + ") on DataMover=" + ar.server.getName() + " for Destination="
                                                     + _desName,
                                             _host.getLogin(), destination, _host.getName(), metadata, original,
-                                            uniqueName, endTarget, entry.time, entry.size >= 0 ? entry.size : -1,
+                                            uniqueName, effectiveTarget, entry.time, entry.size >= 0 ? entry.size : -1,
                                             _getBoolean(HOST_ACQUISITION_EVENT), _getInt(HOST_ACQUISITION_PRIORITY),
                                             _getString(HOST_ACQUISITION_LIFETIME), null, standby,
                                             _getString(HOST_ACQUISITION_GROUPBY,
