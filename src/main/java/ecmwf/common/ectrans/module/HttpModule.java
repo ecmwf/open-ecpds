@@ -1152,11 +1152,11 @@ public final class HttpModule extends TransferModule {
          */
         @Override
         public void add(final String line) {
-			if (!closed.get()) {
-				if (getDebug())
-					_log.debug("Adding new line: {}", line);
-				resultList.add(line);
-			}
+            if (!closed.get()) {
+                if (getDebug())
+                    _log.debug("Adding new line: {}", line);
+                resultList.add(line);
+            }
         }
 
         /**
@@ -1167,8 +1167,8 @@ public final class HttpModule extends TransferModule {
          */
         @Override
         public void addAll(final List<String> lines) {
-			if (!closed.get())
-				resultList.addAll(lines);
+            if (!closed.get())
+                resultList.addAll(lines);
         }
 
         /**
@@ -1236,23 +1236,23 @@ public final class HttpModule extends TransferModule {
          */
         @Override
         public void add(final String line) throws IOException {
-			boolean successful = false;
-			try {
-				if (!closed.get()) {
-					if (getDebug())
-						_log.debug("Writing new line: {}", line);
-					out.write((line + "\n").getBytes());
-					out.flush();
-					count.addAndGet(1);
-					successful = true;
-				}
-			} finally {
-				if (!successful) {
-					_log.warn("Underlying output not healthy");
-					StreamPlugThread.closeQuietly(ProcessEntryAsOutput.this);
-					StreamPlugThread.closeQuietly(HttpModule.this);
-				}
-			}
+            boolean successful = false;
+            try {
+                if (!closed.get()) {
+                    if (getDebug())
+                        _log.debug("Writing new line: {}", line);
+                    out.write((line + "\n").getBytes());
+                    out.flush();
+                    count.addAndGet(1);
+                    successful = true;
+                }
+            } finally {
+                if (!successful) {
+                    _log.warn("Underlying output not healthy");
+                    StreamPlugThread.closeQuietly(ProcessEntryAsOutput.this);
+                    StreamPlugThread.closeQuietly(HttpModule.this);
+                }
+            }
         }
 
         /**
@@ -1868,7 +1868,7 @@ public final class HttpModule extends TransferModule {
             final var lower = currentName.toLowerCase();
             final String path;
             final String filename;
-			// Is it an absolute or a relative reference?
+            // Is it an absolute or a relative reference?
             if (getSetup().getBoolean(HOST_HTTP_MQTT_MODE) || lower.startsWith("http://")
                     || lower.startsWith("https://") || lower.startsWith("/")) {
                 // This is an absolute path, so we don't need to keep the base directory!
