@@ -62,6 +62,7 @@
 									altKey="ecpds.destination.restart.immediate"
 									titleKey="ecpds.destination.restart.immediate"
 									writeFullTag="true" /></a></td>
+						<td>&nbsp;&nbsp;</td>
 						<td><a href="javascript:holdDestination(false)"><content:icon
 									key="icon.stop2" altKey="ecpds.destination.hold"
 									titleKey="ecpds.destination.hold" writeFullTag="true" /></a></td>
@@ -69,6 +70,7 @@
 									key="icon.stop" altKey="ecpds.destination.hold.immediate"
 									titleKey="ecpds.destination.hold.immediate" writeFullTag="true" /></a></td>
 						<c:if test="${destination.dirty}">
+							<td>&nbsp;&nbsp;</td>
 							<td><content:icon key="icon.dirty"
 									altKey="ecpds.destination.dirty"
 									titleKey="ecpds.destination.dirty" writeFullTag="true" /></td>
