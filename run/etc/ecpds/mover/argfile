@@ -59,5 +59,6 @@
 -Dlog.ecmwf.level=debug
 --add-opens java.base/java.lang=ALL-UNNAMED
 --add-opens java.base/sun.security.ssl=ALL-UNNAMED
+--enable-native-access=ALL-UNNAMED
 -XX:+UseG1GC
 -classpath target/classes:lib/*

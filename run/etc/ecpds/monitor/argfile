@@ -52,5 +52,6 @@
 -Dlog.ecmwf.includeLocation=true
 -Dlog.ecmwf.level=debug
 --add-opens java.base/java.lang=ALL-UNNAMED
+--enable-native-access=ALL-UNNAMED
 -XX:+UseG1GC
 -classpath target/classes:lib/*
