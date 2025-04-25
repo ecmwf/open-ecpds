@@ -222,7 +222,7 @@ public final class ECpdsClient {
      *             Signals that an I/O exception has occurred.
      */
     private static void write(final PrintStream _out, final String message) {
-        _log.debug("Sending: {}", message);
+        _log.debug("Sending: \"{}\"", message);
         _out.println(message);
         _out.flush();
     }
