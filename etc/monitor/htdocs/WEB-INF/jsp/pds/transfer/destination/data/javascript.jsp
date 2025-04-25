@@ -145,7 +145,7 @@
 	}
 
 	function cleanDestination() {
-		var text = "Are you sure you want to remove all Data Transfers from Destination '${destination.name}' and stop it?";
+		var text = "Are you sure you want to remove all Data Transfers from the ${destination.typeText} Destination ${destination.name} and stop it?";
 		form = document.destinationDetailActionForm
 
 		if (confirm(text)) {
@@ -155,7 +155,7 @@
 	}
 
 	function cleanExpiredDestination() {
-		var text = "Are you sure you want to remove all deleted, expired, stopped and failed Data Transfers from Destination '${destination.name}'?";
+		var text = "Are you sure you want to remove all deleted, expired, stopped and failed Data Transfers from the ${destination.typeText} Destination ${destination.name} and stop it?";
 		form = document.destinationDetailActionForm
 
 		if (confirm(text)) {
@@ -165,9 +165,9 @@
 	}
 
 	function restartDestination(immediate) {
-		var immediateText = "IMMEDIATE: The destination and data transfers will be restarted NOW.";
-		var gracefulText = "GRACEFUL: We'll wait for all currently running data transfers to be finished and then we'll restart."
-		var text = "Are you sure you want to restart the Destination '${destination.name}'? \n"
+		var immediateText = "IMMEDIATE: The ongoing data transfers, and associated acquisition host listings, if any, will be interrupted now due to the restarting of the Destination.";
+		var gracefulText = "GRACEFUL: The ongoing data transfers, and associated acquisition host listings, if any, will be allowed to complete before the restarting of the Destination."
+		var text = "Are you sure you want to restart the ${destination.typeText} Destination ${destination.name}? \n"
 				+ ((immediate) ? immediateText : gracefulText);
 
 		form = document.destinationDetailActionForm
@@ -183,9 +183,9 @@
 	}
 
 	function holdDestination(immediate) {
-		var immediateText = "IMMEDIATE: The destination and data transfers will be stopped NOW.";
-		var gracefulText = "GRACEFUL: We'll wait for all currently running data transfers to be finished and then we'll stop."
-		var text = "Are you sure you want to put the Destination '${destination.name}' on Hold ?\n"
+		var immediateText = "IMMEDIATE: The ongoing data transfers, and associated acquisition host listings, if any, will be interrupted now due to the stopping of the Destination.";
+		var gracefulText = "GRACEFUL: The ongoing data transfers, and associated acquisition host listings, if any, will be allowed to complete before the stopping of the Destination."
+		var text = "Are you sure you want to stop the ${destination.typeText} Destination ${destination.name}? \n"
 				+ ((immediate) ? immediateText : gracefulText);
 
 		form = document.destinationDetailActionForm
