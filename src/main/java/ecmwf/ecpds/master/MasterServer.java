@@ -8459,8 +8459,15 @@ public final class MasterServer extends ECaccessProvider
             if (thread != null && thread.isAlive()) {
                 _log.debug("Interrupting AcquisitionThread for Host-{}", host.getName());
                 try {
-                    thread.interrupt();
+                    thread._running = false;
                     thread._time = System.currentTimeMillis();
+                    try {
+                        thread.join(10 * Timer.ONE_SECOND);
+                    } catch (final Exception e) {
+                        // The wait timed out? Interrupted?
+                        if (thread.isAlive())
+                            thread.interrupt();
+                    }
                     return true;
                 } catch (final Throwable t) {
                     _log.warn("Interrupting AcquisitionThread", t);
@@ -8701,6 +8708,9 @@ public final class MasterServer extends ECaccessProvider
 
             /** The summary. */
             final StringBuilder _summary = new StringBuilder();
+
+            /** The _running. */
+            boolean _running = true;
 
             /**
              * Instantiates a new acquisition thread.
@@ -9439,7 +9449,7 @@ public final class MasterServer extends ECaccessProvider
                             // already in the database?
                             final var standby = _getBoolean(HOST_ACQUISITION_STANDBY);
                             final var transfers = base.getScheduledDataTransfer(
-                                    TransferManagement.getUniqueKey(standby, _desName, initialTarget, uniqueName),
+                                    TransferManagement.getUniqueKey(standby, _desName, effectiveTarget, uniqueName),
                                     _desName);
                             final var found = transfers.length > 0;
                             var force = false;
@@ -9705,9 +9715,9 @@ public final class MasterServer extends ECaccessProvider
                     ExecutorManager<ListThread> manager = null;
                     // Parse the list of directories in the form
                     // "[filesize=1234;fileage>=24h;dateformat=yyyyMMdd;datedelta=-1d]/home/test/acq-$date/{filename-regex}"
-                    while (!(interrupted = interrupted()) && (currentPath = reader.readLine()) != null) {
+                    while (_running && !(interrupted = interrupted()) && (currentPath = reader.readLine()) != null) {
                         currentPath = currentPath.trim();
-                        if (currentPath.length() == 0) {
+                        if (currentPath.isEmpty()) {
                             continue;
                         }
                         _optionsList.clear(); // remove previous values
@@ -9747,7 +9757,7 @@ public final class MasterServer extends ECaccessProvider
                         final var ar = TransferScheduler.acquisition(this, _desName, copy, path,
                                 regexPattern.length() > 0 ? regexPattern : null,
                                 _setup.getBoolean(HOST_ACQUISITION_LIST_SYNCHRONOUS));
-                        if (ar.complete) {
+                        if (_running && ar.complete) {
                             info("Starting parsing of the listing.", StatusUpdate.IN_PROGRESS);
                             _add(LINE_SEPARATOR);
                             scanner = new Scanner(ar.in);
@@ -9759,7 +9769,7 @@ public final class MasterServer extends ECaccessProvider
                                             _setup.getInteger(HOST_ACQUISITION_LIST_MAX_THREADS))
                                     : null;
                             // Get the list of files from the remote site
-                            while (scanner.hasNext()) {
+                            while (_running && scanner.hasNext()) {
                                 // We don't process the list of files at once as it might be huge and would
                                 // consume a lot of memory!
                                 final var entry = scanner.next();
