@@ -207,7 +207,7 @@ public abstract class SimplePlugin extends ServerPlugin {
                 message = null;
             }
             try {
-                invoke(command.toLowerCase(), message == null || message.trim().length() == 0 ? null
+                invoke(command.toLowerCase(), message == null || message.trim().isEmpty() ? null
                         : Format.getParameters(message, _separators));
             } catch (final NoSuchMethodException e) {
                 _log.error("No such command available");
@@ -290,7 +290,7 @@ public abstract class SimplePlugin extends ServerPlugin {
                 }
             }
             final var result = buffer.toString();
-            if (i == -1 && result.length() == 0) {
+            if (i == -1 && result.isEmpty()) {
                 throw new IOException("Connection closed");
             }
             return result.trim();

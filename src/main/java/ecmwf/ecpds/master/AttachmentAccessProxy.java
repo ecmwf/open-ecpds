@@ -56,7 +56,7 @@ final class AttachmentAccessProxy implements DataAccessInterface {
     @Override
     public long getFileLastModified(final String destinationName, final String source)
             throws MasterException, IOException {
-        if (destinationName == null || source == null || source.length() == 0) {
+        if (destinationName == null || source == null || source.isEmpty()) {
             throw new MasterException("Invalid parameter(s) for getFileLastModified");
         }
         return _attachmentInterface.getFileLastModified(destinationName, source);
@@ -69,7 +69,7 @@ final class AttachmentAccessProxy implements DataAccessInterface {
      */
     @Override
     public long size(final String destinationName, final String source) throws MasterException, IOException {
-        if (destinationName == null || source == null || source.length() == 0) {
+        if (destinationName == null || source == null || source.isEmpty()) {
             throw new MasterException("Invalid parameter(s) for size");
         }
         return _attachmentInterface.size(destinationName, source);
@@ -83,7 +83,7 @@ final class AttachmentAccessProxy implements DataAccessInterface {
     @Override
     public ProxySocket getProxySocketInput(final String destinationName, final String source, final long offset)
             throws MasterException, IOException {
-        if (destinationName == null || source == null || source.length() == 0) {
+        if (destinationName == null || source == null || source.isEmpty()) {
             throw new MasterException("Invalid parameter(s) for getProxySocketInput");
         }
         return _attachmentInterface.getProxySocketInput(destinationName, source, offset);
@@ -108,7 +108,7 @@ final class AttachmentAccessProxy implements DataAccessInterface {
     @Override
     public ProxySocket getProxySocketOutput(final String destinationName, final String target, final long offset,
             final int umask) throws MasterException, IOException {
-        if (destinationName == null || target == null || target.length() == 0) {
+        if (destinationName == null || target == null || target.isEmpty()) {
             throw new MasterException("Invalid parameter(s) for getProxySocketOutput");
         }
         return _attachmentInterface.getProxySocketOutput(destinationName, target, offset, umask);
@@ -122,7 +122,7 @@ final class AttachmentAccessProxy implements DataAccessInterface {
     @Override
     public void delete(final String destinationName, final String source, final boolean force)
             throws MasterException, IOException {
-        if (destinationName == null || source == null || source.length() == 0) {
+        if (destinationName == null || source == null || source.isEmpty()) {
             throw new MasterException("Invalid parameter(s) for delete");
         }
         _attachmentInterface.delete(destinationName, source, force);
@@ -135,7 +135,7 @@ final class AttachmentAccessProxy implements DataAccessInterface {
      */
     @Override
     public void mkdir(final String destinationName, final String path) throws MasterException, IOException {
-        if (destinationName == null || path == null || path.length() == 0) {
+        if (destinationName == null || path == null || path.isEmpty()) {
             throw new MasterException("Invalid parameter(s) for mkdir");
         }
         _attachmentInterface.mkdir(destinationName, path);
@@ -148,7 +148,7 @@ final class AttachmentAccessProxy implements DataAccessInterface {
      */
     @Override
     public void rmdir(final String destinationName, final String path) throws MasterException, IOException {
-        if (destinationName == null || path == null || path.length() == 0) {
+        if (destinationName == null || path == null || path.isEmpty()) {
             throw new MasterException("Invalid parameter(s) for rmdir");
         }
         _attachmentInterface.rmdir(destinationName, path);
@@ -202,8 +202,7 @@ final class AttachmentAccessProxy implements DataAccessInterface {
     @Override
     public void move(final String destinationName, final String source, final String target)
             throws MasterException, IOException {
-        if (destinationName == null || source == null || source.length() == 0 || target == null
-                || target.length() == 0) {
+        if (destinationName == null || source == null || source.isEmpty() || target == null || target.isEmpty()) {
             throw new MasterException("Invalid parameter(s) for move");
         }
         _attachmentInterface.move(destinationName, source, target);

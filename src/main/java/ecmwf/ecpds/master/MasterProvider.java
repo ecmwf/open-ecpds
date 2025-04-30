@@ -413,7 +413,7 @@ public final class MasterProvider extends NativeAuthenticationProvider {
         String nextElements() {
             final var result = new StringBuilder();
             while (tokenizer.hasMoreElements()) {
-                result.append(result.length() == 0 ? "" : "/").append(nextElement());
+                result.append(result.isEmpty() ? "" : "/").append(nextElement());
             }
             return result.toString();
         }
@@ -990,7 +990,7 @@ public final class MasterProvider extends NativeAuthenticationProvider {
                 final var server = tokenizer.nextToken();
                 final var host = tokenizer.nextToken();
                 while (tokenizer.hasMoreElements()) {
-                    dir.append(dir.length() == 0 ? "" : "/").append(tokenizer.nextToken());
+                    dir.append(dir.isEmpty() ? "" : "/").append(tokenizer.nextToken());
                 }
                 return getMoverElement(server, host, dir.toString());
             case FtpURL.TYPE_BY_ATTACHMENTS, FtpURL.TYPE_BY_TYPES:
@@ -1000,7 +1000,7 @@ public final class MasterProvider extends NativeAuthenticationProvider {
                 }
                 final var destinationNameOrType = tokenizer.nextToken();
                 while (tokenizer.hasMoreElements()) {
-                    dir.append(dir.length() == 0 ? "" : "/").append(tokenizer.nextToken());
+                    dir.append(dir.isEmpty() ? "" : "/").append(tokenizer.nextToken());
                 }
                 return getAttachmentElement(destinationNameOrType, dir.toString());
             case FtpURL.TYPE_BY_DATA:
@@ -1010,7 +1010,7 @@ public final class MasterProvider extends NativeAuthenticationProvider {
                 }
                 final var destinationName = tokenizer.nextToken();
                 while (tokenizer.hasMoreElements()) {
-                    dir.append(dir.length() == 0 ? "" : "/").append(tokenizer.nextToken());
+                    dir.append(dir.isEmpty() ? "" : "/").append(tokenizer.nextToken());
                 }
                 return getDataElement(destinationName, dir.toString());
             default:

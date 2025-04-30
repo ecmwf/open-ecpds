@@ -116,7 +116,7 @@ public abstract class AbstractTicket implements Serializable, Closeable {
                 if (error == null) {
                     throw new Exception("No error message specified (null)");
                 }
-                if (error.length() == 0) {
+                if (error.isEmpty()) {
                     throw new Exception("No error message specified (empty)");
                 }
             } catch (final Exception e) {
@@ -148,11 +148,11 @@ public abstract class AbstractTicket implements Serializable, Closeable {
                     if (message == null) {
                         throw new Exception("No exception specified (null-message)");
                     }
-                    if (message.length() == 0) {
+                    if (message.isEmpty()) {
                         throw new Exception("No exception specified (empty-message)");
                     }
                 } catch (final Exception e) {
-                    if (message == null || message.length() == 0) {
+                    if (message == null || message.isEmpty()) {
                         message = "exception " + Format.getClassName(t);
                     }
                     _log.warn(error, e);

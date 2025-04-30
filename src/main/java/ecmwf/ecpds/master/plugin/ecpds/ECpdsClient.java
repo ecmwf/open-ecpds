@@ -777,7 +777,7 @@ public final class ECpdsClient {
             write(master, "NORETRIEVAL", req.isNORETRIEVAL());
             write(master, "FORCE", req.isFORCE());
             write(master, "PUT");
-            if (req.getGROUPBY() == null || req.getGROUPBY().length() == 0) {
+            if (req.getGROUPBY() == null || req.getGROUPBY().isEmpty()) {
                 // The file must be directly transmitted to the data mover!
                 long fileSize = -1;
                 final var target = read(masterIn, "TARGET");

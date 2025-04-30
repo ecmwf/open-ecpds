@@ -425,7 +425,7 @@ public final class MoverProvider extends NativeAuthenticationProvider {
         String nextElements() {
             final var result = new StringBuilder();
             while (_tokenizer.hasMoreElements()) {
-                result.append(result.length() == 0 ? "" : "/").append(nextElement());
+                result.append(result.isEmpty() ? "" : "/").append(nextElement());
             }
             return result.toString();
         }
@@ -691,7 +691,7 @@ public final class MoverProvider extends NativeAuthenticationProvider {
                 final var rootdir = tokenizer.nextToken();
                 final var dir = new StringBuilder();
                 while (tokenizer.hasMoreElements()) {
-                    dir.append(dir.length() == 0 ? "" : "/").append(tokenizer.nextToken());
+                    dir.append(dir.isEmpty() ? "" : "/").append(tokenizer.nextToken());
                 }
                 fileElement = _getDataElement(rootdir, dir.toString(), "");
                 ((DataFileElement) fileElement)._element = element;

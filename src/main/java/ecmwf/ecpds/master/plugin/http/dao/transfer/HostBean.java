@@ -407,7 +407,7 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     @Override
     public String getFormattedLastOutput() {
         final var lastOutput = getLastOutput();
-        return lastOutput == null || lastOutput.trim().length() == 0 ? "[n/a]" : Util.getFormatted(user, lastOutput);
+        return lastOutput == null || lastOutput.trim().isEmpty() ? "[n/a]" : Util.getFormatted(user, lastOutput);
     }
 
     /**

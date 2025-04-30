@@ -302,7 +302,7 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
         if (result == null) {
             final var ident = new StringBuilder();
             for (final Object key : getPrimaryKeyValues(object)) {
-                ident.append(ident.length() == 0 ? "" : ",").append(key);
+                ident.append(ident.isEmpty() ? "" : ",").append(key);
             }
             // This String should not be changed as it is tested in some places
             // to know if an element is missing in the DataBase. Changing this
@@ -1369,7 +1369,7 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
                     if (result != null) {
                         final var ident = new StringBuilder();
                         for (final Object key : getPrimaryKeyValues(object)) {
-                            ident.append(ident.length() == 0 ? "" : ",").append(key);
+                            ident.append(ident.isEmpty() ? "" : ",").append(key);
                         }
                         throw new DataBaseException(
                                 Format.getClassName(object) + " already exists: {" + ident.toString() + "}");

@@ -271,7 +271,7 @@ public abstract class ServerPlugin extends PluginThread {
             final var currentTime = System.currentTimeMillis();
             _remoteHost = _inetAddress.getHostName();
             _log.debug("Inverse Resolution: " + (System.currentTimeMillis() - currentTime) + "ms");
-            if (_remoteHost == null || _remoteHost.length() == 0) {
+            if (_remoteHost == null || _remoteHost.isEmpty()) {
                 _log.warn("Cannot resolve hostname");
                 _remoteHost = _remoteIP;
             }

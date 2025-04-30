@@ -1687,7 +1687,7 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
             }
         }
         // Let's check if it is a valid user-id?
-        if (id == null || id.length() == 0) {
+        if (id == null || id.isEmpty()) {
             throw new DataBaseException("Userid " + id + " not valid (empty)");
         }
         if (id.indexOf("-") != -1) {

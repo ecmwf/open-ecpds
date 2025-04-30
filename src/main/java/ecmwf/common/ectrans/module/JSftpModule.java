@@ -420,7 +420,7 @@ public class JSftpModule extends TransferModule {
         }
         if (setup.getBoolean(HOST_SFTP_MKSUFFIX)) {
             suffix = "." + new RandomString(3).next();
-        } else if (prefix.length() == 0 && suffix.length() == 0) {
+        } else if (prefix.isEmpty() && suffix.isEmpty()) {
             suffix = ".tmp";
         }
         final var port = getPort(getSetup());
@@ -1522,7 +1522,7 @@ public class JSftpModule extends TransferModule {
          */
         @Override
         public boolean promptYesNo(final String str) {
-            final var result = fingerprint == null || fingerprint.trim().length() == 0 || str == null
+            final var result = fingerprint == null || fingerprint.trim().isEmpty() || str == null
                     || str.indexOf("fingerprint is " + fingerprint + ".") >= 0;
             _log.debug("PromptYesNo: {} ({})", str, result ? "yes" : "no");
             return result;

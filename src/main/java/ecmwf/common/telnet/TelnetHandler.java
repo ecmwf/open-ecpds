@@ -786,8 +786,7 @@ public final class TelnetHandler {
         if (hasValues) {
             final var list = new StringBuilder();
             for (var i = 0; values.length > 1 && i < values.length; i++) {
-                list.append(list.length() == 0 ? " (" : ", ").append(values[i])
-                        .append(i + 1 == values.length ? ")" : "");
+                list.append(list.isEmpty() ? " (" : ", ").append(values[i]).append(i + 1 == values.length ? ")" : "");
             }
             var defaultValue = values[defaultPos];
             defaultValue = defaultValue.length() > size ? defaultValue.substring(0, size) : defaultValue;
@@ -799,7 +798,7 @@ public final class TelnetHandler {
         final var result = readLine(size, set);
         println();
         flush();
-        return result.length() == 0 && hasValues ? values[0] : result;
+        return result.isEmpty() && hasValues ? values[0] : result;
     }
 
     /**
@@ -854,7 +853,7 @@ public final class TelnetHandler {
             password = readLine('X', size, set);
             println();
             flush();
-            if (password == null || password.length() == 0) {
+            if (password == null || password.isEmpty()) {
                 if (help.canRead()) {
                     display(help, false);
                 }

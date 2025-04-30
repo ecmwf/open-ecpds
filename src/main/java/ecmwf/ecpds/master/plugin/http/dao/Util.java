@@ -367,7 +367,7 @@ public final class Util {
         final var session = request.getSession();
         final var value = request.getParameter(name);
         final var result = value != null ? value.trim() : (String) session.getAttribute(name);
-        final var finalResult = result == null || result.length() == 0 ? defaultValue.getDefaultValue() : result;
+        final var finalResult = result == null || result.isEmpty() ? defaultValue.getDefaultValue() : result;
         session.setAttribute(name, finalResult);
         return finalResult;
     }

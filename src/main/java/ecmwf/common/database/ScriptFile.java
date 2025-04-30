@@ -411,7 +411,7 @@ public abstract class ScriptFile {
             sql.append(eval);
             showHelp(sql.toString(), help.toString());
         }
-        if (help.length() == 0) {
+        if (help.isEmpty()) {
             if (confirm != null && !getConfirmation(menu + " -> " + name, confirm)) {
                 return null;
             }

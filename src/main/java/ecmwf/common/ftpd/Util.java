@@ -127,7 +127,7 @@ public final class Util {
      */
     public static void display(final CurrentContext currentContext, final String message, final int code,
             final String tail) {
-        if (message == null || message.length() == 0) {
+        if (message == null || message.isEmpty()) {
             currentContext.respond(code + " " + tail);
         } else {
             display(currentContext, new BufferedReader(new StringReader(message)), code, tail);
@@ -287,7 +287,7 @@ public final class Util {
     public static String parseParameter(final CurrentContext curCon, final Class<?> command, String request) {
         var name = command.getName();
         name = name.substring(name.lastIndexOf(".") + 1);
-        if ((request = request.trim()).length() == 0) {
+        if ((request = request.trim()).isEmpty()) {
             curCon.respond(501, name + " parse error");
             return null;
         }

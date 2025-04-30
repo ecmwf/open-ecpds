@@ -377,10 +377,10 @@ public final class PluginContainer implements MBeanService, MonitorCallback {
         final var plugins = _plugins.values().toArray(new PluginThread[0]);
         final var ref = new StringBuilder();
         for (var i = 0; i < plugins.length; i++) {
-            ref.append(ref.length() == 0 ? "" : i == plugins.length - 1 ? " or " : ", ").append(plugins[i].getRef());
+            ref.append(ref.isEmpty() ? "" : i == plugins.length - 1 ? " or " : ", ").append(plugins[i].getRef());
         }
         final var params = new MBeanParameterInfo[] { new MBeanParameterInfo("ref", "java.lang.String",
-                "the plugin reference" + (ref.length() == 0 ? "" : " (" + ref.toString() + ")")) };
+                "the plugin reference" + (ref.isEmpty() ? "" : " (" + ref.toString() + ")")) };
         return new MBeanInfo(this.getClass().getName(), """
                 ECaccess includes a model for the management of "plugin" services. \
                 A plugin is a piece of code that handles request/responses flowing \

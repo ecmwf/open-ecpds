@@ -1783,7 +1783,7 @@ public final class MasterServer extends ECaccessProvider
                     "Report only available through a ProxyHost: " + proxyHost.getName() + " (not a ProxyHost)");
         }
         final var hostName = host.getHost();
-        if (hostName == null || hostName.length() == 0 || hostName.indexOf("$") != -1) {
+        if (hostName == null || hostName.isEmpty() || hostName.indexOf("$") != -1) {
             throw new IOException("Report not available for: " + hostName + " (name only resolved at runtime)");
         }
         return TransferScheduler.getHostReport(proxyHost, host);
@@ -1842,7 +1842,7 @@ public final class MasterServer extends ECaccessProvider
      */
     public String getReport(final Host host) throws DataBaseException, IOException {
         final var hostName = host.getHost();
-        if (hostName == null || hostName.length() == 0 || hostName.indexOf("$") != -1) {
+        if (hostName == null || hostName.isEmpty() || hostName.indexOf("$") != -1) {
             throw new IOException("Report not available for: " + hostName + " (name only resolved at runtime)");
         }
         Throwable throwable = null;
@@ -2936,7 +2936,7 @@ public final class MasterServer extends ECaccessProvider
                 for (final String destination : contacts.keySet()) {
                     result.append("Destination " + destination + ": " + contacts.get(destination) + "\n");
                 }
-                return result.length() == 0 ? "No contact found" : result.toString();
+                return result.isEmpty() ? "No contact found" : result.toString();
             }
             if ("insertAccessControl".equals(operationName) && signature.length == 1
                     && "java.lang.String".equals(signature[0])) {
@@ -3231,7 +3231,7 @@ public final class MasterServer extends ECaccessProvider
         history.setSent(transfer.getSent());
         history.setStatusCode(code);
         history.setTime(new Timestamp(System.currentTimeMillis()));
-        if (StatusFactory.EXEC.equals(code) && host != null && (comment == null || comment.length() == 0)) {
+        if (StatusFactory.EXEC.equals(code) && host != null && (comment == null || comment.isEmpty())) {
             final var method = host.getTransferMethod();
             final var groupName = transfer.getTransferServer().getTransferGroupName();
             final var originalTransferServer = transfer.getOriginalTransferServer();
@@ -5234,7 +5234,7 @@ public final class MasterServer extends ECaccessProvider
             final var result = new StringBuilder();
             for (final DataTransfer transfer : getList()) {
                 if (transfer.getDestinationName().equals(destinationName)) {
-                    result.append(result.length() == 0 ? "" : " ").append(getStatus(transfer).replace(' ', '_'));
+                    result.append(result.isEmpty() ? "" : " ").append(getStatus(transfer).replace(' ', '_'));
                 }
             }
             return result.toString();
@@ -9089,7 +9089,7 @@ public final class MasterServer extends ECaccessProvider
             public void info(final String... messages) throws IOException, DataBaseException {
                 final var sb = new StringBuilder();
                 for (final String message : messages) {
-                    sb.append(sb.length() == 0 ? "" : "\n").append(getCurrentTime()).append(message);
+                    sb.append(sb.isEmpty() ? "" : "\n").append(getCurrentTime()).append(message);
                 }
                 _update(sb);
             }
@@ -9109,7 +9109,7 @@ public final class MasterServer extends ECaccessProvider
             public void warn(final String... messages) throws IOException, DataBaseException {
                 final var sb = new StringBuilder();
                 for (final String message : messages) {
-                    sb.append(sb.length() == 0 ? "" : "\n").append("err:").append(getCurrentTime()).append(message);
+                    sb.append(sb.isEmpty() ? "" : "\n").append("err:").append(getCurrentTime()).append(message);
                 }
                 _update(sb);
             }
@@ -9124,8 +9124,8 @@ public final class MasterServer extends ECaccessProvider
              *             Signals that an I/O exception has occurred.
              */
             private void _update(final StringBuilder progress) throws IOException {
-                _updateHostOutput(_host, Format
-                        .compress(_summary.append(_summary.length() == 0 ? "" : "\n").append(progress).toString()));
+                _updateHostOutput(_host,
+                        Format.compress(_summary.append(_summary.isEmpty() ? "" : "\n").append(progress).toString()));
             }
 
             /**

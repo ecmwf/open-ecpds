@@ -738,7 +738,7 @@ public final class HttpModule extends TransferModule {
         final var tokenizer = new StringTokenizer(path, "/");
         while (tokenizer.hasMoreTokens()) {
             final var token = tokenizer.nextToken();
-            final var isUrl = sb.length() == 0 && ("http:".equalsIgnoreCase(token) || "https:".equalsIgnoreCase(token));
+            final var isUrl = sb.isEmpty() && ("http:".equalsIgnoreCase(token) || "https:".equalsIgnoreCase(token));
             sb.append(decode(isUrl ? token + "/" : token));
             if (tokenizer.hasMoreTokens()) {
                 sb.append("/");
@@ -1512,8 +1512,7 @@ public final class HttpModule extends TransferModule {
             if (text.startsWith("\n"))
                 width = 0; // reset counter if starts with a newline. only from formats above, not in
                            // natural text
-            if (text.equals(" ")
-                    && (accum.length() == 0 || StringUtil.in(accum.substring(accum.length() - 1), " ", "\n")))
+            if (text.equals(" ") && (accum.isEmpty() || StringUtil.in(accum.substring(accum.length() - 1), " ", "\n")))
                 return; // don't accumulate long runs of empty spaces
 
             if (text.length() + width > maxWidth) { // won't fit, needs to wrap

@@ -1896,7 +1896,7 @@ final class DataBaseProxy implements DataBaseInterface {
     @Override
     public Collection<Destination> destinationList(final String user, final String id, final String iso,
             final Integer type) throws DataBaseException, RemoteException {
-        if (isEmpty(user) || iso != null && iso.length() == 0 || id != null && id.length() == 0) {
+        if (isEmpty(user) || iso != null && iso.isEmpty() || id != null && id.isEmpty()) {
             throw new DataBaseException("Invalid parameter(s) for destinationList");
         }
         final var monitor = new MonitorCall("destinationList(" + user + "," + id + "," + iso + "," + type + ")");
@@ -1911,7 +1911,7 @@ final class DataBaseProxy implements DataBaseInterface {
     @Override
     public DestinationBackup getDestinationBackup(final String user, final String id, final String iso,
             final Integer type, final String name) throws DataBaseException, RemoteException {
-        if (isEmpty(user) || iso != null && iso.length() == 0 || id != null && id.length() == 0) {
+        if (isEmpty(user) || iso != null && iso.isEmpty() || id != null && id.isEmpty()) {
             throw new DataBaseException("Invalid parameter(s) for getDestinationBackup");
         }
         final var monitor = new MonitorCall(
@@ -1969,8 +1969,7 @@ final class DataBaseProxy implements DataBaseInterface {
             final String source, final String uniqueName, final String target, final Integer priority,
             final String lifeTime, final String at, final Boolean standby, final Boolean force)
             throws DataBaseException, RemoteException {
-        if (isEmpty(user) || destination != null && destination.length() == 0
-                || source != null && source.length() == 0) {
+        if (isEmpty(user) || destination != null && destination.isEmpty() || source != null && source.isEmpty()) {
             throw new DataBaseException("Invalid parameter(s) for datafilePut");
         }
         final var monitor = new MonitorCall(

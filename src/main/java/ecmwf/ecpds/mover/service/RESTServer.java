@@ -1499,7 +1499,7 @@ public final class RESTServer {
      */
     private static synchronized StringBuilder getTemplateContent(final StringBuilder stringBuilder,
             final String templateName) throws IOException {
-        if (stringBuilder.length() == 0) {
+        if (stringBuilder.isEmpty()) {
             _log.debug("Loading template: {}", templateName);
             final var fis = new FileInputStream(templateName);
             final var dis = new BufferedReader(new InputStreamReader(fis));
@@ -1578,9 +1578,9 @@ public final class RESTServer {
         // Let's build the list of links!
         final var currentPath = new StringBuilder();
         for (final String directory : "./".concat(filename).split("/")) {
-            path.append("/<a href=\"" + uriList + "/"
-                    + (path.length() == 0 ? currentPath : currentPath.append(directory + "/")) + "\">"
-                    + (path.length() == 0 ? "home" : directory) + "</a>");
+            path.append(
+                    "/<a href=\"" + uriList + "/" + (path.isEmpty() ? currentPath : currentPath.append(directory + "/"))
+                            + "\">" + (path.isEmpty() ? "home" : directory) + "</a>");
         }
         Format.replaceAll(builder, "${path}", Format.normalizePath(path.toString()) + "/ directory");
         final var header = new StringBuilder();
@@ -1787,7 +1787,7 @@ public final class RESTServer {
      *            the value
      */
     private static void checkParameter(final String name, final String value) {
-        if (value == null || value.trim().length() == 0) {
+        if (value == null || value.trim().isEmpty()) {
             throw newException(400, "Bad Request: Missing parameter '" + name + "'");
         }
     }

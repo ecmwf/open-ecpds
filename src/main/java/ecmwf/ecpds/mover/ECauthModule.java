@@ -275,7 +275,7 @@ public final class ECauthModule extends ProxyModule {
         suffix = currentSetup.getString(HOST_ECAUTH_SUFFIX);
         if (currentSetup.getBoolean(HOST_ECAUTH_MKSUFFIX)) {
             suffix = "." + new RandomString(3).next();
-        } else if (prefix.length() == 0 && suffix.length() == 0) {
+        } else if (prefix.isEmpty() && suffix.isEmpty()) {
             suffix = ".tmp";
         }
         final var ecauthUser = currentSetup.get(HOST_ECAUTH_USER, Cnf.at("ECauthModule", "user", "ecauth"));
@@ -1245,7 +1245,7 @@ public final class ECauthModule extends ProxyModule {
                         final var timestamp = entry.timestamp;
                         if (timestamp == 0) {
                             // The node is active!
-                            nodeList.append(nodeList.length() == 0 ? "" : ", ").append(entry.nodeName);
+                            nodeList.append(nodeList.isEmpty() ? "" : ", ").append(entry.nodeName);
                             result.addAll(getNodeList(entry.nodeName));
                         } else if (timestamp > 0) {
                             // We are using a unix timestamp in the
@@ -1254,7 +1254,7 @@ public final class ECauthModule extends ProxyModule {
                             // Check if we are not in the session!
                             if (current < timestamp && current > timestamp + entry.duration) {
                                 // The node is active;
-                                nodeList.append(nodeList.length() == 0 ? "" : ", ").append(entry.nodeName);
+                                nodeList.append(nodeList.isEmpty() ? "" : ", ").append(entry.nodeName);
                                 result.addAll(getNodeList(entry.nodeName));
                             }
                         }
@@ -1318,7 +1318,7 @@ public final class ECauthModule extends ProxyModule {
                                 line = line.substring(0, index).trim();
                             }
                             // Skip the empty lines!
-                            if (line.length() == 0) {
+                            if (line.isEmpty()) {
                                 continue;
                             }
                             index = line.indexOf(":");
@@ -1326,7 +1326,7 @@ public final class ECauthModule extends ProxyModule {
                             if (index < 1) {
                                 // Simple format with default to "on"
                                 final var nodeName = line;
-                                nodeList.append(nodeList.length() == 0 ? "" : ", ").append(nodeName).append("(on)");
+                                nodeList.append(nodeList.isEmpty() ? "" : ", ").append(nodeName).append("(on)");
                                 addNodeEntry(new NodeEntry(nodeName, 0, 0), result);
                             } else {
                                 // Complex format with options!
@@ -1336,12 +1336,11 @@ public final class ECauthModule extends ProxyModule {
                                 line = line.substring(index + 1).toLowerCase();
                                 if ("off".equals(line)) {
                                     // The node if off!
-                                    nodeList.append(nodeList.length() == 0 ? "" : ", ").append(nodeName)
-                                            .append("(off)");
+                                    nodeList.append(nodeList.isEmpty() ? "" : ", ").append(nodeName).append("(off)");
                                     addNodeEntry(new NodeEntry(nodeName, -1, 0), result);
                                 } else if ("on".equals(line)) {
                                     // The node is on!
-                                    nodeList.append(nodeList.length() == 0 ? "" : ", ").append(nodeName).append("(on)");
+                                    nodeList.append(nodeList.isEmpty() ? "" : ", ").append(nodeName).append("(on)");
                                     addNodeEntry(new NodeEntry(nodeName, 0, 0), result);
                                 } else {
                                     // This is a timestamp!
@@ -1349,14 +1348,14 @@ public final class ECauthModule extends ProxyModule {
                                     if (index < 1) {
                                         // No duration specified!
                                         final var timestamp = Long.parseLong(line);
-                                        nodeList.append(nodeList.length() == 0 ? "" : ", ").append(nodeName).append("(")
+                                        nodeList.append(nodeList.isEmpty() ? "" : ", ").append(nodeName).append("(")
                                                 .append(Format.formatTime(timestamp * 1000L)).append(")");
                                         addNodeEntry(new NodeEntry(nodeName, timestamp, 0), result);
                                     } else {
                                         // A duration is specified!
                                         final var timestamp = Long.parseLong(line.substring(0, index));
                                         final var duration = Long.parseLong(line.substring(index + 1));
-                                        nodeList.append(nodeList.length() == 0 ? "" : ", ").append(nodeName).append("(")
+                                        nodeList.append(nodeList.isEmpty() ? "" : ", ").append(nodeName).append("(")
                                                 .append(Format.formatTime(timestamp * 1000L)).append(" => ")
                                                 .append(Format.formatDuration(duration)).append(")");
                                         addNodeEntry(new NodeEntry(nodeName, timestamp, duration), result);

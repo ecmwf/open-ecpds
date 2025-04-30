@@ -45,7 +45,7 @@ public final class ECaccessInit {
      */
     public String getHostName() throws IOException {
         final var name = System.getProperty("ecaccess.hostName");
-        return name == null || name.length() == 0 ? InetAddress.getLocalHost().getHostName() : name;
+        return name == null || name.isEmpty() ? InetAddress.getLocalHost().getHostName() : name;
     }
 
     /**
@@ -58,7 +58,7 @@ public final class ECaccessInit {
      */
     public String getHostAddress() throws IOException {
         final var addr = System.getProperty("ecaccess.hostAddress");
-        return addr == null || addr.length() == 0 ? InetAddress.getLocalHost().getHostAddress() : addr;
+        return addr == null || addr.isEmpty() ? InetAddress.getLocalHost().getHostAddress() : addr;
     }
 
     /**
@@ -71,7 +71,7 @@ public final class ECaccessInit {
      */
     public String getECServer() throws IOException {
         final var server = System.getProperty("ecaccess.ecServer");
-        return server == null || server.length() == 0 ? InetAddress.getLocalHost().getHostAddress() : server;
+        return server == null || server.isEmpty() ? InetAddress.getLocalHost().getHostAddress() : server;
     }
 
     /**

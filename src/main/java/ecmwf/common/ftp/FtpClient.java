@@ -1060,7 +1060,7 @@ public final class FtpClient {
                     throw new FtpLoginException("Wrong password");
                 }
                 var message = getResponseStringNoReset();
-                if (message.length() == 0) {
+                if (message.isEmpty()) {
                     message = "No reply from server (FTP code: 550)";
                 }
                 throw new IOException(message);
@@ -1474,7 +1474,7 @@ public final class FtpClient {
                 }
                 if ((code = _readReply()) == FTP_ERROR) {
                     var message = getResponseStringNoReset();
-                    if (message.length() == 0) {
+                    if (message.isEmpty()) {
                         message = "No reply from server (FTP code: " + code + ")";
                     }
                     throw new FtpProtocolException(message);
@@ -1784,7 +1784,7 @@ public final class FtpClient {
         final var code = _readReply();
         if (code == FTP_ERROR) {
             var message = getResponseStringNoReset();
-            if (message.length() == 0) {
+            if (message.isEmpty()) {
                 message = "Connection refused (FTP code: " + code + ")";
             }
             throw new FtpConnectException(message);

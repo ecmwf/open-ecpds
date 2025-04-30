@@ -205,7 +205,7 @@ public final class Format {
             return false;
         }
         final var result = id.trim();
-        if (result.length() == 0) {
+        if (result.isEmpty()) {
             return false;
         }
         for (final char c : result.toCharArray()) {
@@ -1085,7 +1085,7 @@ public final class Format {
      * @return the string
      */
     public static String trimString(final String message, final String empty) {
-        return message == null || message.length() == 0 ? empty
+        return message == null || message.isEmpty() ? empty
                 : message.replace('\t', ' ').replace('\n', ' ').replace('\r', ' ').trim();
     }
 
@@ -1712,7 +1712,7 @@ public final class Format {
         for (final String element : array) {
             result.append("/").append(element);
         }
-        return (result.length() == 0 ? "/" : result.toString())
+        return (result.isEmpty() ? "/" : result.toString())
                 + (keepEndTrailer && (path.endsWith("/") || path.endsWith("\\")) ? "/" : "");
     }
 
@@ -1728,7 +1728,7 @@ public final class Format {
      *             Signals that an I/O exception has occurred.
      */
     public static String compress(final String str) throws IOException {
-        if (str == null || str.length() == 0) {
+        if (str == null || str.isEmpty()) {
             return str;
         }
         final var out = new ByteArrayOutputStream();
@@ -1750,7 +1750,7 @@ public final class Format {
      *             Signals that an I/O exception has occurred.
      */
     public static String uncompress(final String str) throws IOException {
-        if (str == null || str.length() == 0) {
+        if (str == null || str.isEmpty()) {
             return str;
         }
         return uncompress(toBytes(str));

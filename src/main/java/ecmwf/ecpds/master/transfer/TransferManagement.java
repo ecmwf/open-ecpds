@@ -207,7 +207,7 @@ public final class TransferManagement {
     public static String getTargetName(final DataTransfer transfer, final String template, final String message,
             final String moverName, final Collection<MetadataValue> metadataValues)
             throws DirectoryException, DataBaseException {
-        if (template == null || template.trim().length() == 0) {
+        if (template == null || template.trim().isEmpty()) {
             return transfer.getTarget();
         }
         final var original = transfer.getOriginalTransferServer();
@@ -299,7 +299,7 @@ public final class TransferManagement {
         final var result = process(sb.toString());
         // If the path is empty or ends with a file separator then we add the
         // transfer target name!
-        return result.length() == 0 || result.endsWith("/") || result.endsWith("\\") ? result + transfer.getTarget()
+        return result.isEmpty() || result.endsWith("/") || result.endsWith("\\") ? result + transfer.getTarget()
                 : result;
     }
 

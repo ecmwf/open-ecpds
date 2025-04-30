@@ -161,7 +161,7 @@ public abstract class DataBaseObject implements Serializable, Cloneable {
                         final var cr = value.indexOf("\n") != -1;
                         result.append("[").append(fieldName).append("]")
                                 .append(cr ? "\n" + TAG_ACROSS_MULTIPLE_LINES + "\n" : " ")
-                                .append(value.length() == 0 ? "(empty)" : value)
+                                .append(value.isEmpty() ? "(empty)" : value)
                                 .append(cr ? "\n" + TAG_END_OF_LINES + "\n" : "\n");
                     } else {
                         // This is meant to be displayed in the log file!

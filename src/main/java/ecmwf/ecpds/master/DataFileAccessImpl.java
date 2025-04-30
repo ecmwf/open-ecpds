@@ -553,7 +553,7 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
         final var base = master.getDataBase(ECpdsBase.class);
         if (destination.getGroupByDate()) {
             // The files are grouped in directories named by date!
-            if (path == null || path.length() == 0) {
+            if (path == null || path.isEmpty()) {
                 // This is the root directory of the Destination. Let's list the
                 // dates with data available for download!
                 final Long[] dates;
@@ -906,7 +906,7 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
                         newTarget = null;
                     }
                 }
-                if (newTarget == null || newTarget.length() == 0) {
+                if (newTarget == null || newTarget.isEmpty()) {
                     // We should have a proper target!
                     throw new MasterException("No target name specified");
                 }

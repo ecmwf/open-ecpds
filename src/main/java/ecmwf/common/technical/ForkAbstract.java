@@ -180,7 +180,7 @@ public abstract class ForkAbstract implements Closeable {
             }
         }
         if (expect != null) {
-            if (expect.length == 1 && expect[0].length == 0 && (_message == null || _message.length() == 0)) {
+            if (expect.length == 1 && expect[0].length == 0 && (_message == null || _message.isEmpty())) {
                 return true;
             }
             final var command = getCommand();

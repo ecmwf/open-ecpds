@@ -205,7 +205,7 @@ public final class LoginManagement {
             return;
         }
         // We don't accept root access ever nor empty or null password!
-        if ("root".equalsIgnoreCase(user) || passcode == null || passcode.length() == 0) {
+        if ("root".equalsIgnoreCase(user) || passcode == null || passcode.isEmpty()) {
             increment(host);
             throw new EccmdException("Passcode rejected");
         }

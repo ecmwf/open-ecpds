@@ -44,7 +44,7 @@ final class PWD {
         }
         currentContext.respond(257,
                 "\"" + (currentContext.browser && !"*".equals(currentContext.domainName)
-                        ? "/" + currentContext.domainName.toUpperCase() : "") + (path.length() == 0 ? "/" : path)
+                        ? "/" + currentContext.domainName.toUpperCase() : "") + (path.isEmpty() ? "/" : path)
                         + "\" is current directory");
     }
 }

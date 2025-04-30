@@ -307,7 +307,7 @@ public final class FtpsModule extends TransferModule {
                 mksuffix.append(suffix);
             }
             suffix = mksuffix.toString();
-        } else if (prefix.length() == 0 && suffix.length() == 0) {
+        } else if (prefix.isEmpty() && suffix.isEmpty()) {
             suffix = ".tmp";
         }
         dir = setup.get(HOST_FTPS_CWD, dir);
@@ -1160,7 +1160,7 @@ public final class FtpsModule extends TransferModule {
      *             Signals that an I/O exception has occurred.
      */
     private void ftpCommand(final String command) throws IOException {
-        if (command == null || command.length() == 0) {
+        if (command == null || command.isEmpty()) {
             return;
         }
         try {

@@ -190,9 +190,9 @@ public final class OpsViewManager {
      *             the JSON exception
      */
     private static synchronized String getToken(final boolean lastTry) throws IOException, JSONException {
-        if (lastTry || _token.length() == 0) { // Last try or initialization
+        if (lastTry || _token.isEmpty()) { // Last try or initialization
             _log.debug("Getting new Token from Opsview");
-            if (USER.length() == 0 || PASSWORD.length() == 0) {
+            if (USER.isEmpty() || PASSWORD.isEmpty()) {
                 throw new IOException("Please check Opsview credentials");
             }
             // Authenticate and get a new Token

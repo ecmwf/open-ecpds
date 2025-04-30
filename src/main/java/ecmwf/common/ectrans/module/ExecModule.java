@@ -121,7 +121,7 @@ public final class ExecModule extends TransferModule {
         _usetmp = Cnf.at("ExecModule", "usetmp", _usetmp);
         _prefix = Cnf.at("ExecModule", "prefix", "");
         _suffix = Cnf.at("ExecModule", "suffix", "");
-        if (_prefix.length() == 0 && _suffix.length() == 0) {
+        if (_prefix.isEmpty() && _suffix.isEmpty()) {
             _suffix = ".tmp";
         }
     }

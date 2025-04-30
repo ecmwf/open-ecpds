@@ -290,7 +290,7 @@ class ActiveDirectory {
             final String serverName, final int port) throws NamingException {
         if (password != null) {
             password = password.trim();
-            if (password.length() == 0) {
+            if (password.isEmpty()) {
                 password = null;
             }
         }

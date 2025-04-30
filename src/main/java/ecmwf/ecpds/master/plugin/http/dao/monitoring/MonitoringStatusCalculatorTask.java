@@ -288,7 +288,7 @@ public class MonitoringStatusCalculatorTask extends MBeanScheduler {
                         .append(contact).append("</a>");
             }
         }
-        return result.length() == 0 ? "none" : result.toString();
+        return result.isEmpty() ? "none" : result.toString();
     }
 
     /**

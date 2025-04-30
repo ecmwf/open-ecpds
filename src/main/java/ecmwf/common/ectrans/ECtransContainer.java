@@ -305,7 +305,7 @@ public final class ECtransContainer implements MBeanService {
     private static final String getLogMessage(final String request, final Object... args) {
         final var result = new StringBuilder();
         for (final Object arg : args) {
-            result.append(result.length() == 0 ? "" : ",").append(arg != null ? "\"" + arg + "\"" : "null");
+            result.append(result.isEmpty() ? "" : ",").append(arg != null ? "\"" + arg + "\"" : "null");
         }
         return "ECtrans " + request + "(" + result.toString() + ")";
     }

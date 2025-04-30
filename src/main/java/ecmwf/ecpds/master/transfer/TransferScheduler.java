@@ -894,7 +894,7 @@ public final class TransferScheduler extends MBeanScheduler {
         if (sources.length > 0) {
             final var hostsList = new StringBuilder();
             for (final Host host : sources) {
-                hostsList.append(hostsList.length() == 0 ? "" : ", ").append(host.getNickname());
+                hostsList.append(hostsList.isEmpty() ? "" : ", ").append(host.getNickname());
             }
             _log.debug("Source hosts list for " + transfer.getId() + ": " + hostsList.toString());
         }
@@ -1991,7 +1991,7 @@ public final class TransferScheduler extends MBeanScheduler {
                 Collections.sort(movers);
                 for (final String mover : movers) {
                     // This is a new DataMover!
-                    line.append(line.length() == 0 ? "" : "};").append(mover).append("{");
+                    line.append(line.isEmpty() ? "" : "};").append(mover).append("{");
                     final var metrics = _metricsPerDataMovers.get(mover);
                     final List<Integer> fileSystems = new ArrayList<>(metrics.keySet());
                     Collections.sort(fileSystems);
@@ -3519,7 +3519,7 @@ public final class TransferScheduler extends MBeanScheduler {
                                 : "No DataMover available for transfer request";
                         _log.warn("DataTransfer " + _currentTransfer.getId() + " delayed: " + error);
                         final var comment = _currentTransfer.getComment();
-                        if (comment == null || comment.length() == 0) {
+                        if (comment == null || comment.isEmpty()) {
                             _currentTransfer.setComment(error);
                         }
                         _currentTransfer.setStatusCode(StatusFactory.RETR);
@@ -4232,7 +4232,7 @@ public final class TransferScheduler extends MBeanScheduler {
         public String toString() {
             final var result = new StringBuilder();
             for (final HostElement element : _hosts) {
-                result.append(result.length() == 0 ? "" : " ").append(element.getHostName()).append("(")
+                result.append(result.isEmpty() ? "" : " ").append(element.getHostName()).append("(")
                         .append(element.toString()).append(")").append(_host.equals(element) ? "*" : "");
             }
             return result.toString();

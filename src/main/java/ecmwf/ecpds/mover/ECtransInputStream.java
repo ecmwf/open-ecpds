@@ -135,7 +135,7 @@ final class ECtransInputStream extends InputStream {
                 // the correct path on the mover
                 source = getPath(dataFile);
             }
-            hostsList.append(hostsList.length() == 0 ? "" : ", ").append("Host=").append(copy.getName()).append(" (")
+            hostsList.append(hostsList.isEmpty() ? "" : ", ").append("Host=").append(copy.getName()).append(" (")
                     .append(copy.getNickname()).append(")");
             final var module = copy.getTransferMethod().getECtransModuleName();
             final var index = dataFile.getIndex();
@@ -261,7 +261,7 @@ final class ECtransInputStream extends InputStream {
                         line = line.substring(0, index).trim();
                     }
                     // Skip the empty lines!
-                    if (line.length() == 0) {
+                    if (line.isEmpty()) {
                         continue;
                     }
                     // We have a new file!

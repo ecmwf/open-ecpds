@@ -79,7 +79,7 @@ final class ALIAS {
             }
         }
         Util.display(currentContext,
-                "Syntax: ALIAS source=target\n" + (result.length() == 0 ? "no aliases\n" : result.toString())
+                "Syntax: ALIAS source=target\n" + (result.isEmpty() ? "no aliases\n" : result.toString())
                         + "Above aliases are set.\n" + "Current domain name is "
                         + currentContext.domainName.toUpperCase() + ".\n" + "Current domain user is "
                         + currentContext.domainUser + ".",

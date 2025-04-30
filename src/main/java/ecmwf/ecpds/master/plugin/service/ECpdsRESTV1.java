@@ -912,7 +912,7 @@ public final class ECpdsRESTV1 {
      *            the value
      */
     private static void _checkParameter(final String name, final String value) {
-        if (value == null || value.trim().length() == 0) {
+        if (value == null || value.trim().isEmpty()) {
             throw _newException(Status.PRECONDITION_FAILED, "Missing parameter: " + name);
         }
     }

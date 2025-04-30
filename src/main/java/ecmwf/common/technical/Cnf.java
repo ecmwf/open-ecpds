@@ -714,7 +714,7 @@ public final class Cnf {
                         }
                     } else if (!reload && line.startsWith("#reload \"") && line.length() > 10) {
                         reloads.add(line.substring(9, line.lastIndexOf("\"")));
-                    } else if (line.length() != 0 && !line.startsWith("#")) {
+                    } else if (!line.isEmpty() && !line.startsWith("#")) {
                         if (line.charAt(0) == '[' && line.charAt(line.length() - 1) == ']') {
                             group = line.substring(1, line.length() - 1);
                             if (!(toExclude != null && !toExclude.isEmpty() && toExclude.contains(group)
@@ -765,7 +765,7 @@ public final class Cnf {
      */
     public static String notEmptyStringAt(final String group, final String key, final String defaultValue) {
         final var at = at(group, key);
-        if (at == null || at.length() == 0) {
+        if (at == null || at.isEmpty()) {
             return defaultValue;
         }
         final var value = removeDoubleQuote(at);

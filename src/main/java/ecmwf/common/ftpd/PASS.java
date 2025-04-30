@@ -98,7 +98,7 @@ final class PASS {
         if ((pos = currentContext.user.indexOf("@")) > 0 || (pos = currentContext.user.indexOf("-")) > 0) {
             user = currentContext.user.substring(0, pos);
             domain = currentContext.user.substring(pos + 1);
-            if (domain.length() == 0 || ".".equals(domain)) {
+            if (domain.isEmpty() || ".".equals(domain)) {
                 domain = null;
             }
         } else {
