@@ -715,10 +715,12 @@ public final class MoverServer extends StarterServer implements MoverInterface {
         } catch (final Throwable e) {
             _log.warn(e);
         }
-        _log.debug("Reset transfer(s)");
-        transferRepository.clear();
-        _log.debug("Reset download(s)");
-        downloadRepository.clear();
+		_log.debug("Reset transfer(s)");
+		if (transferRepository != null)
+			transferRepository.clear();
+		_log.debug("Reset download(s)");
+		if (downloadRepository != null)
+			downloadRepository.clear();
         if (masterManager != null) {
             _log.debug("Close incoming connection(s)");
             try {
