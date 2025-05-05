@@ -1405,10 +1405,10 @@ public final class RESTServer {
             final ResponseBuilder builder, final String filename) throws EccmdException, IOException {
         final var name = getFilename(session, filename);
         final var element = session.getFileListElement(name);
-		if (element.isDirectory() || element.getSize() == null || element.getComment() == null) {
-		    throw new WebApplicationException(Response.status(Response.Status.NOT_FOUND)
-		        .entity(filename + ": Not a plain file").build());
-		}
+        if (element.isDirectory() || element.getSize() == null || element.getComment() == null) {
+            throw new WebApplicationException(
+                    Response.status(Response.Status.NOT_FOUND).entity(filename + ": Not a plain file").build());
+        }
         // Are we required to check the ETag?
         final var ifNoneMatch = request.getHeader("If-None-Match");
         final var etag = getETag(element.getComment());
