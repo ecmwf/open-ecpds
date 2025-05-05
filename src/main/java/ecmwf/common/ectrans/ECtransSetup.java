@@ -1888,7 +1888,7 @@ public final class ECtransSetup implements Serializable {
      */
     public String getProperties(final boolean secured) {
         return secured
-                ? Cnf.valuesOf(dataContent, str -> "********",
+                ? Cnf.valuesOf(dataContent, _ -> "********",
                         ECtransOptions.getAll(true).stream().map(ECtransOptions::getParameter).toArray(String[]::new))
                 : Cnf.valuesOf(dataContent);
     }

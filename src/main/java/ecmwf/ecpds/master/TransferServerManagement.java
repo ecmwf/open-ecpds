@@ -143,9 +143,9 @@ final class TransferServerManagement {
             Collections.sort(array,
                     (ts1, ts2) -> loadPerTransferServer
                             .computeIfAbsent(ts1.getName(),
-                                    k -> TransferScheduler.getNumberOfDownloadsFor(ts1, fileSystem))
+                                    _ -> TransferScheduler.getNumberOfDownloadsFor(ts1, fileSystem))
                             .compareTo(loadPerTransferServer.computeIfAbsent(ts2.getName(),
-                                    k -> TransferScheduler.getNumberOfDownloadsFor(ts2, fileSystem))));
+                                    _ -> TransferScheduler.getNumberOfDownloadsFor(ts2, fileSystem))));
         }
         // If an original TransferServer is provided and is found to be
         // available and active then it is always set as the first element of

@@ -384,7 +384,7 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
                         final var name = d.getName();
                         if (d.getActive() && d.getMonitor() && !contactsCache.containsKey(name)) {
                             _log.debug("Missing contact for Destination {}", name);
-                            final var missingContacts = perType.computeIfAbsent(d.getType(), k -> new StringBuilder());
+                            final var missingContacts = perType.computeIfAbsent(d.getType(), _ -> new StringBuilder());
                             missingContacts.append("\n").append("Destination ").append(name);
                             // Only append the comment if it is not empty!
                             final var comment = d.getComment();

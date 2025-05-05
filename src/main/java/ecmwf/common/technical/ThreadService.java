@@ -580,7 +580,7 @@ public final class ThreadService {
          * @return the value
          */
         private static long getValue(final Map<String, AtomicLong> map, final StringBuilder key) {
-            return map.computeIfAbsent(key.toString(), k -> new AtomicLong(0))
+            return map.computeIfAbsent(key.toString(), _ -> new AtomicLong(0))
                     .updateAndGet(c -> c == Long.MAX_VALUE ? 1 : c + 1);
         }
 

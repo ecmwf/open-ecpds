@@ -795,8 +795,8 @@ public abstract class ScriptFile {
      */
     private boolean addScriptContent(final String menu, final String group, final String name, final File file,
             final boolean separator) throws IOException {
-        final var menus = allMenus.computeIfAbsent(menu, k -> new ConcurrentHashMap<>());
-        final var groups = menus.computeIfAbsent(group, k -> new ConcurrentHashMap<>());
+        final var menus = allMenus.computeIfAbsent(menu, _ -> new ConcurrentHashMap<>());
+        final var groups = menus.computeIfAbsent(group, _ -> new ConcurrentHashMap<>());
         final var fileKey = menu + "." + group + "." + name;
         if (!groups.containsKey(name)) {
             groups.put(name, getScriptContent(file));

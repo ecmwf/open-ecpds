@@ -127,7 +127,7 @@ final class ECpdsParser extends ConfigurableLoopRunnable {
         // On each iteration, list the files in the target directory and process
         // them according to the last 'last modified' time (to be sure we are
         // only processing the new files)
-        var files = new File(_dir).listFiles((FilenameFilter) (dir, name) -> {
+        var files = new File(_dir).listFiles((FilenameFilter) (_, name) -> {
             final var lowerCase = name.toLowerCase();
             return !(lowerCase.endsWith(".tmp") || lowerCase.endsWith(".temp") || lowerCase.startsWith("."));
         });

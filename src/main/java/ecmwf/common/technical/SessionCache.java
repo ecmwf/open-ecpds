@@ -418,7 +418,7 @@ public class SessionCache<K, S> {
      */
     public boolean put(final K key, final S session, final long timeout, final long updateFrequency) {
         if (timeout > 0 && key != null && session != null) {
-            final var added = cache.computeIfAbsent(key, value -> new LinkedBlockingQueue<CacheElement>(maxQueueSize))
+            final var added = cache.computeIfAbsent(key, _ -> new LinkedBlockingQueue<CacheElement>(maxQueueSize))
                     .offer(new CacheElement(session, timeout, updateFrequency));
             if (added) {
                 if (debug) {

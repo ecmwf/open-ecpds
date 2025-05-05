@@ -77,7 +77,7 @@ public final class Synchronized {
      * @return single instance of Synchronized
      */
     public static Synchronized getInstance(final Class<?> clazz) {
-        return instances.computeIfAbsent(clazz.getName(), value -> new Synchronized());
+        return instances.computeIfAbsent(clazz.getName(), _ -> new Synchronized());
     }
 
     /**

@@ -267,8 +267,9 @@ public class ChangeLogBean extends ModelBeanBase implements ChangeLog {
     private static String getDifferences(final String from, final String to) {
         final var result = new StringBuilder();
         for (final DiffRow row : DiffRowGenerator.create().showInlineDiffs(true).mergeOriginalRevised(true)
-                .inlineDiffByWord(true).oldTag((tag, f) -> f ? "<font color='red'><s>" : "</s></font>")
-                .newTag((tag, f) -> f ? "<font color='green'>" : "</font>").build()
+                .inlineDiffByWord(true)
+                .oldTag((_, f) -> Boolean.TRUE.equals(f) ? "<font color='red'><s>" : "</s></font>")
+                .newTag((_, f) -> Boolean.TRUE.equals(f) ? "<font color='green'>" : "</font>").build()
                 .generateDiffRows(Arrays.asList(from.split("\n")), Arrays.asList(to.split("\n")))) {
             if (!result.isEmpty()) {
                 result.append("\n");

@@ -220,8 +220,8 @@ public abstract class DataBaseObject implements Serializable, Cloneable {
                     if (!value1.equals(value2)) {
                         result.append("[").append(fieldName).append("] ");
                         for (final DiffRow row : DiffRowGenerator.create().showInlineDiffs(true)
-                                .mergeOriginalRevised(mergeOriginalRevised).inlineDiffByWord(true).oldTag(f -> "~")
-                                .newTag(f -> "**").build().generateDiffRows(Arrays.asList(value1.split("\n")),
+                                .mergeOriginalRevised(mergeOriginalRevised).inlineDiffByWord(true).oldTag(_ -> "~")
+                                .newTag(_ -> "**").build().generateDiffRows(Arrays.asList(value1.split("\n")),
                                         Arrays.asList(value2.split("\n")))) {
                             if (mergeOriginalRevised) {
                                 result.append(row.getOldLine());

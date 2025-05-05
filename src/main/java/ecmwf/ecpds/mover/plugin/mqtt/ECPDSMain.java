@@ -82,7 +82,7 @@ public class ECPDSMain implements ExtensionMain {
      * Adds the client lifecycle event listener.
      */
     private void addClientLifecycleEventListener() {
-        Services.eventRegistry().setClientLifecycleEventListener(input -> new ECPDSListener());
+        Services.eventRegistry().setClientLifecycleEventListener(_ -> new ECPDSListener());
     }
 
     /**
@@ -91,10 +91,8 @@ public class ECPDSMain implements ExtensionMain {
     private void addPublishModifier() {
         final var interceptor = new ECPDSInterceptor();
         final InitializerRegistry registry = Services.initializerRegistry();
-        registry.setClientInitializer(
-                (initializerInput, clientContext) -> clientContext.addPublishInboundInterceptor(interceptor));
-        registry.setClientInitializer(
-                (initializerInput, clientContext) -> clientContext.addPublishOutboundInterceptor(interceptor));
+        registry.setClientInitializer((_, clientContext) -> clientContext.addPublishInboundInterceptor(interceptor));
+        registry.setClientInitializer((_, clientContext) -> clientContext.addPublishOutboundInterceptor(interceptor));
     }
 
     /**

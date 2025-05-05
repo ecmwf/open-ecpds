@@ -147,7 +147,7 @@ public class MqttPlugin extends PluginThread {
             server = embeddedHiveMQBuilder.build();
             _log.info("Starting the mqtt/s server on {}:{}/{}", listenAddress, mqttPort, mqttsPort);
             final var started = new AtomicBoolean(true);
-            server.start().thenAccept(result -> {
+            server.start().thenAccept(_ -> {
                 _log.info("MQTT server started");
                 mover.setMQTTInterface(new ECPDSPublisher());
             }).exceptionally(e -> {

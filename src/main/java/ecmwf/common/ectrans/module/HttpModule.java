@@ -2071,7 +2071,7 @@ public final class HttpModule extends TransferModule {
     }
 
     /** The Constant _keepAliveStrategy. */
-    private static final ConnectionKeepAliveStrategy _keepAliveStrategy = (httpResponse, context) -> {
+    private static final ConnectionKeepAliveStrategy _keepAliveStrategy = (httpResponse, _) -> {
         final var it = new BasicHeaderElementIterator(httpResponse.headerIterator("Keep-Alive"));
         while (it.hasNext()) {
             final var he = it.next();
