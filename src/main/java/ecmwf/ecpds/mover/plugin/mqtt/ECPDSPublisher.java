@@ -86,16 +86,15 @@ public class ECPDSPublisher implements MQTTInterface {
         }
         final var logMessage = getLogMessage(topic, selectedQos.name(), expiryInterval, contentType, payload, retain);
         if (clientId != null && !clientId.isBlank()) {
-            publishService.publishToClient(publish.build(), clientId)
-                    .whenComplete((aPublishToClientResult, throwable) -> {
-                        if (throwable == null) {
-                            log.debug("Publish sent successfully to {} ({})", clientId, logMessage);
-                        } else {
-                            log.warn("Publish not processed for {} ({})", clientId, logMessage, throwable);
-                        }
-                    });
+            publishService.publishToClient(publish.build(), clientId).whenComplete((_, throwable) -> {
+                if (throwable == null) {
+                    log.debug("Publish sent successfully to {} ({})", clientId, logMessage);
+                } else {
+                    log.warn("Publish not processed for {} ({})", clientId, logMessage, throwable);
+                }
+            });
         } else {
-            publishService.publish(publish.build()).whenComplete((aVoid, throwable) -> {
+            publishService.publish(publish.build()).whenComplete((_, throwable) -> {
                 if (throwable == null) {
                     log.debug("Publish sent successfully ({})", logMessage);
                 } else {
@@ -137,7 +136,7 @@ public class ECPDSPublisher implements MQTTInterface {
      */
     @Override
     public void remove(final String topic) {
-        retainedMessageStore.remove(topic).whenComplete((aVoid, throwable) -> {
+        retainedMessageStore.remove(topic).whenComplete((_, throwable) -> {
             if (throwable != null) {
                 log.debug("Failed to remove retained message for topic: {}", topic, throwable);
             } else {
@@ -154,11 +153,11 @@ public class ECPDSPublisher implements MQTTInterface {
     @Override
     public int clientsCount() {
         final var counter = new AtomicInteger();
-        clientService.iterateAllClients((context, sessionInformation) -> {
+        clientService.iterateAllClients((_, sessionInformation) -> {
             if (sessionInformation.isConnected()) {
                 counter.incrementAndGet();
             }
-        }).whenComplete((ignored, throwable) -> {
+        }).whenComplete((_, throwable) -> {
             if (throwable != null) {
                 log.warn("", throwable);
             }
