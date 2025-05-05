@@ -979,6 +979,16 @@ public final class HttpModule extends TransferModule {
      *            the directory
      * @param name
      *            the name
+     * @param ownerUser
+     *            the owner user
+     * @param ownerGroup
+     *            the owner group
+     * @param alternativeName
+     *            the alternative name
+     * @param foundSize
+     *            the found size
+     * @param foundDate
+     *            the found date
      *
      * @return the ftp entry
      *
@@ -986,7 +996,8 @@ public final class HttpModule extends TransferModule {
      *             Signals that an I/O exception has occurred.
      */
     private FtpEntry getElement(final String directory, final String name, final String ownerUser,
-            final String ownerGroup) throws IOException {
+            final String ownerGroup, final String alternativeName, final ByteSize foundSize, final Long foundDate)
+            throws IOException {
         final var pr = new PrepareRequest(name);
         final var path = pr.getPath();
         final var fullName = encodePath(getSetup().getBoolean(HOST_HTTP_ENCODE_URL),
@@ -995,18 +1006,23 @@ public final class HttpModule extends TransferModule {
         ClassicHttpResponse getResponse = null;
         try {
             getResponse = execute(pr.getHttpHost(), request, 200);
-            final var entity = getResponse.getEntity();
+            // Let's find out about the size!
             final long size;
-            if (entity == null) {
-                final var contentLength = getResponse.getLastHeader("Content-Length");
-                if (contentLength != null) {
-                    size = Long.parseLong(contentLength.getValue());
-                } else {
-                    // There is no size specified in the header, so this is probably a directory!
-                    size = -1;
-                }
+            if (foundSize != null) { // It was in the MQTT notification
+                size = foundSize.size();
             } else {
-                size = entity.getContentLength();
+                final var entity = getResponse.getEntity();
+                if (entity == null) {
+                    final var contentLength = getResponse.getLastHeader("Content-Length");
+                    if (contentLength != null) {
+                        size = Long.parseLong(contentLength.getValue());
+                    } else {
+                        // There is no size specified in the header, so this is probably a directory!
+                        size = -1;
+                    }
+                } else {
+                    size = entity.getContentLength();
+                }
             }
             if (getDebug()) {
                 _log.debug("Size: {}", size);
@@ -1025,46 +1041,58 @@ public final class HttpModule extends TransferModule {
                 isDirectory = false;
                 isSymlink = false;
             }
-            var date = System.currentTimeMillis();
-            final var lastModified = getResponse.getLastHeader("Last-Modified");
-            if (lastModified != null) {
-                final var value = lastModified.getValue();
-                if (getDebug()) {
-                    _log.debug("LastModified: {}", value);
-                }
-                try {
-                    date = DateUtils.parseStandardDate(value).toEpochMilli();
-                } catch (final Throwable t) {
+            // What date?
+            long date;
+            if (foundDate != null) {
+                date = foundDate; // It was in the MQTT notification
+            } else {
+                date = System.currentTimeMillis();
+                final var lastModified = getResponse.getLastHeader("Last-Modified");
+                if (lastModified != null) {
+                    final var value = lastModified.getValue();
                     if (getDebug()) {
-                        _log.warn("Parsing {}", value, t);
+                        _log.debug("LastModified: {}", value);
+                    }
+                    try {
+                        date = DateUtils.parseStandardDate(value).toEpochMilli();
+                    } catch (final Throwable t) {
+                        if (getDebug()) {
+                            _log.warn("Parsing {}", value, t);
+                        }
                     }
                 }
             }
+            // And filename?
             String filename = null;
-            isSymlink = getSetup().get(HOST_HTTP_IS_SYMLINK, isSymlink);
-            if (isSymlink) {
-                // If it is not a directory and the size is -1 then we might have a filename in
-                // the header?
-                final var contentDisposition = getResponse.getLastHeader("Content-Disposition");
-                if (contentDisposition != null) {
-                    final var contentDispositionValue = contentDisposition.getValue();
-                    String fileNameFound = null;
-                    if (contentDispositionValue.contains("filename=")) {
-                        // Extract the filename from the contentDisposition string
-                        final var parts = contentDispositionValue.split("filename=");
-                        if (parts.length > 1) {
-                            fileNameFound = parts[1].replace("\"", "").trim();
+            if (isNotEmpty(alternativeName)) {
+                filename = alternativeName;
+                isSymlink = true; // Alternative name provided in the MQTT message
+            } else {
+                isSymlink = getSetup().get(HOST_HTTP_IS_SYMLINK, isSymlink);
+                if (isSymlink) {
+                    // If it is not a directory and the size is -1 then we might have a filename in
+                    // the header?
+                    final var contentDisposition = getResponse.getLastHeader("Content-Disposition");
+                    if (contentDisposition != null) {
+                        final var contentDispositionValue = contentDisposition.getValue();
+                        String fileNameFound = null;
+                        if (contentDispositionValue.contains("filename=")) {
+                            // Extract the filename from the contentDisposition string
+                            final var parts = contentDispositionValue.split("filename=");
+                            if (parts.length > 1) {
+                                fileNameFound = parts[1].replace("\"", "").trim();
+                            }
+                        } else {
+                            fileNameFound = contentDispositionValue;
                         }
-                    } else {
-                        fileNameFound = contentDispositionValue;
+                        if (fileNameFound != null) {
+                            filename = decode(fileNameFound).replace(" ", "+");
+                        }
                     }
-                    if (fileNameFound != null) {
-                        filename = decode(fileNameFound).replace(" ", "+");
+                    // If we have no filename found then what should we do?
+                    if (filename == null && getSetup().getBoolean(HOST_HTTP_FAIL_ON_EMPTY_SYMLINK)) {
+                        throw new IOException("No Content-Disposition found in header");
                     }
-                }
-                // If we have no filename found then what should we do?
-                if (filename == null && getSetup().getBoolean(HOST_HTTP_FAIL_ON_EMPTY_SYMLINK)) {
-                    throw new IOException("No Content-Disposition found in header");
                 }
             }
             return new FtpEntry(directory, isSymlink ? "lrwxrwxrwx" : isDirectory ? "drw-r--r--" : "-rw-r--r--",
@@ -1894,7 +1922,7 @@ public final class HttpModule extends TransferModule {
                         (pr.isAlternativeHost() ? filename : pr.getPath()) + (symLink ? " -> " + alternativeName : ""),
                         null);
             } else {
-                entry = getElement(path, filename, ownerUser, ownerGroup);
+                entry = getElement(path, filename, ownerUser, ownerGroup, alternativeName, size, date);
             }
             if (!entry.hasError() && !getSetup().getBoolean(HOST_HTTP_MQTT_MODE)
                     && getSetup().getBoolean(HOST_HTTP_DODIR)) {
