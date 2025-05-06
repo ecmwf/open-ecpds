@@ -127,6 +127,7 @@ import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -136,6 +137,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Stream;
 import java.util.zip.Deflater;
@@ -9289,6 +9292,8 @@ public final class MasterServer extends ECaccessProvider
              *            the destination
              * @param entry
              *            the entry
+             * @param body
+             *            the body
              *
              * @throws ScriptException
              *             the script exception
@@ -9297,7 +9302,7 @@ public final class MasterServer extends ECaccessProvider
              */
             private void _parseEntry(final ECpdsBase base, final AcquisitionResult ar, final Host copy,
                     final String namePattern, final String currentPath, final Destination destination,
-                    final FileEntry entry) throws ScriptException, IOException {
+                    final FileEntry entry, final String body) throws ScriptException, IOException {
                 String message;
                 if (entry.exception == null) {
                     // File entry found with no error
@@ -9320,7 +9325,7 @@ public final class MasterServer extends ECaccessProvider
                                 if ("".equals(namePattern) || entry.name.matches(namePattern)) {
                                     // It does match the required pattern!
                                     message = _processValidEntry(base, ar, copy, currentPath, destination, entry,
-                                            symlink);
+                                            symlink, body);
                                 } else {
                                     message = "not-selected: wrong pattern";
                                 }
@@ -9355,6 +9360,8 @@ public final class MasterServer extends ECaccessProvider
              *            the entry
              * @param symlink
              *            the symlink
+			 * @param body
+			 *            the body
              *
              * @return the string
              *
@@ -9363,7 +9370,7 @@ public final class MasterServer extends ECaccessProvider
              */
             String _processValidEntry(final ECpdsBase base, final AcquisitionResult ar, final Host copy,
                     final String currentPath, final Destination destination, final FileEntry entry,
-                    final boolean symlink) throws ScriptException {
+                    final boolean symlink, final String body) throws ScriptException {
                 // Check if this is an absolute or relative entry name
                 final var name = Format.cleanTextContent(entry.name);
                 final var lower = name.toLowerCase();
@@ -9519,23 +9526,44 @@ public final class MasterServer extends ECaccessProvider
                                         metadata = _setup.eval(String.class,
                                                 metadata.substring(2, metadata.length() - 1));
                                     }
-                                    final var dataFileId = ECpdsClient.put(
-                                            "From Acquisition Host=" + _host.getName() + " (" + _host.getNickname()
-                                                    + ") on DataMover=" + ar.server.getName() + " for Destination="
-                                                    + _desName,
-                                            _host.getLogin(), destination, _host.getName(), metadata, original,
-                                            uniqueName, effectiveTarget, entry.time, entry.size >= 0 ? entry.size : -1,
-                                            _getBoolean(HOST_ACQUISITION_EVENT), _getInt(HOST_ACQUISITION_PRIORITY),
-                                            _getString(HOST_ACQUISITION_LIFETIME), null, standby,
-                                            _getString(HOST_ACQUISITION_GROUPBY,
-                                                    "ACQ_" + _desName + "_" + _host.getName()),
-                                            _getBoolean(HOST_ACQUISITION_NORETRIEVAL), force, failedOnly,
-                                            _getBoolean(HOST_ACQUISITION_DELETEORIGINAL),
-                                            _getString(HOST_ACQUISITION_TRANSFERGROUP));
-                                    // The file has been selected and registered
-                                    // in the database
-                                    return "selected: " + (force ? "re-" : "") + "scheduled with DatafileId="
-                                            + dataFileId;
+									final long dataFileId;
+									if (isEmpty(body)) {
+										// Retrieval is going to be scheduled
+										dataFileId = ECpdsClient.put(
+												"Scheduled from Acquisition Host=" + _host.getName() + " ("
+														+ _host.getNickname() + ") on DataMover=" + ar.server.getName()
+														+ " for Destination=" + _desName,
+												_host.getLogin(), destination, _host.getName(), metadata, original,
+												uniqueName, effectiveTarget, entry.time,
+												entry.size >= 0 ? entry.size : -1, _getBoolean(HOST_ACQUISITION_EVENT),
+												_getInt(HOST_ACQUISITION_PRIORITY),
+												_getString(HOST_ACQUISITION_LIFETIME), null, standby,
+												_getString(HOST_ACQUISITION_GROUPBY,
+														"ACQ_" + _desName + "_" + _host.getName()),
+												_getBoolean(HOST_ACQUISITION_NORETRIEVAL), force, failedOnly,
+												_getBoolean(HOST_ACQUISITION_DELETEORIGINAL),
+												_getString(HOST_ACQUISITION_TRANSFERGROUP));
+										// The file has been selected and registered in the database for later retrieval
+										return "selected: " + (force ? "re-" : "") + "scheduled with DatafileId="
+												+ dataFileId;
+									} else {
+										// Sending the body
+										dataFileId = ECpdsClient.put(
+												"Received from Acquisition Host=" + _host.getName() + " ("
+														+ _host.getNickname() + ") on DataMover=" + ar.server.getName()
+														+ " for Destination=" + _desName,
+												_host.getLogin(), destination, _host.getName(), metadata, original,
+												uniqueName, effectiveTarget, entry.time,
+												entry.size >= 0 ? entry.size : -1, _getBoolean(HOST_ACQUISITION_EVENT),
+												_getInt(HOST_ACQUISITION_PRIORITY),
+												_getString(HOST_ACQUISITION_LIFETIME), null, standby, force, failedOnly,
+												_getBoolean(HOST_ACQUISITION_DELETEORIGINAL),
+												_getString(HOST_ACQUISITION_TRANSFERGROUP),
+												Base64.getDecoder().decode(body));
+										// The file has been registered in the database and sent to the mover
+										return "selected: " + (force ? "re-" : "") + "received with DatafileId="
+												+ dataFileId;
+									}
                                 } catch (final Throwable t) {
                                     // Error when trying to register the
                                     // data file
@@ -9591,6 +9619,9 @@ public final class MasterServer extends ECaccessProvider
                 /** The entry. */
                 final FileEntry _entry;
 
+				/** The body. */
+				final String _body;
+
                 /**
                  * Instantiates a new list thread.
                  *
@@ -9610,10 +9641,12 @@ public final class MasterServer extends ECaccessProvider
                  *            the destination
                  * @param entry
                  *            the entry
+                 * @param body
+                 *            the body
                  */
                 ListThread(final ExecutorManager<ListThread> manager, final ECpdsBase base, final AcquisitionResult ar,
                         final Host copy, final String namePattern, final String currentPath,
-                        final Destination destination, final FileEntry entry) {
+                        final Destination destination, final FileEntry entry, final String body) {
                     super(manager);
                     _base = base;
                     _ar = ar;
@@ -9622,6 +9655,7 @@ public final class MasterServer extends ECaccessProvider
                     _currentPath = currentPath;
                     _destination = destination;
                     _entry = entry;
+                    _body = body;
                 }
 
                 /**
@@ -9634,7 +9668,7 @@ public final class MasterServer extends ECaccessProvider
                  */
                 @Override
                 public void process() throws ScriptException, IOException {
-                    _parseEntry(_base, _ar, _copy, _namePattern, _currentPath, _destination, _entry);
+                    _parseEntry(_base, _ar, _copy, _namePattern, _currentPath, _destination, _entry, _body);
                 }
             }
 
@@ -9777,13 +9811,25 @@ public final class MasterServer extends ECaccessProvider
                                     // This was an error so we just report it!
                                     _add(entry);
                                 } else {
+									// If we have a body then let's extract it!
+									final Pattern pattern = Pattern.compile("^(.*)\\s\\[(.+)]$");
+									final Matcher matcher = pattern.matcher(entry);
+									final String newLine;
+									final String body;
+									if (matcher.matches()) {
+										newLine = matcher.group(1); // text before " ["
+										body = matcher.group(2); // text inside "[...]"
+									} else {
+										newLine = entry;
+										body = null;
+									}
                                     final var entries = FtpParser.parseDir(_getString(HOST_ACQUISITION_REGEX_FORMAT),
                                             _getString(HOST_ACQUISITION_SYSTEM_KEY).toUpperCase(),
                                             _getString(HOST_ACQUISITION_DEFAULT_DATE_FORMAT),
                                             _getString(HOST_ACQUISITION_RECENT_DATE_FORMAT),
                                             _getString(HOST_ACQUISITION_SERVER_LANGUAGE_CODE).toLowerCase(),
                                             _getString(HOST_ACQUISITION_SHORT_MONTH_NAMES),
-                                            _getString(HOST_ACQUISITION_SERVER_TIME_ZONE_ID), new String[] { entry });
+                                            _getString(HOST_ACQUISITION_SERVER_TIME_ZONE_ID), new String[] { newLine });
                                     // Did we find anything?
                                     if (entries.length == 0) {
                                         continue;
@@ -9795,9 +9841,9 @@ public final class MasterServer extends ECaccessProvider
                                         }
                                         // Let's start the listing!
                                         manager.put(new ListThread(manager, base, ar, copy, namePattern, currentPath,
-                                                destination, entries[0]));
+                                                destination, entries[0], body));
                                     } else {
-                                        _parseEntry(base, ar, copy, namePattern, currentPath, destination, entries[0]);
+                                        _parseEntry(base, ar, copy, namePattern, currentPath, destination, entries[0], body);
                                     }
                                     filesCount++;
                                 }

@@ -1289,6 +1289,9 @@ public enum ECtransOptions {
     /** The host http mqtt time. */
     HOST_HTTP_MQTT_TIME("mqttTime", Integer.class, -1),
 
+	/** The host http mqtt body. */
+	HOST_HTTP_MQTT_BODY("mqttBody", String.class, STRING_NONE),
+
     /** The host http mqtt qos. */
     HOST_HTTP_MQTT_QOS("mqttQos", Integer.class, 1),
 

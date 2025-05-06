@@ -40,6 +40,7 @@ import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_INCOMING_VERSION;
 import static ecmwf.common.text.Util.isNotEmpty;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -440,6 +441,162 @@ public final class ECpdsClient {
             StreamPlugThread.closeQuietly(masterSocket);
         }
     }
+    
+	/**
+	 * This method is used from the AcquisitionThread on the MasterServer when a body is found in a notification.
+	 *
+	 * @param from               the from
+	 * @param user               the user
+	 * @param destination        the destination
+	 * @param hostForAcquisition the host for acquisition
+	 * @param metadata           the metadata
+	 * @param original           the original
+	 * @param uniqueName         the unique name
+	 * @param target             the target
+	 * @param timeFile           the time file
+	 * @param fileSize           the file size
+	 * @param event              the event
+	 * @param priority           the priority
+	 * @param lifeTime           the life time
+	 * @param at                 the at
+	 * @param standby            the standby
+	 * @param force              the force
+	 * @param failedOnly         the failed only
+	 * @param deleteOriginal     the delete original
+	 * @param transferGroup      the transfer group
+	 * @param body               the body
+	 *
+	 * @return the long
+	 *
+	 * @throws java.io.IOException Signals that an I/O exception has occurred.
+	 */
+	public static long put(final String from, final String user, final Destination destination,
+			final String hostForAcquisition, final String metadata, final String original, final String uniqueName,
+			final String target, final long timeFile, final long fileSize, final boolean event, final int priority,
+			final String lifeTime, final String at, final boolean standby, final boolean force,
+			final boolean failedOnly, final boolean deleteOriginal, final String transferGroup, final byte[] body)
+			throws IOException {
+		Socket masterSocket = null;
+		try {
+			masterSocket = new Socket(HOST, PORT);
+			_log.debug("Connected to master {}:{}", HOST, PORT);
+			final var masterInput = masterSocket.getInputStream();
+			final var masterOutput = masterSocket.getOutputStream();
+			handleChallenge(masterInput, masterOutput);
+			final var master = new PrintStream(masterOutput);
+			final var masterIn = new BufferedReader(new InputStreamReader(masterInput));
+			// The order VERSION, FROM, USER, MESSAGE and REMOTEIP matters!
+			write(master, "VERSION " + Version.getFullVersion() + " (acquisition)");
+			write(master, "FROM " + from);
+			write(master, "USER " + (isNotEmpty(user) ? user : "-"));
+			read(masterIn, "MESSAGE"); // Welcome!
+			write(master, "REMOTEIP -"); // Not possible to retrieve directly with source host!
+			write(master, "DESTINATION " + destination.getName());
+			if (isNotEmpty(at)) {
+				write(master, "AT " + at);
+			}
+			write(master, "TIMEFILE " + timeFile / 1000L);
+			if (fileSize != -1) {
+				write(master, "SIZE " + fileSize);
+			}
+			write(master, "ORIGINAL " + original);
+			if (isNotEmpty(metadata)) {
+				write(master, "METADATA " + metadata);
+			}
+			if (isNotEmpty(hostForAcquisition)) {
+				write(master, "HOSTFORACQUISITION " + hostForAcquisition);
+			}
+			write(master, "SOURCE " + original);
+			if (isNotEmpty(uniqueName)) {
+				write(master, "UNIQUENAME " + uniqueName);
+			}
+			write(master, "TARGET " + target);
+			write(master, "STANDBY " + standby);
+			write(master, "EVENT " + event);
+			write(master, "PRIORITY " + priority);
+			if (isNotEmpty(lifeTime)) {
+				write(master, "LIFETIME " + lifeTime);
+			}
+			if (isNotEmpty(transferGroup)) {
+				write(master, "GROUP " + transferGroup);
+			}
+			write(master, "FAILEDONLY " + failedOnly);
+			write(master, "FORCE " + force);
+			write(master, "REMOVE " + deleteOriginal);
+			write(master, "PUT");
+			final var targetOnProxy = read(masterIn, "TARGET");
+			final var ecproxyList = read(masterIn, "ECPROXY");
+			String stat = null;
+			if (!"Please continue".equals(read(masterIn, ""))) {
+				final var message = "Unexpected reply from master";
+				write(master, "-" + message);
+				throw new IOException(message);
+			}
+			final var token = new StringTokenizer(ecproxyList, "|");
+			long effectiveFileSize = -1;
+			while (token.hasMoreElements()) {
+				final var currentEcproxy = token.nextToken();
+				var ecproxyAddress = currentEcproxy;
+				final var index = ecproxyAddress.indexOf(":");
+				if (index != -1) {
+					Socket moverSocket = null;
+					try {
+						final var ecproxyPort = Short.parseShort(ecproxyAddress.substring(index + 1));
+						ecproxyAddress = ecproxyAddress.substring(0, index);
+						moverSocket = new Socket(ecproxyAddress, ecproxyPort);
+						_log.debug("Connected to mover {}:{}", ecproxyAddress, ecproxyPort);
+						final var moverInput = moverSocket.getInputStream();
+						final var moverOutput = moverSocket.getOutputStream();
+						handleChallenge(moverInput, moverOutput);
+						final var mover = new PrintStream(moverOutput);
+						final var moverIn = new BufferedReader(new InputStreamReader(moverInput));
+						write(mover, "ECPDS " + Version.getFullVersion());
+						write(mover, "TARGET " + targetOnProxy);
+						read(moverIn, "CONNECT");
+						write(mover, "SIZE -1");
+						_log.debug("Sending file content");
+						effectiveFileSize = StreamPlugThread.copy(moverSocket.getOutputStream(),
+								new ByteArrayInputStream(body), StreamPlugThread.DEFAULT_BUFF_SIZE);
+						if (_log.isDebugEnabled()) {
+							_log.debug("Sent {}", Format.formatSize(effectiveFileSize));
+						}
+						// Close down the output stream of this socket for
+						// the server to know there are no more data to be
+						// retrieved!
+						moverSocket.shutdownOutput();
+						// TODO: there are some side effects on some
+						// platforms and the all socket might be close as a
+						// result. I should send a packet to inform about
+						// the end of the data. This should be also
+						// implemented on the ECproxyPlugin class!
+						stat = read(moverIn, "STAT");
+						read(moverIn, "BYE");
+						write(mover, "BYE");
+						break;
+					} catch (final Throwable t) {
+						// try the next mover in the list
+						_log.debug("Communicating with ecproxy: {}", currentEcproxy, t);
+						throw new IOException("Communicating with ecproxy: " + currentEcproxy + ": " + t.getMessage());
+					} finally {
+						StreamPlugThread.closeQuietly(moverSocket);
+					}
+				}
+			}
+			if (stat != null && effectiveFileSize != -1) {
+				write(master, "HOST " + stat);
+				write(master, "SIZE " + effectiveFileSize);
+				write(master, "BYE");
+				return getDataFileId(read(masterIn, "MESSAGE"));
+			} else {
+				final var message = "Transmission failed to each Data Mover";
+				write(master, "-" + message);
+				throw new IOException(message);
+			}
+		} finally {
+			StreamPlugThread.closeQuietly(masterSocket);
+		}
+	}
+
 
     /**
      * This method is used from the AcquisitionThread on the MasterServer and the REST API through the monitoring
