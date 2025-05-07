@@ -814,8 +814,14 @@ Allow listing sub-directories recursively.
 ### http.maxSize
 Allow setting the maximum size for an HTML document when processing a GET request to retrieve the listing output.
 
+### http.mqttAlternativeName
+This option allows specifying the name of the data file associated with a received notification. Typically, the name is extracted from a field within the message payload (e.g., in WIS2, the 'properties.data_id' field of the JSON message). When configured through the property editor, the option must be set to a static name. When configured through the script editor, the 'mqttPayload' parameter can be used. ECPDS assigns this parameter the content of the notification message (e.g., the JSON object in the case of WIS2). This parameter enables dynamic determination of the name, such as by extracting a field from 'mqttPayload'. By default the name is extracted from the HREF. The 'mqttTopic' parameter is also available.
+
 ### http.mqttAwait
 While waiting for incoming notifications from the MQTT broker, this parameter represents the maximum duration to await before initiating a disconnection. This parameter works in conjunction with the "http.mqttMaxFiles" parameter, terminating the process upon the first occurrence, whichever comes first.
+
+### http.mqttBody
+This option allows specifying the content of the product when available inline within the notification message. Typically, the body is extracted from a field within the message payload (e.g., in WIS2, the 'mqttPayload.properties.content.value' field of the JSON message). When configured through the property editor, the option must be set to a static base64 string. When configured through the script editor, the 'mqttPayload' parameter can be used. ECPDS assigns this parameter the content of the notification message (e.g., the JSON object in the case of WIS2). This parameter enables dynamic determination of the body, such as by extracting a field from 'mqttPayload'; and avoids the need to connect to the remote site solely to retrieve the content. The 'mqttTopic' parameter is also available.
 
 ### http.mqttCleanStart
 Sets the "Clean Start" flag for the MQTT connection. True indicates a new session and requests the broker to clear any previous session state (the broker will not restore previously saved information, such as subscriptions or message queues). False indicates a continuation of an existing session, and the broker maintains any previous session state (e.g. subscriptions and message queues).
@@ -824,7 +830,7 @@ Sets the "Clean Start" flag for the MQTT connection. True indicates a new sessio
 Set the maximum time that the client will wait for the MQTT connection to be established.
 
 ### http.mqttHref
-This option allows specifying the HREF to be used for retrieving the data content related to the received notification. This is typically a field in the returned message (e.g., for WIS2, the 'links[0].href' field of the JSON message). If the output is empty, the notification is ignored. When configured as a function in the script editor, a parameter must be specified. ECPDS will assign this parameter the content of the notification message (e.g., the JSON message in the case of WIS2).
+This option allows specifying the HREF to use for retrieving the data content associated with the received notification and should specify an HTTP or HTTPS URL. Typically, this is extracted from a field within the message payload (e.g., in WIS2, the 'links[0].href' field of the JSON message). When configured through the property editor, this option can only be a static URL. When configured through the script editor, the 'mqttPayload' parameter can be used. ECPDS assigns this parameter the content of the notification message (e.g., the JSON object in the case of WIS2). This parameter enables inspection of the metadata and the application of filtering to process only relevant notifications, and to build the HREF dynamically; such as by extracting a field from the 'mqttPayload' parameter. The 'mqttTopic' parameter is also available.
 
 ### http.mqttKeepAliveInterval
 Set the interval at which the client should send a "keep alive" message to the MQTT broker. "Keep alive" messages are used to maintain the connection between the client and the broker. If there is no other communication between the client and the broker within the specified interval, the client sends a "keep alive" message to ensure the connection remains active.
@@ -856,8 +862,14 @@ Allow specifying the MQTT scheme of the remote MQTT/S server to connect to.
 ### http.mqttSessionExpiryInterval
 Allow specifying the maximum time duration that the broker should maintain the client session state after the client disconnects unexpectedly or intentionally. If the client does not reconnect within this specified interval, the broker will clean up the client session state.
 
+### http.mqttSize
+This option allows specifying the size of the data content associated with a received notification. Typically, the size is extracted from a field within the message payload (e.g., in WIS2, the 'links[0].length' field of the JSON message). When configured through the property editor, the option must be set to a static size. When configured through the script editor, the 'mqttPayload' parameter can be used. ECPDS assigns this parameter the content of the notification message (e.g., the JSON object in the case of WIS2). This parameter enables dynamic determination of the data content size, such as by extracting a field from 'mqttPayload'; and avoids the need to connect to the remote site solely to retrieve the size. The 'mqttTopic' parameter is also available.
+
 ### http.mqttSubscriberId
 Allow specifying the client identifier for the MQTT client being created. must be unique among all clients connected to the MQTT broker. It identifies the client to the broker during the connection process. It allows the MQTT broker to remember the client subscriptions and other session-related information, enabling features such as message persistence, retained messages, and resumption of subscriptions upon reconnection.
+
+### http.mqttTime
+This option allows specifying the creation time in UTC milliseconds from the epoch of the data file associated with a received notification. Typically, the time is extracted from a field within the message payload (e.g., in WIS2, the 'properties.datetime' field of the JSON message). When configured through the property editor, the option must be set to a static time. When configured through the script editor, the 'mqttPayload' parameter can be used. ECPDS assigns this parameter the content of the notification message (e.g., the JSON object in the case of WIS2). This parameter enables dynamic determination of the time, such as by extracting a field from 'mqttPayload'; and avoids the need to connect to the remote site solely to retrieve the time. The 'mqttTopic' parameter is also available.
 
 ### http.mqttUrl
 Allow specifying an alternative URL to connect to the MQTT/S server. By default, the URL is constructed using the "http.mqttScheme", "http.mqttPort" options and hostname field (mqttScheme://hostname:mqttPort).
