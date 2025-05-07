@@ -14,7 +14,7 @@
 		<maven.compiler.target>24</maven.compiler.target>
 		<maven.compiler.source>24</maven.compiler.source>
 		<java.home>${java.home}</java.home>
-		<graalvm.version>24.2.0</graalvm.version>
+		<graalvm.version>24.2.1</graalvm.version>
 		<packager.id>syi</packager.id>
 		<packager.name>Laurent Gougeon</packager.name>
 		<packager.email>laurent.gougeon@ecmwf.int</packager.email>
