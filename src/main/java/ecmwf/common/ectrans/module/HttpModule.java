@@ -1455,8 +1455,8 @@ public final class HttpModule extends TransferModule {
      *            the size
      * @param date
      *            the date
-	 * @param body
-	 *            the body
+     * @param body
+     *            the body
      */
     private void addEntry(final ExecutorManager<ListThread> manager, final ProcessEntry resultList,
             final String rootDirectory, final String directory, final String line, final int level,
@@ -1519,8 +1519,8 @@ public final class HttpModule extends TransferModule {
         // hit when the node is first seen
         public void head(Node node, int depth) {
             String name = node.nodeName();
-			if (node instanceof TextNode textNode)
-				append(textNode.text()); // TextNodes carry all user-readable text in the DOM.
+            if (node instanceof TextNode textNode)
+                append(textNode.text()); // TextNodes carry all user-readable text in the DOM.
             else if (name.equals("li"))
                 append("\n * ");
             else if (name.equals("dt"))
@@ -1530,7 +1530,7 @@ public final class HttpModule extends TransferModule {
         }
 
         // hit when all of the node's children (if any) have been visited
-		@Override
+        @Override
         public void tail(Node node, int depth) {
             String name = node.nodeName();
             if (StringUtil.in(name, "br", "dd", "dt", "p", "h1", "h2", "h3", "h4", "h5"))
@@ -1547,14 +1547,14 @@ public final class HttpModule extends TransferModule {
             if (text.equals(" ") && (accum.isEmpty() || StringUtil.in(accum.substring(accum.length() - 1), " ", "\n")))
                 return; // don't accumulate long runs of empty spaces
 
-			if (text.length() + width > MAX_WIDTH) { // won't fit, needs to wrap
+            if (text.length() + width > MAX_WIDTH) { // won't fit, needs to wrap
                 String[] words = text.split("\\s+");
                 for (int i = 0; i < words.length; i++) {
                     String word = words[i];
                     boolean last = i == words.length - 1;
                     if (!last) // insert a space if not the last word
                         word = word + " ";
-					if (word.length() + width > MAX_WIDTH) { // wrap and reset counter
+                    if (word.length() + width > MAX_WIDTH) { // wrap and reset counter
                         accum.append("\n").append(word);
                         width = word.length();
                     } else {
@@ -1659,7 +1659,8 @@ public final class HttpModule extends TransferModule {
                                 final var time = getSetup().getLong(HOST_HTTP_MQTT_TIME, bindings);
                                 _log.debug("{} : {} : {} : {} : {}", bindings, href, alternativeName, size, time);
                                 addEntry(manager, resultList, rootDirectory, targetDirectory, href, level, pattern,
-                                        counter, alternativeName, size, time, getSetup().getString(HOST_HTTP_MQTT_BODY, bindings));
+                                        counter, alternativeName, size, time,
+                                        getSetup().getString(HOST_HTTP_MQTT_BODY, bindings));
                             } else {
                                 _log.debug("Notification ignored (no href found): {}", topic);
                             }
@@ -1848,8 +1849,8 @@ public final class HttpModule extends TransferModule {
         /** The date. */
         final Long date;
 
-		/** The body. */
-		final String body;
+        /** The body. */
+        final String body;
 
         /**
          * Instantiates a new list thread.
@@ -1973,9 +1974,9 @@ public final class HttpModule extends TransferModule {
             if (isEmpty(pattern) || entry.name.matches(pattern)) {
                 _log.debug("Adding ftp entry: {} => {}", currentName, element);
                 final var hasError = entry.hasError();
-				resultList.add(
-						(hasError ? "err:" : "") + element + (hasError ? " (exception: " + entry.getError() + ")" : "")
-								+ (isEmpty(body) ? "" : " [" + body + "]"));
+                resultList.add(
+                        (hasError ? "err:" : "") + element + (hasError ? " (exception: " + entry.getError() + ")" : "")
+                                + (isEmpty(body) ? "" : " [" + body + "]"));
             } else if (getDebug()) {
                 _log.debug("Discarding {} (wrong-pattern) - {} != {}", entry.fullName, entry.name, pattern);
             }

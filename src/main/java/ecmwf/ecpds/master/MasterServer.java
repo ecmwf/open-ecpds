@@ -9360,8 +9360,8 @@ public final class MasterServer extends ECaccessProvider
              *            the entry
              * @param symlink
              *            the symlink
-			 * @param body
-			 *            the body
+             * @param body
+             *            the body
              *
              * @return the string
              *
@@ -9526,44 +9526,44 @@ public final class MasterServer extends ECaccessProvider
                                         metadata = _setup.eval(String.class,
                                                 metadata.substring(2, metadata.length() - 1));
                                     }
-									final long dataFileId;
-									if (isEmpty(body)) {
-										// Retrieval is going to be scheduled
-										dataFileId = ECpdsClient.put(
-												"Scheduled from Acquisition Host=" + _host.getName() + " ("
-														+ _host.getNickname() + ") on DataMover=" + ar.server.getName()
-														+ " for Destination=" + _desName,
-												_host.getLogin(), destination, _host.getName(), metadata, original,
-												uniqueName, effectiveTarget, entry.time,
-												entry.size >= 0 ? entry.size : -1, _getBoolean(HOST_ACQUISITION_EVENT),
-												_getInt(HOST_ACQUISITION_PRIORITY),
-												_getString(HOST_ACQUISITION_LIFETIME), null, standby,
-												_getString(HOST_ACQUISITION_GROUPBY,
-														"ACQ_" + _desName + "_" + _host.getName()),
-												_getBoolean(HOST_ACQUISITION_NORETRIEVAL), force, failedOnly,
-												_getBoolean(HOST_ACQUISITION_DELETEORIGINAL),
-												_getString(HOST_ACQUISITION_TRANSFERGROUP));
-										// The file has been selected and registered in the database for later retrieval
-										return "selected: " + (force ? "re-" : "") + "scheduled with DatafileId="
-												+ dataFileId;
-									} else {
-										// Sending the body
-										dataFileId = ECpdsClient.put(
-												"Received from Acquisition Host=" + _host.getName() + " ("
-														+ _host.getNickname() + ") on DataMover=" + ar.server.getName()
-														+ " for Destination=" + _desName,
-												_host.getLogin(), destination, _host.getName(), metadata, original,
-												uniqueName, effectiveTarget, entry.time,
-												entry.size >= 0 ? entry.size : -1, _getBoolean(HOST_ACQUISITION_EVENT),
-												_getInt(HOST_ACQUISITION_PRIORITY),
-												_getString(HOST_ACQUISITION_LIFETIME), null, standby, force, failedOnly,
-												_getBoolean(HOST_ACQUISITION_DELETEORIGINAL),
-												_getString(HOST_ACQUISITION_TRANSFERGROUP),
-												Base64.getDecoder().decode(body));
-										// The file has been registered in the database and sent to the mover
-										return "selected: " + (force ? "re-" : "") + "received with DatafileId="
-												+ dataFileId;
-									}
+                                    final long dataFileId;
+                                    if (isEmpty(body)) {
+                                        // Retrieval is going to be scheduled
+                                        dataFileId = ECpdsClient.put(
+                                                "Scheduled from Acquisition Host=" + _host.getName() + " ("
+                                                        + _host.getNickname() + ") on DataMover=" + ar.server.getName()
+                                                        + " for Destination=" + _desName,
+                                                _host.getLogin(), destination, _host.getName(), metadata, original,
+                                                uniqueName, effectiveTarget, entry.time,
+                                                entry.size >= 0 ? entry.size : -1, _getBoolean(HOST_ACQUISITION_EVENT),
+                                                _getInt(HOST_ACQUISITION_PRIORITY),
+                                                _getString(HOST_ACQUISITION_LIFETIME), null, standby,
+                                                _getString(HOST_ACQUISITION_GROUPBY,
+                                                        "ACQ_" + _desName + "_" + _host.getName()),
+                                                _getBoolean(HOST_ACQUISITION_NORETRIEVAL), force, failedOnly,
+                                                _getBoolean(HOST_ACQUISITION_DELETEORIGINAL),
+                                                _getString(HOST_ACQUISITION_TRANSFERGROUP));
+                                        // The file has been selected and registered in the database for later retrieval
+                                        return "selected: " + (force ? "re-" : "") + "scheduled with DatafileId="
+                                                + dataFileId;
+                                    } else {
+                                        // Sending the body
+                                        dataFileId = ECpdsClient.put(
+                                                "Received from Acquisition Host=" + _host.getName() + " ("
+                                                        + _host.getNickname() + ") on DataMover=" + ar.server.getName()
+                                                        + " for Destination=" + _desName,
+                                                _host.getLogin(), destination, _host.getName(), metadata, original,
+                                                uniqueName, effectiveTarget, entry.time,
+                                                entry.size >= 0 ? entry.size : -1, _getBoolean(HOST_ACQUISITION_EVENT),
+                                                _getInt(HOST_ACQUISITION_PRIORITY),
+                                                _getString(HOST_ACQUISITION_LIFETIME), null, standby, force, failedOnly,
+                                                _getBoolean(HOST_ACQUISITION_DELETEORIGINAL),
+                                                _getString(HOST_ACQUISITION_TRANSFERGROUP),
+                                                Base64.getDecoder().decode(body));
+                                        // The file has been registered in the database and sent to the mover
+                                        return "selected: " + (force ? "re-" : "") + "received with DatafileId="
+                                                + dataFileId;
+                                    }
                                 } catch (final Throwable t) {
                                     // Error when trying to register the
                                     // data file
@@ -9619,8 +9619,8 @@ public final class MasterServer extends ECaccessProvider
                 /** The entry. */
                 final FileEntry _entry;
 
-				/** The body. */
-				final String _body;
+                /** The body. */
+                final String _body;
 
                 /**
                  * Instantiates a new list thread.
@@ -9811,18 +9811,18 @@ public final class MasterServer extends ECaccessProvider
                                     // This was an error so we just report it!
                                     _add(entry);
                                 } else {
-									// If we have a body then let's extract it!
-									final Pattern pattern = Pattern.compile("^(.*)\\s\\[(.+)]$");
-									final Matcher matcher = pattern.matcher(entry);
-									final String newLine;
-									final String body;
-									if (matcher.matches()) {
-										newLine = matcher.group(1); // text before " ["
-										body = matcher.group(2); // text inside "[...]"
-									} else {
-										newLine = entry;
-										body = null;
-									}
+                                    // If we have a body then let's extract it!
+                                    final Pattern pattern = Pattern.compile("^(.*)\\s\\[(.+)]$");
+                                    final Matcher matcher = pattern.matcher(entry);
+                                    final String newLine;
+                                    final String body;
+                                    if (matcher.matches()) {
+                                        newLine = matcher.group(1); // text before " ["
+                                        body = matcher.group(2); // text inside "[...]"
+                                    } else {
+                                        newLine = entry;
+                                        body = null;
+                                    }
                                     final var entries = FtpParser.parseDir(_getString(HOST_ACQUISITION_REGEX_FORMAT),
                                             _getString(HOST_ACQUISITION_SYSTEM_KEY).toUpperCase(),
                                             _getString(HOST_ACQUISITION_DEFAULT_DATE_FORMAT),
@@ -9843,7 +9843,8 @@ public final class MasterServer extends ECaccessProvider
                                         manager.put(new ListThread(manager, base, ar, copy, namePattern, currentPath,
                                                 destination, entries[0], body));
                                     } else {
-                                        _parseEntry(base, ar, copy, namePattern, currentPath, destination, entries[0], body);
+                                        _parseEntry(base, ar, copy, namePattern, currentPath, destination, entries[0],
+                                                body);
                                     }
                                     filesCount++;
                                 }
