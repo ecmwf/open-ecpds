@@ -1976,7 +1976,7 @@ public final class HttpModule extends TransferModule {
                 final var hasError = entry.hasError();
                 resultList.add(
                         (hasError ? "err:" : "") + element + (hasError ? " (exception: " + entry.getError() + ")" : "")
-                                + (isEmpty(body) ? "" : " [" + body + "]"));
+                                + (hasError || isEmpty(body) ? "" : " [" + body + "]"));
             } else if (getDebug()) {
                 _log.debug("Discarding {} (wrong-pattern) - {} != {}", entry.fullName, entry.name, pattern);
             }
