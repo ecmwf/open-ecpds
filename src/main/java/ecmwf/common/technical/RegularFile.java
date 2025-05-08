@@ -85,7 +85,7 @@ public final class RegularFile extends GenericFile {
 
     /** The Constant pool. */
     private static DirectByteBufferPool pool = new DirectByteBufferPool(BYTE_BUFFER_SIZE_IN_BYTES,
-            TimeUnit.SECONDS.toSeconds(Cnf.at("IO", "byteBufferPoolMaxIdleSec", 30)));
+            TimeUnit.SECONDS.toSeconds(Cnf.at("IO", "byteBufferPoolMaxIdleSec", 60)));
 
     /** The underlyingFile. */
     private final File underlyingFile;
