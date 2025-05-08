@@ -59,9 +59,9 @@ import ecmwf.common.ecaccess.StarterServer;
 import ecmwf.common.ectrans.ECtransException;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.technical.ProxySocket;
-import ecmwf.common.technical.UUIDUtils;
 import ecmwf.common.text.Format;
 import ecmwf.common.text.Format.DuplicatedChooseScore;
+import ecmwf.common.version.Version;
 import ecmwf.ecpds.mover.MoverInterface;
 import ecmwf.ecpds.mover.SourceNotAvailableException;
 
@@ -357,15 +357,16 @@ public final class TransferManagement {
         final var metaTime = dataFile.getMetaTime();
         final var host = transfer.getHost();
         final var setup = HOST_ECTRANS.getECtransSetup(host != null ? host.getData() : "");
-        final var transferUuid = new UUID(0, transfer.getId()).toString();
-        final var fileUuid = new UUID(0, dataFile.getId()).toString();
+        final var transferUuid = new UUID(0, transfer.getId() * 1000).toString();
+        final var fileUuid = new UUID(0, dataFile.getId() * 1000).toString();
         // This is only for forecast products with the proper fields!
         final var sb = new StringBuilder();
+        append(sb, "version", Version.getFullVersion());
         append(sb, "filename", targetName); // Required to allocate a file for ECcharts (sftp module)
         append(sb, "filesize", dataFile.getSize()); // Required to allocate a file for ECcharts (sftp module)
         append(sb, "timefile", dataFile.getTimeFile().getTime()); // With filesize used to check duplicates on MQTT
         append(sb, "movername", moverName);
-        append(sb, "uuid", UUIDUtils.get(dataFile.getId(), transfer.getId()));
+        append(sb, "uuid", new UUID(dataFile.getId() * 1000, transfer.getId() * 1000));
         append(sb, "datafileid", dataFile.getId());
         append(sb, "datafileuuid", fileUuid);
         append(sb, "datatransferid", transfer.getId());
