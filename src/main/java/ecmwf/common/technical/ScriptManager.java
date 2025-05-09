@@ -311,8 +311,9 @@ public final class ScriptManager implements AutoCloseable {
      */
     private synchronized Cache getCache() throws ScriptException {
         if (cache == null) {
-            cache = new Cache();
-            final var builder = Context.newBuilder(currentLanguage);
+            final Cache tempCache = new Cache();
+            final var builder = Context.newBuilder(currentLanguage).allowHostAccess(HostAccess.ALL)
+                    .allowHostClassLookup(ScriptManager::check);
             builder.useSystemExit(false);
             if (resourceLimits != null) {
                 builder.resourceLimits(resourceLimits);
@@ -320,27 +321,40 @@ public final class ScriptManager implements AutoCloseable {
             if (ALLOW_EXPERIMENTAL_OPTIONS) {
                 builder.allowExperimentalOptions(true).option("engine.WarnVirtualThreadSupport", "false");
             }
-            final var context = builder.allowHostAccess(HostAccess.ALL).allowHostClassLookup(ScriptManager::check)
-                    .build();
-            cache.context = context;
-            cache.bindings = context.getBindings(currentLanguage);
-            for (final Class<?> clazz : exposedClasses) {
-                final var simpleName = clazz.getSimpleName();
-                final var fullName = clazz.getCanonicalName();
-                final String statement;
-                if (JS.equals(currentLanguage)) {
-                    statement = "Java.type('" + fullName + "')";
-                } else if (PYTHON.equals(currentLanguage)) {
-                    statement = "import " + fullName + " as " + simpleName;
-                } else {
-                    statement = "";
+            Context context = null;
+            try {
+                context = builder.build();
+                tempCache.context = context;
+                tempCache.bindings = context.getBindings(currentLanguage);
+                for (final Class<?> clazz : exposedClasses) {
+                    final var simpleName = clazz.getSimpleName();
+                    final var fullName = clazz.getCanonicalName();
+                    final String statement;
+
+                    if (JS.equals(currentLanguage)) {
+                        statement = "Java.type('" + fullName + "')";
+                    } else if (PYTHON.equals(currentLanguage)) {
+                        statement = "import " + fullName + " as " + simpleName;
+                    } else {
+                        statement = "";
+                    }
+                    if (!statement.isBlank()) {
+                        put(simpleName, context.eval(currentLanguage, statement));
+                    }
                 }
-                if (!statement.isBlank()) {
-                    put(simpleName, context.eval(currentLanguage, statement));
+                // Allow logging to the general log
+                put("log", _log);
+                this.cache = tempCache;
+            } catch (final Throwable e) {
+                if (context != null) {
+                    context.close(); // Prevent memory leak
+                }
+                if (e instanceof ScriptException scriptException) {
+                    throw scriptException;
+                } else {
+                    throw new ScriptException("Failed to initialize script context");
                 }
             }
-            // Allow logging to the general log
-            put("log", _log);
         }
         return cache;
     }
