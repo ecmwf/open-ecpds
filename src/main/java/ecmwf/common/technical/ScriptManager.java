@@ -46,6 +46,7 @@ import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.HostAccess;
 import org.graalvm.polyglot.PolyglotException;
 import org.graalvm.polyglot.PolyglotException.StackFrame;
+
 import org.graalvm.polyglot.ResourceLimits;
 import org.graalvm.polyglot.Value;
 
@@ -330,7 +331,6 @@ public final class ScriptManager implements AutoCloseable {
                     final var simpleName = clazz.getSimpleName();
                     final var fullName = clazz.getCanonicalName();
                     final String statement;
-
                     if (JS.equals(currentLanguage)) {
                         statement = "Java.type('" + fullName + "')";
                     } else if (PYTHON.equals(currentLanguage)) {
@@ -339,11 +339,11 @@ public final class ScriptManager implements AutoCloseable {
                         statement = "";
                     }
                     if (!statement.isBlank()) {
-                        put(simpleName, context.eval(currentLanguage, statement));
+                        tempCache.bindings.putMember(simpleName, context.eval(currentLanguage, statement));
                     }
                 }
                 // Allow logging to the general log
-                put("log", _log);
+                tempCache.bindings.putMember("log", _log);
                 this.cache = tempCache;
             } catch (final Throwable e) {
                 if (context != null) {
