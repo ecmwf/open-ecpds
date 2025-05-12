@@ -346,14 +346,11 @@ public final class ScriptManager implements AutoCloseable {
                 tempCache.bindings.putMember("log", _log);
                 this.cache = tempCache;
             } catch (final Throwable e) {
-                if (context != null) {
+                final String message = "Failed to initialize script context";
+                _log.warn(message, e);
+                if (context != null)
                     context.close(); // Prevent memory leak
-                }
-                if (e instanceof ScriptException scriptException) {
-                    throw scriptException;
-                } else {
-                    throw new ScriptException("Failed to initialize script context");
-                }
+                throw e instanceof ScriptException scriptException ? scriptException : new ScriptException(message);
             }
         }
         return cache;
