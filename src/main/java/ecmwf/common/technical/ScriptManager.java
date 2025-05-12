@@ -37,12 +37,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.script.ScriptException;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.Context.Builder;
 import org.graalvm.polyglot.HostAccess;
 import org.graalvm.polyglot.PolyglotException;
 import org.graalvm.polyglot.PolyglotException.StackFrame;
@@ -82,6 +84,9 @@ public final class ScriptManager implements AutoCloseable {
     /** The resource limits. */
     private final ResourceLimits resourceLimits;
 
+    /** The contextCount. */
+    private static final AtomicInteger contextCount = new AtomicInteger(0);
+
     /** The closed. */
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
@@ -100,9 +105,7 @@ public final class ScriptManager implements AutoCloseable {
          * Close.
          */
         void close() {
-            if (context != null) {
-                context.close();
-            }
+            closeContext(context);
         }
     }
 
@@ -324,7 +327,7 @@ public final class ScriptManager implements AutoCloseable {
             }
             Context context = null;
             try {
-                context = builder.build();
+                context = getContext(builder);
                 tempCache.context = context;
                 tempCache.bindings = context.getBindings(currentLanguage);
                 for (final Class<?> clazz : exposedClasses) {
@@ -348,12 +351,38 @@ public final class ScriptManager implements AutoCloseable {
             } catch (final Throwable e) {
                 final String message = "Failed to initialize script context";
                 _log.warn(message, e);
-                if (context != null)
-                    context.close(); // Prevent memory leak
+                closeContext(context); // Prevent memory leak
                 throw e instanceof ScriptException scriptException ? scriptException : new ScriptException(message);
             }
         }
         return cache;
+    }
+
+    /**
+     * Gets the context.
+     *
+     * @param builder
+     *            the builder
+     *
+     * @return the context
+     */
+    private static Context getContext(final Builder builder) {
+        final Context context = builder.build();
+        _log.debug("Context created. Active contexts: {}", contextCount.incrementAndGet());
+        return context;
+    }
+
+    /**
+     * Close context.
+     *
+     * @param context
+     *            the context
+     */
+    private static void closeContext(final Context context) {
+        if (context != null) {
+            context.close();
+            _log.debug("Context closed. Active contexts: {}", contextCount.decrementAndGet());
+        }
     }
 
     /**
