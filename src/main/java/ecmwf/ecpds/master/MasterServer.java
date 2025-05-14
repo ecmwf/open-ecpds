@@ -65,6 +65,7 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_ACQUISITION_MAXIMUM_DURAT
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ACQUISITION_METADATA;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ACQUISITION_NORETRIEVAL;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ACQUISITION_ONLY_VALID_TIME;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_ACQUISITION_PAYLOAD_EXTENSION;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ACQUISITION_PRIORITY;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ACQUISITION_RECENT_DATE_FORMAT;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ACQUISITION_REGEX_FORMAT;
@@ -9294,6 +9295,8 @@ public final class MasterServer extends ECaccessProvider
              *            the entry
              * @param body
              *            the body
+             * @param message
+             *            the message
              *
              * @throws ScriptException
              *             the script exception
@@ -9302,45 +9305,46 @@ public final class MasterServer extends ECaccessProvider
              */
             private void _parseEntry(final ECpdsBase base, final AcquisitionResult ar, final Host copy,
                     final String namePattern, final String currentPath, final Destination destination,
-                    final FileEntry entry, final String body) throws ScriptException, IOException {
-                String message;
+                    final FileEntry entry, final String body, final String message)
+                    throws ScriptException, IOException {
+                String outcome;
                 if (entry.exception == null) {
                     // File entry found with no error
                     final var symlink = FtpParser.SYMBOLIC_LINK_TYPE == entry.type;
                     final var useSymlink = _getBoolean(HOST_ACQUISITION_USE_SYMLINK);
                     if (!useSymlink && symlink) {
                         // We are not allowed to use the symbolic links!
-                        message = "not-selected: symbolic link (useSymlink=no)";
+                        outcome = "not-selected: symbolic link (useSymlink=no)";
                     } else if (!symlink && FtpParser.FILE_TYPE != entry.type) {
                         // Don't select directories or files with an unknown
                         // type
-                        message = "not-selected: directory or unknown type";
+                        outcome = "not-selected: directory or unknown type";
                     } else {
                         final var onlyValidTime = _getBoolean(HOST_ACQUISITION_ONLY_VALID_TIME);
                         if (onlyValidTime && entry.time == -1) {
-                            message = "not-selected: date/time could not be parsed";
+                            outcome = "not-selected: date/time could not be parsed";
                         } else {
                             // It is a valid data/time or we didn't check!
                             try {
                                 if ("".equals(namePattern) || entry.name.matches(namePattern)) {
                                     // It does match the required pattern!
-                                    message = _processValidEntry(base, ar, copy, currentPath, destination, entry,
-                                            symlink, body);
+                                    outcome = _processValidEntry(base, ar, copy, currentPath, destination, entry,
+                                            symlink, body, message);
                                 } else {
-                                    message = "not-selected: wrong pattern";
+                                    outcome = "not-selected: wrong pattern";
                                 }
                             } catch (final PatternSyntaxException e) {
                                 _log.warn("Pattern matching {} -> {}", entry.name, namePattern, e);
-                                message = "not-selected: syntax error in regex pattern";
+                                outcome = "not-selected: syntax error in regex pattern";
                             }
                         }
                     }
                 } else {
                     // Error parsing the file entry
-                    message = "error: " + Format.getMessage(entry.exception);
+                    outcome = "error: " + Format.getMessage(entry.exception);
                 }
                 // Display the current line
-                _add((message.startsWith("selected") ? "log:" : "err:") + entry.line + " (" + message + ")");
+                _add((outcome.startsWith("selected") ? "log:" : "err:") + entry.line + " (" + outcome + ")");
             }
 
             /**
@@ -9362,6 +9366,8 @@ public final class MasterServer extends ECaccessProvider
              *            the symlink
              * @param body
              *            the body
+             * @param message
+             *            the message
              *
              * @return the string
              *
@@ -9370,7 +9376,7 @@ public final class MasterServer extends ECaccessProvider
              */
             String _processValidEntry(final ECpdsBase base, final AcquisitionResult ar, final Host copy,
                     final String currentPath, final Destination destination, final FileEntry entry,
-                    final boolean symlink, final String body) throws ScriptException {
+                    final boolean symlink, final String body, final String message) throws ScriptException {
                 // Check if this is an absolute or relative entry name
                 final var name = Format.cleanTextContent(entry.name);
                 final var lower = name.toLowerCase();
@@ -9527,6 +9533,24 @@ public final class MasterServer extends ECaccessProvider
                                                 metadata.substring(2, metadata.length() - 1));
                                     }
                                     final long dataFileId;
+                                    final long notificationId;
+                                    if (!isEmpty(message)) {
+                                        // Let's push the notification message with the correct extension!
+                                        final var payLoadName = effectiveTarget
+                                                + _getString(HOST_ACQUISITION_PAYLOAD_EXTENSION);
+                                        notificationId = ECpdsClient.put(
+                                                "Notification from Acquisition Host=" + _host.getName() + " ("
+                                                        + _host.getNickname() + ") on DataMover=" + ar.server.getName()
+                                                        + " for Destination=" + _desName,
+                                                _host.getLogin(), destination, _host.getName(), metadata, payLoadName,
+                                                payLoadName, payLoadName, entry.time, -1, false,
+                                                _getInt(HOST_ACQUISITION_PRIORITY),
+                                                _getString(HOST_ACQUISITION_LIFETIME), null, standby, force, failedOnly,
+                                                false, _getString(HOST_ACQUISITION_TRANSFERGROUP),
+                                                Base64.getDecoder().decode(message));
+                                    } else {
+                                        notificationId = -1;
+                                    }
                                     if (isEmpty(body)) {
                                         // Retrieval is going to be scheduled
                                         dataFileId = ECpdsClient.put(
@@ -9545,7 +9569,8 @@ public final class MasterServer extends ECaccessProvider
                                                 _getString(HOST_ACQUISITION_TRANSFERGROUP));
                                         // The file has been selected and registered in the database for later retrieval
                                         return "selected: " + (force ? "re-" : "") + "scheduled with DatafileId="
-                                                + dataFileId;
+                                                + dataFileId + (notificationId >= 0
+                                                        ? " - notification DatafileId=" + notificationId : "");
                                     } else {
                                         // Sending the body
                                         dataFileId = ECpdsClient.put(
@@ -9562,7 +9587,8 @@ public final class MasterServer extends ECaccessProvider
                                                 Base64.getDecoder().decode(body));
                                         // The file has been registered in the database and sent to the mover
                                         return "selected: " + (force ? "re-" : "") + "received with DatafileId="
-                                                + dataFileId;
+                                                + dataFileId + (notificationId >= 0
+                                                        ? " - notification DatafileId=" + notificationId : "");
                                     }
                                 } catch (final Throwable t) {
                                     // Error when trying to register the
@@ -9622,6 +9648,9 @@ public final class MasterServer extends ECaccessProvider
                 /** The body. */
                 final String _body;
 
+                /** The message. */
+                final String _message;
+
                 /**
                  * Instantiates a new list thread.
                  *
@@ -9646,7 +9675,7 @@ public final class MasterServer extends ECaccessProvider
                  */
                 ListThread(final ExecutorManager<ListThread> manager, final ECpdsBase base, final AcquisitionResult ar,
                         final Host copy, final String namePattern, final String currentPath,
-                        final Destination destination, final FileEntry entry, final String body) {
+                        final Destination destination, final FileEntry entry, final String body, final String message) {
                     super(manager);
                     _base = base;
                     _ar = ar;
@@ -9656,6 +9685,7 @@ public final class MasterServer extends ECaccessProvider
                     _destination = destination;
                     _entry = entry;
                     _body = body;
+                    _message = message;
                 }
 
                 /**
@@ -9668,7 +9698,7 @@ public final class MasterServer extends ECaccessProvider
                  */
                 @Override
                 public void process() throws ScriptException, IOException {
-                    _parseEntry(_base, _ar, _copy, _namePattern, _currentPath, _destination, _entry, _body);
+                    _parseEntry(_base, _ar, _copy, _namePattern, _currentPath, _destination, _entry, _body, _message);
                 }
             }
 
@@ -9811,17 +9841,27 @@ public final class MasterServer extends ECaccessProvider
                                     // This was an error so we just report it!
                                     _add(entry);
                                 } else {
-                                    // If we have a body then let's extract it!
+                                    // If we have a body and message content then let's extract them!
                                     final Pattern pattern = Pattern.compile("^(.*)\\s\\[(.+)]$");
                                     final Matcher matcher = pattern.matcher(entry);
                                     final String newLine;
                                     final String body;
+                                    final String message;
                                     if (matcher.matches()) {
                                         newLine = matcher.group(1); // text before " ["
-                                        body = matcher.group(2); // text inside "[...]"
+                                        final String groupContent = matcher.group(2); // inside the brackets
+                                        final String[] bodyAndMessage = groupContent.split(";", 2);
+                                        if (bodyAndMessage.length == 2) {
+                                            body = bodyAndMessage[0].isEmpty() ? null : bodyAndMessage[0];
+                                            message = bodyAndMessage[1];
+                                        } else {
+                                            body = null;
+                                            message = groupContent;
+                                        }
                                     } else {
                                         newLine = entry;
                                         body = null;
+                                        message = null;
                                     }
                                     final var entries = FtpParser.parseDir(_getString(HOST_ACQUISITION_REGEX_FORMAT),
                                             _getString(HOST_ACQUISITION_SYSTEM_KEY).toUpperCase(),
@@ -9841,10 +9881,10 @@ public final class MasterServer extends ECaccessProvider
                                         }
                                         // Let's start the listing!
                                         manager.put(new ListThread(manager, base, ar, copy, namePattern, currentPath,
-                                                destination, entries[0], body));
+                                                destination, entries[0], body, message));
                                     } else {
                                         _parseEntry(base, ar, copy, namePattern, currentPath, destination, entries[0],
-                                                body);
+                                                body, message);
                                     }
                                     filesCount++;
                                 }

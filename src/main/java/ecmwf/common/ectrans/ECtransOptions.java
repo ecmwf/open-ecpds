@@ -487,6 +487,9 @@ public enum ECtransOptions {
     /** The host acquisition debug. */
     HOST_ACQUISITION_DEBUG("debug", Boolean.class, false),
 
+    /** The host acquisition payload extension. */
+    HOST_ACQUISITION_PAYLOAD_EXTENSION("payloadExtension", String.class, ".payload"),
+
     /** The host acquisition regex pattern. */
     HOST_ACQUISITION_REGEX_PATTERN("regexPattern", String.class, ""),
 
@@ -1291,6 +1294,9 @@ public enum ECtransOptions {
 
     /** The host http mqtt body. */
     HOST_HTTP_MQTT_BODY("mqttBody", String.class, STRING_NONE),
+
+    /** The host http mqtt add payload. */
+    HOST_HTTP_MQTT_ADD_PAYLOAD("mqttAddPayload", Boolean.class, false),
 
     /** The host http mqtt qos. */
     HOST_HTTP_MQTT_QOS("mqttQos", Integer.class, 1),

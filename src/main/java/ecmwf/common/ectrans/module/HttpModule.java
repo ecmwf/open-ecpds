@@ -64,6 +64,7 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_LIST_MAX_THREADS;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_LIST_MAX_WAITING;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_LIST_RECURSIVE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MAX_SIZE;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_ADD_PAYLOAD;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_AWAIT;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_CLEAN_START;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_CONNECTION_TIMEOUT;
@@ -1457,11 +1458,13 @@ public final class HttpModule extends TransferModule {
      *            the date
      * @param body
      *            the body
+     * @param message
+     *            the message
      */
     private void addEntry(final ExecutorManager<ListThread> manager, final ProcessEntry resultList,
             final String rootDirectory, final String directory, final String line, final int level,
             final String pattern, final AtomicInteger counter, final String alternativeName, final ByteSize size,
-            final Long date, final String body) {
+            final Long date, final String body, final String message) {
         try {
             if (isEmpty(pattern) || line.matches(pattern)) {
                 // We don't want to have duplicated lines!
@@ -1476,7 +1479,7 @@ public final class HttpModule extends TransferModule {
                         // Let's create a new list task and add it to the list manager queue!
                         try {
                             manager.put(new ListThread(manager, resultList, rootDirectory, directory, line, level,
-                                    pattern, alternativeName, size, date, body));
+                                    pattern, alternativeName, size, date, body, message));
                         } catch (final InterruptedException e) {
                         }
                     } else {
@@ -1660,7 +1663,9 @@ public final class HttpModule extends TransferModule {
                                 _log.debug("{} : {} : {} : {} : {}", bindings, href, alternativeName, size, time);
                                 addEntry(manager, resultList, rootDirectory, targetDirectory, href, level, pattern,
                                         counter, alternativeName, size, time,
-                                        getSetup().getString(HOST_HTTP_MQTT_BODY, bindings));
+                                        getSetup().getString(HOST_HTTP_MQTT_BODY, bindings),
+                                        getSetup().getBoolean(HOST_HTTP_MQTT_ADD_PAYLOAD)
+                                                ? Base64.getEncoder().encodeToString(message.getPayload()) : "");
                             } else {
                                 _log.debug("Notification ignored (no href found): {}", topic);
                             }
@@ -1773,7 +1778,7 @@ public final class HttpModule extends TransferModule {
                                 } else {
                                     listSize++;
                                     addEntry(manager, resultList, rootDirectory, directory, line, level, pattern,
-                                            counter, null, null, null, null);
+                                            counter, null, null, null, null, null);
                                 }
                             }
                         } finally {
@@ -1795,7 +1800,7 @@ public final class HttpModule extends TransferModule {
                                     + (!attribute.isEmpty() ? element.attr(attribute) : element.text());
                             listSize++;
                             addEntry(manager, resultList, rootDirectory, directory, line, level, pattern, counter, null,
-                                    null, null, null);
+                                    null, null, null, null);
                         }
                     }
                 } finally {
@@ -1807,7 +1812,7 @@ public final class HttpModule extends TransferModule {
                     _log.debug("Adding directory: {}", directory);
                 }
                 addEntry(manager, resultList, rootDirectory, directory, directory, level, pattern, counter, null, null,
-                        null, null);
+                        null, null, null);
             }
         }
         // Now we have the listing!
@@ -1852,6 +1857,9 @@ public final class HttpModule extends TransferModule {
         /** The body. */
         final String body;
 
+        /** The message. */
+        final String message;
+
         /**
          * Instantiates a new list thread.
          *
@@ -1877,10 +1885,13 @@ public final class HttpModule extends TransferModule {
          *            the date
          * @param body
          *            the body
+         * @param message
+         *            the message
          */
         ListThread(final ExecutorManager<ListThread> manager, final ProcessEntry resultList, final String rootDirectory,
                 final String currentDirectory, final String currentName, final int level, final String pattern,
-                final String alternativeName, final ByteSize size, final Long date, final String body) {
+                final String alternativeName, final ByteSize size, final Long date, final String body,
+                final String message) {
             super(manager);
             this.manager = manager;
             this.resultList = resultList;
@@ -1893,6 +1904,7 @@ public final class HttpModule extends TransferModule {
             this.size = size;
             this.date = date;
             this.body = body;
+            this.message = message;
         }
 
         /**
@@ -1974,9 +1986,12 @@ public final class HttpModule extends TransferModule {
             if (isEmpty(pattern) || entry.name.matches(pattern)) {
                 _log.debug("Adding ftp entry: {} => {}", currentName, element);
                 final var hasError = entry.hasError();
+                final var theBody = isEmpty(body) ? "" : body;
+                final var theMessage = isEmpty(message) ? "" : message;
                 resultList.add(
                         (hasError ? "err:" : "") + element + (hasError ? " (exception: " + entry.getError() + ")" : "")
-                                + (hasError || isEmpty(body) ? "" : " [" + body + "]"));
+                                + (hasError || (theBody.isEmpty() && theMessage.isEmpty()) ? ""
+                                        : " [" + theBody + ";" + theMessage + "]"));
             } else if (getDebug()) {
                 _log.debug("Discarding {} (wrong-pattern) - {} != {}", entry.fullName, entry.name, pattern);
             }
