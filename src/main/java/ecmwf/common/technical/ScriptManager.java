@@ -29,7 +29,9 @@ package ecmwf.common.technical;
  */
 
 import java.io.BufferedReader;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.URL;
 import java.time.Duration;
 import java.time.Period;
@@ -64,7 +66,7 @@ public final class ScriptManager implements AutoCloseable {
     public static final long LONG_RUNNING_TIME = Cnf.at("ScriptManager", "longRunningTime", 1000L);
 
     /** The Constant ALLOW_EXPERIMENTAL_OPTIONS. */
-    public static final boolean ALLOW_EXPERIMENTAL_OPTIONS = Cnf.at("ScriptManager", "allowExperimentalOptions", true);
+    public static final boolean ALLOW_EXPERIMENTAL_OPTIONS = Cnf.at("ScriptManager", "allowExperimentalOptions", false);
 
     /** The Constant JS. */
     public static final String JS = "js";
@@ -315,21 +317,18 @@ public final class ScriptManager implements AutoCloseable {
      */
     private synchronized Cache getCache() throws ScriptException {
         if (cache == null) {
-            final Cache tempCache = new Cache();
             final var builder = Context.newBuilder(currentLanguage).allowHostAccess(HostAccess.ALL)
-                    .allowHostClassLookup(ScriptManager::check);
-            builder.useSystemExit(false);
-            if (resourceLimits != null) {
+                    .allowHostClassLookup(ScriptManager::check).useSystemExit(false).allowCreateProcess(false)
+                    .allowCreateThread(false).in(InputStream.nullInputStream()).out(OutputStream.nullOutputStream())
+                    .err(OutputStream.nullOutputStream());
+            if (resourceLimits != null)
                 builder.resourceLimits(resourceLimits);
-            }
-            if (ALLOW_EXPERIMENTAL_OPTIONS) {
+            if (ALLOW_EXPERIMENTAL_OPTIONS)
                 builder.allowExperimentalOptions(true).option("engine.WarnVirtualThreadSupport", "false");
-            }
-            Context context = null;
+            final Cache tmp = new Cache();
             try {
-                context = getContext(builder);
-                tempCache.context = context;
-                tempCache.bindings = context.getBindings(currentLanguage);
+                tmp.context = getContext(builder);
+                tmp.bindings = tmp.context.getBindings(currentLanguage);
                 for (final Class<?> clazz : exposedClasses) {
                     final var simpleName = clazz.getSimpleName();
                     final var fullName = clazz.getCanonicalName();
@@ -341,17 +340,16 @@ public final class ScriptManager implements AutoCloseable {
                     } else {
                         statement = "";
                     }
-                    if (!statement.isBlank()) {
-                        tempCache.bindings.putMember(simpleName, context.eval(currentLanguage, statement));
-                    }
+                    if (!statement.isBlank())
+                        tmp.bindings.putMember(simpleName, tmp.context.eval(currentLanguage, statement));
                 }
                 // Allow logging to the general log
-                tempCache.bindings.putMember("log", _log);
-                this.cache = tempCache;
+                tmp.bindings.putMember("log", _log);
+                this.cache = tmp;
             } catch (final Throwable e) {
                 final String message = "Failed to initialize script context";
                 _log.warn(message, e);
-                closeContext(context); // Prevent memory leak
+                closeContext(tmp.context); // Prevent memory leak
                 throw e instanceof ScriptException scriptException ? scriptException : new ScriptException(message);
             }
         }
