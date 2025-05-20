@@ -87,7 +87,8 @@ public final class ScriptManager implements AutoCloseable {
     private final ResourceLimits resourceLimits;
 
     /** The contextCount. */
-    private static final AtomicInteger contextCount = new AtomicInteger(0);
+    private static final AtomicInteger contextCount = Cnf.at("ScriptManager", "debugContext", false)
+            ? new AtomicInteger(0) : null;
 
     /** The closed. */
     private final AtomicBoolean closed = new AtomicBoolean(false);
@@ -366,7 +367,8 @@ public final class ScriptManager implements AutoCloseable {
      */
     private static Context getContext(final Builder builder) {
         final Context context = builder.build();
-        _log.debug("Context created. Active contexts: {}", contextCount.incrementAndGet());
+        if (contextCount != null)
+            _log.debug("Context created. Active contexts: {}", contextCount.incrementAndGet());
         return context;
     }
 
@@ -379,7 +381,8 @@ public final class ScriptManager implements AutoCloseable {
     private static void closeContext(final Context context) {
         if (context != null) {
             context.close();
-            _log.debug("Context closed. Active contexts: {}", contextCount.decrementAndGet());
+            if (contextCount != null)
+                _log.debug("Context closed. Active contexts: {}", contextCount.decrementAndGet());
         }
     }
 
