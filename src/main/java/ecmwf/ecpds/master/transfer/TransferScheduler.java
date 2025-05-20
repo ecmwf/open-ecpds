@@ -1361,7 +1361,8 @@ public final class TransferScheduler extends MBeanScheduler {
             final var current = servers[i].getName();
             transfer.setTransferServer(servers[i]);
             transfer.setTransferServerName(current);
-            final var useHostForSource = i == servers.length - 1 || transfer.getOriginalTransferServer() == null;
+			final var useHostForSource = hostForSource != null
+					&& (i == servers.length - 1 || transfer.getOriginalTransferServer() == null);
             final var staCode = transfer.getStatusCode();
             if (StatusFactory.INTR.equals(staCode) || StatusFactory.STOP.equals(staCode)) {
                 // The data transfer was interrupted or stopped so there is no need to continue!
