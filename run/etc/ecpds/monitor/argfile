@@ -1,7 +1,14 @@
 -server
--Xmx1G
+-Xms128M
+-Xmx1GB
 -Xlog:gc*:file='run/var/log/ecpds/monitor/gc.log':time,uptime,level,tags:filesize=50M,filecount=10
+-XX:SoftMaxHeapSize=256M
+-XX:HeapDumpPath='run/var/log/ecpds/monitor'
 -XX:+DisableExplicitGC
+-XX:+UseZGC
+-XX:ZUncommitDelay=5
+-XX:+UnlockDiagnosticVMOptions
+-XX:NativeMemoryTracking=detail
 -Decaccess.hostName='localhost'
 -Djava.rmi.server.hostname='127.0.0.1'
 -Dmonitor.internalAddress='127.0.0.1'
@@ -53,5 +60,4 @@
 -Dlog.ecmwf.level=debug
 --add-opens java.base/java.lang=ALL-UNNAMED
 --enable-native-access=ALL-UNNAMED
--XX:+UseG1GC
 -classpath target/classes:lib/*
