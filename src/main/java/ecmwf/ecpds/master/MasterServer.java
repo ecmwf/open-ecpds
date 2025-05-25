@@ -9423,12 +9423,7 @@ public final class MasterServer extends ECaccessProvider
                     effectiveTarget = _replaceDate("$dirdate", effectiveTarget, true);
                     effectiveTarget = _replaceDate("$date", effectiveTarget, false);
                     effectiveTarget = Format.replaceAll(effectiveTarget, "$timestamp", entry.time / 1000L * 1000L);
-                    if (effectiveTarget.startsWith("$(") && effectiveTarget.endsWith(")")) {
-                        // This is a script so we just evaluate it!
-                        effectiveTarget = _setup.eval(String.class,
-                                effectiveTarget.substring(2, effectiveTarget.length() - 1));
-                    }
-                } catch (IOException e) {
+                } catch (IOException _) {
                 }
                 // Let's check the size and age options. We obviously only check
                 // the time if it is valid!
@@ -9527,11 +9522,6 @@ public final class MasterServer extends ECaccessProvider
                                     metadata = _replaceDate("$dirdate", metadata, true);
                                     metadata = _replaceDate("$date", metadata, false);
                                     metadata = Format.replaceAll(metadata, "$timestamp", entry.time / 1000L * 1000L);
-                                    if (metadata.startsWith("$(") && metadata.endsWith(")")) {
-                                        // This is a script so we just evaluate it!
-                                        metadata = _setup.eval(String.class,
-                                                metadata.substring(2, metadata.length() - 1));
-                                    }
                                     final long dataFileId;
                                     final long notificationId;
                                     if (!isEmpty(message)) {

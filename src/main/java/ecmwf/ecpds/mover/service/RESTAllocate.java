@@ -113,8 +113,7 @@ public final class RESTAllocate implements AllocateInterface {
      */
     @Override
     public String get(final String command) throws ScriptException {
-        return String.valueOf(
-                ScriptManager.exec(Object.class, ScriptManager.JS, "var json=" + _json.toString() + "; " + command));
+        return ScriptManager.exec(String.class, ScriptManager.JS, "var json=" + _json.toString() + "; " + command);
     }
 
     /**

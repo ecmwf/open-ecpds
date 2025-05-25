@@ -41,6 +41,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
@@ -1388,17 +1389,16 @@ public final class ECtransSetup implements Serializable {
      */
     private <T> T get(final ECtransOptions option, final Class<T> clazz, final Map<String, Object> bindings) {
         final var content = resolve(scriptContent.toString());
-        if (!content.isBlank() && exists(option, content)) {
-            try (final var manager = new ScriptManager(get("script", "limit", 0),
-                    get("script", "language", ScriptManager.JS))) {
+        if (!content.isBlank() && isOptionDefined(option, content)) {
+            final var parameter = option.getModule() + "." + option.getName();
+            try (final var manager = new ScriptManager(get("script", "language", ScriptManager.JS))) {
                 manager.put(bindings);
-                manager.eval(content);
-                final var parameter = option.getModule() + "." + option.getName();
-                if (manager.exists(parameter)) { // Checking the variable itself through the manager
-                    return manager.get(clazz, parameter);
-                }
+                final var output = manager.eval(clazz, content, parameter);
+                if (output != null)
+                    return output;
             } catch (final ScriptException e) {
-                _log.warn("Cannot execute script (will check properties)", e);
+                _log.warn("Cannot execute script (will check properties) - option:{}, class:{}", parameter,
+                        clazz.getName(), e);
             }
         }
         // Switch back to the lookup in the properties
@@ -1417,9 +1417,12 @@ public final class ECtransSetup implements Serializable {
      *
      * @return true, if successful
      */
-    private static boolean exists(final ECtransOptions option, final String content) {
-        return exists(option.getModule(), '=', content)
-                && (exists(option.getName(), ':', content) || exists("\"" + option.getName() + "\"", ':', content));
+    public static boolean isOptionDefined(final ECtransOptions option, final String content) {
+        String pattern = "\\b" + Pattern.quote(option.getModule()) + "\\s*:\\s*\\{[^}]*\\b"
+                + Pattern.quote(option.getName()) + "\\b\\s*:";
+        Pattern regex = Pattern.compile(pattern, Pattern.DOTALL);
+        Matcher matcher = regex.matcher(content);
+        return matcher.find();
     }
 
     /**
@@ -1909,42 +1912,6 @@ public final class ECtransSetup implements Serializable {
      */
     public String getData() {
         return getProperties(false) + SEPARATOR + getScript();
-    }
-
-    /**
-     * Evaluate the script. The result is expected to be of the class clazz.
-     *
-     * @param <T>
-     *            the generic type
-     * @param clazz
-     *            the object class expected
-     * @param script
-     *            the name of the function
-     *
-     * @return the result of the function execution
-     *
-     * @throws javax.script.ScriptException
-     *             the script exception
-     */
-    public <T> T eval(final Class<T> clazz, final String script) throws ScriptException {
-        try (final var manager = new ScriptManager(get("script", "limit", 0),
-                get("script", "language", ScriptManager.JS))) {
-            manager.eval(scriptContent.toString());
-            return manager.eval(clazz, script);
-        }
-    }
-
-    /**
-     * Evaluate the script. No return is expected from the function (void).
-     *
-     * @param script
-     *            the name of the function
-     *
-     * @throws javax.script.ScriptException
-     *             the script exception
-     */
-    public void eval(final String script) throws ScriptException {
-        eval(null, script);
     }
 
     /**

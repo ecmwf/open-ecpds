@@ -122,7 +122,7 @@ public abstract class ScriptFile {
                     }
                     // Test the condition!
                     if (javascript) {
-                        if (ScriptManager.exec(Boolean.class, ScriptManager.JS, condition)) {
+                        if (Boolean.TRUE.equals(ScriptManager.exec(Boolean.class, ScriptManager.JS, condition))) {
                             result.append(thenStr);
                         } else if (elseStr != null) {
                             result.append(elseStr);

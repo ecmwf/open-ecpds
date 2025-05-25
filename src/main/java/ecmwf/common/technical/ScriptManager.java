@@ -35,23 +35,27 @@ import java.io.OutputStream;
 import java.net.URL;
 import java.time.Duration;
 import java.time.Period;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import javax.script.ScriptException;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.graalvm.polyglot.Context;
-import org.graalvm.polyglot.Context.Builder;
 import org.graalvm.polyglot.Engine;
 import org.graalvm.polyglot.HostAccess;
 import org.graalvm.polyglot.PolyglotException;
 import org.graalvm.polyglot.PolyglotException.StackFrame;
+
 import org.graalvm.polyglot.ResourceLimits;
+import org.graalvm.polyglot.Source;
 import org.graalvm.polyglot.Value;
 
 /**
@@ -63,10 +67,7 @@ public final class ScriptManager implements AutoCloseable {
     private static final Logger _log = LogManager.getLogger(ScriptManager.class);
 
     /** The Constant LONG_RUNNING_TIME. */
-    public static final long LONG_RUNNING_TIME = Cnf.at("ScriptManager", "longRunningTime", 1000L);
-
-    /** The Constant ALLOW_EXPERIMENTAL_OPTIONS. */
-    public static final boolean ALLOW_EXPERIMENTAL_OPTIONS = Cnf.at("ScriptManager", "allowExperimentalOptions", false);
+    private static final long LONG_RUNNING_TIME = Cnf.at("ScriptManager", "longRunningTime", 1000L);
 
     /** The Constant JS. */
     public static final String JS = "js";
@@ -75,7 +76,14 @@ public final class ScriptManager implements AutoCloseable {
     public static final String PYTHON = "python";
 
     /** The Constant SHARED_ENGINE. */
-    private static final Engine SHARED_ENGINE = Engine.create(JS, PYTHON);
+    private static final Engine SHARED_ENGINE = Cnf.at("ScriptManager", "allowExperimentalOptions", true)
+            ? Engine.newBuilder(JS, PYTHON).allowExperimentalOptions(true)
+                    .option("engine.WarnVirtualThreadSupport", "false").build()
+            : Engine.create();
+
+    /** The Constant CONTEXT_PROVIDER. */
+    private static final ContextProvider CONTEXT_PROVIDER = new ContextProvider(
+            Cnf.at("ScriptManager", "enableContextSpool", true), Cnf.at("ScriptManager", "resourceLimits", 0));
 
     /**
      * The Constant EXPOSED_CLASSES. Classes which are allowed to be used within the scripts.
@@ -83,15 +91,8 @@ public final class ScriptManager implements AutoCloseable {
     private static final Class<?>[] EXPOSED_CLASSES = new Class[] { UUID.class, URL.class, StringBuffer.class,
             BufferedReader.class, InputStreamReader.class };
 
-    /** The Constant CONTEXT_COUNT. */
-    private static final AtomicInteger CONTEXT_COUNT = Cnf.at("ScriptManager", "debugContext", false)
-            ? new AtomicInteger(0) : null;
-
     /** The current language. */
     private final String currentLanguage;
-
-    /** The resource limits. */
-    private final ResourceLimits resourceLimits;
 
     /** The closed. */
     private final AtomicBoolean closed = new AtomicBoolean(false);
@@ -109,9 +110,12 @@ public final class ScriptManager implements AutoCloseable {
 
         /**
          * Close.
+         *
+         * @param currentLanguage
+         *            the current language
          */
-        void close() {
-            closeContext(context);
+        void close(final String currentLanguage) {
+            releaseContext(context, currentLanguage);
         }
     }
 
@@ -119,8 +123,203 @@ public final class ScriptManager implements AutoCloseable {
     private Cache cache = null;
 
     /**
+     * Wraps the given script content to avoid polluting the global scope. Supports encapsulation for JavaScript and
+     * Python.
+     *
+     * @param scriptBody
+     *            The script content to wrap.
+     *
+     * @return Wrapped script that runs in an isolated scope.
+     */
+    private String wrapScript(final String scriptBody) {
+        // Return as-is if script or language is not defined
+        if (currentLanguage == null || scriptBody == null)
+            return scriptBody;
+        // Normalize line endings to Unix format to avoid syntax issues (e.g., with
+        // Python or JavaScript)
+        final var normalizedScript = scriptBody.replaceAll("\\r\\n?", "\n");
+        // Choose wrapper based on language
+        return switch (currentLanguage) {
+        case JS -> wrapJavaScript(normalizedScript); // JavaScript: wrap in IIFE
+        case PYTHON -> wrapPythonScript(normalizedScript); // Python: wrap in function
+        default -> normalizedScript; // Other: return cleaned script
+        };
+    }
+
+    /**
+     * Wraps the provided JavaScript code in an immediately-invoked function expression (IIFE) to prevent polluting the
+     * global context and to capture the script's final expression as the result.
+     *
+     * This wrapper ensures that:
+     * <ul>
+     * <li>Temporary variables or function declarations do not leak into the global scope.</li>
+     * <li>The result of the last evaluated expression in the script is returned to the caller.</li>
+     * </ul>
+     *
+     * Note: The scriptBody should end with a meaningful expression if a result is expected.
+     *
+     * @param scriptBody
+     *            the JavaScript code to wrap
+     *
+     * @return a wrapped version of the script, ready for evaluation in a GraalVM context
+     */
+    private static String wrapJavaScript(final String scriptBody) {
+        return "(() => {\n" + indent(scriptBody, 1) + "\n" + "})()";
+    }
+
+    /**
+     * Wraps the provided Python code in a uniquely named function to isolate its scope and avoid polluting the global
+     * namespace. The function is then called immediately, its result captured in a variable, and the function
+     * definition is deleted to clean up.
+     *
+     * This wrapper ensures that:
+     * <ul>
+     * <li>Temporary variables or function definitions inside the script do not remain in the global scope.</li>
+     * <li>The script's final expression (or an explicit return) is captured and returned as the result.</li>
+     * </ul>
+     *
+     * Note: The scriptBody should use a return statement to provide a result from the function.
+     *
+     * @param scriptBody
+     *            the Python code to wrap
+     *
+     * @return a wrapped version of the script, ready for evaluation in a GraalVM Python context
+     */
+    private static String wrapPythonScript(final String scriptBody) {
+        final var wrapperName = "__wrapper_" + UUID.randomUUID().toString().replace("-", "");
+        final var wrapperFunction = "_" + wrapperName + "__";
+        final var resultVar = wrapperName + "_result__";
+        // Use newline-separated string concatenation instead of text blocks
+        return "def " + wrapperFunction + "():\n" + indent(scriptBody, 1) + "\n" + resultVar + " = " + wrapperFunction
+                + "()\n" + "del " + wrapperFunction + "\n" + resultVar;
+    }
+
+    /**
+     * Indents each line of a script with 4 spaces so it can be placed inside a function definition.
+     *
+     * @param scriptBody
+     *            The original Python code
+     *
+     * @return Indented Python code for use inside a function
+     */
+    private static String indent(final String body, final int levels) {
+        final var prefix = "    ".repeat(levels); // 4 spaces per level
+        return Arrays.stream(body.split("\n")).map(line -> prefix + line).collect(Collectors.joining("\n"));
+    }
+
+    /**
+     * Ensures that the last meaningful line of a script is returned. Supports both JavaScript and Python.
+     *
+     * @param scriptBody
+     *            The script content to wrap.
+     *
+     * @return Wrapped script that runs in an isolated scope.
+     */
+    private String addReturnToLastExpression(final String scriptBody) {
+        // Return as-is if script or language is not defined
+        if (currentLanguage == null || scriptBody == null)
+            return scriptBody;
+        // Normalize line endings to Unix format to avoid syntax issues (e.g., with
+        // Python or JavaScript)
+        final var normalizedScript = scriptBody.replaceAll("\\r\\n?", "\n");
+        // Choose method based on language
+        return switch (currentLanguage) {
+        case JS -> addReturnToLastExpressionJS(normalizedScript);
+        case PYTHON -> addReturnToLastExpressionPython(normalizedScript);
+        default -> normalizedScript; // Other: return cleaned script
+        };
+    }
+
+    /**
+     * Ensures that the last meaningful line of a JavaScript code snippet is returned when the script is wrapped inside
+     * a function.
+     * <p>
+     * GraalVM automatically evaluates the last expression of a script, but this behavior is lost when the script is
+     * wrapped in a function. This method rewrites the last non-comment, non-blank line as a return statement if it is a
+     * standalone expression.
+     *
+     * @param jsCode
+     *            the original JavaScript code snippet
+     *
+     * @return the modified code with a return statement on the last expression if needed
+     */
+    private static String addReturnToLastExpressionJS(final String jsCode) {
+        final var lines = jsCode.split("\\r?\\n");
+        final var result = new StringBuilder();
+        // Find the index of the last meaningful line
+        var lastExprIndex = -1;
+        for (var i = lines.length - 1; i >= 0; i--) {
+            final var line = lines[i].trim();
+            if (!line.isEmpty() && !line.startsWith("//")) {
+                lastExprIndex = i;
+                break;
+            }
+        }
+        for (var i = 0; i < lines.length; i++) {
+            if (i == lastExprIndex) {
+                final var trimmed = lines[i].trim();
+
+                // Already a return?
+                if (trimmed.startsWith("return ")) {
+                    result.append(lines[i]);
+                } else {
+                    result.append("return ").append(trimmed.replaceAll(";+\\s*$", "")).append(";");
+                }
+            } else {
+                result.append(lines[i]);
+            }
+            if (i < lines.length - 1) {
+                result.append("\n");
+            }
+        }
+        return result.toString();
+    }
+
+    /**
+     * Ensures that the last meaningful line of a Python code snippet is returned when wrapped in a function. If the
+     * last non-comment, non-blank line is a bare expression (e.g., a string or variable), it is replaced with a return
+     * statement.
+     *
+     * Assumes the code is top-level (not indented blocks).
+     *
+     * @param pyCode
+     *            the original Python code snippet
+     *
+     * @return the modified code with a return statement on the last expression if needed
+     */
+    private static String addReturnToLastExpressionPython(final String pyCode) {
+        final var lines = pyCode.split("\\r?\\n");
+        final var result = new StringBuilder();
+        var lastExprIndex = -1;
+        for (var i = lines.length - 1; i >= 0; i--) {
+            final var line = lines[i].trim();
+            if (!line.isEmpty() && !line.startsWith("#")) {
+                lastExprIndex = i;
+                break;
+            }
+        }
+        for (var i = 0; i < lines.length; i++) {
+            if (i == lastExprIndex) {
+                final var trimmed = lines[i].trim();
+
+                if (trimmed.startsWith("return ") || trimmed.equals("return")) {
+                    result.append(lines[i]);
+                } else {
+                    result.append("return ").append(trimmed);
+                }
+            } else {
+                result.append(lines[i]);
+            }
+            if (i < lines.length - 1) {
+                result.append("\n");
+            }
+        }
+        return result.toString();
+    }
+
+    /**
      * Exec. If no language is specified in the header of the script then the default language is used (e.g.
-     * script=js:code or script=python:code).
+     * script=js:code or script=python:code). Also add a return is missing from the last expression of the script.
      *
      * @param <T>
      *            the generic type
@@ -152,7 +351,7 @@ public final class ScriptManager implements AutoCloseable {
             index = 0;
         }
         try (final var manager = new ScriptManager(language)) {
-            return manager.eval(clazz, script.substring(index));
+            return manager.eval(clazz, manager.addReturnToLastExpression(script.substring(index)), null);
         }
     }
 
@@ -179,21 +378,6 @@ public final class ScriptManager implements AutoCloseable {
      *            the language
      */
     public ScriptManager(final String language) {
-        resourceLimits = null;
-        currentLanguage = language;
-    }
-
-    /**
-     * Instantiates a new script manager. Uses the requested script engine with a limit.
-     *
-     * @param limit
-     *            the limit
-     * @param language
-     *            the language
-     */
-    public ScriptManager(final long limit, final String language) {
-        // The limits are only supported with JavaScript
-        resourceLimits = JS.equals(language) ? ResourceLimits.newBuilder().statementLimit(limit, null).build() : null;
         currentLanguage = language;
     }
 
@@ -206,17 +390,19 @@ public final class ScriptManager implements AutoCloseable {
      *            the clazz
      * @param script
      *            the script
+     * @param parameter
+     *            the parameter
      *
      * @return the t
      *
      * @throws ScriptException
      *             the script exception
      */
-    public <T> T eval(final Class<T> clazz, final String script) throws ScriptException {
+    public <T> T eval(final Class<T> clazz, final String script, final String parameter) throws ScriptException {
         final var start = System.currentTimeMillis();
         final Value value;
         try {
-            value = getCache().context.eval(currentLanguage, script);
+            value = getCache().context.eval(Source.create(currentLanguage, wrapScript(script)));
         } catch (final PolyglotException e) {
             throw getMessage("Eval " + currentLanguage + ": " + script, e);
         }
@@ -226,20 +412,7 @@ public final class ScriptManager implements AutoCloseable {
                 _log.debug("Time taken: {} ms", duration);
             }
         }
-        return cast(clazz, value);
-    }
-
-    /**
-     * Eval.
-     *
-     * @param script
-     *            the script
-     *
-     * @throws ScriptException
-     *             the script exception
-     */
-    public void eval(final String script) throws ScriptException {
-        eval(null, script);
+        return cast(clazz, parameter != null ? getNestedValue(value, parameter) : value);
     }
 
     /**
@@ -277,38 +450,27 @@ public final class ScriptManager implements AutoCloseable {
     }
 
     /**
-     * Gets the value, execute it with the provided arguments if it is a function and then cast it to the desired class.
+     * Gets the nested value.
      *
-     * @param <T>
-     *            the generic type
-     * @param clazz
-     *            the clazz
-     * @param name
-     *            the name
-     * @param args
-     *            the args
+     * @param root
+     *            the root
+     * @param path
+     *            the path
      *
-     * @return the t
-     *
-     * @throws ScriptException
-     *             the script exception
+     * @return the nested value
      */
-    public <T> T get(final Class<T> clazz, final String name, final Object... args) throws ScriptException {
-        final var start = System.currentTimeMillis();
-        final Value value;
-        try {
-            final var eval = getCache().context.eval(currentLanguage, name);
-            value = eval.canExecute() ? eval.execute(args) : eval;
-        } catch (final PolyglotException e) {
-            throw getMessage("Eval/Execute " + currentLanguage + ": " + clazz + " <- " + name + "(" + args + ")", e);
-        }
-        if (_log.isDebugEnabled()) {
-            final var duration = System.currentTimeMillis() - start;
-            if (duration > LONG_RUNNING_TIME) {
-                _log.debug("Time taken: {} ms", duration);
+    private static Value getNestedValue(final Value root, final String path) {
+        if (root == null || !root.hasMembers())
+            return null;
+        final var keys = path.split("\\.");
+        var current = root;
+        for (final String key : keys) {
+            if (!current.hasMember(key)) {
+                return null;
             }
+            current = current.getMember(key);
         }
-        return cast(clazz, value);
+        return current;
     }
 
     /**
@@ -321,39 +483,19 @@ public final class ScriptManager implements AutoCloseable {
      */
     private synchronized Cache getCache() throws ScriptException {
         if (cache == null) {
-            final var builder = Context.newBuilder(currentLanguage).engine(SHARED_ENGINE)
-                    .allowHostAccess(HostAccess.ALL).allowHostClassLookup(ScriptManager::check).useSystemExit(false)
-                    .allowCreateProcess(false).allowCreateThread(false).in(InputStream.nullInputStream())
-                    .out(OutputStream.nullOutputStream()).err(OutputStream.nullOutputStream());
-            if (resourceLimits != null)
-                builder.resourceLimits(resourceLimits);
-            if (ALLOW_EXPERIMENTAL_OPTIONS)
-                builder.allowExperimentalOptions(true).option("engine.WarnVirtualThreadSupport", "false");
             final var tmp = new Cache();
             try {
-                tmp.context = getContext(builder);
+                tmp.context = CONTEXT_PROVIDER.acquire();
                 tmp.bindings = tmp.context.getBindings(currentLanguage);
-                for (final Class<?> clazz : EXPOSED_CLASSES) {
-                    final var simpleName = clazz.getSimpleName();
-                    final var fullName = clazz.getCanonicalName();
-                    final String statement;
-                    if (JS.equals(currentLanguage)) {
-                        statement = "Java.type('" + fullName + "')";
-                    } else if (PYTHON.equals(currentLanguage)) {
-                        statement = "import " + fullName + " as " + simpleName;
-                    } else {
-                        statement = "";
-                    }
-                    if (!statement.isBlank())
-                        tmp.bindings.putMember(simpleName, tmp.context.eval(currentLanguage, statement));
-                }
+                for (final Class<?> clazz : EXPOSED_CLASSES)
+                    tmp.bindings.putMember(clazz.getSimpleName(), clazz);
                 // Allow logging to the general log
                 tmp.bindings.putMember("log", _log);
                 this.cache = tmp;
             } catch (final Throwable e) {
                 final var message = "Failed to initialize script context";
                 _log.warn(message, e);
-                closeContext(tmp.context); // Prevent memory leak
+                releaseContext(tmp.context, currentLanguage); // Prevent memory leak
                 throw e instanceof final ScriptException scriptException ? scriptException
                         : new ScriptException(message);
             }
@@ -362,32 +504,16 @@ public final class ScriptManager implements AutoCloseable {
     }
 
     /**
-     * Gets the context.
-     *
-     * @param builder
-     *            the builder
-     *
-     * @return the context
-     */
-    private static Context getContext(final Builder builder) {
-        final var context = builder.build();
-        if (CONTEXT_COUNT != null)
-            _log.debug("Context created. Active contexts: {}", CONTEXT_COUNT.incrementAndGet());
-        return context;
-    }
-
-    /**
      * Close context.
      *
      * @param context
      *            the context
+     * @param currentLanguage
+     *            the current language
      */
-    private static void closeContext(final Context context) {
-        if (context != null) {
-            context.close();
-            if (CONTEXT_COUNT != null)
-                _log.debug("Context closed. Active contexts: {}", CONTEXT_COUNT.decrementAndGet());
-        }
+    private static void releaseContext(final Context context, final String currentLanguage) {
+        if (context != null)
+            CONTEXT_PROVIDER.release(context, currentLanguage);
     }
 
     /**
@@ -448,16 +574,14 @@ public final class ScriptManager implements AutoCloseable {
      */
     private static <T> T cast(final Class<T> clazz, final Value value) throws ScriptException {
         // No return requested (void)
-        if (clazz == null) {
+        if (clazz == null)
             return null;
-        }
-        // No object defined?
-        if (value.isNull()) {
-            throw new ScriptException("No output from script");
-        }
+        // No return from the script?
+        if (value.isNull() || "undefined".equals(value.toString()))
+            throw new ScriptException("No return from script or null/undefined object");
         try {
             return cast(value, clazz);
-        } catch (final ClassCastException e) {
+        } catch (final ClassCastException _) {
             throw new ScriptException("Not a " + clazz.getSimpleName() + " output (" + value.toString() + ")");
         }
     }
@@ -502,21 +626,6 @@ public final class ScriptManager implements AutoCloseable {
     }
 
     /**
-     * Checks if a variable exists in the underlying script (e.g. mqtt.message.qos).
-     *
-     * @param name
-     *            the name
-     *
-     * @return true, if successful
-     *
-     * @throws ScriptException
-     *             the script exception
-     */
-    public boolean exists(final String name) throws ScriptException {
-        return !"undefined".equals(getCache().context.eval(currentLanguage, "typeof " + name).asString());
-    }
-
-    /**
      * Gets the message.
      *
      * @param message
@@ -544,7 +653,125 @@ public final class ScriptManager implements AutoCloseable {
     @Override
     public void close() {
         if (closed.compareAndSet(false, true) && cache != null) {
-            cache.close();
+            cache.close(currentLanguage);
+        }
+    }
+
+    /**
+     * Shutdown.
+     */
+    public static void shutdown() {
+        CONTEXT_PROVIDER.shutdown();
+    }
+
+    /**
+     * The Class ContextProvider.
+     */
+    private static class ContextProvider {
+
+        /** The null output stream. */
+        private static final OutputStream nullOutputStream = OutputStream.nullOutputStream();
+
+        /** The null input stream. */
+        private static final InputStream nullInputStream = InputStream.nullInputStream();
+
+        /** The pool. */
+        private final ConcurrentLinkedQueue<Context> pool = new ConcurrentLinkedQueue<>();
+
+        /** The created count. */
+        private final AtomicInteger createdCount = new AtomicInteger(0);
+
+        /** The resource limits. */
+        private final ResourceLimits resourceLimits;
+
+        /** The use context spool. */
+        private final boolean useContextSpool;
+
+        /**
+         * Instantiates a new context provider.
+         *
+         * @param useContextSpool
+         *            the use context spool
+         * @param allowExperimentalOptions
+         *            the allow experimental options
+         * @param limits
+         *            the limits
+         */
+        ContextProvider(final boolean useContextSpool, final int limits) {
+            this.useContextSpool = useContextSpool;
+            this.resourceLimits = limits > 0 ? ResourceLimits.newBuilder().statementLimit(limits, null).build() : null;
+        }
+
+        /**
+         * Creates the new context.
+         *
+         * @return the context
+         */
+        private Context createNewContext() {
+            final var builder = Context.newBuilder(JS, PYTHON).engine(SHARED_ENGINE).allowHostAccess(HostAccess.ALL)
+                    .allowHostClassLookup(ScriptManager::check).useSystemExit(false).allowCreateProcess(false)
+                    .allowCreateThread(false).in(nullInputStream).out(nullOutputStream).err(nullOutputStream);
+            if (resourceLimits != null)
+                builder.resourceLimits(resourceLimits);
+            return builder.build();
+        }
+
+        /**
+         * Acquire.
+         *
+         * @return the context
+         */
+        Context acquire() {
+            var context = pool.poll();
+            if (context == null) {
+                _log.debug("Context created: {}", createdCount.incrementAndGet());
+                context = createNewContext();
+            }
+            return context;
+        }
+
+        /**
+         * Release.
+         *
+         * @param context
+         *            the context
+         * @param currentLanguage
+         *            the current language
+         */
+        void release(final Context context, final String currentLanguage) {
+            resetBindings(context, currentLanguage);
+            if (!(useContextSpool && pool.offer(context))) {
+                _log.debug("Context closed: {}", createdCount.decrementAndGet());
+                context.close();
+            }
+        }
+
+        /**
+         * Reset bindings.
+         *
+         * @param context
+         *            the context
+         * @param currentLanguage
+         *            the current language
+         */
+        private void resetBindings(final Context context, final String currentLanguage) {
+            // Clear current bindings
+            final var bindings = context.getBindings(currentLanguage);
+            for (final String key : bindings.getMemberKeys()) {
+                try {
+                    bindings.removeMember(key);
+                } catch (final UnsupportedOperationException _) {
+                    // skip non-removable keys, like built-ins
+                }
+            }
+        }
+
+        /**
+         * Shutdown.
+         */
+        void shutdown() {
+            pool.forEach(Context::close);
+            pool.clear();
         }
     }
 }

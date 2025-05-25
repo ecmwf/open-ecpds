@@ -2399,10 +2399,10 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     @Override
     public RemoteInputStream execute(final String script) throws ScriptException, IOException {
         try {
-            final var object = ScriptManager.exec(Object.class, ScriptManager.JS, script);
+            final var value = ScriptManager.exec(String.class, ScriptManager.JS, script);
             final var out = new ByteArrayOutputStream();
             final var gzip = new GZIPOutputStream(out, Deflater.BEST_COMPRESSION);
-            gzip.write(String.valueOf(object).getBytes());
+            gzip.write(value.getBytes());
             gzip.close();
             return new RemoteInputStreamImp(new ByteArrayInputStream(out.toByteArray()));
         } catch (final Throwable t) {

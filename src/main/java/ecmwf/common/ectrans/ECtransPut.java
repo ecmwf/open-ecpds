@@ -65,6 +65,7 @@ import ecmwf.common.rmi.interruptible.InterruptibleInputStream;
 import ecmwf.common.technical.MonitoredInputStream;
 import ecmwf.common.technical.MonitoredOutputStream;
 import ecmwf.common.technical.ProgressHandler;
+import ecmwf.common.technical.ScriptManager;
 import ecmwf.common.technical.StreamManagerImp;
 import ecmwf.common.technical.StreamPlugThread;
 import ecmwf.common.technical.ThrottledInputStream;
@@ -167,7 +168,7 @@ public final class ECtransPut extends ECtransAction {
             final var notifyPre = new StringBuilder(setup.getString(HOST_ECTRANS_NOTIFY_PRE));
             if (notifyPre.length() > 0 && isNotEmpty(connectOptions)) {
                 connectOptions.replace(notifyPre);
-                setup.eval(removeUknownMetadata(notifyPre.toString()));
+                ScriptManager.exec(ScriptManager.JS, removeUknownMetadata(notifyPre.toString()));
             }
             // Second version of the notification mechanism (e.g. mqtt)
             final var notifyAuth = setup.getOptions(HOST_ECTRANS_NOTIFY_AUTH);
@@ -409,7 +410,7 @@ public final class ECtransPut extends ECtransAction {
             final var notifyPost = new StringBuilder(setup.getString(HOST_ECTRANS_NOTIFY_POST));
             if (notifyPost.length() > 0 && isNotEmpty(connectOptions)) {
                 connectOptions.replace(notifyPost);
-                setup.eval(removeUknownMetadata(notifyPost.toString()));
+                ScriptManager.exec(ScriptManager.JS, removeUknownMetadata(notifyPost.toString()));
             }
             // Do we have a notification interface. If it is the case then we have to
             // send a notification
