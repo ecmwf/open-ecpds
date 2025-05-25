@@ -1,6 +1,6 @@
 -server
 -Xms128M
--Xmx1GB
+-Xmx1G
 -Xlog:gc*:file='run/var/log/ecpds/monitor/gc.log':time,uptime,level,tags:filesize=50M,filecount=10
 -XX:SoftMaxHeapSize=256M
 -XX:HeapDumpPath='run/var/log/ecpds/monitor'
