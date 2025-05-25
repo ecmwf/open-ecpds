@@ -32,8 +32,10 @@ services:
     hostname: ecpds-master
     network_mode: host
     environment:
-      # Setting maximum heap size for the Master-Server
-      ALLOCATED_MEMORY: 1G
+      # Setting initial, soft and maximum heap size
+      INITIAL_MEMORY: 128M
+      SOFT_MAX_MEMORY: 256M
+      MAX_MEMORY: 1G
       # Exposed IP address used to bind the public services (ecpds, ftp)
       EXTERNAL_ADDRESS: 0.0.0.0
       # Dedicated to data traffic between the internal components (jmx, rmi)
@@ -62,6 +64,8 @@ services:
       OPSVIEW_HOST:
       # Miscellaneous parameters
       RETRIEVAL_MAX_SPOOL_SIZE: 50 # Maximum number of parallel retrievals
+      # Java Virtual Machine options
+      JAVA_OPTS: -XX:+UseZGC -XX:ZUncommitDelay=5 # The ZGC Garbage Collector
     image: ${ECPDS_REPOSITORY:-ecpds}/master:${TAG:-latest}
     restart: unless-stopped
     volumes:
@@ -78,8 +82,10 @@ services:
     hostname: ecpds-monitor
     network_mode: host
     environment:
-      # Setting maximum heap size for the Monitor-Server
-      ALLOCATED_MEMORY: 1G
+      # Setting initial, soft and maximum heap size
+      INITIAL_MEMORY: 128M
+      SOFT_MAX_MEMORY: 256M
+      MAX_MEMORY: 1G
       # Exposed IP address used to bind the public services (http/s)
       EXTERNAL_ADDRESS: 0.0.0.0
       # Dedicated to data traffic between the internal components (jmx, rmi)
@@ -106,6 +112,8 @@ services:
       USE_CACHE: "no"
       MASTER_URL_LIST:
       DEFAULT_SOURCE_HOST_ID:
+      # Java Virtual Machine options
+      JAVA_OPTS: -XX:+UseZGC -XX:ZUncommitDelay=5 # The ZGC Garbage Collector
     image: ${ECPDS_REPOSITORY:-ecpds}/monitor:${TAG:-latest}
     restart: unless-stopped
     volumes:
@@ -122,8 +130,10 @@ services:
     hostname: ecpds-mover
     network_mode: host
     environment:
-      # Setting maximum heap size for the Mover-Server
-      ALLOCATED_MEMORY: 1G
+      # Setting initial, soft and maximum heap size
+      INITIAL_MEMORY: 128M
+      SOFT_MAX_MEMORY: 256M
+      MAX_MEMORY: 1G
       # Exposed IP address used to bind the public services (http/s, ftp, sftp, ecproxy)
       EXTERNAL_ADDRESS: 0.0.0.0
       # Dedicated to data traffic between the internal components (jmx, rmi)
@@ -153,6 +163,8 @@ services:
       MOVER_COLOR: "#0079d3"
       # Miscellaneous parameters
       OPERATION: "yes" # Set to 'no' to produce random data for missing files (for testing purpose only)
+      # Java Virtual Machine options
+      JAVA_OPTS: -XX:+UseZGC -XX:ZUncommitDelay=5 # The ZGC Garbage Collector
     image: ${ECPDS_REPOSITORY:-ecpds}/mover:${TAG:-latest}
     restart: unless-stopped
     volumes:
