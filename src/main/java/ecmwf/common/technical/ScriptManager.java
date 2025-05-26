@@ -55,7 +55,6 @@ import org.graalvm.polyglot.Engine;
 import org.graalvm.polyglot.HostAccess;
 import org.graalvm.polyglot.PolyglotException;
 import org.graalvm.polyglot.PolyglotException.StackFrame;
-
 import org.graalvm.polyglot.ResourceLimits;
 import org.graalvm.polyglot.Source;
 import org.graalvm.polyglot.Value;
@@ -205,8 +204,10 @@ public final class ScriptManager implements AutoCloseable {
     /**
      * Indents each line of a script with 4 spaces so it can be placed inside a function definition.
      *
-     * @param scriptBody
-     *            The original Python code
+     * @param body
+     *            the body
+     * @param levels
+     *            the levels
      *
      * @return Indented Python code for use inside a function
      */
@@ -407,6 +408,42 @@ public final class ScriptManager implements AutoCloseable {
      *             the script exception
      */
     public <T> T eval(final Class<T> clazz, final String script, final String parameter) throws ScriptException {
+        return eval(clazz, eval(script), parameter);
+    }
+
+    /**
+     * Eval.
+     *
+     * @param <T>
+     *            the generic type
+     * @param clazz
+     *            the clazz
+     * @param value
+     *            the value
+     * @param parameter
+     *            the parameter
+     *
+     * @return the t
+     *
+     * @throws ScriptException
+     *             the script exception
+     */
+    public static <T> T eval(final Class<T> clazz, final Value value, final String parameter) throws ScriptException {
+        return cast(clazz, parameter != null ? getNestedValue(value, parameter) : value);
+    }
+
+    /**
+     * Eval.
+     *
+     * @param script
+     *            the script
+     *
+     * @return the t
+     *
+     * @throws ScriptException
+     *             the script exception
+     */
+    public Value eval(final String script) throws ScriptException {
         final var start = System.currentTimeMillis();
         final Value value;
         try {
@@ -420,7 +457,7 @@ public final class ScriptManager implements AutoCloseable {
                 _log.debug("Time taken: {} ms", duration);
             }
         }
-        return cast(clazz, parameter != null ? getNestedValue(value, parameter) : value);
+        return value;
     }
 
     /**
@@ -448,13 +485,16 @@ public final class ScriptManager implements AutoCloseable {
      * @param context
      *            the context
      *
+     * @return the script manager
+     *
      * @throws ScriptException
      *             the script exception
      */
-    public void put(final Map<String, Object> context) throws ScriptException {
+    public ScriptManager put(final Map<String, Object> context) throws ScriptException {
         for (final Map.Entry<String, Object> entry : context.entrySet()) {
             put(entry.getKey(), entry.getValue());
         }
+        return this;
     }
 
     /**
@@ -467,7 +507,7 @@ public final class ScriptManager implements AutoCloseable {
      *
      * @return the nested value
      */
-    private static Value getNestedValue(final Value root, final String path) {
+    public static Value getNestedValue(final Value root, final String path) {
         if (root == null || !root.hasMembers())
             return null;
         final var keys = path.split("\\.");
@@ -712,8 +752,6 @@ public final class ScriptManager implements AutoCloseable {
          *
          * @param useContextSpool
          *            the use context spool
-         * @param allowExperimentalOptions
-         *            the allow experimental options
          * @param limits
          *            the limits
          */

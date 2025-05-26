@@ -41,7 +41,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
@@ -50,6 +49,7 @@ import javax.script.ScriptException;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.graalvm.polyglot.Value;
 
 import ecmwf.common.ectrans.ECtransGroups.Module;
 import ecmwf.common.technical.ByteSize;
@@ -421,7 +421,7 @@ public final class ECtransSetup implements Serializable {
     public boolean matches(final String name, final String value, final String defaultRegex) {
         final var regex = get(name, defaultRegex);
         try {
-            final boolean result = regex != null && value != null && value.matches(regex);
+            final var result = regex != null && value != null && value.matches(regex);
             if (debug) {
                 _log.debug("Regex matching '{}' '{}': {}", value, regex, result);
             }
@@ -461,7 +461,7 @@ public final class ECtransSetup implements Serializable {
     public boolean matches(final ECtransOptions option, final String value, final String defaultRegex) {
         final var regex = get(option.getModule(), option.getName(), defaultRegex);
         try {
-            final boolean result = regex != null && value != null && value.matches(regex);
+            final var result = regex != null && value != null && value.matches(regex);
             if (debug) {
                 _log.debug("Regex matching '{}' '{}': {}", value, regex, result);
             }
@@ -675,7 +675,7 @@ public final class ECtransSetup implements Serializable {
     private long get(final String moduleName, final String name, final long defaultValue) {
         try {
             return Long.parseLong(get(moduleName, name, null));
-        } catch (final Exception e) {
+        } catch (final Exception _) {
             return defaultValue;
         }
     }
@@ -840,7 +840,7 @@ public final class ECtransSetup implements Serializable {
     private int get(final String moduleName, final String name, final int defaultValue) {
         try {
             return Integer.parseInt(get(moduleName, name, null));
-        } catch (final Exception e) {
+        } catch (final Exception _) {
             return defaultValue;
         }
     }
@@ -879,7 +879,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the object of type class
      */
-    public boolean getBoolean(final ECtransOptions option, final Map<String, Object> bindings) {
+    public boolean getBoolean(final ECtransOptions option, final Value bindings) {
         return Boolean.TRUE.equals(get(option, Boolean.class, bindings));
     }
 
@@ -905,7 +905,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the object of type class
      */
-    public Boolean getBooleanObject(final ECtransOptions option, final Map<String, Object> bindings) {
+    public Boolean getBooleanObject(final ECtransOptions option, final Value bindings) {
         return get(option, Boolean.class, bindings);
     }
 
@@ -967,7 +967,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the object of type class
      */
-    public String getString(final ECtransOptions option, final Map<String, Object> bindings) {
+    public String getString(final ECtransOptions option, final Value bindings) {
         return get(option, String.class, bindings);
     }
 
@@ -1029,7 +1029,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the object of type class
      */
-    public Integer getInteger(final ECtransOptions option, final Map<String, Object> bindings) {
+    public Integer getInteger(final ECtransOptions option, final Value bindings) {
         return get(option, Integer.class, bindings);
     }
 
@@ -1091,7 +1091,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the object of type class
      */
-    public Long getLong(final ECtransOptions option, final Map<String, Object> bindings) {
+    public Long getLong(final ECtransOptions option, final Value bindings) {
         return get(option, Long.class, bindings);
     }
 
@@ -1153,7 +1153,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the object of type class
      */
-    public Double getDouble(final ECtransOptions option, final Map<String, Object> bindings) {
+    public Double getDouble(final ECtransOptions option, final Value bindings) {
         return get(option, Double.class, bindings);
     }
 
@@ -1215,7 +1215,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the object of type class
      */
-    public ByteSize getByteSize(final ECtransOptions option, final Map<String, Object> bindings) {
+    public ByteSize getByteSize(final ECtransOptions option, final Value bindings) {
         return get(option, ByteSize.class, bindings);
     }
 
@@ -1325,7 +1325,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the time range
      */
-    public TimeRange getTimeRange(final ECtransOptions option, final Map<String, Object> bindings) {
+    public TimeRange getTimeRange(final ECtransOptions option, final Value bindings) {
         return get(option, TimeRange.class, bindings);
     }
 
@@ -1368,7 +1368,7 @@ public final class ECtransSetup implements Serializable {
      * @return the object of type class
      */
     private <T> T get(final ECtransOptions option, final Class<T> clazz) {
-        return get(option, clazz, Map.of());
+        return get(option, clazz, null);
     }
 
     /**
@@ -1387,22 +1387,40 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the object of type class
      */
-    private <T> T get(final ECtransOptions option, final Class<T> clazz, final Map<String, Object> bindings) {
-        final var content = resolve(scriptContent.toString());
-        if (!content.isBlank() && isOptionDefined(option, content)) {
+    private <T> T get(final ECtransOptions option, final Class<T> clazz, final Value bindings) {
+        if (bindings != null && !bindings.isNull()) {
             final var parameter = option.getModule() + "." + option.getName();
-            try (final var manager = new ScriptManager(get("script", "language", ScriptManager.JS))) {
-                manager.put(bindings);
-                final var output = manager.eval(clazz, content, parameter);
+            try {
+                final var output = ScriptManager.eval(clazz, bindings, parameter);
                 if (output != null)
                     return output;
             } catch (final ScriptException e) {
-                _log.warn("Cannot execute script (will check properties) - option:{}, class:{}", parameter,
+                _log.warn("Cannot extrtact parameter (will check properties) - option:{}, class:{}", parameter,
                         clazz.getName(), e);
             }
         }
         // Switch back to the lookup in the properties
         return getFromProperties(option, clazz);
+    }
+
+    /**
+     * Execute the underlying script content (if not empty) and return the associated value.
+     *
+     * @param bindings
+     *            the bindings
+     *
+     * @return the value
+     */
+    public Value getValue(final Map<String, Object> bindings) {
+        final var content = resolve(scriptContent.toString());
+        if (!content.isBlank()) {
+            try (final var manager = new ScriptManager(get("script", "language", ScriptManager.JS))) {
+                return manager.put(bindings).eval(content);
+            } catch (final ScriptException e) {
+                _log.warn("Cannot execute script (will check properties)", e);
+            }
+        }
+        return null;
     }
 
     /**
@@ -1418,27 +1436,11 @@ public final class ECtransSetup implements Serializable {
      * @return true, if successful
      */
     public static boolean isOptionDefined(final ECtransOptions option, final String content) {
-        String pattern = "\\b" + Pattern.quote(option.getModule()) + "\\s*:\\s*\\{[^}]*\\b"
+        final var pattern = "\\b" + Pattern.quote(option.getModule()) + "\\s*:\\s*\\{[^}]*\\b"
                 + Pattern.quote(option.getName()) + "\\b\\s*:";
-        Pattern regex = Pattern.compile(pattern, Pattern.DOTALL);
-        Matcher matcher = regex.matcher(content);
+        final var regex = Pattern.compile(pattern, Pattern.DOTALL);
+        final var matcher = regex.matcher(content);
         return matcher.find();
-    }
-
-    /**
-     * Exists.
-     *
-     * @param name
-     *            the name
-     * @param separator
-     *            the separator
-     * @param content
-     *            the content
-     *
-     * @return true, if successful
-     */
-    public static boolean exists(final String name, final char separator, final String content) {
-        return Pattern.compile("\\s*" + name + "\\s*" + separator + ".*").matcher(content).find();
     }
 
     /**
@@ -1598,7 +1600,7 @@ public final class ECtransSetup implements Serializable {
             final var result = get(moduleName, name, null);
             return result == null || result.isBlank() ? defaultValue
                     : "true".equalsIgnoreCase(result) || "yes".equalsIgnoreCase(result);
-        } catch (final Exception e) {
+        } catch (final Exception _) {
             return defaultValue;
         }
     }
@@ -1875,7 +1877,7 @@ public final class ECtransSetup implements Serializable {
                         set(option.getModule(), option.getName(), result);
                     }
                 }
-            } catch (final Exception ignore) {
+            } catch (final Exception _) {
                 // No conversion!
             }
         }

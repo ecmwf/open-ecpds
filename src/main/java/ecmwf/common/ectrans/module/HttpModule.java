@@ -1652,18 +1652,19 @@ public final class HttpModule extends TransferModule {
                                     new ObjectMapper().readValue(
                                             new String(message.getPayload(), StandardCharsets.UTF_8), Map.class),
                                     "mqttTopic", topic));
-                            final var href = getSetup().getString(HOST_HTTP_MQTT_HREF, bindings);
+                            final var value = getSetup().getValue(bindings);
+                            final var href = getSetup().getString(HOST_HTTP_MQTT_HREF, value);
                             _log.debug("payload: {} : bindings: {} ; href: {}", new String(message.getPayload()),
                                     bindings, href);
                             if (isNotEmpty(href)) {
                                 final var alternativeName = getSetup().getString(HOST_HTTP_MQTT_ALTERNATIVE_NAME,
-                                        bindings);
-                                final var size = getSetup().getByteSize(HOST_HTTP_MQTT_SIZE, bindings);
-                                final var time = getSetup().getLong(HOST_HTTP_MQTT_TIME, bindings);
+                                        value);
+                                final var size = getSetup().getByteSize(HOST_HTTP_MQTT_SIZE, value);
+                                final var time = getSetup().getLong(HOST_HTTP_MQTT_TIME, value);
                                 _log.debug("{} : {} : {} : {} : {}", bindings, href, alternativeName, size, time);
                                 addEntry(manager, resultList, rootDirectory, targetDirectory, href, level, pattern,
                                         counter, alternativeName, size, time,
-                                        getSetup().getString(HOST_HTTP_MQTT_BODY, bindings),
+                                        getSetup().getString(HOST_HTTP_MQTT_BODY, value),
                                         getSetup().getBoolean(HOST_HTTP_MQTT_ADD_PAYLOAD)
                                                 ? Base64.getEncoder().encodeToString(message.getPayload()) : "");
                             } else {
