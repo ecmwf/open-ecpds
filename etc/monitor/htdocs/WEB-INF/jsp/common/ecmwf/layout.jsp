@@ -105,6 +105,8 @@
 </style>
 
 <body bgcolor="#ffffff" text="#000000">
+	
+			<iframe title="sandboxFrame" id="sandboxFrame" style="display:none;"></iframe>
 
 			<tiles:insert name="header">
 				<tiles:put name="title"><%=theTitle%></tiles:put>		

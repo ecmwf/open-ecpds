@@ -186,17 +186,28 @@ function getEditorProperties(readOnly, autocompletion, name, mode) {
 }
 
 function testSource(aceEditor) {
-	try {
-		var code = aceEditor.getValue();
-		var o = eval(code);
-		if (o != null) {
-			alert(o.toString());
-		} else {
-			alert("No output from script");
-		}
-	} catch (error) {
-		alert("Error: " + error.message);
-	}
+  const userCode = aceEditor.getValue();
+  // Build HTML content for the iframe
+  const iframeHTML = `<!DOCTYPE html>
+  <html>
+  <body>
+    <script>
+      (async () => {
+        try {
+          const result = await (async function() {
+            ${userCode}
+          })();
+          alert(result != null && result.length > 0 ? result : "No return from script");
+        } catch (e) {
+          alert(e.message);
+        }
+      })();
+    </script>
+  </body>
+  </html>`;
+  const blob = new Blob([iframeHTML], { type: 'text/html' });
+  const iframe = document.getElementById("sandboxFrame");
+  iframe.src = URL.createObjectURL(blob);
 }
 
 function getEditorType(aceEditor) {
