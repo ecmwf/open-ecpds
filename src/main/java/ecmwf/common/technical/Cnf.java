@@ -464,6 +464,22 @@ public final class Cnf {
     }
 
     /**
+     * Boolean object as a String.
+     *
+     * @param group
+     *            the group
+     * @param key
+     *            the key
+     * @param defaultValue
+     *            the default value
+     *
+     * @return the string
+     */
+    public static String stringAt(final String group, final String key, final Boolean defaultValue) {
+        return booleanAt(group, key, defaultValue).toString();
+    }
+
+    /**
      * Gets the command.
      *
      * @param group

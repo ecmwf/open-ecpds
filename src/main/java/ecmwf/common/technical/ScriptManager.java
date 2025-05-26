@@ -33,6 +33,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.URL;
+import java.text.DecimalFormat;
 import java.time.Duration;
 import java.time.Period;
 import java.util.Arrays;
@@ -42,6 +43,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import javax.script.ScriptException;
@@ -76,14 +78,20 @@ public final class ScriptManager implements AutoCloseable {
     public static final String PYTHON = "python";
 
     /** The Constant SHARED_ENGINE. */
-    private static final Engine SHARED_ENGINE = Cnf.at("ScriptManager", "allowExperimentalOptions", true)
-            ? Engine.newBuilder(JS, PYTHON).allowExperimentalOptions(true)
-                    .option("engine.WarnVirtualThreadSupport", "false").build()
-            : Engine.create();
+    private static final Engine SHARED_ENGINE = Engine.newBuilder(JS, PYTHON)
+            .allowExperimentalOptions(Cnf.at("ScriptManager", "allowExperimentalOptions", true))
+            .option("engine.WarnVirtualThreadSupport", Cnf.stringAt("ScriptManager", "warnVirtualThreadSupport", false))
+            .option("engine.Compilation", Cnf.stringAt("ScriptManager", "engineCompilation", false)).build();
 
     /** The Constant CONTEXT_PROVIDER. */
     private static final ContextProvider CONTEXT_PROVIDER = new ContextProvider(
             Cnf.at("ScriptManager", "enableContextSpool", true), Cnf.at("ScriptManager", "resourceLimits", 0));
+
+    /** The Constant DEBUG_POOL. */
+    private static final boolean DEBUG_POOL = Cnf.at("ScriptManager", "debugPool", false);
+
+    /** The Constant DEBUG_FREQUENCY. */
+    private static final int DEBUG_FREQUENCY = Cnf.at("ScriptManager", "debugFrequency", 1_000_000);
 
     /**
      * The Constant EXPOSED_CLASSES. Classes which are allowed to be used within the scripts.
@@ -681,6 +689,18 @@ public final class ScriptManager implements AutoCloseable {
         /** The created count. */
         private final AtomicInteger createdCount = new AtomicInteger(0);
 
+        /** The Constant format. */
+        static final DecimalFormat format = new DecimalFormat("0.00");
+
+        /** The startup. */
+        final long startup = System.currentTimeMillis();
+
+        /** The acquired. */
+        final AtomicLong acquired = new AtomicLong(0);
+
+        /** The released. */
+        final AtomicLong released = new AtomicLong(0);
+
         /** The resource limits. */
         private final ResourceLimits resourceLimits;
 
@@ -717,6 +737,18 @@ public final class ScriptManager implements AutoCloseable {
         }
 
         /**
+         * Gets the avg per sec.
+         *
+         * @param count
+         *            the count
+         *
+         * @return the avg per sec
+         */
+        private String getAvgPerSec(final AtomicLong count) {
+            return format.format(count.get() / ((System.currentTimeMillis() - startup) / 1000d));
+        }
+
+        /**
          * Acquire.
          *
          * @return the context
@@ -726,6 +758,12 @@ public final class ScriptManager implements AutoCloseable {
             if (context == null) {
                 _log.debug("Context created: {}", createdCount.incrementAndGet());
                 context = createNewContext();
+            } else {
+                if (DEBUG_POOL && acquired.updateAndGet(c -> c == Long.MAX_VALUE ? 1 : c + 1) % DEBUG_FREQUENCY == 0
+                        && _log.isDebugEnabled()) {
+                    _log.debug("Context pool: Acquired: {} ({}/sec avg) Released: {} ({}/sec avg)", acquired,
+                            getAvgPerSec(acquired), released, getAvgPerSec(released));
+                }
             }
             return context;
         }
@@ -743,6 +781,12 @@ public final class ScriptManager implements AutoCloseable {
             if (!(useContextSpool && pool.offer(context))) {
                 _log.debug("Context closed: {}", createdCount.decrementAndGet());
                 context.close();
+            } else {
+                if (DEBUG_POOL && released.updateAndGet(c -> c == Long.MAX_VALUE ? 1 : c + 1) % DEBUG_FREQUENCY == 0
+                        && _log.isDebugEnabled()) {
+                    _log.debug("Context pool: Acquired: {} ({}/sec avg) Released: {} ({}/sec avg)", acquired,
+                            getAvgPerSec(acquired), released, getAvgPerSec(released));
+                }
             }
         }
 
