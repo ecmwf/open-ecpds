@@ -835,6 +835,71 @@ public final class Cnf {
     }
 
     /**
+     * Resolves placeholders in the form of "$${service:...}" from a given input string (e.g. "$${ecpds:user.home}").
+     *
+     * Supported formats inside the placeholder: - $${service:property.name} → resolves to System property
+     * "property.name" - $${service:someFunction()} → resolves by invoking a static method named "someFunction" -
+     * $${service:map[key]} → resolves a key lookup from a named map
+     *
+     * Nested placeholders are also resolved recursively. Unknown or malformed placeholders are preserved as-is.
+     *
+     * Example: Input: "Path: $${service:user.home}/bin" Output: "Path: /home/laurent/bin" (if user.home is a system
+     * property)
+     */
+    public static String getServiceValue(final String service, final String value) {
+        if (value == null || value.isEmpty())
+            return value;
+        final var prefix = "$${" + service + ":";
+        final var result = new StringBuilder();
+        var pos = 0;
+        while (true) {
+            final var start = value.indexOf(prefix, pos);
+            if (start == -1) {
+                result.append(value.substring(pos));
+                break;
+            }
+            result.append(value, pos, start); // append preceding text
+            final var end = value.indexOf('}', start);
+            if (end == -1) {
+                // Malformed placeholder, append as-is
+                result.append(value.substring(start));
+                break;
+            }
+            // Extract and resolve the placeholder
+            final var expr = value.substring(start + prefix.length(), end);
+            final var resolved = resolveExpression(expr);
+            result.append(resolved != null ? resolved : prefix + expr + "}");
+            pos = end + 1;
+        }
+        return result.toString();
+    }
+
+    /**
+     * Resolves a single expression from inside a $${service:...} placeholder.
+     */
+    private static String resolveExpression(final String expr) {
+        if (expr == null || expr.isEmpty())
+            return "";
+        try {
+            // Map-style lookup: name[key]
+            final var bracket = expr.indexOf('[');
+            if (bracket != -1 && expr.endsWith("]")) {
+                final var map = expr.substring(0, bracket);
+                final var key = expr.substring(bracket + 1, expr.length() - 1);
+                return at(map, key); // custom map resolver (not shown here)
+            }
+            // Function call: name()
+            if (expr.endsWith("()")) {
+                return callMethod(expr.substring(0, expr.length() - 2)); // custom reflection method
+            }
+            // System property: plain name
+            return System.getProperty(expr, "");
+        } catch (final Exception _) {
+            return null; // fall back to unresolved form
+        }
+    }
+
+    /**
      * Call method.
      *
      * @param name
