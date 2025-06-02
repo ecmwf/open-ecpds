@@ -65,7 +65,7 @@ public final class ThreadService {
     private static final boolean USE_THREAD_SPOOL = Cnf.at("Server", "useThreadSpool", true);
 
     /** The Constant USE_VIRTUAL_THREAD. */
-    private static final boolean USE_VIRTUAL_THREAD = Cnf.at("Server", "useVirtualThread", true);
+    private static final boolean USE_VIRTUAL_THREAD = Cnf.at("Server", "useVirtualThread", false);
 
     /** The Constant configurablePool. */
     private static final ExecutorService configurablePool = ConfigurableThreadFactory.getExecutorService(false);
