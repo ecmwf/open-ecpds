@@ -154,51 +154,47 @@ public final class ScriptManager implements AutoCloseable {
     }
 
     /**
-     * Wraps the provided JavaScript code in an immediately-invoked function expression (IIFE) to prevent polluting the
-     * global context and to capture the script's final expression as the result.
-     *
-     * This wrapper ensures that:
-     * <ul>
-     * <li>Temporary variables or function declarations do not leak into the global scope.</li>
-     * <li>The result of the last evaluated expression in the script is returned to the caller.</li>
-     * </ul>
-     *
-     * Note: The scriptBody should end with a meaningful expression if a result is expected.
+     * Wraps a JavaScript code block in an immediately-invoked function expression (IIFE), and prepends variable
+     * declarations for Java classes specified in the {@code EXPOSED_CLASSES} array.
+     * <p>
+     * Each class in {@code exposedClasses} is mapped to a JavaScript {@code var} declaration using {@code Java.type},
+     * making them available within the script. The body of the script is indented for readability.
      *
      * @param scriptBody
-     *            the JavaScript code to wrap
+     *            the JavaScript code to be wrapped and executed
      *
-     * @return a wrapped version of the script, ready for evaluation in a GraalVM context
+     * @return a complete JavaScript snippet with the necessary class imports and function wrapping
      */
     private static String wrapJavaScript(final String scriptBody) {
-        return "(() => {\n" + indent(scriptBody, 1) + "\n" + "})()";
+        final String preamble = Arrays.stream(EXPOSED_CLASSES)
+                .map(clazz -> "var " + clazz.getSimpleName() + " = Java.type('" + clazz.getName() + "');")
+                .collect(Collectors.joining("\n"));
+        return "(() => {\n" + indent(preamble, 1) + "\n\n" + indent(scriptBody, 1) + "\n" + "})()";
     }
 
     /**
-     * Wraps the provided Python code in a uniquely named function to isolate its scope and avoid polluting the global
-     * namespace. The function is then called immediately, its result captured in a variable, and the function
-     * definition is deleted to clean up.
-     *
-     * This wrapper ensures that:
-     * <ul>
-     * <li>Temporary variables or function definitions inside the script do not remain in the global scope.</li>
-     * <li>The script's final expression (or an explicit return) is captured and returned as the result.</li>
-     * </ul>
-     *
-     * Note: The scriptBody should use a return statement to provide a result from the function.
+     * Wraps a Python script body in an isolated function context, and injects import statements for Java classes
+     * exposed via {@code exposedClasses}. The Java classes are imported using the GraalVM-specific syntax:
+     * {@code import fully.qualified.ClassName as ClassName}.
+     * <p>
+     * The script is wrapped in a uniquely named function to avoid name collisions and is executed immediately. The
+     * result is stored in a uniquely named variable, and the function is deleted afterward to minimize global scope
+     * pollution.
      *
      * @param scriptBody
-     *            the Python code to wrap
+     *            the body of the Python script to wrap and execute
      *
-     * @return a wrapped version of the script, ready for evaluation in a GraalVM Python context
+     * @return a complete Python script string with injected Java imports and execution wrapper
      */
     private static String wrapPythonScript(final String scriptBody) {
         final var wrapperName = "__wrapper_" + UUID.randomUUID().toString().replace("-", "");
         final var wrapperFunction = "_" + wrapperName + "__";
         final var resultVar = wrapperName + "_result__";
-        // Use newline-separated string concatenation instead of text blocks
-        return "def " + wrapperFunction + "():\n" + indent(scriptBody, 1) + "\n" + resultVar + " = " + wrapperFunction
-                + "()\n" + "del " + wrapperFunction + "\n" + resultVar;
+        final String preamble = Arrays.stream(EXPOSED_CLASSES)
+                .map(clazz -> "import " + clazz.getName() + " as " + clazz.getSimpleName())
+                .collect(Collectors.joining("\n"));
+        return preamble + "\n\n" + "def " + wrapperFunction + "():\n" + indent(scriptBody, 1) + "\n" + resultVar + " = "
+                + wrapperFunction + "()\n" + "del " + wrapperFunction + "\n" + resultVar;
     }
 
     /**
