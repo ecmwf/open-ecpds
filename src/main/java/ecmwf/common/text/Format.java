@@ -78,6 +78,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import ecmwf.common.database.DataBaseException;
+import ecmwf.common.technical.ScriptManager;
 
 /**
  * The Class Format.
@@ -1471,7 +1472,13 @@ public final class Format {
      *             the script exception
      */
     public static String choose(final String options) throws DuplicatedChooseScore, ScriptException {
-        final var reader = new BufferedReader(new StringReader(options.trim()));
+        final var chooseFrom = options.trim();
+        if (chooseFrom.startsWith("$(") && chooseFrom.endsWith(")")) {
+            // This is a script so we just evaluate it and use the result string!
+            return choose(String.valueOf(ScriptManager.exec(Object.class, ScriptManager.JS,
+                    chooseFrom.substring(2, chooseFrom.length() - 1))));
+        }
+        final var reader = new BufferedReader(new StringReader(chooseFrom));
         var highScore = 0;
         var duplicated = false;
         String path = null;
