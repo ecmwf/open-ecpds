@@ -1475,8 +1475,8 @@ public final class Format {
         final var chooseFrom = options.trim();
         if (chooseFrom.startsWith("$(") && chooseFrom.endsWith(")")) {
             // This is a script so we just evaluate it and use the result string!
-            return choose(String.valueOf(ScriptManager.exec(Object.class, ScriptManager.JS,
-                    chooseFrom.substring(2, chooseFrom.length() - 1))));
+            return choose(ScriptManager.exec(String.class, ScriptManager.JS,
+                    chooseFrom.substring(2, chooseFrom.length() - 1)));
         }
         final var reader = new BufferedReader(new StringReader(chooseFrom));
         var highScore = 0;
