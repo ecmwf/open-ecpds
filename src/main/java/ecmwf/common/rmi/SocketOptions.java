@@ -51,10 +51,10 @@ class SocketOptions {
                 System.load(absolutePath);
                 loaded = true;
             } catch (final UnsatisfiedLinkError e) {
-                _log.error("Failed to load native library: {}", absolutePath, e);
+                _log.warn("Failed to load native library: {}", absolutePath, e);
             }
         } else {
-            _log.error("Failed to load native library: {} (exists={},canRead={})", absolutePath, libraryFile.exists(),
+            _log.warn("Failed to load native library: {} (exists={},canRead={})", absolutePath, libraryFile.exists(),
                     libraryFile.canRead());
         }
     }
