@@ -243,49 +243,51 @@ public final class ScriptManager implements AutoCloseable {
         };
     }
 
-	/**
-	 * Ensures the last meaningful expression in a JavaScript snippet is returned.
-	 * Handles both plain scripts and scripts wrapped in an IIFE (() => { ... })().
-	 *
-	 * @param jsCode the original JavaScript code
-	 * @return the modified code with return on the last expression if needed
-	 */
-	private static String addReturnToLastExpressionJS(final String jsCode) {
-		final var trimmed = jsCode.trim();
-		final String body;
-		final var isIIFE = trimmed.startsWith("(() => {") && trimmed.endsWith("})()");
-		if (isIIFE) {
-			body = trimmed.substring("(() => {".length(), trimmed.length() - "})()".length()).trim();
-		} else {
-			body = trimmed;
-		}
-		final var lines = body.split("\\r?\\n");
-		final var result = new StringBuilder();
-		var lastExpr = -1;
-		for (var i = lines.length - 1; i >= 0; i--) {
-			final var line = lines[i].trim();
-			if (!line.isEmpty() && !line.startsWith("//")) {
-				lastExpr = i;
-				break;
-			}
-		}
-		for (var i = 0; i < lines.length; i++) {
-			if (i == lastExpr) {
-				final var trimmedLine = lines[i].trim();
-				if (trimmedLine.startsWith("return ")) {
-					result.append(lines[i]);
-				} else {
-					result.append("return ").append(trimmedLine.replaceAll(";+\\s*$", "")).append(";");
-				}
-			} else {
-				result.append(lines[i]);
-			}
-			if (i < lines.length - 1)
-				result.append("\n");
-		}
-		final var processedBody = result.toString();
-		return isIIFE ? "(() => {\n" + processedBody + "\n})()" : processedBody;
-	}
+    /**
+     * Ensures the last meaningful expression in a JavaScript snippet is returned. Handles both plain scripts and
+     * scripts wrapped in an IIFE (() => { ... })().
+     *
+     * @param jsCode
+     *            the original JavaScript code
+     *
+     * @return the modified code with return on the last expression if needed
+     */
+    private static String addReturnToLastExpressionJS(final String jsCode) {
+        final var trimmed = jsCode.trim();
+        final String body;
+        final var isIIFE = trimmed.startsWith("(() => {") && trimmed.endsWith("})()");
+        if (isIIFE) {
+            body = trimmed.substring("(() => {".length(), trimmed.length() - "})()".length()).trim();
+        } else {
+            body = trimmed;
+        }
+        final var lines = body.split("\\r?\\n");
+        final var result = new StringBuilder();
+        var lastExpr = -1;
+        for (var i = lines.length - 1; i >= 0; i--) {
+            final var line = lines[i].trim();
+            if (!line.isEmpty() && !line.startsWith("//")) {
+                lastExpr = i;
+                break;
+            }
+        }
+        for (var i = 0; i < lines.length; i++) {
+            if (i == lastExpr) {
+                final var trimmedLine = lines[i].trim();
+                if (trimmedLine.startsWith("return ")) {
+                    result.append(lines[i]);
+                } else {
+                    result.append("return ").append(trimmedLine.replaceAll(";+\\s*$", "")).append(";");
+                }
+            } else {
+                result.append(lines[i]);
+            }
+            if (i < lines.length - 1)
+                result.append("\n");
+        }
+        final var processedBody = result.toString();
+        return isIIFE ? "(() => {\n" + processedBody + "\n})()" : processedBody;
+    }
 
     /**
      * Ensures that the last meaningful line of a Python code snippet is returned when wrapped in a function. If the
