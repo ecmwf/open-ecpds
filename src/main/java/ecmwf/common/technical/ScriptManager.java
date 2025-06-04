@@ -243,50 +243,49 @@ public final class ScriptManager implements AutoCloseable {
         };
     }
 
-    /**
-     * Ensures that the last meaningful line of a JavaScript code snippet is returned when the script is wrapped inside
-     * a function.
-     * <p>
-     * GraalVM automatically evaluates the last expression of a script, but this behavior is lost when the script is
-     * wrapped in a function. This method rewrites the last non-comment, non-blank line as a return statement if it is a
-     * standalone expression.
-     *
-     * @param jsCode
-     *            the original JavaScript code snippet
-     *
-     * @return the modified code with a return statement on the last expression if needed
-     */
-    private static String addReturnToLastExpressionJS(final String jsCode) {
-        final var lines = jsCode.split("\\r?\\n");
-        final var result = new StringBuilder();
-        // Find the index of the last meaningful line
-        var lastExprIndex = -1;
-        for (var i = lines.length - 1; i >= 0; i--) {
-            final var line = lines[i].trim();
-            if (!line.isEmpty() && !line.startsWith("//")) {
-                lastExprIndex = i;
-                break;
-            }
-        }
-        for (var i = 0; i < lines.length; i++) {
-            if (i == lastExprIndex) {
-                final var trimmed = lines[i].trim();
-
-                // Already a return?
-                if (trimmed.startsWith("return ")) {
-                    result.append(lines[i]);
-                } else {
-                    result.append("return ").append(trimmed.replaceAll(";+\\s*$", "")).append(";");
-                }
-            } else {
-                result.append(lines[i]);
-            }
-            if (i < lines.length - 1) {
-                result.append("\n");
-            }
-        }
-        return result.toString();
-    }
+	/**
+	 * Ensures the last meaningful expression in a JavaScript snippet is returned.
+	 * Handles both plain scripts and scripts wrapped in an IIFE (() => { ... })().
+	 *
+	 * @param jsCode the original JavaScript code
+	 * @return the modified code with return on the last expression if needed
+	 */
+	private static String addReturnToLastExpressionJS(final String jsCode) {
+		final var trimmed = jsCode.trim();
+		final String body;
+		final var isIIFE = trimmed.startsWith("(() => {") && trimmed.endsWith("})()");
+		if (isIIFE) {
+			body = trimmed.substring("(() => {".length(), trimmed.length() - "})()".length()).trim();
+		} else {
+			body = trimmed;
+		}
+		final var lines = body.split("\\r?\\n");
+		final var result = new StringBuilder();
+		var lastExpr = -1;
+		for (var i = lines.length - 1; i >= 0; i--) {
+			final var line = lines[i].trim();
+			if (!line.isEmpty() && !line.startsWith("//")) {
+				lastExpr = i;
+				break;
+			}
+		}
+		for (var i = 0; i < lines.length; i++) {
+			if (i == lastExpr) {
+				final var trimmedLine = lines[i].trim();
+				if (trimmedLine.startsWith("return ")) {
+					result.append(lines[i]);
+				} else {
+					result.append("return ").append(trimmedLine.replaceAll(";+\\s*$", "")).append(";");
+				}
+			} else {
+				result.append(lines[i]);
+			}
+			if (i < lines.length - 1)
+				result.append("\n");
+		}
+		final var processedBody = result.toString();
+		return isIIFE ? "(() => {\n" + processedBody + "\n})()" : processedBody;
+	}
 
     /**
      * Ensures that the last meaningful line of a Python code snippet is returned when wrapped in a function. If the
