@@ -154,22 +154,30 @@ public final class ScriptManager implements AutoCloseable {
     }
 
     /**
-     * Wraps a JavaScript code block in an immediately-invoked function expression (IIFE), and prepends variable
-     * declarations for Java classes specified in the {@code EXPOSED_CLASSES} array.
+     * Wraps the given JavaScript code in an Immediately Invoked Function Expression (IIFE), ensuring that a predefined
+     * set of Java classes (listed in {@code EXPOSED_CLASSES}) are made available in the script via {@code Java.type()}
+     * bindings.
      * <p>
-     * Each class in {@code exposedClasses} is mapped to a JavaScript {@code var} declaration using {@code Java.type},
-     * making them available within the script. The body of the script is indented for readability.
+     * If the provided script is already wrapped in an IIFE (i.e. starts with {@code (() => {})(})}), the method injects
+     * the preamble inside the existing wrapper instead of wrapping it again.
      *
      * @param scriptBody
-     *            the JavaScript code to be wrapped and executed
+     *            The JavaScript code to be wrapped and prefixed with type bindings.
      *
-     * @return a complete JavaScript snippet with the necessary class imports and function wrapping
+     * @return The script wrapped in an IIFE with exposed Java types, unless already wrapped.
      */
     private static String wrapJavaScript(final String scriptBody) {
-        final String preamble = Arrays.stream(EXPOSED_CLASSES)
+        final var trimmed = scriptBody.trim();
+        final var preamble = Arrays.stream(EXPOSED_CLASSES)
                 .map(clazz -> "var " + clazz.getSimpleName() + " = Java.type('" + clazz.getName() + "');")
                 .collect(Collectors.joining("\n"));
-        return "(() => {\n" + indent(preamble, 1) + "\n\n" + indent(scriptBody, 1) + "\n" + "})()";
+        if (trimmed.startsWith("(() => {") && trimmed.endsWith("})()")) {
+            // Already wrapped, inject preamble after the opening {
+            final var innerBody = trimmed.substring("(() => {".length(), trimmed.length() - "})()".length()).trim();
+            return "(() => {\n" + indent(preamble, 1) + "\n\n" + indent(innerBody, 1) + "\n" + "})()";
+        } else {
+            return "(() => {\n" + indent(preamble, 1) + "\n\n" + indent(scriptBody, 1) + "\n" + "})()";
+        }
     }
 
     /**
@@ -190,7 +198,7 @@ public final class ScriptManager implements AutoCloseable {
         final var wrapperName = "__wrapper_" + UUID.randomUUID().toString().replace("-", "");
         final var wrapperFunction = "_" + wrapperName + "__";
         final var resultVar = wrapperName + "_result__";
-        final String preamble = Arrays.stream(EXPOSED_CLASSES)
+        final var preamble = Arrays.stream(EXPOSED_CLASSES)
                 .map(clazz -> "import " + clazz.getName() + " as " + clazz.getSimpleName())
                 .collect(Collectors.joining("\n"));
         return preamble + "\n\n" + "def " + wrapperFunction + "():\n" + indent(scriptBody, 1) + "\n" + resultVar + " = "
