@@ -127,7 +127,7 @@ public final class Cnf {
         try {
             final var at = at(group, key);
             return at == null ? defaultValue : Long.parseLong(removeDoubleQuote(at));
-        } catch (final Exception e) {
+        } catch (final Exception _) {
             return defaultValue;
         }
     }
@@ -458,7 +458,7 @@ public final class Cnf {
             }
             final var bool = removeDoubleQuote(at).toLowerCase();
             return "true".equals(bool) || "yes".equals(bool);
-        } catch (final Exception e) {
+        } catch (final Exception _) {
             return defaultValue;
         }
     }
@@ -556,7 +556,7 @@ public final class Cnf {
         try {
             final var at = at(group, key);
             return at == null ? defaultValue : Integer.parseInt(removeDoubleQuote(at));
-        } catch (final Exception e) {
+        } catch (final Exception _) {
             return defaultValue;
         }
     }
@@ -593,7 +593,7 @@ public final class Cnf {
         try {
             final var at = at(group, key);
             return at == null ? defaultValue : Short.parseShort(removeDoubleQuote(at));
-        } catch (final Exception e) {
+        } catch (final Exception _) {
             return defaultValue;
         }
     }
@@ -618,7 +618,7 @@ public final class Cnf {
             final var pos = new ParsePosition(0);
             final var date = format1.parse(format0.format(new Date()) + removeDoubleQuote(time), pos);
             return date == null ? defaultValue : date;
-        } catch (final Exception e) {
+        } catch (final Exception _) {
             return defaultValue;
         }
     }
@@ -655,7 +655,7 @@ public final class Cnf {
         try {
             final var at = at(group, key);
             return at == null ? defaultValue : Format.getDuration(removeDoubleQuote(at));
-        } catch (final Exception e) {
+        } catch (final Exception _) {
             return defaultValue;
         }
     }
@@ -696,7 +696,7 @@ public final class Cnf {
                     toExclude.add(value.substring(1));
                 } else if (value.length() > 1 && value.startsWith("+")) {
                     toInclude.add(value.substring(1));
-                } else if (value.length() > 0) {
+                } else if (!value.isEmpty()) {
                     toInclude.add(value);
                 }
             }
@@ -756,7 +756,7 @@ public final class Cnf {
                 dis.close();
             }
             exitOnException = false;
-        } catch (final FileNotFoundException e) {
+        } catch (final FileNotFoundException _) {
             _log.warn("Could not load configuration (file {} not found)", file.getName());
         } catch (final Throwable t) {
             _log.warn("Could not load configuration{}", row != -1 ? " (error on line: " + row + ")" : "", t);
@@ -809,16 +809,17 @@ public final class Cnf {
      * @return the value
      */
     public static String getValue(final String value) {
-        if (isNotEmpty(value)) {
+        final var resolved = getContextValue(value); // Allow placeholders in the form of "$${context:...}"
+        if (isNotEmpty(resolved)) {
             final int start;
-            if ((start = value.indexOf("${")) != -1) {
-                final var tag = value.substring(start + 1);
+            if ((start = resolved.indexOf("${")) != -1) {
+                final var tag = resolved.substring(start + 1);
                 int end;
                 if ((end = tag.indexOf("}")) != -1) {
                     final var toResolv = getValue(tag.substring(0, end));
                     final String at;
                     final int index;
-                    return value.substring(0, start)
+                    return resolved.substring(0, start)
                             + ((index = toResolv.indexOf("[")) == -1 || !toResolv.endsWith("]")
                                     ? System.getProperties().containsKey(toResolv.substring(1))
                                             ? System.getProperty(toResolv.substring(1))
@@ -831,25 +832,30 @@ public final class Cnf {
                 }
             }
         }
-        return value;
+        return resolved;
     }
 
     /**
-     * Resolves placeholders in the form of "$${service:...}" from a given input string (e.g. "$${ecpds:user.home}").
+     * Resolves placeholders in the form of "$${context:...}" from a given input string (e.g. "$${context:user.home}").
      *
-     * Supported formats inside the placeholder: - $${service:property.name} → resolves to System property
-     * "property.name" - $${service:someFunction()} → resolves by invoking a static method named "someFunction" -
-     * $${service:map[key]} → resolves a key lookup from a named map
+     * Supported formats inside the placeholder: - $${context:property.name} → resolves to System property
+     * "property.name" - $${context:someFunction()} → resolves by invoking a static method named "someFunction" -
+     * $${context:map[key]} → resolves a key lookup from a named map
      *
      * Nested placeholders are also resolved recursively. Unknown or malformed placeholders are preserved as-is.
      *
-     * Example: Input: "Path: $${service:user.home}/bin" Output: "Path: /home/laurent/bin" (if user.home is a system
+     * Example: Input: "Path: $${context:user.home}/bin" Output: "Path: /home/syi/bin" (if user.home is a system
      * property)
+     *
+     * @param value
+     *            the value
+     *
+     * @return the context value
      */
-    public static String getServiceValue(final String service, final String value) {
+    public static String getContextValue(final String value) {
         if (value == null || value.isEmpty())
             return value;
-        final var prefix = "$${" + service + ":";
+        final var prefix = "$${context:";
         final var result = new StringBuilder();
         var pos = 0;
         while (true) {
@@ -875,7 +881,12 @@ public final class Cnf {
     }
 
     /**
-     * Resolves a single expression from inside a $${service:...} placeholder.
+     * Resolves a single expression from inside a $${context:...} placeholder.
+     *
+     * @param expr
+     *            the expr
+     *
+     * @return the string
      */
     private static String resolveExpression(final String expr) {
         if (expr == null || expr.isEmpty())
