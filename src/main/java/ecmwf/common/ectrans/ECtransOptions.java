@@ -649,9 +649,6 @@ public enum ECtransOptions {
     /** The host ftp parallel streams. */
     HOST_FTP_PARALLEL_STREAMS("parallelStreams", Integer.class, 0),
 
-    /** The host ftp wmo like format. */
-    HOST_FTP_WMO_LIKE_FORMAT("wmoLikeFormat", Boolean.class, false),
-
     /** The host ftp delete on rename. */
     HOST_FTP_DELETE_ON_RENAME("deleteOnRename", Boolean.class, true),
 
@@ -787,9 +784,6 @@ public enum ECtransOptions {
     /** The host ftps use append. */
     HOST_FTPS_USE_APPEND("useAppend", Boolean.class, false),
 
-    /** The host ftps wmo like format. */
-    HOST_FTPS_WMO_LIKE_FORMAT("wmoLikeFormat", Boolean.class, false),
-
     /** The host ftps delete on rename. */
     HOST_FTPS_DELETE_ON_RENAME("deleteOnRename", Boolean.class, true),
 
@@ -885,9 +879,6 @@ public enum ECtransOptions {
 
     /** The host sftp pre mkdirs cmd. */
     HOST_SFTP_PRE_MKDIRS_CMD("preMkdirsCmd", String.class, ""),
-
-    /** The host sftp wmo like format. */
-    HOST_SFTP_WMO_LIKE_FORMAT("wmoLikeFormat", Boolean.class, false),
 
     /** The host sftp exec code. */
     HOST_SFTP_EXEC_CODE("execCode", Integer.class, 0),

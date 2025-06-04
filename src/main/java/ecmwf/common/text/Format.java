@@ -31,7 +31,6 @@ import static ecmwf.common.text.Util.isNotEmpty;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -1631,24 +1630,6 @@ public final class Format {
             }
         }
         return result.toString();
-    }
-
-    /**
-     * Converts into wmo format.
-     *
-     * @param name
-     *            the name
-     *
-     * @return the string
-     */
-    public static String toWMOFormat(final String name) {
-        final var file = new File(name);
-        final var pathName = file.getParent();
-        final var fileName = file.getName();
-        return fileName.length() < 20 ? name
-                : (isNotEmpty(pathName) ? pathName + File.separator : "") + "Z" + fileName.substring(0, 3)
-                        + (fileName.length() == 20 ? "0" + fileName.charAt(19) : fileName.substring(19, 21)) + "ECMF"
-                        + fileName.substring(5, 11) + "RRA." + fileName + ".LT";
     }
 
     /**

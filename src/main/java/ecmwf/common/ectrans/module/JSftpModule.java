@@ -86,7 +86,6 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_SFTP_SUFFIX;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_SFTP_USECLEANPATH;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_SFTP_USETMP;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_SFTP_USE_WRITE_FLUSH;
-import static ecmwf.common.ectrans.ECtransOptions.HOST_SFTP_WMO_LIKE_FORMAT;
 import static ecmwf.common.text.Util.isNotEmpty;
 
 import java.io.BufferedReader;
@@ -192,9 +191,6 @@ public class JSftpModule extends TransferModule {
 
     /** The ignore check. */
     private boolean ignoreCheck = false;
-
-    /** The wmo like format. */
-    private boolean wmoLikeFormat = false;
 
     /** The checked. */
     private boolean checked = false;
@@ -339,7 +335,6 @@ public class JSftpModule extends TransferModule {
         md5Ext = setup.getString(HOST_SFTP_MD5_EXT);
         chmod = setup.getString(HOST_SFTP_CHMOD);
         ignoreCheck = setup.getBoolean(HOST_SFTP_IGNORE_CHECK);
-        wmoLikeFormat = setup.getBoolean(HOST_SFTP_WMO_LIKE_FORMAT);
         executionCode = setup.getInteger(HOST_SFTP_EXEC_CODE);
         execCmd = setup.getString(HOST_SFTP_EXEC_CMD);
         ignoreMkdirsCmdError = setup.getBoolean(HOST_SFTP_IGNORE_MKDIRS_CMD_ERRORS);
@@ -512,7 +507,7 @@ public class JSftpModule extends TransferModule {
                 if (mkdirs) {
                     try {
                         sftp.cd(dir);
-                    } catch (final SftpException e) {
+                    } catch (final SftpException _) {
                         setStatus("MKDIRS");
                         mkdirs(dir);
                         setStatus("CD");
@@ -610,7 +605,7 @@ public class JSftpModule extends TransferModule {
             }
             try {
                 sftp.mkdir(currentPath);
-            } catch (final SftpException e) {
+            } catch (final SftpException _) {
                 // Ignored
             }
             if ((mkdirsCmdIndex > 0 && mkdirsCmdIndex >= index || mkdirsCmdIndex < 0 && length + mkdirsCmdIndex < index)
@@ -708,7 +703,7 @@ public class JSftpModule extends TransferModule {
             } catch (final IOException e) {
             }
         }
-        putName = wmoLikeFormat ? Format.toWMOFormat(name) : name;
+        putName = name;
         temporaryName = tmpName != null ? new File(dir, tmpName).getAbsolutePath() : getName(putName);
         if (posn > 0) {
             long fileSize = -1;
@@ -841,7 +836,7 @@ public class JSftpModule extends TransferModule {
             _log.debug("Deleting {}", putName);
             try {
                 sftp.rm(putName);
-            } catch (final Exception ignored) {
+            } catch (final Exception _) {
             }
             _log.debug("Renaming from {} to {}", remoteName, putName);
             try {
@@ -975,7 +970,7 @@ public class JSftpModule extends TransferModule {
                 }
                 try {
                     Thread.sleep(1000);
-                } catch (final Exception e) {
+                } catch (final Exception _) {
                     // Ignored
                 }
             }
@@ -1043,7 +1038,7 @@ public class JSftpModule extends TransferModule {
      */
     @Override
     public String[] listAsStringArray(final String directory, final String pattern) throws IOException {
-        _log.debug("List{}{}", directory.length() > 0 ? " " + directory : "",
+        _log.debug("List{}{}", !directory.isEmpty() ? " " + directory : "",
                 pattern != null ? " (" + pattern + ")" : "");
         setStatus("LIST");
         final List<String> resultList = Collections.synchronizedList(new ArrayList<>());
@@ -1161,7 +1156,7 @@ public class JSftpModule extends TransferModule {
                 if (pattern == null || fileName.matches(pattern)) {
                     final var fullName = getFullName(directory, fileName);
                     final var currentPrefix = rootDirectory
-                            + (rootDirectory.length() > 0 && !rootDirectory.endsWith("/") ? "/" : "");
+                            + (!rootDirectory.isEmpty() && !rootDirectory.endsWith("/") ? "/" : "");
                     final var line = Format.getFtpList(attrs.getPermissionsString(), String.valueOf(attrs.getUId()),
                             String.valueOf(attrs.getGId()), String.valueOf(attrs.getSize()), attrs.getMTime() * 1000L,
                             fullName.startsWith(currentPrefix) ? fullName.substring(currentPrefix.length()) : fullName);
@@ -1187,7 +1182,7 @@ public class JSftpModule extends TransferModule {
      * @return the full name
      */
     private static final String getFullName(final String directory, final String name) {
-        return directory + (directory.length() > 0 && !directory.endsWith("/") && !name.startsWith("/") ? "/" : "")
+        return directory + (!directory.isEmpty() && !directory.endsWith("/") && !name.startsWith("/") ? "/" : "")
                 + name;
     }
 

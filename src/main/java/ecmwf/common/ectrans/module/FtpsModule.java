@@ -64,7 +64,6 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_FTPS_USESUFFIX;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_FTPS_USETMP;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_FTPS_USE_APPEND;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_FTPS_USE_NOOP;
-import static ecmwf.common.ectrans.ECtransOptions.HOST_FTPS_WMO_LIKE_FORMAT;
 import static ecmwf.common.text.Util.isNotEmpty;
 
 import java.io.ByteArrayInputStream;
@@ -176,9 +175,6 @@ public final class FtpsModule extends TransferModule {
 
     /** The delete on rename. */
     private boolean deleteOnRename = true;
-
-    /** The wmo like format. */
-    private boolean wmoLikeFormat = false;
 
     /** The keep alive. */
     private long keepAlive = 0;
@@ -298,7 +294,6 @@ public final class FtpsModule extends TransferModule {
         useNoop = (int) setup.getDuration(HOST_FTPS_USE_NOOP).toMillis();
         ignoreCheck = setup.getBoolean(HOST_FTPS_IGNORE_CHECK);
         ignoreDelete = setup.getBoolean(HOST_FTPS_IGNORE_DELETE);
-        wmoLikeFormat = setup.getBoolean(HOST_FTPS_WMO_LIKE_FORMAT);
         deleteOnRename = setup.getBoolean(HOST_FTPS_DELETE_ON_RENAME);
         useAppend = setup.getBoolean(HOST_FTPS_USE_APPEND);
         if (setup.getBoolean(HOST_FTPS_MKSUFFIX)) {
@@ -391,11 +386,11 @@ public final class FtpsModule extends TransferModule {
             }
             if (!fromCache) {
                 ftp.setType(FTPClient.TYPE_BINARY);
-                if (dir.length() > 0) {
+                if (!dir.isEmpty()) {
                     if (mkdirs) {
                         try {
                             ftpCd(dir);
-                        } catch (final IOException e) {
+                        } catch (final IOException _) {
                             mkdirs(dir);
                             setStatus("CD");
                             ftpCd(dir);
@@ -414,7 +409,7 @@ public final class FtpsModule extends TransferModule {
                 }
             }
             connected = true;
-        } catch (final UnknownHostException e) {
+        } catch (final UnknownHostException _) {
             _log.error("{} is an unknown host", host);
             throw new IOException("unknown host " + host);
         } catch (final ConnectException e) {
@@ -487,7 +482,7 @@ public final class FtpsModule extends TransferModule {
     private static void closeServer(final FTPClient ftp) {
         try {
             ftp.disconnect(true);
-        } catch (final Exception e) {
+        } catch (final Exception _) {
             ftp.abruptlyCloseCommunication();
         }
     }
@@ -563,10 +558,10 @@ public final class FtpsModule extends TransferModule {
             }
             try {
                 ftpMkdir(currentPath);
-            } catch (final SocketTimeoutException e) {
+            } catch (final SocketTimeoutException _) {
                 // May be we have lost the connection!
                 throw new SocketTimeoutException("Ftp timeout on MKDIR");
-            } catch (final IOException e) {
+            } catch (final IOException _) {
                 // We ignore it, the directory might already exists!
             }
             if ((mkdirsCmdIndex > 0 && mkdirsCmdIndex >= index || mkdirsCmdIndex < 0 && length + mkdirsCmdIndex < index)
@@ -635,12 +630,12 @@ public final class FtpsModule extends TransferModule {
                 ftpCommand(tokenizer.nextToken());
             }
         }
-        putName = wmoLikeFormat ? Format.toWMOFormat(name) : name;
+        putName = name;
         temporaryName = tmpName != null ? new File(dir, tmpName).getAbsolutePath() : getName(putName);
         if (!ignoreDelete) {
             try {
                 ftpDel(temporaryName);
-            } catch (final IOException ignored) {
+            } catch (final IOException _) {
                 // Ignored!
             }
         }
@@ -707,7 +702,7 @@ public final class FtpsModule extends TransferModule {
             if (!ignoreDelete) {
                 try {
                     ftpDel(md5Name);
-                } catch (final IOException ignored) {
+                } catch (final IOException _) {
                     // Ignored!
                 }
             }
@@ -822,7 +817,7 @@ public final class FtpsModule extends TransferModule {
                     if (putName != null && !checked) {
                         try {
                             ftpDel(getName(putName));
-                        } catch (final Throwable ignored) {
+                        } catch (final Throwable _) {
                             // Ignored!
                         }
                     }

@@ -88,7 +88,6 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_FTP_USESUFFIX;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_FTP_USETMP;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_FTP_USE_APPEND;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_FTP_USE_NOOP;
-import static ecmwf.common.ectrans.ECtransOptions.HOST_FTP_WMO_LIKE_FORMAT;
 import static ecmwf.common.text.Util.isNotEmpty;
 
 import java.io.BufferedReader;
@@ -170,9 +169,6 @@ public final class FtpModule extends TransferModule {
 
     /** The delete on rename. */
     private boolean deleteOnRename = true;
-
-    /** The wmo like format. */
-    private boolean wmoLikeFormat = false;
 
     /** The keep alive. */
     private long keepAlive = 0;
@@ -323,7 +319,6 @@ public final class FtpModule extends TransferModule {
         ignoreCheck = setup.getBoolean(HOST_FTP_IGNORE_CHECK);
         ignoreDelete = setup.getBoolean(HOST_FTP_IGNORE_DELETE);
         parallelStreams = setup.getInteger(HOST_FTP_PARALLEL_STREAMS);
-        wmoLikeFormat = setup.getBoolean(HOST_FTP_WMO_LIKE_FORMAT);
         deleteOnRename = setup.getBoolean(HOST_FTP_DELETE_ON_RENAME);
         retryAfterTimeoutOnCheck = setup.getBoolean(HOST_FTP_RETRY_AFTER_TIMEOUT_ON_CHECK);
         keepControlConnectionAlive = setup.getBoolean(HOST_FTP_KEEP_CONTROL_CONNECTION_ALIVE);
@@ -364,11 +359,11 @@ public final class FtpModule extends TransferModule {
             }
             if (!fromCache) {
                 ftpBinary();
-                if (dir.length() > 0) {
+                if (!dir.isEmpty()) {
                     if (mkdirs) {
                         try {
                             ftpCd(dir);
-                        } catch (final IOException e) {
+                        } catch (final IOException _) {
                             mkdirs(dir);
                             setStatus("CD");
                             ftpCd(dir);
@@ -484,7 +479,7 @@ public final class FtpModule extends TransferModule {
                 while (tokenizer.hasMoreTokens()) {
                     ftpCommand(tokenizer.nextToken());
                 }
-            } catch (final SocketTimeoutException e) {
+            } catch (final SocketTimeoutException _) {
                 throw new SocketTimeoutException("Timeout on " + ext + "MkdirsCmd");
             } catch (final IOException e) {
                 if (!ignoreMkdirsCmdError) {
@@ -521,10 +516,10 @@ public final class FtpModule extends TransferModule {
             try {
                 ftp.getResponseString();
                 ftp.mkdir(currentPath);
-            } catch (final SocketTimeoutException e) {
+            } catch (final SocketTimeoutException _) {
                 // May be we have lost the connection!
                 throw new SocketTimeoutException("Ftp timeout on MKDIR");
-            } catch (final IOException e) {
+            } catch (final IOException _) {
                 // We ignore it, the directory might already exists!
             }
             if ((mkdirsCmdIndex > 0 && mkdirsCmdIndex >= index || mkdirsCmdIndex < 0 && length + mkdirsCmdIndex < index)
@@ -594,12 +589,12 @@ public final class FtpModule extends TransferModule {
                 ftpCommand(tokenizer.nextToken());
             }
         }
-        putName = wmoLikeFormat ? Format.toWMOFormat(name) : name;
+        putName = name;
         temporaryName = tmpName != null ? new File(directory, tmpName).getAbsolutePath() : getName(putName);
         if (!ignoreDelete) {
             try {
                 ftpDel(temporaryName);
-            } catch (final IOException e) {
+            } catch (final IOException _) {
             }
         }
         return temporaryName;
@@ -657,7 +652,7 @@ public final class FtpModule extends TransferModule {
             // Try a NOOP to reset the control connection!
             try {
                 ftp.noop();
-            } catch (final Throwable t) {
+            } catch (final Throwable _) {
             }
         }
         var remoteName = putName != null ? temporaryName : getName;
@@ -689,7 +684,7 @@ public final class FtpModule extends TransferModule {
             if (!ignoreDelete) {
                 try {
                     ftpDel(remoteName + md5Ext);
-                } catch (final IOException e) {
+                } catch (final IOException _) {
                 }
             }
             if (checksum != null && !md5sum) {
@@ -836,7 +831,7 @@ public final class FtpModule extends TransferModule {
                     }
                     list.add(line);
                 }
-            } catch (final Exception e) {
+            } catch (final Exception _) {
             }
         }
         // If required transform to an ftp like listing!
@@ -892,7 +887,7 @@ public final class FtpModule extends TransferModule {
             ftp.getResponseString();
             ftp.setInputFilters(filters);
             ftp.getResponseString();
-        } catch (final SocketTimeoutException e) {
+        } catch (final SocketTimeoutException _) {
             throw new SocketTimeoutException("Ftp timeout on setInputFilters");
         } catch (final IOException e) {
             throw new IOException(getExceptionMessage(e));
@@ -910,7 +905,7 @@ public final class FtpModule extends TransferModule {
             ftp.getResponseString();
             ftp.setOutputFilters(filters);
             ftp.getResponseString();
-        } catch (final SocketTimeoutException e) {
+        } catch (final SocketTimeoutException _) {
             throw new SocketTimeoutException("Ftp timeout on setOutputFilters");
         } catch (final IOException e) {
             throw new IOException(getExceptionMessage(e));
@@ -940,7 +935,7 @@ public final class FtpModule extends TransferModule {
             ftp.delegateChecksum();
             ftp.getResponseString();
             md5sum = true;
-        } catch (final SocketTimeoutException e) {
+        } catch (final SocketTimeoutException _) {
             throw new SocketTimeoutException("Ftp timeout on setOutputFilters");
         } catch (final IOException e) {
             throw new IOException(getExceptionMessage(e));
@@ -963,7 +958,7 @@ public final class FtpModule extends TransferModule {
                     if (putName != null && !checked) {
                         try {
                             ftpDel(getName(putName));
-                        } catch (final IOException e) {
+                        } catch (final IOException _) {
                         }
                     }
                     if (ftp.commandIsOpen() && isNotEmpty(preCloseCmd)) {
@@ -1009,7 +1004,7 @@ public final class FtpModule extends TransferModule {
             ftp.getResponseString();
             ftp.binary();
             return ftp.getResponseString();
-        } catch (final SocketTimeoutException e) {
+        } catch (final SocketTimeoutException _) {
             throw new SocketTimeoutException("Ftp timeout on BINARY");
         } catch (final IOException e) {
             throw new IOException(getExceptionMessage(e));
@@ -1032,7 +1027,7 @@ public final class FtpModule extends TransferModule {
             ftp.getResponseString();
             ftp.cd(directory);
             return ftp.getResponseString();
-        } catch (final SocketTimeoutException e) {
+        } catch (final SocketTimeoutException _) {
             throw new SocketTimeoutException("Ftp timeout on CD");
         } catch (final IOException e) {
             throw new IOException(getExceptionMessage(e));
@@ -1055,7 +1050,7 @@ public final class FtpModule extends TransferModule {
             ftp.getResponseString();
             ftp.delete(fileName);
             return ftp.getResponseString();
-        } catch (final SocketTimeoutException e) {
+        } catch (final SocketTimeoutException _) {
             throw new SocketTimeoutException("Ftp timeout on DEL");
         } catch (final IOException e) {
             throw new IOException(getExceptionMessage(e));
@@ -1078,7 +1073,7 @@ public final class FtpModule extends TransferModule {
             ftp.getResponseString();
             ftp.rmdir(fileName);
             return ftp.getResponseString();
-        } catch (final SocketTimeoutException e) {
+        } catch (final SocketTimeoutException _) {
             throw new SocketTimeoutException("Ftp timeout on RMDIR");
         } catch (final IOException e) {
             throw new IOException(getExceptionMessage(e));
@@ -1137,7 +1132,7 @@ public final class FtpModule extends TransferModule {
             ftp.getResponseString();
             ftp.mkdir(dirName);
             return ftp.getResponseString();
-        } catch (final SocketTimeoutException e) {
+        } catch (final SocketTimeoutException _) {
             throw new SocketTimeoutException("Ftp timeout on MKDIR");
         } catch (final IOException e) {
             throw new IOException(getExceptionMessage(e));
@@ -1162,7 +1157,7 @@ public final class FtpModule extends TransferModule {
             ftp.getResponseString();
             ftpInput = ftp.get(fileName, posn, parallelStreams);
             return ftp.getResponseString();
-        } catch (final SocketTimeoutException e) {
+        } catch (final SocketTimeoutException _) {
             throw new SocketTimeoutException("Ftp timeout on GET");
         } catch (final IOException e) {
             throw new IOException(getExceptionMessage(e));
@@ -1185,7 +1180,7 @@ public final class FtpModule extends TransferModule {
             ftp.getResponseString();
             buff = usenlist ? ftp.nlist(directory) : ftp.list(directory);
             return ftp.getResponseString();
-        } catch (final SocketTimeoutException e) {
+        } catch (final SocketTimeoutException _) {
             throw new SocketTimeoutException("Ftp timeout on " + (usenlist ? "NLIST" : "LIST"));
         } catch (final IOException e) {
             throw new IOException(getExceptionMessage(e));
@@ -1212,7 +1207,7 @@ public final class FtpModule extends TransferModule {
             ftp.getResponseString();
             ftpOutput = ftp.put(fileName, posn, size, useAppend, parallelStreams);
             return ftp.getResponseString();
-        } catch (final SocketTimeoutException e) {
+        } catch (final SocketTimeoutException _) {
             throw new SocketTimeoutException("Ftp timeout on STOR");
         } catch (final IOException e) {
             throw new IOException(getExceptionMessage(e));
@@ -1235,7 +1230,7 @@ public final class FtpModule extends TransferModule {
             ftp.getResponseString();
             ftp.size(name);
             return ftp.getResponseString();
-        } catch (final SocketTimeoutException e) {
+        } catch (final SocketTimeoutException _) {
             throw new SocketTimeoutException("Ftp timeout on SIZE");
         } catch (final IOException e) {
             throw new IOException(getExceptionMessage(e));
@@ -1258,7 +1253,7 @@ public final class FtpModule extends TransferModule {
             ftp.getResponseString();
             ftp.mdtm(name);
             return ftp.getResponseString();
-        } catch (final SocketTimeoutException e) {
+        } catch (final SocketTimeoutException _) {
             throw new SocketTimeoutException("Ftp timeout on MDTM");
         } catch (final IOException e) {
             throw new IOException(getExceptionMessage(e));
@@ -1297,7 +1292,7 @@ public final class FtpModule extends TransferModule {
             ftp.getResponseString();
             ftp.issueCommandCheck(command);
             ftp.getResponseString();
-        } catch (final SocketTimeoutException e) {
+        } catch (final SocketTimeoutException _) {
             throw new SocketTimeoutException("Ftp timeout on " + command);
         } catch (final IOException e) {
             throw new IOException(getExceptionMessage(e));
