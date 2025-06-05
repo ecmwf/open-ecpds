@@ -46,8 +46,6 @@ import org.apache.commons.compress.compressors.CompressorStreamFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import ecmwf.common.compression.bzip2a.CBZip2InputStream;
-import ecmwf.common.compression.bzip2a.CBZip2OutputStream;
 import ecmwf.common.text.Format;
 import net.jpountz.lz4.LZ4FrameInputStream;
 import net.jpountz.lz4.LZ4FrameOutputStream;
@@ -133,9 +131,6 @@ public final class StreamManagerImp implements StreamManager {
             return new ZipOutputStream(out);
         } else if (GZIP.equalsIgnoreCase(filter)) {
             return getCompressorOutputStream(CompressorStreamFactory.GZIP, out);
-        } else if (BZIP2a.equalsIgnoreCase(filter)) {
-            // Using specific Bzip2 implementation which is faster that commons-compress!
-            return new CBZip2OutputStream(out);
         } else if (LBZIP2.equalsIgnoreCase(filter)) {
             // Using binary Lbzip2 implementation!
             return new CommandOutputStream(out, Cnf.getCommand("Filter", "fly.out." + LBZIP2));
@@ -204,8 +199,7 @@ public final class StreamManagerImp implements StreamManager {
      */
     public static boolean isFiltered(final OutputStream out) {
         return out instanceof CompressorOutputStream || out instanceof ZipOutputStream
-                || out instanceof CommandOutputStream || out instanceof LZ4FrameOutputStream
-                || out instanceof CBZip2OutputStream;
+                || out instanceof CommandOutputStream || out instanceof LZ4FrameOutputStream;
     }
 
     /**
@@ -232,9 +226,6 @@ public final class StreamManagerImp implements StreamManager {
             return new ZipInputStream(in);
         } else if (GZIP.equalsIgnoreCase(filter)) {
             return getCompressorInputStream(CompressorStreamFactory.GZIP, in);
-        } else if (BZIP2a.equalsIgnoreCase(filter)) {
-            // Using specific Bzip2 implementation which is faster that commons-compress!
-            return new CBZip2InputStream(in);
         } else if (LBZIP2.equalsIgnoreCase(filter)) {
             // Using binary Lbzip2 implementation!
             return new CommandInputStream(in, Cnf.getCommand("Filter", "fly.in." + LBZIP2));
@@ -367,7 +358,7 @@ public final class StreamManagerImp implements StreamManager {
      */
     public static boolean isFiltered(final InputStream in) {
         return in instanceof CompressorInputStream || in instanceof ZipInputStream || in instanceof CommandInputStream
-                || in instanceof LZ4FrameInputStream || in instanceof CBZip2InputStream;
+                || in instanceof LZ4FrameInputStream;
     }
 
     /**
