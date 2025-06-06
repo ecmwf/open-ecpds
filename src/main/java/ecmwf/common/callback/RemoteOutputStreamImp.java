@@ -30,156 +30,149 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.rmi.RemoteException;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import ecmwf.common.technical.CleanableSupport;
 import ecmwf.common.technical.StreamPlugThread;
 
 /**
  * The Class RemoteOutputStreamImp.
  */
 public final class RemoteOutputStreamImp extends RemoteManagement implements RemoteOutputStream, Closeable {
-    /** The Constant serialVersionUID. */
-    private static final long serialVersionUID = -7537470730187698370L;
+	/** The Constant serialVersionUID. */
+	private static final long serialVersionUID = -7537470730187698370L;
 
-    /** The Constant _log. */
-    private static final transient Logger _log = LogManager.getLogger(RemoteOutputStreamImp.class);
+	/** The Constant _log. */
+	private static final transient Logger _log = LogManager.getLogger(RemoteOutputStreamImp.class);
 
-    /** The _closed. */
-    private final transient AtomicBoolean _closed = new AtomicBoolean(false);
+	/** Cleaner support for resource cleanup. */
+	private final transient CleanableSupport cleaner;
 
-    /** The _out. */
-    private final transient OutputStream _out;
+	/** The out. */
+	private final transient OutputStream out;
 
-    /** The _to close. */
-    private final transient Closeable _toClose;
+	/** The to close. */
+	private final transient Closeable toClose;
 
-    /**
-     * Instantiates a new remote output stream imp.
-     *
-     * @param out
-     *            the out
-     *
-     * @throws java.rmi.RemoteException
-     *             the remote exception
-     */
-    public RemoteOutputStreamImp(final OutputStream out) throws RemoteException {
-        _toClose = null;
-        _out = out;
-    }
+	/**
+	 * Instantiates a new remote output stream imp.
+	 *
+	 * @param out the out
+	 * @throws RemoteException the remote exception
+	 */
+	public RemoteOutputStreamImp(final OutputStream out) throws RemoteException {
+		this(null, out);
+	}
 
-    /**
-     * Instantiates a new remote output stream imp.
-     *
-     * @param toClose
-     *            the to close
-     * @param out
-     *            the out
-     *
-     * @throws java.rmi.RemoteException
-     *             the remote exception
-     */
-    public RemoteOutputStreamImp(final Closeable toClose, final OutputStream out) throws RemoteException {
-        _toClose = toClose;
-        _out = out;
-    }
+	/**
+	 * Instantiates a new remote output stream imp.
+	 *
+	 * @param toClose the to close
+	 * @param out     the out
+	 * @throws RemoteException the remote exception
+	 */
+	public RemoteOutputStreamImp(final Closeable toClose, final OutputStream out) throws RemoteException {
+		this.toClose = toClose;
+		this.out = out;
+		// Setup GC cleanup hook
+		this.cleaner = new CleanableSupport(this, () -> {
+			try {
+				cleanup();
+			} catch (final IOException e) {
+				_log.debug("GC cleanup", e);
+			}
+		});
+	}
 
-    /**
-     * {@inheritDoc}
-     *
-     * Alive.
-     */
-    @Override
-    public boolean alive() {
-        if (!_closed.get()) {
-            try {
-                _out.flush();
-                return true;
-            } catch (final Throwable t) {
-            }
-        }
-        return false;
-    }
+	/**
+	 * Alive.
+	 *
+	 * @return true, if successful
+	 */
+	@Override
+	public boolean alive() {
+		try {
+			out.flush();
+			return true;
+		} catch (final IOException _) {
+			return false;
+		}
+	}
 
-    /**
-     * {@inheritDoc}
-     *
-     * Close.
-     */
-    @Override
-    public void close() throws IOException {
-        if (_closed.compareAndSet(false, true)) {
-            StreamPlugThread.closeQuietly(_toClose);
-            _out.close();
-        } else {
-            _log.debug("Already closed");
-        }
-    }
+	/**
+	 * Closes this stream and performs all associated cleanup.
+	 *
+	 * @throws IOException If an error occurs during closing.
+	 */
+	@Override
+	public void close() throws IOException {
+		if (cleaner.markCleaned()) {
+			cleanup();
+		}
+	}
 
-    /**
-     * {@inheritDoc}
-     *
-     * Destroy.
-     */
-    @Override
-    public void destroy() {
-        StreamPlugThread.closeQuietly(this);
-    }
+	/**
+	 * Destroy.
+	 */
+	@Override
+	public void destroy() {
+		StreamPlugThread.closeQuietly(this);
+	}
 
-    /**
-     * {@inheritDoc}
-     *
-     * Flush.
-     */
-    @Override
-    public void flush() throws IOException {
-        _out.flush();
-    }
+	/**
+	 * Flush.
+	 *
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	@Override
+	public void flush() throws IOException {
+		out.flush();
+	}
 
-    /**
-     * {@inheritDoc}
-     *
-     * Write.
-     */
-    @Override
-    public void write(final byte[] b) throws IOException {
-        _out.write(b);
-    }
+	/**
+	 * Write.
+	 *
+	 * @param b the b
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	@Override
+	public void write(final byte[] b) throws IOException {
+		out.write(b);
+	}
 
-    /**
-     * {@inheritDoc}
-     *
-     * Write.
-     */
-    @Override
-    public void write(final byte[] b, final int off, final int len) throws IOException {
-        _out.write(b, off, len);
-    }
+	/**
+	 * Write.
+	 *
+	 * @param b   the b
+	 * @param off the off
+	 * @param len the len
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	@Override
+	public void write(final byte[] b, final int off, final int len) throws IOException {
+		out.write(b, off, len);
+	}
 
-    /**
-     * {@inheritDoc}
-     *
-     * Write.
-     */
-    @Override
-    public void write(final int b) throws IOException {
-        _out.write(b);
-    }
+	/**
+	 * Write.
+	 *
+	 * @param b the b
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	@Override
+	public void write(final int b) throws IOException {
+		out.write(b);
+	}
 
-    /**
-     * {@inheritDoc}
-     *
-     * Finalize.
-     */
-    @Override
-    protected void finalize() throws Throwable {
-        if (_closed.compareAndSet(false, true)) {
-            _log.warn("Forcing close in finalize <- {}", this.getClass().getName());
-            StreamPlugThread.closeQuietly(_toClose);
-            StreamPlugThread.closeQuietly(_out);
-        }
-        super.finalize();
-    }
+	/**
+	 * Cleans up resources and terminates the process if necessary.
+	 *
+	 * @throws IOException If an error occurs during cleanup.
+	 */
+	private void cleanup() throws IOException {
+		StreamPlugThread.closeQuietly(toClose);
+		out.close();
+	}
 }

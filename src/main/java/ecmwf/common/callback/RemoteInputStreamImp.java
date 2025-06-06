@@ -30,173 +30,178 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.rmi.RemoteException;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import ecmwf.common.technical.CleanableSupport;
 import ecmwf.common.technical.StreamPlugThread;
 
 /**
  * The Class RemoteInputStreamImp.
  */
 public final class RemoteInputStreamImp extends RemoteManagement implements RemoteInputStream, Closeable {
-    /** The Constant serialVersionUID. */
-    private static final long serialVersionUID = 4473817650326462267L;
+	/** The Constant serialVersionUID. */
+	private static final long serialVersionUID = 4473817650326462267L;
 
-    /** The Constant _log. */
-    private static final transient Logger _log = LogManager.getLogger(RemoteInputStreamImp.class);
+	/** The Constant _log. */
+	private static final transient Logger _log = LogManager.getLogger(RemoteInputStreamImp.class);
 
-    /** The _closed. */
-    private final transient AtomicBoolean _closed = new AtomicBoolean(false);
+	/** Cleaner support for resource cleanup. */
+	private final transient CleanableSupport cleaner;
 
-    /** The _in. */
-    private final transient InputStream _in;
+	/** The in. */
+	private final transient InputStream in;
 
-    /** The _i. */
-    private transient int _i = 0;
+	/** The i. */
+	private transient int i = 0;
 
-    /**
-     * Instantiates a new remote input stream imp.
-     *
-     * @param in
-     *            the in
-     *
-     * @throws java.rmi.RemoteException
-     *             the remote exception
-     */
-    public RemoteInputStreamImp(final InputStream in) throws RemoteException {
-        _in = in;
-    }
+	/**
+	 * Instantiates a new remote input stream imp.
+	 *
+	 * @param in the in
+	 * @throws RemoteException the remote exception
+	 */
+	public RemoteInputStreamImp(final InputStream in) throws RemoteException {
+		this.in = in;
+		// Setup GC cleanup hook
+		this.cleaner = new CleanableSupport(this, () -> {
+			try {
+				cleanup();
+			} catch (final IOException e) {
+				_log.debug("GC cleanup", e);
+			}
+		});
+	}
 
-    /**
-     * {@inheritDoc}
-     *
-     * Alive.
-     */
-    @Override
-    public boolean alive() {
-        try {
-            return !_closed.get() && _i >= 0 && available() >= 0;
-        } catch (final Throwable t) {
-            return false;
-        }
-    }
+	/**
+	 * Alive.
+	 *
+	 * @return true, if successful
+	 */
+	@Override
+	public boolean alive() {
+		try {
+			return i >= 0 && available() >= 0;
+		} catch (final IOException _) {
+			return false;
+		}
+	}
 
-    /**
-     * {@inheritDoc}
-     *
-     * Available.
-     */
-    @Override
-    public int available() throws IOException {
-        return _in.available();
-    }
+	/**
+	 * Available.
+	 *
+	 * @return the int
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	@Override
+	public int available() throws IOException {
+		return in.available();
+	}
 
-    /**
-     * {@inheritDoc}
-     *
-     * Close.
-     */
-    @Override
-    public void close() throws IOException {
-        if (_closed.compareAndSet(false, true)) {
-            _in.close();
-        } else {
-            _log.debug("Already closed");
-        }
-    }
+	/**
+	 * Closes this stream and performs all associated cleanup.
+	 *
+	 * @throws IOException If an error occurs during closing.
+	 */
+	@Override
+	public void close() throws IOException {
+		if (cleaner.markCleaned()) {
+			cleanup();
+		}
+	}
 
-    /**
-     * {@inheritDoc}
-     *
-     * Destroy.
-     */
-    @Override
-    public void destroy() {
-        StreamPlugThread.closeQuietly(this);
-    }
+	/**
+	 * Destroy.
+	 */
+	@Override
+	public void destroy() {
+		StreamPlugThread.closeQuietly(this);
+	}
 
-    /**
-     * {@inheritDoc}
-     *
-     * Mark.
-     */
-    @Override
-    public void mark(final int readlimit) throws RemoteException {
-        _in.mark(readlimit);
-    }
+	/**
+	 * Mark.
+	 *
+	 * @param readlimit the readlimit
+	 * @throws RemoteException the remote exception
+	 */
+	@Override
+	public void mark(final int readlimit) throws RemoteException {
+		in.mark(readlimit);
+	}
 
-    /**
-     * {@inheritDoc}
-     *
-     * Mark supported.
-     */
-    @Override
-    public boolean markSupported() throws RemoteException {
-        return _in.markSupported();
-    }
+	/**
+	 * Mark supported.
+	 *
+	 * @return true, if successful
+	 * @throws RemoteException the remote exception
+	 */
+	@Override
+	public boolean markSupported() throws RemoteException {
+		return in.markSupported();
+	}
 
-    /**
-     * {@inheritDoc}
-     *
-     * Read.
-     */
-    @Override
-    public int read() throws IOException {
-        final var c = _i = _in.read();
-        if (_i == -1) {
-            close();
-        }
-        return c;
-    }
+	/**
+	 * Read.
+	 *
+	 * @return the int
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	@Override
+	public int read() throws IOException {
+		final var c = i = in.read();
+		if (i == -1) {
+			close();
+		}
+		return c;
+	}
 
-    /**
-     * {@inheritDoc}
-     *
-     * Read.
-     */
-    @Override
-    public ByteStream read(final int len) throws IOException {
-        final var holder = new byte[len];
-        final var bs = new ByteStream(holder, _i = _in.read(holder, 0, len));
-        if (_i == -1) {
-            close();
-        }
-        return bs;
-    }
+	/**
+	 * Read.
+	 *
+	 * @param len the len
+	 * @return the byte stream
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	@Override
+	public ByteStream read(final int len) throws IOException {
+		final var holder = new byte[len];
+		i = in.read(holder, 0, len);
+		final var bs = new ByteStream(holder, i);
+		if (i == -1) {
+			close();
+		}
+		return bs;
+	}
 
-    /**
-     * {@inheritDoc}
-     *
-     * Reset.
-     */
-    @Override
-    public void reset() throws IOException {
-        _in.reset();
-    }
+	/**
+	 * Reset.
+	 *
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	@Override
+	public void reset() throws IOException {
+		in.reset();
+	}
 
-    /**
-     * {@inheritDoc}
-     *
-     * Skip.
-     */
-    @Override
-    public long skip(final long n) throws IOException {
-        return _in.skip(n);
-    }
+	/**
+	 * Skip.
+	 *
+	 * @param n the n
+	 * @return the long
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	@Override
+	public long skip(final long n) throws IOException {
+		return in.skip(n);
+	}
 
-    /**
-     * {@inheritDoc}
-     *
-     * Finalize.
-     */
-    @Override
-    protected void finalize() throws Throwable {
-        if (_closed.compareAndSet(false, true)) {
-            _log.warn("Forcing close in finalize <- {}", this.getClass().getName());
-            StreamPlugThread.closeQuietly(_in);
-        }
-        super.finalize();
-    }
+	/**
+	 * Cleans up resources and terminates the process if necessary.
+	 *
+	 * @throws IOException If an error occurs during cleanup.
+	 */
+	private void cleanup() throws IOException {
+		in.close();
+	}
 }

@@ -29,100 +29,105 @@ package ecmwf.common.callback;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import ecmwf.common.technical.StreamPlugThread;
+import ecmwf.common.technical.CleanableSupport;
 
 /**
  * The Class RAFOutputStream.
  */
 public final class RAFOutputStream extends OutputStream {
-    /** The Constant _log. */
-    private static final Logger _log = LogManager.getLogger(RAFInputStream.class);
+	/** The Constant _log. */
+	private static final Logger _log = LogManager.getLogger(RAFOutputStream.class);
 
-    /** The _raf. */
-    private final RandomAccessFile _raf;
+	/** Cleaner support for resource cleanup. */
+	private final CleanableSupport cleaner;
 
-    /** The _closed. */
-    private final AtomicBoolean _closed = new AtomicBoolean(false);
+	/** The raf. */
+	private final RandomAccessFile raf;
 
-    /**
-     * Instantiates a new RAF output stream.
-     *
-     * @param raf
-     *            the raf
-     */
-    public RAFOutputStream(final RandomAccessFile raf) {
-        _raf = raf;
-    }
+	/**
+	 * Instantiates a new RAF output stream.
+	 *
+	 * @param raf the raf
+	 */
+	public RAFOutputStream(final RandomAccessFile raf) {
+		this.raf = raf;
+		// Setup GC cleanup hook
+		this.cleaner = new CleanableSupport(this, () -> {
+			try {
+				cleanup();
+			} catch (final IOException e) {
+				_log.debug("GC cleanup", e);
+			}
+		});
+	}
 
-    /**
-     * {@inheritDoc}
-     *
-     * Close.
-     */
-    @Override
-    public void close() throws IOException {
-        if (_closed.compareAndSet(false, true)) {
-            _raf.close();
-        } else {
-            _log.debug("Already closed");
-        }
-    }
+	/**
+	 * Closes this stream and performs all associated cleanup.
+	 *
+	 * @throws IOException If an error occurs during closing.
+	 */
+	@Override
+	public void close() throws IOException {
+		if (cleaner.markCleaned()) {
+			cleanup();
+		}
+	}
 
-    /**
-     * {@inheritDoc}
-     *
-     * Flush.
-     */
-    @Override
-    public void flush() throws IOException {
-    }
+	/**
+	 * Flush.
+	 *
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	@Override
+	public void flush() throws IOException {
+		// No implementation required.
+	}
 
-    /**
-     * {@inheritDoc}
-     *
-     * Write.
-     */
-    @Override
-    public void write(final byte[] b) throws IOException {
-        _raf.write(b);
-    }
+	/**
+	 * Write.
+	 *
+	 * @param b the b
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	@Override
+	public void write(final byte[] b) throws IOException {
+		raf.write(b);
+	}
 
-    /**
-     * {@inheritDoc}
-     *
-     * Write.
-     */
-    @Override
-    public void write(final byte[] b, final int off, final int len) throws IOException {
-        _raf.write(b, off, len);
-    }
+	/**
+	 * Write.
+	 *
+	 * @param b   the b
+	 * @param off the off
+	 * @param len the len
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	@Override
+	public void write(final byte[] b, final int off, final int len) throws IOException {
+		raf.write(b, off, len);
+	}
 
-    /**
-     * {@inheritDoc}
-     *
-     * Write.
-     */
-    @Override
-    public void write(final int b) throws IOException {
-        _raf.write(b);
-    }
+	/**
+	 * Write.
+	 *
+	 * @param b the b
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	@Override
+	public void write(final int b) throws IOException {
+		raf.write(b);
+	}
 
-    /**
-     * {@inheritDoc}
-     *
-     * Finalize.
-     */
-    @Override
-    protected void finalize() throws Throwable {
-        if (_closed.compareAndSet(false, true)) {
-            _log.warn("Forcing close in finalize <- {}", this.getClass().getName());
-            StreamPlugThread.closeQuietly(_raf);
-        }
-        super.finalize();
-    }
+	/**
+	 * Cleans up resources and terminates the process if necessary.
+	 *
+	 * @throws IOException If an error occurs during cleanup.
+	 */
+	private void cleanup() throws IOException {
+		raf.close();
+	}
 }

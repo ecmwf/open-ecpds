@@ -29,122 +29,131 @@ package ecmwf.common.callback;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import ecmwf.common.technical.StreamPlugThread;
+import ecmwf.common.technical.CleanableSupport;
 
 /**
  * The Class RAFInputStream.
  */
 public final class RAFInputStream extends InputStream {
-    /** The Constant _log. */
-    private static final Logger _log = LogManager.getLogger(RAFInputStream.class);
+	/** The Constant _log. */
+	private static final Logger _log = LogManager.getLogger(RAFInputStream.class);
 
-    /** The _closed. */
-    private final AtomicBoolean _closed = new AtomicBoolean(false);
+	/** Cleaner support for resource cleanup. */
+	private final CleanableSupport cleaner;
 
-    /** The _raf. */
-    private final RandomAccessFile _raf;
+	/** The raf. */
+	private final RandomAccessFile raf;
 
-    /**
-     * Instantiates a new RAF input stream.
-     *
-     * @param raf
-     *            the raf
-     */
-    public RAFInputStream(final RandomAccessFile raf) {
-        _raf = raf;
-    }
+	/**
+	 * Instantiates a new RAF input stream.
+	 *
+	 * @param raf the raf
+	 */
+	public RAFInputStream(final RandomAccessFile raf) {
+		this.raf = raf;
+		// Setup GC cleanup hook
+		this.cleaner = new CleanableSupport(this, () -> {
+			try {
+				cleanup();
+			} catch (final IOException e) {
+				_log.debug("GC cleanup", e);
+			}
+		});
+	}
 
-    /**
-     * {@inheritDoc}
-     *
-     * Available.
-     */
-    @Override
-    public int available() throws IOException {
-        return 0;
-    }
+	/**
+	 * Available.
+	 *
+	 * @return the int
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	@Override
+	public int available() throws IOException {
+		return 0;
+	}
 
-    /**
-     * {@inheritDoc}
-     *
-     * Close.
-     */
-    @Override
-    public void close() throws IOException {
-        if (_closed.compareAndSet(false, true)) {
-            _raf.close();
-        } else {
-            _log.debug("Already closed");
-        }
-    }
+	/**
+	 * Cleans up resources and terminates the process if necessary.
+	 *
+	 * @throws IOException If an error occurs during cleanup.
+	 */
+	private void cleanup() throws IOException {
+		raf.close();
+	}
 
-    /**
-     * {@inheritDoc}
-     *
-     * Read.
-     */
-    @Override
-    public int read() throws IOException {
-        return _raf.read();
-    }
+	/**
+	 * Read.
+	 *
+	 * @return the int
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	@Override
+	public int read() throws IOException {
+		return raf.read();
+	}
 
-    /**
-     * {@inheritDoc}
-     *
-     * Read.
-     */
-    @Override
-    public int read(final byte[] b) throws IOException {
-        return _raf.read(b);
-    }
+	/**
+	 * Read.
+	 *
+	 * @param b the b
+	 * @return the int
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	@Override
+	public int read(final byte[] b) throws IOException {
+		return raf.read(b);
+	}
 
-    /**
-     * {@inheritDoc}
-     *
-     * Read.
-     */
-    @Override
-    public int read(final byte[] b, final int off, final int len) throws IOException {
-        return _raf.read(b, off, len);
-    }
+	/**
+	 * Read.
+	 *
+	 * @param b   the b
+	 * @param off the off
+	 * @param len the len
+	 * @return the int
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	@Override
+	public int read(final byte[] b, final int off, final int len) throws IOException {
+		return raf.read(b, off, len);
+	}
 
-    /**
-     * {@inheritDoc}
-     *
-     * Reset.
-     */
-    @Override
-    public void reset() throws IOException {
-        _raf.seek(0);
-    }
+	/**
+	 * Reset.
+	 *
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	@Override
+	public void reset() throws IOException {
+		raf.seek(0);
+	}
 
-    /**
-     * {@inheritDoc}
-     *
-     * Skip.
-     */
-    @Override
-    public long skip(final long n) throws IOException {
-        _raf.seek(n);
-        return n;
-    }
+	/**
+	 * Skip.
+	 *
+	 * @param n the n
+	 * @return the long
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	@Override
+	public long skip(final long n) throws IOException {
+		raf.seek(n);
+		return n;
+	}
 
-    /**
-     * {@inheritDoc}
-     *
-     * Finalize.
-     */
-    @Override
-    protected void finalize() throws Throwable {
-        if (_closed.compareAndSet(false, true)) {
-            _log.warn("Forcing close in finalize <- {}", this.getClass().getName());
-            StreamPlugThread.closeQuietly(_raf);
-        }
-        super.finalize();
-    }
+	/**
+	 * Closes this stream and performs all associated cleanup.
+	 *
+	 * @throws IOException If an error occurs during closing.
+	 */
+	@Override
+	public void close() throws IOException {
+		if (cleaner.markCleaned()) {
+			cleanup();
+		}
+	}
 }

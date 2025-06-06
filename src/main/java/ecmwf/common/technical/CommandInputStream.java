@@ -26,216 +26,223 @@ package ecmwf.common.technical;
  * @since 2024-07-01
  */
 
+import java.io.BufferedReader;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- * The Class CommandInputStream.
+ * A stream that connects an InputStream to the input of an external process,
+ * and allows reading the output produced by the process.
+ *
+ * This class manages the lifecycle of the associated process and its
+ * input/output streams, and handles stderr asynchronously to avoid potential
+ * deadlocks.
  */
-public final class CommandInputStream extends FilterInputStream {
+public final class CommandInputStream extends FilterInputStream implements AutoCloseable {
 
-    /** The Constant _log. */
-    private static final Logger _log = LogManager.getLogger(CommandInputStream.class);
+	private static final Logger _log = LogManager.getLogger(CommandInputStream.class);
 
-    /** The process. */
-    private final Process _process;
+	/** The external process. */
+	private final Process process;
 
-    /** The in. */
-    private final InputStream _in;
+	/** The standard output of the process (what we read from). */
+	private final InputStream processIn;
 
-    /** The out. */
-    private final OutputStream _out;
+	/** The standard input of the process (where we send the user’s input). */
+	private final OutputStream processOut;
 
-    /** The thread. */
-    private final StreamPlugThread _thread;
+	/** The standard error of the process. */
+	private final InputStream processErr;
 
-    /** The closed. */
-    private final AtomicBoolean _closed = new AtomicBoolean(false);
+	/** Background thread plugging the user input into the process input. */
+	private final StreamPlugThread thread;
 
-    /**
-     * Instantiates a new command input stream.
-     *
-     * @param in
-     *            the in
-     * @param process
-     *            the process
-     *
-     * @throws java.io.IOException
-     *             Signals that an I/O exception has occurred.
-     */
-    public CommandInputStream(final InputStream in, final Process process) throws IOException {
-        super(in);
-        _log.debug("Starting");
-        _process = process;
-        _out = process.getOutputStream();
-        _in = process.getInputStream();
-        _thread = new StreamPlugThread(in, _out);
-        _thread.toClose(_out);
-        _thread.execute();
-    }
+	/** Executor for handling stderr asynchronously. */
+	private final ExecutorService executor;
 
-    /**
-     * Instantiates a new command input stream.
-     *
-     * @param in
-     *            the in
-     * @param cmd
-     *            the cmd
-     *
-     * @throws java.io.IOException
-     *             Signals that an I/O exception has occurred.
-     */
-    public CommandInputStream(final InputStream in, final String[] cmd) throws IOException {
-        this(in, Runtime.getRuntime().exec(cmd));
-    }
+	/** Cleaner support for resource cleanup. */
+	private final CleanableSupport cleaner;
 
-    /**
-     * {@inheritDoc}
-     *
-     * Close.
-     */
-    @Override
-    public void close() throws IOException {
-        if (_closed.compareAndSet(false, true)) {
-            _log.debug("Closing");
-            final var message = _thread.getMessage();
-            if (message != null) {
-                _log.debug("Destroying process ({})", message);
-                _process.destroy();
-            }
-            try {
-                _out.close();
-                try {
-                    _process.waitFor();
-                } catch (final InterruptedException Ie) {
-                }
-                try {
-                    _thread.join();
-                } catch (final Exception Ie) {
-                }
-                _in.close();
-                in.close();
-            } finally {
-                if (message != null) {
-                    throw new IOException(message);
-                }
-            }
-        } else {
-            _log.debug("Already closed");
-        }
-    }
+	/**
+	 * Creates a CommandInputStream that connects the given InputStream to the
+	 * standard input of a process, and allows reading the standard output of that
+	 * process.
+	 *
+	 * @param in      The InputStream from which to send data to the process's
+	 *                input.
+	 * @param process The process to execute and communicate with.
+	 * @throws IOException If any I/O error occurs during setup.
+	 */
+	public CommandInputStream(final InputStream in, final Process process) throws IOException {
+		super(in);
+		_log.debug("Starting");
+		this.process = process;
+		this.processIn = process.getInputStream();
+		this.processOut = process.getOutputStream();
+		this.processErr = process.getErrorStream();
+		// Pipe the user-supplied input into the process's standard input
+		this.thread = new StreamPlugThread(in, processOut);
+		thread.toClose(processOut);
+		// Start a separate thread to consume stderr (to avoid potential blocking)
+		this.executor = Executors.newSingleThreadExecutor();
+		executor.submit(() -> {
+			try (var reader = new BufferedReader(new InputStreamReader(processErr))) {
+				String line;
+				while ((line = reader.readLine()) != null) {
+					_log.warn("Process stderr: {}", line);
+				}
+			} catch (final IOException e) {
+				_log.error("Error reading stderr", e);
+			}
+		});
+		// Setup GC cleanup hook
+		this.cleaner = new CleanableSupport(this, () -> {
+			try {
+				cleanup();
+			} catch (final IOException e) {
+				_log.debug("GC cleanup", e);
+			}
+		});
+		// Launch the plug thread
+		try {
+			thread.execute();
+		} catch (final Exception e) {
+			try {
+				cleanup();
+			} catch (final IOException io) {
+				e.addSuppressed(io);
+			}
+			throw e instanceof final IOException ioe ? ioe : new IOException("Failed to start thread", e);
+		}
+	}
 
-    /**
-     * Flush.
-     *
-     * @throws java.io.IOException
-     *             Signals that an I/O exception has occurred.
-     */
-    public void flush() throws IOException {
-        _thread.flush();
-    }
+	/**
+	 * Creates a CommandInputStream by executing the given command.
+	 *
+	 * @param in      The InputStream to send to the process's stdin.
+	 * @param command The command to run.
+	 * @throws IOException If an error occurs while launching the process.
+	 */
+	public CommandInputStream(final InputStream in, final String[] command) throws IOException {
+		this(in, Runtime.getRuntime().exec(command));
+	}
 
-    /**
-     * {@inheritDoc}
-     *
-     * Available.
-     */
-    @Override
-    public int available() throws IOException {
-        return _in.available();
-    }
+	/**
+	 * Cleans up resources and terminates the process if necessary.
+	 *
+	 * @throws IOException If an error occurs during cleanup.
+	 */
+	private void cleanup() throws IOException {
+		_log.debug("Closing");
+		String message = null;
+		// Close output and error streams safely
+		StreamPlugThread.closeQuietly(processOut);
+		StreamPlugThread.closeQuietly(processErr);
+		// Wait for the plug thread to finish
+		try {
+			thread.join();
+		} catch (final InterruptedException _) {
+			Thread.currentThread().interrupt();
+		} catch (final Exception _) {
+			// Ignored
+		}
+		// Shutdown stderr reader
+		executor.shutdown();
+		try {
+			if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
+				_log.warn("Executor did not terminate in time, forcing shutdown");
+				executor.shutdownNow();
+			}
+		} catch (final InterruptedException _) {
+			executor.shutdownNow();
+			Thread.currentThread().interrupt();
+		}
+		// Get any error message from plug thread
+		message = thread.getMessage();
+		if (message != null) {
+			_log.debug("Destroying process ({})", message);
+			process.destroy();
+		} else {
+			// Wait for the process to terminate naturally
+			try {
+				if (!process.waitFor(15, TimeUnit.MINUTES)) {
+					_log.debug("Process did not terminate in time, forcing destroy");
+					process.destroy();
+				}
+			} catch (final InterruptedException _) {
+				Thread.currentThread().interrupt();
+			}
+		}
+		// Close input stream and wrapped stream
+		try {
+			processIn.close();
+		} finally {
+			in.close();
+		}
+		// If plug thread reported a problem, propagate it
+		if (message != null) {
+			throw new IOException(message);
+		}
+	}
 
-    /**
-     * {@inheritDoc}
-     *
-     * Read.
-     */
-    @Override
-    public int read() throws IOException {
-        return _in.read();
-    }
+	/**
+	 * Closes this stream and performs all associated cleanup.
+	 *
+	 * @throws IOException If an error occurs during closing.
+	 */
+	@Override
+	public void close() throws IOException {
+		if (cleaner.markCleaned()) {
+			cleanup();
+		}
+	}
 
-    /**
-     * {@inheritDoc}
-     *
-     * Read.
-     */
-    @Override
-    public int read(final byte[] b) throws IOException {
-        return _in.read(b);
-    }
+	/**
+	 * Reads a byte of data from the process's output.
+	 */
+	@Override
+	public int read() throws IOException {
+		return processIn.read();
+	}
 
-    /**
-     * {@inheritDoc}
-     *
-     * Read.
-     */
-    @Override
-    public int read(final byte[] b, final int off, final int len) throws IOException {
-        return _in.read(b, off, len);
-    }
+	/**
+	 * Reads bytes into a buffer from the process's output.
+	 */
+	@Override
+	public int read(final byte[] b) throws IOException {
+		return processIn.read(b);
+	}
 
-    /**
-     * {@inheritDoc}
-     *
-     * Skip.
-     */
-    @Override
-    public long skip(final long n) throws IOException {
-        return _in.skip(n);
-    }
+	/**
+	 * Reads up to len bytes of data from the process's output.
+	 */
+	@Override
+	public int read(final byte[] b, final int off, final int len) throws IOException {
+		return processIn.read(b, off, len);
+	}
 
-    /**
-     * {@inheritDoc}
-     *
-     * Mark.
-     */
-    @Override
-    public void mark(final int readlimit) {
-    }
+	/**
+	 * Skips over and discards n bytes of data from the process's output.
+	 */
+	@Override
+	public long skip(final long n) throws IOException {
+		return processIn.skip(n);
+	}
 
-    /**
-     * {@inheritDoc}
-     *
-     * Mark supported.
-     */
-    @Override
-    public boolean markSupported() {
-        return false;
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * Reset.
-     */
-    @Override
-    public void reset() {
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * Finalize.
-     */
-    @Override
-    public void finalize() throws Throwable {
-        if (_closed.compareAndSet(false, true)) {
-            _log.warn("Forcing close in finalize <- {}", this.getClass().getName());
-            try {
-                _process.destroy();
-            } finally {
-                StreamPlugThread.closeQuietly(_out);
-                StreamPlugThread.closeQuietly(_in);
-                StreamPlugThread.closeQuietly(in);
-            }
-        }
-        super.finalize();
-    }
+	/**
+	 * Returns the number of bytes that can be read without blocking.
+	 */
+	@Override
+	public int available() throws IOException {
+		return processIn.available();
+	}
 }
