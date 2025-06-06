@@ -41,167 +41,190 @@ import ecmwf.common.technical.StreamPlugThread;
  * The Class RemoteInputStreamImp.
  */
 public final class RemoteInputStreamImp extends RemoteManagement implements RemoteInputStream, Closeable {
-	/** The Constant serialVersionUID. */
-	private static final long serialVersionUID = 4473817650326462267L;
+    /** The Constant serialVersionUID. */
+    private static final long serialVersionUID = 4473817650326462267L;
 
-	/** The Constant _log. */
-	private static final transient Logger _log = LogManager.getLogger(RemoteInputStreamImp.class);
+    /** The Constant _log. */
+    private static final transient Logger _log = LogManager.getLogger(RemoteInputStreamImp.class);
 
-	/** Cleaner support for resource cleanup. */
-	private final transient CleanableSupport cleaner;
+    /** Cleaner support for resource cleanup. */
+    private final transient CleanableSupport cleaner;
 
-	/** The in. */
-	private final transient InputStream in;
+    /** The in. */
+    private final transient InputStream in;
 
-	/** The i. */
-	private transient int i = 0;
+    /** The i. */
+    private transient int i = 0;
 
-	/**
-	 * Instantiates a new remote input stream imp.
-	 *
-	 * @param in the in
-	 * @throws RemoteException the remote exception
-	 */
-	public RemoteInputStreamImp(final InputStream in) throws RemoteException {
-		this.in = in;
-		// Setup GC cleanup hook
-		this.cleaner = new CleanableSupport(this, () -> {
-			try {
-				cleanup();
-			} catch (final IOException e) {
-				_log.debug("GC cleanup", e);
-			}
-		});
-	}
+    /**
+     * Instantiates a new remote input stream imp.
+     *
+     * @param in
+     *            the in
+     *
+     * @throws RemoteException
+     *             the remote exception
+     */
+    public RemoteInputStreamImp(final InputStream in) throws RemoteException {
+        this.in = in;
+        // Setup GC cleanup hook
+        this.cleaner = new CleanableSupport(this, () -> {
+            try {
+                cleanup();
+            } catch (final IOException e) {
+                _log.debug("GC cleanup", e);
+            }
+        });
+    }
 
-	/**
-	 * Alive.
-	 *
-	 * @return true, if successful
-	 */
-	@Override
-	public boolean alive() {
-		try {
-			return i >= 0 && available() >= 0;
-		} catch (final IOException _) {
-			return false;
-		}
-	}
+    /**
+     * Alive.
+     *
+     * @return true, if successful
+     */
+    @Override
+    public boolean alive() {
+        try {
+            return i >= 0 && available() >= 0;
+        } catch (final IOException _) {
+            return false;
+        }
+    }
 
-	/**
-	 * Available.
-	 *
-	 * @return the int
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 */
-	@Override
-	public int available() throws IOException {
-		return in.available();
-	}
+    /**
+     * Available.
+     *
+     * @return the int
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     */
+    @Override
+    public int available() throws IOException {
+        return in.available();
+    }
 
-	/**
-	 * Closes this stream and performs all associated cleanup.
-	 *
-	 * @throws IOException If an error occurs during closing.
-	 */
-	@Override
-	public void close() throws IOException {
-		if (cleaner.markCleaned()) {
-			cleanup();
-		}
-	}
+    /**
+     * Closes this stream and performs all associated cleanup.
+     *
+     * @throws IOException
+     *             If an error occurs during closing.
+     */
+    @Override
+    public void close() throws IOException {
+        if (cleaner.markCleaned()) {
+            cleanup();
+        }
+    }
 
-	/**
-	 * Destroy.
-	 */
-	@Override
-	public void destroy() {
-		StreamPlugThread.closeQuietly(this);
-	}
+    /**
+     * Destroy.
+     */
+    @Override
+    public void destroy() {
+        StreamPlugThread.closeQuietly(this);
+    }
 
-	/**
-	 * Mark.
-	 *
-	 * @param readlimit the readlimit
-	 * @throws RemoteException the remote exception
-	 */
-	@Override
-	public void mark(final int readlimit) throws RemoteException {
-		in.mark(readlimit);
-	}
+    /**
+     * Mark.
+     *
+     * @param readlimit
+     *            the readlimit
+     *
+     * @throws RemoteException
+     *             the remote exception
+     */
+    @Override
+    public void mark(final int readlimit) throws RemoteException {
+        in.mark(readlimit);
+    }
 
-	/**
-	 * Mark supported.
-	 *
-	 * @return true, if successful
-	 * @throws RemoteException the remote exception
-	 */
-	@Override
-	public boolean markSupported() throws RemoteException {
-		return in.markSupported();
-	}
+    /**
+     * Mark supported.
+     *
+     * @return true, if successful
+     *
+     * @throws RemoteException
+     *             the remote exception
+     */
+    @Override
+    public boolean markSupported() throws RemoteException {
+        return in.markSupported();
+    }
 
-	/**
-	 * Read.
-	 *
-	 * @return the int
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 */
-	@Override
-	public int read() throws IOException {
-		final var c = i = in.read();
-		if (i == -1) {
-			close();
-		}
-		return c;
-	}
+    /**
+     * Read.
+     *
+     * @return the int
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     */
+    @Override
+    public int read() throws IOException {
+        final var c = i = in.read();
+        if (i == -1) {
+            close();
+        }
+        return c;
+    }
 
-	/**
-	 * Read.
-	 *
-	 * @param len the len
-	 * @return the byte stream
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 */
-	@Override
-	public ByteStream read(final int len) throws IOException {
-		final var holder = new byte[len];
-		i = in.read(holder, 0, len);
-		final var bs = new ByteStream(holder, i);
-		if (i == -1) {
-			close();
-		}
-		return bs;
-	}
+    /**
+     * Read.
+     *
+     * @param len
+     *            the len
+     *
+     * @return the byte stream
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     */
+    @Override
+    public ByteStream read(final int len) throws IOException {
+        final var holder = new byte[len];
+        i = in.read(holder, 0, len);
+        final var bs = new ByteStream(holder, i);
+        if (i == -1) {
+            close();
+        }
+        return bs;
+    }
 
-	/**
-	 * Reset.
-	 *
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 */
-	@Override
-	public void reset() throws IOException {
-		in.reset();
-	}
+    /**
+     * Reset.
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     */
+    @Override
+    public void reset() throws IOException {
+        in.reset();
+    }
 
-	/**
-	 * Skip.
-	 *
-	 * @param n the n
-	 * @return the long
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 */
-	@Override
-	public long skip(final long n) throws IOException {
-		return in.skip(n);
-	}
+    /**
+     * Skip.
+     *
+     * @param n
+     *            the n
+     *
+     * @return the long
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     */
+    @Override
+    public long skip(final long n) throws IOException {
+        return in.skip(n);
+    }
 
-	/**
-	 * Cleans up resources and terminates the process if necessary.
-	 *
-	 * @throws IOException If an error occurs during cleanup.
-	 */
-	private void cleanup() throws IOException {
-		in.close();
-	}
+    /**
+     * Cleans up resources and terminates the process if necessary.
+     *
+     * @throws IOException
+     *             If an error occurs during cleanup.
+     */
+    private void cleanup() throws IOException {
+        in.close();
+    }
 }

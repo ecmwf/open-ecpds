@@ -71,169 +71,180 @@ import org.apache.logging.log4j.Logger;
 /**
  * The Class ExecutorManager.
  *
- * @param <O> the generic type
+ * @param <O>
+ *            the generic type
  */
 public final class ExecutorManager<O extends ExecutorRunnable> extends Thread {
 
-	/** The Constant _log. */
-	private static final Logger _log = LogManager.getLogger(ExecutorManager.class);
+    /** The Constant _log. */
+    private static final Logger _log = LogManager.getLogger(ExecutorManager.class);
 
-	/** The thread count. */
-	private final AtomicInteger threadCount;
+    /** The thread count. */
+    private final AtomicInteger threadCount;
 
-	/** The started flag. */
-	private final AtomicBoolean started = new AtomicBoolean(false);
+    /** The started flag. */
+    private final AtomicBoolean started = new AtomicBoolean(false);
 
-	/** The waiting list. */
-	private final ArrayBlockingQueue<O> waitingList;
+    /** The waiting list. */
+    private final ArrayBlockingQueue<O> waitingList;
 
-	/** The max running. */
-	private final int maxRunning;
+    /** The max running. */
+    private final int maxRunning;
 
-	/** The continueRunning. */
-	private boolean continueRunning = true;
+    /** The continueRunning. */
+    private boolean continueRunning = true;
 
-	/** The count. */
-	private int count = 0;
+    /** The count. */
+    private int count = 0;
 
-	/**
-	 * Instantiates a new executor manager.
-	 *
-	 * @param maxWaiting the max waiting
-	 * @param maxRunning the max running
-	 */
-	public ExecutorManager(final int maxWaiting, final int maxRunning) {
-		this(maxWaiting, maxRunning, false);
-	}
+    /**
+     * Instantiates a new executor manager.
+     *
+     * @param maxWaiting
+     *            the max waiting
+     * @param maxRunning
+     *            the max running
+     */
+    public ExecutorManager(final int maxWaiting, final int maxRunning) {
+        this(maxWaiting, maxRunning, false);
+    }
 
-	/**
-	 * Instantiates a new executor manager.
-	 *
-	 * @param maxWaiting the max waiting
-	 * @param maxRunning the max running
-	 * @param start      the start
-	 */
-	public ExecutorManager(final int maxWaiting, final int maxRunning, final boolean start) {
-		threadCount = new AtomicInteger(0);
-		waitingList = new ArrayBlockingQueue<>(maxWaiting);
-		this.maxRunning = maxRunning;
-		if (start) {
-			start();
-		}
-	}
+    /**
+     * Instantiates a new executor manager.
+     *
+     * @param maxWaiting
+     *            the max waiting
+     * @param maxRunning
+     *            the max running
+     * @param start
+     *            the start
+     */
+    public ExecutorManager(final int maxWaiting, final int maxRunning, final boolean start) {
+        threadCount = new AtomicInteger(0);
+        waitingList = new ArrayBlockingQueue<>(maxWaiting);
+        this.maxRunning = maxRunning;
+        if (start) {
+            start();
+        }
+    }
 
-	/**
-	 * Gets the thread count.
-	 *
-	 * @return the thread count
-	 */
-	public AtomicInteger getThreadCount() {
-		return threadCount;
-	}
+    /**
+     * Gets the thread count.
+     *
+     * @return the thread count
+     */
+    public AtomicInteger getThreadCount() {
+        return threadCount;
+    }
 
-	/**
-	 * Gets the count.
-	 *
-	 * @return the count
-	 */
-	public int getCount() {
-		return count;
-	}
+    /**
+     * Gets the count.
+     *
+     * @return the count
+     */
+    public int getCount() {
+        return count;
+    }
 
-	/**
-	 * Add a new Thread to the list. Inserts the Thread at the tail of this queue,
-	 * waiting for space to become available if the queue is full.
-	 *
-	 * @param entry the entry
-	 * @throws InterruptedException the interrupted exception
-	 */
-	public void put(final O entry) throws InterruptedException {
-		waitingList.put(entry);
-	}
+    /**
+     * Add a new Thread to the list. Inserts the Thread at the tail of this queue, waiting for space to become available
+     * if the queue is full.
+     *
+     * @param entry
+     *            the entry
+     *
+     * @throws InterruptedException
+     *             the interrupted exception
+     */
+    public void put(final O entry) throws InterruptedException {
+        waitingList.put(entry);
+    }
 
-	/**
-	 * Inserts the Thread at the tail of this queue if it is possible to do so
-	 * immediately without exceeding the queue's capacity, return false if this
-	 * queue is full. If the Thread already exists in the queue then return true and
-	 * do nothing.
-	 *
-	 * @param entry the entry
-	 * @return true, if successful
-	 */
-	public boolean offer(final O entry) {
-		return waitingList.contains(entry) || waitingList.offer(entry);
-	}
+    /**
+     * Inserts the Thread at the tail of this queue if it is possible to do so immediately without exceeding the queue's
+     * capacity, return false if this queue is full. If the Thread already exists in the queue then return true and do
+     * nothing.
+     *
+     * @param entry
+     *            the entry
+     *
+     * @return true, if successful
+     */
+    public boolean offer(final O entry) {
+        return waitingList.contains(entry) || waitingList.offer(entry);
+    }
 
-	/**
-	 * Start the Thread if it is not yet started.
-	 */
-	public void startIfNotStarted() {
-		if (!isAlive() && started.compareAndSet(false, true)) {
-			_log.debug("Requesting start");
-			start();
-		}
-	}
+    /**
+     * Start the Thread if it is not yet started.
+     */
+    public void startIfNotStarted() {
+        if (!isAlive() && started.compareAndSet(false, true)) {
+            _log.debug("Requesting start");
+            start();
+        }
+    }
 
-	/**
-	 * Ends the loop.
-	 */
-	public void stopRun() {
-		_log.debug("Requesting stop");
-		continueRunning = false;
-	}
+    /**
+     * Ends the loop.
+     */
+    public void stopRun() {
+        _log.debug("Requesting stop");
+        continueRunning = false;
+    }
 
-	/**
-	 * Run.
-	 */
-	@Override
-	public void run() {
-		_log.debug("Starting ExecutorManager");
-		final ExecutorService executor = Executors.newFixedThreadPool(maxRunning);
-		try {
-			while (continueRunning || !waitingList.isEmpty() || threadCount.get() > 0) {
-				// Do we have a request pending?
-				if (!waitingList.isEmpty()) {
-					// Let's start a new Thread!
-					final var thread = waitingList.poll();
-					executor.execute(thread);
-					// We have one more Thread which is supposed to be running!
-					threadCount.incrementAndGet();
-					// Now we can remove it from the waiting queue
-					waitingList.remove(thread);
-					count++;
-				} else {
-					try {
-						sleep(10);
-					} catch (final InterruptedException e) {
-						_log.warn("Interupted", e);
-						stopRun();
-					}
-				}
-			}
-		} finally {
-			waitingList.clear();
-			executor.shutdown();
-			try {
-				executor.awaitTermination(2 * Timer.ONE_HOUR, TimeUnit.MILLISECONDS);
-			} catch (final InterruptedException e) {
-			}
-			if (!executor.isTerminated()) {
-				// This should not happen!
-				_log.warn("ExecutorManager completed with tasks still running");
-			}
-			_log.debug("ExecutorManager completed (processed {} run(s))", count);
-		}
-	}
+    /**
+     * Run.
+     */
+    @Override
+    public void run() {
+        _log.debug("Starting ExecutorManager");
+        final ExecutorService executor = Executors.newFixedThreadPool(maxRunning);
+        try {
+            while (continueRunning || !waitingList.isEmpty() || threadCount.get() > 0) {
+                // Do we have a request pending?
+                if (!waitingList.isEmpty()) {
+                    // Let's start a new Thread!
+                    final var thread = waitingList.poll();
+                    executor.execute(thread);
+                    // We have one more Thread which is supposed to be running!
+                    threadCount.incrementAndGet();
+                    // Now we can remove it from the waiting queue
+                    waitingList.remove(thread);
+                    count++;
+                } else {
+                    try {
+                        sleep(10);
+                    } catch (final InterruptedException e) {
+                        _log.warn("Interupted", e);
+                        stopRun();
+                    }
+                }
+            }
+        } finally {
+            waitingList.clear();
+            executor.shutdown();
+            try {
+                executor.awaitTermination(2 * Timer.ONE_HOUR, TimeUnit.MILLISECONDS);
+            } catch (final InterruptedException e) {
+            }
+            if (!executor.isTerminated()) {
+                // This should not happen!
+                _log.warn("ExecutorManager completed with tasks still running");
+            }
+            _log.debug("ExecutorManager completed (processed {} run(s))", count);
+        }
+    }
 
-	/**
-	 * Stop and join.
-	 *
-	 * @throws InterruptedException the interrupted exception
-	 */
-	public void stopAndJoin() throws InterruptedException {
-		// We don't want to take more jobs!
-		stopRun();
-		// And now we wait for all the Threads to complete!
-		join();
-	}
+    /**
+     * Stop and join.
+     *
+     * @throws InterruptedException
+     *             the interrupted exception
+     */
+    public void stopAndJoin() throws InterruptedException {
+        // We don't want to take more jobs!
+        stopRun();
+        // And now we wait for all the Threads to complete!
+        join();
+    }
 }
