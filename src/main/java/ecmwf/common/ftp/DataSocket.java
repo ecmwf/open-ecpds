@@ -78,15 +78,8 @@ public final class DataSocket implements Closeable {
     public DataSocket(final Socket socket, final boolean dataAlive) {
         this.dataAlive = dataAlive;
         this.socket = socket;
-        // Setup GC cleanup hook
-        this.cleaner = new CleanableSupport(this, () -> {
-            try {
-                cleanup();
-            } catch (final IOException e) {
-                _log.debug("GC cleanup", e);
-            }
-        });
-        _log.debug("Manage: {}", this);
+		// Setup GC cleanup hook
+		this.cleaner = new CleanableSupport(this, this::cleanup);
     }
 
     /**
@@ -157,9 +150,7 @@ public final class DataSocket implements Closeable {
      */
     @Override
     public void close() throws IOException {
-        if (cleaner.markCleaned()) {
-            cleanup();
-        }
+    	cleaner.close();
     }
 
     /**

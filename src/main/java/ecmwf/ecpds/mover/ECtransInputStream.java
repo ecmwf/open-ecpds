@@ -97,14 +97,8 @@ final class ECtransInputStream extends InputStream implements AutoCloseable {
      */
     public ECtransInputStream(final Host[] hostsForSource, final DataFile dataFile, final long posn)
             throws SourceNotAvailableException {
-        // Setup GC cleanup hook
-        this.cleaner = new CleanableSupport(this, () -> {
-            try {
-                cleanup();
-            } catch (final IOException e) {
-                _log.debug("GC cleanup", e);
-            }
-        });
+		// Setup GC cleanup hook
+		this.cleaner = new CleanableSupport(this, this::cleanup);
         final var fileSize = dataFile.getSize();
         final var hostsList = new StringBuilder();
         Throwable throwable = null;
@@ -403,9 +397,7 @@ final class ECtransInputStream extends InputStream implements AutoCloseable {
      */
     @Override
     public void close() throws IOException {
-        if (cleaner.markCleaned()) {
-            cleanup();
-        }
+    	cleaner.close();
     }
 
     /**

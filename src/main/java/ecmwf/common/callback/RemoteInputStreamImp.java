@@ -31,9 +31,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.rmi.RemoteException;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import ecmwf.common.technical.CleanableSupport;
 import ecmwf.common.technical.StreamPlugThread;
 
@@ -43,9 +40,6 @@ import ecmwf.common.technical.StreamPlugThread;
 public final class RemoteInputStreamImp extends RemoteManagement implements RemoteInputStream, Closeable {
     /** The Constant serialVersionUID. */
     private static final long serialVersionUID = 4473817650326462267L;
-
-    /** The Constant _log. */
-    private static final transient Logger _log = LogManager.getLogger(RemoteInputStreamImp.class);
 
     /** Cleaner support for resource cleanup. */
     private final transient CleanableSupport cleaner;
@@ -67,14 +61,8 @@ public final class RemoteInputStreamImp extends RemoteManagement implements Remo
      */
     public RemoteInputStreamImp(final InputStream in) throws RemoteException {
         this.in = in;
-        // Setup GC cleanup hook
-        this.cleaner = new CleanableSupport(this, () -> {
-            try {
-                cleanup();
-            } catch (final IOException e) {
-                _log.debug("GC cleanup", e);
-            }
-        });
+		// Setup GC cleanup hook
+		this.cleaner = new CleanableSupport(this, this::cleanup);
     }
 
     /**
@@ -112,9 +100,7 @@ public final class RemoteInputStreamImp extends RemoteManagement implements Remo
      */
     @Override
     public void close() throws IOException {
-        if (cleaner.markCleaned()) {
-            cleanup();
-        }
+    	cleaner.close();
     }
 
     /**

@@ -98,14 +98,8 @@ public final class CommandOutputStream extends FilterOutputStream implements Aut
                 _log.error("Error reading stderr", e);
             }
         });
-        cleaner = new CleanableSupport(this, () -> {
-            try {
-                cleanup(); // Only throws in manual path
-            } catch (final IOException e) {
-                // Log exception only (GC path – cannot propagate)
-                _log.debug("GC cleanup", e);
-            }
-        });
+		// Setup GC cleanup hook
+		this.cleaner = new CleanableSupport(this, this::cleanup);
         try {
             thread.execute();
         } catch (final Exception e) {
@@ -195,9 +189,7 @@ public final class CommandOutputStream extends FilterOutputStream implements Aut
      */
     @Override
     public void close() throws IOException {
-        if (cleaner.markCleaned()) {
-            cleanup(); // May throw IOException
-        }
+    	cleaner.close();
     }
 
     /**

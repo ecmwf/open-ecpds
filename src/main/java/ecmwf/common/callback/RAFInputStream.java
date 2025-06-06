@@ -30,17 +30,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import ecmwf.common.technical.CleanableSupport;
 
 /**
  * The Class RAFInputStream.
  */
 public final class RAFInputStream extends InputStream {
-    /** The Constant _log. */
-    private static final Logger _log = LogManager.getLogger(RAFInputStream.class);
 
     /** Cleaner support for resource cleanup. */
     private final CleanableSupport cleaner;
@@ -56,14 +51,8 @@ public final class RAFInputStream extends InputStream {
      */
     public RAFInputStream(final RandomAccessFile raf) {
         this.raf = raf;
-        // Setup GC cleanup hook
-        this.cleaner = new CleanableSupport(this, () -> {
-            try {
-                cleanup();
-            } catch (final IOException e) {
-                _log.debug("GC cleanup", e);
-            }
-        });
+		// Setup GC cleanup hook
+		this.cleaner = new CleanableSupport(this, this::cleanup);
     }
 
     /**
@@ -174,8 +163,6 @@ public final class RAFInputStream extends InputStream {
      */
     @Override
     public void close() throws IOException {
-        if (cleaner.markCleaned()) {
-            cleanup();
-        }
+        cleaner.close();
     }
 }

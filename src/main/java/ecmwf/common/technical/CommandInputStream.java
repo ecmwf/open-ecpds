@@ -105,14 +105,8 @@ public final class CommandInputStream extends FilterInputStream implements AutoC
                 _log.error("Error reading stderr", e);
             }
         });
-        // Setup GC cleanup hook
-        this.cleaner = new CleanableSupport(this, () -> {
-            try {
-                cleanup();
-            } catch (final IOException e) {
-                _log.debug("GC cleanup", e);
-            }
-        });
+		// Setup GC cleanup hook
+		this.cleaner = new CleanableSupport(this, this::cleanup);
         // Launch the plug thread
         try {
             thread.execute();
@@ -208,9 +202,7 @@ public final class CommandInputStream extends FilterInputStream implements AutoC
      */
     @Override
     public void close() throws IOException {
-        if (cleaner.markCleaned()) {
-            cleanup();
-        }
+    	cleaner.close();
     }
 
     /**
