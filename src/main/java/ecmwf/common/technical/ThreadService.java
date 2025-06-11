@@ -29,10 +29,12 @@ package ecmwf.common.technical;
 import static ecmwf.common.text.Util.isNotEmpty;
 
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -68,11 +70,11 @@ public final class ThreadService {
 
     /** The Constant configurablePool. */
     private static final ExecutorService configurablePool = ConfigurableThreadFactory.getExecutorService(0,
-            Integer.MAX_VALUE, false);
+            Integer.MAX_VALUE, new SynchronousQueue<>(), false);
 
     /** The Constant interruptiblePool. */
     private static final ExecutorService interruptiblePool = ConfigurableThreadFactory.getExecutorService(0,
-            Integer.MAX_VALUE, true);
+            Integer.MAX_VALUE, new SynchronousQueue<>(), true);
 
     /**
      * Instantiates a new thread service. Utility classes don't need public constructors!
@@ -92,7 +94,8 @@ public final class ThreadService {
      */
     public static ExecutorService getCleaningThreadLocalExecutorService(final int corePoolSize,
             final int maximumPoolSize) {
-        return ConfigurableThreadFactory.getExecutorService(corePoolSize, maximumPoolSize, false);
+        return ConfigurableThreadFactory.getExecutorService(corePoolSize, maximumPoolSize, new LinkedBlockingQueue<>(),
+                false);
     }
 
     /**
@@ -720,16 +723,18 @@ public final class ThreadService {
          *            the core pool size
          * @param maximumPoolSize
          *            the maximum pool size
+         * @param workQueue
+         *            the work queue
          * @param interruptibleRMIThread
          *            the interruptible rmi thread
          *
          * @return the executor service
          */
         static ExecutorService getExecutorService(final int corePoolSize, final int maximumPoolSize,
-                final boolean interruptibleRMIThread) {
+                final BlockingQueue<Runnable> workQueue, final boolean interruptibleRMIThread) {
             try {
                 return new ThreadPoolExecutorCleaningThreadLocals(corePoolSize, maximumPoolSize, 60L, TimeUnit.SECONDS,
-                        new SynchronousQueue<>(), new ConfigurableThreadFactory(interruptibleRMIThread),
+                        workQueue, new ConfigurableThreadFactory(interruptibleRMIThread),
                         new ThreadPoolExecutor.AbortPolicy(), new ThreadLocalChangeListener() {
                             @Override
                             public boolean isEnabled() {
@@ -744,8 +749,8 @@ public final class ThreadService {
                         });
             } catch (final Throwable t) {
                 _log.warn("Cannot use ThreadPoolExecutorCleaningThreadLocals, switch to ThreadPoolExecutor", t);
-                return new ThreadPoolExecutor(corePoolSize, maximumPoolSize, 60L, TimeUnit.SECONDS,
-                        new SynchronousQueue<>(), new ConfigurableThreadFactory(interruptibleRMIThread));
+                return new ThreadPoolExecutor(corePoolSize, maximumPoolSize, 60L, TimeUnit.SECONDS, workQueue,
+                        new ConfigurableThreadFactory(interruptibleRMIThread));
             }
         }
 
