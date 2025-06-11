@@ -85,10 +85,6 @@ public final class ScriptManager implements AutoCloseable {
             .option("engine.WarnVirtualThreadSupport", Cnf.stringAt("ScriptManager", "warnVirtualThreadSupport", false))
             .option("engine.Compilation", Cnf.stringAt("ScriptManager", "engineCompilation", true)).build();
 
-    /** The Constant CONTEXT_PROVIDER. */
-    private static final ContextProvider CONTEXT_PROVIDER = new ContextProvider(
-            Cnf.at("ScriptManager", "enableContextSpool", true), Cnf.at("ScriptManager", "resourceLimits", 0));
-
     /** The Constant DEBUG_POOL. */
     private static final boolean DEBUG_POOL = Cnf.at("ScriptManager", "debugPool", true);
 
@@ -103,6 +99,10 @@ public final class ScriptManager implements AutoCloseable {
      */
     private static final Class<?>[] EXPOSED_CLASSES = new Class[] { UUID.class, URL.class, StringBuffer.class,
             BufferedReader.class, InputStreamReader.class };
+
+    /** The Constant CONTEXT_PROVIDER. */
+    private static final ContextProvider CONTEXT_PROVIDER = new ContextProvider(
+            Cnf.at("ScriptManager", "enableContextSpool", true), Cnf.at("ScriptManager", "resourceLimits", 0));
 
     /** The current language. */
     private final String currentLanguage;
