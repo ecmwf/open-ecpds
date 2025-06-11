@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
@@ -68,16 +67,39 @@ public final class ThreadService {
 	private static final boolean USE_VIRTUAL_THREAD = Cnf.at("Server", "useVirtualThread", false);
 
 	/** The Constant configurablePool. */
-	private static final ExecutorService configurablePool = ConfigurableThreadFactory.getExecutorService(false);
+	private static final ExecutorService configurablePool = ConfigurableThreadFactory.getExecutorService(0,
+			Integer.MAX_VALUE, false);
 
 	/** The Constant interruptiblePool. */
-	private static final ExecutorService interruptiblePool = ConfigurableThreadFactory.getExecutorService(true);
+	private static final ExecutorService interruptiblePool = ConfigurableThreadFactory.getExecutorService(0,
+			Integer.MAX_VALUE, true);
 
 	/**
 	 * Instantiates a new thread service. Utility classes don't need public
 	 * constructors!
 	 */
 	private ThreadService() {
+	}
+
+	/**
+	 * Gets the cleaning thread local executor service.
+	 *
+	 * @param corePoolSize    the core pool size
+	 * @param maximumPoolSize the maximum pool size
+	 * @return the executor service
+	 */
+	public static ExecutorService getCleaningThreadLocalExecutorService(final int corePoolSize,
+			final int maximumPoolSize) {
+		return ConfigurableThreadFactory.getExecutorService(corePoolSize, maximumPoolSize, false);
+	}
+
+	/**
+	 * Gets the single cleaning thread local executor service.
+	 *
+	 * @return the executor service
+	 */
+	public static ExecutorService getSingleCleaningThreadLocalExecutorService() {
+		return getCleaningThreadLocalExecutorService(1, 1);
 	}
 
 	/**
@@ -175,6 +197,8 @@ public final class ThreadService {
 			if (timeout > 0) {
 				try {
 					join(timeout);
+				} catch (final InterruptedException _) {
+					Thread.currentThread().interrupt();
 				} catch (final Exception e) {
 					_log.warn("shutdown", e);
 				}
@@ -197,7 +221,8 @@ public final class ThreadService {
 							if (!Thread.interrupted()) {
 								Thread.sleep(pause);
 							}
-						} catch (final InterruptedException e) {
+						} catch (final InterruptedException _) {
+							Thread.currentThread().interrupt();
 						}
 					}
 					if (loop) {
@@ -655,12 +680,15 @@ public final class ThreadService {
 		/**
 		 * Gets the executor service.
 		 *
+		 * @param corePoolSize           the core pool size
+		 * @param maximumPoolSize        the maximum pool size
 		 * @param interruptibleRMIThread the interruptible rmi thread
 		 * @return the executor service
 		 */
-		static ExecutorService getExecutorService(final boolean interruptibleRMIThread) {
+		static ExecutorService getExecutorService(final int corePoolSize, final int maximumPoolSize,
+				final boolean interruptibleRMIThread) {
 			try {
-				return new ThreadPoolExecutorCleaningThreadLocals(0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
+				return new ThreadPoolExecutorCleaningThreadLocals(corePoolSize, maximumPoolSize, 60L, TimeUnit.SECONDS,
 						new SynchronousQueue<>(), new ConfigurableThreadFactory(interruptibleRMIThread),
 						new ThreadPoolExecutor.AbortPolicy(), new ThreadLocalChangeListener() {
 							@Override
@@ -671,11 +699,13 @@ public final class ThreadService {
 							@Override
 							public void changed(final Mode mode, final Thread thread, final ThreadLocal<?> threadLocal,
 									final Object value) {
+								// Nothing to be done
 							}
 						});
 			} catch (final Throwable t) {
-				_log.warn("Cannot use ThreadPoolExecutorCleaningThreadLocals, switch to newCachedThreadPool", t);
-				return Executors.newCachedThreadPool(new ConfigurableThreadFactory(interruptibleRMIThread));
+				_log.warn("Cannot use ThreadPoolExecutorCleaningThreadLocals, switch to ThreadPoolExecutor", t);
+				return new ThreadPoolExecutor(corePoolSize, maximumPoolSize, 60L, TimeUnit.SECONDS,
+						new SynchronousQueue<>(), new ConfigurableThreadFactory(interruptibleRMIThread));
 			}
 		}
 
