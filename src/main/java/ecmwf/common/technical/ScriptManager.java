@@ -41,6 +41,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -78,19 +81,22 @@ public final class ScriptManager implements AutoCloseable {
 
     /** The Constant SHARED_ENGINE. */
     private static final Engine SHARED_ENGINE = Engine.newBuilder(JS, PYTHON)
-            .allowExperimentalOptions(Cnf.at("ScriptManager", "allowExperimentalOptions", true))
+            .allowExperimentalOptions(Cnf.at("ScriptManager", "allowExperimentalOptions", false))
             .option("engine.WarnVirtualThreadSupport", Cnf.stringAt("ScriptManager", "warnVirtualThreadSupport", false))
-            .option("engine.Compilation", Cnf.stringAt("ScriptManager", "engineCompilation", false)).build();
+            .option("engine.Compilation", Cnf.stringAt("ScriptManager", "engineCompilation", true)).build();
 
     /** The Constant CONTEXT_PROVIDER. */
     private static final ContextProvider CONTEXT_PROVIDER = new ContextProvider(
             Cnf.at("ScriptManager", "enableContextSpool", true), Cnf.at("ScriptManager", "resourceLimits", 0));
 
     /** The Constant DEBUG_POOL. */
-    private static final boolean DEBUG_POOL = Cnf.at("ScriptManager", "debugPool", false);
+    private static final boolean DEBUG_POOL = Cnf.at("ScriptManager", "debugPool", true);
 
     /** The Constant DEBUG_FREQUENCY. */
-    private static final int DEBUG_FREQUENCY = Cnf.at("ScriptManager", "debugFrequency", 1_000_000);
+    private static final int DEBUG_FREQUENCY = Cnf.at("ScriptManager", "debugFrequency", 500);
+
+    /** The Constant CONTEXT_TIMEOUT_MILLIS. */
+    private static final long CONTEXT_TIMEOUT_MILLIS = Cnf.at("ScriptManager", "contextTimeoutMillis", 5 * 60 * 1000L);
 
     /**
      * The Constant EXPOSED_CLASSES. Classes which are allowed to be used within the scripts.
@@ -722,6 +728,29 @@ public final class ScriptManager implements AutoCloseable {
      */
     private static class ContextProvider {
 
+        /**
+         * The Class PooledContext.
+         */
+        private static class PooledContext {
+
+            /** The context. */
+            final Context context;
+
+            /** The timestamp. */
+            final long timestamp;
+
+            /**
+             * Instantiates a new pooled context.
+             *
+             * @param context
+             *            the context
+             */
+            PooledContext(final Context context) {
+                this.context = context;
+                this.timestamp = System.currentTimeMillis();
+            }
+        }
+
         /** The null output stream. */
         private static final OutputStream nullOutputStream = OutputStream.nullOutputStream();
 
@@ -729,7 +758,7 @@ public final class ScriptManager implements AutoCloseable {
         private static final InputStream nullInputStream = InputStream.nullInputStream();
 
         /** The pool. */
-        private final ConcurrentLinkedQueue<Context> pool = new ConcurrentLinkedQueue<>();
+        private final ConcurrentLinkedQueue<PooledContext> pool = new ConcurrentLinkedQueue<>();
 
         /** The created count. */
         private final AtomicInteger createdCount = new AtomicInteger(0);
@@ -749,8 +778,8 @@ public final class ScriptManager implements AutoCloseable {
         /** The resource limits. */
         private final ResourceLimits resourceLimits;
 
-        /** The use context spool. */
-        private final boolean useContextSpool;
+        /** The cleanup executor. */
+        private final ScheduledExecutorService cleanupExecutor;
 
         /**
          * Instantiates a new context provider.
@@ -761,8 +790,14 @@ public final class ScriptManager implements AutoCloseable {
          *            the limits
          */
         ContextProvider(final boolean useContextSpool, final int limits) {
-            this.useContextSpool = useContextSpool;
             this.resourceLimits = limits > 0 ? ResourceLimits.newBuilder().statementLimit(limits, null).build() : null;
+            if (useContextSpool) {
+                cleanupExecutor = Executors.newSingleThreadScheduledExecutor();
+                cleanupExecutor.scheduleAtFixedRate(this::cleanupExpiredContexts, CONTEXT_TIMEOUT_MILLIS,
+                        CONTEXT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+            } else {
+                cleanupExecutor = null;
+            }
         }
 
         /**
@@ -797,11 +832,21 @@ public final class ScriptManager implements AutoCloseable {
          * @return the context
          */
         Context acquire() {
-            var context = pool.poll();
-            if (context == null) {
+            var pooled = pool.poll();
+            while (pooled != null) {
+                if (System.currentTimeMillis() - pooled.timestamp < CONTEXT_TIMEOUT_MILLIS) {
+                    break; // return this one
+                } else {
+                    pooled.context.close(); // expired
+                    pooled = pool.poll();
+                }
+            }
+            final Context context;
+            if (pooled == null) {
                 _log.debug("Context created: {}", createdCount.incrementAndGet());
                 context = createNewContext();
             } else {
+                context = pooled.context;
                 if (DEBUG_POOL && acquired.updateAndGet(c -> c == Long.MAX_VALUE ? 1 : c + 1) % DEBUG_FREQUENCY == 0
                         && _log.isDebugEnabled()) {
                     _log.debug("Context pool: Acquired: {} ({}/sec avg) Released: {} ({}/sec avg)", acquired,
@@ -821,15 +866,37 @@ public final class ScriptManager implements AutoCloseable {
          */
         void release(final Context context, final String currentLanguage) {
             resetBindings(context, currentLanguage);
-            if (!(useContextSpool && pool.offer(context))) {
+            if (cleanupExecutor != null) {
+                pool.offer(new PooledContext(context));
+            } else {
                 _log.debug("Context closed: {}", createdCount.decrementAndGet());
                 context.close();
-            } else {
-                if (DEBUG_POOL && released.updateAndGet(c -> c == Long.MAX_VALUE ? 1 : c + 1) % DEBUG_FREQUENCY == 0
-                        && _log.isDebugEnabled()) {
-                    _log.debug("Context pool: Acquired: {} ({}/sec avg) Released: {} ({}/sec avg)", acquired,
-                            getAvgPerSec(acquired), released, getAvgPerSec(released));
+            }
+
+            if (DEBUG_POOL && released.updateAndGet(c -> c == Long.MAX_VALUE ? 1 : c + 1) % DEBUG_FREQUENCY == 0
+                    && _log.isDebugEnabled()) {
+                _log.debug("Context pool: Acquired: {} ({}/sec avg) Released: {} ({}/sec avg)", acquired,
+                        getAvgPerSec(acquired), released, getAvgPerSec(released));
+            }
+        }
+
+        /**
+         * Cleanup expired contexts.
+         */
+        private void cleanupExpiredContexts() {
+            final var now = System.currentTimeMillis();
+            var expired = 0;
+            final var iterator = pool.iterator();
+            while (iterator.hasNext()) {
+                final var pc = iterator.next();
+                if (now - pc.timestamp >= CONTEXT_TIMEOUT_MILLIS) {
+                    iterator.remove();
+                    pc.context.close();
+                    expired++;
                 }
+            }
+            if (expired > 0) {
+                _log.debug("Expired {} idle contexts from the pool", expired);
             }
         }
 
@@ -857,8 +924,11 @@ public final class ScriptManager implements AutoCloseable {
          * Shutdown.
          */
         void shutdown() {
-            pool.forEach(Context::close);
-            pool.clear();
+            if (cleanupExecutor != null) {
+                cleanupExecutor.shutdownNow();
+                pool.forEach(pc -> pc.context.close());
+                pool.clear();
+            }
         }
     }
 }
