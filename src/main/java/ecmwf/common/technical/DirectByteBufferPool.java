@@ -122,33 +122,42 @@ public class DirectByteBufferPool {
     /**
      * Start cleanup task.
      */
-    private void startCleanupTask() {
-        cleanupExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
-            final var t = new Thread(r);
-            t.setDaemon(true);
-            t.setName("DirectByteBufferPool-Cleanup");
-            return t;
-        });
-        cleanupExecutor.scheduleAtFixedRate(() -> {
-            final var now = System.currentTimeMillis();
-            final var start = System.nanoTime();
-            final var before = pool.size();
-            var removed = 0;
-            final var it = pool.iterator();
-            while (it.hasNext()) {
-                final var buffer = it.next();
-                if ((now - buffer.lastUsed) >= maxIdleMillis) {
-                    it.remove();
-                    removed++;
-                }
-            }
-            final var durationMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
-            _log.debug(
-                    "Cleanup done in {} ms (Before: {}, Removed: {}, After: {}) - Total (Allocated: {}, Reused: {}, Released: {})",
-                    durationMs, before, removed, pool.size(), totalAllocated.get(), totalReused.get(),
-                    totalReleased.get());
-        }, 1, 1, TimeUnit.MINUTES);
-    }
+	private void startCleanupTask() {
+		cleanupExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
+			final var t = new Thread(r);
+			t.setDaemon(true);
+			t.setName("DirectByteBufferPool-Cleanup");
+			return t;
+		});
+		final var lastLogMessage = new StringBuilder();
+		cleanupExecutor.scheduleAtFixedRate(() -> {
+			final var now = System.currentTimeMillis();
+			final var start = System.nanoTime();
+			final var before = pool.size();
+			var removed = 0;
+			final var it = pool.iterator();
+			while (it.hasNext()) {
+				final var buffer = it.next();
+				if ((now - buffer.lastUsed) >= maxIdleMillis) {
+					it.remove();
+					removed++;
+				}
+			}
+			final var durationMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+			final var message = String.format(
+					"Cleanup done in %d ms (Before: %d, Removed: %d, After: %d) - Total (Allocated: %d, Reused: %d, Released: %d)",
+					durationMs, before, removed, pool.size(), totalAllocated.get(), totalReused.get(),
+					totalReleased.get());
+			// Only log if message is different
+			synchronized (lastLogMessage) {
+				if (!message.equals(lastLogMessage.toString())) {
+					lastLogMessage.setLength(0);
+					lastLogMessage.append(message);
+					_log.debug(message);
+				}
+			}
+		}, 1, 1, TimeUnit.MINUTES);
+	}
 
     /**
      * Current pool size.
