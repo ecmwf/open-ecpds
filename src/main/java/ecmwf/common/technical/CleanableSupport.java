@@ -99,6 +99,9 @@ public class CleanableSupport {
     /** Handle to the registered cleanup task */
     private final Cleaner.Cleanable cleanable;
 
+    /** To keep track of the owner class name */
+    private final String ownerClassName;
+
     /**
      * Functional interface for cleanup code that may throw exceptions.
      */
@@ -122,6 +125,7 @@ public class CleanableSupport {
      *            the cleanup logic, which may throw checked exceptions
      */
     public CleanableSupport(final Object owner, final ThrowingRunnable cleanup) {
+        this.ownerClassName = owner.getClass().getName();
         this.cleanup = cleanup;
         // Register cleanup to be called when 'owner' is garbage collected
         this.cleanable = cleaner.register(owner, () -> {
@@ -200,7 +204,8 @@ public class CleanableSupport {
         if (_log.isDebugEnabled()) {
             final var source = gcTriggered ? "GC" : "manual";
             final var millis = nanos / 1_000_000.0;
-            _log.debug("Resource cleaned after {} ms ({})", String.format("%.2f", millis), source);
+            _log.debug("Resource owned by {} cleaned after {} ms ({})", ownerClassName, String.format("%.2f", millis),
+                    source);
         }
     }
 }
