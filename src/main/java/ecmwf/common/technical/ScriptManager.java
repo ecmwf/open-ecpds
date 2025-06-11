@@ -81,7 +81,7 @@ public final class ScriptManager implements AutoCloseable {
 
     /** The Constant SHARED_ENGINE. */
     private static final Engine SHARED_ENGINE = Engine.newBuilder(JS, PYTHON)
-            .allowExperimentalOptions(Cnf.at("ScriptManager", "allowExperimentalOptions", false))
+            .allowExperimentalOptions(Cnf.at("ScriptManager", "allowExperimentalOptions", true))
             .option("engine.WarnVirtualThreadSupport", Cnf.stringAt("ScriptManager", "warnVirtualThreadSupport", false))
             .option("engine.Compilation", Cnf.stringAt("ScriptManager", "engineCompilation", true)).build();
 
