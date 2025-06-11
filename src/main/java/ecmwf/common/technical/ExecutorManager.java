@@ -58,12 +58,9 @@ package ecmwf.common.technical;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import javax.management.timer.Timer;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -106,26 +103,9 @@ public final class ExecutorManager<O extends ExecutorRunnable> extends Thread {
      *            the max running
      */
     public ExecutorManager(final int maxWaiting, final int maxRunning) {
-        this(maxWaiting, maxRunning, false);
-    }
-
-    /**
-     * Instantiates a new executor manager.
-     *
-     * @param maxWaiting
-     *            the max waiting
-     * @param maxRunning
-     *            the max running
-     * @param start
-     *            the start
-     */
-    public ExecutorManager(final int maxWaiting, final int maxRunning, final boolean start) {
         threadCount = new AtomicInteger(0);
         waitingList = new ArrayBlockingQueue<>(maxWaiting);
         this.maxRunning = maxRunning;
-        if (start) {
-            start();
-        }
     }
 
     /**
@@ -198,7 +178,7 @@ public final class ExecutorManager<O extends ExecutorRunnable> extends Thread {
     @Override
     public void run() {
         _log.debug("Starting ExecutorManager");
-        final ExecutorService executor = Executors.newFixedThreadPool(maxRunning);
+        final ExecutorService executor = ThreadService.getCleaningThreadLocalExecutorService(0, maxRunning);
         try {
             while (continueRunning || !waitingList.isEmpty() || threadCount.get() > 0) {
                 // Do we have a request pending?
@@ -208,14 +188,12 @@ public final class ExecutorManager<O extends ExecutorRunnable> extends Thread {
                     executor.execute(thread);
                     // We have one more Thread which is supposed to be running!
                     threadCount.incrementAndGet();
-                    // Now we can remove it from the waiting queue
-                    waitingList.remove(thread);
                     count++;
                 } else {
                     try {
                         sleep(10);
-                    } catch (final InterruptedException e) {
-                        _log.warn("Interupted", e);
+                    } catch (final InterruptedException _) {
+                        Thread.currentThread().interrupt();
                         stopRun();
                     }
                 }
@@ -224,27 +202,32 @@ public final class ExecutorManager<O extends ExecutorRunnable> extends Thread {
             waitingList.clear();
             executor.shutdown();
             try {
-                executor.awaitTermination(2 * Timer.ONE_HOUR, TimeUnit.MILLISECONDS);
-            } catch (final InterruptedException e) {
+                if (!executor.awaitTermination(2, TimeUnit.HOURS)) {
+                    _log.warn("ExecutorManager did not terminate in time. Forcing shutdown.");
+                    executor.shutdownNow();
+                }
+            } catch (InterruptedException _) {
+                _log.warn("ExecutorManager interrupted during shutdown. Forcing immediate shutdown.");
+                executor.shutdownNow();
+                Thread.currentThread().interrupt();
+            } finally {
+                _log.debug("ExecutorManager completed (processed {} run(s))", count);
             }
-            if (!executor.isTerminated()) {
-                // This should not happen!
-                _log.warn("ExecutorManager completed with tasks still running");
-            }
-            _log.debug("ExecutorManager completed (processed {} run(s))", count);
         }
     }
 
     /**
-     * Stop and join.
+     * Stop and join if it was previously started and is still alive.
      *
      * @throws InterruptedException
      *             the interrupted exception
      */
     public void stopAndJoin() throws InterruptedException {
-        // We don't want to take more jobs!
-        stopRun();
-        // And now we wait for all the Threads to complete!
-        join();
+        if (started.get() && isAlive()) {
+            // We don't want to take more jobs!
+            stopRun();
+            // And now we wait for all the Threads to complete!
+            join();
+        }
     }
 }
