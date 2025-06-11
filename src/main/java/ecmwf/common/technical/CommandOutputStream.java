@@ -33,7 +33,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.logging.log4j.LogManager;
@@ -87,7 +86,7 @@ public final class CommandOutputStream extends FilterOutputStream implements Aut
         thread.toClose(processOut);
         // Start a thread to consume stderr to prevent blocking the closure of the
         // process
-        executor = Executors.newSingleThreadExecutor();
+        executor = ThreadService.getSingleCleaningThreadLocalExecutorService();
         executor.submit(() -> {
             try (final var reader = new BufferedReader(new InputStreamReader(processErr))) {
                 String line;

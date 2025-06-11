@@ -33,7 +33,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.logging.log4j.LogManager;
@@ -94,7 +93,7 @@ public final class CommandInputStream extends FilterInputStream implements AutoC
         this.thread = new StreamPlugThread(in, processOut);
         thread.toClose(processOut);
         // Start a separate thread to consume stderr (to avoid potential blocking)
-        this.executor = Executors.newSingleThreadExecutor();
+        executor = ThreadService.getSingleCleaningThreadLocalExecutorService();
         executor.submit(() -> {
             try (var reader = new BufferedReader(new InputStreamReader(processErr))) {
                 String line;
