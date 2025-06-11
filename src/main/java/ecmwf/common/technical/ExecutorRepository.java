@@ -122,18 +122,29 @@ public abstract class ExecutorRepository<O> {
         this.exceptions = exceptions;
         this.processedCount = processedCount;
         if (objects != null && !objects.isEmpty()) {
-            final var manager = new ExecutorManager<ActionThread>(maxWaiting, maxRunning, true);
+            final var manager = new ExecutorManager<ActionThread>(maxWaiting, maxRunning);
+            var allTasksSubmitted = true;
             for (final O object : objects) {
                 try {
                     manager.put(new ActionThread(manager, object));
                 } catch (final InterruptedException e) {
                     _log.error("Action interrupted/lost", e);
+                    Thread.currentThread().interrupt();
+                    allTasksSubmitted = false;
+                    break; // stop submitting more tasks
                 }
             }
-            try {
-                manager.stopAndJoin();
-            } catch (final InterruptedException e) {
-                _log.error("Action interrupted", e);
+            if (allTasksSubmitted) {
+                try {
+                    manager.start();
+                } finally {
+                    try {
+                        manager.stopAndJoin();
+                    } catch (final InterruptedException e) {
+                        _log.error("Action interrupted while stopping/joining manager", e);
+                        Thread.currentThread().interrupt();
+                    }
+                }
             }
         }
     }
@@ -144,7 +155,7 @@ public abstract class ExecutorRepository<O> {
      * @param object
      *            the object
      *
-     * @throws java.lang.Exception
+     * @throws Exception
      *             the exception
      */
     public abstract void exec(final O object) throws Exception;
