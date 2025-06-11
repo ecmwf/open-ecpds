@@ -77,8 +77,8 @@ public final class RemoteOutputStreamImp extends RemoteManagement implements Rem
     public RemoteOutputStreamImp(final Closeable toClose, final OutputStream out) throws RemoteException {
         this.toClose = toClose;
         this.out = out;
-		// Setup GC cleanup hook
-		this.cleaner = new CleanableSupport(this, this::cleanup);
+        // Setup GC cleanup hook
+        this.cleaner = new CleanableSupport(this, this::cleanup);
     }
 
     /**
@@ -104,7 +104,7 @@ public final class RemoteOutputStreamImp extends RemoteManagement implements Rem
      */
     @Override
     public void close() throws IOException {
-    	cleaner.close();
+        cleaner.close();
     }
 
     /**

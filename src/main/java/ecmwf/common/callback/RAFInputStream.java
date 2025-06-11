@@ -51,8 +51,8 @@ public final class RAFInputStream extends InputStream {
      */
     public RAFInputStream(final RandomAccessFile raf) {
         this.raf = raf;
-		// Setup GC cleanup hook
-		this.cleaner = new CleanableSupport(this, this::cleanup);
+        // Setup GC cleanup hook
+        this.cleaner = new CleanableSupport(this, this::cleanup);
     }
 
     /**

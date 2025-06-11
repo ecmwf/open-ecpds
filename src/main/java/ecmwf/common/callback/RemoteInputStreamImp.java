@@ -61,8 +61,8 @@ public final class RemoteInputStreamImp extends RemoteManagement implements Remo
      */
     public RemoteInputStreamImp(final InputStream in) throws RemoteException {
         this.in = in;
-		// Setup GC cleanup hook
-		this.cleaner = new CleanableSupport(this, this::cleanup);
+        // Setup GC cleanup hook
+        this.cleaner = new CleanableSupport(this, this::cleanup);
     }
 
     /**
@@ -100,7 +100,7 @@ public final class RemoteInputStreamImp extends RemoteManagement implements Remo
      */
     @Override
     public void close() throws IOException {
-    	cleaner.close();
+        cleaner.close();
     }
 
     /**
