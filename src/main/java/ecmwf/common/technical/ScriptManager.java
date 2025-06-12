@@ -33,20 +33,14 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.URL;
-import java.text.DecimalFormat;
 import java.time.Duration;
 import java.time.Period;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import javax.script.ScriptException;
@@ -79,21 +73,6 @@ public final class ScriptManager implements AutoCloseable {
     /** The Constant PYTHON. */
     public static final String PYTHON = "python";
 
-    /** The Constant SHARED_ENGINE. */
-    private static final Engine SHARED_ENGINE = Engine.newBuilder(JS, PYTHON)
-            .allowExperimentalOptions(Cnf.at("ScriptManager", "allowExperimentalOptions", true))
-            .option("engine.WarnVirtualThreadSupport", Cnf.stringAt("ScriptManager", "warnVirtualThreadSupport", false))
-            .option("engine.Compilation", Cnf.stringAt("ScriptManager", "engineCompilation", true)).build();
-
-    /** The Constant DEBUG_POOL. */
-    private static final boolean DEBUG_POOL = Cnf.at("ScriptManager", "debugPool", true);
-
-    /** The Constant DEBUG_FREQUENCY. */
-    private static final int DEBUG_FREQUENCY = Cnf.at("ScriptManager", "debugFrequency", 500);
-
-    /** The Constant CONTEXT_TIMEOUT_MILLIS. */
-    private static final long CONTEXT_TIMEOUT_MILLIS = Cnf.at("ScriptManager", "contextTimeoutMillis", 5 * 60 * 1000L);
-
     /**
      * The Constant EXPOSED_CLASSES. Classes which are allowed to be used within the scripts.
      */
@@ -102,13 +81,27 @@ public final class ScriptManager implements AutoCloseable {
 
     /** The Constant CONTEXT_PROVIDER. */
     private static final ContextProvider CONTEXT_PROVIDER = new ContextProvider(
-            Cnf.at("ScriptManager", "enableContextSpool", true), Cnf.at("ScriptManager", "resourceLimits", 0));
+            Cnf.at("ScriptManager", "enableContextSpool", false), Cnf.at("ScriptManager", "resourceLimits", 0));
 
     /** The current language. */
     private final String currentLanguage;
 
     /** The closed. */
     private final AtomicBoolean closed = new AtomicBoolean(false);
+
+    /** The Constant SHARED_ENGINE. */
+    private static final Engine SHARED_ENGINE;
+
+    static {
+        final var builder = Engine.newBuilder(JS, PYTHON);
+        if (Cnf.at("ScriptManager", "allowExperimentalOptions", true)) {
+            builder.allowExperimentalOptions(true)
+                    .option("engine.WarnVirtualThreadSupport",
+                            Cnf.stringAt("ScriptManager", "warnVirtualThreadSupport", false))
+                    .option("engine.Compilation", Cnf.stringAt("ScriptManager", "engineCompilation", false));
+        }
+        SHARED_ENGINE = builder.build();
+    }
 
     /**
      * The Class Cache.
@@ -717,39 +710,9 @@ public final class ScriptManager implements AutoCloseable {
     }
 
     /**
-     * Shutdown.
-     */
-    public static void shutdown() {
-        CONTEXT_PROVIDER.shutdown();
-    }
-
-    /**
      * The Class ContextProvider.
      */
     private static class ContextProvider {
-
-        /**
-         * The Class PooledContext.
-         */
-        private static class PooledContext {
-
-            /** The context. */
-            final Context context;
-
-            /** The timestamp. */
-            final long timestamp;
-
-            /**
-             * Instantiates a new pooled context.
-             *
-             * @param context
-             *            the context
-             */
-            PooledContext(final Context context) {
-                this.context = context;
-                this.timestamp = System.currentTimeMillis();
-            }
-        }
 
         /** The null output stream. */
         private static final OutputStream nullOutputStream = OutputStream.nullOutputStream();
@@ -757,29 +720,11 @@ public final class ScriptManager implements AutoCloseable {
         /** The null input stream. */
         private static final InputStream nullInputStream = InputStream.nullInputStream();
 
-        /** The pool. */
-        private final ConcurrentLinkedQueue<PooledContext> pool = new ConcurrentLinkedQueue<>();
-
-        /** The created count. */
-        private final AtomicInteger createdCount = new AtomicInteger(0);
-
-        /** The Constant format. */
-        static final DecimalFormat format = new DecimalFormat("0.00");
-
-        /** The startup. */
-        final long startup = System.currentTimeMillis();
-
-        /** The acquired. */
-        final AtomicLong acquired = new AtomicLong(0);
-
-        /** The released. */
-        final AtomicLong released = new AtomicLong(0);
+        /** The context count. */
+        private final AtomicInteger contextCount = new AtomicInteger(0);
 
         /** The resource limits. */
         private final ResourceLimits resourceLimits;
-
-        /** The cleanup executor. */
-        private final ScheduledExecutorService cleanupExecutor;
 
         /**
          * Instantiates a new context provider.
@@ -791,18 +736,6 @@ public final class ScriptManager implements AutoCloseable {
          */
         ContextProvider(final boolean useContextSpool, final int limits) {
             this.resourceLimits = limits > 0 ? ResourceLimits.newBuilder().statementLimit(limits, null).build() : null;
-            if (useContextSpool) {
-                cleanupExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
-                    final var t = new Thread(r);
-                    t.setDaemon(true);
-                    t.setName("ScriptManager-Cleanup");
-                    return t;
-                });
-                cleanupExecutor.scheduleAtFixedRate(this::cleanupExpiredContexts, CONTEXT_TIMEOUT_MILLIS,
-                        CONTEXT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
-            } else {
-                cleanupExecutor = null;
-            }
         }
 
         /**
@@ -810,55 +743,14 @@ public final class ScriptManager implements AutoCloseable {
          *
          * @return the context
          */
-        private Context createNewContext() {
+        Context acquire() {
             final var builder = Context.newBuilder(JS, PYTHON).engine(SHARED_ENGINE).allowHostAccess(HostAccess.ALL)
                     .allowHostClassLookup(ScriptManager::check).useSystemExit(false).allowCreateProcess(false)
                     .allowCreateThread(false).in(nullInputStream).out(nullOutputStream).err(nullOutputStream);
             if (resourceLimits != null)
                 builder.resourceLimits(resourceLimits);
+            _log.debug("Context created: {}", contextCount.incrementAndGet());
             return builder.build();
-        }
-
-        /**
-         * Gets the avg per sec.
-         *
-         * @param count
-         *            the count
-         *
-         * @return the avg per sec
-         */
-        private String getAvgPerSec(final AtomicLong count) {
-            return format.format(count.get() / ((System.currentTimeMillis() - startup) / 1000d));
-        }
-
-        /**
-         * Acquire.
-         *
-         * @return the context
-         */
-        Context acquire() {
-            var pooled = pool.poll();
-            while (pooled != null) {
-                if (System.currentTimeMillis() - pooled.timestamp < CONTEXT_TIMEOUT_MILLIS) {
-                    break; // return this one
-                } else {
-                    pooled.context.close(); // expired
-                    pooled = pool.poll();
-                }
-            }
-            final Context context;
-            if (pooled == null) {
-                _log.debug("Context created: {}", createdCount.incrementAndGet());
-                context = createNewContext();
-            } else {
-                context = pooled.context;
-                if (DEBUG_POOL && acquired.updateAndGet(c -> c == Long.MAX_VALUE ? 1 : c + 1) % DEBUG_FREQUENCY == 0
-                        && _log.isDebugEnabled()) {
-                    _log.debug("Context pool: Acquired: {} ({}/sec avg) Released: {} ({}/sec avg)", acquired,
-                            getAvgPerSec(acquired), released, getAvgPerSec(released));
-                }
-            }
-            return context;
         }
 
         /**
@@ -871,38 +763,8 @@ public final class ScriptManager implements AutoCloseable {
          */
         void release(final Context context, final String currentLanguage) {
             resetBindings(context, currentLanguage);
-            if (cleanupExecutor != null) {
-                pool.offer(new PooledContext(context));
-            } else {
-                _log.debug("Context closed: {}", createdCount.decrementAndGet());
-                context.close();
-            }
-
-            if (DEBUG_POOL && released.updateAndGet(c -> c == Long.MAX_VALUE ? 1 : c + 1) % DEBUG_FREQUENCY == 0
-                    && _log.isDebugEnabled()) {
-                _log.debug("Context pool: Acquired: {} ({}/sec avg) Released: {} ({}/sec avg)", acquired,
-                        getAvgPerSec(acquired), released, getAvgPerSec(released));
-            }
-        }
-
-        /**
-         * Cleanup expired contexts.
-         */
-        private void cleanupExpiredContexts() {
-            final var now = System.currentTimeMillis();
-            var expired = 0;
-            final var iterator = pool.iterator();
-            while (iterator.hasNext()) {
-                final var pc = iterator.next();
-                if (now - pc.timestamp >= CONTEXT_TIMEOUT_MILLIS) {
-                    iterator.remove();
-                    pc.context.close();
-                    expired++;
-                }
-            }
-            if (expired > 0) {
-                _log.debug("Expired {} idle contexts from the pool", expired);
-            }
+            _log.debug("Context closed: {}", contextCount.decrementAndGet());
+            context.close();
         }
 
         /**
@@ -922,17 +784,6 @@ public final class ScriptManager implements AutoCloseable {
                 } catch (final UnsupportedOperationException _) {
                     // skip non-removable keys, like built-ins
                 }
-            }
-        }
-
-        /**
-         * Shutdown.
-         */
-        void shutdown() {
-            if (cleanupExecutor != null) {
-                cleanupExecutor.shutdownNow();
-                pool.forEach(pc -> pc.context.close());
-                pool.clear();
             }
         }
     }
