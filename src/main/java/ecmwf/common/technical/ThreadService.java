@@ -68,6 +68,9 @@ public final class ThreadService {
     /** The Constant USE_VIRTUAL_THREAD. */
     private static final boolean USE_VIRTUAL_THREAD = Cnf.at("Server", "useVirtualThread", true);
 
+    /** The Constant DEBUG_THREAD_LOCAL. */
+    private static final boolean DEBUG_THREAD_LOCAL = Cnf.at("Server", "debugThreadLocal", false);
+
     /** The Constant configurablePool. */
     private static final ExecutorService configurablePool = ConfigurableThreadFactory.getExecutorService(0,
             Integer.MAX_VALUE, new SynchronousQueue<>(), false, false);
@@ -748,7 +751,8 @@ public final class ThreadService {
                             @Override
                             public void changed(final Mode mode, final Thread thread, final ThreadLocal<?> threadLocal,
                                     final Object value) {
-                                // _log.debug("ThreadLocal {}: {} value: {}", mode.name(), threadLocal, value);
+                                if (DEBUG_THREAD_LOCAL)
+                                    _log.debug("ThreadLocal {}: {} value: {}", mode.name(), threadLocal, value);
                             }
                         });
             } catch (final Throwable t) {
