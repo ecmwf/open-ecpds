@@ -70,11 +70,11 @@ public final class ThreadService {
 
     /** The Constant configurablePool. */
     private static final ExecutorService configurablePool = ConfigurableThreadFactory.getExecutorService(0,
-            Integer.MAX_VALUE, new SynchronousQueue<>(), false);
+            Integer.MAX_VALUE, new SynchronousQueue<>(), false, false);
 
     /** The Constant interruptiblePool. */
     private static final ExecutorService interruptiblePool = ConfigurableThreadFactory.getExecutorService(0,
-            Integer.MAX_VALUE, new SynchronousQueue<>(), true);
+            Integer.MAX_VALUE, new SynchronousQueue<>(), true, false);
 
     /**
      * Instantiates a new thread service. Utility classes don't need public constructors!
@@ -92,10 +92,10 @@ public final class ThreadService {
      *
      * @return the executor service
      */
-    public static ExecutorService getCleaningThreadLocalExecutorService(final int corePoolSize,
-            final int maximumPoolSize) {
-        return ConfigurableThreadFactory.getExecutorService(corePoolSize, maximumPoolSize, new LinkedBlockingQueue<>(),
-                false);
+    public static ExecutorService getCleaningThreadLocalExecutorService(final int nThreads,
+            final boolean daemonThreads) {
+        return ConfigurableThreadFactory.getExecutorService(nThreads, nThreads, new LinkedBlockingQueue<>(), false,
+                daemonThreads);
     }
 
     /**
@@ -103,8 +103,8 @@ public final class ThreadService {
      *
      * @return the executor service
      */
-    public static ExecutorService getSingleCleaningThreadLocalExecutorService() {
-        return getCleaningThreadLocalExecutorService(1, 1);
+    public static ExecutorService getSingleCleaningThreadLocalExecutorService(final boolean daemonThreads) {
+        return getCleaningThreadLocalExecutorService(1, daemonThreads);
     }
 
     /**
@@ -364,7 +364,7 @@ public final class ThreadService {
                     startTime = System.currentTimeMillis();
                     futur = (interruptible ? interruptiblePool : configurablePool).submit(this);
                 } else {
-                    thread = new ConfigurableThreadFactory(interruptible).newThread(this);
+                    thread = new ConfigurableThreadFactory(interruptible, true).newThread(this);
                     startTime = System.currentTimeMillis();
                     thread.start();
                 }
@@ -716,6 +716,9 @@ public final class ThreadService {
         /** The namePrefix. */
         final String namePrefix;
 
+        /** The daemon flag. */
+        final boolean daemon;
+
         /**
          * Gets the executor service.
          *
@@ -731,26 +734,27 @@ public final class ThreadService {
          * @return the executor service
          */
         static ExecutorService getExecutorService(final int corePoolSize, final int maximumPoolSize,
-                final BlockingQueue<Runnable> workQueue, final boolean interruptibleRMIThread) {
+                final BlockingQueue<Runnable> workQueue, final boolean interruptibleRMIThread,
+                final boolean daemonThreads) {
             try {
                 return new ThreadPoolExecutorCleaningThreadLocals(corePoolSize, maximumPoolSize, 60L, TimeUnit.SECONDS,
-                        workQueue, new ConfigurableThreadFactory(interruptibleRMIThread),
+                        workQueue, new ConfigurableThreadFactory(interruptibleRMIThread, daemonThreads),
                         new ThreadPoolExecutor.AbortPolicy(), new ThreadLocalChangeListener() {
                             @Override
                             public boolean isEnabled() {
-                                return false;
+                                return true;
                             }
 
                             @Override
                             public void changed(final Mode mode, final Thread thread, final ThreadLocal<?> threadLocal,
                                     final Object value) {
-                                // Nothing to be done
+                                // _log.debug("ThreadLocal {}: {} value: {}", mode.name(), threadLocal, value);
                             }
                         });
             } catch (final Throwable t) {
                 _log.warn("Cannot use ThreadPoolExecutorCleaningThreadLocals, switch to ThreadPoolExecutor", t);
                 return new ThreadPoolExecutor(corePoolSize, maximumPoolSize, 60L, TimeUnit.SECONDS, workQueue,
-                        new ConfigurableThreadFactory(interruptibleRMIThread));
+                        new ConfigurableThreadFactory(interruptibleRMIThread, daemonThreads));
             }
         }
 
@@ -760,10 +764,11 @@ public final class ThreadService {
          * @param interruptibleRMIThread
          *            the interruptible rmi thread
          */
-        ConfigurableThreadFactory(final boolean interruptibleRMIThread) {
+        ConfigurableThreadFactory(final boolean interruptibleRMIThread, final boolean daemon) {
             group = Thread.currentThread().getThreadGroup();
             namePrefix = "Pool-" + poolNumber.getAndIncrement() + "-Thread-";
             this.interruptibleRMIThread = interruptibleRMIThread;
+            this.daemon = daemon;
         }
 
         /**
@@ -777,17 +782,14 @@ public final class ThreadService {
         @Override
         public Thread newThread(final Runnable runnable) {
             final var name = namePrefix + threadNumber.getAndIncrement();
-            final Thread t;
-            if (interruptibleRMIThread) { // Need a redesign to allow using virtual threads!
+            Thread t;
+            if (interruptibleRMIThread) {
                 t = new InterruptibleRMIThread(group, runnable, name, 0);
             } else {
                 t = USE_VIRTUAL_THREAD ? Thread.ofVirtual().name(name).unstarted(runnable)
                         : Thread.ofPlatform().group(group).name(name).unstarted(runnable);
             }
-            if (!USE_VIRTUAL_THREAD && t.isDaemon()) {
-                _log.debug("Deactivate daemon flag for Thread: {}", name);
-                t.setDaemon(false);
-            }
+            t.setDaemon(daemon);
             return t;
         }
     }

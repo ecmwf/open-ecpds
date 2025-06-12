@@ -792,7 +792,12 @@ public final class ScriptManager implements AutoCloseable {
         ContextProvider(final boolean useContextSpool, final int limits) {
             this.resourceLimits = limits > 0 ? ResourceLimits.newBuilder().statementLimit(limits, null).build() : null;
             if (useContextSpool) {
-                cleanupExecutor = Executors.newSingleThreadScheduledExecutor();
+                cleanupExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
+                    final var t = new Thread(r);
+                    t.setDaemon(true);
+                    t.setName("ScriptManager-Cleanup");
+                    return t;
+                });
                 cleanupExecutor.scheduleAtFixedRate(this::cleanupExpiredContexts, CONTEXT_TIMEOUT_MILLIS,
                         CONTEXT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
             } else {

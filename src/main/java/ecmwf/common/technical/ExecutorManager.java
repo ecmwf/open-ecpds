@@ -178,7 +178,7 @@ public final class ExecutorManager<O extends ExecutorRunnable> extends Thread {
     @Override
     public void run() {
         _log.debug("Starting ExecutorManager");
-        final ExecutorService executor = ThreadService.getCleaningThreadLocalExecutorService(0, maxRunning);
+        final ExecutorService executor = ThreadService.getCleaningThreadLocalExecutorService(maxRunning, true);
         try {
             while (continueRunning || !waitingList.isEmpty() || threadCount.get() > 0) {
                 // Do we have a request pending?
