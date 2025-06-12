@@ -111,6 +111,15 @@ public final class ThreadService {
     }
 
     /**
+     * Gets the cleaning thread local executor service.
+     *
+     * @return the executor service
+     */
+    public static ExecutorService getCleaningThreadLocalExecutorService() {
+        return configurablePool;
+    }
+
+    /**
      * Sets the cookie if not already set.
      *
      * @param name
