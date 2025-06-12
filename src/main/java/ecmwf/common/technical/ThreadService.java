@@ -793,7 +793,8 @@ public final class ThreadService {
                 t = USE_VIRTUAL_THREAD ? Thread.ofVirtual().name(name).unstarted(runnable)
                         : Thread.ofPlatform().group(group).name(name).unstarted(runnable);
             }
-            t.setDaemon(daemon);
+            if (!t.isVirtual())
+                t.setDaemon(daemon);
             return t;
         }
     }
