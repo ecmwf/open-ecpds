@@ -50,12 +50,12 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_CREDENTIALS;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_DODIR;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_ENABLE_CONTENT_COMPRESSION;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_ENCODE_URL;
-import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_HAS_PARAMETERS;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_FAIL_ON_EMPTY_SYMLINK;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_FILENAME_ATTRIBUTE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_FTPGROUP;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_FTPUSER;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_FTP_LIKE;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_HAS_PARAMETERS;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_HEADERS;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_IS_SYMLINK;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_LIST_MAX_DIRS;
@@ -65,14 +65,12 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_LIST_MAX_WAITING;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_LIST_RECURSIVE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MAX_SIZE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_ADD_PAYLOAD;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_ALTERNATIVE_NAME;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_AWAIT;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_BODY;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_CLEAN_START;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_CONNECTION_TIMEOUT;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_HREF;
-import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_ALTERNATIVE_NAME;
-import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_SIZE;
-import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_TIME;
-import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_BODY;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_KEEP_ALIVE_INTERVAL;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_MAX_FILES;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_MODE;
@@ -83,7 +81,9 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_PORT;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_QOS;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_SCHEME;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_SESSION_EXPIRY_INTERVAL;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_SIZE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_SUBSCRIBER_ID;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_TIME;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_URL;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MULTIPART_MODE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_PORT;
@@ -129,6 +129,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.script.ScriptException;
 
 import org.apache.hc.client5.http.ConnectionKeepAliveStrategy;
 import org.apache.hc.client5.http.auth.AuthCache;
@@ -263,9 +265,9 @@ public final class HttpModule extends TransferModule {
     private ExecutorManager<ListThread> manager = null;
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the status.
+     *
+     * @return the status
      */
     @Override
     public String getStatus() {
@@ -273,9 +275,12 @@ public final class HttpModule extends TransferModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the port.
+     *
+     * @param setup
+     *            the setup
+     *
+     * @return the port
      */
     @Override
     public int getPort(final ECtransSetup setup) {
@@ -283,9 +288,10 @@ public final class HttpModule extends TransferModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Update socket statistics.
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void updateSocketStatistics() throws IOException {
@@ -298,9 +304,15 @@ public final class HttpModule extends TransferModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Connect.
+     *
+     * @param location
+     *            the location
+     * @param setup
+     *            the setup
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void connect(final String location, final ECtransSetup setup) throws IOException {
@@ -491,9 +503,13 @@ public final class HttpModule extends TransferModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Del.
+     *
+     * @param name
+     *            the name
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void del(final String name) throws IOException {
@@ -575,9 +591,19 @@ public final class HttpModule extends TransferModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Put.
+     *
+     * @param name
+     *            the name
+     * @param posn
+     *            the posn
+     * @param size
+     *            the size
+     *
+     * @return the output stream
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public OutputStream put(final String name, final long posn, final long size) throws IOException {
@@ -588,9 +614,21 @@ public final class HttpModule extends TransferModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Put.
+     *
+     * @param input
+     *            the input
+     * @param name
+     *            the name
+     * @param posn
+     *            the posn
+     * @param size
+     *            the size
+     *
+     * @return true, if successful
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public boolean put(final InputStream input, final String name, final long posn, final long size)
@@ -601,9 +639,17 @@ public final class HttpModule extends TransferModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the.
+     *
+     * @param name
+     *            the name
+     * @param posn
+     *            the posn
+     *
+     * @return the input stream
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public InputStream get(final String name, final long posn) throws IOException {
@@ -625,7 +671,7 @@ public final class HttpModule extends TransferModule {
             if (getDebug()) {
                 try {
                     _log.debug("Get: {}", request.getRequestUri());
-                } catch (Throwable t) {
+                } catch (final Throwable t) {
                     _log.warn("Logging request URI", t);
                 }
             }
@@ -637,7 +683,7 @@ public final class HttpModule extends TransferModule {
             if (response != null) {
                 try {
                     EntityUtils.consumeQuietly(response.getEntity());
-                } catch (Exception cleanupEx) {
+                } catch (final Exception cleanupEx) {
                     _log.warn("Error while cleaning up entity", cleanupEx);
                 }
             }
@@ -646,9 +692,15 @@ public final class HttpModule extends TransferModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Size.
+     *
+     * @param name
+     *            the name
+     *
+     * @return the long
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public long size(final String name) throws IOException {
@@ -1010,8 +1062,8 @@ public final class HttpModule extends TransferModule {
             getResponse = execute(pr.getHttpHost(), request, 200);
             // Let's find out about the size!
             final long size;
-            if (foundSize != null) { // It was in the MQTT notification
-                size = foundSize.size();
+            if (foundSize != null) {
+                size = foundSize.size(); // It was in the MQTT notification
             } else {
                 final var entity = getResponse.getEntity();
                 if (entity == null) {
@@ -1266,7 +1318,7 @@ public final class HttpModule extends TransferModule {
          */
         @Override
         public void add(final String line) throws IOException {
-            boolean successful = false;
+            var successful = false;
             try {
                 if (!closed.get()) {
                     if (getDebug())
@@ -1337,9 +1389,17 @@ public final class HttpModule extends TransferModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * List.
+     *
+     * @param directory
+     *            the directory
+     * @param pattern
+     *            the pattern
+     * @param out
+     *            the out
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void list(final String directory, final String pattern, final OutputStream out) throws IOException {
@@ -1370,9 +1430,17 @@ public final class HttpModule extends TransferModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * List as string array.
+     *
+     * @param directory
+     *            the directory
+     * @param pattern
+     *            the pattern
+     *
+     * @return the string[]
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public String[] listAsStringArray(final String directory, final String pattern) throws IOException {
@@ -1452,6 +1520,8 @@ public final class HttpModule extends TransferModule {
      *            the pattern
      * @param counter
      *            the counter
+     * @param alternativeName
+     *            the alternative name
      * @param size
      *            the size
      * @param date
@@ -1500,29 +1570,46 @@ public final class HttpModule extends TransferModule {
     }
 
     /**
-     * Format an Element to plain-text
+     * Format an Element to plain-text.
      *
      * @param element
      *            the root element to format
      *
      * @return formatted text
      */
-    private static String getPlainText(Element element) {
-        FormattingVisitor formatter = new FormattingVisitor();
+    private static String getPlainText(final Element element) {
+        final var formatter = new FormattingVisitor();
         NodeTraversor.traverse(formatter, element); // walk the DOM, and call .head() and .tail() for each node
         return formatter.toString();
     }
 
+    /**
+     * The Class FormattingVisitor.
+     */
     // the formatting rules, implemented in a breadth-first DOM traverse
     private static class FormattingVisitor implements NodeVisitor {
-        private static final int MAX_WIDTH = 80;
-        private int width = 0;
-        private StringBuilder accum = new StringBuilder(); // holds the accumulated text
 
+        /** The Constant MAX_WIDTH. */
+        private static final int MAX_WIDTH = 80;
+
+        /** The width. */
+        private int width = 0;
+
+        /** The accum. */
+        private final StringBuilder accum = new StringBuilder(); // holds the accumulated text
+
+        /**
+         * Head.
+         *
+         * @param node
+         *            the node
+         * @param depth
+         *            the depth
+         */
         // hit when the node is first seen
-        public void head(Node node, int depth) {
-            String name = node.nodeName();
-            if (node instanceof TextNode textNode)
+        public void head(final Node node, final int depth) {
+            final var name = node.nodeName();
+            if (node instanceof final TextNode textNode)
                 append(textNode.text()); // TextNodes carry all user-readable text in the DOM.
             else if (name.equals("li"))
                 append("\n * ");
@@ -1532,18 +1619,32 @@ public final class HttpModule extends TransferModule {
                 append("\n");
         }
 
+        /**
+         * Tail.
+         *
+         * @param node
+         *            the node
+         * @param depth
+         *            the depth
+         */
         // hit when all of the node's children (if any) have been visited
         @Override
-        public void tail(Node node, int depth) {
-            String name = node.nodeName();
+        public void tail(final Node node, final int depth) {
+            final var name = node.nodeName();
             if (StringUtil.in(name, "br", "dd", "dt", "p", "h1", "h2", "h3", "h4", "h5"))
                 append("\n");
             else if (name.equals("a"))
                 append(String.format(" <%s>", node.absUrl("href")));
         }
 
+        /**
+         * Append.
+         *
+         * @param text
+         *            the text
+         */
         // appends text to the string builder with a simple word wrap method
-        private void append(String text) {
+        private void append(final String text) {
             if (text.startsWith("\n"))
                 width = 0; // reset counter if starts with a newline. only from formats above, not in
                            // natural text
@@ -1551,10 +1652,10 @@ public final class HttpModule extends TransferModule {
                 return; // don't accumulate long runs of empty spaces
 
             if (text.length() + width > MAX_WIDTH) { // won't fit, needs to wrap
-                String[] words = text.split("\\s+");
-                for (int i = 0; i < words.length; i++) {
-                    String word = words[i];
-                    boolean last = i == words.length - 1;
+                final var words = text.split("\\s+");
+                for (var i = 0; i < words.length; i++) {
+                    var word = words[i];
+                    final var last = i == words.length - 1;
                     if (!last) // insert a space if not the last word
                         word = word + " ";
                     if (word.length() + width > MAX_WIDTH) { // wrap and reset counter
@@ -1571,6 +1672,11 @@ public final class HttpModule extends TransferModule {
             }
         }
 
+        /**
+         * To string.
+         *
+         * @return the string
+         */
         @Override
         public String toString() {
             return accum.toString();
@@ -1652,25 +1758,29 @@ public final class HttpModule extends TransferModule {
                                     new ObjectMapper().readValue(
                                             new String(message.getPayload(), StandardCharsets.UTF_8), Map.class),
                                     "mqttTopic", topic));
-                            final var value = getSetup().getValue(bindings);
-                            final var href = getSetup().getString(HOST_HTTP_MQTT_HREF, value);
-                            _log.debug("payload: {} : bindings: {} ; href: {}", new String(message.getPayload()),
-                                    bindings, href);
-                            if (isNotEmpty(href)) {
-                                final var alternativeName = getSetup().getString(HOST_HTTP_MQTT_ALTERNATIVE_NAME,
-                                        value);
-                                final var size = getSetup().getByteSize(HOST_HTTP_MQTT_SIZE, value);
-                                final var time = getSetup().getLong(HOST_HTTP_MQTT_TIME, value);
-                                _log.debug("{} : {} : {} : {} : {}", bindings, href, alternativeName, size, time);
-                                addEntry(manager, resultList, rootDirectory, targetDirectory, href, level, pattern,
-                                        counter, alternativeName, size, time,
-                                        getSetup().getString(HOST_HTTP_MQTT_BODY, value),
-                                        getSetup().getBoolean(HOST_HTTP_MQTT_ADD_PAYLOAD)
-                                                ? Base64.getEncoder().encodeToString(message.getPayload()) : "");
-                            } else {
-                                _log.debug("Notification ignored (no href found): {}", topic);
+                            try (final var scriptManager = getSetup().getScriptManager()) {
+                                final var value = scriptManager.put(bindings).eval(getSetup().getScriptContent());
+                                final var href = getSetup().getString(HOST_HTTP_MQTT_HREF, value);
+                                _log.debug("payload: {} : bindings: {} ; href: {}", new String(message.getPayload()),
+                                        bindings, href);
+                                if (isNotEmpty(href)) {
+                                    final var alternativeName = getSetup().getString(HOST_HTTP_MQTT_ALTERNATIVE_NAME,
+                                            value);
+                                    final var size = getSetup().getByteSize(HOST_HTTP_MQTT_SIZE, value);
+                                    final var time = getSetup().getLong(HOST_HTTP_MQTT_TIME, value);
+                                    _log.debug("{} : {} : {} : {} : {}", bindings, href, alternativeName, size, time);
+                                    addEntry(manager, resultList, rootDirectory, targetDirectory, href, level, pattern,
+                                            counter, alternativeName, size, time,
+                                            getSetup().getString(HOST_HTTP_MQTT_BODY, value),
+                                            getSetup().getBoolean(HOST_HTTP_MQTT_ADD_PAYLOAD)
+                                                    ? Base64.getEncoder().encodeToString(message.getPayload()) : "");
+                                } else {
+                                    _log.debug("Notification ignored (no href found): {}", topic);
+                                }
+                            } catch (final ScriptException e) {
+                                _log.warn("Cannot execute script (will check properties)", e);
                             }
-                        } catch (Throwable t) {
+                        } catch (final Throwable t) {
                             _log.debug("Notification ignored (href resolution error): {}", topic, t);
                         }
                     }
@@ -1997,7 +2107,6 @@ public final class HttpModule extends TransferModule {
                 _log.debug("Discarding {} (wrong-pattern) - {} != {}", entry.fullName, entry.name, pattern);
             }
         }
-
     }
 
     /**
@@ -2079,9 +2188,10 @@ public final class HttpModule extends TransferModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Close.
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void close() throws IOException {
@@ -2099,7 +2209,7 @@ public final class HttpModule extends TransferModule {
                 try {
                     mqttSubscriber.disconnectForcibly();
                     _log.debug("MQTT subscriber disconnected forcibly");
-                } catch (Throwable t) {
+                } catch (final Throwable t) {
                     _log.debug("Closing MQTT subscriber", t);
                 }
             }
