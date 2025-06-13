@@ -95,6 +95,9 @@ When a new file is discovered and registered as a data transfer, allow specifyin
 ### acquisition.onlyValidTime
 This flag, when activated upon discovering a new file, determines the action in case the timestamp cannot be read or parsed successfully from the listing. When enabled, files lacking proper timestamps are discarded. If disabled, all files are selected regardless of their timestamp status. It is important to note that selecting a file with an improper timestamp will exempt it from undergoing any tests specified by the "acquisition.fileage" option.
 
+### acquisition.payloadExtension
+Allow configuring the extension used when creating a file alongside the data file upon receiving a notification.
+
 ### acquisition.priority
 When a new file is discovered and registered as a data transfer, allow specifying a priority for the dissemination process.
 
@@ -302,7 +305,7 @@ Allow selecting an alternative host-name or IP to use when connecting to the rem
 Allow specifying a timeout duration for processing the listing of files on the remote site by the underlying transfer module.
 
 ### ectrans.location
-Allow specifying the location metadata when sending notifications (this parameter can be resolved in the event script or host JavaScript options with the placeholder "$location"). The placeholders "$filename", "$movername", "$datafileid", "$datafileuuid", "$datatransferid" and "$datatransferuuid" can be used within the provided location string.
+Allow specifying the location metadata when sending notifications (this parameter can be resolved in the event script or host JavaScript options with the placeholder "$location"). The placeholders "$filename", "$movername", "$datafileid", "$datafileuuid", "$datatransferid", "$datatransferuuid", "$uuid" and "$version" can be used within the provided location string.
 
 ### ectrans.mkdirTimeOut
 Allow specifying a timeout duration for processing the creation of a directory on the remote site by the underlying transfer module.
@@ -561,9 +564,6 @@ If set and the "ftp.mksuffix" is set as well then the suffix specified in the "f
 ### ftp.usetmp
 Force using a temporary name when transmitting a file to the remote FTP server. Once the transmission has completed successfully, the file is renamed with its final target name. The temporary file name is by default the file name with the ".tmp" suffix concatenated to it, however this behavior can be customized with the "ftp.mksuffix", "ftp.usesuffix", "ftp.prefix" and "ftp.suffix" options.
 
-### ftp.wmoLikeFormat
-When initiating a file upload, try converting the target filename to its WMO format (for example, "TEY12080000122300001" becomes "ZTEY01ECMF080000RRA.TEY12080000122300001.LT"). If the transformation process fails, the original filename will be used instead.
-
 ## Ftps Options
 
 ### ftps.closeTimeOut
@@ -679,9 +679,6 @@ If set and the "ftps.mksuffix" is set as well then the suffix specified in the "
 
 ### ftps.usetmp
 Force using a temporary name when transmitting a file to the remote FTPS server. Once the transmission has completed successfully, the file is renamed with its final target name. The temporary file name is by default the file name with the ".tmp" suffix concatenated to it, however this behavior can be customized with the "ftps.mksuffix", "ftps.usesuffix", "ftps.prefix" and "ftps.suffix" options.
-
-### ftps.wmoLikeFormat
-When initiating a file upload, try converting the target filename to its WMO format (for example, "TEY12080000122300001" becomes "ZTEY01ECMF080000RRA.TEY12080000122300001.LT"). If the transformation process fails, the original filename will be used instead.
 
 ## Gcs Options
 
@@ -813,6 +810,9 @@ Allow listing sub-directories recursively.
 
 ### http.maxSize
 Allow setting the maximum size for an HTML document when processing a GET request to retrieve the listing output.
+
+### http.mqttAddPayload
+Allow requesting the creation of a file, alongside the data file, containing the content of the MQTT payload. By default, the ".payload" extension is used, but this can be configured via the "acquisition.payloadExtension" option.
 
 ### http.mqttAlternativeName
 This option allows specifying the name of the data file associated with a received notification. Typically, the name is extracted from a field within the message payload (e.g., in WIS2, the 'properties.data_id' field of the JSON message). When configured through the property editor, the option must be set to a static name. When configured through the script editor, the 'mqttPayload' parameter can be used. ECPDS assigns this parameter the content of the notification message (e.g., the JSON object in the case of WIS2). This parameter enables dynamic determination of the name, such as by extracting a field from 'mqttPayload'. By default the name is extracted from the HREF. The 'mqttTopic' parameter is also available.
@@ -1419,9 +1419,6 @@ When using the "sftp.mkdirs" command this option allow forcing the SFTP client t
 
 ### sftp.usetmp
 Force using a temporary name when transmitting a file to the remote SFTP server. Once the transmission has completed successfully, the file is renamed with its final target name. The temporary file name is by default the file name with the ".tmp" suffix concatenated to it, however this behavior can be customized with the "sftp.mksuffix", "sftp.prefix" and "sftp.suffix" options.
-
-### sftp.wmoLikeFormat
-When initiating a file upload, try converting the target filename to its WMO format (for example, "TEY12080000122300001" becomes "ZTEY01ECMF080000RRA.TEY12080000122300001.LT"). If the transformation process fails, the original filename will be used instead.
 
 ## Test Options
 
