@@ -1404,21 +1404,23 @@ public final class ECtransSetup implements Serializable {
     }
 
     /**
-     * Execute the underlying script content (if not empty) and return the associated value.
+     * Get the script manager in the language defined in the setup.
      *
-     * @param bindings
-     *            the bindings
-     *
-     * @return the value
+     * @return the script manager
      */
-    public Value getValue(final Map<String, Object> bindings) {
+    public ScriptManager getScriptManager() {
+        return new ScriptManager(get("script", "language", ScriptManager.JS));
+    }
+
+    /**
+     * Get the resolved underlying script content, or null if empty.
+     *
+     * @return the script content
+     */
+    public String getScriptContent() {
         final var content = resolve(scriptContent.toString());
         if (!content.isBlank()) {
-            try (final var manager = new ScriptManager(get("script", "language", ScriptManager.JS))) {
-                return manager.put(bindings).eval(content);
-            } catch (final ScriptException e) {
-                _log.warn("Cannot execute script (will check properties)", e);
-            }
+            return content;
         }
         return null;
     }
