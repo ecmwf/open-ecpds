@@ -39,6 +39,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -447,22 +448,38 @@ public final class ScriptManager implements AutoCloseable {
      * @throws ScriptException
      *             the script exception
      */
-    public Value eval(final String script) throws ScriptException {
-        final var start = System.currentTimeMillis();
-        final Value value;
-        try {
-            value = getCache().context.eval(Source.create(currentLanguage, wrapScript(script)));
-        } catch (final PolyglotException e) {
-            throw getMessage("Eval " + currentLanguage + ": " + script, e);
-        }
-        if (_log.isDebugEnabled()) {
-            final var duration = System.currentTimeMillis() - start;
-            if (duration > LONG_RUNNING_TIME) {
-                _log.debug("Time taken: {} ms", duration);
-            }
-        }
-        return value;
-    }
+	/**
+	 * Eval.
+	 *
+	 * @param script the script
+	 * @return the t
+	 * @throws ScriptException the script exception
+	 */
+	public Value eval(final String script) throws ScriptException {
+		final var executor = ThreadService.getCleaningThreadLocalExecutorService();
+		try {
+			final var future = executor
+					.submit(() -> getCache().context.eval(Source.create(currentLanguage, wrapScript(script))));
+			final var start = System.currentTimeMillis();
+			final var value = future.get(); // blocks until done
+			final var duration = System.currentTimeMillis() - start;
+			if (_log.isDebugEnabled() && duration > LONG_RUNNING_TIME) {
+				_log.debug("Time taken: {} ms", duration);
+			}
+			return value;
+		} catch (InterruptedException _) {
+			Thread.currentThread().interrupt();
+			throw new ScriptException("Error evaluating script (interrupted)");
+		} catch (ExecutionException e) {
+			final var message = "Eval " + currentLanguage + ": " + script;
+			if (e.getCause() instanceof PolyglotException polyglotException) {
+				throw getMessage(message, polyglotException);
+			} else {
+				_log.warn(message, e);
+				throw new ScriptException(message + " (" + e.getMessage() + ")");
+			}
+		}
+	}
 
     /**
      * Put.
