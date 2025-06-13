@@ -48,8 +48,10 @@ import javax.script.ScriptException;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.ThreadContext;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Engine;
+import org.graalvm.polyglot.Engine.Builder;
 import org.graalvm.polyglot.HostAccess;
 import org.graalvm.polyglot.PolyglotException;
 import org.graalvm.polyglot.PolyglotException.StackFrame;
@@ -90,18 +92,21 @@ public final class ScriptManager implements AutoCloseable {
     /** The closed. */
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
+    /** The Constant SHARED_BUILDER. */
+    private static final Builder SHARED_BUILDER;
+
     /** The Constant SHARED_ENGINE. */
     private static final Engine SHARED_ENGINE;
 
     static {
-        final var builder = Engine.newBuilder(JS, PYTHON);
+        SHARED_BUILDER = Engine.newBuilder(JS, PYTHON);
         if (Cnf.at("ScriptManager", "allowExperimentalOptions", true)) {
-            builder.allowExperimentalOptions(true)
+            SHARED_BUILDER.allowExperimentalOptions(true)
                     .option("engine.WarnVirtualThreadSupport",
                             Cnf.stringAt("ScriptManager", "warnVirtualThreadSupport", false))
                     .option("engine.Compilation", Cnf.stringAt("ScriptManager", "engineCompilation", false));
         }
-        SHARED_ENGINE = builder.build();
+        SHARED_ENGINE = Cnf.at("ScriptManager", "useSharedEngine", true) ? SHARED_BUILDER.build() : null;
     }
 
     /**
@@ -123,6 +128,8 @@ public final class ScriptManager implements AutoCloseable {
          */
         void close(final String currentLanguage) {
             releaseContext(context, currentLanguage);
+            context = null;
+            bindings = null;
         }
     }
 
@@ -365,7 +372,7 @@ public final class ScriptManager implements AutoCloseable {
             index = 0;
         }
         try (final var manager = new ScriptManager(language)) {
-            return manager.eval(clazz, manager.addReturnToLastExpression(script.substring(index)), null);
+            return eval(clazz, manager.eval(manager.addReturnToLastExpression(script.substring(index))), null);
         }
     }
 
@@ -402,27 +409,6 @@ public final class ScriptManager implements AutoCloseable {
      *            the generic type
      * @param clazz
      *            the clazz
-     * @param script
-     *            the script
-     * @param parameter
-     *            the parameter
-     *
-     * @return the t
-     *
-     * @throws ScriptException
-     *             the script exception
-     */
-    public <T> T eval(final Class<T> clazz, final String script, final String parameter) throws ScriptException {
-        return eval(clazz, eval(script), parameter);
-    }
-
-    /**
-     * Eval.
-     *
-     * @param <T>
-     *            the generic type
-     * @param clazz
-     *            the clazz
      * @param value
      *            the value
      * @param parameter
@@ -448,38 +434,42 @@ public final class ScriptManager implements AutoCloseable {
      * @throws ScriptException
      *             the script exception
      */
-	/**
-	 * Eval.
-	 *
-	 * @param script the script
-	 * @return the t
-	 * @throws ScriptException the script exception
-	 */
-	public Value eval(final String script) throws ScriptException {
-		final var executor = ThreadService.getCleaningThreadLocalExecutorService();
-		try {
-			final var future = executor
-					.submit(() -> getCache().context.eval(Source.create(currentLanguage, wrapScript(script))));
-			final var start = System.currentTimeMillis();
-			final var value = future.get(); // blocks until done
-			final var duration = System.currentTimeMillis() - start;
-			if (_log.isDebugEnabled() && duration > LONG_RUNNING_TIME) {
-				_log.debug("Time taken: {} ms", duration);
-			}
-			return value;
-		} catch (InterruptedException _) {
-			Thread.currentThread().interrupt();
-			throw new ScriptException("Error evaluating script (interrupted)");
-		} catch (ExecutionException e) {
-			final var message = "Eval " + currentLanguage + ": " + script;
-			if (e.getCause() instanceof PolyglotException polyglotException) {
-				throw getMessage(message, polyglotException);
-			} else {
-				_log.warn(message, e);
-				throw new ScriptException(message + " (" + e.getMessage() + ")");
-			}
-		}
-	}
+    public Value eval(final String script) throws ScriptException {
+        if (script == null || script.isBlank())
+            return null; // Nothing to evaluate!
+        final var executor = ThreadService.getCleaningThreadLocalExecutorService();
+        try {
+            final var future = executor.submit(() -> {
+                final var currentThread = Thread.currentThread();
+                final var originalCL = currentThread.getContextClassLoader();
+                try {
+                    currentThread.setContextClassLoader(ScriptManager.class.getClassLoader());
+                    return getCache().context.eval(Source.create(currentLanguage, wrapScript(script)));
+                } finally {
+                    currentThread.setContextClassLoader(originalCL); // Restore to avoid leaks
+                    ThreadContext.clearAll(); // Clear Log4j thread-local context
+                }
+            });
+            final var start = System.currentTimeMillis();
+            final var value = future.get(); // blocks until done
+            final var duration = System.currentTimeMillis() - start;
+            if (_log.isDebugEnabled() && duration > LONG_RUNNING_TIME) {
+                _log.debug("Time taken: {} ms", duration);
+            }
+            return value;
+        } catch (InterruptedException _) {
+            Thread.currentThread().interrupt();
+            throw new ScriptException("Error evaluating script (interrupted)");
+        } catch (ExecutionException e) {
+            final var message = "Eval " + currentLanguage + ": " + script;
+            if (e.getCause() instanceof PolyglotException polyglotException) {
+                throw getMessage(message, polyglotException);
+            } else {
+                _log.warn(message, e);
+                throw new ScriptException(message + " (" + e.getMessage() + ")");
+            }
+        }
+    }
 
     /**
      * Put.
@@ -489,15 +479,18 @@ public final class ScriptManager implements AutoCloseable {
      * @param value
      *            the value
      *
+     * @return the script manager
+     *
      * @throws ScriptException
      *             the script exception
      */
-    public void put(final String key, final Object value) throws ScriptException {
+    public ScriptManager put(final String key, final Object value) throws ScriptException {
         try {
             getCache().bindings.putMember(key, value);
         } catch (final PolyglotException e) {
             throw getMessage("GetBindings/PutMember " + currentLanguage + ": " + key + "=" + value, e);
         }
+        return this;
     }
 
     /**
@@ -528,7 +521,7 @@ public final class ScriptManager implements AutoCloseable {
      *
      * @return the nested value
      */
-    public static Value getNestedValue(final Value root, final String path) {
+    private static Value getNestedValue(final Value root, final String path) {
         if (root == null || !root.hasMembers())
             return null;
         final var keys = path.split("\\.");
@@ -646,7 +639,7 @@ public final class ScriptManager implements AutoCloseable {
         if (clazz == null)
             return null;
         // No return from the script?
-        if (value.isNull() || "undefined".equals(value.toString()))
+        if (value == null || value.isNull() || "undefined".equals(value.toString()))
             throw new ScriptException("No return from script or null/undefined object");
         try {
             return cast(value, clazz);
@@ -761,9 +754,12 @@ public final class ScriptManager implements AutoCloseable {
          * @return the context
          */
         Context acquire() {
-            final var builder = Context.newBuilder(JS, PYTHON).engine(SHARED_ENGINE).allowHostAccess(HostAccess.ALL)
-                    .allowHostClassLookup(ScriptManager::check).useSystemExit(false).allowCreateProcess(false)
-                    .allowCreateThread(false).in(nullInputStream).out(nullOutputStream).err(nullOutputStream);
+            final var builder = Context.newBuilder(JS, PYTHON);
+            if (SHARED_ENGINE != null)
+                builder.engine(SHARED_ENGINE);
+            builder.allowHostAccess(HostAccess.ALL).allowHostClassLookup(ScriptManager::check).useSystemExit(false)
+                    .allowCreateProcess(false).allowCreateThread(false).in(nullInputStream).out(nullOutputStream)
+                    .err(nullOutputStream);
             if (resourceLimits != null)
                 builder.resourceLimits(resourceLimits);
             _log.debug("Context created: {}", contextCount.incrementAndGet());
@@ -781,7 +777,7 @@ public final class ScriptManager implements AutoCloseable {
         void release(final Context context, final String currentLanguage) {
             resetBindings(context, currentLanguage);
             _log.debug("Context closed: {}", contextCount.decrementAndGet());
-            context.close();
+            context.close(true);
         }
 
         /**
