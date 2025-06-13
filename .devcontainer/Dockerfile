@@ -54,12 +54,12 @@ RUN java -Xshare:dump
 COPY java.security $JAVA_HOME/conf/security/.
 
 # Download and install Maven
-RUN cd /usr/local && wget https://dlcdn.apache.org/maven/maven-3/3.9.9/binaries/apache-maven-3.9.9-bin.tar.gz && \
-  tar -xzf apache-maven-3.9.9-bin.tar.gz && \
-  rm -f apache-maven-3.9.9-bin.tar.gz
+RUN cd /usr/local && wget https://dlcdn.apache.org/maven/maven-3/3.9.10/binaries/apache-maven-3.9.10-bin.tar.gz && \
+  tar -xzf apache-maven-3.9.10-bin.tar.gz && \
+  rm -f apache-maven-3.9.10-bin.tar.gz
 
 # Define environment parameters for Maven
-ENV MAVEN_HOME=/usr/local/apache-maven-3.9.9
+ENV MAVEN_HOME=/usr/local/apache-maven-3.9.10
 ENV PATH=$MAVEN_HOME/bin:$PATH
 
 # Set environment variables for Kompose and Kubectl versions
