@@ -88,10 +88,10 @@ public final class ThreadService {
     /**
      * Gets the cleaning thread local executor service.
      *
-     * @param corePoolSize
-     *            the core pool size
-     * @param maximumPoolSize
-     *            the maximum pool size
+     * @param nThreads
+     *            the n threads
+     * @param daemonThreads
+     *            the daemon threads
      *
      * @return the executor service
      */
@@ -103,6 +103,9 @@ public final class ThreadService {
 
     /**
      * Gets the single cleaning thread local executor service.
+     *
+     * @param daemonThreads
+     *            the daemon threads
      *
      * @return the executor service
      */
@@ -681,8 +684,8 @@ public final class ThreadService {
                 }
             }
             if (startedFrom != null) {
-                _log.debug("Thread started from {} in {}ms (interruptible={},virtual={})", startedFrom,
-                        System.currentTimeMillis() - startTime, interruptible, current.isVirtual());
+                _log.debug("Thread started from {} in {}ms (interruptible={},virtual={},daemon={})", startedFrom,
+                        System.currentTimeMillis() - startTime, interruptible, current.isVirtual(), current.isDaemon());
             } else {
                 _log.debug("Thread NOT started with ConfigurableRunnable.execute()");
             }
@@ -694,12 +697,9 @@ public final class ThreadService {
                 setThread(null);
                 current.setName(originalName);
                 removeCookie();
-                if (inheritCookie) {
-                    ThreadContext.clearStack();
-                }
                 // Cleanup thread-locals, MDC, and reset context class loader to avoid leaks
-                ThreadContext.clearAll(); // Make sure this clears all thread local state you want
-                current.setContextClassLoader(originalClassLoader);
+                ThreadContext.clearAll();
+                current.setContextClassLoader(originalClassLoader); // Restore to avoid leaks
             }
         }
 
@@ -742,6 +742,8 @@ public final class ThreadService {
          *            the work queue
          * @param interruptibleRMIThread
          *            the interruptible rmi thread
+         * @param daemonThreads
+         *            the daemon threads
          *
          * @return the executor service
          */
@@ -776,6 +778,8 @@ public final class ThreadService {
          *
          * @param interruptibleRMIThread
          *            the interruptible rmi thread
+         * @param daemon
+         *            the daemon
          */
         ConfigurableThreadFactory(final boolean interruptibleRMIThread, final boolean daemon) {
             group = Thread.currentThread().getThreadGroup();
