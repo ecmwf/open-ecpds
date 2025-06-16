@@ -766,7 +766,7 @@ public final class ScriptManager implements AutoCloseable {
                     .err(nullOutputStream);
             if (resourceLimits != null)
                 builder.resourceLimits(resourceLimits);
-            _log.debug("Context created: {}", contextCount.incrementAndGet());
+            _log.debug("Context created: total={}", contextCount.incrementAndGet());
             return builder.build();
         }
 
@@ -780,7 +780,7 @@ public final class ScriptManager implements AutoCloseable {
          */
         void release(final Context context, final String currentLanguage) {
             resetBindings(context, currentLanguage);
-            _log.debug("Context closed: {}", contextCount.decrementAndGet());
+            _log.debug("Context closed: total={}", contextCount.decrementAndGet());
             context.close(true);
         }
 
