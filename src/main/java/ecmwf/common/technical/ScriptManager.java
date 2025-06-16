@@ -553,10 +553,10 @@ public final class ScriptManager implements AutoCloseable {
                 for (final Class<?> clazz : EXPOSED_CLASSES)
                     tmp.bindings.putMember(clazz.getSimpleName(), clazz);
                 // Allow logging to the general log
-				tmp.bindings.putMember("log", (ProxyExecutable) args -> {
-					_log.debug(args[0].asString());
-					return null;
-				});
+                tmp.bindings.putMember("log", (ProxyExecutable) args -> {
+                    _log.debug(args[0].asString());
+                    return null;
+                });
                 this.cache = tmp;
             } catch (final Throwable e) {
                 final var message = "Failed to initialize script context";
