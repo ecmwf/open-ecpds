@@ -762,8 +762,12 @@ public final class ThreadService {
                             @Override
                             public void changed(final Mode mode, final Thread thread, final ThreadLocal<?> threadLocal,
                                     final Object value) {
-                                if (DEBUG_THREAD_LOCAL)
-                                    _log.debug("ThreadLocal {}: {} value: {}", mode.name(), threadLocal, value);
+								if (DEBUG_THREAD_LOCAL && _log.isDebugEnabled()) {
+									final boolean discouraged = mode == Mode.ADDED
+											&& threadLocal.getClass().getName().contains("InheritableThreadLocal");
+									_log.debug("ThreadLocal {}: {} value: {}{}", mode.name(), threadLocal, value,
+											discouraged ? " (InheritableThreadLocal is discouraged)" : "");
+								}
                             }
                         });
             } catch (final Throwable t) {
