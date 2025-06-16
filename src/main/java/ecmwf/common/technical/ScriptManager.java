@@ -58,6 +58,7 @@ import org.graalvm.polyglot.PolyglotException.StackFrame;
 import org.graalvm.polyglot.ResourceLimits;
 import org.graalvm.polyglot.Source;
 import org.graalvm.polyglot.Value;
+import org.graalvm.polyglot.proxy.ProxyExecutable;
 
 /**
  * The Class ScriptManager.
@@ -104,7 +105,7 @@ public final class ScriptManager implements AutoCloseable {
             SHARED_BUILDER.allowExperimentalOptions(true)
                     .option("engine.WarnVirtualThreadSupport",
                             Cnf.stringAt("ScriptManager", "warnVirtualThreadSupport", false))
-                    .option("engine.Compilation", Cnf.stringAt("ScriptManager", "engineCompilation", false));
+                    .option("engine.Compilation", Cnf.stringAt("ScriptManager", "engineCompilation", true));
         }
         SHARED_ENGINE = Cnf.at("ScriptManager", "useSharedEngine", true) ? SHARED_BUILDER.build() : null;
     }
@@ -552,7 +553,10 @@ public final class ScriptManager implements AutoCloseable {
                 for (final Class<?> clazz : EXPOSED_CLASSES)
                     tmp.bindings.putMember(clazz.getSimpleName(), clazz);
                 // Allow logging to the general log
-                tmp.bindings.putMember("log", _log);
+				tmp.bindings.putMember("log", (ProxyExecutable) args -> {
+					_log.debug(args[0].asString());
+					return null;
+				});
                 this.cache = tmp;
             } catch (final Throwable e) {
                 final var message = "Failed to initialize script context";
