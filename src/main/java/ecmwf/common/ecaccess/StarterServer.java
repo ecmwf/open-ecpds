@@ -49,6 +49,7 @@ import javax.management.NotCompliantMBeanException;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.LoggerContext;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import ecmwf.common.callback.CallBackObject;
@@ -133,7 +134,7 @@ public abstract class StarterServer extends CallBackObject
         if (position != null) {
             try {
                 Security.insertProviderAt(provider, Integer.parseInt(position));
-            } catch (final NumberFormatException ignored) {
+            } catch (final NumberFormatException _) {
                 // We don't set it!
             }
         } else {
@@ -306,13 +307,17 @@ public abstract class StarterServer extends CallBackObject
         _log.info("Preparing to logout (5sec)");
         try {
             wait(5000);
-        } catch (final InterruptedException ignored) {
+        } catch (final InterruptedException _) {
             // Ignore exception!
         }
         mBeanCenter.unregisterMBeans();
         RemoteEngineThread.removeAll();
         if (MonitorManager.isActivated()) {
             monitor.shutdown();
+        }
+        if (LogManager.getContext(false) instanceof LoggerContext context) {
+            _log.info("Flushing Log4j2 buffers");
+            context.stop();
         }
     }
 
