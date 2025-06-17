@@ -202,6 +202,7 @@ import ecmwf.common.technical.ExecutorManager;
 import ecmwf.common.technical.ExecutorRunnable;
 import ecmwf.common.technical.PipedInputStream;
 import ecmwf.common.technical.PipedOutputStream;
+import ecmwf.common.technical.ScriptManager;
 import ecmwf.common.technical.StreamPlugThread;
 import ecmwf.common.text.Format;
 import ecmwf.common.version.Version;
@@ -1758,28 +1759,27 @@ public final class HttpModule extends TransferModule {
                                     new ObjectMapper().readValue(
                                             new String(message.getPayload(), StandardCharsets.UTF_8), Map.class),
                                     "mqttTopic", topic));
-                            try (final var scriptManager = getSetup().getScriptManager()) {
-                                final var value = scriptManager.put(bindings).eval(getSetup().getScriptContent());
-                                final var href = getSetup().getString(HOST_HTTP_MQTT_HREF, value);
+                            final ECtransSetup setup = getSetup();
+                            ScriptManager.exec(setup.getScriptLanguage(), scriptManager -> {
+                                final var value = scriptManager.put(bindings).eval(setup.getScriptContent());
+                                final var href = setup.getString(HOST_HTTP_MQTT_HREF, value);
                                 _log.debug("payload: {} : bindings: {} ; href: {}", new String(message.getPayload()),
                                         bindings, href);
                                 if (isNotEmpty(href)) {
-                                    final var alternativeName = getSetup().getString(HOST_HTTP_MQTT_ALTERNATIVE_NAME,
-                                            value);
-                                    final var size = getSetup().getByteSize(HOST_HTTP_MQTT_SIZE, value);
-                                    final var time = getSetup().getLong(HOST_HTTP_MQTT_TIME, value);
+                                    final var alternativeName = setup.getString(HOST_HTTP_MQTT_ALTERNATIVE_NAME, value);
+                                    final var size = setup.getByteSize(HOST_HTTP_MQTT_SIZE, value);
+                                    final var time = setup.getLong(HOST_HTTP_MQTT_TIME, value);
                                     _log.debug("{} : {} : {} : {} : {}", bindings, href, alternativeName, size, time);
                                     addEntry(manager, resultList, rootDirectory, targetDirectory, href, level, pattern,
                                             counter, alternativeName, size, time,
-                                            getSetup().getString(HOST_HTTP_MQTT_BODY, value),
-                                            getSetup().getBoolean(HOST_HTTP_MQTT_ADD_PAYLOAD)
+                                            setup.getString(HOST_HTTP_MQTT_BODY, value),
+                                            setup.getBoolean(HOST_HTTP_MQTT_ADD_PAYLOAD)
                                                     ? Base64.getEncoder().encodeToString(message.getPayload()) : "");
                                 } else {
                                     _log.debug("Notification ignored (no href found): {}", topic);
                                 }
-                            } catch (final ScriptException e) {
-                                _log.warn("Cannot execute script (will check properties)", e);
-                            }
+                                return null;
+                            });
                         } catch (final Throwable t) {
                             _log.debug("Notification ignored (href resolution error): {}", topic, t);
                         }

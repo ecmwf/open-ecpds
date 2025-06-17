@@ -1395,8 +1395,11 @@ public final class ECtransSetup implements Serializable {
                 if (output != null)
                     return output;
             } catch (final ScriptException e) {
-                _log.warn("Cannot extrtact parameter (will check properties) - option:{}, class:{}", parameter,
-                        clazz.getName(), e);
+                final var message = e.getMessage();
+                if (!"No return from script or null/undefined object".equals(message)) {
+                    _log.warn("Error extracting parameter from script (will check properties) - option:{}, class:{}",
+                            parameter, clazz.getName(), e);
+                }
             }
         }
         // Switch back to the lookup in the properties
@@ -1404,12 +1407,12 @@ public final class ECtransSetup implements Serializable {
     }
 
     /**
-     * Get the script manager in the language defined in the setup.
+     * Get the script language.
      *
-     * @return the script manager
+     * @return the script language
      */
-    public ScriptManager getScriptManager() {
-        return new ScriptManager(get("script", "language", ScriptManager.JS));
+    public String getScriptLanguage() {
+        return get("script", "language", ScriptManager.JS);
     }
 
     /**

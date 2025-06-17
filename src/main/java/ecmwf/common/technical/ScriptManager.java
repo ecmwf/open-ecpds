@@ -39,6 +39,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -342,6 +344,75 @@ public final class ScriptManager implements AutoCloseable {
     }
 
     /**
+     * The Interface ScriptAction.
+     *
+     * @param <T>
+     *            the generic type
+     */
+    @FunctionalInterface
+    public interface ScriptAction<T> {
+
+        /**
+         * Run.
+         *
+         * @param manager
+         *            the manager
+         *
+         * @return the t
+         *
+         * @throws ScriptException
+         *             the script exception
+         */
+        T run(ScriptManager manager) throws ScriptException;
+    }
+
+    /**
+     * Exec. Use a cleaning executor service: a virtual-thread executor if experimental options are allowed, otherwise a
+     * platform-thread executor.
+     *
+     * @param <T>
+     *            the generic type
+     * @param language
+     *            the language
+     * @param action
+     *            the action
+     *
+     * @return the t
+     *
+     * @throws ScriptException
+     *             the script exception
+     */
+    public static <T> T exec(final String language, final ScriptAction<T> action) throws ScriptException {
+        final ExecutorService executor = ALLOW_EXPERIMENTAL_OPTIONS
+                ? ThreadService.getCleaningVirtualThreadLocalExecutorService()
+                : ThreadService.getCleaningPlatformThreadLocalExecutorService();
+        try {
+            return executor.submit(() -> {
+                final var currentThread = Thread.currentThread();
+                final var originalCL = currentThread.getContextClassLoader();
+                try (final var manager = new ScriptManager(language)) {
+                    return action.run(manager);
+                } finally {
+                    currentThread.setContextClassLoader(originalCL);
+                    ThreadContext.clearAll();
+                }
+            }).get();
+        } catch (InterruptedException _) {
+            Thread.currentThread().interrupt();
+            throw new ScriptException("Error evaluating script (interrupted)");
+        } catch (ExecutionException e) {
+            var cause = e.getCause();
+            if (cause instanceof ScriptException scriptException) {
+                throw scriptException;
+            } else {
+                var se = new ScriptException(e.getMessage());
+                se.initCause(cause);
+                throw se;
+            }
+        }
+    }
+
+    /**
      * Exec. If no language is specified in the header of the script then the default language is used (e.g.
      * script=js:code or script=python:code). Also add a return is missing from the last expression of the script.
      *
@@ -374,9 +445,8 @@ public final class ScriptManager implements AutoCloseable {
             language = defaultLanguage;
             index = 0;
         }
-        try (final var manager = new ScriptManager(language)) {
-            return eval(clazz, manager.eval(manager.addReturnToLastExpression(script.substring(index))), null);
-        }
+        return exec(language,
+                manager -> eval(clazz, manager.eval(manager.addReturnToLastExpression(script.substring(index))), null));
     }
 
     /**
@@ -406,7 +476,8 @@ public final class ScriptManager implements AutoCloseable {
     }
 
     /**
-     * Eval.
+     * Eval. Must be called on the same thread where the context was created, and the thread should support cleanup of
+     * thread-local variables.
      *
      * @param <T>
      *            the generic type
