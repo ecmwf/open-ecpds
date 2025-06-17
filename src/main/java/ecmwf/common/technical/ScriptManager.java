@@ -86,7 +86,7 @@ public final class ScriptManager implements AutoCloseable {
 
     /** The Constant CONTEXT_PROVIDER. */
     private static final ContextProvider CONTEXT_PROVIDER = new ContextProvider(
-            Cnf.at("ScriptManager", "enableContextSpool", false), Cnf.at("ScriptManager", "resourceLimits", 0));
+            Cnf.at("ScriptManager", "resourceLimits", 0));
 
     /** The Constant ALLOW_EXPERIMENTAL_OPTIONS. */
     private static final boolean ALLOW_EXPERIMENTAL_OPTIONS = Cnf.at("ScriptManager", "allowExperimentalOptions", true);
@@ -813,12 +813,10 @@ public final class ScriptManager implements AutoCloseable {
         /**
          * Instantiates a new context provider.
          *
-         * @param useContextSpool
-         *            the use context spool
          * @param limits
          *            the limits
          */
-        ContextProvider(final boolean useContextSpool, final int limits) {
+        ContextProvider(final int limits) {
             this.resourceLimits = limits > 0 ? ResourceLimits.newBuilder().statementLimit(limits, null).build() : null;
         }
 
