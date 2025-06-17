@@ -39,7 +39,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -87,11 +86,8 @@ public final class ScriptManager implements AutoCloseable {
     private static final ContextProvider CONTEXT_PROVIDER = new ContextProvider(
             Cnf.at("ScriptManager", "enableContextSpool", false), Cnf.at("ScriptManager", "resourceLimits", 0));
 
-    /** The current language. */
-    private final String currentLanguage;
-
-    /** The closed. */
-    private final AtomicBoolean closed = new AtomicBoolean(false);
+    /** The Constant ALLOW_EXPERIMENTAL_OPTIONS. */
+    private static final boolean ALLOW_EXPERIMENTAL_OPTIONS = Cnf.at("ScriptManager", "allowExperimentalOptions", true);
 
     /** The Constant SHARED_BUILDER. */
     private static final Builder SHARED_BUILDER;
@@ -101,7 +97,7 @@ public final class ScriptManager implements AutoCloseable {
 
     static {
         SHARED_BUILDER = Engine.newBuilder(JS, PYTHON);
-        if (Cnf.at("ScriptManager", "allowExperimentalOptions", true)) {
+        if (ALLOW_EXPERIMENTAL_OPTIONS) {
             SHARED_BUILDER.allowExperimentalOptions(true)
                     .option("engine.WarnVirtualThreadSupport",
                             Cnf.stringAt("ScriptManager", "warnVirtualThreadSupport", false))
@@ -109,6 +105,12 @@ public final class ScriptManager implements AutoCloseable {
         }
         SHARED_ENGINE = Cnf.at("ScriptManager", "useSharedEngine", true) ? SHARED_BUILDER.build() : null;
     }
+
+    /** The current language. */
+    private final String currentLanguage;
+
+    /** The closed. */
+    private final AtomicBoolean closed = new AtomicBoolean(false);
 
     /**
      * The Class Cache.
@@ -438,36 +440,33 @@ public final class ScriptManager implements AutoCloseable {
     public Value eval(final String script) throws ScriptException {
         if (script == null || script.isBlank())
             return null; // Nothing to evaluate!
-        final var executor = ThreadService.getCleaningThreadLocalExecutorService();
+        final var currentThread = Thread.currentThread();
+        final var originalCL = currentThread.getContextClassLoader();
+        // Save and clear ThreadContext
+        final var originalThreadContextMap = ThreadContext.getImmutableContext();
+        ThreadContext.clearAll();
+        final var start = System.currentTimeMillis();
         try {
-            final var future = executor.submit(() -> {
-                final var currentThread = Thread.currentThread();
-                final var originalCL = currentThread.getContextClassLoader();
-                try {
-                    currentThread.setContextClassLoader(ScriptManager.class.getClassLoader());
-                    return getCache().context.eval(Source.create(currentLanguage, wrapScript(script)));
-                } finally {
-                    currentThread.setContextClassLoader(originalCL); // Restore to avoid leaks
-                    ThreadContext.clearAll(); // Clear Log4j thread-local context
-                }
-            });
-            final var start = System.currentTimeMillis();
-            final var value = future.get(); // blocks until done
-            final var duration = System.currentTimeMillis() - start;
+            currentThread.setContextClassLoader(ScriptManager.class.getClassLoader());
+            var value = getCache().context.eval(Source.create(currentLanguage, wrapScript(script)));
+            var duration = System.currentTimeMillis() - start;
             if (_log.isDebugEnabled() && duration > LONG_RUNNING_TIME) {
                 _log.debug("Time taken: {} ms", duration);
             }
             return value;
-        } catch (InterruptedException _) {
-            Thread.currentThread().interrupt();
-            throw new ScriptException("Error evaluating script (interrupted)");
-        } catch (ExecutionException e) {
+        } catch (PolyglotException polyglotException) {
             final var message = "Eval " + currentLanguage + ": " + script;
-            if (e.getCause() instanceof PolyglotException polyglotException) {
-                throw getMessage(message, polyglotException);
-            } else {
-                _log.warn(message, e);
-                throw new ScriptException(message + " (" + e.getMessage() + ")");
+            throw getMessage(message, polyglotException);
+        } catch (Exception e) {
+            final var message = "Eval " + currentLanguage + ": " + script;
+            _log.warn(message, e);
+            throw new ScriptException(message + " (" + e.getMessage() + ")");
+        } finally {
+            currentThread.setContextClassLoader(originalCL); // Restore CL
+            // Restore ThreadContext
+            ThreadContext.clearAll(); // ensure clean slate before restore
+            if (originalThreadContextMap != null) {
+                ThreadContext.putAll(originalThreadContextMap);
             }
         }
     }

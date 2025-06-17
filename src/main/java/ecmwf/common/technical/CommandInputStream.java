@@ -93,7 +93,7 @@ public final class CommandInputStream extends FilterInputStream implements AutoC
         this.thread = new StreamPlugThread(in, processOut);
         thread.toClose(processOut);
         // Start a separate thread to consume stderr (to avoid potential blocking)
-        executor = ThreadService.getSingleCleaningThreadLocalExecutorService(true);
+        executor = ThreadService.getSingleCleaningThreadLocalExecutorService(true, true);
         executor.submit(() -> {
             try (var reader = new BufferedReader(new InputStreamReader(processErr))) {
                 String line;

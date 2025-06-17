@@ -65,19 +65,23 @@ public final class ThreadService {
     /** The Constant USE_THREAD_SPOOL. */
     private static final boolean USE_THREAD_SPOOL = Cnf.at("Server", "useThreadSpool", true);
 
-    /** The Constant USE_VIRTUAL_THREAD. */
-    private static final boolean USE_VIRTUAL_THREAD = Cnf.at("Server", "useVirtualThread", true);
+    /** The Constant ALLOW_VIRTUAL_THREAD. */
+    private static final boolean ALLOW_VIRTUAL_THREAD = Cnf.at("Server", "allowVirtualThread", true);
 
     /** The Constant DEBUG_THREAD_LOCAL. */
     private static final boolean DEBUG_THREAD_LOCAL = Cnf.at("Server", "debugThreadLocal", false);
 
-    /** The Constant configurablePool. */
-    private static final ExecutorService configurablePool = ConfigurableThreadFactory.getExecutorService(0,
-            Integer.MAX_VALUE, new SynchronousQueue<>(), false, false);
+    /** The Constant VIRTUAL_POOL (can be virtual if allowed). */
+    private static final ExecutorService VIRTUAL_POOL = ConfigurableThreadFactory.getExecutorService(0,
+            Integer.MAX_VALUE, new SynchronousQueue<>(), false, ALLOW_VIRTUAL_THREAD, false);
 
-    /** The Constant interruptiblePool. */
-    private static final ExecutorService interruptiblePool = ConfigurableThreadFactory.getExecutorService(0,
-            Integer.MAX_VALUE, new SynchronousQueue<>(), true, false);
+    /** The Constant PLATFORM_POOL (never virtual). */
+    private static final ExecutorService PLATFORM_POOL = ConfigurableThreadFactory.getExecutorService(0,
+            Integer.MAX_VALUE, new SynchronousQueue<>(), false, false, false);
+
+    /** The Constant INTERRUPTIBLE_POOL (never virtual). */
+    private static final ExecutorService INTERRUPTIBLE_POOL = ConfigurableThreadFactory.getExecutorService(0,
+            Integer.MAX_VALUE, new SynchronousQueue<>(), true, false, false);
 
     /**
      * Instantiates a new thread service. Utility classes don't need public constructors!
@@ -96,9 +100,9 @@ public final class ThreadService {
      * @return the executor service
      */
     public static ExecutorService getCleaningThreadLocalExecutorService(final int nThreads,
-            final boolean daemonThreads) {
+            final boolean useVirtualThreads, final boolean daemonThreads) {
         return ConfigurableThreadFactory.getExecutorService(nThreads, nThreads, new LinkedBlockingQueue<>(), false,
-                daemonThreads);
+                useVirtualThreads && ALLOW_VIRTUAL_THREAD, daemonThreads);
     }
 
     /**
@@ -109,17 +113,28 @@ public final class ThreadService {
      *
      * @return the executor service
      */
-    public static ExecutorService getSingleCleaningThreadLocalExecutorService(final boolean daemonThreads) {
-        return getCleaningThreadLocalExecutorService(1, daemonThreads);
+    public static ExecutorService getSingleCleaningThreadLocalExecutorService(final boolean useVirtualThreads,
+            final boolean daemonThreads) {
+        return getCleaningThreadLocalExecutorService(1, useVirtualThreads, daemonThreads);
     }
 
     /**
-     * Gets the cleaning thread local executor service.
+     * Gets the cleaning virtual thread local executor service. This will produce virtual threads only if allowed in the
+     * configuration.
      *
      * @return the executor service
      */
-    public static ExecutorService getCleaningThreadLocalExecutorService() {
-        return configurablePool;
+    public static ExecutorService getCleaningVirtualThreadLocalExecutorService() {
+        return VIRTUAL_POOL;
+    }
+
+    /**
+     * Gets the cleaning platform thread local executor service.
+     *
+     * @return the executor service
+     */
+    public static ExecutorService getCleaningPlatformThreadLocalExecutorService() {
+        return PLATFORM_POOL;
     }
 
     /**
@@ -366,20 +381,27 @@ public final class ThreadService {
 
         /**
          * Execute.
+         */
+        public final void execute(final boolean interruptibleRMIThread) {
+            execute(interruptibleRMIThread, ALLOW_VIRTUAL_THREAD);
+        }
+
+        /**
+         * Execute.
          *
          * @param interruptibleRMIThread
          *            the interruptible rmi thread
          */
-        public final void execute(final boolean interruptibleRMIThread) {
+        public final void execute(final boolean interruptibleRMIThread, final boolean useVirtualThreads) {
             if (started.compareAndSet(false, true)) {
                 final var start1 = System.currentTimeMillis();
                 interruptible = interruptibleRMIThread;
                 startedFrom = Thread.currentThread().getName();
                 if (USE_THREAD_SPOOL) {
                     startTime = System.currentTimeMillis();
-                    futur = (interruptible ? interruptiblePool : configurablePool).submit(this);
+                    futur = (interruptible ? INTERRUPTIBLE_POOL : VIRTUAL_POOL).submit(this);
                 } else {
-                    thread = new ConfigurableThreadFactory(interruptible, true).newThread(this);
+                    thread = new ConfigurableThreadFactory(interruptible, useVirtualThreads, false).newThread(this);
                     startTime = System.currentTimeMillis();
                     thread.start();
                 }
@@ -719,6 +741,9 @@ public final class ThreadService {
         /** The interruptibleRMIThread. */
         final boolean interruptibleRMIThread;
 
+        /** The useVirtualThreads. */
+        final boolean useVirtualThreads;
+
         /** The group. */
         final ThreadGroup group;
 
@@ -749,10 +774,11 @@ public final class ThreadService {
          */
         static ExecutorService getExecutorService(final int corePoolSize, final int maximumPoolSize,
                 final BlockingQueue<Runnable> workQueue, final boolean interruptibleRMIThread,
-                final boolean daemonThreads) {
+                final boolean useVirtualThreads, final boolean daemonThreads) {
             try {
                 return new ThreadPoolExecutorCleaningThreadLocals(corePoolSize, maximumPoolSize, 60L, TimeUnit.SECONDS,
-                        workQueue, new ConfigurableThreadFactory(interruptibleRMIThread, daemonThreads),
+                        workQueue,
+                        new ConfigurableThreadFactory(interruptibleRMIThread, useVirtualThreads, daemonThreads),
                         new ThreadPoolExecutor.AbortPolicy(), new ThreadLocalChangeListener() {
                             @Override
                             public boolean isEnabled() {
@@ -762,18 +788,18 @@ public final class ThreadService {
                             @Override
                             public void changed(final Mode mode, final Thread thread, final ThreadLocal<?> threadLocal,
                                     final Object value) {
-								if (DEBUG_THREAD_LOCAL && _log.isDebugEnabled()) {
-									final boolean discouraged = mode == Mode.ADDED
-											&& threadLocal.getClass().getName().contains("InheritableThreadLocal");
-									_log.debug("ThreadLocal {}: {} value: {}{}", mode.name(), threadLocal, value,
-											discouraged ? " (InheritableThreadLocal is discouraged)" : "");
-								}
+                                if (DEBUG_THREAD_LOCAL && _log.isDebugEnabled()) {
+                                    final boolean discouraged = mode == Mode.ADDED
+                                            && threadLocal.getClass().getName().contains("InheritableThreadLocal");
+                                    _log.debug("ThreadLocal {}: {} value: {}{}", mode.name(), threadLocal, value,
+                                            discouraged ? " (InheritableThreadLocal is discouraged)" : "");
+                                }
                             }
                         });
             } catch (final Throwable t) {
                 _log.warn("Cannot use ThreadPoolExecutorCleaningThreadLocals, switch to ThreadPoolExecutor", t);
                 return new ThreadPoolExecutor(corePoolSize, maximumPoolSize, 60L, TimeUnit.SECONDS, workQueue,
-                        new ConfigurableThreadFactory(interruptibleRMIThread, daemonThreads));
+                        new ConfigurableThreadFactory(interruptibleRMIThread, useVirtualThreads, daemonThreads));
             }
         }
 
@@ -785,10 +811,12 @@ public final class ThreadService {
          * @param daemon
          *            the daemon
          */
-        ConfigurableThreadFactory(final boolean interruptibleRMIThread, final boolean daemon) {
+        ConfigurableThreadFactory(final boolean interruptibleRMIThread, final boolean useVirtualThreads,
+                final boolean daemon) {
             group = Thread.currentThread().getThreadGroup();
             namePrefix = "Pool-" + poolNumber.getAndIncrement() + "-Thread-";
             this.interruptibleRMIThread = interruptibleRMIThread;
+            this.useVirtualThreads = useVirtualThreads;
             this.daemon = daemon;
         }
 
@@ -807,7 +835,7 @@ public final class ThreadService {
             if (interruptibleRMIThread) {
                 t = new InterruptibleRMIThread(group, runnable, name, 0);
             } else {
-                t = USE_VIRTUAL_THREAD ? Thread.ofVirtual().name(name).unstarted(runnable)
+                t = useVirtualThreads && ALLOW_VIRTUAL_THREAD ? Thread.ofVirtual().name(name).unstarted(runnable)
                         : Thread.ofPlatform().group(group).name(name).unstarted(runnable);
             }
             if (!t.isVirtual())

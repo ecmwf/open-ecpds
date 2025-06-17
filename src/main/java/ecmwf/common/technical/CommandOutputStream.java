@@ -86,7 +86,7 @@ public final class CommandOutputStream extends FilterOutputStream implements Aut
         thread.toClose(processOut);
         // Start a thread to consume stderr to prevent blocking the closure of the
         // process
-        executor = ThreadService.getSingleCleaningThreadLocalExecutorService(true);
+        executor = ThreadService.getSingleCleaningThreadLocalExecutorService(true, true);
         executor.submit(() -> {
             try (final var reader = new BufferedReader(new InputStreamReader(processErr))) {
                 String line;
