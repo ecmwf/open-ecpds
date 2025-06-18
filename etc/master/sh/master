@@ -103,6 +103,7 @@ JAVA_OPTS=$JAVA_OPTS" -Dmaster.data='$dir_data'"
 #################
 JAVA_OPTS=$JAVA_OPTS" -Decmwf.properties='$dir_conf/ecmwf.properties'"
 JAVA_OPTS=$JAVA_OPTS" -Dlog4j2.configurationFile='$dir_conf/log4j2.properties'"
+JAVA_OPTS=$JAVA_OPTS" -Dlog4j2.enableThreadlocals=false"
 JAVA_OPTS=$JAVA_OPTS" -Dlog4j2.contextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector"
 JAVA_OPTS=$JAVA_OPTS" -Djava.security.policy='$dir_conf/ecmwf.policy'"
 JAVA_OPTS=$JAVA_OPTS" -Djava.io.tmpdir='$dir_tmp'"
