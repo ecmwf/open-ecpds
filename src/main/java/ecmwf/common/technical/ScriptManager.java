@@ -36,11 +36,9 @@ import java.net.URL;
 import java.time.Duration;
 import java.time.Period;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -55,11 +53,11 @@ import org.graalvm.polyglot.Engine;
 import org.graalvm.polyglot.Engine.Builder;
 import org.graalvm.polyglot.HostAccess;
 import org.graalvm.polyglot.PolyglotException;
-import org.graalvm.polyglot.PolyglotException.StackFrame;
 import org.graalvm.polyglot.ResourceLimits;
 import org.graalvm.polyglot.Source;
 import org.graalvm.polyglot.Value;
 import org.graalvm.polyglot.proxy.ProxyExecutable;
+import org.graalvm.polyglot.proxy.ProxyObject;
 
 /**
  * The Class ScriptManager.
@@ -89,7 +87,8 @@ public final class ScriptManager implements AutoCloseable {
             Cnf.at("ScriptManager", "resourceLimits", 0));
 
     /** The Constant ALLOW_EXPERIMENTAL_OPTIONS. */
-    private static final boolean ALLOW_EXPERIMENTAL_OPTIONS = Cnf.at("ScriptManager", "allowExperimentalOptions", true);
+    private static final boolean ALLOW_EXPERIMENTAL_OPTIONS = Cnf.at("ScriptManager", "allowExperimentalOptions",
+            false);
 
     /** The Constant SHARED_BUILDER. */
     private static final Builder SHARED_BUILDER;
@@ -383,8 +382,7 @@ public final class ScriptManager implements AutoCloseable {
      *             the script exception
      */
     public static <T> T exec(final String language, final ScriptAction<T> action) throws ScriptException {
-        final ExecutorService executor = ALLOW_EXPERIMENTAL_OPTIONS
-                ? ThreadService.getCleaningVirtualThreadLocalExecutorService()
+        final var executor = ALLOW_EXPERIMENTAL_OPTIONS ? ThreadService.getCleaningVirtualThreadLocalExecutorService()
                 : ThreadService.getCleaningPlatformThreadLocalExecutorService();
         try {
             return executor.submit(() -> {
@@ -392,6 +390,8 @@ public final class ScriptManager implements AutoCloseable {
                 final var originalCL = currentThread.getContextClassLoader();
                 try (final var manager = new ScriptManager(language)) {
                     return action.run(manager);
+                } catch (PolyglotException e) {
+                    throw getMessage("Exec " + language, e);
                 } finally {
                     currentThread.setContextClassLoader(originalCL);
                     ThreadContext.clearAll();
@@ -471,7 +471,7 @@ public final class ScriptManager implements AutoCloseable {
      * @param language
      *            the language
      */
-    public ScriptManager(final String language) {
+    private ScriptManager(final String language) {
         currentLanguage = language;
     }
 
@@ -526,10 +526,9 @@ public final class ScriptManager implements AutoCloseable {
             }
             return value;
         } catch (PolyglotException polyglotException) {
-            final var message = "Eval " + currentLanguage + ": " + script;
-            throw getMessage(message, polyglotException);
+            throw getMessage("Eval " + currentLanguage, polyglotException);
         } catch (Exception e) {
-            final var message = "Eval " + currentLanguage + ": " + script;
+            final var message = "Eval " + currentLanguage;
             _log.warn(message, e);
             throw new ScriptException(message + " (" + e.getMessage() + ")");
         } finally {
@@ -559,7 +558,7 @@ public final class ScriptManager implements AutoCloseable {
         try {
             getCache().bindings.putMember(key, value);
         } catch (final PolyglotException e) {
-            throw getMessage("GetBindings/PutMember " + currentLanguage + ": " + key + "=" + value, e);
+            throw getMessage("Exposing to " + currentLanguage + ": " + key + "=" + value, e);
         }
         return this;
     }
@@ -623,10 +622,23 @@ public final class ScriptManager implements AutoCloseable {
                 for (final Class<?> clazz : EXPOSED_CLASSES)
                     tmp.bindings.putMember(clazz.getSimpleName(), clazz);
                 // Allow logging to the general log
-                tmp.bindings.putMember("log", (ProxyExecutable) args -> {
-                    _log.debug(args[0].asString());
+                tmp.bindings.putMember("log", ProxyObject.fromMap(Map.of("debug", (ProxyExecutable) args -> {
+                    if (args.length > 0)
+                        _log.debug(args[0].asString());
                     return null;
-                });
+                }, "info", (ProxyExecutable) args -> {
+                    if (args.length > 0)
+                        _log.info(args[0].asString());
+                    return null;
+                }, "warn", (ProxyExecutable) args -> {
+                    if (args.length > 0)
+                        _log.warn(args[0].asString());
+                    return null;
+                }, "error", (ProxyExecutable) args -> {
+                    if (args.length > 0)
+                        _log.error(args[0].asString());
+                    return null;
+                })));
                 this.cache = tmp;
             } catch (final Throwable e) {
                 final var message = "Failed to initialize script context";
@@ -650,27 +662,6 @@ public final class ScriptManager implements AutoCloseable {
     private static void releaseContext(final Context context, final String currentLanguage) {
         if (context != null)
             CONTEXT_PROVIDER.release(context, currentLanguage);
-    }
-
-    /**
-     * Gets the properties. Just for debugging (values are shorten with ...).
-     *
-     * @return the properties
-     *
-     * @throws ScriptException
-     *             the script exception
-     */
-    public Map<String, String> getProperties() throws ScriptException {
-        final var result = new HashMap<String, String>();
-        try {
-            final var value = getCache().bindings;
-            for (final String property : value.getMemberKeys()) {
-                result.put(property, value.getMember(property).toString());
-            }
-        } catch (final PolyglotException e) {
-            throw getMessage("GetBindings/GetMember: " + currentLanguage, e);
-        }
-        return result;
     }
 
     /**
@@ -772,15 +763,27 @@ public final class ScriptManager implements AutoCloseable {
      * @return the message
      */
     private static ScriptException getMessage(final String message, final PolyglotException e) {
-        _log.warn(message, e);
+        final var sourceSection = e.getSourceLocation();
+        if (_log.isDebugEnabled() && sourceSection != null) {
+            final var snippet = sourceSection.getCharacters() != null
+                    ? sourceSection.getCharacters().toString().replaceAll("\\s+", " ").trim() : "<unknown code>";
+            _log.debug("{} at line {}: {}", message, sourceSection.getStartLine(), snippet, e);
+        } else if (sourceSection != null) {
+            _log.warn("{} at line {}", message, sourceSection.getStartLine(), e);
+        } else {
+            _log.warn(message, e);
+        }
         final var trace = new StringBuilder();
-        for (final StackFrame stack : e.getPolyglotStackTrace()) {
+        for (final var stack : e.getPolyglotStackTrace()) {
             final var language = stack.getLanguage();
             if (language != null && !"host".equals(language.getId())) {
-                trace.append(trace.length() > 0 ? " <- " : "").append(stack.toString());
+                if (!trace.isEmpty()) {
+                    trace.append(" <- ");
+                }
+                trace.append(stack);
             }
         }
-        return new ScriptException(e.getMessage() + (trace.length() > 0 ? " <- " + trace.toString() : ""));
+        return new ScriptException(e.getMessage() + (trace.isEmpty() ? "" : " <- " + trace));
     }
 
     /**
