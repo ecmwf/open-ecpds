@@ -66,18 +66,18 @@ public final class ThreadService {
     private static final boolean USE_THREAD_SPOOL = Cnf.at("Server", "useThreadSpool", true);
 
     /** The Constant ALLOW_VIRTUAL_THREAD. */
-    private static final boolean ALLOW_VIRTUAL_THREAD = Cnf.at("Server", "allowVirtualThread", true);
+    private static final boolean ALLOW_VIRTUAL_THREAD = Cnf.at("Server", "allowVirtualThread", false);
 
     /** The Constant DEBUG_THREAD_LOCAL. */
     private static final boolean DEBUG_THREAD_LOCAL = Cnf.at("Server", "debugThreadLocal", false);
 
-    /** The Constant VIRTUAL_POOL (can be virtual if allowed). */
-    private static final ExecutorService VIRTUAL_POOL = ConfigurableThreadFactory.getExecutorService(0,
-            Integer.MAX_VALUE, new SynchronousQueue<>(), false, ALLOW_VIRTUAL_THREAD, false);
-
-    /** The Constant PLATFORM_POOL (never virtual). */
+    /** The Constant PLATFORM_POOL. */
     private static final ExecutorService PLATFORM_POOL = ConfigurableThreadFactory.getExecutorService(0,
             Integer.MAX_VALUE, new SynchronousQueue<>(), false, false, false);
+
+    /** The Constant VIRTUAL_POOL (if allowed otherwise same as PLATFORM_POOL). */
+    private static final ExecutorService VIRTUAL_POOL = ALLOW_VIRTUAL_THREAD ? ConfigurableThreadFactory
+            .getExecutorService(0, Integer.MAX_VALUE, new SynchronousQueue<>(), false, true, false) : PLATFORM_POOL;
 
     /** The Constant INTERRUPTIBLE_POOL (never virtual). */
     private static final ExecutorService INTERRUPTIBLE_POOL = ConfigurableThreadFactory.getExecutorService(0,
@@ -399,7 +399,8 @@ public final class ThreadService {
                 startedFrom = Thread.currentThread().getName();
                 if (USE_THREAD_SPOOL) {
                     startTime = System.currentTimeMillis();
-                    futur = (interruptible ? INTERRUPTIBLE_POOL : VIRTUAL_POOL).submit(this);
+                    futur = (interruptible ? INTERRUPTIBLE_POOL : useVirtualThreads ? VIRTUAL_POOL : PLATFORM_POOL)
+                            .submit(this);
                 } else {
                     thread = new ConfigurableThreadFactory(interruptible, useVirtualThreads, false).newThread(this);
                     startTime = System.currentTimeMillis();
