@@ -29,14 +29,26 @@ package ecmwf.common.technical;
  */
 import java.io.IOException;
 import java.lang.ref.Cleaner;
+import java.time.Instant;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- * {@code CleanableSupport} provides a robust mechanism for managing resource cleanup, using Java's {@link Cleaner} for
- * automatic cleanup and supporting cleanup logic that may throw checked exceptions.
+ * {@code CleanableSupport} provides robust lifecycle management for resources, supporting both manual and automatic
+ * cleanup using Java's {@link Cleaner}.
+ *
+ * <p>
+ * It tracks and logs live instances by class every 5 minutes, only logging if any change occurred. It also keeps track
+ * of the peak count for each class to help diagnose potential leaks.
  *
  * <p>
  * This class is especially useful when implementing {@link AutoCloseable} and you want deterministic cleanup with
@@ -78,32 +90,50 @@ import org.apache.logging.log4j.Logger;
  * In the example above, the {@code CleanableSupport} ensures that the resource is cleaned either when {@code close()}
  * is called explicitly, or as a fallback when the object is garbage collected (if not cleaned already).
  */
-
 public class CleanableSupport {
 
-    /** Logger instance */
+    /** Logger for cleanup events and live object tracking. */
     private static final Logger _log = LogManager.getLogger(CleanableSupport.class);
 
-    /** Shared Cleaner instance used to register cleanup actions */
+    /** Shared cleaner instance for registering automatic cleanup logic. */
     private static final Cleaner cleaner = Cleaner.create();
 
-    /** Indicates whether the resource has already been cleaned */
+    /** Ensures the monitoring scheduler is only started once. */
+    private static final AtomicBoolean schedulerStarted = new AtomicBoolean(false);
+
+    /** Tracks the number of live instances per class. */
+    private static final Map<String, AtomicInteger> liveCounts = new ConcurrentHashMap<>();
+
+    /** Stores the previous snapshot of live counts for change detection. */
+    private static final Map<String, Integer> lastSnapshot = new ConcurrentHashMap<>();
+
+    /** Tracks the peak (maximum) number of instances per class. */
+    private static final Map<String, Integer> peakCounts = new ConcurrentHashMap<>();
+
+    /** Background scheduler for periodic reporting. */
+    private static final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+        final var t = new Thread(r, "CleanableSupport-Monitor");
+        t.setDaemon(true);
+        return t;
+    });
+
+    /** Flag indicating whether the resource has already been cleaned. */
     private final AtomicBoolean cleaned = new AtomicBoolean(false);
 
-    /** Cleanup logic provided by the caller */
+    /** User-provided cleanup logic that may throw checked exceptions. */
     private final ThrowingRunnable cleanup;
 
-    /** Time the resource was created (for tracking lifetime) */
+    /** Timestamp at which the resource was created (for logging lifetime). */
     private final long creationTimeNanos = System.nanoTime();
 
-    /** Handle to the registered cleanup task */
+    /** Handle to the automatic cleanup task. */
     private final Cleaner.Cleanable cleanable;
 
-    /** To keep track of the owner class name */
+    /** Name of the class that owns this resource (used for logging/stats). */
     private final String ownerClassName;
 
     /**
-     * Functional interface for cleanup code that may throw exceptions.
+     * Functional interface for user-supplied cleanup logic.
      */
     @FunctionalInterface
     public interface ThrowingRunnable {
@@ -120,34 +150,33 @@ public class CleanableSupport {
      * Constructs a new {@code CleanableSupport} instance.
      *
      * @param owner
-     *            the object being tracked (typically {@code this}); referenced to delay GC
+     *            the resource owner (typically {@code this}), used to delay GC
      * @param cleanup
-     *            the cleanup logic, which may throw checked exceptions
+     *            cleanup logic to be run once manually or automatically
      */
     public CleanableSupport(final Object owner, final ThrowingRunnable cleanup) {
-        this.ownerClassName = owner.getClass().getName();
-        this.cleanup = cleanup;
-        // Register cleanup to be called when 'owner' is garbage collected
+        this.ownerClassName = Objects.requireNonNull(owner).getClass().getName();
+        this.cleanup = Objects.requireNonNull(cleanup);
         this.cleanable = cleaner.register(owner, () -> {
             try {
-                // Perform cleanup if not already done
                 doCleanup(true);
             } catch (final Exception e) {
-                // Log exception; can't propagate during GC finalization
                 _log.warn("Cleanup error (GC): ", e);
             }
         });
+        incrementClassCount(ownerClassName);
+        startSchedulerIfNeeded();
     }
 
     /**
-     * Closes the resource and propagates any exceptions that occur during cleanup.
+     * Explicitly triggers cleanup and releases the resource.
      *
      * @throws IOException
-     *             if cleanup logic fails
+     *             if cleanup logic throws an exception
      */
     public void close() throws IOException {
         try {
-            doCleanup(false); // Attempt cleanup and propagate exception
+            doCleanup(false);
         } catch (final IOException e) {
             throw e;
         } catch (final Exception e) {
@@ -158,47 +187,48 @@ public class CleanableSupport {
     }
 
     /**
-     * Marks the resource as cleaned.
+     * Marks this instance as cleaned. Returns {@code true} if this was the first cleanup attempt.
      *
-     * @return {@code true} if this was the first call to clean, {@code false} otherwise
+     * @return {@code true} if successfully marked as cleaned, {@code false} if already cleaned
      */
     public boolean markCleaned() {
         return cleaned.compareAndSet(false, true);
     }
 
     /**
-     * Indicates whether the resource has already been cleaned.
+     * Checks whether this resource has already been cleaned.
      *
-     * @return {@code true} if cleanup has occurred, {@code false} otherwise
+     * @return {@code true} if cleaned, {@code false} otherwise
      */
     public boolean isCleaned() {
         return cleaned.get();
     }
 
     /**
-     * Internal cleanup logic with one-time guarantee.
+     * Performs cleanup if it has not already been done.
      *
      * @param gcTriggered
-     *            {@code true} if cleanup was triggered by GC
+     *            {@code true} if triggered by garbage collection
      *
      * @throws Exception
-     *             if the cleanup logic fails
+     *             if cleanup logic fails
      */
     private void doCleanup(final boolean gcTriggered) throws Exception {
         if (cleaned.compareAndSet(false, true)) {
+            decrementClassCount(ownerClassName);
             final var duration = System.nanoTime() - creationTimeNanos;
             logResourceLifetime(duration, gcTriggered);
-            cleanup.run(); // May throw checked exception
+            cleanup.run();
         }
     }
 
     /**
-     * Logs the time the resource was alive and how it was cleaned.
+     * Logs how long the resource lived and whether cleanup was triggered by GC.
      *
      * @param nanos
-     *            resource lifetime in nanoseconds
+     *            lifetime of the resource in nanoseconds
      * @param gcTriggered
-     *            {@code true} if cleanup was GC-triggered; {@code false} otherwise
+     *            whether GC triggered the cleanup
      */
     private void logResourceLifetime(final long nanos, final boolean gcTriggered) {
         if (_log.isDebugEnabled()) {
@@ -206,6 +236,60 @@ public class CleanableSupport {
             final var millis = nanos / 1_000_000.0;
             _log.debug("Resource owned by {} cleaned after {} ms ({})", ownerClassName, String.format("%.2f", millis),
                     source);
+        }
+    }
+
+    /**
+     * Increments the live count for the given class.
+     *
+     * @param className
+     *            the name of the class
+     */
+    private static void incrementClassCount(final String className) {
+        liveCounts.computeIfAbsent(className, _ -> new AtomicInteger()).incrementAndGet();
+        peakCounts.merge(className, 1, Math::max);
+    }
+
+    /**
+     * Decrements the live count for the given class.
+     *
+     * @param className
+     *            the name of the class
+     */
+    private static void decrementClassCount(final String className) {
+        liveCounts.getOrDefault(className, new AtomicInteger()).decrementAndGet();
+    }
+
+    /**
+     * Starts the background logging scheduler if not already started.
+     */
+    private static void startSchedulerIfNeeded() {
+        if (schedulerStarted.compareAndSet(false, true)) {
+            scheduler.scheduleAtFixedRate(CleanableSupport::logLiveCounts, 5, 5, TimeUnit.MINUTES);
+        }
+    }
+
+    /**
+     * Logs live object counts per class, only if changes occurred since last snapshot.
+     */
+    private static void logLiveCounts() {
+        final var sb = new StringBuilder();
+        var changed = false;
+        sb.append("CleanableSupport status at ").append(Instant.now()).append(":\n");
+        for (final Map.Entry<String, AtomicInteger> entry : liveCounts.entrySet()) {
+            final var className = entry.getKey();
+            final var current = entry.getValue().get();
+            final int last = lastSnapshot.getOrDefault(className, 0);
+            final int peak = peakCounts.getOrDefault(className, 0);
+            if (current != last) {
+                changed = true;
+            }
+            sb.append(String.format("- %-50s : current = %5d | last = %5d | peak = %5d%n", className, current, last,
+                    peak));
+            lastSnapshot.put(className, current);
+        }
+        if (changed && _log.isInfoEnabled()) {
+            _log.info(sb.toString());
         }
     }
 }
