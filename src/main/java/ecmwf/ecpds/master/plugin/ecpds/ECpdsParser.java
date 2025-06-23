@@ -30,7 +30,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FilenameFilter;
-import java.lang.reflect.Constructor;
 import java.util.Arrays;
 import java.util.Comparator;
 
@@ -53,32 +52,32 @@ final class ECpdsParser extends ConfigurableLoopRunnable {
     private static final Logger _log = LogManager.getLogger(ECpdsParser.class);
 
     /** Repository to store the ecpds requests in a queue. */
-    private final ParserRepository _repository;
+    private final ParserRepository repository;
 
     /** Last modified time of the last file processed. */
-    private Long _lastModified = null;
+    private Long lastRecordedModified = null;
 
     /** Last time stamp of the last file entry processed. */
-    private Long _lastTimeStamp = null;
+    private Long lastRecorderTimeStamp = null;
 
     /** Directory where to look for the files. */
-    private final String _dir;
+    private final String repositoryDir;
 
     /** Shall we delete a file once it is successfully processed?. */
-    private final boolean _clean;
+    private final boolean cleanOnSuccess;
 
     /**
      * Delay the initial startup to give time to the ECpdsPlugin to start fully.
      */
-    private long _delay = 30 * Timer.ONE_SECOND;
+    private long initialDelay = 30 * Timer.ONE_SECOND;
 
     /**
      * Define how faster we want to go! (1 is similar, 2 is 2 times faster, 0.5 is 2 times slower ...).
      */
-    private final long _ratio;
+    private final long speedRatio;
 
     /** Time gained after every new request if the ratio is not 1. */
-    private long _timeGained = 0;
+    private long timeGained = 0;
 
     /**
      * Instantiates a new ecpds parser.
@@ -95,39 +94,38 @@ final class ECpdsParser extends ConfigurableLoopRunnable {
     public ECpdsParser(final long lastTimeStamp, final long ratio, final String dir, final boolean clean) {
         // Initialise the repository to store and process the ecpds request
         _log.debug("Starting the RequestParser");
-        _repository = new ParserRepository("ParserRepository");
+        repository = new ParserRepository("ParserRepository");
         setPriority(Thread.MIN_PRIORITY);
         if (lastTimeStamp > 0) {
-            _lastTimeStamp = lastTimeStamp;
+            lastRecorderTimeStamp = lastTimeStamp;
         }
-        _ratio = ratio;
-        _dir = dir;
-        _clean = clean;
+        speedRatio = ratio;
+        repositoryDir = dir;
+        cleanOnSuccess = clean;
         // Start the Thread to parse the target directory on a regular basis
         execute();
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Configurable loop run.
      */
     @Override
     public void configurableLoopRun() {
         // Make sure the ECpdsPlugin is ready to receive a request if this is
         // the first run!
-        if (_delay != -1) {
+        if (initialDelay != -1) {
             try {
-                Thread.sleep(_delay);
-            } catch (final InterruptedException e) {
+                Thread.sleep(initialDelay);
+            } catch (final InterruptedException _) {
+                Thread.currentThread().interrupt();
             } finally {
-                _delay = -1;
+                initialDelay = -1;
             }
         }
         // On each iteration, list the files in the target directory and process
         // them according to the last 'last modified' time (to be sure we are
         // only processing the new files)
-        var files = new File(_dir).listFiles((FilenameFilter) (_, name) -> {
+        var files = new File(repositoryDir).listFiles((FilenameFilter) (_, name) -> {
             final var lowerCase = name.toLowerCase();
             return !(lowerCase.endsWith(".tmp") || lowerCase.endsWith(".temp") || lowerCase.startsWith("."));
         });
@@ -137,9 +135,9 @@ final class ECpdsParser extends ConfigurableLoopRunnable {
         Arrays.sort(files, new FileComparator());
         for (final File file : files) {
             try {
-                _lastModified = process(_lastModified, file);
+                lastRecordedModified = processFile(lastRecordedModified, file);
             } catch (final Throwable t) {
-                _log.warn("Couldn't process file: " + file.getAbsolutePath(), t);
+                _log.warn("Couldn't process file: {}", file.getAbsolutePath(), t);
             }
         }
     }
@@ -154,47 +152,47 @@ final class ECpdsParser extends ConfigurableLoopRunnable {
      *
      * @return the long
      *
-     * @throws java.lang.Exception
+     * @throws Exception
      *             the exception
      */
-    public long process(final Long lastModified, final File file) throws Exception {
+    public long processFile(final Long lastModified, final File file) throws Exception {
         var result = lastModified;
         var index = 0;
         if (lastModified == null || file.lastModified() > lastModified) {
-            // First file to process or file older than the previous file
-            // processed!
-            _log.debug("Processing file: " + file.getAbsolutePath());
-            final var br = new BufferedReader(new FileReader(file));
-            String currentLine, previousLine = null;
-            result = file.lastModified();
-            while ((currentLine = br.readLine()) != null) {
-                if (currentLine.indexOf("[TYPE]") != -1 && currentLine.indexOf("[TIMESTAMP]") != -1) {
-                    // Let's process the previous line
-                    if (previousLine != null) {
-                        _lastTimeStamp = _process(_lastTimeStamp, previousLine);
-                        index++;
+            // First file to process or file older than the previous file processed!
+            _log.debug("Processing file: {}", file.getAbsolutePath());
+            try (final var br = new BufferedReader(new FileReader(file))) {
+                String currentLine;
+                StringBuilder previousLine = null;
+                result = file.lastModified();
+                while ((currentLine = br.readLine()) != null) {
+                    if (currentLine.contains("[TYPE]") && currentLine.contains("[TIMESTAMP]")) {
+                        // Let's process the previous line
+                        if (previousLine != null) {
+                            lastRecorderTimeStamp = processEntry(lastRecorderTimeStamp, previousLine.toString());
+                            index++;
+                        }
+                        // Start a new line
+                        previousLine = new StringBuilder(currentLine);
+                    } else if (previousLine != null) {
+                        previousLine.append(" ").append(currentLine.trim());
                     }
-                    // Start a new line
-                    previousLine = currentLine;
-                } else if (previousLine != null) {
-                    previousLine += " " + currentLine.trim();
+                }
+                // Last line!
+                if (previousLine != null) {
+                    lastRecorderTimeStamp = processEntry(lastRecorderTimeStamp, previousLine.toString());
+                    index++;
                 }
             }
-            // Last line!
-            if (previousLine != null) {
-                _lastTimeStamp = _process(_lastTimeStamp, previousLine);
-                index++;
-            }
-            br.close();
-            final var cleaned = _clean ? file.delete() : false;
-            _log.debug("File " + file.getAbsolutePath() + " completed (" + index + " line(s),"
-                    + (cleaned ? "deleted" : "not-deleted") + ")");
+            final var cleaned = cleanOnSuccess && file.delete();
+            _log.debug("File {} completed ({} line(s),{})", file.getAbsolutePath(), index,
+                    cleaned ? "deleted" : "not-deleted");
         }
         return result;
     }
 
     /**
-     * _process.
+     * Process new entry.
      *
      * @param lastTimeStamp
      *            the last time stamp
@@ -203,7 +201,7 @@ final class ECpdsParser extends ConfigurableLoopRunnable {
      *
      * @return the long
      */
-    private long _process(final Long lastTimeStamp, final String line) {
+    private long processEntry(final Long lastTimeStamp, final String line) {
         // Let's convert the line into an ECpdsRequest object and push it in the
         // queue of the repository for later processing
         final var types = new String[] { "Completed", "Expected", "Put", "Select", "Started", "WaitForGroup" };
@@ -211,32 +209,34 @@ final class ECpdsParser extends ConfigurableLoopRunnable {
         for (final String type : types) {
             if (line.indexOf("[TYPE] " + type.toUpperCase()) != -1) {
                 try {
-                    final Class<?> clazz = Class.forName("ecmwf.ecpds.master.plugin.ecpds.request.ECpds" + type);
-                    final Constructor<?> constructor = clazz.getConstructor(String.class);
-                    final var req = (ECpdsRequest) constructor.newInstance(line);
-                    var currentTimestamp = req.getTIMESTAMP() - _timeGained;
-                    if (lastTimeStamp != null) {
-                        final var elapsedTime = currentTimestamp - lastTimeStamp;
-                        final var delay = elapsedTime / _ratio;
-                        if (delay > 0) {
-                            _log.debug("Next request queued in " + Format.formatDuration(delay) + " (" + type + ")");
-                            // Let's wait to have the same delay between the
-                            // previous request and the current one as on the
-                            // operational system
-                            _timeGained += elapsedTime - delay;
-                            currentTimestamp = lastTimeStamp + delay;
-                            req.setTIMESTAMP(currentTimestamp);
-                            Thread.sleep(delay);
-                        } else if (delay < 0) {
-                            _log.debug("Request NOT queued (expired by " + Format.formatDuration(-1 * delay) + ")");
-                            return lastTimeStamp;
+                    if (Class.forName("ecmwf.ecpds.master.plugin.ecpds.request.ECpds" + type)
+                            .getConstructor(String.class).newInstance(line) instanceof ECpdsRequest req) {
+                        var currentTimestamp = req.getTIMESTAMP() - timeGained;
+                        if (lastTimeStamp != null) {
+                            final var elapsedTime = currentTimestamp - lastTimeStamp;
+                            final var delay = elapsedTime / speedRatio;
+                            if (delay > 0) {
+                                if (_log.isDebugEnabled())
+                                    _log.debug("Next request queued in {} ({})", Format.formatDuration(delay), type);
+                                // Let's wait to have the same delay between the
+                                // previous request and the current one as on the
+                                // operational system
+                                timeGained += elapsedTime - delay;
+                                currentTimestamp = lastTimeStamp + delay;
+                                req.setTIMESTAMP(currentTimestamp);
+                                Thread.sleep(delay);
+                            } else if (delay < 0) {
+                                if (_log.isDebugEnabled())
+                                    _log.debug("Request NOT queued (expired by {})", Format.formatDuration(-1 * delay));
+                                return lastTimeStamp;
+                            }
                         }
+                        result = currentTimestamp;
+                        // Store it in the queue of the repository!
+                        repository.put(req);
                     }
-                    result = currentTimestamp;
-                    // Store it in the queue of the repository!
-                    _repository.put(req);
                 } catch (final Throwable t) {
-                    _log.warn("Could not process line: " + line, t);
+                    _log.warn("Could not process line: {}", line, t);
                 }
                 break;
             }
@@ -334,9 +334,9 @@ final class ECpdsParser extends ConfigurableLoopRunnable {
          */
         @Override
         public void update(final ECpdsRequest request) throws Exception {
-            _log.debug("Processing request (lastTimeStamp=" + request.getTIMESTAMP() + "): " + request);
+            _log.debug("Processing request (lastTimeStamp={}): {}", request.getTIMESTAMP(), request);
             try {
-                request.process(_ratio);
+                request.process(speedRatio);
             } catch (final Throwable t) {
                 _log.warn("Couldn't process request", t);
             }
