@@ -246,8 +246,8 @@ public class CleanableSupport {
      *            the name of the class
      */
     private static void incrementClassCount(final String className) {
-        liveCounts.computeIfAbsent(className, _ -> new AtomicInteger()).incrementAndGet();
-        peakCounts.merge(className, 1, Math::max);
+        final var count = liveCounts.computeIfAbsent(className, _ -> new AtomicInteger()).incrementAndGet();
+        peakCounts.compute(className, (_, oldPeak) -> (oldPeak == null || count > oldPeak) ? count : oldPeak);
     }
 
     /**
