@@ -30,7 +30,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -47,7 +46,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -113,9 +111,12 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Rename to.
+     *
+     * @param path
+     *            the path
+     *
+     * @return true, if successful
      */
     @Override
     public boolean renameTo(final String path) {
@@ -123,9 +124,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the parent.
+     *
+     * @return the parent
      */
     @Override
     public String getParent() {
@@ -133,9 +134,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the name.
+     *
+     * @return the name
      */
     @Override
     public String getName() {
@@ -143,9 +144,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Checks if is directory.
+     *
+     * @return true, if is directory
      */
     @Override
     public boolean isDirectory() {
@@ -153,9 +154,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Checks if is file.
+     *
+     * @return true, if is file
      */
     @Override
     public boolean isFile() {
@@ -163,9 +164,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Exists.
+     *
+     * @return true, if successful
      */
     @Override
     public boolean exists() {
@@ -173,9 +174,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the path.
+     *
+     * @return the path
      */
     @Override
     public String getPath() {
@@ -183,9 +184,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the absolute path.
+     *
+     * @return the absolute path
      */
     @Override
     public String getAbsolutePath() {
@@ -193,9 +194,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the parent file.
+     *
+     * @return the parent file
      */
     @Override
     public GenericFile getParentFile() {
@@ -207,9 +208,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Delete.
+     *
+     * @return true, if successful
      */
     @Override
     public boolean delete() {
@@ -217,9 +218,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Can read.
+     *
+     * @return true, if successful
      */
     @Override
     public boolean canRead() {
@@ -227,9 +228,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Can write.
+     *
+     * @return true, if successful
      */
     @Override
     public boolean canWrite() {
@@ -237,9 +238,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Length.
+     *
+     * @return the long
      */
     @Override
     public long length() {
@@ -247,9 +248,12 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Last modified.
+     *
+     * @return the long
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public long lastModified() throws IOException {
@@ -257,9 +261,12 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Sets the last modified.
+     *
+     * @param time
+     *            the time
+     *
+     * @return true, if successful
      */
     @Override
     public boolean setLastModified(final long time) {
@@ -267,9 +274,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Sets the read only.
+     *
+     * @return true, if successful
      */
     @Override
     public boolean setReadOnly() {
@@ -277,9 +284,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Mkdir.
+     *
+     * @return true, if successful
      */
     @Override
     public boolean mkdir() {
@@ -287,9 +294,9 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Mkdirs.
+     *
+     * @return true, if successful
      */
     @Override
     public boolean mkdirs() {
@@ -297,49 +304,51 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * List.
+     *
+     * @param filter
+     *            the filter
+     *
+     * @return the string[]
      */
     @Override
-    public String[] list(final GenericFileFilter filter) {
-        final class LocalFilenameFilter implements FilenameFilter {
-            final GenericFileFilter dirFilter;
-
-            LocalFilenameFilter(final GenericFileFilter filter) {
-                dirFilter = filter;
-            }
-
-            @Override
-            public boolean accept(final File dir, final String name) {
-                return dirFilter.accept(new RegularFile(dir.getAbsolutePath()), name);
+    public String[] list(final GenericFileFilter filter) throws IOException {
+        final var dirPath = underlyingFile.toPath();
+        final List<String> result = new ArrayList<>();
+        try (var stream = Files.newDirectoryStream(dirPath, entry -> {
+            final var fileName = entry.getFileName();
+            return fileName != null && filter.accept(new RegularFile(dirPath.toString()), fileName.toString());
+        })) {
+            for (final Path entry : stream) {
+                result.add(entry.getFileName().toString());
             }
         }
-        return underlyingFile.list(new LocalFilenameFilter(filter));
+        return result.toArray(String[]::new);
     }
 
     /**
-     * {@inheritDoc}
-     *
      * List files.
+     *
+     * @param filter
+     *            the filter
+     *
+     * @return the generic file[]
      */
     @Override
-    public GenericFile[] listFiles(final GenericFileFilter filter) {
+    public GenericFile[] listFiles(final GenericFileFilter filter) throws IOException {
         final var files = list(filter);
-        if (files == null) {
-            return null;
-        }
-        final List<GenericFile> list = new ArrayList<>(files.length);
+        final var list = new ArrayList<>(files.length);
+        final var parent = getPath();
         for (final String file : files) {
-            list.add(new RegularFile(getPath(), file));
+            list.add(new RegularFile(parent, file));
         }
         return list.toArray(new GenericFile[list.size()]);
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Checks if is absolute.
+     *
+     * @return true, if is absolute
      */
     @Override
     public boolean isAbsolute() {
@@ -347,9 +356,12 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the file.
+     *
+     * @return the file
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public File getFile() throws IOException {
@@ -357,61 +369,75 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * List.
+     *
+     * @return the string[]
      */
     @Override
-    public String[] list() {
-        return underlyingFile.list();
+    public String[] list() throws IOException {
+        final var dirPath = underlyingFile.toPath();
+        final List<String> result = new ArrayList<>();
+        try (var stream = Files.newDirectoryStream(dirPath)) {
+            for (final Path entry : stream) {
+                result.add(entry.getFileName().toString());
+            }
+        }
+        return result.toArray(String[]::new);
     }
 
     /**
-     * {@inheritDoc}
-     *
      * List count.
+     *
+     * @return the long
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public long listCount() throws IOException {
-        try (final Stream<Path> paths = Files.walk(Paths.get(getAbsolutePath()))) {
+        try (final var paths = Files.walk(Paths.get(getAbsolutePath()))) {
             return paths.parallel().filter(p -> p.toFile().isFile()).count();
         }
     }
 
     /**
-     * {@inheritDoc}
-     *
      * List size.
+     *
+     * @return the long
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public long listSize() throws IOException {
-        try (Stream<Path> paths = Files.walk(Paths.get(getAbsolutePath()))) {
+        try (var paths = Files.walk(Paths.get(getAbsolutePath()))) {
             return paths.filter(p -> p.toFile().isFile()).mapToLong(p -> p.toFile().length()).sum();
         }
     }
 
     /**
-     * {@inheritDoc}
-     *
      * List files.
+     *
+     * @return the generic file[]
      */
     @Override
-    public GenericFile[] listFiles() {
+    public GenericFile[] listFiles() throws IOException {
         final var files = list();
-        if (files == null) {
-            return null;
-        }
-        final List<GenericFile> list = new ArrayList<>(files.length);
+        final var list = new ArrayList<>(files.length);
+        final var parent = getPath();
         for (final String file : files) {
-            list.add(new RegularFile(getPath(), file));
+            list.add(new RegularFile(parent, file));
         }
         return list.toArray(new GenericFile[list.size()]);
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the input stream.
+     *
+     * @return the input stream
+     *
+     * @throws FileNotFoundException
+     *             the file not found exception
      */
     @Override
     public InputStream getInputStream() throws FileNotFoundException {
@@ -419,9 +445,12 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the output stream.
+     *
+     * @return the output stream
+     *
+     * @throws FileNotFoundException
+     *             the file not found exception
      */
     @Override
     public OutputStream getOutputStream() throws FileNotFoundException {
@@ -429,9 +458,15 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the output stream.
+     *
+     * @param append
+     *            the append
+     *
+     * @return the output stream
+     *
+     * @throws FileNotFoundException
+     *             the file not found exception
      */
     @Override
     public OutputStream getOutputStream(final boolean append) throws FileNotFoundException {
@@ -519,16 +554,15 @@ public final class RegularFile extends GenericFile {
      *             Signals that an I/O exception has occurred.
      */
     private long transmitFileWithByteBuffer(final OutputStream out, final long offset) throws IOException {
-        final long count = underlyingFile.length() - offset;
-        final ByteBuffer buffer = getByteBuffer(count);
-        try (final FileInputStream inFile = new FileInputStream(underlyingFile);
-                final FileChannel inChannel = inFile.getChannel();
-                final WritableByteChannel outChannel = Channels.newChannel(out)) {
-            long position = offset;
+        final var count = underlyingFile.length() - offset;
+        final var buffer = getByteBuffer(count);
+        try (final var inFile = new FileInputStream(underlyingFile); final var inChannel = inFile.getChannel();
+                final var outChannel = Channels.newChannel(out)) {
+            var position = offset;
             final var start = System.currentTimeMillis();
             while (position < count) {
                 buffer.clear(); // Prepare buffer for writing
-                final int bytesRead = inChannel.read(buffer, position);
+                final var bytesRead = inChannel.read(buffer, position);
                 if (bytesRead == -1)
                     break; // End of file
                 buffer.flip(); // Prepare buffer for reading
@@ -690,28 +724,27 @@ public final class RegularFile extends GenericFile {
      */
     private long receiveFileWithByteBuffer(final InputStream in, final long expectedBytesCount) throws IOException {
         var fileAvailable = false;
-        try (final ReadableByteChannel inChannel = Channels.newChannel(in)) {
+        try (final var inChannel = Channels.newChannel(in)) {
             final var parent = underlyingFile.getParentFile();
             if ((parent != null && !parent.exists() && !parent.mkdirs()) && !parent.exists()) {
                 throw new IOException("Couldn't mkdirs: " + parent.getAbsolutePath());
             }
             final var suffix = "." + new RandomString(3).next();
-            final File tmpFile = new File(parent, underlyingFile.getName() + suffix);
+            final var tmpFile = new File(parent, underlyingFile.getName() + suffix);
             if (expectedBytesCount >= 0) {
                 _log.info("Waiting for {} byte(s) for file {}", expectedBytesCount, tmpFile.getAbsolutePath());
             } else {
                 _log.info("Waiting byte(s) for file {}", tmpFile.getAbsolutePath());
             }
             deleteIfExists(tmpFile);
-            final ByteBuffer buffer = getByteBuffer(expectedBytesCount);
-            try (final FileOutputStream outFile = new FileOutputStream(tmpFile);
-                    final FileChannel outChannel = createFileChannel(outFile)) {
-                long position = 0;
-                long count = expectedBytesCount >= 0 ? expectedBytesCount : Long.MAX_VALUE;
+            final var buffer = getByteBuffer(expectedBytesCount);
+            try (final var outFile = new FileOutputStream(tmpFile); final var outChannel = createFileChannel(outFile)) {
+                var position = 0L;
+                final var count = expectedBytesCount >= 0 ? expectedBytesCount : Long.MAX_VALUE;
                 final var start = System.currentTimeMillis();
                 while (position < count) {
                     buffer.clear(); // Prepare buffer for writing
-                    int bytesRead = inChannel.read(buffer);
+                    final var bytesRead = inChannel.read(buffer);
                     if (bytesRead == -1)
                         break; // End of stream
                     buffer.flip(); // Prepare buffer for reading
@@ -767,18 +800,18 @@ public final class RegularFile extends GenericFile {
             return false;
         final var path = file.toPath();
         try {
-            var deleted = Files.deleteIfExists(path);
+            final var deleted = Files.deleteIfExists(path);
             if (deleted && _log.isDebugEnabled()) {
                 _log.debug("Deleted file: {}", path);
             } else if (!deleted) {
                 _log.warn("File did not exist: {}", path);
             }
             return deleted;
-        } catch (NoSuchFileException e) {
+        } catch (final NoSuchFileException e) {
             _log.warn("File not found during deletion: {}", path);
-        } catch (DirectoryNotEmptyException e) {
+        } catch (final DirectoryNotEmptyException e) {
             _log.warn("Directory not empty: {}", path);
-        } catch (IOException e) {
+        } catch (final IOException e) {
             _log.warn("I/O error while deleting file {}: {}", path, e.toString());
         }
         return false;
@@ -797,7 +830,7 @@ public final class RegularFile extends GenericFile {
         if (BYTE_BUFFER_POOL && length >= BYTE_BUFFER_SIZE_IN_BYTES)
             return pool.acquire(); // Uses a pooled buffer
         // For small files or when pool is disabled, allocate a new buffer
-        final int bufferSize = (int) Math.min(BYTE_BUFFER_SIZE_IN_BYTES, length < 0 ? Long.MAX_VALUE : length);
+        final var bufferSize = (int) Math.min(BYTE_BUFFER_SIZE_IN_BYTES, length < 0 ? Long.MAX_VALUE : length);
         return BYTE_BUFFER_DIRECT ? ByteBuffer.allocateDirect(bufferSize) : ByteBuffer.allocate(bufferSize);
     }
 
@@ -830,14 +863,14 @@ public final class RegularFile extends GenericFile {
                 if (CHANNEL_FORCE)
                     outChannel.force(CHANNEL_FORCE_METADATA);
                 return outChannel;
-            } catch (FileNotFoundException e1) {
+            } catch (final FileNotFoundException e1) {
                 _log.warn("Could not create file", e1);
                 if (i == 2) {
                     throw new IOException("Could not create file after 3 attempts", e1);
                 }
                 try {
                     Thread.sleep(1000);
-                } catch (InterruptedException e2) {
+                } catch (final InterruptedException e2) {
                     Thread.currentThread().interrupt();
                     throw new IOException("Thread interrupted during retry", e2);
                 }
