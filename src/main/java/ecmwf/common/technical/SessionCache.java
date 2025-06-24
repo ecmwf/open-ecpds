@@ -266,6 +266,20 @@ public class SessionCache<K, S> {
     }
 
     /**
+     * This method remove the ReentrantLock for the specified key.
+     *
+     * @param key
+     *            the key
+     */
+    public void cleanupLock(final K key) {
+        final var lock = locks.get(key);
+        if (lock != null && !lock.isLocked()) {
+            // Remove the lock only if no one is holding it
+            locks.remove(key, lock);
+        }
+    }
+
+    /**
      * This method retrieves a session from the cache that is registered with the specified key. If there is no session
      * registered with this key, the method returns null. It's important to note that the session is not removed from
      * the cache.
