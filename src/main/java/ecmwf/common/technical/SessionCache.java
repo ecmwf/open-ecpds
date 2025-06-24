@@ -55,6 +55,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 
 import javax.management.timer.Timer;
@@ -80,29 +81,29 @@ public class SessionCache<K, S> {
     /** The Constant DEBUG_FREQUENCY. */
     private static final int DEBUG_FREQUENCY = Cnf.at("SessionCache", "debugFrequency", 1000000);
 
-    /** The Constant activities. */
-    private static final Map<String, CacheActivity> activities = new ConcurrentHashMap<>();
+    /** The Constant LOG_ACTIVITY. */
+    private static final boolean LOG_ACTIVITY = Cnf.at("SessionCache", "activityLogger", true);
 
-    /** The management thread. */
-    private final CacheManagementThread managementThread = new CacheManagementThread();
-
-    /** The cache. */
-    private final Map<K, Queue<CacheElement>> cache = new ConcurrentHashMap<>();
-
-    /** The mutex. */
-    private final Synchronized mutex = new Synchronized();
+    /** The Constant MINIMUM_PAUSE. */
+    private static final long MINIMUM_PAUSE = Cnf.at("SessionCache", "minimumPause", 15 * Timer.ONE_SECOND);
 
     /** The debug. */
     private boolean debug = Cnf.at("SessionCache", "debug", false);
 
-    /** The activity. */
-    private final boolean activity = Cnf.at("SessionCache", "activityLogger", true);
+    /** The cache activities. */
+    private final CacheActivity cacheActivity;
 
-    /** The pause. */
-    private long pause = 15 * Timer.ONE_SECOND;
+    /** The management thread. */
+    private final CacheManagementThread managementThread;
+
+    /** The cache. */
+    private final Map<K, Queue<CacheElement>> cache = new ConcurrentHashMap<>();
+
+    /** Map of key -> lock. */
+    private final ConcurrentHashMap<K, ReentrantLock> locks = new ConcurrentHashMap<>();
 
     /** The maxQueueSize. */
-    private int maxQueueSize = Integer.MAX_VALUE;
+    private final int maxQueueSize;
 
     /** The name. */
     private final String name;
@@ -111,7 +112,10 @@ public class SessionCache<K, S> {
      * Instantiates a new session cache. Default constructor for session like caching (multiple connections/host).
      */
     public SessionCache() {
-        this.name = "[no-name]";
+        this.name = this.getClass().getSimpleName();
+        this.cacheActivity = LOG_ACTIVITY ? new CacheActivity(name) : null;
+        this.maxQueueSize = Integer.MAX_VALUE;
+        this.managementThread = new CacheManagementThread(MINIMUM_PAUSE);
     }
 
     /**
@@ -122,6 +126,9 @@ public class SessionCache<K, S> {
      */
     public SessionCache(final String name) {
         this.name = name;
+        this.cacheActivity = LOG_ACTIVITY ? new CacheActivity(name) : null;
+        this.maxQueueSize = Integer.MAX_VALUE;
+        this.managementThread = new CacheManagementThread(MINIMUM_PAUSE);
     }
 
     /**
@@ -134,17 +141,9 @@ public class SessionCache<K, S> {
      */
     public SessionCache(final String name, final long pause) {
         this.name = name;
-        this.pause = pause;
-        maxQueueSize = 1;
-    }
-
-    /**
-     * Return the name of the cache.
-     *
-     * @return name
-     */
-    public String getName() {
-        return name;
+        this.cacheActivity = LOG_ACTIVITY ? new CacheActivity(name) : null;
+        this.maxQueueSize = 1;
+        this.managementThread = new CacheManagementThread(pause > MINIMUM_PAUSE ? pause : MINIMUM_PAUSE);
     }
 
     /**
@@ -178,7 +177,7 @@ public class SessionCache<K, S> {
      * @param session
      *            the session
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public void update(final S session) throws IOException {
@@ -238,28 +237,32 @@ public class SessionCache<K, S> {
      */
     public S remove(final K key, final S defaultValue) {
         final var list = cache.get(key);
-        final var element = list != null ? list.poll() : null;
-        final S session;
-        if ((element == null) || !isConnected(session = element.session)) {
+        if (list == null) {
             return defaultValue;
         }
-        element.removed = true;
-        if (activity && _log.isDebugEnabled()) {
-            activities.computeIfAbsent(name, CacheActivity::new).update(true);
+        synchronized (list) {
+            final var element = list.poll();
+            if (element == null || !isConnected(element.session)) {
+                return defaultValue;
+            }
+            element.removed = true;
+            if (LOG_ACTIVITY && _log.isDebugEnabled()) {
+                cacheActivity.update(true);
+            }
+            return element.session;
         }
-        return session;
     }
 
     /**
-     * This method retrieves a mutex for the specified key.
+     * This method retrieves a ReentrantLock for the specified key.
      *
      * @param key
      *            the key
      *
-     * @return the mutex
+     * @return the ReentrantLock
      */
-    public Mutex getMutex(final K key) {
-        return mutex.getMutex(key);
+    public ReentrantLock getLock(final K key) {
+        return locks.computeIfAbsent(key, _ -> new ReentrantLock());
     }
 
     /**
@@ -290,16 +293,20 @@ public class SessionCache<K, S> {
      */
     public S retrieve(final K key, final S defaultValue) {
         final var list = cache.get(key);
-        final var element = list != null ? list.peek() : null;
-        final S session;
-        if ((element == null) || !isConnected(session = element.session)) {
+        if (list == null) {
             return defaultValue;
         }
-        element.lastUpdate = System.currentTimeMillis();
-        if (activity && _log.isDebugEnabled()) {
-            activities.computeIfAbsent(name, CacheActivity::new).update(true);
+        synchronized (list) {
+            final var element = list.peek();
+            if (element == null || !isConnected(element.session)) {
+                return defaultValue;
+            }
+            element.lastUpdate = System.currentTimeMillis();
+            if (LOG_ACTIVITY && _log.isDebugEnabled()) {
+                cacheActivity.update(true);
+            }
+            return element.session;
         }
-        return session;
     }
 
     /**
@@ -322,8 +329,8 @@ public class SessionCache<K, S> {
             return defaultValue.apply(key);
         }
         element.lastUpdate = System.currentTimeMillis();
-        if (activity && _log.isDebugEnabled()) {
-            activities.computeIfAbsent(name, CacheActivity::new).update(true);
+        if (LOG_ACTIVITY && _log.isDebugEnabled()) {
+            cacheActivity.update(true);
         }
         return session;
     }
@@ -359,12 +366,13 @@ public class SessionCache<K, S> {
      */
     public boolean exists(final K key, final S session, final Comparator<S> comparator) {
         final var list = cache.get(key);
-        if (list != null) {
-            synchronized (list) {
-                for (final CacheElement element : list) {
-                    if (comparator.compare(session, element.session) == 0 && !element.removed && !element.expired()) {
-                        return true;
-                    }
+        if (list == null) {
+            return false;
+        }
+        synchronized (list) {
+            for (final CacheElement element : list) {
+                if (comparator.compare(session, element.session) == 0 && !element.removed && !element.expired()) {
+                    return true;
                 }
             }
         }
@@ -424,8 +432,8 @@ public class SessionCache<K, S> {
                 if (debug) {
                     _log.debug("Cache: {} -> Added key {}", name, key);
                 }
-                if (activity && _log.isDebugEnabled()) {
-                    activities.computeIfAbsent(name, CacheActivity::new).update(false);
+                if (LOG_ACTIVITY && _log.isDebugEnabled()) {
+                    cacheActivity.update(false);
                 }
                 // Let's make sure the management thread is running!
                 if (!managementThread.isStarted()) {
@@ -505,10 +513,14 @@ public class SessionCache<K, S> {
      * The Class CacheManagementThread.
      */
     private final class CacheManagementThread extends ConfigurableLoopRunnable {
+
         /**
          * Instantiates a new cache management thread.
+         *
+         * @param pause
+         *            the pause
          */
-        CacheManagementThread() {
+        CacheManagementThread(final long pause) {
             setPause(pause);
         }
 

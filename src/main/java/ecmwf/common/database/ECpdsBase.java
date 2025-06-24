@@ -119,30 +119,29 @@ public final class ECpdsBase extends DataBase {
      */
     public TransferServer[] getTransferServers(final String groupName) {
         final List<TransferServer> list;
-        final var mutex = transferServersCache.getMutex(groupName);
-        synchronized (mutex.lock()) {
-            try {
-                list = transferServersCache.computeIfAbsent(groupName, k -> {
-                    DBIterator<TransferServer> it = null;
-                    final List<TransferServer> defaultList = new ArrayList<>();
-                    try {
-                        it = ecpds.getTransferServers(k, TransferServer.class);
-                        while (it.hasNext()) {
-                            defaultList.add(it.next());
-                        }
-                    } catch (SQLException | IOException e) {
-                        _log.warn("getTransferServers", e);
-                    } finally {
-                        if (it != null) {
-                            it.remove();
-                        }
+        final var lock = transferServersCache.getLock(groupName);
+        lock.lock();
+        try {
+            list = transferServersCache.computeIfAbsent(groupName, k -> {
+                DBIterator<TransferServer> it = null;
+                final List<TransferServer> defaultList = new ArrayList<>();
+                try {
+                    it = ecpds.getTransferServers(k, TransferServer.class);
+                    while (it.hasNext()) {
+                        defaultList.add(it.next());
                     }
-                    transferServersCache.put(k, defaultList, CACHE_TIMEOUT);
-                    return defaultList;
-                });
-            } finally {
-                mutex.free();
-            }
+                } catch (SQLException | IOException e) {
+                    _log.warn("getTransferServers", e);
+                } finally {
+                    if (it != null) {
+                        it.remove();
+                    }
+                }
+                transferServersCache.put(k, defaultList, CACHE_TIMEOUT);
+                return defaultList;
+            });
+        } finally {
+            lock.unlock();
         }
         logSqlRequest("getTransferServers", list.size());
         return list.toArray(new TransferServer[list.size()]);
@@ -156,7 +155,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the authorised destinations
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public List<String> getAuthorisedDestinations(final String user) throws DataBaseException {
@@ -181,7 +180,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the authorised hosts
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public List<String> getAuthorisedHosts(final String user) throws DataBaseException {
@@ -214,7 +213,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the statistics
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Statistics[] getStatistics(final Date fromDate, final Date toDate, final String groupName,
@@ -251,7 +250,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the rates
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Rates[] getRates(final Date fromDate, final Date toDate, final String caller, final String sourceHost)
@@ -290,7 +289,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the rates per transfer server
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Rates[] getRatesPerTransferServer(final Date fromDate, final Date toDate, final String caller,
@@ -332,7 +331,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the rates per file system
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Rates[] getRatesPerFileSystem(final Date fromDate, final Date toDate, final String transferServerName,
@@ -367,7 +366,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the transfer servers by data file id
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public TransferServer[] getTransferServersByDataFileId(final long dataFileId) throws DataBaseException {
@@ -414,7 +413,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the destinations and hosts for type
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Map<String, List<Host>> getDestinationsAndHostsForType(final String type, final int paramLimit)
@@ -510,7 +509,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the destination ecuser
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public ECUser[] getDestinationEcuser(final String destinationName) throws DataBaseException {
@@ -541,7 +540,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the destination incoming policies
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public IncomingPolicy[] getDestinationIncomingPolicy(final String destinationName) throws DataBaseException {
@@ -572,7 +571,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the incoming users
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public IncomingUser[] getIncomingUsersForIncomingPolicy(final String policyId) throws DataBaseException {
@@ -603,7 +602,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the incoming policies
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public IncomingPolicy[] getIncomingPoliciesForIncomingUser(final String userId) throws DataBaseException {
@@ -636,30 +635,29 @@ public final class ECpdsBase extends DataBase {
      */
     public Operation[] getOperationsForIncomingUser(final String userId) {
         final List<Operation> list;
-        final var mutex = operationsCache.getMutex(userId);
-        synchronized (mutex.lock()) {
-            try {
-                list = operationsCache.computeIfAbsent(userId, k -> {
-                    DBIterator<IncomingPermission> it = null;
-                    final List<Operation> defaultList = new ArrayList<>();
-                    try {
-                        it = ecpds.getIncomingPermissionsForIncomingUser(k, IncomingPermission.class);
-                        while (it.hasNext()) {
-                            defaultList.add(it.next().getOperation());
-                        }
-                    } catch (SQLException | IOException e) {
-                        _log.warn("getOperationsForIncomingUser", e);
-                    } finally {
-                        if (it != null) {
-                            it.remove();
-                        }
+        final var lock = transferServersCache.getLock(userId);
+        lock.lock();
+        try {
+            list = operationsCache.computeIfAbsent(userId, k -> {
+                DBIterator<IncomingPermission> it = null;
+                final List<Operation> defaultList = new ArrayList<>();
+                try {
+                    it = ecpds.getIncomingPermissionsForIncomingUser(k, IncomingPermission.class);
+                    while (it.hasNext()) {
+                        defaultList.add(it.next().getOperation());
                     }
-                    operationsCache.put(k, defaultList, CACHE_TIMEOUT);
-                    return defaultList;
-                });
-            } finally {
-                mutex.free();
-            }
+                } catch (SQLException | IOException e) {
+                    _log.warn("getOperationsForIncomingUser", e);
+                } finally {
+                    if (it != null) {
+                        it.remove();
+                    }
+                }
+                operationsCache.put(k, defaultList, CACHE_TIMEOUT);
+                return defaultList;
+            });
+        } finally {
+            lock.unlock();
         }
         logSqlRequest("getOperationsForIncomingUser", list.size());
         return list.toArray(new Operation[list.size()]);
@@ -673,7 +671,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the destinations
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Destination[] getDestinationsForIncomingPolicy(final String policyId) throws DataBaseException {
@@ -704,7 +702,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the destinations
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Destination[] getDestinations(final String name) throws DataBaseException {
@@ -741,7 +739,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the destinations
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Destination[] getDestinationArray(final boolean monitored) throws DataBaseException {
@@ -775,30 +773,29 @@ public final class ECpdsBase extends DataBase {
     public Destination[] getDestinationsForIncomingUser(final String userId) {
         final var key = "FIU$" + userId;
         final List<Destination> list;
-        final var mutex = destinationsCache.getMutex(key);
-        synchronized (mutex.lock()) {
-            try {
-                list = destinationsCache.computeIfAbsent(key, k -> {
-                    DBIterator<Destination> it = null;
-                    final List<Destination> defaultList = new ArrayList<>();
-                    try {
-                        it = ecpds.getDestinationsForIncomingUser(userId, Destination.class);
-                        while (it.hasNext()) {
-                            defaultList.add(it.next());
-                        }
-                    } catch (SQLException | IOException e) {
-                        _log.warn("getDestinationsForIncomingUser", e);
-                    } finally {
-                        if (it != null) {
-                            it.remove();
-                        }
+        final var lock = transferServersCache.getLock(key);
+        lock.lock();
+        try {
+            list = destinationsCache.computeIfAbsent(key, k -> {
+                DBIterator<Destination> it = null;
+                final List<Destination> defaultList = new ArrayList<>();
+                try {
+                    it = ecpds.getDestinationsForIncomingUser(userId, Destination.class);
+                    while (it.hasNext()) {
+                        defaultList.add(it.next());
                     }
-                    destinationsCache.put(k, defaultList, CACHE_TIMEOUT);
-                    return defaultList;
-                });
-            } finally {
-                mutex.free();
-            }
+                } catch (SQLException | IOException e) {
+                    _log.warn("getDestinationsForIncomingUser", e);
+                } finally {
+                    if (it != null) {
+                        it.remove();
+                    }
+                }
+                destinationsCache.put(k, defaultList, CACHE_TIMEOUT);
+                return defaultList;
+            });
+        } finally {
+            lock.unlock();
         }
         logSqlRequest("getDestinationsForIncomingUser", list.size());
         return list.toArray(new Destination[list.size()]);
@@ -815,30 +812,29 @@ public final class ECpdsBase extends DataBase {
     public Destination[] getDestinationsByUserPolicies(final String userId) {
         final var key = "BUP$" + userId;
         final List<Destination> list;
-        final var mutex = destinationsCache.getMutex(key);
-        synchronized (mutex.lock()) {
-            try {
-                list = destinationsCache.computeIfAbsent(key, k -> {
-                    DBIterator<Destination> it = null;
-                    final List<Destination> defaultList = new ArrayList<>();
-                    try {
-                        it = ecpds.getDestinationsByUserPolicies(userId, Destination.class);
-                        while (it.hasNext()) {
-                            defaultList.add(it.next());
-                        }
-                    } catch (SQLException | IOException e) {
-                        _log.warn("getDestinationsByUserPolicies", e);
-                    } finally {
-                        if (it != null) {
-                            it.remove();
-                        }
+        final var lock = transferServersCache.getLock(key);
+        lock.lock();
+        try {
+            list = destinationsCache.computeIfAbsent(key, k -> {
+                DBIterator<Destination> it = null;
+                final List<Destination> defaultList = new ArrayList<>();
+                try {
+                    it = ecpds.getDestinationsByUserPolicies(userId, Destination.class);
+                    while (it.hasNext()) {
+                        defaultList.add(it.next());
                     }
-                    destinationsCache.put(k, defaultList, CACHE_TIMEOUT);
-                    return defaultList;
-                });
-            } finally {
-                mutex.free();
-            }
+                } catch (SQLException | IOException e) {
+                    _log.warn("getDestinationsByUserPolicies", e);
+                } finally {
+                    if (it != null) {
+                        it.remove();
+                    }
+                }
+                destinationsCache.put(k, defaultList, CACHE_TIMEOUT);
+                return defaultList;
+            });
+        } finally {
+            lock.unlock();
         }
         logSqlRequest("getDestinationsByUserPolicies", list.size());
         return list.toArray(new Destination[list.size()]);
@@ -854,30 +850,29 @@ public final class ECpdsBase extends DataBase {
      */
     public List<IncomingPermission> getIncomingPermissionsForIncomingUser(final String userId) {
         final List<IncomingPermission> list;
-        final var mutex = incomingPermissionCache.getMutex(userId);
-        synchronized (mutex.lock()) {
-            try {
-                list = incomingPermissionCache.computeIfAbsent(userId, k -> {
-                    DBIterator<IncomingPermission> it = null;
-                    final List<IncomingPermission> defaultList = new ArrayList<>();
-                    try {
-                        it = ecpds.getIncomingPermissionsForIncomingUser(k, IncomingPermission.class);
-                        while (it.hasNext()) {
-                            defaultList.add(it.next());
-                        }
-                    } catch (SQLException | IOException e) {
-                        _log.warn("getIncomingPermissionsForIncomingUser", e);
-                    } finally {
-                        if (it != null) {
-                            it.remove();
-                        }
+        final var lock = transferServersCache.getLock(userId);
+        lock.lock();
+        try {
+            list = incomingPermissionCache.computeIfAbsent(userId, k -> {
+                DBIterator<IncomingPermission> it = null;
+                final List<IncomingPermission> defaultList = new ArrayList<>();
+                try {
+                    it = ecpds.getIncomingPermissionsForIncomingUser(k, IncomingPermission.class);
+                    while (it.hasNext()) {
+                        defaultList.add(it.next());
                     }
-                    incomingPermissionCache.put(k, defaultList, CACHE_TIMEOUT);
-                    return defaultList;
-                });
-            } finally {
-                mutex.free();
-            }
+                } catch (SQLException | IOException e) {
+                    _log.warn("getIncomingPermissionsForIncomingUser", e);
+                } finally {
+                    if (it != null) {
+                        it.remove();
+                    }
+                }
+                incomingPermissionCache.put(k, defaultList, CACHE_TIMEOUT);
+                return defaultList;
+            });
+        } finally {
+            lock.unlock();
         }
         logSqlRequest("getIncomingPermissionsForIncomingUser", list.size());
         return list;
@@ -893,7 +888,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the destination aliases
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Destination[] getDestinationAliases(final String name, final String mode) throws DataBaseException {
@@ -926,7 +921,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the aliases
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Alias[] getAliases(final String name, final String mode) throws DataBaseException {
@@ -1007,7 +1002,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the bad data transfers count
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Map<String, Integer> getBadDataTransfersCount() throws DataBaseException {
@@ -1057,7 +1052,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the data transfers by host name
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Collection<DataTransfer> getDataTransfersByHostName(final DataTransferCache cache, final String hostName,
@@ -1115,7 +1110,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the data transfers by destination and meta data
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Map<Long, DataTransfer> getDataTransfersByDestinationAndMetaData(final Date from, final Date to,
@@ -1256,7 +1251,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the data transfer not done on date
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Collection<DataTransfer> getDataTransferNotDoneOnDate() throws DataBaseException {
@@ -1329,7 +1324,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the data transfers by transfer server name
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Collection<DataTransfer> getDataTransfersByTransferServerName(final DataTransferCache cache,
@@ -1416,11 +1411,11 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the initial data transfer events
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public Iterator<DataTransfer> getInitialDataTransferEventsIterator(final Date from, final Date to)
@@ -1512,7 +1507,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the initial data transfer events
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Collection<DataTransfer> getInitialDataTransferEvents(final Date from, final Date to)
@@ -1595,7 +1590,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the sorted data transfers by status code and date
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Collection<DataTransfer> getSortedDataTransfersByStatusCodeAndDate(final DataTransferCache cache,
@@ -1672,7 +1667,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the sorted destination names and comments
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Set<Map.Entry<String, String>> getDestinationNamesAndComments() throws DataBaseException {
@@ -1799,7 +1794,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the data transfers by data file id
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public List<DataTransfer> getDataTransfersByDataFileId(final DataTransferCache cache, final long dataFileId)
@@ -1819,7 +1814,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the data transfers by data file id
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public List<DataTransfer> getDataTransfersByDataFileId(final DataTransferCache cache, final long dataFileId,
@@ -1922,7 +1917,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the destinations by host name
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Destination[] getDestinationsByHostName(final String hostName) throws DataBaseException {
@@ -1953,7 +1948,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the transfer history
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public TransferHistory[] getTransferHistoryByDataTransferId(final long dataTransferId) throws DataBaseException {
@@ -1993,7 +1988,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the sorted transfer history
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     @SuppressWarnings("null")
@@ -2073,9 +2068,9 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the existing storage directories
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
      */
     public Iterator<ExistingStorageDirectory> getExistingStorageDirectories() throws IOException, SQLException {
@@ -2121,9 +2116,9 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the existing storage directories per proxy host
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
      */
     public Iterator<ExistingStorageDirectory> getExistingStorageDirectoriesPerProxyHost()
@@ -2171,9 +2166,9 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the expired data files iterator
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
      */
     public Iterator<DataFile> getExpiredDataFilesIterator(final int limit) throws IOException, SQLException {
@@ -2241,9 +2236,9 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the data files to filter iterator
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
      */
     public Iterator<DataFile> getDataFilesToFilterIterator(final int limit) throws IOException, SQLException {
@@ -2302,9 +2297,9 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the publications to process iterator
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
      */
     public Iterator<Publication> getPublicationIterator(final int limit) throws IOException, SQLException {
@@ -2354,9 +2349,9 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the data transfers to replicate iterator
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
      */
     public Iterator<DataTransfer> getDataTransfersToReplicateIterator(final int limit)
@@ -2372,9 +2367,9 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the data transfers to backup iterator
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
      */
     public Iterator<DataTransfer> getDataTransfersToBackupIterator(final int limit) throws IOException, SQLException {
@@ -2389,9 +2384,9 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the data transfers to proxy iterator
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
      */
     public Iterator<DataTransfer> getDataTransfersToProxyIterator(final int limit) throws IOException, SQLException {
@@ -2406,9 +2401,9 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the acquisition data transfers to download iterator
      *
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public Iterator<DataTransfer> getAcquisitionDataTransfersToDownloadIterator(final int limit)
@@ -2424,9 +2419,9 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the dissemination data transfers to download iterator
      *
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public Iterator<DataTransfer> getDisseminationDataTransfersToDownloadIterator(final int limit)
@@ -2495,7 +2490,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the categories per user id
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Collection<Category> getCategoriesPerUserId(final String userId) throws DataBaseException {
@@ -2532,12 +2527,12 @@ public final class ECpdsBase extends DataBase {
         // Do we have some data policies associated with this user?
         for (final PolicyUser policyUser : getPolicyUserList(user.getId())) {
             final var policyData = policyUser.getIncomingPolicy().getData();
-            if (policyData != null && policyData.length() > 0) {
+            if (policyData != null && !policyData.isEmpty()) {
                 sb.append(policyData).append("\n");
             }
         }
         final var userData = user.getData();
-        if (userData != null && userData.length() > 0) {
+        if (userData != null && !userData.isEmpty()) {
             sb.append(userData);
         }
         return sb.toString();
@@ -2553,30 +2548,29 @@ public final class ECpdsBase extends DataBase {
      */
     public List<PolicyUser> getPolicyUserList(final String userId) {
         final List<PolicyUser> list;
-        final var mutex = policyUserCache.getMutex(userId);
-        synchronized (mutex.lock()) {
-            try {
-                list = policyUserCache.computeIfAbsent(userId, k -> {
-                    DBIterator<PolicyUser> it = null;
-                    final List<PolicyUser> defaultList = new ArrayList<>();
-                    try {
-                        it = ecpds.getPolicyUserList(k, PolicyUser.class);
-                        while (it.hasNext()) {
-                            defaultList.add(it.next());
-                        }
-                    } catch (SQLException | IOException e) {
-                        _log.warn("getPolicyUserList", e);
-                    } finally {
-                        if (it != null) {
-                            it.remove();
-                        }
+        final var lock = transferServersCache.getLock(userId);
+        lock.lock();
+        try {
+            list = policyUserCache.computeIfAbsent(userId, k -> {
+                DBIterator<PolicyUser> it = null;
+                final List<PolicyUser> defaultList = new ArrayList<>();
+                try {
+                    it = ecpds.getPolicyUserList(k, PolicyUser.class);
+                    while (it.hasNext()) {
+                        defaultList.add(it.next());
                     }
-                    policyUserCache.put(k, defaultList, CACHE_TIMEOUT);
-                    return defaultList;
-                });
-            } finally {
-                mutex.free();
-            }
+                } catch (SQLException | IOException e) {
+                    _log.warn("getPolicyUserList", e);
+                } finally {
+                    if (it != null) {
+                        it.remove();
+                    }
+                }
+                policyUserCache.put(k, defaultList, CACHE_TIMEOUT);
+                return defaultList;
+            });
+        } finally {
+            lock.unlock();
         }
         logSqlRequest("getPolicyUserList", list.size());
         return list;
@@ -2590,7 +2584,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the users per category id
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Collection<WebUser> getUsersPerCategoryId(final String categoryId) throws DataBaseException {
@@ -2621,7 +2615,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the urls per category id
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Collection<Url> getUrlsPerCategoryId(final String id) throws DataBaseException {
@@ -2646,7 +2640,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the categories per resource id
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Collection<Category> getCategoriesPerResourceId(final String id) throws DataBaseException {
@@ -2685,7 +2679,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the data files by meta data
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     @SuppressWarnings("null")
@@ -2755,7 +2749,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the transfer count and meta data by filter
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Collection<List<String>> getTransferCountAndMetaDataByFilter(final String countBy, final String destination,
@@ -2843,7 +2837,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the sorted data transfers by filter
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Collection<DataTransfer> getDataTransfersByFilter(final DataTransferCache cache, final String destination,
@@ -2951,7 +2945,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the data transfers by filter
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Collection<DataTransfer> getDataTransfersByFilter(final DataTransferCache cache, final String destination,
@@ -3038,7 +3032,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the hosts
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     @SuppressWarnings("null")
@@ -3096,7 +3090,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the hosts by destination id
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Collection<Host> getHostsByDestinationId(final String destId) throws DataBaseException {
@@ -3127,7 +3121,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the hosts by transfer method id
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Collection<Host> getHostsByTransferMethodId(final String transferMethodId) throws DataBaseException {
@@ -3182,7 +3176,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the transfer methods by ec trans module name
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Collection<TransferMethod> getTransferMethodsByEcTransModuleName(final String ecTransModuleName)
@@ -3214,7 +3208,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the meta data by data file id
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Collection<MetadataValue> getMetaDataByDataFileId(final long dataFileId) throws DataBaseException {
@@ -3247,7 +3241,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the meta data by attribute name
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Collection<MetadataValue> getMetaDataByAttributeName(final String id) throws DataBaseException {
@@ -3275,7 +3269,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the data transfers by destination
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Iterator<DataTransfer> getDataTransfersByDestination(final String destinationName) throws DataBaseException {
@@ -3297,7 +3291,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the int
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public int resetRequeuedTransfersPerDestination(final Destination destination) throws DataBaseException {
@@ -3317,7 +3311,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the data transfers by transfer server
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Iterator<DataTransfer> getDataTransfersByTransferServer(final TransferServer server)
@@ -3344,7 +3338,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the data transfers by destination and identity
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Collection<DataTransfer> getDataTransfersByDestinationAndIdentity(final DataTransferCache cache,
@@ -3376,7 +3370,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the transfer count with destination and metadata value by metadata name
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Collection<List<String>> getTransferCountWithDestinationAndMetadataValueByMetadataName(
@@ -3416,7 +3410,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the data transfers by destination product and time on date
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Collection<DataTransfer> getDataTransfersByDestinationProductAndTimeOnDate(final DataTransferCache cache,
@@ -3456,7 +3450,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the data transfers by destination on date
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Collection<DataTransfer> getDataTransfersByDestinationOnDate(final DataTransferCache cache,
@@ -3495,7 +3489,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the data transfers by destination on date iterator
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Iterator<DataTransfer> getDataTransfersByDestinationAndTargetOnDateIterator(final String destinationName,
@@ -3529,9 +3523,9 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the data transfers by destination on date iterator
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
      */
     public Iterator<DataTransfer> getDataTransfersByDestinationAndTargetOnDateIterator2(final String destinationName,
@@ -3589,7 +3583,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the data transfers by destination on transmission date
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Collection<DataTransfer> getDataTransfersByDestinationOnTransmissionDate(final DataTransferCache cache,
@@ -3624,7 +3618,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the dates by destination and target on date
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Long[] getDatesByDestinationAndTargetOnDate(final String destinationName, final int order)
@@ -3654,7 +3648,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the data transfers by destination and target iterator
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Iterator<DataTransfer> getDataTransfersByDestinationAndTargetIterator(final String destinationName,
@@ -3685,9 +3679,9 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the data transfers by destination and target iterator
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
      */
     public Iterator<DataTransfer> getDataTransfersByDestinationAndTargetIterator2(final String destinationName,
@@ -3740,7 +3734,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the bad data transfers by destination
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Collection<DataTransfer> getBadDataTransfersByDestination(final DataTransferCache cache,
@@ -3797,7 +3791,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the data transfer count not done by product and time on date
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public int getDataTransferCountNotDoneByProductAndTimeOnDate(final String destination, final String product,
@@ -3826,7 +3820,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the sorted transfer history by destination on product date
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     @SuppressWarnings("null")
@@ -3887,7 +3881,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the sorted transfer history by destination on history date
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     @SuppressWarnings("null")
@@ -3948,7 +3942,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the ecuser events
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Collection<Event> getECuserEvents(final String userName, final Date onIsoDate, final String search,
@@ -4009,7 +4003,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the incoming history list
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Collection<IncomingHistory> getIncomingHistory(final String incomingUserName, final Date onIsoDate,
@@ -4066,7 +4060,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the allowed ec users by host name
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Collection<ECUser> getAllowedEcUsersByHostName(final String hostName) throws DataBaseException {
@@ -4097,7 +4091,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the traffic
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public List<Traffic> getTrafficByDestinationName(final String destinationName) throws DataBaseException {
@@ -4129,7 +4123,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the change log
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public List<ChangeLog> getChangeLogByKey(final String keyName, final String keyValue) throws DataBaseException {
@@ -4167,7 +4161,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the product status
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public ProductStatus[] getProductStatus(final String stream, final String time, final String type, final long step,
@@ -4200,11 +4194,11 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the initial product status events iterator
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public Iterator<ProductStatus> getInitialProductStatusEventsIterator()
@@ -4217,7 +4211,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the initial product status events
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public ProductStatus[] getInitialProductStatusEvents() throws DataBaseException {
@@ -4245,7 +4239,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the interrupted transfers
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public DataTransfer[] getInterruptedTransfers() throws DataBaseException {
@@ -4306,7 +4300,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the int
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public int resetProductStatus(final String metaStream, final String metaTime, final long timeStep)
@@ -4329,7 +4323,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the int
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public int removeDestination(final String destinationName, final boolean remove) throws DataBaseException {
@@ -4349,7 +4343,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the int
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public int removeHost(final Host host) throws DataBaseException {
@@ -4369,7 +4363,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the int
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public int removeWebUser(final WebUser user) throws DataBaseException {
@@ -4389,7 +4383,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the int
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public int removeCategory(final Category category) throws DataBaseException {
@@ -4409,7 +4403,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the int
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public int removeUrl(final Url url) throws DataBaseException {
@@ -4429,7 +4423,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the int
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public int removeIncomingUser(final IncomingUser user) throws DataBaseException {
@@ -4449,7 +4443,7 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the int
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public int removeIncomingPolicy(final IncomingPolicy policy) throws DataBaseException {
