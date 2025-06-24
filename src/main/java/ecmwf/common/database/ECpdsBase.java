@@ -142,6 +142,7 @@ public final class ECpdsBase extends DataBase {
             });
         } finally {
             lock.unlock();
+            transferServersCache.cleanupLock(groupName);
         }
         logSqlRequest("getTransferServers", list.size());
         return list.toArray(new TransferServer[list.size()]);
@@ -635,7 +636,7 @@ public final class ECpdsBase extends DataBase {
      */
     public Operation[] getOperationsForIncomingUser(final String userId) {
         final List<Operation> list;
-        final var lock = transferServersCache.getLock(userId);
+        final var lock = operationsCache.getLock(userId);
         lock.lock();
         try {
             list = operationsCache.computeIfAbsent(userId, k -> {
@@ -658,6 +659,7 @@ public final class ECpdsBase extends DataBase {
             });
         } finally {
             lock.unlock();
+            operationsCache.cleanupLock(userId);
         }
         logSqlRequest("getOperationsForIncomingUser", list.size());
         return list.toArray(new Operation[list.size()]);
@@ -773,7 +775,7 @@ public final class ECpdsBase extends DataBase {
     public Destination[] getDestinationsForIncomingUser(final String userId) {
         final var key = "FIU$" + userId;
         final List<Destination> list;
-        final var lock = transferServersCache.getLock(key);
+        final var lock = destinationsCache.getLock(key);
         lock.lock();
         try {
             list = destinationsCache.computeIfAbsent(key, k -> {
@@ -796,6 +798,7 @@ public final class ECpdsBase extends DataBase {
             });
         } finally {
             lock.unlock();
+            destinationsCache.cleanupLock(key);
         }
         logSqlRequest("getDestinationsForIncomingUser", list.size());
         return list.toArray(new Destination[list.size()]);
@@ -812,7 +815,7 @@ public final class ECpdsBase extends DataBase {
     public Destination[] getDestinationsByUserPolicies(final String userId) {
         final var key = "BUP$" + userId;
         final List<Destination> list;
-        final var lock = transferServersCache.getLock(key);
+        final var lock = destinationsCache.getLock(key);
         lock.lock();
         try {
             list = destinationsCache.computeIfAbsent(key, k -> {
@@ -835,6 +838,7 @@ public final class ECpdsBase extends DataBase {
             });
         } finally {
             lock.unlock();
+            destinationsCache.cleanupLock(key);
         }
         logSqlRequest("getDestinationsByUserPolicies", list.size());
         return list.toArray(new Destination[list.size()]);
@@ -850,7 +854,7 @@ public final class ECpdsBase extends DataBase {
      */
     public List<IncomingPermission> getIncomingPermissionsForIncomingUser(final String userId) {
         final List<IncomingPermission> list;
-        final var lock = transferServersCache.getLock(userId);
+        final var lock = incomingPermissionCache.getLock(userId);
         lock.lock();
         try {
             list = incomingPermissionCache.computeIfAbsent(userId, k -> {
@@ -873,6 +877,7 @@ public final class ECpdsBase extends DataBase {
             });
         } finally {
             lock.unlock();
+            incomingPermissionCache.cleanupLock(userId);
         }
         logSqlRequest("getIncomingPermissionsForIncomingUser", list.size());
         return list;
@@ -2548,7 +2553,7 @@ public final class ECpdsBase extends DataBase {
      */
     public List<PolicyUser> getPolicyUserList(final String userId) {
         final List<PolicyUser> list;
-        final var lock = transferServersCache.getLock(userId);
+        final var lock = policyUserCache.getLock(userId);
         lock.lock();
         try {
             list = policyUserCache.computeIfAbsent(userId, k -> {
@@ -2571,6 +2576,7 @@ public final class ECpdsBase extends DataBase {
             });
         } finally {
             lock.unlock();
+            policyUserCache.cleanupLock(userId);
         }
         logSqlRequest("getPolicyUserList", list.size());
         return list;
