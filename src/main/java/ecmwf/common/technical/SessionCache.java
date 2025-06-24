@@ -55,7 +55,6 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 
 import javax.management.timer.Timer;
@@ -99,8 +98,8 @@ public class SessionCache<K, S> {
     /** The cache. */
     private final Map<K, Queue<CacheElement>> cache = new ConcurrentHashMap<>();
 
-    /** Map of key -> lock. */
-    private final ConcurrentHashMap<K, ReentrantLock> locks = new ConcurrentHashMap<>();
+    /** The mutex. */
+    private final Synchronized mutex = new Synchronized();
 
     /** The maxQueueSize. */
     private final int maxQueueSize;
@@ -254,29 +253,15 @@ public class SessionCache<K, S> {
     }
 
     /**
-     * This method retrieves a ReentrantLock for the specified key.
+     * This method retrieves a mutex for the specified key.
      *
      * @param key
      *            the key
      *
-     * @return the ReentrantLock
+     * @return the mutex
      */
-    public ReentrantLock getLock(final K key) {
-        return locks.computeIfAbsent(key, _ -> new ReentrantLock());
-    }
-
-    /**
-     * This method remove the ReentrantLock for the specified key.
-     *
-     * @param key
-     *            the key
-     */
-    public void cleanupLock(final K key) {
-        final var lock = locks.get(key);
-        if (lock != null && !lock.isLocked()) {
-            // Remove the lock only if no one is holding it
-            locks.remove(key, lock);
-        }
+    public Mutex getMutex(final K key) {
+        return mutex.getMutex(key);
     }
 
     /**
