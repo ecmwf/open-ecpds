@@ -29,8 +29,12 @@ package ecmwf.ecpds.master.plugin.ecpds;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
-import java.io.FilenameFilter;
-import java.util.Arrays;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 
 import javax.management.timer.Timer;
@@ -50,6 +54,9 @@ import ecmwf.ecpds.master.plugin.ecpds.request.ECpdsRequest;
 final class ECpdsParser extends ConfigurableLoopRunnable {
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(ECpdsParser.class);
+
+    /** Pause between directory scanning. */
+    private static final long PAUSE = 5 * Timer.ONE_SECOND;
 
     /** Repository to store the ecpds requests in a queue. */
     private final ParserRepository repository;
@@ -103,6 +110,7 @@ final class ECpdsParser extends ConfigurableLoopRunnable {
         repositoryDir = dir;
         cleanOnSuccess = clean;
         // Start the Thread to parse the target directory on a regular basis
+        setPause(PAUSE);
         execute();
     }
 
@@ -111,8 +119,8 @@ final class ECpdsParser extends ConfigurableLoopRunnable {
      */
     @Override
     public void configurableLoopRun() {
-        // Make sure the ECpdsPlugin is ready to receive a request if this is
-        // the first run!
+        // Make sure the ECpdsPlugin is ready to receive a request if this is the first
+        // run!
         if (initialDelay != -1) {
             try {
                 Thread.sleep(initialDelay);
@@ -122,18 +130,25 @@ final class ECpdsParser extends ConfigurableLoopRunnable {
                 initialDelay = -1;
             }
         }
-        // On each iteration, list the files in the target directory and process
-        // them according to the last 'last modified' time (to be sure we are
-        // only processing the new files)
-        var files = new File(repositoryDir).listFiles((FilenameFilter) (_, name) -> {
-            final var lowerCase = name.toLowerCase();
-            return !(lowerCase.endsWith(".tmp") || lowerCase.endsWith(".temp") || lowerCase.startsWith("."));
-        });
-        if (files == null) {
-            files = new File[] {};
+        final var dirPath = Paths.get(repositoryDir);
+        final var filesToProcess = new ArrayList<File>();
+        // Use DirectoryStream to avoid native memory leaks
+        try (var stream = Files.newDirectoryStream(dirPath, path -> {
+            final var name = path.getFileName().toString().toLowerCase();
+            return !(name.endsWith(".tmp") || name.endsWith(".temp") || name.startsWith("."));
+        })) {
+            for (final Path path : stream) {
+                final var file = path.toFile();
+                if (file.isFile()) {
+                    filesToProcess.add(file);
+                }
+            }
+        } catch (final IOException e) {
+            _log.warn("Failed to list files in directory: {}", repositoryDir, e);
         }
-        Arrays.sort(files, new FileComparator());
-        for (final File file : files) {
+        // Sort files using the same comparator
+        Collections.sort(filesToProcess, new FileComparator());
+        for (final File file : filesToProcess) {
             try {
                 lastRecordedModified = processFile(lastRecordedModified, file);
             } catch (final Throwable t) {
@@ -210,7 +225,7 @@ final class ECpdsParser extends ConfigurableLoopRunnable {
             if (line.indexOf("[TYPE] " + type.toUpperCase()) != -1) {
                 try {
                     if (Class.forName("ecmwf.ecpds.master.plugin.ecpds.request.ECpds" + type)
-                            .getConstructor(String.class).newInstance(line) instanceof ECpdsRequest req) {
+                            .getConstructor(String.class).newInstance(line) instanceof final ECpdsRequest req) {
                         var currentTimestamp = req.getTIMESTAMP() - timeGained;
                         if (lastTimeStamp != null) {
                             final var elapsedTime = currentTimestamp - lastTimeStamp;
