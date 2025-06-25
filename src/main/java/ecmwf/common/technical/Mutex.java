@@ -23,18 +23,19 @@ package ecmwf.common.technical;
  *
  * The Mutex class represents a mutual exclusion lock for a specific key. It has a reference to a Synchronized object,
  * which is used to manage locks on a per-key basis. The lock() method of the Mutex object acquires the lock for the
- * associated key by calling the lock() method of the underlying Synchronized object. The free() method of the Mutex
+ * associated key by calling the lock() method of the underlying Synchronized object. The close() method of the Mutex
  * object releases the lock for the associated key by calling the free() method of the underlying Synchronized object.
  * This class provides a way to synchronize access to a shared resource on a per-key basis, which can help prevent data
  * corruption and other synchronization-related problems. *
  *
- * @author Laurent Gougeon - syi@ecmwf.int, ECMWF.
+ * @author Laurent Gougeon <syi@ecmwf.int>, ECMWF.
  *
  * @version 6.7.7
  *
  * @since 2024-07-01
  */
-public final class Mutex {
+
+public final class Mutex implements AutoCloseable {
     /** The sync. */
     private final Synchronized sync;
 
@@ -49,7 +50,7 @@ public final class Mutex {
      * @param key
      *            the key
      */
-    Mutex(final Synchronized sync, final Object key) {
+    protected Mutex(final Synchronized sync, final Object key) {
         this.sync = sync;
         this.key = key;
     }
@@ -64,11 +65,9 @@ public final class Mutex {
     }
 
     /**
-     * Free.
-     *
-     * @return true, if successful
+     * Close.
      */
-    public boolean free() {
-        return sync.free(key);
+    public void close() {
+        sync.free(key);
     }
 }

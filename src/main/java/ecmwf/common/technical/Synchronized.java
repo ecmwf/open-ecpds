@@ -69,7 +69,7 @@ public final class Synchronized {
     private final Map<String, ObjectElement> elements = new ConcurrentHashMap<>();
 
     /**
-     * Gets the single instance of Synchronized.
+     * Gets the single instance of Synchronized. This can be used when mutex need to be used across multiple classes.
      *
      * @param clazz
      *            the clazz
@@ -113,12 +113,13 @@ public final class Synchronized {
      *
      * @return the object
      */
-    public Object lock(final Object key) {
+    protected Object lock(final Object key) {
         synchronized (elements) {
             final var string = key.toString();
             var element = elements.get(string);
             if (element == null) {
-                elements.put(string, element = new ObjectElement());
+                element = new ObjectElement();
+                elements.put(string, element);
             } else {
                 element.subscribe();
             }
@@ -131,18 +132,15 @@ public final class Synchronized {
      *
      * @param key
      *            the key
-     *
-     * @return true, if successful
      */
-    public boolean free(final Object key) {
+    protected void free(final Object key) {
         synchronized (elements) {
             final var string = key.toString();
             final var element = elements.get(string);
             if (element != null && element.unsubscribe()) {
-                return elements.remove(string) != null;
+                elements.remove(string);
             }
         }
-        return false;
     }
 
     /**

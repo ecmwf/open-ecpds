@@ -160,11 +160,11 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     /** The Constant groupThread. */
     private static final DataFilesByGroupThread groupThread = new DataFilesByGroupThread();
 
-    /** The Constant dataTagMutex. */
-    private static final Synchronized dataTagMutex = Synchronized.getInstance(ECpdsPlugin.class);
+    /** The Constant metadataAttributeMutexProvider. */
+    private static final Synchronized metadataAttributeMutexProvider = new Synchronized();
 
-    /** The Constant productStatusMutex. */
-    private static final Synchronized productStatusMutex = Synchronized.getInstance(ProductStatus.class);
+    /** The Constant productStatusMutexProvider. */
+    private static final Synchronized productStatusMutexProvider = new Synchronized();
 
     /** The metaDataList. */
     private final Map<String, String> metaDataList = new HashMap<>();
@@ -384,7 +384,7 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
      * @param socket
      *            the socket
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public ECpdsPlugin(final String name, final Map<String, String> params, final Socket socket) throws IOException {
@@ -417,9 +417,19 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Get instance of current class.
+     *
+     * @param ref
+     *            the ref
+     * @param params
+     *            the params
+     * @param socket
+     *            the socket
+     *
+     * @return the configurable runnable
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public ConfigurableRunnable newInstance(final String ref, final Map<String, String> params, final Socket socket)
@@ -428,9 +438,9 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the plugin name.
+     *
+     * @return the plugin name
      */
     @Override
     public String getPluginName() {
@@ -438,9 +448,9 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the port.
+     *
+     * @return the port
      */
     @Override
     public int getPort() {
@@ -448,9 +458,9 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the version.
+     *
+     * @return the version
      */
     @Override
     public String getVersion() {
@@ -458,9 +468,9 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the info.
+     *
+     * @return the info
      */
     @Override
     public String getInfo() {
@@ -468,9 +478,9 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the data file id.
+     *
+     * @return the data file id
      */
     @Override
     public long getDataFileId() {
@@ -478,9 +488,9 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the root.
+     *
+     * @return the root
      */
     @Override
     public String getRoot() {
@@ -488,9 +498,9 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the byte sent.
+     *
+     * @return the byte sent
      */
     @Override
     public long getByteSent() {
@@ -498,9 +508,12 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Update.
+     *
+     * @param root
+     *            the root
+     * @param byteSent
+     *            the byte sent
      */
     @Override
     public void update(final String root, final long byteSent) {
@@ -509,9 +522,12 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Parses the command.
+     *
+     * @param command
+     *            the command
+     *
+     * @return the string
      */
     @Override
     public String parseCommand(final String command) {
@@ -687,7 +703,7 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
      * @param parameters
      *            the parameters
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      * @throws ParameterException
      *             the parameter exception
@@ -1427,9 +1443,12 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Release connection.
+     *
+     * @param socket
+     *            the socket
+     * @param close
+     *            the close
      */
     @Override
     public void releaseConnection(final Socket socket, final boolean close) {
@@ -1520,7 +1539,7 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     /**
      * Reset req.
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public void resetReq() throws IOException {
@@ -1556,100 +1575,100 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
             stopAndError("Missing metadata value(s) (stream, time and/or step)");
             return;
         }
-        final var mutex = productStatusMutex
-                .getMutex(domain + metaStream + metaTime + timeStep + (metaType != null ? metaType : ""));
-        synchronized (mutex.lock()) {
-            try {
-                final var products = DATABASE.getProductStatus(domain + metaStream, metaTime, metaType, timeStep, 1);
-                final var length = products.length;
-                if (length == 0 && at == -1) {
-                    final var notFoundMessage = "Product status not found (-at option required)";
-                    if (Cnf.at("ECpdsPlugin", "ignoreMissingScheduleTime", true)) {
-                        send("MESSAGE " + notFoundMessage);
-                    } else {
-                        stopAndError(notFoundMessage);
-                    }
-                    _log.warn(notFoundMessage);
-                    return;
-                }
-                if (length > 1) {
-                    _log.warn("Multiple entries for same product: {}", products[0]);
-                }
-                if (StatusFactory.INIT.equals(status) && length > 0) {
-                    final var product = products[0];
-                    if (product.getScheduleTime().getTime() == at) {
-                        final var alreadyExpectedMessage = "Product status already expected (notification ignored)";
-                        _log.warn("{}: {}", alreadyExpectedMessage, product);
-                        send("MESSAGE " + alreadyExpectedMessage);
+        try (final var mutex = productStatusMutexProvider
+                .getMutex(domain + metaStream + metaTime + timeStep + (metaType != null ? metaType : ""))) {
+            synchronized (mutex.lock()) {
+                try {
+                    final var products = DATABASE.getProductStatus(domain + metaStream, metaTime, metaType, timeStep,
+                            1);
+                    final var length = products.length;
+                    if (length == 0 && at == -1) {
+                        final var notFoundMessage = "Product status not found (-at option required)";
+                        if (Cnf.at("ECpdsPlugin", "ignoreMissingScheduleTime", true)) {
+                            send("MESSAGE " + notFoundMessage);
+                        } else {
+                            stopAndError(notFoundMessage);
+                        }
+                        _log.warn(notFoundMessage);
                         return;
                     }
-                    if (_log.isDebugEnabled()) {
-                        _log.debug("Product status updated ({}!={})",
-                                Format.formatTime(product.getScheduleTime().getTime()), Format.formatTime(at));
+                    if (length > 1) {
+                        _log.warn("Multiple entries for same product: {}", products[0]);
                     }
-                }
-                /* Addition for repeated products */
-                if (StatusFactory.EXEC.equals(status) && length > 0) {
-                    final var product = products[0];
-                    if (!StatusFactory.INIT.equals(product.getStatusCode())) {
-                        final var notExpectedMessage = "Product status not expected (notification ignored)";
-                        _log.warn("{}: {}", notExpectedMessage, product);
-                        send("MESSAGE " + notExpectedMessage);
-                        return;
-                    }
-                }
-                if (StatusFactory.DONE.equals(status) && length > 0) {
-                    final var product = products[0];
-                    if (StatusFactory.DONE.equals(product.getStatusCode())) {
-                        final var alreadyCompletedMessage = "Product status already completed (notification ignored)";
-                        _log.warn("{}: {}", alreadyCompletedMessage, product);
-                        send("MESSAGE " + alreadyCompletedMessage);
-                        return;
-                    }
-                }
-                /* End of addition */
-                final var product = new ProductStatus();
-                product.setStream(domain + metaStream);
-                product.setStep(timeStep);
-                product.setTime(metaTime);
-                product.setBuffer(currentBuffer);
-                product.setStatusCode(status);
-                product.setTimeBase(new Timestamp(getProductDate()));
-                product.setUserStatus(userName);
-                product.setComment(from);
-                product.setType(metaType);
-                var currentUpdate = System.currentTimeMillis();
-                // Fix just in case of inconsistencies in the Timeline (e.g. bad
-                // timing in logs).
-                if (length > 0) {
-                    final var lastUpdate = products[0].getLastUpdate().getTime();
-                    if (lastUpdate >= currentUpdate) {
-                        currentUpdate = lastUpdate + 1;
-                        if (_log.isWarnEnabled()) {
-                            _log.warn("Last update resynchronized to {}", Format.formatTime(currentUpdate));
+                    if (StatusFactory.INIT.equals(status) && length > 0) {
+                        final var product = products[0];
+                        if (product.getScheduleTime().getTime() == at) {
+                            final var alreadyExpectedMessage = "Product status already expected (notification ignored)";
+                            _log.warn("{}: {}", alreadyExpectedMessage, product);
+                            send("MESSAGE " + alreadyExpectedMessage);
+                            return;
+                        }
+                        if (_log.isDebugEnabled()) {
+                            _log.debug("Product status updated ({}!={})",
+                                    Format.formatTime(product.getScheduleTime().getTime()), Format.formatTime(at));
                         }
                     }
+                    /* Addition for repeated products */
+                    if (StatusFactory.EXEC.equals(status) && length > 0) {
+                        final var product = products[0];
+                        if (!StatusFactory.INIT.equals(product.getStatusCode())) {
+                            final var notExpectedMessage = "Product status not expected (notification ignored)";
+                            _log.warn("{}: {}", notExpectedMessage, product);
+                            send("MESSAGE " + notExpectedMessage);
+                            return;
+                        }
+                    }
+                    if (StatusFactory.DONE.equals(status) && length > 0) {
+                        final var product = products[0];
+                        if (StatusFactory.DONE.equals(product.getStatusCode())) {
+                            final var alreadyCompletedMessage = "Product status already completed (notification ignored)";
+                            _log.warn("{}: {}", alreadyCompletedMessage, product);
+                            send("MESSAGE " + alreadyCompletedMessage);
+                            return;
+                        }
+                    }
+                    /* End of addition */
+                    final var product = new ProductStatus();
+                    product.setStream(domain + metaStream);
+                    product.setStep(timeStep);
+                    product.setTime(metaTime);
+                    product.setBuffer(currentBuffer);
+                    product.setStatusCode(status);
+                    product.setTimeBase(new Timestamp(getProductDate()));
+                    product.setUserStatus(userName);
+                    product.setComment(from);
+                    product.setType(metaType);
+                    var currentUpdate = System.currentTimeMillis();
+                    // Fix just in case of inconsistencies in the Timeline (e.g. bad
+                    // timing in logs).
+                    if (length > 0) {
+                        final var lastUpdate = products[0].getLastUpdate().getTime();
+                        if (lastUpdate >= currentUpdate) {
+                            currentUpdate = lastUpdate + 1;
+                            if (_log.isWarnEnabled()) {
+                                _log.warn("Last update resynchronized to {}", Format.formatTime(currentUpdate));
+                            }
+                        }
+                    }
+                    product.setLastUpdate(new Timestamp(currentUpdate));
+                    product.setScheduleTime(at == -1 ? products[0].getScheduleTime() : new Timestamp(at));
+                    DATABASE.insert(product, true);
+                    if (_splunk.isInfoEnabled()) {
+                        // For the accounting!
+                        _splunk.info("PRS;{};{};{};{};{};{};{}", "StatusCode=" + product.getStatusCode(),
+                                "DataStream=" + product.getStream(), "TimeStep=" + product.getStep(),
+                                "TimeBase=" + product.getTimeBase(), "Type=" + product.getType(),
+                                "ScheduleTime=" + product.getScheduleTime(), "LastUpdate=" + product.getLastUpdate());
+                    }
+                    MASTER.handle(new ProductStatusEvent(product));
+                    _log.debug("Notification received: {}", product);
+                    send("MESSAGE Product status " + (length > 0 ? "updated to " : "created as ")
+                            + StatusFactory.getProductStatusName(status) + " (ProductId=" + product.getId() + ")");
+                } catch (final Throwable t) {
+                    _log.error("Process aborted", t);
+                    final var error = t.getMessage();
+                    error(error == null ? "aborted by server" : error);
                 }
-                product.setLastUpdate(new Timestamp(currentUpdate));
-                product.setScheduleTime(at == -1 ? products[0].getScheduleTime() : new Timestamp(at));
-                DATABASE.insert(product, true);
-                if (_splunk.isInfoEnabled()) {
-                    // For the accounting!
-                    _splunk.info("PRS;{};{};{};{};{};{};{}", "StatusCode=" + product.getStatusCode(),
-                            "DataStream=" + product.getStream(), "TimeStep=" + product.getStep(),
-                            "TimeBase=" + product.getTimeBase(), "Type=" + product.getType(),
-                            "ScheduleTime=" + product.getScheduleTime(), "LastUpdate=" + product.getLastUpdate());
-                }
-                MASTER.handle(new ProductStatusEvent(product));
-                _log.debug("Notification received: {}", product);
-                send("MESSAGE Product status " + (length > 0 ? "updated to " : "created as ")
-                        + StatusFactory.getProductStatusName(status) + " (ProductId=" + product.getId() + ")");
-            } catch (final Throwable t) {
-                _log.error("Process aborted", t);
-                final var error = t.getMessage();
-                error(error == null ? "aborted by server" : error);
-            } finally {
-                mutex.free();
             }
         }
     }
@@ -2599,7 +2618,7 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     /**
      * Destinationstart req.
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public void destinationstartReq() throws IOException {
@@ -2620,7 +2639,7 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     /**
      * Destinationstop req.
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public void destinationstopReq() throws IOException {
@@ -2641,7 +2660,7 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     /**
      * Schedulerstart req.
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public void schedulerstartReq() throws IOException {
@@ -2662,7 +2681,7 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     /**
      * Schedulerstop req.
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public void schedulerstopReq() throws IOException {
@@ -2683,7 +2702,7 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     /**
      * Schedulercheck req.
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public void schedulercheckReq() throws IOException {
@@ -2718,9 +2737,9 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
      *
      * @throws ParameterException
      *             the parameter exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public void waitforgroupReq(final String[] parameters) throws ParameterException, IOException, DataBaseException {
@@ -2876,14 +2895,11 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
         final var values = DATABASE.getMetaDataByDataFileId(dataFile.getId()).toArray(new MetadataValue[0]);
         for (final String name : metaDataList.keySet()) {
             final var attribute = new MetadataAttribute(name);
-            final var mutex = dataTagMutex.getMutex(name);
-            synchronized (mutex.lock()) {
-                try {
+            try (final var mutex = metadataAttributeMutexProvider.getMutex(name)) {
+                synchronized (mutex.lock()) {
                     if (DATABASE.getMetadataAttributeObject(name) == null) {
                         DATABASE.insert(attribute, false);
                     }
-                } finally {
-                    mutex.free();
                 }
             }
             // Check if the metadata exists (insert || update)

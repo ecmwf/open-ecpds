@@ -119,29 +119,27 @@ public final class ECpdsBase extends DataBase {
      */
     public TransferServer[] getTransferServers(final String groupName) {
         final List<TransferServer> list;
-        final var lock = transferServersCache.getMutex(groupName);
-        lock.lock();
-        try {
-            list = transferServersCache.computeIfAbsent(groupName, k -> {
-                DBIterator<TransferServer> it = null;
-                final List<TransferServer> defaultList = new ArrayList<>();
-                try {
-                    it = ecpds.getTransferServers(k, TransferServer.class);
-                    while (it.hasNext()) {
-                        defaultList.add(it.next());
+        try (final var mutex = transferServersCache.getMutex(groupName)) {
+            synchronized (mutex.lock()) {
+                list = transferServersCache.computeIfAbsent(groupName, k -> {
+                    DBIterator<TransferServer> it = null;
+                    final List<TransferServer> defaultList = new ArrayList<>();
+                    try {
+                        it = ecpds.getTransferServers(k, TransferServer.class);
+                        while (it.hasNext()) {
+                            defaultList.add(it.next());
+                        }
+                    } catch (SQLException | IOException e) {
+                        _log.warn("getTransferServers", e);
+                    } finally {
+                        if (it != null) {
+                            it.remove();
+                        }
                     }
-                } catch (SQLException | IOException e) {
-                    _log.warn("getTransferServers", e);
-                } finally {
-                    if (it != null) {
-                        it.remove();
-                    }
-                }
-                transferServersCache.put(k, defaultList, CACHE_TIMEOUT);
-                return defaultList;
-            });
-        } finally {
-            lock.free();
+                    transferServersCache.put(k, defaultList, CACHE_TIMEOUT);
+                    return defaultList;
+                });
+            }
         }
         logSqlRequest("getTransferServers", list.size());
         return list.toArray(new TransferServer[list.size()]);
@@ -635,29 +633,27 @@ public final class ECpdsBase extends DataBase {
      */
     public Operation[] getOperationsForIncomingUser(final String userId) {
         final List<Operation> list;
-        final var lock = operationsCache.getMutex(userId);
-        lock.lock();
-        try {
-            list = operationsCache.computeIfAbsent(userId, k -> {
-                DBIterator<IncomingPermission> it = null;
-                final List<Operation> defaultList = new ArrayList<>();
-                try {
-                    it = ecpds.getIncomingPermissionsForIncomingUser(k, IncomingPermission.class);
-                    while (it.hasNext()) {
-                        defaultList.add(it.next().getOperation());
+        try (final var mutex = operationsCache.getMutex(userId)) {
+            synchronized (mutex.lock()) {
+                list = operationsCache.computeIfAbsent(userId, k -> {
+                    DBIterator<IncomingPermission> it = null;
+                    final List<Operation> defaultList = new ArrayList<>();
+                    try {
+                        it = ecpds.getIncomingPermissionsForIncomingUser(k, IncomingPermission.class);
+                        while (it.hasNext()) {
+                            defaultList.add(it.next().getOperation());
+                        }
+                    } catch (SQLException | IOException e) {
+                        _log.warn("getOperationsForIncomingUser", e);
+                    } finally {
+                        if (it != null) {
+                            it.remove();
+                        }
                     }
-                } catch (SQLException | IOException e) {
-                    _log.warn("getOperationsForIncomingUser", e);
-                } finally {
-                    if (it != null) {
-                        it.remove();
-                    }
-                }
-                operationsCache.put(k, defaultList, CACHE_TIMEOUT);
-                return defaultList;
-            });
-        } finally {
-            lock.free();
+                    operationsCache.put(k, defaultList, CACHE_TIMEOUT);
+                    return defaultList;
+                });
+            }
         }
         logSqlRequest("getOperationsForIncomingUser", list.size());
         return list.toArray(new Operation[list.size()]);
@@ -773,29 +769,27 @@ public final class ECpdsBase extends DataBase {
     public Destination[] getDestinationsForIncomingUser(final String userId) {
         final var key = "FIU$" + userId;
         final List<Destination> list;
-        final var lock = destinationsCache.getMutex(key);
-        lock.lock();
-        try {
-            list = destinationsCache.computeIfAbsent(key, k -> {
-                DBIterator<Destination> it = null;
-                final List<Destination> defaultList = new ArrayList<>();
-                try {
-                    it = ecpds.getDestinationsForIncomingUser(userId, Destination.class);
-                    while (it.hasNext()) {
-                        defaultList.add(it.next());
+        try (final var mutex = destinationsCache.getMutex(key)) {
+            synchronized (mutex.lock()) {
+                list = destinationsCache.computeIfAbsent(key, k -> {
+                    DBIterator<Destination> it = null;
+                    final List<Destination> defaultList = new ArrayList<>();
+                    try {
+                        it = ecpds.getDestinationsForIncomingUser(userId, Destination.class);
+                        while (it.hasNext()) {
+                            defaultList.add(it.next());
+                        }
+                    } catch (SQLException | IOException e) {
+                        _log.warn("getDestinationsForIncomingUser", e);
+                    } finally {
+                        if (it != null) {
+                            it.remove();
+                        }
                     }
-                } catch (SQLException | IOException e) {
-                    _log.warn("getDestinationsForIncomingUser", e);
-                } finally {
-                    if (it != null) {
-                        it.remove();
-                    }
-                }
-                destinationsCache.put(k, defaultList, CACHE_TIMEOUT);
-                return defaultList;
-            });
-        } finally {
-            lock.free();
+                    destinationsCache.put(k, defaultList, CACHE_TIMEOUT);
+                    return defaultList;
+                });
+            }
         }
         logSqlRequest("getDestinationsForIncomingUser", list.size());
         return list.toArray(new Destination[list.size()]);
@@ -812,29 +806,27 @@ public final class ECpdsBase extends DataBase {
     public Destination[] getDestinationsByUserPolicies(final String userId) {
         final var key = "BUP$" + userId;
         final List<Destination> list;
-        final var lock = destinationsCache.getMutex(key);
-        lock.lock();
-        try {
-            list = destinationsCache.computeIfAbsent(key, k -> {
-                DBIterator<Destination> it = null;
-                final List<Destination> defaultList = new ArrayList<>();
-                try {
-                    it = ecpds.getDestinationsByUserPolicies(userId, Destination.class);
-                    while (it.hasNext()) {
-                        defaultList.add(it.next());
+        try (final var mutex = destinationsCache.getMutex(key)) {
+            synchronized (mutex.lock()) {
+                list = destinationsCache.computeIfAbsent(key, k -> {
+                    DBIterator<Destination> it = null;
+                    final List<Destination> defaultList = new ArrayList<>();
+                    try {
+                        it = ecpds.getDestinationsByUserPolicies(userId, Destination.class);
+                        while (it.hasNext()) {
+                            defaultList.add(it.next());
+                        }
+                    } catch (SQLException | IOException e) {
+                        _log.warn("getDestinationsByUserPolicies", e);
+                    } finally {
+                        if (it != null) {
+                            it.remove();
+                        }
                     }
-                } catch (SQLException | IOException e) {
-                    _log.warn("getDestinationsByUserPolicies", e);
-                } finally {
-                    if (it != null) {
-                        it.remove();
-                    }
-                }
-                destinationsCache.put(k, defaultList, CACHE_TIMEOUT);
-                return defaultList;
-            });
-        } finally {
-            lock.free();
+                    destinationsCache.put(k, defaultList, CACHE_TIMEOUT);
+                    return defaultList;
+                });
+            }
         }
         logSqlRequest("getDestinationsByUserPolicies", list.size());
         return list.toArray(new Destination[list.size()]);
@@ -850,29 +842,27 @@ public final class ECpdsBase extends DataBase {
      */
     public List<IncomingPermission> getIncomingPermissionsForIncomingUser(final String userId) {
         final List<IncomingPermission> list;
-        final var lock = incomingPermissionCache.getMutex(userId);
-        lock.lock();
-        try {
-            list = incomingPermissionCache.computeIfAbsent(userId, k -> {
-                DBIterator<IncomingPermission> it = null;
-                final List<IncomingPermission> defaultList = new ArrayList<>();
-                try {
-                    it = ecpds.getIncomingPermissionsForIncomingUser(k, IncomingPermission.class);
-                    while (it.hasNext()) {
-                        defaultList.add(it.next());
+        try (final var mutex = incomingPermissionCache.getMutex(userId)) {
+            synchronized (mutex.lock()) {
+                list = incomingPermissionCache.computeIfAbsent(userId, k -> {
+                    DBIterator<IncomingPermission> it = null;
+                    final List<IncomingPermission> defaultList = new ArrayList<>();
+                    try {
+                        it = ecpds.getIncomingPermissionsForIncomingUser(k, IncomingPermission.class);
+                        while (it.hasNext()) {
+                            defaultList.add(it.next());
+                        }
+                    } catch (SQLException | IOException e) {
+                        _log.warn("getIncomingPermissionsForIncomingUser", e);
+                    } finally {
+                        if (it != null) {
+                            it.remove();
+                        }
                     }
-                } catch (SQLException | IOException e) {
-                    _log.warn("getIncomingPermissionsForIncomingUser", e);
-                } finally {
-                    if (it != null) {
-                        it.remove();
-                    }
-                }
-                incomingPermissionCache.put(k, defaultList, CACHE_TIMEOUT);
-                return defaultList;
-            });
-        } finally {
-            lock.free();
+                    incomingPermissionCache.put(k, defaultList, CACHE_TIMEOUT);
+                    return defaultList;
+                });
+            }
         }
         logSqlRequest("getIncomingPermissionsForIncomingUser", list.size());
         return list;
@@ -2548,29 +2538,27 @@ public final class ECpdsBase extends DataBase {
      */
     public List<PolicyUser> getPolicyUserList(final String userId) {
         final List<PolicyUser> list;
-        final var lock = policyUserCache.getMutex(userId);
-        lock.lock();
-        try {
-            list = policyUserCache.computeIfAbsent(userId, k -> {
-                DBIterator<PolicyUser> it = null;
-                final List<PolicyUser> defaultList = new ArrayList<>();
-                try {
-                    it = ecpds.getPolicyUserList(k, PolicyUser.class);
-                    while (it.hasNext()) {
-                        defaultList.add(it.next());
+        try (final var mutex = policyUserCache.getMutex(userId)) {
+            synchronized (mutex.lock()) {
+                list = policyUserCache.computeIfAbsent(userId, k -> {
+                    DBIterator<PolicyUser> it = null;
+                    final List<PolicyUser> defaultList = new ArrayList<>();
+                    try {
+                        it = ecpds.getPolicyUserList(k, PolicyUser.class);
+                        while (it.hasNext()) {
+                            defaultList.add(it.next());
+                        }
+                    } catch (SQLException | IOException e) {
+                        _log.warn("getPolicyUserList", e);
+                    } finally {
+                        if (it != null) {
+                            it.remove();
+                        }
                     }
-                } catch (SQLException | IOException e) {
-                    _log.warn("getPolicyUserList", e);
-                } finally {
-                    if (it != null) {
-                        it.remove();
-                    }
-                }
-                policyUserCache.put(k, defaultList, CACHE_TIMEOUT);
-                return defaultList;
-            });
-        } finally {
-            lock.free();
+                    policyUserCache.put(k, defaultList, CACHE_TIMEOUT);
+                    return defaultList;
+                });
+            }
         }
         logSqlRequest("getPolicyUserList", list.size());
         return list;

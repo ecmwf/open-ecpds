@@ -206,8 +206,8 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     /** The moverRepository. */
     private final transient MoverRepository moverRepository;
 
-    /** The dataTransferMutex. */
-    private final transient Synchronized dataTransferMutex = new Synchronized();
+    /** The dataTransferMutexProvider. */
+    private final transient Synchronized dataTransferMutexProvider = new Synchronized();
 
     /** The fileCheckerMonitor. */
     private final transient FileCheckerMonitor fileCheckerMonitor;
@@ -4604,9 +4604,8 @@ public final class MoverServer extends StarterServer implements MoverInterface {
          */
         public boolean delDataTransfer(final boolean force, final long id) {
             var result = true;
-            final var mutex = dataTransferMutex.getMutex(id);
-            synchronized (mutex.lock()) {
-                try {
+            try (final var mutex = dataTransferMutexProvider.getMutex(id)) {
+                synchronized (mutex.lock()) {
                     final DataTransfer transfer;
                     if ((transfer = getDataTransfer(id)) != null) {
                         final var statusCode = transfer.getStatusCode();
@@ -4620,8 +4619,6 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                             result = false;
                         }
                     }
-                } finally {
-                    mutex.free();
                 }
             }
             return result;

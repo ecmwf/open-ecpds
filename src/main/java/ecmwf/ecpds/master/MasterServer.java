@@ -328,17 +328,17 @@ public final class MasterServer extends ECaccessProvider
     /** The data transfer check. */
     private final transient DataTransferCheck theDataTransferCheck;
 
-    /** The host mutex. */
-    private final transient Synchronized hostMutex = new Synchronized();
+    /** The host mutex provider. */
+    private final transient Synchronized hostMutexProvider = new Synchronized();
 
-    /** The host stats mutex. */
-    private final transient Synchronized hostStatsMutex = new Synchronized();
+    /** The host stats mutex provider. */
+    private final transient Synchronized hostStatsMutexProvider = new Synchronized();
 
-    /** The host location mutex. */
-    private final transient Synchronized hostLocationMutex = new Synchronized();
+    /** The host location mutex provider. */
+    private final transient Synchronized hostLocationMutexProvider = new Synchronized();
 
-    /** The host output mutex. */
-    private final transient Synchronized hostOutputMutex = new Synchronized();
+    /** The host output mutex provider. */
+    private final transient Synchronized hostOutputMutexProvider = new Synchronized();
 
     /** The current transfers. */
     private final transient Map<String, ProgressInterface> currentTransfers = new ConcurrentHashMap<>();
@@ -1819,14 +1819,13 @@ public final class MasterServer extends ECaccessProvider
      */
     public void resetHostStats(final Host host) throws DataBaseException {
         final var hostId = host.getName();
-        final var mutex = hostStatsMutex.getMutex(hostId);
-        synchronized (mutex.lock()) {
-            try {
-                getDataBase().update(new HostStats(host.getHostStatsId()));
-            } catch (final Throwable e) {
-                _log.warn("Resetting HostStats for Host-{}", hostId, e);
-            } finally {
-                mutex.free();
+        try (final var mutex = hostStatsMutexProvider.getMutex(hostId)) {
+            synchronized (mutex.lock()) {
+                try {
+                    getDataBase().update(new HostStats(host.getHostStatsId()));
+                } catch (final Throwable e) {
+                    _log.warn("Resetting HostStats for Host-{}", hostId, e);
+                }
             }
         }
     }
@@ -3490,21 +3489,20 @@ public final class MasterServer extends ECaccessProvider
     public void interruptAquisitionFor(final Host host) throws DataBaseException {
         if (HostOption.ACQUISITION.equals(host.getType())) {
             final var hostName = host.getName();
-            final var mutex = hostMutex.getMutex(hostName);
-            synchronized (mutex.lock()) {
-                try {
-                    // If there is an acquisition thread running for this Host then let's kill it!
-                    if (theAcquisitionScheduler != null && theAcquisitionScheduler.interruptAcquisitionFor(host)) {
-                        _log.debug("Acquisition Thread interrupted for Host-{}", host.getName());
+            try (final var mutex = hostMutexProvider.getMutex(hostName)) {
+                synchronized (mutex.lock()) {
+                    try {
+                        // If there is an acquisition thread running for this Host then let's kill it!
+                        if (theAcquisitionScheduler != null && theAcquisitionScheduler.interruptAcquisitionFor(host)) {
+                            _log.debug("Acquisition Thread interrupted for Host-{}", host.getName());
+                        }
+                        // Reset the host output so that the thread will be restarted as soon as
+                        // possible!
+                        _log.debug("Reset Host output for Host-{}", host.getName());
+                        getDataBase().update(new HostOutput(host.getHostOutputId()));
+                    } catch (final Throwable t) {
+                        _log.warn("Interrupting Acquisition Host-{}", hostName, t);
                     }
-                    // Reset the host output so that the thread will be restarted as soon as
-                    // possible!
-                    _log.debug("Reset Host output for Host-{}", host.getName());
-                    getDataBase().update(new HostOutput(host.getHostOutputId()));
-                } catch (final Throwable t) {
-                    _log.warn("Interrupting Acquisition Host-{}", hostName, t);
-                } finally {
-                    mutex.free();
                 }
             }
         }
@@ -3523,28 +3521,27 @@ public final class MasterServer extends ECaccessProvider
      */
     Host updateHost(final Host host) throws DataBaseException {
         final var hostName = host.getName();
-        final var mutex = hostMutex.getMutex(hostName);
-        synchronized (mutex.lock()) {
-            try {
-                // Update the data time-stamp for the updateData method!
-                final var setup = HOST_ECTRANS.getECtransSetup(host.getData());
-                setup.set(HOST_ECTRANS_LASTUPDATE, System.currentTimeMillis());
-                host.setData(setup.getData());
-                // Deal with the Acquisition
-                interruptAquisitionFor(host);
-                _log.debug("Data update requested for Host-{} (monitoring)", hostName);
-                getDataBase().update(host);
-                if (theTransferScheduler != null) {
-                    // The configuration might have been changed by the user, so
-                    // the update must be propagated to the transfer scheduler!
-                    theTransferScheduler.updateHost(host);
+        try (final var mutex = hostMutexProvider.getMutex(hostName)) {
+            synchronized (mutex.lock()) {
+                try {
+                    // Update the data time-stamp for the updateData method!
+                    final var setup = HOST_ECTRANS.getECtransSetup(host.getData());
+                    setup.set(HOST_ECTRANS_LASTUPDATE, System.currentTimeMillis());
+                    host.setData(setup.getData());
+                    // Deal with the Acquisition
+                    interruptAquisitionFor(host);
+                    _log.debug("Data update requested for Host-{} (monitoring)", hostName);
+                    getDataBase().update(host);
+                    if (theTransferScheduler != null) {
+                        // The configuration might have been changed by the user, so
+                        // the update must be propagated to the transfer scheduler!
+                        theTransferScheduler.updateHost(host);
+                    }
+                    // The location might have changed?
+                    updateLocation(host);
+                } catch (final Throwable t) {
+                    _log.warn("Updating Host-{}", hostName, t);
                 }
-                // The location might have changed?
-                updateLocation(host);
-            } catch (final Throwable t) {
-                _log.warn("Updating Host-{}", hostName, t);
-            } finally {
-                mutex.free();
             }
         }
         return host;
@@ -3574,19 +3571,18 @@ public final class MasterServer extends ECaccessProvider
             final boolean valid, final Timestamp checkTime) throws DataBaseException {
         final var hostStats = host.getHostStats();
         final var hostStatsId = hostStats.getId();
-        final var mutex = hostStatsMutex.getMutex(hostStatsId);
-        synchronized (mutex.lock()) {
-            try {
-                hostStats.setConnections(hostStats.getConnections() + connections);
-                hostStats.setSent(hostStats.getSent() + sent);
-                hostStats.setDuration(hostStats.getDuration() + duration);
-                hostStats.setValid(valid);
-                hostStats.setCheckTime(checkTime);
-                getDataBase().update(hostStats);
-            } catch (final Throwable e) {
-                _log.warn("Updating HostStats-" + hostStatsId, e);
-            } finally {
-                mutex.free();
+        try (final var mutex = hostStatsMutexProvider.getMutex(hostStatsId)) {
+            synchronized (mutex.lock()) {
+                try {
+                    hostStats.setConnections(hostStats.getConnections() + connections);
+                    hostStats.setSent(hostStats.getSent() + sent);
+                    hostStats.setDuration(hostStats.getDuration() + duration);
+                    hostStats.setValid(valid);
+                    hostStats.setCheckTime(checkTime);
+                    getDataBase().update(hostStats);
+                } catch (final Throwable e) {
+                    _log.warn("Updating HostStats-" + hostStatsId, e);
+                }
             }
         }
     }
@@ -3601,17 +3597,16 @@ public final class MasterServer extends ECaccessProvider
      */
     private void _updateHostOutput(final Host host, final String output) {
         final var hostId = host.getName();
-        final var mutex = hostOutputMutex.getMutex(hostId);
-        synchronized (mutex.lock()) {
-            try {
-                final var hostOutput = new HostOutput(host.getHostOutputId());
-                hostOutput.setOutput(output);
-                hostOutput.setAcquisitionTime(new Timestamp(System.currentTimeMillis()));
-                getDataBase().update(hostOutput);
-            } catch (final Throwable t) {
-                _log.warn("Updating output for Host-" + hostId, t);
-            } finally {
-                mutex.free();
+        try (final var mutex = hostOutputMutexProvider.getMutex(hostId)) {
+            synchronized (mutex.lock()) {
+                try {
+                    final var hostOutput = new HostOutput(host.getHostOutputId());
+                    hostOutput.setOutput(output);
+                    hostOutput.setAcquisitionTime(new Timestamp(System.currentTimeMillis()));
+                    getDataBase().update(hostOutput);
+                } catch (final Throwable t) {
+                    _log.warn("Updating output for Host-" + hostId, t);
+                }
             }
         }
     }
@@ -3642,26 +3637,25 @@ public final class MasterServer extends ECaccessProvider
     @Override
     public void updateData(final String hostId, final String data) throws DataBaseException {
         final var base = getDataBase();
-        final var mutex = hostMutex.getMutex(hostId);
-        synchronized (mutex.lock()) {
-            try {
-                final var initialHost = base.getHost(hostId);
-                final var initialData = initialHost.getData();
-                // Check if the Host was updated since the host object was initially retrieved
-                // from the database!
-                if (Objects.equals(HOST_ECTRANS.getECtransSetup(initialData).getLong(HOST_ECTRANS_LASTUPDATE),
-                        HOST_ECTRANS.getECtransSetup(data).getLong(HOST_ECTRANS_LASTUPDATE))) {
-                    // The timestamp is the same so we can safely update the data!
-                    initialHost.setData(data);
-                    _log.debug("Data update requested for Host-" + hostId);
-                    base.update(initialHost);
-                } else {
-                    _log.debug("Out of sync for data update request on Host-" + hostId);
+        try (final var mutex = hostMutexProvider.getMutex(hostId)) {
+            synchronized (mutex.lock()) {
+                try {
+                    final var initialHost = base.getHost(hostId);
+                    final var initialData = initialHost.getData();
+                    // Check if the Host was updated since the host object was initially retrieved
+                    // from the database!
+                    if (Objects.equals(HOST_ECTRANS.getECtransSetup(initialData).getLong(HOST_ECTRANS_LASTUPDATE),
+                            HOST_ECTRANS.getECtransSetup(data).getLong(HOST_ECTRANS_LASTUPDATE))) {
+                        // The timestamp is the same so we can safely update the data!
+                        initialHost.setData(data);
+                        _log.debug("Data update requested for Host-" + hostId);
+                        base.update(initialHost);
+                    } else {
+                        _log.debug("Out of sync for data update request on Host-" + hostId);
+                    }
+                } catch (final Throwable t) {
+                    _log.warn("Updating data for Host-" + hostId, t);
                 }
-            } catch (final Throwable t) {
-                _log.warn("Updating data for Host-" + hostId, t);
-            } finally {
-                mutex.free();
             }
         }
     }
@@ -3679,52 +3673,51 @@ public final class MasterServer extends ECaccessProvider
     public void updateLocation(final Host host) {
         final var hostLocation = host.getHostLocation();
         final var hostId = host.getName();
-        final var mutex = hostLocationMutex.getMutex(hostId);
-        synchronized (mutex.lock()) {
-            try {
-                // Is it configured for automatic location discovery?
-                if (host.getAutomaticLocation()) {
-                    // Update geolocation. If the IP is not defined then use the hostName to find
-                    // the IP.
-                    final var dnsName = host.getHost();
-                    var hostIp = hostLocation.getIp();
-                    try {
-                        final var latestHostIp = InetAddress.getByName(dnsName).getHostAddress();
-                        if (isEmpty(hostIp) || !hostIp.equals(latestHostIp)) {
-                            hostIp = latestHostIp;
-                            // No IP address defined, or IP updated!
-                            hostLocation.setIp(hostIp);
-                            // Local host is obviously not in the database!
-                            if (!"127.0.0.1".equals(hostIp) && !"::1".equals(hostIp)) {
-                                final var start = System.currentTimeMillis();
-                                final var location = GeoIP2Helper.getCityResponse(hostIp).getLocation();
-                                if (location == null) {
-                                    _log.warn("Could not get geolocation for Host-{}: {}", hostId, hostIp);
-                                } else {
-                                    final var latitude = location.getLatitude();
-                                    final var longitude = location.getLongitude();
-                                    if (_log.isDebugEnabled()) {
-                                        _log.debug(
-                                                "New location found for Host-{} ({}): latitude={}, longitude={} ({})",
-                                                hostId, hostIp, latitude, longitude,
-                                                Format.formatDuration(System.currentTimeMillis() - start));
+        try (final var mutex = hostLocationMutexProvider.getMutex(hostId)) {
+            synchronized (mutex.lock()) {
+                try {
+                    // Is it configured for automatic location discovery?
+                    if (host.getAutomaticLocation()) {
+                        // Update geolocation. If the IP is not defined then use the hostName to find
+                        // the IP.
+                        final var dnsName = host.getHost();
+                        var hostIp = hostLocation.getIp();
+                        try {
+                            final var latestHostIp = InetAddress.getByName(dnsName).getHostAddress();
+                            if (isEmpty(hostIp) || !hostIp.equals(latestHostIp)) {
+                                hostIp = latestHostIp;
+                                // No IP address defined, or IP updated!
+                                hostLocation.setIp(hostIp);
+                                // Local host is obviously not in the database!
+                                if (!"127.0.0.1".equals(hostIp) && !"::1".equals(hostIp)) {
+                                    final var start = System.currentTimeMillis();
+                                    final var location = GeoIP2Helper.getCityResponse(hostIp).getLocation();
+                                    if (location == null) {
+                                        _log.warn("Could not get geolocation for Host-{}: {}", hostId, hostIp);
+                                    } else {
+                                        final var latitude = location.getLatitude();
+                                        final var longitude = location.getLongitude();
+                                        if (_log.isDebugEnabled()) {
+                                            _log.debug(
+                                                    "New location found for Host-{} ({}): latitude={}, longitude={} ({})",
+                                                    hostId, hostIp, latitude, longitude,
+                                                    Format.formatDuration(System.currentTimeMillis() - start));
+                                        }
+                                        hostLocation.setLatitude(latitude);
+                                        hostLocation.setLongitude(longitude);
+                                        getDataBase().update(hostLocation);
                                     }
-                                    hostLocation.setLatitude(latitude);
-                                    hostLocation.setLongitude(longitude);
-                                    getDataBase().update(hostLocation);
                                 }
                             }
+                        } catch (final AddressNotFoundException e) {
+                            _log.warn("Could not get geolocation for Host-{}: {}", hostId, e.getMessage());
+                        } catch (final Throwable t) {
+                            _log.warn("Could not get geolocation for Host-{}: {}", hostId, hostIp, t);
                         }
-                    } catch (final AddressNotFoundException e) {
-                        _log.warn("Could not get geolocation for Host-{}: {}", hostId, e.getMessage());
-                    } catch (final Throwable t) {
-                        _log.warn("Could not get geolocation for Host-{}: {}", hostId, hostIp, t);
                     }
+                } catch (final Throwable t) {
+                    _log.warn("Updating location for Host-{}", hostId, t);
                 }
-            } catch (final Throwable t) {
-                _log.warn("Updating location for Host-{}", hostId, t);
-            } finally {
-                mutex.free();
             }
         }
     }

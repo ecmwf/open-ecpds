@@ -68,8 +68,8 @@ public class MonitoringEventHandler implements EventHandler {
     /** The Constant PRODUCT_STATUS_EVENT_MAX_AGE. */
     private static final int PRODUCT_STATUS_EVENT_MAX_AGE = Cnf.at("MonitorPlugin", "productStatusEventMaxAge", 7);
 
-    /** The Constant monitoringEventMutex. */
-    private static final Synchronized monitoringEventMutex = Synchronized.getInstance(MonitoringEventHandler.class);
+    /** The Constant mutexProvider. */
+    private static final Synchronized mutexProvider = new Synchronized();
 
     /**
      * Instantiates a new monitoring event handler.
@@ -91,13 +91,10 @@ public class MonitoringEventHandler implements EventHandler {
                 final var dt = dte.getDataTransfer();
                 final var df = dt.getDataFile();
                 if (df.getMonitoringValue() != null && dt.getMonitoringValue() != null) {
-                    final var mutex = monitoringEventMutex.getMutex("DT" + dt.getId());
-                    synchronized (mutex.lock()) {
-                        try {
+                    try (final var mutex = mutexProvider.getMutex("DT" + dt.getId())) {
+                        synchronized (mutex.lock()) {
                             updateStatus(dt, dt.getDestinationName(), df.getMetaStream(), df.getMetaTime(),
                                     df.getTimeBase(), df.getTimeStep(), df.getMetaType());
-                        } finally {
-                            mutex.free();
                         }
                     }
                 } else {
@@ -105,12 +102,9 @@ public class MonitoringEventHandler implements EventHandler {
                 }
             } else if (ev instanceof final ProductStatusEvent productStatusEvent) {
                 final var ps = productStatusEvent.getProductStatus();
-                final var mutex = monitoringEventMutex.getMutex("PS" + ps.getStream() + ps.getTime());
-                synchronized (mutex.lock()) {
-                    try {
+                try (final var mutex = mutexProvider.getMutex("PS" + ps.getStream() + ps.getTime())) {
+                    synchronized (mutex.lock()) {
                         updateProductStatus(ps);
-                    } finally {
-                        mutex.free();
                     }
                 }
             } else if (ev instanceof final ResetDestinationProductEvent rpe) {
@@ -118,12 +112,9 @@ public class MonitoringEventHandler implements EventHandler {
                     log.info("Received ResetDestinationProductEvent with dest '" + rpe.getDestinationName()
                             + "' product '" + rpe.getMetaStream() + "' time '" + rpe.getMetaTime() + "'");
                 }
-                final var mutex = monitoringEventMutex.getMutex("PS" + rpe.getMetaStream() + rpe.getMetaTime());
-                synchronized (mutex.lock()) {
-                    try {
+                try (final var mutex = mutexProvider.getMutex("PS" + rpe.getMetaStream() + rpe.getMetaTime())) {
+                    synchronized (mutex.lock()) {
                         resetDestinationProduct(rpe.getDestinationName(), rpe.getMetaStream(), rpe.getMetaTime());
-                    } finally {
-                        mutex.free();
                     }
                 }
             } else if (ev instanceof final ResetProductEvent rpe) {
@@ -131,12 +122,9 @@ public class MonitoringEventHandler implements EventHandler {
                     log.info("Received ResetProductEvent with product '" + rpe.getMetaStream() + "' time '"
                             + rpe.getMetaTime() + "'");
                 }
-                final var mutex = monitoringEventMutex.getMutex("PS" + rpe.getMetaStream() + rpe.getMetaTime());
-                synchronized (mutex.lock()) {
-                    try {
+                try (final var mutex = mutexProvider.getMutex("PS" + rpe.getMetaStream() + rpe.getMetaTime())) {
+                    synchronized (mutex.lock()) {
                         resetProduct(rpe.getMetaStream(), rpe.getMetaTime());
-                    } finally {
-                        mutex.free();
                     }
                 }
             } else if (ev instanceof final ChangeHostEvent che) {
@@ -144,12 +132,9 @@ public class MonitoringEventHandler implements EventHandler {
                 if (log.isInfoEnabled()) {
                     log.info("Received ChangeHostEvent for Destination '" + d.getName() + "'");
                 }
-                final var mutex = monitoringEventMutex.getMutex("CH" + d.getName());
-                synchronized (mutex.lock()) {
-                    try {
+                try (final var mutex = mutexProvider.getMutex("CH" + d.getName())) {
+                    synchronized (mutex.lock()) {
                         setHostChange(che);
-                    } finally {
-                        mutex.free();
                     }
                 }
             } else {

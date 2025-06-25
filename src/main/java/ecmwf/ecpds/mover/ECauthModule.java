@@ -80,7 +80,6 @@ import com.jcraft.jsch.JSchException;
 
 import ecmwf.common.database.Host;
 import ecmwf.common.ecaccess.ConnectionException;
-import ecmwf.common.ecaccess.EccmdException;
 import ecmwf.common.ecaccess.StarterServer;
 import ecmwf.common.ecauth.InteractiveSession;
 import ecmwf.common.ecauth.SSHSession;
@@ -236,9 +235,15 @@ public final class ECauthModule extends ProxyModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the port.
+     *
+     * @param setup
+     *            the setup
+     *
+     * @return the port
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int getPort(final ECtransSetup setup) throws IOException {
@@ -249,13 +254,25 @@ public final class ECauthModule extends ProxyModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Connect.
+     *
+     * @param location
+     *            the location
+     * @param setup
+     *            the setup
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     * @throws ConnectionException
+     *             the connection exception
+     * @throws EccmdException
+     *             the eccmd exception
+     * @throws JSchException
+     *             the j sch exception
      */
     @Override
     public void connect(final String location, final ECtransSetup setup)
-            throws IOException, ConnectionException, EccmdException, JSchException {
+            throws IOException, ConnectionException, JSchException {
         currentSetup = setup;
         setStatus("CONNECT");
         final var msuser = getMSUser();
@@ -478,9 +495,17 @@ public final class ECauthModule extends ProxyModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the.
+     *
+     * @param name
+     *            the name
+     * @param posn
+     *            the posn
+     * @param socket
+     *            the socket
+     *
+     * @throws Exception
+     *             the exception
      */
     @Override
     public void get(final String name, final long posn, final ProxySocket socket) throws Exception {
@@ -498,9 +523,19 @@ public final class ECauthModule extends ProxyModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Put.
+     *
+     * @param name
+     *            the name
+     * @param posn
+     *            the posn
+     * @param size
+     *            the size
+     * @param socket
+     *            the socket
+     *
+     * @throws Exception
+     *             the exception
      */
     @Override
     public void put(final String name, final long posn, final long size, final ProxySocket socket) throws Exception {
@@ -513,9 +548,19 @@ public final class ECauthModule extends ProxyModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Copy.
+     *
+     * @param source
+     *            the source
+     * @param target
+     *            the target
+     * @param posn
+     *            the posn
+     * @param size
+     *            the size
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void copy(final String source, final String target, final long posn, final long size) throws IOException {
@@ -711,9 +756,13 @@ public final class ECauthModule extends ProxyModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Del.
+     *
+     * @param name
+     *            the name
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void del(final String name) throws IOException {
@@ -722,9 +771,13 @@ public final class ECauthModule extends ProxyModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Mkdir.
+     *
+     * @param dir
+     *            the dir
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void mkdir(final String dir) throws IOException {
@@ -733,9 +786,13 @@ public final class ECauthModule extends ProxyModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Rmdir.
+     *
+     * @param dir
+     *            the dir
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void rmdir(final String dir) throws IOException {
@@ -744,9 +801,15 @@ public final class ECauthModule extends ProxyModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Size.
+     *
+     * @param name
+     *            the name
+     *
+     * @return the long
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public long size(final String name) throws IOException {
@@ -755,9 +818,15 @@ public final class ECauthModule extends ProxyModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Move.
+     *
+     * @param source
+     *            the source
+     * @param target
+     *            the target
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void move(final String source, final String target) throws IOException {
@@ -766,9 +835,17 @@ public final class ECauthModule extends ProxyModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * List as string array.
+     *
+     * @param directory
+     *            the directory
+     * @param pattern
+     *            the pattern
+     *
+     * @return the string[]
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public String[] listAsStringArray(final String directory, final String pattern) throws IOException {
@@ -795,7 +872,7 @@ public final class ECauthModule extends ProxyModule {
      * @param command
      *            the command
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public void exec(final String command) throws IOException {
@@ -821,9 +898,13 @@ public final class ECauthModule extends ProxyModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Removes the.
+     *
+     * @param closedOnError
+     *            the closed on error
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void remove(final boolean closedOnError) throws IOException {
@@ -880,9 +961,9 @@ public final class ECauthModule extends ProxyModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the status.
+     *
+     * @return the status
      */
     @Override
     public String getStatus() {
@@ -1003,7 +1084,7 @@ public final class ECauthModule extends ProxyModule {
         private final Map<String, HostEntry> hosts = new ConcurrentHashMap<>();
 
         /** To synchronize the loading of the file. */
-        private final Synchronized loadingMutex = new Synchronized();
+        private final Synchronized loadingMutexProvider = new Synchronized();
 
         /**
          * Builds the key.
@@ -1217,9 +1298,8 @@ public final class ECauthModule extends ProxyModule {
                 // We have to synchronize on the key otherwise we might have 2
                 // concurrent transfers trying to retrieve the list at the same
                 // time!
-                final var mutex = loadingMutex.getMutex(key);
-                synchronized (mutex.lock()) {
-                    try {
+                try (final var mutex = loadingMutexProvider.getMutex(key)) {
+                    synchronized (mutex.lock()) {
                         // Do we have it in the cache?
                         hostEntry = hosts.get(key);
                         if (hostEntry != null) {
@@ -1237,26 +1317,24 @@ public final class ECauthModule extends ProxyModule {
                             _log.debug("Getting Host list from: {}", key);
                             hosts.put(key, hostEntry = new HostEntry(host, fileName, lifeTime, frequency));
                         }
-                    } finally {
-                        mutex.free();
                     }
-                    // Let's go through the list of nodes
-                    for (final NodeEntry entry : hostEntry.getNodeEntries()) {
-                        final var timestamp = entry.timestamp;
-                        if (timestamp == 0) {
-                            // The node is active!
+                }
+                // Let's go through the list of nodes
+                for (final NodeEntry entry : hostEntry.getNodeEntries()) {
+                    final var timestamp = entry.timestamp;
+                    if (timestamp == 0) {
+                        // The node is active!
+                        nodeList.append(nodeList.isEmpty() ? "" : ", ").append(entry.nodeName);
+                        result.addAll(getNodeList(entry.nodeName));
+                    } else if (timestamp > 0) {
+                        // We are using a unix timestamp in the
+                        // configuration file
+                        final var current = System.currentTimeMillis() / 1000L;
+                        // Check if we are not in the session!
+                        if (current < timestamp && current > timestamp + entry.duration) {
+                            // The node is active;
                             nodeList.append(nodeList.isEmpty() ? "" : ", ").append(entry.nodeName);
                             result.addAll(getNodeList(entry.nodeName));
-                        } else if (timestamp > 0) {
-                            // We are using a unix timestamp in the
-                            // configuration file
-                            final var current = System.currentTimeMillis() / 1000L;
-                            // Check if we are not in the session!
-                            if (current < timestamp && current > timestamp + entry.duration) {
-                                // The node is active;
-                                nodeList.append(nodeList.isEmpty() ? "" : ", ").append(entry.nodeName);
-                                result.addAll(getNodeList(entry.nodeName));
-                            }
                         }
                     }
                 }
@@ -1437,7 +1515,7 @@ public final class ECauthModule extends ProxyModule {
      */
     private static List<String> getNodeList(final String nodeName) {
         // The node name might be in the form
-        // "aa6-[001-2,0003-4,012]test[151-152].my.domain,bb8-[104-149,151-159].fr"
+        // "aa6-[001-2,0003-4,012]test[151-152].ecmwf.int,bb8-[104-149,151-159].fr"
         // So we have to see if we need to expand?
         final List<String> result = new ArrayList<>();
         for (final String node : expand(nodeName).split(",")) {
@@ -1525,8 +1603,8 @@ public final class ECauthModule extends ProxyModule {
     }
 
     /**
-     * Expands aa6-[001-2,0003-4,012]test[151-152].my.domain,bb8-[104-149,151-159].fr into
-     * aa6-[001;002;0003;0004;012;]test[151;152;].my.domain,bb8 (...)
+     * Expands aa6-[001-2,0003-4,012]test[151-152].ecmwf.int,bb8-[104-149,151-159].fr into
+     * aa6-[001;002;0003;0004;012;]test[151;152;].ecmwf.int,bb8 (...)
      *
      * @param nodeList
      *            the node list

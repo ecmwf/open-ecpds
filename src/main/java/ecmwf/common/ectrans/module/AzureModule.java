@@ -37,8 +37,8 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_AZURE_MULTIPART_SIZE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_AZURE_NUM_BUFFERS;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_AZURE_OVERWRITE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_AZURE_PORT;
-import static ecmwf.common.ectrans.ECtransOptions.HOST_AZURE_SAS_URL;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_AZURE_SAS_SUBSCRIPTION_KEY;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_AZURE_SAS_URL;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_AZURE_SCHEME;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_AZURE_URL;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_AZURE_USE_MD5;
@@ -133,9 +133,9 @@ public final class AzureModule extends TransferModule {
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the status.
+     *
+     * @return the status
      */
     @Override
     public String getStatus() {
@@ -143,9 +143,12 @@ public final class AzureModule extends TransferModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the port.
+     *
+     * @param setup
+     *            the setup
+     *
+     * @return the port
      */
     @Override
     public int getPort(final ECtransSetup setup) {
@@ -153,9 +156,17 @@ public final class AzureModule extends TransferModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Connect.
+     *
+     * @param location
+     *            the location
+     * @param setup
+     *            the setup
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     * @throws URISyntaxException
+     *             the URI syntax exception
      */
     @Override
     public void connect(final String location, final ECtransSetup setup) throws IOException, URISyntaxException {
@@ -239,9 +250,13 @@ public final class AzureModule extends TransferModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Del.
+     *
+     * @param name
+     *            the name
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void del(final String name) throws IOException {
@@ -327,9 +342,21 @@ public final class AzureModule extends TransferModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Put.
+     *
+     * @param in
+     *            the in
+     * @param name
+     *            the name
+     * @param posn
+     *            the posn
+     * @param size
+     *            the size
+     *
+     * @return true, if successful
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public boolean put(final InputStream in, final String name, final long posn, final long size) throws IOException {
@@ -400,9 +427,19 @@ public final class AzureModule extends TransferModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Put.
+     *
+     * @param name
+     *            the name
+     * @param posn
+     *            the posn
+     * @param size
+     *            the size
+     *
+     * @return the output stream
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public OutputStream put(final String name, final long posn, final long size) throws IOException {
@@ -459,9 +496,17 @@ public final class AzureModule extends TransferModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the.
+     *
+     * @param name
+     *            the name
+     * @param posn
+     *            the posn
+     *
+     * @return the input stream
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public InputStream get(final String name, final long posn) throws IOException {
@@ -492,12 +537,20 @@ public final class AzureModule extends TransferModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Check.
+     *
+     * @param sent
+     *            the sent
+     * @param checksum
+     *            the checksum
+     * @param error
+     *            the error
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
-    public void check(final long sent, final String checksum) throws IOException {
+    public void check(final long sent, final String checksum, final boolean error) throws IOException {
         _log.debug("Check file ({},{})", sent, checksum);
         setStatus("CHECK");
         if (remoteName == null) {
@@ -512,29 +565,31 @@ public final class AzureModule extends TransferModule {
             }
             _log.debug("Upload task completed");
         }
-        if (!getSetup().getBoolean(HOST_AZURE_IGNORE_CHECK)) {
-            final var properties = getProperties(remoteName);
-            final var size = properties.getBlobSize();
-            if (sent != size) {
-                throw new IOException("Remote file size is " + Format.formatPercentage(size, sent)
-                        + " of original file size (sent=" + sent + "/size=" + size + ")");
-            }
-            final var md5 = properties.getContentMd5();
-            if (md5 != null) {
-                final var md5Hex = getValue(md5);
-                if (isNotEmpty(checksum) && !md5Hex.equals(checksum)) {
-                    throw new IOException("Remote file md5 is " + md5Hex + ", original file md5 is " + checksum);
-                } else if (md5Checksum != null && !md5Hex.equals(md5Checksum.getValue())) {
-                    throw new IOException(
-                            "Remote file md5 is " + md5Hex + ", original file md5 is " + md5Checksum.getValue());
-                } else {
-                    _log.debug("Remote file md5: {}{}", md5Hex, md5Checksum != null ? " (checked)" : "");
+        if (!error) {
+            if (!getSetup().getBoolean(HOST_AZURE_IGNORE_CHECK)) {
+                final var properties = getProperties(remoteName);
+                final var size = properties.getBlobSize();
+                if (sent != size) {
+                    throw new IOException("Remote file size is " + Format.formatPercentage(size, sent)
+                            + " of original file size (sent=" + sent + "/size=" + size + ")");
                 }
-            } else {
-                _log.debug("No remote md5 available");
+                final var md5 = properties.getContentMd5();
+                if (md5 != null) {
+                    final var md5Hex = getValue(md5);
+                    if (isNotEmpty(checksum) && !md5Hex.equals(checksum)) {
+                        throw new IOException("Remote file md5 is " + md5Hex + ", original file md5 is " + checksum);
+                    } else if (md5Checksum != null && !md5Hex.equals(md5Checksum.getValue())) {
+                        throw new IOException(
+                                "Remote file md5 is " + md5Hex + ", original file md5 is " + md5Checksum.getValue());
+                    } else {
+                        _log.debug("Remote file md5: {}{}", md5Hex, md5Checksum != null ? " (checked)" : "");
+                    }
+                } else {
+                    _log.debug("No remote md5 available");
+                }
             }
+            setAttribute("remote.fileName", remoteName);
         }
-        setAttribute("remote.fileName", remoteName);
     }
 
     /**
@@ -570,9 +625,15 @@ public final class AzureModule extends TransferModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Size.
+     *
+     * @param name
+     *            the name
+     *
+     * @return the long
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public long size(final String name) throws IOException {
@@ -604,9 +665,13 @@ public final class AzureModule extends TransferModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Mkdir.
+     *
+     * @param directory
+     *            the directory
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void mkdir(final String directory) throws IOException {
@@ -634,9 +699,13 @@ public final class AzureModule extends TransferModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Rmdir.
+     *
+     * @param directory
+     *            the directory
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void rmdir(final String directory) throws IOException {
@@ -731,9 +800,17 @@ public final class AzureModule extends TransferModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * List as string array.
+     *
+     * @param directory
+     *            the directory
+     * @param pattern
+     *            the pattern
+     *
+     * @return the string[]
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public String[] listAsStringArray(final String directory, final String pattern) throws IOException {
@@ -745,9 +822,17 @@ public final class AzureModule extends TransferModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * List as byte array.
+     *
+     * @param directory
+     *            the directory
+     * @param pattern
+     *            the pattern
+     *
+     * @return the byte[]
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public byte[] listAsByteArray(final String directory, final String pattern) throws IOException {
@@ -863,9 +948,10 @@ public final class AzureModule extends TransferModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Close.
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void close() throws IOException {
@@ -937,7 +1023,7 @@ public final class AzureModule extends TransferModule {
     private static String getSasToken(final String sasUrl, final String sasSubscriptionKey) throws IOException {
         final var message = new StringBuilder();
         try (final var client = HttpClient.newHttpClient()) {
-            final HttpRequest request = HttpRequest.newBuilder().uri(URI.create(sasUrl))
+            final var request = HttpRequest.newBuilder().uri(URI.create(sasUrl))
                     .header("Ocp-Apim-Subscription-Key", sasSubscriptionKey).GET().build();
             final HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() == 200) {
@@ -961,8 +1047,8 @@ public final class AzureModule extends TransferModule {
         /** The Constant instances. */
         private static final Map<String, BlobServiceClientCache> instances = new ConcurrentHashMap<>();
 
-        /** The Constant sync. */
-        private static final Synchronized sync = new Synchronized();
+        /** The Constant mutexProvider. */
+        private static final Synchronized mutexProvider = new Synchronized();
 
         /** The count number. */
         private final AtomicInteger countNumber = new AtomicInteger();
@@ -1001,9 +1087,8 @@ public final class AzureModule extends TransferModule {
                 final boolean mkContainer) throws IOException {
             final var key = new StringBuilder(sasUrl).append(sasSubscriptionKey).append(accountName).append(accountKey)
                     .append(url).append(containerName).append(mkContainer).toString();
-            final var mutex = sync.getMutex(key);
-            synchronized (mutex.lock()) {
-                try {
+            try (final var mutex = mutexProvider.getMutex(key)) {
+                synchronized (mutex.lock()) {
                     var cacheIten = instances.get(key);
                     if (cacheIten == null) {
                         final var builder = new BlobServiceClientBuilder()
@@ -1029,8 +1114,6 @@ public final class AzureModule extends TransferModule {
                     }
                     cacheIten.lock();
                     return cacheIten;
-                } finally {
-                    mutex.free();
                 }
             }
         }
@@ -1092,17 +1175,14 @@ public final class AzureModule extends TransferModule {
          */
         void shutdown() {
             var close = false;
-            final var mutex = sync.getMutex(uniqueKey);
-            synchronized (mutex.lock()) {
-                final var count = countNumber.addAndGet(-1);
-                try {
+            try (final var mutex = mutexProvider.getMutex(uniqueKey)) {
+                synchronized (mutex.lock()) {
+                    final var count = countNumber.addAndGet(-1);
                     if (close = count <= 0) {
                         instances.remove(uniqueKey);
                     }
-                } finally {
-                    mutex.free();
+                    _log.debug("Free {}:{}", uniqueKey, count);
                 }
-                _log.debug("Free {}:{}", uniqueKey, count);
             }
             if (close) {
                 _log.debug("Shutdown {}", uniqueKey);
