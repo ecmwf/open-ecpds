@@ -330,7 +330,7 @@ public final class ECtransPut extends ECtransAction {
                     // We had an error, let's check if we can also get some information from the
                     // transfer module?
                     try {
-                        module.check(contentSize, checksum);
+                        module.check(contentSize, checksum, true);
                     } catch (final IOException e) {
                         _log.warn("check", e);
                         final var eMessage = e.getMessage();
@@ -348,7 +348,7 @@ public final class ECtransPut extends ECtransAction {
                 // We had no error on this side, let's check if it also looked good from the
                 // transfer module point of view?
                 try {
-                    module.check(contentSize, checksum);
+                    module.check(contentSize, checksum, false);
                 } catch (final IOException e) {
                     _log.warn("check", e);
                     throw e;
@@ -388,8 +388,9 @@ public final class ECtransPut extends ECtransAction {
                     if (setup.getInteger(HOST_ECTRANS_PUT_HANDLER_EXIT_CODE) != result) {
                         throw new IOException("Transfer aborted (exitCode: " + result + ")");
                     }
-                    module.check(contentSize, checksum); // Check and rename if needed (e.g. when a temporary filename
-                                                         // is used)
+                    module.check(contentSize, checksum, false); // Check and rename if needed (e.g. when a temporary
+                                                                // filename
+                    // is used)
                     history.setComment(target + " (" + manager.getSimplifiedRate() + ")");
                     // Let's set the nature of the operation for the transfer history!
                     module.setAttribute("remote.operation", "exec");

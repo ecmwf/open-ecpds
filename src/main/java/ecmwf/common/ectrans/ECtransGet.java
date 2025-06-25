@@ -247,7 +247,7 @@ public final class ECtransGet extends ECtransAction {
                 _log.warn(infoOrWarnMessage);
             }
             try {
-                module.check(size == -1 ? sentSize : size, null);
+                module.check(size == -1 ? sentSize : size, null, hasMessage);
             } catch (final IOException e) {
                 _log.warn("check", e);
                 if (hasMessage) {
@@ -285,7 +285,7 @@ public final class ECtransGet extends ECtransAction {
             if (setup.getInteger(HOST_ECTRANS_GET_HANDLER_EXIT_CODE) != result) {
                 throw new IOException("Transfer aborted (exitCode: " + result + ")");
             }
-            module.check(size == -1 ? target.length() : size, null);
+            module.check(size == -1 ? target.length() : size, null, false);
             history.setComment(source + " (" + manager.getSimplifiedRate() + ")");
         }
         if (removeOriginal) {

@@ -229,7 +229,7 @@ public abstract class ProxyModule extends TransferModule implements ECpdsProxy {
      * Check.
      */
     @Override
-    public void check(final long sent, final String checksum) throws IOException {
+    public void check(final long sent, final String checksum, final boolean error) throws IOException {
         if (_thread != null) {
             _log.debug("Waiting for ECtransGet/ECtransPut Thread to complete");
             try {

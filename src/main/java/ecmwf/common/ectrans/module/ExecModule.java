@@ -141,7 +141,11 @@ public final class ExecModule extends TransferModule {
      * Check.
      */
     @Override
-    public void check(final long sent, final String checksum) throws IOException {
+    public void check(final long sent, final String checksum, final boolean error) throws IOException {
+        if (error) {
+            // Nothing special to do if the transfer was not successful!
+            return;
+        }
         // The _temp and _file variables are not null if the put()
         // method has been called before.
         if (_temp != null && _file != null) {

@@ -819,11 +819,15 @@ public class JSftpModule extends TransferModule {
      * Check.
      */
     @Override
-    public void check(final long sent, final String checksum) throws IOException {
+    public void check(final long sent, final String checksum, final boolean error) throws IOException {
         _log.debug("Check file");
         setStatus("CHECK");
         if (putName == null && getName == null) {
             throw new IOException("A check should only occur after a put/get");
+        }
+        if (error) {
+            // Nothing more to check
+            return;
         }
         var remoteName = putName != null ? temporaryName : getName;
         final long size;
@@ -911,7 +915,7 @@ public class JSftpModule extends TransferModule {
         // send a commit?
         if (allocateManager != null) {
             // The format of the parameter is the following:
-            // sftp3.commit="url=http://localhost:5555/commit;req=200"
+            // sftp3.commit="url=http://web-lan-053.ecmwf.int:5555/commit;req=200"
             final var commit = getSetup().getOptions(HOST_SFTP_COMMIT);
             final var url = commit.get("url", null);
             final var req = commit.get("req", 200);

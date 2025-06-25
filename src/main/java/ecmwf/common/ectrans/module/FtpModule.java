@@ -622,9 +622,19 @@ public final class FtpModule extends TransferModule {
      * {@inheritDoc}
      *
      * Check.
+     *
+     * @param sent
+     *            the sent
+     * @param checksum
+     *            the checksum
+     * @param error
+     *            the error
+     *
+     * @throws java.io.IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
-    public void check(final long sent, final String checksum) throws IOException {
+    public void check(final long sent, final String checksum, final boolean error) throws IOException {
         _log.debug("Check file");
         setStatus("CHECK");
         if (keepControlConnectionAlive) {
@@ -638,7 +648,7 @@ public final class FtpModule extends TransferModule {
                 final var code = ftp.checkPendingReply();
                 _log.debug("Reply code: {}", code);
             } catch (final SocketTimeoutException e) {
-                if (!retryAfterTimeoutOnCheck) {
+                if (error || !retryAfterTimeoutOnCheck) {
                     throw e;
                 }
                 _log.debug("Retry to login after timeout", e);
@@ -647,6 +657,10 @@ public final class FtpModule extends TransferModule {
                     ftpCd(dir);
                 }
             }
+        }
+        if (error) {
+            // Nothing more to check
+            return;
         }
         if (keepControlConnectionAlive) {
             // Try a NOOP to reset the control connection!

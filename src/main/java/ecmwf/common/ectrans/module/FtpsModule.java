@@ -663,7 +663,7 @@ public final class FtpsModule extends TransferModule {
      * Check.
      */
     @Override
-    public void check(final long sent, final String checksum) throws IOException {
+    public void check(final long sent, final String checksum, final boolean error) throws IOException {
         _log.debug("Check file");
         setStatus("CHECK");
         if (putName == null && getName == null) {
@@ -671,6 +671,10 @@ public final class FtpsModule extends TransferModule {
         }
         if (transferHandled && transferError != null) {
             throw new IOException(transferError);
+        }
+        if (error) {
+            // Nothing more to do if the transfer was not successful!
+            return;
         }
         var remoteName = putName != null ? temporaryName : getName;
         if (putName != null && isNotEmpty(postPutCmd)) {

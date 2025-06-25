@@ -552,11 +552,13 @@ public abstract class TransferModule implements Closeable {
      *            the sent
      * @param checksum
      *            the checksum
+     * @param error
+     *            the error
      *
      * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
-    public void check(final long sent, final String checksum) throws IOException {
+    public void check(final long sent, final String checksum, final boolean error) throws IOException {
     }
 
     /**
