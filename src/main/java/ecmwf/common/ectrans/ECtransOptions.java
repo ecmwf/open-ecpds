@@ -1117,6 +1117,9 @@ public enum ECtransOptions {
     /** The host azure sas subscription key. */
     HOST_AZURE_SAS_SUBSCRIPTION_KEY("sasSubscriptionKey", String.class, ""),
 
+    /** The host azure user assigned client id. */
+    HOST_AZURE_USER_ASSIGNED_CLIENT_ID("userAssignedClientId", String.class, ""),
+
     /** The host azure mk container. */
     HOST_AZURE_MK_CONTAINER("mkContainer", Boolean.class, false),
 
