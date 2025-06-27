@@ -67,7 +67,7 @@ import org.hibernate.proxy.HibernateProxy;
 import org.hibernate.query.NativeQuery;
 import org.hibernate.query.Query;
 
-import com.mchange.v2.c3p0.impl.NewProxyConnection;
+import com.zaxxer.hikari.pool.ProxyConnection;
 
 import ecmwf.common.technical.Cnf;
 
@@ -174,7 +174,7 @@ final class BrokerHibernate implements Broker {
         try {
             if (GET_MARIADB_CONNECTION && session instanceof final SessionImpl hibernateSession
                     && hibernateSession.getJdbcCoordinator().getLogicalConnection()
-                            .getPhysicalConnection() instanceof final NewProxyConnection proxy
+                            .getPhysicalConnection() instanceof final ProxyConnection proxy
                     && proxy.isWrapperFor(org.mariadb.jdbc.Connection.class) && proxy.unwrap(
                             org.mariadb.jdbc.Connection.class) instanceof final org.mariadb.jdbc.Connection mariadbConnection) {
                 return mariadbConnection;

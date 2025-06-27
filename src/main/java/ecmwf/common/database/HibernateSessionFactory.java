@@ -62,9 +62,6 @@ public class HibernateSessionFactory {
     /** The configuration. */
     private static Configuration configuration = null;
 
-    /** The isC3p0registeredToMBeanServer. */
-    private static boolean isC3p0registeredToMBeanServer = false;
-
     /** The persistent class per table name list. */
     private static HashMap<String, PersistentClass> persistentClassPerTableNameList = new HashMap<>();
 
@@ -100,15 +97,6 @@ public class HibernateSessionFactory {
                 }
             } catch (final Throwable e) {
                 _log.error("Failed to create session Factory", e);
-            }
-        }
-        if (!isC3p0registeredToMBeanServer) {
-            try {
-                new C3P0MBeanService("ECaccess:service=C3p0");
-                isC3p0registeredToMBeanServer = true;
-            } catch (final Exception e) {
-                isC3p0registeredToMBeanServer = false;
-                _log.error("C3P0 not registered to MBeanServer", e);
             }
         }
         return sessionFactory;
