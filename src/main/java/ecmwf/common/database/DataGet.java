@@ -80,7 +80,7 @@ public abstract class DataGet {
      *
      * @return the incoming user
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public IncomingUser getIncomingUser(final String id) throws DataBaseException {
@@ -111,7 +111,7 @@ public abstract class DataGet {
      *
      * @return the activity
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Activity getActivity(final long id) throws DataBaseException {
@@ -142,7 +142,7 @@ public abstract class DataGet {
      *
      * @return the activity
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Activity getActivity(final String id) throws DataBaseException {
@@ -168,7 +168,7 @@ public abstract class DataGet {
      *
      * @return the alias
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Alias getAlias(final String desName, final String destinationName) throws DataBaseException {
@@ -211,15 +211,15 @@ public abstract class DataGet {
      * @return the alias array
      */
     public Alias[] getAliasArray() {
-        final var iterator = getAliasIterator();
         final List<Alias> list = new ArrayList<>();
-        while (iterator.hasNext()) {
-            list.add(iterator.next());
+        try (var iterator = getAliasIterator()) {
+            while (iterator.hasNext()) {
+                list.add(iterator.next());
+            }
         }
         Collections.sort(list,
                 (alias1, alias2) -> alias1.getDestinationName().compareToIgnoreCase(alias2.getDestinationName()));
         logSqlRequest("getAliasArray", list.size());
-        iterator.remove();
         return list.toArray(new Alias[list.size()]);
     }
 
@@ -233,7 +233,7 @@ public abstract class DataGet {
      *
      * @return the association
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Association getAssociation(final String destinationName, final String hostName) throws DataBaseException {
@@ -253,7 +253,7 @@ public abstract class DataGet {
      *
      * @return the policy association
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public PolicyAssociation getPolicyAssociation(final String destinationName, final String policyId)
@@ -297,13 +297,13 @@ public abstract class DataGet {
      * @return the association array
      */
     public Association[] getAssociationArray() {
-        final var iterator = getAssociationIterator();
         final List<Association> list = new ArrayList<>();
-        while (iterator.hasNext()) {
-            list.add(iterator.next());
+        try (var iterator = getAssociationIterator()) {
+            while (iterator.hasNext()) {
+                list.add(iterator.next());
+            }
         }
         logSqlRequest("getAssociationArray", list.size());
-        iterator.remove();
         return list.toArray(new Association[list.size()]);
     }
 
@@ -315,7 +315,7 @@ public abstract class DataGet {
      *
      * @return the category
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Category getCategory(final long id) throws DataBaseException {
@@ -353,14 +353,14 @@ public abstract class DataGet {
      * @return the category array
      */
     public Category[] getCategoryArray() {
-        final var iterator = getCategoryIterator();
         final List<Category> list = new ArrayList<>();
-        while (iterator.hasNext()) {
-            list.add(iterator.next());
+        try (var iterator = getCategoryIterator()) {
+            while (iterator.hasNext()) {
+                list.add(iterator.next());
+            }
         }
         Collections.sort(list, (category1, category2) -> category1.getName().compareToIgnoreCase(category2.getName()));
         logSqlRequest("getCategoryArray", list.size());
-        iterator.remove();
         return list.toArray(new Category[list.size()]);
     }
 
@@ -374,7 +374,7 @@ public abstract class DataGet {
      *
      * @return the cat url
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public CatUrl getCatUrl(final long categoryId, final String urlName) throws DataBaseException {
@@ -417,13 +417,13 @@ public abstract class DataGet {
      * @return the cat url array
      */
     public CatUrl[] getCatUrlArray() {
-        final var iterator = getCatUrlIterator();
         final List<CatUrl> list = new ArrayList<>();
-        while (iterator.hasNext()) {
-            list.add(iterator.next());
+        try (var iterator = getCatUrlIterator()) {
+            while (iterator.hasNext()) {
+                list.add(iterator.next());
+            }
         }
         logSqlRequest("getCatUrlArray", list.size());
-        iterator.remove();
         return list.toArray(new CatUrl[list.size()]);
     }
 
@@ -435,7 +435,7 @@ public abstract class DataGet {
      *
      * @return the country
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Country getCountry(final String iso) throws DataBaseException {
@@ -476,14 +476,14 @@ public abstract class DataGet {
      * @return the country array
      */
     public Country[] getCountryArray() {
-        final var iterator = getCountryIterator();
         final List<Country> list = new ArrayList<>();
-        while (iterator.hasNext()) {
-            list.add(iterator.next());
+        try (var iterator = getCountryIterator()) {
+            while (iterator.hasNext()) {
+                list.add(iterator.next());
+            }
         }
         Collections.sort(list, (country1, country2) -> country1.getName().compareToIgnoreCase(country2.getName()));
         logSqlRequest("getCountryArray", list.size());
-        iterator.remove();
         return list.toArray(new Country[list.size()]);
     }
 
@@ -495,7 +495,7 @@ public abstract class DataGet {
      *
      * @return the data file
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public DataFile getDataFile(final long id) throws DataBaseException {
@@ -526,7 +526,7 @@ public abstract class DataGet {
      *
      * @return the data file
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public DataFile getDataFile(final String id) throws DataBaseException {
@@ -550,7 +550,7 @@ public abstract class DataGet {
      *
      * @return the data transfer
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public DataTransfer getDataTransfer(final long id) throws DataBaseException {
@@ -590,7 +590,7 @@ public abstract class DataGet {
      *
      * @return the destination
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Destination getDestination(final String name) throws DataBaseException {
@@ -631,15 +631,15 @@ public abstract class DataGet {
      * @return the destination array
      */
     public Destination[] getDestinationArray() {
-        final var iterator = getDestinationIterator();
         final List<Destination> list = new ArrayList<>();
-        while (iterator.hasNext()) {
-            list.add(iterator.next());
+        try (var iterator = getDestinationIterator()) {
+            while (iterator.hasNext()) {
+                list.add(iterator.next());
+            }
         }
         Collections.sort(list,
                 (destination1, destination2) -> destination1.getName().compareToIgnoreCase(destination2.getName()));
         logSqlRequest("getDestinationArray", list.size());
-        iterator.remove();
         return list.toArray(new Destination[list.size()]);
     }
 
@@ -658,13 +658,13 @@ public abstract class DataGet {
      * @return the incoming user array
      */
     public IncomingUser[] getIncomingUserArray() {
-        final var iterator = getIncomingUserIterator();
         final List<IncomingUser> list = new ArrayList<>();
-        while (iterator.hasNext()) {
-            list.add(iterator.next());
+        try (var iterator = getIncomingUserIterator()) {
+            while (iterator.hasNext()) {
+                list.add(iterator.next());
+            }
         }
         logSqlRequest("getIncomingUserArray", list.size());
-        iterator.remove();
         return list.toArray(new IncomingUser[list.size()]);
     }
 
@@ -683,13 +683,13 @@ public abstract class DataGet {
      * @return the incoming association array
      */
     public IncomingAssociation[] getIncomingAssociationArray() {
-        final var iterator = getIncomingAssociationIterator();
         final List<IncomingAssociation> list = new ArrayList<>();
-        while (iterator.hasNext()) {
-            list.add(iterator.next());
+        try (var iterator = getIncomingAssociationIterator()) {
+            while (iterator.hasNext()) {
+                list.add(iterator.next());
+            }
         }
         logSqlRequest("getIncomingAssociationArray", list.size());
-        iterator.remove();
         return list.toArray(new IncomingAssociation[list.size()]);
     }
 
@@ -712,7 +712,7 @@ public abstract class DataGet {
      *
      * @return the destination ecuser
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public DestinationECUser getDestinationECUser(final String destinationName, final String ecuserName)
@@ -756,13 +756,13 @@ public abstract class DataGet {
      * @return the destination ecuser array
      */
     public DestinationECUser[] getDestinationECUserArray() {
-        final var iterator = getDestinationECUserIterator();
         final List<DestinationECUser> list = new ArrayList<>();
-        while (iterator.hasNext()) {
-            list.add(iterator.next());
+        try (var iterator = getDestinationECUserIterator()) {
+            while (iterator.hasNext()) {
+                list.add(iterator.next());
+            }
         }
         logSqlRequest("getDestinationECUserArray", list.size());
-        iterator.remove();
         return list.toArray(new DestinationECUser[list.size()]);
     }
 
@@ -774,7 +774,7 @@ public abstract class DataGet {
      *
      * @return the EC session
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public ECSession getECSession(final int id) throws DataBaseException {
@@ -805,7 +805,7 @@ public abstract class DataGet {
      *
      * @return the EC session
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public ECSession getECSession(final String id) throws DataBaseException {
@@ -829,7 +829,7 @@ public abstract class DataGet {
      *
      * @return the ectrans destination
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public ECtransDestination getECtransDestination(final String name) throws DataBaseException {
@@ -870,16 +870,71 @@ public abstract class DataGet {
      * @return the ectrans destination array
      */
     public ECtransDestination[] getECtransDestinationArray() {
-        final var iterator = getECtransDestinationIterator();
         final List<ECtransDestination> list = new ArrayList<>();
-        while (iterator.hasNext()) {
-            list.add(iterator.next());
+        try (var iterator = getECtransDestinationIterator()) {
+            while (iterator.hasNext()) {
+                list.add(iterator.next());
+            }
         }
         Collections.sort(list,
                 (destination1, destination2) -> destination1.getName().compareToIgnoreCase(destination2.getName()));
         logSqlRequest("getECtransDestinationArray", list.size());
-        iterator.remove();
         return list.toArray(new ECtransDestination[list.size()]);
+    }
+
+    /**
+     * Gets the ectrans history.
+     *
+     * @param id
+     *            the id
+     *
+     * @return the ectrans history
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public ECtransHistory getECtransHistory(final int id) throws DataBaseException {
+        return get(new ECtransHistory(id));
+    }
+
+    /**
+     * Gets the ectrans history object.
+     *
+     * @param id
+     *            the id
+     *
+     * @return the ectrans history object
+     */
+    public ECtransHistory getECtransHistoryObject(final int id) {
+        try {
+            return getECtransHistory(id);
+        } catch (final DataBaseException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Gets the ectrans history.
+     *
+     * @param id
+     *            the id
+     *
+     * @return the ectrans history
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public ECtransHistory getECtransHistory(final String id) throws DataBaseException {
+        return getECtransHistory(Integer.parseInt(id));
+    }
+
+    /**
+     * Gets the ectrans history iterator.
+     *
+     * @return the ectrans history iterator
+     */
+    DBIterator<ECtransHistory> getECtransHistoryIterator() {
+        return getAll(ECtransHistory.class);
     }
 
     /**
@@ -890,7 +945,7 @@ public abstract class DataGet {
      *
      * @return the ectrans accounting
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public ECtransAccounting getECtransAccounting(final int id) throws DataBaseException {
@@ -921,7 +976,7 @@ public abstract class DataGet {
      *
      * @return the ectrans accounting
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public ECtransAccounting getECtransAccounting(final String id) throws DataBaseException {
@@ -945,7 +1000,7 @@ public abstract class DataGet {
      *
      * @return the ectrans module
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public ECtransModule getECtransModule(final String name) throws DataBaseException {
@@ -986,14 +1041,14 @@ public abstract class DataGet {
      * @return the ectrans module array
      */
     public ECtransModule[] getECtransModuleArray() {
-        final var iterator = getECtransModuleIterator();
         final List<ECtransModule> list = new ArrayList<>();
-        while (iterator.hasNext()) {
-            list.add(iterator.next());
+        try (var iterator = getECtransModuleIterator()) {
+            while (iterator.hasNext()) {
+                list.add(iterator.next());
+            }
         }
         Collections.sort(list, (module1, module2) -> module1.getName().compareToIgnoreCase(module2.getName()));
         logSqlRequest("getECtransModuleArray", list.size());
-        iterator.remove();
         return list.toArray(new ECtransModule[list.size()]);
     }
 
@@ -1005,7 +1060,7 @@ public abstract class DataGet {
      *
      * @return the EC user
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public ECUser getECUser(final String name) throws DataBaseException {
@@ -1046,14 +1101,14 @@ public abstract class DataGet {
      * @return the EC user array
      */
     public ECUser[] getECUserArray() {
-        final var iterator = getECUserIterator();
         final List<ECUser> list = new ArrayList<>();
-        while (iterator.hasNext()) {
-            list.add(iterator.next());
+        try (var iterator = getECUserIterator()) {
+            while (iterator.hasNext()) {
+                list.add(iterator.next());
+            }
         }
         Collections.sort(list, (ecuser1, ecuser2) -> ecuser1.getName().compareToIgnoreCase(ecuser2.getName()));
         logSqlRequest("getECUserArray", list.size());
-        iterator.remove();
         return list.toArray(new ECUser[list.size()]);
     }
 
@@ -1065,7 +1120,7 @@ public abstract class DataGet {
      *
      * @return the incoming policy
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public IncomingPolicy getIncomingPolicy(final String id) throws DataBaseException {
@@ -1106,13 +1161,13 @@ public abstract class DataGet {
      * @return the incoming policy array
      */
     public IncomingPolicy[] getIncomingPolicyArray() {
-        final var iterator = getIncomingPolicyIterator();
         final List<IncomingPolicy> list = new ArrayList<>();
-        while (iterator.hasNext()) {
-            list.add(iterator.next());
+        try (var iterator = getIncomingPolicyIterator()) {
+            while (iterator.hasNext()) {
+                list.add(iterator.next());
+            }
         }
         logSqlRequest("getIncomingPolicyArray", list.size());
-        iterator.remove();
         return list.toArray(new IncomingPolicy[list.size()]);
     }
 
@@ -1124,7 +1179,7 @@ public abstract class DataGet {
      *
      * @return the event
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Event getEvent(final long id) throws DataBaseException {
@@ -1155,7 +1210,7 @@ public abstract class DataGet {
      *
      * @return the event
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Event getEvent(final String id) throws DataBaseException {
@@ -1179,7 +1234,7 @@ public abstract class DataGet {
      *
      * @return the publication
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Publication getPublication(final int id) throws DataBaseException {
@@ -1210,7 +1265,7 @@ public abstract class DataGet {
      *
      * @return the publication
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Publication getPublication(final String id) throws DataBaseException {
@@ -1234,7 +1289,7 @@ public abstract class DataGet {
      *
      * @return the host
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Host getHost(final String name) throws DataBaseException {
@@ -1268,7 +1323,7 @@ public abstract class DataGet {
      *
      * @return the host and its output.
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Host getHostWithOutput(final String name) throws DataBaseException {
@@ -1292,13 +1347,13 @@ public abstract class DataGet {
      * @return the host array
      */
     public Host[] getHostArray() {
-        final var iterator = getHostIterator();
         final List<Host> list = new ArrayList<>();
-        while (iterator.hasNext()) {
-            list.add(iterator.next());
+        try (var iterator = getHostIterator()) {
+            while (iterator.hasNext()) {
+                list.add(iterator.next());
+            }
         }
         logSqlRequest("getHostArray", list.size());
-        iterator.remove();
         return list.toArray(new Host[list.size()]);
     }
 
@@ -1311,13 +1366,13 @@ public abstract class DataGet {
      * @return the host array
      */
     public Host[] getHostArray(final Comparator<Host> comparator) {
-        final var iterator = getHostIterator();
         final List<Host> list = new ArrayList<>();
-        while (iterator.hasNext()) {
-            list.add(iterator.next());
+        try (var iterator = getHostIterator()) {
+            while (iterator.hasNext()) {
+                list.add(iterator.next());
+            }
         }
         logSqlRequest("getHostArray", list.size());
-        iterator.remove();
         list.sort(comparator);
         return list.toArray(new Host[list.size()]);
     }
@@ -1330,7 +1385,7 @@ public abstract class DataGet {
      *
      * @return the host
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public HostStats getHostStats(final int id) throws DataBaseException {
@@ -1361,7 +1416,7 @@ public abstract class DataGet {
      *
      * @return the host
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public HostLocation getHostLocation(final int id) throws DataBaseException {
@@ -1392,7 +1447,7 @@ public abstract class DataGet {
      *
      * @return the host
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public HostOutput getHostOutput(final int id) throws DataBaseException {
@@ -1425,7 +1480,7 @@ public abstract class DataGet {
      *
      * @return the host ecuser
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public HostECUser getHostECUser(final String ecuserName, final String hostName) throws DataBaseException {
@@ -1470,7 +1525,7 @@ public abstract class DataGet {
      *
      * @return the metadata attribute
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public MetadataAttribute getMetadataAttribute(final String name) throws DataBaseException {
@@ -1511,15 +1566,15 @@ public abstract class DataGet {
      * @return the metadata attribute array
      */
     public MetadataAttribute[] getMetadataAttributeArray() {
-        final var iterator = getMetadataAttributeIterator();
         final List<MetadataAttribute> list = new ArrayList<>();
-        while (iterator.hasNext()) {
-            list.add(iterator.next());
+        try (var iterator = getMetadataAttributeIterator()) {
+            while (iterator.hasNext()) {
+                list.add(iterator.next());
+            }
         }
         Collections.sort(list,
                 (attribute1, attribute2) -> attribute1.getName().compareToIgnoreCase(attribute2.getName()));
         logSqlRequest("getMetadataAttributeArray", list.size());
-        iterator.remove();
         return list.toArray(new MetadataAttribute[list.size()]);
     }
 
@@ -1531,7 +1586,7 @@ public abstract class DataGet {
      *
      * @return the monitoring value
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public MonitoringValue getMonitoringValue(final long id) throws DataBaseException {
@@ -1562,7 +1617,7 @@ public abstract class DataGet {
      *
      * @return the monitoring value
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public MonitoringValue getMonitoringValue(final String id) throws DataBaseException {
@@ -1588,6 +1643,65 @@ public abstract class DataGet {
     }
 
     /**
+     * Gets the MS user.
+     *
+     * @param name
+     *            the name
+     *
+     * @return the MS user
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public MSUser getMSUser(final String name) throws DataBaseException {
+        if (name == null) {
+            throw new DataBaseException("MSUser not found: {(null)}");
+        }
+        return get(new MSUser(name));
+    }
+
+    /**
+     * Gets the MS user object.
+     *
+     * @param name
+     *            the name
+     *
+     * @return the MS user object
+     */
+    public MSUser getMSUserObject(final String name) {
+        try {
+            return getMSUser(name);
+        } catch (final DataBaseException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Gets the ms user iterator.
+     *
+     * @return the MS user iterator
+     */
+    DBIterator<MSUser> getMSUserIterator() {
+        return getAll(MSUser.class);
+    }
+
+    /**
+     * Gets the MS user array.
+     *
+     * @return the MS user array
+     */
+    public MSUser[] getMSUserArray() {
+        final List<MSUser> list = new ArrayList<>();
+        try (var iterator = getMSUserIterator()) {
+            while (iterator.hasNext()) {
+                list.add(iterator.next());
+            }
+        }
+        logSqlRequest("getMSUserArray", list.size());
+        return list.toArray(new MSUser[list.size()]);
+    }
+
+    /**
      * Gets the authorised ecuser.
      *
      * @param ecuserName
@@ -1597,7 +1711,7 @@ public abstract class DataGet {
      *
      * @return the authorised ecuser
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public AuthorizedECUser getAuthorizedECUser(final String ecuserName, final String msuserName)
@@ -1643,7 +1757,7 @@ public abstract class DataGet {
      *
      * @return the notification
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Notification getNotification(final int id) throws DataBaseException {
@@ -1674,7 +1788,7 @@ public abstract class DataGet {
      *
      * @return the notification
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Notification getNotification(final String id) throws DataBaseException {
@@ -1698,7 +1812,7 @@ public abstract class DataGet {
      *
      * @return the operation
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Operation getOperation(final String name) throws DataBaseException {
@@ -1739,15 +1853,15 @@ public abstract class DataGet {
      * @return the operation array
      */
     public Operation[] getOperationArray() {
-        final var iterator = getOperationIterator();
         final List<Operation> list = new ArrayList<>();
-        while (iterator.hasNext()) {
-            list.add(iterator.next());
+        try (var iterator = getOperationIterator()) {
+            while (iterator.hasNext()) {
+                list.add(iterator.next());
+            }
         }
         Collections.sort(list,
                 (operation1, operation2) -> operation1.getName().compareToIgnoreCase(operation2.getName()));
         logSqlRequest("getOperationArray", list.size());
-        iterator.remove();
         return list.toArray(new Operation[list.size()]);
     }
 
@@ -1761,7 +1875,7 @@ public abstract class DataGet {
      *
      * @return the permission
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Permission getPermission(final String ecuserName, final String operationName) throws DataBaseException {
@@ -1808,7 +1922,7 @@ public abstract class DataGet {
      *
      * @return the privileged
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Privileged getPrivileged(final String ecuserName, final int notificationId) throws DataBaseException {
@@ -1853,7 +1967,7 @@ public abstract class DataGet {
      *
      * @return the product status
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public ProductStatus getProductStatus(final long id) throws DataBaseException {
@@ -1884,7 +1998,7 @@ public abstract class DataGet {
      *
      * @return the product status
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public ProductStatus getProductStatus(final String id) throws DataBaseException {
@@ -1906,13 +2020,13 @@ public abstract class DataGet {
      * @return the product status array
      */
     public ProductStatus[] getProductStatusArray() {
-        final var iterator = getProductStatusIterator();
         final List<ProductStatus> list = new ArrayList<>();
-        while (iterator.hasNext()) {
-            list.add(iterator.next());
+        try (var iterator = getProductStatusIterator()) {
+            while (iterator.hasNext()) {
+                list.add(iterator.next());
+            }
         }
         logSqlRequest("getProductStatusArray", list.size());
-        iterator.remove();
         return list.toArray(new ProductStatus[list.size()]);
     }
 
@@ -1924,7 +2038,7 @@ public abstract class DataGet {
      *
      * @return the reception
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Reception getReception(final int id) throws DataBaseException {
@@ -1955,7 +2069,7 @@ public abstract class DataGet {
      *
      * @return the reception
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Reception getReception(final String id) throws DataBaseException {
@@ -1979,7 +2093,7 @@ public abstract class DataGet {
      *
      * @return the scheduler value
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public SchedulerValue getSchedulerValue(final int id) throws DataBaseException {
@@ -2010,7 +2124,7 @@ public abstract class DataGet {
      *
      * @return the scheduler value
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public SchedulerValue getSchedulerValue(final String id) throws DataBaseException {
@@ -2034,7 +2148,7 @@ public abstract class DataGet {
      *
      * @return the spool
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Spool getSpool(final int id) throws DataBaseException {
@@ -2065,7 +2179,7 @@ public abstract class DataGet {
      *
      * @return the spool
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Spool getSpool(final String id) throws DataBaseException {
@@ -2089,7 +2203,7 @@ public abstract class DataGet {
      *
      * @return the transfer group
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public TransferGroup getTransferGroup(final String name) throws DataBaseException {
@@ -2130,14 +2244,14 @@ public abstract class DataGet {
      * @return the transfer group array
      */
     public TransferGroup[] getTransferGroupArray() {
-        final var iterator = getTransferGroupIterator();
         final List<TransferGroup> list = new ArrayList<>();
-        while (iterator.hasNext()) {
-            list.add(iterator.next());
+        try (var iterator = getTransferGroupIterator()) {
+            while (iterator.hasNext()) {
+                list.add(iterator.next());
+            }
         }
         Collections.sort(list, (group1, group2) -> group1.getName().compareToIgnoreCase(group2.getName()));
         logSqlRequest("getTransferGroupArray", list.size());
-        iterator.remove();
         return list.toArray(new TransferGroup[list.size()]);
     }
 
@@ -2149,7 +2263,7 @@ public abstract class DataGet {
      *
      * @return the transfer history
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public TransferHistory getTransferHistory(final long id) throws DataBaseException {
@@ -2180,7 +2294,7 @@ public abstract class DataGet {
      *
      * @return the transfer history
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public TransferHistory getTransferHistory(final String id) throws DataBaseException {
@@ -2195,7 +2309,7 @@ public abstract class DataGet {
      *
      * @return the transfer method
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public TransferMethod getTransferMethod(final String name) throws DataBaseException {
@@ -2236,14 +2350,14 @@ public abstract class DataGet {
      * @return the transfer method array
      */
     public TransferMethod[] getTransferMethodArray() {
-        final var iterator = getTransferMethodIterator();
         final List<TransferMethod> list = new ArrayList<>();
-        while (iterator.hasNext()) {
-            list.add(iterator.next());
+        try (var iterator = getTransferMethodIterator()) {
+            while (iterator.hasNext()) {
+                list.add(iterator.next());
+            }
         }
         Collections.sort(list, (method1, method2) -> method1.getName().compareToIgnoreCase(method2.getName()));
         logSqlRequest("getTransferMethodArray", list.size());
-        iterator.remove();
         return list.toArray(new TransferMethod[list.size()]);
     }
 
@@ -2255,7 +2369,7 @@ public abstract class DataGet {
      *
      * @return the transfer module
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public TransferModule getTransferModule(final String name) throws DataBaseException {
@@ -2296,13 +2410,13 @@ public abstract class DataGet {
      * @return the transfer module array
      */
     public TransferModule[] getTransferModuleArray() {
-        final var iterator = getTransferModuleIterator();
         final List<TransferModule> list = new ArrayList<>();
-        while (iterator.hasNext()) {
-            list.add(iterator.next());
+        try (var iterator = getTransferModuleIterator()) {
+            while (iterator.hasNext()) {
+                list.add(iterator.next());
+            }
         }
         logSqlRequest("getTransferModuleArray", list.size());
-        iterator.remove();
         return list.toArray(new TransferModule[list.size()]);
     }
 
@@ -2314,7 +2428,7 @@ public abstract class DataGet {
      *
      * @return the transfer server
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public TransferServer getTransferServer(final String name) throws DataBaseException {
@@ -2355,14 +2469,14 @@ public abstract class DataGet {
      * @return the transfer server array
      */
     public TransferServer[] getTransferServerArray() {
-        final var iterator = getTransferServerIterator();
         final List<TransferServer> list = new ArrayList<>();
-        while (iterator.hasNext()) {
-            list.add(iterator.next());
+        try (var iterator = getTransferServerIterator()) {
+            while (iterator.hasNext()) {
+                list.add(iterator.next());
+            }
         }
         Collections.sort(list, (server1, server2) -> server1.getName().compareToIgnoreCase(server2.getName()));
         logSqlRequest("getTransferServerArray", list.size());
-        iterator.remove();
         return list.toArray(new TransferServer[list.size()]);
     }
 
@@ -2376,7 +2490,7 @@ public abstract class DataGet {
      *
      * @return the transfer ecuser
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public TransferECUser getTransferECUser(final String ecuserName, final String transfermethodName)
@@ -2422,7 +2536,7 @@ public abstract class DataGet {
      *
      * @return the url
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Url getUrl(final String name) throws DataBaseException {
@@ -2463,14 +2577,14 @@ public abstract class DataGet {
      * @return the url array
      */
     public Url[] getUrlArray() {
-        final var iterator = getUrlIterator();
         final List<Url> list = new ArrayList<>();
-        while (iterator.hasNext()) {
-            list.add(iterator.next());
+        try (var iterator = getUrlIterator()) {
+            while (iterator.hasNext()) {
+                list.add(iterator.next());
+            }
         }
         Collections.sort(list, (url1, url2) -> url1.getName().compareToIgnoreCase(url2.getName()));
         logSqlRequest("getUrlArray", list.size());
-        iterator.remove();
         return list.toArray(new Url[list.size()]);
     }
 
@@ -2482,7 +2596,7 @@ public abstract class DataGet {
      *
      * @return the web user
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public WebUser getWebUser(final String id) throws DataBaseException {
@@ -2523,14 +2637,14 @@ public abstract class DataGet {
      * @return the web user array
      */
     public WebUser[] getWebUserArray() {
-        final var iterator = getWebUserIterator();
         final List<WebUser> list = new ArrayList<>();
-        while (iterator.hasNext()) {
-            list.add(iterator.next());
+        try (var iterator = getWebUserIterator()) {
+            while (iterator.hasNext()) {
+                list.add(iterator.next());
+            }
         }
         Collections.sort(list, (user1, user2) -> user1.getName().compareToIgnoreCase(user2.getName()));
         logSqlRequest("getWebUserArray", list.size());
-        iterator.remove();
         return list.toArray(new WebUser[list.size()]);
     }
 
@@ -2544,7 +2658,7 @@ public abstract class DataGet {
      *
      * @return the weu cat
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public WeuCat getWeuCat(final long categoryId, final String webuserId) throws DataBaseException {
@@ -2587,13 +2701,13 @@ public abstract class DataGet {
      * @return the weu cat array
      */
     public WeuCat[] getWeuCatArray() {
-        final var iterator = getWeuCatIterator();
         final List<WeuCat> list = new ArrayList<>();
-        while (iterator.hasNext()) {
-            list.add(iterator.next());
+        try (var iterator = getWeuCatIterator()) {
+            while (iterator.hasNext()) {
+                list.add(iterator.next());
+            }
         }
         logSqlRequest("getWeuCatArray", list.size());
-        iterator.remove();
         return list.toArray(new WeuCat[list.size()]);
     }
 }

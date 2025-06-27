@@ -122,19 +122,13 @@ public final class ECpdsBase extends DataBase {
         try (final var mutex = transferServersCache.getMutex(groupName)) {
             synchronized (mutex.lock()) {
                 list = transferServersCache.computeIfAbsent(groupName, k -> {
-                    DBIterator<TransferServer> it = null;
                     final List<TransferServer> defaultList = new ArrayList<>();
-                    try {
-                        it = ecpds.getTransferServers(k, TransferServer.class);
+                    try (var it = ecpds.getTransferServers(k, TransferServer.class)) {
                         while (it.hasNext()) {
                             defaultList.add(it.next());
                         }
                     } catch (SQLException | IOException e) {
                         _log.warn("getTransferServers", e);
-                    } finally {
-                        if (it != null) {
-                            it.remove();
-                        }
                     }
                     transferServersCache.put(k, defaultList, CACHE_TIMEOUT);
                     return defaultList;
@@ -369,19 +363,13 @@ public final class ECpdsBase extends DataBase {
      */
     public TransferServer[] getTransferServersByDataFileId(final long dataFileId) throws DataBaseException {
         final List<TransferServer> list = new ArrayList<>();
-        DBIterator<TransferServer> it = null;
-        try {
-            it = ecpds.getTransferServersByDataFileId(dataFileId, TransferServer.class);
+        try (var it = ecpds.getTransferServersByDataFileId(dataFileId, TransferServer.class)) {
             while (it.hasNext()) {
                 list.add(it.next());
             }
         } catch (SQLException | IOException e) {
             _log.warn("getTransferServersByDataFileId", e);
             throw new DataBaseException("getTransferServersByDataFileId", e);
-        } finally {
-            if (it != null) {
-                it.remove();
-            }
         }
         logSqlRequest("getTransferServersByDataFileId", list.size());
         return list.toArray(new TransferServer[list.size()]);
@@ -479,9 +467,7 @@ public final class ECpdsBase extends DataBase {
      */
     public Host[] getDestinationHost(final String dest, final String type) {
         final List<Host> list = new ArrayList<>();
-        DBIterator<Host> it = null;
-        try {
-            it = ecpds.getDestinationHost(dest, Host.class);
+        try (var it = ecpds.getDestinationHost(dest, Host.class)) {
             while (it.hasNext()) {
                 final var host = it.next();
                 if (host.getActive() && (type == null || type.equals(host.getType()))) {
@@ -490,10 +476,6 @@ public final class ECpdsBase extends DataBase {
             }
         } catch (SQLException | IOException e) {
             _log.warn("getDestinationHost", e);
-        } finally {
-            if (it != null) {
-                it.remove();
-            }
         }
         logSqlRequest("getDestinationHost", list.size());
         return list.toArray(new Host[list.size()]);
@@ -512,19 +494,13 @@ public final class ECpdsBase extends DataBase {
      */
     public ECUser[] getDestinationEcuser(final String destinationName) throws DataBaseException {
         final List<ECUser> list = new ArrayList<>();
-        DBIterator<ECUser> it = null;
-        try {
-            it = ecpds.getDestinationEcuser(destinationName, ECUser.class);
+        try (var it = ecpds.getDestinationEcuser(destinationName, ECUser.class)) {
             while (it.hasNext()) {
                 list.add(it.next());
             }
         } catch (SQLException | IOException e) {
             _log.warn("getDestinationEcuser", e);
             throw new DataBaseException("getDestinationEcuser", e);
-        } finally {
-            if (it != null) {
-                it.remove();
-            }
         }
         logSqlRequest("getDestinationEcuser", list.size());
         return list.toArray(new ECUser[list.size()]);
@@ -543,19 +519,13 @@ public final class ECpdsBase extends DataBase {
      */
     public IncomingPolicy[] getDestinationIncomingPolicy(final String destinationName) throws DataBaseException {
         final List<IncomingPolicy> list = new ArrayList<>();
-        DBIterator<IncomingPolicy> it = null;
-        try {
-            it = ecpds.getDestinationIncomingPolicy(destinationName, IncomingPolicy.class);
+        try (var it = ecpds.getDestinationIncomingPolicy(destinationName, IncomingPolicy.class)) {
             while (it.hasNext()) {
                 list.add(it.next());
             }
         } catch (SQLException | IOException e) {
             _log.warn("getDestinationIncomingPolicy", e);
             throw new DataBaseException("getDestinationIncomingPolicy", e);
-        } finally {
-            if (it != null) {
-                it.remove();
-            }
         }
         logSqlRequest("getDestinationIncomingPolicy", list.size());
         return list.toArray(new IncomingPolicy[list.size()]);
@@ -574,19 +544,13 @@ public final class ECpdsBase extends DataBase {
      */
     public IncomingUser[] getIncomingUsersForIncomingPolicy(final String policyId) throws DataBaseException {
         final List<IncomingUser> list = new ArrayList<>();
-        DBIterator<IncomingUser> it = null;
-        try {
-            it = ecpds.getIncomingUsersForIncomingPolicy(policyId, IncomingUser.class);
+        try (var it = ecpds.getIncomingUsersForIncomingPolicy(policyId, IncomingUser.class)) {
             while (it.hasNext()) {
                 list.add(it.next());
             }
         } catch (SQLException | IOException e) {
             _log.warn("getIncomingUsersForIncomingPolicy", e);
             throw new DataBaseException("getIncomingUsersForIncomingPolicy", e);
-        } finally {
-            if (it != null) {
-                it.remove();
-            }
         }
         logSqlRequest("getIncomingUsersForIncomingPolicy", list.size());
         return list.toArray(new IncomingUser[list.size()]);
@@ -605,19 +569,13 @@ public final class ECpdsBase extends DataBase {
      */
     public IncomingPolicy[] getIncomingPoliciesForIncomingUser(final String userId) throws DataBaseException {
         final List<IncomingPolicy> list = new ArrayList<>();
-        DBIterator<IncomingPolicy> it = null;
-        try {
-            it = ecpds.getIncomingPoliciesForIncomingUser(userId, IncomingPolicy.class);
+        try (var it = ecpds.getIncomingPoliciesForIncomingUser(userId, IncomingPolicy.class)) {
             while (it.hasNext()) {
                 list.add(it.next());
             }
         } catch (SQLException | IOException e) {
             _log.warn("getIncomingPoliciesForIncomingUser", e);
             throw new DataBaseException("getIncomingPoliciesForIncomingUser", e);
-        } finally {
-            if (it != null) {
-                it.remove();
-            }
         }
         logSqlRequest("getIncomingPoliciesForIncomingUser", list.size());
         return list.toArray(new IncomingPolicy[list.size()]);
@@ -636,19 +594,13 @@ public final class ECpdsBase extends DataBase {
         try (final var mutex = operationsCache.getMutex(userId)) {
             synchronized (mutex.lock()) {
                 list = operationsCache.computeIfAbsent(userId, k -> {
-                    DBIterator<IncomingPermission> it = null;
                     final List<Operation> defaultList = new ArrayList<>();
-                    try {
-                        it = ecpds.getIncomingPermissionsForIncomingUser(k, IncomingPermission.class);
+                    try (var it = ecpds.getIncomingPermissionsForIncomingUser(k, IncomingPermission.class)) {
                         while (it.hasNext()) {
                             defaultList.add(it.next().getOperation());
                         }
                     } catch (SQLException | IOException e) {
                         _log.warn("getOperationsForIncomingUser", e);
-                    } finally {
-                        if (it != null) {
-                            it.remove();
-                        }
                     }
                     operationsCache.put(k, defaultList, CACHE_TIMEOUT);
                     return defaultList;
@@ -672,19 +624,13 @@ public final class ECpdsBase extends DataBase {
      */
     public Destination[] getDestinationsForIncomingPolicy(final String policyId) throws DataBaseException {
         final List<Destination> list = new ArrayList<>();
-        DBIterator<Destination> it = null;
-        try {
-            it = ecpds.getDestinationsForIncomingPolicy(policyId, Destination.class);
+        try (var it = ecpds.getDestinationsForIncomingPolicy(policyId, Destination.class)) {
             while (it.hasNext()) {
                 list.add(it.next());
             }
         } catch (SQLException | IOException e) {
             _log.warn("getDestinationsForIncomingPolicy", e);
             throw new DataBaseException("getDestinationsForIncomingPolicy", e);
-        } finally {
-            if (it != null) {
-                it.remove();
-            }
         }
         logSqlRequest("getDestinationsForIncomingPolicy", list.size());
         return list.toArray(new Destination[list.size()]);
@@ -703,9 +649,7 @@ public final class ECpdsBase extends DataBase {
      */
     public Destination[] getDestinations(final String name) throws DataBaseException {
         final List<Destination> list = new ArrayList<>();
-        DBIterator<Destination> it = null;
-        try {
-            it = ecpds.getDestinations(name, Destination.class);
+        try (var it = ecpds.getDestinations(name, Destination.class)) {
             while (it.hasNext()) {
                 final var destination = it.next();
                 if (name != null && name.equals(destination.getName())) {
@@ -718,10 +662,6 @@ public final class ECpdsBase extends DataBase {
         } catch (SQLException | IOException e) {
             _log.warn("getDestinations", e);
             throw new DataBaseException("getDestinations", e);
-        } finally {
-            if (it != null) {
-                it.remove();
-            }
         }
         logSqlRequest("getDestinations", list.size());
         return list.toArray(new Destination[list.size()]);
@@ -740,19 +680,13 @@ public final class ECpdsBase extends DataBase {
      */
     public Destination[] getDestinationArray(final boolean monitored) throws DataBaseException {
         final List<Destination> list = new ArrayList<>();
-        DBIterator<Destination> it = null;
-        try {
-            it = ecpds.getDestinationArray(monitored, Destination.class);
+        try (var it = ecpds.getDestinationArray(monitored, Destination.class)) {
             while (it.hasNext()) {
                 list.add(it.next());
             }
         } catch (SQLException | IOException e) {
             _log.warn("getDestinationArray", e);
             throw new DataBaseException("getDestinationArray", e);
-        } finally {
-            if (it != null) {
-                it.remove();
-            }
         }
         logSqlRequest("getDestinationArray", list.size());
         return list.toArray(new Destination[list.size()]);
@@ -772,19 +706,13 @@ public final class ECpdsBase extends DataBase {
         try (final var mutex = destinationsCache.getMutex(key)) {
             synchronized (mutex.lock()) {
                 list = destinationsCache.computeIfAbsent(key, k -> {
-                    DBIterator<Destination> it = null;
                     final List<Destination> defaultList = new ArrayList<>();
-                    try {
-                        it = ecpds.getDestinationsForIncomingUser(userId, Destination.class);
+                    try (var it = ecpds.getDestinationsForIncomingUser(userId, Destination.class)) {
                         while (it.hasNext()) {
                             defaultList.add(it.next());
                         }
                     } catch (SQLException | IOException e) {
                         _log.warn("getDestinationsForIncomingUser", e);
-                    } finally {
-                        if (it != null) {
-                            it.remove();
-                        }
                     }
                     destinationsCache.put(k, defaultList, CACHE_TIMEOUT);
                     return defaultList;
@@ -809,19 +737,13 @@ public final class ECpdsBase extends DataBase {
         try (final var mutex = destinationsCache.getMutex(key)) {
             synchronized (mutex.lock()) {
                 list = destinationsCache.computeIfAbsent(key, k -> {
-                    DBIterator<Destination> it = null;
                     final List<Destination> defaultList = new ArrayList<>();
-                    try {
-                        it = ecpds.getDestinationsByUserPolicies(userId, Destination.class);
+                    try (var it = ecpds.getDestinationsByUserPolicies(userId, Destination.class)) {
                         while (it.hasNext()) {
                             defaultList.add(it.next());
                         }
                     } catch (SQLException | IOException e) {
                         _log.warn("getDestinationsByUserPolicies", e);
-                    } finally {
-                        if (it != null) {
-                            it.remove();
-                        }
                     }
                     destinationsCache.put(k, defaultList, CACHE_TIMEOUT);
                     return defaultList;
@@ -845,19 +767,13 @@ public final class ECpdsBase extends DataBase {
         try (final var mutex = incomingPermissionCache.getMutex(userId)) {
             synchronized (mutex.lock()) {
                 list = incomingPermissionCache.computeIfAbsent(userId, k -> {
-                    DBIterator<IncomingPermission> it = null;
                     final List<IncomingPermission> defaultList = new ArrayList<>();
-                    try {
-                        it = ecpds.getIncomingPermissionsForIncomingUser(k, IncomingPermission.class);
+                    try (var it = ecpds.getIncomingPermissionsForIncomingUser(k, IncomingPermission.class)) {
                         while (it.hasNext()) {
                             defaultList.add(it.next());
                         }
                     } catch (SQLException | IOException e) {
                         _log.warn("getIncomingPermissionsForIncomingUser", e);
-                    } finally {
-                        if (it != null) {
-                            it.remove();
-                        }
                     }
                     incomingPermissionCache.put(k, defaultList, CACHE_TIMEOUT);
                     return defaultList;
@@ -883,19 +799,13 @@ public final class ECpdsBase extends DataBase {
      */
     public Destination[] getDestinationAliases(final String name, final String mode) throws DataBaseException {
         final List<Destination> list = new ArrayList<>();
-        DBIterator<Destination> it = null;
-        try {
-            it = ecpds.getDestinationAliases(name, mode, Destination.class);
+        try (var it = ecpds.getDestinationAliases(name, mode, Destination.class)) {
             while (it.hasNext()) {
                 list.add(it.next());
             }
         } catch (SQLException | IOException e) {
             _log.warn("getDestinationAliases", e);
             throw new DataBaseException("getDestinationAliases", e);
-        } finally {
-            if (it != null) {
-                it.remove();
-            }
         }
         logSqlRequest("getDestinationAliases", list.size());
         return list.toArray(new Destination[list.size()]);
@@ -916,19 +826,13 @@ public final class ECpdsBase extends DataBase {
      */
     public Alias[] getAliases(final String name, final String mode) throws DataBaseException {
         final List<Alias> list = new ArrayList<>();
-        DBIterator<Alias> it = null;
-        try {
-            it = ecpds.getDestinationAliases(name, mode, Alias.class);
+        try (var it = ecpds.getDestinationAliases(name, mode, Alias.class)) {
             while (it.hasNext()) {
                 list.add(it.next());
             }
         } catch (SQLException | IOException e) {
             _log.warn("getAliases", e);
             throw new DataBaseException("getAliases", e);
-        } finally {
-            if (it != null) {
-                it.remove();
-            }
         }
         logSqlRequest("getAliases", list.size());
         return list.toArray(new Alias[list.size()]);
@@ -1810,19 +1714,13 @@ public final class ECpdsBase extends DataBase {
     public List<DataTransfer> getDataTransfersByDataFileId(final DataTransferCache cache, final long dataFileId,
             final boolean includeDeleted) throws DataBaseException {
         final List<DataTransfer> vector = new ArrayList<>();
-        DBIterator<DataTransfer> it = null;
-        try {
-            it = ecpds.getDataTransfersByDataFile(dataFileId, includeDeleted, DataTransfer.class);
+        try (var it = ecpds.getDataTransfersByDataFile(dataFileId, includeDeleted, DataTransfer.class)) {
             while (it.hasNext()) {
                 vector.add(cache.getFromCache(it.next()));
             }
         } catch (SQLException | IOException e) {
             _log.warn("getDataTransfersByDataFileId", e);
             throw new DataBaseException("getDataTransfersByDataFileId", e);
-        } finally {
-            if (it != null) {
-                it.remove();
-            }
         }
         logSqlRequest("getDataTransfersByDataFileId", vector.size());
         return vector;
@@ -1838,18 +1736,12 @@ public final class ECpdsBase extends DataBase {
      */
     public Destination[] getDestinationsByCountryISO(final String isoCode) {
         final List<Destination> list = new ArrayList<>();
-        DBIterator<Destination> it = null;
-        try {
-            it = ecpds.getDestinationsByCountry(isoCode, Destination.class);
+        try (var it = ecpds.getDestinationsByCountry(isoCode, Destination.class)) {
             while (it.hasNext()) {
                 list.add(it.next());
             }
         } catch (SQLException | IOException e) {
             _log.warn("getDestinationsByCountryISO", e);
-        } finally {
-            if (it != null) {
-                it.remove();
-            }
         }
         logSqlRequest("getDestinationsByCountryISO", list.size());
         return list.toArray(new Destination[list.size()]);
@@ -1879,21 +1771,15 @@ public final class ECpdsBase extends DataBase {
             final String fromToAliases, final boolean asc, final String status, final String type,
             final String filter) {
         final List<Destination> list = new ArrayList<>();
-        DBIterator<Destination> it = null;
-        try {
-            it = ecpds.getDestinationsByUser(uid, options.get(0, "DES_NAME"), options.get(1, "DES_COMMENT"),
-                    options.get(2, "COUNTRY.COU_ISO", "COUNTRY.COU_NAME"), options.get(3, "DES_DATA"),
-                    options.get(4, "DES_ACTIVE"), options.get(5, "DES_MONITOR"), options.get(6, "DES_BACKUP"),
-                    fromToAliases, asc, status, type, filter, Destination.class);
+        try (var it = ecpds.getDestinationsByUser(uid, options.get(0, "DES_NAME"), options.get(1, "DES_COMMENT"),
+                options.get(2, "COUNTRY.COU_ISO", "COUNTRY.COU_NAME"), options.get(3, "DES_DATA"),
+                options.get(4, "DES_ACTIVE"), options.get(5, "DES_MONITOR"), options.get(6, "DES_BACKUP"),
+                fromToAliases, asc, status, type, filter, Destination.class)) {
             while (it.hasNext()) {
                 list.add(it.next());
             }
         } catch (SQLException | IOException e) {
             _log.warn("getDestinationsByUser", e);
-        } finally {
-            if (it != null) {
-                it.remove();
-            }
         }
         logSqlRequest("getDestinationsByUser", list.size());
         return list;
@@ -1912,19 +1798,13 @@ public final class ECpdsBase extends DataBase {
      */
     public Destination[] getDestinationsByHostName(final String hostName) throws DataBaseException {
         final List<Destination> list = new ArrayList<>();
-        DBIterator<Destination> it = null;
-        try {
-            it = ecpds.getDestinationsByHostName(hostName, Destination.class);
+        try (var it = ecpds.getDestinationsByHostName(hostName, Destination.class)) {
             while (it.hasNext()) {
                 list.add(it.next());
             }
         } catch (SQLException | IOException e) {
             _log.warn("getDestinationsByHostName", e);
             throw new DataBaseException("getDestinationsByHostName", e);
-        } finally {
-            if (it != null) {
-                it.remove();
-            }
         }
         logSqlRequest("getDestinationsByHostName", list.size());
         return list.toArray(new Destination[list.size()]);
@@ -2036,18 +1916,12 @@ public final class ECpdsBase extends DataBase {
      */
     public DataTransfer[] getScheduledDataTransfer(final String uniqueKey, final String destinationName) {
         final List<DataTransfer> list = new ArrayList<>();
-        DBIterator<DataTransfer> it = null;
-        try {
-            it = ecpds.getScheduledDataTransfer(uniqueKey, destinationName, DataTransfer.class);
+        try (var it = ecpds.getScheduledDataTransfer(uniqueKey, destinationName, DataTransfer.class)) {
             while (it.hasNext()) {
                 list.add(it.next());
             }
         } catch (SQLException | IOException e) {
             _log.warn("getScheduledDataTransfer", e);
-        } finally {
-            if (it != null) {
-                it.remove();
-            }
         }
         logSqlRequest("getScheduledDataTransfer", list.size());
         return list.toArray(new DataTransfer[list.size()]);
@@ -2485,19 +2359,13 @@ public final class ECpdsBase extends DataBase {
      */
     public Collection<Category> getCategoriesPerUserId(final String userId) throws DataBaseException {
         final List<Category> array = new ArrayList<>();
-        DBIterator<Category> it = null;
-        try {
-            it = ecpds.getCategoriesPerUser(userId, Category.class);
+        try (var it = ecpds.getCategoriesPerUser(userId, Category.class)) {
             while (it.hasNext()) {
                 array.add(it.next());
             }
         } catch (SQLException | IOException e) {
             _log.warn("getCategoriesPerUserId", e);
             throw new DataBaseException("getCategoriesPerUserId", e);
-        } finally {
-            if (it != null) {
-                it.remove();
-            }
         }
         logSqlRequest("getCategoriesPerUserId", array.size());
         return array;
@@ -2541,19 +2409,13 @@ public final class ECpdsBase extends DataBase {
         try (final var mutex = policyUserCache.getMutex(userId)) {
             synchronized (mutex.lock()) {
                 list = policyUserCache.computeIfAbsent(userId, k -> {
-                    DBIterator<PolicyUser> it = null;
                     final List<PolicyUser> defaultList = new ArrayList<>();
-                    try {
-                        it = ecpds.getPolicyUserList(k, PolicyUser.class);
+                    try (var it = ecpds.getPolicyUserList(k, PolicyUser.class)) {
                         while (it.hasNext()) {
                             defaultList.add(it.next());
                         }
                     } catch (SQLException | IOException e) {
                         _log.warn("getPolicyUserList", e);
-                    } finally {
-                        if (it != null) {
-                            it.remove();
-                        }
                     }
                     policyUserCache.put(k, defaultList, CACHE_TIMEOUT);
                     return defaultList;
@@ -2577,19 +2439,13 @@ public final class ECpdsBase extends DataBase {
      */
     public Collection<WebUser> getUsersPerCategoryId(final String categoryId) throws DataBaseException {
         final List<WebUser> array = new ArrayList<>();
-        DBIterator<WebUser> it = null;
-        try {
-            it = ecpds.getUsersPerCategory(categoryId, WebUser.class);
+        try (var it = ecpds.getUsersPerCategory(categoryId, WebUser.class)) {
             while (it.hasNext()) {
                 array.add(it.next());
             }
         } catch (SQLException | IOException e) {
             _log.warn("getUsersPerCategoryId", e);
             throw new DataBaseException("getUsersPerCategoryId", e);
-        } finally {
-            if (it != null) {
-                it.remove();
-            }
         }
         logSqlRequest("getUsersPerCategoryId", array.size());
         return array;
@@ -2633,19 +2489,13 @@ public final class ECpdsBase extends DataBase {
      */
     public Collection<Category> getCategoriesPerResourceId(final String id) throws DataBaseException {
         final List<Category> array = new ArrayList<>();
-        DBIterator<Category> it = null;
-        try {
-            it = ecpds.getCategoriesPerUrl(id, Category.class);
+        try (var it = ecpds.getCategoriesPerUrl(id, Category.class)) {
             while (it.hasNext()) {
                 array.add(it.next());
             }
         } catch (SQLException | IOException e) {
             _log.warn("getCategoriesPerResourceId", e);
             throw new DataBaseException("getCategoriesPerResourceId", e);
-        } finally {
-            if (it != null) {
-                it.remove();
-            }
         }
         logSqlRequest("getCategoriesPerResourceId", array.size());
         return array;
@@ -3083,19 +2933,13 @@ public final class ECpdsBase extends DataBase {
      */
     public Collection<Host> getHostsByDestinationId(final String destId) throws DataBaseException {
         final List<Host> array = new ArrayList<>();
-        DBIterator<Host> it = null;
-        try {
-            it = ecpds.getDestinationHost(destId, Host.class);
+        try (var it = ecpds.getDestinationHost(destId, Host.class)) {
             while (it.hasNext()) {
                 array.add(it.next());
             }
         } catch (IOException | SQLException e) {
             _log.warn("getHostsByDestinationId", e);
             throw new DataBaseException("getHostsByDestinationId", e);
-        } finally {
-            if (it != null) {
-                it.remove();
-            }
         }
         logSqlRequest("getHostsByDestinationId", array.size());
         return array;
@@ -3114,19 +2958,13 @@ public final class ECpdsBase extends DataBase {
      */
     public Collection<Host> getHostsByTransferMethodId(final String transferMethodId) throws DataBaseException {
         final List<Host> array = new ArrayList<>();
-        DBIterator<Host> it = null;
-        try {
-            it = ecpds.getHostsByTransferMethodId(transferMethodId, Host.class);
+        try (var it = ecpds.getHostsByTransferMethodId(transferMethodId, Host.class)) {
             while (it.hasNext()) {
                 array.add(it.next());
             }
         } catch (IOException | SQLException e) {
             _log.warn("getHostsByTransferMethodId", e);
             throw new DataBaseException("getHostsByTransferMethodId", e);
-        } finally {
-            if (it != null) {
-                it.remove();
-            }
         }
         logSqlRequest("getHostsByTransferMethodId", array.size());
         return array;
@@ -3139,18 +2977,12 @@ public final class ECpdsBase extends DataBase {
      */
     public Host[] getHostsToCheck() {
         final List<Host> list = new ArrayList<>();
-        DBIterator<Host> it = null;
-        try {
-            it = ecpds.getHostsToCheck(Host.class);
+        try (var it = ecpds.getHostsToCheck(Host.class)) {
             while (it.hasNext()) {
                 list.add(it.next());
             }
         } catch (IOException | SQLException e) {
             _log.warn("getHostsToCheck", e);
-        } finally {
-            if (it != null) {
-                it.remove();
-            }
         }
         logSqlRequest("getHostsToCheck", list.size());
         return list.toArray(new Host[list.size()]);
@@ -3170,19 +3002,13 @@ public final class ECpdsBase extends DataBase {
     public Collection<TransferMethod> getTransferMethodsByEcTransModuleName(final String ecTransModuleName)
             throws DataBaseException {
         final List<TransferMethod> array = new ArrayList<>();
-        DBIterator<TransferMethod> it = null;
-        try {
-            it = ecpds.getTransferMethodsByEcTransModuleName(ecTransModuleName, TransferMethod.class);
+        try (var it = ecpds.getTransferMethodsByEcTransModuleName(ecTransModuleName, TransferMethod.class)) {
             while (it.hasNext()) {
                 array.add(it.next());
             }
         } catch (IOException | SQLException e) {
             _log.warn("getTransferMethodsByEcTransModuleName", e);
             throw new DataBaseException("getTransferMethodsByEcTransModuleName", e);
-        } finally {
-            if (it != null) {
-                it.remove();
-            }
         }
         logSqlRequest("getTransferMethodsByEcTransModuleName", array.size());
         return array;
@@ -3201,9 +3027,7 @@ public final class ECpdsBase extends DataBase {
      */
     public Collection<MetadataValue> getMetaDataByDataFileId(final long dataFileId) throws DataBaseException {
         final List<MetadataValue> array = new ArrayList<>();
-        DBIterator<MetadataValue> it = null;
-        try {
-            it = ecpds.getMetaDataByDataFile(dataFileId, MetadataValue.class);
+        try (var it = ecpds.getMetaDataByDataFile(dataFileId, MetadataValue.class)) {
             while (it.hasNext()) {
                 array.add(it.next());
             }
@@ -3212,10 +3036,6 @@ public final class ECpdsBase extends DataBase {
         } catch (IOException | SQLException e) {
             _log.warn("getMetaDataByDataFileId", e);
             throw new DataBaseException("getMetaDataByDataFileId", e);
-        } finally {
-            if (it != null) {
-                it.remove();
-            }
         }
         logSqlRequest("getMetaDataByDataFileId", array.size());
         return array;
@@ -3332,19 +3152,13 @@ public final class ECpdsBase extends DataBase {
     public Collection<DataTransfer> getDataTransfersByDestinationAndIdentity(final DataTransferCache cache,
             final String destination, final String identity) throws DataBaseException {
         final List<DataTransfer> array = new ArrayList<>();
-        DBIterator<DataTransfer> it = null;
-        try {
-            it = ecpds.getDataTransfersByDestinationAndIdentity(destination, identity, DataTransfer.class);
+        try (var it = ecpds.getDataTransfersByDestinationAndIdentity(destination, identity, DataTransfer.class)) {
             while (it.hasNext()) {
                 array.add(cache.getFromCache(it.next()));
             }
         } catch (IOException | SQLException e) {
             _log.warn("getDataTransfersByDestinationAndIdentity", e);
             throw new DataBaseException("getDataTransfersByDestinationAndIdentity", e);
-        } finally {
-            if (it != null) {
-                it.remove();
-            }
         }
         logSqlRequest("getDataTransfersByDestinationAndIdentity", array.size());
         return array;
@@ -3405,20 +3219,14 @@ public final class ECpdsBase extends DataBase {
             final String destinationName, final String product, final String time, final Date fromIsoDate,
             final Date toIsoDate) throws DataBaseException {
         final List<DataTransfer> array = new ArrayList<>();
-        DBIterator<DataTransfer> it = null;
-        try {
-            it = ecpds.getDataTransfersByDestinationProductAndTimeOnDate(destinationName, product, time,
-                    new Timestamp(fromIsoDate.getTime()), new Timestamp(toIsoDate.getTime()), DataTransfer.class);
+        try (var it = ecpds.getDataTransfersByDestinationProductAndTimeOnDate(destinationName, product, time,
+                new Timestamp(fromIsoDate.getTime()), new Timestamp(toIsoDate.getTime()), DataTransfer.class)) {
             while (it.hasNext()) {
                 array.add(cache.getFromCache(it.next()));
             }
         } catch (IOException | SQLException e) {
             _log.warn("getDataTransfersByDestinationProductAndTimeOnDate", e);
             throw new DataBaseException("getDataTransfersByDestinationProductAndTimeOnDate", e);
-        } finally {
-            if (it != null) {
-                it.remove();
-            }
         }
         logSqlRequest("getDataTransfersByDestinationProductAndTimeOnDate", array.size());
         return array;
@@ -3444,20 +3252,14 @@ public final class ECpdsBase extends DataBase {
     public Collection<DataTransfer> getDataTransfersByDestinationOnDate(final DataTransferCache cache,
             final String destinationName, final Date fromIsoDate, final Date toIsoDate) throws DataBaseException {
         final List<DataTransfer> array = new ArrayList<>();
-        DBIterator<DataTransfer> it = null;
-        try {
-            it = ecpds.getDataTransfersByDestinationAndTargetOnDate(destinationName, null,
-                    new Timestamp(fromIsoDate.getTime()), new Timestamp(toIsoDate.getTime()), DataTransfer.class);
+        try (var it = ecpds.getDataTransfersByDestinationAndTargetOnDate(destinationName, null,
+                new Timestamp(fromIsoDate.getTime()), new Timestamp(toIsoDate.getTime()), DataTransfer.class)) {
             while (it.hasNext()) {
                 array.add(cache.getFromCache(it.next()));
             }
         } catch (IOException | SQLException e) {
             _log.warn("getDataTransfersByDestinationOnDate", e);
             throw new DataBaseException("getDataTransfersByDestinationOnDate", e);
-        } finally {
-            if (it != null) {
-                it.remove();
-            }
         }
         logSqlRequest("getDataTransfersByDestinationOnDate", array.size());
         return array;
@@ -3577,20 +3379,14 @@ public final class ECpdsBase extends DataBase {
     public Collection<DataTransfer> getDataTransfersByDestinationOnTransmissionDate(final DataTransferCache cache,
             final String destinationName, final Date fromIsoDate, final Date toIsoDate) throws DataBaseException {
         final List<DataTransfer> array = new ArrayList<>();
-        DBIterator<DataTransfer> it = null;
-        try {
-            it = ecpds.getDataTransfersByDestinationAndTargetOnTransmissionDate(destinationName, null,
-                    new Timestamp(fromIsoDate.getTime()), new Timestamp(toIsoDate.getTime()), DataTransfer.class);
+        try (var it = ecpds.getDataTransfersByDestinationAndTargetOnTransmissionDate(destinationName, null,
+                new Timestamp(fromIsoDate.getTime()), new Timestamp(toIsoDate.getTime()), DataTransfer.class)) {
             while (it.hasNext()) {
                 array.add(cache.getFromCache(it.next()));
             }
         } catch (SQLException | IOException e) {
             _log.warn("getDataTransfersByDestinationOnTransmissionDate", e);
             throw new DataBaseException("getDataTransfersByDestinationOnTransmissionDate", e);
-        } finally {
-            if (it != null) {
-                it.remove();
-            }
         }
         logSqlRequest("getDataTransfersByDestinationOnTransmissionDate", array.size());
         return array;
@@ -3728,19 +3524,13 @@ public final class ECpdsBase extends DataBase {
     public Collection<DataTransfer> getBadDataTransfersByDestination(final DataTransferCache cache,
             final String destinationName) throws DataBaseException {
         final List<DataTransfer> array = new ArrayList<>();
-        DBIterator<DataTransfer> it = null;
-        try {
-            it = ecpds.getBadDataTransfersByDestination(destinationName, DataTransfer.class);
+        try (var it = ecpds.getBadDataTransfersByDestination(destinationName, DataTransfer.class)) {
             while (it.hasNext()) {
                 array.add(cache.getFromCache(it.next()));
             }
         } catch (SQLException | IOException e) {
             _log.warn("getBadDataTransfersByDestination", e);
             throw new DataBaseException("getBadDataTransfersByDestination", e);
-        } finally {
-            if (it != null) {
-                it.remove();
-            }
         }
         logSqlRequest("getBadDataTransfersByDestination", array.size());
         return array;
@@ -4053,19 +3843,13 @@ public final class ECpdsBase extends DataBase {
      */
     public Collection<ECUser> getAllowedEcUsersByHostName(final String hostName) throws DataBaseException {
         final List<ECUser> array = new ArrayList<>();
-        DBIterator<ECUser> it = null;
-        try {
-            it = ecpds.getAllowedEcUsersByHostName(hostName, ECUser.class);
+        try (var it = ecpds.getAllowedEcUsersByHostName(hostName, ECUser.class)) {
             while (it.hasNext()) {
                 array.add(it.next());
             }
         } catch (SQLException | IOException e) {
             _log.warn("getAllowedEcUsersByHostName", e);
             throw new DataBaseException("getAllowedEcUsersByHostName", e);
-        } finally {
-            if (it != null) {
-                it.remove();
-            }
         }
         logSqlRequest("getAllowedEcUsersByHostName", array.size());
         return array;
@@ -4116,18 +3900,12 @@ public final class ECpdsBase extends DataBase {
      */
     public List<ChangeLog> getChangeLogByKey(final String keyName, final String keyValue) throws DataBaseException {
         final List<ChangeLog> list = new ArrayList<>();
-        DBIterator<ChangeLog> it = null;
-        try {
-            it = ecpds.getChangeLogByKey(keyName, keyValue, ChangeLog.class);
+        try (var it = ecpds.getChangeLogByKey(keyName, keyValue, ChangeLog.class)) {
             while (it.hasNext()) {
                 list.add(it.next());
             }
         } catch (SQLException | IOException e) {
             _log.warn("getChangeLogByKey", e);
-        } finally {
-            if (it != null) {
-                it.remove();
-            }
         }
         logSqlRequest("getChangeLogByKey", list.size());
         return list;
@@ -4204,19 +3982,13 @@ public final class ECpdsBase extends DataBase {
      */
     public ProductStatus[] getInitialProductStatusEvents() throws DataBaseException {
         final List<ProductStatus> list = new ArrayList<>();
-        DBIterator<ProductStatus> it = null;
-        try {
-            it = ecpds.getInitialProductStatusEvents(ProductStatus.class);
+        try (var it = ecpds.getInitialProductStatusEvents(ProductStatus.class)) {
             while (it.hasNext()) {
                 list.add(it.next());
             }
         } catch (SQLException | IOException e) {
             _log.warn("getInitialProductStatusEvents", e);
             throw new DataBaseException("getInitialProductStatusEvents", e);
-        } finally {
-            if (it != null) {
-                it.remove();
-            }
         }
         logSqlRequest("getInitialProductStatusEvents", list.size());
         return list.toArray(new ProductStatus[list.size()]);
@@ -4232,18 +4004,12 @@ public final class ECpdsBase extends DataBase {
      */
     public DataTransfer[] getInterruptedTransfers() throws DataBaseException {
         final List<DataTransfer> list = new ArrayList<>();
-        DBIterator<DataTransfer> it = null;
-        try {
-            it = ecpds.getInterruptedTransfers(DataTransfer.class);
+        try (var it = ecpds.getInterruptedTransfers(DataTransfer.class)) {
             while (it.hasNext()) {
                 list.add(it.next());
             }
         } catch (SQLException | IOException e) {
             _log.warn("getInterruptedTransfers", e);
-        } finally {
-            if (it != null) {
-                it.remove();
-            }
         }
         logSqlRequest("getInterruptedTransfers", list.size());
         return list.toArray(new DataTransfer[list.size()]);
@@ -4259,18 +4025,12 @@ public final class ECpdsBase extends DataBase {
      */
     public DataTransfer[] getInterruptedTransfersPerDestination(final Destination destination) {
         final List<DataTransfer> list = new ArrayList<>();
-        DBIterator<DataTransfer> it = null;
-        try {
-            it = ecpds.getInterruptedTransfersPerDestination(destination.getName(), DataTransfer.class);
+        try (var it = ecpds.getInterruptedTransfersPerDestination(destination.getName(), DataTransfer.class)) {
             while (it.hasNext()) {
                 list.add(it.next());
             }
         } catch (SQLException | IOException e) {
             _log.warn("getInterruptedTransfersPerDestination", e);
-        } finally {
-            if (it != null) {
-                it.remove();
-            }
         }
         logSqlRequest("getInterruptedTransfersPerDestination", list.size());
         return list.toArray(new DataTransfer[list.size()]);

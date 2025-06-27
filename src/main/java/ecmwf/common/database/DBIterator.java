@@ -28,6 +28,7 @@ package ecmwf.common.database;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -40,7 +41,7 @@ import ecmwf.common.text.Format;
  * @param <E>
  *            the element type
  */
-class DBIterator<E extends DataBaseObject> implements Iterator<E> {
+class DBIterator<E extends DataBaseObject> implements Iterator<E>, AutoCloseable {
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(DBIterator.class);
 
@@ -52,6 +53,9 @@ class DBIterator<E extends DataBaseObject> implements Iterator<E> {
 
     /** The start time. */
     private final long startTime = System.currentTimeMillis();
+
+    /** The closed flag. */
+    private final AtomicBoolean closed = new AtomicBoolean(false);
 
     /** The successful flag. */
     private boolean successful = true;
@@ -90,9 +94,9 @@ class DBIterator<E extends DataBaseObject> implements Iterator<E> {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Checks for next.
+     *
+     * @return true, if successful
      */
     @Override
     public boolean hasNext() {
@@ -109,9 +113,9 @@ class DBIterator<E extends DataBaseObject> implements Iterator<E> {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Next.
+     *
+     * @return the e
      */
     @Override
     public E next() {
@@ -131,8 +135,6 @@ class DBIterator<E extends DataBaseObject> implements Iterator<E> {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * This method has a different behavior, as instead of removing the latest element it is closing the underlying
      * database connection. This allow releasing the underlying resources even when using a standard iterator interface.
      *
@@ -140,19 +142,20 @@ class DBIterator<E extends DataBaseObject> implements Iterator<E> {
      */
     @Override
     public void remove() {
-        var done = false;
-        synchronized (this) {
+        if (closed.compareAndSet(false, true)) {
             if (broker != null && dataBase != null) {
                 broker.release(successful);
-                broker = null;
-                done = true;
+                final var elapsed = System.currentTimeMillis() - startTime;
+                if (_log.isDebugEnabled() && elapsed > 10000L) {
+                    _log.debug("Closing DBIterator after: {}", Format.formatDuration(elapsed));
+                }
             }
+            broker = null;
         }
-        if (done) {
-            final var elapsed = System.currentTimeMillis() - startTime;
-            if (_log.isDebugEnabled() && elapsed > 10000L) {
-                _log.debug("Closing DBIterator after: {}", Format.formatDuration(elapsed));
-            }
-        }
+    }
+
+    @Override
+    public void close() {
+        remove();
     }
 }
