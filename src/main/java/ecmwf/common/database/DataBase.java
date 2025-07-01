@@ -79,15 +79,6 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
     /** The Constant NL. */
     private static final String NL = System.lineSeparator();
 
-    /** The Constant MODE_EXTERNAL. */
-    public static final int MODE_EXTERNAL = 2;
-
-    /** The Constant MODE_INTERNAL. */
-    public static final int MODE_INTERNAL = 1;
-
-    /** The Constant MODE_SERVER. */
-    public static final int MODE_SERVER = 3;
-
     /** The closed. */
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
@@ -96,9 +87,6 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
 
     /** The driver. */
     private Driver driver = null;
-
-    /** The mode. */
-    private int mode = -1;
 
     /** The dataFile. */
     private ScriptFileImpl dataFile = null;
@@ -150,41 +138,36 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      * @param debugSqlRequests
      *            the debug sql
      *
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
-     * @throws java.lang.IllegalAccessException
+     * @throws IllegalAccessException
      *             the illegal access exception
-     * @throws java.lang.InstantiationException
+     * @throws InstantiationException
      *             the instantiation exception
-     * @throws java.lang.ClassNotFoundException
+     * @throws ClassNotFoundException
      *             the class not found exception
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
-     * @throws java.lang.IllegalArgumentException
+     * @throws IllegalArgumentException
      *             the illegal argument exception
-     * @throws java.lang.reflect.InvocationTargetException
+     * @throws InvocationTargetException
      *             the invocation target exception
-     * @throws java.lang.NoSuchMethodException
+     * @throws NoSuchMethodException
      *             the no such method exception
-     * @throws java.lang.SecurityException
+     * @throws SecurityException
      *             the security exception
      */
     public void initialize(final String brokerProxy, final String driverClassName, final String level,
-            final String protocol, final String subProtocol, String alias, final String user, final String password,
-            final String dbms, final String serverUrl, final String repository, String validation,
-            final boolean logDatabaseEvents, final boolean debugSqlRequests) throws SQLException,
-            IllegalAccessException, InstantiationException, ClassNotFoundException, DataBaseException,
-            IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
+            final String protocol, final String subProtocol, final String alias, final String user,
+            final String password, final String dbms, final String serverUrl, final String repository,
+            final String validation, final boolean logDatabaseEvents, final boolean debugSqlRequests)
+            throws SQLException, IllegalAccessException, InstantiationException, ClassNotFoundException,
+            DataBaseException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException,
+            SecurityException {
         logEvents = logDatabaseEvents;
         debugSql = debugSqlRequests;
         dataFile = getScriptFileImpl(repository);
-        server = serverUrl != null && serverUrl.length() > 0 ? serverUrl : null;
-        if (server != null) {
-            mode = MODE_SERVER;
-        } else {
-            mode = "jdbc".equals(protocol) && "hsqldb".equals(subProtocol) && !alias.startsWith("hsql:") ? MODE_INTERNAL
-                    : MODE_EXTERNAL;
-        }
+        server = serverUrl != null && !serverUrl.isEmpty() ? serverUrl : null;
         _log.debug("Log events: {}", logDatabaseEvents ? "enabled" : "disabled");
         // Initialize the JDBC driver.
         if (System.getProperty(FQCN + "debug", "false").matches("^(?i)(yes|true)$")) {
@@ -194,6 +177,7 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
                     // Do nothing, we won't use this output stream
                 }
             }) {
+
                 @Override
                 public void println(final String message) {
                     _log.debug(message);
@@ -249,8 +233,6 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Close.
      */
     @Override
@@ -271,9 +253,17 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the.
+     *
+     * @param <T>
+     *            the generic type
+     * @param object
+     *            the object
+     *
+     * @return the t
+     *
+     * @throws DataBaseException
+     *             the data base exception
      */
     @Override
     protected <T extends DataBaseObject> T get(final T object) throws DataBaseException {
@@ -284,25 +274,18 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
             _log.debug("DataBase request (1 element): get{}", Format.getClassName(object));
         }
         T result = null;
-        Broker broker = null;
-        var success = true;
-        try {
-            broker = brokerFactory.getBroker();
+        try (var broker = brokerFactory.getBroker()) {
             result = broker.get(object);
         } catch (final Throwable e) {
             error("get", object, e);
-            success = false;
             throw new BrokerException(e);
         } finally {
-            if (broker != null) {
-                broker.release(success);
-            }
             thread.setContextClassLoader(loader);
         }
         if (result == null) {
             final var ident = new StringBuilder();
             for (final Object key : getPrimaryKeyValues(object)) {
-                ident.append(ident.isEmpty() ? "" : ",").append(key);
+                ident.append(ident.length() == 0 ? "" : ",").append(key);
             }
             // This String should not be changed as it is tested in some places
             // to know if an element is missing in the DataBase. Changing this
@@ -314,28 +297,25 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the all.
+     *
+     * @param <T>
+     *            the generic type
+     * @param target
+     *            the target
+     *
+     * @return the all
      */
     @Override
     protected <T extends DataBaseObject> DBIterator<T> getAll(final Class<T> target) {
-        Broker broker = null;
-        var success = true;
-        DBIterator<T> result = null;
-        try {
-            broker = brokerFactory.getBroker();
-            result = new DBIterator<>(this, broker, broker.getIterator(target),
-                    debugSql ? "getAll(" + target.getName() + ")" : null);
+        DBIterator<T> result;
+        try (var broker = brokerFactory.getBroker()) {
+            result = new DBIterator<>(broker, target);
         } catch (final Exception e) {
             error("getAll", target, e);
-            success = false;
-        } finally {
-            if (!success && broker != null) {
-                broker.release(false);
-            }
+            result = new DBIterator<>();
         }
-        return result == null ? new DBIterator<>() : result;
+        return result;
     }
 
     /**
@@ -429,30 +409,12 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
     }
 
     /**
-     * Fix sql for HSQLDB.
-     *
-     * Remove the COLLATE (...) statements, the USE INDEX (...) statements, the SET STATEMENT (...) FOR statements and
-     * make sure there are no tab or new-lines before the ASC or DESC. Also replaces any "(field-name IS NULL),
-     * field-name)" into "field-name".
-     *
-     * @param sql
-     *            the sql
-     *
-     * @return the string
-     */
-    private String fixSqlForHSQLDB(final String sql) {
-        return mode == MODE_EXTERNAL ? sql // This is not HSQLDB so no fix to apply
-                : sql.replaceAll("(?i)\\(\\w+\\s+IS\\s+NULL\\),\\s+(\\w+)", "$1")
-                        .replaceAll("(?i)\\s+COLLATE\\s+\\S+\\s+", " ")
-                        .replaceAll("(?i)^\\s*SET\\s+STATEMENT\\s+.*\\s+FOR\\s+", "")
-                        .replaceAll("(?i)\\s+USE\\s+INDEX\\s*\\(.*\\)", " ").replaceAll("(?i)\\s+ASC", " ASC")
-                        .replaceAll("(?i)\\s+DESC", " DESC");
-    }
-
-    /**
-     * {@inheritDoc}
-     *
      * Log sql request.
+     *
+     * @param name
+     *            the name
+     * @param count
+     *            the count
      */
     @Override
     protected void logSqlRequest(final String name, final long count) {
@@ -469,36 +431,26 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      *
      * @return the DB result set
      *
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
      */
-    protected DBResultSet executeSelect(final String originalSql) throws SQLException {
-        Broker broker = null;
+    protected DBResultSet executeSelect(final String sql) throws SQLException {
         DBResultSet result = null;
-        var success = true;
-        final var sql = fixSqlForHSQLDB(originalSql);
         if (debugSql) {
             _log.debug("executeSelect: {}", sql);
         }
-        try {
-            broker = brokerFactory.getBroker();
+        try (var broker = brokerFactory.getBroker()) {
             final var start = System.currentTimeMillis();
             result = new DBResultSet(broker, sql);
             logSqlRequest(sql, start, System.currentTimeMillis(), result.getFoundRows());
+            return result;
         } catch (final SQLException e) {
             error("executeSelect", sql, e);
-            success = false;
             throw e;
         } catch (final Exception e) {
             error("executeSelect", sql, e);
-            success = false;
-            throw new SQLException("No JDBC connection available");
-        } finally {
-            if (!success && broker != null) {
-                broker.release(false);
-            }
+            throw new SQLException("Database not available");
         }
-        return result;
     }
 
     /**
@@ -509,19 +461,15 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      *
      * @return the byte[]
      *
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public byte[] select(final String sql) throws SQLException, IOException {
         final var current = System.currentTimeMillis();
-        final var dbResultSet = executeSelect(sql);
-        final var resultSet = dbResultSet.getResultSet();
-        try {
-            return formatResultSet(resultSet, System.currentTimeMillis() - current);
-        } finally {
-            dbResultSet.close();
+        try (var dbResultSet = executeSelect(sql)) {
+            return formatResultSet(dbResultSet.getResultSet(), System.currentTimeMillis() - current);
         }
     }
 
@@ -533,7 +481,7 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      *
      * @return the string
      *
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
      */
     public String update(final String sql) throws SQLException {
@@ -705,8 +653,7 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      * @throws SQLException
      *             the SQL exception
      */
-    private final int executeCustomUpdate(final String originalSql) throws SQLException {
-        final var sql = fixSqlForHSQLDB(originalSql);
+    private final int executeCustomUpdate(final String sql) throws SQLException {
         // Check if this is not a loop request to execute?
         if (sql.toUpperCase().startsWith("LOOP ")) {
             final var st = new StringTokenizer(sql, " ");
@@ -757,18 +704,15 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
             }
             throw new SQLException("Malformed SQL CHUNK request: {}", sql);
         }
-        Broker broker = null;
-        var success = true;
         if (debugSql) {
             _log.debug("executeUpdate: {}", sql);
         }
-        try {
-            broker = brokerFactory.getBroker();
+        try (var broker = brokerFactory.getBroker()) {
             final var start = System.currentTimeMillis();
             final int numberOfRows;
             if (sql.toUpperCase().startsWith("ANALYZE ")) {
                 // This is treated as a query, not an update
-                broker.executeQuery(sql).close(); // We don't need to read the result!
+                broker.executeQuery(false, sql).close(); // We don't need to read the result!
                 numberOfRows = 0;
             } else {
                 numberOfRows = broker.executeUpdate(sql);
@@ -777,16 +721,10 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
             return numberOfRows;
         } catch (final SQLException e) {
             error("executeUpdate", sql, e);
-            success = false;
             throw e;
         } catch (final Exception e) {
             error("executeUpdate", sql, e);
-            success = false;
-            throw new SQLException("No JDBC connection available");
-        } finally {
-            if (broker != null) {
-                broker.release(success);
-            }
+            throw new SQLException("Database not available");
         }
     }
 
@@ -800,9 +738,9 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      *
      * @return the DB result set
      *
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     protected DBResultSet executeSelect(final String menu, final String name) throws SQLException, IOException {
@@ -821,9 +759,9 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      *
      * @return the DB result set
      *
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     protected DBResultSet executeSelect(final String menu, final String name, final String[] values)
@@ -845,11 +783,12 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      *
      * @return the DB iterator
      *
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
+
     protected <T extends DataBaseObject> DBIterator<T> executeQuery(final String menu, final String name,
             final Class<T> resultClass) throws SQLException, IOException {
         return dataFile.executeQuery(menu, "query", name, resultClass);
@@ -871,11 +810,12 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      *
      * @return the DB iterator
      *
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
+
     protected <T extends DataBaseObject> DBIterator<T> executeQuery(final String menu, final String name,
             final Class<T> resultClass, final String[] values) throws SQLException, IOException {
         return dataFile.executeQuery(menu, "query", name, resultClass, stringArrayToMapWithEscapedSQLValues(values));
@@ -891,9 +831,9 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      *
      * @return the int
      *
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     protected int executeCountAsInt(final String menu, final String name) throws SQLException, IOException {
@@ -914,9 +854,9 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      *
      * @return the int
      *
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     protected int executeCountAsInt(final String menu, final String name, final String[] values)
@@ -936,9 +876,9 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      *
      * @return the long
      *
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     protected long executeCountAsLong(final String menu, final String name) throws SQLException, IOException {
@@ -959,9 +899,9 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      *
      * @return the long
      *
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     protected long executeCountAsLong(final String menu, final String name, final String[] values)
@@ -981,9 +921,9 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      *
      * @return the int
      *
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     protected int executeUpdate(final String menu, final String name) throws SQLException, IOException {
@@ -1002,9 +942,9 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      *
      * @return the int
      *
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     protected int executeUpdate(final String menu, final String name, final String[] values)
@@ -1013,9 +953,17 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the attribute.
+     *
+     * @param attributeName
+     *            the attribute name
+     *
+     * @return the attribute
+     *
+     * @throws AttributeNotFoundException
+     *             the attribute not found exception
+     * @throws MBeanException
+     *             the MBean exception
      */
     @Override
     public Object getAttribute(final String attributeName) throws AttributeNotFoundException, MBeanException {
@@ -1038,9 +986,6 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
             if ("Repository".equals(attributeName)) {
                 return dataFile.getRepository();
             }
-            if ("Mode".equals(attributeName)) {
-                return mode == MODE_INTERNAL ? "INTERNAL" : mode == MODE_EXTERNAL ? "EXTERNAL" : "SERVER";
-            }
         } catch (final Exception e) {
             _log.warn("Getting an MBean attribute", e);
             throw new MBeanException(e);
@@ -1050,9 +995,19 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Sets the attribute.
+     *
+     * @param name
+     *            the name
+     * @param value
+     *            the value
+     *
+     * @return true, if successful
+     *
+     * @throws InvalidAttributeValueException
+     *             the invalid attribute value exception
+     * @throws MBeanException
+     *             the MBean exception
      */
     @Override
     public boolean setAttribute(final String name, final Object value)
@@ -1077,21 +1032,19 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the MBean info.
+     *
+     * @return the MBean info
      */
     @Override
     public MBeanInfo getMBeanInfo() {
         return new MBeanInfo(this.getClass().getName(), """
-                The ECaccess database, which can be local or remote, is used by the \
+                The OpenECPDS database, which can be local or remote, is used by the \
                 ECaccess application to maintain information persistence. This \
                 MBean provides informations concerning the database connection \
                 and operations to manage the content of the database.""", new MBeanAttributeInfo[] {
                 new MBeanAttributeInfo("Server", "java.lang.String", "Server: database location if SERVER mode.", true,
                         false, false),
-                new MBeanAttributeInfo("Mode", "java.lang.String", "Mode: INTERNAL, EXTERNAL or SERVER.", true, false,
-                        false),
                 new MBeanAttributeInfo("LogEvents", "java.lang.Boolean", "LogEvents: log events in the database.", true,
                         true, false),
                 new MBeanAttributeInfo("DebugSql", "java.lang.Boolean",
@@ -1110,6 +1063,9 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
                                 MBeanOperationInfo.ACTION),
                         new MBeanOperationInfo("reloadRepository",
                                 "reloadRepository(): reload the scripts from the repository", null, "void",
+                                MBeanOperationInfo.ACTION),
+                        new MBeanOperationInfo("compactDataBase",
+                                "compactDataBase(): shrinks HSQLDB files to the minimum size", null, "void",
                                 MBeanOperationInfo.ACTION),
                         new MBeanOperationInfo("updateScriptContent",
                                 "updateScriptContent(menu,group,name): refresh a cached SQL script",
@@ -1130,20 +1086,11 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
     }
 
     /**
-     * Gets the mode.
-     *
-     * @return the mode
-     */
-    public int getMode() {
-        return mode;
-    }
-
-    /**
      * Gets the time.
      *
      * @return the time
      *
-     * @throws java.text.ParseException
+     * @throws ParseException
      *             the parse exception
      */
     public static long getTime() throws ParseException {
@@ -1160,7 +1107,7 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      *
      * @return the time
      *
-     * @throws java.text.ParseException
+     * @throws ParseException
      *             the parse exception
      */
     public static long getTime(final Date date, final Time time) throws ParseException {
@@ -1170,9 +1117,21 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Invoke.
+     *
+     * @param operationName
+     *            the operation name
+     * @param params
+     *            the params
+     * @param signature
+     *            the signature
+     *
+     * @return the object
+     *
+     * @throws NoSuchMethodException
+     *             the no such method exception
+     * @throws MBeanException
+     *             the MBean exception
      */
     @Override
     public Object invoke(final String operationName, final Object[] params, final String[] signature)
@@ -1332,7 +1291,7 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      * @param createPk
      *            the create pk
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public void insert(final DataBaseObject object, final boolean createPk) throws DataBaseException {
@@ -1349,42 +1308,33 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      * @param checkDuplicate
      *            the check duplicate
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public void insert(final DataBaseObject object, final boolean createPk, final boolean checkDuplicate)
             throws DataBaseException {
-        Broker broker = null;
-        var success = true;
-        try {
-            if (!isNullObject("Insert", object)) {
-                broker = brokerFactory.getBroker();
+        if (!isNullObject("Insert", object)) {
+            try (var broker = brokerFactory.getBroker()) {
                 if (checkDuplicate) {
                     Object result;
                     try {
                         result = get(object);
-                    } catch (final Exception e) {
+                    } catch (final Exception _) {
                         result = null;
                     }
                     if (result != null) {
                         final var ident = new StringBuilder();
                         for (final Object key : getPrimaryKeyValues(object)) {
-                            ident.append(ident.isEmpty() ? "" : ",").append(key);
+                            ident.append(ident.length() == 0 ? "" : ",").append(key);
                         }
                         throw new DataBaseException(
                                 Format.getClassName(object) + " already exists: {" + ident.toString() + "}");
                     }
                 }
                 broker.store(object, false);
-                // broker.removeFromCache(object);
-            }
-        } catch (final Throwable e) {
-            error("Insert", object, e);
-            success = false;
-            throw new DataBaseException(e.getMessage());
-        } finally {
-            if (broker != null) {
-                broker.release(success);
+            } catch (final Throwable e) {
+                error("Insert", object, e);
+                throw new DataBaseException(e.getMessage());
             }
         }
     }
@@ -1395,7 +1345,7 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      * @param object
      *            the object
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public void update(final DataBaseObject object) throws DataBaseException {
@@ -1411,24 +1361,16 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
                 // We should retry, so let's wait for 2 seconds before!
                 try {
                     Thread.sleep(2000);
-                } catch (final InterruptedException e) {
+                } catch (final InterruptedException _) {
                 }
             }
-            Broker broker = null;
-            var success = true;
-            try {
-                if (!isNullObject("Update", object)) {
-                    broker = brokerFactory.getBroker();
+            if (!isNullObject("Update", object)) {
+                try (var broker = brokerFactory.getBroker()) {
                     broker.store(object, true);
-                }
-                // The update was successful!
-                return;
-            } catch (final Throwable t) {
-                error("Update", object, throwable = t);
-                success = false;
-            } finally {
-                if (broker != null) {
-                    broker.release(success);
+                    // The update was successful!
+                    return;
+                } catch (final Throwable t) {
+                    error("Update", object, throwable = t);
                 }
             }
         }
@@ -1480,25 +1422,16 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      * @param object
      *            the object
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public void store(final DataBaseObject object) throws DataBaseException {
-        Broker broker = null;
-        var success = true;
-        try {
-            if (!isNullObject("Store", object)) {
-                broker = brokerFactory.getBroker();
+        if (!isNullObject("Store", object)) {
+            try (var broker = brokerFactory.getBroker()) {
                 broker.store(object);
-                // broker.removeFromCache(object);
-            }
-        } catch (final Throwable e) {
-            error("Store", object, e);
-            success = false;
-            throw new DataBaseException(e.getMessage());
-        } finally {
-            if (broker != null) {
-                broker.release(success);
+            } catch (final Throwable e) {
+                error("Store", object, e);
+                throw new DataBaseException(e.getMessage());
             }
         }
     }
@@ -1509,7 +1442,7 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      * @param object
      *            the object
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public void remove(final DataBaseObject object) throws DataBaseException {
@@ -1522,15 +1455,12 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      * @param objects
      *            the objects
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public void remove(final DataBaseObject[] objects) throws DataBaseException {
-        Broker broker = null;
-        var success = true;
         DataBaseObject object = null;
-        try {
-            broker = brokerFactory.getBroker();
+        try (var broker = brokerFactory.getBroker()) {
             for (final DataBaseObject dataBaseObject : objects) {
                 if (isNullObject("Remove", object = dataBaseObject)) {
                     continue;
@@ -1539,12 +1469,7 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
             }
         } catch (final Throwable e) {
             error("Remove", object, e);
-            success = false;
             throw new DataBaseException(e.getMessage());
-        } finally {
-            if (broker != null) {
-                broker.release(success);
-            }
         }
     }
 
@@ -1552,16 +1477,10 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      * Clear cache.
      */
     public void clearCache() {
-        Broker broker = null;
-        try {
-            broker = brokerFactory.getBroker();
+        try (var broker = brokerFactory.getBroker()) {
             broker.clearCache();
         } catch (final BrokerException e) {
             _log.warn("Broker not available", e);
-        } finally {
-            if (broker != null) {
-                broker.release(true);
-            }
         }
     }
 
@@ -1576,16 +1495,10 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      *            the primary keys
      */
     public <T extends DataBaseObject> void clearCache(final Class<T> clazz, final List<Object> primaryKeys) {
-        Broker broker = null;
-        try {
-            broker = brokerFactory.getBroker();
+        try (var broker = brokerFactory.getBroker()) {
             broker.clearCache(clazz, primaryKeys);
         } catch (final BrokerException e) {
             _log.warn("Broker not available", e);
-        } finally {
-            if (broker != null) {
-                broker.release(true);
-            }
         }
     }
 
@@ -1600,16 +1513,10 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      *            the primary keys
      */
     public void clearCache(final String tableName, final String columnName, final List<Object> primaryKeys) {
-        Broker broker = null;
-        try {
-            broker = brokerFactory.getBroker();
+        try (var broker = brokerFactory.getBroker()) {
             broker.clearCache(tableName, columnName, primaryKeys);
         } catch (final BrokerException e) {
             _log.warn("Broker not available", e);
-        } finally {
-            if (broker != null) {
-                broker.release(true);
-            }
         }
     }
 
@@ -1621,26 +1528,19 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      *
      * @return the primary key values
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Object[] getPrimaryKeyValues(final DataBaseObject object) throws DataBaseException {
         final var thread = Thread.currentThread();
         final var loader = thread.getContextClassLoader();
         thread.setContextClassLoader(object.getClass().getClassLoader());
-        Broker broker = null;
-        var success = true;
-        try {
-            broker = brokerFactory.getBroker();
+        try (var broker = brokerFactory.getBroker()) {
             return broker.getPrimaryKeyValues(object);
         } catch (final Throwable e) {
             error("Remove", object, e);
-            success = false;
             throw new DataBaseException(e.getMessage());
         } finally {
-            if (broker != null) {
-                broker.release(success);
-            }
             thread.setContextClassLoader(loader);
         }
     }
@@ -1706,31 +1606,20 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
          *             the SQL exception
          */
         @Override
-        public <T extends DataBaseObject> DBIterator<T> executeQuery(final Class<T> resultClass,
-                final String originalSql) throws SQLException {
-            Broker broker = null;
-            DBIterator<T> result = null;
-            var success = true;
-            final var sql = fixSqlForHSQLDB(originalSql);
+        public <T extends DataBaseObject> DBIterator<T> executeQuery(final Class<T> resultClass, final String sql)
+                throws SQLException {
             if (debugSql) {
                 _log.debug("executeQuery: {}", sql);
             }
-            try {
-                broker = brokerFactory.getBroker();
+            try (var broker = brokerFactory.getBroker()) {
                 final var start = System.currentTimeMillis();
-                result = new DBIterator<>(DataBase.this, broker, broker.getIterator(resultClass, sql),
-                        debugSql ? "executeQuery(" + sql + ")" : null);
+                final var result = new DBIterator<>(broker, resultClass, sql);
                 logSqlRequest(sql, start, System.currentTimeMillis(), -1);
+                return result;
             } catch (final Exception e) {
                 error("executeQuery", sql, e);
-                success = false;
-                throw new SQLException("No JDBC connection available");
-            } finally {
-                if (!success && broker != null) {
-                    broker.release(false);
-                }
+                throw new SQLException("Database not available");
             }
-            return result;
         }
 
         /**
@@ -1750,7 +1639,7 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
             var rowsAffected = 0;
             while (tokenizer.hasMoreElements()) {
                 final var subquery = tokenizer.nextToken().trim();
-                if (subquery.length() > 0) {
+                if (!subquery.isEmpty()) {
                     rowsAffected += executeCustomUpdate(subquery);
                 }
             }

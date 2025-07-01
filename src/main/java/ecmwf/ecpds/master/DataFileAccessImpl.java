@@ -47,7 +47,6 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 import java.util.StringTokenizer;
 
@@ -63,12 +62,13 @@ import ecmwf.common.database.Destination;
 import ecmwf.common.database.ECpdsBase;
 import ecmwf.common.database.IncomingHistory;
 import ecmwf.common.database.IncomingUser;
-import ecmwf.common.ecaccess.FileListElement;
 import ecmwf.common.ectrans.ECtransSetup;
 import ecmwf.common.rmi.SocketConfig;
+import ecmwf.common.technical.CloseableIterator;
 import ecmwf.common.technical.ProxyEvent;
 import ecmwf.common.technical.ProxySocket;
 import ecmwf.common.text.Format;
+import ecmwf.common.ecaccess.FileListElement;
 import ecmwf.ecpds.master.plugin.ecpds.ECpdsClient;
 import ecmwf.ecpds.master.transfer.AliasesParser;
 import ecmwf.ecpds.master.transfer.DestinationOption;
@@ -160,7 +160,7 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
      * @throws MasterException
      *             the master exception
      */
-    private Iterator<DataTransfer> getDataTransfers(final String destinationName, final String target,
+    private CloseableIterator<DataTransfer> getDataTransfers(final String destinationName, final String target,
             final long specifiedTime, final int sort, final int order) throws MasterException {
         final var from = new Date(specifiedTime);
         final var to = new Date(specifiedTime + Timer.ONE_DAY);
@@ -191,8 +191,8 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
      * @throws MasterException
      *             the master exception
      */
-    private Iterator<DataTransfer> getDataTransfers(final String destinationName, final String target, final int sort,
-            final int order) throws MasterException {
+    private CloseableIterator<DataTransfer> getDataTransfers(final String destinationName, final String target,
+            final int sort, final int order) throws MasterException {
         final var base = master.getDataBase(ECpdsBase.class);
         try {
             return base.getDataTransfersByDestinationAndTargetIterator2(destinationName,
@@ -234,10 +234,9 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
                     throw new MasterException("Invalid date: " + date);
                 }
                 // The next token is supposed to be the name of the data
-                // file!
-                final var transfers = getDataTransfers(destination.getName(), tokenizer.nextToken(), specifiedTime, 3,
-                        2); // sort=DAT_SCHEDULED_TIME & order=DESC
-                try {
+                // file! sort=DAT_SCHEDULED_TIME & order=DESC
+                try (var transfers = getDataTransfers(destination.getName(), tokenizer.nextToken(), specifiedTime, 3,
+                        2)) {
                     if (transfers.hasNext()) {
                         try {
                             return master.getDataBase(ECpdsBase.class).getDataTransfer(transfers.next().getId());
@@ -246,8 +245,6 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
                             throw new MasterException("DataBase error");
                         }
                     }
-                } finally {
-                    transfers.remove();
                 }
                 // File not found!
             } else if (tokenizer.countTokens() == 1) {
@@ -260,8 +257,7 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
         } else // The files are grouped by names and sub-directories as defined in
         // the path of the source!
         if (!source.endsWith("/")) {
-            final var transfers = getDataTransfers(destination.getName(), source, -1, -1);
-            try {
+            try (var transfers = getDataTransfers(destination.getName(), source, -1, -1)) {
                 if (transfers.hasNext()) {
                     try {
                         return master.getDataBase(ECpdsBase.class).getDataTransfer(transfers.next().getId());
@@ -270,8 +266,6 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
                         throw new MasterException("DataBase error");
                     }
                 }
-            } finally {
-                transfers.remove();
             }
         }
         // We couldn't find the file!
@@ -307,9 +301,19 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the file last modified.
+     *
+     * @param destinationName
+     *            the destination name
+     * @param source
+     *            the source
+     *
+     * @return the file last modified
+     *
+     * @throws MasterException
+     *             the master exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public long getFileLastModified(final String destinationName, final String source)
@@ -320,9 +324,19 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Size.
+     *
+     * @param destinationName
+     *            the destination name
+     * @param source
+     *            the source
+     *
+     * @return the long
+     *
+     * @throws MasterException
+     *             the master exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public long size(final String destinationName, final String source) throws MasterException, IOException {
@@ -331,9 +345,21 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the proxy socket input.
+     *
+     * @param destinationName
+     *            the destination name
+     * @param source
+     *            the source
+     * @param offset
+     *            the offset
+     *
+     * @return the proxy socket input
+     *
+     * @throws MasterException
+     *             the master exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public ProxySocket getProxySocketInput(final String destinationName, final String source, final long offset)
@@ -342,9 +368,23 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the proxy socket input.
+     *
+     * @param destinationName
+     *            the destination name
+     * @param source
+     *            the source
+     * @param offset
+     *            the offset
+     * @param length
+     *            the length
+     *
+     * @return the proxy socket input
+     *
+     * @throws MasterException
+     *             the master exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public ProxySocket getProxySocketInput(final String destinationName, final String source, final long offset,
@@ -373,9 +413,23 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the proxy socket output.
+     *
+     * @param destinationName
+     *            the destination name
+     * @param target
+     *            the target
+     * @param offset
+     *            the offset
+     * @param umask
+     *            the umask
+     *
+     * @return the proxy socket output
+     *
+     * @throws MasterException
+     *             the master exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public ProxySocket getProxySocketOutput(final String destinationName, String target, final long offset,
@@ -430,9 +484,19 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Delete.
+     *
+     * @param destinationName
+     *            the destination name
+     * @param source
+     *            the source
+     * @param force
+     *            the force
+     *
+     * @throws MasterException
+     *             the master exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void delete(final String destinationName, final String source, final boolean force)
@@ -449,9 +513,17 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Mkdir.
+     *
+     * @param destinationName
+     *            the destination name
+     * @param path
+     *            the path
+     *
+     * @throws MasterException
+     *             the master exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void mkdir(final String destinationName, final String path) throws MasterException, IOException {
@@ -476,9 +548,17 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Rmdir.
+     *
+     * @param destinationName
+     *            the destination name
+     * @param path
+     *            the path
+     *
+     * @throws MasterException
+     *             the master exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void rmdir(final String destinationName, final String path) throws MasterException, IOException {
@@ -529,9 +609,19 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
     }
 
     /**
-     * {@inheritDoc}
-     *
      * List.
+     *
+     * @param destinationName
+     *            the destination name
+     * @param path
+     *            the path
+     *
+     * @return the file list element[]
+     *
+     * @throws MasterException
+     *             the master exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public FileListElement[] list(final String destinationName, final String path) throws MasterException, IOException {
@@ -539,9 +629,23 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
     }
 
     /**
-     * {@inheritDoc}
-     *
      * List.
+     *
+     * @param destinationName
+     *            the destination name
+     * @param path
+     *            the path
+     * @param sort
+     *            the sort
+     * @param order
+     *            the order
+     *
+     * @return the file list element[]
+     *
+     * @throws MasterException
+     *             the master exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public FileListElement[] list(final String destinationName, String path, final int sort, final int order)
@@ -591,8 +695,7 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
                     // Converting Unix wild-cards into SQL wild-cards!
                     target = Format.unix2sqlWildcards(target);
                 }
-                final var transfers = getDataTransfers(destinationName, target, specifiedTime, sort, order);
-                try {
+                try (var transfers = getDataTransfers(destinationName, target, specifiedTime, sort, order)) {
                     while (transfers.hasNext()) {
                         final var currentTransfer = transfers.next();
                         final var name = new File(currentTransfer.getTarget()).getName();
@@ -603,8 +706,6 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
                             keys.add(name);
                         }
                     }
-                } finally {
-                    transfers.remove();
                 }
             }
         } else {
@@ -614,8 +715,7 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
                 path = "";
             }
             final var level = new StringTokenizer(path, "/").countTokens();
-            final var transfers = getDataTransfers(destinationName, Format.unix2sqlWildcards(path) + "%", sort, order);
-            try {
+            try (var transfers = getDataTransfers(destinationName, Format.unix2sqlWildcards(path) + "%", sort, order)) {
                 while (transfers.hasNext()) {
                     final var currentTransfer = transfers.next();
                     var target = Format.normalizePath(currentTransfer.getTarget());
@@ -678,8 +778,6 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
                         }
                     }
                 }
-            } finally {
-                transfers.remove();
             }
         }
         final var size = elements.size();
@@ -710,9 +808,8 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
         final var currentTime = System.currentTimeMillis();
         final var currentPath = path == null ? "" : path;
         final var level = new StringTokenizer(currentPath, "/").countTokens();
-        final var transfers = getDataTransfers(destination.getName(), Format.unix2sqlWildcards(currentPath) + "%", -1,
-                -1);
-        try {
+        try (var transfers = getDataTransfers(destination.getName(), Format.unix2sqlWildcards(currentPath) + "%", -1,
+                -1)) {
             while (transfers.hasNext()) {
                 final var currentTransfer = transfers.next();
                 var target = Format.normalizePath(currentTransfer.getTarget());
@@ -763,16 +860,24 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
                     }
                 }
             }
-        } finally {
-            transfers.remove();
         }
         return null;
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the.
+     *
+     * @param destinationName
+     *            the destination name
+     * @param path
+     *            the path
+     *
+     * @return the file list element
+     *
+     * @throws MasterException
+     *             the master exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @SuppressWarnings("null")
     @Override
@@ -846,9 +951,19 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Move.
+     *
+     * @param destinationName
+     *            the destination name
+     * @param source
+     *            the source
+     * @param target
+     *            the target
+     *
+     * @throws MasterException
+     *             the master exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void move(final String destinationName, final String source, final String target)
@@ -950,9 +1065,15 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Check.
+     *
+     * @param proxy
+     *            the proxy
+     *
+     * @throws MasterException
+     *             the master exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void check(final ProxySocket proxy) throws MasterException, IOException {

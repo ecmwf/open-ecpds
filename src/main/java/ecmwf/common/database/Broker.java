@@ -29,15 +29,15 @@ package ecmwf.common.database;
  * @since 2024-07-01
  */
 
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Iterator;
 import java.util.List;
+
+import ecmwf.common.technical.CloseableIterator;
 
 /**
  * The Interface Broker.
  */
-interface Broker {
+interface Broker extends AutoCloseable {
 
     /**
      * Clear cache for the specified entities.
@@ -84,12 +84,12 @@ interface Broker {
      *
      * @return the result set
      *
-     * @throws ecmwf.common.database.BrokerException
+     * @throws BrokerException
      *             the broker exception
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
      */
-    ResultSet executeQuery(String sql) throws BrokerException, SQLException;
+    CloseableResultSetWrapper executeQuery(boolean release, String sql) throws BrokerException, SQLException;
 
     /**
      * Execute update.
@@ -99,9 +99,9 @@ interface Broker {
      *
      * @return the number of fields processed
      *
-     * @throws ecmwf.common.database.BrokerException
+     * @throws BrokerException
      *             the broker exception
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
      */
     int executeUpdate(String sql) throws BrokerException, SQLException;
@@ -128,7 +128,7 @@ interface Broker {
      *
      * @return the iterator
      */
-    <T extends DataBaseObject> Iterator<T> getIterator(Class<T> target);
+    <T extends DataBaseObject> CloseableIterator<T> getIterator(Class<T> target);
 
     /**
      * Gets the iterator.
@@ -142,7 +142,7 @@ interface Broker {
      *
      * @return the iterator
      */
-    <T extends DataBaseObject> Iterator<T> getIterator(Class<T> target, String sql);
+    <T extends DataBaseObject> CloseableIterator<T> getIterator(Class<T> target, String sql);
 
     /**
      * Gets the primary key values.
@@ -152,11 +152,11 @@ interface Broker {
      *
      * @return the primary key values
      *
-     * @throws java.lang.Exception
+     * @throws Exception
      *             the exception
-     * @throws java.lang.SecurityException
+     * @throws SecurityException
      *             the security exception
-     * @throws java.lang.IllegalArgumentException
+     * @throws IllegalArgumentException
      *             the illegal argument exception
      */
     Object[] getPrimaryKeyValues(DataBaseObject object) throws Exception;
@@ -169,12 +169,14 @@ interface Broker {
     boolean isClosed();
 
     /**
-     * Release.
-     *
-     * @param success
-     *            the success
+     * Called by the try-catch-resource.
      */
-    void release(boolean success);
+    void close();
+
+    /**
+     * Called by the DBIterator and DBResultSet.
+     */
+    void release();
 
     /**
      * Store the object in the database. If the object does not exists then a new entry is created, otherwise the object

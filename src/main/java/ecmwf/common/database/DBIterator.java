@@ -26,13 +26,14 @@ package ecmwf.common.database;
  * @since 2024-07-01
  */
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import ecmwf.common.technical.CloseableIterator;
+import ecmwf.common.technical.ResourceTracker;
 import ecmwf.common.text.Format;
 
 /**
@@ -41,15 +42,18 @@ import ecmwf.common.text.Format;
  * @param <E>
  *            the element type
  */
-class DBIterator<E extends DataBaseObject> implements Iterator<E>, AutoCloseable {
+public class DBIterator<E extends DataBaseObject> implements Iterator<E>, CloseableIterator<E> {
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(DBIterator.class);
 
-    /** The data base. */
-    private final DataBase dataBase;
+    /** The Constant TRACKER. */
+    private static final ResourceTracker TRACKER = new ResourceTracker(DBIterator.class);
 
     /** The underlying iterator. */
-    private final Iterator<E> iterator;
+    private final CloseableIterator<E> iterator;
+
+    /** The broker. */
+    private final Broker broker;
 
     /** The start time. */
     private final long startTime = System.currentTimeMillis();
@@ -57,40 +61,42 @@ class DBIterator<E extends DataBaseObject> implements Iterator<E>, AutoCloseable
     /** The closed flag. */
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
-    /** The successful flag. */
-    private boolean successful = true;
-
-    /** The broker. */
-    private Broker broker = null;
-
     /**
      * Instantiates a new DB iterator.
      */
     DBIterator() {
-        iterator = new ArrayList<E>().iterator();
-        dataBase = null;
-        broker = null;
+        this.iterator = CloseableIterator.empty();
+        this.broker = null;
     }
 
     /**
      * Instantiates a new DB iterator.
      *
-     * @param dataBase
-     *            the data base
      * @param broker
      *            the broker
-     * @param iterator
-     *            the iterator
-     * @param info
-     *            the info
+     * @param target
+     *            the target
      */
-    DBIterator(final DataBase dataBase, final Broker broker, final Iterator<E> iterator, final String info) {
-        this.iterator = iterator;
-        this.dataBase = dataBase;
+    DBIterator(final Broker broker, final Class<E> target) {
+        this.iterator = broker.getIterator(target);
         this.broker = broker;
-        if (!iterator.hasNext()) {
-            remove();
-        }
+        TRACKER.onOpen();
+    }
+
+    /**
+     * Instantiates a new DB iterator.
+     *
+     * @param broker
+     *            the broker
+     * @param target
+     *            the target
+     * @param sql
+     *            the sql
+     */
+    DBIterator(final Broker broker, final Class<E> target, final String sql) {
+        this.iterator = broker.getIterator(target, sql);
+        this.broker = broker;
+        TRACKER.onOpen();
     }
 
     /**
@@ -100,16 +106,7 @@ class DBIterator<E extends DataBaseObject> implements Iterator<E>, AutoCloseable
      */
     @Override
     public boolean hasNext() {
-        var completed = false;
-        try {
-            final var result = iterator.hasNext();
-            completed = true;
-            return result;
-        } finally {
-            if (!completed) {
-                successful = false;
-            }
-        }
+        return iterator.hasNext();
     }
 
     /**
@@ -119,43 +116,40 @@ class DBIterator<E extends DataBaseObject> implements Iterator<E>, AutoCloseable
      */
     @Override
     public E next() {
-        var completed = false;
         try {
-            final var result = iterator.next();
-            completed = true;
-            return result;
+            return iterator.next();
         } catch (final Throwable t) {
             _log.warn("DBIterator error: {}", iterator, t);
             throw t;
-        } finally {
-            if (!completed) {
-                successful = false;
-            }
         }
     }
 
     /**
-     * This method has a different behavior, as instead of removing the latest element it is closing the underlying
-     * database connection. This allow releasing the underlying resources even when using a standard iterator interface.
+     * This method is closing the underlying database connection. This allow releasing the underlying resources.
      *
-     * @see java.util.Iterator#remove()
+     * @see java.util.Iterator#close()
      */
     @Override
-    public void remove() {
-        if (closed.compareAndSet(false, true)) {
-            if (broker != null && dataBase != null) {
-                broker.release(successful);
+    public void close() {
+        if (closed.compareAndSet(false, true) && broker != null) {
+            try {
+                try {
+                    iterator.close();
+                } catch (Exception e) {
+                    _log.warn("Failed to close iterator", e);
+                }
+                try {
+                    broker.release();
+                } catch (Exception e) {
+                    _log.warn("Failed to release broker", e);
+                }
+            } finally {
+                TRACKER.onClose();
                 final var elapsed = System.currentTimeMillis() - startTime;
-                if (_log.isDebugEnabled() && elapsed > 10000L) {
-                    _log.debug("Closing DBIterator after: {}", Format.formatDuration(elapsed));
+                if (_log.isDebugEnabled() && TRACKER.getClosedCount() % 100 == 0) {
+                    _log.debug("Closed after {}: {}", Format.formatDuration(elapsed), TRACKER);
                 }
             }
-            broker = null;
         }
-    }
-
-    @Override
-    public void close() {
-        remove();
     }
 }

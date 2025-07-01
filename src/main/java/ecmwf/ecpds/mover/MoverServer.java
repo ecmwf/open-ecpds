@@ -1999,7 +1999,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                         file.exists() ? "exist" : "not found", file.getAbsolutePath());
             }
             final var dir = file.getParentFile();
-            if (dir != null) {
+            if (dir != null && dir.exists()) {
                 final var count = instance == null ? 0 : instance;
                 for (var j = 0; j <= count; j++) {
                     final GenericFile currentFile = new FileChecker(
@@ -2020,7 +2020,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                 }
             }
             var checkDirectory = true;
-            for (var i = 0; i < 2 && checkDirectory && (file = file.getParentFile()) != null; i++) {
+            for (var i = 0; i < 2 && checkDirectory && (file = file.getParentFile()) != null && file.exists(); i++) {
                 final var list = file.list();
                 if (list != null && list.length == 0 && (checkDirectory = file.delete())) {
                     _log.info("Directory deleted: {}", file.getAbsolutePath());

@@ -132,7 +132,6 @@ import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -173,6 +172,7 @@ import ecmwf.common.callback.RemoteInputStreamImp;
 import ecmwf.common.database.Alias;
 import ecmwf.common.database.Association;
 import ecmwf.common.database.ChangeLog;
+import ecmwf.common.database.DBIterator;
 import ecmwf.common.database.DataBaseException;
 import ecmwf.common.database.DataBaseObject;
 import ecmwf.common.database.DataFile;
@@ -399,29 +399,29 @@ public final class MasterServer extends ECaccessProvider
      * @param starter
      *            the starter
      *
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
-     * @throws java.lang.IllegalAccessException
+     * @throws IllegalAccessException
      *             the illegal access exception
-     * @throws java.lang.InstantiationException
+     * @throws InstantiationException
      *             the instantiation exception
-     * @throws java.lang.ClassNotFoundException
+     * @throws ClassNotFoundException
      *             the class not found exception
-     * @throws javax.management.InstanceAlreadyExistsException
+     * @throws InstanceAlreadyExistsException
      *             the instance already exists exception
-     * @throws javax.management.MBeanRegistrationException
+     * @throws MBeanRegistrationException
      *             the MBean registration exception
-     * @throws javax.management.NotCompliantMBeanException
+     * @throws NotCompliantMBeanException
      *             the not compliant m bean exception
-     * @throws javax.management.MalformedObjectNameException
+     * @throws MalformedObjectNameException
      *             the malformed object name exception
-     * @throws javax.management.InstanceNotFoundException
+     * @throws InstanceNotFoundException
      *             the instance not found exception
-     * @throws ecmwf.common.ecaccess.ConnectionException
+     * @throws ConnectionException
      *             the connection exception
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public MasterServer(final Starter starter)
@@ -595,9 +595,9 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the version.
+     *
+     * @return the version
      */
     @Override
     public String getVersion() {
@@ -605,9 +605,9 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the management interface.
+     *
+     * @return the management interface
      */
     @Override
     public ManagementInterface getManagementInterface() {
@@ -615,9 +615,9 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the data base interface.
+     *
+     * @return the data base interface
      */
     @Override
     public DataBaseInterface getDataBaseInterface() {
@@ -625,9 +625,9 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the attachment access interface.
+     *
+     * @return the attachment access interface
      */
     @Override
     public DataAccessInterface getAttachmentAccessInterface() {
@@ -635,9 +635,9 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the data file access interface.
+     *
+     * @return the data file access interface
      */
     @Override
     public DataAccessInterface getDataFileAccessInterface() {
@@ -654,9 +654,12 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the destination.
+     *
+     * @param name
+     *            the name
+     *
+     * @return the destination
      */
     @Override
     public Destination getDestination(final String name) {
@@ -664,12 +667,15 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Checks if is valid data file.
      *
      * This method is called by the cleaning scheduler on the DataMovers to check if a DataFile still exists and is
      * valid? Otherwise the DataFile is removed from the DataMover storage system.
+     *
+     * @param dataFileId
+     *            the data file id
+     *
+     * @return true, if is valid data file
      */
     @Override
     public boolean isValidDataFile(final long dataFileId) {
@@ -701,9 +707,12 @@ public final class MasterServer extends ECaccessProvider
     };
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the incoming user hash.
+     *
+     * @param incomingUser
+     *            the incoming user
+     *
+     * @return the incoming user hash
      */
     @Override
     public String getIncomingUserHash(final String incomingUser) {
@@ -727,9 +736,18 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the s 3 authorization signature.
+     *
+     * @param incomingUser
+     *            the incoming user
+     * @param prefix
+     *            the prefix
+     * @param data
+     *            the data
+     * @param algorithm
+     *            the algorithm
+     *
+     * @return the s 3 authorization signature
      */
     @Override
     public byte[] getS3AuthorizationSignature(final String incomingUser, final String prefix, final String data,
@@ -746,9 +764,21 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the incoming profile.
+     *
+     * @param incomingUser
+     *            the incoming user
+     * @param incomingPassword
+     *            the incoming password
+     * @param from
+     *            the from
+     *
+     * @return the incoming profile
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     * @throws MasterException
+     *             the master exception
      */
     @Override
     public IncomingProfile getIncomingProfile(final String incomingUser, final String incomingPassword,
@@ -882,7 +912,7 @@ public final class MasterServer extends ECaccessProvider
      *
      * @return the transfer scheduler
      *
-     * @throws ecmwf.ecpds.master.MasterException
+     * @throws MasterException
      *             the master exception
      */
     public TransferScheduler getTransferScheduler() throws MasterException {
@@ -970,7 +1000,7 @@ public final class MasterServer extends ECaccessProvider
      *
      * @return the download scheduler
      *
-     * @throws ecmwf.ecpds.master.MasterException
+     * @throws MasterException
      *             the master exception
      */
     public DownloadScheduler getDownloadScheduler(final boolean acquisition) throws MasterException {
@@ -1035,7 +1065,7 @@ public final class MasterServer extends ECaccessProvider
      *
      * @return the data transfers
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public DataTransfer[] getDataTransfers(final long dataFileId) throws DataBaseException {
@@ -1112,11 +1142,11 @@ public final class MasterServer extends ECaccessProvider
      *
      * @return the destination scheduler cache
      *
-     * @throws ecmwf.common.monitor.MonitorException
+     * @throws MonitorException
      *             the monitor exception
-     * @throws ecmwf.ecpds.master.MasterException
+     * @throws MasterException
      *             the master exception
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public DestinationSchedulerCache getDestinationSchedulerCache(final String destinationName)
@@ -1134,11 +1164,11 @@ public final class MasterServer extends ECaccessProvider
      *
      * @return the destination scheduler cache
      *
-     * @throws ecmwf.common.monitor.MonitorException
+     * @throws MonitorException
      *             the monitor exception
-     * @throws ecmwf.ecpds.master.MasterException
+     * @throws MasterException
      *             the master exception
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public DestinationSchedulerCache getDestinationSchedulerCache(final String destinationName, final String statusCode)
@@ -1178,11 +1208,11 @@ public final class MasterServer extends ECaccessProvider
      *
      * @return the destination caches
      *
-     * @throws ecmwf.common.monitor.MonitorException
+     * @throws MonitorException
      *             the monitor exception
-     * @throws ecmwf.ecpds.master.MasterException
+     * @throws MasterException
      *             the master exception
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Map<String, DestinationCache> getDestinationCaches()
@@ -1222,11 +1252,11 @@ public final class MasterServer extends ECaccessProvider
      *
      * @return the destination cache
      *
-     * @throws ecmwf.common.monitor.MonitorException
+     * @throws MonitorException
      *             the monitor exception
-     * @throws ecmwf.ecpds.master.MasterException
+     * @throws MasterException
      *             the master exception
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public DestinationCache getDestinationCache(final String destinationName)
@@ -1265,9 +1295,10 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Purge data base.
+     *
+     * @param milliseconds
+     *            the milliseconds
      */
     @Override
     public void purgeDataBase(final long milliseconds) {
@@ -1297,11 +1328,9 @@ public final class MasterServer extends ECaccessProvider
      */
     private void _purgeProxyHosts() {
         _log.debug("Starting ProxyHosts purge");
-        Iterator<ExistingStorageDirectory> it = null;
-        try {
-            String proxyHostName = null;
+        try (var it = getECpdsBase().getExistingStorageDirectoriesPerProxyHost()) {
             final List<ExistingStorageDirectory> directories = new ArrayList<>();
-            it = getECpdsBase().getExistingStorageDirectoriesPerProxyHost();
+            String proxyHostName = null;
             while (it.hasNext()) {
                 final var directory = it.next();
                 // Do we process a new ProxyHostName?
@@ -1321,10 +1350,6 @@ public final class MasterServer extends ECaccessProvider
             _processStorageDirectoriesOnProxyHosts(directories);
         } catch (final Throwable t) {
             _log.warn("purgeProxyHosts", t);
-        } finally {
-            if (it != null) {
-                it.remove();
-            }
         }
     }
 
@@ -1354,11 +1379,9 @@ public final class MasterServer extends ECaccessProvider
      */
     private void _purgeDataMovers() {
         _log.debug("Starting DataMovers purge");
-        Iterator<ExistingStorageDirectory> it = null;
-        try {
-            String transferGroupName = null;
+        try (var it = getECpdsBase().getExistingStorageDirectories()) {
             final List<ExistingStorageDirectory> directories = new ArrayList<>();
-            it = getECpdsBase().getExistingStorageDirectories();
+            String transferGroupName = null;
             while (it.hasNext()) {
                 final var directory = it.next();
                 // Do we process a new TransferGroupName?
@@ -1378,10 +1401,6 @@ public final class MasterServer extends ECaccessProvider
             _processStorageDirectoriesOnDataMovers(directories);
         } catch (final Throwable t) {
             _log.warn("purgeDataMovers", t);
-        } finally {
-            if (it != null) {
-                it.remove();
-            }
         }
     }
 
@@ -1510,7 +1529,7 @@ public final class MasterServer extends ECaccessProvider
      *
      * @return true, if successful
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public boolean deleteDataFile(final DataFile file) throws DataBaseException {
@@ -1528,7 +1547,7 @@ public final class MasterServer extends ECaccessProvider
      *
      * @return the purge result
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public PurgeResult purgeDataFile(final DataFile file, final String byAndFrom) throws DataBaseException {
@@ -1648,7 +1667,7 @@ public final class MasterServer extends ECaccessProvider
      *
      * @return the filter efficiency
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public String computeFilterEfficiency(final String destinationName, final String email, final String filter,
@@ -1663,10 +1682,8 @@ public final class MasterServer extends ECaccessProvider
                 efficiency.destinationName = destinationName;
                 efficiency.pattern = pattern;
                 efficiency.date = date;
-                Iterator<DataTransfer> it = null;
-                try {
-                    it = getECpdsBase().getDataTransfersByDestinationAndTargetOnDateIterator(destinationName, null,
-                            new Date(date), new Date(to));
+                try (var it = getECpdsBase().getDataTransfersByDestinationAndTargetOnDateIterator(destinationName, null,
+                        new Date(date), new Date(to))) {
                     _log.info("Processing Destination {} from {} to {}", () -> destinationName,
                             () -> Format.formatTime(date), () -> Format.formatTime(to));
                     var count = 0;
@@ -1727,10 +1744,6 @@ public final class MasterServer extends ECaccessProvider
                             "Error occurred while computing efficiency of " + filter + " on " + destinationName,
                             Format.getMessage(t));
                     return;
-                } finally {
-                    if (it != null) {
-                        it.remove();
-                    }
                 }
                 // Record the result in the logs!
                 _log.info(() -> efficiency.toString());
@@ -1753,9 +1766,9 @@ public final class MasterServer extends ECaccessProvider
      *
      * @return the mover report
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public String getMoverReport(final Host proxyHost) throws DataBaseException, IOException {
@@ -1776,9 +1789,9 @@ public final class MasterServer extends ECaccessProvider
      *
      * @return the host report
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public String getHostReport(final Host proxyHost, final Host host) throws DataBaseException, IOException {
@@ -1799,9 +1812,9 @@ public final class MasterServer extends ECaccessProvider
      * @param host
      *            the host
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public void cleanDataWindow(final Host host) throws DataBaseException, IOException {
@@ -1814,7 +1827,7 @@ public final class MasterServer extends ECaccessProvider
      * @param host
      *            the host
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public void resetHostStats(final Host host) throws DataBaseException {
@@ -1838,9 +1851,9 @@ public final class MasterServer extends ECaccessProvider
      *
      * @return the report
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public String getReport(final Host host) throws DataBaseException, IOException {
@@ -1877,7 +1890,7 @@ public final class MasterServer extends ECaccessProvider
      *
      * @return the output
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public RemoteInputStreamImp getOutput(final Host host) throws IOException {
@@ -1915,7 +1928,7 @@ public final class MasterServer extends ECaccessProvider
      *
      * @return the report
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public String getReport(final TransferServer server) throws IOException {
@@ -1929,9 +1942,12 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Update incoming connection ids.
+     *
+     * @param serverName
+     *            the server name
+     * @param incomingConnections
+     *            the incoming connections
      */
     @Override
     public void updateIncomingConnectionIds(final String serverName,
@@ -1944,7 +1960,7 @@ public final class MasterServer extends ECaccessProvider
      *
      * @return the incoming connections per user
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Map<String, ArrayList<IncomingConnection>> getIncomingConnections() throws DataBaseException {
@@ -1976,7 +1992,7 @@ public final class MasterServer extends ECaccessProvider
      *
      * @return the incoming connection ids
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public String getIncomingConnectionIds() throws DataBaseException {
@@ -2040,7 +2056,7 @@ public final class MasterServer extends ECaccessProvider
     /**
      * Close all incoming connections from all data movers.
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public void closeAllIncomingConnections() throws DataBaseException {
@@ -2073,7 +2089,7 @@ public final class MasterServer extends ECaccessProvider
      *
      * @return true, if successful
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public boolean closeIncomingConnection(final String id) throws IOException {
@@ -2097,7 +2113,7 @@ public final class MasterServer extends ECaccessProvider
      * @param transferServerName
      *            the transfer server name
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public void closeAllIncomingConnections(final String transferServerName) throws IOException {
@@ -2117,7 +2133,7 @@ public final class MasterServer extends ECaccessProvider
      *
      * @return true, if successful
      *
-     * @throws ecmwf.ecpds.master.MasterException
+     * @throws MasterException
      *             the master exception
      */
     public boolean updateTransferStatus(final DataTransfer transfer, final String code) throws MasterException {
@@ -2136,17 +2152,15 @@ public final class MasterServer extends ECaccessProvider
      * @param username
      *            the username
      * @param byAndFrom
-     *            the by and from
+     *            the comment
      * @param synchronous
      *            the synchronous
      * @param reset
      *            the reset
-     * @param addHistory
-     *            the add history
      *
      * @return true, if successful
      *
-     * @throws ecmwf.ecpds.master.MasterException
+     * @throws MasterException
      *             the master exception
      */
     public boolean updateTransferStatus(final long id, final String code, final boolean commit, final String username,
@@ -2176,12 +2190,10 @@ public final class MasterServer extends ECaccessProvider
      *            the synchronous
      * @param reset
      *            the reset
-     * @param addHistory
-     *            the add history
      *
      * @return true, if successful
      *
-     * @throws ecmwf.ecpds.master.MasterException
+     * @throws MasterException
      *             the master exception
      */
     public boolean updateTransferStatus(final DataTransfer transfer, String code, final boolean commit,
@@ -2319,7 +2331,7 @@ public final class MasterServer extends ECaccessProvider
      *
      * @return true, if successful
      *
-     * @throws ecmwf.ecpds.master.MasterException
+     * @throws MasterException
      *             the master exception
      */
     public boolean reloadDestination(final DataTransfer transfer) throws MasterException {
@@ -2353,7 +2365,7 @@ public final class MasterServer extends ECaccessProvider
      *
      * @return the active transfer servers
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public List<TransferServer> getActiveTransferServers(final String caller, final TransferServer original,
@@ -2379,9 +2391,9 @@ public final class MasterServer extends ECaccessProvider
      *
      * @return the long
      *
-     * @throws ecmwf.ecpds.master.MasterException
+     * @throws MasterException
      *             the master exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public long transfer(final byte[] bytes, final TransferServer server, final Host host, final String target,
@@ -2527,9 +2539,12 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Called when a ProxyHost sends an update to the Master.
+     *
+     * @param name
+     *            the name
+     *
+     * @return the long
      */
     @Override
     public long proxyHostIsAlive(final String name) {
@@ -2548,9 +2563,16 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Adds the root.
+     *
+     * @param access
+     *            the access
+     * @param host
+     *            the host
+     * @param root
+     *            the root
+     * @param service
+     *            the service
      */
     @Override
     public void addRoot(final ClientInterface access, final String host, final String root, final String service) {
@@ -2593,9 +2615,12 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Removes the expired.
+     *
+     * @param root
+     *            the root
+     * @param service
+     *            the service
      */
     @Override
     public void removeExpired(final String root, final String service) {
@@ -2606,9 +2631,17 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Import EC user.
+     *
+     * @param uid
+     *            the uid
+     *
+     * @return the EC user
+     *
+     * @throws EccmdException
+     *             the eccmd exception
+     * @throws RemoteException
+     *             the remote exception
      */
     @Override
     public ECUser importECUser(final String uid) throws EccmdException, RemoteException {
@@ -2616,12 +2649,13 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Handle E cuser update.
      *
      * This method is called when an ECUser change is detected (when the database has just been updated with a new
      * version from NIS).
+     *
+     * @param ecuser
+     *            the ecuser
      */
     @Override
     public void handleECuserUpdate(final ECUser ecuser) {
@@ -2649,9 +2683,9 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the MBean info.
+     *
+     * @return the MBean info
      */
     @Override
     public MBeanInfo getMBeanInfo() {
@@ -2784,9 +2818,17 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the attribute.
+     *
+     * @param attributeName
+     *            the attribute name
+     *
+     * @return the attribute
+     *
+     * @throws AttributeNotFoundException
+     *             the attribute not found exception
+     * @throws MBeanException
+     *             the MBean exception
      */
     @Override
     public Object getAttribute(final String attributeName) throws AttributeNotFoundException, MBeanException {
@@ -2808,9 +2850,19 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Sets the attribute.
+     *
+     * @param name
+     *            the name
+     * @param value
+     *            the value
+     *
+     * @return true, if successful
+     *
+     * @throws InvalidAttributeValueException
+     *             the invalid attribute value exception
+     * @throws MBeanException
+     *             the MBean exception
      */
     @Override
     public boolean setAttribute(final String name, final Object value)
@@ -2827,9 +2879,21 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Invoke.
+     *
+     * @param operationName
+     *            the operation name
+     * @param params
+     *            the params
+     * @param signature
+     *            the signature
+     *
+     * @return the object
+     *
+     * @throws NoSuchMethodException
+     *             the no such method exception
+     * @throws MBeanException
+     *             the MBean exception
      */
     @Override
     public Object invoke(final String operationName, final Object[] params, final String[] signature)
@@ -2954,9 +3018,13 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Update data transfers.
+     *
+     * @param transfers
+     *            the transfers
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void updateDataTransfers(final DataTransfer[] transfers) throws IOException {
@@ -3009,9 +3077,15 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Update download progress.
+     *
+     * @param progress
+     *            the progress
+     *
+     * @return the download progress[]
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public DownloadProgress[] updateDownloadProgress(final DownloadProgress[] progress) throws IOException {
@@ -3151,9 +3225,9 @@ public final class MasterServer extends ECaccessProvider
      * @param byAndFrom
      *            the comment
      *
-     * @throws ecmwf.ecpds.master.MasterException
+     * @throws MasterException
      *             the master exception
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public void removeDataFileAndDataTransfers(final DataFile file, final String username, final String byAndFrom)
@@ -3466,9 +3540,9 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Checks if is available.
+     *
+     * @return the long
      */
     @Override
     public long isAvailable() {
@@ -3612,13 +3686,17 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Update data.
      *
      * This method is used from the MoverProvider on the MoverServer (updateMSUser) to update the Host. The method will
      * make sure the Host was not updated by a newer version. If a newer version exists then this update will not be
      * done. The only field updated in this method is the DATA.
+     *
+     * @param host
+     *            the host
+     *
+     * @throws DataBaseException
+     *             the data base exception
      */
     @Override
     public void updateData(final Host host) throws DataBaseException {
@@ -3626,13 +3704,19 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Update data.
      *
      * This method is used from the MoverProvider on the MoverServer (updateMSUser) to update the Host. The method will
      * make sure the Host was not updated by a newer version. If a newer version exists then this update will not be
      * done. The only field updated in this method is the DATA.
+     *
+     * @param hostId
+     *            the host id
+     * @param data
+     *            the data
+     *
+     * @throws DataBaseException
+     *             the data base exception
      */
     @Override
     public void updateData(final String hostId, final String data) throws DataBaseException {
@@ -3661,13 +3745,14 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Update location.
      *
      * This method is used from the MoverProvider on the MoverServer (getMSUser) to update the Host location. This is
      * triggered when the MoverServer has detected a change in the IP address. It is also called from the Web monitoring
      * and JMX interface.
+     *
+     * @param host
+     *            the host
      */
     @Override
     public void updateLocation(final Host host) {
@@ -3737,9 +3822,15 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the ecauth token.
+     *
+     * @param user
+     *            the user
+     *
+     * @return the ecauth token
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public ECauthToken getECauthToken(final String user) throws IOException {
@@ -3747,9 +3838,15 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the e tag.
+     *
+     * @param dataTransferId
+     *            the data transfer id
+     *
+     * @return the e tag
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public String getETag(final long dataTransferId) throws IOException {
@@ -3969,7 +4066,7 @@ public final class MasterServer extends ECaccessProvider
      *
      * @return the host
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Host copyHost(final String destinationName, final String hostName) throws DataBaseException {
@@ -4033,9 +4130,9 @@ public final class MasterServer extends ECaccessProvider
      *
      * @return the destination
      *
-     * @throws ecmwf.ecpds.master.MasterException
+     * @throws MasterException
      *             the master exception
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public Destination copyDestination(final String fromDestinationName, final String toDestinationName,
@@ -4060,9 +4157,19 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Import destination.
+     *
+     * @param fromDestination
+     *            the from destination
+     * @param linkedAssociations
+     *            the linked associations
+     * @param copySharedHost
+     *            the copy shared host
+     *
+     * @throws MasterException
+     *             the master exception
+     * @throws DataBaseException
+     *             the data base exception
      */
     @Override
     public void importDestination(final Destination fromDestination, final Association[] linkedAssociations,
@@ -4082,9 +4189,9 @@ public final class MasterServer extends ECaccessProvider
      * @param copySharedHost
      *            the copy shared host
      *
-     * @throws ecmwf.ecpds.master.MasterException
+     * @throws MasterException
      *             the master exception
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public void exportDestination(final String targetMaster, final String fromDestination, final boolean copySharedHost)
@@ -4329,7 +4436,7 @@ public final class MasterServer extends ECaccessProvider
      *
      * @return true, if successful
      *
-     * @throws ecmwf.ecpds.master.MasterException
+     * @throws MasterException
      *             the master exception
      */
     public boolean updateRemoteTransferStatus(final String remoteMaster, final boolean standby,
@@ -4347,9 +4454,25 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Update local transfer status.
+     *
+     * @param remoteMaster
+     *            the remote master
+     * @param standby
+     *            the standby
+     * @param destination
+     *            the destination
+     * @param target
+     *            the target
+     * @param uniqueKey
+     *            the unique key
+     * @param status
+     *            the status
+     *
+     * @return true, if successful
+     *
+     * @throws MasterException
+     *             the master exception
      */
     @Override
     public boolean updateLocalTransferStatus(final String remoteMaster, final boolean standby, final String destination,
@@ -4633,8 +4756,12 @@ public final class MasterServer extends ECaccessProvider
      *
      * @return the web user
      *
-     * @throws ecmwf.ecpds.master.MasterException
+     * @throws MasterException
      *             the master exception
+     * @throws DataBaseException
+     *             the data base exception
+     * @throws RemoteException
+     *             the remote exception
      */
     public WebUser getWebUser(final String user, final String credentials, final String root) throws MasterException {
         if (!Cnf.at("Server", "anonymousUser", "anonymous").equals(user)) { // No need to log anonymous requests!
@@ -4717,9 +4844,11 @@ public final class MasterServer extends ECaccessProvider
      * @param webUser
      *            the web user
      *
-     * @throws ecmwf.ecpds.master.MasterException
+     * @return the web user
+     *
+     * @throws MasterException
      *             the master exception
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public void saveWebUser(final WebUser webUser) throws MasterException, DataBaseException {
@@ -4752,8 +4881,6 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Shutdown.
      */
     @Override
@@ -4851,9 +4978,10 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Handle.
+     *
+     * @param event
+     *            the event
      */
     @Override
     public void handle(final PluginEvent<?> event) {
@@ -4867,9 +4995,10 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Handle.
+     *
+     * @param events
+     *            the events
      */
     @Override
     public void handle(final PluginEvent<?>[] events) {
@@ -4912,14 +5041,14 @@ public final class MasterServer extends ECaccessProvider
      *
      * @param target
      *            the target
+     *
+     * @return the initial data transfer events
      */
     public void getInitialDataTransferEvents(final String target) {
-        Iterator<DataTransfer> it = null;
+        final var current = System.currentTimeMillis();
         var i = 0;
-        try {
-            final var current = System.currentTimeMillis();
-            it = getECpdsBase().getInitialDataTransferEventsIterator(new Date(current - 30 * Timer.ONE_DAY),
-                    new Date(current));
+        try (var it = getECpdsBase().getInitialDataTransferEventsIterator(new Date(current - 30 * Timer.ONE_DAY),
+                new Date(current))) {
             final List<PluginEvent<?>> events = new ArrayList<>();
             while (it.hasNext()) {
                 final var event = new DataTransferEvent(it.next());
@@ -4932,10 +5061,6 @@ public final class MasterServer extends ECaccessProvider
             _updatePluginEvents(events, 0);
         } catch (final Throwable e) {
             _log.warn("DataTransferEvents cache not initialized for " + target, e);
-        } finally {
-            if (it != null) {
-                it.remove();
-            }
         }
         _log.debug("DataTransferEvent(s) notified with " + i + " element(s)");
     }
@@ -4954,10 +5079,8 @@ public final class MasterServer extends ECaccessProvider
      * @return the initial product status events
      */
     public void getInitialProductStatusEvents(final String target, final String stream, final String time) {
-        Iterator<ProductStatus> it = null;
         var i = 0;
-        try {
-            it = getECpdsBase().getInitialProductStatusEventsIterator();
+        try (var it = getECpdsBase().getInitialProductStatusEventsIterator()) {
             final List<PluginEvent<?>> events = new ArrayList<>();
             while (it.hasNext()) {
                 final ProductStatus ps = it.next();
@@ -4972,10 +5095,6 @@ public final class MasterServer extends ECaccessProvider
             _updatePluginEvents(events, 0);
         } catch (final Throwable e) {
             _log.warn("ProductStatusEvents cache not initialized for " + target, e);
-        } finally {
-            if (it != null) {
-                it.remove();
-            }
         }
         _log.debug("ProductStatusEvent(s) notified with " + i + " element(s)");
     }
@@ -4985,6 +5104,8 @@ public final class MasterServer extends ECaccessProvider
      *
      * @param target
      *            the target
+     *
+     * @return the initial change host events
      */
     public void getInitialChangeHostEvents(final String target) {
         var i = 0;
@@ -5005,9 +5126,9 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the root.
+     *
+     * @return the root
      */
     @Override
     public String getRoot() {
@@ -5015,9 +5136,9 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the service.
+     *
+     * @return the service
      */
     @Override
     public String getService() {
@@ -5025,9 +5146,9 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the password.
+     *
+     * @return the password
      */
     @Override
     public String getPassword() {
@@ -5763,11 +5884,9 @@ public final class MasterServer extends ECaccessProvider
          */
         @Override
         public int nextStep() {
-            Iterator<Publication> it = null;
+            final var start = System.currentTimeMillis();
             var processed = 0;
-            try {
-                final var start = System.currentTimeMillis();
-                it = getECpdsBase().getPublicationIterator(2 * _maxEventThreads);
+            try (var it = getECpdsBase().getPublicationIterator(2 * _maxEventThreads)) {
                 while (isRunning() && it.hasNext()) {
                     try {
                         final var publication = it.next();
@@ -5818,10 +5937,6 @@ public final class MasterServer extends ECaccessProvider
                 }
             } catch (final Throwable t) {
                 _log.warn("Error in scheduler", t);
-            } finally {
-                if (it != null) {
-                    it.remove();
-                }
             }
             // If there are still files to be processed then there is no reason
             // to wait!
@@ -6128,7 +6243,7 @@ public final class MasterServer extends ECaccessProvider
      * @param events
      *            the events
      *
-     * @throws java.lang.Exception
+     * @throws Exception
      *             the exception
      */
     public void updatePluginEvents(final PluginEvent<?>[] events) throws Exception {
@@ -6764,11 +6879,9 @@ public final class MasterServer extends ECaccessProvider
          */
         @Override
         public int nextStep() {
-            Iterator<DataFile> it = null;
+            final var start = System.currentTimeMillis();
             var processed = 0;
-            try {
-                final var start = System.currentTimeMillis();
-                it = getECpdsBase().getDataFilesToFilterIterator(2 * _maxFilterThreads);
+            try (var it = getECpdsBase().getDataFilesToFilterIterator(2 * _maxFilterThreads)) {
                 while (isRunning() && it.hasNext()) {
                     if (getFilterThreadsCount() >= _maxFilterThreads) {
                         break;
@@ -6815,10 +6928,6 @@ public final class MasterServer extends ECaccessProvider
                 }
             } catch (final Throwable t) {
                 _log.warn("Error in scheduler", t);
-            } finally {
-                if (it != null) {
-                    it.remove();
-                }
             }
             // If there are still files to be processed then there is no reason
             // to wait!
@@ -7104,11 +7213,9 @@ public final class MasterServer extends ECaccessProvider
          */
         @Override
         public int nextStep() {
-            Iterator<DataTransfer> it = null;
+            final var start = System.currentTimeMillis();
             var processed = 0;
-            try {
-                final var start = System.currentTimeMillis();
-                it = getECpdsBase().getDataTransfersToReplicateIterator(2 * _maxReplicateThreads);
+            try (var it = getECpdsBase().getDataTransfersToReplicateIterator(2 * _maxReplicateThreads)) {
                 while (isRunning() && it.hasNext()) {
                     try {
                         final var transfer = it.next();
@@ -7174,10 +7281,6 @@ public final class MasterServer extends ECaccessProvider
                 }
             } catch (final Throwable t) {
                 _log.warn("Error in scheduler", t);
-            } finally {
-                if (it != null) {
-                    it.remove();
-                }
             }
             // If there are still files to be processed then there is no reason
             // to wait!
@@ -7459,11 +7562,9 @@ public final class MasterServer extends ECaccessProvider
          */
         @Override
         public int nextStep() {
-            Iterator<DataFile> it = null;
+            final var start = System.currentTimeMillis();
             var processed = 0;
-            try {
-                final var start = System.currentTimeMillis();
-                it = getECpdsBase().getExpiredDataFilesIterator(2 * _maxPurgeThreads);
+            try (var it = getECpdsBase().getExpiredDataFilesIterator(2 * _maxPurgeThreads)) {
                 while (isRunning() && it.hasNext()) {
                     try {
                         final var dataFile = it.next();
@@ -7515,10 +7616,6 @@ public final class MasterServer extends ECaccessProvider
                 }
             } catch (final Throwable t) {
                 _log.warn("Error in scheduler", t);
-            } finally {
-                if (it != null) {
-                    it.remove();
-                }
             }
             // If there are still files to be processed then there is no reason
             // to wait!
@@ -7728,11 +7825,9 @@ public final class MasterServer extends ECaccessProvider
          */
         @Override
         public int nextStep() {
-            Iterator<DataTransfer> it = null;
+            final var start = System.currentTimeMillis();
             var processed = 0;
-            try {
-                final var start = System.currentTimeMillis();
-                it = getECpdsBase().getDataTransfersToBackupIterator(2 * _maxBackupThreads);
+            try (var it = getECpdsBase().getDataTransfersToBackupIterator(2 * _maxBackupThreads)) {
                 while (isRunning() && it.hasNext()) {
                     try {
                         final var transfer = it.next();
@@ -7798,10 +7893,6 @@ public final class MasterServer extends ECaccessProvider
                 }
             } catch (final Throwable t) {
                 _log.warn("Error in scheduler", t);
-            } finally {
-                if (it != null) {
-                    it.remove();
-                }
             }
             // If there are still files to be processed then there is no reason
             // to wait!
@@ -8131,11 +8222,9 @@ public final class MasterServer extends ECaccessProvider
          */
         @Override
         public int nextStep() {
-            Iterator<DataTransfer> it = null;
+            final var start = System.currentTimeMillis();
             var processed = 0;
-            try {
-                final var start = System.currentTimeMillis();
-                it = getECpdsBase().getDataTransfersToProxyIterator(2 * _maxProxyThreads);
+            try (var it = getECpdsBase().getDataTransfersToProxyIterator(2 * _maxProxyThreads)) {
                 while (isRunning() && it.hasNext()) {
                     try {
                         final var transfer = it.next();
@@ -8211,10 +8300,6 @@ public final class MasterServer extends ECaccessProvider
                 }
             } catch (final Throwable t) {
                 _log.warn("Error in scheduler", t);
-            } finally {
-                if (it != null) {
-                    it.remove();
-                }
             }
             // If there are still files to be processed then there is no reason
             // to wait!
@@ -10055,7 +10140,7 @@ public final class MasterServer extends ECaccessProvider
          *             the SQL exception
          */
         @Override
-        public Iterator<DataTransfer> getDataTransfersToDownloadIterator() throws IOException, SQLException {
+        public DBIterator<DataTransfer> getDataTransfersToDownloadIterator() throws IOException, SQLException {
             return getECpdsBase()
                     .getDisseminationDataTransfersToDownloadIterator(_cacheRatio * getMaxDownloadThreads());
         }
@@ -10155,7 +10240,7 @@ public final class MasterServer extends ECaccessProvider
          *             the SQL exception
          */
         @Override
-        public Iterator<DataTransfer> getDataTransfersToDownloadIterator() throws IOException, SQLException {
+        public DBIterator<DataTransfer> getDataTransfersToDownloadIterator() throws IOException, SQLException {
             return getECpdsBase().getAcquisitionDataTransfersToDownloadIterator(_maxPresetPerDestination);
         }
     }
@@ -10180,7 +10265,7 @@ public final class MasterServer extends ECaccessProvider
         public long _minimumRate = Cnf.at("Scheduler", "minimumRateDownloadThread", 2359296);
 
         /** The _debug. */
-        public boolean _debug = Cnf.at("Scheduler", "debug", false);
+        public boolean _debug = Cnf.at("Scheduler", "debug", true);
 
         /** The _processChecksum. */
         public boolean _processChecksum = Cnf.at("Scheduler", "processChecksum", true);
@@ -10226,7 +10311,7 @@ public final class MasterServer extends ECaccessProvider
          * @throws SQLException
          *             the SQL exception
          */
-        public abstract Iterator<DataTransfer> getDataTransfersToDownloadIterator() throws IOException, SQLException;
+        public abstract DBIterator<DataTransfer> getDataTransfersToDownloadIterator() throws IOException, SQLException;
 
         /**
          * Sets the max download threads.
@@ -10637,11 +10722,9 @@ public final class MasterServer extends ECaccessProvider
          */
         @Override
         public int nextStep() {
-            Iterator<DataTransfer> it = null;
+            final var start = System.currentTimeMillis();
             var processed = 0;
-            try {
-                final var start = System.currentTimeMillis();
-                it = getDataTransfersToDownloadIterator();
+            try (var it = getDataTransfersToDownloadIterator()) {
                 final var hostsPerDestination = new HashMap<String, Collection<Host>>();
                 while (!_pause && isRunning() && it.hasNext()) {
                     try {
@@ -10762,10 +10845,6 @@ public final class MasterServer extends ECaccessProvider
                 }
             } catch (final Throwable t) {
                 _log.warn("Error in scheduler", t);
-            } finally {
-                if (it != null) {
-                    it.remove();
-                }
             }
             // If there are still files to be processed then there is no reason
             // to wait!

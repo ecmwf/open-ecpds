@@ -40,15 +40,15 @@ package ecmwf.common.database;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLTransactionRollbackException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.persistence.criteria.CriteriaQuery;
@@ -57,6 +57,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hibernate.Cache;
 import org.hibernate.HibernateException;
+import org.hibernate.ScrollMode;
+import org.hibernate.ScrollableResults;
 import org.hibernate.Session;
 import org.hibernate.TransactionException;
 import org.hibernate.engine.spi.SessionImplementor;
@@ -69,6 +71,7 @@ import org.hibernate.query.Query;
 
 import com.zaxxer.hikari.pool.ProxyConnection;
 
+import ecmwf.common.technical.CloseableIterator;
 import ecmwf.common.technical.Cnf;
 
 /**
@@ -80,10 +83,7 @@ final class BrokerHibernate implements Broker {
     private static final Logger _log = LogManager.getLogger(BrokerHibernate.class);
 
     /** The Constant FETCH_SIZE. */
-    private static final int FETCH_SIZE = Cnf.at("DataBase", "fetchSize", 500);
-
-    /** The Constant QUERY_CACHEABLE. */
-    private static final boolean QUERY_CACHEABLE = Cnf.at("DataBase", "queryCacheable", false);
+    private static final int FETCH_SIZE = Cnf.at("DataBase", "fetchSize", 100);
 
     /** The Constant GET_MARIADB_CONNECTION. */
     private static final boolean GET_MARIADB_CONNECTION = Cnf.at("DataBase", "getMariadbConnection", true);
@@ -111,6 +111,12 @@ final class BrokerHibernate implements Broker {
 
     /** The Constant activities. */
     private static final Map<String, NodeActivity> activities = new ConcurrentHashMap<>();
+
+    /** The closed flag. */
+    private final AtomicBoolean closed = new AtomicBoolean(false);
+
+    /** The released flag. */
+    private final AtomicBoolean released = new AtomicBoolean(false);
 
     /** The session. */
     private final Session session;
@@ -365,14 +371,17 @@ final class BrokerHibernate implements Broker {
      * @see ecmwf.common.database.Broker#executeQuery(java.lang.String)
      */
     @Override
-    public ResultSet executeQuery(final String sql) throws BrokerException, SQLException {
+    public CloseableResultSetWrapper executeQuery(final boolean release, final String sql)
+            throws BrokerException, SQLException {
         setReadOnly(true);
         session.setDefaultReadOnly(true);
+        if (release)
+            closed.set(true); // The release() method will be used instead
         try {
             return session.doReturningWork(connection -> {
                 final var statement = connection.createStatement();
                 statement.setFetchSize(FETCH_SIZE);
-                return statement.executeQuery(sql);
+                return new CloseableResultSetWrapper(statement, sql);
             });
         } catch (final Exception e) {
             _log.error("executeQuery: {}", sql, e);
@@ -400,8 +409,6 @@ final class BrokerHibernate implements Broker {
             session.doWork(connection -> {
                 try (final var statement = connection.createStatement()) {
                     numberOfRows.append(statement.executeUpdate(sql));
-                } finally {
-                    session.clear();
                 }
             });
         } catch (final Exception e) {
@@ -449,15 +456,46 @@ final class BrokerHibernate implements Broker {
      * @see ecmwf.common.database.Broker#getIterator(java.lang.Class)
      */
     @Override
-    public <T extends DataBaseObject> Iterator<T> getIterator(final Class<T> target) {
+    public <T extends DataBaseObject> CloseableIterator<T> getIterator(Class<T> target) {
         setReadOnly(true);
         session.setDefaultReadOnly(true);
         try {
-            final CriteriaQuery<T> cq = session.getCriteriaBuilder().createQuery(target);
-            final Query<T> query = session.createQuery(cq.select(cq.from(target)));
+            final var cb = session.getCriteriaBuilder();
+            final CriteriaQuery<T> cq = cb.createQuery(target);
+            cq.from(target);
+            final Query<T> query = session.createQuery(cq);
             query.setFetchSize(FETCH_SIZE);
-            query.setCacheable(QUERY_CACHEABLE);
-            return query.list().iterator();
+            query.setReadOnly(true);
+            query.setCacheable(false);
+            final ScrollableResults results = query.scroll(ScrollMode.FORWARD_ONLY);
+            closed.set(true); // The release() method will be used instead
+            return new CloseableIterator<>() {
+                private boolean hasNextChecked = false;
+                private boolean hasNext = false;
+
+                @Override
+                public boolean hasNext() {
+                    if (!hasNextChecked) {
+                        hasNext = results.next();
+                        hasNextChecked = true;
+                    }
+                    return hasNext;
+                }
+
+                @Override
+                public T next() {
+                    if (!hasNext()) {
+                        throw new NoSuchElementException("No more results");
+                    }
+                    hasNextChecked = false;
+                    return target.cast(results.get(0));
+                }
+
+                @Override
+                public void close() {
+                    results.close();
+                }
+            };
         } catch (final HibernateException e) {
             _log.error("getIterator: {}", target.getName(), e);
             throw e;
@@ -481,14 +519,43 @@ final class BrokerHibernate implements Broker {
      * @see ecmwf.common.database.Broker#getIterator(java.lang.Class, java.lang.String)
      */
     @Override
-    public <T extends DataBaseObject> Iterator<T> getIterator(final Class<T> target, final String sql) {
+    public <T extends DataBaseObject> CloseableIterator<T> getIterator(final Class<T> target, final String sql) {
         setReadOnly(true);
         session.setDefaultReadOnly(true);
         try {
             final NativeQuery<T> query = session.createNativeQuery(sql, target);
             query.setFetchSize(FETCH_SIZE);
-            query.setCacheable(QUERY_CACHEABLE);
-            return query.list().iterator();
+            query.setReadOnly(true);
+            query.setCacheable(false);
+            final ScrollableResults results = query.scroll(ScrollMode.FORWARD_ONLY);
+            closed.set(true); // The release() method will be used instead
+            return new CloseableIterator<>() {
+                private boolean hasNextChecked = false;
+                private boolean hasNext = false;
+
+                @Override
+                public boolean hasNext() {
+                    if (!hasNextChecked) {
+                        hasNext = results.next();
+                        hasNextChecked = true;
+                    }
+                    return hasNext;
+                }
+
+                @Override
+                public T next() {
+                    if (!hasNext()) {
+                        throw new NoSuchElementException("No more results");
+                    }
+                    hasNextChecked = false;
+                    return target.cast(results.get(0));
+                }
+
+                @Override
+                public void close() {
+                    results.close();
+                }
+            };
         } catch (final HibernateException e) {
             _log.error("getIterator: {} -> {}", target.getName(), sql, e);
             throw e;
@@ -615,7 +682,7 @@ final class BrokerHibernate implements Broker {
             }
             try {
                 Thread.sleep(RETRY_TRANSACTION_DELAY);
-            } catch (final InterruptedException ignored) {
+            } catch (final InterruptedException _) {
                 Thread.currentThread().interrupt();
             }
             retryablePerform(operation, object, retryCount - 1);
@@ -655,11 +722,25 @@ final class BrokerHibernate implements Broker {
      *
      * This method is closing the underlying hibernate session.
      *
-     * @see ecmwf.common.database.Broker#release(boolean)
+     * @see ecmwf.common.database.Broker#close()
      */
     @Override
-    public void release(final boolean success) {
-        session.close();
+    public void close() {
+        if (closed.compareAndSet(false, true) && !isClosed())
+            session.close();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * This method is releasing the underlying hibernate session.
+     *
+     * @see ecmwf.common.database.Broker#release()
+     */
+    @Override
+    public void release() {
+        if (released.compareAndSet(false, true) && !isClosed())
+            session.close();
     }
 
     /**

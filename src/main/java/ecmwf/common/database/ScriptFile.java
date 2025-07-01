@@ -320,7 +320,7 @@ public abstract class ScriptFile {
         String line;
         try {
             while ((line = dis.readLine()) != null) {
-                if (line.length() > 0) {
+                if (!line.isEmpty()) {
                     if (line.startsWith("# ") && line.length() > 2) {
                         help.append(line.substring(2)).append("\n");
                     } else {

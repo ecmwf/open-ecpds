@@ -26,31 +26,38 @@ package ecmwf.common.database;
  * @since 2024-07-01
  */
 
-import java.io.Closeable;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import ecmwf.common.technical.Cnf;
+import ecmwf.common.technical.ResourceTracker;
 import ecmwf.common.text.Format;
 
 /**
  * The Class DBResultSet.
  */
-final class DBResultSet implements Closeable {
+final class DBResultSet implements AutoCloseable {
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(DBResultSet.class);
+
+    /** The Constant TRACKER. */
+    private static final ResourceTracker TRACKER = new ResourceTracker(DBResultSet.class);
 
     /** The Constant EMULATE_CALC_FOUND_ROWS. */
     private static final boolean EMULATE_CALC_FOUND_ROWS = Cnf.at("DataBase", "emulateCalcFoundRows",
             "hsqldb".equalsIgnoreCase(Cnf.at("DataBase", "subProtocol", "")));
+
+    /** The wrapper. */
+    private final CloseableResultSetWrapper wrapper;
 
     /** The result set. */
     private final ResultSet resultSet;
@@ -61,8 +68,8 @@ final class DBResultSet implements Closeable {
     /** The start time. */
     private final long startTime = System.currentTimeMillis();
 
-    /** The successful. */
-    private boolean successful = true;
+    /** The closed flag. */
+    private final AtomicBoolean closed = new AtomicBoolean(false);
 
     /** The broker. */
     private Broker broker = null;
@@ -89,8 +96,10 @@ final class DBResultSet implements Closeable {
     DBResultSet(final Broker broker, final String sql) throws BrokerException, SQLException {
         hasCalcFoundRows = Pattern.compile("(?i)^\\s*SELECT\\s+SQL_CALC_FOUND_ROWS\\s+").matcher(sql).find();
         sqlQuery = hasCalcFoundRows && EMULATE_CALC_FOUND_ROWS ? getInitialSQL(sql) : sql;
-        resultSet = broker.executeQuery(sqlQuery);
+        wrapper = broker.executeQuery(true, sqlQuery);
+        resultSet = wrapper.getResultSet();
         this.broker = broker;
+        TRACKER.onOpen();
     }
 
     /**
@@ -162,69 +171,48 @@ final class DBResultSet implements Closeable {
      *
      * @return true, if successful
      *
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
      */
     public boolean next() throws SQLException {
-        var completed = false;
-        try {
-            final var result = resultSet.next();
-            completed = true;
-            return result;
-        } finally {
-            if (!completed) {
-                successful = false;
+        final var result = resultSet.next();
+        if (!result && hasCalcFoundRows) {
+            // Either We are required to process the second SQL query to find the total
+            // number of entries without limits or we rely on the special MySQL feature!
+            try (var setWrapper = broker.executeQuery(true,
+                    EMULATE_CALC_FOUND_ROWS ? getFoundRowsSQL(sqlQuery) : "SELECT FOUND_ROWS()")) {
+                final var set = setWrapper.getResultSet();
+                if (set.next()) {
+                    foundRows = set.getInt(1);
+                }
+            } catch (final Throwable t) {
+                _log.warn("close", t);
             }
         }
+        return result;
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Close.
      */
     @Override
     public void close() {
-        var done = false;
-        synchronized (this) {
-            ResultSet set = null;
-            if (broker != null) {
-                if (hasCalcFoundRows) {
-                    // Either We are required to process the second SQL query to find the total
-                    // number of entries without limits or we rely on the special MySQL feature!
-                    try {
-                        set = broker.executeQuery(
-                                EMULATE_CALC_FOUND_ROWS ? getFoundRowsSQL(sqlQuery) : "SELECT FOUND_ROWS()");
-                        if (set.next()) {
-                            foundRows = set.getInt(1);
-                        }
-                    } catch (final Throwable t) {
-                        successful = false;
-                        _log.warn("close", t);
-                    }
-                }
-                // We can now release the resources!
-                broker.release(successful);
-                broker = null;
-                try {
-                    resultSet.close();
-                } catch (final Throwable t) {
-                    _log.warn("close", t);
-                }
-                if (set != null) {
-                    try {
-                        set.close();
-                    } catch (final Throwable t) {
-                        _log.warn("close", t);
-                    }
-                }
-                done = true;
+        if (closed.compareAndSet(false, true)) {
+            try {
+                wrapper.close();
+            } catch (final Throwable t) {
+                _log.warn("Failed to close wrapper", t);
             }
-        }
-        if (done) {
-            final var elapsed = System.currentTimeMillis() - startTime;
-            if (elapsed > 10000L) {
-                _log.debug("Closing ResultSet after: {}", Format.formatDuration(elapsed));
+            try {
+                broker.release();
+            } catch (final Throwable t) {
+                _log.warn("Failed to release broker", t);
+            } finally {
+                TRACKER.onClose();
+                final var elapsed = System.currentTimeMillis() - startTime;
+                if (_log.isDebugEnabled() && TRACKER.getClosedCount() % 100 == 0) {
+                    _log.debug("Closed after {}: {}", Format.formatDuration(elapsed), TRACKER);
+                }
             }
         }
     }
@@ -234,20 +222,11 @@ final class DBResultSet implements Closeable {
      *
      * @return true, if successful
      *
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
      */
     public boolean wasNull() throws SQLException {
-        var completed = false;
-        try {
-            final var result = resultSet.wasNull();
-            completed = true;
-            return result;
-        } finally {
-            if (!completed) {
-                successful = false;
-            }
-        }
+        return resultSet.wasNull();
     }
 
     /**
@@ -258,20 +237,11 @@ final class DBResultSet implements Closeable {
      *
      * @return the string
      *
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
      */
     public String getString(final int columnIndex) throws SQLException {
-        var completed = false;
-        try {
-            final var result = resultSet.getString(columnIndex);
-            completed = true;
-            return result;
-        } finally {
-            if (!completed) {
-                successful = false;
-            }
-        }
+        return resultSet.getString(columnIndex);
     }
 
     /**
@@ -282,20 +252,11 @@ final class DBResultSet implements Closeable {
      *
      * @return the boolean
      *
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
      */
     public boolean getBoolean(final int columnIndex) throws SQLException {
-        var completed = false;
-        try {
-            final var result = resultSet.getBoolean(columnIndex);
-            completed = true;
-            return result;
-        } finally {
-            if (!completed) {
-                successful = false;
-            }
-        }
+        return resultSet.getBoolean(columnIndex);
     }
 
     /**
@@ -306,24 +267,16 @@ final class DBResultSet implements Closeable {
      *
      * @return the integer
      *
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
      */
     public Integer getInteger(final int columnIndex) throws SQLException {
-        var completed = false;
-        try {
-            final var integer = resultSet.getString(columnIndex);
-            Integer result = null;
-            if (integer != null) {
-                result = Integer.parseInt(integer);
-            }
-            completed = true;
-            return result;
-        } finally {
-            if (!completed) {
-                successful = false;
-            }
+        final var integer = resultSet.getString(columnIndex);
+        Integer result = null;
+        if (integer != null) {
+            result = Integer.parseInt(integer);
         }
+        return result;
     }
 
     /**
@@ -334,20 +287,11 @@ final class DBResultSet implements Closeable {
      *
      * @return the object
      *
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
      */
     public Object getObject(final int columnIndex) throws SQLException {
-        var completed = false;
-        try {
-            final var result = resultSet.getObject(columnIndex);
-            completed = true;
-            return result;
-        } finally {
-            if (!completed) {
-                successful = false;
-            }
-        }
+        return resultSet.getObject(columnIndex);
     }
 
     /**
@@ -358,20 +302,11 @@ final class DBResultSet implements Closeable {
      *
      * @return the int
      *
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
      */
     public int getInt(final int columnIndex) throws SQLException {
-        var completed = false;
-        try {
-            final var result = resultSet.getInt(columnIndex);
-            completed = true;
-            return result;
-        } finally {
-            if (!completed) {
-                successful = false;
-            }
-        }
+        return resultSet.getInt(columnIndex);
     }
 
     /**
@@ -382,20 +317,11 @@ final class DBResultSet implements Closeable {
      *
      * @return the long
      *
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
      */
     public long getLong(final int columnIndex) throws SQLException {
-        var completed = false;
-        try {
-            final var result = resultSet.getLong(columnIndex);
-            completed = true;
-            return result;
-        } finally {
-            if (!completed) {
-                successful = false;
-            }
-        }
+        return resultSet.getLong(columnIndex);
     }
 
     /**
@@ -406,20 +332,11 @@ final class DBResultSet implements Closeable {
      *
      * @return the string
      *
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
      */
     public String getString(final String columnName) throws SQLException {
-        var completed = false;
-        try {
-            final var result = resultSet.getString(columnName);
-            completed = true;
-            return result;
-        } finally {
-            if (!completed) {
-                successful = false;
-            }
-        }
+        return resultSet.getString(columnName);
     }
 
     /**
@@ -430,20 +347,11 @@ final class DBResultSet implements Closeable {
      *
      * @return the boolean
      *
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
      */
     public boolean getBoolean(final String columnName) throws SQLException {
-        var completed = false;
-        try {
-            final var result = resultSet.getBoolean(columnName);
-            completed = true;
-            return result;
-        } finally {
-            if (!completed) {
-                successful = false;
-            }
-        }
+        return resultSet.getBoolean(columnName);
     }
 
     /**
@@ -454,20 +362,11 @@ final class DBResultSet implements Closeable {
      *
      * @return the boolean
      *
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
      */
     public BigDecimal getBigDecimal(final String columnName) throws SQLException {
-        var completed = false;
-        try {
-            final var result = resultSet.getBigDecimal(columnName);
-            completed = true;
-            return result;
-        } finally {
-            if (!completed) {
-                successful = false;
-            }
-        }
+        return resultSet.getBigDecimal(columnName);
     }
 
     /**
@@ -478,24 +377,16 @@ final class DBResultSet implements Closeable {
      *
      * @return the integer
      *
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
      */
     public Integer getInteger(final String columnName) throws SQLException {
-        var completed = false;
-        try {
-            final var integer = resultSet.getString(columnName);
-            Integer result = null;
-            if (integer != null) {
-                result = Integer.parseInt(integer);
-            }
-            completed = true;
-            return result;
-        } finally {
-            if (!completed) {
-                successful = false;
-            }
+        final var integer = resultSet.getString(columnName);
+        Integer result = null;
+        if (integer != null) {
+            result = Integer.parseInt(integer);
         }
+        return result;
     }
 
     /**
@@ -506,20 +397,11 @@ final class DBResultSet implements Closeable {
      *
      * @return the object
      *
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
      */
     public Object getObject(final String columnName) throws SQLException {
-        var completed = false;
-        try {
-            final var result = resultSet.getObject(columnName);
-            completed = true;
-            return result;
-        } finally {
-            if (!completed) {
-                successful = false;
-            }
-        }
+        return resultSet.getObject(columnName);
     }
 
     /**
@@ -530,20 +412,11 @@ final class DBResultSet implements Closeable {
      *
      * @return the int
      *
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
      */
     public int getInt(final String columnName) throws SQLException {
-        var completed = false;
-        try {
-            final var result = resultSet.getInt(columnName);
-            completed = true;
-            return result;
-        } finally {
-            if (!completed) {
-                successful = false;
-            }
-        }
+        return resultSet.getInt(columnName);
     }
 
     /**
@@ -554,20 +427,11 @@ final class DBResultSet implements Closeable {
      *
      * @return the date
      *
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
      */
     public Date getDate(final String columnName) throws SQLException {
-        var completed = false;
-        try {
-            final var result = resultSet.getDate(columnName);
-            completed = true;
-            return result;
-        } finally {
-            if (!completed) {
-                successful = false;
-            }
-        }
+        return resultSet.getDate(columnName);
     }
 
     /**
@@ -578,25 +442,16 @@ final class DBResultSet implements Closeable {
      *
      * @return the timestamp
      *
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
      */
     public Timestamp getTimestamp(final String columnName) throws SQLException {
-        var completed = false;
-        try {
-            final var timestamp = getString(columnName);
-            Timestamp result = null;
-            if (timestamp != null) {
-                result = new Timestamp(Long.parseLong(timestamp));
-            }
-            completed = true;
-            return result;
-        } finally {
-            if (!completed) {
-                successful = false;
-            }
+        final var timestamp = getString(columnName);
+        Timestamp result = null;
+        if (timestamp != null) {
+            result = new Timestamp(Long.parseLong(timestamp));
         }
-
+        return result;
     }
 
     /**
@@ -607,20 +462,11 @@ final class DBResultSet implements Closeable {
      *
      * @return the time
      *
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
      */
     public Time getTime(final String columnName) throws SQLException {
-        var completed = false;
-        try {
-            final var result = resultSet.getTime(columnName);
-            completed = true;
-            return result;
-        } finally {
-            if (!completed) {
-                successful = false;
-            }
-        }
+        return resultSet.getTime(columnName);
     }
 
     /**
@@ -631,20 +477,11 @@ final class DBResultSet implements Closeable {
      *
      * @return the long
      *
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
      */
     public long getLong(final String columnName) throws SQLException {
-        var completed = false;
-        try {
-            final var result = resultSet.getLong(columnName);
-            completed = true;
-            return result;
-        } finally {
-            if (!completed) {
-                successful = false;
-            }
-        }
+        return resultSet.getLong(columnName);
     }
 
     /**
@@ -655,20 +492,11 @@ final class DBResultSet implements Closeable {
      *
      * @return the float
      *
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
      */
     public float getFloat(final String columnName) throws SQLException {
-        var completed = false;
-        try {
-            final var result = resultSet.getFloat(columnName);
-            completed = true;
-            return result;
-        } finally {
-            if (!completed) {
-                successful = false;
-            }
-        }
+        return resultSet.getFloat(columnName);
     }
 
     /**
@@ -679,20 +507,11 @@ final class DBResultSet implements Closeable {
      *
      * @return the int
      *
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
      */
     public int findColumn(final String columnName) throws SQLException {
-        var completed = false;
-        try {
-            final var result = resultSet.findColumn(columnName);
-            completed = true;
-            return result;
-        } finally {
-            if (!completed) {
-                successful = false;
-            }
-        }
+        return resultSet.findColumn(columnName);
     }
 
     /**
@@ -703,21 +522,11 @@ final class DBResultSet implements Closeable {
      *
      * @return the column type
      *
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
      */
     public int getColumnType(final int columnIndex) throws SQLException {
-        var completed = false;
-        try {
-            final var metaData = resultSet.getMetaData();
-            final var result = metaData.getColumnType(columnIndex);
-            completed = true;
-            return result;
-        } finally {
-            if (!completed) {
-                successful = false;
-            }
-        }
+        return resultSet.getMetaData().getColumnType(columnIndex);
     }
 
     /**
@@ -728,20 +537,10 @@ final class DBResultSet implements Closeable {
      *
      * @return the column type
      *
-     * @throws java.sql.SQLException
+     * @throws SQLException
      *             the SQL exception
      */
     public String getColumnName(final int columnIndex) throws SQLException {
-        var completed = false;
-        try {
-            final var metaData = resultSet.getMetaData();
-            final var result = metaData.getColumnName(columnIndex);
-            completed = true;
-            return result;
-        } finally {
-            if (!completed) {
-                successful = false;
-            }
-        }
+        return resultSet.getMetaData().getColumnName(columnIndex);
     }
 }

@@ -35,7 +35,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +45,7 @@ import javax.management.timer.Timer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import ecmwf.common.technical.CloseableIterator;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.technical.SessionCache;
 import ecmwf.common.text.DateUtil;
@@ -118,10 +118,9 @@ public final class ECpdsBase extends DataBase {
      * @return the transfer servers
      */
     public TransferServer[] getTransferServers(final String groupName) {
-        final List<TransferServer> list;
         try (final var mutex = transferServersCache.getMutex(groupName)) {
             synchronized (mutex.lock()) {
-                list = transferServersCache.computeIfAbsent(groupName, k -> {
+                final List<TransferServer> list = transferServersCache.computeIfAbsent(groupName, k -> {
                     final List<TransferServer> defaultList = new ArrayList<>();
                     try (var it = ecpds.getTransferServers(k, TransferServer.class)) {
                         while (it.hasNext()) {
@@ -133,10 +132,10 @@ public final class ECpdsBase extends DataBase {
                     transferServersCache.put(k, defaultList, CACHE_TIMEOUT);
                     return defaultList;
                 });
+                logSqlRequest("getTransferServers", list.size());
+                return list.toArray(new TransferServer[list.size()]);
             }
         }
-        logSqlRequest("getTransferServers", list.size());
-        return list.toArray(new TransferServer[list.size()]);
     }
 
     /**
@@ -151,17 +150,17 @@ public final class ECpdsBase extends DataBase {
      *             the data base exception
      */
     public List<String> getAuthorisedDestinations(final String user) throws DataBaseException {
-        final List<String> destinationList = new ArrayList<>();
         try (var rs = ecpds.getAuthorizedDestinations(user)) {
+            final List<String> destinationList = new ArrayList<>();
             while (rs.next()) {
                 destinationList.add(rs.getString("DES_NAME"));
             }
+            logSqlRequest("getAuthorisedDestinations", destinationList.size());
+            return destinationList;
         } catch (SQLException | IOException e) {
             _log.warn("getAuthorisedDestinations", e);
             throw new DataBaseException("getAuthorisedDestinations", e);
         }
-        logSqlRequest("getAuthorisedDestinations", destinationList.size());
-        return destinationList;
     }
 
     /**
@@ -176,17 +175,17 @@ public final class ECpdsBase extends DataBase {
      *             the data base exception
      */
     public List<String> getAuthorisedHosts(final String user) throws DataBaseException {
-        final List<String> hostList = new ArrayList<>();
         try (var rs = ecpds.getAuthorizedHosts(user)) {
+            final List<String> hostList = new ArrayList<>();
             while (rs.next()) {
                 hostList.add(rs.getString("HOS_NAME"));
             }
+            logSqlRequest("getAuthorisedHosts", hostList.size());
+            return hostList;
         } catch (SQLException | IOException e) {
             _log.warn("getAuthorisedHosts", e);
             throw new DataBaseException("getAuthorisedHosts", e);
         }
-        logSqlRequest("getAuthorisedHosts", hostList.size());
-        return hostList;
     }
 
     /**
@@ -210,9 +209,9 @@ public final class ECpdsBase extends DataBase {
      */
     public Statistics[] getStatistics(final Date fromDate, final Date toDate, final String groupName,
             final String status, final String type) throws DataBaseException {
-        final List<Statistics> list = new ArrayList<>();
         try (var rs = ecpds.getStatistics(new Timestamp(fromDate.getTime()), new Timestamp(toDate.getTime()), groupName,
                 status, type)) {
+            final List<Statistics> list = new ArrayList<>();
             while (rs.next()) {
                 final var stat = new Statistics();
                 stat.setDate(rs.getTimestamp("DATE"));
@@ -220,12 +219,12 @@ public final class ECpdsBase extends DataBase {
                 stat.setSize(rs.getLong("SIZE"));
                 list.add(stat);
             }
+            logSqlRequest("getStatistics", list.size());
+            return list.toArray(new Statistics[list.size()]);
         } catch (SQLException | IOException e) {
             _log.warn("getStatistics", e);
             throw new DataBaseException("getStatistics", e);
         }
-        logSqlRequest("getStatistics", list.size());
-        return list.toArray(new Statistics[list.size()]);
     }
 
     /**
@@ -247,9 +246,9 @@ public final class ECpdsBase extends DataBase {
      */
     public Rates[] getRates(final Date fromDate, final Date toDate, final String caller, final String sourceHost)
             throws DataBaseException {
-        final List<Rates> list = new ArrayList<>();
         try (var rs = ecpds.getRates(new Timestamp(fromDate.getTime()), new Timestamp(toDate.getTime()), caller,
                 sourceHost)) {
+            final List<Rates> list = new ArrayList<>();
             while (rs.next()) {
                 final var rates = new Rates();
                 rates.setDate(rs.getString("DATE"));
@@ -259,12 +258,12 @@ public final class ECpdsBase extends DataBase {
                 rates.setGetDuration(rs.getLong("DURATION"));
                 list.add(rates);
             }
+            logSqlRequest("getRates", list.size());
+            return list.toArray(new Rates[list.size()]);
         } catch (SQLException | IOException e) {
             _log.warn("getRates", e);
             throw new DataBaseException("getRates", e);
         }
-        logSqlRequest("getRates", list.size());
-        return list.toArray(new Rates[list.size()]);
     }
 
     /**
@@ -286,9 +285,9 @@ public final class ECpdsBase extends DataBase {
      */
     public Rates[] getRatesPerTransferServer(final Date fromDate, final Date toDate, final String caller,
             final String sourceHost) throws DataBaseException {
-        final List<Rates> list = new ArrayList<>();
         try (var rs = ecpds.getRatesPerTransferServer(new Timestamp(fromDate.getTime()),
                 new Timestamp(toDate.getTime()), caller, sourceHost)) {
+            final List<Rates> list = new ArrayList<>();
             while (rs.next()) {
                 final var rates = new Rates();
                 rates.setDate(rs.getString("DATE"));
@@ -299,12 +298,12 @@ public final class ECpdsBase extends DataBase {
                 rates.setGetDuration(rs.getLong("DURATION"));
                 list.add(rates);
             }
+            logSqlRequest("getRatesPerTransferServer", list.size());
+            return list.toArray(new Rates[list.size()]);
         } catch (SQLException | IOException e) {
             _log.warn("getRatesPerTransferServer", e);
             throw new DataBaseException("getRatesPerTransferServer", e);
         }
-        logSqlRequest("getRatesPerTransferServer", list.size());
-        return list.toArray(new Rates[list.size()]);
     }
 
     /**
@@ -328,9 +327,9 @@ public final class ECpdsBase extends DataBase {
      */
     public Rates[] getRatesPerFileSystem(final Date fromDate, final Date toDate, final String transferServerName,
             final String caller, final String sourceHost) throws DataBaseException {
-        final List<Rates> list = new ArrayList<>();
         try (var rs = ecpds.getRatesPerFileSystem(new Timestamp(fromDate.getTime()), new Timestamp(toDate.getTime()),
                 transferServerName, caller, sourceHost)) {
+            final List<Rates> list = new ArrayList<>();
             while (rs.next()) {
                 final var rates = new Rates();
                 rates.setDate(rs.getString("DATE"));
@@ -342,12 +341,12 @@ public final class ECpdsBase extends DataBase {
                 rates.setGetDuration(rs.getLong("DURATION"));
                 list.add(rates);
             }
+            logSqlRequest("getRatesPerFileSystem", list.size());
+            return list.toArray(new Rates[list.size()]);
         } catch (SQLException | IOException e) {
             _log.warn("getRatesPerFileSystem", e);
             throw new DataBaseException("getRatesPerFileSystem", e);
         }
-        logSqlRequest("getRatesPerFileSystem", list.size());
-        return list.toArray(new Rates[list.size()]);
     }
 
     /**
@@ -362,17 +361,17 @@ public final class ECpdsBase extends DataBase {
      *             the data base exception
      */
     public TransferServer[] getTransferServersByDataFileId(final long dataFileId) throws DataBaseException {
-        final List<TransferServer> list = new ArrayList<>();
         try (var it = ecpds.getTransferServersByDataFileId(dataFileId, TransferServer.class)) {
+            final List<TransferServer> list = new ArrayList<>();
             while (it.hasNext()) {
                 list.add(it.next());
             }
+            logSqlRequest("getTransferServersByDataFileId", list.size());
+            return list.toArray(new TransferServer[list.size()]);
         } catch (SQLException | IOException e) {
             _log.warn("getTransferServersByDataFileId", e);
             throw new DataBaseException("getTransferServersByDataFileId", e);
         }
-        logSqlRequest("getTransferServersByDataFileId", list.size());
-        return list.toArray(new TransferServer[list.size()]);
     }
 
     /**
@@ -404,12 +403,10 @@ public final class ECpdsBase extends DataBase {
      */
     public Map<String, List<Host>> getDestinationsAndHostsForType(final String type, final int paramLimit)
             throws DataBaseException {
-        final var result = new HashMap<String, List<Host>>();
-        DBResultSet rs = null;
-        List<Host> array = new ArrayList<>();
-        String current = null;
-        try {
-            rs = ecpds.getDestinationsAndHostsForType(type, paramLimit);
+        try (var rs = ecpds.getDestinationsAndHostsForType(type, paramLimit)) {
+            final var result = new HashMap<String, List<Host>>();
+            List<Host> array = new ArrayList<>();
+            String current = null;
             while (rs.next()) {
                 final var desName = rs.getString("DES_NAME");
                 if (current == null || !current.equals(desName)) {
@@ -429,16 +426,12 @@ public final class ECpdsBase extends DataBase {
                 host.setTransferGroupName(rs.getString("TRG_NAME"));
                 array.add(host);
             }
+            logSqlRequest("getDestinationsAndHostsForType", result.size());
+            return result;
         } catch (SQLException | IOException e) {
             _log.warn("getDestinationsAndHostsForType", e);
             throw new DataBaseException("getDestinationsAndHostsForType", e);
-        } finally {
-            if (rs != null) {
-                rs.close();
-            }
         }
-        logSqlRequest("getDestinationsAndHostsForType", result.size());
-        return result;
     }
 
     /**
@@ -493,17 +486,17 @@ public final class ECpdsBase extends DataBase {
      *             the data base exception
      */
     public ECUser[] getDestinationEcuser(final String destinationName) throws DataBaseException {
-        final List<ECUser> list = new ArrayList<>();
         try (var it = ecpds.getDestinationEcuser(destinationName, ECUser.class)) {
+            final List<ECUser> list = new ArrayList<>();
             while (it.hasNext()) {
                 list.add(it.next());
             }
+            logSqlRequest("getDestinationEcuser", list.size());
+            return list.toArray(new ECUser[list.size()]);
         } catch (SQLException | IOException e) {
             _log.warn("getDestinationEcuser", e);
             throw new DataBaseException("getDestinationEcuser", e);
         }
-        logSqlRequest("getDestinationEcuser", list.size());
-        return list.toArray(new ECUser[list.size()]);
     }
 
     /**
@@ -518,17 +511,17 @@ public final class ECpdsBase extends DataBase {
      *             the data base exception
      */
     public IncomingPolicy[] getDestinationIncomingPolicy(final String destinationName) throws DataBaseException {
-        final List<IncomingPolicy> list = new ArrayList<>();
         try (var it = ecpds.getDestinationIncomingPolicy(destinationName, IncomingPolicy.class)) {
+            final List<IncomingPolicy> list = new ArrayList<>();
             while (it.hasNext()) {
                 list.add(it.next());
             }
+            logSqlRequest("getDestinationIncomingPolicy", list.size());
+            return list.toArray(new IncomingPolicy[list.size()]);
         } catch (SQLException | IOException e) {
             _log.warn("getDestinationIncomingPolicy", e);
             throw new DataBaseException("getDestinationIncomingPolicy", e);
         }
-        logSqlRequest("getDestinationIncomingPolicy", list.size());
-        return list.toArray(new IncomingPolicy[list.size()]);
     }
 
     /**
@@ -543,17 +536,17 @@ public final class ECpdsBase extends DataBase {
      *             the data base exception
      */
     public IncomingUser[] getIncomingUsersForIncomingPolicy(final String policyId) throws DataBaseException {
-        final List<IncomingUser> list = new ArrayList<>();
         try (var it = ecpds.getIncomingUsersForIncomingPolicy(policyId, IncomingUser.class)) {
+            final List<IncomingUser> list = new ArrayList<>();
             while (it.hasNext()) {
                 list.add(it.next());
             }
+            logSqlRequest("getIncomingUsersForIncomingPolicy", list.size());
+            return list.toArray(new IncomingUser[list.size()]);
         } catch (SQLException | IOException e) {
             _log.warn("getIncomingUsersForIncomingPolicy", e);
             throw new DataBaseException("getIncomingUsersForIncomingPolicy", e);
         }
-        logSqlRequest("getIncomingUsersForIncomingPolicy", list.size());
-        return list.toArray(new IncomingUser[list.size()]);
     }
 
     /**
@@ -568,17 +561,17 @@ public final class ECpdsBase extends DataBase {
      *             the data base exception
      */
     public IncomingPolicy[] getIncomingPoliciesForIncomingUser(final String userId) throws DataBaseException {
-        final List<IncomingPolicy> list = new ArrayList<>();
         try (var it = ecpds.getIncomingPoliciesForIncomingUser(userId, IncomingPolicy.class)) {
+            final List<IncomingPolicy> list = new ArrayList<>();
             while (it.hasNext()) {
                 list.add(it.next());
             }
+            logSqlRequest("getIncomingPoliciesForIncomingUser", list.size());
+            return list.toArray(new IncomingPolicy[list.size()]);
         } catch (SQLException | IOException e) {
             _log.warn("getIncomingPoliciesForIncomingUser", e);
             throw new DataBaseException("getIncomingPoliciesForIncomingUser", e);
         }
-        logSqlRequest("getIncomingPoliciesForIncomingUser", list.size());
-        return list.toArray(new IncomingPolicy[list.size()]);
     }
 
     /**
@@ -590,10 +583,9 @@ public final class ECpdsBase extends DataBase {
      * @return the operations
      */
     public Operation[] getOperationsForIncomingUser(final String userId) {
-        final List<Operation> list;
         try (final var mutex = operationsCache.getMutex(userId)) {
             synchronized (mutex.lock()) {
-                list = operationsCache.computeIfAbsent(userId, k -> {
+                final List<Operation> list = operationsCache.computeIfAbsent(userId, k -> {
                     final List<Operation> defaultList = new ArrayList<>();
                     try (var it = ecpds.getIncomingPermissionsForIncomingUser(k, IncomingPermission.class)) {
                         while (it.hasNext()) {
@@ -605,10 +597,10 @@ public final class ECpdsBase extends DataBase {
                     operationsCache.put(k, defaultList, CACHE_TIMEOUT);
                     return defaultList;
                 });
+                logSqlRequest("getOperationsForIncomingUser", list.size());
+                return list.toArray(new Operation[list.size()]);
             }
         }
-        logSqlRequest("getOperationsForIncomingUser", list.size());
-        return list.toArray(new Operation[list.size()]);
     }
 
     /**
@@ -623,17 +615,17 @@ public final class ECpdsBase extends DataBase {
      *             the data base exception
      */
     public Destination[] getDestinationsForIncomingPolicy(final String policyId) throws DataBaseException {
-        final List<Destination> list = new ArrayList<>();
         try (var it = ecpds.getDestinationsForIncomingPolicy(policyId, Destination.class)) {
+            final List<Destination> list = new ArrayList<>();
             while (it.hasNext()) {
                 list.add(it.next());
             }
+            logSqlRequest("getDestinationsForIncomingPolicy", list.size());
+            return list.toArray(new Destination[list.size()]);
         } catch (SQLException | IOException e) {
             _log.warn("getDestinationsForIncomingPolicy", e);
             throw new DataBaseException("getDestinationsForIncomingPolicy", e);
         }
-        logSqlRequest("getDestinationsForIncomingPolicy", list.size());
-        return list.toArray(new Destination[list.size()]);
     }
 
     /**
@@ -648,8 +640,8 @@ public final class ECpdsBase extends DataBase {
      *             the data base exception
      */
     public Destination[] getDestinations(final String name) throws DataBaseException {
-        final List<Destination> list = new ArrayList<>();
         try (var it = ecpds.getDestinations(name, Destination.class)) {
+            final List<Destination> list = new ArrayList<>();
             while (it.hasNext()) {
                 final var destination = it.next();
                 if (name != null && name.equals(destination.getName())) {
@@ -659,12 +651,12 @@ public final class ECpdsBase extends DataBase {
                     list.add(destination);
                 }
             }
+            logSqlRequest("getDestinations", list.size());
+            return list.toArray(new Destination[list.size()]);
         } catch (SQLException | IOException e) {
             _log.warn("getDestinations", e);
             throw new DataBaseException("getDestinations", e);
         }
-        logSqlRequest("getDestinations", list.size());
-        return list.toArray(new Destination[list.size()]);
     }
 
     /**
@@ -679,17 +671,17 @@ public final class ECpdsBase extends DataBase {
      *             the data base exception
      */
     public Destination[] getDestinationArray(final boolean monitored) throws DataBaseException {
-        final List<Destination> list = new ArrayList<>();
         try (var it = ecpds.getDestinationArray(monitored, Destination.class)) {
+            final List<Destination> list = new ArrayList<>();
             while (it.hasNext()) {
                 list.add(it.next());
             }
+            logSqlRequest("getDestinationArray", list.size());
+            return list.toArray(new Destination[list.size()]);
         } catch (SQLException | IOException e) {
             _log.warn("getDestinationArray", e);
             throw new DataBaseException("getDestinationArray", e);
         }
-        logSqlRequest("getDestinationArray", list.size());
-        return list.toArray(new Destination[list.size()]);
     }
 
     /**
@@ -702,10 +694,9 @@ public final class ECpdsBase extends DataBase {
      */
     public Destination[] getDestinationsForIncomingUser(final String userId) {
         final var key = "FIU$" + userId;
-        final List<Destination> list;
         try (final var mutex = destinationsCache.getMutex(key)) {
             synchronized (mutex.lock()) {
-                list = destinationsCache.computeIfAbsent(key, k -> {
+                final List<Destination> list = destinationsCache.computeIfAbsent(key, k -> {
                     final List<Destination> defaultList = new ArrayList<>();
                     try (var it = ecpds.getDestinationsForIncomingUser(userId, Destination.class)) {
                         while (it.hasNext()) {
@@ -717,10 +708,10 @@ public final class ECpdsBase extends DataBase {
                     destinationsCache.put(k, defaultList, CACHE_TIMEOUT);
                     return defaultList;
                 });
+                logSqlRequest("getDestinationsForIncomingUser", list.size());
+                return list.toArray(new Destination[list.size()]);
             }
         }
-        logSqlRequest("getDestinationsForIncomingUser", list.size());
-        return list.toArray(new Destination[list.size()]);
     }
 
     /**
@@ -733,10 +724,9 @@ public final class ECpdsBase extends DataBase {
      */
     public Destination[] getDestinationsByUserPolicies(final String userId) {
         final var key = "BUP$" + userId;
-        final List<Destination> list;
         try (final var mutex = destinationsCache.getMutex(key)) {
             synchronized (mutex.lock()) {
-                list = destinationsCache.computeIfAbsent(key, k -> {
+                final List<Destination> list = destinationsCache.computeIfAbsent(key, k -> {
                     final List<Destination> defaultList = new ArrayList<>();
                     try (var it = ecpds.getDestinationsByUserPolicies(userId, Destination.class)) {
                         while (it.hasNext()) {
@@ -748,10 +738,10 @@ public final class ECpdsBase extends DataBase {
                     destinationsCache.put(k, defaultList, CACHE_TIMEOUT);
                     return defaultList;
                 });
+                logSqlRequest("getDestinationsByUserPolicies", list.size());
+                return list.toArray(new Destination[list.size()]);
             }
         }
-        logSqlRequest("getDestinationsByUserPolicies", list.size());
-        return list.toArray(new Destination[list.size()]);
     }
 
     /**
@@ -763,10 +753,9 @@ public final class ECpdsBase extends DataBase {
      * @return the incoming permissions for incoming user
      */
     public List<IncomingPermission> getIncomingPermissionsForIncomingUser(final String userId) {
-        final List<IncomingPermission> list;
         try (final var mutex = incomingPermissionCache.getMutex(userId)) {
             synchronized (mutex.lock()) {
-                list = incomingPermissionCache.computeIfAbsent(userId, k -> {
+                final List<IncomingPermission> list = incomingPermissionCache.computeIfAbsent(userId, k -> {
                     final List<IncomingPermission> defaultList = new ArrayList<>();
                     try (var it = ecpds.getIncomingPermissionsForIncomingUser(k, IncomingPermission.class)) {
                         while (it.hasNext()) {
@@ -778,10 +767,10 @@ public final class ECpdsBase extends DataBase {
                     incomingPermissionCache.put(k, defaultList, CACHE_TIMEOUT);
                     return defaultList;
                 });
+                logSqlRequest("getIncomingPermissionsForIncomingUser", list.size());
+                return list;
             }
         }
-        logSqlRequest("getIncomingPermissionsForIncomingUser", list.size());
-        return list;
     }
 
     /**
@@ -798,17 +787,17 @@ public final class ECpdsBase extends DataBase {
      *             the data base exception
      */
     public Destination[] getDestinationAliases(final String name, final String mode) throws DataBaseException {
-        final List<Destination> list = new ArrayList<>();
         try (var it = ecpds.getDestinationAliases(name, mode, Destination.class)) {
+            final List<Destination> list = new ArrayList<>();
             while (it.hasNext()) {
                 list.add(it.next());
             }
+            logSqlRequest("getDestinationAliases", list.size());
+            return list.toArray(new Destination[list.size()]);
         } catch (SQLException | IOException e) {
             _log.warn("getDestinationAliases", e);
             throw new DataBaseException("getDestinationAliases", e);
         }
-        logSqlRequest("getDestinationAliases", list.size());
-        return list.toArray(new Destination[list.size()]);
     }
 
     /**
@@ -825,17 +814,17 @@ public final class ECpdsBase extends DataBase {
      *             the data base exception
      */
     public Alias[] getAliases(final String name, final String mode) throws DataBaseException {
-        final List<Alias> list = new ArrayList<>();
         try (var it = ecpds.getDestinationAliases(name, mode, Alias.class)) {
+            final List<Alias> list = new ArrayList<>();
             while (it.hasNext()) {
                 list.add(it.next());
             }
+            logSqlRequest("getAliases", list.size());
+            return list.toArray(new Alias[list.size()]);
         } catch (SQLException | IOException e) {
             _log.warn("getAliases", e);
             throw new DataBaseException("getAliases", e);
         }
-        logSqlRequest("getAliases", list.size());
-        return list.toArray(new Alias[list.size()]);
     }
 
     /**
@@ -900,17 +889,17 @@ public final class ECpdsBase extends DataBase {
      *             the data base exception
      */
     public Map<String, Integer> getBadDataTransfersCount() throws DataBaseException {
-        final var result = new HashMap<String, Integer>();
         try (var rs = ecpds.getBadDataTransfersCount()) {
+            final var result = new HashMap<String, Integer>();
             while (rs.next()) {
                 result.put(rs.getString("DES_NAME"), rs.getInteger("COUNT"));
             }
+            logSqlRequest("getBadDataTransfersCount", result.size());
+            return result;
         } catch (SQLException | IOException e) {
             _log.warn("getBadDataTransfersCount", e);
             throw new DataBaseException("getBadDataTransfersCount", e);
         }
-        logSqlRequest("getBadDataTransfersCount", result.size());
-        return result;
     }
 
     /**
@@ -951,10 +940,10 @@ public final class ECpdsBase extends DataBase {
      */
     public Collection<DataTransfer> getDataTransfersByHostName(final DataTransferCache cache, final String hostName,
             final Date from, final Date to) throws DataBaseException {
-        final List<DataTransfer> array = new ArrayList<>();
         try (var rs = ecpds.getDataTransfersByHostName(hostName, new Timestamp(from.getTime()),
                 new Timestamp(to.getTime()))) {
             final var hosts = new HashMap<String, Host>();
+            final List<DataTransfer> array = new ArrayList<>();
             while (rs.next()) {
                 final var file = new DataFile();
                 file.setId(rs.getLong("DAF_ID"));
@@ -980,12 +969,12 @@ public final class ECpdsBase extends DataBase {
                 _setHost(this, transfer, rs.getString("HOS_NAME"), hosts);
                 array.add(cache.getFromCache(transfer));
             }
+            logSqlRequest("getDataTransfersByHostName", array.size());
+            return array;
         } catch (SQLException | IOException e) {
             _log.warn("getDataTransfersByHostName", e);
             throw new DataBaseException("getDataTransfersByHostName", e);
         }
-        logSqlRequest("getDataTransfersByHostName", array.size());
-        return array;
     }
 
     /**
@@ -1009,9 +998,9 @@ public final class ECpdsBase extends DataBase {
      */
     public Map<Long, DataTransfer> getDataTransfersByDestinationAndMetaData(final Date from, final Date to,
             final String destinationName, final String metaStream, final String metaTime) throws DataBaseException {
-        final var hashtable = new HashMap<Long, DataTransfer>();
         try (var rs = ecpds.getDataTransfersByDestinationAndMetaData(new Timestamp(from.getTime()),
                 new Timestamp(to.getTime()), destinationName, metaStream, metaTime)) {
+            final var hashtable = new HashMap<Long, DataTransfer>();
             final var hosts = new HashMap<String, Host>();
             while (rs.next()) {
                 final var file = new DataFile();
@@ -1057,12 +1046,12 @@ public final class ECpdsBase extends DataBase {
                 _setHost(this, transfer, rs.getString("HOS_NAME"), hosts);
                 hashtable.put(transfer.getId(), transfer);
             }
+            logSqlRequest("getDataTransfersByDestinationAndMetaData", hashtable.size());
+            return hashtable;
         } catch (SQLException | IOException e) {
             _log.warn("getDataTransfersByDestinationAndMetaData", e);
             throw new DataBaseException("getDataTransfersByDestinationAndMetaData", e);
         }
-        logSqlRequest("getDataTransfersByDestinationAndMetaData", hashtable.size());
-        return hashtable;
     }
 
     /** The Constant _SET_HOS_NAME. */
@@ -1149,9 +1138,9 @@ public final class ECpdsBase extends DataBase {
      *             the data base exception
      */
     public Collection<DataTransfer> getDataTransferNotDoneOnDate() throws DataBaseException {
-        final List<DataTransfer> array = new ArrayList<>();
         try (var rs = ecpds.getDataTransferNotDoneOnDate(new Timestamp(System.currentTimeMillis()))) {
             final var hosts = new HashMap<String, Host>();
+            final List<DataTransfer> array = new ArrayList<>();
             while (rs.next()) {
                 final var file = new DataFile();
                 file.setId(rs.getLong("DAF_ID"));
@@ -1196,12 +1185,12 @@ public final class ECpdsBase extends DataBase {
                 _setHost(this, transfer, rs.getString("HOS_NAME"), hosts);
                 array.add(transfer);
             }
+            logSqlRequest("getDataTransferNotDoneOnDate", array.size());
+            return array;
         } catch (SQLException | IOException e) {
             _log.warn("getDataTransferNotDoneOnDate", e);
             throw new DataBaseException("getDataTransferNotDoneOnDate", e);
         }
-        logSqlRequest("getDataTransferNotDoneOnDate", array.size());
-        return array;
     }
 
     /**
@@ -1223,10 +1212,10 @@ public final class ECpdsBase extends DataBase {
      */
     public Collection<DataTransfer> getDataTransfersByTransferServerName(final DataTransferCache cache,
             final String name, final Date from, final Date to) throws DataBaseException {
-        final List<DataTransfer> array = new ArrayList<>();
         try (var rs = ecpds.getDataTransfersPerTransferServer(name, new Timestamp(from.getTime()),
                 new Timestamp(to.getTime()))) {
             final var hosts = new HashMap<String, Host>();
+            final List<DataTransfer> array = new ArrayList<>();
             while (rs.next()) {
                 final var file = new DataFile();
                 file.setId(rs.getLong("DAF_ID"));
@@ -1252,12 +1241,12 @@ public final class ECpdsBase extends DataBase {
                 _setHost(this, transfer, rs.getString("HOS_NAME"), hosts);
                 array.add(cache.getFromCache(transfer));
             }
+            logSqlRequest("getDataTransfersByTransferServerName", array.size());
+            return array;
         } catch (SQLException | IOException e) {
             _log.warn("getDataTransfersByTransferServerName", e);
             throw new DataBaseException("getDataTransfersByTransferServerName", e);
         }
-        logSqlRequest("getDataTransfersByTransferServerName", array.size());
-        return array;
     }
 
     /**
@@ -1312,9 +1301,9 @@ public final class ECpdsBase extends DataBase {
      * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    public Iterator<DataTransfer> getInitialDataTransferEventsIterator(final Date from, final Date to)
+    public CloseableIterator<DataTransfer> getInitialDataTransferEventsIterator(final Date from, final Date to)
             throws DataBaseException, SQLException, IOException {
-        return new Iterator<>() {
+        return new CloseableIterator<>() {
             final HashMap<String, Host> hosts = new HashMap<>();
             final DBResultSet rs = ecpds.getInitialDataTransferEvents(new Timestamp(from.getTime()),
                     new Timestamp(to.getTime()));
@@ -1323,7 +1312,7 @@ public final class ECpdsBase extends DataBase {
             public boolean hasNext() {
                 try {
                     return rs.next();
-                } catch (final SQLException e) {
+                } catch (final SQLException _) {
                     return false;
                 }
             }
@@ -1383,7 +1372,7 @@ public final class ECpdsBase extends DataBase {
             }
 
             @Override
-            public void remove() {
+            public void close() {
                 if (rs != null) {
                     rs.close();
                 }
@@ -1406,9 +1395,9 @@ public final class ECpdsBase extends DataBase {
      */
     public Collection<DataTransfer> getInitialDataTransferEvents(final Date from, final Date to)
             throws DataBaseException {
-        final var hashtable = new HashMap<String, DataTransfer>();
         try (var rs = ecpds.getInitialDataTransferEvents(new Timestamp(from.getTime()), new Timestamp(to.getTime()))) {
             final var hosts = new HashMap<String, Host>();
+            final var hashtable = new HashMap<String, DataTransfer>();
             while (rs.next()) {
                 final var identity = rs.getString("DAT_IDENTITY");
                 if (identity != null && !hashtable.containsKey(identity)) {
@@ -1456,12 +1445,12 @@ public final class ECpdsBase extends DataBase {
                     hashtable.put(identity, transfer);
                 }
             }
+            logSqlRequest("getInitialDataTransferEvents", hashtable.size());
+            return hashtable.values();
         } catch (SQLException | IOException e) {
             _log.warn("getInitialDataTransferEvents", e);
             throw new DataBaseException("getInitialDataTransferEvents", e);
         }
-        logSqlRequest("getInitialDataTransferEvents", hashtable.size());
-        return hashtable.values();
     }
 
     /**
@@ -1490,70 +1479,66 @@ public final class ECpdsBase extends DataBase {
     public Collection<DataTransfer> getSortedDataTransfersByStatusCodeAndDate(final DataTransferCache cache,
             final String status, final Date from, final Date to, final String fileName, final String type,
             final DataBaseCursor cursor) throws DataBaseException {
-        final List<DataTransfer> array = new ArrayList<>();
-        DataTransfer initialTransfer = null; // The first DataTransfer will contain the collection size (total)!
-        DBResultSet rs = null;
         try {
             final var options = new SQLParameterParser(fileName, "target", "source", "ts=d", "priority=d", "checksum",
                     "groupby", "identity", "size=b", "replicated=?", "asap=?", "event=?", "deleted=?", "expired=?",
                     "proxy=?");
-            rs = ecpds.getSortedDataTransfersByStatusOnDate(status, new Timestamp(from.getTime()),
+            final List<DataTransfer> array = new ArrayList<>();
+            DataTransfer initialTransfer = null; // The first DataTransfer will contain the collection size (total)!
+            try (var rs = ecpds.getSortedDataTransfersByStatusOnDate(status, new Timestamp(from.getTime()),
                     new Timestamp(to.getTime()), options.get(0, "DAT_TARGET"), options.get(1, "DAF_ORIGINAL"),
                     options.get(2, "DAT_TIME_STEP"), options.get(3, "DAT_PRIORITY"), options.get(4, "DAF_CHECKSUM"),
                     options.get(5, "DAF_GROUP_BY"), options.get(6, "DAT_IDENTITY"), options.get(7, "DAT_SIZE"),
                     options.get(8, "DAT_REPLICATED"), options.get(9, "DAT_ASAP"), options.get(10, "DAT_EVENT"),
                     options.get(11, "DAT_DELETED"), options.get(12, "DAT_EXPIRY_TIME < UNIX_TIMESTAMP() * 1000"),
                     options.get(13, "HOS_NAME_PROXY is not null"), type, cursor.getSort(), cursor.getOrder(),
-                    cursor.getStart(), cursor.getLength(), options.has(1) || options.has(4) || options.has(5));
-            final var hosts = new HashMap<String, Host>();
-            while (rs.next()) {
-                final var file = new DataFile();
-                file.setId(rs.getLong("DAF_ID"));
-                file.setSize(rs.getLong("DAT_SIZE"));
-                file.setTimeStep(rs.getLong("DAT_TIME_STEP"));
-                final var transfer = new DataTransfer();
-                transfer.setId(rs.getLong("DAT_ID"));
-                transfer.setDataFileId(file.getId());
-                transfer.setDataFile(file);
-                transfer.setSize(rs.getLong("DAT_SIZE"));
-                transfer.setTimeStep(rs.getLong("DAT_TIME_STEP"));
-                transfer.setDestinationName(rs.getString("DES_NAME"));
-                transfer.setTransferServerName(rs.getString("TRS_NAME"));
-                transfer.setTarget(rs.getString("DAT_TARGET"));
-                transfer.setStatusCode(rs.getString("STA_CODE"));
-                transfer.setUserStatus(rs.getString("DAT_USER_STATUS"));
-                transfer.setSent(rs.getLong("DAT_SENT"));
-                transfer.setDuration(rs.getLong("DAT_DURATION"));
-                transfer.setDeleted(rs.getBoolean("DAT_DELETED"));
-                transfer.setPriority(rs.getInt("DAT_PRIORITY"));
-                transfer.setRetryTime(rs.getTimestamp("DAT_RETRY_TIME"));
-                transfer.setQueueTime(rs.getTimestamp("DAT_QUEUE_TIME"));
-                transfer.setStartTime(rs.getTimestamp("DAT_START_TIME"));
-                transfer.setFinishTime(rs.getTimestamp("DAT_FINISH_TIME"));
-                transfer.setScheduledTime(rs.getTimestamp("DAT_SCHEDULED_TIME"));
-                transfer.setFailedTime(rs.getTimestamp("DAT_FAILED_TIME"));
-                _setHost(this, transfer, rs.getString("HOS_NAME"), hosts);
-                final var used = cache.getFromCache(transfer);
-                if (initialTransfer == null) {
-                    initialTransfer = used;
+                    cursor.getStart(), cursor.getLength(), options.has(1) || options.has(4) || options.has(5))) {
+                final var hosts = new HashMap<String, Host>();
+                while (rs.next()) {
+                    final var file = new DataFile();
+                    file.setId(rs.getLong("DAF_ID"));
+                    file.setSize(rs.getLong("DAT_SIZE"));
+                    file.setTimeStep(rs.getLong("DAT_TIME_STEP"));
+                    final var transfer = new DataTransfer();
+                    transfer.setId(rs.getLong("DAT_ID"));
+                    transfer.setDataFileId(file.getId());
+                    transfer.setDataFile(file);
+                    transfer.setSize(rs.getLong("DAT_SIZE"));
+                    transfer.setTimeStep(rs.getLong("DAT_TIME_STEP"));
+                    transfer.setDestinationName(rs.getString("DES_NAME"));
+                    transfer.setTransferServerName(rs.getString("TRS_NAME"));
+                    transfer.setTarget(rs.getString("DAT_TARGET"));
+                    transfer.setStatusCode(rs.getString("STA_CODE"));
+                    transfer.setUserStatus(rs.getString("DAT_USER_STATUS"));
+                    transfer.setSent(rs.getLong("DAT_SENT"));
+                    transfer.setDuration(rs.getLong("DAT_DURATION"));
+                    transfer.setDeleted(rs.getBoolean("DAT_DELETED"));
+                    transfer.setPriority(rs.getInt("DAT_PRIORITY"));
+                    transfer.setRetryTime(rs.getTimestamp("DAT_RETRY_TIME"));
+                    transfer.setQueueTime(rs.getTimestamp("DAT_QUEUE_TIME"));
+                    transfer.setStartTime(rs.getTimestamp("DAT_START_TIME"));
+                    transfer.setFinishTime(rs.getTimestamp("DAT_FINISH_TIME"));
+                    transfer.setScheduledTime(rs.getTimestamp("DAT_SCHEDULED_TIME"));
+                    transfer.setFailedTime(rs.getTimestamp("DAT_FAILED_TIME"));
+                    _setHost(this, transfer, rs.getString("HOS_NAME"), hosts);
+                    final var used = cache.getFromCache(transfer);
+                    if (initialTransfer == null) {
+                        initialTransfer = used;
+                    }
+                    array.add(used);
                 }
-                array.add(used);
+                // Let's set the full size of the Collection in the first
+                // DataTransfer (if we have any)!
+                if (initialTransfer != null) {
+                    initialTransfer.setCollectionSize(rs.getFoundRows(cursor));
+                }
+                logSqlRequest("getSortedDataTransfersByStatusCodeAndDate(" + cursor + ")", array.size());
+                return array;
             }
         } catch (SQLException | IOException e) {
             _log.warn("getSortedDataTransfersByStatusCodeAndDate", e);
             throw new DataBaseException("getSortedDataTransfersByStatusCodeAndDate", e);
-        } finally {
-            if (rs != null) {
-                rs.close();
-            }
         }
-        // Let's set the full size of the Collection in the first
-        // DataTransfer (if we have any)!
-        if (initialTransfer != null && rs != null) {
-            initialTransfer.setCollectionSize(rs.getFoundRows(cursor));
-        }
-        logSqlRequest("getSortedDataTransfersByStatusCodeAndDate(" + cursor + ")", array.size());
-        return array;
     }
 
     /**
@@ -1713,17 +1698,17 @@ public final class ECpdsBase extends DataBase {
      */
     public List<DataTransfer> getDataTransfersByDataFileId(final DataTransferCache cache, final long dataFileId,
             final boolean includeDeleted) throws DataBaseException {
-        final List<DataTransfer> vector = new ArrayList<>();
         try (var it = ecpds.getDataTransfersByDataFile(dataFileId, includeDeleted, DataTransfer.class)) {
+            final List<DataTransfer> vector = new ArrayList<>();
             while (it.hasNext()) {
                 vector.add(cache.getFromCache(it.next()));
             }
+            logSqlRequest("getDataTransfersByDataFileId", vector.size());
+            return vector;
         } catch (SQLException | IOException e) {
             _log.warn("getDataTransfersByDataFileId", e);
             throw new DataBaseException("getDataTransfersByDataFileId", e);
         }
-        logSqlRequest("getDataTransfersByDataFileId", vector.size());
-        return vector;
     }
 
     /**
@@ -1797,17 +1782,17 @@ public final class ECpdsBase extends DataBase {
      *             the data base exception
      */
     public Destination[] getDestinationsByHostName(final String hostName) throws DataBaseException {
-        final List<Destination> list = new ArrayList<>();
         try (var it = ecpds.getDestinationsByHostName(hostName, Destination.class)) {
+            final List<Destination> list = new ArrayList<>();
             while (it.hasNext()) {
                 list.add(it.next());
             }
+            logSqlRequest("getDestinationsByHostName", list.size());
+            return list.toArray(new Destination[list.size()]);
         } catch (SQLException | IOException e) {
             _log.warn("getDestinationsByHostName", e);
             throw new DataBaseException("getDestinationsByHostName", e);
         }
-        logSqlRequest("getDestinationsByHostName", list.size());
-        return list.toArray(new Destination[list.size()]);
     }
 
     /**
@@ -1822,8 +1807,8 @@ public final class ECpdsBase extends DataBase {
      *             the data base exception
      */
     public TransferHistory[] getTransferHistoryByDataTransferId(final long dataTransferId) throws DataBaseException {
-        final List<TransferHistory> list = new ArrayList<>();
         try (var rs = ecpds.getTransferHistoryPerDataTransfer(dataTransferId)) {
+            final List<TransferHistory> list = new ArrayList<>();
             final var hosts = new HashMap<String, Host>();
             while (rs.next()) {
                 final var history = new TransferHistory();
@@ -1838,12 +1823,12 @@ public final class ECpdsBase extends DataBase {
                 _setHost(this, history, rs.getString("HOS_NAME"), hosts);
                 list.add(history);
             }
+            logSqlRequest("getTransferHistoryByDataTransferId", list.size());
+            return list.toArray(new TransferHistory[list.size()]);
         } catch (SQLException | IOException e) {
             _log.warn("getTransferHistoryByDataTransferId", e);
             throw new DataBaseException("getTransferHistoryByDataTransferId", e);
         }
-        logSqlRequest("getTransferHistoryByDataTransferId", list.size());
-        return list.toArray(new TransferHistory[list.size()]);
     }
 
     /**
@@ -1861,16 +1846,13 @@ public final class ECpdsBase extends DataBase {
      * @throws DataBaseException
      *             the data base exception
      */
-    @SuppressWarnings("null")
     public TransferHistory[] getSortedTransferHistory(final long dataTransferId, final boolean afterScheduleTime,
             final DataBaseCursor cursor) throws DataBaseException {
-        final List<TransferHistory> list = new ArrayList<>();
-        TransferHistory initialHistory = null; // In the first TransferHistory we set the collection size (total)!
-        DBResultSet rs = null;
-        try {
-            rs = ecpds.getSortedTransferHistoryPerDataTransfer(dataTransferId, afterScheduleTime, cursor.getSort(),
-                    cursor.getOrder(), cursor.getStart(), cursor.getLength());
+        try (var rs = ecpds.getSortedTransferHistoryPerDataTransfer(dataTransferId, afterScheduleTime, cursor.getSort(),
+                cursor.getOrder(), cursor.getStart(), cursor.getLength())) {
             final var hosts = new HashMap<String, Host>();
+            final List<TransferHistory> list = new ArrayList<>();
+            TransferHistory initialHistory = null; // In the first TransferHistory we set the collection size (total)!
             while (rs.next()) {
                 final var history = new TransferHistory();
                 if (initialHistory == null) {
@@ -1887,21 +1869,17 @@ public final class ECpdsBase extends DataBase {
                 _setHost(this, history, rs.getString("HOS_NAME"), hosts);
                 list.add(history);
             }
+            // Let's set the full size of the Collection in the first
+            // TransferHistory (if we have any)!
+            if (initialHistory != null) {
+                initialHistory.setCollectionSize(rs.getFoundRows(cursor));
+            }
+            logSqlRequest("getSortedTransferHistory(" + cursor + ")", list.size());
+            return list.toArray(new TransferHistory[list.size()]);
         } catch (SQLException | IOException e) {
             _log.warn("getSortedTransferHistory", e);
             throw new DataBaseException("getSortedTransferHistory", e);
-        } finally {
-            if (rs != null) {
-                rs.close();
-            }
         }
-        // Let's set the full size of the Collection in the first
-        // TransferHistory (if we have any)!
-        if (initialHistory != null) {
-            initialHistory.setCollectionSize(rs.getFoundRows(cursor));
-        }
-        logSqlRequest("getSortedTransferHistory(" + cursor + ")", list.size());
-        return list.toArray(new TransferHistory[list.size()]);
     }
 
     /**
@@ -1937,15 +1915,16 @@ public final class ECpdsBase extends DataBase {
      * @throws SQLException
      *             the SQL exception
      */
-    public Iterator<ExistingStorageDirectory> getExistingStorageDirectories() throws IOException, SQLException {
-        return new Iterator<>() {
+    public CloseableIterator<ExistingStorageDirectory> getExistingStorageDirectories()
+            throws IOException, SQLException {
+        return new CloseableIterator<>() {
             final DBResultSet rs = ecpds.getExistingStorageDirectories();
 
             @Override
             public boolean hasNext() {
                 try {
                     return rs.next();
-                } catch (final SQLException e) {
+                } catch (final SQLException _) {
                     return false;
                 }
             }
@@ -1967,7 +1946,7 @@ public final class ECpdsBase extends DataBase {
             }
 
             @Override
-            public void remove() {
+            public void close() {
                 if (rs != null) {
                     rs.close();
                 }
@@ -1985,16 +1964,16 @@ public final class ECpdsBase extends DataBase {
      * @throws SQLException
      *             the SQL exception
      */
-    public Iterator<ExistingStorageDirectory> getExistingStorageDirectoriesPerProxyHost()
+    public CloseableIterator<ExistingStorageDirectory> getExistingStorageDirectoriesPerProxyHost()
             throws IOException, SQLException {
-        return new Iterator<>() {
+        return new CloseableIterator<>() {
             final DBResultSet rs = ecpds.getExistingStorageDirectoriesPerProxyHost();
 
             @Override
             public boolean hasNext() {
                 try {
                     return rs.next();
-                } catch (final SQLException e) {
+                } catch (final SQLException _) {
                     return false;
                 }
             }
@@ -2014,7 +1993,7 @@ public final class ECpdsBase extends DataBase {
             }
 
             @Override
-            public void remove() {
+            public void close() {
                 if (rs != null) {
                     rs.close();
                 }
@@ -2035,15 +2014,15 @@ public final class ECpdsBase extends DataBase {
      * @throws SQLException
      *             the SQL exception
      */
-    public Iterator<DataFile> getExpiredDataFilesIterator(final int limit) throws IOException, SQLException {
-        return new Iterator<>() {
+    public CloseableIterator<DataFile> getExpiredDataFilesIterator(final int limit) throws IOException, SQLException {
+        return new CloseableIterator<>() {
             final DBResultSet rs = ecpds.getExpiredDataFiles(limit);
 
             @Override
             public boolean hasNext() {
                 try {
                     return rs.next();
-                } catch (final SQLException e) {
+                } catch (final SQLException _) {
                     return false;
                 }
             }
@@ -2084,7 +2063,7 @@ public final class ECpdsBase extends DataBase {
             }
 
             @Override
-            public void remove() {
+            public void close() {
                 if (rs != null) {
                     rs.close();
                 }
@@ -2105,15 +2084,15 @@ public final class ECpdsBase extends DataBase {
      * @throws SQLException
      *             the SQL exception
      */
-    public Iterator<DataFile> getDataFilesToFilterIterator(final int limit) throws IOException, SQLException {
-        return new Iterator<>() {
+    public CloseableIterator<DataFile> getDataFilesToFilterIterator(final int limit) throws IOException, SQLException {
+        return new CloseableIterator<>() {
             final DBResultSet rs = ecpds.getDataFilesToFilter(limit);
 
             @Override
             public boolean hasNext() {
                 try {
                     return rs.next();
-                } catch (final SQLException e) {
+                } catch (final SQLException _) {
                     return false;
                 }
             }
@@ -2145,7 +2124,7 @@ public final class ECpdsBase extends DataBase {
             }
 
             @Override
-            public void remove() {
+            public void close() {
                 if (rs != null) {
                     rs.close();
                 }
@@ -2166,15 +2145,15 @@ public final class ECpdsBase extends DataBase {
      * @throws SQLException
      *             the SQL exception
      */
-    public Iterator<Publication> getPublicationIterator(final int limit) throws IOException, SQLException {
-        return new Iterator<>() {
+    public CloseableIterator<Publication> getPublicationIterator(final int limit) throws IOException, SQLException {
+        return new CloseableIterator<>() {
             final DBResultSet rs = ecpds.getPublicationsToProcess(limit);
 
             @Override
             public boolean hasNext() {
                 try {
                     return rs.next();
-                } catch (final SQLException e) {
+                } catch (final SQLException _) {
                     return false;
                 }
             }
@@ -2197,7 +2176,7 @@ public final class ECpdsBase extends DataBase {
             }
 
             @Override
-            public void remove() {
+            public void close() {
                 if (rs != null) {
                     rs.close();
                 }
@@ -2218,7 +2197,7 @@ public final class ECpdsBase extends DataBase {
      * @throws SQLException
      *             the SQL exception
      */
-    public Iterator<DataTransfer> getDataTransfersToReplicateIterator(final int limit)
+    public DBIterator<DataTransfer> getDataTransfersToReplicateIterator(final int limit)
             throws IOException, SQLException {
         return ecpds.getDataTransfersToReplicate(limit, DataTransfer.class);
     }
@@ -2236,7 +2215,7 @@ public final class ECpdsBase extends DataBase {
      * @throws SQLException
      *             the SQL exception
      */
-    public Iterator<DataTransfer> getDataTransfersToBackupIterator(final int limit) throws IOException, SQLException {
+    public DBIterator<DataTransfer> getDataTransfersToBackupIterator(final int limit) throws IOException, SQLException {
         return ecpds.getDataTransfersToBackup(limit, DataTransfer.class);
     }
 
@@ -2253,7 +2232,7 @@ public final class ECpdsBase extends DataBase {
      * @throws SQLException
      *             the SQL exception
      */
-    public Iterator<DataTransfer> getDataTransfersToProxyIterator(final int limit) throws IOException, SQLException {
+    public DBIterator<DataTransfer> getDataTransfersToProxyIterator(final int limit) throws IOException, SQLException {
         return ecpds.getDataTransfersToProxy(limit, DataTransfer.class);
     }
 
@@ -2270,7 +2249,7 @@ public final class ECpdsBase extends DataBase {
      * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    public Iterator<DataTransfer> getAcquisitionDataTransfersToDownloadIterator(final int limit)
+    public DBIterator<DataTransfer> getAcquisitionDataTransfersToDownloadIterator(final int limit)
             throws SQLException, IOException {
         return ecpds.getAcquisitionDataTransfersToDownload(limit, DataTransfer.class);
     }
@@ -2288,7 +2267,7 @@ public final class ECpdsBase extends DataBase {
      * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    public Iterator<DataTransfer> getDisseminationDataTransfersToDownloadIterator(final int limit)
+    public DBIterator<DataTransfer> getDisseminationDataTransfersToDownloadIterator(final int limit)
             throws SQLException, IOException {
         return ecpds.getDisseminationDataTransfersToDownload(limit, DataTransfer.class);
     }
@@ -2304,12 +2283,10 @@ public final class ECpdsBase extends DataBase {
      * @return the long
      */
     public long purgeExpiredDataTransfers(final int maxIdentityCount, final int maxTransferLife) {
-        DBResultSet rs = null;
         String currentIdentity = null;
         var entries = 0L;
         var removed = 0L;
-        try {
-            rs = ecpds.getExpiredDataTransfers();
+        try (var rs = ecpds.getExpiredDataTransfers()) {
             var count = 0;
             while (rs.next()) {
                 var transferRemoved = false;
@@ -2337,10 +2314,6 @@ public final class ECpdsBase extends DataBase {
             }
         } catch (SQLException | IOException e) {
             _log.warn("purgeExpiredDataTransfers", e);
-        } finally {
-            if (rs != null) {
-                rs.close();
-            }
         }
         logSqlRequest("purgeExpiredDataTransfers", entries);
         return removed;
@@ -2358,17 +2331,17 @@ public final class ECpdsBase extends DataBase {
      *             the data base exception
      */
     public Collection<Category> getCategoriesPerUserId(final String userId) throws DataBaseException {
-        final List<Category> array = new ArrayList<>();
         try (var it = ecpds.getCategoriesPerUser(userId, Category.class)) {
+            final List<Category> array = new ArrayList<>();
             while (it.hasNext()) {
                 array.add(it.next());
             }
+            logSqlRequest("getCategoriesPerUserId", array.size());
+            return array;
         } catch (SQLException | IOException e) {
             _log.warn("getCategoriesPerUserId", e);
             throw new DataBaseException("getCategoriesPerUserId", e);
         }
-        logSqlRequest("getCategoriesPerUserId", array.size());
-        return array;
     }
 
     /**
@@ -2405,10 +2378,9 @@ public final class ECpdsBase extends DataBase {
      * @return the user policies per user id
      */
     public List<PolicyUser> getPolicyUserList(final String userId) {
-        final List<PolicyUser> list;
         try (final var mutex = policyUserCache.getMutex(userId)) {
             synchronized (mutex.lock()) {
-                list = policyUserCache.computeIfAbsent(userId, k -> {
+                final List<PolicyUser> list = policyUserCache.computeIfAbsent(userId, k -> {
                     final List<PolicyUser> defaultList = new ArrayList<>();
                     try (var it = ecpds.getPolicyUserList(k, PolicyUser.class)) {
                         while (it.hasNext()) {
@@ -2420,10 +2392,10 @@ public final class ECpdsBase extends DataBase {
                     policyUserCache.put(k, defaultList, CACHE_TIMEOUT);
                     return defaultList;
                 });
+                logSqlRequest("getPolicyUserList", list.size());
+                return list;
             }
         }
-        logSqlRequest("getPolicyUserList", list.size());
-        return list;
     }
 
     /**
@@ -2438,17 +2410,17 @@ public final class ECpdsBase extends DataBase {
      *             the data base exception
      */
     public Collection<WebUser> getUsersPerCategoryId(final String categoryId) throws DataBaseException {
-        final List<WebUser> array = new ArrayList<>();
         try (var it = ecpds.getUsersPerCategory(categoryId, WebUser.class)) {
+            final List<WebUser> array = new ArrayList<>();
             while (it.hasNext()) {
                 array.add(it.next());
             }
+            logSqlRequest("getUsersPerCategoryId", array.size());
+            return array;
         } catch (SQLException | IOException e) {
             _log.warn("getUsersPerCategoryId", e);
             throw new DataBaseException("getUsersPerCategoryId", e);
         }
-        logSqlRequest("getUsersPerCategoryId", array.size());
-        return array;
     }
 
     /**
@@ -2463,17 +2435,17 @@ public final class ECpdsBase extends DataBase {
      *             the data base exception
      */
     public Collection<Url> getUrlsPerCategoryId(final String id) throws DataBaseException {
-        final List<Url> array = new ArrayList<>();
         try (var rs = ecpds.getUrlsPerCategory(id)) {
+            final List<Url> array = new ArrayList<>();
             while (rs.next()) {
                 array.add(new Url(rs.getString("URL_NAME")));
             }
+            logSqlRequest("getUrlsPerCategoryId", array.size());
+            return array;
         } catch (SQLException | IOException e) {
             _log.warn("getUrlsPerCategoryId", e);
             throw new DataBaseException("getUrlsPerCategoryId", e);
         }
-        logSqlRequest("getUrlsPerCategoryId", array.size());
-        return array;
     }
 
     /**
@@ -2488,17 +2460,17 @@ public final class ECpdsBase extends DataBase {
      *             the data base exception
      */
     public Collection<Category> getCategoriesPerResourceId(final String id) throws DataBaseException {
-        final List<Category> array = new ArrayList<>();
         try (var it = ecpds.getCategoriesPerUrl(id, Category.class)) {
+            final List<Category> array = new ArrayList<>();
             while (it.hasNext()) {
                 array.add(it.next());
             }
+            logSqlRequest("getCategoriesPerResourceId", array.size());
+            return array;
         } catch (SQLException | IOException e) {
             _log.warn("getCategoriesPerResourceId", e);
             throw new DataBaseException("getCategoriesPerResourceId", e);
         }
-        logSqlRequest("getCategoriesPerResourceId", array.size());
-        return array;
     }
 
     /**
@@ -2520,15 +2492,13 @@ public final class ECpdsBase extends DataBase {
      * @throws DataBaseException
      *             the data base exception
      */
-    @SuppressWarnings("null")
     public Collection<DataFile> getDataFilesByMetaData(final String name, final String value, final Date from,
             final Date to, final DataBaseCursor cursor) throws DataBaseException {
-        final List<DataFile> array = new ArrayList<>();
-        DataFile initialFile = null; // The first DataFile will contain the collection size (total)!
-        DBResultSet rs = null;
-        try {
-            rs = ecpds.getDataFilesByMetaData(name, value, new Timestamp(from.getTime()), new Timestamp(to.getTime()),
-                    cursor.getSort(), cursor.getOrder(), cursor.getStart(), cursor.getLength());
+        try (var rs = ecpds.getDataFilesByMetaData(name, value, new Timestamp(from.getTime()),
+                new Timestamp(to.getTime()), cursor.getSort(), cursor.getOrder(), cursor.getStart(),
+                cursor.getLength())) {
+            final List<DataFile> array = new ArrayList<>();
+            DataFile initialFile = null; // The first DataFile will contain the collection size (total)!
             while (rs.next()) {
                 final var file = new DataFile();
                 file.setId(rs.getLong("DAF_ID"));
@@ -2541,21 +2511,17 @@ public final class ECpdsBase extends DataBase {
                 }
                 array.add(file);
             }
+            // Let's set the full size of the Collection in the first
+            // DataTransfer (if we have any)!
+            if (initialFile != null) {
+                initialFile.setCollectionSize(rs.getFoundRows(cursor));
+            }
+            logSqlRequest("getDataFilesByMetaData(" + cursor + ")", array.size());
+            return array;
         } catch (SQLException | IOException e) {
             _log.warn("getDataFilesByMetaData", e);
             throw new DataBaseException("getDataFilesByMetaData", e);
-        } finally {
-            if (rs != null) {
-                rs.close();
-            }
         }
-        // Let's set the full size of the Collection in the first
-        // DataTransfer (if we have any)!
-        if (initialFile != null) {
-            initialFile.setCollectionSize(rs.getFoundRows(cursor));
-        }
-        logSqlRequest("getDataFilesByMetaData(" + cursor + ")", array.size());
-        return array;
     }
 
     /**
@@ -2594,55 +2560,51 @@ public final class ECpdsBase extends DataBase {
             final String target, final String stream, final String time, final String status, final String fileName,
             final Date from, final Date to, final String privilegedUser, final Date scheduledBefore)
             throws DataBaseException {
-        final List<List<String>> results = new ArrayList<>();
-        DBResultSet rs = null;
         try {
             final var options = new SQLParameterParser(fileName, "target", "source", "ts=d", "priority=d", "checksum",
                     "groupby", "identity", "size=b", "replicated=?", "asap=?", "event=?", "deleted=?", "expired=?",
                     "proxy=?");
-            rs = ecpds.getDataTransferCountAndMetaDataByFilter(destination, countBy, target, stream, time, status,
-                    options.get(0, "DAT_TARGET"), options.get(1, "DAF_ORIGINAL"), options.get(2, "DAT_TIME_STEP"),
-                    options.get(3, "DAT_PRIORITY"), options.get(4, "DAF_CHECKSUM"), options.get(5, "DAF_GROUP_BY"),
-                    options.get(6, "DAT_IDENTITY"), options.get(7, "DAT_SIZE"), options.get(8, "DAT_REPLICATED"),
-                    options.get(9, "DAT_ASAP"), options.get(10, "DAT_EVENT"), options.get(11, "DAT_DELETED"),
-                    options.get(12, "DAT_EXPIRY_TIME < UNIX_TIMESTAMP() * 1000"),
+            final List<List<String>> results = new ArrayList<>();
+            try (var rs = ecpds.getDataTransferCountAndMetaDataByFilter(destination, countBy, target, stream, time,
+                    status, options.get(0, "DAT_TARGET"), options.get(1, "DAF_ORIGINAL"),
+                    options.get(2, "DAT_TIME_STEP"), options.get(3, "DAT_PRIORITY"), options.get(4, "DAF_CHECKSUM"),
+                    options.get(5, "DAF_GROUP_BY"), options.get(6, "DAT_IDENTITY"), options.get(7, "DAT_SIZE"),
+                    options.get(8, "DAT_REPLICATED"), options.get(9, "DAT_ASAP"), options.get(10, "DAT_EVENT"),
+                    options.get(11, "DAT_DELETED"), options.get(12, "DAT_EXPIRY_TIME < UNIX_TIMESTAMP() * 1000"),
                     options.get(13, "HOS_NAME_PROXY is not null"), new Timestamp(from.getTime()),
                     new Timestamp(to.getTime()), privilegedUser, new Timestamp(scheduledBefore.getTime()),
-                    options.has(1) || options.has(4) || options.has(5));
-            var total = 0L;
-            var size = 0L;
-            final var addSize = "stream2".equals(countBy) || "target2".equals(countBy) || "status2".equals(countBy);
-            while (rs.next()) {
-                final List<String> p = new ArrayList<>(2);
-                p.add(rs.getString("name") != null ? rs.getString("name") : "None");
-                if (addSize) {
-                    p.add(rs.getString("count") + ";" + rs.getLong("size"));
-                    total += rs.getInt("count");
-                    size += rs.getLong("size");
-                } else {
-                    p.add(rs.getString("count"));
-                    total += rs.getInt("count");
+                    options.has(1) || options.has(4) || options.has(5))) {
+                var total = 0L;
+                var size = 0L;
+                final var addSize = "stream2".equals(countBy) || "target2".equals(countBy) || "status2".equals(countBy);
+                while (rs.next()) {
+                    final List<String> p = new ArrayList<>(2);
+                    p.add(rs.getString("name") != null ? rs.getString("name") : "None");
+                    if (addSize) {
+                        p.add(rs.getString("count") + ";" + rs.getLong("size"));
+                        total += rs.getInt("count");
+                        size += rs.getLong("size");
+                    } else {
+                        p.add(rs.getString("count"));
+                        total += rs.getInt("count");
+                    }
+                    results.add(p);
                 }
-                results.add(p);
+                final List<String> p = new ArrayList<>(2);
+                p.add("All");
+                if (addSize) {
+                    p.add(total + ";" + size);
+                } else {
+                    p.add(Long.toString(total));
+                }
+                results.add(0, p);
             }
-            final List<String> p = new ArrayList<>(2);
-            p.add("All");
-            if (addSize) {
-                p.add(total + ";" + size);
-            } else {
-                p.add(Long.toString(total));
-            }
-            results.add(0, p);
+            logSqlRequest("getTransferCountAndMetaDataByFilter", results.size());
+            return results;
         } catch (IOException | SQLException e) {
             _log.warn("getTransferCountAndMetaDataByFilter", e);
             throw new DataBaseException("getTransferCountAndMetaDataByFilter", e);
-        } finally {
-            if (rs != null) {
-                rs.close();
-            }
         }
-        logSqlRequest("getTransferCountAndMetaDataByFilter", results.size());
-        return results;
     }
 
     /**
@@ -2682,15 +2644,12 @@ public final class ECpdsBase extends DataBase {
             final String target, final String stream, final String time, final String status,
             final String privilegedUser, final Date scheduledBefore, final String fileName, final Date from,
             final Date to, final DataBaseCursor cursor) throws DataBaseException {
-        final List<DataTransfer> array = new ArrayList<>();
-        DataTransfer initialTransfer = null; // The first DataTransfer we have the collection size (total)!
-        DBResultSet rs = null;
         try {
             final var options = new SQLParameterParser(fileName, "target", "source", "ts=d", "priority=d", "checksum",
                     "groupby", "identity", "size=b", "replicated=?", "asap=?", "event=?", "deleted=?", "expired=?",
                     "proxy=?");
-            rs = ecpds.getSortedDataTransfersByFilter(destination, target, stream, time, status, privilegedUser,
-                    new Timestamp(scheduledBefore.getTime()), options.get(0, "DAT_TARGET"),
+            try (var rs = ecpds.getSortedDataTransfersByFilter(destination, target, stream, time, status,
+                    privilegedUser, new Timestamp(scheduledBefore.getTime()), options.get(0, "DAT_TARGET"),
                     options.get(1, "DAF_ORIGINAL"), options.get(2, "DAT_TIME_STEP"), options.get(3, "DAT_PRIORITY"),
                     options.get(4, "DAF_CHECKSUM"), options.get(5, "DAF_GROUP_BY"), options.get(6, "DAT_IDENTITY"),
                     options.get(7, "DAT_SIZE"), options.get(8, "DAT_REPLICATED"), options.get(9, "DAT_ASAP"),
@@ -2698,61 +2657,60 @@ public final class ECpdsBase extends DataBase {
                     options.get(12, "DAT_EXPIRY_TIME < UNIX_TIMESTAMP() * 1000"),
                     options.get(13, "HOS_NAME_PROXY is not null"), new Timestamp(from.getTime()),
                     new Timestamp(to.getTime()), cursor.getSort(), cursor.getOrder(), cursor.getStart(),
-                    cursor.getLength());
-            final var hosts = new HashMap<String, Host>();
-            while (rs.next()) {
-                final var file = new DataFile();
-                file.setOriginal(rs.getString("DAF_ORIGINAL"));
-                file.setId(rs.getLong("DAF_ID"));
-                file.setSize(rs.getString("DAT_SIZE"));
-                file.setTimeStep(rs.getLong("DAT_TIME_STEP"));
-                final var transfer = new DataTransfer();
-                transfer.setId(rs.getLong("DAT_ID"));
-                transfer.setDataFileId(file.getId());
-                transfer.setDataFile(file);
-                transfer.setSize(rs.getString("DAT_SIZE"));
-                transfer.setTimeStep(rs.getLong("DAT_TIME_STEP"));
-                transfer.setDestinationName(rs.getString("DES_NAME"));
-                transfer.setTransferServerName(rs.getString("TRS_NAME"));
-                transfer.setTarget(rs.getString("DAT_TARGET"));
-                transfer.setStatusCode(rs.getString("STA_CODE"));
-                transfer.setUserStatus(rs.getString("DAT_USER_STATUS"));
-                transfer.setSent(rs.getString("DAT_SENT"));
-                transfer.setDuration(rs.getString("DAT_DURATION"));
-                transfer.setPriority(rs.getString("DAT_PRIORITY"));
-                transfer.setRetryTime(rs.getTimestamp("DAT_RETRY_TIME"));
-                transfer.setQueueTime(rs.getTimestamp("DAT_QUEUE_TIME"));
-                transfer.setStartTime(rs.getTimestamp("DAT_START_TIME"));
-                transfer.setFinishTime(rs.getTimestamp("DAT_FINISH_TIME"));
-                transfer.setFailedTime(rs.getTimestamp("DAT_FAILED_TIME"));
-                transfer.setScheduledTime(rs.getTimestamp("DAT_SCHEDULED_TIME"));
-                transfer.setDeleted(rs.getBoolean("DAT_DELETED"));
-                transfer.setReplicated(rs.getBoolean("DAT_REPLICATED"));
-                transfer.setExpiryTime(rs.getTimestamp("DAT_EXPIRY_TIME"));
-                _setHost(this, transfer, rs.getString("HOS_NAME_BACKUP"), hosts, _SET_HOS_NAME_BACKUP);
-                _setHost(this, transfer, rs.getString("HOS_NAME_PROXY"), hosts, _SET_HOS_NAME_PROXY);
-                _setHost(this, transfer, rs.getString("HOS_NAME"), hosts);
-                final var used = cache.getFromCache(transfer);
-                if (initialTransfer == null) {
-                    initialTransfer = used;
+                    cursor.getLength())) {
+                final List<DataTransfer> array = new ArrayList<>();
+                DataTransfer initialTransfer = null; // The first DataTransfer we have the collection size (total)!
+                final var hosts = new HashMap<String, Host>();
+                while (rs.next()) {
+                    final var file = new DataFile();
+                    file.setOriginal(rs.getString("DAF_ORIGINAL"));
+                    file.setId(rs.getLong("DAF_ID"));
+                    file.setSize(rs.getString("DAT_SIZE"));
+                    file.setTimeStep(rs.getLong("DAT_TIME_STEP"));
+                    final var transfer = new DataTransfer();
+                    transfer.setId(rs.getLong("DAT_ID"));
+                    transfer.setDataFileId(file.getId());
+                    transfer.setDataFile(file);
+                    transfer.setSize(rs.getString("DAT_SIZE"));
+                    transfer.setTimeStep(rs.getLong("DAT_TIME_STEP"));
+                    transfer.setDestinationName(rs.getString("DES_NAME"));
+                    transfer.setTransferServerName(rs.getString("TRS_NAME"));
+                    transfer.setTarget(rs.getString("DAT_TARGET"));
+                    transfer.setStatusCode(rs.getString("STA_CODE"));
+                    transfer.setUserStatus(rs.getString("DAT_USER_STATUS"));
+                    transfer.setSent(rs.getString("DAT_SENT"));
+                    transfer.setDuration(rs.getString("DAT_DURATION"));
+                    transfer.setPriority(rs.getString("DAT_PRIORITY"));
+                    transfer.setRetryTime(rs.getTimestamp("DAT_RETRY_TIME"));
+                    transfer.setQueueTime(rs.getTimestamp("DAT_QUEUE_TIME"));
+                    transfer.setStartTime(rs.getTimestamp("DAT_START_TIME"));
+                    transfer.setFinishTime(rs.getTimestamp("DAT_FINISH_TIME"));
+                    transfer.setFailedTime(rs.getTimestamp("DAT_FAILED_TIME"));
+                    transfer.setScheduledTime(rs.getTimestamp("DAT_SCHEDULED_TIME"));
+                    transfer.setDeleted(rs.getBoolean("DAT_DELETED"));
+                    transfer.setReplicated(rs.getBoolean("DAT_REPLICATED"));
+                    transfer.setExpiryTime(rs.getTimestamp("DAT_EXPIRY_TIME"));
+                    _setHost(this, transfer, rs.getString("HOS_NAME_BACKUP"), hosts, _SET_HOS_NAME_BACKUP);
+                    _setHost(this, transfer, rs.getString("HOS_NAME_PROXY"), hosts, _SET_HOS_NAME_PROXY);
+                    _setHost(this, transfer, rs.getString("HOS_NAME"), hosts);
+                    final var used = cache.getFromCache(transfer);
+                    if (initialTransfer == null) {
+                        initialTransfer = used;
+                    }
+                    array.add(used);
                 }
-                array.add(used);
+                // Let's set the full size of the Collection in the first
+                // DataTransfer (if we have any)!
+                if (initialTransfer != null) {
+                    initialTransfer.setCollectionSize(rs.getFoundRows(cursor));
+                }
+                logSqlRequest("getSortedDataTransfersByFilter(" + cursor + ")", array.size());
+                return array;
             }
         } catch (IOException | SQLException e) {
             _log.warn("getSortedDataTransfersByFilter", e);
             throw new DataBaseException("getSortedDataTransfersByFilter", e);
-        } finally {
-            if (rs != null) {
-                rs.close();
-            }
         }
-        // Let's set the full size of the Collection in the first
-        // DataTransfer (if we have any)!
-        if (initialTransfer != null && rs != null) {
-            initialTransfer.setCollectionSize(rs.getFoundRows(cursor));
-        }
-        logSqlRequest("getSortedDataTransfersByFilter(" + cursor + ")", array.size());
-        return array;
     }
 
     /**
@@ -2790,13 +2748,11 @@ public final class ECpdsBase extends DataBase {
             final String target, final String stream, final String time, final String status,
             final String privilegedUser, final Date scheduledBefore, final String fileName, final Date from,
             final Date to) throws DataBaseException {
-        final List<DataTransfer> array = new ArrayList<>();
-        DBResultSet rs = null;
         try {
             final var options = new SQLParameterParser(fileName, "target", "source", "ts=d", "priority=d", "checksum",
                     "groupby", "identity", "size=b", "replicated=?", "asap=?", "event=?", "deleted=?", "expired=?",
                     "proxy=?");
-            rs = ecpds.getDataTransfersByFilter(destination, target, stream, time, status, privilegedUser,
+            try (var rs = ecpds.getDataTransfersByFilter(destination, target, stream, time, status, privilegedUser,
                     new Timestamp(scheduledBefore.getTime()), options.get(0, "DAT_TARGET"),
                     options.get(1, "DAF_ORIGINAL"), options.get(2, "DAT_TIME_STEP"), options.get(3, "DAT_PRIORITY"),
                     options.get(4, "DAF_CHECKSUM"), options.get(5, "DAF_GROUP_BY"), options.get(6, "DAT_IDENTITY"),
@@ -2804,52 +2760,50 @@ public final class ECpdsBase extends DataBase {
                     options.get(10, "DAT_EVENT"), options.get(11, "DAT_DELETED"),
                     options.get(12, "DAT_EXPIRY_TIME < UNIX_TIMESTAMP() * 1000"),
                     options.get(13, "HOS_NAME_PROXY is not null"), new Timestamp(from.getTime()),
-                    new Timestamp(to.getTime()));
-            final var hosts = new HashMap<String, Host>();
-            while (rs.next()) {
-                final var file = new DataFile();
-                file.setOriginal(rs.getString("DAF_ORIGINAL"));
-                file.setId(rs.getLong("DAF_ID"));
-                file.setSize(rs.getString("DAT_SIZE"));
-                file.setTimeStep(rs.getLong("DAT_TIME_STEP"));
-                final var transfer = new DataTransfer();
-                transfer.setId(rs.getLong("DAT_ID"));
-                transfer.setDataFileId(file.getId());
-                transfer.setDataFile(file);
-                transfer.setSize(rs.getString("DAT_SIZE"));
-                transfer.setTimeStep(rs.getLong("DAT_TIME_STEP"));
-                transfer.setDestinationName(rs.getString("DES_NAME"));
-                transfer.setTransferServerName(rs.getString("TRS_NAME"));
-                transfer.setTarget(rs.getString("DAT_TARGET"));
-                transfer.setStatusCode(rs.getString("STA_CODE"));
-                transfer.setUserStatus(rs.getString("DAT_USER_STATUS"));
-                transfer.setSent(rs.getString("DAT_SENT"));
-                transfer.setDuration(rs.getString("DAT_DURATION"));
-                transfer.setPriority(rs.getString("DAT_PRIORITY"));
-                transfer.setRetryTime(rs.getTimestamp("DAT_RETRY_TIME"));
-                transfer.setQueueTime(rs.getTimestamp("DAT_QUEUE_TIME"));
-                transfer.setStartTime(rs.getTimestamp("DAT_START_TIME"));
-                transfer.setFinishTime(rs.getTimestamp("DAT_FINISH_TIME"));
-                transfer.setFailedTime(rs.getTimestamp("DAT_FAILED_TIME"));
-                transfer.setScheduledTime(rs.getTimestamp("DAT_SCHEDULED_TIME"));
-                transfer.setDeleted(rs.getBoolean("DAT_DELETED"));
-                transfer.setReplicated(rs.getBoolean("DAT_REPLICATED"));
-                transfer.setExpiryTime(rs.getTimestamp("DAT_EXPIRY_TIME"));
-                _setHost(this, transfer, rs.getString("HOS_NAME_BACKUP"), hosts, _SET_HOS_NAME_BACKUP);
-                _setHost(this, transfer, rs.getString("HOS_NAME_PROXY"), hosts, _SET_HOS_NAME_PROXY);
-                _setHost(this, transfer, rs.getString("HOS_NAME"), hosts);
-                array.add(cache.getFromCache(transfer));
+                    new Timestamp(to.getTime()))) {
+                final List<DataTransfer> array = new ArrayList<>();
+                final var hosts = new HashMap<String, Host>();
+                while (rs.next()) {
+                    final var file = new DataFile();
+                    file.setOriginal(rs.getString("DAF_ORIGINAL"));
+                    file.setId(rs.getLong("DAF_ID"));
+                    file.setSize(rs.getString("DAT_SIZE"));
+                    file.setTimeStep(rs.getLong("DAT_TIME_STEP"));
+                    final var transfer = new DataTransfer();
+                    transfer.setId(rs.getLong("DAT_ID"));
+                    transfer.setDataFileId(file.getId());
+                    transfer.setDataFile(file);
+                    transfer.setSize(rs.getString("DAT_SIZE"));
+                    transfer.setTimeStep(rs.getLong("DAT_TIME_STEP"));
+                    transfer.setDestinationName(rs.getString("DES_NAME"));
+                    transfer.setTransferServerName(rs.getString("TRS_NAME"));
+                    transfer.setTarget(rs.getString("DAT_TARGET"));
+                    transfer.setStatusCode(rs.getString("STA_CODE"));
+                    transfer.setUserStatus(rs.getString("DAT_USER_STATUS"));
+                    transfer.setSent(rs.getString("DAT_SENT"));
+                    transfer.setDuration(rs.getString("DAT_DURATION"));
+                    transfer.setPriority(rs.getString("DAT_PRIORITY"));
+                    transfer.setRetryTime(rs.getTimestamp("DAT_RETRY_TIME"));
+                    transfer.setQueueTime(rs.getTimestamp("DAT_QUEUE_TIME"));
+                    transfer.setStartTime(rs.getTimestamp("DAT_START_TIME"));
+                    transfer.setFinishTime(rs.getTimestamp("DAT_FINISH_TIME"));
+                    transfer.setFailedTime(rs.getTimestamp("DAT_FAILED_TIME"));
+                    transfer.setScheduledTime(rs.getTimestamp("DAT_SCHEDULED_TIME"));
+                    transfer.setDeleted(rs.getBoolean("DAT_DELETED"));
+                    transfer.setReplicated(rs.getBoolean("DAT_REPLICATED"));
+                    transfer.setExpiryTime(rs.getTimestamp("DAT_EXPIRY_TIME"));
+                    _setHost(this, transfer, rs.getString("HOS_NAME_BACKUP"), hosts, _SET_HOS_NAME_BACKUP);
+                    _setHost(this, transfer, rs.getString("HOS_NAME_PROXY"), hosts, _SET_HOS_NAME_PROXY);
+                    _setHost(this, transfer, rs.getString("HOS_NAME"), hosts);
+                    array.add(cache.getFromCache(transfer));
+                }
+                logSqlRequest("getDataTransfersByFilter", array.size());
+                return array;
             }
         } catch (IOException | SQLException e) {
             _log.warn("getDataTransfersByFilter", e);
             throw new DataBaseException("getDataTransfersByFilter", e);
-        } finally {
-            if (rs != null) {
-                rs.close();
-            }
         }
-        logSqlRequest("getDataTransfersByFilter", array.size());
-        return array;
     }
 
     /**
@@ -2873,51 +2827,46 @@ public final class ECpdsBase extends DataBase {
      * @throws DataBaseException
      *             the data base exception
      */
-    @SuppressWarnings("null")
     public Collection<Host> getFilteredHosts(final String label, final String filter, final String network,
             final String type, final String search, final DataBaseCursor cursor) throws DataBaseException {
-        final List<Host> array = new ArrayList<>();
-        Host initialHost = null; // In the first Host we set the collection size (total)!
-        DBResultSet rs = null;
         try {
             final var options = new SQLParameterParser(search, "nickname", "id=d", "login", "comment", "options", "dir",
                     "hostname", "enabled=?", "method", "email", "password");
-            rs = ecpds.getFilteredHosts(label, filter, network, type, options.get(1, "HOS_NAME"),
+            try (var rs = ecpds.getFilteredHosts(label, filter, network, type, options.get(1, "HOS_NAME"),
                     options.get(2, "HOS_LOGIN"), options.get(0, "HOS_NICKNAME"), options.get(3, "HOS_COMMENT"),
                     options.get(4, "HOS_DATA"), options.get(5, "HOS_DIR"), options.get(6, "HOS_HOST"),
                     options.get(7, "HOS_ACTIVE"), options.get(8, "TME_NAME"), options.get(9, "HOS_USER_MAIL"),
                     options.get(10, "HOS_PASSWD"), cursor.getSort(), cursor.getOrder(), cursor.getStart(),
-                    cursor.getLength());
-            while (rs.next()) {
-                final var host = new Host();
-                if (initialHost == null) {
-                    initialHost = host;
+                    cursor.getLength())) {
+                final List<Host> array = new ArrayList<>();
+                Host initialHost = null; // In the first Host we set the collection size (total)!
+                while (rs.next()) {
+                    final var host = new Host();
+                    if (initialHost == null) {
+                        initialHost = host;
+                    }
+                    host.setHost(rs.getString("HOS_HOST"));
+                    host.setName(rs.getString("HOS_NAME"));
+                    host.setType(rs.getString("HOS_TYPE"));
+                    host.setActive(rs.getBoolean("HOS_ACTIVE"));
+                    host.setTransferGroupName(rs.getString("TRG_NAME"));
+                    host.setTransferMethodName(rs.getString("TME_NAME"));
+                    host.setNetworkName(rs.getString("HOS_NETWORK_NAME"));
+                    host.setNickname(rs.getString("HOS_NICKNAME"));
+                    array.add(host);
                 }
-                host.setHost(rs.getString("HOS_HOST"));
-                host.setName(rs.getString("HOS_NAME"));
-                host.setType(rs.getString("HOS_TYPE"));
-                host.setActive(rs.getBoolean("HOS_ACTIVE"));
-                host.setTransferGroupName(rs.getString("TRG_NAME"));
-                host.setTransferMethodName(rs.getString("TME_NAME"));
-                host.setNetworkName(rs.getString("HOS_NETWORK_NAME"));
-                host.setNickname(rs.getString("HOS_NICKNAME"));
-                array.add(host);
+                // Let's set the full size of the Collection in the first
+                // TransferHistory (if we have any)!
+                if (initialHost != null) {
+                    initialHost.setCollectionSize(rs.getFoundRows(cursor));
+                }
+                logSqlRequest("getFilteredHosts(" + cursor + ")", array.size());
+                return array;
             }
         } catch (IOException | SQLException e) {
             _log.warn("getFilteredHosts", e);
             throw new DataBaseException("getFilteredHosts", e);
-        } finally {
-            if (rs != null) {
-                rs.close();
-            }
         }
-        // Let's set the full size of the Collection in the first
-        // TransferHistory (if we have any)!
-        if (initialHost != null) {
-            initialHost.setCollectionSize(rs.getFoundRows(cursor));
-        }
-        logSqlRequest("getFilteredHosts(" + cursor + ")", array.size());
-        return array;
     }
 
     /**
@@ -2932,17 +2881,17 @@ public final class ECpdsBase extends DataBase {
      *             the data base exception
      */
     public Collection<Host> getHostsByDestinationId(final String destId) throws DataBaseException {
-        final List<Host> array = new ArrayList<>();
         try (var it = ecpds.getDestinationHost(destId, Host.class)) {
+            final List<Host> array = new ArrayList<>();
             while (it.hasNext()) {
                 array.add(it.next());
             }
+            logSqlRequest("getHostsByDestinationId", array.size());
+            return array;
         } catch (IOException | SQLException e) {
             _log.warn("getHostsByDestinationId", e);
             throw new DataBaseException("getHostsByDestinationId", e);
         }
-        logSqlRequest("getHostsByDestinationId", array.size());
-        return array;
     }
 
     /**
@@ -2957,17 +2906,17 @@ public final class ECpdsBase extends DataBase {
      *             the data base exception
      */
     public Collection<Host> getHostsByTransferMethodId(final String transferMethodId) throws DataBaseException {
-        final List<Host> array = new ArrayList<>();
         try (var it = ecpds.getHostsByTransferMethodId(transferMethodId, Host.class)) {
+            final List<Host> array = new ArrayList<>();
             while (it.hasNext()) {
                 array.add(it.next());
             }
+            logSqlRequest("getHostsByTransferMethodId", array.size());
+            return array;
         } catch (IOException | SQLException e) {
             _log.warn("getHostsByTransferMethodId", e);
             throw new DataBaseException("getHostsByTransferMethodId", e);
         }
-        logSqlRequest("getHostsByTransferMethodId", array.size());
-        return array;
     }
 
     /**
@@ -3001,17 +2950,17 @@ public final class ECpdsBase extends DataBase {
      */
     public Collection<TransferMethod> getTransferMethodsByEcTransModuleName(final String ecTransModuleName)
             throws DataBaseException {
-        final List<TransferMethod> array = new ArrayList<>();
         try (var it = ecpds.getTransferMethodsByEcTransModuleName(ecTransModuleName, TransferMethod.class)) {
+            final List<TransferMethod> array = new ArrayList<>();
             while (it.hasNext()) {
                 array.add(it.next());
             }
+            logSqlRequest("getTransferMethodsByEcTransModuleName", array.size());
+            return array;
         } catch (IOException | SQLException e) {
             _log.warn("getTransferMethodsByEcTransModuleName", e);
             throw new DataBaseException("getTransferMethodsByEcTransModuleName", e);
         }
-        logSqlRequest("getTransferMethodsByEcTransModuleName", array.size());
-        return array;
     }
 
     /**
@@ -3026,19 +2975,19 @@ public final class ECpdsBase extends DataBase {
      *             the data base exception
      */
     public Collection<MetadataValue> getMetaDataByDataFileId(final long dataFileId) throws DataBaseException {
-        final List<MetadataValue> array = new ArrayList<>();
         try (var it = ecpds.getMetaDataByDataFile(dataFileId, MetadataValue.class)) {
+            final List<MetadataValue> array = new ArrayList<>();
             while (it.hasNext()) {
                 array.add(it.next());
             }
             Collections.sort(array, (o1, o2) -> Integer.compare(o2.getMetadataAttributeName().length(),
                     o1.getMetadataAttributeName().length()));
+            logSqlRequest("getMetaDataByDataFileId", array.size());
+            return array;
         } catch (IOException | SQLException e) {
             _log.warn("getMetaDataByDataFileId", e);
             throw new DataBaseException("getMetaDataByDataFileId", e);
         }
-        logSqlRequest("getMetaDataByDataFileId", array.size());
-        return array;
     }
 
     /**
@@ -3053,20 +3002,20 @@ public final class ECpdsBase extends DataBase {
      *             the data base exception
      */
     public Collection<MetadataValue> getMetaDataByAttributeName(final String id) throws DataBaseException {
-        final List<MetadataValue> array = new ArrayList<>();
         try (var rs = ecpds.getMetaDataByAttribute(id)) {
+            final List<MetadataValue> array = new ArrayList<>();
             while (rs.next()) {
                 final var val = new MetadataValue();
                 val.setValue(rs.getString("MEV_VALUE"));
                 val.setMetadataAttributeName(id);
                 array.add(val);
             }
+            logSqlRequest("getMetaDataByAttributeName", array.size());
+            return array;
         } catch (IOException | SQLException e) {
             _log.warn("getMetaDataByAttributeName", e);
             throw new DataBaseException("getMetaDataByAttributeName", e);
         }
-        logSqlRequest("getMetaDataByAttributeName", array.size());
-        return array;
     }
 
     /**
@@ -3080,15 +3029,14 @@ public final class ECpdsBase extends DataBase {
      * @throws DataBaseException
      *             the data base exception
      */
-    public Iterator<DataTransfer> getDataTransfersByDestination(final String destinationName) throws DataBaseException {
-        DBIterator<DataTransfer> it = null;
+    public DBIterator<DataTransfer> getDataTransfersByDestination(final String destinationName)
+            throws DataBaseException {
         try {
-            it = ecpds.getDataTransfersByDestination(destinationName, DataTransfer.class);
+            return ecpds.getDataTransfersByDestination(destinationName, DataTransfer.class);
         } catch (IOException | SQLException e) {
             _log.warn("getDataTransfersByDestination", e);
             throw new DataBaseException("getDataTransfersByDestination", e);
         }
-        return it;
     }
 
     /**
@@ -3122,16 +3070,14 @@ public final class ECpdsBase extends DataBase {
      * @throws DataBaseException
      *             the data base exception
      */
-    public Iterator<DataTransfer> getDataTransfersByTransferServer(final TransferServer server)
+    public DBIterator<DataTransfer> getDataTransfersByTransferServer(final TransferServer server)
             throws DataBaseException {
-        DBIterator<DataTransfer> it = null;
         try {
-            it = ecpds.getDataTransfersByTransferServer(server.getName(), DataTransfer.class);
+            return ecpds.getDataTransfersByTransferServer(server.getName(), DataTransfer.class);
         } catch (IOException | SQLException e) {
             _log.warn("getDataTransfersByTransferServer", e);
             throw new DataBaseException("getDataTransfersByTransferServer", e);
         }
-        return it;
     }
 
     /**
@@ -3151,17 +3097,17 @@ public final class ECpdsBase extends DataBase {
      */
     public Collection<DataTransfer> getDataTransfersByDestinationAndIdentity(final DataTransferCache cache,
             final String destination, final String identity) throws DataBaseException {
-        final List<DataTransfer> array = new ArrayList<>();
         try (var it = ecpds.getDataTransfersByDestinationAndIdentity(destination, identity, DataTransfer.class)) {
+            final List<DataTransfer> array = new ArrayList<>();
             while (it.hasNext()) {
                 array.add(cache.getFromCache(it.next()));
             }
+            logSqlRequest("getDataTransfersByDestinationAndIdentity", array.size());
+            return array;
         } catch (IOException | SQLException e) {
             _log.warn("getDataTransfersByDestinationAndIdentity", e);
             throw new DataBaseException("getDataTransfersByDestinationAndIdentity", e);
         }
-        logSqlRequest("getDataTransfersByDestinationAndIdentity", array.size());
-        return array;
     }
 
     /**
@@ -3177,8 +3123,8 @@ public final class ECpdsBase extends DataBase {
      */
     public Collection<List<String>> getTransferCountWithDestinationAndMetadataValueByMetadataName(
             final String metadataName) throws DataBaseException {
-        final List<List<String>> results = new ArrayList<>();
         try (var rs = ecpds.getDataTransferCountDestinationAndMetadataValueByMetadataName(metadataName)) {
+            final List<List<String>> results = new ArrayList<>();
             while (rs.next()) {
                 final List<String> p = new ArrayList<>(3);
                 p.add(rs.getString("destination"));
@@ -3186,12 +3132,12 @@ public final class ECpdsBase extends DataBase {
                 p.add(rs.getString("count"));
                 results.add(p);
             }
+            logSqlRequest("getTransferCountWithDestinationAndMetadataValueByMetadataName", results.size());
+            return results;
         } catch (IOException | SQLException e) {
             _log.warn("getTransferCountWithDestinationAndMetadataValueByMetadataName");
             throw new DataBaseException("getTransferCountWithDestinationAndMetadataValueByMetadataName", e);
         }
-        logSqlRequest("getTransferCountWithDestinationAndMetadataValueByMetadataName", results.size());
-        return results;
     }
 
     /**
@@ -3218,18 +3164,18 @@ public final class ECpdsBase extends DataBase {
     public Collection<DataTransfer> getDataTransfersByDestinationProductAndTimeOnDate(final DataTransferCache cache,
             final String destinationName, final String product, final String time, final Date fromIsoDate,
             final Date toIsoDate) throws DataBaseException {
-        final List<DataTransfer> array = new ArrayList<>();
         try (var it = ecpds.getDataTransfersByDestinationProductAndTimeOnDate(destinationName, product, time,
                 new Timestamp(fromIsoDate.getTime()), new Timestamp(toIsoDate.getTime()), DataTransfer.class)) {
+            final List<DataTransfer> array = new ArrayList<>();
             while (it.hasNext()) {
                 array.add(cache.getFromCache(it.next()));
             }
+            logSqlRequest("getDataTransfersByDestinationProductAndTimeOnDate", array.size());
+            return array;
         } catch (IOException | SQLException e) {
             _log.warn("getDataTransfersByDestinationProductAndTimeOnDate", e);
             throw new DataBaseException("getDataTransfersByDestinationProductAndTimeOnDate", e);
         }
-        logSqlRequest("getDataTransfersByDestinationProductAndTimeOnDate", array.size());
-        return array;
     }
 
     /**
@@ -3251,18 +3197,18 @@ public final class ECpdsBase extends DataBase {
      */
     public Collection<DataTransfer> getDataTransfersByDestinationOnDate(final DataTransferCache cache,
             final String destinationName, final Date fromIsoDate, final Date toIsoDate) throws DataBaseException {
-        final List<DataTransfer> array = new ArrayList<>();
         try (var it = ecpds.getDataTransfersByDestinationAndTargetOnDate(destinationName, null,
                 new Timestamp(fromIsoDate.getTime()), new Timestamp(toIsoDate.getTime()), DataTransfer.class)) {
+            final List<DataTransfer> array = new ArrayList<>();
             while (it.hasNext()) {
                 array.add(cache.getFromCache(it.next()));
             }
+            logSqlRequest("getDataTransfersByDestinationOnDate", array.size());
+            return array;
         } catch (IOException | SQLException e) {
             _log.warn("getDataTransfersByDestinationOnDate", e);
             throw new DataBaseException("getDataTransfersByDestinationOnDate", e);
         }
-        logSqlRequest("getDataTransfersByDestinationOnDate", array.size());
-        return array;
     }
 
     /**
@@ -3282,17 +3228,15 @@ public final class ECpdsBase extends DataBase {
      * @throws DataBaseException
      *             the data base exception
      */
-    public Iterator<DataTransfer> getDataTransfersByDestinationAndTargetOnDateIterator(final String destinationName,
+    public DBIterator<DataTransfer> getDataTransfersByDestinationAndTargetOnDateIterator(final String destinationName,
             final String target, final Date fromIsoDate, final Date toIsoDate) throws DataBaseException {
-        DBIterator<DataTransfer> it = null;
         try {
-            it = ecpds.getDataTransfersByDestinationAndTargetOnDate(destinationName, target,
+            return ecpds.getDataTransfersByDestinationAndTargetOnDate(destinationName, target,
                     new Timestamp(fromIsoDate.getTime()), new Timestamp(toIsoDate.getTime()), DataTransfer.class);
         } catch (IOException | SQLException e) {
             _log.warn("getDataTransfersByDestinationAndTargetOnDateIterator", e);
             throw new DataBaseException("getDataTransfersByDestinationAndTargetOnDateIterator", e);
         }
-        return it;
     }
 
     /**
@@ -3318,10 +3262,10 @@ public final class ECpdsBase extends DataBase {
      * @throws SQLException
      *             the SQL exception
      */
-    public Iterator<DataTransfer> getDataTransfersByDestinationAndTargetOnDateIterator2(final String destinationName,
-            final String target, final Date fromIsoDate, final Date toIsoDate, final int sort, final int order)
-            throws IOException, SQLException {
-        return new Iterator<>() {
+    public CloseableIterator<DataTransfer> getDataTransfersByDestinationAndTargetOnDateIterator2(
+            final String destinationName, final String target, final Date fromIsoDate, final Date toIsoDate,
+            final int sort, final int order) throws IOException, SQLException {
+        return new CloseableIterator<>() {
             final DBResultSet rs = ecpds.getDataTransfersByDestinationAndTargetOnDate2(destinationName, target,
                     new Timestamp(fromIsoDate.getTime()), new Timestamp(toIsoDate.getTime()), sort, order);
 
@@ -3329,7 +3273,7 @@ public final class ECpdsBase extends DataBase {
             public boolean hasNext() {
                 try {
                     return rs.next();
-                } catch (final SQLException e) {
+                } catch (final SQLException _) {
                     return false;
                 }
             }
@@ -3351,7 +3295,7 @@ public final class ECpdsBase extends DataBase {
             }
 
             @Override
-            public void remove() {
+            public void close() {
                 if (rs != null) {
                     rs.close();
                 }
@@ -3378,18 +3322,18 @@ public final class ECpdsBase extends DataBase {
      */
     public Collection<DataTransfer> getDataTransfersByDestinationOnTransmissionDate(final DataTransferCache cache,
             final String destinationName, final Date fromIsoDate, final Date toIsoDate) throws DataBaseException {
-        final List<DataTransfer> array = new ArrayList<>();
         try (var it = ecpds.getDataTransfersByDestinationAndTargetOnTransmissionDate(destinationName, null,
                 new Timestamp(fromIsoDate.getTime()), new Timestamp(toIsoDate.getTime()), DataTransfer.class)) {
+            final List<DataTransfer> array = new ArrayList<>();
             while (it.hasNext()) {
                 array.add(cache.getFromCache(it.next()));
             }
+            logSqlRequest("getDataTransfersByDestinationOnTransmissionDate", array.size());
+            return array;
         } catch (SQLException | IOException e) {
             _log.warn("getDataTransfersByDestinationOnTransmissionDate", e);
             throw new DataBaseException("getDataTransfersByDestinationOnTransmissionDate", e);
         }
-        logSqlRequest("getDataTransfersByDestinationOnTransmissionDate", array.size());
-        return array;
     }
 
     /**
@@ -3407,17 +3351,17 @@ public final class ECpdsBase extends DataBase {
      */
     public Long[] getDatesByDestinationAndTargetOnDate(final String destinationName, final int order)
             throws DataBaseException {
-        final List<Long> list = new ArrayList<>();
         try (var rs = ecpds.getDatesByDestinationAndTargetOnDate(destinationName, order)) {
+            final List<Long> list = new ArrayList<>();
             while (rs.next()) {
                 list.add(rs.getLong("DAF_TIME_BASE"));
             }
+            logSqlRequest("getDatesByDestinationAndTargetOnDate", list.size());
+            return list.toArray(new Long[list.size()]);
         } catch (SQLException | IOException e) {
             _log.warn("getDatesByDestinationAndTargetOnDate", e);
             throw new DataBaseException("getDatesByDestinationAndTargetOnDate", e);
         }
-        logSqlRequest("getDatesByDestinationAndTargetOnDate", list.size());
-        return list.toArray(new Long[list.size()]);
     }
 
     /**
@@ -3435,16 +3379,14 @@ public final class ECpdsBase extends DataBase {
      * @throws DataBaseException
      *             the data base exception
      */
-    public Iterator<DataTransfer> getDataTransfersByDestinationAndTargetIterator(final String destinationName,
+    public DBIterator<DataTransfer> getDataTransfersByDestinationAndTargetIterator(final String destinationName,
             final String target, final boolean runnable) throws DataBaseException {
-        DBIterator<DataTransfer> it = null;
         try {
-            it = ecpds.getDataTransfersByDestinationAndTarget(destinationName, target, runnable, DataTransfer.class);
+            return ecpds.getDataTransfersByDestinationAndTarget(destinationName, target, runnable, DataTransfer.class);
         } catch (SQLException | IOException e) {
             _log.warn("getDataTransfersByDestinationAndTargetIterator", e);
             throw new DataBaseException("getDataTransfersByDestinationAndTargetIterator", e);
         }
-        return it;
     }
 
     /**
@@ -3468,10 +3410,10 @@ public final class ECpdsBase extends DataBase {
      * @throws SQLException
      *             the SQL exception
      */
-    public Iterator<DataTransfer> getDataTransfersByDestinationAndTargetIterator2(final String destinationName,
+    public CloseableIterator<DataTransfer> getDataTransfersByDestinationAndTargetIterator2(final String destinationName,
             final String target, final boolean runnable, final int sort, final int order)
             throws IOException, SQLException {
-        return new Iterator<>() {
+        return new CloseableIterator<>() {
             final DBResultSet rs = ecpds.getDataTransfersByDestinationAndTarget2(destinationName, target, runnable,
                     sort, order);
 
@@ -3479,7 +3421,7 @@ public final class ECpdsBase extends DataBase {
             public boolean hasNext() {
                 try {
                     return rs.next();
-                } catch (final SQLException e) {
+                } catch (final SQLException _) {
                     return false;
                 }
             }
@@ -3500,7 +3442,7 @@ public final class ECpdsBase extends DataBase {
             }
 
             @Override
-            public void remove() {
+            public void close() {
                 if (rs != null) {
                     rs.close();
                 }
@@ -3523,17 +3465,17 @@ public final class ECpdsBase extends DataBase {
      */
     public Collection<DataTransfer> getBadDataTransfersByDestination(final DataTransferCache cache,
             final String destinationName) throws DataBaseException {
-        final List<DataTransfer> array = new ArrayList<>();
         try (var it = ecpds.getBadDataTransfersByDestination(destinationName, DataTransfer.class)) {
+            final List<DataTransfer> array = new ArrayList<>();
             while (it.hasNext()) {
                 array.add(cache.getFromCache(it.next()));
             }
+            logSqlRequest("getBadDataTransfersByDestination", array.size());
+            return array;
         } catch (SQLException | IOException e) {
             _log.warn("getBadDataTransfersByDestination", e);
             throw new DataBaseException("getBadDataTransfersByDestination", e);
         }
-        logSqlRequest("getBadDataTransfersByDestination", array.size());
-        return array;
     }
 
     /**
@@ -3601,17 +3543,14 @@ public final class ECpdsBase extends DataBase {
      * @throws DataBaseException
      *             the data base exception
      */
-    @SuppressWarnings("null")
     public Collection<TransferHistory> getSortedTransferHistoryByDestinationOnProductDate(final String destinationName,
             final Date fromIsoDate, final Date toIsoDate, final DataBaseCursor cursor) throws DataBaseException {
-        final List<TransferHistory> array = new ArrayList<>();
-        TransferHistory initialHistory = null; // In the first TransferHistory we set the collection size (total)!
-        DBResultSet rs = null;
-        try {
-            rs = ecpds.getSortedTransferHistoryPerDestinationOnProductDate(destinationName,
-                    new Timestamp(fromIsoDate.getTime()), new Timestamp(toIsoDate.getTime()), cursor.getSort(),
-                    cursor.getOrder(), cursor.getStart(), cursor.getLength());
+        try (var rs = ecpds.getSortedTransferHistoryPerDestinationOnProductDate(destinationName,
+                new Timestamp(fromIsoDate.getTime()), new Timestamp(toIsoDate.getTime()), cursor.getSort(),
+                cursor.getOrder(), cursor.getStart(), cursor.getLength())) {
             final var hosts = new HashMap<String, Host>();
+            final List<TransferHistory> array = new ArrayList<>();
+            TransferHistory initialHistory = null; // In the first TransferHistory we set the collection size (total)!
             while (rs.next()) {
                 final var history = new TransferHistory();
                 if (initialHistory == null) {
@@ -3628,21 +3567,17 @@ public final class ECpdsBase extends DataBase {
                 _setHost(this, history, rs.getString("HOS_NAME"), hosts);
                 array.add(history);
             }
+            // Let's set the full size of the Collection in the first
+            // TransferHistory (if we have any)!
+            if (initialHistory != null) {
+                initialHistory.setCollectionSize(rs.getFoundRows(cursor));
+            }
+            logSqlRequest("getSortedTransferHistoryByDestinationOnProductDate(" + cursor + ")", array.size());
+            return array;
         } catch (SQLException | IOException e) {
             _log.warn("getSortedTransferHistoryByDestinationOnProductDate", e);
             throw new DataBaseException("getSortedTransferHistoryByDestinationOnProductDate", e);
-        } finally {
-            if (rs != null) {
-                rs.close();
-            }
         }
-        // Let's set the full size of the Collection in the first
-        // TransferHistory (if we have any)!
-        if (initialHistory != null) {
-            initialHistory.setCollectionSize(rs.getFoundRows(cursor));
-        }
-        logSqlRequest("getSortedTransferHistoryByDestinationOnProductDate(" + cursor + ")", array.size());
-        return array;
     }
 
     /**
@@ -3662,17 +3597,14 @@ public final class ECpdsBase extends DataBase {
      * @throws DataBaseException
      *             the data base exception
      */
-    @SuppressWarnings("null")
     public Collection<TransferHistory> getSortedTransferHistoryByDestinationOnHistoryDate(final String destinationName,
             final Date fromIsoDate, final Date toIsoDate, final DataBaseCursor cursor) throws DataBaseException {
-        final List<TransferHistory> array = new ArrayList<>();
-        TransferHistory initialHistory = null; // In the first TransferHistory we set the collection size (total)!
-        DBResultSet rs = null;
-        try {
-            rs = ecpds.getSortedTransferHistoryPerDestinationOnHistoryDate(destinationName,
-                    new Timestamp(fromIsoDate.getTime()), new Timestamp(toIsoDate.getTime()), cursor.getSort(),
-                    cursor.getOrder(), cursor.getStart(), cursor.getLength());
+        try (var rs = ecpds.getSortedTransferHistoryPerDestinationOnHistoryDate(destinationName,
+                new Timestamp(fromIsoDate.getTime()), new Timestamp(toIsoDate.getTime()), cursor.getSort(),
+                cursor.getOrder(), cursor.getStart(), cursor.getLength())) {
             final var hosts = new HashMap<String, Host>();
+            final List<TransferHistory> array = new ArrayList<>();
+            TransferHistory initialHistory = null; // In the first TransferHistory we set the collection size (total)!
             while (rs.next()) {
                 final var history = new TransferHistory();
                 if (initialHistory == null) {
@@ -3689,21 +3621,17 @@ public final class ECpdsBase extends DataBase {
                 _setHost(this, history, rs.getString("HOS_NAME"), hosts);
                 array.add(history);
             }
+            // Let's set the full size of the Collection in the first
+            // TransferHistory (if we have any)!
+            if (initialHistory != null) {
+                initialHistory.setCollectionSize(rs.getFoundRows(cursor));
+            }
+            logSqlRequest("getSortedTransferHistoryByDestinationOnHistoryDate(" + cursor + ")", array.size());
+            return array;
         } catch (SQLException | IOException e) {
             _log.warn("getSortedTransferHistoryByDestinationOnHistoryDate", e);
             throw new DataBaseException("getSortedTransferHistoryByDestinationOnHistoryDate", e);
-        } finally {
-            if (rs != null) {
-                rs.close();
-            }
         }
-        // Let's set the full size of the Collection in the first
-        // TransferHistory (if we have any)!
-        if (initialHistory != null) {
-            initialHistory.setCollectionSize(rs.getFoundRows(cursor));
-        }
-        logSqlRequest("getSortedTransferHistoryByDestinationOnHistoryDate(" + cursor + ")", array.size());
-        return array;
     }
 
     /**
@@ -3726,12 +3654,11 @@ public final class ECpdsBase extends DataBase {
     public Collection<Event> getECuserEvents(final String userName, final Date onIsoDate, final String search,
             final DataBaseCursor cursor) throws DataBaseException {
         final var date = new java.sql.Date(onIsoDate.getTime());
-        Event initialEvent = null; // In the first Event we set the collection size (total)!
-        final List<Event> array = new ArrayList<>();
-        DBResultSet rs = null;
-        try {
-            rs = ecpds.getECUserEvents(getSQLLikeFormattedString(userName), date, getSQLLikeFormattedString(search),
-                    cursor.getSort(), cursor.getOrder(), cursor.getStart(), cursor.getEnd(), cursor.getLength());
+        try (var rs = ecpds.getECUserEvents(getSQLLikeFormattedString(userName), date,
+                getSQLLikeFormattedString(search), cursor.getSort(), cursor.getOrder(), cursor.getStart(),
+                cursor.getEnd(), cursor.getLength())) {
+            Event initialEvent = null; // In the first Event we set the collection size (total)!
+            final List<Event> array = new ArrayList<>();
             while (rs.next()) {
                 final var event = new Event();
                 if (initialEvent == null) {
@@ -3749,22 +3676,17 @@ public final class ECpdsBase extends DataBase {
                 event.setActivity(activity);
                 array.add(event);
             }
+            // Let's set the full size of the Collection in the first Event (if we have
+            // any)!
+            if (initialEvent != null) {
+                initialEvent.setCollectionSize(rs.getFoundRows(cursor));
+            }
+            logSqlRequest("getECuserEvents(" + cursor + ")", array.size());
+            return array;
         } catch (SQLException | IOException e) {
             _log.warn("getECuserEvents", e);
             throw new DataBaseException("getECuserEvents", e);
-        } finally {
-            if (rs != null) {
-                rs.close();
-            }
         }
-        // Let's set the full size of the Collection in the first Event (if we have
-        // any)!
-        if (initialEvent != null && rs != null) {
-            initialEvent.setCollectionSize(rs.getFoundRows(cursor));
-        }
-        logSqlRequest("getECuserEvents(" + cursor + ")", array.size());
-        return array;
-
     }
 
     /**
@@ -3786,14 +3708,12 @@ public final class ECpdsBase extends DataBase {
      */
     public Collection<IncomingHistory> getIncomingHistory(final String incomingUserName, final Date onIsoDate,
             final String search, final DataBaseCursor cursor) throws DataBaseException {
-        IncomingHistory initialHistory = null; // In the first IncomingHistory we set the collection size (total)!
-        final List<IncomingHistory> array = new ArrayList<>();
-        DBResultSet rs = null;
-        try {
-            rs = ecpds.getIncomingHistory(getSQLLikeFormattedString(incomingUserName),
-                    new Timestamp(DateUtil.getStartOfDay(onIsoDate).getTime()),
-                    new Timestamp(DateUtil.getEndOfDay(onIsoDate).getTime()), getSQLLikeFormattedString(search),
-                    cursor.getSort(), cursor.getOrder(), cursor.getStart(), cursor.getEnd(), cursor.getLength());
+        try (var rs = ecpds.getIncomingHistory(getSQLLikeFormattedString(incomingUserName),
+                new Timestamp(DateUtil.getStartOfDay(onIsoDate).getTime()),
+                new Timestamp(DateUtil.getEndOfDay(onIsoDate).getTime()), getSQLLikeFormattedString(search),
+                cursor.getSort(), cursor.getOrder(), cursor.getStart(), cursor.getEnd(), cursor.getLength())) {
+            IncomingHistory initialHistory = null; // In the first IncomingHistory we set the collection size (total)!
+            final List<IncomingHistory> array = new ArrayList<>();
             while (rs.next()) {
                 final var event = new IncomingHistory();
                 if (initialHistory == null) {
@@ -3813,21 +3733,17 @@ public final class ECpdsBase extends DataBase {
                 event.setUpload(rs.getBoolean("INH_UPLOAD"));
                 array.add(event);
             }
+            // Let's set the full size of the Collection in the first
+            // IncomingHistory (if we have any)!
+            if (initialHistory != null) {
+                initialHistory.setCollectionSize(rs.getFoundRows(cursor));
+            }
+            logSqlRequest("getIncomingHistory(" + cursor + ")", array.size());
+            return array;
         } catch (SQLException | IOException e) {
             _log.warn("getIncomingHistory", e);
             throw new DataBaseException("getIncomingHistory", e);
-        } finally {
-            if (rs != null) {
-                rs.close();
-            }
         }
-        // Let's set the full size of the Collection in the first
-        // IncomingHistory (if we have any)!
-        if (initialHistory != null && rs != null) {
-            initialHistory.setCollectionSize(rs.getFoundRows(cursor));
-        }
-        logSqlRequest("getIncomingHistory(" + cursor + ")", array.size());
-        return array;
     }
 
     /**
@@ -3842,17 +3758,17 @@ public final class ECpdsBase extends DataBase {
      *             the data base exception
      */
     public Collection<ECUser> getAllowedEcUsersByHostName(final String hostName) throws DataBaseException {
-        final List<ECUser> array = new ArrayList<>();
         try (var it = ecpds.getAllowedEcUsersByHostName(hostName, ECUser.class)) {
+            final List<ECUser> array = new ArrayList<>();
             while (it.hasNext()) {
                 array.add(it.next());
             }
+            logSqlRequest("getAllowedEcUsersByHostName", array.size());
+            return array;
         } catch (SQLException | IOException e) {
             _log.warn("getAllowedEcUsersByHostName", e);
             throw new DataBaseException("getAllowedEcUsersByHostName", e);
         }
-        logSqlRequest("getAllowedEcUsersByHostName", array.size());
-        return array;
     }
 
     /**
@@ -3867,8 +3783,8 @@ public final class ECpdsBase extends DataBase {
      *             the data base exception
      */
     public List<Traffic> getTrafficByDestinationName(final String destinationName) throws DataBaseException {
-        final List<Traffic> array = new ArrayList<>();
         try (var rs = ecpds.getTrafficByDestinationName(destinationName)) {
+            final List<Traffic> array = new ArrayList<>();
             while (rs.next()) {
                 final var traffic = new Traffic();
                 traffic.setDate(rs.getString("DATE"));
@@ -3877,12 +3793,12 @@ public final class ECpdsBase extends DataBase {
                 traffic.setFiles(rs.getInt("FILES"));
                 array.add(traffic);
             }
+            logSqlRequest("getTrafficByDestinationName", array.size());
+            return array;
         } catch (SQLException | IOException e) {
             _log.warn("getTrafficByDestinationName", e);
             throw new DataBaseException("getTrafficByDestinationName", e);
         }
-        logSqlRequest("getTrafficByDestinationName", array.size());
-        return array;
     }
 
     /**
@@ -3960,15 +3876,12 @@ public final class ECpdsBase extends DataBase {
      *
      * @return the initial product status events iterator
      *
-     * @throws DataBaseException
-     *             the data base exception
      * @throws SQLException
      *             the SQL exception
      * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    public Iterator<ProductStatus> getInitialProductStatusEventsIterator()
-            throws DataBaseException, SQLException, IOException {
+    public DBIterator<ProductStatus> getInitialProductStatusEventsIterator() throws SQLException, IOException {
         return ecpds.getInitialProductStatusEvents(ProductStatus.class);
     }
 
@@ -3981,17 +3894,17 @@ public final class ECpdsBase extends DataBase {
      *             the data base exception
      */
     public ProductStatus[] getInitialProductStatusEvents() throws DataBaseException {
-        final List<ProductStatus> list = new ArrayList<>();
         try (var it = ecpds.getInitialProductStatusEvents(ProductStatus.class)) {
+            final List<ProductStatus> list = new ArrayList<>();
             while (it.hasNext()) {
                 list.add(it.next());
             }
+            logSqlRequest("getInitialProductStatusEvents", list.size());
+            return list.toArray(new ProductStatus[list.size()]);
         } catch (SQLException | IOException e) {
             _log.warn("getInitialProductStatusEvents", e);
             throw new DataBaseException("getInitialProductStatusEvents", e);
         }
-        logSqlRequest("getInitialProductStatusEvents", list.size());
-        return list.toArray(new ProductStatus[list.size()]);
     }
 
     /**

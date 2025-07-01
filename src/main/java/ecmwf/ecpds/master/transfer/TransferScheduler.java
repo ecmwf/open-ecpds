@@ -92,6 +92,7 @@ import ecmwf.common.monitor.MonitorException;
 import ecmwf.common.monitor.MonitorManager;
 import ecmwf.common.monitor.MonitorThread;
 import ecmwf.common.opsview.OpsViewManager;
+import ecmwf.common.technical.CloseableIterator;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.technical.ProxySocket;
 import ecmwf.common.technical.ScriptManager;
@@ -3565,7 +3566,7 @@ public final class TransferScheduler extends MBeanScheduler {
         private DataTransfer _requeueOn(final boolean retry, final String rule) {
             // Let's get the list of DataTransfers with the same target name
             // in this Destination!
-            Iterator<DataTransfer> transfers = null;
+            CloseableIterator<DataTransfer> transfers = null;
             final var target = _currentTransfer.getTarget();
             final var id = _currentTransfer.getId();
             try {
@@ -3574,7 +3575,7 @@ public final class TransferScheduler extends MBeanScheduler {
                             false);
                 } catch (final Throwable t) {
                     // TODO: should we delay the check?
-                    transfers = new ArrayList<DataTransfer>().iterator();
+                    transfers = CloseableIterator.empty();
                     _log.warn("Checking duplicate for DataTransfer-" + id, t);
                 }
                 final List<DataTransfer> candidates = new ArrayList<>();
@@ -3678,7 +3679,7 @@ public final class TransferScheduler extends MBeanScheduler {
                 _log.debug("Current DataTransfer-" + id + " is the winner (higher identifier)");
             } finally {
                 if (transfers != null) {
-                    transfers.remove();
+                    transfers.close();
                 }
             }
             // We found no DataTransfer with a higher level so we are going to
