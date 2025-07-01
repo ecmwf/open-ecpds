@@ -305,7 +305,8 @@ public final class SSHSession implements InteractiveSession {
             out = new PipedOutputStream(pip);
             final var pop = new PipedOutputStream();
             channel.setOutputStream(pop);
-            in = new DataInputStream(new PipedInputStream(pop));
+            final var pipedIn = new PipedInputStream(pop);
+            in = new DataInputStream(pipedIn);
             channel.connect(connectTimeOut);
             _log.debug("Connected(shell): {}", channel.isConnected());
             login(token);
