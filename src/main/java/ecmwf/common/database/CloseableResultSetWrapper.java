@@ -42,68 +42,72 @@ import ecmwf.common.text.Format;
  */
 public class CloseableResultSetWrapper implements AutoCloseable {
 
-	/** The Constant _log. */
-	private static final Logger _log = LogManager.getLogger(CloseableResultSetWrapper.class);
+    /** The Constant _log. */
+    private static final Logger _log = LogManager.getLogger(CloseableResultSetWrapper.class);
 
-	/** The Constant TRACKER. */
-	private static final ResourceTracker TRACKER = new ResourceTracker(CloseableResultSetWrapper.class);
+    /** The Constant TRACKER. */
+    private static final ResourceTracker TRACKER = new ResourceTracker(CloseableResultSetWrapper.class);
 
-	/** The result set. */
-	private final ResultSet resultSet;
+    /** The result set. */
+    private final ResultSet resultSet;
 
-	/** The statement. */
-	private final Statement statement;
+    /** The statement. */
+    private final Statement statement;
 
-	/** The start time. */
-	private final long startTime = System.currentTimeMillis();
+    /** The start time. */
+    private final long startTime = System.currentTimeMillis();
 
-	/** The closed flag. */
-	private final AtomicBoolean closed = new AtomicBoolean(false);
+    /** The closed flag. */
+    private final AtomicBoolean closed = new AtomicBoolean(false);
 
-	/**
-	 * Instantiates a new closeable result set wrapper.
-	 *
-	 * @param resultSet the result set
-	 * @param statement the statement
-	 * @throws SQLException
-	 */
-	public CloseableResultSetWrapper(final Statement statement, final String sql) throws SQLException {
-		this.resultSet = statement.executeQuery(sql);
-		this.statement = statement;
-		TRACKER.onOpen();
-	}
+    /**
+     * Instantiates a new closeable result set wrapper.
+     *
+     * @param resultSet
+     *            the result set
+     * @param statement
+     *            the statement
+     *
+     * @throws SQLException
+     */
+    public CloseableResultSetWrapper(final Statement statement, final String sql) throws SQLException {
+        this.resultSet = statement.executeQuery(sql);
+        this.statement = statement;
+        TRACKER.onOpen();
+    }
 
-	/**
-	 * Gets the result set.
-	 *
-	 * @return the result set
-	 */
-	public ResultSet getResultSet() {
-		return resultSet;
-	}
+    /**
+     * Gets the result set.
+     *
+     * @return the result set
+     */
+    public ResultSet getResultSet() {
+        return resultSet;
+    }
 
-	/**
-	 * Close.
-	 *
-	 * @throws SQLException the SQL exception
-	 */
-	@Override
-	public void close() throws SQLException {
-		if (closed.compareAndSet(false, true)) {
-			// We can now release the resources!
-			try {
-				resultSet.close();
-			} finally {
-				try {
-					statement.close(); // ensure both are closed
-				} finally {
-					TRACKER.onClose();
-					final var elapsed = System.currentTimeMillis() - startTime;
-					if (_log.isDebugEnabled() && TRACKER.getClosedCount() % 100 == 0) {
-						_log.debug("Close after {}: {}", Format.formatDuration(elapsed), TRACKER);
-					}
-				}
-			}
-		}
-	}
+    /**
+     * Close.
+     *
+     * @throws SQLException
+     *             the SQL exception
+     */
+    @Override
+    public void close() throws SQLException {
+        if (closed.compareAndSet(false, true)) {
+            // We can now release the resources!
+            try {
+                resultSet.close();
+            } finally {
+                try {
+                    statement.close(); // ensure both are closed
+                } finally {
+                    TRACKER.onClose();
+                    final var elapsed = System.currentTimeMillis() - startTime;
+                    if (_log.isDebugEnabled() && TRACKER.getClosedCount() % 100 == 0) {
+                        _log.debug("Close after {}: {}", Format.formatDuration(elapsed), TRACKER);
+                    }
+                }
+            }
+        }
+    }
 }

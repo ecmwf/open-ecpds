@@ -29,35 +29,37 @@ package ecmwf.common.technical;
 import java.util.Iterator;
 
 /**
- * An iterator that must be explicitly closed to release resources, such as open
- * database cursors or file handles.
+ * An iterator that must be explicitly closed to release resources, such as open database cursors or file handles.
  *
- * @param <T> the type of elements returned by this iterator
+ * @param <T>
+ *            the type of elements returned by this iterator
  */
 public interface CloseableIterator<T> extends Iterator<T>, AutoCloseable {
 
-	/**
-	 * Returns an empty CloseableIterator.
-	 *
-	 * @param <T> the element type
-	 * @return a CloseableIterator with no elements
-	 */
-	static <T> CloseableIterator<T> empty() {
-		return new CloseableIterator<>() {
-			@Override
-			public boolean hasNext() {
-				return false;
-			}
+    /**
+     * Returns an empty CloseableIterator.
+     *
+     * @param <T>
+     *            the element type
+     *
+     * @return a CloseableIterator with no elements
+     */
+    static <T> CloseableIterator<T> empty() {
+        return new CloseableIterator<>() {
+            @Override
+            public boolean hasNext() {
+                return false;
+            }
 
-			@Override
-			public T next() {
-				throw new java.util.NoSuchElementException("No elements");
-			}
-		};
-	}
+            @Override
+            public T next() {
+                throw new java.util.NoSuchElementException("No elements");
+            }
+        };
+    }
 
-	@Override
-	default void close() {
-		// Default no-op
-	}
+    @Override
+    default void close() {
+        // Default no-op
+    }
 }
