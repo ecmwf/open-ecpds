@@ -38,7 +38,7 @@ public class ChangeLog extends DataBaseObject {
     private static final long serialVersionUID = -5217175943280411688L;
 
     /** The chl id. */
-    protected long CHL_ID;
+    protected Long CHL_ID;
 
     /** The weu id. */
     protected String WEU_ID;

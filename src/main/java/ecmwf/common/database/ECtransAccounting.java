@@ -32,7 +32,7 @@ public class ECtransAccounting extends DataBaseObject {
     private static final long serialVersionUID = -8607911332776732997L;
 
     /** The eca id. */
-    protected int ECA_ID;
+    protected Integer ECA_ID;
 
     /** The eca action. */
     protected String ECA_ACTION;

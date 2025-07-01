@@ -1417,26 +1417,6 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
     }
 
     /**
-     * Store.
-     *
-     * @param object
-     *            the object
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     */
-    public void store(final DataBaseObject object) throws DataBaseException {
-        if (!isNullObject("Store", object)) {
-            try (var broker = brokerFactory.getBroker()) {
-                broker.store(object);
-            } catch (final Throwable e) {
-                error("Store", object, e);
-                throw new DataBaseException(e.getMessage());
-            }
-        }
-    }
-
-    /**
      * Removes the.
      *
      * @param object

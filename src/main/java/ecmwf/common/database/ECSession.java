@@ -42,7 +42,7 @@ public class ECSession extends DataBaseObject {
     protected java.sql.Date ECS_DATE;
 
     /** The ecs id. */
-    protected long ECS_ID;
+    protected Long ECS_ID;
 
     /** The ecs profile. */
     protected String ECS_PROFILE;

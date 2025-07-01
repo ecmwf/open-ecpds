@@ -36,7 +36,7 @@ public class Reception extends DataBaseObject {
     private static final long serialVersionUID = -258372606051444631L;
 
     /** The not id. */
-    protected int NOT_ID;
+    protected Integer NOT_ID;
 
     /** The rec environment. */
     protected String REC_ENVIRONMENT;
@@ -45,7 +45,7 @@ public class Reception extends DataBaseObject {
     protected BigDecimal REC_EXPIRATION_DATE;
 
     /** The rec id. */
-    protected int REC_ID;
+    protected Integer REC_ID;
 
     /** The rec monitor. */
     protected boolean REC_MONITOR;

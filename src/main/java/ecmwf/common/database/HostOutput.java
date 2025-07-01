@@ -37,7 +37,7 @@ public class HostOutput extends DataBaseObject {
     private static final long serialVersionUID = -6269434296900284206L;
 
     /** The hou id. */
-    protected int HOU_ID;
+    protected Integer HOU_ID;
 
     /** The acquisition time. */
     protected BigDecimal HOU_ACQUISITION_TIME;

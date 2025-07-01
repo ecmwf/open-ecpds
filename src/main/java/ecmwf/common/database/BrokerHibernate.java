@@ -51,8 +51,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import javax.persistence.criteria.CriteriaQuery;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hibernate.Cache;
@@ -64,10 +62,12 @@ import org.hibernate.TransactionException;
 import org.hibernate.engine.spi.SessionImplementor;
 import org.hibernate.internal.SessionImpl;
 import org.hibernate.mapping.PersistentClass;
-import org.hibernate.metamodel.spi.MetamodelImplementor;
+import org.hibernate.metamodel.MappingMetamodel;
 import org.hibernate.proxy.HibernateProxy;
 import org.hibernate.query.NativeQuery;
 import org.hibernate.query.Query;
+
+import jakarta.persistence.criteria.CriteriaQuery;
 
 import com.zaxxer.hikari.pool.ProxyConnection;
 
@@ -131,9 +131,6 @@ final class BrokerHibernate implements Broker {
      * The ExecuteOperation.
      */
     private enum ExecuteOperation {
-
-        /** The save or update. */
-        SAVE_OR_UPDATE,
         /** The save. */
         SAVE,
         /** The update. */
@@ -213,19 +210,14 @@ final class BrokerHibernate implements Broker {
      * @throws HibernateException
      *             the hibernate exception
      */
-    private static Serializable getObjectIdentifier(final Object object, final Session session) {
-        // For Hibernate6 replace: MetamodelImplementor -> MappingMetamodel &&
-        // implementor.entityPersister(...) -> implementor.getEntityDescriptor(...) and
-        // return Object instead of Serializable.
-        // Also add the following imports:
-        // import org.hibernate.metamodel.MappingMetamodel;
-        // import jakarta.persistence.criteria.CriteriaQuery;
+    private static Object getObjectIdentifier(final Object object, final Session session) {
         if (object instanceof final HibernateProxy proxy) {
             return proxy.getHibernateLazyInitializer().getIdentifier();
         }
-        if (session.getEntityManagerFactory().getMetamodel() instanceof final MetamodelImplementor implementor
+        if (session.getEntityManagerFactory().getMetamodel() instanceof final MappingMetamodel implementor
                 && session instanceof final SessionImplementor sessionImplementor) {
-            return implementor.entityPersister(object.getClass().getName()).getIdentifier(object, sessionImplementor);
+            return implementor.getEntityDescriptor(object.getClass().getName()).getIdentifier(object,
+                    sessionImplementor);
         } else {
             throw new HibernateException("Getting object identifier");
         }
@@ -437,7 +429,7 @@ final class BrokerHibernate implements Broker {
         setReadOnly(true);
         session.setDefaultReadOnly(true);
         try {
-            return (T) session.get(object.getClass(), getObjectIdentifier(object, session));
+            return (T) session.find(object.getClass(), getObjectIdentifier(object, session));
         } catch (final HibernateException e) {
             _log.error("get", e);
             throw e;
@@ -467,7 +459,7 @@ final class BrokerHibernate implements Broker {
             query.setFetchSize(FETCH_SIZE);
             query.setReadOnly(true);
             query.setCacheable(false);
-            final ScrollableResults results = query.scroll(ScrollMode.FORWARD_ONLY);
+            final ScrollableResults<T> results = query.scroll(ScrollMode.FORWARD_ONLY);
             closed.set(true); // The release() method will be used instead
             return new CloseableIterator<>() {
                 private boolean hasNextChecked = false;
@@ -488,7 +480,7 @@ final class BrokerHibernate implements Broker {
                         throw new NoSuchElementException("No more results");
                     }
                     hasNextChecked = false;
-                    return target.cast(results.get(0));
+                    return results.get();
                 }
 
                 @Override
@@ -527,7 +519,7 @@ final class BrokerHibernate implements Broker {
             query.setFetchSize(FETCH_SIZE);
             query.setReadOnly(true);
             query.setCacheable(false);
-            final ScrollableResults results = query.scroll(ScrollMode.FORWARD_ONLY);
+            final ScrollableResults<T> results = query.scroll(ScrollMode.FORWARD_ONLY);
             closed.set(true); // The release() method will be used instead
             return new CloseableIterator<>() {
                 private boolean hasNextChecked = false;
@@ -548,7 +540,7 @@ final class BrokerHibernate implements Broker {
                         throw new NoSuchElementException("No more results");
                     }
                     hasNextChecked = false;
-                    return target.cast(results.get(0));
+                    return results.get();
                 }
 
                 @Override
@@ -601,18 +593,6 @@ final class BrokerHibernate implements Broker {
     /**
      * {@inheritDoc}
      *
-     * This method performs a save (if the object is new) or update (if the object already exists) of the given object.
-     *
-     * @see ecmwf.common.database.Broker#store(ecmwf.common.database.DataBaseObject)
-     */
-    @Override
-    public void store(final DataBaseObject object) {
-        retryablePerform(ExecuteOperation.SAVE_OR_UPDATE, object, RETRY_TRANSACTION_COUNT);
-    }
-
-    /**
-     * {@inheritDoc}
-     *
      * This method performs a save or update of the given object depending on the update parameter.
      *
      * @see ecmwf.common.database.Broker#store(ecmwf.common.database.DataBaseObject, boolean)
@@ -637,12 +617,8 @@ final class BrokerHibernate implements Broker {
     private void perform(final ExecuteOperation operation, final DataBaseObject object) {
         setReadOnly(false);
         try {
-            // For Hibernate6 replace saveOrUpdate, save and update by persist, merge ...
             session.beginTransaction();
             switch (operation) {
-            case SAVE_OR_UPDATE:
-                session.saveOrUpdate(object);
-                break;
             case SAVE:
                 session.persist(object);
                 break;

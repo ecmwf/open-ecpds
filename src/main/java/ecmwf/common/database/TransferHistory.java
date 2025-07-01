@@ -36,7 +36,7 @@ public class TransferHistory extends DataBaseObject {
     private static final long serialVersionUID = -536725907129766950L;
 
     /** The dat id. */
-    protected long DAT_ID;
+    protected Long DAT_ID;
 
     /** The hos name. */
     protected Integer HOS_NAME;
@@ -54,7 +54,7 @@ public class TransferHistory extends DataBaseObject {
     protected boolean TRH_ERROR;
 
     /** The trh id. */
-    protected long TRH_ID;
+    protected Long TRH_ID;
 
     /** The trh sent. */
     protected long TRH_SENT;

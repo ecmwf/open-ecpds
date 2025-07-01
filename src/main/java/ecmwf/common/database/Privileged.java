@@ -37,7 +37,7 @@ public class Privileged extends DataBaseObject {
     protected String ECU_NAME;
 
     /** The not id. */
-    protected int NOT_ID;
+    protected Integer NOT_ID;
 
     /** The prv send. */
     protected boolean PRV_SEND;

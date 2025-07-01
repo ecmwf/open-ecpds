@@ -55,7 +55,7 @@ public class UploadHistory extends DataBaseObject {
     protected BigDecimal UPH_FINISH_TIME;
 
     /** The uph id. */
-    protected long UPH_ID;
+    protected Long UPH_ID;
 
     /** The uph meta stream. */
     protected String UPH_META_STREAM;
@@ -270,7 +270,7 @@ public class UploadHistory extends DataBaseObject {
      *            the new id
      */
     public void setId(final int param) {
-        UPH_ID = param;
+        UPH_ID = Long.valueOf(param);
     }
 
     /**

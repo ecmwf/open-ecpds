@@ -36,13 +36,13 @@ public class MetadataValue extends DataBaseObject {
     private static final long serialVersionUID = -8218425007673012498L;
 
     /** The daf id. */
-    protected long DAF_ID;
+    protected Long DAF_ID;
 
     /** The mea name. */
     protected String MEA_NAME;
 
     /** The mev id. */
-    protected long MEV_ID;
+    protected Long MEV_ID;
 
     /** The mev value. */
     protected String MEV_VALUE;

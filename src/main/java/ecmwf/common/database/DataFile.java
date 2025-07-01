@@ -91,7 +91,7 @@ public class DataFile extends DataBaseObject {
     protected long DAF_FILTER_SIZE;
 
     /** The daf id. */
-    protected long DAF_ID;
+    protected Long DAF_ID;
 
     /** The daf meta stream. */
     protected String DAF_META_STREAM;

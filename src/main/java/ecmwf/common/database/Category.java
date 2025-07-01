@@ -42,7 +42,7 @@ public class Category extends DataBaseObject {
     protected String CAT_DESCRIPTION;
 
     /** The cat id. */
-    protected long CAT_ID;
+    protected Long CAT_ID;
 
     /** The cat name. */
     protected String CAT_NAME;

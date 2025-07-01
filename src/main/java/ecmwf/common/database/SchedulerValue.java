@@ -43,7 +43,7 @@ public class SchedulerValue extends DataBaseObject {
     protected boolean SCV_HAS_REQUEUED;
 
     /** The scv id. */
-    protected int SCV_ID;
+    protected Integer SCV_ID;
 
     /** The scv last transfer ko. */
     protected Long SCV_LAST_TRANSFER_KO;

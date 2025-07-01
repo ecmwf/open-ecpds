@@ -40,7 +40,7 @@ public class MonitoringValue extends DataBaseObject {
     protected BigDecimal MOV_EARLIEST_TIME;
 
     /** The mov id. */
-    protected long MOV_ID;
+    protected Long MOV_ID;
 
     /** The mov latest time. */
     protected BigDecimal MOV_LATEST_TIME;

@@ -37,7 +37,7 @@ public class IncomingHistory extends DataBaseObject {
     private static final long serialVersionUID = 3140795959633785200L;
 
     /** The inh id. */
-    protected long INH_ID;
+    protected Long INH_ID;
 
     /** The dat id. */
     protected Long DAT_ID;

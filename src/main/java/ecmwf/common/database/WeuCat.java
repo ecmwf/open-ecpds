@@ -34,7 +34,7 @@ public class WeuCat extends DataBaseObject {
     private static final long serialVersionUID = -1610007381228128042L;
 
     /** The cat id. */
-    protected long CAT_ID;
+    protected Long CAT_ID;
 
     /** The weu id. */
     protected String WEU_ID;

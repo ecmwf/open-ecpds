@@ -40,7 +40,7 @@ public class ProductStatus extends DataBaseObject {
     protected String PRS_COMMENT;
 
     /** The prs id. */
-    protected long PRS_ID;
+    protected Long PRS_ID;
 
     /** The prs last update. */
     protected BigDecimal PRS_LAST_UPDATE;

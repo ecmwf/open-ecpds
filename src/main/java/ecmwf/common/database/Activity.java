@@ -42,7 +42,7 @@ public class Activity extends DataBaseObject {
     protected String ACT_HOST;
 
     /** The act id. */
-    protected long ACT_ID;
+    protected Long ACT_ID;
 
     /** The act plugin. */
     protected String ACT_PLUGIN;

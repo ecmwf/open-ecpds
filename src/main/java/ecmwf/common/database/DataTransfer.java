@@ -37,7 +37,7 @@ public class DataTransfer extends DataBaseObject {
     private static final long serialVersionUID = 9043274581568789473L;
 
     /** The daf id. */
-    protected long DAF_ID;
+    protected Long DAF_ID;
 
     /** The dat comment. */
     protected String DAT_COMMENT;
@@ -61,7 +61,7 @@ public class DataTransfer extends DataBaseObject {
     protected BigDecimal DAT_FIRST_FINISH_TIME;
 
     /** The dat id. */
-    protected long DAT_ID;
+    protected Long DAT_ID;
 
     /** The dat identity. */
     protected String DAT_IDENTITY;

@@ -46,10 +46,10 @@ public class Publication extends DataBaseObject {
     protected String PUB_OPTIONS;
 
     /** The dat id. */
-    protected long DAT_ID;
+    protected Long DAT_ID;
 
     /** The pub id. */
-    protected long PUB_ID;
+    protected Long PUB_ID;
 
     /** The done. */
     protected boolean PUB_DONE;

@@ -179,15 +179,6 @@ interface Broker extends AutoCloseable {
     void release();
 
     /**
-     * Store the object in the database. If the object does not exists then a new entry is created, otherwise the object
-     * is updated. If required, the primary key is automatically generated.
-     *
-     * @param object
-     *            the object
-     */
-    void store(DataBaseObject object);
-
-    /**
      * Store the object in the database. If update is true then it does an update of an existing object, otherwise the
      * object is created. If required, the primary key is automatically generated.
      *

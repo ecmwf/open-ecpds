@@ -47,7 +47,7 @@ public class ECtransHistory extends DataBaseObject {
     protected boolean ECH_ERROR;
 
     /** The ech id. */
-    protected int ECH_ID;
+    protected Integer ECH_ID;
 
     /** The ech location. */
     protected String ECH_LOCATION;

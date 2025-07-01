@@ -36,7 +36,7 @@ public class Event extends DataBaseObject {
     private static final long serialVersionUID = 8069080526398711614L;
 
     /** The act id. */
-    protected long ACT_ID;
+    protected Long ACT_ID;
 
     /** The eve action. */
     protected String EVE_ACTION;
@@ -51,7 +51,7 @@ public class Event extends DataBaseObject {
     protected boolean EVE_ERROR;
 
     /** The eve id. */
-    protected long EVE_ID;
+    protected Long EVE_ID;
 
     /** The eve time. */
     protected java.sql.Time EVE_TIME;

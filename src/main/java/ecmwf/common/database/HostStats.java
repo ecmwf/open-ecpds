@@ -37,7 +37,7 @@ public class HostStats extends DataBaseObject {
     private static final long serialVersionUID = -6269434296900284206L;
 
     /** The hst id. */
-    protected int HST_ID;
+    protected Integer HST_ID;
 
     /** The connections. */
     protected int HST_CONNECTIONS;

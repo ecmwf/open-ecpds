@@ -36,7 +36,7 @@ public class HostLocation extends DataBaseObject {
     private static final long serialVersionUID = -6269434296900284206L;
 
     /** The hlo id. */
-    protected int HLO_ID;
+    protected Integer HLO_ID;
 
     /** The hos ip. */
     protected String HLO_IP;

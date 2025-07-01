@@ -36,7 +36,7 @@ public class CatUrl extends DataBaseObject {
     private static final long serialVersionUID = 4998875148534456402L;
 
     /** The cat id. */
-    protected long CAT_ID;
+    protected Long CAT_ID;
 
     /** The url name. */
     protected String URL_NAME;

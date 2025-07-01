@@ -38,7 +38,7 @@ public class Notification extends DataBaseObject {
     protected String NOT_COMMENT;
 
     /** The not id. */
-    protected int NOT_ID;
+    protected Integer NOT_ID;
 
     /** The not metadata. */
     protected String NOT_METADATA;

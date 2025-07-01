@@ -47,7 +47,7 @@ public class Spool extends DataBaseObject {
     protected java.sql.Time SPO_EXPIRY_TIME;
 
     /** The spo id. */
-    protected int SPO_ID;
+    protected Integer SPO_ID;
 
     /** The spo mail on end. */
     protected boolean SPO_MAIL_ON_END;
