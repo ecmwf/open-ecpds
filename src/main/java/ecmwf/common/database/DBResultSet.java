@@ -194,17 +194,22 @@ final class DBResultSet implements AutoCloseable {
     @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
+            boolean closedSuccessfully = true;
             try {
-                wrapper.close();
-            } catch (final Throwable t) {
-                _log.warn("Failed to close wrapper", t);
-            }
-            try {
-                broker.release();
-            } catch (final Throwable t) {
-                _log.warn("Failed to release broker", t);
+                try {
+                    wrapper.close();
+                } catch (Throwable t) {
+                    closedSuccessfully = false;
+                    _log.warn("Failed to close wrapper", t);
+                }
+                try {
+                    broker.release();
+                } catch (Throwable t) {
+                    closedSuccessfully = false;
+                    _log.warn("Failed to release broker", t);
+                }
             } finally {
-                TRACKER.onClose();
+                TRACKER.onClose(closedSuccessfully);
             }
         }
     }

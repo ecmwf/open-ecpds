@@ -84,15 +84,31 @@ public class CloseableResultSetWrapper implements AutoCloseable {
     @Override
     public void close() throws SQLException {
         if (closed.compareAndSet(false, true)) {
-            // We can now release the resources!
+            SQLException firstException = null;
+            boolean closedSuccessfully = false;
             try {
-                resultSet.close();
-            } finally {
                 try {
-                    statement.close(); // ensure both are closed
-                } finally {
-                    TRACKER.onClose();
+                    resultSet.close();
+                } catch (SQLException e) {
+                    firstException = e;
                 }
+                try {
+                    statement.close();
+                } catch (SQLException e) {
+                    if (firstException != null) {
+                        firstException.addSuppressed(e);
+                    } else {
+                        firstException = e;
+                    }
+                }
+                if (firstException == null) {
+                    closedSuccessfully = true;
+                }
+            } finally {
+                TRACKER.onClose(closedSuccessfully);
+            }
+            if (firstException != null) {
+                throw firstException;
             }
         }
     }

@@ -128,19 +128,22 @@ public class DBIterator<E extends DataBaseObject> implements Iterator<E>, Closea
     @Override
     public void close() {
         if (closed.compareAndSet(false, true) && broker != null) {
+            boolean closedSuccessfully = true;
             try {
                 try {
                     iterator.close();
                 } catch (Exception e) {
+                    closedSuccessfully = false;
                     _log.warn("Failed to close iterator", e);
                 }
                 try {
                     broker.release();
                 } catch (Exception e) {
+                    closedSuccessfully = false;
                     _log.warn("Failed to release broker", e);
                 }
             } finally {
-                TRACKER.onClose();
+                TRACKER.onClose(closedSuccessfully);
             }
         }
     }

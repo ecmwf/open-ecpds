@@ -728,10 +728,14 @@ final class BrokerHibernate implements Broker {
      * Close session.
      */
     private void closeSession() {
+        boolean closedSuccessfully = true;
         try {
             session.close();
+        } catch (Exception e) {
+            closedSuccessfully = false;
+            _log.warn("Failed to close session", e);
         } finally {
-            TRACKER.onClose();
+            TRACKER.onClose(closedSuccessfully);
         }
     }
 

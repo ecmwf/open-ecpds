@@ -53,6 +53,9 @@ public class ResourceTracker {
     /** The peak open count. */
     private final AtomicInteger peakOpenCount = new AtomicInteger(0);
 
+    /** The error count. */
+    private final AtomicInteger errorCount = new AtomicInteger(0);
+
     /**
      * Instantiates a new resource tracker.
      *
@@ -72,12 +75,19 @@ public class ResourceTracker {
 
     /**
      * Call this when a resource is closed.
+     *
+     * @param success
+     *            the success
      */
-    public void onClose() {
-        var open = openCount.decrementAndGet();
-        closedCount.incrementAndGet();
+    public void onClose(boolean success) {
+        int open = openCount.decrementAndGet();
         if (open < 0) {
             _log.warn("Negative open count for {}: this indicates unmatched close()", name);
+        }
+        closedCount.incrementAndGet();
+        if (!success) {
+            errorCount.incrementAndGet();
+            _log.warn("Resource close reported error for {}", name);
         }
         if (_log.isDebugEnabled() && closedCount.get() % DEBUG_FREQUENCY == 0) {
             _log.debug(toString());
@@ -118,6 +128,15 @@ public class ResourceTracker {
     }
 
     /**
+     * Gets the error count.
+     *
+     * @return the error count
+     */
+    public int getErrorCount() {
+        return errorCount.get();
+    }
+
+    /**
      * Gets the peak open count.
      *
      * @return the peak open count
@@ -133,7 +152,7 @@ public class ResourceTracker {
      */
     @Override
     public String toString() {
-        return String.format("ResourceTracker[%s]: open=%d, closed=%d, peak=%d", name, getOpenCount(), getClosedCount(),
-                getPeakOpenCount());
+        return String.format("ResourceTracker[%s]: open=%d, closed=%d, errors=%d, peak=%d", name, getOpenCount(),
+                getClosedCount(), getErrorCount(), getPeakOpenCount());
     }
 }
