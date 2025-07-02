@@ -31,19 +31,12 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import ecmwf.common.technical.ResourceTracker;
-import ecmwf.common.text.Format;
 
 /**
  * The Class CloseableResultSetWrapper.
  */
 public class CloseableResultSetWrapper implements AutoCloseable {
-
-    /** The Constant _log. */
-    private static final Logger _log = LogManager.getLogger(CloseableResultSetWrapper.class);
 
     /** The Constant TRACKER. */
     private static final ResourceTracker TRACKER = new ResourceTracker(CloseableResultSetWrapper.class);
@@ -53,9 +46,6 @@ public class CloseableResultSetWrapper implements AutoCloseable {
 
     /** The statement. */
     private final Statement statement;
-
-    /** The start time. */
-    private final long startTime = System.currentTimeMillis();
 
     /** The closed flag. */
     private final AtomicBoolean closed = new AtomicBoolean(false);
@@ -102,10 +92,6 @@ public class CloseableResultSetWrapper implements AutoCloseable {
                     statement.close(); // ensure both are closed
                 } finally {
                     TRACKER.onClose();
-                    final var elapsed = System.currentTimeMillis() - startTime;
-                    if (_log.isDebugEnabled() && TRACKER.getClosedCount() % 100 == 0) {
-                        _log.debug("Close after {}: {}", Format.formatDuration(elapsed), TRACKER);
-                    }
                 }
             }
         }

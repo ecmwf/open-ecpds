@@ -28,10 +28,18 @@ package ecmwf.common.technical;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 /**
  * Utility to track resource usage: open, closed, and peak concurrent count.
  */
 public class ResourceTracker {
+    /** The Constant _log. */
+    private static final Logger _log = LogManager.getLogger(ResourceTracker.class);
+
+    /** The Constant DEBUG_FREQUENCY. */
+    private static final int DEBUG_FREQUENCY = Cnf.at("ResourceTracker", "debugFrequency", 100);
 
     /** The name. */
     private final String name;
@@ -48,11 +56,11 @@ public class ResourceTracker {
     /**
      * Instantiates a new resource tracker.
      *
-     * @param name
-     *            the name
+     * @param clazz
+     *            the clazz
      */
-    public ResourceTracker(final Class<?> name) {
-        this.name = name.getCanonicalName();
+    public ResourceTracker(final Class<?> clazz) {
+        this.name = clazz.getCanonicalName();
     }
 
     /**
@@ -66,8 +74,14 @@ public class ResourceTracker {
      * Call this when a resource is closed.
      */
     public void onClose() {
-        openCount.decrementAndGet();
+        var open = openCount.decrementAndGet();
         closedCount.incrementAndGet();
+        if (open < 0) {
+            _log.warn("Negative open count for {}: this indicates unmatched close()", name);
+        }
+        if (_log.isDebugEnabled() && closedCount.get() % DEBUG_FREQUENCY == 0) {
+            _log.debug(toString());
+        }
     }
 
     /**
@@ -119,7 +133,7 @@ public class ResourceTracker {
      */
     @Override
     public String toString() {
-        return String.format("%s: open=%d, closed=%d, peak=%d", name, getOpenCount(), getClosedCount(),
+        return String.format("ResourceTracker[%s]: open=%d, closed=%d, peak=%d", name, getOpenCount(), getClosedCount(),
                 getPeakOpenCount());
     }
 }

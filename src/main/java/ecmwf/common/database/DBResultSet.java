@@ -40,7 +40,6 @@ import org.apache.logging.log4j.Logger;
 
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.technical.ResourceTracker;
-import ecmwf.common.text.Format;
 
 /**
  * The Class DBResultSet.
@@ -64,9 +63,6 @@ final class DBResultSet implements AutoCloseable {
 
     /** The sqlQuery. */
     private final String sqlQuery;
-
-    /** The start time. */
-    private final long startTime = System.currentTimeMillis();
 
     /** The closed flag. */
     private final AtomicBoolean closed = new AtomicBoolean(false);
@@ -209,10 +205,6 @@ final class DBResultSet implements AutoCloseable {
                 _log.warn("Failed to release broker", t);
             } finally {
                 TRACKER.onClose();
-                final var elapsed = System.currentTimeMillis() - startTime;
-                if (_log.isDebugEnabled() && TRACKER.getClosedCount() % 100 == 0) {
-                    _log.debug("Closed after {}: {}", Format.formatDuration(elapsed), TRACKER);
-                }
             }
         }
     }

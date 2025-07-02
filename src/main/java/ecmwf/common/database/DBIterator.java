@@ -34,7 +34,6 @@ import org.apache.logging.log4j.Logger;
 
 import ecmwf.common.technical.CloseableIterator;
 import ecmwf.common.technical.ResourceTracker;
-import ecmwf.common.text.Format;
 
 /**
  * The Class DBIterator.
@@ -54,9 +53,6 @@ public class DBIterator<E extends DataBaseObject> implements Iterator<E>, Closea
 
     /** The broker. */
     private final Broker broker;
-
-    /** The start time. */
-    private final long startTime = System.currentTimeMillis();
 
     /** The closed flag. */
     private final AtomicBoolean closed = new AtomicBoolean(false);
@@ -145,10 +141,6 @@ public class DBIterator<E extends DataBaseObject> implements Iterator<E>, Closea
                 }
             } finally {
                 TRACKER.onClose();
-                final var elapsed = System.currentTimeMillis() - startTime;
-                if (_log.isDebugEnabled() && TRACKER.getClosedCount() % 100 == 0) {
-                    _log.debug("Closed after {}: {}", Format.formatDuration(elapsed), TRACKER);
-                }
             }
         }
     }
