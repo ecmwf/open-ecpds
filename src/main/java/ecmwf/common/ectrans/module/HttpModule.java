@@ -1758,8 +1758,7 @@ public final class HttpModule extends TransferModule {
                                             new String(message.getPayload(), StandardCharsets.UTF_8), Map.class),
                                     "mqttTopic", topic));
                             final ECtransSetup setup = getSetup();
-                            ScriptManager.exec(setup.getScriptLanguage(), scriptManager -> {
-                                final var value = scriptManager.put(bindings).eval(setup.getScriptContent());
+                            ScriptManager.exec(setup.getScriptLanguage(), bindings, setup.getScriptContent(), value -> {
                                 final var href = setup.getString(HOST_HTTP_MQTT_HREF, value);
                                 _log.debug("payload: {} : bindings: {} ; href: {}", new String(message.getPayload()),
                                         bindings, href);

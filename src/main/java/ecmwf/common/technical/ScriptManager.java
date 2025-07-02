@@ -36,11 +36,14 @@ import java.net.URL;
 import java.time.Duration;
 import java.time.Period;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import javax.script.ScriptException;
@@ -67,8 +70,11 @@ public final class ScriptManager implements AutoCloseable {
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(ScriptManager.class);
 
+    /** The Constant RUNNING_TIMEOUT. */
+    private static final long RUNNING_TIMEOUT = Cnf.at("ScriptManager", "runningTimeout", 10_000);
+
     /** The Constant LONG_RUNNING_TIME. */
-    private static final long LONG_RUNNING_TIME = Cnf.at("ScriptManager", "longRunningTime", 1000L);
+    private static final long LONG_RUNNING_TIME = Cnf.at("ScriptManager", "longRunningTime", 1_000);
 
     /** The Constant JS. */
     public static final String JS = "js";
@@ -116,7 +122,13 @@ public final class ScriptManager implements AutoCloseable {
     /**
      * The Class Cache.
      */
-    private static final class Cache {
+    private final class Cache implements AutoCloseable {
+
+        /** The Constant TRACKER. */
+        private static final ResourceTracker TRACKER = new ResourceTracker(Cache.class);
+
+        /** The released flag. */
+        private final AtomicBoolean released = new AtomicBoolean(false);
 
         /** The context. */
         Context context;
@@ -125,15 +137,69 @@ public final class ScriptManager implements AutoCloseable {
         Value bindings;
 
         /**
-         * Close.
+         * Instantiates a new cache.
          *
-         * @param currentLanguage
-         *            the current language
+         * @throws ScriptException
+         *             the script exception
          */
-        void close(final String currentLanguage) {
-            releaseContext(context, currentLanguage);
-            context = null;
-            bindings = null;
+        Cache() throws ScriptException {
+            try {
+                context = CONTEXT_PROVIDER.acquire();
+                bindings = context.getBindings(currentLanguage);
+                for (final Class<?> clazz : EXPOSED_CLASSES)
+                    bindings.putMember(clazz.getSimpleName(), clazz);
+                // Allow logging to the general log
+                bindings.putMember("log", ProxyObject.fromMap(Map.of("debug", (ProxyExecutable) args -> {
+                    if (args.length > 0)
+                        _log.debug(args[0].asString());
+                    return null;
+                }, "info", (ProxyExecutable) args -> {
+                    if (args.length > 0)
+                        _log.info(args[0].asString());
+                    return null;
+                }, "warn", (ProxyExecutable) args -> {
+                    if (args.length > 0)
+                        _log.warn(args[0].asString());
+                    return null;
+                }, "error", (ProxyExecutable) args -> {
+                    if (args.length > 0)
+                        _log.error(args[0].asString());
+                    return null;
+                })));
+                TRACKER.onOpen();
+            } catch (final Throwable e) {
+                final var message = "Failed to initialize script context";
+                _log.warn(message, e);
+                release(); // Prevent memory leak
+                throw e instanceof final ScriptException scriptException ? scriptException
+                        : new ScriptException(message);
+            }
+        }
+
+        /**
+         * Release.
+         */
+        void release() {
+            if (released.compareAndSet(false, true) && context != null) {
+                CONTEXT_PROVIDER.release(context, currentLanguage);
+                context = null;
+                bindings = null;
+            }
+        }
+
+        /**
+         * Close.
+         */
+        public void close() {
+            boolean closedSuccessfully = false;
+            try {
+                release();
+                closedSuccessfully = true;
+            } catch (Exception e) {
+                _log.warn("Failed to close context cleanly", e);
+            } finally {
+                TRACKER.onClose(closedSuccessfully);
+            }
         }
     }
 
@@ -354,15 +420,15 @@ public final class ScriptManager implements AutoCloseable {
         /**
          * Run.
          *
-         * @param manager
-         *            the manager
+         * @param value
+         *            the value
          *
          * @return the t
          *
          * @throws ScriptException
          *             the script exception
          */
-        T run(ScriptManager manager) throws ScriptException;
+        T run(Value value) throws ScriptException;
     }
 
     /**
@@ -373,6 +439,10 @@ public final class ScriptManager implements AutoCloseable {
      *            the generic type
      * @param language
      *            the language
+     * @param bindings
+     *            the bindings
+     * @param scriptContent
+     *            the script content
      * @param action
      *            the action
      *
@@ -381,25 +451,58 @@ public final class ScriptManager implements AutoCloseable {
      * @throws ScriptException
      *             the script exception
      */
-    public static <T> T exec(final String language, final ScriptAction<T> action) throws ScriptException {
+    public static <T> T exec(final String language, final Map<String, Object> bindings, final String scriptContent,
+            final ScriptAction<T> action) throws ScriptException {
+        return exec(language, bindings, scriptContent, action, RUNNING_TIMEOUT);
+    }
+
+    /**
+     * Exec. Use a cleaning executor service: a virtual-thread executor if experimental options are allowed, otherwise a
+     * platform-thread executor.
+     *
+     * @param <T>
+     *            the generic type
+     * @param language
+     *            the language
+     * @param bindings
+     *            the bindings
+     * @param scriptContent
+     *            the script content
+     * @param action
+     *            the action
+     * @param timeoutMs
+     *            the timeout ms
+     *
+     * @return the t
+     *
+     * @throws ScriptException
+     *             the script exception
+     */
+    public static <T> T exec(final String language, final Map<String, Object> bindings, final String scriptContent,
+            final ScriptAction<T> action, long timeoutMs) throws ScriptException {
         final var executor = ALLOW_EXPERIMENTAL_OPTIONS ? ThreadService.getCleaningVirtualThreadLocalExecutorService()
                 : ThreadService.getCleaningPlatformThreadLocalExecutorService();
+        Future<T> future = null;
         try {
-            return executor.submit(() -> {
+            future = executor.submit(() -> {
                 final var currentThread = Thread.currentThread();
                 final var originalCL = currentThread.getContextClassLoader();
                 try (final var manager = new ScriptManager(language)) {
-                    return action.run(manager);
+                    return action.run(manager.put(bindings).eval(scriptContent));
                 } catch (PolyglotException e) {
                     throw getMessage("Exec " + language, e);
                 } finally {
                     currentThread.setContextClassLoader(originalCL);
                     ThreadContext.clearAll();
                 }
-            }).get();
+            });
+            return future.get(timeoutMs, TimeUnit.MILLISECONDS);
+        } catch (TimeoutException _) {
+            future.cancel(true);
+            throw new ScriptException("Script execution timed out after " + timeoutMs + " ms");
         } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
-            throw new ScriptException("Error evaluating script (interrupted)");
+            throw new ScriptException("Script execution interrupted");
         } catch (ExecutionException e) {
             var cause = e.getCause();
             if (cause instanceof ScriptException scriptException) {
@@ -445,8 +548,7 @@ public final class ScriptManager implements AutoCloseable {
             language = defaultLanguage;
             index = 0;
         }
-        return exec(language,
-                manager -> eval(clazz, manager.eval(manager.addReturnToLastExpression(script.substring(index))), null));
+        return exec(language, Collections.emptyMap(), script.substring(index), value -> cast(clazz, value));
     }
 
     /**
@@ -508,7 +610,7 @@ public final class ScriptManager implements AutoCloseable {
      * @throws ScriptException
      *             the script exception
      */
-    public Value eval(final String script) throws ScriptException {
+    private Value eval(final String script) throws ScriptException {
         if (script == null || script.isBlank())
             return null; // Nothing to evaluate!
         final var currentThread = Thread.currentThread();
@@ -519,7 +621,8 @@ public final class ScriptManager implements AutoCloseable {
         final var start = System.currentTimeMillis();
         try {
             currentThread.setContextClassLoader(ScriptManager.class.getClassLoader());
-            var value = getCache().context.eval(Source.create(currentLanguage, wrapScript(script)));
+            var value = getCache().context
+                    .eval(Source.create(currentLanguage, addReturnToLastExpression((wrapScript(script)))));
             var duration = System.currentTimeMillis() - start;
             if (_log.isDebugEnabled() && duration > LONG_RUNNING_TIME) {
                 _log.debug("Time taken: {} ms", duration);
@@ -554,7 +657,7 @@ public final class ScriptManager implements AutoCloseable {
      * @throws ScriptException
      *             the script exception
      */
-    public ScriptManager put(final String key, final Object value) throws ScriptException {
+    private ScriptManager put(final String key, final Object value) throws ScriptException {
         try {
             getCache().bindings.putMember(key, value);
         } catch (final PolyglotException e) {
@@ -574,7 +677,7 @@ public final class ScriptManager implements AutoCloseable {
      * @throws ScriptException
      *             the script exception
      */
-    public ScriptManager put(final Map<String, Object> context) throws ScriptException {
+    private ScriptManager put(final Map<String, Object> context) throws ScriptException {
         for (final Map.Entry<String, Object> entry : context.entrySet()) {
             put(entry.getKey(), entry.getValue());
         }
@@ -615,53 +718,9 @@ public final class ScriptManager implements AutoCloseable {
      */
     private synchronized Cache getCache() throws ScriptException {
         if (cache == null) {
-            final var tmp = new Cache();
-            try {
-                tmp.context = CONTEXT_PROVIDER.acquire();
-                tmp.bindings = tmp.context.getBindings(currentLanguage);
-                for (final Class<?> clazz : EXPOSED_CLASSES)
-                    tmp.bindings.putMember(clazz.getSimpleName(), clazz);
-                // Allow logging to the general log
-                tmp.bindings.putMember("log", ProxyObject.fromMap(Map.of("debug", (ProxyExecutable) args -> {
-                    if (args.length > 0)
-                        _log.debug(args[0].asString());
-                    return null;
-                }, "info", (ProxyExecutable) args -> {
-                    if (args.length > 0)
-                        _log.info(args[0].asString());
-                    return null;
-                }, "warn", (ProxyExecutable) args -> {
-                    if (args.length > 0)
-                        _log.warn(args[0].asString());
-                    return null;
-                }, "error", (ProxyExecutable) args -> {
-                    if (args.length > 0)
-                        _log.error(args[0].asString());
-                    return null;
-                })));
-                this.cache = tmp;
-            } catch (final Throwable e) {
-                final var message = "Failed to initialize script context";
-                _log.warn(message, e);
-                releaseContext(tmp.context, currentLanguage); // Prevent memory leak
-                throw e instanceof final ScriptException scriptException ? scriptException
-                        : new ScriptException(message);
-            }
+            cache = new Cache();
         }
         return cache;
-    }
-
-    /**
-     * Close context.
-     *
-     * @param context
-     *            the context
-     * @param currentLanguage
-     *            the current language
-     */
-    private static void releaseContext(final Context context, final String currentLanguage) {
-        if (context != null)
-            CONTEXT_PROVIDER.release(context, currentLanguage);
     }
 
     /**
@@ -792,7 +851,7 @@ public final class ScriptManager implements AutoCloseable {
     @Override
     public void close() {
         if (closed.compareAndSet(false, true) && cache != null) {
-            cache.close(currentLanguage);
+            cache.close();
         }
     }
 
@@ -801,14 +860,14 @@ public final class ScriptManager implements AutoCloseable {
      */
     private static class ContextProvider {
 
+        /** The Constant TRACKER. */
+        private static final ResourceTracker TRACKER = new ResourceTracker(Context.class);
+
         /** The null output stream. */
         private static final OutputStream nullOutputStream = OutputStream.nullOutputStream();
 
         /** The null input stream. */
         private static final InputStream nullInputStream = InputStream.nullInputStream();
-
-        /** The context count. */
-        private final AtomicInteger contextCount = new AtomicInteger(0);
 
         /** The resource limits. */
         private final ResourceLimits resourceLimits;
@@ -837,8 +896,9 @@ public final class ScriptManager implements AutoCloseable {
                     .err(nullOutputStream);
             if (resourceLimits != null)
                 builder.resourceLimits(resourceLimits);
-            _log.debug("Context created: total={}", contextCount.incrementAndGet());
-            return builder.build();
+            final var contex = builder.build();
+            TRACKER.onOpen();
+            return contex;
         }
 
         /**
@@ -851,8 +911,15 @@ public final class ScriptManager implements AutoCloseable {
          */
         void release(final Context context, final String currentLanguage) {
             resetBindings(context, currentLanguage);
-            _log.debug("Context closed: total={}", contextCount.decrementAndGet());
-            context.close(true);
+            boolean closedSuccessfully = false;
+            try {
+                context.close(true);
+                closedSuccessfully = true;
+            } catch (Exception e) {
+                _log.warn("Failed to close context cleanly", e);
+            } finally {
+                TRACKER.onClose(closedSuccessfully);
+            }
         }
 
         /**
