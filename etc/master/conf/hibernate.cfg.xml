@@ -9,9 +9,8 @@
 		<property name="hibernate.format_sql">false</property>
 		<property name="hibernate.use_sql_comments">false</property>
 		<property name="hibernate.generate_statistics">false</property>
-		<property name="hibernate.max_fetch_depth">3</property>
+		<property name="hibernate.max_fetch_depth">2</property>
 		<property name="hibernate.default_batch_fetch_size">1024</property>
-		<property name="hibernate.connection.autocommit">true</property>
 		<property name="hibernate.connection.isolation">2</property>
 		<property name="hibernate.cache.use_second_level_cache">true</property>
 		<property name="hibernate.cache.region.factory_class">org.hibernate.cache.jcache.internal.JCacheRegionFactory</property>
