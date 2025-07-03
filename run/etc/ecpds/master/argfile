@@ -14,7 +14,7 @@
 -Dmaster.internalAddress='127.0.0.1'
 -Decaccess.address=''
 -Deccmd.address=''
--Ddatabase.alias='sequential://localhost:3309,host.docker.internal:3309/ecpds?log=true'
+-Ddatabase.alias='//localhost:3309,host.docker.internal:3309/ecpds?failOverReadOnly=false'
 -Dhibernate.minPoolSize='5'
 -Dhibernate.maxPoolSize='50'
 -Dretrieval.maxPoolSize='50'
