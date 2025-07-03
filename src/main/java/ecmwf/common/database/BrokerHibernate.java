@@ -56,24 +56,19 @@ import org.apache.logging.log4j.Logger;
 import org.hibernate.Cache;
 import org.hibernate.HibernateException;
 import org.hibernate.ScrollMode;
-import org.hibernate.ScrollableResults;
 import org.hibernate.Session;
 import org.hibernate.TransactionException;
 import org.hibernate.engine.spi.SessionImplementor;
-import org.hibernate.internal.SessionImpl;
 import org.hibernate.mapping.PersistentClass;
 import org.hibernate.metamodel.MappingMetamodel;
 import org.hibernate.proxy.HibernateProxy;
 import org.hibernate.query.NativeQuery;
 import org.hibernate.query.Query;
 
-import jakarta.persistence.criteria.CriteriaQuery;
-
-import com.zaxxer.hikari.pool.ProxyConnection;
-
 import ecmwf.common.technical.CloseableIterator;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.technical.ResourceTracker;
+import jakarta.persistence.criteria.CriteriaQuery;
 
 /**
  * The Class BrokerHibernate.
@@ -88,9 +83,6 @@ final class BrokerHibernate implements Broker {
 
     /** The Constant FETCH_SIZE. */
     private static final int FETCH_SIZE = Cnf.at("DataBase", "fetchSize", 100);
-
-    /** The Constant GET_MARIADB_CONNECTION. */
-    private static final boolean GET_MARIADB_CONNECTION = Cnf.at("DataBase", "getMariadbConnection", true);
 
     /** The Constant SET_AUTO_COMMIT. */
     private static final boolean SET_AUTO_COMMIT = Cnf.at("DataBase", "setAutoCommit", true);
@@ -128,8 +120,8 @@ final class BrokerHibernate implements Broker {
     /** The Hibernate cache. */
     private final Cache cache;
 
-    /** The mariadbConnection. */
-    private final org.mariadb.jdbc.Connection mariadbConnection;
+    /** The generic jdbc connection wrapper. */
+    private final GenericJdbcConnectionWrapper.GenericJdbcConnection genericConnection;
 
     /**
      * The ExecuteOperation.
@@ -160,37 +152,9 @@ final class BrokerHibernate implements Broker {
             throw new BrokerException("Hibernate session initialization failed");
         }
         session = sessionFactory.openSession();
-        // If not a MariaDB driver, this is null!
-        mariadbConnection = getMariadbConnection(session);
+        genericConnection = GenericJdbcConnectionWrapper.wrap(session);
         cache = sessionFactory.getCache();
         TRACKER.onOpen();
-    }
-
-    /**
-     * This method takes a Session object as a parameter and returns a MariaDB jdbc Connection object. The method first
-     * checks if the flag GET_MARIADB_CONNECTION is set to true, and if so, it checks if the Session object is an
-     * instance of SessionImpl and if its physical connection is a NewProxyConnection that wraps a MariaDB jdbc
-     * Connection. If all of these conditions are true, the method returns the unwrapped MariaDB jdbc Connection object.
-     * If any of the conditions are false or if an exception is thrown during the process, the method returns null.
-     *
-     * @param session
-     *            the session
-     *
-     * @return the mariadb connection
-     */
-    private static org.mariadb.jdbc.Connection getMariadbConnection(final Session session) {
-        try {
-            if (GET_MARIADB_CONNECTION && session instanceof final SessionImpl hibernateSession
-                    && hibernateSession.getJdbcCoordinator().getLogicalConnection()
-                            .getPhysicalConnection() instanceof final ProxyConnection proxy
-                    && proxy.isWrapperFor(org.mariadb.jdbc.Connection.class) && proxy.unwrap(
-                            org.mariadb.jdbc.Connection.class) instanceof final org.mariadb.jdbc.Connection mariadbConnection) {
-                return mariadbConnection;
-            }
-        } catch (final SQLException e) {
-            _log.debug("Getting underlying JDBC connection", e);
-        }
-        return null;
     }
 
     /**
@@ -240,20 +204,22 @@ final class BrokerHibernate implements Broker {
      *            the new read only
      */
     private void setReadOnly(final boolean read) {
-        if (mariadbConnection != null) {
-            try {
-                if (SET_READ_ONLY) {
-                    mariadbConnection.setReadOnly(read);
-                }
-                if (SET_AUTO_COMMIT && !read) {
-                    mariadbConnection.setAutoCommit(true);
-                }
-            } catch (final SQLException e) {
-                _log.error("setReadOnly/setAutoCommit: read={}", read, e);
+        if (genericConnection == null) {
+            return;
+        }
+        try {
+            if (SET_READ_ONLY) {
+                genericConnection.setReadOnly(read);
             }
-            if (DEBUG_POOL && _log.isDebugEnabled()) {
-                activities.computeIfAbsent(mariadbConnection.__test_host(), NodeActivity::new).update(read);
+            if (SET_AUTO_COMMIT && !read) {
+                genericConnection.setAutoCommit(true);
             }
+        } catch (final SQLException e) {
+            _log.error("setReadOnly/setAutoCommit: read={}", read, e);
+        }
+        if (DEBUG_POOL && _log.isDebugEnabled()) {
+            final var hostInfo = genericConnection.getHostInfoString();
+            activities.computeIfAbsent(hostInfo, NodeActivity::new).update(read);
         }
     }
 
@@ -293,15 +259,15 @@ final class BrokerHibernate implements Broker {
      *            the primary keys
      */
     private void clearCache(final PersistentClass persistentClass, final List<Object> primaryKeys) {
-        final Class<?> mappedClass = persistentClass.getMappedClass();
+        final var mappedClass = persistentClass.getMappedClass();
         if (primaryKeys == null || primaryKeys.isEmpty()) {
             cache.evict(mappedClass);
             if (DEBUG_CACHE) {
                 _log.debug("Cache {} cleared for all entities", mappedClass.getName());
             }
         } else {
-            final Class<?> hibernateClass = persistentClass.getIdentifier().getType().getReturnedClass();
-            for (final Object primaryKey : primaryKeys) {
+            final var hibernateClass = persistentClass.getIdentifier().getType().getReturnedClass();
+            for (final var primaryKey : primaryKeys) {
                 if (primaryKey instanceof final Serializable serializableKey) {
                     final var hibernateKey = convert(serializableKey, hibernateClass);
                     if (cache.contains(mappedClass, hibernateKey)) {
@@ -453,7 +419,7 @@ final class BrokerHibernate implements Broker {
      * @see ecmwf.common.database.Broker#getIterator(java.lang.Class)
      */
     @Override
-    public <T extends DataBaseObject> CloseableIterator<T> getIterator(Class<T> target) {
+    public <T extends DataBaseObject> CloseableIterator<T> getIterator(final Class<T> target) {
         setReadOnly(true);
         session.setDefaultReadOnly(true);
         try {
@@ -464,7 +430,7 @@ final class BrokerHibernate implements Broker {
             query.setFetchSize(FETCH_SIZE);
             query.setReadOnly(true);
             query.setCacheable(false);
-            final ScrollableResults<T> results = query.scroll(ScrollMode.FORWARD_ONLY);
+            final var results = query.scroll(ScrollMode.FORWARD_ONLY);
             closed.set(true); // The release() method will be used instead
             return new CloseableIterator<>() {
                 private boolean hasNextChecked = false;
@@ -524,7 +490,7 @@ final class BrokerHibernate implements Broker {
             query.setFetchSize(FETCH_SIZE);
             query.setReadOnly(true);
             query.setCacheable(false);
-            final ScrollableResults<T> results = query.scroll(ScrollMode.FORWARD_ONLY);
+            final var results = query.scroll(ScrollMode.FORWARD_ONLY);
             closed.set(true); // The release() method will be used instead
             return new CloseableIterator<>() {
                 private boolean hasNextChecked = false;
@@ -728,10 +694,10 @@ final class BrokerHibernate implements Broker {
      * Close session.
      */
     private void closeSession() {
-        boolean closedSuccessfully = true;
+        var closedSuccessfully = true;
         try {
             session.close();
-        } catch (Exception e) {
+        } catch (final Exception e) {
             closedSuccessfully = false;
             _log.warn("Failed to close session", e);
         } finally {
