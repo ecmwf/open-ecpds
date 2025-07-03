@@ -85,10 +85,10 @@ final class BrokerHibernate implements Broker {
     private static final int FETCH_SIZE = Cnf.at("DataBase", "fetchSize", 100);
 
     /** The Constant SET_AUTO_COMMIT. */
-    private static final boolean SET_AUTO_COMMIT = Cnf.at("DataBase", "setAutoCommit", true);
+    private static final boolean SET_AUTO_COMMIT = Cnf.at("DataBase", "setAutoCommit", false);
 
     /** The Constant SET_READ_ONLY. */
-    private static final boolean SET_READ_ONLY = Cnf.at("DataBase", "setReadOnly", true);
+    private static final boolean SET_READ_ONLY = Cnf.at("DataBase", "setReadOnly", false);
 
     /** The Constant RETRY_TRANSACTION_COUNT. */
     private static final int RETRY_TRANSACTION_COUNT = Cnf.at("DataBase", "retryTransactionCount", 2);
@@ -103,7 +103,7 @@ final class BrokerHibernate implements Broker {
     private static final boolean DEBUG_POOL = Cnf.at("DataBase", "debugPool", false);
 
     /** The Constant DEBUG_FREQUENCY. */
-    private static final int DEBUG_FREQUENCY = Cnf.at("DataBase", "debugFrequency", 1_000_000);
+    private static final int DEBUG_FREQUENCY = Cnf.at("DataBase", "debugFrequency", 10_000);
 
     /** The Constant activities. */
     private static final Map<String, NodeActivity> activities = new ConcurrentHashMap<>();
@@ -368,15 +368,25 @@ final class BrokerHibernate implements Broker {
     public int executeUpdate(final String sql) throws BrokerException, SQLException {
         setReadOnly(false);
         final var numberOfRows = new StringBuilder();
+        var tx = session.getTransaction();
         try {
+            if (!tx.isActive()) {
+                tx = session.beginTransaction();
+            }
             session.doWork(connection -> {
                 try (final var statement = connection.createStatement()) {
                     numberOfRows.append(statement.executeUpdate(sql));
                 }
             });
+            tx.commit(); // commit only if we started it
         } catch (final Exception e) {
+            if (tx != null && tx.isActive()) {
+                tx.rollback();
+            }
             _log.error("executeUpdate: {}", sql, e);
             throw new SQLException(e);
+        } finally {
+            session.clear();
         }
         return Integer.parseInt(numberOfRows.toString());
     }
