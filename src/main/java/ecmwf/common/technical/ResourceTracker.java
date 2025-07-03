@@ -39,7 +39,7 @@ public class ResourceTracker {
     private static final Logger _log = LogManager.getLogger(ResourceTracker.class);
 
     /** The Constant DEBUG_FREQUENCY. */
-    private static final int DEBUG_FREQUENCY = Cnf.at("ResourceTracker", "debugFrequency", 100);
+    private static final int DEBUG_FREQUENCY = Cnf.at("ResourceTracker", "debugFrequency", 1_000);
 
     /** The name. */
     private final String name;
