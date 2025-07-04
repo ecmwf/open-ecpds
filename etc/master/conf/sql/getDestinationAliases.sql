@@ -14,7 +14,7 @@
 ##
 ## Request(s)
 ##
-SELECT *
+SELECT D.*
 FROM 
   DESTINATION D, ALIAS A
 WHERE 
