@@ -10,6 +10,10 @@
 package ecmwf.common.rmi.interruptible;
 
 /**
+ * ECMWF Product Data Store (OpenECPDS) Project
+ *
+ * Tailored Neil O'Toole's original version to specific requirements.
+ *
  * Extends Thread to provide support for interrupting the thread while the
  * thread is in a blocking RMI IO operation. Typically, threads that are in
  * blocking IO operations can't be interrupted. This implementation provides a
@@ -32,95 +36,88 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- * The Class InterruptibleRMIThread.
+ * An RMI thread that can be forcefully interrupted via socket closure.
  */
+
 public final class InterruptibleRMIThread extends Thread {
 
-    /** The Constant _log. */
-    private static final Logger _log = LogManager.getLogger(InterruptibleRMIThread.class);
+	/** The Constant LOG. */
+	private static final Logger LOG = LogManager.getLogger(InterruptibleRMIThread.class);
 
-    /** The rmi socket. */
-    private Socket rmiSocket;
+	/** The rmi socket. */
+	private volatile Socket rmiSocket;
 
-    /**
-     * Instantiates a new interruptible RMI thread.
-     *
-     * @param target
-     *            the target
-     *
-     * @see Thread#Thread(java.lang.String)
-     */
-    public InterruptibleRMIThread(final Runnable target) {
-        super(target);
-    }
+	/**
+	 * Instantiates a new interruptible RMI thread.
+	 *
+	 * @param target the target
+	 */
+	public InterruptibleRMIThread(final Runnable target) {
+		super(target);
+	}
 
-    /**
-     * Instantiates a new interruptible RMI thread.
-     *
-     * @param group
-     *            the group
-     * @param runnable
-     *            the runnable
-     * @param name
-     *            the name
-     * @param stackSize
-     *            the stack size
-     *
-     * @see Thread#Thread(java.lang.String)
-     */
-    public InterruptibleRMIThread(final ThreadGroup group, final Runnable runnable, final String name,
-            final long stackSize) {
-        super(group, runnable, name, stackSize);
-    }
+	/**
+	 * Instantiates a new interruptible RMI thread.
+	 *
+	 * @param group     the group
+	 * @param runnable  the runnable
+	 * @param name      the name
+	 * @param stackSize the stack size
+	 */
+	public InterruptibleRMIThread(final ThreadGroup group, final Runnable runnable, final String name,
+			final long stackSize) {
+		super(group, runnable, name, stackSize);
+	}
 
-    /**
-     * Register the supplied socket as currently being in an IO operation.
-     *
-     * @param socket
-     *            the socket
-     */
-    synchronized void registerSocketInIO(final InterruptibleRMIClientSocket socket) {
-        rmiSocket = socket;
-    }
+	/**
+	 * Register socket in IO.
+	 *
+	 * @param socket the socket
+	 */
+	synchronized void registerSocketInIO(final InterruptibleRMIClientSocket socket) {
+		this.rmiSocket = socket;
+	}
 
-    /**
-     * Unregister the socket currently registered as being in an IO operation.
-     */
-    synchronized void unregisterSocketInIO() {
-        rmiSocket = null;
-    }
+	/**
+	 * Unregister socket in IO.
+	 */
+	synchronized void unregisterSocketInIO() {
+		this.rmiSocket = null;
+	}
 
-    /**
-     * {@inheritDoc}
-     *
-     * Interrupt this thread, even if it is in a blocking RMI IO operation. This method first invokes the superclass's
-     * #interrupt method. Then, if an RMI socket has been registered as being in IO for this thread, a special marker
-     * (like an EOF) is written to the socket (to help the server side shutdown its threads), and then the RMI socket is
-     * directly closed. Afterwards, this thread's interrupt status will have been set.
-     *
-     * @see Thread#interrupt()
-     */
-    @Override
-    public synchronized void interrupt() {
-        try {
-            super.interrupt();
-        } finally {
-            if (rmiSocket != null) {
-                _log.debug("Interrupting RMI Thread in IO operation ({})", rmiSocket);
-                try {
-                    final var out = rmiSocket.getOutputStream();
-                    out.write(InterruptibleRMISocket.SHUTDOWN_SOCKET);
-                    out.flush();
-                    out.close();
-                    rmiSocket.close();
-                } catch (final IOException e) {
-                    _log.warn("Closing Socket connection", e);
-                } finally {
-                    rmiSocket = null;
-                }
-            } else {
-                _log.debug("RMI Thread NOT in IO operation");
-            }
-        }
-    }
+	/**
+	 * Interrupt.
+	 */
+	@Override
+	public void interrupt() {
+		Socket socketToClose;
+
+		// Take local copy to avoid holding lock during I/O
+		synchronized (this) {
+			socketToClose = this.rmiSocket;
+			this.rmiSocket = null;
+		}
+
+		// First, call standard interrupt
+		super.interrupt();
+
+		if (socketToClose != null) {
+			if (LOG.isDebugEnabled()) {
+				LOG.debug("Interrupting RMI Thread in IO operation ({})", socketToClose);
+			}
+			try {
+				socketToClose.shutdownInput(); // optionally signal clean shutdown
+				socketToClose.shutdownOutput();
+			} catch (final IOException _) {
+				// Ignore, likely already shut down
+			}
+			try {
+				socketToClose.close(); // This is the actual interrupt trigger
+			} catch (final IOException e) {
+				LOG.warn("Error closing RMI socket during interrupt", e);
+			}
+		} else {
+			LOG.debug("RMI Thread NOT in IO operation");
+		}
+	}
 }
