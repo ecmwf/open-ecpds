@@ -52,6 +52,8 @@
 -Dstarter.addShutdownHook=no
 -Dstarter.debug=no
 -Dstarter.urlClassLoader=no
+-Dsun.net.inetaddr.ttl=120
+-Dsun.net.inetaddr.negative.ttl=10
 -Djava.rmi.server.randomIDs=true
 -Djava.rmi.server.disableHttp=true
 -Djava.rmi.server.useCodebaseOnly=true

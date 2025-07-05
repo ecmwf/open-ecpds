@@ -131,6 +131,12 @@ JAVA_OPTS=$JAVA_OPTS" -Decmwf.common.starter.tmp='$dir_tmp'"
 JAVA_OPTS=$JAVA_OPTS" -Decmwf.common.starter.debug=no"
 
 ##############
+## TTL options
+##############
+JAVA_OPTS=$JAVA_OPTS" -Dsun.net.inetaddr.ttl=300"
+JAVA_OPTS=$JAVA_OPTS" -Dsun.net.inetaddr.negative.ttl=10"
+
+##############
 ## RMI options
 ##############
 JAVA_OPTS=$JAVA_OPTS" -Djava.rmi.server.randomIDs=true"
