@@ -52,8 +52,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.ThreadContext;
 import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.Context.Builder;
 import org.graalvm.polyglot.Engine;
-import org.graalvm.polyglot.Engine.Builder;
 import org.graalvm.polyglot.HostAccess;
 import org.graalvm.polyglot.PolyglotException;
 import org.graalvm.polyglot.ResourceLimits;
@@ -95,23 +95,6 @@ public final class ScriptManager implements AutoCloseable {
     /** The Constant ALLOW_EXPERIMENTAL_OPTIONS. */
     private static final boolean ALLOW_EXPERIMENTAL_OPTIONS = Cnf.at("ScriptManager", "allowExperimentalOptions",
             false);
-
-    /** The Constant SHARED_BUILDER. */
-    private static final Builder SHARED_BUILDER;
-
-    /** The Constant SHARED_ENGINE. */
-    private static final Engine SHARED_ENGINE;
-
-    static {
-        SHARED_BUILDER = Engine.newBuilder(JS, PYTHON);
-        if (ALLOW_EXPERIMENTAL_OPTIONS) {
-            SHARED_BUILDER.allowExperimentalOptions(true)
-                    .option("engine.WarnVirtualThreadSupport",
-                            Cnf.stringAt("ScriptManager", "warnVirtualThreadSupport", false))
-                    .option("engine.Compilation", Cnf.stringAt("ScriptManager", "engineCompilation", true));
-        }
-        SHARED_ENGINE = Cnf.at("ScriptManager", "useSharedEngine", true) ? SHARED_BUILDER.build() : null;
-    }
 
     /** The current language. */
     private final String currentLanguage;
@@ -181,7 +164,7 @@ public final class ScriptManager implements AutoCloseable {
          */
         void release() {
             if (released.compareAndSet(false, true) && context != null) {
-                CONTEXT_PROVIDER.release(context, currentLanguage);
+                ContextProvider.release(context, currentLanguage);
                 context = null;
                 bindings = null;
             }
@@ -191,7 +174,7 @@ public final class ScriptManager implements AutoCloseable {
          * Close.
          */
         public void close() {
-            boolean closedSuccessfully = false;
+            var closedSuccessfully = false;
             try {
                 release();
                 closedSuccessfully = true;
@@ -724,26 +707,6 @@ public final class ScriptManager implements AutoCloseable {
     }
 
     /**
-     * Called whenever the underlying script is trying to access an external class. It the external class is not listed
-     * in the exposed classes then the permission is denied!
-     *
-     * @param className
-     *            the class name
-     *
-     * @return true, if successful
-     */
-    private static boolean check(final String className) {
-        for (final Class<?> clazz : EXPOSED_CLASSES) {
-            if (clazz.getCanonicalName().equals(className)) {
-                return true;
-            }
-        }
-        // Not found
-        _log.warn("Rejected class: {}", className);
-        return false;
-    }
-
-    /**
      * Cast.
      *
      * @param <T>
@@ -861,16 +824,10 @@ public final class ScriptManager implements AutoCloseable {
     private static class ContextProvider {
 
         /** The Constant TRACKER. */
-        private static final ResourceTracker TRACKER = new ResourceTracker(Context.class);
-
-        /** The null output stream. */
-        private static final OutputStream nullOutputStream = OutputStream.nullOutputStream();
-
-        /** The null input stream. */
-        private static final InputStream nullInputStream = InputStream.nullInputStream();
+        private static final ResourceTracker TRACKER = new ResourceTracker(ContextProvider.class);
 
         /** The resource limits. */
-        private final ResourceLimits resourceLimits;
+        private final Builder contextBuilder;
 
         /**
          * Instantiates a new context provider.
@@ -879,7 +836,51 @@ public final class ScriptManager implements AutoCloseable {
          *            the limits
          */
         ContextProvider(final int limits) {
-            this.resourceLimits = limits > 0 ? ResourceLimits.newBuilder().statementLimit(limits, null).build() : null;
+            this.contextBuilder = Context.newBuilder(JS, PYTHON);
+            if (Cnf.at("ScriptManager", "useSharedEngine", true))
+                contextBuilder.engine(getConfiguredEngine());
+            final var nullOutputStream = OutputStream.nullOutputStream();
+            contextBuilder.allowHostAccess(HostAccess.ALL).allowHostClassLookup(ContextProvider::check)
+                    .useSystemExit(false).allowCreateProcess(false).allowCreateThread(false)
+                    .in(InputStream.nullInputStream()).out(nullOutputStream).err(nullOutputStream);
+            if (limits > 0)
+                contextBuilder.resourceLimits(ResourceLimits.newBuilder().statementLimit(limits, null).build());
+        }
+
+        /**
+         * Gets the configured engine.
+         *
+         * @return the configured engine
+         */
+        static Engine getConfiguredEngine() {
+            final var engineBuilder = Engine.newBuilder(JS, PYTHON);
+            if (ALLOW_EXPERIMENTAL_OPTIONS) {
+                engineBuilder.allowExperimentalOptions(true)
+                        .option("engine.WarnVirtualThreadSupport",
+                                Cnf.stringAt("ScriptManager", "warnVirtualThreadSupport", false))
+                        .option("engine.Compilation", Cnf.stringAt("ScriptManager", "engineCompilation", true));
+            }
+            return engineBuilder.build();
+        }
+
+        /**
+         * Called whenever the underlying script is trying to access an external class. It the external class is not
+         * listed in the exposed classes then the permission is denied!
+         *
+         * @param className
+         *            the class name
+         *
+         * @return true, if successful
+         */
+        static boolean check(final String className) {
+            for (final Class<?> clazz : EXPOSED_CLASSES) {
+                if (clazz.getCanonicalName().equals(className)) {
+                    return true;
+                }
+            }
+            // Not found
+            _log.warn("Rejected class: {}", className);
+            return false;
         }
 
         /**
@@ -888,17 +889,9 @@ public final class ScriptManager implements AutoCloseable {
          * @return the context
          */
         Context acquire() {
-            final var builder = Context.newBuilder(JS, PYTHON);
-            if (SHARED_ENGINE != null)
-                builder.engine(SHARED_ENGINE);
-            builder.allowHostAccess(HostAccess.ALL).allowHostClassLookup(ScriptManager::check).useSystemExit(false)
-                    .allowCreateProcess(false).allowCreateThread(false).in(nullInputStream).out(nullOutputStream)
-                    .err(nullOutputStream);
-            if (resourceLimits != null)
-                builder.resourceLimits(resourceLimits);
-            final var contex = builder.build();
+            final var context = contextBuilder.build();
             TRACKER.onOpen();
-            return contex;
+            return context;
         }
 
         /**
@@ -909,9 +902,9 @@ public final class ScriptManager implements AutoCloseable {
          * @param currentLanguage
          *            the current language
          */
-        void release(final Context context, final String currentLanguage) {
+        static void release(final Context context, final String currentLanguage) {
             resetBindings(context, currentLanguage);
-            boolean closedSuccessfully = false;
+            var closedSuccessfully = false;
             try {
                 context.close(true);
                 closedSuccessfully = true;
@@ -930,7 +923,7 @@ public final class ScriptManager implements AutoCloseable {
          * @param currentLanguage
          *            the current language
          */
-        private void resetBindings(final Context context, final String currentLanguage) {
+        static void resetBindings(final Context context, final String currentLanguage) {
             // Clear current bindings
             final var bindings = context.getBindings(currentLanguage);
             for (final String key : bindings.getMemberKeys()) {
