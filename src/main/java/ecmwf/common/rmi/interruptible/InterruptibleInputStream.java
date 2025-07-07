@@ -31,101 +31,116 @@ import org.apache.logging.log4j.Logger;
  */
 public final class InterruptibleInputStream extends FilterInputStream {
 
-	/** The Constant LOG. */
-	private static final Logger LOG = LogManager.getLogger(InterruptibleInputStream.class);
+    /** The Constant LOG. */
+    private static final Logger LOG = LogManager.getLogger(InterruptibleInputStream.class);
 
-	/** The monitor. */
-	private final InterruptibleMonitor monitor;
+    /** The monitor. */
+    private final InterruptibleMonitor monitor;
 
-	/** The closed. */
-	private final AtomicBoolean closed = new AtomicBoolean(false);
+    /** The closed. */
+    private final AtomicBoolean closed = new AtomicBoolean(false);
 
-	/**
-	 * Instantiates a new interruptible input stream.
-	 *
-	 * @param in the in
-	 */
-	public InterruptibleInputStream(final InputStream in) {
-		super(in);
-		this.monitor = new InterruptibleMonitor(InterruptibleRMIServerSocket.getCurrentRMIServerThreadSocket());
-		this.monitor.execute();
-	}
+    /**
+     * Instantiates a new interruptible input stream.
+     *
+     * @param in
+     *            the in
+     */
+    public InterruptibleInputStream(final InputStream in) {
+        super(in);
+        this.monitor = new InterruptibleMonitor(InterruptibleRMIServerSocket.getCurrentRMIServerThreadSocket());
+        this.monitor.execute();
+    }
 
-	/**
-	 * Read.
-	 *
-	 * @return the int
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 */
-	@Override
-	public int read() throws IOException {
-		checkConnection();
-		return super.read();
-	}
+    /**
+     * Read.
+     *
+     * @return the int
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     */
+    @Override
+    public int read() throws IOException {
+        checkConnection();
+        return super.read();
+    }
 
-	/**
-	 * Read.
-	 *
-	 * @param b the b
-	 * @return the int
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 */
-	@Override
-	public int read(final byte[] b) throws IOException {
-		return read(b, 0, b.length);
-	}
+    /**
+     * Read.
+     *
+     * @param b
+     *            the b
+     *
+     * @return the int
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     */
+    @Override
+    public int read(final byte[] b) throws IOException {
+        return read(b, 0, b.length);
+    }
 
-	/**
-	 * Read.
-	 *
-	 * @param b   the b
-	 * @param off the off
-	 * @param len the len
-	 * @return the int
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 */
-	@Override
-	public int read(final byte[] b, final int off, final int len) throws IOException {
-		checkConnection();
-		return super.read(b, off, len);
-	}
+    /**
+     * Read.
+     *
+     * @param b
+     *            the b
+     * @param off
+     *            the off
+     * @param len
+     *            the len
+     *
+     * @return the int
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     */
+    @Override
+    public int read(final byte[] b, final int off, final int len) throws IOException {
+        checkConnection();
+        return super.read(b, off, len);
+    }
 
-	/**
-	 * Close.
-	 *
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 */
-	@Override
-	public void close() throws IOException {
-		if (closed.compareAndSet(false, true)) {
-			try {
-				super.close();
-			} finally {
-				LOG.debug("Interrupting monitor thread");
-				monitor.setLoop(false);
-				monitor.interrupt();
-				try {
-					monitor.join(5000); // wait max 5s
-				} catch (final InterruptedException e) {
-					Thread.currentThread().interrupt();
-					LOG.warn("Interrupted while joining monitor thread", e);
-				} catch (final Throwable t) {
-					LOG.warn("Monitor did not shut down cleanly", t);
-				}
-			}
-		} else {
-			LOG.debug("Stream already closed");
-		}
-	}
+    /**
+     * Close.
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     */
+    @Override
+    public void close() throws IOException {
+        if (closed.compareAndSet(false, true)) {
+            try {
+                super.close();
+            } finally {
+                LOG.debug("Interrupting monitor thread");
+                monitor.setLoop(false);
+                monitor.interrupt();
+                try {
+                    monitor.join(5000); // wait max 5s
+                } catch (final InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    LOG.warn("Interrupted while joining monitor thread", e);
+                } catch (final Throwable t) {
+                    LOG.warn("Monitor did not shut down cleanly", t);
+                }
+            }
+        } else {
+            LOG.debug("Stream already closed");
+        }
+    }
 
-	/**
-	 * Check connection.
-	 *
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 */
-	private void checkConnection() throws IOException {
-		if (monitor.isClosed()) {
-			throw new IOException("RMI client disconnected");
-		}
-	}
+    /**
+     * Check connection.
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     */
+    private void checkConnection() throws IOException {
+        if (monitor.isClosed()) {
+            throw new IOException("RMI client disconnected");
+        }
+    }
 }

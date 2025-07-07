@@ -28,38 +28,37 @@ import java.net.Socket;
  */
 public final class InterruptibleRMIClientSocket extends InterruptibleRMISocket {
 
-	/**
-	 * Instantiates a new interruptible RMI client socket.
-	 *
-	 * @param decoratee the decoratee
-	 */
-	public InterruptibleRMIClientSocket(final Socket decoratee) {
-		super(decoratee);
-	}
+    /**
+     * Instantiates a new interruptible RMI client socket.
+     *
+     * @param decoratee
+     *            the decoratee
+     */
+    public InterruptibleRMIClientSocket(final Socket decoratee) {
+        super(decoratee);
+    }
 
-	/**
-	 * Called by {@link InterruptibleRMISocketInputStream} and
-	 * {@link InterruptibleRMISocketOutputStream} before the thread enters an RMI IO
-	 * operation.
-	 */
-	@Override
-	void ioStarting() {
-		// Register this socket with the current thread if it's an
-		// InterruptibleRMIThread
-		if (Thread.currentThread() instanceof final InterruptibleRMIThread thread) {
-			thread.registerSocketInIO(this);
-		}
-	}
+    /**
+     * Called by {@link InterruptibleRMISocketInputStream} and {@link InterruptibleRMISocketOutputStream} before the
+     * thread enters an RMI IO operation.
+     */
+    @Override
+    void ioStarting() {
+        // Register this socket with the current thread if it's an
+        // InterruptibleRMIThread
+        if (Thread.currentThread() instanceof final InterruptibleRMIThread thread) {
+            thread.registerSocketInIO(this);
+        }
+    }
 
-	/**
-	 * Called by {@link InterruptibleRMISocketInputStream} and
-	 * {@link InterruptibleRMISocketOutputStream} after the thread exits an RMI IO
-	 * operation.
-	 */
-	@Override
-	void ioEnding() {
-		if (Thread.currentThread() instanceof final InterruptibleRMIThread thread) {
-			thread.unregisterSocketInIO();
-		}
-	}
+    /**
+     * Called by {@link InterruptibleRMISocketInputStream} and {@link InterruptibleRMISocketOutputStream} after the
+     * thread exits an RMI IO operation.
+     */
+    @Override
+    void ioEnding() {
+        if (Thread.currentThread() instanceof final InterruptibleRMIThread thread) {
+            thread.unregisterSocketInIO();
+        }
+    }
 }

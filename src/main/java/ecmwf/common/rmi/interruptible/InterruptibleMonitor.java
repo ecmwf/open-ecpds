@@ -26,64 +26,66 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 final class InterruptibleMonitor extends Thread {
 
-	/** The rmi socket. */
-	private final Socket rmiSocket;
+    /** The rmi socket. */
+    private final Socket rmiSocket;
 
-	/** The closed. */
-	private final AtomicBoolean closed = new AtomicBoolean(false);
+    /** The closed. */
+    private final AtomicBoolean closed = new AtomicBoolean(false);
 
-	/** The loop. */
-	private volatile boolean loop = true;
+    /** The loop. */
+    private volatile boolean loop = true;
 
-	/**
-	 * Instantiates a new interruptible monitor.
-	 *
-	 * @param rmiSocket the rmi socket
-	 */
-	public InterruptibleMonitor(final Socket rmiSocket) {
-		this.rmiSocket = rmiSocket;
-	}
+    /**
+     * Instantiates a new interruptible monitor.
+     *
+     * @param rmiSocket
+     *            the rmi socket
+     */
+    public InterruptibleMonitor(final Socket rmiSocket) {
+        this.rmiSocket = rmiSocket;
+    }
 
-	/**
-	 * Checks if is closed.
-	 *
-	 * @return true, if is closed
-	 */
-	public boolean isClosed() {
-		return closed.get();
-	}
+    /**
+     * Checks if is closed.
+     *
+     * @return true, if is closed
+     */
+    public boolean isClosed() {
+        return closed.get();
+    }
 
-	/**
-	 * Sets the loop.
-	 *
-	 * @param loop the new loop
-	 */
-	public void setLoop(final boolean loop) {
-		this.loop = loop;
-	}
+    /**
+     * Sets the loop.
+     *
+     * @param loop
+     *            the new loop
+     */
+    public void setLoop(final boolean loop) {
+        this.loop = loop;
+    }
 
-	/**
-	 * Execute.
-	 */
-	public void execute() {
-		start();
-	}
+    /**
+     * Execute.
+     */
+    public void execute() {
+        start();
+    }
 
-	/**
-	 * Run.
-	 */
-	@Override
-	public void run() {
-		while (loop && !closed.get()) {
-			if (!InterruptibleRMIServerSocket.isCurrentRMIServerThreadSocketAlive(rmiSocket)) {
-				closed.set(true);
-			}
-			try {
-				Thread.sleep(2000);
-			} catch (final InterruptedException _) {
-				Thread.currentThread().interrupt();
-				break;
-			}
-		}
-	}
+    /**
+     * Run.
+     */
+    @Override
+    public void run() {
+        while (loop && !closed.get()) {
+            if (!InterruptibleRMIServerSocket.isCurrentRMIServerThreadSocketAlive(rmiSocket)) {
+                closed.set(true);
+            }
+            try {
+                Thread.sleep(2000);
+            } catch (final InterruptedException _) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+    }
 }

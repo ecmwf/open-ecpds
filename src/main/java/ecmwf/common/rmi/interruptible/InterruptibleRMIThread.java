@@ -41,83 +41,89 @@ import org.apache.logging.log4j.Logger;
 
 public final class InterruptibleRMIThread extends Thread {
 
-	/** The Constant LOG. */
-	private static final Logger LOG = LogManager.getLogger(InterruptibleRMIThread.class);
+    /** The Constant LOG. */
+    private static final Logger LOG = LogManager.getLogger(InterruptibleRMIThread.class);
 
-	/** The rmi socket. */
-	private volatile Socket rmiSocket;
+    /** The rmi socket. */
+    private volatile Socket rmiSocket;
 
-	/**
-	 * Instantiates a new interruptible RMI thread.
-	 *
-	 * @param target the target
-	 */
-	public InterruptibleRMIThread(final Runnable target) {
-		super(target);
-	}
+    /**
+     * Instantiates a new interruptible RMI thread.
+     *
+     * @param target
+     *            the target
+     */
+    public InterruptibleRMIThread(final Runnable target) {
+        super(target);
+    }
 
-	/**
-	 * Instantiates a new interruptible RMI thread.
-	 *
-	 * @param group     the group
-	 * @param runnable  the runnable
-	 * @param name      the name
-	 * @param stackSize the stack size
-	 */
-	public InterruptibleRMIThread(final ThreadGroup group, final Runnable runnable, final String name,
-			final long stackSize) {
-		super(group, runnable, name, stackSize);
-	}
+    /**
+     * Instantiates a new interruptible RMI thread.
+     *
+     * @param group
+     *            the group
+     * @param runnable
+     *            the runnable
+     * @param name
+     *            the name
+     * @param stackSize
+     *            the stack size
+     */
+    public InterruptibleRMIThread(final ThreadGroup group, final Runnable runnable, final String name,
+            final long stackSize) {
+        super(group, runnable, name, stackSize);
+    }
 
-	/**
-	 * Register socket in IO.
-	 *
-	 * @param socket the socket
-	 */
-	synchronized void registerSocketInIO(final InterruptibleRMIClientSocket socket) {
-		this.rmiSocket = socket;
-	}
+    /**
+     * Register socket in IO.
+     *
+     * @param socket
+     *            the socket
+     */
+    synchronized void registerSocketInIO(final InterruptibleRMIClientSocket socket) {
+        this.rmiSocket = socket;
+    }
 
-	/**
-	 * Unregister socket in IO.
-	 */
-	synchronized void unregisterSocketInIO() {
-		this.rmiSocket = null;
-	}
+    /**
+     * Unregister socket in IO.
+     */
+    synchronized void unregisterSocketInIO() {
+        this.rmiSocket = null;
+    }
 
-	/**
-	 * Interrupt.
-	 */
-	@Override
-	public void interrupt() {
-		Socket socketToClose;
+    /**
+     * Interrupt.
+     */
+    @Override
+    public void interrupt() {
+        Socket socketToClose;
 
-		// Take local copy to avoid holding lock during I/O
-		synchronized (this) {
-			socketToClose = this.rmiSocket;
-			this.rmiSocket = null;
-		}
+        // Take local copy to avoid holding lock during I/O
+        synchronized (this) {
+            socketToClose = this.rmiSocket;
+            this.rmiSocket = null;
+        }
 
-		// First, call standard interrupt
-		super.interrupt();
+        // First, call standard interrupt
+        super.interrupt();
 
-		if (socketToClose != null) {
-			if (LOG.isDebugEnabled()) {
-				LOG.debug("Interrupting RMI Thread in IO operation ({})", socketToClose);
-			}
-			try {
-				socketToClose.shutdownInput(); // optionally signal clean shutdown
-				socketToClose.shutdownOutput();
-			} catch (final IOException _) {
-				// Ignore, likely already shut down
-			}
-			try {
-				socketToClose.close(); // This is the actual interrupt trigger
-			} catch (final IOException e) {
-				LOG.warn("Error closing RMI socket during interrupt", e);
-			}
-		} else {
-			LOG.debug("RMI Thread NOT in IO operation");
-		}
-	}
+        if (socketToClose != null) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Interrupting RMI Thread in IO operation ({})", socketToClose);
+            }
+            try {
+                socketToClose.shutdownInput(); // optionally signal clean shutdown
+                socketToClose.shutdownOutput();
+            } catch (final IOException _) {
+                // Ignore, likely already shut down
+            }
+            try {
+                socketToClose.close(); // This is the actual interrupt trigger
+            } catch (final IOException e) {
+                LOG.warn("Error closing RMI socket during interrupt", e);
+            }
+        } else {
+            LOG.debug("RMI Thread NOT in IO operation");
+        }
+    }
 }
