@@ -41,6 +41,8 @@ import java.net.UnknownHostException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
+import java.util.StringJoiner;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.net.ServerSocketFactory;
 import javax.net.SocketFactory;
@@ -65,14 +67,26 @@ public class SocketConfig {
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(SocketConfig.class);
 
+    /** The Constant DEFAULT_FACTORY. */
+    public static final SocketFactory DEFAULT_FACTORY = SocketFactory.getDefault();
+
+    /** The Constant DEFAULT_SERVER_FACTORY. */
+    public static final ServerSocketFactory DEFAULT_SERVER_FACTORY = ServerSocketFactory.getDefault();
+
     /** The Constant MIN_PORT. */
     public static final int MIN_PORT = Cnf.at("SocketConfig", "minPrivilegedPort", 500);
 
     /** The Constant MAX_PORT. */
     public static final int MAX_PORT = Cnf.at("SocketConfig", "maxPrivilegedPort", 1023);
 
-    /** The current local address. */
-    private static String currentLocalAddress = null;
+    /** The Constant ssl context map. */
+    private static final ConcurrentHashMap<String, SSLContext> sslContextMap = new ConcurrentHashMap<>();
+
+    /** The lock for safely initializing the local address. */
+    private static final Object localAddressLock = new Object();
+
+    /** The cached current local address. */
+    private static volatile String currentLocalAddress;
 
     /** The current name. */
     private String currentName = null;
@@ -668,7 +682,7 @@ public class SocketConfig {
      * @param socket
      *            the new TCP options
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public void setTCPOptions(final Socket socket) throws IOException {
@@ -1037,7 +1051,7 @@ public class SocketConfig {
      *
      * @return the socket
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public Socket getSocket() throws IOException {
@@ -1052,7 +1066,7 @@ public class SocketConfig {
      *
      * @return the socket
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public Socket getSocket(final SocketFactory factory) throws IOException {
@@ -1067,7 +1081,7 @@ public class SocketConfig {
      *
      * @return the socket
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public Socket getSocket(final int localPort) throws IOException {
@@ -1084,7 +1098,7 @@ public class SocketConfig {
      *
      * @return the socket
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public Socket getSocket(final SocketFactory factory, final int localPort) throws IOException {
@@ -1101,11 +1115,11 @@ public class SocketConfig {
      *
      * @return the socket
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public Socket getSocket(final String host, final int port) throws IOException {
-        return getSocket(SocketFactory.getDefault(), host, port);
+        return getSocket(DEFAULT_FACTORY, host, port);
     }
 
     /**
@@ -1120,7 +1134,7 @@ public class SocketConfig {
      *
      * @return the socket
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public Socket getSocket(final SocketFactory factory, final String host, final int port) throws IOException {
@@ -1160,11 +1174,11 @@ public class SocketConfig {
      *
      * @return the socket
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public Socket getSocket(final String host, final int port, final int localPort) throws IOException {
-        return getSocket(SocketFactory.getDefault(), host, port, localPort);
+        return getSocket(DEFAULT_FACTORY, host, port, localPort);
     }
 
     /**
@@ -1181,7 +1195,7 @@ public class SocketConfig {
      *
      * @return the socket
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public Socket getSocket(final SocketFactory factory, final String host, final int port, final int localPort)
@@ -1236,7 +1250,7 @@ public class SocketConfig {
      *
      * @return the socket
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public Socket getSocket(final ServerSocket serverSocket) throws IOException {
@@ -1290,7 +1304,9 @@ public class SocketConfig {
      * @param socket
      *            the socket
      *
-     * @throws java.io.IOException
+     * @return the socket
+     *
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     protected void configureConnectedSocket(final Socket socket) throws IOException {
@@ -1319,7 +1335,7 @@ public class SocketConfig {
      *
      * @return the server socket
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public ServerSocket getServerSocket() throws IOException {
@@ -1346,11 +1362,11 @@ public class SocketConfig {
      *
      * @return the server socket
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public ServerSocket getServerSocket(final int port) throws IOException {
-        return getServerSocket(ServerSocketFactory.getDefault(), port);
+        return getServerSocket(DEFAULT_SERVER_FACTORY, port);
     }
 
     /**
@@ -1363,7 +1379,7 @@ public class SocketConfig {
      *
      * @return the server socket
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public ServerSocket getServerSocket(final ServerSocketFactory factory, final int port) throws IOException {
@@ -1442,13 +1458,17 @@ public class SocketConfig {
      *
      * @return the local address
      */
-    public static final String getLocalAddress() {
-        try {
-            if (currentLocalAddress == null) {
-                currentLocalAddress = InetAddress.getLocalHost().getHostAddress();
+    public static String getLocalAddress() {
+        if (currentLocalAddress == null) {
+            synchronized (localAddressLock) {
+                if (currentLocalAddress == null) {
+                    try {
+                        currentLocalAddress = InetAddress.getLocalHost().getHostAddress();
+                    } catch (final Throwable t) {
+                        _log.debug("Cannot get localhost", t);
+                    }
+                }
             }
-        } catch (final Throwable t) {
-            _log.debug("Can not get localhost", t);
         }
         return currentLocalAddress;
     }
@@ -1459,23 +1479,23 @@ public class SocketConfig {
      * @return the string
      */
     public String configToString() {
-        final var builder = new StringBuilder();
+        final var joiner = new StringJoiner(", ");
         final var name = getName();
         if (isNotEmpty(name)) {
-            builder.append("Name: ").append(name).append(", ");
+            joiner.add("Name: " + name);
         }
-        builder.append("ListenAddress: ").append(getListenAddress());
-        builder.append(", PublicAddress: ").append(getPublicAddress());
-        builder.append(", ReuseAddress: ").append(getValue(getReuseAddress()));
-        builder.append(", SoTimeOut: ").append(getSOTimeOut());
-        builder.append(", ConnectTimeOut: ").append(getConnectTimeOut());
-        builder.append(", ReceiveBufferSize: ").append(getValue(getReceiveBufferSize()));
-        builder.append(", SendBufferSize: ").append(getValue(getSendBufferSize()));
-        builder.append(", KeepAlive: ").append(getValue(getKeepAlive()));
-        builder.append(", TcpNoDelay: ").append(getValue(getTcpNoDelay()));
-        builder.append(", Interruptible: ").append(getInterruptible());
-        builder.append(", PrivilegedLocalPort: ").append(getPrivilegedLocalPort());
-        return builder.toString();
+        joiner.add("ListenAddress: " + getListenAddress());
+        joiner.add("PublicAddress: " + getPublicAddress());
+        joiner.add("ReuseAddress: " + getValue(getReuseAddress()));
+        joiner.add("SoTimeOut: " + getSOTimeOut());
+        joiner.add("ConnectTimeOut: " + getConnectTimeOut());
+        joiner.add("ReceiveBufferSize: " + getValue(getReceiveBufferSize()));
+        joiner.add("SendBufferSize: " + getValue(getSendBufferSize()));
+        joiner.add("KeepAlive: " + getValue(getKeepAlive()));
+        joiner.add("TcpNoDelay: " + getValue(getTcpNoDelay()));
+        joiner.add("Interruptible: " + getInterruptible());
+        joiner.add("PrivilegedLocalPort: " + getPrivilegedLocalPort());
+        return joiner.toString();
     }
 
     /**
@@ -1486,27 +1506,28 @@ public class SocketConfig {
      *
      * @return the string
      *
-     * @throws java.net.SocketException
+     * @throws SocketException
      *             the socket exception
      */
     public String configToString(final Socket socket) throws SocketException {
-        final var builder = new StringBuilder();
+        final var joiner = new StringJoiner(", ");
         final var name = getName();
         if (isNotEmpty(name)) {
-            builder.append("Name: ").append(name).append(", ");
+            joiner.add("Name: " + name);
         }
-        builder.append("ListenAddress: ").append(socket.getLocalAddress().getHostAddress());
-        builder.append(", LocalPort: ").append(socket.getLocalPort());
-        builder.append(", ReuseAddress: ").append(socket.getReuseAddress());
-        builder.append(", SoTimeOut: ").append(socket.getSoTimeout());
-        builder.append(", ConnectTimeOut: ").append(getConnectTimeOut());
-        builder.append(", ReceiveBufferSize: ").append(socket.getReceiveBufferSize());
-        builder.append(", SendBufferSize: ").append(socket.getSendBufferSize());
-        builder.append(", KeepAlive: ").append(socket.getKeepAlive());
-        builder.append(", TcpNoDelay: ").append(socket.getTcpNoDelay());
-        builder.append(", Interruptible: ").append(getInterruptible());
-        builder.append(", PrivilegedLocalPort: ").append(getPrivilegedLocalPort());
-        return builder.toString();
+        final var localAddress = socket.getLocalAddress();
+        joiner.add("ListenAddress: " + (localAddress != null ? localAddress.getHostAddress() : "unknown"));
+        joiner.add("LocalPort: " + socket.getLocalPort());
+        joiner.add("ReuseAddress: " + socket.getReuseAddress());
+        joiner.add("SoTimeOut: " + socket.getSoTimeout());
+        joiner.add("ConnectTimeOut: " + getConnectTimeOut());
+        joiner.add("ReceiveBufferSize: " + socket.getReceiveBufferSize());
+        joiner.add("SendBufferSize: " + socket.getSendBufferSize());
+        joiner.add("KeepAlive: " + socket.getKeepAlive());
+        joiner.add("TcpNoDelay: " + socket.getTcpNoDelay());
+        joiner.add("Interruptible: " + getInterruptible());
+        joiner.add("PrivilegedLocalPort: " + getPrivilegedLocalPort());
+        return joiner.toString();
     }
 
     /**
@@ -1517,25 +1538,25 @@ public class SocketConfig {
      *
      * @return the string
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public String configToString(final ServerSocket socket) throws IOException {
-        final var builder = new StringBuilder();
+        final var joiner = new StringJoiner(", ");
         final var name = getName();
         if (isNotEmpty(name)) {
-            builder.append("Name: ").append(name).append(", ");
+            joiner.add("Name: " + name);
         }
-        builder.append("ListenAddress: ").append(socket.getInetAddress().getHostAddress());
-        builder.append(", LocalPort: ").append(socket.getLocalPort());
-        builder.append(", ReuseAddress: ").append(socket.getReuseAddress());
-        builder.append(", SoTimeOut: ").append(socket.getSoTimeout());
-        builder.append(", ConnectTimeOut: ").append(getConnectTimeOut());
-        builder.append(", ReceiveBufferSize: ").append(socket.getReceiveBufferSize());
-        builder.append(", Interruptible: ").append(getInterruptible());
-        builder.append(", PrivilegedLocalPort: ").append(getPrivilegedLocalPort());
-        builder.append(", BackLog: ").append(getBackLog());
-        return builder.toString();
+        joiner.add("ListenAddress: " + socket.getInetAddress().getHostAddress());
+        joiner.add("LocalPort: " + socket.getLocalPort());
+        joiner.add("ReuseAddress: " + socket.getReuseAddress());
+        joiner.add("SoTimeOut: " + socket.getSoTimeout());
+        joiner.add("ConnectTimeOut: " + getConnectTimeOut());
+        joiner.add("ReceiveBufferSize: " + socket.getReceiveBufferSize());
+        joiner.add("Interruptible: " + getInterruptible());
+        joiner.add("PrivilegedLocalPort: " + getPrivilegedLocalPort());
+        joiner.add("BackLog: " + getBackLog());
+        return joiner.toString();
     }
 
     /**
@@ -1581,9 +1602,9 @@ public class SocketConfig {
      *
      * @return the SSL socket factory
      *
-     * @throws java.security.KeyManagementException
+     * @throws KeyManagementException
      *             the key management exception
-     * @throws java.security.NoSuchAlgorithmException
+     * @throws NoSuchAlgorithmException
      *             the no such algorithm exception
      */
     public SSLClientSocketFactory getSSLSocketFactory(final String protocol, final boolean sslValidation)
@@ -1621,31 +1642,42 @@ public class SocketConfig {
      *
      * @return the blindly trusting SSL context
      *
-     * @throws java.security.NoSuchAlgorithmException
+     * @throws NoSuchAlgorithmException
      *             the no such algorithm exception
-     * @throws java.security.KeyManagementException
+     * @throws KeyManagementException
      *             the key management exception
      */
     public static SSLContext getBlindlyTrustingSSLContext(final String protocol)
             throws NoSuchAlgorithmException, KeyManagementException {
-        _log.debug("Disable SSL Validation");
-        final var sc = SSLContext.getInstance(protocol);
-        sc.init(null, new TrustManager[] { new X509TrustManager() {
-            @Override
-            public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-                return null;
-            }
+        var cached = sslContextMap.get(protocol);
+        if (cached != null) {
+            return cached;
+        }
+        synchronized (sslContextMap) {
+            cached = sslContextMap.get(protocol);
+            if (cached == null) {
+                _log.debug("Disable SSL Validation for protocol: {}", protocol);
+                final var sc = SSLContext.getInstance(protocol);
+                sc.init(null, new TrustManager[] { new X509TrustManager() {
+                    @Override
+                    public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+                        return new X509Certificate[0];
+                    }
 
-            @Override
-            public void checkClientTrusted(final X509Certificate[] certs, final String authType) {
-                // All certificates trusted
-            }
+                    @Override
+                    public void checkClientTrusted(final X509Certificate[] certs, final String authType) {
+                        // Trust all clients
+                    }
 
-            @Override
-            public void checkServerTrusted(final X509Certificate[] certs, final String authType) {
-                // All certificates trusted
+                    @Override
+                    public void checkServerTrusted(final X509Certificate[] certs, final String authType) {
+                        // Trust all servers
+                    }
+                } }, new java.security.SecureRandom());
+                sslContextMap.put(protocol, sc);
+                cached = sc;
             }
-        } }, new java.security.SecureRandom());
-        return sc;
+        }
+        return cached;
     }
 }

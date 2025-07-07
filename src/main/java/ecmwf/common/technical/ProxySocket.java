@@ -143,7 +143,7 @@ public final class ProxySocket implements Serializable, Closeable {
             }
         }
         if (plainText) {
-            return SocketFactory.getDefault();
+            return SocketConfig.DEFAULT_FACTORY;
         }
         return SSLSocketFactory.getSSLSocketFactory();
     }

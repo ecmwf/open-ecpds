@@ -32,8 +32,6 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.net.ServerSocket;
 
-import javax.net.ServerSocketFactory;
-
 /**
  * A factory for creating RMIServerSocket objects.
  */
@@ -41,9 +39,6 @@ public final class RMIServerSocketFactory extends SocketConfig
         implements java.rmi.server.RMIServerSocketFactory, Serializable {
     /** The Constant serialVersionUID. */
     private static final long serialVersionUID = 720632566430787096L;
-
-    /** The Constant _socketFactory. */
-    private static final transient ServerSocketFactory _socketFactory = ServerSocketFactory.getDefault();
 
     /**
      * {@inheritDoc}
@@ -53,7 +48,7 @@ public final class RMIServerSocketFactory extends SocketConfig
     @Override
     public ServerSocket createServerSocket(final int port) throws IOException {
         load("RMIServerSocketFactory");
-        return getServerSocket(_socketFactory, port);
+        return getServerSocket(SocketConfig.DEFAULT_SERVER_FACTORY, port);
     }
 
     /**

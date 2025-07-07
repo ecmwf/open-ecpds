@@ -85,7 +85,7 @@ public class ClientSocketFactory extends SocketFactory {
      *            the config
      */
     public ClientSocketFactory(final SocketConfig config) {
-        this(SocketFactory.getDefault(), config);
+        this(SocketConfig.DEFAULT_FACTORY, config);
     }
 
     /**
