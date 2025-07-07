@@ -18,16 +18,25 @@
 
 package ecmwf.common.rmi;
 
+/**
+ * ECMWF Product Data Store (ECPDS) Project
+ *
+ * @author Laurent Gougeon <syi@ecmwf.int>, ECMWF.
+ * @version 6.7.7
+ * @since 2024-07-01
+ */
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
 import java.nio.file.Path;
-import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import ecmwf.common.technical.StreamPlugThread;
 
 /**
  * The Class SocketOptions.
@@ -237,54 +246,78 @@ class SocketOptions {
      *             Signals that an I/O exception has occurred.
      */
     static String getSSOutput(final Socket socket) throws IOException {
-        if (ssAvailable) {
-            final String[] command = { "/bin/sh", "-c", "ss -ntepi state established --inet-sockopt -O -H | grep -E ']:"
-                    + socket.getLocalPort() + " .*]:" + socket.getPort() + " '" };
-            final var processBuilder = new ProcessBuilder(command);
-            try {
-                final var process = processBuilder.start();
-                final var output = new StringBuilder();
-                final var outputThread = new Thread(() -> {
-                    try (var reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                        String line;
-                        while ((line = reader.readLine()) != null) {
-                            output.append(line).append("\n");
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                });
-                outputThread.start();
-                // Wait for the process to finish within the timeout
-                var finished = process.waitFor(5, TimeUnit.SECONDS);
-                if (!finished) {
-                    process.destroy();
-                    process.waitFor(2, TimeUnit.SECONDS);
-                    if (process.isAlive()) {
-                        process.destroyForcibly();
-                    }
-                    return "exception:timeout";
-                }
-                outputThread.join(); // Ensure output reading is finished
-                return output.toString();
-            } catch (IOException | InterruptedException e) {
-                _log.warn("Running SS command", e);
-                return "exception:" + e.getClass().getName();
-            }
-        } else {
+        if (!ssAvailable) {
             return "exception:ss-not-found";
+        }
+        final String[] command = { "/bin/sh", "-c", "ss -ntepi state established --inet-sockopt -O -H | grep -E ']:"
+                + socket.getLocalPort() + " .*]:" + socket.getPort() + " '" };
+        final var pb = new ProcessBuilder(command);
+        pb.redirectErrorStream(true); // Merge error with output stream
+        Process process = null;
+        try {
+            process = pb.start();
+            final var output = new StringBuilder();
+            try (var reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    output.append(line).append("\n");
+                }
+            }
+            final var finished = process.waitFor(5, TimeUnit.SECONDS);
+            if (!finished) {
+                process.destroy();
+                process.waitFor(2, TimeUnit.SECONDS);
+                if (process.isAlive()) {
+                    process.destroyForcibly();
+                }
+                return "exception:timeout";
+            }
+            return output.toString();
+        } catch (final InterruptedException _) {
+            Thread.currentThread().interrupt();
+            _log.warn("Interrupted while waiting for SS command");
+            return "exception:interrupted";
+        } finally {
+            if (process != null) {
+                StreamPlugThread.closeQuietly(process.getInputStream());
+                StreamPlugThread.closeQuietly(process.getErrorStream());
+                StreamPlugThread.closeQuietly(process.getOutputStream());
+            }
         }
     }
 
+    /**
+     * Checks if is command available.
+     *
+     * @param command
+     *            the command
+     *
+     * @return true, if is command available
+     */
     private static boolean isCommandAvailable(final String command) {
+        final var os = System.getProperty("os.name").toLowerCase();
+        final var checkCmd = os.startsWith("win") ? "where" : "which";
+        final var pb = new ProcessBuilder(checkCmd, command);
+        pb.redirectErrorStream(true);
         try {
-            try (var scanner = new Scanner(
-                    Runtime.getRuntime().exec(System.getProperty("os.name").toLowerCase().startsWith("win")
-                            ? "where " + command : "which " + command).getInputStream())) {
-                return scanner.hasNext(); // If there is output, the command exists
+            final var process = pb.start();
+            // Consume all output to avoid blocking (optional but recommended)
+            try (var reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                while (reader.readLine() != null) {
+                    // Just drain output, content not used here
+                }
             }
-        } catch (IOException e) {
-            return false;
+            final var finished = process.waitFor(5, TimeUnit.SECONDS);
+            if (!finished) {
+                process.destroyForcibly();
+                return false;
+            }
+            return process.exitValue() == 0;
+        } catch (final InterruptedException _) {
+            Thread.currentThread().interrupt();
+        } catch (final IOException _) {
+            // Ignore
         }
+        return false;
     }
 }
