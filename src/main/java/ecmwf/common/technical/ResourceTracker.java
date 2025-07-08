@@ -38,8 +38,8 @@ public class ResourceTracker {
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(ResourceTracker.class);
 
-    /** The Constant DEBUG_FREQUENCY. */
-    private static final int DEBUG_FREQUENCY = Cnf.at("ResourceTracker", "debugFrequency", 1_000);
+    /** The Constant DEFAULT_DEBUG_FREQUENCY. */
+    private static final int DEFAULT_DEBUG_FREQUENCY = Cnf.at("ResourceTracker", "defaultDebugFrequency", 1_000);
 
     /** The name. */
     private final String name;
@@ -56,6 +56,9 @@ public class ResourceTracker {
     /** The error count. */
     private final AtomicInteger errorCount = new AtomicInteger(0);
 
+    /** The error count. */
+    private final int debugFrequency;
+
     /**
      * Instantiates a new resource tracker.
      *
@@ -63,7 +66,20 @@ public class ResourceTracker {
      *            the clazz
      */
     public ResourceTracker(final Class<?> clazz) {
+        this(clazz, DEFAULT_DEBUG_FREQUENCY);
+    }
+
+    /**
+     * Instantiates a new resource tracker.
+     *
+     * @param clazz
+     *            the clazz
+     * @param debugFrequency
+     *            the debug frequency
+     */
+    public ResourceTracker(final Class<?> clazz, final int debugFrequency) {
         this.name = clazz.getCanonicalName();
+        this.debugFrequency = debugFrequency;
     }
 
     /**
@@ -89,7 +105,7 @@ public class ResourceTracker {
             errorCount.incrementAndGet();
             _log.warn("Resource close reported error for {}", name);
         }
-        if (_log.isDebugEnabled() && closedCount.get() % DEBUG_FREQUENCY == 0) {
+        if (_log.isDebugEnabled() && closedCount.get() % debugFrequency == 0) {
             _log.debug(toString());
         }
     }
