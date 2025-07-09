@@ -79,3 +79,11 @@ RUN if [ "$(uname -m)" = "aarch64" ]; then \
 
 # We are in the dev-container
 ENV IN_DEV_CONTAINER=true
+
+# Add Gemini CLI to command-line utilities; requires a Google account
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash && \
+    export NVM_DIR="$HOME/.nvm" && \
+    . "$NVM_DIR/nvm.sh" && \
+    nvm install 22 && \
+    nvm use 22 && \
+    npm install -g @google/gemini-cli

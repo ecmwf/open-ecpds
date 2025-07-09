@@ -96,7 +96,7 @@ dev: .dev-cntnr .run login ## Build, run and login into the development containe
 login: ## Log in to the running development container (*)
 	@$(call is-dev-container,true,outside)
 	@$(call check-dev-container)
-	@$(DOCKER) exec -it -w $(WORKDIR) $(CONTAINER_NAME) /bin/bash
+	@[ -n "$GEMINI_API_KEY" ] && $(DOCKER) exec -it -w $(WORKDIR) $(CONTAINER_NAME) env GEMINI_API_KEY=$(GEMINI_API_KEY) /bin/bash || $(DOCKER) exec -it -w $(WORKDIR) $(CONTAINER_NAME) /bin/bash
 
 rm-dev: ## Stop the development container, then remove both its container and image. (*)
 	@$(call is-dev-container,true,outside)
