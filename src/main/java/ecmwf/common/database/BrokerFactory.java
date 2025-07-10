@@ -39,8 +39,6 @@ interface BrokerFactory {
      *            the debug
      * @param driver
      *            the driver
-     * @param level
-     *            the level
      * @param protocol
      *            the protocol
      * @param subProtocol
@@ -51,13 +49,9 @@ interface BrokerFactory {
      *            the user
      * @param password
      *            the password
-     * @param dbms
-     *            the dbms
-     * @param validation
-     *            the validation
      */
-    void init(boolean debug, String driver, String level, String protocol, String subProtocol, String alias,
-            String user, String password, String dbms, String validation);
+    void init(boolean debug, String driver, String protocol, String subProtocol, String alias, String user,
+            String password);
 
     /**
      * Gets the broker.

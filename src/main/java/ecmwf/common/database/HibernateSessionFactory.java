@@ -197,9 +197,8 @@ public class HibernateSessionFactory {
      * @param validation
      *            the validation
      */
-    public static synchronized void init(final String driver, final String level, final String protocol,
-            final String subProtocol, final String alias, final String user, final String password, final String dbms,
-            final String validation) {
+    public static synchronized void init(final String driver, final String protocol, final String subProtocol,
+            final String alias, final String user, final String password) {
         final var conf = new Configuration().setProperty("hibernate.connection.driver_class", driver)
                 .setProperty("hibernate.connection.url", protocol + ":" + subProtocol + ":" + alias)
                 .setProperty("hibernate.connection.username", user)

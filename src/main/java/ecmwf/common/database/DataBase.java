@@ -113,8 +113,6 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      *            the broker proxy
      * @param driverClassName
      *            the driver
-     * @param level
-     *            the level
      * @param protocol
      *            the protocol
      * @param subProtocol
@@ -125,14 +123,10 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      *            the user
      * @param password
      *            the password
-     * @param dbms
-     *            the dbms
      * @param serverUrl
      *            the server
      * @param repository
      *            the repository
-     * @param validation
-     *            the validation
      * @param logDatabaseEvents
      *            the log events
      * @param debugSqlRequests
@@ -157,10 +151,9 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      * @throws SecurityException
      *             the security exception
      */
-    public void initialize(final String brokerProxy, final String driverClassName, final String level,
-            final String protocol, final String subProtocol, final String alias, final String user,
-            final String password, final String dbms, final String serverUrl, final String repository,
-            final String validation, final boolean logDatabaseEvents, final boolean debugSqlRequests)
+    public void initialize(final String brokerProxy, final String driverClassName, final String protocol,
+            final String subProtocol, String alias, final String user, final String password, final String serverUrl,
+            final String repository, final boolean logDatabaseEvents, final boolean debugSqlRequests)
             throws SQLException, IllegalAccessException, InstantiationException, ClassNotFoundException,
             DataBaseException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException,
             SecurityException {
@@ -190,8 +183,7 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
                 .newInstance() instanceof final BrokerFactory factory)) {
             throw new DataBaseException("Class " + brokerProxy + " not a BrokerFactory");
         }
-        factory.init(debugSqlRequests, driverClassName, level, protocol, subProtocol, alias, user, password, dbms,
-                validation);
+        factory.init(debugSqlRequests, driverClassName, protocol, subProtocol, alias, user, password);
         brokerFactory = factory;
     }
 

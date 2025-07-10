@@ -40,11 +40,16 @@ package ecmwf.common.database;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLTransactionRollbackException;
+import java.sql.Statement;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentHashMap;
@@ -56,6 +61,7 @@ import org.apache.logging.log4j.Logger;
 import org.hibernate.Cache;
 import org.hibernate.HibernateException;
 import org.hibernate.ScrollMode;
+import org.hibernate.ScrollableResults;
 import org.hibernate.Session;
 import org.hibernate.TransactionException;
 import org.hibernate.engine.spi.SessionImplementor;
@@ -82,7 +88,10 @@ final class BrokerHibernate implements Broker {
     private static final ResourceTracker TRACKER = new ResourceTracker(BrokerHibernate.class);
 
     /** The Constant FETCH_SIZE. */
-    private static final int FETCH_SIZE = Cnf.at("DataBase", "fetchSize", 100);
+    private static final int FETCH_SIZE = Cnf.at("DataBase", "fetchSize", 500);
+
+    /** The Constant ENABLE_STREAMING_FETCH. */
+    private static final boolean ENABLE_STREAMING_FETCH = Cnf.at("DataBase", "enableStreamingFetch", true);
 
     /** The Constant SET_AUTO_COMMIT. */
     private static final boolean SET_AUTO_COMMIT = Cnf.at("DataBase", "setAutoCommit", false);
@@ -342,13 +351,74 @@ final class BrokerHibernate implements Broker {
             closed.set(true); // The release() method will be used instead
         try {
             return session.doReturningWork(connection -> {
-                final var statement = connection.createStatement();
-                statement.setFetchSize(FETCH_SIZE);
-                return new CloseableResultSetWrapper(statement, sql);
+                final var trimmedSql = sql.trim();
+                final var lower = trimmedSql.toLowerCase(Locale.ROOT);
+                if (lower.startsWith("set session") && lower.contains("for select")) {
+                    final var forIndex = lower.indexOf("for select");
+                    final var setStmt = trimmedSql.substring(0, forIndex).trim();
+                    final var selectStmt = trimmedSql.substring(forIndex + "for ".length()).trim();
+
+                    try (var setStatement = connection.createStatement()) {
+                        setStatement.execute(setStmt);
+                    }
+                    return createStreamingResultSet(connection, selectStmt);
+                } else {
+                    return createStreamingResultSet(connection, sql);
+                }
             });
         } catch (final Exception e) {
             _log.error("executeQuery: {}", sql, e);
             throw new BrokerException(e);
+        }
+    }
+
+    /**
+     * Create a ResultSet with proper fetch size and resource handling.
+     *
+     * @param connection
+     *            the connection
+     * @param sql
+     *            the sql
+     *
+     * @return the closeable result set wrapper
+     *
+     * @throws SQLException
+     *             the SQL exception
+     */
+    private CloseableResultSetWrapper createStreamingResultSet(final Connection connection, final String sql)
+            throws SQLException {
+        if (ENABLE_STREAMING_FETCH) {
+            PreparedStatement ps = null;
+            try {
+                ps = connection.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+                ps.setFetchSize(Integer.MIN_VALUE);
+                return new CloseableResultSetWrapper(ps, ps.executeQuery());
+            } catch (final Exception ex) {
+                if (ps != null) {
+                    try {
+                        ps.close();
+                    } catch (final Exception closeEx) {
+                        _log.warn("Failed to close PreparedStatement after failure", closeEx);
+                    }
+                }
+                throw ex;
+            }
+        } else {
+            Statement statement = null;
+            try {
+                statement = connection.createStatement();
+                statement.setFetchSize(FETCH_SIZE);
+                return new CloseableResultSetWrapper(statement, statement.executeQuery(sql));
+            } catch (final Exception ex) {
+                if (statement != null) {
+                    try {
+                        statement.close();
+                    } catch (final Exception closeEx) {
+                        _log.warn("Failed to close Statement after failure", closeEx);
+                    }
+                }
+                throw ex;
+            }
         }
     }
 
@@ -367,28 +437,34 @@ final class BrokerHibernate implements Broker {
     @Override
     public int executeUpdate(final String sql) throws BrokerException, SQLException {
         setReadOnly(false);
-        final var numberOfRows = new StringBuilder();
-        var tx = session.getTransaction();
+        final var affectedRows = new int[1]; // or use AtomicInteger
+        final var tx = session.getTransaction();
+        final var startTransaction = !tx.isActive();
         try {
-            if (!tx.isActive()) {
-                tx = session.beginTransaction();
+            if (startTransaction) {
+                session.beginTransaction();
             }
             session.doWork(connection -> {
-                try (final var statement = connection.createStatement()) {
-                    numberOfRows.append(statement.executeUpdate(sql));
+                try (var statement = connection.createStatement()) {
+                    affectedRows[0] = statement.executeUpdate(sql);
                 }
             });
-            tx.commit(); // commit only if we started it
+            if (startTransaction) {
+                tx.commit();
+            }
         } catch (final Exception e) {
-            if (tx != null && tx.isActive()) {
+            if (startTransaction && tx.isActive()) {
                 tx.rollback();
             }
             _log.error("executeUpdate: {}", sql, e);
-            throw new SQLException(e);
+            if (e instanceof final SQLException se) {
+                throw se;
+            }
+            throw new BrokerException(e);
         } finally {
             session.clear();
         }
-        return Integer.parseInt(numberOfRows.toString());
+        return affectedRows[0];
     }
 
     /**
@@ -432,6 +508,7 @@ final class BrokerHibernate implements Broker {
     public <T extends DataBaseObject> CloseableIterator<T> getIterator(final Class<T> target) {
         setReadOnly(true);
         session.setDefaultReadOnly(true);
+        ScrollableResults<T> results = null;
         try {
             final var cb = session.getCriteriaBuilder();
             final CriteriaQuery<T> cq = cb.createQuery(target);
@@ -440,8 +517,9 @@ final class BrokerHibernate implements Broker {
             query.setFetchSize(FETCH_SIZE);
             query.setReadOnly(true);
             query.setCacheable(false);
-            final var results = query.scroll(ScrollMode.FORWARD_ONLY);
+            results = query.scroll(ScrollMode.FORWARD_ONLY);
             closed.set(true); // The release() method will be used instead
+            final var finalResults = results; // effectively final for lambda/closure
             return new CloseableIterator<>() {
                 private boolean hasNextChecked = false;
                 private boolean hasNext = false;
@@ -449,7 +527,7 @@ final class BrokerHibernate implements Broker {
                 @Override
                 public boolean hasNext() {
                     if (!hasNextChecked) {
-                        hasNext = results.next();
+                        hasNext = finalResults.next();
                         hasNextChecked = true;
                     }
                     return hasNext;
@@ -461,17 +539,24 @@ final class BrokerHibernate implements Broker {
                         throw new NoSuchElementException("No more results");
                     }
                     hasNextChecked = false;
-                    return results.get();
+                    return finalResults.get();
                 }
 
                 @Override
                 public void close() {
-                    results.close();
+                    finalResults.close();
                 }
             };
         } catch (final HibernateException e) {
+            if (results != null) {
+                try {
+                    results.close();
+                } catch (final Exception closeEx) {
+                    _log.warn("Failed to close ScrollableResults after exception", closeEx);
+                }
+            }
             _log.error("getIterator: {}", target.getName(), e);
-            throw e;
+            throw e; // or wrap in BrokerException
         }
     }
 
@@ -495,13 +580,15 @@ final class BrokerHibernate implements Broker {
     public <T extends DataBaseObject> CloseableIterator<T> getIterator(final Class<T> target, final String sql) {
         setReadOnly(true);
         session.setDefaultReadOnly(true);
+        ScrollableResults<T> results = null;
         try {
             final NativeQuery<T> query = session.createNativeQuery(sql, target);
             query.setFetchSize(FETCH_SIZE);
             query.setReadOnly(true);
             query.setCacheable(false);
-            final var results = query.scroll(ScrollMode.FORWARD_ONLY);
+            results = query.scroll(ScrollMode.FORWARD_ONLY);
             closed.set(true); // The release() method will be used instead
+            final var finalResults = results; // effectively final
             return new CloseableIterator<>() {
                 private boolean hasNextChecked = false;
                 private boolean hasNext = false;
@@ -509,7 +596,7 @@ final class BrokerHibernate implements Broker {
                 @Override
                 public boolean hasNext() {
                     if (!hasNextChecked) {
-                        hasNext = results.next();
+                        hasNext = finalResults.next();
                         hasNextChecked = true;
                     }
                     return hasNext;
@@ -521,17 +608,24 @@ final class BrokerHibernate implements Broker {
                         throw new NoSuchElementException("No more results");
                     }
                     hasNextChecked = false;
-                    return results.get();
+                    return finalResults.get();
                 }
 
                 @Override
                 public void close() {
-                    results.close();
+                    finalResults.close();
                 }
             };
         } catch (final HibernateException e) {
+            if (results != null) {
+                try {
+                    results.close();
+                } catch (final Exception closeEx) {
+                    _log.warn("Failed to close ScrollableResults after exception", closeEx);
+                }
+            }
             _log.error("getIterator: {} -> {}", target.getName(), sql, e);
-            throw e;
+            throw e; // or wrap in BrokerException
         }
     }
 
@@ -610,6 +704,7 @@ final class BrokerHibernate implements Broker {
                 session.remove(object);
                 break;
             }
+            session.flush();
             session.getTransaction().commit();
         } catch (final HibernateException e) {
             _log.warn("perform", e);

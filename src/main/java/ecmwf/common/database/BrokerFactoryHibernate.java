@@ -35,10 +35,9 @@ public class BrokerFactoryHibernate implements BrokerFactory {
      * Inits the.
      */
     @Override
-    public void init(final boolean debug, final String driver, final String level, final String protocol,
-            final String subProtocol, final String alias, final String user, final String password, final String dbms,
-            final String validation) {
-        HibernateSessionFactory.init(driver, level, protocol, subProtocol, alias, user, password, dbms, validation);
+    public void init(final boolean debug, final String driver, final String protocol, final String subProtocol,
+            final String alias, final String user, final String password) {
+        HibernateSessionFactory.init(driver, protocol, subProtocol, alias, user, password);
     }
 
     /**

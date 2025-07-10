@@ -53,15 +53,13 @@ public class CloseableResultSetWrapper implements AutoCloseable {
     /**
      * Instantiates a new closeable result set wrapper.
      *
-     * @param resultSet
-     *            the result set
      * @param statement
      *            the statement
-     *
-     * @throws SQLException
+     * @param resultSet
+     *            the result set
      */
-    public CloseableResultSetWrapper(final Statement statement, final String sql) throws SQLException {
-        this.resultSet = statement.executeQuery(sql);
+    public CloseableResultSetWrapper(final Statement statement, final ResultSet resultSet) {
+        this.resultSet = resultSet;
         this.statement = statement;
         TRACKER.onOpen();
     }

@@ -154,17 +154,16 @@ public abstract class ECaccessServer extends StarterServer {
                         _log.info("Sleeping {}", Format.formatDuration(sleep));
                     }
                     Thread.sleep(sleep);
-                } catch (final InterruptedException e) {
+                } catch (final InterruptedException _) {
                 }
             }
             var success = false;
             try {
                 _log.info("Initializing the DataBase connection");
                 dataBase.initialize(Cnf.at("DataBase", "brokerFactory", "ecmwf.common.database.BrokerFactoryOJB"),
-                        Cnf.at("DataBase", "driver"), Cnf.at("DataBase", "level"), Cnf.at("DataBase", "protocol"),
-                        Cnf.at("DataBase", "subProtocol"), Cnf.at("DataBase", "alias"), Cnf.at("DataBase", "user"),
-                        Cnf.at("DataBase", "password"), Cnf.at("DataBase", "dbms"), Cnf.at("DataBase", "server"),
-                        Cnf.at("DataBase", "repository"), Cnf.at("DataBase", "validation"),
+                        Cnf.at("DataBase", "driver"), Cnf.at("DataBase", "protocol"), Cnf.at("DataBase", "subProtocol"),
+                        Cnf.at("DataBase", "alias"), Cnf.at("DataBase", "user"), Cnf.at("DataBase", "password"),
+                        Cnf.at("DataBase", "server"), Cnf.at("DataBase", "repository"),
                         Cnf.at("DataBase", "logEvents", true), Cnf.at("DataBase", "debugSql", false));
                 _log.debug("DataBase initialized");
                 success = true;
