@@ -8,7 +8,7 @@
 ##
 ## Request(s)
 ##
-SET STATEMENT net_write_timeout=180 FOR SELECT
+SET SESSION net_write_timeout=180 FOR SELECT
   DAT_ID,DAT_IDENTITY,DAT_EXPIRY_TIME
 FROM
   DATA_TRANSFER
