@@ -508,6 +508,8 @@ public final class ScriptManager implements AutoCloseable {
      *            the clazz
      * @param defaultLanguage
      *            the default language
+     * @param bindings
+     *            the bindings
      * @param script
      *            the script
      *
@@ -516,8 +518,8 @@ public final class ScriptManager implements AutoCloseable {
      * @throws ScriptException
      *             the script exception
      */
-    public static <T> T exec(final Class<T> clazz, final String defaultLanguage, final String script)
-            throws ScriptException {
+    public static <T> T exec(final Class<T> clazz, final String defaultLanguage, final Map<String, Object> bindings,
+            final String script) throws ScriptException {
         final var toLowerCase = script.toLowerCase();
         final String language;
         final int index;
@@ -531,7 +533,30 @@ public final class ScriptManager implements AutoCloseable {
             language = defaultLanguage;
             index = 0;
         }
-        return exec(language, Collections.emptyMap(), script.substring(index), value -> cast(clazz, value));
+        return exec(language, bindings, script.substring(index), value -> cast(clazz, value));
+    }
+
+    /**
+     * Exec. If no language is specified in the header of the script then the default language is used (e.g.
+     * script=js:code or script=python:code). Also add a return is missing from the last expression of the script.
+     *
+     * @param <T>
+     *            the generic type
+     * @param clazz
+     *            the clazz
+     * @param defaultLanguage
+     *            the default language
+     * @param script
+     *            the script
+     *
+     * @return the t
+     *
+     * @throws ScriptException
+     *             the script exception
+     */
+    public static <T> T exec(final Class<T> clazz, final String defaultLanguage, final String script)
+            throws ScriptException {
+        return exec(clazz, defaultLanguage, Collections.emptyMap(), script);
     }
 
     /**
@@ -547,7 +572,7 @@ public final class ScriptManager implements AutoCloseable {
      *             the script exception
      */
     public static void exec(final String defaultLanguage, final String script) throws ScriptException {
-        exec(null, defaultLanguage, script);
+        exec(null, defaultLanguage, Collections.emptyMap(), script);
     }
 
     /**
