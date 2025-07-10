@@ -36,7 +36,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -57,6 +59,7 @@ import org.codehaus.jackson.jaxrs.JacksonJaxbJsonProvider;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 import org.codehaus.jackson.map.exc.UnrecognizedPropertyException;
+import org.codehaus.jackson.type.TypeReference;
 
 import ecmwf.common.ectrans.AllocateInterface;
 import ecmwf.common.technical.ScriptManager;
@@ -68,63 +71,82 @@ public final class RESTAllocate implements AllocateInterface {
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(RESTAllocate.class);
 
-    /** The _clientConfig. */
-    private final ClientConfig _clientConfig;
+    /** The clientConfig. */
+    private final ClientConfig clientConfig;
 
-    /** The _json. */
-    private final JSONObject _json;
+    /** The json. */
+    private final JSONObject json;
 
     /**
      * Instantiates a new allocate manager. At this time the request is sent to the remote site and the outcome is
-     * stored in the _json object.
+     * stored in the json object.
      *
      * @param url
      *            the url
      * @param properties
      *            the properties
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             the IO exception
      */
     public RESTAllocate(final String url, final Properties properties) throws IOException {
-        _log.debug("Sending Allocate: " + url);
-        _clientConfig = new ClientConfig().applications(new AllocateApplication());
-        _clientConfig.setBypassHostnameVerification(true);
+        _log.debug("Sending Allocate: {}", url);
+        clientConfig = new ClientConfig().applications(new AllocateApplication());
+        clientConfig.setBypassHostnameVerification(true);
         if (properties != null && !properties.isEmpty()) {
-            _clientConfig.setProperties(properties);
-            for (final String key : properties.stringPropertyNames()) {
-                _log.debug("Using property " + key + " value=" + properties.getProperty(key));
+            clientConfig.setProperties(properties);
+            if (_log.isDebugEnabled()) {
+                for (final String key : properties.stringPropertyNames()) {
+                    _log.debug("Using property {}={}", key, properties.getProperty(key));
+                }
             }
         }
-        final var response = new RestClient(_clientConfig).resource(url).accept(MediaType.WILDCARD).get();
+        final var response = new RestClient(clientConfig).resource(url).accept(MediaType.WILDCARD).get();
         try {
-            _json = response.getEntity(JSONObject.class);
-        } catch (final Exception e) {
+            json = response.getEntity(JSONObject.class);
+        } catch (final Exception _) {
             throw new IOException(
                     response.getStatusCode() + " " + response.getMessage() + " - " + response.getEntity(String.class));
         }
     }
 
     /**
-     * {@inheritDoc}
-     *
-     * Execute the javascript command against the _json object (e.g. json.pathspecs[0]) and expect the outcome to be a
+     * Execute the javascript command against the json object (e.g. json.pathspecs[0]) and expect the outcome to be a
      * String.
+     *
+     * @param command
+     *            the command
+     *
+     * @return the string
+     *
+     * @throws ScriptException
+     *             the script exception
      */
     @Override
     public String get(final String command) throws ScriptException {
-        return ScriptManager.exec(String.class, ScriptManager.JS, "var json=" + _json.toString() + "; " + command);
+        try {
+            return ScriptManager.exec(String.class, ScriptManager.JS, new HashMap<>(Map.of("json",
+                    new ObjectMapper().readValue(json.toString(), new TypeReference<Map<String, Object>>() {
+                    }))), command);
+        } catch (final Exception e) {
+            final var scriptException = new ScriptException("Failed to execute JavaScript against the json object");
+            scriptException.initCause(e);
+            throw scriptException;
+        }
     }
 
     /**
-     * {@inheritDoc}
+     * Commit. Send the commit request using the url specified. The original json object is sent within the request.
      *
-     * Commit. Send the commit request using the url specified. The original _json object is sent within the request.
+     * @param url
+     *            the url
+     *
+     * @return the int
      */
     @Override
     public int commit(final String url) {
-        return new RestClient(_clientConfig).resource(url).contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.WILDCARD).post(_json).getStatusCode();
+        return new RestClient(clientConfig).resource(url).contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.WILDCARD).post(json).getStatusCode();
     }
 
     /**
@@ -175,7 +197,7 @@ public final class RESTAllocate implements AllocateInterface {
              *
              * @return the string
              */
-            private static String _getThrowableMessage(Throwable t) {
+            private static String getThrowableMessage(Throwable t) {
                 String message = null;
                 while (t != null && (message = t.getMessage()) == null && t.getCause() != null) {
                     t = t.getCause();
@@ -222,7 +244,7 @@ public final class RESTAllocate implements AllocateInterface {
                 } catch (final Throwable t) {
                     _log.debug("Parsing error", t);
                     throw new WebApplicationException(
-                            Response.status(Status.PRECONDITION_FAILED).entity(_getThrowableMessage(t)).build());
+                            Response.status(Status.PRECONDITION_FAILED).entity(getThrowableMessage(t)).build());
                 }
             }
         }
