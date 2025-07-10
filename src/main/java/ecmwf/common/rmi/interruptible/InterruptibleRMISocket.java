@@ -28,6 +28,21 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.nio.channels.SocketChannel;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import ecmwf.common.technical.Cnf;
+import ecmwf.common.technical.ResourceTracker;
 
 /**
  * ECMWF Product Data Store (ECPDS) Project
@@ -49,6 +64,13 @@ import java.nio.channels.SocketChannel;
  */
 abstract class InterruptibleRMISocket extends Socket {
 
+    /** The Constant _log. */
+    private static final Logger _log = LogManager.getLogger(InterruptibleRMISocket.class);
+
+    /** The Constant USE_POOLED_BUFFERED_STREAMS. */
+    private static final boolean USE_POOLED_BUFFERED_STREAMS = Cnf.at("InterruptibleRMISocket",
+            "usePooledBufferedStreams", true);
+
     /** The Constant SHUTDOWN_SOCKET. */
     protected static final byte SHUTDOWN_SOCKET = Byte.MAX_VALUE;
 
@@ -60,6 +82,9 @@ abstract class InterruptibleRMISocket extends Socket {
 
     /** The cached output. */
     private OutputStream cachedOutput;
+
+    /** The buffers. */
+    private final ConcurrentLinkedQueue<byte[]> buffers = new ConcurrentLinkedQueue<>();
 
     /**
      * Instantiates a new interruptible RMI socket.
@@ -92,9 +117,16 @@ abstract class InterruptibleRMISocket extends Socket {
      *             Signals that an I/O exception has occurred.
      */
     @Override
-    public InputStream getInputStream() throws IOException {
+    public synchronized InputStream getInputStream() throws IOException {
         if (cachedInput == null) {
-            cachedInput = new InterruptibleRMISocketInputStream(currentDecoratee.getInputStream());
+            if (USE_POOLED_BUFFERED_STREAMS) {
+                final var buffer = BufferPool.acquire();
+                buffers.add(buffer);
+                final var pooledIn = new PooledBufferedInputStream(currentDecoratee.getInputStream(), buffer);
+                cachedInput = new InterruptibleRMISocketInputStream(pooledIn);
+            } else {
+                cachedInput = currentDecoratee.getInputStream();
+            }
         }
         return cachedInput;
     }
@@ -108,11 +140,324 @@ abstract class InterruptibleRMISocket extends Socket {
      *             Signals that an I/O exception has occurred.
      */
     @Override
-    public OutputStream getOutputStream() throws IOException {
+    public synchronized OutputStream getOutputStream() throws IOException {
         if (cachedOutput == null) {
-            cachedOutput = new InterruptibleRMISocketOutputStream(currentDecoratee.getOutputStream());
+            if (USE_POOLED_BUFFERED_STREAMS) {
+                final var buffer = BufferPool.acquire();
+                buffers.add(buffer);
+                final var pooledOut = new PooledBufferedOutputStream(currentDecoratee.getOutputStream(), buffer);
+                cachedOutput = new InterruptibleRMISocketOutputStream(pooledOut);
+            } else {
+                cachedOutput = currentDecoratee.getOutputStream();
+            }
         }
         return cachedOutput;
+    }
+
+    /**
+     * The Class BufferPool.
+     */
+    private static final class BufferPool {
+
+        /** The Constant TRACKER. */
+        private static final ResourceTracker TRACKER = new ResourceTracker(BufferPool.class, 1);
+
+        /** The Constant BUFFER_SIZE. */
+        private static final int BUFFER_SIZE = Cnf.at("InterruptibleRMISocket", "bufferSize", 64 * 1024);
+
+        /** The Constant BUFFER_TTL_MS. */
+        private static final long BUFFER_TTL_MS = TimeUnit.MINUTES
+                .toMillis(Cnf.at("InterruptibleRMISocket", "bufferTTLInMinutes", 5));
+
+        /** The Constant reusable – using a deque for LIFO behavior. */
+        private static final ConcurrentLinkedDeque<byte[]> reusable = new ConcurrentLinkedDeque<>();
+
+        /** The Constant expirations. */
+        private static final ConcurrentMap<byte[], ScheduledFuture<?>> expirations = new ConcurrentHashMap<>();
+
+        /** The Constant scheduler. */
+        private static final ScheduledExecutorService scheduler = Executors
+                .newSingleThreadScheduledExecutor(Thread.ofVirtual().name("BufferPool-Cleanup", 0).factory());
+
+        /** Prevent instantiation. */
+        private BufferPool() {
+        }
+
+        /**
+         * Acquire a buffer, reusing the most recently released one first.
+         *
+         * @return the byte[]
+         */
+        public static byte[] acquire() {
+            TRACKER.onOpen();
+            final var buffer = reusable.pollFirst(); // LIFO: take most recently added
+            if (buffer != null) {
+                synchronized (buffer) {
+                    final var task = expirations.remove(buffer);
+                    if (task != null) {
+                        task.cancel(false);
+                    }
+                }
+                _log.debug("Borrow buffer, pool size: {}", reusable.size());
+                return buffer;
+            }
+            _log.debug("Create new buffer");
+            return new byte[BUFFER_SIZE];
+        }
+
+        /**
+         * Release a buffer to the pool and schedule its expiration.
+         *
+         * @param buffer
+         *            the buffer
+         */
+        public static void release(final byte[] buffer) {
+            if (buffer == null)
+                return;
+            TRACKER.onClose(true);
+            synchronized (buffer) {
+                reusable.push(buffer); // LIFO: add to front
+                final ScheduledFuture<?> future = scheduler.schedule(() -> {
+                    synchronized (buffer) {
+                        final var removed = reusable.remove(buffer);
+                        expirations.remove(buffer);
+                        if (removed) {
+                            _log.debug("Expired unused buffer, pool size: {}", reusable.size());
+                        }
+                    }
+                }, BUFFER_TTL_MS, TimeUnit.MILLISECONDS);
+                expirations.put(buffer, future);
+                _log.debug("Released buffer, pool size: {}", reusable.size());
+            }
+        }
+    }
+
+    /**
+     * The Class PooledBufferedInputStream.
+     */
+    private final class PooledBufferedInputStream extends FilterInputStream {
+
+        /** The buffer. */
+        private byte[] buffer;
+
+        /** The closed. */
+        private final AtomicBoolean closed = new AtomicBoolean(false);
+
+        /** The pos. */
+        private int pos = 0;
+
+        /** The count. */
+        private int count = 0;
+
+        /**
+         * Instantiates a new pooled buffered input stream.
+         *
+         * @param in
+         *            the in
+         * @param buffer
+         *            the buffer
+         */
+        public PooledBufferedInputStream(final InputStream in, final byte[] buffer) {
+            super(in);
+            this.buffer = buffer;
+        }
+
+        /**
+         * Close.
+         *
+         * @throws IOException
+         *             Signals that an I/O exception has occurred.
+         */
+        @Override
+        public void close() throws IOException {
+            if (closed.compareAndSet(false, true)) {
+                try {
+                    super.close();
+                } finally {
+                    BufferPool.release(buffer);
+                    buffers.remove(buffer);
+                    buffer = null;
+                }
+            }
+        }
+
+        /**
+         * Read.
+         *
+         * @return the int
+         *
+         * @throws IOException
+         *             Signals that an I/O exception has occurred.
+         */
+        @Override
+        public int read() throws IOException {
+            if (pos >= count) {
+                fill();
+                if (count == -1)
+                    return -1;
+            }
+            return buffer[pos++] & 0xff;
+        }
+
+        /**
+         * Read.
+         *
+         * @param b
+         *            the b
+         * @param off
+         *            the off
+         * @param len
+         *            the len
+         *
+         * @return the int
+         *
+         * @throws IOException
+         *             Signals that an I/O exception has occurred.
+         */
+        @Override
+        public int read(final byte[] b, final int off, final int len) throws IOException {
+            if (pos >= count) {
+                if (len >= buffer.length) {
+                    return in.read(b, off, len);
+                }
+                fill();
+                if (count == -1)
+                    return -1;
+            }
+            final var avail = count - pos;
+            final var toCopy = Math.min(len, avail);
+            System.arraycopy(buffer, pos, b, off, toCopy);
+            pos += toCopy;
+            return toCopy;
+        }
+
+        /**
+         * Fill.
+         *
+         * @throws IOException
+         *             Signals that an I/O exception has occurred.
+         */
+        private void fill() throws IOException {
+            count = in.read(buffer, 0, buffer.length);
+            pos = 0;
+        }
+    }
+
+    /**
+     * The Class PooledBufferedOutputStream.
+     */
+    private final class PooledBufferedOutputStream extends FilterOutputStream {
+
+        /** The buffer. */
+        private byte[] buffer;
+
+        /** The closed. */
+        private final AtomicBoolean closed = new AtomicBoolean(false);
+
+        /** The count. */
+        private int count = 0;
+
+        /**
+         * Instantiates a new pooled buffered output stream.
+         *
+         * @param out
+         *            the out
+         * @param buffer
+         *            the buffer
+         */
+        public PooledBufferedOutputStream(final OutputStream out, final byte[] buffer) {
+            super(out);
+            this.buffer = buffer;
+        }
+
+        /**
+         * Close.
+         *
+         * @throws IOException
+         *             Signals that an I/O exception has occurred.
+         */
+        @Override
+        public void close() throws IOException {
+            if (closed.compareAndSet(false, true)) {
+                try {
+                    super.close();
+                } finally {
+                    BufferPool.release(buffer);
+                    buffers.remove(buffer);
+                    buffer = null;
+                }
+            }
+        }
+
+        /**
+         * Write.
+         *
+         * @param b
+         *            the b
+         *
+         * @throws IOException
+         *             Signals that an I/O exception has occurred.
+         */
+        @Override
+        public void write(final int b) throws IOException {
+            if (count >= buffer.length) {
+                flushBuffer();
+            }
+            buffer[count++] = (byte) b;
+        }
+
+        /**
+         * Write.
+         *
+         * @param b
+         *            the b
+         * @param off
+         *            the off
+         * @param len
+         *            the len
+         *
+         * @throws IOException
+         *             Signals that an I/O exception has occurred.
+         */
+        @Override
+        public void write(final byte[] b, int off, int len) throws IOException {
+            while (len > 0) {
+                final var space = buffer.length - count;
+                final var toWrite = Math.min(space, len);
+                System.arraycopy(b, off, buffer, count, toWrite);
+                count += toWrite;
+                off += toWrite;
+                len -= toWrite;
+                if (count >= buffer.length) {
+                    flushBuffer();
+                }
+            }
+        }
+
+        /**
+         * Flush.
+         *
+         * @throws IOException
+         *             Signals that an I/O exception has occurred.
+         */
+        @Override
+        public void flush() throws IOException {
+            flushBuffer();
+            out.flush();
+        }
+
+        /**
+         * Flush buffer.
+         *
+         * @throws IOException
+         *             Signals that an I/O exception has occurred.
+         */
+        private void flushBuffer() throws IOException {
+            if (count > 0) {
+                out.write(buffer, 0, count);
+                count = 0;
+            }
+        }
     }
 
     /**
@@ -125,6 +470,8 @@ abstract class InterruptibleRMISocket extends Socket {
          *
          * @param out
          *            the out
+         * @param buffer
+         *            the buffer
          */
         InterruptibleRMISocketOutputStream(final OutputStream out) {
             super(out);
@@ -141,6 +488,25 @@ abstract class InterruptibleRMISocket extends Socket {
          */
         @Override
         public void write(final int b) throws IOException {
+            ioStarting();
+            try {
+                out.write(b);
+            } finally {
+                ioEnding();
+            }
+        }
+
+        /**
+         * Write.
+         *
+         * @param b
+         *            the b
+         *
+         * @throws IOException
+         *             Signals that an I/O exception has occurred.
+         */
+        @Override
+        public void write(final byte[] b) throws IOException {
             ioStarting();
             try {
                 out.write(b);
@@ -199,6 +565,8 @@ abstract class InterruptibleRMISocket extends Socket {
          *
          * @param in
          *            the in
+         * @param buffer
+         *            the buffer
          */
         InterruptibleRMISocketInputStream(final InputStream in) {
             super(in);
@@ -217,6 +585,27 @@ abstract class InterruptibleRMISocket extends Socket {
             ioStarting();
             try {
                 return in.read();
+            } finally {
+                ioEnding();
+            }
+        }
+
+        /**
+         * Read.
+         *
+         * @param b
+         *            the b
+         *
+         * @return the int
+         *
+         * @throws IOException
+         *             Signals that an I/O exception has occurred.
+         */
+        @Override
+        public int read(final byte[] b) throws IOException {
+            ioStarting();
+            try {
+                return in.read(b);
             } finally {
                 ioEnding();
             }
@@ -267,6 +656,7 @@ abstract class InterruptibleRMISocket extends Socket {
                 ioEnding();
             }
         }
+
     }
 
     /**
@@ -292,6 +682,25 @@ abstract class InterruptibleRMISocket extends Socket {
      */
     @Override
     public void close() throws IOException {
+        try {
+            if (cachedInput != null)
+                cachedInput.close();
+        } catch (final IOException _) {
+            // Ignored
+        }
+        try {
+            if (cachedOutput != null)
+                cachedOutput.close();
+        } catch (final IOException _) {
+            // Ignored
+        }
+        // Release any remaining buffers
+        if (USE_POOLED_BUFFERED_STREAMS) {
+            byte[] buffer;
+            while ((buffer = buffers.poll()) != null) {
+                BufferPool.release(buffer);
+            }
+        }
         currentDecoratee.close();
     }
 
