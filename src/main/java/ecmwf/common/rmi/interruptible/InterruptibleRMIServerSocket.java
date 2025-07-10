@@ -29,10 +29,12 @@ import java.net.SocketException;
 import java.nio.channels.ServerSocketChannel;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import ecmwf.common.technical.Cnf;
 import ecmwf.common.technical.ResourceTracker;
 
 /**
@@ -348,6 +350,40 @@ public final class InterruptibleRMIServerSocket extends ServerSocket {
         /** The Constant socketThreadMap. */
         private static final Map<Socket, Thread> socketThreadMap = new ConcurrentHashMap<>();
 
+        static {
+            final long cleanupInterval = TimeUnit.MINUTES
+                    .toMillis(Cnf.at("InterruptibleRMIServerSideSocket", "cleanupIntervalInMinutes", 5));
+            Thread.ofVirtual().name("InterruptibleRMIServer-Cleaner", 0).start(() -> {
+                while (!Thread.currentThread().isInterrupted()) {
+                    try {
+                        Thread.sleep(cleanupInterval);
+                    } catch (final InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        _log.warn("InterruptibleRMIServer-Cleaner thread interrupted, stopping.", e);
+                        break;
+                    }
+                    _log.debug("Running InterruptibleRMIServer socket maps cleanup");
+                    try {
+                        socketThreadMap.entrySet().removeIf(entry -> {
+                            final Thread thread = entry.getValue();
+                            if (thread == null || !thread.isAlive()) {
+                                final Socket socket = entry.getKey();
+                                if (thread != null) {
+                                    threadSocketMap.remove(thread);
+                                }
+                                _log.warn("Removed stale RMI thread/socket mapping for dead thread: {} / {}",
+                                        thread != null ? thread.getName() : "null", socket);
+                                return true; // remove from socketThreadMap
+                            }
+                            return false;
+                        });
+                    } catch (final Exception e) {
+                        _log.error("Error during InterruptibleRMIServer socket maps cleanup", e);
+                    }
+                }
+            });
+        }
+
         /**
          * Gets the current RMI server thread socket.
          *
@@ -471,7 +507,7 @@ public final class InterruptibleRMIServerSocket extends ServerSocket {
         @Override
         public void close() throws IOException {
             try {
-                currentDecoratee.close();
+                super.close();
             } finally {
                 registerSocketIsClosing(this);
             }
