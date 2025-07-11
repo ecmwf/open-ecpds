@@ -44,6 +44,7 @@ import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.nio.file.FileSystems;
 import java.nio.file.Paths;
+import java.rmi.RemoteException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Timestamp;
@@ -77,6 +78,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import ecmwf.common.database.DataBaseException;
+import ecmwf.common.rmi.SocketConfig;
 import ecmwf.common.technical.ScriptManager;
 
 /**
@@ -1350,6 +1352,54 @@ public final class Format {
      */
     public static String getMessage(final Throwable t) {
         return getMessage(t, null, 0);
+    }
+
+    /**
+     * Creates a {@link RemoteException} containing a concise message and the local hostname, intended for use across
+     * RMI boundaries. The stack trace is explicitly cleared to reduce native memory usage and minimize data transfer
+     * during remote exception serialization.
+     *
+     * @param message
+     *            the message
+     *
+     * @return a {@link RemoteException} with a trimmed stack trace and formatted message
+     */
+    public static RemoteException getRemoteException(final String message) {
+        var e = new RemoteException("[" + SocketConfig.getLocalAddress() + "]: " + message);
+        e.setStackTrace(new StackTraceElement[0]);
+        return e;
+    }
+
+    /**
+     * Creates a {@link RemoteException} containing a concise message and the local hostname, intended for use across
+     * RMI boundaries. The stack trace is explicitly cleared to reduce native memory usage and minimize data transfer
+     * during remote exception serialization.
+     *
+     * @param message
+     *            the message
+     * @param t
+     *            the original {@link Throwable} to extract the message from
+     *
+     * @return a {@link RemoteException} with a trimmed stack trace and formatted message
+     */
+    public static RemoteException getRemoteException(final String message, final Throwable t) {
+        _log.warn(message, t);
+        return getRemoteException(message + " <- " + getMessage(t, null, 0));
+    }
+
+    /**
+     * Creates a {@link RemoteException} containing a concise message and the local hostname, intended for use across
+     * RMI boundaries. The stack trace is explicitly cleared to reduce native memory usage and minimize data transfer
+     * during remote exception serialization.
+     *
+     * @param t
+     *            the original {@link Throwable} to extract the message from
+     *
+     * @return a {@link RemoteException} with a trimmed stack trace and formatted message
+     */
+    public static RemoteException getRemoteException(final Throwable t) {
+        _log.warn("Exception in RMI call", t);
+        return getRemoteException(getMessage(t, null, 0));
     }
 
     /**
