@@ -32,6 +32,7 @@ import java.util.Properties;
 import java.util.Vector;
 
 import ecmwf.common.technical.Cnf;
+import ecmwf.common.text.Format;
 
 /**
  * The Class RemoteCnfImp.
@@ -43,46 +44,70 @@ public final class RemoteCnfImp extends CallBackObject implements RemoteCnf {
     /**
      * Instantiates a new remote cnf imp.
      *
-     * @throws java.rmi.RemoteException
+     * @throws RemoteException
      *             the remote exception
      */
     public RemoteCnfImp() throws RemoteException {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Adds the.
+     *
+     * @param group
+     *            the group
+     *
+     * @throws RemoteException
+     *             the remote exception
      */
     @Override
     public void add(final String group) throws RemoteException {
-        throw new RemoteException("Not implemented");
+        throw Format.getRemoteException("Not implemented");
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Adds the.
+     *
+     * @param group
+     *            the group
+     * @param key
+     *            the key
+     * @param value
+     *            the value
+     *
+     * @throws RemoteException
+     *             the remote exception
      */
     @Override
     public void add(final String group, final String key, final String value) throws RemoteException {
-        throw new RemoteException("Not implemented");
+        throw Format.getRemoteException("Not implemented");
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Adds the.
+     *
+     * @param group
+     *            the group
+     * @param table
+     *            the table
+     *
+     * @throws RemoteException
+     *             the remote exception
      */
     @Override
     public void add(final String group, final Hashtable<String, String> table) throws RemoteException {
-        throw new RemoteException("Not implemented");
+        throw Format.getRemoteException("Not implemented");
     }
 
     /**
-     * {@inheritDoc}
-     *
      * At.
+     *
+     * @param group
+     *            the group
+     *
+     * @return the hashtable
+     *
+     * @throws RemoteException
+     *             the remote exception
      */
     @Override
     public Hashtable<String, String> at(final String group) throws RemoteException {
@@ -90,9 +115,17 @@ public final class RemoteCnfImp extends CallBackObject implements RemoteCnf {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * At.
+     *
+     * @param group
+     *            the group
+     * @param key
+     *            the key
+     *
+     * @return the string
+     *
+     * @throws RemoteException
+     *             the remote exception
      */
     @Override
     public String at(final String group, final String key) throws RemoteException {
@@ -100,9 +133,19 @@ public final class RemoteCnfImp extends CallBackObject implements RemoteCnf {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * At.
+     *
+     * @param group
+     *            the group
+     * @param key
+     *            the key
+     * @param defaut
+     *            the defaut
+     *
+     * @return the string
+     *
+     * @throws RemoteException
+     *             the remote exception
      */
     @Override
     public String at(final String group, final String key, final String defaut) throws RemoteException {
@@ -110,39 +153,66 @@ public final class RemoteCnfImp extends CallBackObject implements RemoteCnf {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Groups.
+     *
+     * @return the vector
+     *
+     * @throws RemoteException
+     *             the remote exception
      */
     @Override
     public Vector<String> groups() throws RemoteException {
-        throw new RemoteException("Not implemented");
+        throw Format.getRemoteException("Not implemented");
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Values at.
+     *
+     * @param group
+     *            the group
+     *
+     * @return the hashtable
+     *
+     * @throws RemoteException
+     *             the remote exception
      */
     @Override
     public Hashtable<String, Vector<String>> valuesAt(final String group) throws RemoteException {
-        throw new RemoteException("Not implemented");
+        throw Format.getRemoteException("Not implemented");
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Values at.
+     *
+     * @param group
+     *            the group
+     * @param key
+     *            the key
+     *
+     * @return the vector
+     *
+     * @throws RemoteException
+     *             the remote exception
      */
     @Override
     public Vector<String> valuesAt(final String group, final String key) throws RemoteException {
-        throw new RemoteException("Not implemented");
+        throw Format.getRemoteException("Not implemented");
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Boolean at.
+     *
+     * @param group
+     *            the group
+     * @param key
+     *            the key
+     * @param defaut
+     *            the defaut
+     *
+     * @return true, if successful
+     *
+     * @throws RemoteException
+     *             the remote exception
      */
     @Override
     public boolean booleanAt(final String group, final String key, final boolean defaut) throws RemoteException {
@@ -150,49 +220,72 @@ public final class RemoteCnfImp extends CallBackObject implements RemoteCnf {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the added properties.
+     *
+     * @return the added properties
+     *
+     * @throws RemoteException
+     *             the remote exception
      */
     @Override
     public Properties getAddedProperties() throws RemoteException {
-        throw new RemoteException("Not implemented");
+        throw Format.getRemoteException("Not implemented");
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the export.
+     *
+     * @return the export
+     *
+     * @throws RemoteException
+     *             the remote exception
      */
     @Override
     public Hashtable<String, Hashtable<String, String>> getExport() throws RemoteException {
-        throw new RemoteException("Not implemented");
+        throw Format.getRemoteException("Not implemented");
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the system properties.
+     *
+     * @return the system properties
+     *
+     * @throws RemoteException
+     *             the remote exception
      */
     @Override
     public Properties getSystemProperties() throws RemoteException {
-        throw new RemoteException("Not implemented");
+        throw Format.getRemoteException("Not implemented");
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Import from.
+     *
+     * @param export
+     *            the export
+     *
+     * @throws RemoteException
+     *             the remote exception
      */
     @Override
     public void importFrom(final Hashtable<String, Hashtable<String, String>> export) throws RemoteException {
-        throw new RemoteException("Not implemented");
+        throw Format.getRemoteException("Not implemented");
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Int at.
+     *
+     * @param group
+     *            the group
+     * @param key
+     *            the key
+     * @param defaut
+     *            the defaut
+     *
+     * @return the int
+     *
+     * @throws RemoteException
+     *             the remote exception
      */
     @Override
     public int intAt(final String group, final String key, final int defaut) throws RemoteException {
@@ -200,19 +293,37 @@ public final class RemoteCnfImp extends CallBackObject implements RemoteCnf {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Not empty string at.
+     *
+     * @param group
+     *            the group
+     * @param key
+     *            the key
+     *
+     * @return the string
+     *
+     * @throws RemoteException
+     *             the remote exception
      */
     @Override
     public String notEmptyStringAt(final String group, final String key) throws RemoteException {
-        throw new RemoteException("Not implemented");
+        throw Format.getRemoteException("Not implemented");
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Not empty string at.
+     *
+     * @param group
+     *            the group
+     * @param key
+     *            the key
+     * @param defaut
+     *            the defaut
+     *
+     * @return the string
+     *
+     * @throws RemoteException
+     *             the remote exception
      */
     @Override
     public String notEmptyStringAt(final String group, final String key, final String defaut) throws RemoteException {

@@ -654,7 +654,7 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
         try {
             master.exportDestination(targetMaster, fromDestination, copySharedHost);
             monitor.done();
-        } catch (final MasterException e) {
+        } catch (final RemoteException e) {
             exception = e;
             _log.warn(e);
             throw e;

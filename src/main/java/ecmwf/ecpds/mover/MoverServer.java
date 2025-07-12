@@ -1271,8 +1271,12 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      * Check.
      */
     @Override
-    public void check(final long ticket) throws IOException {
-        ticketRepository.check(ticket, Cnf.at("Other", "ticketWaitDuration", 20 * Timer.ONE_MINUTE));
+    public void check(final long ticket) throws RemoteException {
+        try {
+            ticketRepository.check(ticket, Cnf.at("Other", "ticketWaitDuration", 20 * Timer.ONE_MINUTE));
+        } catch (Throwable t) {
+            throw Format.getRemoteException(t);
+        }
     }
 
     /**
@@ -1281,7 +1285,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      * Size.
      */
     @Override
-    public long size(final DataTransfer transfer, final String fileName) throws ECtransException, IOException {
+    public long size(final DataTransfer transfer, final String fileName) throws RemoteException {
         final var cookieSet = ThreadService.setCookieIfNotAlreadySet(_getCookie(transfer, "size"));
         try {
             _checkInProgress(transfer);
@@ -1296,6 +1300,8 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                 transferRepository.removeValue(transfer);
             }
             return size.getSize();
+        } catch (Throwable t) {
+            throw Format.getRemoteException(t);
         } finally {
             if (cookieSet) {
                 ThreadService.removeCookie();
@@ -1309,7 +1315,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      * Del.
      */
     @Override
-    public void del(final DataTransfer transfer, final String fileName) throws ECtransException, IOException {
+    public void del(final DataTransfer transfer, final String fileName) throws RemoteException {
         final var cookieSet = ThreadService.setCookieIfNotAlreadySet(_getCookie(transfer, "del"));
         try {
             _checkInProgress(transfer);
@@ -1322,6 +1328,8 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             } finally {
                 transferRepository.removeValue(transfer);
             }
+        } catch (Throwable t) {
+            throw Format.getRemoteException(t);
         } finally {
             if (cookieSet) {
                 ThreadService.removeCookie();
@@ -1335,7 +1343,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      * Filter.
      */
     @Override
-    public DataFile filter(final DataFile dataFile, final boolean remove) throws IOException {
+    public DataFile filter(final DataFile dataFile, final boolean remove) throws RemoteException {
         final var cookieSet = ThreadService.setCookieIfNotAlreadySet(_getCookie(dataFile, "filter"));
         try {
             final var filter = StreamManagerImp.getFilters(dataFile.getFilterName(), dataFile.getSize());
@@ -1452,6 +1460,8 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             }
             _log.debug("Filtering completed successfully ({} byte(s))", size);
             return dataFile;
+        } catch (Throwable t) {
+            throw Format.getRemoteException(t);
         } finally {
             if (cookieSet) {
                 ThreadService.removeCookie();
@@ -1466,7 +1476,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      */
     @Override
     public DataFile replicate(final DataFile dataFile, final Host targetHost, final Host[] hostsForSource)
-            throws ECtransException, SourceNotAvailableException, IOException {
+            throws RemoteException {
         final var operation = HostOption.BACKUP.equals(targetHost.getType()) ? "backup"
                 : HostOption.PROXY.equals(targetHost.getType()) ? "proxy" : "replicate";
         final var cookieSet = ThreadService.setCookieIfNotAlreadySet(_getCookie(dataFile, operation));
@@ -1546,6 +1556,8 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                     new DefaultCallback(HOST_ECTRANS.getECtransSetup(targetHost.getData())), true);
             _log.info("File {} successfully transmitted on {}", fileName, targetHost.getNickname());
             return dataFile;
+        } catch (Throwable t) {
+            throw Format.getRemoteException(t);
         } finally {
             if (cookieSet) {
                 ThreadService.removeCookie();
@@ -1559,7 +1571,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      * Gets the mover report.
      */
     @Override
-    public String getMoverReport(final Host proxyHost) throws IOException {
+    public String getMoverReport(final Host proxyHost) throws RemoteException {
         final var setup = HOST_PROXY.getECtransSetup(proxyHost.getData());
         final var url = setup.getString(HOST_PROXY_HTTP_PROXY_URL);
         final var mover = setup.get(HOST_PROXY_HTTP_MOVER_URL, "https://" + proxyHost.getHost());
@@ -1567,7 +1579,8 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             final var rest = getRESTInterface(url, mover, (int) setup.getDuration(HOST_PROXY_TIMEOUT).toMillis());
             return rest.getMoverReport();
         } catch (final Throwable t) {
-            throw new IOException("Error occurred on remote proxy (proxy=" + url + ",mover=" + mover + ")", t);
+            throw Format.getRemoteException("Error occurred on remote proxy (proxy=" + url + ",mover=" + mover + "): ",
+                    t);
         }
     }
 
@@ -1577,7 +1590,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      * Gets the host report.
      */
     @Override
-    public String getHostReport(final Host proxyHost, final Host host) throws IOException {
+    public String getHostReport(final Host proxyHost, final Host host) throws RemoteException {
         final var setup = HOST_PROXY.getECtransSetup(proxyHost.getData());
         final var url = setup.getString(HOST_PROXY_HTTP_PROXY_URL);
         final var mover = setup.get(HOST_PROXY_HTTP_MOVER_URL, "https://" + proxyHost.getHost());
@@ -1585,59 +1598,68 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             final var rest = getRESTInterface(url, mover, (int) setup.getDuration(HOST_PROXY_TIMEOUT).toMillis());
             return rest.getHostReport(host);
         } catch (final Throwable t) {
-            throw new IOException("Error occurred on remote proxy (proxy=" + url + ",mover=" + mover + ")", t);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * Gets the report.
-     */
-    @Override
-    public String getReport() throws IOException {
-        return _exec(Cnf.notEmptyStringAt("ReportCommand", "mover", "mover-report"));
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * Gets the report.
-     */
-    @Override
-    public String getReport(final Host host) throws IOException {
-        // Load the TransferModule to get the port number!
-        final int port;
-        final String listenAddress;
-        try {
-            final var ectransModule = host.getTransferMethod().getECtransModule();
-            final var provider = new MoverProvider(new ECproxyRepository(host));
-            final var transferModule = provider.loadTransferModule(ectransModule);
-            final var setup = new ECtransSetup(ectransModule.getName(), host.getData());
-            port = transferModule.getPort(setup);
-            listenAddress = setup.get("listenAddress", null);
-        } catch (final Throwable t) {
-            throw new IOException("Could not load the " + host.getTransferMethod().getECtransModuleName() + " module",
+            throw Format.getRemoteException("Error occurred on remote proxy (proxy=" + url + ",mover=" + mover + ")",
                     t);
         }
-        // Find the command to process the Host report!
-        final var c = Cnf.notEmptyStringAt("ReportCommand", "host", "host-report");
-        // Let's fill the parameters with the proper values from the Host
-        // object!
-        final var sb = new StringBuilder(c);
-        Format.replaceAll(sb, "$name", host.getName());
-        Format.replaceAll(sb, "$method", host.getTransferMethodName());
-        Format.replaceAll(sb, "$host", host.getHost());
-        Format.replaceAll(sb, "$port", port);
-        Format.replaceAll(sb, "$login", host.getLogin());
-        Format.replaceAll(sb, "$passwd", host.getPasswd());
-        Format.replaceAll(sb, "$mail", host.getUserMail());
-        Format.replaceAll(sb, "$networkCode", host.getNetworkCode());
-        Format.replaceAll(sb, "$networkName", host.getNetworkName());
-        Format.replaceAll(sb, "$nickname", host.getNickname());
-        Format.replaceAll(sb, "$listenAddress", listenAddress == null ? "" : listenAddress);
-        // Run the report!
-        return _exec(sb.toString());
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Gets the report.
+     */
+    @Override
+    public String getReport() throws RemoteException {
+        try {
+            return _exec(Cnf.notEmptyStringAt("ReportCommand", "mover", "mover-report"));
+        } catch (Throwable t) {
+            throw Format.getRemoteException(t);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Gets the report.
+     */
+    @Override
+    public String getReport(final Host host) throws RemoteException {
+        // Load the TransferModule to get the port number!
+        try {
+            final int port;
+            final String listenAddress;
+            try {
+                final var ectransModule = host.getTransferMethod().getECtransModule();
+                final var provider = new MoverProvider(new ECproxyRepository(host));
+                final var transferModule = provider.loadTransferModule(ectransModule);
+                final var setup = new ECtransSetup(ectransModule.getName(), host.getData());
+                port = transferModule.getPort(setup);
+                listenAddress = setup.get("listenAddress", null);
+            } catch (final Throwable t) {
+                throw new IOException(
+                        "Could not load the " + host.getTransferMethod().getECtransModuleName() + " module", t);
+            }
+            // Find the command to process the Host report!
+            final var c = Cnf.notEmptyStringAt("ReportCommand", "host", "host-report");
+            // Let's fill the parameters with the proper values from the Host
+            // object!
+            final var sb = new StringBuilder(c);
+            Format.replaceAll(sb, "$name", host.getName());
+            Format.replaceAll(sb, "$method", host.getTransferMethodName());
+            Format.replaceAll(sb, "$host", host.getHost());
+            Format.replaceAll(sb, "$port", port);
+            Format.replaceAll(sb, "$login", host.getLogin());
+            Format.replaceAll(sb, "$passwd", host.getPasswd());
+            Format.replaceAll(sb, "$mail", host.getUserMail());
+            Format.replaceAll(sb, "$networkCode", host.getNetworkCode());
+            Format.replaceAll(sb, "$networkName", host.getNetworkName());
+            Format.replaceAll(sb, "$nickname", host.getNickname());
+            Format.replaceAll(sb, "$listenAddress", listenAddress == null ? "" : listenAddress);
+            // Run the report!
+            return _exec(sb.toString());
+        } catch (Throwable t) {
+            throw Format.getRemoteException(t);
+        }
     }
 
     /**
@@ -1727,8 +1749,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      * Download.
      */
     @Override
-    public DataFile download(final DataFile dataFile, final Host hostForSource)
-            throws SourceNotAvailableException, IOException {
+    public DataFile download(final DataFile dataFile, final Host hostForSource) throws RemoteException {
         final var cookieSet = ThreadService.setCookieIfNotAlreadySet(_getCookie(dataFile, "download"));
         try {
             var fileSize = dataFile.getSize();
@@ -1884,6 +1905,8 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             }
             _log.debug("Download completed successfully");
             return dataFile;
+        } catch (Throwable t) {
+            throw Format.getRemoteException(t);
         } finally {
             if (cookieSet) {
                 ThreadService.removeCookie();
@@ -1952,7 +1975,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      * Del.
      */
     @Override
-    public boolean del(final Host proxyHost, final DataFile dataFile) throws ECtransException, IOException {
+    public boolean del(final Host proxyHost, final DataFile dataFile) throws RemoteException {
         final var cookieSet = ThreadService.setCookieIfNotAlreadySet(_getCookie(dataFile, "del"));
         try {
             final var setup = HOST_PROXY.getECtransSetup(proxyHost.getData());
@@ -1966,6 +1989,8 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                 _log.warn("Error occurred on remote proxy (proxy={},mover={})", url, mover, t);
             }
             return false;
+        } catch (Throwable t) {
+            throw Format.getRemoteException(t);
         } finally {
             if (cookieSet) {
                 ThreadService.removeCookie();
@@ -1979,7 +2004,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      * Del.
      */
     @Override
-    public boolean del(final DataFile dataFile) throws ECtransException, IOException {
+    public boolean del(final DataFile dataFile) throws RemoteException {
         final var cookieSet = ThreadService.setCookieIfNotAlreadySet(_getCookie(dataFile, "del"));
         try {
             GenericFile file = new FileChecker(GenericFile.getGenericFile(getRepository(), getPath(dataFile)));
@@ -2027,6 +2052,8 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                 }
             }
             return !OPERATIONAL || deleted;
+        } catch (Throwable t) {
+            throw Format.getRemoteException(t);
         } finally {
             if (cookieSet) {
                 ThreadService.removeCookie();
@@ -2068,8 +2095,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      */
     @Override
     public DataTransfer put(final Host[] hostsForSource, final DataTransfer transfer, final String targetName,
-            final long localPosn, final long remotePosn)
-            throws ECtransException, SourceNotAvailableException, IOException {
+            final long localPosn, final long remotePosn) throws RemoteException {
         final var cookieSet = ThreadService.setCookieIfNotAlreadySet(_getCookie(transfer, "put"));
         try {
             _checkInProgress(transfer);
@@ -2221,6 +2247,8 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                     transferRepository.removeValue(transfer);
                 }
             }
+        } catch (Throwable t) {
+            throw Format.getRemoteException(t);
         } finally {
             if (cookieSet) {
                 ThreadService.removeCookie();
@@ -2236,14 +2264,19 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      */
     @Override
     public ProxySocket put(final Host host, final String target, final long remotePosn, final long size)
-            throws ECtransException, IOException {
-        final var repository = new ECproxyRepository(host);
-        final var ticket = getTicketRepository().add(new ECaccessTicket(repository, ECaccessTicket.INPUT));
-        new ECtransContainer(new MoverProvider(repository), false).asyncExec(
-                new ECtransPut(target, ticket, remotePosn, size), null, host.getECUserName(),
-                host.getName() + "@" + host.getTransferMethodName(), null, new ECproxyCallback(ticket, host.getData()));
-        final var socketConfig = new SocketConfig("ECproxyPlugin");
-        return new ProxySocket(ticket.getId(), socketConfig.getPublicAddress(), socketConfig.getPort(), true);
+            throws RemoteException {
+        try {
+            final var repository = new ECproxyRepository(host);
+            final var ticket = getTicketRepository().add(new ECaccessTicket(repository, ECaccessTicket.INPUT));
+            new ECtransContainer(new MoverProvider(repository), false).asyncExec(
+                    new ECtransPut(target, ticket, remotePosn, size), null, host.getECUserName(),
+                    host.getName() + "@" + host.getTransferMethodName(), null,
+                    new ECproxyCallback(ticket, host.getData()));
+            final var socketConfig = new SocketConfig("ECproxyPlugin");
+            return new ProxySocket(ticket.getId(), socketConfig.getPublicAddress(), socketConfig.getPort(), true);
+        } catch (Throwable t) {
+            throw Format.getRemoteException(t);
+        }
     }
 
     /**
@@ -2254,14 +2287,19 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      */
     @Override
     public ProxySocket get(final Host host, final String source, final long remotePosn, final boolean removeOriginal)
-            throws ECtransException, IOException {
-        final var repository = new ECproxyRepository(host);
-        final var ticket = getTicketRepository().add(new ECaccessTicket(repository, ECaccessTicket.OUTPUT));
-        new ECtransContainer(new MoverProvider(repository), false).asyncExec(
-                new ECtransGet(source, ticket, remotePosn, removeOriginal), null, host.getECUserName(),
-                host.getName() + "@" + host.getTransferMethodName(), null, new ECproxyCallback(ticket, host.getData()));
-        final var socketConfig = new SocketConfig("ECproxyPlugin");
-        return new ProxySocket(ticket.getId(), socketConfig.getPublicAddress(), socketConfig.getPort(), true);
+            throws RemoteException {
+        try {
+            final var repository = new ECproxyRepository(host);
+            final var ticket = getTicketRepository().add(new ECaccessTicket(repository, ECaccessTicket.OUTPUT));
+            new ECtransContainer(new MoverProvider(repository), false).asyncExec(
+                    new ECtransGet(source, ticket, remotePosn, removeOriginal), null, host.getECUserName(),
+                    host.getName() + "@" + host.getTransferMethodName(), null,
+                    new ECproxyCallback(ticket, host.getData()));
+            final var socketConfig = new SocketConfig("ECproxyPlugin");
+            return new ProxySocket(ticket.getId(), socketConfig.getPublicAddress(), socketConfig.getPort(), true);
+        } catch (Throwable t) {
+            throw Format.getRemoteException(t);
+        }
     }
 
     /**
@@ -2307,8 +2345,12 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      */
     @Override
     public ProxySocket get(final DataFile dataFile, final Host hostForSource, final long remotePosn)
-            throws SourceNotAvailableException, IOException {
-        return get(dataFile, new Host[] { hostForSource }, remotePosn, -1);
+            throws RemoteException {
+        try {
+            return get(dataFile, new Host[] { hostForSource }, remotePosn, -1);
+        } catch (Throwable t) {
+            throw Format.getRemoteException(t);
+        }
     }
 
     /**
@@ -2318,7 +2360,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      */
     @Override
     public ProxySocket get(final DataFile dataFile, final Host[] hostsForSource, final long remotePosn,
-            final long length) throws SourceNotAvailableException, IOException {
+            final long length) throws RemoteException {
         final var cookieSet = ThreadService.setCookieIfNotAlreadySet(_getCookie(dataFile, "get"));
         try {
             final GenericFile file = new FileChecker(GenericFile.getGenericFile(getRepository(), getPath(dataFile)));
@@ -2327,6 +2369,8 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             final var ticket = getTicketRepository().add(new FileDescriptorTicket(descriptor));
             final var socketConfig = new SocketConfig("ECproxyPlugin");
             return new ProxySocket(ticket.getId(), socketConfig.getPublicAddress(), socketConfig.getPort(), true);
+        } catch (Throwable t) {
+            throw Format.getRemoteException(t);
         } finally {
             if (cookieSet) {
                 ThreadService.removeCookie();
@@ -2340,12 +2384,16 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      * Size.
      */
     @Override
-    public long size(final Host host, final String source) throws ECtransException, IOException {
-        final var size = new ECtransSize(source);
-        new ECtransContainer(new MoverProvider(new ECproxyRepository(host)), false).syncExec(size, null,
-                host.getECUserName(), host.getName() + "@" + host.getTransferMethodName(), null,
-                new DefaultCallback(HOST_ECTRANS.getECtransSetup(host.getData())), true);
-        return size.getSize();
+    public long size(final Host host, final String source) throws RemoteException {
+        try {
+            final var size = new ECtransSize(source);
+            new ECtransContainer(new MoverProvider(new ECproxyRepository(host)), false).syncExec(size, null,
+                    host.getECUserName(), host.getName() + "@" + host.getTransferMethodName(), null,
+                    new DefaultCallback(HOST_ECTRANS.getECtransSetup(host.getData())), true);
+            return size.getSize();
+        } catch (Throwable t) {
+            throw Format.getRemoteException(t);
+        }
     }
 
     /**
@@ -2355,12 +2403,16 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      */
     @Override
     public String[] listAsStringArray(final Host host, final String directory, final String pattern)
-            throws ECtransException, IOException {
-        final var list = new ECtransList(directory, pattern, true);
-        new ECtransContainer(new MoverProvider(new ECproxyRepository(host)), false).syncExec(list, null,
-                host.getECUserName(), host.getName() + "@" + host.getTransferMethodName(), null,
-                new DefaultCallback(HOST_ECTRANS.getECtransSetup(host.getData())), true);
-        return list.getListAsStringArray();
+            throws RemoteException {
+        try {
+            final var list = new ECtransList(directory, pattern, true);
+            new ECtransContainer(new MoverProvider(new ECproxyRepository(host)), false).syncExec(list, null,
+                    host.getECUserName(), host.getName() + "@" + host.getTransferMethodName(), null,
+                    new DefaultCallback(HOST_ECTRANS.getECtransSetup(host.getData())), true);
+            return list.getListAsStringArray();
+        } catch (Throwable t) {
+            throw Format.getRemoteException(t);
+        }
     }
 
     /**
@@ -2370,25 +2422,30 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      */
     @Override
     public RemoteInputStream listAsByteArray(final Host host, final String directory, final String pattern,
-            final boolean synchronous) throws ECtransException, IOException {
-        final var container = new ECtransContainer(new MoverProvider(new ECproxyRepository(host)), false);
-        final InputStream in;
-        if (synchronous) {
-            // We are sending back the result AFTER the exec is completed. This is GZipped!
-            final var list = new ECtransList(directory, pattern, false);
-            container.syncExec(list, null, host.getECUserName(), host.getName() + "@" + host.getTransferMethodName(),
-                    null, new DefaultCallback(HOST_ECTRANS.getECtransSetup(host.getData())), true);
-            in = new ByteArrayInputStream(list.getListAsByteArray());
-        } else {
-            // We are sending back the result BEFORE the exec is completed. This is
-            // not compressed!
-            final var out = new PipedOutputStream();
-            container.asyncExec(new ECtransList(directory, pattern, out), null, host.getECUserName(),
-                    host.getName() + "@" + host.getTransferMethodName(), null,
-                    new DefaultCallback(HOST_ECTRANS.getECtransSetup(host.getData())));
-            in = new PipedInputStream(out, StreamPlugThread.DEFAULT_BUFF_SIZE);
+            final boolean synchronous) throws RemoteException {
+        try {
+            final var container = new ECtransContainer(new MoverProvider(new ECproxyRepository(host)), false);
+            final InputStream in;
+            if (synchronous) {
+                // We are sending back the result AFTER the exec is completed. This is GZipped!
+                final var list = new ECtransList(directory, pattern, false);
+                container.syncExec(list, null, host.getECUserName(),
+                        host.getName() + "@" + host.getTransferMethodName(), null,
+                        new DefaultCallback(HOST_ECTRANS.getECtransSetup(host.getData())), true);
+                in = new ByteArrayInputStream(list.getListAsByteArray());
+            } else {
+                // We are sending back the result BEFORE the exec is completed. This is
+                // not compressed!
+                final var out = new PipedOutputStream();
+                container.asyncExec(new ECtransList(directory, pattern, out), null, host.getECUserName(),
+                        host.getName() + "@" + host.getTransferMethodName(), null,
+                        new DefaultCallback(HOST_ECTRANS.getECtransSetup(host.getData())));
+                in = new PipedInputStream(out, StreamPlugThread.DEFAULT_BUFF_SIZE);
+            }
+            return new RemoteInputStreamImp(in);
+        } catch (Throwable t) {
+            throw Format.getRemoteException(t);
         }
-        return new RemoteInputStreamImp(in);
     }
 
     /**
@@ -2397,7 +2454,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      * Execute.
      */
     @Override
-    public RemoteInputStream execute(final String script) throws ScriptException, IOException {
+    public RemoteInputStream execute(final String script) throws RemoteException {
         try {
             final var value = ScriptManager.exec(String.class, ScriptManager.JS, script);
             final var out = new ByteArrayOutputStream();
@@ -2406,8 +2463,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             gzip.close();
             return new RemoteInputStreamImp(new ByteArrayInputStream(out.toByteArray()));
         } catch (final Throwable t) {
-            _log.debug("Cannot execute: {}", script, t);
-            throw new IOException(Format.getMessage(t));
+            throw Format.getRemoteException(t);
         }
     }
 
@@ -2417,10 +2473,14 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      * Del.
      */
     @Override
-    public void del(final Host host, final String source) throws ECtransException, IOException {
-        new ECtransContainer(new MoverProvider(new ECproxyRepository(host)), false).syncExec(new ECtransDel(source),
-                null, host.getECUserName(), host.getName() + "@" + host.getTransferMethodName(), null,
-                new DefaultCallback(HOST_ECTRANS.getECtransSetup(host.getData())), true);
+    public void del(final Host host, final String source) throws RemoteException {
+        try {
+            new ECtransContainer(new MoverProvider(new ECproxyRepository(host)), false).syncExec(new ECtransDel(source),
+                    null, host.getECUserName(), host.getName() + "@" + host.getTransferMethodName(), null,
+                    new DefaultCallback(HOST_ECTRANS.getECtransSetup(host.getData())), true);
+        } catch (Throwable t) {
+            throw Format.getRemoteException(t);
+        }
     }
 
     /**
@@ -2429,10 +2489,14 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      * Mkdir.
      */
     @Override
-    public void mkdir(final Host host, final String dir) throws ECtransException, IOException {
-        new ECtransContainer(new MoverProvider(new ECproxyRepository(host)), false).syncExec(new ECtransMkdir(dir),
-                null, host.getECUserName(), host.getName() + "@" + host.getTransferMethodName(), null,
-                new DefaultCallback(HOST_ECTRANS.getECtransSetup(host.getData())), true);
+    public void mkdir(final Host host, final String dir) throws RemoteException {
+        try {
+            new ECtransContainer(new MoverProvider(new ECproxyRepository(host)), false).syncExec(new ECtransMkdir(dir),
+                    null, host.getECUserName(), host.getName() + "@" + host.getTransferMethodName(), null,
+                    new DefaultCallback(HOST_ECTRANS.getECtransSetup(host.getData())), true);
+        } catch (Throwable t) {
+            throw Format.getRemoteException(t);
+        }
     }
 
     /**
@@ -2441,10 +2505,14 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      * Rmdir.
      */
     @Override
-    public void rmdir(final Host host, final String dir) throws ECtransException, IOException {
-        new ECtransContainer(new MoverProvider(new ECproxyRepository(host)), false).syncExec(new ECtransRmdir(dir),
-                null, host.getECUserName(), host.getName() + "@" + host.getTransferMethodName(), null,
-                new DefaultCallback(HOST_ECTRANS.getECtransSetup(host.getData())), true);
+    public void rmdir(final Host host, final String dir) throws RemoteException {
+        try {
+            new ECtransContainer(new MoverProvider(new ECproxyRepository(host)), false).syncExec(new ECtransRmdir(dir),
+                    null, host.getECUserName(), host.getName() + "@" + host.getTransferMethodName(), null,
+                    new DefaultCallback(HOST_ECTRANS.getECtransSetup(host.getData())), true);
+        } catch (Throwable t) {
+            throw Format.getRemoteException(t);
+        }
     }
 
     /**
@@ -2453,11 +2521,15 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      * Move.
      */
     @Override
-    public void move(final Host host, final String source, final String target) throws ECtransException, IOException {
-        new ECtransContainer(new MoverProvider(new ECproxyRepository(host)), false).syncExec(
-                new ECtransMove(source, target), null, host.getECUserName(),
-                host.getName() + "@" + host.getTransferMethodName(), null,
-                new DefaultCallback(HOST_ECTRANS.getECtransSetup(host.getData())), true);
+    public void move(final Host host, final String source, final String target) throws RemoteException {
+        try {
+            new ECtransContainer(new MoverProvider(new ECproxyRepository(host)), false).syncExec(
+                    new ECtransMove(source, target), null, host.getECUserName(),
+                    host.getName() + "@" + host.getTransferMethodName(), null,
+                    new DefaultCallback(HOST_ECTRANS.getECtransSetup(host.getData())), true);
+        } catch (Throwable t) {
+            throw Format.getRemoteException(t);
+        }
     }
 
     /**
@@ -2466,7 +2538,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      * Close.
      */
     @Override
-    public boolean close(final DataTransfer transfer) throws ECtransException, IOException {
+    public boolean close(final DataTransfer transfer) throws RemoteException {
         final var cookieSet = ThreadService.setCookieIfNotAlreadySet(_getCookie(transfer, "close"));
         try {
             // We first try to stop it on the current DataMover, just in case it
@@ -2502,6 +2574,8 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             }
             _log.warn("Transfer {} not found/closed", transfer.getId());
             return false;
+        } catch (Throwable t) {
+            throw Format.getRemoteException(t);
         } finally {
             if (cookieSet) {
                 ThreadService.removeCookie();

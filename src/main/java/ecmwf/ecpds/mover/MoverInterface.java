@@ -57,12 +57,12 @@ public interface MoverInterface extends ClientInterface {
      *
      * @return the long
      *
-     * @throws ecmwf.common.ectrans.ECtransException
+     * @throws ECtransException
      *             the ectrans exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    long size(DataTransfer transfer, String fileName) throws ECtransException, IOException;
+    long size(DataTransfer transfer, String fileName) throws RemoteException;
 
     /**
      * Del.
@@ -72,12 +72,12 @@ public interface MoverInterface extends ClientInterface {
      * @param fileName
      *            the file name
      *
-     * @throws ecmwf.common.ectrans.ECtransException
+     * @throws ECtransException
      *             the ectrans exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    void del(DataTransfer transfer, String fileName) throws ECtransException, IOException;
+    void del(DataTransfer transfer, String fileName) throws RemoteException;
 
     /**
      * Del.
@@ -89,12 +89,12 @@ public interface MoverInterface extends ClientInterface {
      *
      * @return true, if successful
      *
-     * @throws ecmwf.common.ectrans.ECtransException
+     * @throws ECtransException
      *             the ectrans exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    boolean del(Host proxyHost, DataFile dataFile) throws ECtransException, IOException;
+    boolean del(Host proxyHost, DataFile dataFile) throws RemoteException;
 
     /**
      * Purge.
@@ -102,7 +102,7 @@ public interface MoverInterface extends ClientInterface {
      * @param directories
      *            the directories
      *
-     * @throws java.rmi.RemoteException
+     * @throws RemoteException
      *             the remote exception
      */
     void purge(List<ExistingStorageDirectory> directories) throws RemoteException;
@@ -115,7 +115,7 @@ public interface MoverInterface extends ClientInterface {
      * @param directories
      *            the directories
      *
-     * @throws java.rmi.RemoteException
+     * @throws RemoteException
      *             the remote exception
      */
     void purge(Host proxyHost, List<ExistingStorageDirectory> directories) throws RemoteException;
@@ -136,15 +136,15 @@ public interface MoverInterface extends ClientInterface {
      *
      * @return the data transfer
      *
-     * @throws ecmwf.common.ectrans.ECtransException
+     * @throws ECtransException
      *             the ectrans exception
-     * @throws ecmwf.ecpds.mover.SourceNotAvailableException
+     * @throws SourceNotAvailableException
      *             the source not available exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     DataTransfer put(Host[] hostsForSource, DataTransfer transfer, String fileName, long localPosn, long remotePosn)
-            throws ECtransException, SourceNotAvailableException, IOException;
+            throws RemoteException;
 
     /**
      * Puts the.
@@ -160,12 +160,12 @@ public interface MoverInterface extends ClientInterface {
      *
      * @return the proxy socket
      *
-     * @throws ecmwf.common.ectrans.ECtransException
+     * @throws ECtransException
      *             the ectrans exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    ProxySocket put(Host host, String target, long remotePosn, long size) throws ECtransException, IOException;
+    ProxySocket put(Host host, String target, long remotePosn, long size) throws RemoteException;
 
     /**
      * Gets the.
@@ -181,13 +181,12 @@ public interface MoverInterface extends ClientInterface {
      *
      * @return the proxy socket
      *
-     * @throws ecmwf.common.ectrans.ECtransException
+     * @throws ECtransException
      *             the ectrans exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    ProxySocket get(Host host, String source, long remotePosn, boolean removeOriginal)
-            throws ECtransException, IOException;
+    ProxySocket get(Host host, String source, long remotePosn, boolean removeOriginal) throws RemoteException;
 
     /**
      * Gets the.
@@ -201,13 +200,12 @@ public interface MoverInterface extends ClientInterface {
      *
      * @return the proxy socket
      *
-     * @throws ecmwf.ecpds.mover.SourceNotAvailableException
+     * @throws SourceNotAvailableException
      *             the source not available exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    ProxySocket get(DataFile dataFile, Host hostForSource, long remotePosn)
-            throws SourceNotAvailableException, IOException;
+    ProxySocket get(DataFile dataFile, Host hostForSource, long remotePosn) throws RemoteException;
 
     /**
      * Gets the.
@@ -223,13 +221,12 @@ public interface MoverInterface extends ClientInterface {
      *
      * @return the proxy socket
      *
-     * @throws ecmwf.ecpds.mover.SourceNotAvailableException
+     * @throws SourceNotAvailableException
      *             the source not available exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    ProxySocket get(DataFile dataFile, Host[] hostForSource, long remotePosn, long length)
-            throws SourceNotAvailableException, IOException;
+    ProxySocket get(DataFile dataFile, Host[] hostForSource, long remotePosn, long length) throws RemoteException;
 
     /**
      * Size.
@@ -241,12 +238,12 @@ public interface MoverInterface extends ClientInterface {
      *
      * @return the long
      *
-     * @throws ecmwf.common.ectrans.ECtransException
+     * @throws ECtransException
      *             the ectrans exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    long size(Host host, String source) throws ECtransException, IOException;
+    long size(Host host, String source) throws RemoteException;
 
     /**
      * Del.
@@ -256,12 +253,12 @@ public interface MoverInterface extends ClientInterface {
      * @param source
      *            the source
      *
-     * @throws ecmwf.common.ectrans.ECtransException
+     * @throws ECtransException
      *             the ectrans exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    void del(Host host, String source) throws ECtransException, IOException;
+    void del(Host host, String source) throws RemoteException;
 
     /**
      * Mkdir.
@@ -271,12 +268,12 @@ public interface MoverInterface extends ClientInterface {
      * @param dir
      *            the dir
      *
-     * @throws ecmwf.common.ectrans.ECtransException
+     * @throws ECtransException
      *             the ectrans exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    void mkdir(Host host, String dir) throws ECtransException, IOException;
+    void mkdir(Host host, String dir) throws RemoteException;
 
     /**
      * Rmdir.
@@ -286,12 +283,12 @@ public interface MoverInterface extends ClientInterface {
      * @param dir
      *            the dir
      *
-     * @throws ecmwf.common.ectrans.ECtransException
+     * @throws ECtransException
      *             the ectrans exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    void rmdir(Host host, String dir) throws ECtransException, IOException;
+    void rmdir(Host host, String dir) throws RemoteException;
 
     /**
      * List.
@@ -305,12 +302,12 @@ public interface MoverInterface extends ClientInterface {
      *
      * @return the string[]
      *
-     * @throws ecmwf.common.ectrans.ECtransException
+     * @throws ECtransException
      *             the ectrans exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    String[] listAsStringArray(Host host, String source, String pattern) throws ECtransException, IOException;
+    String[] listAsStringArray(Host host, String source, String pattern) throws RemoteException;
 
     /**
      * List2.
@@ -326,13 +323,13 @@ public interface MoverInterface extends ClientInterface {
      *
      * @return the remote input stream
      *
-     * @throws ecmwf.common.ectrans.ECtransException
+     * @throws ECtransException
      *             the ectrans exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     RemoteInputStream listAsByteArray(Host host, String directory, String pattern, boolean synchronous)
-            throws ECtransException, IOException;
+            throws RemoteException;
 
     /**
      * Execute.
@@ -342,12 +339,12 @@ public interface MoverInterface extends ClientInterface {
      *
      * @return the remote input stream
      *
-     * @throws javax.script.ScriptException
+     * @throws ScriptException
      *             the script exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    RemoteInputStream execute(String script) throws ScriptException, IOException;
+    RemoteInputStream execute(String script) throws RemoteException;
 
     /**
      * Move.
@@ -359,12 +356,12 @@ public interface MoverInterface extends ClientInterface {
      * @param target
      *            the target
      *
-     * @throws ecmwf.common.ectrans.ECtransException
+     * @throws ECtransException
      *             the ectrans exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    void move(Host host, String source, String target) throws ECtransException, IOException;
+    void move(Host host, String source, String target) throws RemoteException;
 
     /**
      * Close.
@@ -374,12 +371,12 @@ public interface MoverInterface extends ClientInterface {
      *
      * @return true, if successful
      *
-     * @throws ecmwf.common.ectrans.ECtransException
+     * @throws ECtransException
      *             the ectrans exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    boolean close(DataTransfer transfer) throws ECtransException, IOException;
+    boolean close(DataTransfer transfer) throws RemoteException;
 
     /**
      * Replicate.
@@ -393,15 +390,14 @@ public interface MoverInterface extends ClientInterface {
      *
      * @return the data file
      *
-     * @throws ecmwf.common.ectrans.ECtransException
+     * @throws ECtransException
      *             the ectrans exception
-     * @throws ecmwf.ecpds.mover.SourceNotAvailableException
+     * @throws SourceNotAvailableException
      *             the source not available exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    DataFile replicate(DataFile dataFile, Host targetHost, Host[] hostsForSource)
-            throws ECtransException, SourceNotAvailableException, IOException;
+    DataFile replicate(DataFile dataFile, Host targetHost, Host[] hostsForSource) throws RemoteException;
 
     /**
      * Download.
@@ -413,12 +409,12 @@ public interface MoverInterface extends ClientInterface {
      *
      * @return the data file
      *
-     * @throws ecmwf.ecpds.mover.SourceNotAvailableException
+     * @throws SourceNotAvailableException
      *             the source not available exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    DataFile download(DataFile dataFile, Host hostForSource) throws SourceNotAvailableException, IOException;
+    DataFile download(DataFile dataFile, Host hostForSource) throws RemoteException;
 
     /**
      * Filter.
@@ -430,10 +426,10 @@ public interface MoverInterface extends ClientInterface {
      *
      * @return the data file
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    DataFile filter(DataFile dataFile, boolean remove) throws IOException;
+    DataFile filter(DataFile dataFile, boolean remove) throws RemoteException;
 
     /**
      * Del.
@@ -443,12 +439,12 @@ public interface MoverInterface extends ClientInterface {
      *
      * @return true, if successful
      *
-     * @throws ecmwf.common.ectrans.ECtransException
+     * @throws ECtransException
      *             the ectrans exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    boolean del(DataFile dataFile) throws ECtransException, IOException;
+    boolean del(DataFile dataFile) throws RemoteException;
 
     /**
      * Check.
@@ -456,10 +452,10 @@ public interface MoverInterface extends ClientInterface {
      * @param ticket
      *            the ticket
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    void check(long ticket) throws IOException;
+    void check(long ticket) throws RemoteException;
 
     /**
      * Gets the mover report.
@@ -469,10 +465,10 @@ public interface MoverInterface extends ClientInterface {
      *
      * @return the mover report
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    String getMoverReport(Host proxyHost) throws IOException;
+    String getMoverReport(Host proxyHost) throws RemoteException;
 
     /**
      * Gets the host report.
@@ -484,20 +480,20 @@ public interface MoverInterface extends ClientInterface {
      *
      * @return the host report
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    String getHostReport(Host proxyHost, Host host) throws IOException;
+    String getHostReport(Host proxyHost, Host host) throws RemoteException;
 
     /**
      * Gets the report.
      *
      * @return the report
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    String getReport() throws IOException;
+    String getReport() throws RemoteException;
 
     /**
      * Gets the report.
@@ -507,30 +503,30 @@ public interface MoverInterface extends ClientInterface {
      *
      * @return the report
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    String getReport(Host host) throws IOException;
+    String getReport(Host host) throws RemoteException;
 
     /**
      * Gets the incoming connection ids.
      *
      * @return the incoming connection ids
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    String[] getIncomingConnectionIds() throws IOException;
+    String[] getIncomingConnectionIds() throws RemoteException;
 
     /**
      * Gets the incoming connections.
      *
      * @return the incoming connections
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    List<IncomingConnection> getIncomingConnections() throws IOException;
+    List<IncomingConnection> getIncomingConnections() throws RemoteException;
 
     /**
      * Close incoming connection.
@@ -540,18 +536,18 @@ public interface MoverInterface extends ClientInterface {
      *
      * @return true, if successful
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    boolean closeIncomingConnection(String id) throws IOException;
+    boolean closeIncomingConnection(String id) throws RemoteException;
 
     /**
      * Close all incoming connections.
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    void closeAllIncomingConnections() throws IOException;
+    void closeAllIncomingConnections() throws RemoteException;
 
     /**
      * Publish a notification to the MQTT service.
@@ -571,7 +567,7 @@ public interface MoverInterface extends ClientInterface {
      * @param retain
      *            the retain
      *
-     * @throws java.rmi.RemoteException
+     * @throws RemoteException
      *             the remote exception
      */
     void publishToMQTTBroker(final String topic, final int qos, final long expiryInterval, final String contentType,
@@ -583,7 +579,7 @@ public interface MoverInterface extends ClientInterface {
      * @param topic
      *            the topic
      *
-     * @throws java.rmi.RemoteException
+     * @throws RemoteException
      *             the remote exception
      */
     void removeFromMQTTBroker(final String topic) throws RemoteException;
@@ -593,7 +589,7 @@ public interface MoverInterface extends ClientInterface {
      *
      * @return the MQTT clients count
      *
-     * @throws java.rmi.RemoteException
+     * @throws RemoteException
      *             the remote exception
      */
     int getMQTTClientsCount() throws RemoteException;
@@ -606,10 +602,10 @@ public interface MoverInterface extends ClientInterface {
      * @param restart
      *            the restart
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    void shutdown(boolean graceful, boolean restart) throws IOException;
+    void shutdown(boolean graceful, boolean restart) throws RemoteException;
 
     /**
      * Gets the ECproxy plugging listen address and port. This is used by the Master Server to update the
@@ -618,7 +614,7 @@ public interface MoverInterface extends ClientInterface {
      *
      * @return the ECproxyPlugin address and port
      *
-     * @throws java.rmi.RemoteException
+     * @throws RemoteException
      *             the remote exception
      */
     String getECproxyAddressAndPort() throws RemoteException;

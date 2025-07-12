@@ -52,7 +52,7 @@ public interface MasterInterface extends ProviderInterface {
      * @param incomingConnections
      *            the incoming connections
      *
-     * @throws java.rmi.RemoteException
+     * @throws RemoteException
      *             the remote exception
      */
     void updateIncomingConnectionIds(String serverName, List<IncomingConnection> incomingConnections)
@@ -66,12 +66,12 @@ public interface MasterInterface extends ProviderInterface {
      *
      * @return the long
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
-     * @throws java.rmi.RemoteException
+     * @throws RemoteException
      *             the remote exception
      */
-    long proxyHostIsAlive(String name) throws IOException, RemoteException;
+    long proxyHostIsAlive(String name) throws RemoteException;
 
     /**
      * Update data transfers.
@@ -79,12 +79,12 @@ public interface MasterInterface extends ProviderInterface {
      * @param transfers
      *            the transfers
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
-     * @throws java.rmi.RemoteException
+     * @throws RemoteException
      *             the remote exception
      */
-    void updateDataTransfers(DataTransfer[] transfers) throws IOException, RemoteException;
+    void updateDataTransfers(DataTransfer[] transfers) throws RemoteException;
 
     /**
      * Update download progress.
@@ -94,12 +94,12 @@ public interface MasterInterface extends ProviderInterface {
      *
      * @return the list of DownloadProgress to interrupt (not found on the MasterServer)
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
-     * @throws java.rmi.RemoteException
+     * @throws RemoteException
      *             the remote exception
      */
-    DownloadProgress[] updateDownloadProgress(DownloadProgress[] progress) throws IOException, RemoteException;
+    DownloadProgress[] updateDownloadProgress(DownloadProgress[] progress) throws RemoteException;
 
     /**
      * Update data.
@@ -107,12 +107,12 @@ public interface MasterInterface extends ProviderInterface {
      * @param host
      *            the host
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
-     * @throws java.rmi.RemoteException
+     * @throws RemoteException
      *             the remote exception
      */
-    void updateData(Host host) throws DataBaseException, RemoteException;
+    void updateData(Host host) throws RemoteException;
 
     /**
      * Update data.
@@ -122,12 +122,12 @@ public interface MasterInterface extends ProviderInterface {
      * @param data
      *            the host data
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
-     * @throws java.rmi.RemoteException
+     * @throws RemoteException
      *             the remote exception
      */
-    void updateData(final String hostId, final String data) throws DataBaseException, RemoteException;
+    void updateData(final String hostId, final String data) throws RemoteException;
 
     /**
      * Update location.
@@ -135,19 +135,19 @@ public interface MasterInterface extends ProviderInterface {
      * @param host
      *            the host
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
-     * @throws java.rmi.RemoteException
+     * @throws RemoteException
      *             the remote exception
      */
-    void updateLocation(Host host) throws DataBaseException, RemoteException;
+    void updateLocation(Host host) throws RemoteException;
 
     /**
      * Gets the data file access interface.
      *
      * @return the data file access interface
      *
-     * @throws java.rmi.RemoteException
+     * @throws RemoteException
      *             the remote exception
      */
     DataAccessInterface getDataFileAccessInterface() throws RemoteException;
@@ -160,7 +160,7 @@ public interface MasterInterface extends ProviderInterface {
      *
      * @return the destination
      *
-     * @throws java.rmi.RemoteException
+     * @throws RemoteException
      *             the remote exception
      */
     Destination getDestination(String name) throws RemoteException;
@@ -173,7 +173,7 @@ public interface MasterInterface extends ProviderInterface {
      *
      * @return true, if is valid data file
      *
-     * @throws java.rmi.RemoteException
+     * @throws RemoteException
      *             the remote exception
      */
     boolean isValidDataFile(long dataFileId) throws RemoteException;
@@ -186,7 +186,7 @@ public interface MasterInterface extends ProviderInterface {
      *
      * @return hash, if the user is found
      *
-     * @throws java.rmi.RemoteException
+     * @throws RemoteException
      *             the remote exception
      */
     String getIncomingUserHash(String incomingUser) throws RemoteException;
@@ -205,7 +205,7 @@ public interface MasterInterface extends ProviderInterface {
      *
      * @return authorization signature
      *
-     * @throws java.rmi.RemoteException
+     * @throws RemoteException
      *             the remote exception
      */
     byte[] getS3AuthorizationSignature(final String incomingUser, final String prefix, final String data,
@@ -223,15 +223,15 @@ public interface MasterInterface extends ProviderInterface {
      *
      * @return the incoming profile
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
-     * @throws ecmwf.ecpds.master.MasterException
+     * @throws MasterException
      *             the master exception
-     * @throws java.rmi.RemoteException
+     * @throws RemoteException
      *             the remote exception
      */
     IncomingProfile getIncomingProfile(String incomingUser, String incomingPassword, String from)
-            throws DataBaseException, MasterException, RemoteException;
+            throws RemoteException;
 
     /**
      * Gets the ETag for a given dataTransferId.
@@ -241,10 +241,10 @@ public interface MasterInterface extends ProviderInterface {
      *
      * @return the ETag
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    String getETag(long dataTransferId) throws IOException;
+    String getETag(long dataTransferId) throws RemoteException;
 
     /**
      * Gets the ecauth token.
@@ -254,10 +254,10 @@ public interface MasterInterface extends ProviderInterface {
      *
      * @return the ecauth token
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    ECauthToken getECauthToken(String user) throws IOException;
+    ECauthToken getECauthToken(String user) throws RemoteException;
 
     /**
      * Import destination from another Master Server.
@@ -269,15 +269,15 @@ public interface MasterInterface extends ProviderInterface {
      * @param copySharedHost
      *            the copy shared host
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
-     * @throws ecmwf.ecpds.master.MasterException
+     * @throws MasterException
      *             the master exception
-     * @throws java.rmi.RemoteException
+     * @throws RemoteException
      *             the remote exception
      */
     void importDestination(final Destination fromDestination, final Association[] linkedAssociations,
-            final boolean copySharedHost) throws DataBaseException, MasterException, RemoteException;
+            final boolean copySharedHost) throws RemoteException;
 
     /**
      * Update data transfer status from another Master Server.
@@ -297,12 +297,12 @@ public interface MasterInterface extends ProviderInterface {
      *
      * @return true, if successful
      *
-     * @throws ecmwf.ecpds.master.MasterException
+     * @throws MasterException
      *             the master exception
-     * @throws java.rmi.RemoteException
+     * @throws RemoteException
      *             the remote exception
      */
     boolean updateLocalTransferStatus(final String master, final boolean standby, final String destination,
-            final String target, final String uniqueName, final String status) throws MasterException, RemoteException;
+            final String target, final String uniqueName, final String status) throws RemoteException;
 
 }

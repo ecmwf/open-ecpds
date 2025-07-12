@@ -2043,7 +2043,7 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
      */
     @Override
     public int putDestinationBackup(final String user, final DestinationBackup backup, final boolean copySharedHost)
-            throws DataBaseException, MasterException {
+            throws DataBaseException, RemoteException {
         checkUser(user, "putDestinationBackup");
         final var monitor = new MonitorCall("putDestinationBackup(" + user + ")");
         // Make sure all the required ECusers are in the database
@@ -2188,7 +2188,7 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
                     force != null && force, false, false, null);
             return monitor.done(id);
         } catch (final IOException e) {
-            throw new RemoteException(e.getMessage());
+            throw Format.getRemoteException(e);
         }
     }
 

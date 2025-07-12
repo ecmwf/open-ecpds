@@ -782,129 +782,134 @@ public final class MasterServer extends ECaccessProvider
      */
     @Override
     public IncomingProfile getIncomingProfile(final String incomingUser, final String incomingPassword,
-            final String from) throws DataBaseException, MasterException {
-        // Is it a valid user?
-        final var base = getECpdsBase();
-        final var user = base.getIncomingUserObject(incomingUser);
-        if (user == null) {
-            if (_splunk.isInfoEnabled())
-                _splunk.info("DEA;UserId={};Message=Not found;Context={}", incomingUser, from);
-            throw new MasterException("Login failed");
-        }
-        // Let's get the data from the user and the data policies!
-        final var setup = USER_PORTAL.getECtransSetup(base.getDataFromUserPolicies(user));
-        final var geoblocking = setup.getStringList(USER_PORTAL_GEOBLOCLING);
-        var blocked = false;
-        if (!geoblocking.isEmpty()) {
-            blocked = true;
-            if (isNotEmpty(from)) {
-                final var ipAddress = from.split("@")[1];
-                // Local host is obviously not in the database!
-                if (!"127.0.0.1".equals(ipAddress) && !"::1".equals(ipAddress)) {
-                    try {
-                        final var response = GeoIP2Helper.getCityResponse(ipAddress);
-                        final var continent = response.getContinent().getName();
-                        final var country = response.getCountry().getIsoCode();
-                        final var city = response.getCity().getName();
-                        blocked = geoblocking.stream().anyMatch(str -> str.equalsIgnoreCase(continent)
-                                || str.equalsIgnoreCase(country) || str.equalsIgnoreCase(city));
-                        if (blocked) {
-                            _log.warn("Geolocation restriction for incoming user {} ({}->{}->{})", incomingUser,
-                                    continent, country, city);
+            final String from) throws RemoteException {
+        try {
+            // Is it a valid user?
+            final var base = getECpdsBase();
+            final var user = base.getIncomingUserObject(incomingUser);
+            if (user == null) {
+                if (_splunk.isInfoEnabled())
+                    _splunk.info("DEA;UserId={};Message=Not found;Context={}", incomingUser, from);
+                throw new MasterException("Login failed");
+            }
+            // Let's get the data from the user and the data policies!
+            final var setup = USER_PORTAL.getECtransSetup(base.getDataFromUserPolicies(user));
+            final var geoblocking = setup.getStringList(USER_PORTAL_GEOBLOCLING);
+            var blocked = false;
+            if (!geoblocking.isEmpty()) {
+                blocked = true;
+                if (isNotEmpty(from)) {
+                    final var ipAddress = from.split("@")[1];
+                    // Local host is obviously not in the database!
+                    if (!"127.0.0.1".equals(ipAddress) && !"::1".equals(ipAddress)) {
+                        try {
+                            final var response = GeoIP2Helper.getCityResponse(ipAddress);
+                            final var continent = response.getContinent().getName();
+                            final var country = response.getCountry().getIsoCode();
+                            final var city = response.getCity().getName();
+                            blocked = geoblocking.stream().anyMatch(str -> str.equalsIgnoreCase(continent)
+                                    || str.equalsIgnoreCase(country) || str.equalsIgnoreCase(city));
+                            if (blocked) {
+                                _log.warn("Geolocation restriction for incoming user {} ({}->{}->{})", incomingUser,
+                                        continent, country, city);
+                            }
+                        } catch (final AddressNotFoundException e) {
+                            _log.debug("No location found for {}", ipAddress);
+                        } catch (final Throwable t) {
+                            _log.warn("Getting location for {}", ipAddress, t);
                         }
-                    } catch (final AddressNotFoundException e) {
-                        _log.debug("No location found for {}", ipAddress);
-                    } catch (final Throwable t) {
-                        _log.warn("Getting location for {}", ipAddress, t);
                     }
                 }
             }
-        }
-        if (blocked) {
-            if (_splunk.isInfoEnabled())
-                _splunk.info("DEA;UserId={};Message=Geolocation restriction;Context={}", incomingUser, from);
-            throw new MasterException("Login failed");
-        }
-        if (!user.getActive()) {
-            if (_splunk.isInfoEnabled())
-                _splunk.info("DEA;UserId={};Message=Disabled;Context={}", incomingUser, from);
-            throw new MasterException("Login failed");
-        }
-        if (setup.getBoolean(USER_PORTAL_ANONYMOUS)) {
-            // This is an anonymous user so no authentication required!
-        } else if (incomingPassword != null) {
-            if (user.getSynchronized()) {
-                // User/password authentication through TOTP!
-                boolean authenticated;
-                try {
-                    authenticated = TOTP.authenticate(incomingUser, incomingPassword,
-                            setup.getBoolean(USER_PORTAL_USE_PASSCODE));
-                } catch (IOException | URISyntaxException e) {
-                    authenticated = false;
-                }
-                if (!authenticated) {
-                    if (_splunk.isInfoEnabled())
-                        _splunk.info("DEA;UserId={};Message=TOTP authentication failed;Context={}", incomingUser, from);
-                    throw new MasterException("Login failed");
-                }
-            } else {
-                // User/password authentication against the database
-                final var localPassword = user.getPassword();
-                if (localPassword != null && !localPassword.equals(incomingPassword)
-                        && !_getIncomingUserHash(user).equals(incomingPassword)) {
-                    if (_splunk.isInfoEnabled())
-                        _splunk.info("DEA;UserId={};Message=Password authentication failed;Context={}", incomingUser,
-                                from);
-                    throw new MasterException("Login failed");
-                }
-                if (localPassword == null) {
-                    // There was no password set for this user!
-                    if (_splunk.isInfoEnabled())
-                        _splunk.info("DEA;UserId={};Message=Password not set;Context={}", incomingUser, from);
-                    _log.debug("Password not set for IncomingUser {}", incomingUser);
-                    throw new MasterException("Login failed");
+            if (blocked) {
+                if (_splunk.isInfoEnabled())
+                    _splunk.info("DEA;UserId={};Message=Geolocation restriction;Context={}", incomingUser, from);
+                throw new MasterException("Login failed");
+            }
+            if (!user.getActive()) {
+                if (_splunk.isInfoEnabled())
+                    _splunk.info("DEA;UserId={};Message=Disabled;Context={}", incomingUser, from);
+                throw new MasterException("Login failed");
+            }
+            if (setup.getBoolean(USER_PORTAL_ANONYMOUS)) {
+                // This is an anonymous user so no authentication required!
+            } else if (incomingPassword != null) {
+                if (user.getSynchronized()) {
+                    // User/password authentication through TOTP!
+                    boolean authenticated;
+                    try {
+                        authenticated = TOTP.authenticate(incomingUser, incomingPassword,
+                                setup.getBoolean(USER_PORTAL_USE_PASSCODE));
+                    } catch (IOException | URISyntaxException e) {
+                        authenticated = false;
+                    }
+                    if (!authenticated) {
+                        if (_splunk.isInfoEnabled())
+                            _splunk.info("DEA;UserId={};Message=TOTP authentication failed;Context={}", incomingUser,
+                                    from);
+                        throw new MasterException("Login failed");
+                    }
+                } else {
+                    // User/password authentication against the database
+                    final var localPassword = user.getPassword();
+                    if (localPassword != null && !localPassword.equals(incomingPassword)
+                            && !_getIncomingUserHash(user).equals(incomingPassword)) {
+                        if (_splunk.isInfoEnabled())
+                            _splunk.info("DEA;UserId={};Message=Password authentication failed;Context={}",
+                                    incomingUser, from);
+                        throw new MasterException("Login failed");
+                    }
+                    if (localPassword == null) {
+                        // There was no password set for this user!
+                        if (_splunk.isInfoEnabled())
+                            _splunk.info("DEA;UserId={};Message=Password not set;Context={}", incomingUser, from);
+                        _log.debug("Password not set for IncomingUser {}", incomingUser);
+                        throw new MasterException("Login failed");
+                    }
                 }
             }
-        }
-        // Let's check if the maximum number of connections have not been
-        // reached for this user!
-        final var count = _getIncomingConnectionCountFor(incomingUser);
-        if (count >= setup.getInteger(USER_PORTAL_MAX_CONNECTIONS)) {
-            final var message = "Maximum number of connections exceeded (" + count + ")";
-            if (_splunk.isInfoEnabled())
-                _splunk.info("DEA;UserId={};Message={};Context={}", incomingUser, message, from);
-            _log.warn("{} for IncomingUser {}", message, incomingUser);
-            throw new MasterException(message);
-        }
-        // Look for the Destinations accessible to this user!
-        final List<Destination> destinations = new ArrayList<>();
-        Collections.addAll(destinations, base.getDestinationsForIncomingUser(incomingUser));
-        for (final Destination destination : base.getDestinationsByUserPolicies(incomingUser)) {
-            if (!destinations.contains(destination)) {
-                destinations.add(destination);
+            // Let's check if the maximum number of connections have not been
+            // reached for this user!
+            final var count = _getIncomingConnectionCountFor(incomingUser);
+            if (count >= setup.getInteger(USER_PORTAL_MAX_CONNECTIONS)) {
+                final var message = "Maximum number of connections exceeded (" + count + ")";
+                if (_splunk.isInfoEnabled())
+                    _splunk.info("DEA;UserId={};Message={};Context={}", incomingUser, message, from);
+                _log.warn("{} for IncomingUser {}", message, incomingUser);
+                throw new MasterException(message);
             }
+            // Look for the Destinations accessible to this user!
+            final List<Destination> destinations = new ArrayList<>();
+            Collections.addAll(destinations, base.getDestinationsForIncomingUser(incomingUser));
+            for (final Destination destination : base.getDestinationsByUserPolicies(incomingUser)) {
+                if (!destinations.contains(destination)) {
+                    destinations.add(destination);
+                }
+            }
+            if (destinations.isEmpty()) {
+                if (_splunk.isInfoEnabled())
+                    _splunk.info("DEA;UserId={};Message=No associated Destinations;Context={}", incomingUser, from);
+                throw new MasterException("Login failed");
+            }
+            // Look for the Permissions associated to this user!
+            final var permissions = base.getIncomingPermissionsForIncomingUser(incomingUser);
+            if (permissions.isEmpty()) {
+                if (_splunk.isInfoEnabled())
+                    _splunk.info("DEA;UserId={};Message=No associated Permissions;Context={}", incomingUser, from);
+                throw new MasterException("Login failed");
+            }
+            // Let's update with the last login informations!
+            user.setLastLogin(new Timestamp(System.currentTimeMillis()));
+            user.setLastLoginHost(from);
+            if (setup.getBoolean(USER_PORTAL_UPDATE_LAST_LOGIN_INFORMATION)) { // Do we persist?
+                base.update(user);
+            }
+            // Let's pass the data from data policies to the mover!
+            user.setData(setup.getData());
+            return new IncomingProfile(user, permissions, destinations);
+        } catch (Throwable t) {
+            throw Format.getRemoteException(t);
         }
-        if (destinations.isEmpty()) {
-            if (_splunk.isInfoEnabled())
-                _splunk.info("DEA;UserId={};Message=No associated Destinations;Context={}", incomingUser, from);
-            throw new MasterException("Login failed");
-        }
-        // Look for the Permissions associated to this user!
-        final var permissions = base.getIncomingPermissionsForIncomingUser(incomingUser);
-        if (permissions.isEmpty()) {
-            if (_splunk.isInfoEnabled())
-                _splunk.info("DEA;UserId={};Message=No associated Permissions;Context={}", incomingUser, from);
-            throw new MasterException("Login failed");
-        }
-        // Let's update with the last login informations!
-        user.setLastLogin(new Timestamp(System.currentTimeMillis()));
-        user.setLastLoginHost(from);
-        if (setup.getBoolean(USER_PORTAL_UPDATE_LAST_LOGIN_INFORMATION)) { // Do we persist?
-            base.update(user);
-        }
-        // Let's pass the data from data policies to the mover!
-        user.setData(setup.getData());
-        return new IncomingProfile(user, permissions, destinations);
     }
 
     /**
@@ -3027,52 +3032,56 @@ public final class MasterServer extends ECaccessProvider
      *             Signals that an I/O exception has occurred.
      */
     @Override
-    public void updateDataTransfers(final DataTransfer[] transfers) throws IOException {
-        for (DataTransfer transfer : transfers) {
-            final var id = transfer.getId();
-            if (transfer.getDestination() == null && getDataTransferFromCache(id) != null) {
-                // This update comes from a ProxyHost and it is being processed
-                // on the Master, so we only take the relevant information (the
-                // full Destination object is not set in the JSON request)!
-                _log.debug("Received update from Proxy Host-{}: {} (found in cache)", transfer.getProxyHostName(),
-                        transfer);
-                // We have to create a clone otherwise the TransferRepository
-                // will detect the status change and if the file is DONE then it
-                // will be removed from the repository too soon!
-                final var found = getDataTransfer(id);
-                if (found != null && found.clone() instanceof final DataTransfer local) {
-                    try {
-                        local.setFinishTime(transfer.getFinishTime());
-                        local.setFailedTime(transfer.getFailedTime());
-                        local.setPutTime(transfer.getPutTime());
-                        local.setSent(transfer.getSent());
-                        local.setDuration(transfer.getDuration());
-                        local.setDurationOnClose(transfer.getDurationOnClose());
-                        local.setComment(transfer.getComment());
-                        local.setStatusCode(transfer.getStatusCode());
-                        local.setRatio(transfer.getRatio());
-                        local.setCompressed(transfer.getCompressed());
-                        local.setCompressedOnTheFly(transfer.getCompressedOnTheFly());
-                        local.setStatistics(transfer.getStatistics());
-                        local.setProxyName(transfer.getProxyHostName());
-                        final var hostName = transfer.getHostName();
-                        if (hostName != null) {
-                            local.setHost(getECpdsBase().getHost(hostName));
-                            local.setHostName(hostName);
+    public void updateDataTransfers(final DataTransfer[] transfers) throws RemoteException {
+        try {
+            for (DataTransfer transfer : transfers) {
+                final var id = transfer.getId();
+                if (transfer.getDestination() == null && getDataTransferFromCache(id) != null) {
+                    // This update comes from a ProxyHost and it is being processed
+                    // on the Master, so we only take the relevant information (the
+                    // full Destination object is not set in the JSON request)!
+                    _log.debug("Received update from Proxy Host-{}: {} (found in cache)", transfer.getProxyHostName(),
+                            transfer);
+                    // We have to create a clone otherwise the TransferRepository
+                    // will detect the status change and if the file is DONE then it
+                    // will be removed from the repository too soon!
+                    final var found = getDataTransfer(id);
+                    if (found != null && found.clone() instanceof final DataTransfer local) {
+                        try {
+                            local.setFinishTime(transfer.getFinishTime());
+                            local.setFailedTime(transfer.getFailedTime());
+                            local.setPutTime(transfer.getPutTime());
+                            local.setSent(transfer.getSent());
+                            local.setDuration(transfer.getDuration());
+                            local.setDurationOnClose(transfer.getDurationOnClose());
+                            local.setComment(transfer.getComment());
+                            local.setStatusCode(transfer.getStatusCode());
+                            local.setRatio(transfer.getRatio());
+                            local.setCompressed(transfer.getCompressed());
+                            local.setCompressedOnTheFly(transfer.getCompressedOnTheFly());
+                            local.setStatistics(transfer.getStatistics());
+                            local.setProxyName(transfer.getProxyHostName());
+                            final var hostName = transfer.getHostName();
+                            if (hostName != null) {
+                                local.setHost(getECpdsBase().getHost(hostName));
+                                local.setHostName(hostName);
+                            }
+                            // We want now to update the updated local object!
+                            _log.debug("Local DataTransfer-{} updated", id);
+                            transfer = local;
+                        } catch (final Throwable t) {
+                            _log.warn("Couldn't update DataTransfer-{} from remote DataMover", id, t);
+                            continue;
                         }
-                        // We want now to update the updated local object!
-                        _log.debug("Local DataTransfer-{} updated", id);
-                        transfer = local;
-                    } catch (final Throwable t) {
-                        _log.warn("Couldn't update DataTransfer-{} from remote DataMover", id, t);
-                        continue;
+                    } else {
+                        _log.warn("Couldn't find/clone DataTransfer-{}", id);
                     }
-                } else {
-                    _log.warn("Couldn't find/clone DataTransfer-{}", id);
                 }
+                // Let's update the DataTransfer!
+                updateDataTransfer(transfer);
             }
-            // Let's update the DataTransfer!
-            updateDataTransfer(transfer);
+        } catch (Throwable t) {
+            throw Format.getRemoteException(t);
         }
     }
 
@@ -3088,25 +3097,29 @@ public final class MasterServer extends ECaccessProvider
      *             Signals that an I/O exception has occurred.
      */
     @Override
-    public DownloadProgress[] updateDownloadProgress(final DownloadProgress[] progress) throws IOException {
-        final List<DownloadProgress> toInterrupt = new ArrayList<>();
-        for (final DownloadProgress aProgress : progress) {
-            final var dataFileId = aProgress.getDataFileId();
-            final var root = aProgress.getRoot();
-            final var progressInterface = getProgressInterface(dataFileId);
-            if (progressInterface != null) {
-                // We found it!
-                progressInterface.update(root, aProgress.getByteSent());
-            } else {
-                // Not found so it should be interrupted on the Mover (e.g. the
-                // retrieval has been interrupted because it was too slow)!
-                _log.warn("DownloadProgress not found/ignored - " + aProgress.toString());
-                toInterrupt.add(aProgress);
+    public DownloadProgress[] updateDownloadProgress(final DownloadProgress[] progress) throws RemoteException {
+        try {
+            final List<DownloadProgress> toInterrupt = new ArrayList<>();
+            for (final DownloadProgress aProgress : progress) {
+                final var dataFileId = aProgress.getDataFileId();
+                final var root = aProgress.getRoot();
+                final var progressInterface = getProgressInterface(dataFileId);
+                if (progressInterface != null) {
+                    // We found it!
+                    progressInterface.update(root, aProgress.getByteSent());
+                } else {
+                    // Not found so it should be interrupted on the Mover (e.g. the
+                    // retrieval has been interrupted because it was too slow)!
+                    _log.warn("DownloadProgress not found/ignored - " + aProgress.toString());
+                    toInterrupt.add(aProgress);
+                }
             }
+            // Return all the DownloadProgress not found so that the Mover can
+            // interrupt them!
+            return toInterrupt.toArray(new DownloadProgress[toInterrupt.size()]);
+        } catch (Throwable t) {
+            throw Format.getRemoteException(t);
         }
-        // Return all the DownloadProgress not found so that the Mover can
-        // interrupt them!
-        return toInterrupt.toArray(new DownloadProgress[toInterrupt.size()]);
     }
 
     /**
@@ -3699,8 +3712,12 @@ public final class MasterServer extends ECaccessProvider
      *             the data base exception
      */
     @Override
-    public void updateData(final Host host) throws DataBaseException {
-        updateData(host.getName(), host.getData());
+    public void updateData(final Host host) throws RemoteException {
+        try {
+            updateData(host.getName(), host.getData());
+        } catch (Throwable t) {
+            throw Format.getRemoteException(t);
+        }
     }
 
     /**
@@ -3719,7 +3736,7 @@ public final class MasterServer extends ECaccessProvider
      *             the data base exception
      */
     @Override
-    public void updateData(final String hostId, final String data) throws DataBaseException {
+    public void updateData(final String hostId, final String data) throws RemoteException {
         final var base = getDataBase();
         try (final var mutex = hostMutexProvider.getMutex(hostId)) {
             synchronized (mutex.lock()) {
@@ -3741,6 +3758,8 @@ public final class MasterServer extends ECaccessProvider
                     _log.warn("Updating data for Host-" + hostId, t);
                 }
             }
+        } catch (Throwable t) {
+            throw Format.getRemoteException(t);
         }
     }
 
@@ -3833,8 +3852,12 @@ public final class MasterServer extends ECaccessProvider
      *             Signals that an I/O exception has occurred.
      */
     @Override
-    public ECauthToken getECauthToken(final String user) throws IOException {
-        return ECauthTokenGenerator.getInstance().getECauthToken(user);
+    public ECauthToken getECauthToken(final String user) throws RemoteException {
+        try {
+            return ECauthTokenGenerator.getInstance().getECauthToken(user);
+        } catch (Throwable t) {
+            throw Format.getRemoteException(t);
+        }
     }
 
     /**
@@ -3849,8 +3872,12 @@ public final class MasterServer extends ECaccessProvider
      *             Signals that an I/O exception has occurred.
      */
     @Override
-    public String getETag(final long dataTransferId) throws IOException {
-        return TransferManagement.getETag(getDataTransfer(dataTransferId).getDataFile());
+    public String getETag(final long dataTransferId) throws RemoteException {
+        try {
+            return TransferManagement.getETag(getDataTransfer(dataTransferId).getDataFile());
+        } catch (Throwable t) {
+            throw Format.getRemoteException(t);
+        }
     }
 
     /**
@@ -4173,10 +4200,14 @@ public final class MasterServer extends ECaccessProvider
      */
     @Override
     public void importDestination(final Destination fromDestination, final Association[] linkedAssociations,
-            final boolean copySharedHost) throws MasterException, DataBaseException {
-        // Let's create a new Destination with the same name, comment and hosts!
-        _createDestination(fromDestination, linkedAssociations, fromDestination.getName(), fromDestination.getComment(),
-                copySharedHost, true);
+            final boolean copySharedHost) throws RemoteException {
+        try {
+            // Let's create a new Destination with the same name, comment and hosts!
+            _createDestination(fromDestination, linkedAssociations, fromDestination.getName(),
+                    fromDestination.getComment(), copySharedHost, true);
+        } catch (Throwable t) {
+            throw Format.getRemoteException(t);
+        }
     }
 
     /**
@@ -4195,26 +4226,24 @@ public final class MasterServer extends ECaccessProvider
      *             the data base exception
      */
     public void exportDestination(final String targetMaster, final String fromDestination, final boolean copySharedHost)
-            throws MasterException, DataBaseException {
-        final var base = getDataBase(ECpdsBase.class);
-        final var destination = base.getDestination(fromDestination);
-        // We only select the associations which are linked with the source
-        // Destination!
-        final List<Association> associations = new ArrayList<>();
-        for (final Association assoc : base.getAssociationArray()) {
-            if (fromDestination.equals(assoc.getDestinationName())) {
-                associations.add(assoc);
-            }
-        }
-        // RMI call to the remote importDestination of the target Master!
+            throws RemoteException {
         try {
+            final var base = getDataBase(ECpdsBase.class);
+            final var destination = base.getDestination(fromDestination);
+            // We only select the associations which are linked with the source
+            // Destination!
+            final List<Association> associations = new ArrayList<>();
+            for (final Association assoc : base.getAssociationArray()) {
+                if (fromDestination.equals(assoc.getDestinationName())) {
+                    associations.add(assoc);
+                }
+            }
+            // RMI call to the remote importDestination of the target Master!
             final var master = (MasterInterface) Naming.lookup("//" + targetMaster + "/MasterServer");
             master.importDestination(destination, associations.toArray(new Association[associations.size()]),
                     copySharedHost);
-        } catch (DataBaseException | MasterException e) {
-            throw e;
-        } catch (final Exception e) {
-            throw new MasterException(e.getMessage());
+        } catch (Throwable t) {
+            throw Format.getRemoteException(t);
         }
     }
 
@@ -4441,15 +4470,13 @@ public final class MasterServer extends ECaccessProvider
      */
     public boolean updateRemoteTransferStatus(final String remoteMaster, final boolean standby,
             final String destination, final String target, final String uniqueKey, final String status)
-            throws MasterException {
+            throws RemoteException {
         // RMI call to the remote updateDataTransferStatus of the target Master!
         try {
             final var master = (MasterInterface) Naming.lookup("//" + remoteMaster + "/MasterServer");
             return master.updateLocalTransferStatus(getRoot(), standby, destination, target, uniqueKey, status);
-        } catch (final MasterException e) {
-            throw e;
-        } catch (final Exception e) {
-            throw new MasterException(e.getMessage());
+        } catch (Throwable t) {
+            throw Format.getRemoteException(t);
         }
     }
 
@@ -4476,20 +4503,24 @@ public final class MasterServer extends ECaccessProvider
      */
     @Override
     public boolean updateLocalTransferStatus(final String remoteMaster, final boolean standby, final String destination,
-            final String target, final String uniqueKey, final String status) throws MasterException {
-        var result = false;
-        for (final DataTransfer transfer : getECpdsBase().getScheduledDataTransfer(uniqueKey, destination)) {
-            // We don't stop Aliased data transfers, hence the check on the Destination!
-            if (transfer.getDestinationName().equals(destination)) {
-                result = updateTransferStatus(transfer.getId(), status, true, null,
-                        "Update from Master: " + remoteMaster, true, false, true);
-                if (result) {
-                    reloadDestination(transfer);
+            final String target, final String uniqueKey, final String status) throws RemoteException {
+        try {
+            var result = false;
+            for (final DataTransfer transfer : getECpdsBase().getScheduledDataTransfer(uniqueKey, destination)) {
+                // We don't stop Aliased data transfers, hence the check on the Destination!
+                if (transfer.getDestinationName().equals(destination)) {
+                    result = updateTransferStatus(transfer.getId(), status, true, null,
+                            "Update from Master: " + remoteMaster, true, false, true);
+                    if (result) {
+                        reloadDestination(transfer);
+                    }
+                    break;
                 }
-                break;
             }
+            return result;
+        } catch (Throwable t) {
+            throw Format.getRemoteException(t);
         }
-        return result;
     }
 
     /**
