@@ -160,7 +160,7 @@ abstract class InterruptibleRMISocket extends Socket {
     private static final class BufferPool {
 
         /** The Constant TRACKER. */
-        private static final ResourceTracker TRACKER = new ResourceTracker(BufferPool.class, 1);
+        private static final ResourceTracker TRACKER = new ResourceTracker(BufferPool.class, 100);
 
         /** The Constant BUFFER_SIZE. */
         private static final int BUFFER_SIZE = Cnf.at("InterruptibleRMISocket", "bufferSize", 64 * 1024);
