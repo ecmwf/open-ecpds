@@ -1365,6 +1365,7 @@ public final class Format {
      * @return a {@link RemoteException} with a trimmed stack trace and formatted message
      */
     public static RemoteException getRemoteException(final String message) {
+        _log.warn(message);
         var e = new RemoteException("[" + SocketConfig.getLocalAddress() + "]: " + message);
         e.setStackTrace(new StackTraceElement[0]);
         return e;
@@ -1383,7 +1384,6 @@ public final class Format {
      * @return a {@link RemoteException} with a trimmed stack trace and formatted message
      */
     public static RemoteException getRemoteException(final String message, final Throwable t) {
-        _log.warn(message, t);
         return getRemoteException(message + " <- " + getMessage(t, null, 0));
     }
 
@@ -1398,8 +1398,7 @@ public final class Format {
      * @return a {@link RemoteException} with a trimmed stack trace and formatted message
      */
     public static RemoteException getRemoteException(final Throwable t) {
-        _log.warn("Exception in RMI call", t);
-        return getRemoteException(getMessage(t, null, 0));
+        return getRemoteException("Exception in RMI call", t);
     }
 
     /**
