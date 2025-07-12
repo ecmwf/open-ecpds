@@ -41,7 +41,6 @@ import static ecmwf.common.text.Util.isNotEmpty;
 import static ecmwf.common.text.Util.nullToNone;
 
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
@@ -1435,9 +1434,6 @@ public final class TransferScheduler extends MBeanScheduler {
                 if (remove) {
                     break;
                 }
-            } catch (final FileNotFoundException e) {
-                _log.debug("DataFile {} not found on {} (not replicated yet)", dataFile.getId(), moverName);
-                continue;
             } catch (final Throwable t) {
                 final var message = "Filtering DataFile " + dataFile.getId();
                 if (Thread.interrupted()) {
