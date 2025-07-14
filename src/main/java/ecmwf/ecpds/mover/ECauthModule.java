@@ -1342,7 +1342,7 @@ public final class ECauthModule extends ProxyModule {
                 _log.warn("Loading node list for {}", key, t);
             }
             // Return the list of nodes available!
-            _log.debug("Node available list ({}): {} -> {}", key, nodeList, result);
+            _log.debug("Node available list ({}): {} host(s)", key, result.size());
             return result;
         }
 
