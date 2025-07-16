@@ -38,9 +38,6 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.technical.ResourceTracker;
 
@@ -63,9 +60,6 @@ import ecmwf.common.technical.ResourceTracker;
  * @see org.neilja.net.interruptiblermi.InterruptibleRMIServerSideSocket
  */
 abstract class InterruptibleRMISocket extends Socket {
-
-    /** The Constant _log. */
-    private static final Logger _log = LogManager.getLogger(InterruptibleRMISocket.class);
 
     /** The Constant USE_POOLED_BUFFERED_STREAMS. */
     private static final boolean USE_POOLED_BUFFERED_STREAMS = Cnf.at("InterruptibleRMISocket",
@@ -160,7 +154,7 @@ abstract class InterruptibleRMISocket extends Socket {
     private static final class BufferPool {
 
         /** The Constant TRACKER. */
-        private static final ResourceTracker TRACKER = new ResourceTracker(BufferPool.class, 100);
+        private static final ResourceTracker TRACKER = new ResourceTracker(BufferPool.class);
 
         /** The Constant BUFFER_SIZE. */
         private static final int BUFFER_SIZE = Cnf.at("InterruptibleRMISocket", "bufferSize", 64 * 1024);
@@ -198,10 +192,10 @@ abstract class InterruptibleRMISocket extends Socket {
                         task.cancel(false);
                     }
                 }
-                _log.debug("Borrow buffer, pool size: {}", reusable.size());
+                // Borrow buffer
                 return buffer;
             }
-            _log.debug("Create new buffer");
+            // Create new buffer
             return new byte[BUFFER_SIZE];
         }
 
@@ -219,15 +213,12 @@ abstract class InterruptibleRMISocket extends Socket {
                 reusable.push(buffer); // LIFO: add to front
                 final ScheduledFuture<?> future = scheduler.schedule(() -> {
                     synchronized (buffer) {
-                        final var removed = reusable.remove(buffer);
+                        // Expired unused buffer
+                        reusable.remove(buffer);
                         expirations.remove(buffer);
-                        if (removed) {
-                            _log.debug("Expired unused buffer, pool size: {}", reusable.size());
-                        }
                     }
                 }, BUFFER_TTL_MS, TimeUnit.MILLISECONDS);
                 expirations.put(buffer, future);
-                _log.debug("Released buffer, pool size: {}", reusable.size());
             }
         }
     }

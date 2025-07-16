@@ -453,7 +453,7 @@ public final class InterruptibleRMIServerSocket extends ServerSocket {
             }
             threadSocketMap.put(thread, socket);
             socketThreadMap.put(socket, thread);
-            _log.debug("Registered Thread/Socket: {}", socket);
+            // _log.debug("Registered Thread/Socket: {}", socket);
         }
 
         /**
@@ -467,7 +467,7 @@ public final class InterruptibleRMIServerSocket extends ServerSocket {
             if (thread != null) {
                 threadSocketMap.remove(thread);
                 thread.interrupt();
-                _log.debug("Unregistered Thread/Socket: {}", socket);
+                // _log.debug("Unregistered Thread/Socket: {}", socket);
             }
         }
 
