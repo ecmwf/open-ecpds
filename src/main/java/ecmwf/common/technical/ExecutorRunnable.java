@@ -65,14 +65,13 @@ public abstract class ExecutorRunnable implements Runnable {
      */
     @Override
     public void run() {
-        final var count = manager.getThreadCount();
         try {
             process();
         } catch (final Throwable t) {
             _log.warn("Error processing", t);
         } finally {
             // We have one Thread less!
-            count.decrementAndGet();
+            manager.getThreadCount().decrementAndGet();
         }
     }
 }
