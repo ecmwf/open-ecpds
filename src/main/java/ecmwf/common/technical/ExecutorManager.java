@@ -57,7 +57,6 @@ package ecmwf.common.technical;
  */
 
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -76,6 +75,9 @@ public final class ExecutorManager<O extends ExecutorRunnable> extends Thread {
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(ExecutorManager.class);
 
+    /** The Constant ALLOW_VIRTUAL_THREAD. */
+    private static final boolean ALLOW_VIRTUAL_THREAD = Cnf.at("ExecutorManager", "allowVirtualThread", true);
+
     /** The thread count. */
     private final AtomicInteger threadCount;
 
@@ -89,10 +91,10 @@ public final class ExecutorManager<O extends ExecutorRunnable> extends Thread {
     private final int maxRunning;
 
     /** The continueRunning. */
-    private boolean continueRunning = true;
+    private final AtomicBoolean continueRunning = new AtomicBoolean(true);
 
     /** The count. */
-    private int count = 0;
+    private final AtomicInteger totalRunCount = new AtomicInteger(0);
 
     /**
      * Instantiates a new executor manager.
@@ -123,7 +125,7 @@ public final class ExecutorManager<O extends ExecutorRunnable> extends Thread {
      * @return the count
      */
     public int getCount() {
-        return count;
+        return totalRunCount.get();
     }
 
     /**
@@ -169,7 +171,7 @@ public final class ExecutorManager<O extends ExecutorRunnable> extends Thread {
      */
     public void stopRun() {
         _log.debug("Requesting stop");
-        continueRunning = false;
+        continueRunning.set(false);
     }
 
     /**
@@ -177,42 +179,26 @@ public final class ExecutorManager<O extends ExecutorRunnable> extends Thread {
      */
     @Override
     public void run() {
-        _log.debug("Starting ExecutorManager");
-        final ExecutorService executor = ThreadService.getCleaningThreadLocalExecutorService(maxRunning, true, true);
-        try {
-            while (continueRunning || !waitingList.isEmpty() || threadCount.get() > 0) {
-                // Do we have a request pending?
-                if (!waitingList.isEmpty()) {
-                    // Let's start a new Thread!
-                    final var thread = waitingList.poll();
-                    executor.execute(thread);
-                    // We have one more Thread which is supposed to be running!
-                    threadCount.incrementAndGet();
-                    count++;
-                } else {
-                    try {
-                        sleep(10);
-                    } catch (final InterruptedException _) {
-                        Thread.currentThread().interrupt();
-                        stopRun();
+        _log.debug("ExecutorManager started");
+        try (final var executor = ThreadService.getCleaningThreadLocalExecutorService(maxRunning, ALLOW_VIRTUAL_THREAD,
+                true)) {
+            while (continueRunning.get() || !waitingList.isEmpty() || threadCount.get() > 0) {
+                try {
+                    final var thread = waitingList.poll(1, TimeUnit.SECONDS);
+                    if (thread != null) {
+                        executor.execute(thread);
+                        threadCount.incrementAndGet();
+                        totalRunCount.incrementAndGet();
                     }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    stopRun();
+                    break;
                 }
             }
         } finally {
             waitingList.clear();
-            executor.shutdown();
-            try {
-                if (!executor.awaitTermination(2, TimeUnit.HOURS)) {
-                    _log.warn("ExecutorManager did not terminate in time. Forcing shutdown.");
-                    executor.shutdownNow();
-                }
-            } catch (InterruptedException _) {
-                _log.warn("ExecutorManager interrupted during shutdown. Forcing immediate shutdown.");
-                executor.shutdownNow();
-                Thread.currentThread().interrupt();
-            } finally {
-                _log.debug("ExecutorManager completed (processed {} run(s))", count);
-            }
+            _log.debug("ExecutorManager completed (processed {} run(s))", totalRunCount.get());
         }
     }
 
