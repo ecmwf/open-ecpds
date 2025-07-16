@@ -38,8 +38,11 @@ public class ResourceTracker {
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(ResourceTracker.class);
 
+    /** The Constant ENABLED. */
+    private static final boolean ENABLED = Cnf.at("ResourceTracker", "enabled", true);
+
     /** The Constant DEFAULT_DEBUG_FREQUENCY. */
-    private static final int DEFAULT_DEBUG_FREQUENCY = Cnf.at("ResourceTracker", "defaultDebugFrequency", 1_000);
+    private static final int DEFAULT_DEBUG_FREQUENCY = Cnf.at("ResourceTracker", "defaultDebugFrequency", 10_000);
 
     /** The name. */
     private final String name;
@@ -86,7 +89,8 @@ public class ResourceTracker {
      * Call this when a resource is opened.
      */
     public void onOpen() {
-        updatePeak(openCount.incrementAndGet());
+        if (ENABLED)
+            updatePeak(openCount.incrementAndGet());
     }
 
     /**
@@ -96,17 +100,19 @@ public class ResourceTracker {
      *            the success
      */
     public void onClose(boolean success) {
-        int open = openCount.decrementAndGet();
-        if (open < 0) {
-            _log.warn("Negative open count for {}: this indicates unmatched close()", name);
-        }
-        closedCount.incrementAndGet();
-        if (!success) {
-            errorCount.incrementAndGet();
-            _log.warn("Resource close reported error for {}", name);
-        }
-        if (_log.isDebugEnabled() && closedCount.get() % debugFrequency == 0) {
-            _log.debug(toString());
+        if (ENABLED) {
+            int open = openCount.decrementAndGet();
+            if (open < 0) {
+                _log.warn("Negative open count for {}: this indicates unmatched close()", name);
+            }
+            closedCount.incrementAndGet();
+            if (!success) {
+                errorCount.incrementAndGet();
+                _log.warn("Resource close reported error for {}", name);
+            }
+            if (_log.isDebugEnabled() && closedCount.get() % debugFrequency == 0) {
+                _log.debug(toString());
+            }
         }
     }
 
