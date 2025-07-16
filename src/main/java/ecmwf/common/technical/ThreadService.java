@@ -28,14 +28,14 @@ package ecmwf.common.technical;
 
 import static ecmwf.common.text.Util.isNotEmpty;
 
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -62,26 +62,11 @@ public final class ThreadService {
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(ThreadService.class);
 
-    /** The Constant USE_THREAD_SPOOL. */
-    private static final boolean USE_THREAD_SPOOL = Cnf.at("Server", "useThreadSpool", true);
-
     /** The Constant ALLOW_VIRTUAL_THREAD. */
-    private static final boolean ALLOW_VIRTUAL_THREAD = Cnf.at("Server", "allowVirtualThread", false);
+    private static final boolean ALLOW_VIRTUAL_THREAD = Cnf.at("ThreadService", "allowVirtualThread", true);
 
     /** The Constant DEBUG_THREAD_LOCAL. */
-    private static final boolean DEBUG_THREAD_LOCAL = Cnf.at("Server", "debugThreadLocal", false);
-
-    /** The Constant PLATFORM_POOL. */
-    private static final ExecutorService PLATFORM_POOL = ConfigurableThreadFactory.getExecutorService(0,
-            Integer.MAX_VALUE, new SynchronousQueue<>(), false, false, false);
-
-    /** The Constant VIRTUAL_POOL (if allowed otherwise same as PLATFORM_POOL). */
-    private static final ExecutorService VIRTUAL_POOL = ALLOW_VIRTUAL_THREAD ? ConfigurableThreadFactory
-            .getExecutorService(0, Integer.MAX_VALUE, new SynchronousQueue<>(), false, true, false) : PLATFORM_POOL;
-
-    /** The Constant INTERRUPTIBLE_POOL (never virtual). */
-    private static final ExecutorService INTERRUPTIBLE_POOL = ConfigurableThreadFactory.getExecutorService(0,
-            Integer.MAX_VALUE, new SynchronousQueue<>(), true, false, false);
+    private static final boolean DEBUG_THREAD_LOCAL = Cnf.at("ThreadService", "debugThreadLocal", false);
 
     /**
      * Instantiates a new thread service. Utility classes don't need public constructors!
@@ -90,10 +75,131 @@ public final class ThreadService {
     }
 
     /**
+     * The Class CloseableExecutorService.
+     */
+    private final static class CloseableExecutorService extends AbstractExecutorService implements AutoCloseable {
+
+        /** The delegate. */
+        private final ExecutorService delegate;
+
+        /** The timeout. */
+        private final long timeout;
+
+        /** The unit. */
+        private final TimeUnit unit;
+
+        /**
+         * Instantiates a new closeable executor service.
+         *
+         * @param delegate
+         *            the delegate
+         * @param timeout
+         *            the timeout
+         * @param unit
+         *            the unit
+         */
+        public CloseableExecutorService(final ExecutorService delegate, final long timeout, final TimeUnit unit) {
+            this.delegate = delegate;
+            this.timeout = timeout;
+            this.unit = unit;
+        }
+
+        /**
+         * Shutdown.
+         */
+        @Override
+        public void shutdown() {
+            delegate.shutdown();
+        }
+
+        /**
+         * Shutdown now.
+         *
+         * @return the list
+         */
+        @Override
+        public List<Runnable> shutdownNow() {
+            return delegate.shutdownNow();
+        }
+
+        /**
+         * Checks if is shutdown.
+         *
+         * @return true, if is shutdown
+         */
+        @Override
+        public boolean isShutdown() {
+            return delegate.isShutdown();
+        }
+
+        /**
+         * Checks if is terminated.
+         *
+         * @return true, if is terminated
+         */
+        @Override
+        public boolean isTerminated() {
+            return delegate.isTerminated();
+        }
+
+        /**
+         * Await termination.
+         *
+         * @param timeout
+         *            the timeout
+         * @param unit
+         *            the unit
+         *
+         * @return true, if successful
+         *
+         * @throws InterruptedException
+         *             the interrupted exception
+         */
+        @Override
+        public boolean awaitTermination(final long timeout, final TimeUnit unit) throws InterruptedException {
+            return delegate.awaitTermination(timeout, unit);
+        }
+
+        /**
+         * Execute.
+         *
+         * @param command
+         *            the command
+         */
+        @Override
+        public void execute(final Runnable command) {
+            delegate.execute(command);
+        }
+
+        /**
+         * Close.
+         */
+        @Override
+        public void close() {
+            delegate.shutdown(); // Disable new tasks from being submitted
+            try {
+                // Wait for existing tasks to terminate
+                if (!delegate.awaitTermination(timeout, unit)) {
+                    delegate.shutdownNow(); // Cancel currently executing tasks
+                    // Wait again for tasks to respond to being cancelled
+                    if (!delegate.awaitTermination(timeout, unit)) {
+                        _log.warn("Executor did not terminate");
+                    }
+                }
+            } catch (final InterruptedException ie) {
+                delegate.shutdownNow();
+                Thread.currentThread().interrupt(); // Preserve interrupt status
+            }
+        }
+    }
+
+    /**
      * Gets the cleaning thread local executor service.
      *
      * @param nThreads
      *            the n threads
+     * @param useVirtualThreads
+     *            the use virtual threads
      * @param daemonThreads
      *            the daemon threads
      *
@@ -101,13 +207,16 @@ public final class ThreadService {
      */
     public static ExecutorService getCleaningThreadLocalExecutorService(final int nThreads,
             final boolean useVirtualThreads, final boolean daemonThreads) {
-        return ConfigurableThreadFactory.getExecutorService(nThreads, nThreads, new LinkedBlockingQueue<>(), false,
-                useVirtualThreads && ALLOW_VIRTUAL_THREAD, daemonThreads);
+        return new CloseableExecutorService(ConfigurableThreadFactory.getExecutorService(nThreads, nThreads,
+                new LinkedBlockingQueue<>(), false, useVirtualThreads && ALLOW_VIRTUAL_THREAD, daemonThreads), 5,
+                TimeUnit.SECONDS);
     }
 
     /**
      * Gets the single cleaning thread local executor service.
      *
+     * @param useVirtualThreads
+     *            the use virtual threads
      * @param daemonThreads
      *            the daemon threads
      *
@@ -116,25 +225,6 @@ public final class ThreadService {
     public static ExecutorService getSingleCleaningThreadLocalExecutorService(final boolean useVirtualThreads,
             final boolean daemonThreads) {
         return getCleaningThreadLocalExecutorService(1, useVirtualThreads, daemonThreads);
-    }
-
-    /**
-     * Gets the cleaning virtual thread local executor service. This will produce virtual threads only if allowed in the
-     * configuration.
-     *
-     * @return the executor service
-     */
-    public static ExecutorService getCleaningVirtualThreadLocalExecutorService() {
-        return VIRTUAL_POOL;
-    }
-
-    /**
-     * Gets the cleaning platform thread local executor service.
-     *
-     * @return the executor service
-     */
-    public static ExecutorService getCleaningPlatformThreadLocalExecutorService() {
-        return PLATFORM_POOL;
     }
 
     /**
@@ -189,7 +279,7 @@ public final class ThreadService {
         private boolean loop = true;
 
         /** The pause. */
-        private long pause = 0;
+        private volatile long pause = 0;
 
         /**
          * Gets the loop.
@@ -267,7 +357,14 @@ public final class ThreadService {
                         }
                     }
                     if (loop) {
-                        configurableLoopRun();
+                        final var currentThread = Thread.currentThread();
+                        final var originalCL = currentThread.getContextClassLoader();
+                        try {
+                            configurableLoopRun();
+                        } finally {
+                            currentThread.setContextClassLoader(originalCL);
+                            ThreadContext.clearAll();
+                        }
                     }
                 }
             } catch (final Throwable t) {
@@ -330,32 +427,29 @@ public final class ThreadService {
         /** The stack. */
         private final ContextStack stack = ThreadContext.cloneStack();
 
-        /** The futur. */
-        private Future<?> futur = null;
-
         /** The thread. */
-        private Thread thread = null;
+        private volatile Thread thread = null;
+
+        /** The name. */
+        private volatile String name = null;
 
         /** The _started from. */
         private String startedFrom = null;
 
-        /** The name. */
-        private String name = null;
-
         /** The cookie. */
-        private String cookie = null;
+        private volatile String cookie = null;
 
         /** The priority. */
         private int priority = Thread.NORM_PRIORITY;
 
         /** The classLoader. */
-        private ClassLoader classLoader = null;
+        private volatile ClassLoader classLoader = null;
 
         /** The inheritCookie. */
-        private boolean inheritCookie = true;
+        private volatile boolean inheritCookie = true;
 
         /** The forceCookie. */
-        private boolean forceCookie = false;
+        private volatile boolean forceCookie = false;
 
         /** The interruptible. */
         private boolean interruptible = false;
@@ -381,6 +475,9 @@ public final class ThreadService {
 
         /**
          * Execute.
+         *
+         * @param interruptibleRMIThread
+         *            the interruptible RMI thread
          */
         public final void execute(final boolean interruptibleRMIThread) {
             execute(interruptibleRMIThread, ALLOW_VIRTUAL_THREAD);
@@ -391,21 +488,17 @@ public final class ThreadService {
          *
          * @param interruptibleRMIThread
          *            the interruptible rmi thread
+         * @param useVirtualThreads
+         *            the use virtual threads
          */
         public final void execute(final boolean interruptibleRMIThread, final boolean useVirtualThreads) {
             if (started.compareAndSet(false, true)) {
                 final var start1 = System.currentTimeMillis();
                 interruptible = interruptibleRMIThread;
                 startedFrom = Thread.currentThread().getName();
-                if (USE_THREAD_SPOOL) {
-                    startTime = System.currentTimeMillis();
-                    futur = (interruptible ? INTERRUPTIBLE_POOL : useVirtualThreads ? VIRTUAL_POOL : PLATFORM_POOL)
-                            .submit(this);
-                } else {
-                    thread = new ConfigurableThreadFactory(interruptible, useVirtualThreads, false).newThread(this);
-                    startTime = System.currentTimeMillis();
-                    thread.start();
-                }
+                thread = new ConfigurableThreadFactory(interruptible, useVirtualThreads, false).newThread(this);
+                startTime = System.currentTimeMillis();
+                thread.start();
                 _log.debug("Execute started: elapsed1={}ms,elapsedTotal={}ms", startTime - start1,
                         System.currentTimeMillis() - start1);
             } else {
@@ -420,10 +513,6 @@ public final class ThreadService {
          */
         public final boolean interrupt() {
             final var className = Format.getClassName(this);
-            if (futur != null) {
-                _log.debug("{} canceled", className);
-                return futur.cancel(true);
-            }
             synchronized (threadSync) {
                 if (thread != null) {
                     _log.debug("{} interrupted", className);
@@ -441,9 +530,6 @@ public final class ThreadService {
          * @return true, if successful
          */
         public final boolean interrupted() {
-            if (futur != null) {
-                return futur.isCancelled();
-            }
             return Thread.interrupted();
         }
 
@@ -533,9 +619,6 @@ public final class ThreadService {
          * @return true, if is alive
          */
         public final boolean isAlive() {
-            if (futur != null) {
-                return !futur.isCancelled() && !futur.isDone();
-            }
             synchronized (threadSync) {
                 if (thread != null) {
                     return thread.isAlive();
@@ -548,6 +631,8 @@ public final class ThreadService {
         /**
          * Join.
          *
+         * @return true, if successful
+         *
          * @throws InterruptedException
          *             the interrupted exception
          * @throws ExecutionException
@@ -555,8 +640,8 @@ public final class ThreadService {
          * @throws TimeoutException
          *             the timeout exception
          */
-        public final void join() throws InterruptedException, ExecutionException, TimeoutException {
-            join(Timer.ONE_WEEK);
+        public final boolean join() throws InterruptedException, ExecutionException, TimeoutException {
+            return join(Timer.ONE_WEEK);
         }
 
         /**
@@ -576,31 +661,13 @@ public final class ThreadService {
          */
         public final boolean join(final long timeout)
                 throws InterruptedException, ExecutionException, TimeoutException {
-            if (isAlive()) {
-                if (futur != null) {
-                    futur.get(timeout, TimeUnit.MILLISECONDS);
-                    return true;
-                }
-                if (thread != null) {
-                    thread.join(timeout);
-                    return true;
-                }
+            if (isAlive() && thread != null) {
+                thread.join(timeout);
+                return true;
             }
             return false;
         }
 
-        /**
-         * Sets the thread name and cookie.
-         *
-         * @param info
-         *            the info
-         * @param user
-         *            the user
-         * @param context
-         *            the context
-         * @param address
-         *            the address
-         */
         /**
          * Sets the thread name and cookie.
          *
@@ -768,6 +835,8 @@ public final class ThreadService {
          *            the work queue
          * @param interruptibleRMIThread
          *            the interruptible rmi thread
+         * @param useVirtualThreads
+         *            the use virtual threads
          * @param daemonThreads
          *            the daemon threads
          *
@@ -790,7 +859,7 @@ public final class ThreadService {
                             public void changed(final Mode mode, final Thread thread, final ThreadLocal<?> threadLocal,
                                     final Object value) {
                                 if (DEBUG_THREAD_LOCAL && _log.isDebugEnabled()) {
-                                    final boolean discouraged = mode == Mode.ADDED
+                                    final var discouraged = mode == Mode.ADDED
                                             && threadLocal.getClass().getName().contains("InheritableThreadLocal");
                                     _log.debug("ThreadLocal {}: {} value: {}{}", mode.name(), threadLocal, value,
                                             discouraged ? " (InheritableThreadLocal is discouraged)" : "");
@@ -809,6 +878,8 @@ public final class ThreadService {
          *
          * @param interruptibleRMIThread
          *            the interruptible rmi thread
+         * @param useVirtualThreads
+         *            the use virtual threads
          * @param daemon
          *            the daemon
          */

@@ -96,6 +96,9 @@ public final class ScriptManager implements AutoCloseable {
     private static final boolean ALLOW_EXPERIMENTAL_OPTIONS = Cnf.at("ScriptManager", "allowExperimentalOptions",
             false);
 
+    /** The Constant ALLOW_VIRTUAL_THREAD. */
+    private static final boolean ALLOW_VIRTUAL_THREAD = Cnf.at("ScriptManager", "allowVirtualThread", false);
+
     /** The current language. */
     private final String currentLanguage;
 
@@ -463,10 +466,9 @@ public final class ScriptManager implements AutoCloseable {
      */
     public static <T> T exec(final String language, final Map<String, Object> bindings, final String scriptContent,
             final ScriptAction<T> action, long timeoutMs) throws ScriptException {
-        final var executor = ALLOW_EXPERIMENTAL_OPTIONS ? ThreadService.getCleaningVirtualThreadLocalExecutorService()
-                : ThreadService.getCleaningPlatformThreadLocalExecutorService();
         Future<T> future = null;
-        try {
+        try (final var executor = ThreadService.getSingleCleaningThreadLocalExecutorService(ALLOW_VIRTUAL_THREAD,
+                true)) {
             future = executor.submit(() -> {
                 final var currentThread = Thread.currentThread();
                 final var originalCL = currentThread.getContextClassLoader();
@@ -481,7 +483,8 @@ public final class ScriptManager implements AutoCloseable {
             });
             return future.get(timeoutMs, TimeUnit.MILLISECONDS);
         } catch (TimeoutException _) {
-            future.cancel(true);
+            if (future != null)
+                future.cancel(true);
             throw new ScriptException("Script execution timed out after " + timeoutMs + " ms");
         } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
@@ -491,8 +494,15 @@ public final class ScriptManager implements AutoCloseable {
             if (cause instanceof ScriptException scriptException) {
                 throw scriptException;
             } else {
-                var se = new ScriptException(e.getMessage());
-                se.initCause(cause);
+                var msg = "Unexpected error during script execution";
+                if (cause != null && cause.getMessage() != null) {
+                    msg += ": " + cause.getMessage();
+                } else if (cause != null) {
+                    msg += ": " + cause.getClass().getName();
+                }
+                var se = new ScriptException(msg);
+                if (cause != null)
+                    se.initCause(cause);
                 throw se;
             }
         }
