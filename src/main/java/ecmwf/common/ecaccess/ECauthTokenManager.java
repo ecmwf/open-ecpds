@@ -93,8 +93,6 @@ public abstract class ECauthTokenManager {
                     }
                 }
             }
-        } else {
-            _log.debug("Using ECauthToken from cache for user: " + user);
         }
         return token;
     }
