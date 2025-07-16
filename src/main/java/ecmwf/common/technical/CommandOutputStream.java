@@ -145,16 +145,7 @@ public final class CommandOutputStream extends FilterOutputStream implements Aut
         } catch (final Exception _) {
             // Ignored
         }
-        executor.shutdown();
-        try {
-            if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
-                _log.warn("Executor did not terminate in time, forcing shutdown");
-                executor.shutdownNow();
-            }
-        } catch (final InterruptedException _) {
-            executor.shutdownNow();
-            Thread.currentThread().interrupt();
-        }
+        executor.close();
         message = thread.getMessage();
         if (message != null) {
             _log.debug("Destroying process ({})", message);

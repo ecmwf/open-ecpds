@@ -155,16 +155,7 @@ public final class CommandInputStream extends FilterInputStream implements AutoC
             // Ignored
         }
         // Shutdown stderr reader
-        executor.shutdown();
-        try {
-            if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
-                _log.warn("Executor did not terminate in time, forcing shutdown");
-                executor.shutdownNow();
-            }
-        } catch (final InterruptedException _) {
-            executor.shutdownNow();
-            Thread.currentThread().interrupt();
-        }
+        executor.close();
         // Get any error message from plug thread
         message = thread.getMessage();
         if (message != null) {
