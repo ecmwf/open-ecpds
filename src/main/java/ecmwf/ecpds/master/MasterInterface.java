@@ -26,18 +26,16 @@ package ecmwf.ecpds.master;
  * @since 2024-07-01
  */
 
-import java.io.IOException;
 import java.rmi.RemoteException;
 import java.util.List;
 
 import ecmwf.common.database.Association;
-import ecmwf.common.database.DataBaseException;
 import ecmwf.common.database.DataTransfer;
 import ecmwf.common.database.Destination;
 import ecmwf.common.database.Host;
 import ecmwf.common.database.IncomingConnection;
-import ecmwf.common.ecaccess.ECauthToken;
 import ecmwf.common.ecaccess.ProviderInterface;
+import ecmwf.common.ecaccess.ECauthToken;
 
 /**
  * The Interface MasterInterface.
@@ -66,8 +64,6 @@ public interface MasterInterface extends ProviderInterface {
      *
      * @return the long
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      * @throws RemoteException
      *             the remote exception
      */
@@ -79,8 +75,6 @@ public interface MasterInterface extends ProviderInterface {
      * @param transfers
      *            the transfers
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      * @throws RemoteException
      *             the remote exception
      */
@@ -94,8 +88,6 @@ public interface MasterInterface extends ProviderInterface {
      *
      * @return the list of DownloadProgress to interrupt (not found on the MasterServer)
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
      * @throws RemoteException
      *             the remote exception
      */
@@ -107,8 +99,6 @@ public interface MasterInterface extends ProviderInterface {
      * @param host
      *            the host
      *
-     * @throws DataBaseException
-     *             the data base exception
      * @throws RemoteException
      *             the remote exception
      */
@@ -122,12 +112,10 @@ public interface MasterInterface extends ProviderInterface {
      * @param data
      *            the host data
      *
-     * @throws DataBaseException
-     *             the data base exception
      * @throws RemoteException
      *             the remote exception
      */
-    void updateData(final String hostId, final String data) throws RemoteException;
+    void updateData(String hostId, String data) throws RemoteException;
 
     /**
      * Update location.
@@ -135,8 +123,6 @@ public interface MasterInterface extends ProviderInterface {
      * @param host
      *            the host
      *
-     * @throws DataBaseException
-     *             the data base exception
      * @throws RemoteException
      *             the remote exception
      */
@@ -208,8 +194,8 @@ public interface MasterInterface extends ProviderInterface {
      * @throws RemoteException
      *             the remote exception
      */
-    byte[] getS3AuthorizationSignature(final String incomingUser, final String prefix, final String data,
-            final String algorithm) throws RemoteException;
+    byte[] getS3AuthorizationSignature(String incomingUser, String prefix, String data, String algorithm)
+            throws RemoteException;
 
     /**
      * Gets the incoming profile.
@@ -223,10 +209,6 @@ public interface MasterInterface extends ProviderInterface {
      *
      * @return the incoming profile
      *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws MasterException
-     *             the master exception
      * @throws RemoteException
      *             the remote exception
      */
@@ -241,8 +223,8 @@ public interface MasterInterface extends ProviderInterface {
      *
      * @return the ETag
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * @throws RemoteException
+     *             the remote exception
      */
     String getETag(long dataTransferId) throws RemoteException;
 
@@ -254,8 +236,8 @@ public interface MasterInterface extends ProviderInterface {
      *
      * @return the ecauth token
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * @throws RemoteException
+     *             the remote exception
      */
     ECauthToken getECauthToken(String user) throws RemoteException;
 
@@ -269,15 +251,11 @@ public interface MasterInterface extends ProviderInterface {
      * @param copySharedHost
      *            the copy shared host
      *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws MasterException
-     *             the master exception
      * @throws RemoteException
      *             the remote exception
      */
-    void importDestination(final Destination fromDestination, final Association[] linkedAssociations,
-            final boolean copySharedHost) throws RemoteException;
+    void importDestination(Destination fromDestination, Association[] linkedAssociations, boolean copySharedHost)
+            throws RemoteException;
 
     /**
      * Update data transfer status from another Master Server.
@@ -297,12 +275,10 @@ public interface MasterInterface extends ProviderInterface {
      *
      * @return true, if successful
      *
-     * @throws MasterException
-     *             the master exception
      * @throws RemoteException
      *             the remote exception
      */
-    boolean updateLocalTransferStatus(final String master, final boolean standby, final String destination,
-            final String target, final String uniqueName, final String status) throws RemoteException;
+    boolean updateLocalTransferStatus(String master, boolean standby, String destination, String target,
+            String uniqueName, String status) throws RemoteException;
 
 }

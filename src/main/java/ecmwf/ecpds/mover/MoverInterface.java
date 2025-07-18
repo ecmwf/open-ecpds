@@ -602,8 +602,8 @@ public interface MoverInterface extends ClientInterface {
      * @param restart
      *            the restart
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * @throws RemoteException
+     *             the remote exception
      */
     void shutdown(boolean graceful, boolean restart) throws RemoteException;
 
