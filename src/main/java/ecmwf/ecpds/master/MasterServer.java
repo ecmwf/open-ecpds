@@ -110,13 +110,14 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.StringReader;
 import java.net.InetAddress;
+import java.net.MalformedURLException;
 import java.net.Socket;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.rmi.Naming;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateExpiredException;
@@ -137,10 +138,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-import java.util.stream.Stream;
 import java.util.zip.Deflater;
 import java.util.zip.GZIPOutputStream;
 
@@ -189,7 +188,6 @@ import ecmwf.common.database.HostOutput;
 import ecmwf.common.database.HostStats;
 import ecmwf.common.database.IncomingConnection;
 import ecmwf.common.database.IncomingUser;
-import ecmwf.common.database.ProductStatus;
 import ecmwf.common.database.Publication;
 import ecmwf.common.database.SchedulerValue;
 import ecmwf.common.database.TransferGroup;
@@ -775,10 +773,8 @@ public final class MasterServer extends ECaccessProvider
      *
      * @return the incoming profile
      *
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws MasterException
-     *             the master exception
+     * @throws RemoteException
+     *             the remote exception
      */
     @Override
     public IncomingProfile getIncomingProfile(final String incomingUser, final String incomingPassword,
@@ -907,8 +903,8 @@ public final class MasterServer extends ECaccessProvider
             // Let's pass the data from data policies to the mover!
             user.setData(setup.getData());
             return new IncomingProfile(user, permissions, destinations);
-        } catch (Throwable t) {
-            throw Format.getRemoteException(t);
+        } catch (final Throwable t) {
+            throw Format.getRemoteException("MasterServer=" + getRoot(), t);
         }
     }
 
@@ -2162,6 +2158,8 @@ public final class MasterServer extends ECaccessProvider
      *            the synchronous
      * @param reset
      *            the reset
+     * @param addHistory
+     *            the add history
      *
      * @return true, if successful
      *
@@ -2195,6 +2193,8 @@ public final class MasterServer extends ECaccessProvider
      *            the synchronous
      * @param reset
      *            the reset
+     * @param addHistory
+     *            the add history
      *
      * @return true, if successful
      *
@@ -3028,8 +3028,8 @@ public final class MasterServer extends ECaccessProvider
      * @param transfers
      *            the transfers
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * @throws RemoteException
+     *             the remote exception
      */
     @Override
     public void updateDataTransfers(final DataTransfer[] transfers) throws RemoteException {
@@ -3080,8 +3080,8 @@ public final class MasterServer extends ECaccessProvider
                 // Let's update the DataTransfer!
                 updateDataTransfer(transfer);
             }
-        } catch (Throwable t) {
-            throw Format.getRemoteException(t);
+        } catch (final Throwable t) {
+            throw Format.getRemoteException("MasterServer=" + getRoot(), t);
         }
     }
 
@@ -3093,8 +3093,8 @@ public final class MasterServer extends ECaccessProvider
      *
      * @return the download progress[]
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * @throws RemoteException
+     *             the remote exception
      */
     @Override
     public DownloadProgress[] updateDownloadProgress(final DownloadProgress[] progress) throws RemoteException {
@@ -3117,8 +3117,8 @@ public final class MasterServer extends ECaccessProvider
             // Return all the DownloadProgress not found so that the Mover can
             // interrupt them!
             return toInterrupt.toArray(new DownloadProgress[toInterrupt.size()]);
-        } catch (Throwable t) {
-            throw Format.getRemoteException(t);
+        } catch (final Throwable t) {
+            throw Format.getRemoteException("MasterServer=" + getRoot(), t);
         }
     }
 
@@ -3708,15 +3708,15 @@ public final class MasterServer extends ECaccessProvider
      * @param host
      *            the host
      *
-     * @throws DataBaseException
-     *             the data base exception
+     * @throws RemoteException
+     *             the remote exception
      */
     @Override
     public void updateData(final Host host) throws RemoteException {
         try {
             updateData(host.getName(), host.getData());
-        } catch (Throwable t) {
-            throw Format.getRemoteException(t);
+        } catch (final Throwable t) {
+            throw Format.getRemoteException("MasterServer=" + getRoot(), t);
         }
     }
 
@@ -3732,8 +3732,8 @@ public final class MasterServer extends ECaccessProvider
      * @param data
      *            the data
      *
-     * @throws DataBaseException
-     *             the data base exception
+     * @throws RemoteException
+     *             the remote exception
      */
     @Override
     public void updateData(final String hostId, final String data) throws RemoteException {
@@ -3758,8 +3758,8 @@ public final class MasterServer extends ECaccessProvider
                     _log.warn("Updating data for Host-" + hostId, t);
                 }
             }
-        } catch (Throwable t) {
-            throw Format.getRemoteException(t);
+        } catch (final Throwable t) {
+            throw Format.getRemoteException("MasterServer=" + getRoot(), t);
         }
     }
 
@@ -3848,15 +3848,15 @@ public final class MasterServer extends ECaccessProvider
      *
      * @return the ecauth token
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * @throws RemoteException
+     *             the remote exception
      */
     @Override
     public ECauthToken getECauthToken(final String user) throws RemoteException {
         try {
             return ECauthTokenGenerator.getInstance().getECauthToken(user);
-        } catch (Throwable t) {
-            throw Format.getRemoteException(t);
+        } catch (final Throwable t) {
+            throw Format.getRemoteException("MasterServer=" + getRoot(), t);
         }
     }
 
@@ -3868,15 +3868,15 @@ public final class MasterServer extends ECaccessProvider
      *
      * @return the e tag
      *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     * @throws RemoteException
+     *             the remote exception
      */
     @Override
     public String getETag(final long dataTransferId) throws RemoteException {
         try {
             return TransferManagement.getETag(getDataTransfer(dataTransferId).getDataFile());
-        } catch (Throwable t) {
-            throw Format.getRemoteException(t);
+        } catch (final Throwable t) {
+            throw Format.getRemoteException("MasterServer=" + getRoot(), t);
         }
     }
 
@@ -3931,7 +3931,7 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * Write a Serial DataBaseObject to the disk!
+     * Write a Serial DataBaseObject to the disk!.
      *
      * @param object
      *            the object
@@ -3949,7 +3949,7 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * Read a Serial DataBaseObject from the disk!
+     * Read a Serial DataBaseObject from the disk!.
      *
      * @param file
      *            the file
@@ -3970,22 +3970,18 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * Import Destinations, Hosts and ECUsers, and Transfer Methods and ECtrans Modules from the disk!
+     * Import Destinations, Hosts and ECUsers, and Transfer Methods and ECtrans Modules from the disk!.
      *
      * @param dir
      *            the dir
      *
      * @throws IOException
      *             Signals that an I/O exception has occurred.
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
      */
-    private void _importDestinationsAndHosts(final String dir) throws IOException, MasterException, DataBaseException {
+    private void _importDestinationsAndHosts(final String dir) throws IOException {
         final var destinations = new HashMap<String, ArrayList<Association>>();
         final var base = getDataBase();
-        try (final Stream<Path> paths = Files.walk(Paths.get(dir))) {
+        try (final var paths = Files.walk(Paths.get(dir))) {
             paths.forEach(path -> {
                 if (!Files.isDirectory(path)) {
                     final var fileName = path.toFile().getName();
@@ -4014,7 +4010,7 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * Export destinations, hosts, associations, ecusers, transfer methods, ectrans modules to the disk!
+     * Export destinations, hosts, associations, ecusers, transfer methods, ectrans modules to the disk!.
      *
      * @param dir
      *            the dir
@@ -4193,10 +4189,8 @@ public final class MasterServer extends ECaccessProvider
      * @param copySharedHost
      *            the copy shared host
      *
-     * @throws MasterException
-     *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
+     * @throws RemoteException
+     *             the remote exception
      */
     @Override
     public void importDestination(final Destination fromDestination, final Association[] linkedAssociations,
@@ -4205,8 +4199,8 @@ public final class MasterServer extends ECaccessProvider
             // Let's create a new Destination with the same name, comment and hosts!
             _createDestination(fromDestination, linkedAssociations, fromDestination.getName(),
                     fromDestination.getComment(), copySharedHost, true);
-        } catch (Throwable t) {
-            throw Format.getRemoteException(t);
+        } catch (final Throwable t) {
+            throw Format.getRemoteException("MasterServer=" + getRoot(), t);
         }
     }
 
@@ -4220,31 +4214,31 @@ public final class MasterServer extends ECaccessProvider
      * @param copySharedHost
      *            the copy shared host
      *
-     * @throws MasterException
-     *             the master exception
+     * @throws RemoteException
+     *             the remote exception
      * @throws DataBaseException
      *             the data base exception
+     * @throws MalformedURLException
+     *             the malformed URL exception
+     * @throws NotBoundException
+     *             the not bound exception
      */
     public void exportDestination(final String targetMaster, final String fromDestination, final boolean copySharedHost)
-            throws RemoteException {
-        try {
-            final var base = getDataBase(ECpdsBase.class);
-            final var destination = base.getDestination(fromDestination);
-            // We only select the associations which are linked with the source
-            // Destination!
-            final List<Association> associations = new ArrayList<>();
-            for (final Association assoc : base.getAssociationArray()) {
-                if (fromDestination.equals(assoc.getDestinationName())) {
-                    associations.add(assoc);
-                }
+            throws RemoteException, DataBaseException, MalformedURLException, NotBoundException {
+        final var base = getDataBase(ECpdsBase.class);
+        final var destination = base.getDestination(fromDestination);
+        // We only select the associations which are linked with the source
+        // Destination!
+        final List<Association> associations = new ArrayList<>();
+        for (final Association assoc : base.getAssociationArray()) {
+            if (fromDestination.equals(assoc.getDestinationName())) {
+                associations.add(assoc);
             }
-            // RMI call to the remote importDestination of the target Master!
-            final var master = (MasterInterface) Naming.lookup("//" + targetMaster + "/MasterServer");
-            master.importDestination(destination, associations.toArray(new Association[associations.size()]),
-                    copySharedHost);
-        } catch (Throwable t) {
-            throw Format.getRemoteException(t);
         }
+        // RMI call to the remote importDestination of the target Master!
+        final var master = (MasterInterface) Naming.lookup("//" + targetMaster + "/MasterServer");
+        master.importDestination(destination, associations.toArray(new Association[associations.size()]),
+                copySharedHost);
     }
 
     /**
@@ -4465,19 +4459,19 @@ public final class MasterServer extends ECaccessProvider
      *
      * @return true, if successful
      *
-     * @throws MasterException
-     *             the master exception
+     * @throws RemoteException
+     *             the remote exception
+     * @throws MalformedURLException
+     *             the malformed URL exception
+     * @throws NotBoundException
+     *             the not bound exception
      */
     public boolean updateRemoteTransferStatus(final String remoteMaster, final boolean standby,
             final String destination, final String target, final String uniqueKey, final String status)
-            throws RemoteException {
+            throws RemoteException, MalformedURLException, NotBoundException {
         // RMI call to the remote updateDataTransferStatus of the target Master!
-        try {
-            final var master = (MasterInterface) Naming.lookup("//" + remoteMaster + "/MasterServer");
-            return master.updateLocalTransferStatus(getRoot(), standby, destination, target, uniqueKey, status);
-        } catch (Throwable t) {
-            throw Format.getRemoteException(t);
-        }
+        final var master = (MasterInterface) Naming.lookup("//" + remoteMaster + "/MasterServer");
+        return master.updateLocalTransferStatus(getRoot(), standby, destination, target, uniqueKey, status);
     }
 
     /**
@@ -4498,8 +4492,8 @@ public final class MasterServer extends ECaccessProvider
      *
      * @return true, if successful
      *
-     * @throws MasterException
-     *             the master exception
+     * @throws RemoteException
+     *             the remote exception
      */
     @Override
     public boolean updateLocalTransferStatus(final String remoteMaster, final boolean standby, final String destination,
@@ -4518,8 +4512,8 @@ public final class MasterServer extends ECaccessProvider
                 }
             }
             return result;
-        } catch (Throwable t) {
-            throw Format.getRemoteException(t);
+        } catch (final Throwable t) {
+            throw Format.getRemoteException("MasterServer=" + getRoot(), t);
         }
     }
 
@@ -4576,18 +4570,13 @@ public final class MasterServer extends ECaccessProvider
      */
     private static String _getObjectLink(final Object object) {
         final var ref = Cnf.at("Server", "monitoring", "");
-        if (object instanceof final DataFile dataFile) {
-            return ref + "/do/datafile/datafile/" + dataFile.getId();
-        }
-        if (object instanceof final DataTransfer dataTransfer) {
-            return ref + "/do/transfer/data/" + dataTransfer.getId();
-        } else if (object instanceof final Destination destination) {
-            return ref + "/do/transfer/destination/" + destination.getName();
-        } else if (object instanceof final Host host) {
-            return ref + "/do/transfer/host/" + host.getName();
-        } else {
-            return null;
-        }
+        return switch (object) {
+        case DataFile dataFile -> ref + "/do/datafile/datafile/" + dataFile.getId();
+        case DataTransfer dataTransfer -> ref + "/do/transfer/data/" + dataTransfer.getId();
+        case Destination destination -> ref + "/do/transfer/destination/" + destination.getName();
+        case Host host -> ref + "/do/transfer/host/" + host.getName();
+        case null, default -> null;
+        };
     }
 
     /**
@@ -4789,10 +4778,6 @@ public final class MasterServer extends ECaccessProvider
      *
      * @throws MasterException
      *             the master exception
-     * @throws DataBaseException
-     *             the data base exception
-     * @throws RemoteException
-     *             the remote exception
      */
     public WebUser getWebUser(final String user, final String credentials, final String root) throws MasterException {
         if (!Cnf.at("Server", "anonymousUser", "anonymous").equals(user)) { // No need to log anonymous requests!
@@ -5114,7 +5099,7 @@ public final class MasterServer extends ECaccessProvider
         try (var it = getECpdsBase().getInitialProductStatusEventsIterator()) {
             final List<PluginEvent<?>> events = new ArrayList<>();
             while (it.hasNext()) {
-                final ProductStatus ps = it.next();
+                final var ps = it.next();
                 if ((stream == null || stream.equals(ps.getStream())) && (time == null || time.equals(ps.getTime()))) {
                     final var event = new ProductStatusEvent(ps);
                     event.setTarget(target);
@@ -8406,7 +8391,7 @@ public final class MasterServer extends ECaccessProvider
                     }
                     // Did we find any HostForProxy available for the
                     // transmission? (good or bad)
-                    final long duration = System.currentTimeMillis() - start;
+                    final var duration = System.currentTimeMillis() - start;
                     if (rr == null) {
                         // Maybe next time!
                         if (_debug) {
@@ -9532,7 +9517,7 @@ public final class MasterServer extends ECaccessProvider
                     effectiveTarget = _replaceDate("$dirdate", effectiveTarget, true);
                     effectiveTarget = _replaceDate("$date", effectiveTarget, false);
                     effectiveTarget = Format.replaceAll(effectiveTarget, "$timestamp", entry.time / 1000L * 1000L);
-                } catch (IOException _) {
+                } catch (final IOException _) {
                 }
                 // Let's check the size and age options. We obviously only check
                 // the time if it is valid!
@@ -9771,6 +9756,8 @@ public final class MasterServer extends ECaccessProvider
                  *            the entry
                  * @param body
                  *            the body
+                 * @param message
+                 *            the message
                  */
                 ListThread(final ExecutorManager<ListThread> manager, final ECpdsBase base, final AcquisitionResult ar,
                         final Host copy, final String namePattern, final String currentPath,
@@ -9941,15 +9928,15 @@ public final class MasterServer extends ECaccessProvider
                                     _add(entry);
                                 } else {
                                     // If we have a body and message content then let's extract them!
-                                    final Pattern pattern = Pattern.compile("^(.*)\\s\\[(.+)]$");
-                                    final Matcher matcher = pattern.matcher(entry);
+                                    final var pattern = Pattern.compile("^(.*)\\s\\[(.+)]$");
+                                    final var matcher = pattern.matcher(entry);
                                     final String newLine;
                                     final String body;
                                     final String message;
                                     if (matcher.matches()) {
                                         newLine = matcher.group(1); // text before " ["
-                                        final String groupContent = matcher.group(2); // inside the brackets
-                                        final String[] bodyAndMessage = groupContent.split(";", 2);
+                                        final var groupContent = matcher.group(2); // inside the brackets
+                                        final var bodyAndMessage = groupContent.split(";", 2);
                                         if (bodyAndMessage.length == 2) {
                                             body = bodyAndMessage[0].isEmpty() ? null : bodyAndMessage[0];
                                             message = bodyAndMessage[1];

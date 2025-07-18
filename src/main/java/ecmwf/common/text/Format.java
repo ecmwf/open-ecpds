@@ -78,7 +78,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import ecmwf.common.database.DataBaseException;
-import ecmwf.common.rmi.SocketConfig;
 import ecmwf.common.technical.ScriptManager;
 
 /**
@@ -91,11 +90,11 @@ public final class Format {
     /** The Constant CRLFb. */
     private static final byte[] CRLFb = { (byte) 0x0d, (byte) 0x0a };
 
-    /** The Constant _dontNeedEncoding. */
-    private static final BitSet _dontNeedEncoding;
+    /** The Constant dontNeedEncoding. */
+    private static final BitSet dontNeedEncoding;
 
-    /** The _dflt enc name. */
-    private static String _dfltEncName = null;
+    /** The dflt enc name. */
+    private static String dfltEncName = null;
 
     /** The Constant HEXA_LOOKUP. */
     private static final char[] HEXA_LOOKUP = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd',
@@ -105,23 +104,23 @@ public final class Format {
     private static final String EMAIL_REGEX = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}$";
 
     static {
-        _dontNeedEncoding = new BitSet(256);
+        dontNeedEncoding = new BitSet(256);
         int i;
         for (i = 'a'; i <= 'z'; i++) {
-            _dontNeedEncoding.set(i);
+            dontNeedEncoding.set(i);
         }
         for (i = 'A'; i <= 'Z'; i++) {
-            _dontNeedEncoding.set(i);
+            dontNeedEncoding.set(i);
         }
         for (i = '0'; i <= '9'; i++) {
-            _dontNeedEncoding.set(i);
+            dontNeedEncoding.set(i);
         }
-        _dontNeedEncoding.set(' ');
-        _dontNeedEncoding.set('-');
-        _dontNeedEncoding.set('_');
-        _dontNeedEncoding.set('.');
-        _dontNeedEncoding.set('*');
-        _dfltEncName = Charset.defaultCharset().displayName();
+        dontNeedEncoding.set(' ');
+        dontNeedEncoding.set('-');
+        dontNeedEncoding.set('_');
+        dontNeedEncoding.set('.');
+        dontNeedEncoding.set('*');
+        dfltEncName = Charset.defaultCharset().displayName();
     }
 
     /**
@@ -171,7 +170,7 @@ public final class Format {
      *
      * @return the string
      */
-    private static String _formatNumber(final double myDouble) {
+    private static String formatNumber(final double myDouble) {
         final var myDoubleMultiplied = myDouble * 100;
         final double myDoubleRounded = Math.round(myDoubleMultiplied);
         final var myDoubleDivided = myDoubleRounded / 100.0;
@@ -252,23 +251,23 @@ public final class Format {
         final var absBytes = Math.abs(bytes);
         if (absBytes >= 1152921504606846976d) {
             final var eb = bytes / 1152921504606846976d;
-            return _formatNumber(eb) + " Ebytes";
+            return formatNumber(eb) + " Ebytes";
         }
         if (absBytes >= 1125899906842624d) {
             final var pb = bytes / 1125899906842624d;
-            return _formatNumber(pb) + " Pbytes";
+            return formatNumber(pb) + " Pbytes";
         } else if (absBytes >= 1099511627776d) {
             final var tb = bytes / 1099511627776d;
-            return _formatNumber(tb) + " Tbytes";
+            return formatNumber(tb) + " Tbytes";
         } else if (absBytes >= 1073741824) {
             final var gb = bytes / 1073741824d;
-            return _formatNumber(gb) + " Gbytes";
+            return formatNumber(gb) + " Gbytes";
         } else if (absBytes >= 1048576) {
             final var mb = bytes / 1048576d;
-            return _formatNumber(mb) + " Mbytes";
+            return formatNumber(mb) + " Mbytes";
         } else if (absBytes >= 1024) {
             final var kb = bytes / 1024d;
-            return _formatNumber(kb) + " Kbytes";
+            return formatNumber(kb) + " Kbytes";
         } else {
             return bytes + " byte" + (absBytes > 1 ? "s" : "");
         }
@@ -654,7 +653,7 @@ public final class Format {
     private static Duration parseDurationFromISO8601Format(final String duration) {
         try {
             return duration != null ? Duration.parse(duration.trim()) : null;
-        } catch (final DateTimeParseException e) {
+        } catch (final DateTimeParseException _) {
             return null;
         }
     }
@@ -706,7 +705,7 @@ public final class Format {
                 }
                 return result;
             }
-        } catch (final Exception ignored) {
+        } catch (final Exception _) {
             // Ignored!
         }
         throw new NumberFormatException("Duration format error: " + duration);
@@ -720,7 +719,7 @@ public final class Format {
      *
      * @return the duration
      *
-     * @throws java.lang.NumberFormatException
+     * @throws NumberFormatException
      *             the number format exception
      */
     public static long parseDurationWithDefaultInMillis(final String duration) throws NumberFormatException {
@@ -735,7 +734,7 @@ public final class Format {
      *
      * @return the duration
      *
-     * @throws java.lang.NumberFormatException
+     * @throws NumberFormatException
      *             the number format exception
      */
     public static long getDuration(final String duration) throws NumberFormatException {
@@ -928,7 +927,7 @@ public final class Format {
      * @param value
      *            the value
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public static void replaceAllExt(final StringBuilder target, final String name, final String value)
@@ -971,7 +970,7 @@ public final class Format {
                 }
             }
             target.insert(0, result);
-        } catch (final Throwable t) {
+        } catch (final Throwable _) {
             throw new IOException("replacing " + name + " in metadata");
         }
     }
@@ -989,7 +988,7 @@ public final class Format {
      *
      * @return the string
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public static String replaceAllExt(final String target, final String name, final String value) throws IOException {
@@ -1038,7 +1037,7 @@ public final class Format {
     }
 
     /**
-     * Converts into long.
+     * Converts into time.
      *
      * @param format
      *            the format
@@ -1121,7 +1120,7 @@ public final class Format {
     public static String getHash(final byte[] bytes) {
         try {
             return toHexa(MessageDigest.getInstance("SHA3-256").digest(bytes));
-        } catch (final NoSuchAlgorithmException e) {
+        } catch (final NoSuchAlgorithmException _) {
             return null;
         }
     }
@@ -1134,7 +1133,7 @@ public final class Format {
      *
      * @return the byte[]
      *
-     * @throws java.lang.NumberFormatException
+     * @throws NumberFormatException
      *             the number format exception
      */
     public static byte[] toBytes(final String hexa) throws NumberFormatException {
@@ -1156,7 +1155,7 @@ public final class Format {
      *
      * @return the byte[]
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public static byte[] toBytes(final Object object) throws IOException {
@@ -1178,9 +1177,9 @@ public final class Format {
      *
      * @return the object
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
-     * @throws java.lang.ClassNotFoundException
+     * @throws ClassNotFoundException
      *             the class not found exception
      */
     public static Object toObject(final byte[] bytes) throws IOException, ClassNotFoundException {
@@ -1205,7 +1204,7 @@ public final class Format {
     public static String getHostAddress(final String host) {
         try {
             return InetAddress.getByName(host).getHostAddress();
-        } catch (final UnknownHostException e) {
+        } catch (final UnknownHostException _) {
             return host;
         }
     }
@@ -1221,7 +1220,7 @@ public final class Format {
     public static String getHostName(final String host) {
         try {
             return InetAddress.getByName(host).getHostName();
-        } catch (final UnknownHostException e) {
+        } catch (final UnknownHostException _) {
             return host;
         }
     }
@@ -1283,7 +1282,8 @@ public final class Format {
      */
     public static String getMessage(Throwable t, final String defaultMessage, final int limit) {
         // The original message
-        var m = t == null || t instanceof NullPointerException ? "Internal error" : t.getMessage();
+        var m = t == null || t instanceof NullPointerException ? "Internal error"
+                : sanitizeRemoteExceptionMessage(t.getMessage());
         // Are there causes to this exception?
         Throwable c;
         // Let's go through all the causes. If we have a DataBaseException then
@@ -1293,13 +1293,13 @@ public final class Format {
         while (t != null && (c = t.getCause()) != null && !(t instanceof DataBaseException)) {
             // Can we get a message from the cause exception?
             var cm = c instanceof NullPointerException ? "Internal error" : c.getMessage();
-            if (cm != null && (cm = cm.trim()).length() > 0) {
+            if (cm != null && !(cm = cm.trim()).isEmpty()) {
                 // There is indeed a message. If the message is surrounded by
                 // parenthesis let's remove them!
                 if (cm.startsWith("(") && cm.endsWith(")")) {
                     cm = cm.substring(1, cm.length() - 1).trim();
                 }
-                if (m != null && (m = m.trim()).length() > 0) {
+                if (m != null && !(m = m.trim()).isEmpty()) {
                     // Make sure we don't have duplicated messages
                     if (!cm.equalsIgnoreCase(p)) {
                         // Make sure we don't have the last message which ends
@@ -1326,7 +1326,7 @@ public final class Format {
         // Use the message or the name of the class if there is no message. If there is
         // a message then we make sure there are no special characters in it. Also,
         // remove non-ASCII characters and sequences of space (just one)!
-        final var result = (m != null && (m = m.replaceAll("[\n\r]", "").trim()).length() > 0
+        final var result = (m != null && !(m = m.replaceAll("[\n\r]", "").trim()).isEmpty()
                 ? m.substring(0, 1).toUpperCase() + m.substring(1)
                 : defaultMessage != null ? defaultMessage : getClassName(t)).replaceAll("[^\\x00-\\x7F]", "").trim()
                         .replaceAll(" +", " ");
@@ -1340,6 +1340,29 @@ public final class Format {
         } else {
             return result.substring(0, limit);
         }
+    }
+
+    /**
+     * Sanitize remote exception message.
+     *
+     * @param message
+     *            the message
+     *
+     * @return the string
+     */
+    private static String sanitizeRemoteExceptionMessage(String message) {
+        if (message == null)
+            return null;
+        // Strip out the RMI boilerplate if present
+        final var marker = "RemoteException occurred in server thread; nested exception is: ";
+        if (message.startsWith(marker)) {
+            message = message.substring(marker.length()).trim();
+        }
+        // Remove nested java.rmi.RemoteException: prefix if it appears again
+        if (message.startsWith("java.rmi.RemoteException:")) {
+            message = message.substring("java.rmi.RemoteException:".length()).trim();
+        }
+        return message;
     }
 
     /**
@@ -1359,14 +1382,16 @@ public final class Format {
      * RMI boundaries. The stack trace is explicitly cleared to reduce native memory usage and minimize data transfer
      * during remote exception serialization.
      *
+     * @param root
+     *            the root
      * @param message
      *            the message
      *
      * @return a {@link RemoteException} with a trimmed stack trace and formatted message
      */
-    public static RemoteException getRemoteException(final String message) {
+    public static RemoteException getRemoteException(final String root, final String message) {
         _log.warn(message);
-        var e = new RemoteException("[" + SocketConfig.getLocalAddress() + "]: " + message);
+        final var e = new RemoteException("[" + root + "]: " + message);
         e.setStackTrace(new StackTraceElement[0]);
         return e;
     }
@@ -1376,6 +1401,8 @@ public final class Format {
      * RMI boundaries. The stack trace is explicitly cleared to reduce native memory usage and minimize data transfer
      * during remote exception serialization.
      *
+     * @param root
+     *            the root
      * @param message
      *            the message
      * @param t
@@ -1383,8 +1410,8 @@ public final class Format {
      *
      * @return a {@link RemoteException} with a trimmed stack trace and formatted message
      */
-    public static RemoteException getRemoteException(final String message, final Throwable t) {
-        return getRemoteException(message + " <- " + getMessage(t, null, 0));
+    public static RemoteException getRemoteException(final String root, final String message, final Throwable t) {
+        return getRemoteException(root, message + " <- " + getMessage(t, null, 0));
     }
 
     /**
@@ -1392,13 +1419,15 @@ public final class Format {
      * RMI boundaries. The stack trace is explicitly cleared to reduce native memory usage and minimize data transfer
      * during remote exception serialization.
      *
+     * @param root
+     *            the root
      * @param t
      *            the original {@link Throwable} to extract the message from
      *
      * @return a {@link RemoteException} with a trimmed stack trace and formatted message
      */
-    public static RemoteException getRemoteException(final Throwable t) {
-        return getRemoteException("Exception in RMI call", t);
+    public static RemoteException getRemoteException(final String root, final Throwable t) {
+        return getRemoteException(root, getMessage(t, null, 0));
     }
 
     /**
@@ -1409,7 +1438,7 @@ public final class Format {
      *
      * @return the string
      *
-     * @throws java.io.UnsupportedEncodingException
+     * @throws UnsupportedEncodingException
      *             the unsupported encoding exception
      */
     public static String decode(final String s) throws UnsupportedEncodingException {
@@ -1439,7 +1468,7 @@ public final class Format {
                     if (i < numChars && c == '%') {
                         throw new IllegalArgumentException("URLDecoder: Incomplete trailing escape (%) pattern");
                     }
-                    sb.append(new String(bytes, 0, pos, _dfltEncName));
+                    sb.append(new String(bytes, 0, pos, dfltEncName));
                 } catch (final NumberFormatException e) {
                     throw new IllegalArgumentException(
                             "URLDecoder: Illegal hex characters in escape (%) pattern - " + e.getMessage());
@@ -1479,7 +1508,7 @@ public final class Format {
         private static final long serialVersionUID = -2675503634979160345L;
 
         /** The _score. */
-        final int _score;
+        final int score;
 
         /**
          * Instantiates a new duplicated choose score.
@@ -1488,7 +1517,7 @@ public final class Format {
          *            the score
          */
         DuplicatedChooseScore(final int score) {
-            _score = score;
+            this.score = score;
         }
 
         /**
@@ -1497,7 +1526,7 @@ public final class Format {
          * @return the score
          */
         public int getScore() {
-            return _score;
+            return score;
         }
     }
 
@@ -1514,9 +1543,9 @@ public final class Format {
      *
      * @return the selection
      *
-     * @throws ecmwf.common.text.Format.DuplicatedChooseScore
+     * @throws DuplicatedChooseScore
      *             the duplicated choose score
-     * @throws javax.script.ScriptException
+     * @throws ScriptException
      *             the script exception
      */
     public static String choose(final String options) throws DuplicatedChooseScore, ScriptException {
@@ -1578,7 +1607,7 @@ public final class Format {
                         highScore = score;
                         path = currentPath;
                     }
-                } else if (line.trim().length() > 0) {
+                } else if (!line.trim().isEmpty()) {
                     path = line;
                 }
             }
@@ -1592,11 +1621,13 @@ public final class Format {
     }
 
     /**
-     * The options are in the following format: (.= /readme.txt) standby=yes (== {avhrr_n.*}) standby=never;delay=2h And
-     * this method looks for the first line which apply to the selected key. For example, if the key is /etc/readme.txt
-     * then the first line will be selected and the method will return "standby=yes". The operator for comparison are
-     * the following: ".=" starts with; "==" equals to, if the second part is between {} then it is considered as a
-     * regular expression (regex); "=." ends with; "!=" different than.
+     * The options are in the following format: <code>
+     * 	(.= /readme.txt) standby=yes
+     * 	(== {avhrr_n.*}) standby=never;delay=2h
+     * </code> And this method looks for the first line which apply to the selected key. For example, if the key is
+     * /etc/readme.txt then the first line will be selected and the method will return "standby=yes". The operator for
+     * comparison are the following: ".=" starts with; "==" equals to, if the second part is between {} then it is
+     * considered as a regular expression (regex); "=." ends with; "!=" different than.
      *
      * @param key
      *            the key to look for.
@@ -1605,7 +1636,7 @@ public final class Format {
      *
      * @return the selection or null if nothing is found
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public static String choose(final String key, final String options) throws IOException {
@@ -1641,7 +1672,7 @@ public final class Format {
                     result = null;
                 }
             } else // Bad format for the line, so let's skip it
-            if (line.length() > 0) {
+            if (!line.isEmpty()) {
                 _log.warn("Skipping entry: {}", line);
             }
         }
@@ -1701,7 +1732,7 @@ public final class Format {
      *
      * @return the string
      *
-     * @throws java.io.FileNotFoundException
+     * @throws FileNotFoundException
      *             the file not found exception
      */
     public static String normalizePath(final String path) throws FileNotFoundException {
@@ -1754,7 +1785,7 @@ public final class Format {
      *
      * @return the string
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public static String compress(final String str) throws IOException {
@@ -1776,7 +1807,7 @@ public final class Format {
      *
      * @return the string
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public static String uncompress(final String str) throws IOException {
@@ -1794,7 +1825,7 @@ public final class Format {
      *
      * @return the string
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public static String uncompress(final byte[] bytes) throws IOException {
@@ -1822,7 +1853,7 @@ public final class Format {
      *
      * @return the string
      */
-    private static String _toString(final String str, final int maxWidth) {
+    private static String toString(final String str, final int maxWidth) {
         return str != null && str.length() > maxWidth ? str.substring(0, maxWidth) : str;
     }
 
@@ -1863,11 +1894,11 @@ public final class Format {
             final long time, final String name) {
         final var sb = new StringBuilder();
         final var fmt = new Formatter(sb);
-        fmt.format("%s    1 %-8s %-8s", permission, _toString(user, 8), _toString(group, 8));
+        fmt.format("%s    1 %-8s %-8s", permission, toString(user, 8), toString(group, 8));
         if (size != null && size.length() > 10) {
             fmt.format(" %s", size);
         } else {
-            fmt.format(" %10s", _toString(size, 10));
+            fmt.format(" %10s", toString(size, 10));
         }
         fmt.format(" %-12s %s", formatTime(time), name);
         fmt.close();
@@ -1894,7 +1925,7 @@ public final class Format {
         old[0] = true;
         for (var i = 0; i < aText.length(); i++) {
             final var c = aText.charAt(i);
-            states = new boolean[N + 1]; // Initialised to false
+            states = new boolean[N + 1]; // Initialized to false
             for (var j = 0; j < N; j++) {
                 final var p = aPattern.charAt(j);
                 // hack to handle *'s that match 0 characters

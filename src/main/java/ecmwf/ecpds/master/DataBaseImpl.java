@@ -2188,7 +2188,7 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
                     force != null && force, false, false, null);
             return monitor.done(id);
         } catch (final IOException e) {
-            throw Format.getRemoteException(e);
+            throw Format.getRemoteException("MasterServer=" + master.getRoot(), e);
         }
     }
 

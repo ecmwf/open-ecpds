@@ -106,8 +106,6 @@ import ecmwf.common.database.IncomingConnection;
 import ecmwf.common.database.MSUser;
 import ecmwf.common.database.TransferMethod;
 import ecmwf.common.ecaccess.ConnectionException;
-import ecmwf.common.ecaccess.ECauthToken;
-import ecmwf.common.ecaccess.ECauthTokenManager;
 import ecmwf.common.ecaccess.MBeanRepository;
 import ecmwf.common.ecaccess.NativeAuthenticationProvider;
 import ecmwf.common.ecaccess.StarterServer;
@@ -163,6 +161,8 @@ import ecmwf.common.text.Format;
 import ecmwf.common.text.Format.DuplicatedChooseScore;
 import ecmwf.common.text.Options;
 import ecmwf.common.version.Version;
+import ecmwf.common.ecaccess.ECauthToken;
+import ecmwf.common.ecaccess.ECauthTokenManager;
 import ecmwf.ecpds.master.DataAccessInterface;
 import ecmwf.ecpds.master.DownloadProgress;
 import ecmwf.ecpds.master.MasterConnection;
@@ -754,7 +754,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      *
      * @return the REST interface
      *
-     * @throws ecmwf.ecpds.mover.MoverException
+     * @throws MoverException
      *             the mover exception
      */
     public RESTInterface getRESTInterface(final String httpProxy, final String httpMover, final int connectTimeout)
@@ -781,7 +781,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      *
      * @return the MQTT interface
      *
-     * @throws ecmwf.ecpds.mover.MoverException
+     * @throws MoverException
      *             the mover exception
      */
     public MQTTInterface getMQTTInterface() throws MoverException {
@@ -857,7 +857,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      *
      * @return the data file access interface
      *
-     * @throws ecmwf.ecpds.master.MasterException
+     * @throws MasterException
      *             the master exception
      */
     public DataAccessInterface getDataFileAccessInterface() throws MasterException {
@@ -874,19 +874,19 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      * @param starter
      *            the starter
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
-     * @throws javax.management.InstanceAlreadyExistsException
+     * @throws InstanceAlreadyExistsException
      *             the instance already exists exception
-     * @throws javax.management.MBeanRegistrationException
+     * @throws MBeanRegistrationException
      *             the MBean registration exception
-     * @throws javax.management.NotCompliantMBeanException
+     * @throws NotCompliantMBeanException
      *             the not compliant m bean exception
-     * @throws javax.management.MalformedObjectNameException
+     * @throws MalformedObjectNameException
      *             the malformed object name exception
-     * @throws javax.management.InstanceNotFoundException
+     * @throws InstanceNotFoundException
      *             the instance not found exception
-     * @throws ecmwf.common.ecaccess.ConnectionException
+     * @throws ConnectionException
      *             the connection exception
      */
     public MoverServer(final Starter starter)
@@ -955,11 +955,11 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the ECproxy plugging listen address and port. This is used by the Master Server to update the
      * "TransferServer" entry in the database when the Mover subscribe. This address and port are used when the Master
      * Server send the address of the allocated Mover to the ecpds command.
+     *
+     * @return the ECproxyPlugin address and port
      */
     @Override
     public String getECproxyAddressAndPort() {
@@ -995,9 +995,9 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the incoming connection ids.
+     *
+     * @return the incoming connection ids
      */
     @Override
     public String[] getIncomingConnectionIds() {
@@ -1005,9 +1005,9 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the incoming connections.
+     *
+     * @return the incoming connections
      */
     @Override
     public List<IncomingConnection> getIncomingConnections() {
@@ -1015,9 +1015,12 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Close incoming connection.
+     *
+     * @param id
+     *            the id
+     *
+     * @return true, if successful
      */
     @Override
     public boolean closeIncomingConnection(final String id) {
@@ -1031,8 +1034,6 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Close all incoming connections.
      */
     @Override
@@ -1046,9 +1047,22 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Publish a notification to the registered MQTT service (if any).
+     *
+     * @param topic
+     *            the topic
+     * @param qos
+     *            the qos
+     * @param expiryInterval
+     *            the expiry interval
+     * @param contentType
+     *            the content type
+     * @param clientId
+     *            the client id
+     * @param payload
+     *            the payload
+     * @param retain
+     *            the retain
      */
     @Override
     public void publishToMQTTBroker(final String topic, final int qos, final long expiryInterval,
@@ -1059,9 +1073,10 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Remove a retained notification from the MQTT broker.
+     *
+     * @param topic
+     *            the topic
      */
     @Override
     public void removeFromMQTTBroker(final String topic) {
@@ -1071,9 +1086,9 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Get the number of client connected to the MQTT broker.
+     *
+     * @return the MQTT clients count
      */
     @Override
     public int getMQTTClientsCount() {
@@ -1105,9 +1120,9 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the root.
+     *
+     * @return the root
      */
     @Override
     public String getRoot() {
@@ -1115,9 +1130,9 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the service.
+     *
+     * @return the service
      */
     @Override
     public String getService() {
@@ -1130,9 +1145,9 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the password.
+     *
+     * @return the password
      */
     @Override
     public String getPassword() {
@@ -1140,9 +1155,9 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the version.
+     *
+     * @return the version
      */
     @Override
     public String getVersion() {
@@ -1150,9 +1165,9 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the MBean info.
+     *
+     * @return the MBean info
      */
     @Override
     public MBeanInfo getMBeanInfo() {
@@ -1186,9 +1201,19 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Sets the attribute.
+     *
+     * @param name
+     *            the name
+     * @param value
+     *            the value
+     *
+     * @return true, if successful
+     *
+     * @throws InvalidAttributeValueException
+     *             the invalid attribute value exception
+     * @throws MBeanException
+     *             the MBean exception
      */
     @Override
     public boolean setAttribute(final String name, final Object value)
@@ -1201,9 +1226,17 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the attribute.
+     *
+     * @param attributeName
+     *            the attribute name
+     *
+     * @return the attribute
+     *
+     * @throws AttributeNotFoundException
+     *             the attribute not found exception
+     * @throws MBeanException
+     *             the MBean exception
      */
     @Override
     public Object getAttribute(final String attributeName) throws AttributeNotFoundException, MBeanException {
@@ -1238,9 +1271,21 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Invoke.
+     *
+     * @param operationName
+     *            the operation name
+     * @param params
+     *            the params
+     * @param signature
+     *            the signature
+     *
+     * @return the object
+     *
+     * @throws NoSuchMethodException
+     *             the no such method exception
+     * @throws MBeanException
+     *             the MBean exception
      */
     @Override
     public Object invoke(final String operationName, final Object[] params, final String[] signature)
@@ -1266,23 +1311,37 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Check.
+     *
+     * @param ticket
+     *            the ticket
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void check(final long ticket) throws RemoteException {
         try {
             ticketRepository.check(ticket, Cnf.at("Other", "ticketWaitDuration", 20 * Timer.ONE_MINUTE));
         } catch (Throwable t) {
-            throw Format.getRemoteException(t);
+            throw Format.getRemoteException("DataMover=" + getRoot(), t);
         }
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Size.
+     *
+     * @param transfer
+     *            the transfer
+     * @param fileName
+     *            the file name
+     *
+     * @return the long
+     *
+     * @throws ECtransException
+     *             the ectrans exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public long size(final DataTransfer transfer, final String fileName) throws RemoteException {
@@ -1301,7 +1360,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             }
             return size.getSize();
         } catch (Throwable t) {
-            throw Format.getRemoteException(t);
+            throw Format.getRemoteException("DataMover=" + getRoot(), t);
         } finally {
             if (cookieSet) {
                 ThreadService.removeCookie();
@@ -1310,9 +1369,17 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Del.
+     *
+     * @param transfer
+     *            the transfer
+     * @param fileName
+     *            the file name
+     *
+     * @throws ECtransException
+     *             the ectrans exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void del(final DataTransfer transfer, final String fileName) throws RemoteException {
@@ -1329,7 +1396,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                 transferRepository.removeValue(transfer);
             }
         } catch (Throwable t) {
-            throw Format.getRemoteException(t);
+            throw Format.getRemoteException("DataMover=" + getRoot(), t);
         } finally {
             if (cookieSet) {
                 ThreadService.removeCookie();
@@ -1338,9 +1405,17 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Filter.
+     *
+     * @param dataFile
+     *            the data file
+     * @param remove
+     *            the remove
+     *
+     * @return the data file
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public DataFile filter(final DataFile dataFile, final boolean remove) throws RemoteException {
@@ -1461,7 +1536,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             _log.debug("Filtering completed successfully ({} byte(s))", size);
             return dataFile;
         } catch (Throwable t) {
-            throw Format.getRemoteException(t);
+            throw Format.getRemoteException("DataMover=" + getRoot(), t);
         } finally {
             if (cookieSet) {
                 ThreadService.removeCookie();
@@ -1470,9 +1545,23 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Replicate.
+     *
+     * @param dataFile
+     *            the data file
+     * @param targetHost
+     *            the target host
+     * @param hostsForSource
+     *            the hosts for source
+     *
+     * @return the data file
+     *
+     * @throws ECtransException
+     *             the ectrans exception
+     * @throws SourceNotAvailableException
+     *             the source not available exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public DataFile replicate(final DataFile dataFile, final Host targetHost, final Host[] hostsForSource)
@@ -1557,7 +1646,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             _log.info("File {} successfully transmitted on {}", fileName, targetHost.getNickname());
             return dataFile;
         } catch (Throwable t) {
-            throw Format.getRemoteException(t);
+            throw Format.getRemoteException("DataMover=" + getRoot(), t);
         } finally {
             if (cookieSet) {
                 ThreadService.removeCookie();
@@ -1566,9 +1655,15 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the mover report.
+     *
+     * @param proxyHost
+     *            the proxy host
+     *
+     * @return the mover report
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public String getMoverReport(final Host proxyHost) throws RemoteException {
@@ -1578,16 +1673,24 @@ public final class MoverServer extends StarterServer implements MoverInterface {
         try {
             final var rest = getRESTInterface(url, mover, (int) setup.getDuration(HOST_PROXY_TIMEOUT).toMillis());
             return rest.getMoverReport();
-        } catch (final Throwable t) {
-            throw Format.getRemoteException("Error occurred on remote proxy (proxy=" + url + ",mover=" + mover + "): ",
-                    t);
+        } catch (Throwable t) {
+            throw Format.getRemoteException("DataMover=" + getRoot(),
+                    "Error occurred on remote proxy (proxy=" + url + ",mover=" + mover + ")", t);
         }
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the host report.
+     *
+     * @param proxyHost
+     *            the proxy host
+     * @param host
+     *            the host
+     *
+     * @return the host report
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public String getHostReport(final Host proxyHost, final Host host) throws RemoteException {
@@ -1597,30 +1700,39 @@ public final class MoverServer extends StarterServer implements MoverInterface {
         try {
             final var rest = getRESTInterface(url, mover, (int) setup.getDuration(HOST_PROXY_TIMEOUT).toMillis());
             return rest.getHostReport(host);
-        } catch (final Throwable t) {
-            throw Format.getRemoteException("Error occurred on remote proxy (proxy=" + url + ",mover=" + mover + ")",
-                    t);
+        } catch (Throwable t) {
+            throw Format.getRemoteException("DataMover=" + getRoot(),
+                    "Error occurred on remote proxy (proxy=" + url + ",mover=" + mover + ")", t);
         }
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the report.
+     *
+     * @return the report
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public String getReport() throws RemoteException {
         try {
             return _exec(Cnf.notEmptyStringAt("ReportCommand", "mover", "mover-report"));
         } catch (Throwable t) {
-            throw Format.getRemoteException(t);
+            throw Format.getRemoteException("DataMover=" + getRoot(), t);
         }
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the report.
+     *
+     * @param host
+     *            the host
+     *
+     * @return the report
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public String getReport(final Host host) throws RemoteException {
@@ -1658,7 +1770,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             // Run the report!
             return _exec(sb.toString());
         } catch (Throwable t) {
-            throw Format.getRemoteException(t);
+            throw Format.getRemoteException("DataMover=" + getRoot(), t);
         }
     }
 
@@ -1724,7 +1836,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             outputThread.join();
             errorThread.join();
             returnCode = process.waitFor();
-        } catch (final InterruptedException e) {
+        } catch (final InterruptedException _) {
             _log.debug("Interrupted while waiting for process completion");
             throw new IOException("Interrupted while waiting");
         } finally {
@@ -1744,9 +1856,19 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Download.
+     *
+     * @param dataFile
+     *            the data file
+     * @param hostForSource
+     *            the host for source
+     *
+     * @return the data file
+     *
+     * @throws SourceNotAvailableException
+     *             the source not available exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public DataFile download(final DataFile dataFile, final Host hostForSource) throws RemoteException {
@@ -1906,7 +2028,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             _log.debug("Download completed successfully");
             return dataFile;
         } catch (Throwable t) {
-            throw Format.getRemoteException(t);
+            throw Format.getRemoteException("DataMover=" + getRoot(), t);
         } finally {
             if (cookieSet) {
                 ThreadService.removeCookie();
@@ -1915,12 +2037,18 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Purge.
+     *
+     * @param proxyHost
+     *            the proxy host
+     * @param directories
+     *            the directories
+     *
+     * @throws RemoteException
+     *             the remote exception
      */
     @Override
-    public void purge(final Host proxyHost, final List<ExistingStorageDirectory> directories) throws RemoteException {
+    public void purge(final Host proxyHost, final List<ExistingStorageDirectory> directories) {
         _log.info("Request to purge on ProxyHost-{} (found {} existing directories)", proxyHost.getName(),
                 directories.size());
         final var setup = HOST_PROXY.getECtransSetup(proxyHost.getData());
@@ -1935,12 +2063,16 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Purge.
+     *
+     * @param directories
+     *            the directories
+     *
+     * @throws RemoteException
+     *             the remote exception
      */
     @Override
-    public void purge(final List<ExistingStorageDirectory> directories) throws RemoteException {
+    public void purge(final List<ExistingStorageDirectory> directories) {
         _log.info("Request to purge (found {} existing directories)", directories.size());
         synchronized (this) {
             if (purgeThread != null && purgeThread.isAlive()) {
@@ -1970,9 +2102,19 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Del.
+     *
+     * @param proxyHost
+     *            the proxy host
+     * @param dataFile
+     *            the data file
+     *
+     * @return true, if successful
+     *
+     * @throws ECtransException
+     *             the ectrans exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public boolean del(final Host proxyHost, final DataFile dataFile) throws RemoteException {
@@ -1990,7 +2132,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             }
             return false;
         } catch (Throwable t) {
-            throw Format.getRemoteException(t);
+            throw Format.getRemoteException("DataMover=" + getRoot(), t);
         } finally {
             if (cookieSet) {
                 ThreadService.removeCookie();
@@ -1999,9 +2141,17 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Del.
+     *
+     * @param dataFile
+     *            the data file
+     *
+     * @return true, if successful
+     *
+     * @throws ECtransException
+     *             the ectrans exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public boolean del(final DataFile dataFile) throws RemoteException {
@@ -2053,7 +2203,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             }
             return !OPERATIONAL || deleted;
         } catch (Throwable t) {
-            throw Format.getRemoteException(t);
+            throw Format.getRemoteException("DataMover=" + getRoot(), t);
         } finally {
             if (cookieSet) {
                 ThreadService.removeCookie();
@@ -2089,9 +2239,27 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Puts the.
+     *
+     * @param hostsForSource
+     *            the hosts for source
+     * @param transfer
+     *            the transfer
+     * @param targetName
+     *            the target name
+     * @param localPosn
+     *            the local posn
+     * @param remotePosn
+     *            the remote posn
+     *
+     * @return the data transfer
+     *
+     * @throws ECtransException
+     *             the ectrans exception
+     * @throws SourceNotAvailableException
+     *             the source not available exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public DataTransfer put(final Host[] hostsForSource, final DataTransfer transfer, final String targetName,
@@ -2248,7 +2416,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                 }
             }
         } catch (Throwable t) {
-            throw Format.getRemoteException(t);
+            throw Format.getRemoteException("DataMover=" + getRoot(), t);
         } finally {
             if (cookieSet) {
                 ThreadService.removeCookie();
@@ -2257,10 +2425,24 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Allow getting a ProxySocket to upload a file on a target host. This method should be used only when the file is
      * to be uploaded from a different data mover than the current one.
+     *
+     * @param host
+     *            the host
+     * @param target
+     *            the target
+     * @param remotePosn
+     *            the remote posn
+     * @param size
+     *            the size
+     *
+     * @return the proxy socket
+     *
+     * @throws ECtransException
+     *             the ectrans exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public ProxySocket put(final Host host, final String target, final long remotePosn, final long size)
@@ -2275,15 +2457,29 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             final var socketConfig = new SocketConfig("ECproxyPlugin");
             return new ProxySocket(ticket.getId(), socketConfig.getPublicAddress(), socketConfig.getPort(), true);
         } catch (Throwable t) {
-            throw Format.getRemoteException(t);
+            throw Format.getRemoteException("DataMover=" + getRoot(), t);
         }
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Allow getting a ProxySocket to retrieve a file on a target host. This method should be used only when the file is
      * to be retrieved from a different data mover than the current one.
+     *
+     * @param host
+     *            the host
+     * @param source
+     *            the source
+     * @param remotePosn
+     *            the remote posn
+     * @param removeOriginal
+     *            the remove original
+     *
+     * @return the proxy socket
+     *
+     * @throws ECtransException
+     *             the ectrans exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public ProxySocket get(final Host host, final String source, final long remotePosn, final boolean removeOriginal)
@@ -2298,7 +2494,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             final var socketConfig = new SocketConfig("ECproxyPlugin");
             return new ProxySocket(ticket.getId(), socketConfig.getPublicAddress(), socketConfig.getPort(), true);
         } catch (Throwable t) {
-            throw Format.getRemoteException(t);
+            throw Format.getRemoteException("DataMover=" + getRoot(), t);
         }
     }
 
@@ -2320,7 +2516,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      *
      * @return the ecproxy callback for checking the outcome of the transmission
      *
-     * @throws ecmwf.common.ectrans.ECtransException
+     * @throws ECtransException
      *             the ectrans exception
      */
     public ECproxyCallback get(final OutputStream out, final Host host, final String source, final long remotePosn,
@@ -2339,9 +2535,21 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the.
+     *
+     * @param dataFile
+     *            the data file
+     * @param hostForSource
+     *            the host for source
+     * @param remotePosn
+     *            the remote posn
+     *
+     * @return the proxy socket
+     *
+     * @throws SourceNotAvailableException
+     *             the source not available exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public ProxySocket get(final DataFile dataFile, final Host hostForSource, final long remotePosn)
@@ -2349,14 +2557,28 @@ public final class MoverServer extends StarterServer implements MoverInterface {
         try {
             return get(dataFile, new Host[] { hostForSource }, remotePosn, -1);
         } catch (Throwable t) {
-            throw Format.getRemoteException(t);
+            throw Format.getRemoteException("DataMover=" + getRoot(), t);
         }
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the.
+     *
+     * @param dataFile
+     *            the data file
+     * @param hostsForSource
+     *            the hosts for source
+     * @param remotePosn
+     *            the remote posn
+     * @param length
+     *            the length
+     *
+     * @return the proxy socket
+     *
+     * @throws SourceNotAvailableException
+     *             the source not available exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public ProxySocket get(final DataFile dataFile, final Host[] hostsForSource, final long remotePosn,
@@ -2370,7 +2592,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             final var socketConfig = new SocketConfig("ECproxyPlugin");
             return new ProxySocket(ticket.getId(), socketConfig.getPublicAddress(), socketConfig.getPort(), true);
         } catch (Throwable t) {
-            throw Format.getRemoteException(t);
+            throw Format.getRemoteException("DataMover=" + getRoot(), t);
         } finally {
             if (cookieSet) {
                 ThreadService.removeCookie();
@@ -2379,9 +2601,19 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Size.
+     *
+     * @param host
+     *            the host
+     * @param source
+     *            the source
+     *
+     * @return the long
+     *
+     * @throws ECtransException
+     *             the ectrans exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public long size(final Host host, final String source) throws RemoteException {
@@ -2392,14 +2624,26 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                     new DefaultCallback(HOST_ECTRANS.getECtransSetup(host.getData())), true);
             return size.getSize();
         } catch (Throwable t) {
-            throw Format.getRemoteException(t);
+            throw Format.getRemoteException("DataMover=" + getRoot(), t);
         }
     }
 
     /**
-     * {@inheritDoc}
-     *
      * List as string array.
+     *
+     * @param host
+     *            the host
+     * @param directory
+     *            the directory
+     * @param pattern
+     *            the pattern
+     *
+     * @return the string[]
+     *
+     * @throws ECtransException
+     *             the ectrans exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public String[] listAsStringArray(final Host host, final String directory, final String pattern)
@@ -2411,14 +2655,28 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                     new DefaultCallback(HOST_ECTRANS.getECtransSetup(host.getData())), true);
             return list.getListAsStringArray();
         } catch (Throwable t) {
-            throw Format.getRemoteException(t);
+            throw Format.getRemoteException("DataMover=" + getRoot(), t);
         }
     }
 
     /**
-     * {@inheritDoc}
-     *
      * List as byte array.
+     *
+     * @param host
+     *            the host
+     * @param directory
+     *            the directory
+     * @param pattern
+     *            the pattern
+     * @param synchronous
+     *            the synchronous
+     *
+     * @return the remote input stream
+     *
+     * @throws ECtransException
+     *             the ectrans exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public RemoteInputStream listAsByteArray(final Host host, final String directory, final String pattern,
@@ -2444,14 +2702,22 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             }
             return new RemoteInputStreamImp(in);
         } catch (Throwable t) {
-            throw Format.getRemoteException(t);
+            throw Format.getRemoteException("DataMover=" + getRoot(), t);
         }
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Execute.
+     *
+     * @param script
+     *            the script
+     *
+     * @return the remote input stream
+     *
+     * @throws ScriptException
+     *             the script exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public RemoteInputStream execute(final String script) throws RemoteException {
@@ -2463,14 +2729,22 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             gzip.close();
             return new RemoteInputStreamImp(new ByteArrayInputStream(out.toByteArray()));
         } catch (final Throwable t) {
-            throw Format.getRemoteException(t);
+            throw Format.getRemoteException("DataMover=" + getRoot(), t);
         }
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Del.
+     *
+     * @param host
+     *            the host
+     * @param source
+     *            the source
+     *
+     * @throws ECtransException
+     *             the ectrans exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void del(final Host host, final String source) throws RemoteException {
@@ -2479,14 +2753,22 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                     null, host.getECUserName(), host.getName() + "@" + host.getTransferMethodName(), null,
                     new DefaultCallback(HOST_ECTRANS.getECtransSetup(host.getData())), true);
         } catch (Throwable t) {
-            throw Format.getRemoteException(t);
+            throw Format.getRemoteException("DataMover=" + getRoot(), t);
         }
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Mkdir.
+     *
+     * @param host
+     *            the host
+     * @param dir
+     *            the dir
+     *
+     * @throws ECtransException
+     *             the ectrans exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void mkdir(final Host host, final String dir) throws RemoteException {
@@ -2495,14 +2777,22 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                     null, host.getECUserName(), host.getName() + "@" + host.getTransferMethodName(), null,
                     new DefaultCallback(HOST_ECTRANS.getECtransSetup(host.getData())), true);
         } catch (Throwable t) {
-            throw Format.getRemoteException(t);
+            throw Format.getRemoteException("DataMover=" + getRoot(), t);
         }
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Rmdir.
+     *
+     * @param host
+     *            the host
+     * @param dir
+     *            the dir
+     *
+     * @throws ECtransException
+     *             the ectrans exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void rmdir(final Host host, final String dir) throws RemoteException {
@@ -2511,14 +2801,24 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                     null, host.getECUserName(), host.getName() + "@" + host.getTransferMethodName(), null,
                     new DefaultCallback(HOST_ECTRANS.getECtransSetup(host.getData())), true);
         } catch (Throwable t) {
-            throw Format.getRemoteException(t);
+            throw Format.getRemoteException("DataMover=" + getRoot(), t);
         }
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Move.
+     *
+     * @param host
+     *            the host
+     * @param source
+     *            the source
+     * @param target
+     *            the target
+     *
+     * @throws ECtransException
+     *             the ectrans exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void move(final Host host, final String source, final String target) throws RemoteException {
@@ -2528,14 +2828,22 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                     host.getName() + "@" + host.getTransferMethodName(), null,
                     new DefaultCallback(HOST_ECTRANS.getECtransSetup(host.getData())), true);
         } catch (Throwable t) {
-            throw Format.getRemoteException(t);
+            throw Format.getRemoteException("DataMover=" + getRoot(), t);
         }
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Close.
+     *
+     * @param transfer
+     *            the transfer
+     *
+     * @return true, if successful
+     *
+     * @throws ECtransException
+     *             the ectrans exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public boolean close(final DataTransfer transfer) throws RemoteException {
@@ -2575,7 +2883,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             _log.warn("Transfer {} not found/closed", transfer.getId());
             return false;
         } catch (Throwable t) {
-            throw Format.getRemoteException(t);
+            throw Format.getRemoteException("DataMover=" + getRoot(), t);
         } finally {
             if (cookieSet) {
                 ThreadService.removeCookie();
@@ -2590,7 +2898,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      *
      * @return the master proxy
      *
-     * @throws ecmwf.ecpds.mover.MoverException
+     * @throws MoverException
      *             the mover exception
      */
     public MasterProxy getMasterProxy() throws MoverException {
@@ -2622,7 +2930,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      *
      * @return the master interface
      *
-     * @throws ecmwf.common.ecaccess.ConnectionException
+     * @throws ConnectionException
      *             the connection exception
      */
     public MasterInterface getMasterInterface() throws ConnectionException {
@@ -2637,7 +2945,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      *
      * @return the ecauth token
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public ECauthToken getECauthToken(final String user) throws IOException {
@@ -2663,8 +2971,6 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Shutdown.
      */
     @Override
@@ -3304,7 +3610,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     /**
      * The Class ECproxyCallback.
      */
-    public static final class ECproxyCallback extends DefaultCallback {
+    public final class ECproxyCallback extends DefaultCallback {
         /** The _ticket. */
         private final ECaccessTicket _ticket;
 
@@ -3382,13 +3688,17 @@ public final class MoverServer extends StarterServer implements MoverInterface {
          *             Signals that an I/O exception has occurred.
          */
         public void check() throws IOException {
-            final var start = System.currentTimeMillis();
-            _ticket.close(30 * Timer.ONE_SECOND);
-            if (_log.isDebugEnabled()) {
-                _log.debug("Duration on check: {}", Format.formatDuration(start, System.currentTimeMillis()));
-            }
-            if (_ticket.hasError()) {
-                throw new IOException(_ticket.getError());
+            try {
+                final var start = System.currentTimeMillis();
+                _ticket.close(30 * Timer.ONE_SECOND);
+                if (_log.isDebugEnabled()) {
+                    _log.debug("Duration on check: {}", Format.formatDuration(start, System.currentTimeMillis()));
+                }
+                if (_ticket.hasError()) {
+                    throw new IOException(_ticket.getError());
+                }
+            } catch (Throwable t) {
+                throw Format.getRemoteException("DataMover=" + getRoot(), t);
             }
         }
 

@@ -31,6 +31,7 @@ import java.util.Hashtable;
 import java.util.Properties;
 import java.util.Vector;
 
+import ecmwf.common.rmi.SocketConfig;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.text.Format;
 
@@ -61,7 +62,7 @@ public final class RemoteCnfImp extends CallBackObject implements RemoteCnf {
      */
     @Override
     public void add(final String group) throws RemoteException {
-        throw Format.getRemoteException("Not implemented");
+        throw Format.getRemoteException(SocketConfig.getLocalAddress(), "Not implemented");
     }
 
     /**
@@ -79,7 +80,7 @@ public final class RemoteCnfImp extends CallBackObject implements RemoteCnf {
      */
     @Override
     public void add(final String group, final String key, final String value) throws RemoteException {
-        throw Format.getRemoteException("Not implemented");
+        throw Format.getRemoteException(SocketConfig.getLocalAddress(), "Not implemented");
     }
 
     /**
@@ -95,7 +96,7 @@ public final class RemoteCnfImp extends CallBackObject implements RemoteCnf {
      */
     @Override
     public void add(final String group, final Hashtable<String, String> table) throws RemoteException {
-        throw Format.getRemoteException("Not implemented");
+        throw Format.getRemoteException(SocketConfig.getLocalAddress(), "Not implemented");
     }
 
     /**
@@ -162,7 +163,7 @@ public final class RemoteCnfImp extends CallBackObject implements RemoteCnf {
      */
     @Override
     public Vector<String> groups() throws RemoteException {
-        throw Format.getRemoteException("Not implemented");
+        throw Format.getRemoteException(SocketConfig.getLocalAddress(), "Not implemented");
     }
 
     /**
@@ -178,7 +179,7 @@ public final class RemoteCnfImp extends CallBackObject implements RemoteCnf {
      */
     @Override
     public Hashtable<String, Vector<String>> valuesAt(final String group) throws RemoteException {
-        throw Format.getRemoteException("Not implemented");
+        throw Format.getRemoteException(SocketConfig.getLocalAddress(), "Not implemented");
     }
 
     /**
@@ -196,7 +197,7 @@ public final class RemoteCnfImp extends CallBackObject implements RemoteCnf {
      */
     @Override
     public Vector<String> valuesAt(final String group, final String key) throws RemoteException {
-        throw Format.getRemoteException("Not implemented");
+        throw Format.getRemoteException(SocketConfig.getLocalAddress(), "Not implemented");
     }
 
     /**
@@ -229,7 +230,7 @@ public final class RemoteCnfImp extends CallBackObject implements RemoteCnf {
      */
     @Override
     public Properties getAddedProperties() throws RemoteException {
-        throw Format.getRemoteException("Not implemented");
+        throw Format.getRemoteException(SocketConfig.getLocalAddress(), "Not implemented");
     }
 
     /**
@@ -242,7 +243,7 @@ public final class RemoteCnfImp extends CallBackObject implements RemoteCnf {
      */
     @Override
     public Hashtable<String, Hashtable<String, String>> getExport() throws RemoteException {
-        throw Format.getRemoteException("Not implemented");
+        throw Format.getRemoteException(SocketConfig.getLocalAddress(), "Not implemented");
     }
 
     /**
@@ -255,7 +256,7 @@ public final class RemoteCnfImp extends CallBackObject implements RemoteCnf {
      */
     @Override
     public Properties getSystemProperties() throws RemoteException {
-        throw Format.getRemoteException("Not implemented");
+        throw Format.getRemoteException(SocketConfig.getLocalAddress(), "Not implemented");
     }
 
     /**
@@ -269,7 +270,7 @@ public final class RemoteCnfImp extends CallBackObject implements RemoteCnf {
      */
     @Override
     public void importFrom(final Hashtable<String, Hashtable<String, String>> export) throws RemoteException {
-        throw Format.getRemoteException("Not implemented");
+        throw Format.getRemoteException(SocketConfig.getLocalAddress(), "Not implemented");
     }
 
     /**
@@ -307,7 +308,7 @@ public final class RemoteCnfImp extends CallBackObject implements RemoteCnf {
      */
     @Override
     public String notEmptyStringAt(final String group, final String key) throws RemoteException {
-        throw Format.getRemoteException("Not implemented");
+        throw Format.getRemoteException(SocketConfig.getLocalAddress(), "Not implemented");
     }
 
     /**
