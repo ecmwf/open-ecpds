@@ -30,6 +30,7 @@ package ecmwf.ecpds.master.plugin.http.dao;
  */
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -64,7 +65,7 @@ public final class Util {
      *
      * @return the ecpds session from object
      *
-     * @throws ecmwf.web.model.ModelException
+     * @throws ModelException
      *             the model exception
      */
     public static ECpdsSession getECpdsSessionFromObject(final Object u) throws ModelException {
@@ -82,22 +83,33 @@ public final class Util {
     }
 
     /**
-     * Gets the id.
+     * Extracts the leading identifier from the input string, consisting only of letters, digits, '-', '_' or ':'
+     * characters. Stops at the first invalid character.
      *
-     * @param string
-     *            the string
+     * @param text
+     *            the input string
      *
-     * @return the id
+     * @return the extracted identifier, or an empty string if none is found
      */
-    private static String getId(final String string) {
-        final var result = new StringBuilder();
-        for (final char c : string.toCharArray()) {
-            if (!Character.isLetterOrDigit(c) && (c != '-') && (c != '_') && (c != ':')) {
+    private static String getId(final String text) {
+        if (text == null || text.isEmpty()) {
+            return "";
+        }
+        final var result = new StringBuilder(text.length());
+        for (var i = 0; i < text.length(); i++) {
+            final var c = text.charAt(i);
+            if (isIdentifierChar(c)) {
+                result.append(c);
+            } else {
                 break;
             }
-            result.append(c);
         }
         return result.toString();
+    }
+
+    /** Determines whether a character is valid in an identifier. */
+    private static boolean isIdentifierChar(final char c) {
+        return Character.isLetterOrDigit(c) || c == '-' || c == '_' || c == ':';
     }
 
     /**
@@ -105,8 +117,8 @@ public final class Util {
      *
      * @param name
      *            the name
-     * @param ressource
-     *            the ressource
+     * @param resource
+     *            the resource
      * @param user
      *            the user
      * @param line
@@ -114,30 +126,30 @@ public final class Util {
      *
      * @return the href
      */
-    private static String getHREF(final String name, final String ressource, final User user, String line) {
-        // Let's search for the parameter name!
-        final var pos = line.toLowerCase().indexOf(name.toLowerCase() + "=");
-        if (pos >= 0) {
-            // We found it so now we have to get its value!
-            final var id = getId(line.substring(pos + name.length() + 1));
-            if (id.length() > 0) {
-                // A value is found!
-                boolean authorized;
+    private static String getHREF(final String name, final String resource, final User user, final String line) {
+        final var lowerLine = line.toLowerCase();
+        final var search = name.toLowerCase() + "=";
+        final var paramIndex = lowerLine.indexOf(search);
+        if (paramIndex >= 0) {
+            final var valueStart = paramIndex + name.length() + 1;
+            final var remainder = line.substring(valueStart);
+            final var id = getId(remainder);
+            if (!id.isEmpty()) {
+                var authorized = false;
                 try {
-                    // Is the user authorized to access the link?
-                    authorized = user != null && user.hasAccess(ressource);
-                } catch (final UserException e) {
-                    // Let's not authorize it!
-                    authorized = false;
+                    authorized = user != null && user.hasAccess(resource);
+                } catch (final UserException _) {
+                    // Access denied, fallback to plain text
                 }
                 try {
-                    // Build the line with the link if authorized or just the
-                    // name if not authorized!
-                    line = line.substring(0, pos)
-                            + (authorized ? "<a href=\"" + ressource + "/" + id + "\">" + name + " " + id + "</a>"
-                                    : name + " " + id)
-                            + getHREF(name, ressource, user, line.substring(pos + name.length() + id.length() + 1));
-                } catch (final Throwable t) {
+                    final var before = line.substring(0, paramIndex);
+                    final var after = line.substring(valueStart + id.length());
+                    final var replacement = authorized
+                            ? "<a href=\"" + resource + "/" + id + "\">" + name + " " + id + "</a>" : name + " " + id;
+
+                    return before + replacement + getHREF(name, resource, user, after);
+                } catch (final IndexOutOfBoundsException _) {
+                    // Defensive: malformed input
                 }
             }
         }
@@ -154,23 +166,24 @@ public final class Util {
      *
      * @return the href
      */
-    private static String getHREF(final String protocol, String line) {
-        // Let's search for the parameter name!
-        final var pos = line.toLowerCase().indexOf(protocol + "://");
-        if (pos >= 0) {
-            // We found it so now we have to get its value!
-            var pos2 = line.substring(pos).indexOf(" ");
-            if (pos2 == -1) {
-                // This is the end of the line!
-                pos2 = line.substring(pos).length();
+    private static String getHREF(final String protocol, final String line) {
+        final var lowerLine = line.toLowerCase();
+        final var prefix = protocol.toLowerCase() + "://";
+        final var start = lowerLine.indexOf(prefix);
+        if (start >= 0) {
+            var end = line.indexOf(' ', start);
+            if (end == -1) {
+                end = line.length();
             }
-            if (pos2 > 0) {
+            if (end > start) {
                 try {
-                    final var url = line.substring(pos, pos + pos2);
-                    // Build the line with the link!
-                    line = line.substring(0, pos) + "<a href=\"" + url + "\">" + url + "</a>"
-                            + getHREF(protocol, line.substring(pos + pos2));
-                } catch (final Throwable t) {
+                    final var url = line.substring(start, end);
+                    final var before = line.substring(0, start);
+                    final var after = line.substring(end);
+                    final var linked = "<a href=\"" + url + "\">" + url + "</a>";
+                    return before + linked + getHREF(protocol, after);
+                } catch (final IndexOutOfBoundsException _) {
+                    // Malformed input, ignore and return original line
                 }
             }
         }
@@ -185,24 +198,24 @@ public final class Util {
      *
      * @return the time
      */
-    private static String getTime(String line) {
-        // Let's search for the time parameter!
-        final var pos = line.toLowerCase().indexOf("time=");
-        if (pos >= 0) {
-            // We found it so now we have to get its value!
-            var pos2 = line.substring(pos).indexOf(" ");
-            if (pos2 == -1) {
-                // This is the end of the line!
-                pos2 = line.substring(pos).length();
-            }
-            if (pos2 > 0) {
+    private static String getTime(final String line) {
+        final var lowerLine = line.toLowerCase();
+        final var key = "time=";
+        final var keyIndex = lowerLine.indexOf(key);
+        if (keyIndex >= 0) {
+            final var valueStart = keyIndex + key.length();
+            final var spaceIndex = line.indexOf(' ', valueStart);
+            final var valueEnd = (spaceIndex != -1) ? spaceIndex : line.length();
+            if (valueEnd > valueStart) {
                 try {
-                    final var time = line.substring(pos + 5, pos + pos2);
-                    // Build the line with the date formated!
-                    line = line.substring(0, pos) + "<font color=\"black\">"
-                            + Format.formatTime("MMM dd HH:mm:ss", Long.parseLong(time)) + "</font>"
-                            + getTime(line.substring(pos + pos2));
-                } catch (final Throwable t) {
+                    final var timestampStr = line.substring(valueStart, valueEnd);
+                    final var timestamp = Long.parseLong(timestampStr);
+                    final var formatted = Format.formatTime("MMM dd HH:mm:ss", timestamp);
+                    final var before = line.substring(0, keyIndex);
+                    final var after = line.substring(valueEnd);
+                    return before + "<font color=\"black\">" + formatted + "</font>" + getTime(after);
+                } catch (NumberFormatException | IndexOutOfBoundsException _) {
+                    // Ignore malformed time value
                 }
             }
         }
@@ -217,24 +230,24 @@ public final class Util {
      *
      * @return the start
      */
-    private static String getStart(String line) {
-        // Let's search for the start parameter!
-        final var pos = line.toLowerCase().indexOf("start=");
-        if (pos >= 0) {
-            // We found it so now we have to get its value!
-            var pos2 = line.substring(pos).indexOf(" ");
-            if (pos2 == -1) {
-                // This is the end of the line!
-                pos2 = line.substring(pos).length();
-            }
-            if (pos2 > 0) {
+    private static String getStart(final String line) {
+        final var lowerLine = line.toLowerCase();
+        final var key = "start=";
+        final var keyIndex = lowerLine.indexOf(key);
+        if (keyIndex >= 0) {
+            final var valueStart = keyIndex + key.length();
+            final var spaceIndex = line.indexOf(' ', valueStart);
+            final var valueEnd = (spaceIndex != -1) ? spaceIndex : line.length();
+            if (valueEnd > valueStart) {
                 try {
-                    final var time = line.substring(pos + 6, pos + pos2);
-                    // Build the line with the duration formated!
-                    line = line.substring(0, pos)
-                            + Format.formatDuration(Long.parseLong(time), System.currentTimeMillis())
-                            + getStart(line.substring(pos + pos2));
-                } catch (final Throwable t) {
+                    final var timeStr = line.substring(valueStart, valueEnd);
+                    final var startTime = Long.parseLong(timeStr);
+                    final var formatted = Format.formatDuration(startTime, System.currentTimeMillis());
+                    final var before = line.substring(0, keyIndex);
+                    final var after = line.substring(valueEnd);
+                    return before + formatted + getStart(after);
+                } catch (NumberFormatException | IndexOutOfBoundsException _) {
+                    // Ignore malformed start time
                 }
             }
         }
@@ -269,54 +282,45 @@ public final class Util {
             return null;
         }
         final var result = new StringBuilder();
-        final var reader = new BufferedReader(new StringReader(beautify(Format.escapeHTML(output))));
-        while (true) {
-            String line = null;
-            try {
-                line = reader.readLine();
-            } catch (final Throwable t) {
+        final var escaped = Format.escapeHTML(output);
+        final var reader = new BufferedReader(new StringReader(beautify(escaped)));
+        try {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                // Add hyperlinks for different identifiers
+                line = getHREF("DataFileId", "/do/datafile/datafile", user, line);
+                line = getHREF("DataTransferId", "/do/transfer/data", user, line);
+                line = getHREF("Destination", "/do/transfer/destination", user, line);
+                line = getHREF("Host", "/do/transfer/host", user, line);
+                line = getHREF("DataMover", "/do/datafile/transferserver", user, line);
+                line = getHREF("TransferGroup", "/do/datafile/transfergroup", user, line);
+                line = getHREF("TransferMethod", "/do/transfer/method", user, line);
+                line = getHREF("WebUser", "/do/user/user", user, line);
+                line = getHREF("DataUser", "/do/user/incoming", user, line);
+                line = getHREF("MasterServer", null, null, line);
+                // Linkify known protocols
+                line = getHREF("http", line);
+                line = getHREF("https", line);
+                line = getHREF("ftp", line);
+                // Format time and start fields
+                line = getTime(line);
+                line = getStart(line);
+                // Color-coded log levels
+                final var lower = line.toLowerCase();
+                if (lower.startsWith("log:")) {
+                    result.append("<font color=\"green\">").append(line.substring(4)).append("</font>\n");
+                } else if (lower.startsWith("err:")) {
+                    result.append("<font color=\"red\">").append(line.substring(4)).append("</font>\n");
+                } else if (lower.startsWith("inf:")) {
+                    result.append("<font color=\"black\">").append(line.substring(4)).append("</font>\n");
+                } else {
+                    result.append(line).append("\n");
+                }
             }
-            if (line == null) {
-                break;
-            }
-            // Look for entries with "DataFileId=1387466"
-            line = getHREF("DataFileId", "/do/datafile/datafile", user, line);
-            // Look for entries with "DataTransferId=1387466"
-            line = getHREF("DataTransferId", "/do/transfer/data", user, line);
-            // Look for entries with "Destination=TST1"
-            line = getHREF("Destination", "/do/transfer/destination", user, line);
-            // Look for entries with "Host=123456"
-            line = getHREF("Host", "/do/transfer/host", user, line);
-            // Look for entries with "DataMover=ecpds-dm1"
-            line = getHREF("DataMover", "/do/datafile/transferserver", user, line);
-            // Look for entries with "TransferGroup=internet"
-            line = getHREF("TransferGroup", "/do/datafile/transfergroup", user, line);
-            // Look for entries with "TransferMethod=internet"
-            line = getHREF("TransferMethod", "/do/transfer/method", user, line);
-            // Look for entries with "WebUser=syi"
-            line = getHREF("WebUser", "/do/user/user", user, line);
-            // Look for entries with "DataUser=syi"
-            line = getHREF("DataUser", "/do/user/incoming", user, line);
-            // check if we have an "http://", "https://" or "ftp://" url?
-            line = getHREF("http", line);
-            line = getHREF("https", line);
-            line = getHREF("ftp", line);
-            // Do we have any "time" or "start" parameters to process?
-            line = getTime(line);
-            line = getStart(line);
-            // Check if it is requested to use a different color?
-            final var toLowerCase = line.toLowerCase();
-            if (toLowerCase.startsWith("log:")) {
-                result.append("<font color=\"green\">").append(line.substring(4)).append("</font>\n");
-            } else if (toLowerCase.startsWith("err:")) {
-                result.append("<font color=\"red\">").append(line.substring(4)).append("</font>\n");
-            } else if (toLowerCase.startsWith("inf:")) {
-                result.append("<font color=\"black\">").append(line.substring(4)).append("</font>\n");
-            } else {
-                result.append(line).append("\n");
-            }
+        } catch (final IOException _) {
+            // Unlikely with StringReader
         }
-        // Do we have any line separator?
+        // Replace separator lines with paragraph breaks
         Format.replaceAll(result, "------------------------------------------------------------------------", "<p>");
         return result.toString();
     }
@@ -397,7 +401,8 @@ public final class Util {
         var start = 0;
         try {
             start = Integer.parseInt(request.getParameter(paramPageNumber));
-        } catch (final Throwable e) {
+        } catch (final Throwable _) {
+            // Ignored
         }
         if (start > 0) {
             start = (start - 1) * recordsPerPage;
