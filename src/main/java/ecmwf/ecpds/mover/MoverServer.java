@@ -984,7 +984,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                 return;
             }
             _log.warn("Try to close transfer {}", transfer.getId());
-            close(transfer);
+            closeDataTransfer(transfer);
             try {
                 Thread.sleep(Timer.ONE_SECOND);
             } catch (final InterruptedException e) {
@@ -2845,8 +2845,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    @Override
-    public boolean close(final DataTransfer transfer) throws RemoteException {
+    public boolean closeDataTransfer(final DataTransfer transfer) throws IOException {
         final var cookieSet = ThreadService.setCookieIfNotAlreadySet(_getCookie(transfer, "close"));
         try {
             // We first try to stop it on the current DataMover, just in case it
@@ -2882,12 +2881,32 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             }
             _log.warn("Transfer {} not found/closed", transfer.getId());
             return false;
-        } catch (Throwable t) {
-            throw Format.getRemoteException("DataMover=" + getRoot(), t);
         } finally {
             if (cookieSet) {
                 ThreadService.removeCookie();
             }
+        }
+    }
+
+    /**
+     * Close.
+     *
+     * @param transfer
+     *            the transfer
+     *
+     * @return true, if successful
+     *
+     * @throws ECtransException
+     *             the ectrans exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     */
+    @Override
+    public boolean close(final DataTransfer transfer) throws RemoteException {
+        try {
+            return closeDataTransfer(transfer);
+        } catch (Throwable t) {
+            throw Format.getRemoteException("DataMover=" + getRoot(), t);
         }
     }
 
@@ -3849,7 +3868,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                 return false;
             }
             try {
-                close(_transfer);
+                closeDataTransfer(_transfer);
             } catch (final Throwable t) {
                 _log.warn("Closing DataTransfer: {}", _transfer.getId(), t);
             }

@@ -193,7 +193,7 @@ public final class RESTServer {
         checkIsControlChannel(ui);
         try {
             checkParameter("dataTransfer", dataTransfer);
-            return mover.close(dataTransfer) ? RESTMessage.getSuccessMessage().getResponse()
+            return mover.closeDataTransfer(dataTransfer) ? RESTMessage.getSuccessMessage().getResponse()
                     : RESTMessage.getErrorMessage("DataTransfer not closed").getResponse();
         } catch (final WebApplicationException w) {
             _log.warn("close", w);
