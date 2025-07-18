@@ -129,6 +129,27 @@ final class ECpdsGet {
     }
 
     /**
+     * Gets the valid data transfers count for the data file.
+     *
+     * @param paramIsProxy
+     *            the param is proxy
+     * @param paramDatafile
+     *            the param datafile
+     *
+     * @return the valid data transfers count for the data file
+     *
+     * @throws SQLException
+     *             the SQL exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     */
+    int getValidDataTransfersCount(final boolean paramIsProxy, final long paramDatafile)
+            throws SQLException, IOException {
+        return _database.executeCountAsInt("ECpdsBase", "getValidDataTransfersCount",
+                new String[] { "isproxy=" + paramIsProxy, "datafile=" + paramDatafile });
+    }
+
+    /**
      * Gets the existing storage directories.
      *
      * @return the existing storage directories

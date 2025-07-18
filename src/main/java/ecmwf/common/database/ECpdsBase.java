@@ -120,7 +120,7 @@ public final class ECpdsBase extends DataBase {
     public TransferServer[] getTransferServers(final String groupName) {
         try (final var mutex = transferServersCache.getMutex(groupName)) {
             synchronized (mutex.lock()) {
-                final List<TransferServer> list = transferServersCache.computeIfAbsent(groupName, k -> {
+                final var list = transferServersCache.computeIfAbsent(groupName, k -> {
                     final List<TransferServer> defaultList = new ArrayList<>();
                     try (var it = ecpds.getTransferServers(k, TransferServer.class)) {
                         while (it.hasNext()) {
@@ -585,7 +585,7 @@ public final class ECpdsBase extends DataBase {
     public Operation[] getOperationsForIncomingUser(final String userId) {
         try (final var mutex = operationsCache.getMutex(userId)) {
             synchronized (mutex.lock()) {
-                final List<Operation> list = operationsCache.computeIfAbsent(userId, k -> {
+                final var list = operationsCache.computeIfAbsent(userId, k -> {
                     final List<Operation> defaultList = new ArrayList<>();
                     try (var it = ecpds.getIncomingPermissionsForIncomingUser(k, IncomingPermission.class)) {
                         while (it.hasNext()) {
@@ -696,7 +696,7 @@ public final class ECpdsBase extends DataBase {
         final var key = "FIU$" + userId;
         try (final var mutex = destinationsCache.getMutex(key)) {
             synchronized (mutex.lock()) {
-                final List<Destination> list = destinationsCache.computeIfAbsent(key, k -> {
+                final var list = destinationsCache.computeIfAbsent(key, k -> {
                     final List<Destination> defaultList = new ArrayList<>();
                     try (var it = ecpds.getDestinationsForIncomingUser(userId, Destination.class)) {
                         while (it.hasNext()) {
@@ -726,7 +726,7 @@ public final class ECpdsBase extends DataBase {
         final var key = "BUP$" + userId;
         try (final var mutex = destinationsCache.getMutex(key)) {
             synchronized (mutex.lock()) {
-                final List<Destination> list = destinationsCache.computeIfAbsent(key, k -> {
+                final var list = destinationsCache.computeIfAbsent(key, k -> {
                     final List<Destination> defaultList = new ArrayList<>();
                     try (var it = ecpds.getDestinationsByUserPolicies(userId, Destination.class)) {
                         while (it.hasNext()) {
@@ -755,7 +755,7 @@ public final class ECpdsBase extends DataBase {
     public List<IncomingPermission> getIncomingPermissionsForIncomingUser(final String userId) {
         try (final var mutex = incomingPermissionCache.getMutex(userId)) {
             synchronized (mutex.lock()) {
-                final List<IncomingPermission> list = incomingPermissionCache.computeIfAbsent(userId, k -> {
+                final var list = incomingPermissionCache.computeIfAbsent(userId, k -> {
                     final List<IncomingPermission> defaultList = new ArrayList<>();
                     try (var it = ecpds.getIncomingPermissionsForIncomingUser(k, IncomingPermission.class)) {
                         while (it.hasNext()) {
@@ -2380,7 +2380,7 @@ public final class ECpdsBase extends DataBase {
     public List<PolicyUser> getPolicyUserList(final String userId) {
         try (final var mutex = policyUserCache.getMutex(userId)) {
             synchronized (mutex.lock()) {
-                final List<PolicyUser> list = policyUserCache.computeIfAbsent(userId, k -> {
+                final var list = policyUserCache.computeIfAbsent(userId, k -> {
                     final List<PolicyUser> defaultList = new ArrayList<>();
                     try (var it = ecpds.getPolicyUserList(k, PolicyUser.class)) {
                         while (it.hasNext()) {
@@ -3493,6 +3493,25 @@ public final class ECpdsBase extends DataBase {
             _log.warn("getBadDataTransfersByDestinationCount", e);
         }
         return -1;
+    }
+
+    /**
+     * Gets the valid data transfers by data file id count.
+     *
+     * @param isProxy
+     *            the is proxy
+     * @param dataFileId
+     *            the data file id
+     *
+     * @return the valid data transfers by data file id count
+     */
+    public boolean isValidDataFile(final boolean isProxy, final long dataFileId) {
+        try {
+            return ecpds.getValidDataTransfersCount(isProxy, dataFileId) > 0;
+        } catch (SQLException | IOException e) {
+            _log.warn("isValidDataFile", e);
+            return true; // By default let's make it as a valid data file to avoid its deletion.
+        }
     }
 
     /**

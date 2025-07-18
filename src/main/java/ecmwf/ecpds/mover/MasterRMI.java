@@ -160,7 +160,7 @@ final class MasterRMI implements MasterProxy {
      */
     @Override
     public boolean isValidDataFile(final long dataFileId) throws Exception {
-        return _mover.getMasterInterface().isValidDataFile(dataFileId);
+        return _mover.getMasterInterface().isValidDataFile(false, dataFileId);
     }
 
     /**

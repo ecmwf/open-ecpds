@@ -34,8 +34,8 @@ import ecmwf.common.database.DataTransfer;
 import ecmwf.common.database.Destination;
 import ecmwf.common.database.Host;
 import ecmwf.common.database.IncomingConnection;
-import ecmwf.common.ecaccess.ProviderInterface;
 import ecmwf.common.ecaccess.ECauthToken;
+import ecmwf.common.ecaccess.ProviderInterface;
 
 /**
  * The Interface MasterInterface.
@@ -154,6 +154,8 @@ public interface MasterInterface extends ProviderInterface {
     /**
      * Checks if is valid data file.
      *
+     * @param isProxy
+     *            the is proxy
      * @param dataFileId
      *            the data file id
      *
@@ -162,7 +164,7 @@ public interface MasterInterface extends ProviderInterface {
      * @throws RemoteException
      *             the remote exception
      */
-    boolean isValidDataFile(long dataFileId) throws RemoteException;
+    boolean isValidDataFile(boolean isProxy, long dataFileId) throws RemoteException;
 
     /**
      * Return a hash of the specified incoming user (the string is in the form userid:password).

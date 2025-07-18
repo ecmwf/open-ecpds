@@ -668,32 +668,27 @@ public final class MasterServer extends ECaccessProvider
      * Checks if is valid data file.
      *
      * This method is called by the cleaning scheduler on the DataMovers to check if a DataFile still exists and is
-     * valid? Otherwise the DataFile is removed from the DataMover storage system.
+     * valid? Otherwise the DataFile is removed from the DataMover storage system. In case of error, the data file is
+     * considered as valid to avoid its deletion.
      *
+     * @param isProxy
+     *            the is proxy
      * @param dataFileId
      *            the data file id
      *
      * @return true, if is valid data file
      */
     @Override
-    public boolean isValidDataFile(final long dataFileId) {
-        var result = false;
+    public boolean isValidDataFile(final boolean isProxy, final long dataFileId) {
         try {
             // Should it be deleted already (after expiration)?
-            result = !getDataBase().getDataFile(dataFileId).getDeleted();
-        } catch (final DataBaseException e) {
-            result = !("DataFile not found: {" + dataFileId + "}").equals(e.getMessage());
+            return getECpdsBase().isValidDataFile(isProxy, dataFileId);
         } catch (final Throwable t) {
             // If we don't know let's keep it. For example we might have a
             // problem with the DataBase connection!
             _log.warn("No info for DataFile {}", dataFileId, t);
-            result = true;
-        } finally {
-            if (!result) {
-                _log.debug("DataFile {} NOT valid", dataFileId);
-            }
+            return true;
         }
-        return result;
     }
 
     /**
@@ -4571,10 +4566,10 @@ public final class MasterServer extends ECaccessProvider
     private static String _getObjectLink(final Object object) {
         final var ref = Cnf.at("Server", "monitoring", "");
         return switch (object) {
-        case DataFile dataFile -> ref + "/do/datafile/datafile/" + dataFile.getId();
-        case DataTransfer dataTransfer -> ref + "/do/transfer/data/" + dataTransfer.getId();
-        case Destination destination -> ref + "/do/transfer/destination/" + destination.getName();
-        case Host host -> ref + "/do/transfer/host/" + host.getName();
+        case final DataFile dataFile -> ref + "/do/datafile/datafile/" + dataFile.getId();
+        case final DataTransfer dataTransfer -> ref + "/do/transfer/data/" + dataTransfer.getId();
+        case final Destination destination -> ref + "/do/transfer/destination/" + destination.getName();
+        case final Host host -> ref + "/do/transfer/host/" + host.getName();
         case null, default -> null;
         };
     }

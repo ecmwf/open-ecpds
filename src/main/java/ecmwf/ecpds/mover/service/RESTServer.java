@@ -377,7 +377,7 @@ public final class RESTServer {
         checkParameter("dataFileId", dataFileId);
         try {
             final var message = RESTMessage.getSuccessMessage();
-            message.put("isValid", mover.getMasterProxy().isValidDataFile(dataFileId));
+            message.put("isValid", mover.getMasterInterface().isValidDataFile(true, dataFileId));
             return message.getResponse();
         } catch (final WebApplicationException w) {
             _log.warn("isValidDataFile", w);
@@ -1429,7 +1429,7 @@ public final class RESTServer {
         // Get content type by file name and set content disposition.
         var contentType = URLConnection.getFileNameMap().getContentTypeFor(fileName);
         var disposition = "inline";
-        var setup = session.getECtransSetup();
+        final var setup = session.getECtransSetup();
         if (setup != null) {
             for (final var entry : setup.getOptions(ECtransOptions.USER_PORTAL_HEADER_REGISTRY, filename, null)
                     .getProperties().entrySet()) {
