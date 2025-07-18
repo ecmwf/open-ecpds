@@ -339,7 +339,8 @@ public final class FtpModule extends TransferModule {
         var fromCache = false;
         final var client = new FtpClient();
         client.setDebug(getDebug());
-        if (setup.getBoolean(HOST_ECTRANS_SOCKET_STATISTICS) && getAttribute("connectOptions") != null) {
+        if (keepAlive == 0 && setup.getBoolean(HOST_ECTRANS_SOCKET_STATISTICS)
+                && getAttribute("connectOptions") != null) {
             _log.debug("Activating Socket Statistics");
             final var statistics = new ClientSocketStatistics();
             setAttribute(statistics);
