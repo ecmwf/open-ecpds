@@ -910,7 +910,7 @@ public final class TransferScheduler extends MBeanScheduler {
      *
      * @return true, if successful
      */
-    private static boolean _put(final DataTransfer transfer, final Host hostForSource) {
+    private static boolean put(final DataTransfer transfer, final Host hostForSource) {
         Throwable throwable = null;
         try {
             // Get the list of hosts for source
@@ -1356,20 +1356,28 @@ public final class TransferScheduler extends MBeanScheduler {
      * @return true, if successful
      */
     public static boolean put(final TransferServer[] servers, final DataTransfer transfer, final Host hostForSource) {
+        final var useSourceHost = hostForSource != null;
         for (var i = 0; i < servers.length; i++) {
-            final var current = servers[i].getName();
-            transfer.setTransferServer(servers[i]);
-            transfer.setTransferServerName(current);
-            final var useHostForSource = hostForSource != null
+            final var server = servers[i];
+            final var serverName = server.getName();
+            transfer.setTransferServer(server);
+            transfer.setTransferServerName(serverName);
+            // If hostForSource is not null, only use it on the last server or if no
+            // original server is set
+            final var applySourceHost = useSourceHost
                     && (i == servers.length - 1 || transfer.getOriginalTransferServer() == null);
-            final var staCode = transfer.getStatusCode();
-            if (StatusFactory.INTR.equals(staCode) || StatusFactory.STOP.equals(staCode)) {
-                // The data transfer was interrupted or stopped so there is no need to continue!
+            final var status = transfer.getStatusCode();
+            if (StatusFactory.INTR.equals(status) || StatusFactory.STOP.equals(status)) {
+                // The transfer has been stopped or interrupted — stop processing
                 break;
             }
-            _log.debug("Trying DataTransfer-" + transfer.getId() + " on DataMover " + current
-                    + (useHostForSource ? " (include source host " + hostForSource.getNickname() + ")" : ""));
-            if (_put(transfer, useHostForSource ? hostForSource : null)) {
+            if (hostForSource != null) {
+                _log.debug("Trying DataTransfer-{} on DataMover {} (include source host {})", transfer.getId(),
+                        serverName, hostForSource.getNickname());
+            } else {
+                _log.debug("Trying DataTransfer-{} on DataMover {}", transfer.getId(), serverName);
+            }
+            if (put(transfer, applySourceHost ? hostForSource : null)) {
                 return true;
             }
         }
