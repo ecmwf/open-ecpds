@@ -31,8 +31,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.management.timer.Timer;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -101,9 +99,10 @@ public class MonitoredInputStream extends FilterInputStream implements StreamMon
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Close.
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void close() throws IOException {
@@ -121,7 +120,7 @@ public class MonitoredInputStream extends FilterInputStream implements StreamMon
                     progress.setLoop(false);
                     progress.interrupt();
                     try {
-                        progress.join(5 * Timer.ONE_MINUTE);
+                        progress.join(300_000L);
                     } catch (final Throwable t) {
                         _log.warn("Waiting for progress to join", t);
                     }
@@ -136,9 +135,12 @@ public class MonitoredInputStream extends FilterInputStream implements StreamMon
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Read.
+     *
+     * @return the int
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int read() throws IOException {
@@ -159,9 +161,15 @@ public class MonitoredInputStream extends FilterInputStream implements StreamMon
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Read.
+     *
+     * @param b
+     *            the b
+     *
+     * @return the int
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int read(final byte[] b) throws IOException {
@@ -169,9 +177,19 @@ public class MonitoredInputStream extends FilterInputStream implements StreamMon
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Read.
+     *
+     * @param b
+     *            the b
+     * @param off
+     *            the off
+     * @param len
+     *            the len
+     *
+     * @return the int
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int read(final byte[] b, final int off, final int len) throws IOException {
@@ -202,9 +220,9 @@ public class MonitoredInputStream extends FilterInputStream implements StreamMon
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the byte sent.
+     *
+     * @return the byte sent
      */
     @Override
     public long getByteSent() {
@@ -212,9 +230,9 @@ public class MonitoredInputStream extends FilterInputStream implements StreamMon
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the start time.
+     *
+     * @return the start time
      */
     @Override
     public long getStartTime() {
@@ -222,14 +240,14 @@ public class MonitoredInputStream extends FilterInputStream implements StreamMon
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the rate.
+     *
+     * @return the rate
      */
     @Override
     public String getRate() {
         if (startAt == -1) {
-            return "0 bits transfered";
+            return "0 bits transferred";
         }
         return Format.getMBitsPerSeconds(byteCount, (stopAt == -1 ? System.currentTimeMillis() : stopAt) - startAt)
                 + " Mbits/s";
@@ -242,21 +260,21 @@ public class MonitoredInputStream extends FilterInputStream implements StreamMon
      */
     public String getRateOnClose() {
         if (startAt == -1) {
-            return "0 bits transfered";
+            return "0 bits transferred";
         }
         return Format.getMBitsPerSeconds(byteCount, (closedAt == -1 ? System.currentTimeMillis() : closedAt) - startAt)
                 + " Mbits/s";
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the simplified rate.
+     *
+     * @return the simplified rate
      */
     @Override
     public String getSimplifiedRate() {
         if (startAt == -1) {
-            return "0 bytes transfered";
+            return "0 bytes transferred";
         }
         return Format.formatRate(byteCount, (stopAt == -1 ? System.currentTimeMillis() : stopAt) - startAt);
     }
@@ -268,15 +286,15 @@ public class MonitoredInputStream extends FilterInputStream implements StreamMon
      */
     public String getSimplifiedRateOnClose() {
         if (startAt == -1) {
-            return "0 bytes transfered";
+            return "0 bytes transferred";
         }
         return Format.formatRate(byteCount, (closedAt == -1 ? System.currentTimeMillis() : closedAt) - startAt);
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the duration.
+     *
+     * @return the duration
      */
     @Override
     public long getDuration() {
@@ -295,8 +313,6 @@ public class MonitoredInputStream extends FilterInputStream implements StreamMon
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Close and interrupt if required.
      */
     @Override
