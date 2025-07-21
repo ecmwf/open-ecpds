@@ -214,6 +214,9 @@ public class DataTransfer extends DataBaseObject {
     /** The compressedOnTheFly. */
     protected boolean compressedOnTheFly = false;
 
+    /** The recordUPH. */
+    protected boolean recordUPH = true;
+
     /**
      * Gets the mover name.
      *
@@ -390,6 +393,25 @@ public class DataTransfer extends DataBaseObject {
      */
     public void setCompressed(final String param) {
         compressed = param;
+    }
+
+    /**
+     * Gets the recordUPH.
+     *
+     * @return the recordUPH
+     */
+    public boolean getRecordUPH() {
+        return recordUPH;
+    }
+
+    /**
+     * Sets the recordUPH.
+     *
+     * @param param
+     *            the new recordUPH
+     */
+    public void setRecordUPH(final boolean param) {
+        recordUPH = param;
     }
 
     /**

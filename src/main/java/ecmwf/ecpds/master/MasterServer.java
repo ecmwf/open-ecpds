@@ -5522,7 +5522,7 @@ public final class MasterServer extends ECaccessProvider
                     upload.setHostAddress(host.getHost());
                     base.insert(upload, true);
                     final var socketStatistics = nullToNone(transfer.getStatistics());
-                    if (_splunk.isInfoEnabled()) {
+                    if (transfer.getRecordUPH() && _splunk.isInfoEnabled()) {
                         // For the accounting!
                         final var destination = transfer.getDestination();
                         final var proxyHost = transfer.getProxyHost();
