@@ -84,7 +84,7 @@ public final class CommandInputStream extends FilterInputStream implements AutoC
      */
     public CommandInputStream(final InputStream in, final Process process) throws IOException {
         super(in);
-        _log.debug("Starting");
+        _log.debug("Starting (process-id: {})", process.pid());
         this.process = process;
         this.processIn = process.getInputStream();
         this.processOut = process.getOutputStream();

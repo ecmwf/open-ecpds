@@ -77,7 +77,7 @@ public final class CommandOutputStream extends FilterOutputStream implements Aut
      */
     public CommandOutputStream(final OutputStream out, final Process process) throws IOException {
         super(out);
-        _log.debug("Starting");
+        _log.debug("Starting (process-id: {})", process.pid());
         this.process = process;
         processOut = process.getOutputStream();
         processIn = process.getInputStream();
