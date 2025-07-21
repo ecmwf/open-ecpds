@@ -3836,9 +3836,9 @@ public final class MoverServer extends StarterServer implements MoverInterface {
         }
 
         /**
-         * _update.
+         * Refresh transfer stats.
          */
-        private void _update() {
+        private void refreshTransferStats() {
             if (_monitor != null) {
                 final var putTime = _monitor.getStartTime();
                 if (_monitor instanceof final MonitoredInputStream monIn) {
@@ -3851,35 +3851,37 @@ public final class MoverServer extends StarterServer implements MoverInterface {
         }
 
         /**
-         * Sets the finish time.
+         * Update the finish time (called from completed or failed method).
          */
-        private void _setFinishTime() {
+        private void updateFinishTime() {
             _transfer.setFinishTime(new Timestamp(System.currentTimeMillis() - _transfer.getFinishTime().getTime()));
         }
 
         /**
-         * _close.
+         * Close the data transfer and the associated monitor.
          *
          * @return true, if successful
          */
-        private boolean _close() {
+        private boolean closeTransferAndMonitor() {
             if (!_closed.compareAndSet(false, true)) {
                 _log.debug("Already closed");
                 return false;
-            }
-            try {
-                closeDataTransfer(_transfer);
-            } catch (final Throwable t) {
-                _log.warn("Closing DataTransfer: {}", _transfer.getId(), t);
-            }
-            if (_monitor != null) {
+            } else {
                 try {
-                    _monitor.closeAndInterruptIfRequired();
+                    closeDataTransfer(_transfer);
+                } catch (final Throwable t) {
+                    _log.warn("Closing DataTransfer: {}", _transfer.getId(), t);
                 } finally {
-                    _update();
+                    if (_monitor != null) {
+                        try {
+                            _monitor.closeAndInterruptIfRequired();
+                        } finally {
+                            refreshTransferStats();
+                        }
+                    }
                 }
+                return true;
             }
-            return true;
         }
 
         /**
@@ -3925,7 +3927,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                 // First update or update in the number of bytes sent!
                 _update = System.currentTimeMillis();
                 _monitor = monitor;
-                _update();
+                refreshTransferStats();
             } else if (!_closed.get() && _timeout > 0 && System.currentTimeMillis() - _update > _timeout) {
                 failed(null, "stream timeout after " + Format.formatDuration(_timeout));
             }
@@ -3953,7 +3955,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
          */
         @Override
         public void completed(final TransferModule module) {
-            if (!_close()) { // If it is closed then no need to process the transfer history again!
+            if (!closeTransferAndMonitor()) { // If it is closed then no need to process the transfer history again!
                 return;
             }
             if (_transfer.getDuration() == 0) {
@@ -3989,7 +3991,11 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                         // This was compression on the fly so let's compute the ratio
                         // and the number of bytes sent now that we have the data!
                         _transfer.setCompressedOnTheFly(true);
-                        _transfer.setRatio((double) _fileSize / (double) fileSize);
+                        if (fileSize > 0) {
+                            _transfer.setRatio((double) _fileSize / (double) fileSize);
+                        } else {
+                            _transfer.setRatio(1); // safe default
+                        }
                         _transfer.setSent(fileSize);
                         _filtered = true;
                     }
@@ -4009,7 +4015,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             }
             final var statisticsString = statistics != null && !statistics.isEmpty() ? statistics.toString() : null;
             synchronized (transferRepository) {
-                _setFinishTime();
+                updateFinishTime();
                 _transfer.setComment(comment);
                 _transfer.setStatistics(statisticsString);
                 _transfer.setCompressed(_filter);
@@ -4030,7 +4036,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
          */
         @Override
         public void failed(final TransferModule module, String comment) {
-            if (!_close()) { // If it is closed then no need to process the transfer history again!
+            if (!closeTransferAndMonitor()) { // If it is closed then no need to process the transfer history again!
                 return;
             }
             comment = isNotEmpty(comment) ? comment : null;
@@ -4045,15 +4051,18 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                     comment = existingComment;
                 }
             }
+            final var statistics = module.getAttribute(ClientSocketStatistics.class);
+            final var statisticsString = statistics != null && !statistics.isEmpty() ? statistics.toString() : null;
             synchronized (transferRepository) {
-                _setFinishTime();
+                updateFinishTime();
                 _transfer.setComment(comment);
                 _transfer.setFailedTime(new Timestamp(System.currentTimeMillis()));
-                _transfer.setStatistics(null);
+                _transfer.setStatistics(statisticsString);
                 _transfer.setStatusCode(StatusFactory.RETR);
                 transferRepository.notifyAll();
             }
-            _log.warn("Transfer {} ({}) failed: {}", _transfer.getId(), _dataFile.getSource(), comment);
+            _log.warn("Transfer {} ({}) failed: {} - statistics: '{}'", _transfer.getId(), _dataFile.getSource(),
+                    comment, statisticsString != null ? statisticsString : "none");
         }
     }
 
