@@ -136,7 +136,7 @@ public final class TransferScheduler extends MBeanScheduler {
     private final Map<String, Integer> _pendings = new ConcurrentHashMap<>();
 
     /** The _pool size. */
-    private int _poolSize = Cnf.at("TransferScheduler", "poolSize", 200);
+    private int _poolSize = Cnf.at("TransferScheduler", "poolSize", 400);
 
     /** The _queue size. */
     private final int _queueSize = Cnf.at("TransferScheduler", "queueSize", 15);
