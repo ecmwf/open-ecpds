@@ -54,7 +54,7 @@ RUN java -Xshare:dump
 COPY java.security $JAVA_HOME/conf/security/.
 
 # Download and install Maven
-RUN sdk install maven
+RUN bash -c "source $HOME/.sdkman/bin/sdkman-init.sh && sdk install maven"
 
 # Set environment variables for Kompose and Kubectl versions
 ENV KOMPOSE_VERSION=1.34.0
