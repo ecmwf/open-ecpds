@@ -757,7 +757,7 @@ public final class TransferScheduler extends MBeanScheduler {
                     final var moverName = tokenizer.nextToken();
                     for (final char c : moverName.toCharArray()) {
                         if (!(Character.isDigit(c) || Character.isLetter(c) || c == '.' || c == '-')) {
-                            throw new IOException("Invalid ecpds.moverList parameter (e.g. " + moverName + ")");
+                            throw new IOException("Invalid 'ecpds.moverListFor*' parameter (e.g. " + moverName + ")");
                         }
                     }
                     result.add(moverName);
