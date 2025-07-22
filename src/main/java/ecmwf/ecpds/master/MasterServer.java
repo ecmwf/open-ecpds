@@ -10278,7 +10278,7 @@ public final class MasterServer extends ECaccessProvider
         public long _minimumRate = Cnf.at("Scheduler", "minimumRateDownloadThread", 2359296);
 
         /** The _debug. */
-        public boolean _debug = Cnf.at("Scheduler", "debug", true);
+        public boolean _debug = Cnf.at("Scheduler", "debug", false);
 
         /** The _processChecksum. */
         public boolean _processChecksum = Cnf.at("Scheduler", "processChecksum", true);
