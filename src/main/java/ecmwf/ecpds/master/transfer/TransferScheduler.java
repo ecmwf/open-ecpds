@@ -139,7 +139,7 @@ public final class TransferScheduler extends MBeanScheduler {
     private int _poolSize = Cnf.at("TransferScheduler", "poolSize", 400);
 
     /** The _queue size. */
-    private final int _queueSize = Cnf.at("TransferScheduler", "queueSize", 15);
+    private final int _queueSize = Cnf.at("TransferScheduler", "queueSize", 20);
 
     /** The _last destination. */
     private DestinationThread _lastDestination = null;
