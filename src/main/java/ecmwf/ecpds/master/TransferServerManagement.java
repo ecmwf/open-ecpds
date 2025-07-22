@@ -26,6 +26,8 @@ package ecmwf.ecpds.master;
  * @since 2024-07-01
  */
 
+import static ecmwf.common.text.Util.isNotEmpty;
+
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -41,6 +43,7 @@ import ecmwf.common.database.TransferGroup;
 import ecmwf.common.database.TransferServer;
 import ecmwf.common.technical.Cnf;
 import ecmwf.ecpds.master.transfer.TransferScheduler;
+import ecmwf.ecpds.master.transfer.TransferServerProvider;
 
 /**
  * The Class TransferServerManagement.
@@ -83,8 +86,8 @@ final class TransferServerManagement {
      *            the caller
      * @param original
      *            the original
-     * @param group
-     *            the group
+     * @param originalTransferGroup
+     *            the original transfer group
      * @param fileSystem
      *            the file system
      *
@@ -95,12 +98,24 @@ final class TransferServerManagement {
      */
     @SuppressWarnings("null")
     public List<TransferServer> getActiveTransferServers(final String caller, final TransferServer original,
-            final TransferGroup group, final Integer fileSystem) throws DataBaseException {
-        // Let's get the list of TransferServers declared for this TransferGroup
+            final TransferGroup originalTransferGroup, final Integer fileSystem) throws DataBaseException {
+        // Let's get the list of TransferServers declared for the original TransferGroup
         // in the DataBase!
-        final var servers = base.getTransferServers(group.getName());
-        if (servers.length <= 0) {
-            throw new DataBaseException("No DataMover configured for TransferGroup " + group.getName());
+        var group = originalTransferGroup;
+        var servers = base.getTransferServers(group.getName());
+        if (servers.length == 0) {
+            // See if the original Transfer Group is part of a Cluster and if
+            // this is the case then let's pick up a random TransferGroup from
+            // the Cluster according to the weight, rather than failing!
+            final var clusterName = group.getClusterName();
+            if (isNotEmpty(clusterName) && group.getClusterWeight() != null) {
+                group = TransferServerProvider.getRandomGroupFromCluster(group, base.getTransferGroupArray());
+                _log.debug("Choosing TransferGroup " + group.getName() + " from Cluster " + clusterName);
+                servers = base.getTransferServers(group.getName());
+            }
+        }
+        if (servers.length == 0) {
+            throw new DataBaseException("No DataMover configured for TransferGroup " + originalTransferGroup.getName());
         }
         // Increment the index for this particular caller. This index is used as
         // a starting position modulo the size of the list of TransferServers!
