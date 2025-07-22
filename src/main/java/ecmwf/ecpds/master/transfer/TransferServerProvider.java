@@ -154,9 +154,9 @@ public final class TransferServerProvider {
      * @param primaryHost
      *            allow forcing the primary host
      *
-     * @throws ecmwf.ecpds.master.transfer.TransferServerProvider.TransferServerException
+     * @throws TransferServerException
      *             the transfer server exception
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public TransferServerProvider(final String caller, boolean checkCluster, final Integer allocatedFileSystem,
@@ -238,7 +238,7 @@ public final class TransferServerProvider {
             // the Cluster according to the weight
             final var clusterName = _group.getClusterName();
             if (isNotEmpty(clusterName) && _group.getClusterWeight() != null) {
-                _group = _getRandomGroupFromCluster(_group, dataBase.getTransferGroupArray());
+                _group = getRandomGroupFromCluster(_group, dataBase.getTransferGroupArray());
                 _log.debug("Choosing TransferGroup " + _group.getName() + " from Cluster " + clusterName);
             }
         }
@@ -269,7 +269,7 @@ public final class TransferServerProvider {
      *
      * @return the transfer group
      */
-    private static TransferGroup _getRandomGroupFromCluster(final TransferGroup original,
+    public static TransferGroup getRandomGroupFromCluster(final TransferGroup original,
             final TransferGroup[] transferGroups) {
         final var clusterName = original.getClusterName();
         // What is the sum of all the weightings?
