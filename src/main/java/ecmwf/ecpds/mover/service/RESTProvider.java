@@ -148,14 +148,24 @@ final class RESTProvider {
      * The Interface DataTransferMixIn.
      */
     @JsonIgnoreProperties({ "originalTransferServer", "transferServer", "destination", "backupHost", "monitoringValue",
-            "collectionSize", "proxyName" })
+            "collectionSize", "proxyName", "recordUPH" })
     public interface DataTransferMixIn {
+        /**
+         * Sets the connectOptions.
+         *
+         * @param param
+         *            the new compressed
+         */
+        @JsonProperty("connectOptions")
+        void setConnectOptions(String param);
+
         /**
          * Sets the compressed.
          *
          * @param param
          *            the new compressed
          */
+        @JsonProperty("compressed")
         void setCompressed(String param);
 
         /**
@@ -164,6 +174,7 @@ final class RESTProvider {
          * @param param
          *            the new compressedOnTheFly
          */
+        @JsonProperty("compressedOnTheFly")
         void setCompressedOnTheFly(boolean param);
 
         /**
@@ -172,6 +183,7 @@ final class RESTProvider {
          * @param param
          *            the new duration
          */
+        @JsonProperty("durationOnClose")
         void setDurationOnClose(long param);
 
         /**
