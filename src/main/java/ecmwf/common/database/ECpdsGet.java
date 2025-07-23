@@ -1186,8 +1186,8 @@ final class ECpdsGet {
      */
     <T extends DataBaseObject> DBIterator<T> getDestinationAliases(final String paramDestination,
             final String paramMode, final Class<T> resultClass) throws SQLException, IOException {
-        return _database.executeQuery("ECpdsBase", "getDestinationAliases", resultClass,
-                new String[] { "destination=" + paramDestination, "mode=" + paramMode });
+        return _database.executeQuery("ECpdsBase", "getDestinationAliases", resultClass, new String[] {
+                "destination=" + paramDestination, "mode=" + paramMode, "expected=" + resultClass.getSimpleName() });
     }
 
     /**

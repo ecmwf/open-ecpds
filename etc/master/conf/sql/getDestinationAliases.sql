@@ -10,11 +10,18 @@
 ##
 #prompt "destination;Which host;%"
 #prompt "mode;Which host;%"
+#prompt "expected;Which class;%"
 
 ##
 ## Request(s)
 ##
+
+#if ('$expected' == 'Destination')
 SELECT D.*
+#fi
+#if ('$expected' == 'Alias')
+SELECT A.*
+#fi
 FROM 
   DESTINATION D, ALIAS A
 WHERE 
