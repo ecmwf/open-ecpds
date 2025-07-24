@@ -4051,8 +4051,13 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                     comment = existingComment;
                 }
             }
-            final var statistics = module.getAttribute(ClientSocketStatistics.class);
-            final var statisticsString = statistics != null && !statistics.isEmpty() ? statistics.toString() : null;
+            final String statisticsString;
+            if (module != null) {
+                final var statistics = module.getAttribute(ClientSocketStatistics.class);
+                statisticsString = statistics != null && !statistics.isEmpty() ? statistics.toString() : null;
+            } else {
+                statisticsString = null;
+            }
             synchronized (transferRepository) {
                 updateFinishTime();
                 _transfer.setComment(comment);
