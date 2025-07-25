@@ -136,7 +136,7 @@ public abstract class ExecutorRepository<O> {
             }
             if (allTasksSubmitted) {
                 try {
-                    manager.start();
+                    manager.startIfNotStarted();
                 } finally {
                     try {
                         manager.stopAndJoin();
