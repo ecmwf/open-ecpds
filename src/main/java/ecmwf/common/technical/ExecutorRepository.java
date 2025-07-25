@@ -134,16 +134,15 @@ public abstract class ExecutorRepository<O> {
                     break; // stop submitting more tasks
                 }
             }
-            if (allTasksSubmitted) {
-                try {
+            try {
+                if (allTasksSubmitted)
                     manager.startIfNotStarted();
-                } finally {
-                    try {
-                        manager.stopAndJoin();
-                    } catch (final InterruptedException e) {
-                        _log.error("Action interrupted while stopping/joining manager", e);
-                        Thread.currentThread().interrupt();
-                    }
+            } finally {
+                try {
+                    manager.stopAndJoin();
+                } catch (final InterruptedException e) {
+                    _log.error("Action interrupted while stopping/joining manager", e);
+                    Thread.currentThread().interrupt();
                 }
             }
         }
