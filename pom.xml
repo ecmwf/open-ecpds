@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>ecmwf</groupId>
 	<artifactId>product-data-store</artifactId>
-	<version>7.1.2</version>
+	<version>7.1.3</version>
 	<name>Product Data Store (OpenECPDS)</name>
 	<description>Product Data Store for Acquisition and Dissemination activities</description>
 	<url>https://github.com/ecmwf/open-ecpds</url>
