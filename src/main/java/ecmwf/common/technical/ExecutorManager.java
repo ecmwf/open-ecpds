@@ -79,22 +79,22 @@ public final class ExecutorManager<O extends ExecutorRunnable> extends Thread {
     private static final boolean ALLOW_VIRTUAL_THREAD = Cnf.at("ExecutorManager", "allowVirtualThread", true);
 
     /** The thread count. */
-    private final AtomicInteger threadCount;
+    private final AtomicInteger threadCount = new AtomicInteger(0);
 
     /** The started flag. */
     private final AtomicBoolean started = new AtomicBoolean(false);
-
-    /** The waiting list. */
-    private final ArrayBlockingQueue<O> waitingList;
-
-    /** The max running. */
-    private final int maxRunning;
 
     /** The continueRunning. */
     private final AtomicBoolean continueRunning = new AtomicBoolean(true);
 
     /** The count. */
     private final AtomicInteger totalRunCount = new AtomicInteger(0);
+
+    /** The waiting list. */
+    private final ArrayBlockingQueue<O> waitingList;
+
+    /** The max running. */
+    private final int maxRunning;
 
     /**
      * Instantiates a new executor manager.
@@ -105,7 +105,6 @@ public final class ExecutorManager<O extends ExecutorRunnable> extends Thread {
      *            the max running
      */
     public ExecutorManager(final int maxWaiting, final int maxRunning) {
-        threadCount = new AtomicInteger(0);
         waitingList = new ArrayBlockingQueue<>(maxWaiting);
         this.maxRunning = maxRunning;
     }
@@ -190,7 +189,7 @@ public final class ExecutorManager<O extends ExecutorRunnable> extends Thread {
                         threadCount.incrementAndGet();
                         totalRunCount.incrementAndGet();
                     }
-                } catch (InterruptedException e) {
+                } catch (InterruptedException _) {
                     Thread.currentThread().interrupt();
                     stopRun();
                     break;

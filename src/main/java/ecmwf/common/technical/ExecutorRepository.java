@@ -68,132 +68,112 @@ import org.apache.logging.log4j.Logger;
 /**
  * The Class ExecutorRepository.
  *
- * @param <O>
- *            the generic type
+ * @param <O> the generic type
  */
 public abstract class ExecutorRepository<O> {
 
-    /** The Constant _log. */
-    private static final Logger _log = LogManager.getLogger(ExecutorRepository.class);
+	/** The Constant _log. */
+	private static final Logger _log = LogManager.getLogger(ExecutorRepository.class);
 
-    /** The exceptions. */
-    private final List<Exception> exceptions;
+	/** The exceptions. */
+	private final List<Exception> exceptions;
 
-    /** The processedCount. */
-    private final AtomicLong processedCount;
+	/** The processedCount. */
+	private final AtomicLong processedCount;
 
-    /** The default configuration for the manager. */
-    private static final int EXECUTOR_MAX_WAITING = 100;
+	/** The default configuration for the manager. */
+	private static final int EXECUTOR_MAX_WAITING = 100;
 
-    /** The Constant EXECUTOR_MAX_RUNNING. */
-    private static final int EXECUTOR_MAX_RUNNING = 50;
+	/** The Constant EXECUTOR_MAX_RUNNING. */
+	private static final int EXECUTOR_MAX_RUNNING = 50;
 
-    /**
-     * Instantiates a new executor repository. Process the actions in parallel.
-     *
-     * @param exceptions
-     *            the exceptions
-     * @param processedCount
-     *            the processed count
-     * @param objects
-     *            the objects
-     */
-    protected ExecutorRepository(final List<Exception> exceptions, final AtomicLong processedCount,
-            final Collection<O> objects) {
-        this(EXECUTOR_MAX_WAITING, EXECUTOR_MAX_RUNNING, exceptions, processedCount, objects);
-    }
+	/**
+	 * Instantiates a new executor repository. Process the actions in parallel.
+	 *
+	 * @param exceptions     the exceptions
+	 * @param processedCount the processed count
+	 * @param objects        the objects
+	 */
+	protected ExecutorRepository(final List<Exception> exceptions, final AtomicLong processedCount,
+			final Collection<O> objects) {
+		this(EXECUTOR_MAX_WAITING, EXECUTOR_MAX_RUNNING, exceptions, processedCount, objects);
+	}
 
-    /**
-     * Instantiates a new executor repository. Process the actions in parallel.
-     *
-     * @param maxWaiting
-     *            the max waiting
-     * @param maxRunning
-     *            the max running
-     * @param exceptions
-     *            the exceptions
-     * @param processedCount
-     *            the processed count
-     * @param objects
-     *            the objects
-     */
-    protected ExecutorRepository(final int maxWaiting, final int maxRunning, final List<Exception> exceptions,
-            final AtomicLong processedCount, final Collection<O> objects) {
-        this.exceptions = exceptions;
-        this.processedCount = processedCount;
-        if (objects != null && !objects.isEmpty()) {
-            final var manager = new ExecutorManager<ActionThread>(maxWaiting, maxRunning);
-            var allTasksSubmitted = true;
-            for (final O object : objects) {
-                try {
-                    manager.put(new ActionThread(manager, object));
-                } catch (final InterruptedException e) {
-                    _log.error("Action interrupted/lost", e);
-                    Thread.currentThread().interrupt();
-                    allTasksSubmitted = false;
-                    break; // stop submitting more tasks
-                }
-            }
-            try {
-                if (allTasksSubmitted)
-                    manager.startIfNotStarted();
-            } finally {
-                try {
-                    manager.stopAndJoin();
-                } catch (final InterruptedException e) {
-                    _log.error("Action interrupted while stopping/joining manager", e);
-                    Thread.currentThread().interrupt();
-                }
-            }
-        }
-    }
+	/**
+	 * Instantiates a new executor repository. Process the actions in parallel.
+	 *
+	 * @param maxWaiting     the max waiting
+	 * @param maxRunning     the max running
+	 * @param exceptions     the exceptions
+	 * @param processedCount the processed count
+	 * @param objects        the objects
+	 */
+	protected ExecutorRepository(final int maxWaiting, final int maxRunning, final List<Exception> exceptions,
+			final AtomicLong processedCount, final Collection<O> objects) {
+		this.exceptions = exceptions;
+		this.processedCount = processedCount;
+		if (objects != null && !objects.isEmpty()) {
+			final var manager = new ExecutorManager<ActionThread>(maxWaiting, maxRunning);
+			manager.startIfNotStarted();
+			for (final O object : objects) {
+				try {
+					manager.put(new ActionThread(manager, object));
+				} catch (final InterruptedException e) {
+					_log.error("Action interrupted/lost", e);
+					Thread.currentThread().interrupt();
+					break; // stop submitting more tasks
+				}
+			}
+			try {
+				manager.stopAndJoin();
+			} catch (final InterruptedException e) {
+				_log.error("Action interrupted while stopping/joining manager", e);
+				Thread.currentThread().interrupt();
+			}
+		}
+	}
 
-    /**
-     * Exec. Action to perform on the object.
-     *
-     * @param object
-     *            the object
-     *
-     * @throws Exception
-     *             the exception
-     */
-    public abstract void exec(final O object) throws Exception;
+	/**
+	 * Exec. Action to perform on the object.
+	 *
+	 * @param object the object
+	 * @throws Exception the exception
+	 */
+	public abstract void exec(final O object) throws Exception;
 
-    /**
-     * The Class ActionThread. Thread which is taking care of the execution of the action.
-     */
-    private class ActionThread extends ExecutorRunnable {
+	/**
+	 * The Class ActionThread. Thread which is taking care of the execution of the
+	 * action.
+	 */
+	private class ActionThread extends ExecutorRunnable {
 
-        /** The object. */
-        final O object;
+		/** The object. */
+		final O object;
 
-        /**
-         * Instantiates a new action thread.
-         *
-         * @param manager
-         *            the manager
-         * @param object
-         *            the object
-         */
-        ActionThread(final ExecutorManager<ActionThread> manager, final O object) {
-            super(manager);
-            this.object = object;
-        }
+		/**
+		 * Instantiates a new action thread.
+		 *
+		 * @param manager the manager
+		 * @param object  the object
+		 */
+		ActionThread(final ExecutorManager<ActionThread> manager, final O object) {
+			super(manager);
+			this.object = object;
+		}
 
-        /**
-         * Process.
-         *
-         * @throws IOException
-         *             Signals that an I/O exception has occurred.
-         */
-        @Override
-        public void process() throws IOException {
-            try {
-                exec(object);
-                processedCount.addAndGet(1);
-            } catch (final Exception e) {
-                exceptions.add(e);
-            }
-        }
-    }
+		/**
+		 * Process.
+		 *
+		 * @throws IOException Signals that an I/O exception has occurred.
+		 */
+		@Override
+		public void process() throws IOException {
+			try {
+				exec(object);
+				processedCount.addAndGet(1);
+			} catch (final Exception e) {
+				exceptions.add(e);
+			}
+		}
+	}
 }
