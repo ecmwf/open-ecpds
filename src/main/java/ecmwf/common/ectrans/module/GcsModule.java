@@ -26,19 +26,38 @@ package ecmwf.common.ectrans.module;
  * @since 2024-07-01
  */
 
-import com.google.auth.oauth2.ServiceAccountCredentials;
-import com.google.cloud.storage.Storage.BlobListOption;
-import com.google.cloud.storage.Blob;
-import com.google.cloud.storage.BlobId;
-import com.google.cloud.storage.BlobInfo;
-import com.google.cloud.storage.Bucket;
-import com.google.cloud.storage.BucketInfo;
-import com.google.cloud.storage.Storage;
-import com.google.cloud.storage.StorageOptions;
-import com.google.cloud.storage.StorageException;
-import com.google.cloud.http.HttpTransportOptions;
-import com.google.api.client.http.HttpTransport;
-import com.google.api.client.http.javanet.NetHttpTransport;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_SOCKET_STATISTICS;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_TCP_CONGESTION_CONTROL;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_TCP_KEEP_ALIVE;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_TCP_KEEP_ALIVE_INTERVAL;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_TCP_KEEP_ALIVE_PROBES;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_TCP_KEEP_ALIVE_TIME;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_TCP_LINGER_ENABLE;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_TCP_LINGER_TIME;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_TCP_MAX_SEGMENT;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_TCP_NO_DELAY;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_TCP_QUICK_ACK;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_TCP_TIME_STAMP;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_TCP_USER_TIMEOUT;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_TCP_WINDOW_CLAMP;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_ALLOW_EMPTY_BUCKET_NAME;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_BUCKET_LOCATION;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_BUCKET_NAME;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_CLIENT_EMAIL;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_CLIENT_ID;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_FTPGROUP;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_FTPUSER;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_MK_BUCKET;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_PORT;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_PREFIX;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_PRIVATE_KEY;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_PRIVATE_KEY_ID;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_PROJECT_ID;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_PROTOCOL;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_SCHEME;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_SSL_VALIDATION;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_URL;
+import static ecmwf.common.text.Util.isNotEmpty;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -54,24 +73,34 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.Deflater;
 import java.util.zip.GZIPOutputStream;
 
+import org.apache.commons.io.filefilter.WildcardFileFilter;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import com.google.api.client.http.HttpTransport;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.auth.oauth2.ServiceAccountCredentials;
+import com.google.cloud.http.HttpTransportOptions;
+import com.google.cloud.storage.Blob;
+import com.google.cloud.storage.BlobId;
+import com.google.cloud.storage.BlobInfo;
+import com.google.cloud.storage.Bucket;
+import com.google.cloud.storage.BucketInfo;
+import com.google.cloud.storage.Storage;
+import com.google.cloud.storage.Storage.BlobListOption;
+import com.google.cloud.storage.StorageException;
+import com.google.cloud.storage.StorageOptions;
+
 import ecmwf.common.ectrans.ECtransSetup;
 import ecmwf.common.ectrans.TransferModule;
 import ecmwf.common.rmi.ClientSocketStatistics;
 import ecmwf.common.rmi.SSLClientSocketFactory;
 import ecmwf.common.rmi.SocketConfig;
-
-import org.apache.logging.log4j.Logger;
-import org.apache.commons.io.filefilter.WildcardFileFilter;
-import org.apache.logging.log4j.LogManager;
-
 import ecmwf.common.technical.StreamPlugThread;
 import ecmwf.common.text.Format;
 
-import static ecmwf.common.text.Util.isNotEmpty;
-import static ecmwf.common.ectrans.ECtransOptions.*;
-
 /**
- * The Class GcsModule.
+ * The Class GCSModule.
  */
 public final class GcsModule extends TransferModule {
 
@@ -240,7 +269,8 @@ public final class GcsModule extends TransferModule {
                     setup.getBoolean(HOST_GCS_SSL_VALIDATION));
 
             // Create the custom HTTP transport with the custom SSLSocketFactory
-            HttpTransport httpTransport = new NetHttpTransport.Builder().setSslSocketFactory(socketFactory).build();
+            final HttpTransport httpTransport = new NetHttpTransport.Builder().setSslSocketFactory(socketFactory)
+                    .build();
 
             gcs = StorageOptions.newBuilder().setProjectId(projectId).setCredentials(credentials)
                     .setTransportOptions(
@@ -270,14 +300,14 @@ public final class GcsModule extends TransferModule {
             }
 
             connected = true;
-        } catch (Throwable t) {
+        } catch (final Throwable t) {
             _log.error("Connection failed to {}", url, t);
             throw new IOException("Connection failed to " + url + ": " + Format.getMessage(t, "", 0));
         } finally {
             if (!connected && gcs != null) {
                 try {
                     gcs.close();
-                } catch (Throwable t) {
+                } catch (final Throwable t) {
                     // Ignore!
                 }
             }
@@ -359,14 +389,14 @@ public final class GcsModule extends TransferModule {
         setStatus("DEL");
         final var bucketNameAndObject = getBucketNameAndObjectName(name);
         try {
-            var blob = gcs.get(bucketNameAndObject[0], bucketNameAndObject[1]);
+            final var blob = gcs.get(bucketNameAndObject[0], bucketNameAndObject[1]);
 
             // for avoiding race conditions, 412 error if precondition does not match
-            var precondition = Storage.BlobSourceOption.generationMatch(blob.getGeneration());
+            final var precondition = Storage.BlobSourceOption.generationMatch(blob.getGeneration());
 
             gcs.delete(blob.getBucket(), blob.getName(), precondition);
 
-        } catch (Exception e) {
+        } catch (final Exception e) {
             _log.debug("deleteObject", e);
             throw new IOException("Deleting object " + name + ": " + Format.getMessage(e, "", 0));
         }
@@ -399,11 +429,11 @@ public final class GcsModule extends TransferModule {
         }
 
         try {
-            var bucketName = bucketNameAndObject[0];
-            var objectName = bucketNameAndObject[1];
+            final var bucketName = bucketNameAndObject[0];
+            final var objectName = bucketNameAndObject[1];
 
-            var objectId = BlobId.of(bucketName, objectName);
-            var objectInfo = BlobInfo.newBuilder(objectId).build();
+            final var objectId = BlobId.of(bucketName, objectName);
+            final var objectInfo = BlobInfo.newBuilder(objectId).build();
 
             // set to avoid potential race
             // request returns a 412 error if preconditions are not met
@@ -422,7 +452,7 @@ public final class GcsModule extends TransferModule {
 
             gcs.createFrom(objectInfo, in, precondition);
 
-        } catch (Exception e) {
+        } catch (final Exception e) {
             _log.debug("putObject", e);
             throw new IOException("Pushing object " + name + ": " + Format.getMessage(e, "", 0));
 
@@ -458,12 +488,12 @@ public final class GcsModule extends TransferModule {
 
         try {
 
-            var objectId = BlobId.of(bucketNameAndObject[0], bucketNameAndObject[1]);
-            var objectInfo = BlobInfo.newBuilder(objectId).build();
+            final var objectId = BlobId.of(bucketNameAndObject[0], bucketNameAndObject[1]);
+            final var objectInfo = BlobInfo.newBuilder(objectId).build();
 
             return Channels.newOutputStream(gcs.writer(objectInfo));
 
-        } catch (Exception e) {
+        } catch (final Exception e) {
             _log.debug("putObject", e);
             throw new IOException("Pushing object " + name + ": " + Format.getMessage(e, "", 0));
 
@@ -484,7 +514,7 @@ public final class GcsModule extends TransferModule {
      *             Signals that an I/O exception has occurred.
      */
     @Override
-    public InputStream get(String name, long posn) throws IOException {
+    public InputStream get(final String name, final long posn) throws IOException {
         _log.debug("Get file " + name);
         setStatus("GET");
         if (posn > 0) {
@@ -496,7 +526,7 @@ public final class GcsModule extends TransferModule {
             gcsInput = Channels.newInputStream(gcs.reader(bucketNameAndObject[0], bucketNameAndObject[1]));
 
             return gcsInput;
-        } catch (Exception e) {
+        } catch (final Exception e) {
             _log.debug("getObject", e);
             throw new IOException("Getting object " + name + ": " + Format.getMessage(e, "", 0));
         }
@@ -522,7 +552,7 @@ public final class GcsModule extends TransferModule {
             // content length of the data in bytes
             return gcs.get(bucketNameAndObject[0], bucketNameAndObject[1],
                     Storage.BlobGetOption.fields(Storage.BlobField.values())).getSize();
-        } catch (Exception e) {
+        } catch (final Exception e) {
             _log.debug("getObject", e);
             throw new IOException("Getting object " + name + ": " + Format.getMessage(e));
         }
@@ -561,7 +591,7 @@ public final class GcsModule extends TransferModule {
                     gcs.create(BucketInfo.newBuilder(newBucketName).build());
                 }
 
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 _log.debug("createBucket", e);
                 throw new IOException("Creating Bucket " + directory + ": " + Format.getMessage(e, "", 0));
             }
@@ -594,7 +624,7 @@ public final class GcsModule extends TransferModule {
         } else if (count == 1) {
             try {
                 gcs.get(token.nextToken()).delete();
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 _log.debug("deleteBucket", e);
                 throw new IOException("Deleting Bucket " + directory + ": " + Format.getMessage(e, "", 0));
             }
@@ -669,11 +699,11 @@ public final class GcsModule extends TransferModule {
                     listObjects(output, extractedBucketName, processKey(token.nextToken("\0")), pattern);
                 }
             }
-        } catch (StorageException e) {
+        } catch (final StorageException e) {
             _log.debug("list", e);
             throw new IOException("Listing " + directory + ": " + e.getCode() + " <- " + Format.getMessage(e, "", 0));
 
-        } catch (Exception e) {
+        } catch (final Exception e) {
             _log.debug("list", e);
             throw new IOException("Listing " + directory + ": " + Format.getMessage(e, "", 0));
         }
@@ -745,16 +775,18 @@ public final class GcsModule extends TransferModule {
         if (getDebug()) {
             _log.debug("listBuckets: {},{}", bucketName, pattern);
         }
-
-        var buckets = gcs.list();
+        final var buckets = gcs.list();
+        WildcardFileFilter fileFilter = null;
+        if (bucketName != null) {
+            fileFilter = WildcardFileFilter.builder().setWildcards(bucketName).get();
+        }
         for (final Bucket bucket : buckets.iterateAll()) {
             if (bucket != null) {
                 final var owner = bucket.getOwner();
                 final var ownerName = owner != null ? owner.toString() : "unknown";
                 final var name = bucket.getName();
-
                 if ((pattern == null || name.matches(pattern))
-                        && (bucketName == null || new WildcardFileFilter(bucketName).accept(new File(name)))) {
+                        && (fileFilter == null || fileFilter.accept(new File(name)))) {
                     output.add(Format.getFtpList("drw-r--r--", getSetup().get(HOST_GCS_FTPUSER, ownerName),
                             getSetup().get(HOST_GCS_FTPGROUP, ownerName), "2048",
                             bucket.getCreateTimeOffsetDateTime() != null
@@ -762,7 +794,6 @@ public final class GcsModule extends TransferModule {
                                     : new Date().getTime(),
                             name));
                 }
-
             }
         }
     }
@@ -870,7 +901,7 @@ public final class GcsModule extends TransferModule {
             if (gcs != null) {
                 try {
                     gcs.close();
-                } catch (Exception e) {
+                } catch (final Exception e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
@@ -897,5 +928,4 @@ public final class GcsModule extends TransferModule {
         }
         currentStatus = status;
     }
-
 }
