@@ -1135,7 +1135,6 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
                         // We found also a profile, so let's add something in the
                         // transfer history!
                         if (setup != null && setup.getBoolean(USER_PORTAL_RECORD_HISTORY)) {
-                            transfer.setRecordUPH(false); // Don't record any UPH entry for this transfer!
                             master.addTransferHistory(transfer, null,
                                     success ? event.getUpload() ? transfer.getStatusCode() : StatusFactory.DONE
                                             : StatusFactory.STOP,

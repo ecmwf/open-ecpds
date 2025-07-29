@@ -3183,6 +3183,7 @@ public final class MasterServer extends ECaccessProvider
             }
             if (done) {
                 transfer.setNotify(true);
+                transfer.setRecordUPH(true);
             }
             try {
                 final var destination = getDataBase().getDestination(transfer.getDestinationName());

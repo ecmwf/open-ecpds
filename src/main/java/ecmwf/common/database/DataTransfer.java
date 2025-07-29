@@ -215,7 +215,7 @@ public class DataTransfer extends DataBaseObject {
     protected boolean compressedOnTheFly = false;
 
     /** The recordUPH. */
-    protected boolean recordUPH = true;
+    protected boolean recordUPH = false;
 
     /**
      * Gets the mover name.
