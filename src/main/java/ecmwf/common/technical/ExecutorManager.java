@@ -76,7 +76,7 @@ public final class ExecutorManager<O extends ExecutorRunnable> extends Thread {
     private static final Logger _log = LogManager.getLogger(ExecutorManager.class);
 
     /** The Constant ALLOW_VIRTUAL_THREAD. */
-    private static final boolean ALLOW_VIRTUAL_THREAD = Cnf.at("ExecutorManager", "allowVirtualThread", true);
+    private static final boolean ALLOW_VIRTUAL_THREAD = Cnf.at("ExecutorManager", "allowVirtualThread", false);
 
     /** The thread count. */
     private final AtomicInteger threadCount = new AtomicInteger(0);

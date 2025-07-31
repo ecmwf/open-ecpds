@@ -63,7 +63,7 @@ public final class ThreadService {
     private static final Logger _log = LogManager.getLogger(ThreadService.class);
 
     /** The Constant ALLOW_VIRTUAL_THREAD. */
-    private static final boolean ALLOW_VIRTUAL_THREAD = Cnf.at("ThreadService", "allowVirtualThread", true);
+    private static final boolean ALLOW_VIRTUAL_THREAD = Cnf.at("ThreadService", "allowVirtualThread", false);
 
     /** The Constant DEBUG_THREAD_LOCAL. */
     private static final boolean DEBUG_THREAD_LOCAL = Cnf.at("ThreadService", "debugThreadLocal", false);
