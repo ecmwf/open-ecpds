@@ -116,6 +116,7 @@ import com.amazonaws.services.s3.internal.SkipMd5CheckStrategy;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.GetObjectRequest;
+import com.amazonaws.services.s3.model.ListBucketsPaginatedRequest;
 import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
@@ -708,12 +709,19 @@ public final class AmazonS3Module extends TransferModule {
         if (getDebug()) {
             _log.debug("listBuckets: {},{}", bucketName, pattern);
         }
-        for (final Bucket bucket : s3.getAmazonS3().listBuckets()) {
+        final var request = new ListBucketsPaginatedRequest();
+        final var result = s3.getAmazonS3().listBuckets(request);
+        for (final Bucket bucket : result.getBuckets()) {
             final var owner = bucket.getOwner();
             final var ownerName = owner != null ? owner.getDisplayName() : "unknown";
             final var name = bucket.getName();
-            if ((pattern == null || name.matches(pattern))
-                    && (bucketName == null || new WildcardFileFilter(bucketName).accept(new File(name)))) {
+            final var matchesPattern = (pattern == null || name.matches(pattern));
+            var matchesWildcard = true;
+            if (bucketName != null) {
+                final var filter = WildcardFileFilter.builder().setWildcards(bucketName).get();
+                matchesWildcard = filter.accept(new File(name));
+            }
+            if (matchesPattern && matchesWildcard) {
                 output.add(Format.getFtpList("drw-r--r--", getSetup().get(HOST_S3_FTPUSER, ownerName),
                         getSetup().get(HOST_S3_FTPGROUP, ownerName), "2048", bucket.getCreationDate().getTime(), name));
             }
@@ -800,7 +808,8 @@ public final class AmazonS3Module extends TransferModule {
                     final var displayName = (!rootName.isBlank() ? rootName : "") + name;
                     if (pattern == null || displayName.matches(pattern)) {
                         final var owner = objectSummary.getOwner();
-                        final var ownerName = owner != null ? owner.getDisplayName() : "unknown";
+                        final var ownerDisplayName = owner != null ? owner.getDisplayName() : "unknown";
+                        final var ownerName = ownerDisplayName != null ? ownerDisplayName : "unknown";
                         final var date = objectSummary.getLastModified();
                         final var entry = Format.getFtpList((isDirectory ? "d" : "-") + "rw-r--r--",
                                 getSetup().get(HOST_S3_FTPUSER, ownerName), getSetup().get(HOST_S3_FTPGROUP, ownerName),
@@ -1023,7 +1032,9 @@ public final class AmazonS3Module extends TransferModule {
                 if (isNotEmpty(bucketName) && mkBucket) {
                     // The user has configured a Bucket Name!
                     var bucketFound = false;
-                    for (final Bucket bucket : s3.listBuckets()) {
+                    final var request = new ListBucketsPaginatedRequest();
+                    final var result = s3.listBuckets(request);
+                    for (final var bucket : result.getBuckets()) {
                         if (bucketName.equals(bucket.getName())) {
                             bucketFound = true;
                             break;
