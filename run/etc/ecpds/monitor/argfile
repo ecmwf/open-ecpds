@@ -5,7 +5,7 @@
 -XX:SoftMaxHeapSize=256M
 -XX:HeapDumpPath='run/var/log/ecpds/monitor'
 -XX:+DisableExplicitGC
--XX:+UseZGC
+-XX:+UseG1GC
 -XX:ZUncommitDelay=5
 -XX:+UnlockDiagnosticVMOptions
 -XX:NativeMemoryTracking=detail
