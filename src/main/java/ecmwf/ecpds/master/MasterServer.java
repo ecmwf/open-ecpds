@@ -164,6 +164,7 @@ import javax.script.ScriptException;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.graalvm.polyglot.Value;
 
 import com.maxmind.geoip2.exception.AddressNotFoundException;
 
@@ -5976,10 +5977,6 @@ public final class MasterServer extends ECaccessProvider
                 this.publication = publication;
             }
 
-            /**
-             * Configurable run.
-             */
-            @Override
             public void configurableRun() {
                 final var key = _getKey(publication);
                 try {
@@ -5994,35 +5991,45 @@ public final class MasterServer extends ECaccessProvider
                         if (transfer != null && (remainingMilliseconds = transfer.getExpiryTime().getTime()
                                 - System.currentTimeMillis()) > 0) { // We found it and it is not expired!
                             if (selectedConnectOptions.endsWith(MQTT_TOKEN)) { // This is an MQTT request
-                                final var connectOptions = selectedConnectOptions.substring(0,
-                                        selectedConnectOptions.length() - MQTT_TOKEN.length());
                                 final var destination = transfer.getDestination();
-                                final var setup = DESTINATION_MQTT
-                                        .getECtransSetup(replace(connectOptions, destination.getData()));
-                                final var topic = getMQTTTopic(destination, setup, transfer);
-                                if (topic != null && !topic.isBlank()) {
-                                    final var payload = setup.getString(DESTINATION_MQTT_PAYLOAD);
-                                    if (payload != null && !payload.isBlank()) {
-                                        publishToMQTTBroker(topic, setup.getInteger(DESTINATION_MQTT_QOS),
-                                                setup.getOptionalDuration(DESTINATION_MQTT_EXPIRY_INTERVAL)
-                                                        .orElse(Duration.ofMillis(remainingMilliseconds)).toMillis(),
-                                                setup.getString(DESTINATION_MQTT_CONTENT_TYPE),
-                                                setup.getString(DESTINATION_MQTT_CLIENT_ID), payload,
-                                                setup.getBoolean(DESTINATION_MQTT_RETAIN));
-                                    } else {
-                                        _log.warn("No payload for DataTransfer-{}! ignoring & publication set to done",
-                                                dataTransferId);
-                                    }
-                                } else {
-                                    _log.warn("No topic for DataTransfer-{}! ignoring & publication set to done",
-                                            dataTransferId);
-                                }
+                                final var setup = DESTINATION_MQTT.getECtransSetup(replace(
+                                        selectedConnectOptions.substring(0,
+                                                selectedConnectOptions.length() - MQTT_TOKEN.length()),
+                                        destination.getData()));
+                                ScriptManager.exec(setup.getScriptLanguage(), Map.of(), setup.getScriptContent(),
+                                        value -> {
+                                            final var topic = getMQTTTopic(destination, setup, transfer, value);
+                                            if (topic != null && !topic.isBlank()) {
+                                                final var payload = setup.getString(DESTINATION_MQTT_PAYLOAD, value);
+                                                if (payload != null && !payload.isBlank()) {
+                                                    _log.warn("Payload detected for DataTransfer-{}", dataTransferId);
+                                                    publishToMQTTBroker(topic,
+                                                            setup.getInteger(DESTINATION_MQTT_QOS, value),
+                                                            setup.getOptionalDuration(DESTINATION_MQTT_EXPIRY_INTERVAL,
+                                                                    value)
+                                                                    .orElse(Duration.ofMillis(remainingMilliseconds))
+                                                                    .toMillis(),
+                                                            setup.getString(DESTINATION_MQTT_CONTENT_TYPE, value),
+                                                            setup.getString(DESTINATION_MQTT_CLIENT_ID, value), payload,
+                                                            setup.getBoolean(DESTINATION_MQTT_RETAIN, value));
+                                                } else {
+                                                    _log.warn(
+                                                            "No payload for DataTransfer-{}; ignoring & publication set to done -> {}",
+                                                            dataTransferId, value);
+                                                }
+                                            } else {
+                                                _log.warn(
+                                                        "No topic for DataTransfer-{}; ignoring & publication set to done",
+                                                        dataTransferId);
+                                            }
+                                            return null;
+                                        });
                             } else { // This is an event.js request (e.g. Aviso)
                                 ScriptManager.exec(ScriptManager.JS,
                                         replace(selectedConnectOptions, eventScriptContent.toString()));
                             }
                         } else {
-                            _log.warn("DataTransfer-{} not found or expired! ignoring & publication set to done",
+                            _log.warn("DataTransfer-{} not found or expired; ignoring & publication set to done",
                                     dataTransferId);
                         }
                         publication.setDone(true);
@@ -6039,10 +6046,10 @@ public final class MasterServer extends ECaccessProvider
                 }
             }
 
-            // Build the MQTT topic. It is either defined in the destination setup, or by
-            // default it is using the destination name. If the topic ends with a '/' (the
             /**
-             * Gets the MQTT topic.
+             * Build the MQTT topic. It is either defined in the destination setup, or by default it is using the
+             * destination name. If the topic ends with a '/' (the default when no topic is specified), the target name
+             * is appended.
              *
              * @param destination
              *            the destination
@@ -6050,13 +6057,15 @@ public final class MasterServer extends ECaccessProvider
              *            the setup
              * @param transfer
              *            the transfer
+             * @param value
+             *            the value
              *
              * @return the MQTT topic
              */
-            // default when no topic is specified), the target name is appended.
             private static String getMQTTTopic(final Destination destination, final ECtransSetup setup,
-                    final DataTransfer transfer) {
-                final var topic = setup.getOptionalString(DESTINATION_MQTT_TOPIC).orElse(destination.getName() + "/");
+                    final DataTransfer transfer, final Value value) {
+                final var topic = setup.getOptionalString(DESTINATION_MQTT_TOPIC, value)
+                        .orElse(destination.getName() + "/");
                 return (topic.endsWith("/") ? topic + getTarget(destination, transfer) : topic).replaceAll("/+", "/");
             }
 
