@@ -984,6 +984,20 @@ public final class ECtransSetup implements Serializable {
     }
 
     /**
+     * Gets the optional string.
+     *
+     * @param option
+     *            the option
+     * @param bindings
+     *            the bindings
+     *
+     * @return the object of type class
+     */
+    public Optional<String> getOptionalString(final ECtransOptions option, final Value bindings) {
+        return getOptional(option, String.class, bindings);
+    }
+
+    /**
      * Sets the optional string if present.
      *
      * @param option
@@ -1253,6 +1267,18 @@ public final class ECtransSetup implements Serializable {
      */
     public Optional<Duration> getOptionalDuration(final ECtransOptions option) {
         return getOptional(option, Duration.class);
+    }
+
+    /**
+     * Gets the optional duration.
+     *
+     * @param option
+     *            the option
+     *
+     * @return the object of type class
+     */
+    public Optional<Duration> getOptionalDuration(final ECtransOptions option, final Value bindings) {
+        return getOptional(option, Duration.class, bindings);
     }
 
     /**
@@ -1586,6 +1612,24 @@ public final class ECtransSetup implements Serializable {
      */
     private <T> Optional<T> getOptional(final ECtransOptions option, final Class<T> clazz) {
         return Optional.ofNullable(get(option, clazz));
+    }
+
+    /**
+     * Gets the option in the optional specified type.
+     *
+     * @param <T>
+     *            the generic type
+     * @param option
+     *            the option
+     * @param clazz
+     *            the clazz
+     * @param bindings
+     *            the bindings
+     *
+     * @return the object of type class
+     */
+    private <T> Optional<T> getOptional(final ECtransOptions option, final Class<T> clazz, final Value bindings) {
+        return Optional.ofNullable(get(option, clazz, bindings));
     }
 
     /**
