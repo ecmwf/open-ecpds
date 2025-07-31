@@ -47,7 +47,6 @@ import static ecmwf.common.text.Util.isNotEmpty;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -57,6 +56,8 @@ import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
@@ -67,10 +68,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
 import java.util.zip.Deflater;
 import java.util.zip.GZIPOutputStream;
 
-import org.apache.commons.io.filefilter.WildcardFileFilter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -84,7 +85,9 @@ import com.azure.storage.blob.BlobServiceClientBuilder;
 import com.azure.storage.blob.models.BlobContainerItem;
 import com.azure.storage.blob.models.BlobItem;
 import com.azure.storage.blob.models.BlobProperties;
+import com.azure.storage.blob.models.BlobRequestConditions;
 import com.azure.storage.blob.models.ParallelTransferOptions;
+import com.azure.storage.blob.options.BlobParallelUploadOptions;
 import com.azure.storage.common.StorageSharedKeyCredential;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -383,8 +386,7 @@ public final class AzureModule extends TransferModule {
                     }
                     containerClient.create().block();
                 }
-                final var blobClient = service.buildAsyncClient().getBlobContainerAsyncClient(cnb[0])
-                        .getBlobAsyncClient(cnb[1]);
+                final var blobClient = containerClient.getBlobAsyncClient(cnb[1]);
                 // If a blob with the same name already exists do we have to delete it ?
                 if (!getSetup().getBoolean(HOST_AZURE_IGNORE_DELETE) && existsMono(blobClient.exists())) {
                     if (getDebug()) {
@@ -392,15 +394,25 @@ public final class AzureModule extends TransferModule {
                     }
                     blobClient.delete().block();
                 }
-                blobClient.upload(FluxUtil.toFluxByteBuffer(getMarkSupportedInputStream(getMD5InputStream(in))),
-                        new ParallelTransferOptions((int) getSetup().getByteSize(HOST_AZURE_BLOCK_SIZE).size(),
-                                getSetup().getInteger(HOST_AZURE_NUM_BUFFERS), null),
-                        getSetup().getBoolean(HOST_AZURE_OVERWRITE)).block();
+                final var dataFlux = FluxUtil.toFluxByteBuffer(getMarkSupportedInputStream(getMD5InputStream(in)));
+                BlobRequestConditions requestConditions = null;
+                if (!getSetup().getBoolean(HOST_AZURE_OVERWRITE)) {
+                    // Only upload if the blob does NOT already exist
+                    requestConditions = new BlobRequestConditions().setIfNoneMatch("*");
+                }
+                final var parallelOptions = new ParallelTransferOptions()
+                        .setBlockSizeLong(getSetup().getByteSize(HOST_AZURE_BLOCK_SIZE).size()) // block size in bytes
+                        .setMaxConcurrency(getSetup().getInteger(HOST_AZURE_NUM_BUFFERS)); // number of parallel buffers
+                final var uploadOptions = new BlobParallelUploadOptions(dataFlux)
+                        .setParallelTransferOptions(parallelOptions).setRequestConditions(requestConditions);
+                // then call upload with this options object
+                blobClient.uploadWithResponse(uploadOptions).block();
             } catch (final Exception e) {
                 _log.debug("upload", e);
                 throw new IOException(e.getMessage());
             }
         } else {
+            // Standard synchronous upload
             _log.debug("Using standard service");
             try {
                 final var containerClient = service.getBlobContainerClient(cnb[0]);
@@ -412,7 +424,7 @@ public final class AzureModule extends TransferModule {
                     containerClient.create();
                 }
                 final var blobClient = containerClient.getBlobClient(cnb[1]).getBlockBlobClient();
-                // If a blobl with the same name already exists do we have to delete it ?
+                // If a blob with the same name already exists do we have to delete it ?
                 if (!getSetup().getBoolean(HOST_AZURE_IGNORE_DELETE) && existsBoolean(blobClient.exists())) {
                     if (getDebug()) {
                         _log.debug("Deleting original blob");
@@ -464,7 +476,7 @@ public final class AzureModule extends TransferModule {
                 containerClient.create().block();
             }
             final var blobClient = containerClient.getBlobAsyncClient(cnb[1]);
-            // If a blobl with the same name already exists do we have to delete it ?
+            // If a blob with the same name already exists do we have to delete it ?
             if (!getSetup().getBoolean(HOST_AZURE_IGNORE_DELETE) && existsMono(blobClient.exists())) {
                 if (getDebug()) {
                     _log.debug("Deleting original blob");
@@ -478,12 +490,21 @@ public final class AzureModule extends TransferModule {
                 public void configurableRun() {
                     _log.debug("Starting upload");
                     try {
-                        blobClient.upload(FluxUtil.toFluxByteBuffer(input),
-                                new ParallelTransferOptions(getSetup().getInteger(HOST_AZURE_BLOCK_SIZE),
-                                        getSetup().getInteger(HOST_AZURE_NUM_BUFFERS), null),
-                                getSetup().getBoolean(HOST_AZURE_OVERWRITE)).block();
+                        final var dataFlux = FluxUtil.toFluxByteBuffer(getMarkSupportedInputStream(input));
+                        BlobRequestConditions requestConditions = null;
+                        if (!getSetup().getBoolean(HOST_AZURE_OVERWRITE)) {
+                            // Only upload if the blob does NOT already exist
+                            requestConditions = new BlobRequestConditions().setIfNoneMatch("*");
+                        }
+                        final var parallelOptions = new ParallelTransferOptions()
+                                .setBlockSizeLong(getSetup().getByteSize(HOST_AZURE_BLOCK_SIZE).size())
+                                .setMaxConcurrency(getSetup().getInteger(HOST_AZURE_NUM_BUFFERS));
+                        final var uploadOptions = new BlobParallelUploadOptions(dataFlux)
+                                .setParallelTransferOptions(parallelOptions).setRequestConditions(requestConditions);
+                        // then call upload with this options object
+                        blobClient.uploadWithResponse(uploadOptions).block();
                         _log.debug("File uploaded");
-                    } catch (final IOException e) {
+                    } catch (final Exception e) {
                         _log.debug("File NOT uploaded", e);
                     } finally {
                         StreamPlugThread.closeQuietly(input);
@@ -520,19 +541,8 @@ public final class AzureModule extends TransferModule {
         }
         final var cnb = getContainerNameAndBloblName(name);
         try {
-            final var output = new PipedOutputStream();
-            azureInput = new PipedInputStream(output, StreamPlugThread.DEFAULT_BUFF_SIZE);
-            final ConfigurableRunnable task = new ConfigurableRunnable() {
-                @Override
-                public void configurableRun() {
-                    _log.debug("Starting download");
-                    service.getBlobContainerClient(cnb[0]).getBlobClient(cnb[1]).download(output);
-                    _log.debug("File downloaded");
-                    StreamPlugThread.closeQuietly(output);
-                }
-            };
-            task.execute();
-            return azureInput;
+            // Open input stream directly from the blob client
+            return service.getBlobContainerClient(cnb[0]).getBlobClient(cnb[1]).openInputStream();
         } catch (final Exception e) {
             _log.debug("download", e);
             throw new IOException(e.getMessage());
@@ -869,18 +879,23 @@ public final class AzureModule extends TransferModule {
         final var owner = client.getAccountName();
         final var ownerName = owner != null ? owner : "unknown";
         final List<String> list = new ArrayList<>();
-        // The iterator is looping indefinitely with the same values so we have to check
-        // when we reach the end and return!ListList
+        // Prepare wildcard matcher if needed
+        Predicate<String> containerMatcher = _ -> true;
+        if (containerName != null && !containerName.isBlank()) {
+            // Glob-style matcher (e.g., *data*, logs?, etc.)
+            final var matcher = FileSystems.getDefault().getPathMatcher("glob:" + containerName);
+            containerMatcher = name -> matcher.matches(Path.of(name));
+        }
         for (final BlobContainerItem containerItem : client.listBlobContainers()) {
             final var name = containerItem.getName();
             _log.debug("ContainerItemName: {}", name);
             if (list.contains(name)) {
-                // End of the listing!
-                break;
+                break; // End of the listing
             }
             list.add(name);
-            if ((pattern == null || name.matches(pattern))
-                    && (containerName == null || new WildcardFileFilter(containerName).accept(new File(name)))) {
+            final var matchesPattern = pattern == null || name.matches(pattern);
+            final var matchesWildcard = containerMatcher.test(name);
+            if (matchesPattern && matchesWildcard) {
                 output.add(Format.getFtpList("drw-r--r--", getSetup().get(HOST_AZURE_FTPUSER, ownerName),
                         getSetup().get(HOST_AZURE_FTPGROUP, ownerName), "2048",
                         containerItem.getProperties().getLastModified().toEpochSecond() * 1000, name));
@@ -912,8 +927,12 @@ public final class AzureModule extends TransferModule {
         final var owner = storageClient.getAccountName();
         final var ownerName = owner != null ? owner : "unknown";
         final List<String> list = new ArrayList<>();
-        // The iterator is looping indefinitely with the same values so we have to check
-        // when we reach the end and return!
+        // Prepare wildcard matcher if needed
+        Predicate<String> fileNameMatcher = _ -> true;
+        if (fileName != null && !fileName.isBlank()) {
+            final var matcher = FileSystems.getDefault().getPathMatcher("glob:" + fileName);
+            fileNameMatcher = name -> matcher.matches(Path.of(name));
+        }
         for (final BlobItem blobItem : containerClient.listBlobs()) {
             final var name = blobItem.getName();
             if (list.contains(name)) {
@@ -922,12 +941,12 @@ public final class AzureModule extends TransferModule {
             }
             list.add(name);
             final var properties = blobItem.getProperties();
-            if (properties != null && (pattern == null || name.matches(pattern))
-                    && (fileName == null || new WildcardFileFilter(fileName).accept(new File(name)))) {
+            if (properties != null && (pattern == null || name.matches(pattern)) && fileNameMatcher.test(name)) {
                 final var entry = Format.getFtpList("-rw-r--r--", getSetup().get(HOST_AZURE_FTPUSER, ownerName),
                         getSetup().get(HOST_AZURE_FTPGROUP, ownerName), String.valueOf(properties.getContentLength()),
                         properties.getLastModified().toEpochSecond() * 1000, name);
                 output.add(entry);
+
                 if (getDebug()) {
                     _log.debug("Adding entry: {}", entry);
                 }
