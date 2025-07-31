@@ -3253,9 +3253,10 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                             }
                         }
                     }
-                } catch (final UnknownHostException e) {
+                } catch (final UnknownHostException _) {
                     if (!isNotEmpty(hostIp)) {
-                        throw new ECtransException("unknown host " + hostName);
+                        throw new ECtransException("unknown host " + hostName + " (consider setting the "
+                                + HOST_ECTRANS_USEDNSNAME.getFullName() + " option to true)");
                     }
                     _log.warn("Using cached IP address: {}", hostIp);
                     hostName = hostIp;
