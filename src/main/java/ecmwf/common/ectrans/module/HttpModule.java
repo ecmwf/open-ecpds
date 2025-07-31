@@ -1770,7 +1770,7 @@ public final class HttpModule extends TransferModule {
                                     addEntry(manager, resultList, rootDirectory, targetDirectory, href, level, pattern,
                                             counter, alternativeName, size, time,
                                             setup.getString(HOST_HTTP_MQTT_BODY, value),
-                                            setup.getBoolean(HOST_HTTP_MQTT_ADD_PAYLOAD)
+                                            setup.getBoolean(HOST_HTTP_MQTT_ADD_PAYLOAD, value)
                                                     ? Base64.getEncoder().encodeToString(message.getPayload()) : "");
                                 } else {
                                     _log.debug("Notification ignored (no href found): {}", topic);
