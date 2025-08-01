@@ -9850,7 +9850,7 @@ public final class MasterServer extends ECaccessProvider
                         final var er = TransferScheduler.execution(this, _desName, _host,
                                 script.substring(2, script.length() - 1));
                         if (!er.complete) {
-                            throw new ScriptException(er.message);
+                            return;
                         }
                         // We update the string with the result of the code
                         // and we continue the processing!
