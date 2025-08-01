@@ -284,114 +284,24 @@ public final class ScriptManager implements AutoCloseable {
     }
 
     /**
-     * Ensures that the last meaningful line of a script is returned. Supports both JavaScript and Python.
+     * Ensures that any single line in a JavaScript include a return.
      *
      * @param scriptBody
-     *            The script content to wrap.
+     *            The script content to process.
      *
-     * @return Wrapped script that runs in an isolated scope.
+     * @return script body with return added if required.
      */
-    private String addReturnToLastExpression(final String scriptBody) {
-        // Return as-is if script or language is not defined
-        if (currentLanguage == null || scriptBody == null)
+    private String addMissingReturnToSingleLineJSExpression(final String scriptBody) {
+        // Return as-is if language is not JavaScript
+        if (!JS.equals(currentLanguage))
             return scriptBody;
-        // Normalize line endings to Unix format to avoid syntax issues (e.g., with
-        // Python or JavaScript)
-        final var normalizedScript = scriptBody.replaceAll("\\r\\n?", "\n");
-        // Choose method based on language
-        return switch (currentLanguage) {
-        case JS -> addReturnToLastExpressionJS(normalizedScript);
-        case PYTHON -> addReturnToLastExpressionPython(normalizedScript);
-        default -> normalizedScript; // Other: return cleaned script
-        };
-    }
-
-    /**
-     * Ensures the last meaningful expression in a JavaScript snippet is returned. Handles both plain scripts and
-     * scripts wrapped in an IIFE (() => { ... })().
-     *
-     * @param jsCode
-     *            the original JavaScript code
-     *
-     * @return the modified code with return on the last expression if needed
-     */
-    private static String addReturnToLastExpressionJS(final String jsCode) {
-        final var trimmed = jsCode.trim();
-        final String body;
-        final var isIIFE = trimmed.startsWith("(() => {") && trimmed.endsWith("})()");
-        if (isIIFE) {
-            body = trimmed.substring("(() => {".length(), trimmed.length() - "})()".length()).trim();
-        } else {
-            body = trimmed;
+        final var trimmed = scriptBody.replaceAll("\\r\\n?", "\n").trim();
+        // Check if it's a single line (no newline chars)
+        if (!trimmed.contains("\n")) {
+            // Add "return " if not already present
+            return trimmed.startsWith("return ") ? trimmed : "return " + trimmed;
         }
-        final var lines = body.split("\\r?\\n");
-        final var result = new StringBuilder();
-        var lastExpr = -1;
-        for (var i = lines.length - 1; i >= 0; i--) {
-            final var line = lines[i].trim();
-            if (!line.isEmpty() && !line.startsWith("//")) {
-                lastExpr = i;
-                break;
-            }
-        }
-        for (var i = 0; i < lines.length; i++) {
-            if (i == lastExpr) {
-                final var trimmedLine = lines[i].trim();
-                if (trimmedLine.startsWith("return ")) {
-                    result.append(lines[i]);
-                } else {
-                    result.append("return ").append(trimmedLine.replaceAll(";+\\s*$", "")).append(";");
-                }
-            } else {
-                result.append(lines[i]);
-            }
-            if (i < lines.length - 1)
-                result.append("\n");
-        }
-        final var processedBody = result.toString();
-        return isIIFE ? "(() => {\n" + processedBody + "\n})()" : processedBody;
-    }
-
-    /**
-     * Ensures that the last meaningful line of a Python code snippet is returned when wrapped in a function. If the
-     * last non-comment, non-blank line is a bare expression (e.g., a string or variable), it is replaced with a return
-     * statement.
-     *
-     * Assumes the code is top-level (not indented blocks).
-     *
-     * @param pyCode
-     *            the original Python code snippet
-     *
-     * @return the modified code with a return statement on the last expression if needed
-     */
-    private static String addReturnToLastExpressionPython(final String pyCode) {
-        final var lines = pyCode.split("\\r?\\n");
-        final var result = new StringBuilder();
-        var lastExprIndex = -1;
-        for (var i = lines.length - 1; i >= 0; i--) {
-            final var line = lines[i].trim();
-            if (!line.isEmpty() && !line.startsWith("#")) {
-                lastExprIndex = i;
-                break;
-            }
-        }
-        for (var i = 0; i < lines.length; i++) {
-            if (i == lastExprIndex) {
-                final var trimmed = lines[i].trim();
-
-                if (trimmed.startsWith("return ") || trimmed.equals("return")) {
-                    result.append(lines[i]);
-                } else {
-                    result.append("return ").append(trimmed);
-                }
-            } else {
-                result.append(lines[i]);
-            }
-            if (i < lines.length - 1) {
-                result.append("\n");
-            }
-        }
-        return result.toString();
+        return trimmed;
     }
 
     /**
@@ -459,7 +369,7 @@ public final class ScriptManager implements AutoCloseable {
      * @param timeoutMs
      *            the timeout ms
      *
-     * @return the t
+     * @return the result of type T
      *
      * @throws ScriptException
      *             the script exception
@@ -494,13 +404,13 @@ public final class ScriptManager implements AutoCloseable {
             if (cause instanceof ScriptException scriptException) {
                 throw scriptException;
             } else {
-                var msg = "Unexpected error during script execution";
+                var msg = new StringBuilder("Unexpected error during script execution");
                 if (cause != null && cause.getMessage() != null) {
-                    msg += ": " + cause.getMessage();
+                    msg.append(": ").append(cause.getMessage());
                 } else if (cause != null) {
-                    msg += ": " + cause.getClass().getName();
+                    msg.append(": ").append(cause.getClass().getName());
                 }
-                var se = new ScriptException(msg);
+                var se = new ScriptException(msg.toString());
                 if (cause != null)
                     se.initCause(cause);
                 throw se;
@@ -620,16 +530,16 @@ public final class ScriptManager implements AutoCloseable {
     /**
      * Eval.
      *
-     * @param script
+     * @param scriptBody
      *            the script
      *
-     * @return the t
+     * @return the the Value
      *
      * @throws ScriptException
      *             the script exception
      */
-    private Value eval(final String script) throws ScriptException {
-        if (script == null || script.isBlank())
+    private Value eval(final String scriptBody) throws ScriptException {
+        if (scriptBody == null || scriptBody.isBlank())
             return null; // Nothing to evaluate!
         final var currentThread = Thread.currentThread();
         final var originalCL = currentThread.getContextClassLoader();
@@ -639,8 +549,8 @@ public final class ScriptManager implements AutoCloseable {
         final var start = System.currentTimeMillis();
         try {
             currentThread.setContextClassLoader(ScriptManager.class.getClassLoader());
-            var value = getCache().context
-                    .eval(Source.create(currentLanguage, addReturnToLastExpression((wrapScript(script)))));
+            var value = getCache().context.eval(
+                    Source.create(currentLanguage, wrapScript(addMissingReturnToSingleLineJSExpression(scriptBody))));
             var duration = System.currentTimeMillis() - start;
             if (_log.isDebugEnabled() && duration > LONG_RUNNING_TIME) {
                 _log.debug("Time taken: {} ms", duration);
