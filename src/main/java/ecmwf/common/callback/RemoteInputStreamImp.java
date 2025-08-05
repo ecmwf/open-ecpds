@@ -211,6 +211,10 @@ public final class RemoteInputStreamImp extends RemoteManagement implements Remo
      *             If an error occurs during cleanup.
      */
     private void cleanup() throws IOException {
-        in.close();
+        try {
+            in.close();
+        } finally {
+            unexport();
+        }
     }
 }

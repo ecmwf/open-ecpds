@@ -179,7 +179,11 @@ public final class RemoteOutputStreamImp extends RemoteManagement implements Rem
      *             If an error occurs during cleanup.
      */
     private void cleanup() throws IOException {
-        StreamPlugThread.closeQuietly(toClose);
-        out.close();
+        try {
+            StreamPlugThread.closeQuietly(toClose);
+            out.close();
+        } finally {
+            unexport();
+        }
     }
 }
