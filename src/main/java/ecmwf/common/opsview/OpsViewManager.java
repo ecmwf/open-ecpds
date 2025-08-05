@@ -98,6 +98,9 @@ public final class OpsViewManager {
     public static final String ACQUISITION_FILTER_NAME = Cnf.at("OpsViewManager", "acquisitionFilterName",
             "ECPDS_Acquisition");
 
+    /** The Constant REST_CLIENT. */
+    public static final RestClient REST_CLIENT = getRestClient();
+
     /** The Constant OTHER_FILTER_NAME. */
     public static final String OTHER_FILTER_NAME = Cnf.at("OpsViewManager", "otherFilterName", "ECPDS_Other");
 
@@ -199,7 +202,7 @@ public final class OpsViewManager {
             final var auth = new JSONObject();
             auth.put("username", USER);
             auth.put("password", PASSWORD);
-            final var json = getRestClient().resource(URL_LOGIN).contentType(MediaType.APPLICATION_JSON)
+            final var json = REST_CLIENT.resource(URL_LOGIN).contentType(MediaType.APPLICATION_JSON)
                     .accept(MediaType.APPLICATION_JSON).post(JSONObject.class, auth);
             final var token = String.valueOf(json.get("token"));
             if ("null".equals(token)) {
@@ -245,7 +248,7 @@ public final class OpsViewManager {
         do {
             try {
                 // Now we send the message!
-                final var response = getRestClient().resource(URL_DETAIL).contentType(MediaType.APPLICATION_JSON)
+                final var response = REST_CLIENT.resource(URL_DETAIL).contentType(MediaType.APPLICATION_JSON)
                         .header("X-Opsview-Username", USER).header("X-Opsview-Token", getToken(lastTry.get()))
                         .accept(MediaType.APPLICATION_JSON).queryParam("hostname", hostname)
                         .queryParam("servicename", service)
@@ -376,14 +379,13 @@ public final class OpsViewManager {
             try {
                 // Get the token and REST client
                 final var token = getToken(lastTry.get());
-                final var client = getRestClient();
                 final var clear = metadata == null || metadata.isBlank();
                 _log.debug("{}ing notes for {}", clear ? "Clear" : "Add", destination);
                 // Build the message
                 final var notes = new JSONObject();
                 notes.put("note", clear ? "" : metadata);
                 // Submit on the server
-                final var response = client.resource(URL_NOTES + "/" + getDestinationName(destination))
+                final var response = REST_CLIENT.resource(URL_NOTES + "/" + getDestinationName(destination))
                         .contentType(MediaType.APPLICATION_JSON).header("X-Opsview-Username", USER)
                         .header("X-Opsview-Token", token).accept(MediaType.APPLICATION_JSON).put(notes);
                 if (response.getStatusCode() != 200) {
@@ -420,12 +422,11 @@ public final class OpsViewManager {
             try {
                 // Get the token and REST client
                 final var token = getToken(lastTry.get());
-                final var client = getRestClient();
                 _log.debug("Synchronization started for {}", filterName);
                 // Get the list of Destinations already on opsview
                 final var filter = URLEncoder.encode("{\"name\":\"" + filterName + "\"}",
                         Charset.defaultCharset().displayName());
-                final var json = client.resource(URL_HOST).contentType(MediaType.APPLICATION_JSON)
+                final var json = REST_CLIENT.resource(URL_HOST).contentType(MediaType.APPLICATION_JSON)
                         .header("X-Opsview-Username", USER).header("X-Opsview-Token", token)
                         .accept(MediaType.APPLICATION_JSON).queryParam("json_filter", filter).get(JSONObject.class);
                 final var list = json.getJSONArray("list");
@@ -468,7 +469,7 @@ public final class OpsViewManager {
                     hostattributes.add(newdes);
                 }
                 // Submit on the server
-                var response = client.resource(URL_HOST).contentType(MediaType.APPLICATION_JSON)
+                var response = REST_CLIENT.resource(URL_HOST).contentType(MediaType.APPLICATION_JSON)
                         .header("X-Opsview-Username", USER).header("X-Opsview-Token", token)
                         .accept(MediaType.APPLICATION_JSON).put(json);
                 if (response.getStatusCode() != 200) {
@@ -478,7 +479,7 @@ public final class OpsViewManager {
                     throw new IOException("Submit failed: " + response.getMessage());
                 }
                 // Reload the configuration
-                response = client.resource(URL_RELOAD).contentType(MediaType.APPLICATION_JSON)
+                response = REST_CLIENT.resource(URL_RELOAD).contentType(MediaType.APPLICATION_JSON)
                         .header("X-Opsview-Username", USER).header("X-Opsview-Token", token).post(null);
                 if (response.getStatusCode() != 200) {
                     throw new IOException("Reload failed: " + response.getMessage());
