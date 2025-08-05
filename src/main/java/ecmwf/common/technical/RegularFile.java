@@ -82,7 +82,7 @@ public final class RegularFile extends GenericFile {
     private static final boolean CHANNEL_FORCE_METADATA = Cnf.at("IO", "channelForceMetadata", true);
 
     /** The Constant pool. */
-    private static DirectByteBufferPool pool = new DirectByteBufferPool(BYTE_BUFFER_SIZE_IN_BYTES,
+    private static final DirectByteBufferPool pool = new DirectByteBufferPool(BYTE_BUFFER_SIZE_IN_BYTES,
             TimeUnit.SECONDS.toSeconds(Cnf.at("IO", "byteBufferPoolMaxIdleSec", 60)));
 
     /** The underlyingFile. */
