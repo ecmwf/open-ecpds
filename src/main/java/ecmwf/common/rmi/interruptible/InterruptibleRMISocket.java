@@ -215,7 +215,11 @@ abstract class InterruptibleRMISocket extends Socket {
                     synchronized (buffer) {
                         // Expired unused buffer
                         reusable.remove(buffer);
-                        expirations.remove(buffer);
+                        final var task = expirations.remove(buffer);
+                        if (task != null) {
+                            task.cancel(false);
+                        }
+
                     }
                 }, BUFFER_TTL_MS, TimeUnit.MILLISECONDS);
                 expirations.put(buffer, future);
