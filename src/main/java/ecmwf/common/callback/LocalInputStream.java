@@ -28,13 +28,18 @@ package ecmwf.common.callback;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * The Class LocalInputStream.
  */
 public final class LocalInputStream extends InputStream {
-    /** The _in. */
-    private final RemoteInputStream _in;
+
+    /** The closed. */
+    private final AtomicBoolean closed = new AtomicBoolean(false);
+
+    /** The in. */
+    private final RemoteInputStream in;
 
     /**
      * Instantiates a new local input stream.
@@ -43,43 +48,61 @@ public final class LocalInputStream extends InputStream {
      *            the in
      */
     public LocalInputStream(final RemoteInputStream in) {
-        _in = in;
+        this.in = in;
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Available.
+     *
+     * @return the int
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int available() throws IOException {
-        return _in.available();
+        if (closed.get())
+            throw new IOException("Cannot close stream: stream is already closed");
+        return in.available();
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Close.
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public synchronized void close() throws IOException {
-        _in.close();
+        if (closed.compareAndSet(false, true))
+            in.close();
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Read.
+     *
+     * @return the int
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int read() throws IOException {
-        return _in.read();
+        if (closed.get())
+            throw new IOException("Cannot read from stream: stream is already closed");
+        return in.read();
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Read.
+     *
+     * @param b
+     *            the b
+     *
+     * @return the int
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int read(final byte[] b) throws IOException {
@@ -87,13 +110,25 @@ public final class LocalInputStream extends InputStream {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Read.
+     *
+     * @param b
+     *            the b
+     * @param off
+     *            the off
+     * @param len
+     *            the len
+     *
+     * @return the int
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public int read(final byte[] b, final int off, int len) throws IOException {
-        final var data = _in.read(len);
+        if (closed.get())
+            throw new IOException("Cannot read from stream: stream is already closed");
+        final var data = in.read(len);
         if ((len = data.getLen()) > 0) {
             System.arraycopy(data.getBytes(), 0, b, off, len);
         }
@@ -101,22 +136,33 @@ public final class LocalInputStream extends InputStream {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Reset.
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void reset() throws IOException {
-        _in.reset();
+        if (closed.get())
+            throw new IOException("Cannot reset stream: stream is already closed");
+        in.reset();
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Skip.
+     *
+     * @param n
+     *            the n
+     *
+     * @return the long
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public long skip(final long n) throws IOException {
-        return _in.skip(n);
+        if (closed.get())
+            throw new IOException("Cannot skip stream: stream is already closed");
+        return in.skip(n);
     }
 }

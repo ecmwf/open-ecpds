@@ -28,13 +28,18 @@ package ecmwf.common.callback;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * The Class LocalOutputStream.
  */
 public final class LocalOutputStream extends OutputStream {
-    /** The _out. */
-    private final RemoteOutputStream _out;
+
+    /** The closed. */
+    private final AtomicBoolean closed = new AtomicBoolean(false);
+
+    /** The out. */
+    private final RemoteOutputStream out;
 
     /**
      * Instantiates a new local output stream.
@@ -43,56 +48,84 @@ public final class LocalOutputStream extends OutputStream {
      *            the out
      */
     public LocalOutputStream(final RemoteOutputStream out) {
-        _out = out;
+        this.out = out;
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Close.
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public synchronized void close() throws IOException {
-        _out.close();
+        if (closed.get())
+            throw new IOException("Cannot close stream: stream is already closed");
+        out.close();
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Flush.
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void flush() throws IOException {
-        _out.flush();
+        if (closed.get())
+            throw new IOException("Cannot flush stream: stream is already closed");
+        out.flush();
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Write.
+     *
+     * @param b
+     *            the b
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void write(final byte[] b) throws IOException {
-        _out.write(b);
+        if (closed.get())
+            throw new IOException("Cannot write to stream: stream is already closed");
+        out.write(b);
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Write.
+     *
+     * @param b
+     *            the b
+     * @param off
+     *            the off
+     * @param len
+     *            the len
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void write(final byte[] b, final int off, final int len) throws IOException {
-        _out.write(b, off, len);
+        if (closed.get())
+            throw new IOException("Cannot write to stream: stream is already closed");
+        out.write(b, off, len);
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Write.
+     *
+     * @param b
+     *            the b
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void write(final int b) throws IOException {
-        _out.write(b);
+        if (closed.get())
+            throw new IOException("Cannot write to stream: stream is already closed");
+        out.write(b);
     }
 }
