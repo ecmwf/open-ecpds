@@ -32,6 +32,7 @@ import java.rmi.registry.Registry;
 import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RMIServerSocketFactory;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -61,6 +62,9 @@ public abstract class CallBackObject extends UnicastRemoteObject {
     /** The Constant serverSocketFactory. */
     private static final transient RMIServerSocketFactory serverSocketFactory = getRMIServerSocketFactory(socketConfig);
 
+    /** The Constant isLocal. */
+    private final transient AtomicBoolean isLocal = new AtomicBoolean(false);
+
     /**
      * Instantiates a new call back object.
      *
@@ -69,7 +73,30 @@ public abstract class CallBackObject extends UnicastRemoteObject {
      */
     protected CallBackObject() throws RemoteException {
         super(PORT, clientSocketFactory, serverSocketFactory);
+        isLocal.set(true); // Mark that this is the original exported instance
         _log.debug("Export object: {}", this.getClass().getName());
+    }
+
+    /**
+     * Requests the remote object to unexport itself, allowing it to be garbage collected. This method should be called
+     * from the remote RMI peer (not the exporter).
+     */
+    public void unexport() {
+        if (isLocal.get() && this instanceof RemoteManagement management) {
+            try {
+                if (UnicastRemoteObject.unexportObject(this, true)) {
+                    _log.debug("Successfully unexported CallBackObject: {}", this.getClass().getName());
+                } else {
+                    _log.warn("CallBackObject was not exported or already unexported: {}", this.getClass().getName());
+                }
+            } catch (Exception e) {
+                _log.error("Error while unexporting CallBackObject: {}", this.getClass().getName(), e);
+            } finally {
+                management.destroy();
+            }
+        } else {
+            _log.debug("Skipping unexport: not the exporting side (this is a stub)");
+        }
     }
 
     /**
