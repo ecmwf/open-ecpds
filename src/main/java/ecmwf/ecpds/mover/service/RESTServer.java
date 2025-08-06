@@ -39,6 +39,7 @@ import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Formatter;
 import java.util.HashMap;
 import java.util.List;
@@ -734,7 +735,7 @@ public final class RESTServer {
             final var biggerIndexes = getBiggerIndexes(elements);
             final var builder = Response.ok();
             builder.header("Content-Type", "text/html");
-            builder.header("Last-Modified", biggerIndexes[3]);
+            builder.lastModified(new Date(biggerIndexes[3]));
             builder.header("Cache-Control", "no-cache");
             return builder.build();
         } catch (final WebApplicationException w) {
@@ -888,7 +889,7 @@ public final class RESTServer {
                 out.println(element.getName() + (element.isDirectory() ? "/" : ""));
             }
             out.flush();
-            return builder.header("Last-Modified", biggerIndexes[3]).build();
+            return builder.lastModified(new Date(biggerIndexes[3])).build();
         } catch (final WebApplicationException w) {
             _log.warn("fileGet", w);
             throw w;
@@ -1263,7 +1264,7 @@ public final class RESTServer {
             Format.replaceAll(sb, "${listing}", listing.toString());
             final var builder = Response.ok();
             builder.header("Content-Type", "text/html");
-            builder.header("Last-Modified", biggerIndexes[3]);
+            builder.lastModified(new Date(biggerIndexes[3]));
             builder.header("Cache-Control", "no-cache");
             return builder.entity(sb.toString()).build();
         } catch (final WebApplicationException w) {
@@ -1461,7 +1462,7 @@ public final class RESTServer {
         builder.header("Content-Type", contentType);
         builder.header("Content-Disposition", disposition + ";filename=\"" + fileName + "\"");
         builder.header("ETag", etag);
-        builder.header("Last-Modified", lastModified);
+        builder.lastModified(new Date(lastModified));
         return new MediaRequest(request.getRemoteAddr(), contentType, name, Long.parseLong(element.getSize()));
     }
 
