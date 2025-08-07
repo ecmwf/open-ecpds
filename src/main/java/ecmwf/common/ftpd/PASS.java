@@ -119,7 +119,7 @@ final class PASS {
             _log.info("User " + user + " NOT logged in from " + currentContext.remoteSite + " (login failed)");
             if (authMessage.isEmpty()) {
                 currentContext.respond(530, "Invalid domain name");
-            } else if (authMessage.startsWith("Maximum number of connections exceeded")) {
+            } else if (authMessage.contains("Maximum number of connections exceeded")) {
                 currentContext.respond(421, authMessage);
             } else {
                 currentContext.respond(530, authMessage);
@@ -258,7 +258,7 @@ final class PASS {
             }
         } catch (final Exception e) {
             final var message = e.getMessage();
-            if (message != null && message.startsWith("Maximum number of connections exceeded")) {
+            if (message != null && message.contains("Maximum number of connections exceeded")) {
                 return message;
             }
             _log.warn("Authenticating user " + user, e);
