@@ -1039,9 +1039,8 @@ public final class RESTServer {
         final var session = getUserSession(authString, request, response);
         try {
             checkParameter("filename", filename);
-            final var builder = Response.ok();
-            session.deleteFile(processGet(session, request, builder, filename).name, true);
-            return builder.build();
+            session.deleteFile(processGet(session, request, null, filename).name, true);
+            return Response.ok().build();
         } catch (final WebApplicationException w) {
             _log.warn("dataFileDelete", w);
             throw w;
@@ -1096,7 +1095,6 @@ public final class RESTServer {
         try {
             checkParameter("filename", filename);
             final var builder = Response.ok();
-            builder.header(ACCEPT_RANGES, "bytes");
             final var mediaRequest = processGet(session, request, builder, filename);
             final var fullRange = new Range(0, mediaRequest.size - 1, mediaRequest.size);
             // Is it a bytes range request?
@@ -1472,7 +1470,7 @@ public final class RESTServer {
         final var lastModified = element.getTime();
         final var ifModifiedSince = request.getDateHeader(IF_MODIFIED_SINCE);
         final var ifUnmodifiedSince = request.getDateHeader(IF_UNMODIFIED_SINCE);
-        final var etagMatches = ifNoneMatch != null && ifNoneMatch.length() > 0 && ifNoneMatch.equals(etag);
+        final var etagMatches = ifNoneMatch != null && !ifNoneMatch.isEmpty() && ifNoneMatch.equals(etag);
         final var notModifiedSince = ifNoneMatch == null && ifModifiedSince != -1
                 && lastModified < ifModifiedSince + 1000;
         final var modifiedAfterUnmodifiedSince = ifNoneMatch == null && ifUnmodifiedSince != -1
@@ -1485,7 +1483,7 @@ public final class RESTServer {
         var contentType = URLConnection.getFileNameMap().getContentTypeFor(fileName);
         var disposition = "inline";
         final var setup = session.getECtransSetup();
-        if (setup != null) {
+        if (setup != null && builder != null) {
             for (final var entry : setup.getOptions(ECtransOptions.USER_PORTAL_HEADER_REGISTRY, filename, null)
                     .getProperties().entrySet()) {
                 final var key = entry.getKey().toString();
@@ -1511,11 +1509,13 @@ public final class RESTServer {
             final var accept = request.getHeader(ACCEPT);
             disposition = accept != null && accepts(accept, contentType) ? "inline" : "attachment";
         }
-        builder.header(ACCEPT_RANGES, "bytes");
-        builder.header(CONTENT_TYPE, contentType);
-        builder.header(CONTENT_DISPOSITION, disposition + ";filename=\"" + fileName + "\"");
-        builder.header(ETAG, etag);
-        builder.lastModified(new Date(lastModified));
+        if (builder != null) {
+            builder.header(ACCEPT_RANGES, "bytes");
+            builder.header(CONTENT_TYPE, contentType);
+            builder.header(CONTENT_DISPOSITION, disposition + ";filename=\"" + fileName + "\"");
+            builder.header(ETAG, etag);
+            builder.lastModified(new Date(lastModified));
+        }
         return new MediaRequest(request.getRemoteAddr(), contentType, name, Long.parseLong(element.getSize()));
     }
 
