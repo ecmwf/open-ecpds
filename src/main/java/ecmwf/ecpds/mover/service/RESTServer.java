@@ -44,6 +44,7 @@ import java.util.Formatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -115,8 +116,57 @@ public final class RESTServer {
     /** The Constant portalContent. */
     private static final StringBuilder portalContent = new StringBuilder();
 
-    /** For mutipart ranges *. */
+    /** The Constant MULTIPART_BOUNDARY. */
     private static final String MULTIPART_BOUNDARY = "MULTIPART_BYTERANGES";
+
+    /** The Constant CONTENT_TYPE. */
+    private static final String CONTENT_TYPE = "Content-Type";
+
+    /** The Constant CONTENT_LENGTH. */
+    private static final String CONTENT_LENGTH = "Content-Length";
+
+    /** The Constant CONTENT_DISPOSITION. */
+    private static final String CONTENT_DISPOSITION = "Content-Disposition";
+
+    /** The Constant CONTENT_RANGE. */
+    private static final String CONTENT_RANGE = "Content-Range";
+
+    /** The Constant LAST_MODIFIED. */
+    private static final String LAST_MODIFIED = "Last-Modified";
+
+    /** The Constant ACCEPT_RANGES. */
+    private static final String ACCEPT_RANGES = "Accept-Ranges";
+
+    /** The Constant ACCEPT. */
+    private static final String ACCEPT = "Accept";
+
+    /** The Constant RANGE. */
+    private static final String RANGE = "Range";
+
+    /** The Constant IF_MODIFIED_SINCE. */
+    private static final String IF_MODIFIED_SINCE = "If-Modified-Since";
+
+    /** The Constant IF_NONE_MATCH. */
+    private static final String IF_NONE_MATCH = "If-None-Match";
+
+    /** The Constant IF_UNMODIFIED_SINCE. */
+    private static final String IF_UNMODIFIED_SINCE = "If-Unmodified-Since";
+
+    /** The Constant IF_RANGE. */
+    private static final String IF_RANGE = "If-Range";
+
+    /** The Constant CACHE_CONTROL. */
+    private static final String CACHE_CONTROL = "Cache-Control";
+
+    /** The Constant NO_CACHE. */
+    private static final String NO_CACHE = "no-cache";
+
+    /** The Constant ETAG. */
+    private static final String ETAG = "ETag";
+
+    /** The Constant RESERVED_HEADERS. */
+    private static final Set<String> RESERVED_HEADERS = Set.of(ACCEPT_RANGES.toLowerCase(),
+            CONTENT_DISPOSITION.toLowerCase(), ETAG.toLowerCase(), LAST_MODIFIED.toLowerCase());
 
     /**
      * Get version.
@@ -636,7 +686,6 @@ public final class RESTServer {
      * @return the input stream
      */
     @HEAD
-    @Produces(MediaType.APPLICATION_OCTET_STREAM)
     @Path("home/{user}")
     public Response homeHead(@Context final UriInfo ui, @PathParam("user") final String user,
             @HeaderParam("range") final String range, @Context final HttpServletRequest request,
@@ -663,7 +712,6 @@ public final class RESTServer {
      * @return the input stream
      */
     @HEAD
-    @Produces(MediaType.APPLICATION_OCTET_STREAM)
     @Path("home/{user}/{filename: .*}")
     public Response homeHead(@Context final UriInfo ui, @PathParam("user") final String user,
             @HeaderParam("range") final String range, @Context final HttpServletRequest request,
@@ -688,7 +736,6 @@ public final class RESTServer {
      * @return the input stream
      */
     @HEAD
-    @Produces(MediaType.APPLICATION_OCTET_STREAM)
     @Path("file")
     public Response fileHead(@Context final UriInfo ui, @HeaderParam("authorization") final String authString,
             @HeaderParam("range") final String range, @Context final HttpServletRequest request,
@@ -715,7 +762,6 @@ public final class RESTServer {
      * @return the input stream
      */
     @HEAD
-    @Produces(MediaType.APPLICATION_OCTET_STREAM)
     @Path("file/{filename: .*}")
     public Response fileHead(@Context final UriInfo ui, @HeaderParam("authorization") final String authString,
             @HeaderParam("range") final String range, @Context final HttpServletRequest request,
@@ -734,9 +780,9 @@ public final class RESTServer {
             final var elements = session.getFileList(path);
             final var biggerIndexes = getBiggerIndexes(elements);
             final var builder = Response.ok();
-            builder.header("Content-Type", "text/html");
+            builder.header(CONTENT_TYPE, MediaType.TEXT_HTML);
             builder.lastModified(new Date(biggerIndexes[3]));
-            builder.header("Cache-Control", "no-cache");
+            builder.header(CACHE_CONTROL, NO_CACHE);
             return builder.build();
         } catch (final WebApplicationException w) {
             _log.warn("fileHead", w);
@@ -747,13 +793,13 @@ public final class RESTServer {
         } catch (final EccmdException e) {
             _log.warn("fileHead", e);
             final var message = e.getMessage();
-            if (message.indexOf("File not found") != -1 || message.indexOf("Destination not found") != -1) {
+            if (message.contains("File not found") || message.contains("Destination not found")) {
                 throw newException(e, 404, "Not Found: " + message);
             }
             throw newException(e, 500, message);
         } catch (final Throwable t) {
             _log.warn("fileHead", t);
-            throw newException(t, 500, "Bad request");
+            throw newException(t, 500, "Internal server error");
         } finally {
             if (session != null) {
                 session.close(true);
@@ -778,7 +824,7 @@ public final class RESTServer {
      * @return the input stream
      */
     @GET
-    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    @Produces({ MediaType.APPLICATION_OCTET_STREAM, MediaType.TEXT_HTML, MediaType.TEXT_PLAIN })
     @Path("home/{user}")
     public Response homeGet(@Context final UriInfo ui, @PathParam("user") final String user,
             @HeaderParam("range") final String range, @Context final HttpServletRequest request,
@@ -805,7 +851,7 @@ public final class RESTServer {
      * @return the input stream
      */
     @GET
-    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    @Produces({ MediaType.APPLICATION_OCTET_STREAM, MediaType.TEXT_HTML, MediaType.TEXT_PLAIN })
     @Path("home/{user}/{filename: .*}")
     public Response homeGet(@Context final UriInfo ui, @PathParam("user") final String user,
             @HeaderParam("range") final String range, @Context final HttpServletRequest request,
@@ -830,7 +876,7 @@ public final class RESTServer {
      * @return the input stream
      */
     @GET
-    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    @Produces({ MediaType.APPLICATION_OCTET_STREAM, MediaType.TEXT_HTML, MediaType.TEXT_PLAIN })
     @Path("file")
     public Response fileGet(@Context final UriInfo ui, @HeaderParam("authorization") final String authString,
             @HeaderParam("range") final String range, @Context final HttpServletRequest request,
@@ -857,7 +903,7 @@ public final class RESTServer {
      * @return the input stream
      */
     @GET
-    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    @Produces({ MediaType.APPLICATION_OCTET_STREAM, MediaType.TEXT_HTML, MediaType.TEXT_PLAIN })
     @Path("file/{filename: .*}")
     public Response fileGet(@Context final UriInfo ui, @HeaderParam("authorization") final String authString,
             @HeaderParam("range") final String range, @Context final HttpServletRequest request,
@@ -880,16 +926,16 @@ public final class RESTServer {
             }
             // Only send a simple text list
             final var builder = Response.ok();
-            builder.header("Content-Type", "text/html");
-            builder.header("Cache-Control", "no-cache");
-            final var out = response.getOutputStream();
+            builder.header(CONTENT_TYPE, MediaType.TEXT_PLAIN);
+            builder.header(CACHE_CONTROL, NO_CACHE);
             final var elements = session.getFileList(path);
-            final var biggerIndexes = getBiggerIndexes(elements);
-            for (final FileListElement element : elements) {
-                out.println(element.getName() + (element.isDirectory() ? "/" : ""));
-            }
-            out.flush();
-            return builder.lastModified(new Date(biggerIndexes[3])).build();
+            final StreamingOutput output = os -> {
+                for (final var element : elements) {
+                    os.write((element.getName() + (element.isDirectory() ? "/" : "") + "\n")
+                            .getBytes(StandardCharsets.UTF_8));
+                }
+            };
+            return builder.entity(output).lastModified(new Date(getBiggerIndexes(elements)[3])).build();
         } catch (final WebApplicationException w) {
             _log.warn("fileGet", w);
             throw w;
@@ -899,13 +945,13 @@ public final class RESTServer {
         } catch (final EccmdException e) {
             _log.warn("fileGet", e);
             final var message = e.getMessage();
-            if (message.indexOf("File not found") != -1 || message.indexOf("Destination not found") != -1) {
+            if (message.contains("File not found") || message.contains("Destination not found")) {
                 throw newException(e, 404, "Not Found: " + message);
             }
             throw newException(e, 500, message);
         } catch (final Throwable t) {
             _log.warn("fileGet", t);
-            throw newException(t, 500, "Bad request");
+            throw newException(t, 500, "Internal server error");
         } finally {
             if (session != null) {
                 session.close(true);
@@ -943,7 +989,7 @@ public final class RESTServer {
             checkParameter("filename", filename);
             final var builder = Response.ok();
             final var mediaRequest = processGet(session, request, builder, filename);
-            return builder.header("Content-Length", mediaRequest.size).status(200).build();
+            return builder.header(CONTENT_LENGTH, mediaRequest.size).build();
         } catch (final WebApplicationException w) {
             _log.warn("dataFileHead", w);
             throw w;
@@ -953,13 +999,13 @@ public final class RESTServer {
         } catch (final EccmdException e) {
             _log.warn("dataFileHead", e);
             final var message = e.getMessage();
-            if (message.indexOf("File not found") != -1 || message.indexOf("Destination not found") != -1) {
+            if (message.contains("File not found") || message.contains("Destination not found")) {
                 throw newException(e, 404, "Not Found: " + message);
             }
             throw newException(e, 500, message);
         } catch (final Throwable t) {
             _log.warn("dataFileHead", t);
-            throw newException(t, 500, "Bad request");
+            throw newException(t, 500, "Internal server error");
         } finally {
             if (session != null) {
                 session.close(true);
@@ -1005,13 +1051,13 @@ public final class RESTServer {
         } catch (final EccmdException e) {
             _log.warn("dataFileDelete", e);
             final var message = e.getMessage();
-            if (message.indexOf("File not found") != -1 || message.indexOf("Destination not found") != -1) {
+            if (message.contains("File not found") || message.contains("Destination not found")) {
                 throw newException(e, 404, "Not Found: " + message);
             }
             throw newException(e, 500, message);
         } catch (final Throwable t) {
             _log.warn("dataFileDelete", t);
-            throw newException(t, 500, "Bad request");
+            throw newException(t, 500, "Internal server error");
         } finally {
             if (session != null) {
                 session.close(true);
@@ -1050,35 +1096,44 @@ public final class RESTServer {
         try {
             checkParameter("filename", filename);
             final var builder = Response.ok();
+            builder.header(ACCEPT_RANGES, "bytes");
             final var mediaRequest = processGet(session, request, builder, filename);
+            final var fullRange = new Range(0, mediaRequest.size - 1, mediaRequest.size);
             // Is it a bytes range request?
-            final var full = new Range(0, mediaRequest.size - 1, mediaRequest.size);
-            final var ranges = getRanges(full, filename, mediaRequest.size, request);
+            final var rangeHeader = request.getHeader(RANGE);
             final StreamingOutput streamer;
-            if (ranges.isEmpty() || ranges.get(0) == full) {
+            if (rangeHeader == null) {
                 // Return full file
-                builder.header("Content-Range", "bytes " + full.start + "-" + full.end + "/" + full.total);
-                builder.header("Content-Length", full.length);
-                builder.status(200);
+                builder.header(CONTENT_LENGTH, fullRange.length);
                 streamer = new SingleStreamer(session, mediaRequest, 0, -1);
-            } else if (ranges.size() == 1) {
-                // Only one range requested
-                final var r = ranges.get(0);
-                builder.header("Content-Range", "bytes " + r.start + "-" + r.end + "/" + r.total);
-                builder.header("Content-Length", r.length);
-                builder.status(206);
-                streamer = new SingleStreamer(session, mediaRequest, r.start, r.length);
             } else {
-                // Multiple ranges requested
-                final var rangeSize = ranges.size();
-                final var setup = session.getECtransSetup();
-                if (setup != null
-                        && rangeSize > setup.getByteSize(ECtransOptions.USER_PORTAL_MAX_RANGES_ALLOWED).size()) {
-                    throw newException(429, "Too Many Requests: Max ranges allowed exceeded (" + rangeSize + ")");
-                }
-                builder.header("Content-Type", "multipart/byteranges; boundary=" + MULTIPART_BOUNDARY);
+                // Found a Range request, returning HTTP 206 Partial Content
                 builder.status(206);
-                streamer = new MultiStreamer(session, mediaRequest, ranges);
+                final var ranges = getRanges(rangeHeader, fullRange, filename, mediaRequest.size, request);
+                if (ranges.isEmpty() || ranges.get(0) == fullRange) {
+                    // Return full file
+                    builder.header(CONTENT_RANGE,
+                            "bytes " + fullRange.start + "-" + fullRange.end + "/" + fullRange.total);
+                    builder.header(CONTENT_LENGTH, fullRange.length);
+                    streamer = new SingleStreamer(session, mediaRequest, 0, -1);
+                } else if (ranges.size() == 1) {
+                    // Only one range requested
+                    final var singleRange = ranges.get(0);
+                    builder.header(CONTENT_RANGE,
+                            "bytes " + singleRange.start + "-" + singleRange.end + "/" + singleRange.total);
+                    builder.header(CONTENT_LENGTH, singleRange.length);
+                    streamer = new SingleStreamer(session, mediaRequest, singleRange.start, singleRange.length);
+                } else {
+                    // Multiple ranges requested
+                    final var rangeSize = ranges.size();
+                    final var setup = session.getECtransSetup();
+                    if (setup != null
+                            && rangeSize > setup.getByteSize(ECtransOptions.USER_PORTAL_MAX_RANGES_ALLOWED).size()) {
+                        throw newException(429, "Too Many Requests: Max ranges allowed exceeded (" + rangeSize + ")");
+                    }
+                    builder.header(CONTENT_TYPE, "multipart/byteranges; boundary=" + MULTIPART_BOUNDARY);
+                    streamer = new MultiStreamer(session, mediaRequest, ranges);
+                }
             }
             success = true;
             return builder.entity(streamer).build();
@@ -1091,7 +1146,7 @@ public final class RESTServer {
         } catch (final EccmdException e) {
             _log.warn("dataFileGet", e);
             final var message = e.getMessage();
-            if (message.indexOf("File not found") != -1 || message.indexOf("Destination not found") != -1) {
+            if (message.contains("File not found") || message.contains("Destination not found")) {
                 throw newException(e, 404, "Not Found: " + message);
             }
             throw newException(e, 500, message);
@@ -1125,8 +1180,9 @@ public final class RESTServer {
      */
     @POST
     @Produces(MediaType.TEXT_PLAIN)
+    @Consumes(MediaType.APPLICATION_OCTET_STREAM)
     @Path("data/file/{filename: .*}")
-    public String dataFilePost(@Context final UriInfo ui, @HeaderParam("authorization") final String authString,
+    public Response dataFilePost(@Context final UriInfo ui, @HeaderParam("authorization") final String authString,
             @Context final HttpServletRequest request, @Context final HttpServletResponse response,
             @PathParam("filename") final String filename, final InputStream in) {
         _log.debug("REST received request: dataFilePost({})", filename);
@@ -1151,7 +1207,8 @@ public final class RESTServer {
             }
             final var element = session.getFileListElement(name);
             final var etag = getETag(element.getComment());
-            return "Upload complete (id: " + element.getComment() + ", ETag: " + etag + ")\n";
+            return Response.ok("Upload complete (id: " + element.getComment() + ", ETag: " + etag + ")")
+                    .type(MediaType.TEXT_PLAIN).header("ETag", etag).build();
         } catch (final WebApplicationException w) {
             _log.warn("dataFilePost", w);
             throw w;
@@ -1161,7 +1218,7 @@ public final class RESTServer {
         } catch (final EccmdException e) {
             _log.warn("dataFilePost", e);
             final var message = e.getMessage();
-            if (message.indexOf("File not found") != -1 || message.indexOf("Destination not found") != -1) {
+            if (message.contains("File not found") || message.contains("Destination not found")) {
                 throw newException(e, 404, "Not Found: " + message);
             }
             throw newException(e, 500, message);
@@ -1262,11 +1319,10 @@ public final class RESTServer {
                 listing.append("empty");
             }
             Format.replaceAll(sb, "${listing}", listing.toString());
-            final var builder = Response.ok();
-            builder.header("Content-Type", "text/html");
+            final var builder = Response.ok(sb.toString(), MediaType.TEXT_HTML);
             builder.lastModified(new Date(biggerIndexes[3]));
-            builder.header("Cache-Control", "no-cache");
-            return builder.entity(sb.toString()).build();
+            builder.header(CACHE_CONTROL, NO_CACHE);
+            return builder.build();
         } catch (final WebApplicationException w) {
             _log.debug("dataListGet", w);
             throw w;
@@ -1276,7 +1332,7 @@ public final class RESTServer {
         } catch (final EccmdException e) {
             _log.debug("dataListGet", e);
             final var message = e.getMessage();
-            if (message.indexOf("File not found") != -1 || message.indexOf("Destination not found") != -1) {
+            if (message.contains("File not found") || message.contains("Destination not found")) {
                 throw newException(e, 404, "Not Found: " + message);
             }
             throw newException(new Exception(message), 500, message);
@@ -1305,7 +1361,6 @@ public final class RESTServer {
      *            the filename
      */
     @HEAD
-    @Produces(MediaType.TEXT_HTML)
     @Path("data/list/{filename: .*}")
     public void dataListHead(@Context final UriInfo ui, @HeaderParam("authorization") final String authString,
             @Context final HttpServletRequest request, @Context final HttpServletResponse response,
@@ -1320,7 +1375,7 @@ public final class RESTServer {
             if (!list.isDirectory() && list.getSize() == null) {
                 throw new FileNotFoundException("No such file or directory");
             }
-            response.addDateHeader("Last-Modified", getBiggerIndexes(session.getFileList(path))[3]);
+            response.addDateHeader(LAST_MODIFIED, getBiggerIndexes(session.getFileList(path))[3]);
         } catch (final WebApplicationException w) {
             _log.warn("dataListHead", w);
             throw w;
@@ -1330,7 +1385,7 @@ public final class RESTServer {
         } catch (final EccmdException e) {
             _log.warn("dataListHead", e);
             final var message = e.getMessage();
-            if (message.indexOf("File not found") != -1 || message.indexOf("Destination not found") != -1) {
+            if (message.contains("File not found") || message.contains("Destination not found")) {
                 throw newException(e, 404, "Not Found: " + message);
             }
             throw newException(e, 500, message);
@@ -1407,24 +1462,23 @@ public final class RESTServer {
         final var name = getFilename(session, filename);
         final var element = session.getFileListElement(name);
         if (element.isDirectory() || element.getSize() == null || element.getComment() == null) {
-            throw new WebApplicationException(
-                    Response.status(Response.Status.NOT_FOUND).entity(filename + ": Not a plain file").build());
+            throw new WebApplicationException(Response.status(Response.Status.NOT_FOUND).type(MediaType.TEXT_PLAIN)
+                    .entity(filename + ": Not a regular file").build());
         }
         // Are we required to check the ETag?
-        final var ifNoneMatch = request.getHeader("If-None-Match");
+        final var ifNoneMatch = request.getHeader(IF_NONE_MATCH);
         final var etag = getETag(element.getComment());
-        if (ifNoneMatch != null && ifNoneMatch.length() > 0 && ifNoneMatch.equals(etag)) {
-            throw new WebApplicationException(Response.status(304).entity("Not Modified").header("ETag", etag).build());
-        }
         // Are we required to check against the last modified time?
         final var lastModified = element.getTime();
-        final var ifModifiedSince = request.getDateHeader("If-Modified-Since");
-        if (ifNoneMatch == null && ifModifiedSince != -1 && lastModified < ifModifiedSince + 1000) {
-            throw new WebApplicationException(Response.status(304).entity("Not Modified").header("ETag", etag).build());
-        }
-        final var ifUnmodifiedSince = request.getDateHeader("If-Unmodified-Since");
-        if (ifNoneMatch == null && ifUnmodifiedSince != -1 && lastModified >= ifUnmodifiedSince + 1000) {
-            throw new WebApplicationException(Response.status(304).entity("Not Modified").header("ETag", etag).build());
+        final var ifModifiedSince = request.getDateHeader(IF_MODIFIED_SINCE);
+        final var ifUnmodifiedSince = request.getDateHeader(IF_UNMODIFIED_SINCE);
+        final var etagMatches = ifNoneMatch != null && ifNoneMatch.length() > 0 && ifNoneMatch.equals(etag);
+        final var notModifiedSince = ifNoneMatch == null && ifModifiedSince != -1
+                && lastModified < ifModifiedSince + 1000;
+        final var modifiedAfterUnmodifiedSince = ifNoneMatch == null && ifUnmodifiedSince != -1
+                && lastModified >= ifUnmodifiedSince + 1000;
+        if (etagMatches || notModifiedSince || modifiedAfterUnmodifiedSince) {
+            throw new WebApplicationException(Response.notModified().header(ETAG, etag).build());
         }
         final var fileName = new File(element.getName()).getName();
         // Get content type by file name and set content disposition.
@@ -1436,12 +1490,11 @@ public final class RESTServer {
                     .getProperties().entrySet()) {
                 final var key = entry.getKey().toString();
                 final var value = entry.getValue().toString();
-                if (key.equalsIgnoreCase("Content-Type")) {
+                if (key.equalsIgnoreCase(CONTENT_TYPE)) {
                     contentType = value;
                 } else {
-                    if (List.of("Accept-Ranges", "Content-Disposition", "ETag", "Last-Modified").stream()
-                            .noneMatch(s -> s.equalsIgnoreCase(key))) {
-                        builder.header(entry.getKey().toString(), entry.getValue());
+                    if (!RESERVED_HEADERS.contains(key.toLowerCase())) {
+                        builder.header(key, entry.getValue());
                     }
                 }
             }
@@ -1450,18 +1503,18 @@ public final class RESTServer {
         // For all content types, see: http://www.w3schools.com/media/media_mimeref.asp
         // To add new content types, add new mime-mapping entry in web.xml.
         if (contentType == null) {
-            contentType = "application/octet-stream";
+            contentType = MediaType.APPLICATION_OCTET_STREAM;
         } else if (!contentType.startsWith("image")) {
-            // Expect for images, determine content disposition. If content type is
+            // Except for images, determine content disposition. If content type is
             // supported by the browser, then set to inline, else attachment which will pop
             // a 'save as' dialogue.
-            final var accept = request.getHeader("Accept");
+            final var accept = request.getHeader(ACCEPT);
             disposition = accept != null && accepts(accept, contentType) ? "inline" : "attachment";
         }
-        builder.header("Accept-Ranges", "bytes");
-        builder.header("Content-Type", contentType);
-        builder.header("Content-Disposition", disposition + ";filename=\"" + fileName + "\"");
-        builder.header("ETag", etag);
+        builder.header(ACCEPT_RANGES, "bytes");
+        builder.header(CONTENT_TYPE, contentType);
+        builder.header(CONTENT_DISPOSITION, disposition + ";filename=\"" + fileName + "\"");
+        builder.header(ETAG, etag);
         builder.lastModified(new Date(lastModified));
         return new MediaRequest(request.getRemoteAddr(), contentType, name, Long.parseLong(element.getSize()));
     }
@@ -1588,7 +1641,7 @@ public final class RESTServer {
         final var header = new StringBuilder();
         header.append(Format.formatString("Name", (int) biggerIndexes[0], ' ', true));
         final var fmt = new Formatter(header);
-        fmt.format(" %-16s", "Creation date");
+        fmt.format(" %-16s", "Scheduled date");
         fmt.close();
         header.append(Format.formatString("Size", (int) biggerIndexes[1], ' ', false));
         header.append(Format.formatString("Id", (int) biggerIndexes[2], ' ', false));
@@ -1705,19 +1758,19 @@ public final class RESTServer {
                 _log.warn("getUserSession", t);
                 final var message = t.getMessage();
                 if (message != null) {
-                    if (message.indexOf("Maximum number of connections exceeded") != -1) {
-                        throw new WebApplicationException(Response.status(429).entity("Too Many Requests")
-                                .header("WWW-Authenticate", "Basic realm=\"Data User Credentials\"").build());
+                    if (message.contains("Maximum number of connections exceeded")) {
+                        throw new WebApplicationException(
+                                Response.status(429).type(MediaType.TEXT_PLAIN).entity("Too Many Requests").build());
                     }
-                    if (message.indexOf(" not allowed for ") != -1) {
-                        throw new WebApplicationException(Response.status(403).entity("Forbidden")
-                                .header("WWW-Authenticate", "Basic realm=\"Data User Credentials\"").build());
+                    if (message.contains(" not allowed for ")) {
+                        throw new WebApplicationException(
+                                Response.status(403).type(MediaType.TEXT_PLAIN).entity("Forbidden").build());
                     }
                 }
             }
         }
         // For whatever reason we were not able to authenticate the user!
-        throw new WebApplicationException(Response.status(401).entity("Unauthorized")
+        throw new WebApplicationException(Response.status(401).type(MediaType.TEXT_PLAIN).entity("Unauthorized")
                 .header("WWW-Authenticate", "Basic realm=\"Data User Credentials\"").build());
     }
 
@@ -1760,7 +1813,8 @@ public final class RESTServer {
      * @return the web application exception
      */
     private static WebApplicationException newException(final Throwable t, final int status, final String message) {
-        return new WebApplicationException(t, Response.status(status).entity(message).build());
+        return new WebApplicationException(t,
+                Response.status(status).type(MediaType.TEXT_PLAIN).entity(message).build());
     }
 
     /**
@@ -1878,6 +1932,8 @@ public final class RESTServer {
     /**
      * Gets the ranges.
      *
+     * @param rangeHeader
+     *            the range header
      * @param full
      *            the full
      * @param fileName
@@ -1889,50 +1945,46 @@ public final class RESTServer {
      *
      * @return the ranges
      */
-    private static List<Range> getRanges(final Range full, final String fileName, final long fileSize,
-            final HttpServletRequest request) {
-        // Prepare some variables. The full Range represents the complete file.
+    private static List<Range> getRanges(final String rangeHeader, final Range full, final String fileName,
+            final long fileSize, final HttpServletRequest request) {
+        // The full Range represents the complete file.
         final List<Range> ranges = new ArrayList<>();
-        // Validate and process Range and If-Range headers.
-        final var rangeHeader = request.getHeader("Range");
-        if (rangeHeader != null) {
-            // Remove all spaces/tab from the range header
-            final var range = rangeHeader.replaceAll("\\s", "").toLowerCase();
-            // Range header should match format "bytes=n-n,n-n,n-n..."
-            if (!range.matches("^bytes=\\d*-\\d*(,\\d*-\\d*)*$")) {
-                throw newException(416, "Range Not Satisfiable: Bad range format (" + rangeHeader + ")");
-            }
-            final var ifRange = request.getHeader("If-Range");
-            if (ifRange != null && !ifRange.equals(fileName)) {
-                try {
-                    final var ifRangeTime = request.getDateHeader("If-Range"); // Throws IAE if invalid.
-                    if (ifRangeTime != -1) {
-                        ranges.add(full);
-                    }
-                } catch (final IllegalArgumentException ignore) {
+        // Remove all spaces/tab from the range header
+        final var range = rangeHeader.replaceAll("\\s", "").toLowerCase();
+        // Range header should match format "bytes=n-n,n-n,n-n..."
+        if (!range.matches("^bytes=\\d*-\\d*(,\\d*-\\d*)*$")) {
+            throw newException(416, "Range Not Satisfiable: Bad range format (" + rangeHeader + ")");
+        }
+        final var ifRange = request.getHeader(IF_RANGE);
+        if (ifRange != null && !ifRange.equals(fileName)) {
+            try {
+                final var ifRangeTime = request.getDateHeader(IF_RANGE); // Throws IAE if invalid.
+                if (ifRangeTime != -1) {
                     ranges.add(full);
                 }
+            } catch (final IllegalArgumentException ignore) {
+                ranges.add(full);
             }
-            // If any valid If-Range header, then process each part of byte range
-            if (ranges.isEmpty()) {
-                for (final String part : range.substring(6).split(",")) {
-                    // Assuming a file with length of 100, the following examples returns bytes at:
-                    // 50-80 (50 to 80), 40- (40 to length=100), -20 (length-20=80 to length=100).
-                    var start = Range.sublong(part, 0, part.indexOf("-"));
-                    var end = Range.sublong(part, part.indexOf("-") + 1, part.length());
-                    if (start == -1) {
-                        start = fileSize - end;
-                        end = fileSize - 1;
-                    } else if (end == -1 || end > fileSize - 1) {
-                        end = fileSize - 1;
-                    }
-                    // Check if Range is syntactically valid. If not, then return 416.
-                    if (start > end) {
-                        throw newException(416, "Range Not Satisfiable: Syntactically invalid (" + part + ")");
-                    }
-                    // Add range.
-                    ranges.add(new Range(start, end, fileSize));
+        }
+        // If any valid If-Range header, then process each part of byte range
+        if (ranges.isEmpty()) {
+            for (final String part : range.substring(6).split(",")) {
+                // Assuming a file with length of 100, the following examples returns bytes at:
+                // 50-80 (50 to 80), 40- (40 to length=100), -20 (length-20=80 to length=100).
+                var start = Range.sublong(part, 0, part.indexOf("-"));
+                var end = Range.sublong(part, part.indexOf("-") + 1, part.length());
+                if (start == -1) {
+                    start = fileSize - end;
+                    end = fileSize - 1;
+                } else if (end == -1 || end > fileSize - 1) {
+                    end = fileSize - 1;
                 }
+                // Check if Range is syntactically valid. If not, then return 416.
+                if (start > end) {
+                    throw newException(416, "Range Not Satisfiable: Syntactically invalid (" + part + ")");
+                }
+                // Add range.
+                ranges.add(new Range(start, end, fileSize));
             }
         }
         return ranges;
@@ -2055,16 +2107,16 @@ public final class RESTServer {
                 var fullLength = 0L;
                 // Copy multipart range
                 for (var i = 0; i < rangesCount; i++) {
-                    final var r = ranges.get(i);
-                    fullLength += r.length;
+                    final var range = ranges.get(i);
+                    fullLength += range.length;
                     // Print the header!
                     println(out, "");
                     println(out, "--" + MULTIPART_BOUNDARY);
                     println(out, "Content-Type: " + mediaRequest.contentType);
-                    println(out, "Content-Range: bytes " + r.start + "-" + r.end + "/" + r.total);
+                    println(out, "Content-Range: bytes " + range.start + "-" + range.end + "/" + range.total);
                     println(out, "");
                     // And drop the content
-                    transferRange(out, session, mediaRequest, r.start, r.length, startTime,
+                    transferRange(out, session, mediaRequest, range.start, range.length, startTime,
                             triggerEvent ? triggerLastRangeOnly ? i == rangesCount - 1 ? fullLength : 0 : -1 : 0);
                 }
                 // End with multipart boundary.
