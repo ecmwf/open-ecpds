@@ -9228,7 +9228,7 @@ public final class MasterServer extends ECaccessProvider
              */
             private void _update(final StringBuilder progress) throws IOException {
                 _updateHostOutput(_host,
-                        Format.compress(_summary.append(_summary.isEmpty() ? "" : "\n").append(progress).toString()));
+                        Format.compress(_summary.append(_summary.isEmpty() ? "" : "\n").append(progress)));
             }
 
             /**

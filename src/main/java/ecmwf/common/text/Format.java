@@ -36,12 +36,14 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStreamWriter;
 import java.io.Serializable;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
 import java.nio.file.Paths;
 import java.rmi.RemoteException;
@@ -1788,15 +1790,19 @@ public final class Format {
      * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    public static String compress(final String str) throws IOException {
-        if (str == null || str.isEmpty()) {
-            return str;
+    public static String compress(final StringBuilder str) throws IOException {
+        if (str == null || str.length() == 0) {
+            return null;
         }
-        final var out = new ByteArrayOutputStream();
-        final var gzip = new GZIPOutputStream(out, Deflater.BEST_COMPRESSION);
-        gzip.write(str.getBytes());
-        gzip.close();
-        return toHexa(out.toByteArray());
+        final var estimatedSize = str.length() * 4; // max UTF-8 expansion
+        try (var out = new ByteArrayOutputStream(estimatedSize);
+                var gzip = new GZIPOutputStream(out, Deflater.DEFAULT_COMPRESSION);
+                var writer = new OutputStreamWriter(gzip, StandardCharsets.UTF_8)) {
+            writer.append(str);
+            writer.flush();
+            gzip.finish();
+            return toHexa(out.toByteArray());
+        }
     }
 
     /**
