@@ -26,7 +26,7 @@ package ecmwf.common.technical;
  * @since 2024-07-01
  */
 
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -48,16 +48,16 @@ public class ResourceTracker {
     private final String name;
 
     /** The open count. */
-    private final AtomicInteger openCount = new AtomicInteger(0);
+    private final AtomicLong openCount = new AtomicLong(0);
 
     /** The closed count. */
-    private final AtomicInteger closedCount = new AtomicInteger(0);
+    private final AtomicLong closedCount = new AtomicLong(0);
 
     /** The peak open count. */
-    private final AtomicInteger peakOpenCount = new AtomicInteger(0);
+    private final AtomicLong peakOpenCount = new AtomicLong(0);
 
     /** The error count. */
-    private final AtomicInteger errorCount = new AtomicInteger(0);
+    private final AtomicLong errorCount = new AtomicLong(0);
 
     /** The error count. */
     private final int debugFrequency;
@@ -99,9 +99,9 @@ public class ResourceTracker {
      * @param success
      *            the success
      */
-    public void onClose(boolean success) {
+    public void onClose(final boolean success) {
         if (ENABLED) {
-            int open = openCount.decrementAndGet();
+            final var open = openCount.decrementAndGet();
             if (open < 0) {
                 _log.warn("Negative open count for {}: this indicates unmatched close()", name);
             }
@@ -122,8 +122,8 @@ public class ResourceTracker {
      * @param current
      *            the current
      */
-    private void updatePeak(final int current) {
-        int peak;
+    private void updatePeak(final long current) {
+        long peak;
         do {
             peak = peakOpenCount.get();
             if (current <= peak)
@@ -136,7 +136,7 @@ public class ResourceTracker {
      *
      * @return the open count
      */
-    public int getOpenCount() {
+    public long getOpenCount() {
         return openCount.get();
     }
 
@@ -145,7 +145,7 @@ public class ResourceTracker {
      *
      * @return the closed count
      */
-    public int getClosedCount() {
+    public long getClosedCount() {
         return closedCount.get();
     }
 
@@ -154,7 +154,7 @@ public class ResourceTracker {
      *
      * @return the error count
      */
-    public int getErrorCount() {
+    public long getErrorCount() {
         return errorCount.get();
     }
 
@@ -163,7 +163,7 @@ public class ResourceTracker {
      *
      * @return the peak open count
      */
-    public int getPeakOpenCount() {
+    public long getPeakOpenCount() {
         return peakOpenCount.get();
     }
 
