@@ -37,6 +37,7 @@ import java.time.Duration;
 import java.time.Period;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -44,6 +45,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.script.ScriptException;
@@ -90,14 +92,28 @@ public final class ScriptManager implements AutoCloseable {
 
     /** The Constant CONTEXT_PROVIDER. */
     private static final ContextProvider CONTEXT_PROVIDER = new ContextProvider(
-            Cnf.at("ScriptManager", "resourceLimits", 0));
-
-    /** The Constant ALLOW_EXPERIMENTAL_OPTIONS. */
-    private static final boolean ALLOW_EXPERIMENTAL_OPTIONS = Cnf.at("ScriptManager", "allowExperimentalOptions",
-            false);
+            Cnf.at("ScriptManager", "resourceLimits", 0), Cnf.at("ScriptManager", "useSharedEngine", true),
+            Cnf.at("ScriptManager", "allowExperimentalOptions", false),
+            Cnf.stringAt("ScriptManager", "warnVirtualThreadSupport", false),
+            Cnf.stringAt("ScriptManager", "engineCompilation", true));
 
     /** The Constant ALLOW_VIRTUAL_THREAD. */
     private static final boolean ALLOW_VIRTUAL_THREAD = Cnf.at("ScriptManager", "allowVirtualThread", false);
+
+    /** The Constant CASTERS. */
+    private static final Map<Class<?>, Function<Value, ?>> CASTERS = new HashMap<>();
+
+    static {
+        CASTERS.put(String.class, Value::asString);
+        CASTERS.put(Integer.class, Value::asInt);
+        CASTERS.put(Double.class, Value::asDouble);
+        CASTERS.put(Long.class, Value::asLong);
+        CASTERS.put(Boolean.class, Value::asBoolean);
+        CASTERS.put(ByteSize.class, v -> ByteSize.of(v.asLong()));
+        CASTERS.put(Duration.class, v -> Duration.ofMillis(v.asLong()));
+        CASTERS.put(Period.class, v -> Period.parse(v.asString()));
+        CASTERS.put(TimeRange.class, v -> TimeRange.parse(v.asString()));
+    }
 
     /** The current language. */
     private final String currentLanguage;
@@ -167,7 +183,7 @@ public final class ScriptManager implements AutoCloseable {
          */
         void release() {
             if (released.compareAndSet(false, true) && context != null) {
-                ContextProvider.release(context, currentLanguage);
+                CONTEXT_PROVIDER.release(context, currentLanguage);
                 context = null;
                 bindings = null;
             }
@@ -652,19 +668,19 @@ public final class ScriptManager implements AutoCloseable {
     }
 
     /**
-     * Cast.
+     * Casts a GraalVM {@code Value} to a specified Java type.
      *
      * @param <T>
-     *            the generic type
+     *            The target type to which the value should be cast.
      * @param clazz
-     *            the clazz
+     *            The {@code Class} representing the target type {@code T}.
      * @param value
-     *            the value
+     *            The GraalVM {@code Value} object to convert.
      *
-     * @return the t
+     * @return The converted object of type {@code T}.
      *
-     * @throws ScriptException
-     *             the script exception
+     * @throws ClassCastException
+     *             if the value cannot be converted to the target type.
      */
     private static <T> T cast(final Class<T> clazz, final Value value) throws ScriptException {
         // No return requested (void)
@@ -681,42 +697,33 @@ public final class ScriptManager implements AutoCloseable {
     }
 
     /**
-     * Cast the value in the requested type.
+     * Casts a GraalVM {@code Value} to a specified Java type.
+     * <p>
+     * This method uses a map of optimized converters for common scalar types and falls back to GraalVM's default
+     * casting for others.
      *
      * @param <T>
-     *            the generic type
+     *            The target type to which the value should be cast.
      * @param value
-     *            the value
+     *            The GraalVM {@code Value} object to convert.
      * @param clazz
-     *            the clazz
+     *            The {@code Class} representing the target type {@code T}.
      *
-     * @return the object of type class
+     * @return The converted object of type {@code T}.
+     *
+     * @throws ClassCastException
+     *             if the value cannot be converted to the target type.
      */
-    @SuppressWarnings({ "unchecked" })
+    @SuppressWarnings("unchecked")
     private static <T> T cast(final Value value, final Class<T> clazz) {
-        if (clazz == String.class) {
-            return (T) value.asString();
-        } else if (clazz == Integer.class) {
-            return (T) Integer.valueOf(value.asInt());
-        } else if (clazz == Double.class) {
-            return (T) Double.valueOf(value.asDouble());
-        } else if (clazz == Long.class) {
-            return (T) Long.valueOf(value.asLong());
-        } else if (clazz == Boolean.class) {
-            return (T) Boolean.valueOf(value.asBoolean());
-        } else if (clazz == ByteSize.class) {
-            return (T) ByteSize.of(value.asLong());
-        } else if (clazz == Duration.class) {
-            return (T) Duration.ofMillis(value.asLong());
-        } else if (clazz == Period.class) {
-            return (T) Period.parse(value.asString());
-        } else if (clazz == TimeRange.class) {
-            return (T) TimeRange.parse(value.asString());
-        } else {
-            // No matching conversion is found, return default casting!
-            _log.warn("Unsuported option type: {}", clazz);
-            return value.as(clazz);
+        // Look up the specific caster function, or use a default
+        Function<Value, ?> caster = CASTERS.get(clazz);
+        if (caster != null) {
+            return (T) caster.apply(value);
         }
+        // Default behavior for unsupported or complex types
+        _log.debug("Using default GraalVM cast for type: {}", clazz);
+        return value.as(clazz);
     }
 
     /**
@@ -771,6 +778,9 @@ public final class ScriptManager implements AutoCloseable {
         /** The Constant TRACKER. */
         private static final ResourceTracker TRACKER = new ResourceTracker(ContextProvider.class);
 
+        /** The use shared engine. */
+        private final boolean useSharedEngine;
+
         /** The resource limits. */
         private final Builder contextBuilder;
 
@@ -780,10 +790,13 @@ public final class ScriptManager implements AutoCloseable {
          * @param limits
          *            the limits
          */
-        ContextProvider(final int limits) {
+        ContextProvider(final int limits, final boolean useSharedEngine, final boolean allowExperimentalOptions,
+                final String warnVirtualThreadSupport, final String engineCompilation) {
             this.contextBuilder = Context.newBuilder(JS, PYTHON);
-            if (Cnf.at("ScriptManager", "useSharedEngine", true))
-                contextBuilder.engine(getConfiguredEngine());
+            this.useSharedEngine = useSharedEngine;
+            if (useSharedEngine)
+                contextBuilder.engine(
+                        getConfiguredEngine(allowExperimentalOptions, warnVirtualThreadSupport, engineCompilation));
             final var nullOutputStream = OutputStream.nullOutputStream();
             contextBuilder.allowHostAccess(HostAccess.ALL).allowHostClassLookup(ContextProvider::check)
                     .useSystemExit(false).allowCreateProcess(false).allowCreateThread(false)
@@ -797,13 +810,13 @@ public final class ScriptManager implements AutoCloseable {
          *
          * @return the configured engine
          */
-        static Engine getConfiguredEngine() {
+        static Engine getConfiguredEngine(final boolean allowExperimentalOptions, final String warnVirtualThreadSupport,
+                final String engineCompilation) {
             final var engineBuilder = Engine.newBuilder(JS, PYTHON);
-            if (ALLOW_EXPERIMENTAL_OPTIONS) {
+            if (allowExperimentalOptions) {
                 engineBuilder.allowExperimentalOptions(true)
-                        .option("engine.WarnVirtualThreadSupport",
-                                Cnf.stringAt("ScriptManager", "warnVirtualThreadSupport", false))
-                        .option("engine.Compilation", Cnf.stringAt("ScriptManager", "engineCompilation", true));
+                        .option("engine.WarnVirtualThreadSupport", warnVirtualThreadSupport)
+                        .option("engine.Compilation", engineCompilation);
             }
             return engineBuilder.build();
         }
@@ -847,11 +860,13 @@ public final class ScriptManager implements AutoCloseable {
          * @param currentLanguage
          *            the current language
          */
-        static void release(final Context context, final String currentLanguage) {
+        void release(final Context context, final String currentLanguage) {
             resetBindings(context, currentLanguage);
             var closedSuccessfully = false;
             try {
                 context.close(true);
+                if (!useSharedEngine)
+                    context.getEngine().close(true);
                 closedSuccessfully = true;
             } catch (Exception e) {
                 _log.warn("Failed to close context cleanly", e);
