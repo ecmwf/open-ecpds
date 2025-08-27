@@ -189,45 +189,6 @@ public final class ECpdsBase extends DataBase {
     }
 
     /**
-     * Gets the statistics.
-     *
-     * @param fromDate
-     *            the from date
-     * @param toDate
-     *            the to date
-     * @param groupName
-     *            the group name
-     * @param status
-     *            the status
-     * @param type
-     *            the type
-     *
-     * @return the statistics
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     */
-    public Statistics[] getStatistics(final Date fromDate, final Date toDate, final String groupName,
-            final String status, final String type) throws DataBaseException {
-        try (var rs = ecpds.getStatistics(new Timestamp(fromDate.getTime()), new Timestamp(toDate.getTime()), groupName,
-                status, type)) {
-            final List<Statistics> list = new ArrayList<>();
-            while (rs.next()) {
-                final var stat = new Statistics();
-                stat.setDate(rs.getTimestamp("DATE"));
-                stat.setDestination(rs.getInt("DESTINATION"));
-                stat.setSize(rs.getLong("SIZE"));
-                list.add(stat);
-            }
-            logSqlRequest("getStatistics", list.size());
-            return list.toArray(new Statistics[list.size()]);
-        } catch (SQLException | IOException e) {
-            _log.warn("getStatistics", e);
-            throw new DataBaseException("getStatistics", e);
-        }
-    }
-
-    /**
      * Gets the rates.
      *
      * @param fromDate

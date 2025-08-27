@@ -63,7 +63,6 @@ import ecmwf.common.database.Operation;
 import ecmwf.common.database.PolicyAssociation;
 import ecmwf.common.database.ProductStatus;
 import ecmwf.common.database.Rates;
-import ecmwf.common.database.Statistics;
 import ecmwf.common.database.Traffic;
 import ecmwf.common.database.TransferGroup;
 import ecmwf.common.database.TransferHistory;
@@ -284,30 +283,6 @@ public interface DataBaseInterface extends Remote {
      *             the remote exception
      */
     Destination[] getDestinationsForIncomingPolicy(String policyId) throws DataBaseException, RemoteException;
-
-    /**
-     * Gets the statistics.
-     *
-     * @param fromDate
-     *            the from date
-     * @param toDate
-     *            the to date
-     * @param groupName
-     *            the group name
-     * @param status
-     *            the status
-     * @param type
-     *            the type
-     *
-     * @return the statistics
-     *
-     * @throws ecmwf.common.database.DataBaseException
-     *             the data base exception
-     * @throws java.rmi.RemoteException
-     *             the remote exception
-     */
-    Statistics[] getStatistics(Date fromDate, Date toDate, String groupName, String status, String type)
-            throws DataBaseException, RemoteException;
 
     /**
      * Gets the rates.

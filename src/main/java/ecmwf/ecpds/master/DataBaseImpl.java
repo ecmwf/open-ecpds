@@ -84,7 +84,6 @@ import ecmwf.common.database.ProductStatus;
 import ecmwf.common.database.Rates;
 import ecmwf.common.database.SQLParameterParser;
 import ecmwf.common.database.SchedulerValue;
-import ecmwf.common.database.Statistics;
 import ecmwf.common.database.Traffic;
 import ecmwf.common.database.TransferGroup;
 import ecmwf.common.database.TransferHistory;
@@ -424,19 +423,6 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
             mover.setLastUpdate(master.lastUpdateForClientInterface(mover.getName(), "DataMover"));
         }
         return monitor.done(movers);
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * Gets the statistics.
-     */
-    @Override
-    public Statistics[] getStatistics(final Date fromDate, final Date toDate, final String groupName,
-            final String status, final String type) throws DataBaseException, RemoteException {
-        final var monitor = new MonitorCall(
-                "getStatistics(" + fromDate + "," + toDate + "," + groupName + "," + status + "," + type + ")");
-        return monitor.done(ecpds.getStatistics(fromDate, toDate, groupName, status, type));
     }
 
     /**
