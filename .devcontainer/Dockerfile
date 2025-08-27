@@ -37,7 +37,7 @@ RUN apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugi
 RUN apt-get autoremove -y && apt-get clean -y
 
 # SDKMAN Java Development Kit
-ENV SDKMAN_JDK=24.0.1-graal
+ENV SDKMAN_JDK=24.0.2-graal
 
 # Install GraalVM using SDKMAN
 RUN curl -s "https://get.sdkman.io" | bash && \
