@@ -26,6 +26,7 @@ package ecmwf.common.opsview;
  * @since 2024-07-01
  */
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
@@ -41,6 +42,7 @@ import javax.ws.rs.core.MediaType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.wink.client.ClientConfig;
+import org.apache.wink.client.ClientResponse;
 import org.apache.wink.client.RestClient;
 import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONException;
@@ -98,11 +100,11 @@ public final class OpsViewManager {
     public static final String ACQUISITION_FILTER_NAME = Cnf.at("OpsViewManager", "acquisitionFilterName",
             "ECPDS_Acquisition");
 
-    /** The Constant REST_CLIENT. */
-    public static final RestClient REST_CLIENT = getRestClient();
-
     /** The Constant OTHER_FILTER_NAME. */
     public static final String OTHER_FILTER_NAME = Cnf.at("OpsViewManager", "otherFilterName", "ECPDS_Other");
+
+    /** The Constant REST_CLIENT. */
+    public static final RestClient REST_CLIENT = getRestClient();
 
     /** The Constant filtersList. */
     protected static final String[] filtersList = { ACQUISITION_FILTER_NAME, DISSEMINATION_FILTER_NAME,
@@ -137,6 +139,80 @@ public final class OpsViewManager {
      */
     private OpsViewManager() {
         // Hide the private constructor!
+    }
+
+    /**
+     * A wrapper around {@link ClientResponse} that implements {@link Closeable}.
+     * <p>
+     * This allows the use of try-with-resources to automatically release underlying HTTP/SSL connections by calling
+     * {@link ClientResponse#consumeContent()} when done.
+     * </p>
+     */
+    private static class CloseableClientResponse implements Closeable {
+
+        /** The underlying Wink ClientResponse being wrapped. */
+        private final ClientResponse response;
+
+        /**
+         * Constructs a new CloseableClientResponse wrapping the given ClientResponse.
+         *
+         * @param response
+         *            the ClientResponse to wrap; must not be null
+         */
+        CloseableClientResponse(final ClientResponse response) {
+            this.response = response;
+        }
+
+        /**
+         * Returns the HTTP status code of the response.
+         *
+         * @return the HTTP status code
+         */
+        public int getStatusCode() {
+            return response.getStatusCode();
+        }
+
+        /**
+         * Returns the HTTP status message of the response.
+         *
+         * @return the status message
+         */
+        public String getMessage() {
+            return response.getMessage();
+        }
+
+        /**
+         * Reads and returns the entity from the response.
+         * <p>
+         * Note that calling this method will fully read the entity into memory.
+         * </p>
+         *
+         * @param <T>
+         *            the type of the entity
+         * @param t
+         *            the class of the entity
+         *
+         * @return the entity deserialized as the given class
+         */
+        public <T> T getEntity(final Class<T> t) {
+            return response.getEntity(t);
+        }
+
+        /**
+         * Closes the response by consuming its content.
+         * <p>
+         * This ensures that the underlying HTTP/SSL connection is released and prevents potential connection leaks.
+         * </p>
+         *
+         * @throws IOException
+         *             if an I/O error occurs while consuming the content
+         */
+        @Override
+        public void close() throws IOException {
+            if (response != null) {
+                response.consumeContent();
+            }
+        }
     }
 
     /**
@@ -202,14 +278,21 @@ public final class OpsViewManager {
             final var auth = new JSONObject();
             auth.put("username", USER);
             auth.put("password", PASSWORD);
-            final var json = REST_CLIENT.resource(URL_LOGIN).contentType(MediaType.APPLICATION_JSON)
-                    .accept(MediaType.APPLICATION_JSON).post(JSONObject.class, auth);
-            final var token = String.valueOf(json.get("token"));
-            if ("null".equals(token)) {
-                throw new IOException("Authentication failed");
+            try (final var response = new CloseableClientResponse(REST_CLIENT.resource(URL_LOGIN)
+                    .contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).post(auth))) {
+                final var code = response.getStatusCode();
+                if (code != 200) {
+                    _log.warn("URL: {}, Code: {}, Message: {}", URL_LOGIN, code, response.getMessage());
+                    throw new IOException("Login request failed");
+                }
+                final var json = response.getEntity(JSONObject.class);
+                final var token = String.valueOf(json.get("token"));
+                if ("null".equals(token)) {
+                    throw new IOException("Authentication failed");
+                }
+                _token.setLength(0);
+                _token.append(token);
             }
-            _token.setLength(0);
-            _token.append(token);
         }
         return _token.toString();
     }
@@ -224,7 +307,7 @@ public final class OpsViewManager {
     }
 
     /**
-     * Sync.
+     * Detail.
      *
      * @param hostname
      *            the host name
@@ -235,28 +318,28 @@ public final class OpsViewManager {
      * @param message
      *            the message
      *
-     * @throws ecmwf.common.opsview.OpsViewManagerException
+     * @throws OpsViewManagerException
      *             the ops view manager exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
-     * @throws org.apache.wink.json4j.JSONException
+     * @throws JSONException
      *             the JSON exception
      */
     public static void detail(final String hostname, final String service, final int status, final String message)
             throws OpsViewManagerException, IOException, JSONException {
+        final var request = "{\"set_state\": { \"result\": " + status + ",\"output\": \"" + message + "\"}}";
         final var lastTry = getLastTry();
         do {
-            try {
+            try (final var response = new CloseableClientResponse(REST_CLIENT.resource(URL_DETAIL)
+                    .contentType(MediaType.APPLICATION_JSON).header("X-Opsview-Username", USER)
+                    .header("X-Opsview-Token", getToken(lastTry.get())).accept(MediaType.APPLICATION_JSON)
+                    .queryParam("hostname", hostname).queryParam("servicename", service).post(request))) {
                 // Now we send the message!
-                final var response = REST_CLIENT.resource(URL_DETAIL).contentType(MediaType.APPLICATION_JSON)
-                        .header("X-Opsview-Username", USER).header("X-Opsview-Token", getToken(lastTry.get()))
-                        .accept(MediaType.APPLICATION_JSON).queryParam("hostname", hostname)
-                        .queryParam("servicename", service)
-                        .post("{\"set_state\": { \"result\": " + status + ",\"output\": \"" + message + "\"}}");
                 final var code = response.getStatusCode();
                 if (code != 200) {
-                    _log.warn("Code: {}, Message: {}", code, response.getMessage());
-                    throw new IOException("Submit failed: " + response.getMessage());
+                    _log.warn("URL: {}, Code: {}, Message: {}, Request: {}", URL_DETAIL, code, response.getMessage(),
+                            request);
+                    throw new IOException("Detail request failed");
                 }
                 break;
             } catch (final IOException e) {
@@ -288,11 +371,11 @@ public final class OpsViewManager {
      * @param destinations
      *            the destinations
      *
-     * @throws ecmwf.common.opsview.OpsViewManagerException
+     * @throws OpsViewManagerException
      *             the ops view manager exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
-     * @throws org.apache.wink.json4j.JSONException
+     * @throws JSONException
      *             the JSON exception
      */
     public static void sync(final Destination[] destinations)
@@ -346,11 +429,11 @@ public final class OpsViewManager {
      * @param destination
      *            the destination
      *
-     * @throws ecmwf.common.opsview.OpsViewManagerException
+     * @throws OpsViewManagerException
      *             the ops view manager exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
-     * @throws org.apache.wink.json4j.JSONException
+     * @throws JSONException
      *             the JSON exception
      */
     public static void clearNotes(final String destination) throws OpsViewManagerException, IOException, JSONException {
@@ -365,11 +448,11 @@ public final class OpsViewManager {
      * @param metadata
      *            the metadata
      *
-     * @throws ecmwf.common.opsview.OpsViewManagerException
+     * @throws OpsViewManagerException
      *             the ops view manager exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
-     * @throws org.apache.wink.json4j.JSONException
+     * @throws JSONException
      *             the JSON exception
      */
     public static void addNotes(final String destination, final String metadata)
@@ -385,11 +468,15 @@ public final class OpsViewManager {
                 final var notes = new JSONObject();
                 notes.put("note", clear ? "" : metadata);
                 // Submit on the server
-                final var response = REST_CLIENT.resource(URL_NOTES + "/" + getDestinationName(destination))
+                final var url = URL_NOTES + "/" + getDestinationName(destination);
+                try (final var response = new CloseableClientResponse(REST_CLIENT.resource(url)
                         .contentType(MediaType.APPLICATION_JSON).header("X-Opsview-Username", USER)
-                        .header("X-Opsview-Token", token).accept(MediaType.APPLICATION_JSON).put(notes);
-                if (response.getStatusCode() != 200) {
-                    throw new IOException("Submit failed: " + response.getMessage());
+                        .header("X-Opsview-Token", token).accept(MediaType.APPLICATION_JSON).put(notes))) {
+                    final var code = response.getStatusCode();
+                    if (code != 200) {
+                        _log.warn("URL: {}, Code: {}, Message: {}", url, code, response.getMessage());
+                        throw new IOException("Notes request failed");
+                    }
                 }
                 break;
             } catch (final IOException e) {
@@ -426,9 +513,19 @@ public final class OpsViewManager {
                 // Get the list of Destinations already on opsview
                 final var filter = URLEncoder.encode("{\"name\":\"" + filterName + "\"}",
                         Charset.defaultCharset().displayName());
-                final var json = REST_CLIENT.resource(URL_HOST).contentType(MediaType.APPLICATION_JSON)
-                        .header("X-Opsview-Username", USER).header("X-Opsview-Token", token)
-                        .accept(MediaType.APPLICATION_JSON).queryParam("json_filter", filter).get(JSONObject.class);
+                JSONObject json;
+                try (final var response = new CloseableClientResponse(
+                        REST_CLIENT.resource(URL_HOST).contentType(MediaType.APPLICATION_JSON)
+                                .header("X-Opsview-Username", USER).header("X-Opsview-Token", token)
+                                .accept(MediaType.APPLICATION_JSON).queryParam("json_filter", filter).get())) {
+                    final var code = response.getStatusCode();
+                    if (code != 200) {
+                        _log.warn("URL: {}, Code: {}, Message: {}, Request: {}", URL_HOST, code, response.getMessage(),
+                                filter);
+                        throw new IOException("Host request failed");
+                    }
+                    json = response.getEntity(JSONObject.class); // read entity
+                }
                 final var list = json.getJSONArray("list");
                 JSONArray hostattributes = null;
                 // Build the list of Destinations from the request
@@ -469,20 +566,25 @@ public final class OpsViewManager {
                     hostattributes.add(newdes);
                 }
                 // Submit on the server
-                var response = REST_CLIENT.resource(URL_HOST).contentType(MediaType.APPLICATION_JSON)
-                        .header("X-Opsview-Username", USER).header("X-Opsview-Token", token)
-                        .accept(MediaType.APPLICATION_JSON).put(json);
-                if (response.getStatusCode() != 200) {
-                    if (_log.isWarnEnabled()) {
-                        _log.warn("Message: {}", json.toString(2));
+                try (final var response = new CloseableClientResponse(REST_CLIENT.resource(URL_HOST)
+                        .contentType(MediaType.APPLICATION_JSON).header("X-Opsview-Username", USER)
+                        .header("X-Opsview-Token", token).accept(MediaType.APPLICATION_JSON).put(json))) {
+                    final var code = response.getStatusCode();
+                    if (code != 200) {
+                        _log.warn("URL: {}, Code: {}, Message: {}, Request: {}", URL_HOST, code, response.getMessage(),
+                                json.toString(2));
+                        throw new IOException("Host request failed");
                     }
-                    throw new IOException("Submit failed: " + response.getMessage());
                 }
                 // Reload the configuration
-                response = REST_CLIENT.resource(URL_RELOAD).contentType(MediaType.APPLICATION_JSON)
-                        .header("X-Opsview-Username", USER).header("X-Opsview-Token", token).post(null);
-                if (response.getStatusCode() != 200) {
-                    throw new IOException("Reload failed: " + response.getMessage());
+                try (final var response = new CloseableClientResponse(
+                        REST_CLIENT.resource(URL_RELOAD).contentType(MediaType.APPLICATION_JSON)
+                                .header("X-Opsview-Username", USER).header("X-Opsview-Token", token).post(null))) {
+                    final var code = response.getStatusCode();
+                    if (code != 200) {
+                        _log.warn("URL: {}, Code: {}, Message: {}", URL_RELOAD, code, response.getMessage());
+                        throw new IOException("Reload request failed");
+                    }
                 }
                 break;
             } catch (final IOException e) {
