@@ -393,8 +393,8 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
         }
         final var output = hostOutput.getOutput();
         try {
-            return Format.uncompress(output);
-        } catch (final Exception e) {
+            return Format.uncompressBase64(output);
+        } catch (final Exception _) {
             return output;
         }
     }

@@ -56,6 +56,7 @@ import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.BitSet;
 import java.util.Calendar;
 import java.util.Date;
@@ -1779,46 +1780,77 @@ public final class Format {
     }
 
     /**
-     * Compress.
+     * Compresses a text using GZIP and then encodes the result in Base64.
+     *
+     * <p>
+     * This method is useful when you need to transmit or store a large string efficiently in a text-only medium (e.g.,
+     * JSON, database, XML), since the GZIP compression reduces size and Base64 ensures safe encoding in environments
+     * that expect plain text.
+     * </p>
      *
      * @param str
-     *            the str
+     *            the input text to compress and encode (as a StringBuilder). If {@code null} or empty, {@code null} is
+     *            returned.
      *
-     * @return the string
+     * @return the compressed and Base64-encoded string, or {@code null} if input was empty.
      *
      * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     *             if an I/O error occurs during compression.
      */
-    public static String compress(final StringBuilder str) throws IOException {
+    public static String compressBase64(final StringBuilder str) throws IOException {
         if (str == null || str.length() == 0) {
-            return null;
+            return null; // Nothing to compress
         }
-        final var estimatedSize = str.length() * 4; // max UTF-8 expansion
+        // Use initial capacity ~ input length (rough estimate to reduce resizing).
+        final var estimatedSize = str.length();
+        // Try-with-resources ensures all streams are closed automatically.
         try (var out = new ByteArrayOutputStream(estimatedSize); var gzip = new GZIPOutputStream(out);
                 var writer = new OutputStreamWriter(gzip, StandardCharsets.UTF_8)) {
+
+            // Write the string content into the GZIP stream.
             writer.append(str);
-            writer.flush();
-            gzip.finish();
-            return toHexa(out.toByteArray());
+            writer.flush(); // Ensure everything is written into the GZIP stream
+            gzip.finish(); // Finish compression but don't close the underlying stream
+            // Convert compressed bytes into Base64 for safe text representation.
+            return Base64.getEncoder().encodeToString(out.toByteArray());
         }
     }
 
     /**
-     * Uncompress.
+     * Decodes a Base64 string and then decompresses it with GZIP to restore the original text.
+     *
+     * <p>
+     * This method reverses the {@link #compressBase64(StringBuilder)} process: it first decodes the Base64-encoded
+     * bytes, then inflates them using GZIP, and finally reconstructs the original string with UTF-8 decoding.
+     * </p>
      *
      * @param str
-     *            the str
+     *            the Base64-encoded compressed string. If {@code null} or empty, {@code null} is returned.
      *
-     * @return the string
+     * @return the uncompressed original string, or {@code null} if input was empty.
      *
      * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     *             if an I/O error occurs during decompression.
      */
-    public static String uncompress(final String str) throws IOException {
+    public static String uncompressBase64(final String str) throws IOException {
         if (str == null || str.isEmpty()) {
-            return str;
+            return null; // Nothing to uncompress
         }
-        return uncompress(toBytes(str));
+        // Decode Base64 back to compressed bytes.
+        final var compressed = Base64.getDecoder().decode(str);
+        // Try-with-resources to safely handle all streams.
+        try (var in = new ByteArrayInputStream(compressed); var gzip = new GZIPInputStream(in);
+                var reader = new InputStreamReader(gzip, StandardCharsets.UTF_8);
+                var buffer = new BufferedReader(reader)) {
+            final var sb = new StringBuilder();
+            final var chars = new char[4096]; // Read in chunks for efficiency
+            int len;
+            // Read decompressed data into the StringBuilder.
+            while ((len = buffer.read(chars)) != -1) {
+                sb.append(chars, 0, len);
+            }
+            return sb.toString(); // Return the fully reconstructed string
+        }
     }
 
     /**
