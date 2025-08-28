@@ -69,7 +69,6 @@ import java.util.StringTokenizer;
 import java.util.Vector;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-import java.util.zip.Deflater;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -1795,8 +1794,7 @@ public final class Format {
             return null;
         }
         final var estimatedSize = str.length() * 4; // max UTF-8 expansion
-        try (var out = new ByteArrayOutputStream(estimatedSize);
-                var gzip = new GZIPOutputStream(out, Deflater.DEFAULT_COMPRESSION);
+        try (var out = new ByteArrayOutputStream(estimatedSize); var gzip = new GZIPOutputStream(out);
                 var writer = new OutputStreamWriter(gzip, StandardCharsets.UTF_8)) {
             writer.append(str);
             writer.flush();
