@@ -28,8 +28,8 @@ package ecmwf.ecpds.master.plugin.ecpds;
 
 import static ecmwf.common.ectrans.ECtransGroups.Module.DESTINATION_SCHEDULER;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_SCHEDULER_ASAP;
-import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_SCHEDULER_DELAY;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_SCHEDULER_DATE_FORMAT;
+import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_SCHEDULER_DELAY;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_SCHEDULER_FORCE;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_SCHEDULER_FORCE_STOP;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_SCHEDULER_LIFETIME;
@@ -1211,12 +1211,25 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
             metaStream = stream;
         }
         // Let's extract the product date!
-        if (metaDate != null && (metaDate.length() == 8 && metaTime != null && metaTime.length() == 2
-                || metaDate.length() == 10 && metaTime == null)) {
-            final var productDate = metaDate + (metaTime != null ? metaTime : "00");
-            currentProductDate = Format.toTime("yyyyMMddHH", productDate);
-            if (processMetadata) { // This is dissemination!
-                metaDataList.put("time", Format.formatTime("HH", currentProductDate));
+        if (metaDate != null) {
+            final String productDate;
+            if (metaDate.length() == 8) { // yyyyMMdd
+                if (metaTime != null && metaTime.length() == 2) { // HH
+                    productDate = metaDate + metaTime;
+                } else {
+                    productDate = metaDate + "00"; // fallback
+                }
+            } else if (metaDate.length() == 10) { // yyyyMMddHH already
+                productDate = metaDate.substring(0, 10); // ensure only yyyyMMddHH
+            } else {
+                _log.warn("Unexpected date length: '{}', expected 8 or 10 chars", metaDate);
+                productDate = null;
+            }
+            if (productDate != null) {
+                currentProductDate = Format.toTime("yyyyMMddHH", productDate);
+                if (processMetadata && currentProductDate != -1) { // This is dissemination!
+                    metaDataList.put("time", Format.formatTime("HH", currentProductDate));
+                }
             }
         }
     }
@@ -2361,7 +2374,7 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
                         }
                     }
                     final var destinationName = destination.getName();
-                    var comment = new StringBuilder().append(currentTransfer.getComment());
+                    final var comment = new StringBuilder().append(currentTransfer.getComment());
                     var target = currentTarget;
                     var newExpiry = expiry;
                     var priority = currentPriority;
