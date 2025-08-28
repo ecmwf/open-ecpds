@@ -6002,7 +6002,7 @@ public final class MasterServer extends ECaccessProvider
                                             if (topic != null && !topic.isBlank()) {
                                                 final var payload = setup.getString(DESTINATION_MQTT_PAYLOAD, value);
                                                 if (payload != null && !payload.isBlank()) {
-                                                    _log.warn("Payload detected for DataTransfer-{}", dataTransferId);
+                                                    _log.debug("Payload detected for DataTransfer-{}", dataTransferId);
                                                     publishToMQTTBroker(topic,
                                                             setup.getInteger(DESTINATION_MQTT_QOS, value),
                                                             setup.getOptionalDuration(DESTINATION_MQTT_EXPIRY_INTERVAL,
