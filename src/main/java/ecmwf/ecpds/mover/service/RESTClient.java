@@ -57,6 +57,7 @@ import ecmwf.common.database.Host;
 import ecmwf.common.database.HostLocation;
 import ecmwf.common.ecaccess.ECauthToken;
 import ecmwf.common.security.SSLSocketFactory;
+import ecmwf.common.technical.CloseableClientResponse;
 import ecmwf.common.technical.Cnf;
 import ecmwf.ecpds.mover.RESTInterface;
 
@@ -67,17 +68,17 @@ public final class RESTClient implements RESTInterface {
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(RESTClient.class);
 
-    /** The Constant _debug. */
-    private static final boolean _debug = Cnf.at("RESTClient", "debug", false);
+    /** The Constant debug. */
+    private static final boolean debug = Cnf.at("RESTClient", "debug", false);
 
-    /** The _http mover. */
-    private final List<String> _httpMover = Collections.synchronizedList(new ArrayList<>());
+    /** The http mover list. */
+    private final List<String> httpMoverList = Collections.synchronizedList(new ArrayList<>());
 
-    /** The _http proxy. */
-    private final String _httpProxy;
+    /** The http proxy. */
+    private final String httpProxy;
 
-    /** The _connect timeout. */
-    private final int _connectTimeout;
+    /** The connect timeout. */
+    private final int connectTimeout;
 
     static {
         // If requested make sure the REST client can connect to URL with
@@ -97,20 +98,20 @@ public final class RESTClient implements RESTInterface {
      *
      * @return the string[]
      */
-    private String[] _getDataMover() {
+    private String[] getDataMover() {
         // If only one DataMover is available we return it straight away. This
         // is true when the Master wants to contact a specific DataMover!
-        final var length = _httpMover.size();
+        final var length = httpMoverList.size();
         if (length == 1) {
-            return new String[] { _httpMover.get(0) };
+            return new String[] { httpMoverList.get(0) };
         }
         // Let's find a random position in the list!
-        final var pos = ThreadLocalRandom.current().nextInt(_httpMover.size());
+        final var pos = ThreadLocalRandom.current().nextInt(httpMoverList.size());
         // Now we build the list starting from this random position till we go
         // back to the previous position!
         final List<String> dataMovers = new ArrayList<>(length);
         for (var i = 0; i < length; i++) {
-            dataMovers.add(_httpMover.get((pos + i) % length));
+            dataMovers.add(httpMoverList.get((pos + i) % length));
         }
         // As a list of String
         return dataMovers.toArray(new String[dataMovers.size()]);
@@ -121,36 +122,45 @@ public final class RESTClient implements RESTInterface {
      *
      * @param httpProxy
      *            the http proxy
-     * @param httpMover
-     *            the http mover
+     * @param httpMovers
+     *            the http mover list
      * @param connectTimeout
      *            the connect timeout
      */
-    RESTClient(final String httpProxy, final String httpMover, final int connectTimeout) {
-        final var token = new StringTokenizer(httpMover, ";,");
+    RESTClient(final String httpProxy, final String httpMovers, final int connectTimeout) {
+        final var token = new StringTokenizer(httpMovers, ";,");
         while (token.hasMoreElements()) {
-            _httpMover.add(token.nextToken());
+            httpMoverList.add(token.nextToken());
         }
-        _httpProxy = httpProxy;
-        _connectTimeout = connectTimeout;
+        this.httpProxy = httpProxy;
+        this.connectTimeout = connectTimeout;
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Get the version of the remote ECaccess software (mover).
+     *
+     * @return the version
+     *
+     * @throws RestException
+     *             the rest exception
      */
     @Override
     public String getVersion() throws RestException {
-        final var response = _getResource(_httpProxy, _getDataMover()[0] + "/ecpds/mover/getVersion", _connectTimeout)
-                .accept(MediaType.APPLICATION_JSON).get();
-        return _parse(response, String.class);
+        try (final var response = new CloseableClientResponse(
+                getResource(httpProxy, getDataMover()[0] + "/ecpds/mover/getVersion", connectTimeout)
+                        .accept(MediaType.APPLICATION_JSON).get())) {
+            return parse(response, String.class);
+        }
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Delete the physical file associated to the DataFile on the mover.
+     *
+     * @param dataFile
+     *            the data file
+     *
+     * @throws RestException
+     *             the rest exception
      */
     @Override
     public void del(final DataFile dataFile) throws RestException {
@@ -164,16 +174,22 @@ public final class RESTClient implements RESTInterface {
         f.setTimeStep(dataFile.getTimeStep());
         f.setOriginal(dataFile.getOriginal());
         _log.debug("REST sending request: del(" + f + ")");
-        final var response = _getResource(_httpProxy, _getDataMover()[0] + "/ecpds/mover/del", _connectTimeout)
-                .accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON)
-                .invoke("DELETE", ClientResponse.class, f);
-        _parse(response);
+        try (final var response = new CloseableClientResponse(
+                getResource(httpProxy, getDataMover()[0] + "/ecpds/mover/del", connectTimeout)
+                        .accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON)
+                        .invoke("DELETE", ClientResponse.class, f))) {
+            parse(response);
+        }
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Stop the transmission of the DataTransfer on the mover.
+     *
+     * @param dataTransfer
+     *            the data transfer
+     *
+     * @throws RestException
+     *             the rest exception
      */
     @Override
     public void close(final DataTransfer dataTransfer) throws RestException {
@@ -192,31 +208,45 @@ public final class RESTClient implements RESTInterface {
         t.setHostName(h.getName());
         t.setHost(h);
         _log.debug("REST sending request: close(" + t + ")");
-        final var response = _getResource(_httpProxy, _getDataMover()[0] + "/ecpds/mover/close", _connectTimeout)
-                .accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON)
-                .invoke("DELETE", ClientResponse.class, t);
-        _parse(response);
+        try (final var response = new CloseableClientResponse(
+                getResource(httpProxy, getDataMover()[0] + "/ecpds/mover/close", connectTimeout)
+                        .accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON)
+                        .invoke("DELETE", ClientResponse.class, t))) {
+            parse(response);
+        }
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Purge. Request an asynchronous purge of the DataFiles on the data mover which are more than the specified date.
+     *
+     * @param directories
+     *            the directories
+     *
+     * @throws RestException
+     *             the rest exception
      */
     @Override
     public void purge(final List<ExistingStorageDirectory> directories) throws RestException {
         _log.debug("REST sending request: purge("
                 + (directories != null ? directories.size() + " directories" : "no-directory") + ")");
-        final var response = _getResource(_httpProxy, _getDataMover()[0] + "/ecpds/mover/purge", _connectTimeout)
-                .accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON)
-                .invoke("DELETE", ClientResponse.class, directories);
-        _parse(response);
+        try (final var response = new CloseableClientResponse(
+                getResource(httpProxy, getDataMover()[0] + "/ecpds/mover/purge", connectTimeout)
+                        .accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON)
+                        .invoke("DELETE", ClientResponse.class, directories))) {
+            parse(response);
+        }
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the host report. Request a report for the specified Host (e.g. traceroute, paping, mtr).
+     *
+     * @param host
+     *            the host
+     *
+     * @return the host report
+     *
+     * @throws RestException
+     *             the rest exception
      */
     @Override
     public String getHostReport(final Host host) throws RestException {
@@ -244,53 +274,80 @@ public final class RESTClient implements RESTInterface {
         h.setNetworkName(host.getNetworkName());
         h.setNickname(host.getNickname());
         _log.debug("REST sending request: getHostReport(" + h + ")");
-        final var response = _getResource(_httpProxy, _getDataMover()[0] + "/ecpds/mover/getHostReport",
-                _connectTimeout).accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON).put(h);
-        return _parse(response, String.class);
+        try (final var response = new CloseableClientResponse(
+                getResource(httpProxy, getDataMover()[0] + "/ecpds/mover/getHostReport", connectTimeout)
+                        .accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON).put(h))) {
+            return parse(response, String.class);
+        }
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the mover report. Request a report from the Data Mover (e.g. df, sar).
+     *
+     * @return the mover report
+     *
+     * @throws RestException
+     *             the rest exception
      */
     @Override
     public String getMoverReport() throws RestException {
         _log.debug("REST sending request: getMoverReport()");
-        final var response = _getResource(_httpProxy, _getDataMover()[0] + "/ecpds/mover/getMoverReport",
-                _connectTimeout).accept(MediaType.APPLICATION_JSON).get();
-        return _parse(response, String.class);
+        try (final var response = new CloseableClientResponse(
+                getResource(httpProxy, getDataMover()[0] + "/ecpds/mover/getMoverReport", connectTimeout)
+                        .accept(MediaType.APPLICATION_JSON).get())) {
+            return parse(response, String.class);
+        }
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Request a transmission of the DataTransfer with the target name as specified in fileName.
+     *
+     * @param transfer
+     *            the transfer
+     * @param fileName
+     *            the file name
+     * @param localPosn
+     *            the local posn
+     * @param remotePosn
+     *            the remote posn
+     *
+     * @return the string
+     *
+     * @throws RestException
+     *             the rest exception
      */
     @Override
     public String put(final DataTransfer transfer, final String fileName, final long localPosn, final long remotePosn)
             throws RestException {
         _log.debug("REST sending request: put(" + transfer + "," + fileName + "," + localPosn + "," + remotePosn + ")");
-        final var response = _getResource(_httpProxy, _getDataMover()[0] + "/ecpds/mover/put", _connectTimeout)
-                .accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON)
-                .put(getPutRequest(transfer, fileName, localPosn, remotePosn));
-        return _parse(response, String.class);
+        try (final var response = new CloseableClientResponse(
+                getResource(httpProxy, getDataMover()[0] + "/ecpds/mover/put", connectTimeout)
+                        .accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON)
+                        .put(getPutRequest(transfer, fileName, localPosn, remotePosn)))) {
+            return parse(response, String.class);
+        }
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Request a ecauth token to allow a connection to a ecauth compliant server.
+     *
+     * @param user
+     *            the user
+     *
+     * @return the ecauth token
+     *
+     * @throws RestException
+     *             the rest exception
      */
     @Override
     public ECauthToken getECauthToken(final String user) throws RestException {
         _log.debug("REST sending request: getECauthToken(" + user + ")");
         RestException restException = null;
-        for (final String dataMover : _getDataMover()) {
-            try {
-                final var response = _getResource(_httpProxy, dataMover + "/ecpds/master/getECauthToken",
-                        _connectTimeout).accept(MediaType.APPLICATION_JSON).queryParam("user", user).get();
-                return _parse(response, ECauthToken.class);
+        for (final String dataMover : getDataMover()) {
+            try (final var response = new CloseableClientResponse(
+                    getResource(httpProxy, dataMover + "/ecpds/master/getECauthToken", connectTimeout)
+                            .accept(MediaType.APPLICATION_JSON).queryParam("user", user).get())) {
+                return parse(response, ECauthToken.class);
             } catch (final Throwable t) {
                 restException = new RestException("Connecting to " + dataMover, t);
             }
@@ -302,19 +359,25 @@ public final class RESTClient implements RESTInterface {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Check if the DataFile exists and is not expired.
+     *
+     * @param dataFileId
+     *            the data file id
+     *
+     * @return true, if is valid data file
+     *
+     * @throws Exception
+     *             the exception
      */
     @Override
     public boolean isValidDataFile(final long dataFileId) throws Exception {
         _log.debug("REST sending request: isValidDataFile(" + dataFileId + ")");
         RestException restException = null;
-        for (final String dataMover : _getDataMover()) {
-            try {
-                final var response = _getResource(_httpProxy, _getDataMover()[0] + "/ecpds/master/isValidDataFile",
-                        _connectTimeout).accept(MediaType.APPLICATION_JSON).queryParam("dataFileId", dataFileId).get();
-                return _parse(response, boolean.class);
+        for (final String dataMover : getDataMover()) {
+            try (final var response = new CloseableClientResponse(
+                    getResource(httpProxy, getDataMover()[0] + "/ecpds/master/isValidDataFile", connectTimeout)
+                            .accept(MediaType.APPLICATION_JSON).queryParam("dataFileId", dataFileId).get())) {
+                return parse(response, boolean.class);
             } catch (final Throwable t) {
                 restException = new RestException("Connecting to " + dataMover, t);
             }
@@ -326,20 +389,25 @@ public final class RESTClient implements RESTInterface {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Send a live message from the ProxyHost to the Master server.
+     *
+     * @param name
+     *            the name
+     *
+     * @return the long
+     *
+     * @throws RestException
+     *             the rest exception
      */
     @Override
     public long proxyHostIsAlive(final String name) throws RestException {
         _log.debug("REST sending request: proxyHostIsAlive(" + name + ")");
         RestException restException = null;
-        for (final String dataMover : _getDataMover()) {
-            try {
-                final var response = _getResource(_httpProxy, dataMover + "/ecpds/master/proxyHostIsAlive",
-                        _connectTimeout).accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON)
-                                .put(name);
-                return _parse(response, long.class);
+        for (final String dataMover : getDataMover()) {
+            try (final var response = new CloseableClientResponse(
+                    getResource(httpProxy, dataMover + "/ecpds/master/proxyHostIsAlive", connectTimeout)
+                            .accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON).put(name))) {
+                return parse(response, long.class);
             } catch (final Throwable t) {
                 restException = new RestException("Connecting to " + dataMover, t);
             }
@@ -351,21 +419,24 @@ public final class RESTClient implements RESTInterface {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Request an update of the data part of the Host on the master (e.g. when the data is updated by the ectrans
      * module).
+     *
+     * @param request
+     *            the request
+     *
+     * @throws RestException
+     *             the rest exception
      */
     @Override
     public void updateDataRequest(final UpdateDataRequest request) throws RestException {
         _log.debug("REST sending request: updateDataRequest(" + request + ")");
         RestException restException = null;
-        for (final String dataMover : _getDataMover()) {
-            try {
-                final var response = _getResource(_httpProxy, dataMover + "/ecpds/master/updateDataRequest",
-                        _connectTimeout).accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON)
-                                .put(request);
-                _parse(response);
+        for (final String dataMover : getDataMover()) {
+            try (final var response = new CloseableClientResponse(
+                    getResource(httpProxy, dataMover + "/ecpds/master/updateDataRequest", connectTimeout)
+                            .accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON).put(request))) {
+                parse(response);
                 return;
             } catch (final Throwable t) {
                 restException = new RestException("Connecting to " + dataMover, t);
@@ -375,23 +446,28 @@ public final class RESTClient implements RESTInterface {
         // then we trough the last one! Otherwise we inform the Mover that no
         // MasterServer is available!
         throw restException != null ? restException : new RestException("No MasterServer available");
+
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Request an update of the data part of the Host on the master (e.g. when the data is updated by the ectrans
      * module).
+     *
+     * @param host
+     *            the host
+     *
+     * @throws RestException
+     *             the rest exception
      */
     @Override
     public void updateData(final Host host) throws RestException {
         _log.debug("REST sending request: updateData(" + host + ")");
         RestException restException = null;
-        for (final String dataMover : _getDataMover()) {
-            try {
-                final var response = _getResource(_httpProxy, dataMover + "/ecpds/master/updateData", _connectTimeout)
-                        .accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON).put(host);
-                _parse(response);
+        for (final String dataMover : getDataMover()) {
+            try (final var response = new CloseableClientResponse(
+                    getResource(httpProxy, dataMover + "/ecpds/master/updateData", connectTimeout)
+                            .accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON).put(host))) {
+                parse(response);
                 return;
             } catch (final Throwable t) {
                 restException = new RestException("Connecting to " + dataMover, t);
@@ -404,23 +480,26 @@ public final class RESTClient implements RESTInterface {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Update location.
      *
      * Request an update of the location part of the Host on the master (e.g. when the IP is updated by the ectrans
      * module).
+     *
+     * @param host
+     *            the host
+     *
+     * @throws RestException
+     *             the rest exception
      */
     @Override
     public void updateLocation(final Host host) throws RestException {
         _log.debug("REST sending request: updateLocation(" + host + ")");
         RestException restException = null;
-        for (final String dataMover : _getDataMover()) {
-            try {
-                final var response = _getResource(_httpProxy, dataMover + "/ecpds/master/updateLocation",
-                        _connectTimeout).accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON)
-                                .put(host);
-                _parse(response);
+        for (final String dataMover : getDataMover()) {
+            try (final var response = new CloseableClientResponse(
+                    getResource(httpProxy, dataMover + "/ecpds/master/updateLocation", connectTimeout)
+                            .accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON).put(host))) {
+                parse(response);
                 return;
             } catch (final Throwable t) {
                 restException = new RestException("Connecting to " + dataMover, t);
@@ -433,21 +512,25 @@ public final class RESTClient implements RESTInterface {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Request an update of the transfers on the master (e.g. status).
+     *
+     * @param transfers
+     *            the transfers
+     *
+     * @throws RestException
+     *             the rest exception
      */
     @Override
     public void updateDataTransfers(final List<DataTransfer> transfers) throws RestException {
         _log.debug("REST sending request: updateDataTransfers("
                 + (transfers != null ? transfers.size() + " transfer(s)" : "no-transfer") + ")");
         RestException restException = null;
-        for (final String dataMover : _getDataMover()) {
-            try {
-                final var response = _getResource(_httpProxy, dataMover + "/ecpds/master/updateDataTransfers",
-                        _connectTimeout).accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON)
-                                .put(transfers);
-                _parse(response);
+        for (final String dataMover : getDataMover()) {
+            try (final var response = new CloseableClientResponse(
+                    getResource(httpProxy, dataMover + "/ecpds/master/updateDataTransfers", connectTimeout)
+                            .accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON)
+                            .put(transfers))) {
+                parse(response);
                 return;
             } catch (final Throwable t) {
                 restException = new RestException("Connecting to " + dataMover, t);
@@ -460,19 +543,23 @@ public final class RESTClient implements RESTInterface {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Send a message using Monitor.
+     *
+     * @param request
+     *            the request
+     *
+     * @throws RestException
+     *             the rest exception
      */
     @Override
     public void sendMessage(final MonitorRequest request) throws RestException {
         _log.debug("REST sending request: sendMessage(" + request + ")");
         RestException restException = null;
-        for (final String dataMover : _getDataMover()) {
-            try {
-                final var response = _getResource(_httpProxy, dataMover + "/ecpds/master/sendMessage", _connectTimeout)
-                        .accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON).put(request);
-                _parse(response);
+        for (final String dataMover : getDataMover()) {
+            try (final var response = new CloseableClientResponse(
+                    getResource(httpProxy, dataMover + "/ecpds/master/sendMessage", connectTimeout)
+                            .accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON).put(request))) {
+                parse(response);
                 return;
             } catch (final Throwable t) {
                 restException = new RestException("Connecting to " + dataMover, t);
@@ -669,7 +756,7 @@ public final class RESTClient implements RESTInterface {
      *
      * @return the resource
      */
-    private static Resource _getResource(final String proxy, final String url, final int connectTimeout) {
+    private static Resource getResource(final String proxy, final String url, final int connectTimeout) {
         final var config = new ClientConfig().applications(new ECaccessRESTApplication());
         config.setBypassHostnameVerification(true);
         config.connectTimeout(connectTimeout);
@@ -698,8 +785,8 @@ public final class RESTClient implements RESTInterface {
      * @throws RestException
      *             the rest exception
      */
-    private static <T> T _parse(final ClientResponse response, final Class<T> valueType) throws RestException {
-        return _parse(response.getEntity(String.class), valueType, null);
+    private static <T> T parse(final CloseableClientResponse response, final Class<T> valueType) throws RestException {
+        return parse(response.getEntity(String.class), valueType, null);
     }
 
     /**
@@ -711,8 +798,8 @@ public final class RESTClient implements RESTInterface {
      * @throws RestException
      *             the rest exception
      */
-    private static void _parse(final ClientResponse response) throws RestException {
-        _parse(response.getEntity(String.class), null, null);
+    private static void parse(final CloseableClientResponse response) throws RestException {
+        parse(response.getEntity(String.class), null, null);
     }
 
     /**
@@ -733,9 +820,9 @@ public final class RESTClient implements RESTInterface {
      * @throws RestException
      *             the rest exception
      */
-    private static <T> T _parse(final String message, final Class<T> valueType, final TypeReference<T> valueTypeRef)
+    private static <T> T parse(final String message, final Class<T> valueType, final TypeReference<T> valueTypeRef)
             throws RestException {
-        if (_debug) {
+        if (debug) {
             _log.debug("Parsing message: " + message);
         }
         T result = null;
@@ -750,7 +837,7 @@ public final class RESTClient implements RESTInterface {
             while (jp.nextToken() != JsonToken.END_OBJECT) {
                 final var fieldName = jp.getCurrentName();
                 jp.nextToken();
-                if (_debug) {
+                if (debug) {
                     _log.debug("Parsing " + fieldName + "=" + jp.getText() + " (" + jp.getCurrentToken().name() + ")");
                 }
                 if ("success".equals(fieldName)) {
@@ -758,18 +845,18 @@ public final class RESTClient implements RESTInterface {
                 } else if ("error".equals(fieldName)) {
                     errorMessage = jp.getText();
                 } else if (valueTypeRef != null && jp.getCurrentToken() == JsonToken.START_ARRAY) {
-                    if (_debug) {
+                    if (debug) {
                         _log.debug("Object " + fieldName + " is array of " + valueTypeRef.getType().toString());
                     }
                     final var mapper = new ObjectMapper();
                     result = mapper.readValue(jp, valueTypeRef);
                 } else if (valueType != null) {
-                    if (_debug) {
+                    if (debug) {
                         _log.debug("Object " + fieldName + " is " + valueType.getSimpleName());
                     }
                     final var mapper = new ObjectMapper();
                     result = mapper.readValue(jp, valueType);
-                } else if (_debug) {
+                } else if (debug) {
                     _log.debug("Skipping " + fieldName);
                 }
             }
