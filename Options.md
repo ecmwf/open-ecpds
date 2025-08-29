@@ -220,6 +220,9 @@ Allow specifying an alternative URL to connect to the endpoint. By default, the 
 ### azure.useMD5
 Enable the request for processing the MD5 checksum during data transmission. If the MD5 is available at both ends and the "azure.ignoreCheck" option is not set, the local MD5 is compared with the remote MD5 after transmission.
 
+### azure.userAssignedClientId
+This is the client ID of the user-assigned managed identity.
+
 ## Ecaccess Options
 
 These options help fine-tune the ecaccess transfer module and are accessible via the host editor.
@@ -359,7 +362,7 @@ Allow specifying a timeout duration for getting the size of a file from the remo
 Maximum transmit rate in bytes per second for the socket. TCP pacing is good for flows having idle times, as the congestion window permits TCP stack to queue a possibly large number of packets.
 
 ### ectrans.socketStatistics
-When enabled, it allows gathering socket statistics for each individual data transfer pushed (dissemination), such as the number of TCP packets retransmitted.
+When enabled, it allows gathering socket statistics for each individual data transfer pushed (dissemination), such as the number of TCP packets retransmitted. When a connection spool is configured (e.g. in the FTP module), this option is automatically disabled.
 
 ### ectrans.streamTimeout
 Allow specifying a timeout duration for streaming a file to the remote site by the underlying transfer module. This is different from the "ectrans.putTimeOut" which is taking into account the protocol overhead on top of the streaming.
@@ -407,7 +410,7 @@ Maximum amount of time, in milliseconds, that transmitted data may remain unackn
 Bound the size of the advertised window to this value
 
 ### ectrans.usednsname
-Enabling this option allows bypassing DNS resolution and providing the hostname verbatim to the transfer module. By default, DNS resolution is processed, and the IP address is passed to the transfer module rather than the hostname.
+Enabling this option allows bypassing DNS resolution at the application level and instead passing the hostname verbatim to the transfer module. By default, the system resolves the hostname to an IP address before initiating the transfer, and the resulting IP is passed to the module. However, in some scenarios, it may be necessary to provide the DNS name directly. For example, when the target system uses dynamic DNS (DDNS), the hostname always points to the current IP, which may change over time. Additionally, some transfer modules perform their own DNS resolution or rely on the original hostname for certificate validation, virtual hosting, or routing decisions. In such cases, using the DNS name rather than a resolved IP address ensures compatibility and flexibility.
 
 ### ectrans.usemget
 When processing data retrieval via index files, enabling this option allows for managing the data retrieval directly through the transfer module (optimization supported by the ECauth module). By default, ECtrans retrieves the list of files in the index, and each file is retrieved at the ECtrans level.
@@ -460,7 +463,7 @@ If not set, the FTP client tries to delete the target file before the upload is 
 If set, ignore any error occurring during the execution of the command specified in "ftp.preMkdirsCmd" or "ftp.postMkdirsCmd".
 
 ### ftp.keepAlive
-Allow keeping FTP control connections alive in a pool. If the connection is unused for longer than the duration specified by this option then the connection is closed and removed from the pool. A duration of zero is interpreted as no pooling.
+Allow keeping FTP control connections alive in a pool. If the connection is unused for longer than the duration specified by this option then the connection is closed and removed from the pool. A duration of zero is interpreted as no pooling. Activating this option automatically disables socket statistics collection.
 
 ### ftp.keepControlConnectionAlive
 If set, the FTP client will keep sending NOOPS commands through the control channel while waiting for a data transmission to complete. This proves beneficial during prolonged transfers, preventing control channel blockages caused by some firewalls.
