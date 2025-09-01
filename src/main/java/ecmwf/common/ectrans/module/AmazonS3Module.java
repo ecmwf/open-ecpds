@@ -399,23 +399,21 @@ public final class AmazonS3Module extends TransferModule {
             _log.debug("Using StreamTransferManager");
             final var manager = new StreamTransferManager(bnk[0], bnk[1], s3.getAmazonS3()).numStreams(1)
                     .numUploadThreads(numUploadThreads).queueCapacity(queueCapacity).partSize(partSize);
-            try {
-                final OutputStream out = manager.getMultiPartOutputStreams().get(0);
+            try (final var out = manager.getMultiPartOutputStreams().get(0)) {
                 StreamPlugThread.copy(out, in, StreamPlugThread.DEFAULT_BUFF_SIZE);
-                out.close();
                 manager.complete();
             } catch (final Throwable t) {
                 manager.abort();
+                _log.debug("putObject", t);
+                throw new IOException("Pushing object " + name + ": " + Format.getMessage(t, "", 0));
             }
         } else {
             // We know the file size so we can use the default mechanism!
-            try {
+            try (final var input = getSetup().getBoolean(HOST_S3_USE_BYTE_ARRAY_INPUT_STREAM)
+                    && size < getSetup().getLong(HOST_S3_SINGLEPART_SIZE)
+                            ? new ByteArrayInputStream(IOUtils.toByteArray(in)) : in) {
                 final var metadata = new ObjectMetadata();
                 metadata.setContentLength(size);
-                final InputStream input;
-                input = getSetup().getBoolean(HOST_S3_USE_BYTE_ARRAY_INPUT_STREAM)
-                        && size < getSetup().getLong(HOST_S3_SINGLEPART_SIZE)
-                                ? new ByteArrayInputStream(IOUtils.toByteArray(in)) : in;
                 final var request = new PutObjectRequest(bnk[0], bnk[1], input, metadata);
                 if (getSetup().getBoolean(HOST_S3_ENABLE_MARK_AND_RESET)) {
                     request.getRequestClientOptions().setReadLimit(RequestClientOptions.DEFAULT_STREAM_BUFFER_SIZE);
