@@ -409,9 +409,10 @@ public final class AmazonS3Module extends TransferModule {
             }
         } else {
             // We know the file size so we can use the default mechanism!
-            try (final var input = getSetup().getBoolean(HOST_S3_USE_BYTE_ARRAY_INPUT_STREAM)
-                    && size < getSetup().getLong(HOST_S3_SINGLEPART_SIZE)
-                            ? new ByteArrayInputStream(IOUtils.toByteArray(in)) : in) {
+            try {
+                final var input = getSetup().getBoolean(HOST_S3_USE_BYTE_ARRAY_INPUT_STREAM)
+                        && size < getSetup().getLong(HOST_S3_SINGLEPART_SIZE)
+                                ? new ByteArrayInputStream(IOUtils.toByteArray(in)) : in;
                 final var metadata = new ObjectMetadata();
                 metadata.setContentLength(size);
                 final var request = new PutObjectRequest(bnk[0], bnk[1], input, metadata);
@@ -425,6 +426,7 @@ public final class AmazonS3Module extends TransferModule {
             }
         }
         return true;
+
     }
 
     /**
