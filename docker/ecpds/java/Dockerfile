@@ -1,4 +1,4 @@
-FROM docker.io/library/rockylinux:9.3
+FROM docker.io/library/rockylinux:9.6
 
 ARG SDKMAN_JDK
 ENV SDKMAN_JDK=${SDKMAN_JDK}
