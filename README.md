@@ -807,7 +807,7 @@ RET;Monitored=true;DataTransferId=123456789;DestinationName=MyDestination;Destin
 - **MetaTime**: The meta time associated with the data file, which represents a specific timestamp or point in time relevant to the metadata.
 - **TimeBase**: The time base associated with the data file.
 - **TimeStep**: The time step associated with the data file.
-- **Duration**: The total duration of the data retrieval process, which includes the time from initiation to completion.
+- **Duration**: The total duration of the data retrieval process, measured in milliseconds, from initiation to completion.
 - **HostId**: The identifier of the acquisition or source host that was used to retrieve the data file. This identifies where the file originated.
 - **HostLogin**: The user ID associated with the host system used to retrieve the file.
 - **HostAddress**: The address or hostname of the host from which the file is being retrieved.
@@ -850,8 +850,8 @@ UPH;Monitored=false;DataTransferId=123456789;DestinationName=MyDestination;Desti
 - **ScheduledTime**: The scheduled time when the data transfer request is expected to be processed (same as in RET).
 - **StartTime**: The most recent time when the dissemination process started.
 - **PutTime**: The time when the connection to the destination was established, and the input stream was ready to be read.
-- **Duration**: The total time taken for data dissemination from the moment the input stream started until it reached the end.
-- **DurationOnClose**: The total time taken for data dissemination, considering the moment when the output stream was fully flushed and closed. This can be longer than Duration if the transfer module uses large buffers for output.
+- **Duration**: The total time taken for data dissemination, measured from when the input stream started until it completed, in milliseconds.
+- **DurationOnClose**: The total time taken for data dissemination, measured in milliseconds from the start until the output stream is fully flushed and closed. This can be longer than Duration if the transfer module uses large output buffers.
 - **BytesSent**: The number of bytes sent during transmission. This may differ from the original file size if the transfer was incomplete, the file was compressed, or the transfer was resumed.
 - **StatusCode**: The final status of the transfer request can be one of the following: **Done** - Transfer successfully completed, **Stopped** – Transfer was intentionally stopped, **Failed** – Transfer failed, **Requeued** – Transfer was re-queued for another attempt, **Interrupted** – Transfer was interrupted.
 - **RetrievalTime**: The time when the data retrieval process started.
@@ -892,7 +892,7 @@ INH;Monitored=true;DataTransferId=123456789;DestinationName=MyDestination;Destin
 - **MetaTime**: Meta time associated with the data file (same as RET).
 - **TimeBase**: Time base associated with the data file (same as RET).
 - **TimeStep**: Time step associated with the data file (same as RET).
-- **Duration**: Total duration of the data transmission, whether inbound or outbound.
+- **Duration**: The total duration of the data transmission, in milliseconds, whether inbound or outbound.
 - **UserId**: If the request originates from the `ecpds` command, this field contains the user who initiated the command. Otherwise, it holds the identifier of the underlying data user.
 - **CountryCode**: Country code associated with the underlying data user.
 - **UserDescription**: Description field associated with the underlying data user.
@@ -926,7 +926,7 @@ ERR;Monitored=false;DataTransferId=123456789;DestinationName=MyDestination;Desti
 - **MetaTime** – Metadata time associated with the data file (same as RET).
 - **TimeBase** – Time base associated with the data file (same as RET).
 - **TimeStep** – Time step associated with the data file (same as RET).
-- **Duration** – Total duration of the failed data transmission attempt.
+- **Duration** – Total duration of the failed data transmission attempt, measured in milliseconds.
 - **UserId** – Identifier of the user responsible for initiating the transfer request.
 - **CountryCode** – Country code assigned to the destination entity.
 - **BytesSent** – Number of bytes successfully sent before the transfer failure.
@@ -956,7 +956,7 @@ CPY;Monitored=true;DataTransferId=123456789;DestinationName=MyDestination;Destin
 - **MetaTime** – Metadata time associated with the data file (same as RET).
 - **TimeBase** – Time base associated with the data file (same as RET).
 - **TimeStep** – Time step associated with the data file (same as RET).
-- **Duration** – Total duration of the data transmission.
+- **Duration** – Total duration of the data transmission, measured in milliseconds.
 - **CountryCode** – Country code assigned to the destination entity.
 - **Target** – File name on the target site after dissemination.
 - **TransferServer** – Name of the server handling the data transfer (same as RET).
