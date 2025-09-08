@@ -761,6 +761,8 @@ The DEA category captures events that highlight unauthorized access attempts, he
 
 Each event logged by OpenECPDS follows a structured format, with fields that provide detailed information about the recorded operation. The fields vary depending on the event category, capturing relevant attributes such as timestamps, file identifiers, processing statuses, and transfer details.
 
+>**Note:** All duration values are measured in milliseconds. All timestamps are formatted as `yyyy-MM-dd HH:mm:ss.fffffffff`, where `yyyy` is the 4-digit year, `MM` is the 2-digit month, `dd` is the 2-digit day, `HH` is the 2-digit hour (24-hour clock), `mm` is minutes, `ss` is seconds, and `fffffffff` represents fractional seconds in nanoseconds.
+
 The following sections provide a breakdown of the specific fields recorded for each event category:
 
 #### PRS (Product STatus) Fields
