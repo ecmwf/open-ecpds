@@ -815,7 +815,7 @@ RET;Monitored=true;DataTransferId=123456789;DestinationName=MyDestination;Destin
 - **MoverName**: The name of the Data Mover responsible for connecting to the host and processing the data retrieval.
 - **UserId**: The user identifier associated with the destination of the data transfer, helping identify the user or service involved in the transfer.
 - **RequestAddress**: The address of the host from where the registration of the data transfer was made, typically the host where the `ecpds` command was issued. If the registration was done through the Acquisition System this is the address of the host used for the discovery.
-- **DataOnlyDuration**: The duration of the data retrieval process excluding protocol overhead, such as authentication or directory navigation. This helps distinguish between actual data transfer time and protocol-related delays.
+- **DataOnlyDuration**: The duration of the data retrieval process, in milliseconds, excluding protocol overhead such as authentication or directory navigation. This helps separate actual data transfer time from protocol-related delays.
 - **StandBy**: A flag indicating whether the transfer request is in **standby** mode after the data retrieval has completed. If set, the file will remain inactive until further processing instructions are provided; otherwise, it will be in **queued** mode, awaiting dissemination.
 - **RemoteHost**: The RemoteHost can either be the same as the HostAddress or different, particularly in scenarios where the host entity is configured for load balancing across a cluster. In such cases, the RemoteHost field will specify the actual host used to process the data retrieval, providing a more accurate representation of the system involved in the transfer.
 
