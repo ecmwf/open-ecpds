@@ -8,7 +8,7 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive && \
 	apt-get -y install --no-install-recommends \
 	make rpm binutils joe file apt-transport-https \
 	ca-certificates curl ftp gnupg-agent clang-format \
-	software-properties-common awscli iputils-ping telnet
+	awscli iputils-ping telnet
 
 # Configure awscli (s3)
 RUN mkdir /root/.aws
