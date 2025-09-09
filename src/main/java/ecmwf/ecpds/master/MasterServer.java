@@ -1908,11 +1908,9 @@ public final class MasterServer extends ECaccessProvider
         } else {
             // We have to compress the file content
             final var os = new ByteArrayOutputStream();
-            final var gos = new GZIPOutputStream(os);
-            try (final var in = Files.newInputStream(path)) {
-                gos.write(in.readAllBytes());
+            try (final var gos = new GZIPOutputStream(os); final var in = Files.newInputStream(path)) {
+                in.transferTo(gos);
             }
-            gos.finish();
             return new RemoteInputStreamImp(new ByteArrayInputStream(os.toByteArray()));
         }
     }
