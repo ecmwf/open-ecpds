@@ -913,8 +913,7 @@ final class ECtransInputStream extends InputStream implements AutoCloseable {
                                 // Let's wait for some time and then retry!
                                 _log.warn("Retry in {}", Format.formatDuration(retryFrequency), t);
                                 try {
-                                    // We should own the monitor!
-                                    wait(retryFrequency);
+									Thread.sleep(retryFrequency);
                                 } catch (final InterruptedException e) {
                                     // We just continue!
                                 }
