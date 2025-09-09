@@ -279,7 +279,7 @@ public final class TransferScheduler extends MBeanScheduler {
                         MASTER.addTransferHistory(transfer, StatusFactory.INTR,
                                 "Interrupted by server shutdown during transmission");
                     }
-                    transfer.setComment("Requeued by scheduler after server restart");
+                    transfer.setComment("Requeued by the scheduler after a Master Server restart");
                     transfer.setStatusCode(StatusFactory.RETR);
                     transfer.setFailedTime(new Timestamp(System.currentTimeMillis()));
                     transfer.setUserStatus(null);
@@ -2981,7 +2981,7 @@ public final class TransferScheduler extends MBeanScheduler {
                 if (!isAcquisition(transfer)) {
                     MASTER.addTransferHistory(transfer, StatusFactory.STOP, transfer.getComment());
                     MASTER.addTransferHistory(transfer, StatusFactory.RETR,
-                            "Requeued by scheduler after transfer failure on DataMover="
+                            "Requeued by the scheduler after a transfer failure on DataMover="
                                     + transfer.getTransferServerName() + " (S:" + transfer.getStartCount() + ",R:"
                                     + transfer.getRequeueHistory() + ")");
                 } else {
@@ -2995,8 +2995,9 @@ public final class TransferScheduler extends MBeanScheduler {
                 if (StatusFactory.INIT.equals(code)) {
                     // Transfer of previous instance was interrupted!
                     final var instance = transfer.getDataFile().getFileInstance();
-                    MASTER.addTransferHistory(transfer, StatusFactory.RETR, "Requeued by scheduler on new file instance"
-                            + (instance != null ? " (" + instance + ")" : ""));
+                    MASTER.addTransferHistory(transfer, StatusFactory.RETR,
+                            "Requeued by the scheduler on a new file instance"
+                                    + (instance != null ? " (" + instance + ")" : ""));
                 } else if (StatusFactory.SCHE.equals(code) || StatusFactory.FETC.equals(code)) {
                     _log.warn("Unexpected status for DataTransfer " + transfer.getId());
                 }
@@ -3280,7 +3281,7 @@ public final class TransferScheduler extends MBeanScheduler {
                             + (userName != null ? " initiated by WebUser=" + userName : ""));
                     MASTER.addTransferHistory(transfer, StatusFactory.INTR, transfer.getComment());
                 }
-                transfer.setComment("Requeued by scheduler after destination restart"
+                transfer.setComment("Requeued by the scheduler after a Destination restart"
                         + (userName != null ? " (" + userName + ")" : ""));
                 transfer.setStatusCode(StatusFactory.RETR);
                 transfer.setFailedTime(new Timestamp(System.currentTimeMillis()));
@@ -3314,13 +3315,13 @@ public final class TransferScheduler extends MBeanScheduler {
             }
             _inactivity = -1;
             MASTER.checkPendingTicket(_currentTransfer = transfersList.get(0), true);
-            final var status = _currentTransfer.getStatusCode();
+            final var transferStatus = _currentTransfer.getStatusCode();
             final var hostForSourceName = _currentTransfer.getDataFile().getHostForAcquisitionName();
             final var acquisition = isAcquisition(_currentTransfer);
             final var currentTime = System.currentTimeMillis();
             final var expiryTime = _currentTransfer.getExpiryTime().getTime();
-            final var currentStatus = _currentTransfer.getUserStatus();
-            if (!StatusFactory.EXEC.equals(status) && expiryTime < currentTime) {
+            final var userStatus = _currentTransfer.getUserStatus();
+            if (!StatusFactory.EXEC.equals(transferStatus) && expiryTime < currentTime) {
                 _log.info("Stopping DataTransfer " + _currentTransfer.getId() + " (expired)");
                 _currentTransfer.setStatusCode(StatusFactory.FAIL);
                 _currentTransfer.setFinishTime(new Timestamp(System.currentTimeMillis()));
@@ -3330,9 +3331,9 @@ public final class TransferScheduler extends MBeanScheduler {
                 _update(_currentTransfer, true);
                 return NEXT_STEP_CONTINUE;
             }
-            if (StatusFactory.RETR.equals(status) && acquisition) {
+            if (StatusFactory.RETR.equals(transferStatus) && acquisition) {
                 // Was this file already downloaded by the DownloadScheduler?
-                if (!isNotEmpty(currentStatus) && !_currentTransfer.getDataFile().getDownloaded()) {
+                if (!isNotEmpty(userStatus) && !_currentTransfer.getDataFile().getDownloaded()) {
                     // The file was not downloaded so the source acquisition
                     // Host was configured to not retrieve the file on the
                     // data movers.
@@ -3360,8 +3361,8 @@ public final class TransferScheduler extends MBeanScheduler {
             final var maxStart = _destination.getMaxStart();
             final var queueTime = _currentTransfer.getQueueTime().getTime();
             var delayed = false;
-            if (StatusFactory.HOLD.equals(status) || StatusFactory.FAIL.equals(status)
-                    || StatusFactory.STOP.equals(status) || (delayed = queueTime > currentTime)) {
+            if (StatusFactory.HOLD.equals(transferStatus) || StatusFactory.FAIL.equals(transferStatus)
+                    || StatusFactory.STOP.equals(transferStatus) || (delayed = queueTime > currentTime)) {
                 removeValue(_currentTransfer);
                 if (delayed) {
                     _log.debug("DataTransfer " + _currentTransfer.getId() + " was delayed (next start: "
@@ -3408,7 +3409,7 @@ public final class TransferScheduler extends MBeanScheduler {
                     return NEXT_STEP_CONTINUE;
                 }
                 _log.info("Retrying DataTransfer " + _currentTransfer.getId());
-                if (isNotEmpty(currentStatus) && acquisition)
+                if (isNotEmpty(userStatus) && acquisition)
                     // The retry was triggered by a user action (e.g. re-queue)
                     // Make sure it will not be triggered again unless the file
                     // is already on the data movers!
@@ -3492,7 +3493,17 @@ public final class TransferScheduler extends MBeanScheduler {
                         _currentTransfer.setTransferServerName(server.getName());
                     }
                     if (_currentTransfer.getTransferServer() == null) {
-                        throw new IOException("No Transfer Server(s) available (Transfer Group might be empty?)");
+                        final var error = "No Transfer Server available (Transfer Group might be empty?)";
+                        _log.warn("DataTransfer " + _currentTransfer.getId() + " delayed: " + error);
+                        _currentTransfer.setComment(error);
+                        _currentTransfer.setStatusCode(StatusFactory.RETR);
+                        _currentTransfer.setFinishTime(new Timestamp(System.currentTimeMillis()));
+                        _setLastFailedTransfer(_currentTransfer);
+                        MASTER.addTransferHistory(_currentTransfer, StatusFactory.STOP, error);
+                        MASTER.addTransferHistory(_currentTransfer, StatusFactory.RETR,
+                                "Requeued by the scheduler because no Transfer Server was available");
+                        _update(_currentTransfer, true);
+                        return NEXT_STEP_DELAY;
                     }
                     MASTER.addDataTransfer(_currentTransfer);
                     MASTER.addTransferHistory(_currentTransfer);
@@ -3889,7 +3900,7 @@ public final class TransferScheduler extends MBeanScheduler {
                 for (final DataTransfer transfer : BASE.getInterruptedTransfersPerDestination(_destination)) {
                     final var code = transfer.getStatusCode();
                     if (StatusFactory.EXEC.equals(code)) {
-                        transfer.setComment("Requeued by scheduler after destination shutdown");
+                        transfer.setComment("Requeued by the scheduler after a Destination shutdown");
                         transfer.setStatusCode(StatusFactory.RETR);
                         transfer.setUserStatus(null);
                         _updateDataTransfer(transfer);
