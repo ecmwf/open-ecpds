@@ -1595,7 +1595,11 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                     _log.debug("Using InterruptibleInputStream for donwload");
                     get = new InterruptibleInputStream(get);
                 }
-                file.receiveFile(get, fileSize);
+                try {
+                    file.receiveFile(get, fileSize);
+                } finally {
+                    StreamPlugThread.closeQuietly(get);
+                }
                 dataFile.setDownloaded(true);
                 if (targetHost.getName().equals(ectransGet.getHost().getName())) {
                     _log.info("No file to {} (already on target)", operation);
@@ -4285,7 +4289,8 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                     final var hostsForSource = desc.getHostsForSource();
                     if (hostsForSource != null && hostsForSource.length > 0) {
                         in = new ECtransInputStream(hostsForSource, dataFile, posn);
-                        desc.setSelectedSourceHost(((ECtransInputStream) in).getHost());
+                        if (in instanceof ECtransInputStream ectransIn)
+                            desc.setSelectedSourceHost(ectransIn.getHost());
                         posn = 0; // No skip required here, will be processed in the ECtransInputStream
                     }
                 } catch (final SourceNotAvailableException s) {
