@@ -78,17 +78,13 @@ public class GetOutputAction extends PDSAction {
                 return mapping.findForward("success");
             } else if ("load".equalsIgnoreCase(operation)) {
                 // TODO: if in progress then should display formattedLastOutput instead!
-                final OutputStream out = response.getOutputStream();
-                final InputStream in = new GZIPInputStream(new LocalInputStream(host.getOutput(user)));
-                final var scanner = new Scanner(in);
-                scanner.useDelimiter("\n");
-                try {
+                final var out = response.getOutputStream();
+                try (var in = new GZIPInputStream(new LocalInputStream(host.getOutput(user)));
+                        var scanner = new Scanner(in)) {
+                    scanner.useDelimiter("\n");
                     while (scanner.hasNext()) {
                         out.write(Util.getFormatted(user, scanner.next() + "\n").getBytes());
                     }
-                } finally {
-                    scanner.close();
-                    in.close();
                 }
                 return null;
             } else {
