@@ -26,8 +26,6 @@ package ecmwf.ecpds.master.plugin.http.controller.transfer.host;
  * @since 2004-10-09
  */
 
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Scanner;
