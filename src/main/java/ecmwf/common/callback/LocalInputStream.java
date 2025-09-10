@@ -73,7 +73,7 @@ public final class LocalInputStream extends InputStream {
      *             Signals that an I/O exception has occurred.
      */
     @Override
-    public synchronized void close() throws IOException {
+    public void close() throws IOException {
         if (closed.compareAndSet(false, true))
             in.close();
     }
