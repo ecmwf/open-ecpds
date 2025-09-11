@@ -121,8 +121,7 @@ import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
-import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
-import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceAsyncClientBuilder;
+import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import com.amazonaws.services.securitytoken.model.AssumeRoleRequest;
 import com.amazonaws.thirdparty.apache.http.Header;
 import com.amazonaws.thirdparty.apache.http.conn.ssl.NoopHostnameVerifier;
@@ -1098,20 +1097,26 @@ public final class AmazonS3Module extends TransferModule {
         private static AWSCredentialsProvider loadCredentials(final String accessKeyId, final String secretAccessKey,
                 final String region, final ClientConfiguration clientConfiguration, final String roleArn,
                 final String roleSessionName) {
-            final var provider = new AWSStaticCredentialsProvider(accessKeyId != null && !accessKeyId.isBlank()
-                    ? new BasicAWSCredentials(accessKeyId, secretAccessKey) : new AnonymousAWSCredentials());
-            if (isNotEmpty(roleArn) && isNotEmpty(roleSessionName)) {
-                final var builder = AWSSecurityTokenServiceAsyncClientBuilder.standard();
-                final AWSSecurityTokenService stsClient = builder.withCredentials(provider)
-                        .withClientConfiguration(clientConfiguration).withRegion(region).build();
-                final var assumeRoleRequest = new AssumeRoleRequest().withDurationSeconds(3600).withRoleArn(roleArn)
-                        .withRoleSessionName(roleSessionName);
-                final var assumeRoleResult = stsClient.assumeRole(assumeRoleRequest);
-                final var creds = assumeRoleResult.getCredentials();
-                return new AWSStaticCredentialsProvider(new BasicSessionCredentials(creds.getAccessKeyId(),
-                        creds.getSecretAccessKey(), creds.getSessionToken()));
+            // Base credentials: either real AWS keys or anonymous
+            final var baseProvider = (accessKeyId != null && !accessKeyId.isBlank())
+                    ? new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKeyId, secretAccessKey))
+                    : new AWSStaticCredentialsProvider(new AnonymousAWSCredentials());
+            // If no role is specified, just return the base provider
+            if (isEmpty(roleArn) || isEmpty(roleSessionName)) {
+                return baseProvider;
             }
-            return provider;
+            // Create an STS client using the base credentials
+            final var stsClient = AWSSecurityTokenServiceClientBuilder.standard().withCredentials(baseProvider)
+                    .withClientConfiguration(clientConfiguration).withRegion(region).build();
+            // Call STS to assume the role
+            final var assumeRoleRequest = new AssumeRoleRequest().withRoleArn(roleArn)
+                    .withRoleSessionName(roleSessionName).withDurationSeconds(3600); // session duration (max depends on
+                                                                                     // IAM role)
+            final var assumeRoleResult = stsClient.assumeRole(assumeRoleRequest);
+            final var stsCreds = assumeRoleResult.getCredentials();
+            // Wrap the temporary session credentials in a static provider
+            return new AWSStaticCredentialsProvider(new BasicSessionCredentials(stsCreds.getAccessKeyId(),
+                    stsCreds.getSecretAccessKey(), stsCreds.getSessionToken()));
         }
     }
 }
