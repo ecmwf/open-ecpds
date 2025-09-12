@@ -1,83 +1,71 @@
-FROM mcr.microsoft.com/vscode/devcontainers/base:latest
+# Base image: Rocky Linux 9.6
+FROM rockylinux/rockylinux:9.6
 
 # Development container for OpenECPDS
 LABEL maintainer="Laurent.Gougeon@ecmwf.int"
 
-# Install base packages
-RUN apt-get update && export DEBIAN_FRONTEND=noninteractive && \
-	apt-get -y install --no-install-recommends \
-	make rpm binutils joe file apt-transport-https \
-	ca-certificates curl ftp gnupg-agent clang-format \
-	awscli iputils-ping telnet
+# Enable EPEL for extra packages
+RUN dnf install -y epel-release && dnf update -y
 
-# Configure awscli (s3)
-RUN mkdir /root/.aws
+# Install base development tools and utilities
+RUN dnf groupinstall -y "Development Tools" && \
+    dnf install -y \
+        make rpm-build binutils joe file ftp awscli iputils \
+        telnet clang-tools-extra gnupg2 ca-certificates sudo which unzip wget tar \
+        openssl-devel \
+    && dnf clean all
+
+# Configure AWS CLI
+RUN mkdir -p /root/.aws
 COPY .aws-credentials /root/.aws/credentials
 
-# Add Docker's official GPG key:
-RUN apt-get update && \
-  apt-get install ca-certificates curl && \
-  install -m 0755 -d /etc/apt/keyrings && \
-  curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc && \
-  chmod a+r /etc/apt/keyrings/docker.asc
+# Install Docker CE (via official repository)
+RUN dnf install -y yum-utils && \
+    dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo && \
+    dnf install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin && \
+    dnf clean all
 
-# Add the repository to Docker Apt sources:
-RUN echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian \
-  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-  tee /etc/apt/sources.list.d/docker.list > /dev/null
-
-# And update the repository
-RUN apt-get update -y
-
-# Install the latest version of Docker
-RUN apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-
-# Some cleaning
-RUN apt-get autoremove -y && apt-get clean -y
-
-# SDKMAN Java Development Kit
+# Install SDKMAN for GraalVM and Java
+ENV SDKMAN_DIR=/root/.sdkman
 ENV SDKMAN_JDK=24.0.2-graal
 
-# Install GraalVM using SDKMAN
 RUN curl -s "https://get.sdkman.io" | bash && \
-    bash -c "source $HOME/.sdkman/bin/sdkman-init.sh && sdk install java ${SDKMAN_JDK}"
+    bash -c "source $SDKMAN_DIR/bin/sdkman-init.sh && sdk install java ${SDKMAN_JDK}" && \
+    bash -c "source $SDKMAN_DIR/bin/sdkman-init.sh && sdk install maven"
 
-# Define environment parameters for the JVM
-ENV JAVA_HOME=/root/.sdkman/candidates/java/current
+# Set Java environment variables
+ENV JAVA_HOME=$SDKMAN_DIR/candidates/java/current
 ENV PATH=$JAVA_HOME/bin:$PATH
 
 # Create the JDK Class-Data Archive
 RUN java -Xshare:dump
 
 # Re-enable disabled algorithms to allow connecting to low security sites
-COPY java.security $JAVA_HOME/conf/security/.
+COPY java.security $JAVA_HOME/conf/security/
 
-# Download and install Maven
-RUN bash -c "source $HOME/.sdkman/bin/sdkman-init.sh && sdk install maven"
-
-# Set environment variables for Kompose and Kubectl versions
+# Install Kompose and kubectl
 ENV KOMPOSE_VERSION=1.34.0
 ENV KUBECTL_VERSION=1.31.1
 
-# Download and install Kompose and Kubectl based on the platform
 RUN if [ "$(uname -m)" = "aarch64" ]; then \
-    curl -s -L https://github.com/kubernetes/kompose/releases/download/v${KOMPOSE_VERSION}/kompose-linux-arm64 -o /usr/local/bin/kompose; \
-    curl -s -L https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/arm64/kubectl -o /usr/local/bin/kubectl; \
-  else \
-    curl -s -L https://github.com/kubernetes/kompose/releases/download/v${KOMPOSE_VERSION}/kompose-linux-amd64 -o /usr/local/bin/kompose; \
-    curl -s -L https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl -o /usr/local/bin/kubectl; \
-  fi; \
-  chmod +x /usr/local/bin/kompose || true && \
-  chmod +x /usr/local/bin/kubectl || true
+        curl -s -L https://github.com/kubernetes/kompose/releases/download/v${KOMPOSE_VERSION}/kompose-linux-arm64 -o /usr/local/bin/kompose; \
+        curl -s -L https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/arm64/kubectl -o /usr/local/bin/kubectl; \
+    else \
+        curl -s -L https://github.com/kubernetes/kompose/releases/download/v${KOMPOSE_VERSION}/kompose-linux-amd64 -o /usr/local/bin/kompose; \
+        curl -s -L https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl -o /usr/local/bin/kubectl; \
+    fi && \
+    chmod +x /usr/local/bin/kompose /usr/local/bin/kubectl
 
-# We are in the dev-container
+# Set VS Code dev container environment variable
 ENV IN_DEV_CONTAINER=true
 
-# Add Gemini CLI to command-line utilities; requires a Google account
+# Install Node.js (via nvm) and Gemini CLI
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash && \
-    export NVM_DIR="$HOME/.nvm" && \
+    export NVM_DIR="/root/.nvm" && \
     . "$NVM_DIR/nvm.sh" && \
     nvm install 22 && \
     nvm use 22 && \
     npm install -g @google/gemini-cli
+
+# Optional: clean up DNF caches
+RUN dnf clean all
