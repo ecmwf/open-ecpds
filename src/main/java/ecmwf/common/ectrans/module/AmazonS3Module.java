@@ -46,8 +46,10 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_ALLOW_EMPTY_BUCKET_NAM
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_BUCKET_NAME;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_DISABLE_CHUNKED_ENCODING;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_DUALSTACK;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_DURATION_SECONDS;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_ENABLE_MARK_AND_RESET;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_ENABLE_PATH_STYLE_ACCESS;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_EXTERNAL_ID;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_FORCE_GLOBAL_BUCKET_ACCESS;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_FTPGROUP;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_FTPUSER;
@@ -98,6 +100,7 @@ import org.apache.commons.io.filefilter.WildcardFileFilter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.amazonaws.AmazonServiceException;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.Request;
 import com.amazonaws.RequestClientOptions;
@@ -110,6 +113,7 @@ import com.amazonaws.auth.BasicSessionCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 import com.amazonaws.handlers.RequestHandler2;
 import com.amazonaws.regions.Regions;
+import com.amazonaws.services.neptunedata.model.S3Exception;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.internal.SkipMd5CheckStrategy;
@@ -129,7 +133,6 @@ import com.amazonaws.thirdparty.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import com.amazonaws.util.IOUtils;
 
 import alex.mojaki.s3upload.StreamTransferManager;
-
 import ecmwf.common.ectrans.ECtransSetup;
 import ecmwf.common.ectrans.TransferModule;
 import ecmwf.common.rmi.ClientSocketStatistics;
@@ -152,9 +155,6 @@ public final class AmazonS3Module extends TransferModule {
 
     /** The s3input. */
     private InputStream s3input;
-
-    /** The scheme. */
-    private String scheme = "http";
 
     /** The prefix. */
     private String s3prefix = "";
@@ -181,7 +181,7 @@ public final class AmazonS3Module extends TransferModule {
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
     /**
-     * Allow skipping the MD5 check for GET and PUT.
+     * Allow skipping the MD5 check for GET and PUT
      **/
     static {
         if (Cnf.at("AmazonS3", "skipMd5CheckStrategy", false)) {
@@ -191,9 +191,9 @@ public final class AmazonS3Module extends TransferModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the status.
+     *
+     * @return the status
      */
     @Override
     public String getStatus() {
@@ -201,9 +201,12 @@ public final class AmazonS3Module extends TransferModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the port.
+     *
+     * @param setup
+     *            the setup
+     *
+     * @return the port
      */
     @Override
     public int getPort(final ECtransSetup setup) {
@@ -211,9 +214,10 @@ public final class AmazonS3Module extends TransferModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Update socket statistics.
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void updateSocketStatistics() throws IOException {
@@ -223,9 +227,15 @@ public final class AmazonS3Module extends TransferModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Connect.
+     *
+     * @param location
+     *            the location
+     * @param setup
+     *            the setup
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void connect(final String location, final ECtransSetup setup) throws IOException {
@@ -248,7 +258,7 @@ public final class AmazonS3Module extends TransferModule {
             host = host.substring(0, pos);
         }
         final var port = getPort(getSetup());
-        scheme = setup.getString(HOST_S3_SCHEME);
+        final var scheme = setup.getString(HOST_S3_SCHEME);
         bucketName = setup.getString(HOST_S3_BUCKET_NAME);
         s3prefix = setup.getString(HOST_S3_PREFIX).trim();
         numUploadThreads = setup.getInteger(HOST_S3_NUM_UPLOAD_THREADS);
@@ -293,7 +303,8 @@ public final class AmazonS3Module extends TransferModule {
                     setup.getBoolean(HOST_S3_DISABLE_CHUNKED_ENCODING),
                     setup.getBoolean(HOST_S3_ENABLE_PATH_STYLE_ACCESS), bucketName, url,
                     isNotEmpty(region) ? region : Regions.DEFAULT_REGION.getName(), setup.getBoolean(HOST_S3_MK_BUCKET),
-                    setup.getString(HOST_S3_ROLE_ARN), setup.getString(HOST_S3_ROLE_SESSION_NAME), getDebug());
+                    setup.getString(HOST_S3_ROLE_ARN), setup.getString(HOST_S3_ROLE_SESSION_NAME),
+                    setup.getInteger(HOST_S3_DURATION_SECONDS), setup.getString(HOST_S3_EXTERNAL_ID), getDebug());
             connected = true;
         } catch (final Throwable t) {
             _log.error("Connection failed to {}", url, t);
@@ -362,9 +373,13 @@ public final class AmazonS3Module extends TransferModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Del.
+     *
+     * @param name
+     *            the name
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void del(final String name) throws IOException {
@@ -373,6 +388,9 @@ public final class AmazonS3Module extends TransferModule {
         final var bnk = getBucketNameAndKey(name);
         try {
             s3.getAmazonS3().deleteObject(bnk[0], bnk[1]);
+        } catch (final S3Exception e) {
+            _log.debug("deleteObject", e);
+            throw new IOException("Deleting object " + name + ": " + formatS3Exception(e));
         } catch (final Exception e) {
             _log.debug("deleteObject", e);
             throw new IOException("Deleting object " + name + ": " + Format.getMessage(e, "", 0));
@@ -380,9 +398,21 @@ public final class AmazonS3Module extends TransferModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Put.
+     *
+     * @param in
+     *            the in
+     * @param name
+     *            the name
+     * @param posn
+     *            the posn
+     * @param size
+     *            the size
+     *
+     * @return true, if successful
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public boolean put(final InputStream in, final String name, final long posn, final long size) throws IOException {
@@ -401,10 +431,13 @@ public final class AmazonS3Module extends TransferModule {
             try (final var out = manager.getMultiPartOutputStreams().get(0)) {
                 StreamPlugThread.copy(out, in, StreamPlugThread.DEFAULT_BUFF_SIZE);
                 manager.complete();
+            } catch (final S3Exception e) {
+                _log.debug("putObject", e);
+                throw new IOException("Pushing Object " + name + ": " + formatS3Exception(e));
             } catch (final Throwable t) {
                 manager.abort();
                 _log.debug("putObject", t);
-                throw new IOException("Pushing object " + name + ": " + Format.getMessage(t, "", 0));
+                throw new IOException("Pushing Object " + name + ": " + Format.getMessage(t, "", 0));
             }
         } else {
             // We know the file size so we can use the default mechanism!
@@ -419,19 +452,31 @@ public final class AmazonS3Module extends TransferModule {
                     request.getRequestClientOptions().setReadLimit(RequestClientOptions.DEFAULT_STREAM_BUFFER_SIZE);
                 }
                 s3.getAmazonS3().putObject(request);
+            } catch (final S3Exception e) {
+                _log.debug("putObject", e);
+                throw new IOException("Pushing object " + name + ": " + formatS3Exception(e));
             } catch (final Exception e) {
                 _log.debug("putObject", e);
                 throw new IOException("Pushing object " + name + ": " + Format.getMessage(e, "", 0));
             }
         }
         return true;
-
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Put.
+     *
+     * @param name
+     *            the name
+     * @param posn
+     *            the posn
+     * @param size
+     *            the size
+     *
+     * @return the output stream
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public OutputStream put(final String name, final long posn, final long size) throws IOException {
@@ -479,9 +524,17 @@ public final class AmazonS3Module extends TransferModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the.
+     *
+     * @param name
+     *            the name
+     * @param posn
+     *            the posn
+     *
+     * @return the input stream
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public InputStream get(final String name, final long posn) throws IOException {
@@ -500,16 +553,25 @@ public final class AmazonS3Module extends TransferModule {
                 }
             };
             return s3input;
+        } catch (final S3Exception e) {
+            _log.debug("getObject", e);
+            throw new IOException("Getting Object " + name + ": " + formatS3Exception(e));
         } catch (final Exception e) {
             _log.debug("getObject", e);
-            throw new IOException("Getting object " + name + ": " + Format.getMessage(e, "", 0));
+            throw new IOException("Getting Object " + name + ": " + Format.getMessage(e, "", 0));
         }
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Size.
+     *
+     * @param name
+     *            the name
+     *
+     * @return the long
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public long size(final String name) throws IOException {
@@ -521,16 +583,23 @@ public final class AmazonS3Module extends TransferModule {
             try (s3Object) {
                 return s3Object.getObjectMetadata().getContentLength();
             }
+        } catch (final S3Exception e) {
+            _log.debug("getObject", e);
+            throw new IOException("Getting Object " + name + ": " + formatS3Exception(e));
         } catch (final Exception e) {
             _log.debug("getObject", e);
-            throw new IOException("Getting object " + name + ": " + Format.getMessage(e, "", 0));
+            throw new IOException("Getting Object " + name + ": " + Format.getMessage(e, "", 0));
         }
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Mkdir.
+     *
+     * @param directory
+     *            the directory
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void mkdir(final String directory) throws IOException {
@@ -546,11 +615,15 @@ public final class AmazonS3Module extends TransferModule {
             throw new IOException("Invalid directory specified: empty");
         }
         if (count == 1) {
+            final var bucketName = token.nextToken();
             try {
-                s3.getAmazonS3().createBucket(token.nextToken());
+                s3.getAmazonS3().createBucket(bucketName);
+            } catch (final S3Exception e) {
+                _log.debug("createBucket", e);
+                throw new IOException("Creating Bucket " + bucketName + ": " + formatS3Exception(e));
             } catch (final Exception e) {
                 _log.debug("createBucket", e);
-                throw new IOException("Creating Bucket " + directory + ": " + Format.getMessage(e, "", 0));
+                throw new IOException("Creating Bucket " + bucketName + ": " + Format.getMessage(e, "", 0));
             }
         } else {
             throw new IOException("Subdirectories not allowed in Bucket");
@@ -558,9 +631,13 @@ public final class AmazonS3Module extends TransferModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Rmdir.
+     *
+     * @param directory
+     *            the directory
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void rmdir(final String directory) throws IOException {
@@ -576,11 +653,15 @@ public final class AmazonS3Module extends TransferModule {
             throw new IOException("Invalid directory specified: empty");
         }
         if (count == 1) {
+            final var bucketName = token.nextToken();
             try {
-                s3.getAmazonS3().deleteBucket(token.nextToken());
+                s3.getAmazonS3().deleteBucket(bucketName);
+            } catch (final S3Exception e) {
+                _log.debug("deleteBucket", e);
+                throw new IOException("Deleting Bucket " + bucketName + ": " + formatS3Exception(e));
             } catch (final Exception e) {
                 _log.debug("deleteBucket", e);
-                throw new IOException("Deleting Bucket " + directory + ": " + Format.getMessage(e, "", 0));
+                throw new IOException("Deleting Bucket " + bucketName + ": " + Format.getMessage(e, "", 0));
             }
         } else {
             throw new IOException("Subdirectories not allowed in Bucket");
@@ -661,9 +742,17 @@ public final class AmazonS3Module extends TransferModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * List as string array.
+     *
+     * @param directory
+     *            the directory
+     * @param pattern
+     *            the pattern
+     *
+     * @return the string[]
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public String[] listAsStringArray(final String directory, final String pattern) throws IOException {
@@ -675,9 +764,17 @@ public final class AmazonS3Module extends TransferModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * List as byte array.
+     *
+     * @param directory
+     *            the directory
+     * @param pattern
+     *            the pattern
+     *
+     * @return the byte[]
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public byte[] listAsByteArray(final String directory, final String pattern) throws IOException {
@@ -840,9 +937,10 @@ public final class AmazonS3Module extends TransferModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Close.
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
     public void close() throws IOException {
@@ -887,8 +985,10 @@ public final class AmazonS3Module extends TransferModule {
         final SSLClientSocketFactory socketFactory;
 
         /**
-         * Instantiates a new session.
+         * Instantiates a new Session.
          *
+         * @param key
+         *            the key
          * @param s3
          *            the s 3
          * @param clientSocketFactory
@@ -953,7 +1053,7 @@ public final class AmazonS3Module extends TransferModule {
                 final boolean acceleration, final boolean dualstack, final boolean forceGlobalBucketAccess,
                 final boolean disableChunkedEncoding, final boolean enablePathStyleAccess, final String bucketName,
                 final String url, final String region, final boolean mkBucket, final String roleArn,
-                final String roleSessionName, final boolean debug)
+                final String roleSessionName, final int durationSeconds, final String externalId, final boolean debug)
                 throws NoSuchAlgorithmException, KeyManagementException {
             final var builder = AmazonS3ClientBuilder.standard();
             final var clientConfiguration = new ClientConfiguration();
@@ -973,15 +1073,16 @@ public final class AmazonS3Module extends TransferModule {
                 clientConfiguration.getApacheHttpClientConfig().withSslSocketFactory(new SSLConnectionSocketFactory(
                         clientSocketFactory, !strict ? NoopHostnameVerifier.INSTANCE : null));
             }
-            builder.withCredentials(
-                    loadCredentials(user, password, region, clientConfiguration, roleArn, roleSessionName))
-                    .withClientConfiguration(clientConfiguration)
+            builder.withCredentials(loadCredentials(user, password, region, clientConfiguration, roleArn,
+                    roleSessionName, durationSeconds, externalId)).withClientConfiguration(clientConfiguration)
                     .withForceGlobalBucketAccessEnabled(forceGlobalBucketAccess).withAccelerateModeEnabled(acceleration)
                     .withDualstackEnabled(dualstack);
             if (acceleration || isEmpty(url)) {
                 builder.withRegion(region);
             } else {
                 builder.withEndpointConfiguration(new EndpointConfiguration(url, region));
+                _log.debug("EndPoint: {} - {}", builder.getEndpoint().getServiceEndpoint(),
+                        builder.getEndpoint().getSigningRegion());
             }
             if (disableChunkedEncoding) {
                 builder.disableChunkedEncoding();
@@ -1096,7 +1197,7 @@ public final class AmazonS3Module extends TransferModule {
          */
         private static AWSCredentialsProvider loadCredentials(final String accessKeyId, final String secretAccessKey,
                 final String region, final ClientConfiguration clientConfiguration, final String roleArn,
-                final String roleSessionName) {
+                final String roleSessionName, final int durationSeconds, final String externalId) {
             // Base credentials: either real AWS keys or anonymous
             final var baseProvider = (accessKeyId != null && !accessKeyId.isBlank())
                     ? new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKeyId, secretAccessKey))
@@ -1110,13 +1211,39 @@ public final class AmazonS3Module extends TransferModule {
                     .withClientConfiguration(clientConfiguration).withRegion(region).build();
             // Call STS to assume the role
             final var assumeRoleRequest = new AssumeRoleRequest().withRoleArn(roleArn)
-                    .withRoleSessionName(roleSessionName).withDurationSeconds(3600); // session duration (max depends on
-                                                                                     // IAM role)
+                    .withRoleSessionName(roleSessionName).withDurationSeconds(durationSeconds);
+            // Add external ID if provided
+            if (externalId != null && !externalId.isBlank()) {
+                assumeRoleRequest.withExternalId(externalId);
+            }
             final var assumeRoleResult = stsClient.assumeRole(assumeRoleRequest);
             final var stsCreds = assumeRoleResult.getCredentials();
             // Wrap the temporary session credentials in a static provider
             return new AWSStaticCredentialsProvider(new BasicSessionCredentials(stsCreds.getAccessKeyId(),
                     stsCreds.getSecretAccessKey(), stsCreds.getSessionToken()));
         }
+    }
+
+    /**
+     * Formats a S3Exception into a single-line string with full AWS info.
+     */
+    public static String formatS3Exception(final S3Exception e) {
+        final var sb = new StringBuilder();
+        sb.append("S3Exception: ");
+        sb.append("HTTPStatus=").append(e.getStatusCode()).append(", ");
+        sb.append("AWSCode=").append(e.getErrorCode()).append(", ");
+        sb.append("Message=").append(e.getErrorMessage()).append(", ");
+        sb.append("RequestId=").append(e.getRequestId());
+        final var cause = e.getCause();
+        if (cause != null) {
+            sb.append(", Cause=").append(cause.getClass().getSimpleName()).append(":").append(cause.getMessage());
+        }
+        // Include chained AmazonServiceException causes if present
+        AmazonServiceException ase = e;
+        while (ase.getCause() instanceof AmazonServiceException) {
+            ase = (AmazonServiceException) ase.getCause();
+            sb.append(", ChainedAWSCode=").append(ase.getErrorCode());
+        }
+        return sb.toString();
     }
 }

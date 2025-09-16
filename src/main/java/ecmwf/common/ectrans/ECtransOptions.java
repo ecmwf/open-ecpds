@@ -1027,6 +1027,12 @@ public enum ECtransOptions {
     /** The host s3 role session name. */
     HOST_S3_ROLE_SESSION_NAME("roleSessionName", String.class, STRING_NONE),
 
+    /** The host s3 duration seconds. */
+    HOST_S3_DURATION_SECONDS("durationSeconds", Integer.class, 3600),
+
+    /** The host s3 external id. */
+    HOST_S3_EXTERNAL_ID("externalId", String.class, STRING_NONE),
+
     /** The host s3 allow empty bucket name. */
     HOST_S3_ALLOW_EMPTY_BUCKET_NAME("allowEmptyBucketName", Boolean.class, false),
 
