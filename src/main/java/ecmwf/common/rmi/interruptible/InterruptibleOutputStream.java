@@ -21,6 +21,7 @@ package ecmwf.common.rmi.interruptible;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.Socket;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.logging.log4j.LogManager;
@@ -47,9 +48,25 @@ public final class InterruptibleOutputStream extends FilterOutputStream {
      *            the out
      */
     public InterruptibleOutputStream(final OutputStream out) {
+        this(out, InterruptibleRMIServerSocket.getCurrentRMIServerThreadSocket());
+    }
+
+    /**
+     * Instantiates a new interruptible output stream.
+     *
+     * @param out
+     *            the out
+     * @param socket
+     *            the socket
+     */
+    public InterruptibleOutputStream(final OutputStream out, final Socket socket) {
         super(out);
-        this.monitor = new InterruptibleMonitor(InterruptibleRMIServerSocket.getCurrentRMIServerThreadSocket());
-        this.monitor.execute();
+        if (socket != null) {
+            monitor = new InterruptibleMonitor(socket);
+            monitor.execute();
+        } else {
+            monitor = null;
+        }
     }
 
     /**
@@ -112,16 +129,18 @@ public final class InterruptibleOutputStream extends FilterOutputStream {
             try {
                 super.close();
             } finally {
-                LOG.debug("Shutting down monitor");
-                monitor.setLoop(false);
-                monitor.interrupt();
-                try {
-                    monitor.join(5000); // wait max 5 seconds
-                } catch (final InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    LOG.warn("Interrupted while waiting for monitor thread", e);
-                } catch (final Throwable t) {
-                    LOG.warn("Monitor thread did not terminate cleanly", t);
+                if (monitor != null) {
+                    LOG.debug("Interrupting RMI monitor thread");
+                    monitor.setLoop(false);
+                    monitor.interrupt();
+                    try {
+                        monitor.join(5000); // wait max 5 seconds
+                    } catch (final InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        LOG.warn("Interrupted while joining RMI monitor thread", e);
+                    } catch (final Throwable t) {
+                        LOG.warn("RMI monitor thread did not terminate cleanly", t);
+                    }
                 }
             }
         } else {
@@ -136,8 +155,8 @@ public final class InterruptibleOutputStream extends FilterOutputStream {
      *             Signals that an I/O exception has occurred.
      */
     private void checkConnection() throws IOException {
-        if (monitor.isClosed()) {
-            throw new IOException("RMI client disconnected");
+        if (monitor != null && monitor.isClosed()) {
+            throw new IOException("RMI client connection lost unexpectedly");
         }
     }
 }
