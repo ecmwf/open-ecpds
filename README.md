@@ -114,7 +114,7 @@ The object storage system in OpenECPDS is hierarchy-free but can emulate directo
 
 ### System Requirements and Setup
 
-OpenECPDS requires Docker to be installed and fully functional, with the default Docker socket enabled (Settings -> Advanced -> "Allow the default Docker socket to be used"). The build and run process has been tested on Linux and macOS (Intel/Apple Silicon) using Docker Desktop v4.42.1. It has also been reported to work on Windows with the WSL 2 backend and the host networking option enabled.
+OpenECPDS requires Docker to be installed and fully functional, with the default Docker socket enabled (Settings -> Advanced -> "Allow the default Docker socket to be used"). The build and run process has been tested on Linux and macOS (Intel/Apple Silicon) using Docker Desktop v4.46.0. It has also been reported to work on Windows with the WSL 2 backend and the host networking option enabled.
 
 To test the deployment of OpenECPDS containers to a Kubernetes cluster, Kubernetes must be enabled in Docker (Settings -> Kubernetes -> "Enable Kubernetes").
 
@@ -1025,11 +1025,11 @@ Additionally, you can find the OpenECPDS options for various editors at this lin
 
 ## Notes
 
-![GraalVM](https://img.shields.io/badge/GraalVM-24.0.1-brightgreen)
-![Maven](https://img.shields.io/badge/Maven-3.9.10-brightgreen)
-![Docker](https://img.shields.io/badge/Docker-28.2.2-blue)
-![Kompose](https://img.shields.io/badge/Kompose-1.34.0-blue)
-![Kubectl](https://img.shields.io/badge/Kubectl-1.31.1-blue)
+![GraalVM](https://img.shields.io/badge/GraalVM-24.0.2-brightgreen)
+![Maven](https://img.shields.io/badge/Maven-3.9.11-brightgreen)
+![Docker](https://img.shields.io/badge/Docker-28.4.0-blue)
+![Kompose](https://img.shields.io/badge/Kompose-1.37.0-blue)
+![Kubectl](https://img.shields.io/badge/Kubectl-1.37.2-blue)
 
 This project automates the downloading of specific tools (GraalVM, Maven, Docker, Kompose, Kubectl). Additionally, it uses external APIs that are downloaded via Maven. For licenses and details on these dependencies, please refer to their respective documentation. You can retrieve the licenses from the development container using:
 
