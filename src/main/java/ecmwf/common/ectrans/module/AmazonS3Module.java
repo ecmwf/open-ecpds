@@ -306,6 +306,9 @@ public final class AmazonS3Module extends TransferModule {
                     setup.getString(HOST_S3_ROLE_ARN), setup.getString(HOST_S3_ROLE_SESSION_NAME),
                     setup.getInteger(HOST_S3_DURATION_SECONDS), setup.getString(HOST_S3_EXTERNAL_ID), getDebug());
             connected = true;
+        } catch (final S3Exception e) {
+            _log.error("Connection failed to {}", url, e);
+            throw new IOException("Connection failed to " + url + ": " + formatS3Exception(e));
         } catch (final Throwable t) {
             _log.error("Connection failed to {}", url, t);
             throw new IOException("Connection failed to " + url + ": " + Format.getMessage(t, "", 0));
@@ -1229,7 +1232,6 @@ public final class AmazonS3Module extends TransferModule {
      */
     public static String formatS3Exception(final S3Exception e) {
         final var sb = new StringBuilder();
-        sb.append("S3Exception: ");
         sb.append("HTTPStatus=").append(e.getStatusCode()).append(", ");
         sb.append("AWSCode=").append(e.getErrorCode()).append(", ");
         sb.append("Message=").append(e.getErrorMessage()).append(", ");
