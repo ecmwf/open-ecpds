@@ -44,8 +44,8 @@ RUN java -Xshare:dump
 COPY java.security $JAVA_HOME/conf/security/
 
 # Install Kompose and kubectl
-ENV KOMPOSE_VERSION=1.34.0
-ENV KUBECTL_VERSION=1.31.1
+ENV KOMPOSE_VERSION=1.37.0
+ENV KUBECTL_VERSION=1.37.2
 
 RUN if [ "$(uname -m)" = "aarch64" ]; then \
         curl -s -L https://github.com/kubernetes/kompose/releases/download/v${KOMPOSE_VERSION}/kompose-linux-arm64 -o /usr/local/bin/kompose; \
