@@ -679,14 +679,19 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
      */
     @Override
     public Collection<TransferHistory> getTransferHistoryAfterScheduledTime() throws TransferException {
-        final List<TransferHistory> historyList = new ArrayList<>();
-        final var scheduledTime = getScheduledTime();
-        for (final TransferHistory history : TransferHistoryHome.findByDataTransfer(this)) {
-            if (history.getDate().after(scheduledTime)) {
-                historyList.add(history);
+        if (getAsap()) { // The user is getting the file pre-scheduled, so he should be able to see the
+                         // full history.
+            return getTransferHistory();
+        } else {
+            final List<TransferHistory> historyList = new ArrayList<>();
+            final var scheduledTime = getScheduledTime();
+            for (final TransferHistory history : TransferHistoryHome.findByDataTransfer(this)) {
+                if (history.getDate().after(scheduledTime)) {
+                    historyList.add(history);
+                }
             }
+            return historyList;
         }
-        return historyList;
     }
 
     /**
