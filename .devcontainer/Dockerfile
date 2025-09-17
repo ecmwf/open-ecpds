@@ -10,7 +10,7 @@ RUN dnf install -y epel-release && dnf update -y
 # Install base development tools and utilities
 RUN dnf groupinstall -y "Development Tools" && \
     dnf install -y \
-        make rpm-build binutils joe file ftp awscli iputils \
+        make rpm-build binutils joe file ftp awscli iputils net-tools \
         telnet clang-tools-extra gnupg2 ca-certificates sudo which unzip wget tar \
         openssl-devel \
     && dnf clean all
