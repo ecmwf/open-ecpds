@@ -1,39 +1,48 @@
 {
-	"name": "OpenECPDS",
-	"build": {
-		"dockerfile": "Dockerfile"
-	},
-	"remoteUser": "root",
-	"remoteEnv": {
-		"DOCKER_HOST_WORKSPACE": "${localWorkspaceFolder}",
-		"DOCKER_HOST_OS": "Darwin"
-	},
-	"customizations": {
-		"vscode": {
-			"forwardPorts": [
-				2021,
-				2640,
-				2062,
-				3062,
-				3443,
-				4062,
-				4443,
-				4080,
-				4183,
-				4883
-			],
-			"settings": {
-				"java.jdt.ls.java.home": "/root/.sdkman/candidates/java/current"
-			},
-			"extensions": [
-				"vscjava.vscode-java-pack",
-				"vscjava.vscode-java-debug",
-				"dgileadi.java-decompiler"
-			]
-		}
-	},
-	"mounts": [
-		"source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
-		"source=${env:HOME}/.kube,target=/root/.kube,type=bind"
-	]
+  "name": "OpenECPDS",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "remoteUser": "root",
+  "remoteEnv": {
+    "DOCKER_HOST_WORKSPACE": "${localWorkspaceFolder}",
+    "DOCKER_HOST_OS": "Darwin"
+  },
+  "customizations": {
+    "vscode": {
+      "forwardPorts": [
+        2062, 2021, 2640, 3062, 3443,
+        4062, 4443, 4080, 4883, 4183
+      ],
+      "portsAttributes": {
+        // Master services
+		"2062": { "label": "Master JMX",   "onAutoForward": "notify" },
+        "2021": { "label": "Master FTP",   "onAutoForward": "notify" },
+        "2640": { "label": "Master ECPDS", "onAutoForward": "notify" },
+
+        // Monitor services
+        "3062": { "label": "Monitor JMX",   "onAutoForward": "notify" },
+        "3443": { "label": "Monitor HTTPS", "onAutoForward": "openBrowser" },
+
+        // Mover services
+        "4062": { "label": "Mover JMX",    "onAutoForward": "notify" },
+        "4443": { "label": "Mover HTTPS",  "onAutoForward": "notify" },
+        "4080": { "label": "Mover HTTP",   "onAutoForward": "notify" },
+		"4883": { "label": "Mover MQTTS",  "onAutoForward": "notify" },
+        "4183": { "label": "Mover MQTT",   "onAutoForward": "notify" }
+      },
+      "settings": {
+        "java.jdt.ls.java.home": "/root/.sdkman/candidates/java/current"
+      },
+      "extensions": [
+        "vscjava.vscode-java-pack",
+        "vscjava.vscode-java-debug",
+        "dgileadi.java-decompiler"
+      ]
+    }
+  },
+  "mounts": [
+    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
+    "source=${env:HOME}/.kube,target=/root/.kube,type=bind"
+  ]
 }
