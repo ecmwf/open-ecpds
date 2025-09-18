@@ -1160,11 +1160,17 @@ Allow disabling chunked encoding for PutObject and UploadPart requests. Setting 
 ### s3.dualstack
 Enabling this option allows the client to utilize AWS-provided dual-stack endpoints when communicating with the Amazon S3 service. However, it assumes that the network environment of the data movers supports IPv6 and is appropriately configured to use it. This setting ensures attempts to utilize IPv6-capable endpoints for interactions with S3.
 
+### s3.durationSeconds
+Specifies the duration, in seconds, for which the temporary security credentials obtained from STS will remain valid. The value can range from a few minutes up to the maximum allowed by the IAM role configuration (typically 1 hour by default, but some roles may allow longer sessions). Once this time expires, the credentials can no longer be used to access AWS resources, and a new STS request is required.
+
 ### s3.enableMarkAndReset
 Used to enable mark-and-reset for non-mark-and-resettable non-file input stream for up to 128K memory buffering.
 
 ### s3.enablePathStyleAccess
 Enabling path-style access means that requests to Amazon S3 will use the path-style URL format, explicitly adding the bucket name in the request path, irrespective of whether the bucket name adheres to DNS naming conventions. This feature can be beneficial in scenarios where there are challenges with DNS-compliant bucket names or when accessing buckets not configured for virtual-hosted-style access. It is essential to note that although path-style access can be enabled, AWS strongly recommends using virtual-hosted-style access for S3 buckets whenever possible due to its superior performance and scalability.
+
+### s3.externalId
+An optional identifier used when assuming a role in another AWS account to prevent the 'confused deputy' problem. It allows the role owner to ensure that only trusted clients providing the correct externalId can assume the role.
 
 ### s3.forceGlobalBucketAccess
 Enable global access to S3 buckets via the global S3 endpoint (s3.amazonaws.com). This functionality allows accessing buckets globally, utilizing their DNS-compliant names across all AWS regions, rather than region-specific endpoints. This can be beneficial in scenarios where bucket names are DNS-compliant and uniquely global across AWS regions. However, it is important to note that not all bucket names are suitable for global access due to DNS restrictions, so the use of this feature should be considered carefully based on the application requirements.
