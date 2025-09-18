@@ -9,12 +9,12 @@
 -XX:ZUncommitDelay=5
 -XX:+UnlockDiagnosticVMOptions
 -XX:NativeMemoryTracking=detail
--Decaccess.hostName='localhost'
+-Decaccess.hostName='0.0.0.0'
 -Djava.rmi.server.hostname='127.0.0.1'
 -Dmaster.internalAddress='127.0.0.1'
 -Decaccess.address=''
 -Deccmd.address=''
--Ddatabase.alias='//localhost:3309,host.docker.internal:3309/ecpds?failOverReadOnly=false'
+-Ddatabase.alias='//localhost:3309,host.docker.internal:3309,ecpds-database:3309/ecpds?failOverReadOnly=false'
 -Dhibernate.minPoolSize='5'
 -Dhibernate.maxPoolSize='50'
 -Dretrieval.maxPoolSize='50'
@@ -41,7 +41,7 @@
 -Dhibernate.cfg.xml='etc/master/conf/hibernate.cfg.xml'
 -Dhibernate.hbm.xml='etc/master/conf/hibernate.hbm.xml'
 -Dstarter.properties='etc/master/conf/starter.properties'
--Dstarter.listenAddress='127.0.0.1'
+-Dstarter.listenAddress='0.0.0.0'
 -Dstarter.port='2062'
 -Dstarter.name=ecmwf.ecpds.master.MasterServer
 -Dstarter.domain=ECpdsMaster

@@ -9,7 +9,7 @@
 -XX:ZUncommitDelay=5
 -XX:+UnlockDiagnosticVMOptions
 -XX:NativeMemoryTracking=detail
--Decaccess.hostName='localhost'
+-Decaccess.hostName='0.0.0.0'
 -Djava.rmi.server.hostname='127.0.0.1'
 -Dmover.internalAddress='127.0.0.1'
 -Dmaster.address='127.0.0.1'
@@ -46,7 +46,7 @@
 -Dfile.encoding=UTF8
 -Duser.timezone=GMT
 -Dstarter.properties='etc/mover/conf/starter.properties'
--Dstarter.listenAddress='127.0.0.1'
+-Dstarter.listenAddress='0.0.0.0'
 -Dstarter.port='4062'
 -Dstarter.name=ecmwf.ecpds.mover.MoverServer
 -Dstarter.domain=ECpdsMover
