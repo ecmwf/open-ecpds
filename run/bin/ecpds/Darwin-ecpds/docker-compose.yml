@@ -15,6 +15,7 @@
 
 networks:
   backbone:
+    name: ecpds-backbone
 
 services:
   # The OpenECPDS Database (MariaDB) enables persistent storage for configurations, metadata and history
