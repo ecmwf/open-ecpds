@@ -244,13 +244,13 @@ make clean
 
 OpenECPDS includes configuration files for both **Visual Studio Code** and **Eclipse**, so you can choose the development environment you are most comfortable with. Simply select your preferred IDE, and you will find ready-to-use settings tailored to streamline your work with OpenECPDS.
 
-Before following the guidelines to start OpenECPDS in your IDE, ensure that an instance of the OpenECPDS database is running. This can be done either within or outside the development container. To set it up, run:
+Before following the guidelines to start OpenECPDS in your IDE, ensure that the required Docker network has been created and that an instance of the OpenECPDS database is running. This can be done either outside or inside the development container if it already exists. To set it up, run:
 
 ```
 make start-db
 ```
 
-This command will start only the database service, while the Master, Monitor, and Mover services can be launched directly from the IDE.
+This command creates the Docker network for OpenECPDS and starts only the database service, while the Master, Monitor, and Mover services can be launched directly from the IDE.
 
 ### Visual Studio Code
 
@@ -259,6 +259,8 @@ When working with OpenECPDS in Visual Studio Code, the **Dev Containers extensio
 Before opening the project, make sure to edit `.devcontainer/devcontainer.json` to update the DOCKER_HOST_OS environment parameter according to your Docker host operating system (the default is set to Darwin for macOS).
 
 Once you open the OpenECPDS folder, VS Code will prompt you to reopen the project within a container: **Reopen in Container**. If this option is selected, VS Code uses the `.devcontainer/Dockerfile` to build the container image, adding necessary tools and dependencies specified for OpenECPDS. The `.devcontainer/devcontainer.json` file configures additional settings, such as environment variables and workspace mounting, ensuring the container is fully tailored to the project. This setup provides a consistent and fully-equipped development environment from the start.
+
+>**Warning:** If the Docker network has not been created using the 'make start-db' target in the project’s home directory, creating the development container will fail.
 
 For more information on working with development containers in Visual Studio Code, please visit the [Visual Studio Code website](https://code.visualstudio.com/docs/devcontainers/containers).
 
