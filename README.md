@@ -1027,7 +1027,7 @@ Additionally, you can find the OpenECPDS options for various editors at this lin
 
 ## Notes
 
-![GraalVM](https://img.shields.io/badge/GraalVM-24.0.2-brightgreen)
+![GraalVM](https://img.shields.io/badge/GraalVM-25.0.0-brightgreen)
 ![Maven](https://img.shields.io/badge/Maven-3.9.11-brightgreen)
 ![Docker](https://img.shields.io/badge/Docker-28.4.0-blue)
 ![Kompose](https://img.shields.io/badge/Kompose-1.37.0-blue)
