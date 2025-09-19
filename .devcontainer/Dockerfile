@@ -27,7 +27,7 @@ RUN dnf install -y yum-utils && \
 
 # Install SDKMAN for GraalVM and Java
 ENV SDKMAN_DIR=/root/.sdkman
-ENV SDKMAN_JDK=24.0.2-graal
+ENV SDKMAN_JDK=25-graal
 
 RUN curl -s "https://get.sdkman.io" | bash && \
     bash -c "source $SDKMAN_DIR/bin/sdkman-init.sh && sdk install java ${SDKMAN_JDK}" && \

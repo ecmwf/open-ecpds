@@ -11,15 +11,15 @@
 	<packaging>jar</packaging>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<maven.compiler.target>24</maven.compiler.target>
-		<maven.compiler.source>24</maven.compiler.source>
+		<maven.compiler.target>25</maven.compiler.target>
+		<maven.compiler.source>25</maven.compiler.source>
 		<java.home>${java.home}</java.home>
-		<graalvm.version>24.2.2</graalvm.version>
+		<graalvm.version>25.0.0</graalvm.version>
 		<packager.id>syi</packager.id>
 		<packager.name>Laurent Gougeon</packager.name>
 		<packager.email>laurent.gougeon@ecmwf.int</packager.email>
 		<packager.distribution>OpenECPDS</packager.distribution>
-		<build.number>16092025</build.number>
+		<build.number>19092025</build.number>
 	</properties>
 	<licenses>
 		<license>
