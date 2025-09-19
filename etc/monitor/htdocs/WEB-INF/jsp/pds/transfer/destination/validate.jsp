@@ -144,7 +144,7 @@
 									pagesize="<%=pageSize%>" class="listing">
 									<display:caption>Global Actions apply only to Transfers in the table below which are also selected</display:caption>
 
-									<display:column title="S">
+									<display:column title="Err" style="padding-right:30px;">
 										<c:if
 											test="${not empty transfer.startTime and (transfer.retryTime != transfer.startTime)}">
 											<content:icon key="icon.micro.cancel" writeFullTag="true" />

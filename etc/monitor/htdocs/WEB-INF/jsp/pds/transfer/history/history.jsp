@@ -34,7 +34,7 @@ select {
 		size="${historyItemsSize}" pagesize="${recordsPerPage}"
 		class="listing">
 
-		<display:column sortable="true" title="S">
+		<display:column sortable="true" title="Err" style="padding-right:30px;">
 			<c:if test="${history.error}">
 				<content:icon key="icon.micro.cancel" writeFullTag="true" />
 			</c:if>

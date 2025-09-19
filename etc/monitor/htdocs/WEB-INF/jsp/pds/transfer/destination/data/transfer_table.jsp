@@ -38,7 +38,7 @@
 					dateFormatKey="date.format.long.iso" ignoreNull="true" />
 			</i>
 		</display:caption>
-		<display:column sortable="true" title="S">
+		<display:column sortable="true" title="Err" style="padding-right:30px;">
 			<c:if test="${not empty transfer.failedTime}">
 				<content:icon title="Help" key="icon.micro.cancel"
 					writeFullTag="true" />

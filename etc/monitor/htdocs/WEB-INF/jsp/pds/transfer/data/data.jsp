@@ -62,7 +62,7 @@ Error retrieving object by key <- DataBase problem searching by key '${datatrans
 <display:table id="history" name="${historyItems}" requestURI="" sort="external" defaultsort="2"
         partialList="true" size="${historyItemsSize}" pagesize="${recordsPerPage}" class="listing">
 
-<display:column sortable="true" title="S"> 
+<display:column sortable="true" title="Err" style="padding-right:30px;"> 
     <c:if test="${history.error}"><content:icon key="icon.micro.cancel" writeFullTag="true"/></c:if>
     <c:if test="${not history.error}"><content:icon key="icon.micro.submit" writeFullTag="true"/></c:if>  
   </display:column>   		
