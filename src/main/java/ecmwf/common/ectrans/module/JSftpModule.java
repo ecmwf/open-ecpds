@@ -302,8 +302,8 @@ public class JSftpModule extends TransferModule {
             }
             // The format of the allocate request is the following:
             // sftp3.allocate="url=http://localhost:5555/allocate?dataset=fields&file=$filename&length=$filesize;req=json.pathspecs[0]"
-            final var url = allocate.get("url", null);
-            final var req = allocate.get("req", null);
+            final var url = Format.removeUnknownMetadata(allocate.get("url", null));
+            final var req = Format.removeUnknownMetadata(allocate.get("req", null));
             if (isNotEmpty(url) && isNotEmpty(req)) {
                 _log.debug("Allocate requested ({})", url);
                 final String get;
