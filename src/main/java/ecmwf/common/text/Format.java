@@ -1987,6 +1987,37 @@ public final class Format {
     }
 
     /**
+     * Removes all the unknown metadata tags (e.g. replace $metadata[...] with '').
+     *
+     * @param value
+     *            the value
+     *
+     * @return the string
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     */
+    public static String removeUnknownMetadata(final String value) throws IOException {
+        if (!isNotEmpty(value)) {
+            return value;
+        }
+        final var sb = new StringBuilder(value);
+        int index;
+        while ((index = sb.indexOf("$metadata[")) != -1) {
+            final var last = sb.indexOf("]", index + 10);
+            if (last != -1) {
+                if (_log.isWarnEnabled()) {
+                    _log.warn("Metadata \"{}\" not found", sb.substring(index, last + 1));
+                }
+                sb.delete(index, last + 1);
+            } else {
+                throw new IOException("Malformed metadata in notification configuration: \"" + sb + "\"");
+            }
+        }
+        return sb.toString();
+    }
+
+    /**
      * Extract search parameters.
      *
      * This method is extracting the parameters in the following form: "param1=value1 param2=space\\ char

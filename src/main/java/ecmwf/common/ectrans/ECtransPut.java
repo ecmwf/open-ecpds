@@ -168,7 +168,7 @@ public final class ECtransPut extends ECtransAction {
             final var notifyPre = new StringBuilder(setup.getString(HOST_ECTRANS_NOTIFY_PRE));
             if (notifyPre.length() > 0 && isNotEmpty(connectOptions)) {
                 connectOptions.replace(notifyPre);
-                ScriptManager.exec(ScriptManager.JS, removeUknownMetadata(notifyPre.toString()));
+                ScriptManager.exec(ScriptManager.JS, Format.removeUnknownMetadata(notifyPre.toString()));
             }
             // Second version of the notification mechanism (e.g. mqtt)
             final var notifyAuth = setup.getOptions(HOST_ECTRANS_NOTIFY_AUTH);
@@ -176,9 +176,9 @@ public final class ECtransPut extends ECtransAction {
                 notifyAuth.inject(connectOptions);
                 // The format of the notification request is the following:
                 // test.notifyAuth="url=mqtt://localhost:1883;name=ecpds;password=ecpds2020"
-                final var url = removeUknownMetadata(notifyAuth.get("url", null));
-                final var name = removeUknownMetadata(notifyAuth.get("name", null));
-                final var passwd = removeUknownMetadata(notifyAuth.get("password", null));
+                final var url = Format.removeUnknownMetadata(notifyAuth.get("url", null));
+                final var name = Format.removeUnknownMetadata(notifyAuth.get("name", null));
+                final var passwd = Format.removeUnknownMetadata(notifyAuth.get("password", null));
                 _log.debug("Notification requested ({},{},{})", url, name, passwd);
                 if (!isNotEmpty(url) || !isNotEmpty(name) || !isNotEmpty(passwd)) {
                     throw new IOException("Missing parameters for notification");
@@ -411,7 +411,7 @@ public final class ECtransPut extends ECtransAction {
             final var notifyPost = new StringBuilder(setup.getString(HOST_ECTRANS_NOTIFY_POST));
             if (notifyPost.length() > 0 && isNotEmpty(connectOptions)) {
                 connectOptions.replace(notifyPost);
-                ScriptManager.exec(ScriptManager.JS, removeUknownMetadata(notifyPost.toString()));
+                ScriptManager.exec(ScriptManager.JS, Format.removeUnknownMetadata(notifyPost.toString()));
             }
             // Do we have a notification interface. If it is the case then we have to
             // send a notification
@@ -420,9 +420,12 @@ public final class ECtransPut extends ECtransAction {
                 // test.notifyPublish="topic=ecpds/gts/0000;payload=https://localhost/data/gts/FGTER.bin;metadata=filename=FGTER.bin,metatime=0000;lifetime=4505"
                 final var notifyPublish = setup.getOptions(HOST_ECTRANS_NOTIFY_PUBLISH, ";\n");
                 notifyPublish.inject(connectOptions);
-                final var url = removeUknownMetadata(notifyPublish.get("url", notifyPublish.get("payload", null)));
-                final var key = removeUknownMetadata(notifyPublish.get("key", notifyPublish.get("topic", null)));
-                final var value = removeUknownMetadata(notifyPublish.get("value", notifyPublish.get("metadata", null)));
+                final var url = Format
+                        .removeUnknownMetadata(notifyPublish.get("url", notifyPublish.get("payload", null)));
+                final var key = Format
+                        .removeUnknownMetadata(notifyPublish.get("key", notifyPublish.get("topic", null)));
+                final var value = Format
+                        .removeUnknownMetadata(notifyPublish.get("value", notifyPublish.get("metadata", null)));
                 if (isNotEmpty(url) && isNotEmpty(key) && isNotEmpty(value)) {
                     final var lifetime = notifyPublish.get("lifetime", -1L);
                     _log.debug("Notification requested ({},{},{},{})", url, key, value, lifetime);
@@ -436,37 +439,6 @@ public final class ECtransPut extends ECtransAction {
         } finally {
             StreamPlugThread.closeQuietly(notificationInterface);
         }
-    }
-
-    /**
-     * Removes all the unknown metadata tags (e.g. replace $metadata[...] with '').
-     *
-     * @param value
-     *            the value
-     *
-     * @return the string
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
-     */
-    private static String removeUknownMetadata(final String value) throws IOException {
-        if (!isNotEmpty(value)) {
-            return value;
-        }
-        final var sb = new StringBuilder(value);
-        int index;
-        while ((index = sb.indexOf("$metadata[")) != -1) {
-            final var last = sb.indexOf("]", index + 10);
-            if (last != -1) {
-                if (_log.isWarnEnabled()) {
-                    _log.warn("Metadata \"{}\" not found", sb.substring(index, last + 1));
-                }
-                sb.delete(index, last + 1);
-            } else {
-                throw new IOException("Malformed metadata in notification configuration: \"" + sb + "\"");
-            }
-        }
-        return sb.toString();
     }
 
     /**
