@@ -293,7 +293,7 @@ public final class TransferManagement {
                 Format.replaceAll(sb, "$metadata[" + value.getMetadataAttributeName() + "]", value.getValue());
             }
             // Remove all the "$metadata[...]" which were not found!
-            removeUknownMetadata(sb, transfer, host);
+            removeUnknownMetadata(sb, transfer, host);
         }
         // Let's see if there is a choice to make?
         final var result = process(sb.toString());
@@ -316,7 +316,7 @@ public final class TransferManagement {
      * @throws DirectoryException
      *             the directory exception
      */
-    private static void removeUknownMetadata(final StringBuilder sb, final DataTransfer transfer, final Host host)
+    private static void removeUnknownMetadata(final StringBuilder sb, final DataTransfer transfer, final Host host)
             throws DirectoryException {
         int index;
         while ((index = sb.indexOf("$metadata[")) != -1) {
