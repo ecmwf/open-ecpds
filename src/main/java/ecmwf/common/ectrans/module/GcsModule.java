@@ -18,6 +18,14 @@
 
 package ecmwf.common.ectrans.module;
 
+/**
+ * ECMWF Product Data Store (OpenECPDS) Project
+ *
+ * @author Cristina-Iulia Bucur <cristina-iulia.bucur@ecmwf.int>, ECMWF.
+ * @version 6.7.9
+ * @since 2024-07-01
+ */
+
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_SOCKET_STATISTICS;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_TCP_CONGESTION_CONTROL;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_TCP_KEEP_ALIVE;
