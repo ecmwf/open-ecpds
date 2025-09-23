@@ -18,14 +18,6 @@
 
 package ecmwf.common.ectrans.module;
 
-/**
- * ECMWF Product Data Store (ECPDS) Project
- *
- * @author Cristina-Iulia Bucur <cristina-iulia.bucur@ecmwf.int>, ECMWF.
- * @version 6.7.9
- * @since 2024-07-01
- */
-
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_SOCKET_STATISTICS;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_TCP_CONGESTION_CONTROL;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_TCP_KEEP_ALIVE;
@@ -56,6 +48,7 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_PROJECT_ID;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_PROTOCOL;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_SCHEME;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_SSL_VALIDATION;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_CHUNK_SIZE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_URL;
 import static ecmwf.common.text.Util.isNotEmpty;
 
@@ -80,6 +73,7 @@ import org.apache.logging.log4j.Logger;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.auth.oauth2.ServiceAccountCredentials;
+import com.google.cloud.WriteChannel;
 import com.google.cloud.http.HttpTransportOptions;
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.BlobId;
@@ -106,6 +100,11 @@ public final class GcsModule extends TransferModule {
 
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(GcsModule.class);
+
+    // GCS chunk size needs to be between 256KB and 2GB, default 5MB
+    // capping the max chunk size to 50MB to prevent "Out of memory..." exceptions
+    private static final long MIN_CHUNK = 256L * 1024; // 256 KB
+    private static final long MAX_CHUNK = 50L * 1024 * 1024; // 50 MB
 
     /** The status. */
     private String currentStatus = "INIT";
@@ -281,12 +280,10 @@ public final class GcsModule extends TransferModule {
                 // The user has configured a Bucket Name!
                 var bucketFound = false;
 
-                for (final Bucket bucket : gcs.list().iterateAll()) {
-                    if (bucketName.equals(bucket.getName())) {
-                        bucketFound = true;
-                        break;
-                    }
+                if (gcs.get(bucketName) != null) {
+                    bucketFound = true;
                 }
+
                 if (!bucketFound) {
                     final var region = setup.getString(HOST_GCS_BUCKET_LOCATION);
                     // gcs.create(BucketInfo.of(bucketName));
@@ -387,19 +384,43 @@ public final class GcsModule extends TransferModule {
     public void del(final String name) throws IOException { // name can be a folder name, prefix or object name
         _log.debug("Del file {}", name);
         setStatus("DEL");
+
+        _log.debug("Using GCS delete");
         final var bucketNameAndObject = getBucketNameAndObjectName(name);
         try {
-            final var blob = gcs.get(bucketNameAndObject[0], bucketNameAndObject[1]);
-
-            // for avoiding race conditions, 412 error if precondition does not match
-            final var precondition = Storage.BlobSourceOption.generationMatch(blob.getGeneration());
-
-            gcs.delete(blob.getBucket(), blob.getName(), precondition);
+            if (!(gcs.delete(bucketNameAndObject[0], bucketNameAndObject[1]))) {
+                _log.warn("Object {} not found for deletion", name);
+            }
 
         } catch (final Exception e) {
             _log.debug("deleteObject", e);
             throw new IOException("Deleting object " + name + ": " + Format.getMessage(e, "", 0));
         }
+    }
+
+    /**
+     * CHecks if a chunk size was set, adjusts it to be a multiple of 256KB (as per GCS requirements) and checks if this
+     * size is a valid one (between 5MB and 5GB).
+     *
+     * @return int Size of the chunk to be used in bytes and 0 if the default GCS chunk size (5MB) should be used.
+     *
+     * @throws IllegalArgumentException
+     *             Signals that an invalid chunk size was provided.
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     */
+    private int getValidatedChunkSize() throws IllegalArgumentException, IOException {
+        return getSetup().getOptionalByteSize(HOST_GCS_CHUNK_SIZE).map(chunkSize -> {
+            long adjustedChunk = Math.max(256 * 1024, (chunkSize.size() / (256 * 1024)) * (256 * 1024));
+            if (adjustedChunk < MIN_CHUNK || adjustedChunk > MAX_CHUNK) {
+                throw new IllegalArgumentException(HOST_GCS_CHUNK_SIZE.getFullName() + " Invalid GCS chunk size: "
+                        + adjustedChunk + ". Must be between 256KB and 50MB, and a multiple of 256KB.");
+            }
+            if (adjustedChunk != chunkSize.size()) {
+                _log.debug("Provided chunk size adjusted ({} -> {})", chunkSize.size(), adjustedChunk);
+            }
+            return (int) adjustedChunk;
+        }).orElse(0); // 0 means “use default GCS chunk size”
     }
 
     /**
@@ -423,39 +444,27 @@ public final class GcsModule extends TransferModule {
     public boolean put(final InputStream in, final String name, final long posn, final long size) throws IOException {
         _log.debug("Put file {} ({})", name, posn);
         setStatus("PUT");
-        final var bucketNameAndObject = getBucketNameAndObjectName(name);
         if (posn > 0) {
             throw new IOException("Resume not supported by the " + getSetup().getModuleName() + " module");
         }
-
+        final var bucketNameAndObject = getBucketNameAndObjectName(name);
         try {
-            final var bucketName = bucketNameAndObject[0];
-            final var objectName = bucketNameAndObject[1];
-
-            final var objectId = BlobId.of(bucketName, objectName);
-            final var objectInfo = BlobInfo.newBuilder(objectId).build();
-
-            // set to avoid potential race
-            // request returns a 412 error if preconditions are not met
-            Storage.BlobWriteOption precondition;
-            if (gcs.get(bucketName, objectName) == null) {
-                // request fails if the object is created before the request runs
-                precondition = Storage.BlobWriteOption.doesNotExist();
+            final var objectInfo = BlobInfo.newBuilder(BlobId.of(bucketNameAndObject[0], bucketNameAndObject[1]))
+                    .build();
+            // check (and use) if a different chunk size was set, GCS default 5MB
+            int chunkSize = getValidatedChunkSize();
+            if (chunkSize > 0) {
+                _log.debug("Using GCS upload with chunk size={} bytes", chunkSize);
+                gcs.createFrom(objectInfo, in, chunkSize);
             } else {
-                // If the destination already exists, the request fails if the existing object's
-                // generation changes before the request runs
-                precondition = Storage.BlobWriteOption.generationMatch(gcs.get(bucketName, objectName).getGeneration());
+                _log.debug("Using GCS upload with default chunk size.");
+                gcs.createFrom(objectInfo, in);
             }
-
-            // int largeBufferSize = 150 * 1024 * 1024;
-            // gcs.createFrom(objectInfo, in, largeBufferSize, precondition);
-
-            gcs.createFrom(objectInfo, in, precondition);
-
+        } catch (final IllegalArgumentException e) {
+            throw new IOException("Pushing object " + name + ": " + e.getMessage());
         } catch (final Exception e) {
             _log.debug("putObject", e);
             throw new IOException("Pushing object " + name + ": " + Format.getMessage(e, "", 0));
-
         }
         return true;
     }
@@ -466,7 +475,7 @@ public final class GcsModule extends TransferModule {
      * @param name
      *            the name
      * @param posn
-     *            the posn
+     *            the
      * @param size
      *            the size
      *
@@ -479,24 +488,27 @@ public final class GcsModule extends TransferModule {
     public OutputStream put(final String name, final long posn, final long size) throws IOException {
         _log.warn("Fake put of: {} (posn={})", name, posn);
         setStatus("PUT");
-
-        final var bucketNameAndObject = getBucketNameAndObjectName(name);
         if (posn > 0) {
             throw new IOException("Resume not supported by the " + getSetup().getModuleName() + " module");
         }
         _log.debug("Using GCS put");
-
+        final var bucketNameAndObject = getBucketNameAndObjectName(name);
         try {
-
-            final var objectId = BlobId.of(bucketNameAndObject[0], bucketNameAndObject[1]);
-            final var objectInfo = BlobInfo.newBuilder(objectId).build();
-
-            return Channels.newOutputStream(gcs.writer(objectInfo));
-
+            final var objectInfo = BlobInfo.newBuilder(BlobId.of(bucketNameAndObject[0], bucketNameAndObject[1]))
+                    .build();
+            WriteChannel writer = gcs.writer(objectInfo);
+            // check (and use) if a different chunk size was set, GCS default 5MB
+            int chunkSize = getValidatedChunkSize();
+            if (chunkSize > 0) {
+                _log.debug("Using GCS upload with chunk size={} bytes", chunkSize);
+                writer.setChunkSize(chunkSize);
+            }
+            return Channels.newOutputStream(writer);
+        } catch (final IllegalArgumentException e) {
+            throw new IOException("Pushing object " + name + ": " + e.getMessage());
         } catch (final Exception e) {
             _log.debug("putObject", e);
             throw new IOException("Pushing object " + name + ": " + Format.getMessage(e, "", 0));
-
         }
     }
 
@@ -520,12 +532,10 @@ public final class GcsModule extends TransferModule {
         if (posn > 0) {
             throw new IOException("Resume not supported by the " + getSetup().getModuleName() + " module");
         }
+        _log.debug("Using GCS get");
         final var bucketNameAndObject = getBucketNameAndObjectName(name);
-
         try {
-            gcsInput = Channels.newInputStream(gcs.reader(bucketNameAndObject[0], bucketNameAndObject[1]));
-
-            return gcsInput;
+            return Channels.newInputStream(gcs.reader(bucketNameAndObject[0], bucketNameAndObject[1]));
         } catch (final Exception e) {
             _log.debug("getObject", e);
             throw new IOException("Getting object " + name + ": " + Format.getMessage(e, "", 0));
@@ -547,6 +557,7 @@ public final class GcsModule extends TransferModule {
     public long size(final String name) throws IOException {
         _log.debug("Size {}", name);
         setStatus("SIZE");
+        _log.debug("Using GCS size");
         final var bucketNameAndObject = getBucketNameAndObjectName(name);
         try {
             // content length of the data in bytes

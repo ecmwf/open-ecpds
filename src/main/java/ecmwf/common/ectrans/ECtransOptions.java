@@ -1063,6 +1063,9 @@ public enum ECtransOptions {
     /** The host gcs bucket name. */
     HOST_GCS_BUCKET_NAME("bucketName", String.class, STRING_NONE),
 
+    /** The host gcs chunk size. */
+    HOST_GCS_CHUNK_SIZE("chunkSize", ByteSize.class, BYTE_SIZE_NONE),
+
     /** The host client email */
     HOST_GCS_CLIENT_EMAIL("clientEmail", String.class, STRING_NONE),
 

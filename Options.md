@@ -696,6 +696,9 @@ Allows specifying a bucket's geographic location. This is taken into account onl
 ### gcs.bucketName
 This option allows for the provision of the GCS bucket name. If the bucket name is not explicitly defined, it is extracted from the path specified in the directory field.
 
+### gcs.chunkSize
+Allows setting the chunk size for file upload. This can be sometimes beneficial for large files as they can be split into smaller pieces, thus allowing for a smoother and more reliable upload. The default GCS chunk size is 5MB, minimum is 256KB and maximum is 50MB. If smaller values then 256KB are specified, these are always round up to at least 256 KB.
+
 ### gcs.clientEmail
 Allows specifying the client email associated with a Google service account. This client email enables a service account to interact with GCS buckets securely, supporting automation and access control in Google Cloud. 
 
