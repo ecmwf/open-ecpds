@@ -431,16 +431,23 @@ public final class AmazonS3Module extends TransferModule {
             _log.debug("Using StreamTransferManager");
             final var manager = new StreamTransferManager(bnk[0], bnk[1], s3.getAmazonS3()).numStreams(1)
                     .numUploadThreads(numUploadThreads).queueCapacity(queueCapacity).partSize(partSize);
-            try (final var out = manager.getMultiPartOutputStreams().get(0)) {
-                StreamPlugThread.copy(out, in, StreamPlugThread.DEFAULT_BUFF_SIZE);
+            var completed = false;
+            try {
+                try (final var out = manager.getMultiPartOutputStreams().get(0)) {
+                    StreamPlugThread.copy(out, in, StreamPlugThread.DEFAULT_BUFF_SIZE);
+                }
                 manager.complete();
+                completed = true;
             } catch (final S3Exception e) {
-                _log.debug("putObject", e);
+                _log.debug("putObject S3Exception", e);
                 throw new IOException("Pushing Object " + name + ": " + formatS3Exception(e));
             } catch (final Throwable t) {
-                manager.abort();
-                _log.debug("putObject", t);
+                _log.debug("putObject unexpected error", t);
                 throw new IOException("Pushing Object " + name + ": " + Format.getMessage(t, "", 0));
+            } finally {
+                if (!completed) {
+                    manager.abort();
+                }
             }
         } else {
             // We know the file size so we can use the default mechanism!
@@ -494,6 +501,8 @@ public final class AmazonS3Module extends TransferModule {
                 .numUploadThreads(numUploadThreads).queueCapacity(queueCapacity).partSize(partSize);
         // Let's implement the various write methods for better performances!
         return new FilterOutputStream(manager.getMultiPartOutputStreams().get(0)) {
+            private boolean closed = false;
+
             @Override
             public void write(final int b) throws IOException {
                 out.write(b);
@@ -511,6 +520,8 @@ public final class AmazonS3Module extends TransferModule {
 
             @Override
             public void close() throws IOException {
+                if (closed)
+                    return;
                 var complete = false;
                 try {
                     super.close();
@@ -521,6 +532,7 @@ public final class AmazonS3Module extends TransferModule {
                     } else {
                         manager.abort();
                     }
+                    closed = true;
                 }
             }
         };
