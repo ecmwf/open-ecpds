@@ -62,7 +62,6 @@ import org.codehaus.jackson.map.exc.UnrecognizedPropertyException;
 import org.codehaus.jackson.type.TypeReference;
 
 import ecmwf.common.ectrans.AllocateInterface;
-import ecmwf.common.technical.CloseableClientResponse;
 import ecmwf.common.technical.ScriptManager;
 
 /**
@@ -108,6 +107,9 @@ public final class RESTAllocate implements AllocateInterface {
         } catch (final Exception _) {
             throw new IOException(
                     response.getStatusCode() + " " + response.getMessage() + " - " + response.getEntity(String.class));
+        } finally {
+            if (response != null)
+                response.consumeContent();
         }
     }
 
@@ -146,9 +148,13 @@ public final class RESTAllocate implements AllocateInterface {
      */
     @Override
     public int commit(final String url) {
-        try (final var response = new CloseableClientResponse(new RestClient(clientConfig).resource(url)
-                .contentType(MediaType.APPLICATION_JSON).accept(MediaType.WILDCARD).post(json))) {
+        final var response = new RestClient(clientConfig).resource(url).contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.WILDCARD).post(json);
+        try {
             return response.getStatusCode();
+        } finally {
+            if (response != null)
+                response.consumeContent();
         }
     }
 
