@@ -122,7 +122,7 @@ public class Activity extends DataBaseObject {
      *
      * @return the id
      */
-    public long getId() {
+    public Long getId() {
         return ACT_ID;
     }
 

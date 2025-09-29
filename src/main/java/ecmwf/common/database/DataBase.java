@@ -1220,29 +1220,28 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      *
      * @return the event
      */
-    public Event newEvent(final Activity activity, final String action, final String comment, final boolean error) {
-        Event event = null;
-        if (logEvents && activity != null && activity.getId() != 0) {
-            try {
-                // New event entry.
-                event = new Event();
-                event.setActivityId(activity.getId());
-                event.setActivity(activity);
-                event.setDate(new Date(System.currentTimeMillis()));
-                event.setTime(new Time(System.currentTimeMillis()));
-                event.setAction(action);
-                event.setComment(comment);
-                event.setError(error);
-                insert(event, true);
-            } catch (final Throwable t) {
-                _log.warn("Creating new Event: {}", event, t);
-                event = null;
-            }
-        } else {
-            _log.debug("Don't record Event for {} (comment={},error={}): {}", action, comment, error, activity);
-        }
-        return event;
-    }
+	public Event newEvent(final Activity activity, final String action, final String comment, final boolean error) {
+	    if (!logEvents || activity == null || activity.getId() == null || activity.getId() <= 0) {
+	        _log.debug("Don't record Event for {} (comment={}, error={}): {}", action, comment, error, activity);
+	        return null;
+	    }
+	    final var event = new Event();
+	    try {
+	        var now = System.currentTimeMillis();
+	        event.setActivityId(activity.getId());
+	        event.setActivity(activity);
+	        event.setDate(new Date(now));
+	        event.setTime(new Time(now));
+	        event.setAction(action);
+	        event.setComment(comment);
+	        event.setError(error);
+	        insert(event, true);
+	    } catch (final Throwable t) {
+	        _log.warn("Creating new Event failed: {}", event, t);
+	        return null;
+	    }
+	    return event;
+	}
 
     /**
      * Checks if is null object.
