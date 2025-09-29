@@ -81,6 +81,9 @@ public class Destination extends DataBaseObject {
     /** The des monitor. */
     protected boolean DES_MONITOR;
 
+    /** The des force proxy. */
+    protected boolean DES_FORCE_PROXY;
+
     /** The des name. */
     protected String DES_NAME;
 
@@ -584,6 +587,35 @@ public class Destination extends DataBaseObject {
      */
     public void setMonitor(final String param) {
         DES_MONITOR = Boolean.parseBoolean(param);
+    }
+
+    /**
+     * Gets the force proxy.
+     *
+     * @return the force proxy
+     */
+    public boolean getForceProxy() {
+        return DES_FORCE_PROXY;
+    }
+
+    /**
+     * Sets the force proxy.
+     *
+     * @param param
+     *            the new force proxy
+     */
+    public void setForceProxy(final boolean param) {
+        DES_FORCE_PROXY = param;
+    }
+
+    /**
+     * Sets the force proxy.
+     *
+     * @param param
+     *            the new use proxy
+     */
+    public void setForceProxy(final String param) {
+        DES_FORCE_PROXY = Boolean.parseBoolean(param);
     }
 
     /**

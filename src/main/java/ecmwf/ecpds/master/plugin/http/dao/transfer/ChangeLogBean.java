@@ -72,6 +72,7 @@ public class ChangeLogBean extends ModelBeanBase implements ChangeLog {
         translationMap.put("DES_MAX_REQUEUE", "Maximum Requeue");
         translationMap.put("DES_MAX_START", "Maximum Start");
         translationMap.put("DES_MONITOR", "Monitored");
+        translationMap.put("DES_FORCE_PROXY", "Force Proxy Usage");
         translationMap.put("DES_NAME", "Name");
         translationMap.put("DES_DATA", "Options");
         translationMap.put("DES_ON_HOST_FAILURE", "On Host Failure");

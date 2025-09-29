@@ -1720,7 +1720,7 @@ public final class ECpdsBase extends DataBase {
         try (var it = ecpds.getDestinationsByUser(uid, options.get(0, "DES_NAME"), options.get(1, "DES_COMMENT"),
                 options.get(2, "COUNTRY.COU_ISO", "COUNTRY.COU_NAME"), options.get(3, "DES_DATA"),
                 options.get(4, "DES_ACTIVE"), options.get(5, "DES_MONITOR"), options.get(6, "DES_BACKUP"),
-                fromToAliases, asc, status, type, filter, Destination.class)) {
+                options.get(7, "DES_FORCE_PROXY"), fromToAliases, asc, status, type, filter, Destination.class)) {
             while (it.hasNext()) {
                 list.add(it.next());
             }

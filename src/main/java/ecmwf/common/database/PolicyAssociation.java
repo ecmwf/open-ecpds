@@ -63,7 +63,7 @@ public class PolicyAssociation extends DataBaseObject {
      */
     public PolicyAssociation(final String destinationName, final String incomingPolicyId) {
         setDestinationName(destinationName);
-        setIncomingPolicyiD(incomingPolicyId);
+        setIncomingPolicyId(incomingPolicyId);
     }
 
     /**
@@ -100,7 +100,7 @@ public class PolicyAssociation extends DataBaseObject {
      * @param param
      *            the incoming policy id
      */
-    public void setIncomingPolicyiD(final String param) {
+    public void setIncomingPolicyId(final String param) {
         INP_ID = param;
     }
 

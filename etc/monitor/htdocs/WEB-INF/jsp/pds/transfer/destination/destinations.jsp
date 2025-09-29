@@ -21,7 +21,7 @@ select {
 								<td colspan="3" style="width: 80%;"><input class="search"
 									name="destinationSearch" type="text"
 									placeholder="e.g. enabled=yes name=AB? email=*@meteo.ms comment=*test* country=fr options=*mqtt* case=i"
-									title="Default search is by name. Conduct extended searches using name, comment, country, email, enabled, monitor, backup and options (Properties & JavaScript) rules."
+									title="Default search is by name. Conduct extended searches using name, comment, country, email, enabled, monitor, backup, forceproxy and options (Properties & JavaScript) rules."
 									style="width: 100%"
 									value='<c:out value="${destinationSearch}"/>'></td>
 								<td style="width: 20%;"><select name="destinationType"
@@ -88,7 +88,7 @@ select {
 					<c:if test="${empty getDestinationsError}">
 						No Destinations found matching these criteria! The default search is by Destination name or email address, if the format matches.<p>
 					</c:if>
-								You can conduct an extensive search using the name, comment, country, email, enabled, monitor, backup and options (Properties & JavaScript) rules.<p>
+						You can conduct an extensive search using the name, comment, country, email, enabled, monitor, backup, forceproxy and options (Properties & JavaScript) rules.<p>
 						For instance: enabled=yes name=des0?_a* email=*@meteo.ms
 						comment=*test* country=fr options=*mqtt* case=i
 					<p>

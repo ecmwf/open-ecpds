@@ -614,7 +614,7 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
         final var monitor = new MonitorCall("getDestinationsByUser(" + uid + "," + searchString + "," + fromToAliases
                 + "," + asc + "," + status + "," + type + "," + filter + ")");
         final var options = new SQLParameterParser(searchString, "name", "comment", "country", "options", "enabled=?",
-                "monitor=?", "backup=?", "email");
+                "monitor=?", "backup=?", "forceproxy=?", "email");
         final var email = options.remove("email");
         final var foundDestinations = ecpds.getDestinationsByUser(uid, options, fromToAliases, asc, status, type,
                 filter);

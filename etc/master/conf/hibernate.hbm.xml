@@ -534,6 +534,9 @@
 		<property name="DES_MONITOR" type="boolean">
 			<column name="DES_MONITOR" />
 		</property>
+		<property name="DES_FORCE_PROXY" type="boolean">
+			<column name="DES_FORCE_PROXY" />
+		</property>
 		<property name="DES_GROUPBY_DATE" type="boolean">
 			<column name="DES_GROUPBY_DATE" />
 		</property>

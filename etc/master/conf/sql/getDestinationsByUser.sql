@@ -16,6 +16,7 @@
 #prompt "enabled;Enabled;%"
 #prompt "monitor;Monitor;%"
 #prompt "backup;Backup;%"
+#prompt "forceProxy;Force Proxy;%"
 #prompt "fromToAliases;From To Aliases;%"
 #prompt "asc;Sort direction;%"
 #prompt "status;Select by status;%"
@@ -39,6 +40,7 @@ WHERE
   $enabled
   $monitor
   $backup
+  $forceProxy
 #fi
 #if ('$status' != 'All Status')
   AND STA_CODE = '$status'

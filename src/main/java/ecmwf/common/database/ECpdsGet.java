@@ -1551,14 +1551,15 @@ final class ECpdsGet {
      */
     <T extends DataBaseObject> DBIterator<T> getDestinationsByUser(final String paramUid, final String paramName,
             final String paramComment, final String paramCountry, final String paramOptions, final String paramEnabled,
-            final String paramMonitor, final String paramBackup, final String paramFromToAliases,
-            final boolean paramAsc, final String paramStatus, final String paramType, final String paramFilter,
-            final Class<T> resultClass) throws SQLException, IOException {
+            final String paramMonitor, final String paramBackup, final String paramForceProxy,
+            final String paramFromToAliases, final boolean paramAsc, final String paramStatus, final String paramType,
+            final String paramFilter, final Class<T> resultClass) throws SQLException, IOException {
         return _database.executeQuery("ECpdsBase", "getDestinationsByUser", resultClass,
                 new String[] { "uid=" + paramUid, "name-=" + paramName, "comment-=" + paramComment,
                         "country-=" + paramCountry, "options-=" + paramOptions, "enabled-=" + paramEnabled,
-                        "monitor-=" + paramMonitor, "backup-=" + paramBackup, "fromToAliases=" + paramFromToAliases,
-                        "asc=" + paramAsc, "status=" + paramStatus, "type=" + paramType, "filter=" + paramFilter });
+                        "monitor-=" + paramMonitor, "backup-=" + paramBackup, "forceProxy-=" + paramForceProxy,
+                        "fromToAliases=" + paramFromToAliases, "asc=" + paramAsc, "status=" + paramStatus,
+                        "type=" + paramType, "filter=" + paramFilter });
     }
 
     /**
