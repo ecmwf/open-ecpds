@@ -3575,8 +3575,12 @@ public final class MasterServer extends ECaccessProvider
                 synchronized (mutex.lock()) {
                     try {
                         // If there is an acquisition thread running for this Host then let's kill it!
-                        if (theAcquisitionScheduler != null && theAcquisitionScheduler.interruptAcquisitionFor(host)) {
-                            _log.debug("Acquisition Thread interrupted for Host-{}", host.getName());
+                        if (theAcquisitionScheduler != null) {
+                            if (theAcquisitionScheduler.interruptAcquisitionFor(host)) {
+                                _log.debug("Acquisition Thread interrupted for Host-{}", host.getName());
+                            } else {
+                                _log.debug("Acquisition Thread NOT interrupted for Host-{}", host.getName());
+                            }
                         }
                         // Reset the host output so that the thread will be restarted as soon as
                         // possible!
@@ -9833,6 +9837,10 @@ public final class MasterServer extends ECaccessProvider
                 try {
                     final var base = getDataBase(ECpdsBase.class);
                     final var destination = base.getDestination(_desName);
+                    if (StatusFactory.STOP.equals(destination.getStatusCode())) {
+                        _log.debug("AcquisitionThread " + key + " interrupted");
+                        _running = false;
+                    }
                     _host = base.getHost(_host.getName());
                     _setup = HOST_ACQUISITION.getECtransSetup(_host.getData());
                     _localMaximumDuration = _setup
