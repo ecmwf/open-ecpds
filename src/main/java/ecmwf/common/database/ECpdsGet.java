@@ -2276,34 +2276,6 @@ final class ECpdsGet {
     }
 
     /**
-     * Gets the statistics.
-     *
-     * @param paramFromDate
-     *            the param from date
-     * @param paramToDate
-     *            the param to date
-     * @param paramGroup
-     *            the param group
-     * @param paramCode
-     *            the param code
-     * @param paramType
-     *            the param type
-     *
-     * @return the statistics
-     *
-     * @throws SQLException
-     *             the SQL exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
-     */
-    DBResultSet getStatistics(final java.sql.Timestamp paramFromDate, final java.sql.Timestamp paramToDate,
-            final String paramGroup, final String paramCode, final String paramType) throws SQLException, IOException {
-        return _database.executeSelect("ECpdsBase", "getStatistics",
-                new String[] { "fromDate=" + paramFromDate.getTime(), "toDate=" + paramToDate.getTime(),
-                        "group=" + paramGroup, "code=" + paramCode, "type=" + paramType });
-    }
-
-    /**
      * Gets the rates.
      *
      * @param paramFromDate
