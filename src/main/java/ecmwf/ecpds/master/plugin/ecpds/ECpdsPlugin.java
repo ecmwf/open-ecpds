@@ -1981,6 +1981,10 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
             putReq.setEVENT(currentEvent);
         }
         try {
+            if (selectedDestination == null || selectedDestination.isBlank()) {
+                stopAndError("Destination not specified");
+                return;
+            }
             // Get the current Destination!
             final var currentDestination = DATABASE.getDestinationObject(selectedDestination);
             if (currentDestination == null) {
