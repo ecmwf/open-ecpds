@@ -29,6 +29,7 @@ package ecmwf.common.technical;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.logging.log4j.LogManager;
@@ -42,6 +43,9 @@ import ecmwf.common.text.Format;
 public class MonitoredInputStream extends FilterInputStream implements StreamMonitorInterface, ProgressInterface {
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(MonitoredInputStream.class);
+
+    /** The Constant JOIN_TIMER_MS. */
+    private static final long JOIN_TIMER_MS = Duration.ofMinutes(5).toMillis();
 
     /** The closed. */
     private final AtomicBoolean closed = new AtomicBoolean(false);
@@ -120,7 +124,7 @@ public class MonitoredInputStream extends FilterInputStream implements StreamMon
                     progress.setLoop(false);
                     progress.interrupt();
                     try {
-                        progress.join(300_000L);
+                        progress.join(JOIN_TIMER_MS);
                     } catch (final Throwable t) {
                         _log.warn("Waiting for progress to join", t);
                     }
