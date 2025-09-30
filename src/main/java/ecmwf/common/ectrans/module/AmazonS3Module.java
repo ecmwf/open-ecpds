@@ -433,11 +433,12 @@ public final class AmazonS3Module extends TransferModule {
                     .numUploadThreads(numUploadThreads).queueCapacity(queueCapacity).partSize(partSize);
             var completed = false;
             try {
-                try (final var out = manager.getMultiPartOutputStreams().get(0)) {
-                    StreamPlugThread.copy(out, in, StreamPlugThread.DEFAULT_BUFF_SIZE);
-                }
-                manager.complete();
-                completed = true;
+				final OutputStream out = manager.getMultiPartOutputStreams().get(0);
+				StreamPlugThread.copy(out, in, StreamPlugThread.DEFAULT_BUFF_SIZE);
+				out.close();
+				manager.complete();
+				_log.debug("Multi-part transfer completed");
+				completed = true;
             } catch (final S3Exception e) {
                 _log.debug("putObject S3Exception", e);
                 throw new IOException("Pushing Object " + name + ": " + formatS3Exception(e));
