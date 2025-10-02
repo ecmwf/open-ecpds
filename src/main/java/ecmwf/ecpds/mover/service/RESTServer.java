@@ -45,6 +45,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -187,7 +188,7 @@ public final class RESTServer {
             message.put("version", Version.getFullVersion());
             return message.getResponse();
         } catch (final WebApplicationException w) {
-            _log.warn("getVersion", w);
+            _log.warn("getVersion - {}", describe(w));
             throw w;
         } catch (final Throwable t) {
             _log.warn("getVersion", t);
@@ -217,7 +218,7 @@ public final class RESTServer {
             return mover.del(dataFile) ? RESTMessage.getSuccessMessage().getResponse()
                     : RESTMessage.getErrorMessage("DataFile not deleted").getResponse();
         } catch (final WebApplicationException w) {
-            _log.warn("del", w);
+            _log.warn("del - {}", describe(w));
             throw w;
         } catch (final Throwable t) {
             _log.warn("del", t);
@@ -247,7 +248,7 @@ public final class RESTServer {
             return mover.closeDataTransfer(dataTransfer) ? RESTMessage.getSuccessMessage().getResponse()
                     : RESTMessage.getErrorMessage("DataTransfer not closed").getResponse();
         } catch (final WebApplicationException w) {
-            _log.warn("close", w);
+            _log.warn("close - {}", describe(w));
             throw w;
         } catch (final Throwable t) {
             _log.warn("close", t);
@@ -278,7 +279,7 @@ public final class RESTServer {
             mover.purge(new ArrayList<>(directories));
             return RESTMessage.getSuccessMessage().getResponse();
         } catch (final WebApplicationException w) {
-            _log.warn("purge", w);
+            _log.warn("purge - {}", describe(w));
             throw w;
         } catch (final Throwable t) {
             _log.warn("purge", t);
@@ -313,7 +314,7 @@ public final class RESTServer {
             message.put("root", mover.getRoot());
             return message.getResponse();
         } catch (final WebApplicationException w) {
-            _log.warn("put", w);
+            _log.warn("put - {}", describe(w));
             throw w;
         } catch (final Throwable t) {
             _log.warn("put", t);
@@ -344,7 +345,7 @@ public final class RESTServer {
             message.put("report", mover.getReport(host));
             return message.getResponse();
         } catch (final WebApplicationException w) {
-            _log.warn("getHostReport", w);
+            _log.warn("getHostReport - {}", describe(w));
             throw w;
         } catch (final Throwable t) {
             _log.warn("getHostReport", t);
@@ -371,7 +372,7 @@ public final class RESTServer {
             message.put("report", mover.getReport());
             return message.getResponse();
         } catch (final WebApplicationException w) {
-            _log.warn("getMoverReport", w);
+            _log.warn("getMoverReport - {}", describe(w));
             throw w;
         } catch (final Throwable t) {
             _log.warn("getMoverReport", t);
@@ -401,7 +402,7 @@ public final class RESTServer {
             message.put("ecauthToken", mover.getECauthToken(user));
             return message.getResponse();
         } catch (final WebApplicationException w) {
-            _log.warn("getECauthToken", w);
+            _log.warn("getECauthToken - {}", describe(w));
             throw w;
         } catch (final Throwable t) {
             _log.warn("getECauthToken", t);
@@ -431,7 +432,7 @@ public final class RESTServer {
             message.put("isValid", mover.getMasterInterface().isValidDataFile(true, dataFileId));
             return message.getResponse();
         } catch (final WebApplicationException w) {
-            _log.warn("isValidDataFile", w);
+            _log.warn("isValidDataFile - {}", describe(w));
             throw w;
         } catch (final Throwable t) {
             _log.warn("isValidDataFile", t);
@@ -462,7 +463,7 @@ public final class RESTServer {
             message.put("restartTime", mover.getMasterProxy().proxyHostIsAlive(name));
             return message.getResponse();
         } catch (final WebApplicationException w) {
-            _log.warn("proxyHostIsAlive", w);
+            _log.warn("proxyHostIsAlive - {}", describe(w));
             throw w;
         } catch (final Throwable t) {
             _log.warn("proxyHostIsAlive", t);
@@ -493,7 +494,7 @@ public final class RESTServer {
             mover.getMasterProxy().updateData(request.hostId, request.data);
             return RESTMessage.getSuccessMessage().getResponse();
         } catch (final WebApplicationException w) {
-            _log.warn("updateDataRequest", w);
+            _log.warn("updateDataRequest - {}", describe(w));
             throw w;
         } catch (final Throwable t) {
             _log.warn("updateDataRequest", t);
@@ -523,7 +524,7 @@ public final class RESTServer {
             mover.getMasterProxy().updateData(host);
             return RESTMessage.getSuccessMessage().getResponse();
         } catch (final WebApplicationException w) {
-            _log.warn("updateData", w);
+            _log.warn("updateData - {}", describe(w));
             throw w;
         } catch (final Throwable t) {
             _log.warn("updateData", t);
@@ -553,7 +554,7 @@ public final class RESTServer {
             mover.getMasterProxy().updateLocation(host);
             return RESTMessage.getSuccessMessage().getResponse();
         } catch (final WebApplicationException w) {
-            _log.warn("updateLocation", w);
+            _log.warn("updateLocation - {}", describe(w));
             throw w;
         } catch (final Throwable t) {
             _log.warn("updateLocation", t);
@@ -585,7 +586,7 @@ public final class RESTServer {
             mover.getMasterProxy().updateDataTransfers(transfers.toArray(new DataTransfer[0]));
             return RESTMessage.getSuccessMessage().getResponse();
         } catch (final WebApplicationException w) {
-            _log.warn("updateDataTransfers", w);
+            _log.warn("updateDataTransfers - {}", describe(w));
             throw w;
         } catch (final Throwable t) {
             _log.warn("updateDataTransfers", t);
@@ -618,7 +619,7 @@ public final class RESTServer {
             mover.getMasterProxy().sendMessage(request.name, request.service, request.status, request.message);
             return RESTMessage.getSuccessMessage().getResponse();
         } catch (final WebApplicationException w) {
-            _log.warn("sendMessage", w);
+            _log.warn("sendMessage - {}", describe(w));
             throw w;
         } catch (final Throwable t) {
             _log.warn("sendMessage", t);
@@ -785,7 +786,7 @@ public final class RESTServer {
             builder.header(CACHE_CONTROL, NO_CACHE);
             return builder.build();
         } catch (final WebApplicationException w) {
-            _log.warn("fileHead", w);
+            _log.warn("fileHead - {}", describe(w));
             throw w;
         } catch (final FileNotFoundException e) {
             _log.warn("fileHead", e);
@@ -937,7 +938,7 @@ public final class RESTServer {
             };
             return builder.entity(output).lastModified(new Date(getBiggerIndexes(elements)[3])).build();
         } catch (final WebApplicationException w) {
-            _log.warn("fileGet", w);
+            _log.warn("fileGet - {}", describe(w));
             throw w;
         } catch (final FileNotFoundException e) {
             _log.warn("fileGet", e);
@@ -991,7 +992,7 @@ public final class RESTServer {
             final var mediaRequest = processGet(session, request, builder, filename);
             return builder.header(CONTENT_LENGTH, mediaRequest.size).build();
         } catch (final WebApplicationException w) {
-            _log.warn("dataFileHead", w);
+            _log.warn("dataFileHead - {}", describe(w));
             throw w;
         } catch (final FileNotFoundException e) {
             _log.warn("dataFileHead", e);
@@ -1042,7 +1043,7 @@ public final class RESTServer {
             session.deleteFile(processGet(session, request, null, filename).name, true);
             return Response.ok().build();
         } catch (final WebApplicationException w) {
-            _log.warn("dataFileDelete", w);
+            _log.warn("dataFileDelete - {}", describe(w));
             throw w;
         } catch (final FileNotFoundException e) {
             _log.warn("dataFileDelete", e);
@@ -1136,7 +1137,7 @@ public final class RESTServer {
             success = true;
             return builder.entity(streamer).build();
         } catch (final WebApplicationException w) {
-            _log.warn("dataFileGet", w);
+            _log.warn("dataFileGet - {}", describe(w));
             throw w;
         } catch (final FileNotFoundException e) {
             _log.warn("dataFileGet", e);
@@ -1208,7 +1209,7 @@ public final class RESTServer {
             return Response.ok("Upload complete (id: " + element.getComment() + ", ETag: " + etag + ")")
                     .type(MediaType.TEXT_PLAIN).header("ETag", etag).build();
         } catch (final WebApplicationException w) {
-            _log.warn("dataFilePost", w);
+            _log.warn("dataFilePost - {}", describe(w));
             throw w;
         } catch (final FileNotFoundException e) {
             _log.warn("dataFilePost", e);
@@ -1322,7 +1323,7 @@ public final class RESTServer {
             builder.header(CACHE_CONTROL, NO_CACHE);
             return builder.build();
         } catch (final WebApplicationException w) {
-            _log.debug("dataListGet", w);
+            _log.warn("dataListGet - {}", describe(w));
             throw w;
         } catch (final FileNotFoundException e) {
             _log.debug("dataListGet", e);
@@ -1375,7 +1376,7 @@ public final class RESTServer {
             }
             response.addDateHeader(LAST_MODIFIED, getBiggerIndexes(session.getFileList(path))[3]);
         } catch (final WebApplicationException w) {
-            _log.warn("dataListHead", w);
+            _log.warn("dataListHead - {}", describe(w));
             throw w;
         } catch (final FileNotFoundException e) {
             _log.warn("dataListHead", e);
@@ -2266,6 +2267,47 @@ public final class RESTServer {
         } catch (final EccmdException e) {
             throw newException(e, 500, e.getMessage());
         }
+    }
+
+    /**
+     * Builds a human-readable description of a {@link WebApplicationException}, including the HTTP status code,
+     * headers, exception message, and root cause.
+     * <p>
+     * This method is useful for logging, since the default {@code toString()} of {@link WebApplicationException}
+     * typically only shows the class name without any of the associated HTTP response details.
+     *
+     * @param ex
+     *            the {@link WebApplicationException} to describe, may be {@code null}
+     *
+     * @return a string with status, headers, entity type/value, message, and cause; or
+     *         {@code "null WebApplicationException"} if {@code ex} is null.
+     */
+    private static String describe(final WebApplicationException ex) {
+        if (ex == null) {
+            return "null WebApplicationException";
+        }
+        final var r = ex.getResponse();
+        if (r == null) {
+            return "WebApplicationException with no Response: " + ex.toString();
+        }
+        final var sb = new StringBuilder();
+        sb.append("WebApplicationException: status=").append(r.getStatus());
+        // Headers (metadata)
+        final var headers = r.getMetadata();
+        if (headers != null && !headers.isEmpty()) {
+            final var hdrs = headers.entrySet().stream().map(e -> e.getKey() + "=" + e.getValue())
+                    .collect(Collectors.joining(", "));
+            sb.append(", headers={").append(hdrs).append("}");
+        }
+        // Exception message if any
+        if (ex.getMessage() != null && !ex.getMessage().isBlank()) {
+            sb.append(", message=").append(ex.getMessage());
+        }
+        // Root cause if any
+        if (ex.getCause() != null) {
+            sb.append(", cause=").append(ex.getCause().toString());
+        }
+        return sb.toString();
     }
 
     /**
