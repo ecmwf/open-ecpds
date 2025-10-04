@@ -259,7 +259,7 @@ final class PASS {
         } catch (final Exception e) {
             final var message = e.getMessage();
             if (message != null && message.contains("Maximum number of connections exceeded")) {
-                return message;
+                return "Maximum number of connections exceeded";
             }
             _log.warn("Authenticating user " + user, e);
         } finally {
