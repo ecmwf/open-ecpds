@@ -2147,7 +2147,7 @@ public final class HttpModule extends TransferModule {
             if (authCache != null) { // Is it required?
                 context.setAuthCache(authCache);
             }
-            final ClassicHttpResponse httpResponse = httpClient.execute(targetHost, httpRequest, context);
+            final ClassicHttpResponse httpResponse = httpClient.executeOpen(targetHost, httpRequest, context);
             final var statusCode = httpResponse.getCode();
             final var statusMessage = statusCode + " " + httpResponse.getReasonPhrase() + " "
                     + httpResponse.getVersion().getProtocol();
