@@ -18,6 +18,9 @@
 
 package ecmwf.ecpds.mover.service;
 
+import java.io.Closeable;
+import java.io.IOException;
+
 /**
  * ECMWF Product Data Store (OpenECPDS) Project
  *
@@ -57,7 +60,6 @@ import ecmwf.common.database.Host;
 import ecmwf.common.database.HostLocation;
 import ecmwf.common.ecaccess.ECauthToken;
 import ecmwf.common.security.SSLSocketFactory;
-import ecmwf.common.technical.CloseableClientResponse;
 import ecmwf.common.technical.Cnf;
 import ecmwf.ecpds.mover.RESTInterface;
 
@@ -893,6 +895,80 @@ public final class RESTClient implements RESTInterface {
         public ECaccessRESTApplication() {
             singletons = new HashSet<>();
             singletons.add(RESTProvider.getJacksonProvider());
+        }
+    }
+
+    /**
+     * A wrapper around {@link ClientResponse} that implements {@link Closeable}.
+     * <p>
+     * This allows the use of try-with-resources to automatically release underlying HTTP/SSL connections by calling
+     * {@link ClientResponse#consumeContent()} when done.
+     * </p>
+     */
+    public static class CloseableClientResponse implements Closeable {
+
+        /** The underlying Wink ClientResponse being wrapped. */
+        private final ClientResponse response;
+
+        /**
+         * Constructs a new CloseableClientResponse wrapping the given ClientResponse.
+         *
+         * @param response
+         *            the ClientResponse to wrap; must not be null
+         */
+        public CloseableClientResponse(final ClientResponse response) {
+            this.response = response;
+        }
+
+        /**
+         * Returns the HTTP status code of the response.
+         *
+         * @return the HTTP status code
+         */
+        public int getStatusCode() {
+            return response.getStatusCode();
+        }
+
+        /**
+         * Returns the HTTP status message of the response.
+         *
+         * @return the status message
+         */
+        public String getMessage() {
+            return response.getMessage();
+        }
+
+        /**
+         * Reads and returns the entity from the response.
+         * <p>
+         * Note that calling this method will fully read the entity into memory.
+         * </p>
+         *
+         * @param <T>
+         *            the type of the entity
+         * @param t
+         *            the class of the entity
+         *
+         * @return the entity deserialized as the given class
+         */
+        public <T> T getEntity(final Class<T> t) {
+            return response.getEntity(t);
+        }
+
+        /**
+         * Closes the response by consuming its content.
+         * <p>
+         * This ensures that the underlying HTTP/SSL connection is released and prevents potential connection leaks.
+         * </p>
+         *
+         * @throws IOException
+         *             if an I/O error occurs while consuming the content
+         */
+        @Override
+        public void close() {
+            if (response != null) {
+                response.consumeContent();
+            }
         }
     }
 }

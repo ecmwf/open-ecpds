@@ -18,6 +18,8 @@
 
 package ecmwf.ecpds.mover.service;
 
+import java.io.Closeable;
+
 /**
  * ECMWF Product Data Store (OpenECPDS) Project
  *
@@ -53,6 +55,7 @@ import javax.ws.rs.core.Response.Status;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.wink.client.ClientConfig;
+import org.apache.wink.client.ClientResponse;
 import org.apache.wink.client.RestClient;
 import org.apache.wink.json4j.JSONObject;
 import org.codehaus.jackson.jaxrs.JacksonJaxbJsonProvider;
@@ -107,9 +110,6 @@ public final class RESTAllocate implements AllocateInterface {
         } catch (final Exception _) {
             throw new IOException(
                     response.getStatusCode() + " " + response.getMessage() + " - " + response.getEntity(String.class));
-        } finally {
-            if (response != null)
-                response.consumeContent();
         }
     }
 
@@ -148,13 +148,9 @@ public final class RESTAllocate implements AllocateInterface {
      */
     @Override
     public int commit(final String url) {
-        final var response = new RestClient(clientConfig).resource(url).contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.WILDCARD).post(json);
-        try {
+        try (final var response = new CloseableClientResponse(new RestClient(clientConfig).resource(url)
+                .contentType(MediaType.APPLICATION_JSON).accept(MediaType.WILDCARD).post(json))) {
             return response.getStatusCode();
-        } finally {
-            if (response != null)
-                response.consumeContent();
         }
     }
 
@@ -255,6 +251,80 @@ public final class RESTAllocate implements AllocateInterface {
                     throw new WebApplicationException(
                             Response.status(Status.PRECONDITION_FAILED).entity(getThrowableMessage(t)).build());
                 }
+            }
+        }
+    }
+
+    /**
+     * A wrapper around {@link ClientResponse} that implements {@link Closeable}.
+     * <p>
+     * This allows the use of try-with-resources to automatically release underlying HTTP/SSL connections by calling
+     * {@link ClientResponse#consumeContent()} when done.
+     * </p>
+     */
+    public class CloseableClientResponse implements Closeable {
+
+        /** The underlying Wink ClientResponse being wrapped. */
+        private final ClientResponse response;
+
+        /**
+         * Constructs a new CloseableClientResponse wrapping the given ClientResponse.
+         *
+         * @param response
+         *            the ClientResponse to wrap; must not be null
+         */
+        public CloseableClientResponse(final ClientResponse response) {
+            this.response = response;
+        }
+
+        /**
+         * Returns the HTTP status code of the response.
+         *
+         * @return the HTTP status code
+         */
+        public int getStatusCode() {
+            return response.getStatusCode();
+        }
+
+        /**
+         * Returns the HTTP status message of the response.
+         *
+         * @return the status message
+         */
+        public String getMessage() {
+            return response.getMessage();
+        }
+
+        /**
+         * Reads and returns the entity from the response.
+         * <p>
+         * Note that calling this method will fully read the entity into memory.
+         * </p>
+         *
+         * @param <T>
+         *            the type of the entity
+         * @param t
+         *            the class of the entity
+         *
+         * @return the entity deserialized as the given class
+         */
+        public <T> T getEntity(final Class<T> t) {
+            return response.getEntity(t);
+        }
+
+        /**
+         * Closes the response by consuming its content.
+         * <p>
+         * This ensures that the underlying HTTP/SSL connection is released and prevents potential connection leaks.
+         * </p>
+         *
+         * @throws IOException
+         *             if an I/O error occurs while consuming the content
+         */
+        @Override
+        public void close() {
+            if (response != null) {
+                response.consumeContent();
             }
         }
     }
