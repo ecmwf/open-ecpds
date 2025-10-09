@@ -767,7 +767,7 @@ public class JSftpModule extends TransferModule {
      */
     @Override
     public String prePut(final String name, final String tmpName, final long posn) throws IOException {
-        if (allocatedName != null)
+        if (allocatedName != null && !allocatedName.equals(name))
             throw new IOException(HOST_SFTP_ALLOCATE.getFullName() + " option is not supported for prePut operations");
         _log.debug("PrePut file {} ({})", name, posn);
         setStatus("PREPUT");
