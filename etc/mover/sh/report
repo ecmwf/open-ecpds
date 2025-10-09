@@ -41,7 +41,7 @@ case $# in
     $echo
     $nmap -Pn -p $2 $1
     $echo
-    $mtr -c 10 -P $2 $1 --report-wide
+    $mtr -c 10 -P $2 $1 --report-wide --aslookup
     exit 0
  ;;
  3) source=$($ping -c 1 $3 | $grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}' | tail -1)
@@ -49,7 +49,7 @@ case $# in
     $echo
     $nmap -S $source -Pn -p $2 $1
     $echo
-    $mtr --address $source -c 10 -P $2 $1 --report-wide
+    $mtr --address $source -c 10 -P $2 $1 --report-wide --aslookup
     exit 0
  ;;
  *) $echo "format: report | report {host} {port} {listenAddress}"
