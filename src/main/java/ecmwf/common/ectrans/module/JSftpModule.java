@@ -561,10 +561,15 @@ public class JSftpModule extends TransferModule {
      * {@inheritDoc}
      *
      * Del.
+     *
+     * @param name
+     *            the target name
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     @Override
-    public void del(final String targetName) throws IOException {
-        var name = allocatedName != null ? allocatedName : targetName;
+    public void del(final String name) throws IOException {
         _log.debug("Delete file {}", name);
         setStatus("DEL");
         try {
@@ -616,8 +621,6 @@ public class JSftpModule extends TransferModule {
      *             Signals that an I/O exception has occurred.
      */
     public void mkdirs(final String dir) throws IOException {
-        if (allocatedName != null)
-            throw new IOException(HOST_SFTP_ALLOCATE.getFullName() + " option is not supported for mkdir operations");
         _log.debug("Mkdirs {}", dir);
         setStatus("MKDIRS");
         final var token = new StringTokenizer(dir, "\\/");
@@ -657,8 +660,6 @@ public class JSftpModule extends TransferModule {
      */
     @Override
     public void mkdir(final String dir) throws IOException {
-        if (allocatedName != null)
-            throw new IOException(HOST_SFTP_ALLOCATE.getFullName() + " option is not supported for mkdir operations");
         _log.debug("Mkdir {}", dir);
         setStatus("MKDIR");
         try {
@@ -670,8 +671,6 @@ public class JSftpModule extends TransferModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Rmdir.
      *
      * @param dir
@@ -682,8 +681,6 @@ public class JSftpModule extends TransferModule {
      */
     @Override
     public void rmdir(final String dir) throws IOException {
-        if (allocatedName != null)
-            throw new IOException(HOST_SFTP_ALLOCATE.getFullName() + " option is not supported for rmdir operations");
         _log.debug("Rmdir {}", dir);
         setStatus("RMDIR");
         try {
@@ -708,8 +705,7 @@ public class JSftpModule extends TransferModule {
      *             Signals that an I/O exception has occurred.
      */
     @Override
-    public long size(final String targetName) throws IOException {
-        var name = allocatedName != null ? allocatedName : targetName;
+    public long size(final String name) throws IOException {
         _log.debug("Size file {}", name);
         setStatus("SIZE");
         try {
@@ -736,8 +732,6 @@ public class JSftpModule extends TransferModule {
      */
     @Override
     public void move(final String source, final String target) throws IOException {
-        if (allocatedName != null)
-            throw new IOException(HOST_SFTP_ALLOCATE.getFullName() + " option is not supported for rename operations");
         _log.debug("Move file {} to {}", source, target);
         setStatus("MOVE");
         try {
@@ -1122,8 +1116,6 @@ public class JSftpModule extends TransferModule {
      */
     @Override
     public void preGet(final String name, final long posn) throws IOException {
-        if (allocatedName != null)
-            throw new IOException(HOST_SFTP_ALLOCATE.getFullName() + " option is not supported for preGet operations");
         _log.debug("PreGet file {}", name);
         setStatus("PREGET");
         getName = name;
@@ -1168,8 +1160,6 @@ public class JSftpModule extends TransferModule {
      */
     @Override
     public boolean get(final OutputStream out, final String name, final long posn) throws IOException {
-        if (allocatedName != null)
-            throw new IOException(HOST_SFTP_ALLOCATE.getFullName() + " option is not supported for get operations");
         preGet(name, posn);
         _log.debug("Get file {} (posn={})", name, posn);
         setStatus("GET");
