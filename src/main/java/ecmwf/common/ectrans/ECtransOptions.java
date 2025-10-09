@@ -1147,6 +1147,9 @@ public enum ECtransOptions {
     /** The host azure num buffers. */
     HOST_AZURE_NUM_BUFFERS("numBuffers", Integer.class, 5),
 
+    /** The host azure chunk size. */
+    HOST_AZURE_CHUNK_SIZE("chunkSize", ByteSize.class, ByteSize.ofKB(0)),
+
     /** The host azure overwrite. */
     HOST_AZURE_OVERWRITE("overwrite", Boolean.class, true),
 
