@@ -99,16 +99,16 @@ CHUNK 1000 DELETE FROM PUBLICATION
 ## Delete the DataTransfers which have an
 ## expiration date which is less than one
 ## hour (acquisition) or which are more
-## than 21 days after being queued
-## (the acquisition should keep track of
-## files for at least 20 days).
+## than 1 week after being queued
+## (the acquisition might keep track of
+## files for at least 3 weeks).
 ##
 CHUNK 1000 DELETE FROM DATA_TRANSFER
   WHERE DAT_ID IN (
     SELECT DAT_ID FROM DATA_TRANSFER
     WHERE (DAT_DELETED<>0)
     AND ((DAT_EXPIRY_TIME - DAT_SCHEDULED_TIME) < (60*60*1000)
-      OR ($currentTimeMillis - DAT_QUEUE_TIME) > (21*24*60*60*1000))
+      OR ($currentTimeMillis - DAT_QUEUE_TIME) > (7*24*60*60*1000))
     AND NOT DAT_ID IN (SELECT DAT_ID FROM TRANSFER_HISTORY)
 );
 
@@ -167,11 +167,11 @@ CHUNK 1000 DELETE FROM ACTIVITY
 
 #ANALYZE TABLE ACTIVITY PERSISTENT FOR ALL;
 
-## Delete all the upload history which are more than 1 month old.
+## Delete all the upload history which are more than 1 week old.
 CHUNK 1000 DELETE FROM UPLOAD_HISTORY
   WHERE UPH_ID IN (
     SELECT UPH_ID FROM UPLOAD_HISTORY
-    WHERE UPH_QUEUE_TIME < ($currentTimeMillis-(30*60*60*24*1000))
+    WHERE UPH_QUEUE_TIME < ($currentTimeMillis-(7*60*60*24*1000))
 );
 
 #ANALYZE TABLE UPLOAD_HISTORY PERSISTENT FOR ALL;
@@ -186,11 +186,11 @@ CHUNK 1000 DELETE FROM INCOMING_HISTORY
 #ANALYZE TABLE INCOMING_HISTORY PERSISTENT FOR ALL;
 
 ## Delete all the product status which are
-## more than 15 days old.
+## more than 2 weeks old.
 CHUNK 1000 DELETE FROM PRODUCT_STATUS
   WHERE PRS_ID IN (
     SELECT PRS_ID FROM PRODUCT_STATUS
-    WHERE PRS_LAST_UPDATE < ($currentTimeMillis-(15*60*60*24*1000))
+    WHERE PRS_LAST_UPDATE < ($currentTimeMillis-(14*60*60*24*1000))
 );
 
 #ANALYZE TABLE PRODUCT_STATUS PERSISTENT FOR ALL;
@@ -228,6 +228,13 @@ CHUNK 1000 DELETE FROM PUBLICATION
   WHERE PUB_ID IN (
     SELECT PUB_ID FROM PUBLICATION
     WHERE PUB_DONE <> 0
+);
+
+## Delete all BANDWIDTH which are not linked to any DESTINATION
+CHUNK 1000 DELETE FROM BANDWIDTH
+  WHERE DES_NAME IN (
+    SELECT DES_NAME FROM BANDWIDTH
+    WHERE NOT DES_NAME in (SELECT DES_NAME from DESTINATION)
 );
 
 ## Compute the bandwidth (make sure that we have not yet computed the bandwidth before to avoid duplicates)
