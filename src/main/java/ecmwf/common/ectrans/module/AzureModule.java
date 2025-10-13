@@ -104,7 +104,6 @@ import ecmwf.common.technical.ThreadService.ConfigurableRunnable;
 import ecmwf.common.text.Format;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.publisher.SynchronousSink;
 import reactor.core.scheduler.Schedulers;
 
 /**
@@ -1224,63 +1223,27 @@ public final class AzureModule extends TransferModule {
     }
 
     /**
-     * Creates a reactive {@link Flux} that streams the content of the provided {@link InputStream} as
-     * {@link ByteBuffer} chunks. This allows processing large streams without loading the entire content into memory at
-     * once.
-     *
-     * <p>
-     * The generated {@link Flux}:
-     * <ul>
-     * <li>Opens the input stream and wraps it in a mark-supported stream for optional MD5 calculation.</li>
-     * <li>Reads the input stream in chunks of size {@code HOST_AZURE_CHUNK_SIZE} (converted to int).</li>
-     * <li>Emits each chunk as a {@link ByteBuffer} to downstream consumers.</li>
-     * <li>Closes the stream automatically when the Flux completes or an error occurs.</li>
-     * </ul>
-     *
-     * <p>
-     * The Flux is scheduled on {@link Schedulers#boundedElastic()} to allow blocking IO operations without blocking the
-     * main reactive pipeline.
+     * Creates a reactive {@link Flux} of {@link ByteBuffer} from the provided {@link InputStream}, suitable for
+     * streaming large data to Azure or other reactive consumers.
      *
      * @param input
-     *            the {@link InputStream} to stream; it must not be {@code null}
+     *            the input stream to be streamed; must not be null
      *
-     * @return a {@link Flux} emitting {@link ByteBuffer} chunks read from the input stream
+     * @return a Flux of ByteBuffer representing the stream content
      *
+     * @throws IOException
+     *             if an I/O error occurs while wrapping or preparing the input stream
      * @throws IllegalArgumentException
      *             if the configured chunk size exceeds {@link Integer#MAX_VALUE}
      */
     private Flux<ByteBuffer> createStreamingFlux(final InputStream input) throws IOException {
         final var chunkSizeLong = getSetup().getByteSize(HOST_AZURE_CHUNK_SIZE).size();
-        // Ensure it fits into an int (Java arrays require int size)
         if (chunkSizeLong > Integer.MAX_VALUE) {
             throw new IllegalArgumentException("Chunk size too large: " + chunkSizeLong);
         }
         final var in = getMarkSupportedInputStream(getMD5InputStream(input));
-        final var CHUNK_SIZE = (int) chunkSizeLong;
-        return CHUNK_SIZE == 0 ? FluxUtil.toFluxByteBuffer(in) : Flux.generate(
-                // State supplier: open or wrap the input stream
-                () -> in,
-                // Generator: read and emit chunks
-                (final InputStream stream, SynchronousSink<ByteBuffer> sink) -> {
-                    try {
-                        var buffer = new byte[CHUNK_SIZE];
-                        var bytesRead = stream.read(buffer);
-                        if (bytesRead == -1) {
-                            sink.complete();
-                        } else {
-                            sink.next(ByteBuffer.wrap(buffer, 0, bytesRead));
-                        }
-                    } catch (final IOException e) {
-                        sink.error(e);
-                    }
-                    return stream; // maintain same stream as state
-                },
-                // Cleanup: close stream when done
-                stream -> {
-                    try {
-                        stream.close();
-                    } catch (IOException ignored) {
-                    }
-                }).subscribeOn(Schedulers.boundedElastic());
+        final var chunkSize = (int) chunkSizeLong;
+        return (chunkSize == 0 ? FluxUtil.toFluxByteBuffer(in) : FluxUtil.toFluxByteBuffer(in, chunkSize))
+                .subscribeOn(Schedulers.boundedElastic());
     }
 }
