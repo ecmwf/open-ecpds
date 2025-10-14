@@ -85,6 +85,17 @@
 	<tiles:useAttribute name="isInsert" classname="java.lang.String" />
 
 	<c:if test="${isInsert != 'true'}">
+		<c:if test="${requestScope[actionFormName].type == 'Proxy'}">
+			<div class="alert">
+				<span class="closebtn" onclick="parent.history.back();">&times;</span>
+				<b>THIS CONFIGURATION CONTROLS THE BEHAVIOR OF THE PROXY HOST.<br>
+				DO NOT MODIFY IT UNLESS YOU FULLY UNDERSTAND THE CONSEQUENCES.<br>
+				ANY CHANGES MAY DIRECTLY AFFECT REPLICATION TO THIS PROXY AND<br>
+				COULD IMPACT ALL ALLOCATED DESTINATIONS.
+				<p>
+				PROCEED ONLY IF YOU ARE CERTAIN OF THE IMPACT!!!!</b>
+			</div>
+		</c:if>
 		<tr>
 			<th>Id</th>
 			<td colspan="2">${requestScope[actionFormName].name}<html:hidden
