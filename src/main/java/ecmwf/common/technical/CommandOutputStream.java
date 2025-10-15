@@ -64,9 +64,6 @@ public final class CommandOutputStream extends FilterOutputStream implements Aut
     /** The executor. */
     private final ExecutorService executor;
 
-    /** The cleaner. */
-    private final CleanableSupport cleaner;
-
     /**
      * Instantiates a new command output stream.
      *
@@ -97,13 +94,11 @@ public final class CommandOutputStream extends FilterOutputStream implements Aut
                 _log.error("Error reading stderr", e);
             }
         });
-        // Setup GC cleanup hook
-        this.cleaner = new CleanableSupport(this, this::cleanup);
         try {
             thread.execute();
         } catch (final Exception e) {
             try {
-                cleanup();
+                close();
             } catch (final IOException io) {
                 e.addSuppressed(io);
             }
@@ -127,12 +122,13 @@ public final class CommandOutputStream extends FilterOutputStream implements Aut
     }
 
     /**
-     * Cleanup.
+     * Close.
      *
      * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    private void cleanup() throws IOException {
+    @Override
+    public void close() throws IOException {
         _log.debug("Closing");
         String message = null;
         StreamPlugThread.closeQuietly(processOut);
@@ -145,7 +141,9 @@ public final class CommandOutputStream extends FilterOutputStream implements Aut
         } catch (final Exception _) {
             // Ignored
         }
+        // Shutdown stderr reader
         executor.close();
+        // Get any error message from plug thread
         message = thread.getMessage();
         if (message != null) {
             _log.debug("Destroying process ({})", message);
@@ -169,17 +167,6 @@ public final class CommandOutputStream extends FilterOutputStream implements Aut
         if (message != null) {
             throw new IOException(message);
         }
-    }
-
-    /**
-     * Close.
-     *
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
-     */
-    @Override
-    public void close() throws IOException {
-        cleaner.close();
     }
 
     /**

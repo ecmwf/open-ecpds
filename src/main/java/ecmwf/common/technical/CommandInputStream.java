@@ -67,9 +67,6 @@ public final class CommandInputStream extends FilterInputStream implements AutoC
     /** Executor for handling stderr asynchronously. */
     private final ExecutorService executor;
 
-    /** Cleaner support for resource cleanup. */
-    private final CleanableSupport cleaner;
-
     /**
      * Creates a CommandInputStream that connects the given InputStream to the standard input of a process, and allows
      * reading the standard output of that process.
@@ -104,14 +101,12 @@ public final class CommandInputStream extends FilterInputStream implements AutoC
                 _log.error("Error reading stderr", e);
             }
         });
-        // Setup GC cleanup hook
-        this.cleaner = new CleanableSupport(this, this::cleanup);
         // Launch the plug thread
         try {
             thread.execute();
         } catch (final Exception e) {
             try {
-                cleanup();
+                close();
             } catch (final IOException io) {
                 e.addSuppressed(io);
             }
@@ -135,12 +130,13 @@ public final class CommandInputStream extends FilterInputStream implements AutoC
     }
 
     /**
-     * Cleans up resources and terminates the process if necessary.
+     * Closes this stream and performs all associated cleanup.
      *
      * @throws IOException
-     *             If an error occurs during cleanup.
+     *             If an error occurs during closing.
      */
-    private void cleanup() throws IOException {
+    @Override
+    public void close() throws IOException {
         _log.debug("Closing");
         String message = null;
         // Close output and error streams safely
@@ -182,17 +178,6 @@ public final class CommandInputStream extends FilterInputStream implements AutoC
         if (message != null) {
             throw new IOException(message);
         }
-    }
-
-    /**
-     * Closes this stream and performs all associated cleanup.
-     *
-     * @throws IOException
-     *             If an error occurs during closing.
-     */
-    @Override
-    public void close() throws IOException {
-        cleaner.close();
     }
 
     /**
