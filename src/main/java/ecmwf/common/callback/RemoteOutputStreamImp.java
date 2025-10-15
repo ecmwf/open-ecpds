@@ -30,8 +30,8 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.rmi.RemoteException;
+import java.util.Objects;
 
-import ecmwf.common.technical.CleanableSupport;
 import ecmwf.common.technical.StreamPlugThread;
 
 /**
@@ -41,13 +41,10 @@ public final class RemoteOutputStreamImp extends RemoteManagement implements Rem
     /** The Constant serialVersionUID. */
     private static final long serialVersionUID = -7537470730187698370L;
 
-    /** Cleaner support for resource cleanup. */
-    private final transient CleanableSupport cleaner;
-
     /** The out. */
     private final transient OutputStream out;
 
-    /** The to close. */
+    /** The toClose. */
     private final transient Closeable toClose;
 
     /**
@@ -75,10 +72,8 @@ public final class RemoteOutputStreamImp extends RemoteManagement implements Rem
      *             the remote exception
      */
     public RemoteOutputStreamImp(final Closeable toClose, final OutputStream out) throws RemoteException {
+        this.out = Objects.requireNonNull(out, "out must not be null");
         this.toClose = toClose;
-        this.out = out;
-        // Setup GC cleanup hook
-        this.cleaner = new CleanableSupport(this, this::cleanup);
     }
 
     /**
@@ -94,25 +89,6 @@ public final class RemoteOutputStreamImp extends RemoteManagement implements Rem
         } catch (final IOException _) {
             return false;
         }
-    }
-
-    /**
-     * Closes this stream and performs all associated cleanup.
-     *
-     * @throws IOException
-     *             If an error occurs during closing.
-     */
-    @Override
-    public void close() throws IOException {
-        cleaner.close();
-    }
-
-    /**
-     * Destroy.
-     */
-    @Override
-    public void destroy() {
-        StreamPlugThread.closeQuietly(this);
     }
 
     /**
@@ -173,12 +149,22 @@ public final class RemoteOutputStreamImp extends RemoteManagement implements Rem
     }
 
     /**
-     * Cleans up resources and terminates the process if necessary.
+     * Destroy.
+     */
+    @Override
+    public void destroy() {
+        StreamPlugThread.closeQuietly(toClose);
+        StreamPlugThread.closeQuietly(out);
+    }
+
+    /**
+     * Closes this stream and performs all associated cleanup.
      *
      * @throws IOException
-     *             If an error occurs during cleanup.
+     *             If an error occurs during closing.
      */
-    private void cleanup() throws IOException {
+    @Override
+    public void close() throws IOException {
         try {
             StreamPlugThread.closeQuietly(toClose);
             out.close();
