@@ -97,135 +97,141 @@ final class ECtransInputStream extends InputStream implements AutoCloseable {
      */
     public ECtransInputStream(final Host[] hostsForSource, final DataFile dataFile, final long posn)
             throws SourceNotAvailableException {
-        // Setup GC cleanup hook
-        this.cleaner = new CleanableSupport(this, this::cleanup);
-        final var fileSize = dataFile.getSize();
-        final var hostsList = new StringBuilder();
-        Throwable throwable = null;
-        for (var i = 0; i < hostsForSource.length; i++) {
-            hostForSource = hostsForSource[i];
-            var login = hostForSource.getLogin();
-            var host = hostForSource.getHost();
-            // Is it a generic host for source?
-            if ((dataFile.getEcauthUser() == null || dataFile.getEcauthHost() == null)
-                    && (login.indexOf(ECAUTH_USER) != -1 || host.indexOf(ECAUTH_HOST) != -1)) {
-                _log.debug("Discarding generic source host {} (file was pushed through the data portal)",
-                        hostForSource.getNickname());
-                continue;
-            }
-            _log.debug("Trying getting source from {}", hostForSource.getNickname());
-            if (isNotEmpty(login)) {
-                login = Cnf.getValue(login);
-                hostForSource.setLogin(Format.replaceAll(login, ECAUTH_USER, dataFile.getEcauthUser()));
-                _log.debug("Using login: {}", hostForSource.getLogin());
-            }
-            if (isNotEmpty(host)) {
-                host = Cnf.getValue(host);
-                hostForSource.setHost(Format.replaceAll(host, ECAUTH_HOST, dataFile.getEcauthHost()));
-                _log.debug("Using host: {}", hostForSource.getHost());
-            }
-            final var copy = (Host) hostForSource.clone();
-            final var acquisition = HostOption.ACQUISITION.equals(copy.getType());
-            final var backup = HostOption.BACKUP.equals(copy.getType());
-            final String source;
-            if (!backup && (copy.getUseSourcePath() || acquisition)) {
-                // This is either a source host or a host for acquisition so we
-                // have to set the source with the full original path
-                source = dataFile.getSource();
-                copy.setDir("");
-            } else {
-                // This is a backup host on a data mover host so we have to find
-                // the correct path on the mover
-                source = getPath(dataFile);
-            }
-            hostsList.append(hostsList.isEmpty() ? "" : ", ").append("Host=").append(copy.getName()).append(" (")
-                    .append(copy.getNickname()).append(")");
-            final var module = copy.getTransferMethod().getECtransModuleName();
-            final var index = dataFile.getIndex();
-            try {
-                if (index > 0 && !backup && copy.getUseSourcePath()) {
-                    // This is an index file
-                    if (HOST_ECTRANS.getECtransSetup(copy.getData()).getBoolean(ECtransOptions.HOST_ECTRANS_USEMGET)) {
-                        copy.setName(null); // Prevent it to be updated on the
-                                            // master!
-                        // This is a source host and the file is an index but
-                        // the list of files will be processed by the transfer
-                        // module directly!
-                        final var setup = new ECtransSetup(module, copy.getData());
-                        setup.set(ECtransOptions.HOST_ECTRANS_USEMGET, true);
-                        copy.setData(setup.getData());
-                        final var out = new PipedOutputStream();
-                        this.in = new SimpleInputStream(MOVER.get(out, copy, source, posn, dataFile),
-                                new PipedInputStream(out, StreamPlugThread.DEFAULT_BUFF_SIZE), copy, source);
-                        _log.info("Files in {} will be retrieved from {} (index managed by transfer module {})", source,
-                                copy.getNickname(), module);
-                        return;
-                    }
-                    // This is a source host and the file is an index so we
-                    // have to retrieve the list of files first!
-                    try {
-                        final var fileNames = loadFileListFor(copy, source);
-                        final var size = fileNames.size();
-                        if (size != index) {
-                            throw new IOException("Wrong number of files in index (" + size + "!=" + index + ")");
-                        }
-                        _log.info("Index file {} contains {} name(s)", source, index);
-                        this.in = new MultipleInputStream(copy, fileNames, posn, dataFile);
-                        _log.info("Files in {} will be retrieved from {}", source, copy.getNickname());
-                        return;
-                    } catch (final Throwable t) {
-                        if (i == hostsForSource.length - 1) {
-                            throw new SourceNotAvailableException("Could not load index file on " + hostsList.toString()
-                                    + " from DataMover=" + MOVER.getRoot(), t);
-                        } else {
-                            _log.warn("Could not load index file ({}) on {}", source, hostsList, t);
-                        }
-                    }
-                } else {
-                    // This is not an index so we try to get the file directly!
-                    final var remoteFileSize = MOVER.size(copy, source);
-                    final var fifo = remoteFileSize == 0 && fileSize == -1;
-                    final var link = remoteFileSize >= 0 && fileSize == -1;
-                    if (fifo || link || remoteFileSize == -1 && acquisition && i == hostsForSource.length - 1
-                            || remoteFileSize == fileSize) {
-                        if (fifo) {
-                            _log.debug("Fifo detected on the remote host (removing {}.hostList)", module);
-                            // We have to make sure there is no
-                            // ecauth.hostList defined in the Host as with the
-                            // fifo we have to connect to the original node (the
-                            // fifo are not shared among nodes)!
-                            final var setup = new ECtransSetup(module, copy.getData());
-                            setup.remove(ECtransOptions.HOST_ECAUTH_HOST_LIST);
-                            copy.setData(setup.getData());
-                        }
-                        final var out = new PipedOutputStream();
-                        this.in = new SimpleInputStream(MOVER.get(out, copy, source, posn, dataFile),
-                                new PipedInputStream(out, StreamPlugThread.DEFAULT_BUFF_SIZE), copy, source);
-                        _log.info("File {} will be retrieved from {}", source, copy.getNickname());
-                        return;
-                    }
-                    if (i == hostsForSource.length - 1) {
-                        throw new SourceNotAvailableException("Incorrect size (" + remoteFileSize + " bytes) on "
-                                + hostsList.toString() + " from DataMover=" + MOVER.getRoot());
-                    } else {
-                        _log.warn("Incorrect size ({} bytes) on {}", remoteFileSize, hostsList);
-                    }
+        try {
+            final var fileSize = dataFile.getSize();
+            final var hostsList = new StringBuilder();
+            Throwable throwable = null;
+            for (var i = 0; i < hostsForSource.length; i++) {
+                hostForSource = hostsForSource[i];
+                var login = hostForSource.getLogin();
+                var host = hostForSource.getHost();
+                // Is it a generic host for source?
+                if ((dataFile.getEcauthUser() == null || dataFile.getEcauthHost() == null)
+                        && (login.indexOf(ECAUTH_USER) != -1 || host.indexOf(ECAUTH_HOST) != -1)) {
+                    _log.debug("Discarding generic source host {} (file was pushed through the data portal)",
+                            hostForSource.getNickname());
+                    continue;
                 }
-            } catch (final SourceNotAvailableException t) {
-                throwable = t;
-                throw t;
-            } catch (final Throwable t) {
-                throwable = t;
-                _log.warn("File {} not retrieved from {}", source, copy.getNickname(), t);
+                _log.debug("Trying getting source from {}", hostForSource.getNickname());
+                if (isNotEmpty(login)) {
+                    login = Cnf.getValue(login);
+                    hostForSource.setLogin(Format.replaceAll(login, ECAUTH_USER, dataFile.getEcauthUser()));
+                    _log.debug("Using login: {}", hostForSource.getLogin());
+                }
+                if (isNotEmpty(host)) {
+                    host = Cnf.getValue(host);
+                    hostForSource.setHost(Format.replaceAll(host, ECAUTH_HOST, dataFile.getEcauthHost()));
+                    _log.debug("Using host: {}", hostForSource.getHost());
+                }
+                final var copy = (Host) hostForSource.clone();
+                final var acquisition = HostOption.ACQUISITION.equals(copy.getType());
+                final var backup = HostOption.BACKUP.equals(copy.getType());
+                final String source;
+                if (!backup && (copy.getUseSourcePath() || acquisition)) {
+                    // This is either a source host or a host for acquisition so we
+                    // have to set the source with the full original path
+                    source = dataFile.getSource();
+                    copy.setDir("");
+                } else {
+                    // This is a backup host on a data mover host so we have to find
+                    // the correct path on the mover
+                    source = getPath(dataFile);
+                }
+                hostsList.append(hostsList.isEmpty() ? "" : ", ").append("Host=").append(copy.getName()).append(" (")
+                        .append(copy.getNickname()).append(")");
+                final var module = copy.getTransferMethod().getECtransModuleName();
+                final var index = dataFile.getIndex();
+                try {
+                    if (index > 0 && !backup && copy.getUseSourcePath()) {
+                        // This is an index file
+                        if (HOST_ECTRANS.getECtransSetup(copy.getData())
+                                .getBoolean(ECtransOptions.HOST_ECTRANS_USEMGET)) {
+                            copy.setName(null); // Prevent it to be updated on the
+                                                // master!
+                            // This is a source host and the file is an index but
+                            // the list of files will be processed by the transfer
+                            // module directly!
+                            final var setup = new ECtransSetup(module, copy.getData());
+                            setup.set(ECtransOptions.HOST_ECTRANS_USEMGET, true);
+                            copy.setData(setup.getData());
+                            final var out = new PipedOutputStream();
+                            this.in = new SimpleInputStream(MOVER.get(out, copy, source, posn, dataFile),
+                                    new PipedInputStream(out, StreamPlugThread.DEFAULT_BUFF_SIZE), copy, source);
+                            _log.info("Files in {} will be retrieved from {} (index managed by transfer module {})",
+                                    source, copy.getNickname(), module);
+                            return;
+                        }
+                        // This is a source host and the file is an index so we
+                        // have to retrieve the list of files first!
+                        try {
+                            final var fileNames = loadFileListFor(copy, source);
+                            final var size = fileNames.size();
+                            if (size != index) {
+                                throw new IOException("Wrong number of files in index (" + size + "!=" + index + ")");
+                            }
+                            _log.info("Index file {} contains {} name(s)", source, index);
+                            this.in = new MultipleInputStream(copy, fileNames, posn, dataFile);
+                            _log.info("Files in {} will be retrieved from {}", source, copy.getNickname());
+                            return;
+                        } catch (final Throwable t) {
+                            if (i == hostsForSource.length - 1) {
+                                throw new SourceNotAvailableException("Could not load index file on "
+                                        + hostsList.toString() + " from DataMover=" + MOVER.getRoot(), t);
+                            } else {
+                                _log.warn("Could not load index file ({}) on {}", source, hostsList, t);
+                            }
+                        }
+                    } else {
+                        // This is not an index so we try to get the file directly!
+                        final var remoteFileSize = MOVER.size(copy, source);
+                        final var fifo = remoteFileSize == 0 && fileSize == -1;
+                        final var link = remoteFileSize >= 0 && fileSize == -1;
+                        if (fifo || link || remoteFileSize == -1 && acquisition && i == hostsForSource.length - 1
+                                || remoteFileSize == fileSize) {
+                            if (fifo) {
+                                _log.debug("Fifo detected on the remote host (removing {}.hostList)", module);
+                                // We have to make sure there is no
+                                // ecauth.hostList defined in the Host as with the
+                                // fifo we have to connect to the original node (the
+                                // fifo are not shared among nodes)!
+                                final var setup = new ECtransSetup(module, copy.getData());
+                                setup.remove(ECtransOptions.HOST_ECAUTH_HOST_LIST);
+                                copy.setData(setup.getData());
+                            }
+                            final var out = new PipedOutputStream();
+                            this.in = new SimpleInputStream(MOVER.get(out, copy, source, posn, dataFile),
+                                    new PipedInputStream(out, StreamPlugThread.DEFAULT_BUFF_SIZE), copy, source);
+                            _log.info("File {} will be retrieved from {}", source, copy.getNickname());
+                            return;
+                        }
+                        if (i == hostsForSource.length - 1) {
+                            throw new SourceNotAvailableException("Incorrect size (" + remoteFileSize + " bytes) on "
+                                    + hostsList.toString() + " from DataMover=" + MOVER.getRoot());
+                        } else {
+                            _log.warn("Incorrect size ({} bytes) on {}", remoteFileSize, hostsList);
+                        }
+                    }
+                } catch (final SourceNotAvailableException t) {
+                    throwable = t;
+                    throw t;
+                } catch (final Throwable t) {
+                    throwable = t;
+                    _log.warn("File {} not retrieved from {}", source, copy.getNickname(), t);
+                }
             }
+            final var authHost = dataFile.getEcauthHost();
+            final var snae = new SourceNotAvailableException(
+                    "Not retrieved " + (!hostsList.isEmpty() ? "using " + hostsList + " on DataMover=" + MOVER.getRoot()
+                            : "(hosts list empty)") + (isNotEmpty(authHost) ? " with source " + authHost : ""));
+            snae.initCause(throwable);
+            throw snae;
+        } finally {
+            final var inRef = this.in;
+            this.cleaner = new CleanableSupport(inRef, () -> {
+                if (inRef != null)
+                    inRef.close();
+            });
         }
-
-        final var authHost = dataFile.getEcauthHost();
-        final var snae = new SourceNotAvailableException(
-                "Not retrieved " + (hostsList.length() > 0 ? "using " + hostsList + " on DataMover=" + MOVER.getRoot()
-                        : "(hosts list empty)") + (isNotEmpty(authHost) ? " with source " + authHost : ""));
-        snae.initCause(throwable);
-        throw snae;
     }
 
     /**
@@ -376,17 +382,6 @@ final class ECtransInputStream extends InputStream implements AutoCloseable {
             throw new IOException("Stream closed");
         }
         return in.read(b, off, len);
-    }
-
-    /**
-     * Cleans up resources and terminates the process if necessary.
-     *
-     * @throws IOException
-     *             If an error occurs during cleanup.
-     */
-    private void cleanup() throws IOException {
-        if (in != null)
-            in.close();
     }
 
     /**
