@@ -1841,7 +1841,7 @@ public final class TransferScheduler extends MBeanScheduler {
                     ar.message = "Listing task interrupted";
                     break;
                 } else {
-                    out.warn("Listing task failed on DataMover=" + getHost + ": " + Format.getMessage(t));
+                    out.warn("Listing task failed on DataMover=" + getHost + " with error: " + Format.getMessage(t));
                     _log.warn("Listing task for " + destinationName + " on " + getHost + " (source=" + source
                             + ",pattern=" + pattern + ")", t);
                     ar.message = Format.getMessage(t);
