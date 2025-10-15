@@ -1924,82 +1924,83 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             _log.debug("File to download: {}", file.getAbsolutePath());
             final var ectransIn = new ECtransInputStream(new Host[] { hostForSource }, dataFile, 0);
             InputStream get = ectransIn; // We need to have a standard input stream for buffering and more!
-            try {
-                if (del(dataFile)) {
-                    _log.debug("Existing file(s) deleted for DataFile {}", dataFile.getId());
-                }
-            } catch (final Throwable t) {
-                _log.warn("Couldn't delete existing DataFile {}", dataFile.getId(), t);
-            }
-            final var start = System.currentTimeMillis();
-            if (Cnf.at("RetrievalInputStream", "buffered", false)) {
-                _log.debug("Using BufferedInputStream for donwload");
-                get = new BufferedInputStream(get);
-            }
-            if (Cnf.at("RetrievalInputStream", "interruptible", false)) {
-                _log.debug("Using InterruptibleInputStream for donwload");
-                get = new InterruptibleInputStream(get);
-            }
             Checksum checksum = null;
-            final var cheksumAlgorithm = _algorithm.getName();
-            if (!"none".equalsIgnoreCase(dataFile.getChecksum())) {
-                _log.debug("Processing {} hash", cheksumAlgorithm);
-                try {
-                    checksum = Checksum.getChecksum(_algorithm, get);
-                    get = checksum.getInputStream();
-                } catch (final Throwable t) {
-                    _log.warn("Cannot init {}", cheksumAlgorithm, t);
-                }
-            }
-            final var completed = new StringBuilder("0");
-            final long delta;
-            if ((delta = Cnf.durationAt("RetrievalInputStream", "monitored", -1)) > 0) {
-                if (_log.isDebugEnabled()) {
-                    _log.debug("Using MonitoredInputStream for donwload (delta={})", Format.formatDuration(delta));
-                }
-                get = new MonitoredInputStream(get, delta, new ProgressHandler() {
-                    @Override
-                    public long getDelay() {
-                        return 2 * Timer.ONE_SECOND;
-                    }
-
-                    @Override
-                    public void update(final ProgressInterface monitor) {
-                        final var dataFileId = dataFile.getId();
-                        // If the current thread is completed then we don't need
-                        // to store the download progress in the repository!
-                        if (completed.charAt(0) == '1') {
-                            _log.debug("Retrieval for DataFile-{} completed", dataFileId);
-                            downloadRepository.removeKey(dataFile);
-                            return;
-                        }
-                        // It is still running!
-                        final var progress = downloadRepository.getValue(dataFileId);
-                        if (progress != null) {
-                            progress.setDuration(monitor.getDuration());
-                            progress.setByteSent(monitor.getByteSent());
-                        } else {
-                            // We need to record it!
-                            downloadRepository.put(new DownloadProgress(getRoot(), dataFile.getId(), dataFile.getSize(),
-                                    monitor.getDuration(), monitor.getByteSent(), () -> {
-                                        // If the receiving is completed
-                                        // then no need to interrupt! This
-                                        // method is called when the
-                                        // Download repository is cleared
-                                        // (e.g. when the Data Mover
-                                        // disconnect from the Master).
-                                        if (completed.charAt(0) == '0') {
-                                            _log.debug("Still receiving data (interrupt)");
-                                            monitor.closeAndInterruptIfRequired();
-                                        } else {
-                                            _log.debug("No interrupt required");
-                                        }
-                                    }));
-                        }
-                    }
-                });
-            }
+            String cheksumAlgorithm = null;
+            final var start = System.currentTimeMillis();
             try {
+                try {
+                    if (del(dataFile)) {
+                        _log.debug("Existing file(s) deleted for DataFile {}", dataFile.getId());
+                    }
+                } catch (final Throwable t) {
+                    _log.warn("Couldn't delete existing DataFile {}", dataFile.getId(), t);
+                }
+                if (Cnf.at("RetrievalInputStream", "buffered", false)) {
+                    _log.debug("Using BufferedInputStream for donwload");
+                    get = new BufferedInputStream(get);
+                }
+                if (Cnf.at("RetrievalInputStream", "interruptible", false)) {
+                    _log.debug("Using InterruptibleInputStream for donwload");
+                    get = new InterruptibleInputStream(get);
+                }
+                cheksumAlgorithm = _algorithm.getName();
+                if (!"none".equalsIgnoreCase(dataFile.getChecksum())) {
+                    _log.debug("Processing {} hash", cheksumAlgorithm);
+                    try {
+                        checksum = Checksum.getChecksum(_algorithm, get);
+                        get = checksum.getInputStream();
+                    } catch (final Throwable t) {
+                        _log.warn("Cannot init {}", cheksumAlgorithm, t);
+                    }
+                }
+                final var completed = new StringBuilder("0");
+                final long delta;
+                if ((delta = Cnf.durationAt("RetrievalInputStream", "monitored", -1)) > 0) {
+                    if (_log.isDebugEnabled()) {
+                        _log.debug("Using MonitoredInputStream for donwload (delta={})", Format.formatDuration(delta));
+                    }
+                    get = new MonitoredInputStream(get, delta, new ProgressHandler() {
+                        @Override
+                        public long getDelay() {
+                            return 2 * Timer.ONE_SECOND;
+                        }
+
+                        @Override
+                        public void update(final ProgressInterface monitor) {
+                            final var dataFileId = dataFile.getId();
+                            // If the current thread is completed then we don't need
+                            // to store the download progress in the repository!
+                            if (completed.charAt(0) == '1') {
+                                _log.debug("Retrieval for DataFile-{} completed", dataFileId);
+                                downloadRepository.removeKey(dataFile);
+                                return;
+                            }
+                            // It is still running!
+                            final var progress = downloadRepository.getValue(dataFileId);
+                            if (progress != null) {
+                                progress.setDuration(monitor.getDuration());
+                                progress.setByteSent(monitor.getByteSent());
+                            } else {
+                                // We need to record it!
+                                downloadRepository.put(new DownloadProgress(getRoot(), dataFile.getId(),
+                                        dataFile.getSize(), monitor.getDuration(), monitor.getByteSent(), () -> {
+                                            // If the receiving is completed
+                                            // then no need to interrupt! This
+                                            // method is called when the
+                                            // Download repository is cleared
+                                            // (e.g. when the Data Mover
+                                            // disconnect from the Master).
+                                            if (completed.charAt(0) == '0') {
+                                                _log.debug("Still receiving data (interrupt)");
+                                                monitor.closeAndInterruptIfRequired();
+                                            } else {
+                                                _log.debug("No interrupt required");
+                                            }
+                                        }));
+                            }
+                        }
+                    });
+                }
                 file.receiveFile(get, fileSize);
                 completed.setCharAt(0, '1');
             } finally {
