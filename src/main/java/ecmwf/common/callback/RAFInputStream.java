@@ -29,6 +29,7 @@ package ecmwf.common.callback;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
+import java.util.Objects;
 
 import ecmwf.common.technical.CleanableSupport;
 
@@ -50,9 +51,12 @@ public final class RAFInputStream extends InputStream {
      *            the raf
      */
     public RAFInputStream(final RandomAccessFile raf) {
-        this.raf = raf;
+        this.raf = Objects.requireNonNull(raf, "raf must not be null");
         // Setup GC cleanup hook
-        this.cleaner = new CleanableSupport(this, this::cleanup);
+        final var rafRef = raf;
+        this.cleaner = new CleanableSupport(rafRef, () -> {
+            rafRef.close();
+        });
     }
 
     /**
@@ -66,16 +70,6 @@ public final class RAFInputStream extends InputStream {
     @Override
     public int available() throws IOException {
         return 0;
-    }
-
-    /**
-     * Cleans up resources and terminates the process if necessary.
-     *
-     * @throws IOException
-     *             If an error occurs during cleanup.
-     */
-    private void cleanup() throws IOException {
-        raf.close();
     }
 
     /**
