@@ -82,7 +82,7 @@ public abstract class CallBackObject extends UnicastRemoteObject {
      * from the remote RMI peer (not the exporter).
      */
     public void unexport() {
-        if (isLocal.get() && this instanceof RemoteManagement management) {
+        if (isLocal.getAndSet(false)) {
             try {
                 if (UnicastRemoteObject.unexportObject(this, true)) {
                     _log.debug("Successfully unexported CallBackObject: {}", this.getClass().getName());
@@ -91,11 +91,7 @@ public abstract class CallBackObject extends UnicastRemoteObject {
                 }
             } catch (Exception e) {
                 _log.error("Error while unexporting CallBackObject: {}", this.getClass().getName(), e);
-            } finally {
-                management.destroy();
             }
-        } else {
-            _log.debug("Skipping unexport: not the exporting side (this is a stub)");
         }
     }
 
