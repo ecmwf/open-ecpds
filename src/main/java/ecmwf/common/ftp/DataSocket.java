@@ -36,12 +36,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import ecmwf.common.technical.CleanableSupport;
 import ecmwf.common.technical.StreamPlugThread;
 import ecmwf.common.transport.ptcp.psocket.PTCPSocket;
 
@@ -51,9 +51,6 @@ import ecmwf.common.transport.ptcp.psocket.PTCPSocket;
 public final class DataSocket implements Closeable {
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(DataSocket.class);
-
-    /** Cleaner support for resource cleanup. */
-    private final CleanableSupport cleaner;
 
     /** The _data alive. */
     private final boolean dataAlive;
@@ -76,10 +73,9 @@ public final class DataSocket implements Closeable {
      *            the data alive
      */
     public DataSocket(final Socket socket, final boolean dataAlive) {
+        this.socket = Objects.requireNonNull(socket, "socket must not be null");
         this.dataAlive = dataAlive;
-        this.socket = socket;
-        // Setup GC cleanup hook
-        this.cleaner = new CleanableSupport(this, this::cleanup);
+        _log.debug("Manage: {}", this);
     }
 
     /**
@@ -150,16 +146,6 @@ public final class DataSocket implements Closeable {
      */
     @Override
     public void close() throws IOException {
-        cleaner.close();
-    }
-
-    /**
-     * Cleans up resources and terminates the process if necessary.
-     *
-     * @throws IOException
-     *             If an error occurs during cleanup.
-     */
-    private void cleanup() throws IOException {
         socket.close();
     }
 
