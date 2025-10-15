@@ -51,8 +51,7 @@ public class TOTP {
     public static final boolean ACTIVE = Cnf.at("TOTP", "active", false);
 
     /** The Constant URL. */
-    public static final String URL = Cnf.at("TOTP", "url",
-            "https://localhost/auth/realms/openpds/protocol/openid-connect/token");
+    public static final String URL = Cnf.at("TOTP", "url");
 
     /** The Constant CLIENT_ID_FOR_PASSWORD. */
     public static final String CLIENT_ID_FOR_PASSWORD = Cnf.at("TOTP", "clientIdForPassword");
@@ -98,7 +97,7 @@ public class TOTP {
      */
     public static boolean authenticate(final String user, final String credentials, final boolean isPasscode)
             throws IOException, URISyntaxException {
-        if (!ACTIVE) {
+        if (!ACTIVE || URL == null || URL.isBlank()) {
             throw new IOException("TOTP authentication not active");
         }
         final var con = (HttpURLConnection) new URI(URL).toURL().openConnection();
