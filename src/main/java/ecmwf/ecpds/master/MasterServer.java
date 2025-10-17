@@ -31,6 +31,7 @@ import static ecmwf.common.ectrans.ECtransGroups.Module.DESTINATION_SCHEDULER;
 import static ecmwf.common.ectrans.ECtransGroups.Module.HOST_ACQUISITION;
 import static ecmwf.common.ectrans.ECtransGroups.Module.HOST_ECTRANS;
 import static ecmwf.common.ectrans.ECtransGroups.Module.USER_PORTAL;
+import static ecmwf.common.ectrans.ECtransGroups.Module.HOST_PROXY;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_MQTT_CLIENT_ID;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_MQTT_CONTENT_TYPE;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_MQTT_EXPIRY_INTERVAL;
@@ -93,6 +94,7 @@ import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_GEOBLOCLING;
 import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_MAX_CONNECTIONS;
 import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_UPDATE_LAST_LOGIN_INFORMATION;
 import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_USE_PASSCODE;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_PROXY_USE_DESTINATION_FILTER;
 import static ecmwf.common.text.Util.isEmpty;
 import static ecmwf.common.text.Util.isNotEmpty;
 import static ecmwf.common.text.Util.nullToNone;
@@ -8391,6 +8393,14 @@ public final class MasterServer extends ECaccessProvider
                                         + " (count=" + threadCound + ",max=" + maxConnections + ")");
                             }
                             continue;
+                        }
+                        // Are we requested to use the filter defined at the destination level?
+                        if (HOST_PROXY.getECtransSetup(hostForProxy.getData())
+                                .getBoolean(HOST_PROXY_USE_DESTINATION_FILTER)) {
+                            final var filterName = _transfer.getDestination().getFilterName();
+                            hostForProxy.setFilterName(filterName);
+                            _log.debug("Forcing {} for replicating to ProxyHost {}", filterName,
+                                    hostForProxy.getNickname());
                         }
                         if ((rr = TransferScheduler.backup(_hostForProxy = hostForProxy, list, _transfer)).complete) {
                             break;
