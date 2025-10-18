@@ -31,11 +31,13 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Properties;
 
+import javax.mail.AuthenticationFailedException;
 import javax.mail.Flags;
 import javax.mail.Folder;
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.Multipart;
+import javax.mail.NoSuchProviderException;
 import javax.mail.PasswordAuthentication;
 import javax.mail.SendFailedException;
 import javax.mail.Session;
@@ -79,10 +81,10 @@ public class MailMBean extends MBeanRepository<MailMessage> {
     private String mailPassword;
 
     /** The mail store type. */
-    private String mailStoreType = "imap";
+    private String mailStoreType;
 
     /** The folder name. */
-    private String folderName = "INBOX";
+    private String folderName;
 
     /** The store. */
     private volatile Store store;
@@ -186,23 +188,63 @@ public class MailMBean extends MBeanRepository<MailMessage> {
      * Initializes the mail session and POP/IMAP configuration.
      */
     @Override
-    public void initialize() {
-        mailHost = Cnf.at("Mail", "host");
-        mailUser = Cnf.at("Mail", "user");
-        mailPassword = Cnf.at("Mail", "password");
-        mailStoreType = Cnf.at("Mail", "storeType", mailStoreType);
-        folderName = Cnf.at("Mail", "folderName", folderName);
-        final var props = new Properties();
-        if (mailUser != null && mailPassword != null) {
-            props.put("mail.smtp.auth", "true");
+    public synchronized void initialize() {
+        if (session == null) {
+            _log.info("Initializing Mail session");
+            final var props = new Properties();
+            // --- Common settings ---
+            mailHost = Cnf.at("Mail", "host", "");
+            mailUser = Cnf.at("Mail", "user", "");
+            mailPassword = Cnf.at("Mail", "password", "");
+            mailStoreType = Cnf.at("Mail", "storeType", "smtp").toLowerCase();
+            folderName = Cnf.at("Mail", "folderName", "INBOX");
+            // --- Determine default ports ---
+            final var defaultSmtpPort = 25;
+            final var defaultImapPort = 143;
+            final var defaultImapsPort = 993;
+            final var defaultPopPort = 110;
+            final var defaultPopSslPort = 995;
+            // --- SMTP properties (always safe to define) ---
+            var smtpPort = Cnf.at("Mail", "port", "");
+            if (smtpPort.isBlank()) {
+                smtpPort = "smtp".equals(mailStoreType) ? String.valueOf(defaultSmtpPort) : "25";
+            }
+            props.put("mail.transport.protocol", "smtp");
+            props.put("mail.smtp.host", mailHost);
+            props.put("mail.smtp.port", smtpPort);
+            props.put("mail.smtp.starttls.enable", Cnf.at("Mail", "starttls", "true"));
+            props.put("mail.smtp.auth", Cnf.at("Mail", "auth", "true"));
+            // Optional: IMAP/POP properties for receiving mail
+            if (!mailStoreType.startsWith("smtp")) {
+                props.put("mail.store.protocol", mailStoreType);
+                props.put("mail." + mailStoreType + ".host", mailHost);
+                // Determine default store port if not provided
+                var storePort = Cnf.at("Mail", "storePort", "");
+                if (storePort.isBlank()) {
+                    if (mailStoreType.startsWith("imap")) {
+                        storePort = mailStoreType.equals("imaps") ? String.valueOf(defaultImapsPort)
+                                : String.valueOf(defaultImapPort);
+                    } else if (mailStoreType.startsWith("pop")) {
+                        storePort = mailStoreType.equals("pops") ? String.valueOf(defaultPopSslPort)
+                                : String.valueOf(defaultPopPort);
+                    } else {
+                        storePort = "993"; // fallback safe default
+                    }
+                }
+                props.put("mail." + mailStoreType + ".port", storePort);
+                props.put("mail." + mailStoreType + ".ssl.enable", Cnf.at("Mail", "ssl", "true"));
+            }
+            // Enable debug if configured
+            final var debug = Cnf.at("Mail", "debug", false);
+            // Create authenticated session
             session = Session.getInstance(props, new javax.mail.Authenticator() {
                 @Override
                 protected PasswordAuthentication getPasswordAuthentication() {
                     return new PasswordAuthentication(mailUser, mailPassword);
                 }
             });
-        } else {
-            session = Session.getDefaultInstance(props, null);
+            session.setDebug(debug);
+            _log.info("Mail session initialized (protocol=" + mailStoreType + ", debug=" + debug + ")");
         }
     }
 
@@ -216,7 +258,9 @@ public class MailMBean extends MBeanRepository<MailMessage> {
         try {
             connect();
             sendMessages();
-            getMessages();
+            if (!mailStoreType.startsWith("smtp")) {
+                getMessages();
+            }
         } catch (final MessagingException e) {
             _log.error("Mail connection error", e);
             closesFolderAndStore();
@@ -289,12 +333,9 @@ public class MailMBean extends MBeanRepository<MailMessage> {
      *            the attachment name
      * @param attachmentContent
      *            the attachment content
-     *
-     * @throws Exception
-     *             if sending fails
      */
     private void sendMessage(final String from, final String to, final String cc, final String subject,
-            final String content, final String attachmentName, final String attachmentContent) throws Exception {
+            final String content, final String attachmentName, final String attachmentContent) {
         if (to == null || to.isBlank()) {
             _log.warn("Invalid address: null or empty (mail not sent)");
             return;
@@ -304,9 +345,9 @@ public class MailMBean extends MBeanRepository<MailMessage> {
             final var message = new MimeMessage(session);
             message.setFrom(new InternetAddress(
                     from != null && !from.isBlank() ? from : Cnf.at("Mail", "defaultFrom", mailUser)));
-            message.addRecipient(Message.RecipientType.TO, new InternetAddress(to));
+            message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to));
             if (cc != null && !cc.isBlank()) {
-                message.addRecipient(Message.RecipientType.CC, new InternetAddress(cc));
+                message.setRecipients(Message.RecipientType.CC, InternetAddress.parse(cc));
             }
             message.setSubject(subject);
             if (attachmentName != null && !attachmentName.isBlank()) {
@@ -315,7 +356,7 @@ public class MailMBean extends MBeanRepository<MailMessage> {
                 final var filePart = new MimeBodyPart();
                 filePart.setText(attachmentContent, "utf-8");
                 filePart.setFileName(attachmentName);
-                final Multipart multipart = new MimeMultipart("alternative");
+                final Multipart multipart = new MimeMultipart("mixed"); // changed from "alternative"
                 multipart.addBodyPart(textPart);
                 multipart.addBodyPart(filePart);
                 message.setContent(multipart);
@@ -323,9 +364,14 @@ public class MailMBean extends MBeanRepository<MailMessage> {
                 message.setText(content);
             }
             message.saveChanges();
-            Transport.send(message);
-        } catch (AddressException | SendFailedException e) {
+            Transport.send(message, message.getAllRecipients());
+            _log.debug("Mail sent successfully to {}", to);
+        } catch (final AddressException | SendFailedException e) {
             _log.warn("Invalid address: {} (mail not sent)", to, e);
+        } catch (final MessagingException e) {
+            _log.error("MessagingException while sending mail to {}: {}", to, e.getMessage(), e);
+        } catch (final Exception e) {
+            _log.error("Unexpected exception while sending mail to {}: {}", to, e.getMessage(), e);
         }
     }
 
@@ -348,32 +394,51 @@ public class MailMBean extends MBeanRepository<MailMessage> {
      * @throws MessagingException
      *             if connection fails
      */
+    /**
+     * Connects to the configured mail store (IMAP/POP) if applicable.
+     * <p>
+     * If the configuration indicates an SMTP-only setup (e.g. host name contains "smtp" or the protocol is "smtp"),
+     * this method will simply log that no store connection is required and return immediately.
+     *
+     * @throws MessagingException
+     *             if the connection to the mail store fails
+     */
     private synchronized void connect() throws MessagingException {
-        if (store != null || mailHost == null || mailHost.isBlank()) {
+        if (store != null) {
+            _log.debug("Mail store already connected");
             return;
         }
-        store = session.getStore(mailStoreType);
-        var host = mailHost;
-        var port = -1; // default: use protocol default port
-        // Check if mailHost includes a port, e.g. "imap.example.org:993"
-        final var colonIndex = mailHost.lastIndexOf(':');
-        if (colonIndex > 0 && colonIndex < mailHost.length() - 1) {
-            final var portPart = mailHost.substring(colonIndex + 1);
-            try {
-                port = Integer.parseInt(portPart);
-                host = mailHost.substring(0, colonIndex);
-            } catch (final NumberFormatException _) {
-                // not a valid port — keep host as-is, default port will be used
+        if (mailHost == null || mailHost.isEmpty()) {
+            _log.debug("No mailHost configured — skipping mail store connection");
+            return;
+        }
+        // Determine the store type (imap, imaps, pop3, pop3s, or smtp)
+        // Detect SMTP-only configurations and skip connecting
+        if (mailStoreType.startsWith("smtp")) {
+            _log.debug("Detected SMTP-only configuration for host '{}'; skipping store connection", mailHost);
+            return;
+        }
+        _log.debug("Connecting to mail store '{}', protocol='{}'", mailHost, mailStoreType);
+        try {
+            store = session.getStore(mailStoreType);
+            store.connect(mailHost, mailUser, mailPassword);
+            folder = store.getFolder(folderName); // <- folderName is usually "INBOX"
+            folder.open(Folder.READ_WRITE);
+            _log.info("Connected to mail store '{}' using {}", mailHost, mailStoreType);
+        } catch (final NoSuchProviderException e) {
+            _log.error("Invalid mail store provider: '{}'", mailStoreType, e);
+            throw e;
+        } catch (final AuthenticationFailedException e) {
+            _log.error("Authentication failed connecting to mail store '{}': {}", mailHost, e.getMessage());
+            throw e;
+        } catch (final MessagingException e) {
+            // Common mistake: connecting IMAP to an SMTP port
+            if (e.getMessage() != null && e.getMessage().contains("ESMTP")) {
+                _log.error("Mail connection error: host '{}' appears to be an SMTP server; "
+                        + "use SMTP-only mode or correct mail.store.protocol", mailHost);
             }
+            throw e;
         }
-        // Connect using explicit port if provided
-        if (port > 0) {
-            store.connect(host, port, mailUser, mailPassword);
-        } else {
-            store.connect(host, mailUser, mailPassword);
-        }
-        folder = store.getFolder(folderName);
-        folder.open(Folder.READ_WRITE);
     }
 
     /**
