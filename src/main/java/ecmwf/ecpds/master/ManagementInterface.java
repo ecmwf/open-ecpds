@@ -397,7 +397,7 @@ public interface ManagementInterface extends Remote {
      * @throws java.rmi.RemoteException
      *             the remote exception
      */
-    void closeIncomingConnection(ECpdsSession session, String id) throws IOException, RemoteException;
+    void closeIncomingConnection(ECpdsSession session, String id) throws IOException;
 
     /**
      * Restart destination.
@@ -613,7 +613,7 @@ public interface ManagementInterface extends Remote {
      *             Signals that an I/O exception has occurred.
      */
     long transfer(ECpdsSession session, byte[] bytes, Host host, String target, long remotePosn)
-            throws MasterException, DataBaseException, RemoteException, IOException;
+            throws MasterException, DataBaseException, IOException;
 
     /**
      * Gets the mover report.
@@ -634,8 +634,7 @@ public interface ManagementInterface extends Remote {
      * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
-    String getMoverReport(ECpdsSession session, Host proxyHost)
-            throws MasterException, DataBaseException, RemoteException, IOException;
+    String getMoverReport(ECpdsSession session, Host proxyHost) throws MasterException, DataBaseException, IOException;
 
     /**
      * Gets the host report.
@@ -659,7 +658,7 @@ public interface ManagementInterface extends Remote {
      *             Signals that an I/O exception has occurred.
      */
     String getHostReport(ECpdsSession session, Host proxyHost, Host host)
-            throws MasterException, DataBaseException, RemoteException, IOException;
+            throws MasterException, DataBaseException, IOException;
 
     /**
      * Clean the data window host.
@@ -678,8 +677,7 @@ public interface ManagementInterface extends Remote {
      * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
-    void cleanDataWindow(ECpdsSession session, Host host)
-            throws MasterException, DataBaseException, RemoteException, IOException;
+    void cleanDataWindow(ECpdsSession session, Host host) throws MasterException, DataBaseException, IOException;
 
     /**
      * Reset the host stats.
@@ -699,7 +697,7 @@ public interface ManagementInterface extends Remote {
      *             Signals that an I/O exception has occurred.
      */
     void resetTransferStatistics(ECpdsSession session, Host host)
-            throws MasterException, DataBaseException, RemoteException, IOException;
+            throws MasterException, DataBaseException, IOException;
 
     /**
      * Gets the report.
@@ -720,8 +718,7 @@ public interface ManagementInterface extends Remote {
      * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
-    String getReport(ECpdsSession session, Host host)
-            throws MasterException, DataBaseException, RemoteException, IOException;
+    String getReport(ECpdsSession session, Host host) throws MasterException, DataBaseException, IOException;
 
     /**
      * Gets the host output.
@@ -742,8 +739,7 @@ public interface ManagementInterface extends Remote {
      * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
-    RemoteInputStream getOutput(ECpdsSession session, Host host)
-            throws MasterException, DataBaseException, RemoteException, IOException;
+    RemoteInputStream getOutput(ECpdsSession session, Host host) throws MasterException, DataBaseException, IOException;
 
     /**
      * Gets the report.
@@ -765,7 +761,7 @@ public interface ManagementInterface extends Remote {
      *             Signals that an I/O exception has occurred.
      */
     String getReport(ECpdsSession session, TransferServer server)
-            throws MasterException, DataBaseException, RemoteException, IOException;
+            throws MasterException, DataBaseException, IOException;
 
     /**
      * Update host.
@@ -1147,38 +1143,7 @@ public interface ManagementInterface extends Remote {
      *             the remote exception
      */
     byte[] exec(ECpdsSession session, Map<String, String> environment, byte[] request, String service)
-            throws MasterException, IOException, RemoteException;
-
-    /**
-     * Sends an ecpds email message.
-     *
-     * @param session
-     *            the session
-     * @param from
-     *            the from
-     * @param to
-     *            the to
-     * @param cc
-     *            the cc
-     * @param subject
-     *            the subject
-     * @param content
-     *            the content
-     * @param attachmentName
-     *            the attachment name
-     * @param attachmentContent
-     *            the attachment content
-     *
-     * @throws ecmwf.ecpds.master.MasterException
-     *             the master exception
-     * @throws java.io.IOException
-     *             Signals that an I/O exception has occurred.
-     * @throws java.rmi.RemoteException
-     *             the remote exception
-     */
-    void sendECpdsMessage(ECpdsSession session, final String from, final String to, final String cc,
-            final String subject, final String content, final String attachmentName, final String attachmentContent)
-            throws MasterException, IOException, RemoteException;
+            throws MasterException, IOException;
 
     /**
      * Gets the destination scheduler cache.

@@ -145,7 +145,7 @@ final class ManagementProxy implements ManagementInterface {
         try {
             return monitor.done(MasterManager.getMonitoringCache(destinationName).getDestinationSchedulerCache()
                     .getMonitorManager());
-        } catch (final Exception e) {
+        } catch (final Exception _) {
             return monitor.done(managementInterface.getMonitorManager(destinationName));
         }
     }
@@ -165,7 +165,7 @@ final class ManagementProxy implements ManagementInterface {
         try {
             return monitor.done(MasterManager.getMonitoringCache(destinationName).getDestinationSchedulerCache()
                     .getDestinationStatus());
-        } catch (final Exception e) {
+        } catch (final Exception _) {
             return monitor.done(managementInterface.getDestinationStatus(destinationName));
         }
     }
@@ -184,7 +184,7 @@ final class ManagementProxy implements ManagementInterface {
         try {
             return monitor.done(MasterManager.getMonitoringCache(destinationName).getDestinationSchedulerCache()
                     .getDestinationSize());
-        } catch (final Exception e) {
+        } catch (final Exception _) {
             return monitor.done(managementInterface.getDestinationSize(destinationName));
         }
     }
@@ -203,7 +203,7 @@ final class ManagementProxy implements ManagementInterface {
         try {
             return monitor.done(MasterManager.getMonitoringCache(destinationName).getDestinationSchedulerCache()
                     .getDestinationStartDate());
-        } catch (final Exception e) {
+        } catch (final Exception _) {
             return monitor.done(managementInterface.getDestinationStartDate(destinationName));
         }
     }
@@ -222,7 +222,7 @@ final class ManagementProxy implements ManagementInterface {
         try {
             return monitor.done(MasterManager.getMonitoringCache(destinationName).getDestinationSchedulerCache()
                     .getPendingDataTransfersCount());
-        } catch (final Exception e) {
+        } catch (final Exception _) {
             return monitor.done(managementInterface.getPendingDataTransfersCount(destinationName));
         }
     }
@@ -242,7 +242,7 @@ final class ManagementProxy implements ManagementInterface {
         try {
             return monitor.done(
                     MasterManager.getMonitoringCache(destinationName).getDestinationSchedulerCache().getLastTransfer());
-        } catch (final Exception e) {
+        } catch (final Exception _) {
             return monitor.done(managementInterface.getDestinationLastTransfer(destinationName));
         }
     }
@@ -262,7 +262,7 @@ final class ManagementProxy implements ManagementInterface {
         try {
             return monitor.done(MasterManager.getMonitoringCache(destinationName).getDestinationSchedulerCache()
                     .getLastFailedTransfer());
-        } catch (final Exception e) {
+        } catch (final Exception _) {
             return monitor.done(managementInterface.getDestinationLastFailedTransfer(destinationName));
         }
     }
@@ -1085,25 +1085,6 @@ final class ManagementProxy implements ManagementInterface {
         final var monitor = new MonitorCall("exec(" + session.getWebUser().getName() + ",Map(" + environment.size()
                 + "),byte[" + request.length + "]," + service + ")");
         return monitor.done(managementInterface.exec(session, environment, request, service));
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * Send E cpds message.
-     */
-    @Override
-    public void sendECpdsMessage(final ECpdsSession session, final String from, final String to, final String cc,
-            final String subject, final String content, final String attachmentName, final String attachmentContent)
-            throws MasterException, IOException {
-        if (session == null || isEmpty(to) || isEmpty(subject) || isEmpty(content)) {
-            throw new MasterException("Invalid parameter(s) for sendECpdsMessage");
-        }
-        final var monitor = new MonitorCall("sendECpdsMessage(" + session.getWebUser().getName() + "," + from + "," + to
-                + "," + cc + "," + subject + "," + content + ")");
-        managementInterface.sendECpdsMessage(session, from, to, cc, subject, content, attachmentName,
-                attachmentContent);
-        monitor.done();
     }
 
     /**

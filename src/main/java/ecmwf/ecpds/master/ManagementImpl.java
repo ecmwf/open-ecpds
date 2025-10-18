@@ -2672,41 +2672,6 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
-     * Send E cpds message.
-     *
-     * @param session
-     *            the session
-     * @param from
-     *            the from
-     * @param to
-     *            the to
-     * @param cc
-     *            the cc
-     * @param subject
-     *            the subject
-     * @param content
-     *            the content
-     * @param attachmentName
-     *            the attachment name
-     * @param attachmentContent
-     *            the attachment content
-     *
-     * @throws MasterException
-     *             the master exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
-     */
-    @Override
-    public void sendECpdsMessage(final ECpdsSession session, final String from, final String to, final String cc,
-            final String subject, final String content, final String attachmentName, final String attachmentContent)
-            throws MasterException, IOException {
-        final var monitor = new MonitorCall("sendECpdsMessage(" + session.getWebUser().getName() + "," + from + "," + to
-                + "," + cc + "," + subject + "," + content + ")");
-        master.sendECpdsMessage(from, to, cc, subject, content, attachmentName, attachmentContent);
-        monitor.done();
-    }
-
-    /**
      * Gets the destination scheduler cache.
      *
      * @param destinationName
