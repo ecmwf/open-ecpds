@@ -28,18 +28,15 @@ package ecmwf.common.ecaccess;
 
 import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Properties;
-import java.util.StringTokenizer;
 
 import javax.mail.Flags;
 import javax.mail.Folder;
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.Multipart;
-import javax.mail.NoSuchProviderException;
+import javax.mail.PasswordAuthentication;
 import javax.mail.SendFailedException;
 import javax.mail.Session;
 import javax.mail.Store;
@@ -56,71 +53,75 @@ import org.apache.logging.log4j.Logger;
 import ecmwf.common.technical.Cnf;
 
 /**
- * The Class MailMBean.
+ * Manages sending and receiving emails through SMTP/IMAP/POP protocols.
  */
 public class MailMBean extends MBeanRepository<MailMessage> {
+
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(MailMBean.class);
 
-    /** The Constant _dateOrder. */
-    private static final Comparator<Message> _dateOrder = (o1, o2) -> {
+    /** The Constant DATA_ORDER. */
+    private static final Comparator<Message> DATA_ORDER = (o1, o2) -> {
         try {
             return o1.getSentDate().compareTo(o2.getSentDate());
-        } catch (final MessagingException me) {
+        } catch (final MessagingException _) {
             return 0;
         }
     };
 
-    /** The _host. */
-    private String _host = null;
+    /** The mail host. */
+    private String mailHost;
 
-    /** The _username. */
-    private String _username = null;
+    /** The mail user. */
+    private String mailUser;
 
-    /** The _password. */
-    private String _password = null;
+    /** The mail password. */
+    private String mailPassword;
 
-    /** The _storename. */
-    private String _storename = "imap";
+    /** The mail store type. */
+    private String mailStoreType = "imap";
 
-    /** The _foldername. */
-    private String _foldername = "INBOX";
+    /** The folder name. */
+    private String folderName = "INBOX";
 
-    /** The _store. */
-    private Store _store = null;
+    /** The store. */
+    private volatile Store store;
 
-    /** The _folder. */
-    private Folder _folder = null;
+    /** The folder. */
+    private volatile Folder folder;
 
-    /** The _session. */
-    private Session _session = null;
+    /** The session. */
+    private Session session;
 
     /**
-     * Instantiates a new mail m bean.
+     * Constructs a MailMBean with the specified name.
      *
      * @param name
-     *            the name
+     *            the MBean name
      */
     public MailMBean(final String name) {
         super(name);
     }
 
     /**
-     * Instantiates a new mail m bean.
+     * Constructs a MailMBean with the specified group and name.
      *
      * @param group
-     *            the group
+     *            the MBean group
      * @param name
-     *            the name
+     *            the MBean name
      */
     public MailMBean(final String group, final String name) {
         super(group, name);
     }
 
     /**
-     * {@inheritDoc}
+     * Returns a string representation of the mail message status.
      *
-     * Gets the status.
+     * @param message
+     *            the mail message
+     *
+     * @return the status string
      */
     @Override
     public String getStatus(final MailMessage message) {
@@ -128,43 +129,43 @@ public class MailMBean extends MBeanRepository<MailMessage> {
     }
 
     /**
-     * Gets the mail interfaces.
+     * Returns the list of mail interfaces.
      *
-     * @return the mail interfaces
+     * @return array of mail interfaces
      */
     public MailInterface[] getMailInterfaces() {
-        return new MailInterface[0];
+        return new MailInterface[0]; // placeholder
     }
 
     /**
-     * Send mail.
+     * Sends an email without CC or attachment.
      *
      * @param from
-     *            the from
+     *            the sender
      * @param to
-     *            the to
+     *            the recipient(s)
      * @param subject
      *            the subject
      * @param content
-     *            the content
+     *            the message content
      */
     public void sendMail(final String from, final String to, final String subject, final String content) {
         sendMail(from, to, null, subject, content, null, null);
     }
 
     /**
-     * Send mail.
+     * Sends an email with optional CC and attachment.
      *
      * @param from
-     *            the from
+     *            the sender
      * @param to
-     *            the to
+     *            the recipient(s)
      * @param cc
-     *            the cc
+     *            the CC recipient(s)
      * @param subject
      *            the subject
      * @param content
-     *            the content
+     *            the message content
      * @param attachmentName
      *            the attachment name
      * @param attachmentContent
@@ -172,78 +173,98 @@ public class MailMBean extends MBeanRepository<MailMessage> {
      */
     public void sendMail(final String from, final String to, final String cc, final String subject,
             final String content, final String attachmentName, final String attachmentContent) {
-        if (to != null && to.length() > 0) {
-            _log.debug("Mail to " + to + ": " + subject);
-            final var tokenizer = new StringTokenizer(to, ";,");
-            while (tokenizer.hasMoreElements()) {
-                put(new MailMessage(from, tokenizer.nextToken(), cc, subject, content, attachmentName,
-                        attachmentContent));
-            }
+        if (to != null && !to.isBlank()) {
+            _log.debug("Mail to {}: {}", to, subject);
+            Arrays.stream(to.split("[,;]")).map(String::trim).filter(s -> !s.isEmpty()).forEach(recipient -> put(
+                    new MailMessage(from, recipient, cc, subject, content, attachmentName, attachmentContent)));
         } else {
-            _log.warn("Invalid address: null (mail not sent)");
+            _log.warn("Invalid address: null or empty (mail not sent)");
         }
     }
 
     /**
-     * {@inheritDoc}
-     *
-     * Initialize.
+     * Initializes the mail session and POP/IMAP configuration.
      */
     @Override
     public void initialize() {
+        mailHost = Cnf.at("Mail", "host");
+        mailUser = Cnf.at("Mail", "user");
+        mailPassword = Cnf.at("Mail", "password");
+        mailStoreType = Cnf.at("Mail", "storeType", mailStoreType);
+        folderName = Cnf.at("Mail", "folderName", folderName);
         final var props = new Properties();
-        props.put("mail.smtp.host", Cnf.at("Mail", "smtp"));
-        _session = Session.getDefaultInstance(props, null);
-        _host = Cnf.at("Mail", "pop");
-        _username = Cnf.at("Mail", "popUser");
-        _password = Cnf.at("Mail", "popPassword");
-        _storename = Cnf.at("Mail", "storeName", _storename);
-        _foldername = Cnf.at("Mail", "folderName", _foldername);
+        if (mailUser != null && mailPassword != null) {
+            props.put("mail.smtp.auth", "true");
+            session = Session.getInstance(props, new javax.mail.Authenticator() {
+                @Override
+                protected PasswordAuthentication getPasswordAuthentication() {
+                    return new PasswordAuthentication(mailUser, mailPassword);
+                }
+            });
+        } else {
+            session = Session.getDefaultInstance(props, null);
+        }
     }
 
     /**
-     * {@inheritDoc}
+     * Executes the next step in the MBean workflow: connect, send, receive.
      *
-     * Next step.
+     * @return delay until next step
      */
     @Override
     public int nextStep() {
         try {
-            _connect();
-            _sendMessages();
-            _getMessages();
+            connect();
+            sendMessages();
+            getMessages();
         } catch (final MessagingException e) {
-            _log.error("Mail connection", e);
-            _log.error("Mail connection", e.getNextException());
-            _close();
-        } catch (final Throwable t) {
-            _log.error("sendMessages", t);
-            _close();
+            _log.error("Mail connection error", e);
+            closesFolderAndStore();
+        } catch (final Exception t) {
+            _log.error("sendMessages/getMessages error", t);
+            closesFolderAndStore();
         }
         return NEXT_STEP_DELAY;
     }
 
     /**
-     * _close.
+     * Closes the folder and store safely.
      */
-    private synchronized void _close() {
+    private synchronized void closesFolderAndStore() {
         try {
-            if (_folder != null && _folder.isOpen()) {
-                _folder.close(true);
+            if (folder != null && folder.isOpen()) {
+                folder.close(true);
             }
-            if (_store != null) {
-                _store.close();
+            if (store != null) {
+                store.close();
             }
-        } catch (final Exception ignored) {
+        } catch (final Exception e) {
+            _log.debug("Error closing folder/store", e);
         } finally {
-            _folder = null;
-            _store = null;
+            folder = null;
+            store = null;
         }
     }
 
     /**
-     * {@inheritDoc}
+     * Shuts down the MBean and optionally sends pending messages.
      *
+     * @param graceful
+     *            if true, send pending messages before shutdown
+     */
+    public void shutdown(final boolean graceful) {
+        super.shutdown();
+        if (graceful) {
+            try {
+                connect();
+                sendMessages();
+            } catch (final Exception e) {
+                _log.warn("Shutdown mail send failed", e);
+            }
+        }
+    }
+
+    /**
      * Shutdown.
      */
     @Override
@@ -252,25 +273,7 @@ public class MailMBean extends MBeanRepository<MailMessage> {
     }
 
     /**
-     * Shutdown.
-     *
-     * @param graceful
-     *            the graceful
-     */
-    public void shutdown(final boolean graceful) {
-        super.shutdown();
-        if (graceful) {
-            try {
-                _connect();
-                _sendMessages();
-            } catch (final Exception e) {
-                _log.warn(e);
-            }
-        }
-    }
-
-    /**
-     * _send message.
+     * Sends a single message via SMTP.
      *
      * @param from
      *            the from
@@ -288,123 +291,135 @@ public class MailMBean extends MBeanRepository<MailMessage> {
      *            the attachment content
      *
      * @throws Exception
-     *             the exception
+     *             if sending fails
      */
-    private void _sendMessage(final String from, final String to, final String cc, final String subject,
+    private void sendMessage(final String from, final String to, final String cc, final String subject,
             final String content, final String attachmentName, final String attachmentContent) throws Exception {
-        if (to != null && to.length() > 0) {
-            try {
-                _log.debug("Sending from=" + from + " to=" + to + " bcc=" + cc + " subject=" + subject
-                        + " attachmentName=" + attachmentName);
-                final var message = new MimeMessage(_session);
-                message.setFrom(new InternetAddress(from != null && from.length() > 0 ? from : Cnf.at("Mail", "from")));
-                message.addRecipient(Message.RecipientType.TO, new InternetAddress(to));
-                if (cc != null && cc.length() > 0) {
-                    message.addRecipient(Message.RecipientType.CC, new InternetAddress(cc));
-                }
-                message.setSubject(subject);
-                if (attachmentName != null && attachmentName.length() > 0) {
-                    _log.debug("Sending attachment");
-                    final var filePart = new MimeBodyPart();
-                    filePart.setText(attachmentContent, "utf-8");
-                    filePart.setFileName(attachmentName);
-                    final var textPart = new MimeBodyPart();
-                    textPart.setText(content, "utf-8");
-                    final Multipart multipart = new MimeMultipart("alternative");
-                    multipart.addBodyPart(textPart);
-                    multipart.addBodyPart(filePart);
-                    message.setContent(multipart);
-                } else {
-                    message.setText(content);
-                }
-                message.saveChanges();
-                Transport.send(message);
-            } catch (final AddressException | SendFailedException e) {
-                _log.warn("Invalid address: " + to + " (mail not sent)", e);
-            } catch (final Exception e) {
-                throw e;
+        if (to == null || to.isBlank()) {
+            _log.warn("Invalid address: null or empty (mail not sent)");
+            return;
+        }
+        try {
+            _log.debug("Sending from={} to={} cc={} subject={} attachment={}", from, to, cc, subject, attachmentName);
+            final var message = new MimeMessage(session);
+            message.setFrom(new InternetAddress(
+                    from != null && !from.isBlank() ? from : Cnf.at("Mail", "defaultFrom", mailUser)));
+            message.addRecipient(Message.RecipientType.TO, new InternetAddress(to));
+            if (cc != null && !cc.isBlank()) {
+                message.addRecipient(Message.RecipientType.CC, new InternetAddress(cc));
             }
-        } else {
-            _log.warn("Invalid address: null (mail not sent)");
+            message.setSubject(subject);
+            if (attachmentName != null && !attachmentName.isBlank()) {
+                final var textPart = new MimeBodyPart();
+                textPart.setText(content, "utf-8");
+                final var filePart = new MimeBodyPart();
+                filePart.setText(attachmentContent, "utf-8");
+                filePart.setFileName(attachmentName);
+                final Multipart multipart = new MimeMultipart("alternative");
+                multipart.addBodyPart(textPart);
+                multipart.addBodyPart(filePart);
+                message.setContent(multipart);
+            } else {
+                message.setText(content);
+            }
+            message.saveChanges();
+            Transport.send(message);
+        } catch (AddressException | SendFailedException e) {
+            _log.warn("Invalid address: {} (mail not sent)", to, e);
         }
     }
 
     /**
-     * Orders by date.
+     * Orders messages by sent date.
      *
-     * @param message
-     *            the message
+     * @param messages
+     *            array of messages
      *
-     * @return the message[]
+     * @return sorted array
      */
-    private Message[] _orderByDate(final Message[] message) {
-        final List<Message> list = Arrays.asList(message);
-        Collections.sort(list, _dateOrder);
-        return list.toArray(new Message[list.size()]);
+    private Message[] orderByDate(final Message[] messages) {
+        Arrays.sort(messages, DATA_ORDER);
+        return messages;
     }
 
     /**
-     * _connect.
+     * Connects to the mail store and folder if not already connected.
      *
-     * @throws NoSuchProviderException
-     *             the no such provider exception
      * @throws MessagingException
-     *             the messaging exception
+     *             if connection fails
      */
-    private synchronized void _connect() throws NoSuchProviderException, MessagingException {
-        if (_store == null && _host != null && _host.length() > 0) {
-            _store = _session.getStore(_storename);
-            _store.connect(_host, _username, _password);
-            _folder = _store.getFolder(_foldername);
-            _folder.open(Folder.READ_WRITE);
+    private synchronized void connect() throws MessagingException {
+        if (store != null || mailHost == null || mailHost.isBlank()) {
+            return;
         }
+        store = session.getStore(mailStoreType);
+        var host = mailHost;
+        var port = -1; // default: use protocol default port
+        // Check if mailHost includes a port, e.g. "imap.example.org:993"
+        final var colonIndex = mailHost.lastIndexOf(':');
+        if (colonIndex > 0 && colonIndex < mailHost.length() - 1) {
+            final var portPart = mailHost.substring(colonIndex + 1);
+            try {
+                port = Integer.parseInt(portPart);
+                host = mailHost.substring(0, colonIndex);
+            } catch (final NumberFormatException _) {
+                // not a valid port — keep host as-is, default port will be used
+            }
+        }
+        // Connect using explicit port if provided
+        if (port > 0) {
+            store.connect(host, port, mailUser, mailPassword);
+        } else {
+            store.connect(host, mailUser, mailPassword);
+        }
+        folder = store.getFolder(folderName);
+        folder.open(Folder.READ_WRITE);
     }
 
     /**
-     * Sends the messages.
+     * Sends all pending messages.
      *
      * @throws Exception
-     *             the exception
+     *             if sending fails
      */
-    private void _sendMessages() throws Exception {
+    private void sendMessages() throws Exception {
         for (final MailMessage toSend : getList()) {
-            _sendMessage(toSend.getFrom(), toSend.getTo(), toSend.getCC(), toSend.getSubject(), toSend.getContent(),
+            sendMessage(toSend.getFrom(), toSend.getTo(), toSend.getCC(), toSend.getSubject(), toSend.getContent(),
                     toSend.getAttachmentName(), toSend.getAttachmentContent());
             removeValue(toSend);
         }
     }
 
     /**
-     * Gets the messages.
+     * Receives messages from the configured interfaces and processes them.
+     *
+     * @return the messages
      *
      * @throws MessagingException
-     *             the messaging exception
+     *             if message retrieval fails
      */
-    private void _getMessages() throws MessagingException {
+    private void getMessages() throws MessagingException {
         final var interfaces = getMailInterfaces();
         for (final MailInterface element : interfaces) {
-            _folder.expunge();
-            final var message = _orderByDate(_folder.search(element.getSearchTerm()));
-            if (message.length > 0) {
-                _log.debug("Receiving " + message.length + " mail(s)");
+            folder.expunge();
+            final var messages = orderByDate(folder.search(element.getSearchTerm()));
+            if (messages.length > 0) {
+                _log.debug("Receiving {} mail(s)", messages.length);
                 final var content = new StringBuilder();
-                for (final Message notification : message) {
-                    if (notification.getFlags().contains(Flags.Flag.DELETED)) {
+                for (final Message notification : messages) {
+                    if (notification.getFlags().contains(Flags.Flag.DELETED))
                         continue;
-                    }
                     content.setLength(0);
                     var delete = false;
-                    try {
-                        final var bao = new ByteArrayOutputStream();
+                    try (var bao = new ByteArrayOutputStream()) {
                         notification.getDataHandler().writeTo(bao);
                         content.append(bao.toString());
-                        bao.close();
                         delete = element.received(notification, content.toString());
                     } catch (final Exception e) {
                         delete = true;
-                        _log.warn("Message deleted: '" + content.toString() + "'", e);
+                        _log.warn("Message deleted: '{}'", content, e);
                     } finally {
-                        if (delete && _folder.isOpen()) {
+                        if (delete && folder.isOpen()) {
                             notification.setFlag(Flags.Flag.DELETED, true);
                         }
                     }
