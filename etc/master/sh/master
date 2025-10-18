@@ -73,10 +73,10 @@ JAVA_OPTS=$JAVA_OPTS" -Dport.callback='$PORT_CALLBACK'"
 #################################
 ## Deal with SMTP (notifications)
 #################################
-if [ ! -z "$SMTP_HOST" -a ! -z "$SMTP_FROM" ]; then
-  JAVA_OPTS=$JAVA_OPTS" -Dsmtp.activated=yes"
-  JAVA_OPTS=$JAVA_OPTS" -Dsmtp.host='$SMTP_HOST'"
-  JAVA_OPTS=$JAVA_OPTS" -Dsmtp.from='$SMTP_FROM'"
+if [ ! -z "$MAIL_HOST" -a ! -z "$MAIL_USER" ]; then
+  JAVA_OPTS=$JAVA_OPTS" -Dmail.activated=yes"
+  JAVA_OPTS=$JAVA_OPTS" -Dmail.host='$MAIL_HOST'"
+  JAVA_OPTS=$JAVA_OPTS" -Dmail.user='$MAIL_USER'"
 fi
 
 ####################################
