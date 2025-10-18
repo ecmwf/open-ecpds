@@ -3510,8 +3510,6 @@ public final class MasterServer extends ECaccessProvider
     /**
      * Sends the ecpds message.
      *
-     * @param from
-     *            the from
      * @param to
      *            the to
      * @param cc
@@ -3525,13 +3523,13 @@ public final class MasterServer extends ECaccessProvider
      * @param attachmentContent
      *            the attachment content
      */
-    public void sendECpdsMessage(final String from, final String to, final String cc, final String subject,
-            final String content, final String attachmentName, final String attachmentContent) {
+    public void sendECpdsMessage(final String to, final String cc, final String subject, final String content,
+            final String attachmentName, final String attachmentContent) {
         if (theMailRepository != null) {
-            theMailRepository.sendMail(from, to, cc, subject, content, attachmentName, attachmentContent);
+            theMailRepository.sendMail(null, to, cc, subject, content, attachmentName, attachmentContent);
         } else {
-            _log.warn("Mail not sent: from={}, to={}, cc={}, subject={}, attachment={}\n{}", from, to, cc, subject,
-                    attachmentName, content);
+            _log.warn("Mail not sent: to={}, cc={}, subject={}, attachment={}\n{}", to, cc, subject, attachmentName,
+                    content);
         }
     }
 
@@ -3546,7 +3544,7 @@ public final class MasterServer extends ECaccessProvider
      *            the content
      */
     public void sendECpdsMessage(final String to, final String subject, final String content) {
-        sendECpdsMessage(null, to, null, subject, content, null, null);
+        sendECpdsMessage(to, null, subject, content, null, null);
     }
 
     /**
