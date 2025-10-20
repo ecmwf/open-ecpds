@@ -8397,8 +8397,8 @@ public final class MasterServer extends ECaccessProvider
                                 .getBoolean(HOST_PROXY_USE_DESTINATION_FILTER)) {
                             final var filterName = _transfer.getDestination().getFilterName();
                             hostForProxy.setFilterName(filterName);
-                            _log.debug("Forcing {} for replicating to ProxyHost {}", filterName,
-                                    hostForProxy.getNickname());
+                            _log.debug("Forcing {} for replicating DataTransfer-{} to ProxyHost {}", filterName,
+                                    _transfer.getId(), hostForProxy.getNickname());
                         }
                         if ((rr = TransferScheduler.backup(_hostForProxy = hostForProxy, list, _transfer)).complete) {
                             break;
