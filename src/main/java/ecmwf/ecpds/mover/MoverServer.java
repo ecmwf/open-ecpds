@@ -1581,21 +1581,21 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                 final var ectransGet = new ECtransInputStream(hostsForSource, dataFile, 0);
                 InputStream get = ectransGet;
                 try {
-                    if (del(dataFile)) {
-                        _log.debug("Corrupted file(s) deleted for DataFile {}", dataFile.getId());
+                    try {
+                        if (del(dataFile)) {
+                            _log.debug("Corrupted file(s) deleted for DataFile {}", dataFile.getId());
+                        }
+                    } catch (final Throwable t) {
+                        _log.warn("Couldn't delete DataFile {}", dataFile.getId(), t);
                     }
-                } catch (final Throwable t) {
-                    _log.warn("Couldn't delete DataFile {}", dataFile.getId(), t);
-                }
-                if (Cnf.at("RetrievalInputStream", "buffered", false)) {
-                    _log.debug("Using BufferedInputStream for donwload");
-                    get = new BufferedInputStream(get);
-                }
-                if (Cnf.at("RetrievalInputStream", "interruptible", false)) {
-                    _log.debug("Using InterruptibleInputStream for donwload");
-                    get = new InterruptibleInputStream(get);
-                }
-                try {
+                    if (Cnf.at("RetrievalInputStream", "buffered", false)) {
+                        _log.debug("Using BufferedInputStream for donwload");
+                        get = new BufferedInputStream(get);
+                    }
+                    if (Cnf.at("RetrievalInputStream", "interruptible", false)) {
+                        _log.debug("Using InterruptibleInputStream for donwload");
+                        get = new InterruptibleInputStream(get);
+                    }
                     file.receiveFile(get, fileSize);
                 } finally {
                     StreamPlugThread.closeQuietly(get);
