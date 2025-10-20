@@ -227,10 +227,13 @@ final class ECtransInputStream extends InputStream implements AutoCloseable {
             throw snae;
         } finally {
             final var inRef = this.in;
-            this.cleaner = new CleanableSupport(inRef, () -> {
-                if (inRef != null)
+            if (inRef != null) {
+                this.cleaner = new CleanableSupport(inRef, () -> {
                     inRef.close();
-            });
+                });
+            } else {
+                this.cleaner = null;
+            }
         }
     }
 
