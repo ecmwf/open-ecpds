@@ -1,35 +1,55 @@
-<%@ page import="java.io.*" %><%@ page import="ecmwf.web.ECMWFException" %><%@ page import="ecmwf.web.services.content.Content" %><%
+<%@ page import="java.io.*" %>
+<%@ page import="java.net.URLEncoder" %>
+<%@ page import="java.nio.charset.StandardCharsets" %>
+<%@ page import="ecmwf.web.ECMWFException" %>
+<%@ page import="ecmwf.web.services.content.Content" %>
+<%
+Content content = (Content) request.getAttribute("content");
+if (content == null) {
+    response.setContentType("text/plain");
+    response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+    response.getWriter().write("No content provided.");
+    return;
+}
 
-    // The first tags are in a single line to avoid sending carriage returns to the 
-    // OutputStream before getting it (which would result in a Tomcat warning, and that being lucky ;-))
+try {
+    response.setContentType(content.getContentType());
 
+    // Encode filename for modern browsers (UTF-8)
+    String encodedName = URLEncoder.encode(content.getName(), StandardCharsets.UTF_8.toString());
 
-       try {
-       
-       	  Content content = (Content)(request.getAttribute("content"));
-          response.setContentType(content.getContentType());
-          if (content.getContentType().startsWith("image/"))
-          	  response.addHeader("Content-Disposition","inline; filename="+content.getName());	
-          else
-	          response.addHeader("Content-Disposition","attachment; filename="+content.getName());
-          InputStream is = content.getInputStream();
-          OutputStream o = response.getOutputStream();
+    // Fallback ASCII filename for older browsers
+    String asciiName = content.getName().replaceAll("[^\\x20-\\x7E]", "_");
 
-          byte[] buf = new byte[32 * 1024]; // 32k buffer
-          int nRead = 0;
-          while( (nRead=is.read(buf)) != -1 ) {
-            o.write(buf, 0, nRead);
-          }
-          o.flush();
-          o.close();// *important* to ensure no more jsp output
-          is.close();
-          return; 
-      } catch (ECMWFException e) {
-          response.setContentType("text/plain");
-          Writer o2 = response.getWriter();
-          o2.write("File not found in storage area: "+e.getFullMessage());
-          o2.flush();
-          o2.close();         
-      }
+    String disposition = content.getContentType().startsWith("image/") ? "inline" : "attachment";
 
+    response.setHeader("Content-Disposition",
+        disposition + "; filename=\"" + asciiName + "\"; filename*=UTF-8''" + encodedName
+    );
+
+    try (InputStream is = content.getInputStream();
+         OutputStream os = response.getOutputStream()) {
+        byte[] buffer = new byte[32 * 1024];
+        int bytesRead;
+        while ((bytesRead = is.read(buffer)) != -1) {
+            os.write(buffer, 0, bytesRead);
+        }
+        os.flush();
+    }
+
+    return; // stop JSP from adding any extra output
+
+} catch (ECMWFException e) {
+    response.setContentType("text/plain");
+    response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+    try (Writer w = response.getWriter()) {
+        w.write("File not found in storage area: " + e.getFullMessage());
+    }
+} catch (IOException e) {
+    response.setContentType("text/plain");
+    response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+    try (Writer w = response.getWriter()) {
+        w.write("Error sending file: " + e.getMessage());
+    }
+}
 %>
