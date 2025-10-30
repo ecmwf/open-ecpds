@@ -312,9 +312,10 @@
 
 			</table>
 
-			<table width="100%" border=0>
-				<tr>
-					<td><display:table id="destination"
+			<c:if test="${host.type != 'Replication' && host.type != 'Source' && host.type != 'Backup'}">
+				<table width="100%" border=0>
+					<tr>
+						<td><display:table id="destination"
 							name="${host.destinations}" requestURI="" class="listing">
 							<display:column sortable="true" title="Name">
 								<a
@@ -323,8 +324,9 @@
 							<display:column sortable="false" title="Comment">${destination.comment}</display:column>
 							<display:caption>Destination(s) using this Host</display:caption>
 						</display:table></td>
-				</tr>
-			</table>
+					</tr>
+				</table>
+			</c:if>
 		</c:if>
 	</c:if>
 
