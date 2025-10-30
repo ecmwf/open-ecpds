@@ -329,6 +329,7 @@
 					<option>$dataTransfer[name]</option>
 					<option>$dataTransfer[path]</option>
 					<option>$dataTransfer[parent]</option>
+					<option>$dataTransfer[asap]</option>
 				</optgroup>
 				<optgroup label="Destination">
 					<option>$destination[name]</option>

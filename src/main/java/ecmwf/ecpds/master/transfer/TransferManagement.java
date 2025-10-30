@@ -283,6 +283,7 @@ public final class TransferManagement {
         Format.replaceAll(sb, "$dataTransfer[name]", target.getName());
         Format.replaceAll(sb, "$dataTransfer[path]", target.getPath());
         Format.replaceAll(sb, "$dataTransfer[parent]", target.getParent());
+        Format.replaceAll(sb, "$dataTransfer[asap]", transfer.getAsap());
         // Do we have "$metadata[...]" parameters to process?
         if (sb.indexOf("$metadata[") != -1) {
             if (metadataValues.isEmpty()) {
