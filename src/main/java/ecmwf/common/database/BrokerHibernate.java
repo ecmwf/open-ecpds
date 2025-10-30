@@ -40,6 +40,7 @@ package ecmwf.common.database;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -329,6 +330,19 @@ final class BrokerHibernate implements Broker {
     }
 
     /**
+     * Validates that the provided SQL string can be safely represented using the ISO-8859-1 (Latin-1) character
+     * encoding. This check helps detect characters that may cause JDBC or database-level collation errors (e.g.,
+     * "Illegal mix of collations") when the database or connection expects Latin-1 encoded input.
+     */
+    private static void validateSqlEncoding(final String sql) throws BrokerException {
+        final var latinBytes = sql.getBytes(StandardCharsets.ISO_8859_1);
+        final var roundTrip = new String(latinBytes, StandardCharsets.ISO_8859_1);
+        if (!roundTrip.equals(sql)) {
+            throw new BrokerException("Only Latin-1 characters allowed");
+        }
+    }
+
+    /**
      * {@inheritDoc}
      *
      * This method takes an SQL query as input and returns a ResultSet.
@@ -345,6 +359,7 @@ final class BrokerHibernate implements Broker {
     @Override
     public CloseableResultSetWrapper executeQuery(final boolean release, final String sql)
             throws BrokerException, SQLException {
+        validateSqlEncoding(sql);
         setReadOnly(true);
         session.setDefaultReadOnly(true);
         if (release)
@@ -436,6 +451,7 @@ final class BrokerHibernate implements Broker {
      */
     @Override
     public int executeUpdate(final String sql) throws BrokerException, SQLException {
+        validateSqlEncoding(sql);
         setReadOnly(false);
         final var affectedRows = new int[1]; // or use AtomicInteger
         final var tx = session.getTransaction();
@@ -505,7 +521,7 @@ final class BrokerHibernate implements Broker {
      * @see ecmwf.common.database.Broker#getIterator(java.lang.Class)
      */
     @Override
-    public <T extends DataBaseObject> CloseableIterator<T> getIterator(final Class<T> target) {
+    public <T extends DataBaseObject> CloseableIterator<T> getIterator(final Class<T> target) throws BrokerException {
         setReadOnly(true);
         session.setDefaultReadOnly(true);
         ScrollableResults<T> results = null;
@@ -556,7 +572,7 @@ final class BrokerHibernate implements Broker {
                 }
             }
             _log.error("getIterator: {}", target.getName(), e);
-            throw e; // or wrap in BrokerException
+            throw new BrokerException("Unable to retrieve data");
         }
     }
 
@@ -577,7 +593,9 @@ final class BrokerHibernate implements Broker {
      * @see ecmwf.common.database.Broker#getIterator(java.lang.Class, java.lang.String)
      */
     @Override
-    public <T extends DataBaseObject> CloseableIterator<T> getIterator(final Class<T> target, final String sql) {
+    public <T extends DataBaseObject> CloseableIterator<T> getIterator(final Class<T> target, final String sql)
+            throws BrokerException {
+        validateSqlEncoding(sql);
         setReadOnly(true);
         session.setDefaultReadOnly(true);
         ScrollableResults<T> results = null;
@@ -625,7 +643,7 @@ final class BrokerHibernate implements Broker {
                 }
             }
             _log.error("getIterator: {} -> {}", target.getName(), sql, e);
-            throw e; // or wrap in BrokerException
+            throw new BrokerException("Unable to retrieve data");
         }
     }
 

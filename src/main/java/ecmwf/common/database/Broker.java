@@ -127,8 +127,11 @@ interface Broker extends AutoCloseable {
      *            the target
      *
      * @return the iterator
+     *
+     * @throws BrokerException
+     *             the broker exception
      */
-    <T extends DataBaseObject> CloseableIterator<T> getIterator(Class<T> target);
+    <T extends DataBaseObject> CloseableIterator<T> getIterator(Class<T> target) throws BrokerException;
 
     /**
      * Gets the iterator.
@@ -141,8 +144,11 @@ interface Broker extends AutoCloseable {
      *            the sql
      *
      * @return the iterator
+     *
+     * @throws BrokerException
+     *             the broker exception
      */
-    <T extends DataBaseObject> CloseableIterator<T> getIterator(Class<T> target, String sql);
+    <T extends DataBaseObject> CloseableIterator<T> getIterator(Class<T> target, String sql) throws BrokerException;
 
     /**
      * Gets the primary key values.

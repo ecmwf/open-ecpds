@@ -73,7 +73,7 @@ public class DBIterator<E extends DataBaseObject> implements Iterator<E>, Closea
      * @param target
      *            the target
      */
-    DBIterator(final Broker broker, final Class<E> target) {
+    DBIterator(final Broker broker, final Class<E> target) throws BrokerException {
         this.iterator = broker.getIterator(target);
         this.broker = broker;
         TRACKER.onOpen();
@@ -88,8 +88,11 @@ public class DBIterator<E extends DataBaseObject> implements Iterator<E>, Closea
      *            the target
      * @param sql
      *            the sql
+     *
+     * @throws BrokerException
+     *             the broker exception
      */
-    DBIterator(final Broker broker, final Class<E> target, final String sql) {
+    DBIterator(final Broker broker, final Class<E> target, final String sql) throws BrokerException {
         this.iterator = broker.getIterator(target, sql);
         this.broker = broker;
         TRACKER.onOpen();
@@ -128,17 +131,17 @@ public class DBIterator<E extends DataBaseObject> implements Iterator<E>, Closea
     @Override
     public void close() {
         if (closed.compareAndSet(false, true) && broker != null) {
-            boolean closedSuccessfully = true;
+            var closedSuccessfully = true;
             try {
                 try {
                     iterator.close();
-                } catch (Exception e) {
+                } catch (final Exception e) {
                     closedSuccessfully = false;
                     _log.warn("Failed to close iterator", e);
                 }
                 try {
                     broker.release();
-                } catch (Exception e) {
+                } catch (final Exception e) {
                     closedSuccessfully = false;
                     _log.warn("Failed to release broker", e);
                 }
