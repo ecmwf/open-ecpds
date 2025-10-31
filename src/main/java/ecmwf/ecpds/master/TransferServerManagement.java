@@ -115,7 +115,7 @@ final class TransferServerManagement {
             }
         }
         if (servers.length == 0) {
-            throw new DataBaseException("No DataMover configured for TransferGroup " + originalTransferGroup.getName());
+            throw new DataBaseException("No DataMover available for TransferGroup " + originalTransferGroup.getName());
         }
         // Increment the index for this particular caller. This index is used as
         // a starting position modulo the size of the list of TransferServers!

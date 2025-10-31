@@ -1813,7 +1813,7 @@ public final class TransferScheduler extends MBeanScheduler {
         // check against the clusters to spread the load evenly on all data
         // movers!
         final var provider = new TransferServerProvider("TransferScheduler.acquisition", true, -1,
-                host.getTransferGroupName(), destinationName, MASTER, host);
+                host.getTransferGroupName(), destinationName, host);
         for (final TransferServer current : provider.getTransferServers()) {
             final var getHost = current.getName();
             MoverInterface mover;
@@ -1901,7 +1901,7 @@ public final class TransferScheduler extends MBeanScheduler {
         // check against the clusters to spread the load evenly on all data
         // movers!
         final var provider = new TransferServerProvider("TransferScheduler.execution", true, -1,
-                host.getTransferGroupName(), destinationName, MASTER, host);
+                host.getTransferGroupName(), destinationName, host);
         for (final TransferServer current : provider.getTransferServers()) {
             final var getHost = current.getName();
             MoverInterface mover;
@@ -2072,7 +2072,7 @@ public final class TransferScheduler extends MBeanScheduler {
                             + " data mover");
                 }
                 final var provider = new TransferServerProvider("TransferScheduler.download", false,
-                        dr.dataFile.getFileSystem(), groupFromData, transfer.getDestinationName(), MASTER, null);
+                        dr.dataFile.getFileSystem(), groupFromData, transfer.getDestinationName(), null);
                 for (final TransferServer server : provider.getTransferServers()) {
                     final var moverName = server.getName();
                     final var groupName = server.getTransferGroupName();

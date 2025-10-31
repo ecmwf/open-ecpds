@@ -2327,7 +2327,7 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
                 // Initialize the new DataTransfer(s) and DataFile!
                 _log.debug("Create new DataTransfer(s) and associated DataFile");
                 provider = new TransferServerProvider("ECpdsPlugin", checkCluster, null, transferGroup,
-                        selectedDestination, MASTER, null);
+                        selectedDestination, null);
                 final var group = provider.getTransferGroup();
                 dataFile.setTransferGroup(group);
                 dataFile.setTransferGroupName(group.getName());
@@ -2456,7 +2456,7 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
                 for (final DataTransfer transfer : transfersList) {
                     if (groupBy == null && provider == null) {
                         provider = new TransferServerProvider("ECpdsPlugin", false, dataFile.getFileSystem(),
-                                transferGroup, selectedDestination, MASTER, null);
+                                transferGroup, selectedDestination, null);
                     }
                     transfer.setTransferServer(null);
                     transfer.setTransferServerName(null);

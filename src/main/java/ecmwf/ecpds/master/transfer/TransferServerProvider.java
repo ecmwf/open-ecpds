@@ -32,6 +32,7 @@ import static ecmwf.common.text.Util.isNotEmpty;
 
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -44,6 +45,7 @@ import ecmwf.common.database.DataBaseException;
 import ecmwf.common.database.Host;
 import ecmwf.common.database.TransferGroup;
 import ecmwf.common.database.TransferServer;
+import ecmwf.common.ecaccess.StarterServer;
 import ecmwf.common.ectrans.ECtransOptions;
 import ecmwf.common.technical.Cnf;
 import ecmwf.ecpds.master.MasterServer;
@@ -56,16 +58,19 @@ public final class TransferServerProvider {
     private static final Logger _log = LogManager.getLogger(TransferServerProvider.class);
 
     /** List of current file system selected for each TransferGroup. */
-    private static final Map<String, SecureRandom> _fileSystems = new ConcurrentHashMap<>();
+    private static final Map<String, SecureRandom> FILE_SYSTEMS = new ConcurrentHashMap<>();
 
-    /** The _servers. */
-    private final List<TransferServer> _servers = new ArrayList<>();
+    /** The Constant MASTER. */
+    private static final MasterServer MASTER = StarterServer.getInstance(MasterServer.class);
 
-    /** The _group. */
-    private TransferGroup _group = null;
+    /** The servers. */
+    private final List<TransferServer> servers = new ArrayList<>();
 
-    /** The _file system. */
-    private int _fileSystem = -1;
+    /** The group. */
+    private TransferGroup group = null;
+
+    /** The file system. */
+    private int fileSystem = -1;
 
     /**
      * The Class TransferServerException.
@@ -96,9 +101,9 @@ public final class TransferServerProvider {
     private static int _allocateFileSystem(final TransferGroup group) {
         final var groupName = group.getName();
         SecureRandom random;
-        synchronized (_fileSystems) {
-            if ((random = _fileSystems.get(groupName)) == null) {
-                _fileSystems.put(groupName, random = new SecureRandom());
+        synchronized (FILE_SYSTEMS) {
+            if ((random = FILE_SYSTEMS.get(groupName)) == null) {
+                FILE_SYSTEMS.put(groupName, random = new SecureRandom());
             }
         }
         final var index = random.nextInt(group.getVolumeCount());
@@ -112,7 +117,7 @@ public final class TransferServerProvider {
      * @return the file system
      */
     public int getFileSystem() {
-        return _fileSystem;
+        return fileSystem;
     }
 
     /**
@@ -121,7 +126,7 @@ public final class TransferServerProvider {
      * @return the transfer group
      */
     public TransferGroup getTransferGroup() {
-        return _group;
+        return group;
     }
 
     /**
@@ -130,7 +135,7 @@ public final class TransferServerProvider {
      * @return the transfer servers
      */
     public List<TransferServer> getTransferServers() {
-        return _servers;
+        return servers;
     }
 
     /**
@@ -160,21 +165,21 @@ public final class TransferServerProvider {
      *             the data base exception
      */
     public TransferServerProvider(final String caller, boolean checkCluster, final Integer allocatedFileSystem,
-            final String transferGroup, final String destination, final MasterServer master, final Host primaryHost)
+            final String transferGroup, final String destination, final Host primaryHost)
             throws TransferServerException, DataBaseException {
-        final var dataBase = master.getECpdsBase();
+        final var dataBase = MASTER.getECpdsBase();
         if (transferGroup != null && primaryHost == null) {
             // A transfer group was specified and we don't have a default primary host, so
             // let's use it if we can!
-            _group = dataBase.getTransferGroup(transferGroup);
-            if (_group == null) {
+            group = dataBase.getTransferGroup(transferGroup);
+            if (group == null) {
                 throw new TransferServerException("TransferGroup " + transferGroup + " not found");
             }
-            if (!_group.getActive()) {
-                // The group provided is not active so force the checking of the
+            if (!groupIsAvailable(group)) {
+                // The group provided is not available so force the checking of the
                 // cluster and let's hope that another group from this cluster
-                // is valid!
-                _log.warn("Force cluster checking as " + transferGroup + " is inactive");
+                // is available!
+                _log.warn("Force cluster checking as " + transferGroup + " is not available");
                 checkCluster = true;
             }
         } else {
@@ -185,25 +190,25 @@ public final class TransferServerProvider {
             if (hosts.length == 0) {
                 // We have no hosts defined for this Destination so let's get
                 // the default transfer group from the Destination!
-                if ((_group = dataBase.getDestination(destination).getTransferGroup()) == null) {
+                if ((group = dataBase.getDestination(destination).getTransferGroup()) == null) {
                     // There is no default transfer group for this Destination
                     // so let's take the default value from the configuration!
                     final var defaultGroup = Cnf.at("Server", "defaultTransferGroup");
                     if (defaultGroup == null) {
                         throw new TransferServerException("No host(s) defined for " + destination);
                     }
-                    _group = dataBase.getTransferGroup(defaultGroup);
-                    if (_group == null) {
-                        throw new TransferServerException("Default TransferGroup not found: " + defaultGroup);
+                    group = dataBase.getTransferGroup(defaultGroup);
+                    if (group == null) {
+                        throw new TransferServerException("Default TransferGroup " + defaultGroup + " not found");
                     }
                 }
             } else {
                 // We have some hosts defined so we should be able to find a
                 // transfer group from the primary host!
                 final var primary = hosts[0];
-                _group = primary.getTransferGroup();
+                group = primary.getTransferGroup();
                 // If no TransferGroup is defined then we can not proceed!
-                if (_group == null) {
+                if (group == null) {
                     throw new TransferServerException("No TransferGroup defined for Host " + primary.getNickname());
                 }
                 // Is there a request to use a specific data mover?
@@ -213,15 +218,14 @@ public final class TransferServerProvider {
                     if (moverList.length() > 0) {
                         // Get one of the mandatory mover!
                         final var server = TransferScheduler.getTransferServerName(setup.getBoolean(HOST_ECTRANS_DEBUG),
-                                _group.getName(), null, moverList);
+                                group.getName(), null, moverList);
                         if (server != null) {
                             // We know the group and the server are active and
                             // connected (checked in getTransferServerName)!
-                            _group = server.getTransferGroup();
-                            _fileSystem = allocatedFileSystem != null ? allocatedFileSystem
-                                    : _allocateFileSystem(_group);
-                            _servers.add(server);
-                            _log.debug("Force usage of " + server.getName() + " in " + _group.getName());
+                            group = server.getTransferGroup();
+                            fileSystem = allocatedFileSystem != null ? allocatedFileSystem : _allocateFileSystem(group);
+                            servers.add(server);
+                            _log.debug("Force usage of " + server.getName() + " in " + group.getName());
                             // No more processing required!
                             return;
                         }
@@ -236,27 +240,40 @@ public final class TransferServerProvider {
             // See if the Transfer Group we found is part of a Cluster and if
             // this is the case then let's pick up a random TransferGroup from
             // the Cluster according to the weight
-            final var clusterName = _group.getClusterName();
-            if (isNotEmpty(clusterName) && _group.getClusterWeight() != null) {
-                _group = getRandomGroupFromCluster(_group, dataBase.getTransferGroupArray());
-                _log.debug("Choosing TransferGroup " + _group.getName() + " from Cluster " + clusterName);
+            final var clusterName = group.getClusterName();
+            if (isNotEmpty(clusterName) && group.getClusterWeight() != null) {
+                group = getRandomGroupFromCluster(group, dataBase.getTransferGroupArray());
+                _log.debug("Choosing TransferGroup " + group.getName() + " from Cluster " + clusterName);
             }
         }
-        // This shouldn't happen but let's check if the TransferGroup is active
+        // This shouldn't happen but let's check if the TransferGroup is available
         // just in case!
-        if (!_group.getActive()) {
-            throw new TransferServerException("TransferGroup " + _group.getName() + " not active");
+        if (!groupIsAvailable(group)) {
+            throw new TransferServerException("TransferGroup " + group.getName() + " not available");
         }
         // Select one of the file system available for this group!
-        _fileSystem = allocatedFileSystem != null ? allocatedFileSystem : _allocateFileSystem(_group);
+        fileSystem = allocatedFileSystem != null ? allocatedFileSystem : _allocateFileSystem(group);
         // Now gets the list of active TransferServers for the selected
         // TransferGroup
-        _servers.addAll(master.getActiveTransferServers("TransferServerProvider." + caller, null, _group, _fileSystem));
+        servers.addAll(MASTER.getActiveTransferServers("TransferServerProvider." + caller, null, group, fileSystem));
         // And check if we have something? (all the TransferServers might be
         // down)
-        if (_servers.isEmpty()) {
-            throw new TransferServerException("No TransferServer(s) available for TransferGroup " + _group.getName());
+        if (servers.isEmpty()) {
+            throw new TransferServerException("No TransferServer(s) available for TransferGroup " + group.getName());
         }
+    }
+
+    /**
+     * Check if the given transfer group is active and has at least one transfer server connected to the master.
+     *
+     * @param transferGroups
+     *            the transfer groups
+     *
+     * @return the transfer group is available for use
+     */
+    public static boolean groupIsAvailable(final TransferGroup group) {
+        return group.getActive() && Arrays.stream(MASTER.getECpdsBase().getTransferServers(group.getName()))
+                .anyMatch(server -> server.getActive() && MASTER.existsClientInterface(server.getName(), "DataMover"));
     }
 
     /**
@@ -275,7 +292,8 @@ public final class TransferServerProvider {
         // What is the sum of all the weightings?
         var total = 0;
         for (final TransferGroup group : transferGroups) {
-            if (group.getActive() && clusterName.equals(group.getClusterName()) && group.getClusterWeight() != null) {
+            if (clusterName.equals(group.getClusterName()) && group.getClusterWeight() != null
+                    && groupIsAvailable(group)) {
                 total += group.getClusterWeight();
             }
         }
@@ -285,8 +303,8 @@ public final class TransferServerProvider {
             // Loop through the weightings list until the correct one is found!
             var current = 0;
             for (final TransferGroup group : transferGroups) {
-                if (group.getActive() && clusterName.equals(group.getClusterName())
-                        && group.getClusterWeight() != null) {
+                if (clusterName.equals(group.getClusterName()) && group.getClusterWeight() != null
+                        && groupIsAvailable(group)) {
                     current += group.getClusterWeight();
                     if (random < current) {
                         return group;
