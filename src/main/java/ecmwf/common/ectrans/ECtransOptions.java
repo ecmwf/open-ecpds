@@ -186,6 +186,12 @@ public enum ECtransOptions {
     /** The destination scheduler requeueignore. */
     DESTINATION_SCHEDULER_REQUEUEIGNORE("requeueignore", String.class, STRING_NONE),
 
+    /** The destination ectrans filter minimum size. */
+    DESTINATION_ECTRANS_FILTER_MINIMUM_SIZE("filterMinimumSize", ByteSize.class, BYTE_SIZE_NONE),
+
+    /** The destination ectrans filterpattern. */
+    DESTINATION_ECTRANS_FILTERPATTERN("filterpattern", String.class, STRING_NONE),
+
     /** The host ectrans connect time out. */
     HOST_ECTRANS_CONNECT_TIME_OUT("connectTimeOut", Duration.class, Duration.ofMinutes(1)),
 

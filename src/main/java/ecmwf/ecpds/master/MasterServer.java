@@ -26,12 +26,12 @@ package ecmwf.ecpds.master;
  * @since 2024-07-01
  */
 
+import static ecmwf.common.ectrans.ECtransGroups.Module.DESTINATION_ECTRANS;
 import static ecmwf.common.ectrans.ECtransGroups.Module.DESTINATION_MQTT;
 import static ecmwf.common.ectrans.ECtransGroups.Module.DESTINATION_SCHEDULER;
 import static ecmwf.common.ectrans.ECtransGroups.Module.HOST_ACQUISITION;
 import static ecmwf.common.ectrans.ECtransGroups.Module.HOST_ECTRANS;
 import static ecmwf.common.ectrans.ECtransGroups.Module.USER_PORTAL;
-import static ecmwf.common.ectrans.ECtransGroups.Module.HOST_PROXY;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_MQTT_CLIENT_ID;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_MQTT_CONTENT_TYPE;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_MQTT_EXPIRY_INTERVAL;
@@ -44,6 +44,8 @@ import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_SCHEDULER_FORCE_ST
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_SCHEDULER_MASTER_TO_NOTIFY_ON_DONE;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_SCHEDULER_RESET_QUEUE_ON_CHANGE;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_SCHEDULER_STANDBY;
+import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_ECTRANS_FILTER_MINIMUM_SIZE;
+import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_ECTRANS_FILTERPATTERN;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ACQUISITION_ACTION;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ACQUISITION_DATEDELTA;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ACQUISITION_DATEFORMAT;
@@ -88,7 +90,9 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_ACQUISITION_UNIQUE_BY_TAR
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ACQUISITION_USE_SYMLINK;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ACQUISITION_USE_TARGET_AS_UNIQUE_NAME;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ACQUISITION_WILDCARD_FILTER;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_FILTERPATTERN;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_LASTUPDATE;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_FILTER_MINIMUM_SIZE;
 import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_ANONYMOUS;
 import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_GEOBLOCLING;
 import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_MAX_CONNECTIONS;
@@ -8379,6 +8383,7 @@ public final class MasterServer extends ECaccessProvider
                 try {
                     _log.info("Starting proxy for DataTransfer " + _transfer.getId());
                     final var list = _getTransferServers(_transfer.getDataFile());
+                    final var destination = _transfer.getDestination();
                     BackupResult rr = null;
                     // TODO: find a better way of checking the maximum number of
                     // proxy hosts - there is a synchronisation issue here!
@@ -8392,13 +8397,18 @@ public final class MasterServer extends ECaccessProvider
                             }
                             continue;
                         }
-                        // Are we requested to use the filter defined at the destination level?
-                        if (HOST_PROXY.getECtransSetup(hostForProxy.getData())
-                                .getBoolean(HOST_PROXY_USE_DESTINATION_FILTER)) {
-                            final var filterName = _transfer.getDestination().getFilterName();
-                            hostForProxy.setFilterName(filterName);
-                            _log.debug("Forcing {} for replicating DataTransfer-{} to ProxyHost {}", filterName,
+                        // Are we requested to use the filter options defined at the destination level?
+                        final var proxySetup = new ECtransSetup(hostForProxy.getData());
+                        if (proxySetup.getBoolean(HOST_PROXY_USE_DESTINATION_FILTER)) {
+                            _log.debug("Using Destination options for replicating DataTransfer-{} to ProxyHost {}",
                                     _transfer.getId(), hostForProxy.getNickname());
+                            hostForProxy.setFilterName(destination.getFilterName());
+                            final var setup = DESTINATION_ECTRANS.getECtransSetup(destination.getData());
+                            setup.getOptionalString(DESTINATION_ECTRANS_FILTERPATTERN).ifPresent(
+                                    filterPattern -> proxySetup.set(HOST_ECTRANS_FILTERPATTERN, filterPattern));
+                            setup.getOptionalByteSize(DESTINATION_ECTRANS_FILTER_MINIMUM_SIZE)
+                                    .ifPresent(byteSize -> proxySetup.set(HOST_ECTRANS_FILTER_MINIMUM_SIZE, byteSize));
+                            hostForProxy.setData(proxySetup.getData());
                         }
                         if ((rr = TransferScheduler.backup(_hostForProxy = hostForProxy, list, _transfer)).complete) {
                             break;
@@ -8439,7 +8449,6 @@ public final class MasterServer extends ECaccessProvider
                         // Add a new history to inform about the failure!
                         addTransferHistory(_transfer, StatusFactory.STOP, rr.message);
                     }
-                    final var destination = _transfer.getDestination();
                     final var dataFile = _transfer.getDataFile();
                     if (_splunk.isInfoEnabled())
                         _splunk.info("CPY;{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{}",
