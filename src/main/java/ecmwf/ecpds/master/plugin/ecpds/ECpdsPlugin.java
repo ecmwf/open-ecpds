@@ -963,12 +963,11 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     public void targetReq(final String[] parameters) throws ParameterException {
         final var target = getParameter(parameters);
         try {
-			currentTarget = Format.normalizePath(target, true)
-					.substring(target.startsWith("/") || target.startsWith("\\") ? 0 : 1);
-			if (currentTarget.endsWith("/")) {
-				currentTarget += new File(source == null ? original : source).getName();
-			}
-        } catch (final FileNotFoundException e) {
+            currentTarget = Format.normalizePath(target, true);
+            if (currentTarget.endsWith("/")) {
+                currentTarget += new File(source == null ? original : source).getName();
+            }
+        } catch (final FileNotFoundException _) {
             stopAndError("Invalid format for the -target option (" + target + ")");
         }
         checkParameterSize("target", currentTarget, MAX_SOURCE_NAME_LENGTH);
