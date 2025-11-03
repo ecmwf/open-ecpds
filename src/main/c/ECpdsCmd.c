@@ -929,7 +929,7 @@ int usage(void) {
   fprintf(stdout, " -metadata    {arg} - metadata(s) (param=value,...)\n");
   fprintf(
       stdout,
-      " -target      {arg} - target file name (default: source file name)\n");
+      " -target      {arg} - target file name or directory (default: source file name)\n");
   fprintf(stdout, " -identity    {arg} - identity of the product (default: "
                   "target file name)\n");
   fprintf(stdout, " -lifetime    {arg} - lifetime of the data file (default: "

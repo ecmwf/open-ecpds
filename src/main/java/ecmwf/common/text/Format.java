@@ -1754,7 +1754,7 @@ public final class Format {
      * @throws FileNotFoundException
      *             the file not found exception
      */
-    private static String normalizePath(final String path, final boolean keepEndTrailer) throws FileNotFoundException {
+    public static String normalizePath(final String path, final boolean keepEndTrailer) throws FileNotFoundException {
         final List<String> array = new ArrayList<>();
         var index = 0;
         final var token = new StringTokenizer(path.replace('\\', '/'), "/");

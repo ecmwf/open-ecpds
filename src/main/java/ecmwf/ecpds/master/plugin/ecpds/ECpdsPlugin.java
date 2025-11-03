@@ -42,6 +42,7 @@ import static ecmwf.common.text.Util.nullToNone;
 import static ecmwf.ecpds.master.DataFilePath.getPath;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -962,8 +963,11 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     public void targetReq(final String[] parameters) throws ParameterException {
         final var target = getParameter(parameters);
         try {
-            currentTarget = Format.normalizePath(target)
-                    .substring(target.startsWith("/") || target.startsWith("\\") ? 0 : 1);
+			currentTarget = Format.normalizePath(target, true)
+					.substring(target.startsWith("/") || target.startsWith("\\") ? 0 : 1);
+			if (currentTarget.endsWith("/")) {
+				currentTarget += new File(source == null ? original : source).getName();
+			}
         } catch (final FileNotFoundException e) {
             stopAndError("Invalid format for the -target option (" + target + ")");
         }
