@@ -54,6 +54,9 @@ public class Destination extends DataBaseObject {
     /** The des keep in spool. */
     protected int DES_KEEP_IN_SPOOL;
 
+    /** The des mail on update. */
+    protected boolean DES_MAIL_ON_UPDATE;
+
     /** The des mail on end. */
     protected boolean DES_MAIL_ON_END;
 
@@ -355,6 +358,35 @@ public class Destination extends DataBaseObject {
      */
     public void setKeepInSpool(final String param) {
         DES_KEEP_IN_SPOOL = Integer.parseInt(param);
+    }
+
+    /**
+     * Gets the mail on update.
+     *
+     * @return the mail on update
+     */
+    public boolean getMailOnUpdate() {
+        return DES_MAIL_ON_UPDATE;
+    }
+
+    /**
+     * Sets the mail on update.
+     *
+     * @param param
+     *            the new mail on update
+     */
+    public void setMailOnUpdate(final boolean param) {
+        DES_MAIL_ON_UPDATE = param;
+    }
+
+    /**
+     * Sets the mail on update.
+     *
+     * @param param
+     *            the new mail on update
+     */
+    public void setMailOnUpdate(final String param) {
+        DES_MAIL_ON_UPDATE = Boolean.parseBoolean(param);
     }
 
     /**

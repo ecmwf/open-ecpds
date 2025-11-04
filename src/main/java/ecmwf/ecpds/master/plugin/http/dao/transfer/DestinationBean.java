@@ -495,6 +495,16 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     }
 
     /**
+     * Gets the mail on update.
+     *
+     * @return the mail on update
+     */
+    @Override
+    public boolean getMailOnUpdate() {
+        return destination.getMailOnUpdate();
+    }
+
+    /**
      * {@inheritDoc}
      *
      * Gets the mail on end.
@@ -973,6 +983,17 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     @Override
     public void setKeepInSpool(final int i) {
         destination.setKeepInSpool(i);
+    }
+
+    /**
+     * Sets the mail on update.
+     *
+     * @param param
+     *            the new mail on update
+     */
+    @Override
+    public void setMailOnUpdate(final boolean param) {
+        destination.setMailOnUpdate(param);
     }
 
     /**

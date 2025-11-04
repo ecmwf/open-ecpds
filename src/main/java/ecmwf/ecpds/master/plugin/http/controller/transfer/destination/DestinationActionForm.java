@@ -161,6 +161,9 @@ public class DestinationActionForm extends ECMWFActionForm {
     /** The mail on start. */
     private String mailOnStart = "off";
 
+    /** The mail on update. */
+    private String mailOnUpdate = "off";
+
     /** The mail on end. */
     private String mailOnEnd = "off";
 
@@ -462,6 +465,15 @@ public class DestinationActionForm extends ECMWFActionForm {
     }
 
     /**
+     * Gets the mail on update.
+     *
+     * @return the mail on update
+     */
+    public String getMailOnUpdate() {
+        return mailOnUpdate;
+    }
+
+    /**
      * Gets the mail on end.
      *
      * @return the mail on end
@@ -739,6 +751,16 @@ public class DestinationActionForm extends ECMWFActionForm {
      */
     public void setOnHostFailure(final String string) {
         onHostFailure = string;
+    }
+
+    /**
+     * Sets the mail on update.
+     *
+     * @param string
+     *            the new mail on update
+     */
+    public void setMailOnUpdate(final String string) {
+        mailOnUpdate = string;
     }
 
     /**
@@ -1599,6 +1621,7 @@ public class DestinationActionForm extends ECMWFActionForm {
         destination.setMaxPending(convertToInt(maxPending));
         destination.setFilterName(filterName);
         destination.setUserMail(userMail);
+        destination.setMailOnUpdate(convertToBoolean(mailOnUpdate));
         destination.setMailOnStart(convertToBoolean(mailOnStart));
         destination.setMailOnEnd(convertToBoolean(mailOnEnd));
         destination.setMailOnError(convertToBoolean(mailOnError));
@@ -1642,6 +1665,7 @@ public class DestinationActionForm extends ECMWFActionForm {
         setMaxPending(Integer.toString(destination.getMaxPending()));
         setFilterName(destination.getFilterName());
         setUserMail(destination.getUserMail());
+        setMailOnUpdate(destination.getMailOnUpdate() ? "on" : "off");
         setMailOnStart(destination.getMailOnStart() ? "on" : "off");
         setMailOnEnd(destination.getMailOnEnd() ? "on" : "off");
         setMailOnError(destination.getMailOnError() ? "on" : "off");

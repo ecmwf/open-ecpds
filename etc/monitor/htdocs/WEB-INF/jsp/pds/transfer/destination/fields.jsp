@@ -402,6 +402,10 @@
 							property="userMail" /></td>
 				</tr>
 				<tr>
+					<th>Mail on Update</th>
+					<td><html:checkbox property="mailOnUpdate" /></td>
+				</tr>
+				<tr>
 					<th>Mail on Start</th>
 					<td><html:checkbox property="mailOnStart" /></td>
 				</tr>

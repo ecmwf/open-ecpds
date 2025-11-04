@@ -4669,7 +4669,7 @@ public final class MasterServer extends ECaccessProvider
                 }
                 // Let's build the list of email addresses!
                 for (final Destination destination : destinations) {
-                    if (destination != null) {
+                    if (destination != null && destination.getMailOnUpdate()) {
                         final var email = destination.getUserMail();
                         if (isNotEmpty(email) && emails.indexOf(email) == -1) {
                             _log.debug("Adding email address: " + email);

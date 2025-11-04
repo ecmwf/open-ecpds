@@ -152,6 +152,11 @@
 	</tr>
 
 	<tr>
+		<th>Mail on Update</th>
+		<td><c:if test="${destination.mailOnUpdate}">yes</c:if> <c:if
+				test="${!destination.mailOnUpdate}">no</c:if></td>
+	</tr>
+	<tr>
 		<th>Mail on Start</th>
 		<td><c:if test="${destination.mailOnStart}">yes</c:if> <c:if
 				test="${!destination.mailOnStart}">no</c:if></td>

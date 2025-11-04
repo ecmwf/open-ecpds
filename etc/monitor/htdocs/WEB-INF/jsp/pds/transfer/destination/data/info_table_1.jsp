@@ -16,10 +16,13 @@
 						title="See all destinations in ${destination.country.name}" /></a></td>
 				<td><a title="See all destinations in the group"
 					href="<bean:message key="destination.basepath"/>?destinationSearch=&destinationStatus=&destinationType=${destination.type}">${destination.typeText}</a></td>
-				<td>Notify <c:if test="${destination.mailOnStart}">  &nbsp; <content:icon
-							key="icon.mail1" altKey="ecpds.destination.mailOnStart"
-							titleKey="ecpds.destination.mailOnStart" writeFullTag="true" />
-					</c:if> <c:if test="${destination.mailOnEnd}"> &nbsp; <content:icon
+					<td>Notify <c:if test="${destination.mailOnUpdate}">  &nbsp; <content:icon
+								key="icon.mail1" altKey="ecpds.destination.mailOnUpdate"
+								titleKey="ecpds.destination.mailOnUpdate" writeFullTag="true" />
+						</c:if> <c:if test="${destination.mailOnStart}"> &nbsp; <content:icon
+									key="icon.mail2" altKey="ecpds.destination.mailOnStart"
+									titleKey="ecpds.destination.mailOnStart" writeFullTag="true" />
+						</c:if> <c:if test="${destination.mailOnEnd}"> &nbsp; <content:icon
 							key="icon.mail2" altKey="ecpds.destination.mailOnEnd"
 							titleKey="ecpds.destination.mailOnEnd" writeFullTag="true" />
 					</c:if> <c:if test="${destination.mailOnError}"> &nbsp; <content:icon

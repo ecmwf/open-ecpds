@@ -66,6 +66,7 @@ public class ChangeLogBean extends ModelBeanBase implements ChangeLog {
         translationMap.put("DES_MAIL_ON_END", "Mail On End");
         translationMap.put("DES_MAIL_ON_ERROR", "Mail On Error");
         translationMap.put("DES_MAIL_ON_START", "Mail On Start");
+        translationMap.put("DES_MAIL_ON_UPDATE", "Mail On Update");
         translationMap.put("DES_MAX_CONNECTIONS", "Maximum Connections");
         translationMap.put("DES_MAX_PENDING", "Maximum Pending");
         translationMap.put("DES_MAX_FILE_SIZE", "Maximum File Size");

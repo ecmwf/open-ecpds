@@ -316,6 +316,13 @@ public interface Destination extends ModelBean {
     String getKeepInSpoolText();
 
     /**
+     * Gets the mail on update.
+     *
+     * @return the mail on update
+     */
+    boolean getMailOnUpdate();
+
+    /**
      * Gets the mail on end.
      *
      * @return the mail on end
@@ -904,6 +911,14 @@ public interface Destination extends ModelBean {
      *            the new keep in spool
      */
     void setKeepInSpool(int i);
+
+    /**
+     * Sets the mail on update.
+     *
+     * @param b
+     *            the new mail on update
+     */
+    void setMailOnUpdate(boolean b);
 
     /**
      * Sets the mail on end.

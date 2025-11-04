@@ -510,6 +510,9 @@
 		<property name="DES_KEEP_IN_SPOOL" type="java.lang.Integer">
 			<column name="DES_KEEP_IN_SPOOL" />
 		</property>
+		<property name="DES_MAIL_ON_UPDATE" type="boolean">
+			<column name="DES_MAIL_ON_UPDATE" />
+		</property>
 		<property name="DES_MAIL_ON_END" type="boolean">
 			<column name="DES_MAIL_ON_END" />
 		</property>
