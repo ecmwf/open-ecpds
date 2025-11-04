@@ -392,8 +392,12 @@ public final class MasterServer extends ECaccessProvider
     /** The schedule clone id. */
     private transient Integer scheduleCloneId = null;
 
-    /** The send mails. */
-    private transient boolean sendMails = Cnf.at("Server", "sendMails", true);
+    /** The send mail notifications for transfers. */
+    private transient boolean sendMailNotificationsForTransfers = Cnf.at("Server", "sendMailNotificationsForTransfers",
+            true);
+
+    /** The mail subject tag. */
+    private final transient String mailSubjectTag = Cnf.at("Server", "mailSubjectTag", getRoot());
 
     /** The MQTT token used in the connect parameters. */
     private static final String MQTT_TOKEN = ";notification=mqtt";
@@ -2698,8 +2702,9 @@ public final class MasterServer extends ECaccessProvider
                 new MBeanAttributeInfo[] {
                         new MBeanAttributeInfo("Connected", "java.lang.Boolean",
                                 "Connected: connected to the ECcmdServer.", true, false, false),
-                        new MBeanAttributeInfo("SendMails", "java.lang.Boolean",
-                                "SendMails: send mails for each user action.", true, true, false),
+                        new MBeanAttributeInfo("sendMailForTransfers", "java.lang.Boolean",
+                                "sendMailForTransfers: send mails for each event on a data transfer.", true, true,
+                                false),
                         new MBeanAttributeInfo("Trace", "java.lang.Boolean",
                                 "Trace: show remote calls from monitoring interface in logs.", true, true, false),
                         new MBeanAttributeInfo("SynchronizedCount", "java.lang.Long",
@@ -2841,8 +2846,8 @@ public final class MasterServer extends ECaccessProvider
             if ("SynchronizedCount".equals(attributeName)) {
                 return Synchronized.getSize();
             }
-            if ("SendMails".equals(attributeName)) {
-                return sendMails;
+            if ("sendMailForTransfers".equals(attributeName)) {
+                return sendMailNotificationsForTransfers;
             }
             if ("Trace".equals(attributeName)) {
                 return MonitorCall.getTrace();
@@ -2872,8 +2877,8 @@ public final class MasterServer extends ECaccessProvider
     @Override
     public boolean setAttribute(final String name, final Object value)
             throws InvalidAttributeValueException, MBeanException {
-        if ("SendMails".equals(name)) {
-            sendMails = (Boolean) value;
+        if ("sendMailForTransfers".equals(name)) {
+            sendMailNotificationsForTransfers = (Boolean) value;
             return true;
         }
         if ("Trace".equals(name)) {
@@ -3491,15 +3496,14 @@ public final class MasterServer extends ECaccessProvider
      *            the transfer
      */
     public void sendECpdsMessage(final DataTransfer transfer) {
-        if (sendMails) {
+        if (sendMailNotificationsForTransfers) {
             final var destination = transfer.getDestination();
             final var comment = transfer.getComment();
             final var file = transfer.getDataFile();
             final var ecuser = destination.getECUser();
             final var mailto = destination.getUserMail();
             sendECpdsMessage(mailto != null ? mailto : ecuser.getName(),
-                    "[ecpds] request: " + file.getId() + " " + transfer.getStatusCode() + " (" + destination.getName()
-                            + ")",
+                    "request: " + file.getId() + " " + transfer.getStatusCode() + " (" + destination.getName() + ")",
                     "Message concerning ECpds request: " + file.getId() + "\nRequest status: "
                             + transfer.getStatusCode() + (isNotEmpty(comment) ? "\nComment: " + comment : "")
                             + "\nRequest owner: " + ecuser.getName() + "\nTarget destination: " + destination.getName()
@@ -3507,7 +3511,8 @@ public final class MasterServer extends ECaccessProvider
                             + "\nTarget file: " + transfer.getTarget() + "\nMail sent at: "
                             + Format.formatCurrentTime());
         } else {
-            _log.warn("Mail notification not sent for DataTransfer {}", transfer.getId());
+            _log.warn("Mail notification not sent for DataTransfer {} (email notification for transfer disabled)",
+                    transfer.getId());
         }
     }
 
@@ -3530,10 +3535,11 @@ public final class MasterServer extends ECaccessProvider
     public void sendECpdsMessage(final String to, final String cc, final String subject, final String content,
             final String attachmentName, final String attachmentContent) {
         if (theMailRepository != null) {
-            theMailRepository.sendMail(null, to, cc, subject, content, attachmentName, attachmentContent);
+            theMailRepository.sendMail(null, to, cc, "[" + mailSubjectTag + "] " + subject, content, attachmentName,
+                    attachmentContent);
         } else {
-            _log.warn("Mail not sent: to={}, cc={}, subject={}, attachment={}\n{}", to, cc, subject, attachmentName,
-                    content);
+            _log.warn("Mail not sent: to={}, cc={}, subject={}, attachment={}\n{} (email service disabled)", to, cc,
+                    subject, attachmentName, content);
         }
     }
 
@@ -4745,10 +4751,8 @@ public final class MasterServer extends ECaccessProvider
                             .append(Format.getMessage(exception)).append("\n===============================");
                 }
                 // Send a notification email!
-                sendECpdsMessage(
-                        emails.toString(), new StringBuilder("[ecpds] ").append(operation).append(" initiated by ")
-                                .append(webUser.getId()).append(": ").append(statusMessage).toString(),
-                        content.toString());
+                sendECpdsMessage(emails.toString(), new StringBuilder(operation).append(" initiated by ")
+                        .append(webUser.getId()).append(": ").append(statusMessage).toString(), content.toString());
             }
         } catch (final Exception e) {
             _log.warn(e);
@@ -6549,7 +6553,7 @@ public final class MasterServer extends ECaccessProvider
                 }
                 mail = isNotEmpty(mail) ? mail : host.getECUserName();
                 sendECpdsMessage(mail,
-                        "[ecpds] Host check " + " for " + host.getHost() + " ("
+                        "Host check " + " for " + host.getHost() + " ("
                                 + (hostStats.getValid() ? "SUCCESSFUL" : "NOT-SUCCESSFUL") + ")",
                         "Host check " + (hostStats.getValid() ? "successful" : "failure") + ": " + host.getName()
                                 + "\nHost name: " + host.getHost() + "\nHost comment: " + host.getComment()
