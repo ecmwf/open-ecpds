@@ -1167,29 +1167,14 @@
 		if (layerName != 'policyChooser')
 			hide('policyChooser');
 	}
-
-	$('#toDestination').bind(
-			'keypress',
-			function(event) {
-				var regex = new RegExp("^[a-zA-Z0-9_-]+$");
-				var key = String.fromCharCode(!event.charCode ? event.which
-						: event.charCode);
-				if (!regex.test(key)) {
-					event.preventDefault();
-					return false;
-				}
-			});
-
-	$('#name').bind(
-			'keypress',
-			function(event) {
-				var regex = new RegExp("^[a-zA-Z0-9_-]+$");
-				var key = String.fromCharCode(!event.charCode ? event.which
-						: event.charCode);
-				if (!regex.test(key)) {
-					event.preventDefault();
-					return false;
-				}
-			});
+	$('#name, #toDestination').on('input', function() {
+		const regex = /^[a-zA-Z0-9_-]+$/;
+		const $this = $(this);
+		const value = $this.val();
+		if (!regex.test(value)) {
+			// Remove all invalid characters
+			$this.val(value.replace(/[^a-zA-Z0-9_-]/g, ''));
+		}
+	});
 </script>
 

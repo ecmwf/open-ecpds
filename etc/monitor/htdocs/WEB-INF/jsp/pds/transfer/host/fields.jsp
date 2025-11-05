@@ -841,26 +841,22 @@
 							}
 						});
 	});
-	$('#nickName').bind(
-			'keypress',
-			function(event) {
-				var regex = new RegExp("^[a-zA-Z0-9_-]+$");
-				var key = String.fromCharCode(!event.charCode ? event.which
-						: event.charCode);
-				if (!regex.test(key)) {
-					event.preventDefault();
-					return false;
-				}
-			});
-	$('#host').bind(
-			'keypress',
-			function(event) {
-				var regex = new RegExp("^[a-zA-Z0-9-.]+$");
-				var key = String.fromCharCode(!event.charCode ? event.which
-						: event.charCode);
-				if (!regex.test(key)) {
-					event.preventDefault();
-					return false;
-				}
-			});
+	$('#nickName').on('input', function() {
+		const regex = /^[a-zA-Z0-9_-]+$/;
+		const $this = $(this);
+		const value = $this.val();
+		if (!regex.test(value)) {
+			// Remove all invalid characters
+			$this.val(value.replace(/[^a-zA-Z0-9_-]/g, ''));
+		}
+	});
+	$('#host').on('input', function() {
+		const regex = /^[a-zA-Z0-9-.]+$/;
+		const $this = $(this);
+		const value = $this.val();
+		if (!regex.test(value)) {
+			// Remove all invalid characters
+			$this.val(value.replace(/[^a-zA-Z0-9-.]/g, ''));
+		}
+	});
 </script>
