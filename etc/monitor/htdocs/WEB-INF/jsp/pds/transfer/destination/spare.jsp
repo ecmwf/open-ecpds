@@ -100,6 +100,14 @@
 				</tr>
 
 				<tr>
+					<td valign="top"><search:icon key="icon.arrow.right"
+							writeFullTag="true" /></td>
+					<td colspan="2"><a
+						href="<bean:message key="incoming.basepath"/>?destinationNameForSearch=${destination.id}">Data
+							Users</a></td>
+				</tr>
+
+				<tr>
 					<td><search:icon key="icon.small.timeline" writeFullTag="true" /></td>
 					<td colspan="2"><a
 						href="<bean:message key="monitoring.timeline.basepath"/>/${destination.id}?date=${date}">Transfer
