@@ -963,8 +963,9 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     public void targetReq(final String[] parameters) throws ParameterException {
         final var target = getParameter(parameters);
         try {
-            currentTarget = Format.normalizePath(target, true);
-            if (currentTarget.endsWith("/")) {
+            final var normalized = Format.normalizePath(target, true);
+            currentTarget = normalized.substring(normalized.startsWith("/") || normalized.startsWith("\\") ? 1 : 0);
+            if (currentTarget.endsWith("/")) { // The target is a directory!
                 currentTarget += new File(source == null ? original : source).getName();
             }
         } catch (final FileNotFoundException _) {
