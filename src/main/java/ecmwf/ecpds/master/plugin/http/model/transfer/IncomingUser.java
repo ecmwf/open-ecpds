@@ -123,6 +123,13 @@ public interface IncomingUser extends ModelBean {
     String getData();
 
     /**
+     * Gets the anonymous.
+     *
+     * @return the anonymous
+     */
+    boolean getAnonymous();
+
+    /**
      * Gets the properties.
      *
      * @return the properties

@@ -224,6 +224,18 @@ public class IncomingUserBean extends ModelBeanBase implements IncomingUser, Ojb
     /**
      * {@inheritDoc}
      *
+     * Gets the anonymous.
+     *
+     * @return the anonymous
+     */
+    @Override
+    public boolean getAnonymous() {
+        return setup.getBoolean(ECtransOptions.USER_PORTAL_ANONYMOUS);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * Gets the properties.
      */
     @Override

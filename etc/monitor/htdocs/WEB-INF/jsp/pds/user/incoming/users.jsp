@@ -31,16 +31,24 @@ select {
 </c:if>
 
 <c:if test="${!empty users}">
-<display:table name="${users}" id="user" requestURI="" sort="list" pagesize="25" class="listing">
-	<display:column title="Data Login" sortable="true"><a href="<bean:message key="incoming.basepath"/>/${user.id}">${user.id}</a></display:column>
-	<display:column title="Comment" sortable="true">${user.comment}</display:column>
-	<display:column title="Country" sortable="true">${user.country.name}</display:column>
-	<display:column title="Enabled" sortable="true"><c:if test="${user.active}">yes</c:if><c:if test="${!user.active}"><font color="red">no</font></c:if></display:column>
-	<display:column title="TOTP" sortable="true"><c:if test="${user.isSynchronized}">yes</c:if><c:if test="${!user.isSynchronized}">no</c:if></display:column>
-	<display:column title="Sessions" sortable="true">${fn:length(user.incomingConnections)}</display:column>
+	<display:table name="${users}" id="user" requestURI="" sort="list" pagesize="25" class="listing">
+		<display:column title="Data Login" sortable="true"><a href="<bean:message key="incoming.basepath"/>/${user.id}">${user.id}</a></display:column>
+		<display:column title="Comment" sortable="true">${user.comment}</display:column>
+		<display:column title="Country" sortable="true">${user.country.name}</display:column>
+		<display:column title="Enabled" sortable="true"><c:if test="${user.active}">yes</c:if><c:if test="${!user.active}"><font color="red">no</font></c:if></display:column>
+		<display:column title="TOTP" sortable="true"><c:if test="${user.isSynchronized}">yes</c:if><c:if test="${!user.isSynchronized}">no</c:if></display:column>
+		<display:column title="Anonymous" sortable="true">
+	    	<c:if test="${user.anonymous}">
+	        	<font color="red"><b>yes</b></font>
+	    	</c:if>
+	    	<c:if test="${!user.anonymous}">
+	        	no
+	    	</c:if>
+		</display:column>
+		<display:column title="Sessions" sortable="true">${fn:length(user.incomingConnections)}</display:column>
     	<display:column title="Actions" class="buttons">
     	<auth:link styleClass="menuitem" href="/do/user/incoming/edit/update_form/${user.id}" imageKey="icon.small.update"/>
 		<auth:link styleClass="menuitem" href="/do/user/incoming/edit/delete_form/${user.id}" imageKey="icon.small.delete"/>
-	</display:column>
-</display:table>
+		</display:column>
+	</display:table>
 </c:if>
