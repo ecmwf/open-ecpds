@@ -34,7 +34,9 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -469,20 +471,15 @@ public final class Util {
      *
      * @return the destination pair list
      */
-    public static Collection<Pair> getDestinationPairList(final Collection<Pair> list,
+    public static List<Pair> getDestinationPairList(final Collection<Pair> list,
             final Collection<Destination> toRemove) {
-        final List<Pair> pairListToRemove = new ArrayList<>();
+        final List<Pair> result = new ArrayList<>(list);
+        // Remove all pairs matching destinations to remove
         for (final Destination destination : toRemove) {
-            for (final Pair pair : list) {
-                final var destinationName = destination.getName();
-                if (pair.getName().equals(destinationName)) {
-                    pairListToRemove.add(pair);
-                }
-            }
+            result.removeIf(pair -> pair.getName().equals(destination.getName()));
         }
-        list.removeAll(pairListToRemove);
-        return list.stream().sorted(
-                (pair1, pair2) -> String.valueOf(pair1.getName()).compareToIgnoreCase(String.valueOf(pair2.getName())))
-                .toList();
+        // Sort by name, case-insensitive
+        result.sort(Comparator.comparing(p -> String.valueOf(p.getName()).toLowerCase(Locale.ROOT)));
+        return result;
     }
 }

@@ -30,6 +30,7 @@ import static ecmwf.common.text.Util.isNotEmpty;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 import javax.management.timer.Timer;
 
@@ -38,6 +39,7 @@ import org.apache.logging.log4j.Logger;
 
 import ecmwf.common.technical.StreamManager;
 import ecmwf.common.text.Format;
+import ecmwf.ecpds.master.plugin.http.dao.Util;
 import ecmwf.ecpds.master.plugin.http.home.transfer.DestinationHome;
 import ecmwf.ecpds.master.plugin.http.model.transfer.TransferException;
 import ecmwf.web.controller.ECMWFActionForm;
@@ -99,7 +101,7 @@ public class FilterActionForm extends ECMWFActionForm {
      */
     public Collection<Pair> getDestinationOptions() {
         try {
-            return DestinationHome.findAllNamesAndComments();
+            return Util.getDestinationPairList(DestinationHome.findAllNamesAndComments(), List.of());
         } catch (final TransferException e) {
             log.error("Problem getting Destinations", e);
             return new ArrayList<>(0);
