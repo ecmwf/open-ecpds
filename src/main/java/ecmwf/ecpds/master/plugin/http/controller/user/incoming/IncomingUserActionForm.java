@@ -28,6 +28,7 @@ package ecmwf.ecpds.master.plugin.http.controller.user.incoming;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -82,7 +83,7 @@ public class IncomingUserActionForm extends ECMWFActionForm {
     /** The active. */
     private String active = "";
 
-    /** The synchronised. */
+    /** The synchronized. */
     private String synchronised = "";
 
     /** The user. */
@@ -349,7 +350,7 @@ public class IncomingUserActionForm extends ECMWFActionForm {
      *
      * @return All the Destinations currently NOT associated to the User
      */
-    public Collection<Pair> getDestinationOptions() {
+    public List<Pair> getDestinationOptions() {
         try {
             return Util.getDestinationPairList(DestinationHome.findAllNamesAndComments(), getDestinations());
         } catch (final TransferException e) {

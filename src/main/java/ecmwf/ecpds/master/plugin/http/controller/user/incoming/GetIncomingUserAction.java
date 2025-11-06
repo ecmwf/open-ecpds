@@ -71,7 +71,8 @@ public class GetIncomingUserAction extends PDSAction {
         Collection<? extends ModelBean> users = IncomingUserHome.findAll();
         final var destinationNamesAndComment = new ArrayList<Pair>();
         destinationNamesAndComment.add(new Pair("Any Destination", ""));
-        destinationNamesAndComment.addAll(DestinationHome.findAllNamesAndComments());
+        destinationNamesAndComment
+                .addAll(Util.getDestinationPairList(DestinationHome.findAllNamesAndComments(), List.of()));
         request.setAttribute("destinationOptions", destinationNamesAndComment);
         final var destinationNameForSearch = Util.getValue(request, "destinationNameForSearch", "Any Destination");
         if (!"Any Destination".equals(destinationNameForSearch)) {

@@ -99,7 +99,7 @@ public class FilterActionForm extends ECMWFActionForm {
      *
      * @return the destination options
      */
-    public Collection<Pair> getDestinationOptions() {
+    public List<Pair> getDestinationOptions() {
         try {
             return Util.getDestinationPairList(DestinationHome.findAllNamesAndComments(), List.of());
         } catch (final TransferException e) {

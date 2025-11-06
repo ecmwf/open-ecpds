@@ -30,6 +30,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -68,7 +69,8 @@ public class GetTransferHistoryAction extends PDSAction {
             throws ECMWFException, ClassCastException {
         final ArrayList<?> pathParameters = ECMWFActionForm.getPathParameters(mapping, request);
         if (pathParameters.isEmpty()) {
-            final var destinationNamesAndComment = DestinationHome.findAllNamesAndComments();
+            final var destinationNamesAndComment = Util
+                    .getDestinationPairList(DestinationHome.findAllNamesAndComments(), List.of());
             final var destinationName = Util.getValue(request, "destinationName",
                     () -> getFirstPairName(destinationNamesAndComment));
             if ("".equals(destinationName)) {

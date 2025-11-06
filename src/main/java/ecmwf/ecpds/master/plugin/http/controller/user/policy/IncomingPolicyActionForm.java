@@ -28,6 +28,7 @@ package ecmwf.ecpds.master.plugin.http.controller.user.policy;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -193,7 +194,7 @@ public class IncomingPolicyActionForm extends ECMWFActionForm {
      *
      * @return All the Destinations currently NOT associated to the IncomingPolicy
      */
-    public Collection<Pair> getDestinationOptions() {
+    public List<Pair> getDestinationOptions() {
         try {
             return Util.getDestinationPairList(DestinationHome.findAllNamesAndComments(), getDestinations());
         } catch (final TransferException e) {

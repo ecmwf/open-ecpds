@@ -90,7 +90,7 @@ public class DestinationActionForm extends ECMWFActionForm {
     private Collection<EcUser> ecuserList;
 
     /** The names and comments. */
-    private Collection<Pair> namesAndComments;
+    private List<Pair> namesAndComments;
 
     /** The id. */
     private String id = "";
@@ -991,10 +991,10 @@ public class DestinationActionForm extends ECMWFActionForm {
      *
      * @return the from destination options
      */
-    public Collection<Pair> getFromDestinationOptions() {
+    public List<Pair> getFromDestinationOptions() {
         if (namesAndComments == null) {
             try {
-                namesAndComments = DestinationHome.findAllNamesAndComments();
+                namesAndComments = Util.getDestinationPairList(DestinationHome.findAllNamesAndComments(), List.of());
             } catch (final TransferException e) {
                 log.error("Problem getting Destinations", e);
             }
