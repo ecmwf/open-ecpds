@@ -2329,7 +2329,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             final var setup = HOST_ECTRANS.getECtransSetup(host.getData());
             // Do we have to compress the file?
             final String filter;
-            if (setup.matches(HOST_ECTRANS_FILTERPATTERN, targetName)
+            if (setup.matches(HOST_ECTRANS_FILTERPATTERN, new File(dataFile.getOriginal()).getName())
                     && size >= setup.getByteSize(HOST_ECTRANS_FILTER_MINIMUM_SIZE).size()) {
                 filter = StreamManagerImp.getFilters(host.getFilterName(), size);
             } else {
