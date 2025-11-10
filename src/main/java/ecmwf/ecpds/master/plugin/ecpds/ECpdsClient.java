@@ -336,8 +336,8 @@ public final class ECpdsClient {
             }
             write(master, "TARGET " + filename);
             write(master,
-                    "STANDBY " + (setup.getBoolean(DESTINATION_INCOMING_TMP_DETECT)
-                            && setup.matches(DESTINATION_INCOMING_TMP_PATTERN, filename)
+                    "STANDBY " + ((setup.getBoolean(DESTINATION_INCOMING_TMP_DETECT)
+                            && setup.matches(DESTINATION_INCOMING_TMP_PATTERN, filename))
                             || setup.getBoolean(DESTINATION_INCOMING_STANDBY)));
             write(master, "PRIORITY " + setup.getInteger(DESTINATION_INCOMING_PRIORITY));
             write(master, "EVENT " + setup.getBoolean(DESTINATION_INCOMING_EVENT));
