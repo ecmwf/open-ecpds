@@ -32,7 +32,8 @@ import static ecmwf.common.ectrans.ECtransGroups.Module.USER_PORTAL;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_INCOMING_MAX_BYTES_PER_SEC_FOR_INPUT;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_INCOMING_MAX_BYTES_PER_SEC_FOR_OUTPUT;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_INCOMING_STANDBY;
-import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_INCOMING_TMP;
+import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_INCOMING_TMP_PATTERN;
+import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_INCOMING_TMP_DETECT;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_SCHEDULER_STANDBY;
 import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_RECORD_HISTORY;
 import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_RECORD_SPLUNK;
@@ -976,8 +977,9 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
             final var setup = DESTINATION_INCOMING.getECtransSetup(destination.getData());
             // We check if it is a rename from a temporary name to a definitive
             // name?
-            final var tmpToDefinitive = setup.matches(DESTINATION_INCOMING_TMP, original)
-                    && !setup.matches(DESTINATION_INCOMING_TMP, target);
+            final var tmpToDefinitive = setup.getBoolean(DESTINATION_INCOMING_TMP_DETECT)
+                    && (setup.matches(DESTINATION_INCOMING_TMP_PATTERN, original)
+                            && !setup.matches(DESTINATION_INCOMING_TMP_PATTERN, target));
             final var aliases = new AliasesParser(destination, target, null, 0, -1, false, false);
             final var dataBase = master.getDataBase();
             for (final DataTransfer transfer : master.getDataTransfers(file.getId())) {

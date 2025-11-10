@@ -35,7 +35,8 @@ import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_INCOMING_LIFETIME;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_INCOMING_METADATA;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_INCOMING_PRIORITY;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_INCOMING_STANDBY;
-import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_INCOMING_TMP;
+import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_INCOMING_TMP_PATTERN;
+import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_INCOMING_TMP_DETECT;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_INCOMING_VERSION;
 import static ecmwf.common.text.Util.isNotEmpty;
 
@@ -334,8 +335,10 @@ public final class ECpdsClient {
                 write(master, "UNIQUENAME " + sb.toString());
             }
             write(master, "TARGET " + filename);
-            write(master, "STANDBY " + (setup.matches(DESTINATION_INCOMING_TMP, filename)
-                    || setup.getBoolean(DESTINATION_INCOMING_STANDBY)));
+            write(master,
+                    "STANDBY " + (setup.getBoolean(DESTINATION_INCOMING_TMP_DETECT)
+                            && setup.matches(DESTINATION_INCOMING_TMP_PATTERN, filename)
+                            || setup.getBoolean(DESTINATION_INCOMING_STANDBY)));
             write(master, "PRIORITY " + setup.getInteger(DESTINATION_INCOMING_PRIORITY));
             write(master, "EVENT " + setup.getBoolean(DESTINATION_INCOMING_EVENT));
             // Let's make sure the time base (product date) is set!
