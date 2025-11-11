@@ -1934,6 +1934,23 @@ final class DataBaseProxy implements DataBaseInterface {
     /**
      * {@inheritDoc}
      *
+     * Update the provided host option.
+     */
+    @Override
+    public void updateHostOption(final String user, final String hostid, final String module, final String name,
+            final String value) throws DataBaseException, RemoteException, MasterException {
+        if (isEmpty(user) || hostid != null && hostid.isEmpty() || module != null && module.isEmpty()
+                || name != null && name.isEmpty() || value != null && value.isEmpty()) {
+            throw new DataBaseException("Invalid parameter(s) for updateHostOption");
+        }
+        final var monitor = new MonitorCall("updateHostOption(" + user + "," + hostid + "," + name + "," + value + ")");
+        dataBaseInterface.updateHostOption(user, hostid, module, name, value);
+        monitor.done();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * Gets the destination option list.
      */
     @Override

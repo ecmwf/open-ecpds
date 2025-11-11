@@ -35,6 +35,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
@@ -573,6 +574,51 @@ public final class ECpdsRESTV1 {
             throw w;
         } catch (final Throwable t) {
             _log.warn("putDestinationBackup", t);
+            return RESTMessage.getErrorMessage(t).getResponse();
+        }
+    }
+
+    /**
+     * Incoming association add.
+     *
+     * @param authString
+     *            the auth string
+     * @param request
+     *            the request
+     * @param hostid
+     *            the hostid
+     * @param name
+     *            the name
+     * @param value
+     *            the value
+     *
+     * @return the response
+     */
+    @POST
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("host/option")
+    public Response hostSetOption(@HeaderParam("authorization") final String authString,
+            @Context final HttpServletRequest request, @QueryParam("hostid") final String hostid,
+            @QueryParam("name") final String name, @FormParam("value") final String value) {
+        _log.debug("hostSetOption");
+        try {
+            final var userNameAndPassword = _getUserNameAndPassword(authString, request);
+            _checkParameter("hostid", hostid);
+            _checkParameter("name", name);
+            _checkParameter("value", value);
+            final var parts = name.split("\\.", 2);
+            if (parts.length == 2) {
+                MasterManager.getDB().updateHostOption(userNameAndPassword, hostid, parts[0], parts[1], value);
+                return RESTMessage.getSuccessMessage().getResponse();
+            } else {
+                return RESTMessage.getErrorMessage("Malformed name: " + name).getResponse();
+            }
+        } catch (final WebApplicationException w) {
+            _log.warn("hostSetOption", w);
+            throw w;
+        } catch (final Throwable t) {
+            _log.warn("hostSetOption", t);
             return RESTMessage.getErrorMessage(t).getResponse();
         }
     }

@@ -92,6 +92,7 @@ import ecmwf.common.database.TransferServer;
 import ecmwf.common.database.Url;
 import ecmwf.common.database.WebUser;
 import ecmwf.common.database.WeuCat;
+import ecmwf.common.ectrans.ECtransSetup;
 import ecmwf.common.monitor.MonitorManager;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.text.Format;
@@ -2139,6 +2140,39 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
             }
         }
         return monitor.done(result);
+    }
+
+    /**
+     * Update the provided host option.
+     *
+     * @param user
+     *            the user
+     * @param hostid
+     *            the hostid
+     * @param module
+     *            the module
+     * @param name
+     *            the name
+     * @param value
+     *            the value
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     * @throws MasterException
+     *             the master exception
+     */
+    @Override
+    public void updateHostOption(final String user, final String hostid, final String module, final String name,
+            final String value) throws DataBaseException, RemoteException, MasterException {
+        checkUser(user, "updateHostOption");
+        final var monitor = new MonitorCall(
+                "updateHostOption(" + user + "," + hostid + "," + module + "," + name + "," + value + ")");
+        final var host = getHost(hostid);
+        final var setup = new ECtransSetup(module, host.getData());
+        setup.set(name, value);
+        host.setData(setup.getData());
+        ecpds.update(host);
+        monitor.done();
     }
 
     /**

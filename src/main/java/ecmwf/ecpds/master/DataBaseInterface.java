@@ -1992,6 +1992,28 @@ public interface DataBaseInterface extends Remote {
     Collection<Country> destinationCountryList(String user) throws DataBaseException, RemoteException;
 
     /**
+     * Update the provided host option.
+     *
+     * @param user
+     *            the user
+     * @param hostid
+     *            the hostid
+     * @param module
+     *            the module
+     * @param name
+     *            the name
+     * @param value
+     *            the value
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     * @throws MasterException
+     *             the master exception
+     */
+    public void updateHostOption(final String user, final String hostid, final String module, final String name,
+            final String value) throws DataBaseException, RemoteException, MasterException;
+
+    /**
      * Datafile put.
      *
      * @param user
