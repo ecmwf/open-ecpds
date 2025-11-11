@@ -83,7 +83,6 @@ import ecmwf.common.ecaccess.MBeanRepository;
 import ecmwf.common.ecaccess.MBeanScheduler;
 import ecmwf.common.ecaccess.StarterServer;
 import ecmwf.common.ectrans.ECtransException;
-import ecmwf.common.ectrans.ECtransSetup;
 import ecmwf.common.mbean.MBeanManager;
 import ecmwf.common.monitor.MonitorCallback;
 import ecmwf.common.monitor.MonitorException;
@@ -2772,7 +2771,7 @@ public final class TransferScheduler extends MBeanScheduler {
                 setDelay(Cnf.durationAt("Scheduler", "destinationThread", Timer.ONE_SECOND));
                 setJammedTimeout(Cnf.durationAt("Scheduler", "destinationThreadJammedTimeout", 5 * Timer.ONE_MINUTE));
                 _destination = BASE.getDestination(destinationName);
-                setTimeRanges(new ECtransSetup(_destination.getData())
+                setTimeRanges(DESTINATION_SCHEDULER.getECtransSetup(_destination.getData())
                         .getTimeRangeList(DESTINATION_SCHEDULER_ACTIVE_TIME_RANGE));
                 _value = _destination.getSchedulerValue();
                 _provider = new HostProvider(this);
