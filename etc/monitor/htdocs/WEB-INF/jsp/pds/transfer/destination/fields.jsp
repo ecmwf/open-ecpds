@@ -403,19 +403,27 @@
 				</tr>
 				<tr>
 					<th>Mail on Update</th>
-					<td><html:checkbox property="mailOnUpdate" /></td>
+					<td><html:checkbox
+						title="When enabled, an email is sent when a change is made to the Destination or its related Hosts."
+						property="mailOnUpdate" /></td>
 				</tr>
 				<tr>
 					<th>Mail on Start</th>
-					<td><html:checkbox property="mailOnStart" /></td>
+					<td><html:checkbox
+						title="When enabled, an email is sent when a data transfer starts for this Destination."
+						property="mailOnStart" /></td>
 				</tr>
 				<tr>
 					<th>Mail on End</th>
-					<td><html:checkbox property="mailOnEnd" /></td>
+					<td><html:checkbox
+						title="When enabled, an email is sent when a data transfer has completed successfully for this Destination."
+						property="mailOnEnd" /></td>
 				</tr>
 				<tr>
 					<th>Mail on Error</th>
-					<td><html:checkbox property="mailOnError" /></td>
+					<td><html:checkbox
+						title="When enabled, an email is sent when a data transfer has failed for this Destination."
+						property="mailOnError" /></td>
 				</tr>
 				<tr>
 					<td colspan="2">&nbsp;</td>
@@ -434,11 +442,15 @@
 				</tr>
 				<tr>
 					<th>Enabled</th>
-					<td><html:checkbox property="active" /></td>
+					<td><html:checkbox
+						title="When enabled, this Destination is considered by the transfer scheduler; otherwise, no data transfers will be scheduled, even if there are pending requests in the queue. Similarly, any acquisition host will be disregarded."
+						property="active" /></td>
 				</tr>
 				<tr>
 					<th>Show In Monitors</th>
-					<td><html:checkbox property="showInMonitors" /></td>
+					<td><html:checkbox
+						title="When enabled, this Destination is monitored in the monitoring display."
+						property="showInMonitors" /></td>
 				</tr>
 				<tr>
 					<th>Backup</th>
