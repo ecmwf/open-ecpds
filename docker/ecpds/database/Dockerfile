@@ -8,10 +8,10 @@ LABEL org.opencontainers.image.description="OpenECPDS Database"
 ENV MYSQL_ROOT_PASSWORD=ecpds2020!
 
 # Init script to create the OpenECPDS database
-COPY ecpds.sql.gz /docker-entrypoint-initdb.d/
+COPY ecpds.sql /docker-entrypoint-initdb.d/
 
 # Make it readable to mysql
-RUN chown mysql:mysql /docker-entrypoint-initdb.d/ecpds.sql.gz
+RUN chown mysql:mysql /docker-entrypoint-initdb.d/ecpds.sql
 
 # Make directories readable to mysql
 RUN chown mysql:mysql /etc/mysql/conf.d
