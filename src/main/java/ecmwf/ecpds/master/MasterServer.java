@@ -31,6 +31,7 @@ import static ecmwf.common.ectrans.ECtransGroups.Module.DESTINATION_MQTT;
 import static ecmwf.common.ectrans.ECtransGroups.Module.DESTINATION_SCHEDULER;
 import static ecmwf.common.ectrans.ECtransGroups.Module.HOST_ACQUISITION;
 import static ecmwf.common.ectrans.ECtransGroups.Module.HOST_ECTRANS;
+import static ecmwf.common.ectrans.ECtransGroups.Module.HOST_PROXY;
 import static ecmwf.common.ectrans.ECtransGroups.Module.USER_PORTAL;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_MQTT_CLIENT_ID;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_MQTT_CONTENT_TYPE;
@@ -8402,7 +8403,7 @@ public final class MasterServer extends ECaccessProvider
                             continue;
                         }
                         // Are we requested to use the filter options defined at the destination level?
-                        final var proxySetup = new ECtransSetup(hostForProxy.getData());
+                        final var proxySetup = HOST_PROXY.getECtransSetup(hostForProxy.getData());
                         if (proxySetup.getBoolean(HOST_PROXY_USE_DESTINATION_FILTER)) {
                             _log.debug("Using Destination options for replicating DataTransfer-{} to ProxyHost {}",
                                     _transfer.getId(), hostForProxy.getNickname());
