@@ -1,3 +1,10 @@
+-- Create users for the Master (master)
+CREATE OR REPLACE USER master@'%' IDENTIFIED BY 'ecmasdb';
+GRANT ALL PRIVILEGES ON ecpds.* TO 'master'@'%';
+FLUSH PRIVILEGES;
+
+SET FOREIGN_KEY_CHECKS = 0;
+
 /*M!999999\- enable the sandbox mode */ 
 -- MariaDB dump 10.19-11.4.8-MariaDB, for debian-linux-gnu (x86_64)
 --
@@ -1992,3 +1999,5 @@ UNLOCK TABLES;
 /*M!100616 SET NOTE_VERBOSITY=@OLD_NOTE_VERBOSITY */;
 
 -- Dump completed on 2025-09-29 15:23:59
+
+SET FOREIGN_KEY_CHECKS = 1;
