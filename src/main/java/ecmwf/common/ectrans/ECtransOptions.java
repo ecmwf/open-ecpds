@@ -85,7 +85,7 @@ public enum ECtransOptions {
     DESTINATION_INCOMING_VERSION("version", String.class, STRING_NONE),
 
     /** The destination incoming tmp pattern. */
-    DESTINATION_INCOMING_TMP_PATTERN("tmpPattern", String.class, ".*/(\\.[^/]+|[^/]+\\.(?i:tmp))$"),
+    DESTINATION_INCOMING_TMP_PATTERN("tmpPattern", String.class, "(?:.*/)?(\\.[^/]+|[^/]+(?i:\\.tmp))$"),
 
     /** The destination incoming tmp detect. */
     DESTINATION_INCOMING_TMP_DETECT("tmpDetect", Boolean.class, false),
