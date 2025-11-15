@@ -13,7 +13,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.compiler.target>25</maven.compiler.target>
 		<maven.compiler.source>25</maven.compiler.source>
-		<java.home>${java.home}</java.home>
+		<java.home>${env.JAVA_HOME}</java.home>
 		<graalvm.version>25.0.0</graalvm.version>
 		<packager.id>syi</packager.id>
 		<packager.name>Laurent Gougeon</packager.name>
