@@ -175,6 +175,9 @@ These options help fine-tune the azure transfer module and are accessible via th
 ### azure.blockSize
 Allow specifying the maximum size of data chunks to be transferred in parallel
 
+### azure.chunkSize
+Size of each block read from the input stream during upload. Controls memory usage and upload speed: larger values increase throughput but use more memory, while smaller values reduce memory usage but may slow down transfers. A value of zero forces a full download of the file into memory (default).
+
 ### azure.containerName
 Allow specifying the container name for the Azure account. These containers act as a way to group blobs together, somewhat similar to folders in a file system, but without the hierarchical structure.
 
@@ -281,10 +284,10 @@ Allow requesting debug messages in the data mover logs related to the transfer m
 Allow specifying a timeout duration for processing the removal of a file on the remote site by the underlying transfer module.
 
 ### ectrans.filterMinimumSize
-When disseminating files with compression enabled, this option allows for the provision of a minimum size to filter which files should undergo compression.
+When compression is enabled, this option allows for the provision of a minimum size to filter which files should undergo compression.
 
 ### ectrans.filterpattern
-When disseminating files with compression enabled, this option allows for the provision of a regex pattern to filter which files should undergo compression.
+When compression is enabled, this option allows specifying a regex pattern to filter which files should undergo compression. The pattern is applied to the original filenames, not to the target names. This design ensures that compression applies to the data file itself, regardless of the destinations that may share or reference it (for example, through destination aliases).
 
 ### ectrans.getHandler
 When defined, allow delegating the data retrieval to an external module running in a spawn process in the underlying operating system. If this option is enabled then the "ectrans.getHandlerCmd" option is required.
@@ -965,8 +968,11 @@ Allow specifying if the listing through the data portal should be sorted by size
 ### incoming.standby
 Enable the enforcement of standby mode for a file pushed by a user via the data portal.
 
-### incoming.tmp
-When a user uploads a file through the data portal, this feature permits the specification of a regex pattern to identify if the file is temporary. If flagged as temporary, the file remains in standby mode until the user renames it to its definitive name.
+### incoming.tmpDetect
+When a user uploads a file through the data portal, enabling this feature forces the use of incoming.tmpPattern to determine whether the file is temporary. If flagged as temporary, the file remains in standby mode until the user renames it to its final name.
+
+### incoming.tmpPattern
+When incoming.tmpDetect is enabled, this feature allows specifying a regex pattern to identify temporary files. By default, a file is considered temporary if its filename (excluding the path) starts with a dot and/or ends with the .tmp extension (case-insensitive).
 
 ### incoming.version
 Allow specifying an optional version number for a file pushed by a user via the data portal.  Use placeholders like "$date", "$timestamp", "$destination", "$target", "$original", and "$timefile" within the version, which will be substituted by their respective values.
@@ -1124,6 +1130,9 @@ Specify the number of unsuccessful data transmission on the continental data mov
 
 ### proxy.timeout
 Specify the connect timeout duration for connecting to the continental data mover HTTP URL.
+
+### proxy.useDestinationFilter
+When enabled, this option ensures that the compression method used for data replication to Proxy Movers, as well as the ectrans.filterpattern and ectrans.filterMinimumSize settings, match those defined for the Destination.
 
 ## Retrieval Options
 
