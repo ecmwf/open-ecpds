@@ -28,10 +28,11 @@ RUN dnf install -y yum-utils && \
 # Install SDKMAN for GraalVM and Java
 ENV SDKMAN_DIR=/root/.sdkman
 ENV SDKMAN_JDK=25-graal
+ENV SDKMAN_MAVEN=3.9.9
 
 RUN curl -s "https://get.sdkman.io" | bash && \
     bash -c "source $SDKMAN_DIR/bin/sdkman-init.sh && sdk install java ${SDKMAN_JDK}" && \
-    bash -c "source $SDKMAN_DIR/bin/sdkman-init.sh && sdk install maven"
+    bash -c "source $SDKMAN_DIR/bin/sdkman-init.sh && sdk install maven ${SDKMAN_MAVEN}"
 
 # Set Java environment variables
 ENV JAVA_HOME=$SDKMAN_DIR/candidates/java/current
