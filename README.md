@@ -1036,7 +1036,7 @@ This poster provides an accessible, high-level overview of the system, including
 ## Notes
 
 ![GraalVM](https://img.shields.io/badge/GraalVM-25.0.0-brightgreen)
-![Maven](https://img.shields.io/badge/Maven-3.9.11-brightgreen)
+![Maven](https://img.shields.io/badge/Maven-3.9.9-brightgreen)
 ![Docker](https://img.shields.io/badge/Docker-28.4.0-blue)
 ![Kompose](https://img.shields.io/badge/Kompose-1.37.0-blue)
 ![Kubectl](https://img.shields.io/badge/Kubectl-1.37.2-blue)
