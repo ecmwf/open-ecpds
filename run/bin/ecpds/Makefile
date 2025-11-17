@@ -95,6 +95,10 @@ connect: check-yaml ## Open a bash session in a running container (arg: containe
 mariadb: check-yaml ## Connect to the database
 	@$(COMPOSE) -f ${DOCKER_HOST_OS}-ecpds/docker-compose.yml exec database sh -c 'mariadb ecpds -p"$$MYSQL_ROOT_PASSWORD"'
 
+mariadb-exec:
+	@$(COMPOSE) -f $(DOCKER_HOST_OS)-ecpds/docker-compose.yml exec -T \
+		database sh -c 'env MYSQL_PWD="$$MYSQL_ROOT_PASSWORD" mariadb -N -s ecpds' < /dev/stdin
+
 dump-full: check-yaml ## Perform a full dump of the database to stdout
 	@$(COMPOSE) -f ${DOCKER_HOST_OS}-ecpds/docker-compose.yml exec database sh -c 'mariadb-dump -A -p"$$MYSQL_ROOT_PASSWORD"'
 
@@ -102,7 +106,27 @@ dump-conf: check-yaml ## Dump only configuration data from the database to stdou
 	@$(COMPOSE) -f ${DOCKER_HOST_OS}-ecpds/docker-compose.yml exec database sh -c 'mariadb-dump -p"$$MYSQL_ROOT_PASSWORD" ecpds --ignore-table=ecpds.ACTIVITY --ignore-table=ecpds.BANDWIDTH --ignore-table=ecpds.DATA_FILE --ignore-table=ecpds.DATA_TRANSFER --ignore-table=ecpds.EVENT --ignore-table=ecpds.INCOMING_HISTORY --ignore-table=ecpds.METADATA_ATTRIBUTE --ignore-table=ecpds.METADATA_VALUE --ignore-table=ecpds.MONITORING_HISTORY --ignore-table=ecpds.MONITORING_VALUE --ignore-table=ecpds.PRODUCT_STATUS --ignore-table=ecpds.PUBLICATION --ignore-table=ecpds.TRANSFER_HISTORY --ignore-table=ecpds.UPLOAD_HISTORY'
 	@$(COMPOSE) -f ${DOCKER_HOST_OS}-ecpds/docker-compose.yml exec database sh -c 'mariadb-dump -p"$$MYSQL_ROOT_PASSWORD" -d ecpds ACTIVITY BANDWIDTH DATA_FILE DATA_TRANSFER EVENT INCOMING_HISTORY METADATA_ATTRIBUTE METADATA_VALUE MONITORING_HISTORY MONITORING_VALUE PRODUCT_STATUS PUBLICATION TRANSFER_HISTORY UPLOAD_HISTORY CHANGE_LOG'
 
-clean: down .clean-log .clean-lib .clean-tmp .clean-kml .fix-perms ## Remove all logs, persistent data, and fix database permissions
+check-db:
+	@running=$$($(COMPOSE) -f $(DOCKER_HOST_OS)-ecpds/docker-compose.yml ps -q database); \
+	if [ -z "$$running" ]; then \
+		echo "Database container is NOT running."; \
+		exit 0; \
+	fi; \
+	echo "Database container is running. Checking active 'master' connections..."; \
+	active_count=$$(echo "SELECT COUNT(*) FROM INFORMATION_SCHEMA.PROCESSLIST WHERE USER='master';" | \
+		$(MAKE) mariadb-exec 2>/dev/null); \
+	if [ "$$active_count" -gt 0 ]; then \
+		echo "WARNING: There are $$active_count active connection(s) from user 'master'!"; \
+		read -p "Are you sure you want to clean the database? (y/N) " answer; \
+		if [ "$$answer" != "y" ] && [ "$$answer" != "Y" ]; then \
+			echo "Aborting clean."; \
+			exit 1; \
+		fi; \
+	else \
+		echo "No active connections from user 'master'."; \
+	fi
+
+clean: check-db down .clean-log .clean-lib .clean-tmp .clean-kml .fix-perms ## Remove all logs, persistent data, and fix database permissions
 
 .clean-log: # Remove all logs (master, monitor and mover)
 	cd ${LOCAL_ROOT_PATH}/var/log/ecpds ; rm -f master/* monitor/* mover/*
