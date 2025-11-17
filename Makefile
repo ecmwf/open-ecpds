@@ -20,6 +20,7 @@ DOCKER_GUEST_OS := $(shell uname -s)
 IMAGE_NAME := node-$(PROJECT_NAME)-dev
 CONTAINER_NAME := running-$(PROJECT_NAME)-dev
 WORKDIR := /workspaces/$(PROJECT_NAME)
+DB_DATA_DIR := run/var/lib/ecpds/database
 
 # Extract the tag number from the Maven file
 VERSION=$(shell grep '<version>' pom.xml | head -n 1 | sed 's/.*>\(.*\)<.*/\1/')
@@ -121,6 +122,17 @@ build: ## Compile java sources into JARs, create RPMs and Docker images (**)
 	@cd docker && $(MAKE) all
 
 start-db: ## Build and run the database for VS Code and Eclipse debugging/running
+	@if [ -d $(DB_DATA_DIR)/mysql ] && [ -d $(DB_DATA_DIR)/ecpds ]; then \
+		echo "WARNING: A database already exists in '$(DB_DATA_DIR)'."; \
+		echo "If you keep it, the SQL initial script will NOT be executed."; \
+		read -p "Delete existing database data and reinitialize? (y/N) " answer; \
+		if [ "$$answer" = "y" ] || [ "$$answer" = "Y" ]; then \
+			echo "Deleting existing database data..."; \
+			rm -rf $(DB_DATA_DIR)/*; \
+	else \
+		echo "Keeping existing database data..."; \
+		fi \
+	fi
 	@cd docker && $(MAKE) build-db
 	@cd run/bin/ecpds && $(MAKE) up container=database
 
