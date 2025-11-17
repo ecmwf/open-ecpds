@@ -1019,6 +1019,10 @@ The following map, taken from the OpenECPDS Web Interface, illustrates the globa
 
 A corresponding view is available for the acquisition service.
 
+In addition to this global view, it is also useful to observe how data volumes have evolved over time. The graph below illustrates the annual average monthly data volume (in terabytes) handled by OpenECPDS from 2010 to 2025. This trend highlights the steady and continuous growth of data transfers over the past fifteen years, reflecting both the expanding user base and the increasing scale of operational activities.
+
+<img src="img/Figure23.svg" alt="Long-Term Data Volume Trend Across OpenECPDS" width="250"/>
+
 ## Support Materials
 
 You can access the Javadoc API documentation for OpenECPDS at the following link: [Javadocs](https://ecmwf.github.io/open-ecpds/apidocs/). This comprehensive documentation provides detailed information about the classes, methods, and functionalities available, serving as a valuable resource for developers.
