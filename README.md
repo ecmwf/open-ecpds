@@ -1029,6 +1029,10 @@ You can access the Javadoc API documentation for OpenECPDS at the following link
 
 Additionally, you can find the OpenECPDS options for various editors at this link: [OpenECPDS Options](Options.md). This documentation outlines the configurable options available in the OpenECPDS editors, helping users to customize their experience and optimize their workflow effectively.
 
+In addition to these technical resources, a comprehensive OpenECPDS Presentation Poster is also available: [OpenECPDS Poster](Poster.pdf).
+
+This poster provides an accessible, high-level overview of the system, including its purpose, key features and architecture. It also includes visual diagrams, usage statistics, and long-term trends to help new users, partners, and stakeholders quickly understand what OpenECPDS does, who it serves, and how it supports large-scale data acquisition and dissemination. It is an ideal entry point for anyone discovering the platform or looking for a concise summary of its capabilities.
+
 ## Notes
 
 ![GraalVM](https://img.shields.io/badge/GraalVM-25.0.0-brightgreen)
