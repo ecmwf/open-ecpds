@@ -147,6 +147,7 @@ import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import java.util.stream.Collectors;
 import java.util.zip.Deflater;
 import java.util.zip.GZIPOutputStream;
 
@@ -1994,6 +1995,66 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
+     * Formats a 2D long matrix representing used and total space per volume into a human-readable string.
+     * <p>
+     * The matrix is expected to have exactly two rows:
+     * <ul>
+     * <li>Row 0: used space per volume (in bytes)</li>
+     * <li>Row 1: total/max space per volume (in bytes)</li>
+     * </ul>
+     * Each value is converted into an approximate size string (e.g., "432.7GB").
+     *
+     * @param name
+     *            the name of the entity (e.g., server or group) being formatted
+     * @param matrix
+     *            a 2D long array with [usedPerVolume[], maxCapacityPerVolume[]]
+     *
+     * @return a human-readable string representing the used and max capacity per volume
+     */
+    private static String formatLongMatrix(final String name, final long[][] matrix) {
+        final var sb = new StringBuilder();
+        sb.append(name).append(" [\n");
+        for (var i = 0; i < matrix.length; i++) {
+            sb.append("  ").append(i == 0 ? "used" : " max").append(" [");
+            var rowValues = Arrays.stream(matrix[i]).mapToObj(v -> ByteSize.of(v).toApproximateSize())
+                    .collect(Collectors.joining(", "));
+            sb.append(rowValues).append("]");
+            if (i < matrix.length - 1)
+                sb.append(",");
+            sb.append("\n");
+        }
+        sb.append("]\n");
+        return sb.toString();
+    }
+
+    /**
+     * Retrieves information about the data volumes for all transfer servers.
+     * <p>
+     * Iterates over all transfer groups and their associated transfer servers, computing the used and total capacity
+     * for each volume. The results are formatted using {@link #formatLongMatrix(String, long[][])} and concatenated
+     * into a single string. Only servers that are currently connected are included.
+     *
+     * @return a human-readable string containing the volume usage information for all active transfer servers
+     *
+     * @throws RemoteException
+     *             if there is an error communicating with any remote transfer server
+     */
+    private String getDataVolumeInformations() throws RemoteException {
+        final var result = new StringBuilder();
+        for (final TransferGroup group : getECpdsBase().getTransferGroupArray()) {
+            for (final TransferServer server : getECpdsBase().getTransferServers(group.getName())) {
+                final var serverName = server.getName();
+                final var mover = getDataMoverInterface(serverName);
+                // Is it still connected?
+                if (mover != null)
+                    result.append(formatLongMatrix(serverName,
+                            mover.computeVolumeUsage(server.getTransferGroup().getVolumeCount())));
+            }
+        }
+        return result.toString();
+    }
+
+    /**
      * Get all incoming connections from all data movers.
      *
      * @return the incoming connection ids
@@ -2001,7 +2062,7 @@ public final class MasterServer extends ECaccessProvider
      * @throws DataBaseException
      *             the data base exception
      */
-    public String getIncomingConnectionIds() throws DataBaseException {
+    public String getIncomingConnectionIds() {
         final var result = new StringBuilder();
         for (final TransferGroup group : getECpdsBase().getTransferGroupArray()) {
             for (final TransferServer server : getECpdsBase().getTransferServers(group.getName())) {
@@ -2009,7 +2070,7 @@ public final class MasterServer extends ECaccessProvider
                 // Is it still connected?
                 if (getDataMoverInterface(serverName) != null) {
                     for (final IncomingConnection incomingConnection : incomingConnectionIds.get(serverName)) {
-                        result.append(result.length() > 0 ? "\n" : "").append(incomingConnection.getId()).append("=")
+                        result.append(!result.isEmpty() ? "\n" : "").append(incomingConnection.getId()).append("=")
                                 .append(incomingConnection.getProtocol()).append(":")
                                 .append(incomingConnection.getLogin()).append("@")
                                 .append(incomingConnection.getRemoteIpAddress());
@@ -2021,7 +2082,6 @@ public final class MasterServer extends ECaccessProvider
             }
         }
         return result.toString();
-
     }
 
     /**
@@ -2806,6 +2866,9 @@ public final class MasterServer extends ECaccessProvider
                         new MBeanOperationInfo("getIncomingConnectionIds",
                                 "getIncomingConnectionIds(): get all incoming connections on all data movers",
                                 new MBeanParameterInfo[0], "java.lang.String", MBeanOperationInfo.ACTION),
+                        new MBeanOperationInfo("getDataVolumeInformations",
+                                "getDataVolumeInformations(): get data volume informations from all data movers",
+                                new MBeanParameterInfo[0], "java.lang.String", MBeanOperationInfo.ACTION),
                         new MBeanOperationInfo("getContacts", "getContacts(): get contact details for each destination",
                                 new MBeanParameterInfo[0], "java.lang.String", MBeanOperationInfo.ACTION),
                         new MBeanOperationInfo("closeAllIncomingConnections",
@@ -3007,6 +3070,9 @@ public final class MasterServer extends ECaccessProvider
             }
             if ("getIncomingConnectionIds".equals(operationName) && signature.length == 0) {
                 return getIncomingConnectionIds();
+            }
+            if ("getDataVolumeInformations".equals(operationName) && signature.length == 0) {
+                return getDataVolumeInformations();
             }
             if ("getContacts".equals(operationName) && signature.length == 0) {
                 final var result = new StringBuilder();
