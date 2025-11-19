@@ -336,7 +336,11 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                 }
             }
             final var realPathList = new ArrayList<>(unique.values());
-            Collections.sort(realPathList, (a, b) -> a.getName().compareTo(b.getName()));
+			Collections.sort(realPathList, (a, b) -> {
+				int i1 = Integer.parseInt(a.getName().substring("volume".length()));
+				int i2 = Integer.parseInt(b.getName().substring("volume".length()));
+				return Integer.compare(i1, i2);
+			});
             var n = realPathList.size();
             var usedPerVolume = new long[n];
             var maxCapacityPerVolume = new long[n];
