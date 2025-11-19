@@ -64,6 +64,8 @@ import java.sql.Timestamp;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Properties;
 import java.util.StringTokenizer;
@@ -296,6 +298,107 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             } catch (final Throwable t) {
                 _log.warn("Sending incoming connection ids", t);
             }
+        }
+    }
+
+    /**
+     * Compute the used and total capacity for each file system in the data repository.
+     *
+     * @param volumeIndexMax
+     *            the volume index max
+     *
+     * @return a 2-element array: [usedPerVolume[], maxCapacityPerVolume[]]
+     *
+     * @throws RemoteException
+     *             the remote exception
+     */
+    @Override
+    public long[][] computeVolumeUsage(final int volumeIndexMax) throws RemoteException {
+        try {
+            final var repository = GenericFile.getGenericFile(getRepository());
+            final var volumes = repository.listFiles(new VolumeFilter(volumeIndexMax));
+            if (volumes == null) {
+                // The repository is not a directory?
+                _log.warn("Repository {} not a directory?", repository.getAbsolutePath());
+                return new long[][] { new long[] {}, new long[] {} };
+            }
+            final var unique = new LinkedHashMap<String, GenericFile>();
+            for (final GenericFile dataVolume : volumes) {
+                if (dataVolume.isDirectory()) {
+                    final var fsId = dataVolume.getFileSystemId();
+                    if (!unique.containsKey(fsId)) {
+                        unique.put(fsId, dataVolume);
+                    } else {
+                        // This volume was already processed!
+                        _log.debug("Skipping data volume {} (already processed - symbolic link?)",
+                                dataVolume.getAbsolutePath());
+                    }
+                }
+            }
+            final var realPathList = new ArrayList<>(unique.values());
+            Collections.sort(realPathList, (a, b) -> a.getName().compareTo(b.getName()));
+            var n = realPathList.size();
+            var usedPerVolume = new long[n];
+            var maxCapacityPerVolume = new long[n];
+            for (var i = 0; i < n; i++) {
+                var volume = realPathList.get(i);
+                // total space in bytes
+                maxCapacityPerVolume[i] = volume.getTotalSpace();
+                // free space in bytes
+                var free = volume.getFreeSpace();
+                // used = total - free
+                usedPerVolume[i] = maxCapacityPerVolume[i] - free;
+            }
+            return new long[][] { usedPerVolume, maxCapacityPerVolume };
+        } catch (Throwable t) {
+            throw Format.getRemoteException("DataMover=" + getRoot(), t);
+        }
+    }
+
+    /**
+     * The Class VolumeFilter.
+     */
+    static final class VolumeFilter implements GenericFileFilter {
+        /** The volumeIndexMax. */
+        private final int volumeIndexMax;
+
+        /**
+         * Instantiates a new data file filter.
+         *
+         * @param file
+         *            the file
+         */
+        VolumeFilter(final int volumeIndexMax) {
+            this.volumeIndexMax = volumeIndexMax;
+        }
+
+        // Check if the format is as expected for a volume
+        private boolean endsWithVolumeIndex(final String filename) {
+            if (filename == null)
+                return false;
+            var prefix = "volume";
+            if (!filename.startsWith(prefix))
+                return false;
+            var numberPart = filename.substring(prefix.length());
+            if (!numberPart.matches("\\d+"))
+                return false;
+            var value = Integer.parseInt(numberPart);
+            return value >= 0 && value <= volumeIndexMax;
+        }
+
+        /**
+         * Accept.
+         *
+         * @param dir
+         *            the dir
+         * @param name
+         *            the name
+         *
+         * @return true, if successful
+         */
+        @Override
+        public boolean accept(final GenericFile dir, final String name) {
+            return endsWithVolumeIndex(name);
         }
     }
 

@@ -618,4 +618,17 @@ public interface MoverInterface extends ClientInterface {
      *             the remote exception
      */
     String getECproxyAddressAndPort() throws RemoteException;
+
+    /**
+     * Compute the used and total capacity for each file system in the data repository.
+     *
+     * @param volumeIndexMax
+     *            the volume index max
+     *
+     * @return a 2-element array: [usedPerVolume[], maxCapacityPerVolume[]]
+     *
+     * @throws RemoteException
+     *             the remote exception
+     */
+    long[][] computeVolumeUsage(final int volumeIndexMax) throws RemoteException;
 }
