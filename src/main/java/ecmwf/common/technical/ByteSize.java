@@ -225,6 +225,32 @@ public class ByteSize {
     }
 
     /**
+     * Converts the number of bytes into a human-readable string using conventional binary prefixes (KB, MB, GB, TB, PB,
+     * EB).
+     *
+     * <p>
+     * If the value is not an exact multiple of a unit, an approximate decimal value is shown (e.g., "1.2TB"). The
+     * special value {@link Long#MAX_VALUE} is represented as "max-size".
+     * </p>
+     *
+     * @return a string representing the size in a human-readable format
+     */
+    public String toApproximateSize() {
+        if (bytesCount == Long.MAX_VALUE) {
+            return "max-size";
+        }
+        final String[] units = { "B", "KB", "MB", "GB", "TB", "PB", "EB" };
+        double value = bytesCount;
+        int unitIndex = 0;
+        while (value >= 1024 && unitIndex < units.length - 1) {
+            value /= 1024;
+            unitIndex++;
+        }
+        // Format with up to 2 decimals, but no trailing zeros
+        return String.format("%.2f%s", value, units[unitIndex]).replaceAll("\\.?0+(?=[A-Z])", "");
+    }
+
+    /**
      * Parses the byte size.
      *
      * @param byteSizeString
