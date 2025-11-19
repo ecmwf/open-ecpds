@@ -284,6 +284,37 @@ public abstract class GenericFileChecker extends GenericFile {
     }
 
     /**
+     * Gets the underlying file system identifier.
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     */
+    @Override
+    public String getFileSystemId() throws IOException {
+        return _file.getFileSystemId();
+    }
+
+    /**
+     * Gets the total space.
+     *
+     * @return the total space
+     */
+    @Override
+    public long getTotalSpace() {
+        return _file.getTotalSpace();
+    }
+
+    /**
+     * Gets the free space.
+     *
+     * @return the free space
+     */
+    @Override
+    public long getFreeSpace() {
+        return _file.getFreeSpace();
+    }
+
+    /**
      * {@inheritDoc}
      *
      * Checks if is directory.

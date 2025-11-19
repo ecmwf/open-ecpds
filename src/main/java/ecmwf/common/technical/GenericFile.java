@@ -252,6 +252,28 @@ public abstract class GenericFile {
     public abstract boolean setReadOnly();
 
     /**
+     * Gets the underlying file system identifier.
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     */
+    public abstract String getFileSystemId() throws IOException;
+
+    /**
+     * Gets the total space.
+     *
+     * @return the total space
+     */
+    public abstract long getTotalSpace();
+
+    /**
+     * Gets the free space.
+     *
+     * @return the free space
+     */
+    public abstract long getFreeSpace();
+
+    /**
      * Checks if is directory.
      *
      * @return true, if is directory

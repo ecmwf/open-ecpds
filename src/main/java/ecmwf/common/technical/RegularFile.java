@@ -284,6 +284,39 @@ public final class RegularFile extends GenericFile {
     }
 
     /**
+     * Gets the underlying file system identifier.
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     */
+    @Override
+    public String getFileSystemId() throws IOException {
+        final var p = Paths.get(underlyingFile.getPath()).toRealPath(); // resolves symlinks
+        final var fs = Files.getFileStore(p);
+        return fs.name() + "|" + fs.type();
+    }
+
+    /**
+     * Gets the total space.
+     *
+     * @return the total space
+     */
+    @Override
+    public long getTotalSpace() {
+        return underlyingFile.getTotalSpace();
+    }
+
+    /**
+     * Gets the free space.
+     *
+     * @return the free space
+     */
+    @Override
+    public long getFreeSpace() {
+        return underlyingFile.getFreeSpace();
+    }
+
+    /**
      * Mkdir.
      *
      * @return true, if successful
