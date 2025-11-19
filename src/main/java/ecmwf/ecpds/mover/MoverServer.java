@@ -64,8 +64,7 @@ import java.sql.Timestamp;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
 import java.util.StringTokenizer;
@@ -108,6 +107,8 @@ import ecmwf.common.database.IncomingConnection;
 import ecmwf.common.database.MSUser;
 import ecmwf.common.database.TransferMethod;
 import ecmwf.common.ecaccess.ConnectionException;
+import ecmwf.common.ecaccess.ECauthToken;
+import ecmwf.common.ecaccess.ECauthTokenManager;
 import ecmwf.common.ecaccess.MBeanRepository;
 import ecmwf.common.ecaccess.NativeAuthenticationProvider;
 import ecmwf.common.ecaccess.StarterServer;
@@ -163,8 +164,6 @@ import ecmwf.common.text.Format;
 import ecmwf.common.text.Format.DuplicatedChooseScore;
 import ecmwf.common.text.Options;
 import ecmwf.common.version.Version;
-import ecmwf.common.ecaccess.ECauthToken;
-import ecmwf.common.ecaccess.ECauthTokenManager;
 import ecmwf.ecpds.master.DataAccessInterface;
 import ecmwf.ecpds.master.DownloadProgress;
 import ecmwf.ecpds.master.MasterConnection;
@@ -318,43 +317,51 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             final var repository = GenericFile.getGenericFile(getRepository());
             final var volumes = repository.listFiles(new VolumeFilter(volumeIndexMax));
             if (volumes == null) {
-                // The repository is not a directory?
                 _log.warn("Repository {} not a directory?", repository.getAbsolutePath());
                 return new long[][] { new long[] {}, new long[] {} };
             }
-            final var unique = new LinkedHashMap<String, GenericFile>();
+            // Map from filesystem ID -> volume with lowest numeric index
+            final var fsIdToVolume = new HashMap<String, GenericFile>();
             for (final GenericFile dataVolume : volumes) {
-                if (dataVolume.isDirectory()) {
-                    final var fsId = dataVolume.getFileSystemId();
-                    if (!unique.containsKey(fsId)) {
-                        unique.put(fsId, dataVolume);
+                if (!dataVolume.isDirectory())
+                    continue;
+                final var fsId = dataVolume.getFileSystemId();
+                final var index = Integer.parseInt(dataVolume.getName().substring("volume".length()));
+                if (!fsIdToVolume.containsKey(fsId)) {
+                    fsIdToVolume.put(fsId, dataVolume);
+                    _log.debug("Mapping {} -> filesystem {}", dataVolume.getName(), fsId);
+                } else {
+                    final var existing = fsIdToVolume.get(fsId);
+                    final var existingIndex = Integer.parseInt(existing.getName().substring("volume".length()));
+                    if (index < existingIndex) {
+                        _log.debug("Replacing {} with {} for filesystem {} (lower index)", existing.getName(),
+                                dataVolume.getName(), fsId);
+                        fsIdToVolume.put(fsId, dataVolume);
                     } else {
-                        // This volume was already processed!
-                        _log.debug("Skipping data volume {} (already processed - symbolic link?)",
-                                dataVolume.getAbsolutePath());
+                        _log.debug("Skipping {} for filesystem {} (already mapped to {})", dataVolume.getName(), fsId,
+                                existing.getName());
                     }
                 }
             }
-            final var realPathList = new ArrayList<>(unique.values());
-            Collections.sort(realPathList, (a, b) -> {
-                int i1 = Integer.parseInt(a.getName().substring("volume".length()));
-                int i2 = Integer.parseInt(b.getName().substring("volume".length()));
+            // Sort by volume numeric index
+            final var realPathList = new ArrayList<>(fsIdToVolume.values());
+            realPathList.sort((a, b) -> {
+                final var i1 = Integer.parseInt(a.getName().substring("volume".length()));
+                final var i2 = Integer.parseInt(b.getName().substring("volume".length()));
                 return Integer.compare(i1, i2);
             });
-            var n = realPathList.size();
-            var usedPerVolume = new long[n];
-            var maxCapacityPerVolume = new long[n];
+            final var n = realPathList.size();
+            final var usedPerVolume = new long[n];
+            final var maxCapacityPerVolume = new long[n];
             for (var i = 0; i < n; i++) {
-                var volume = realPathList.get(i);
-                // total space in bytes
+                final var volume = realPathList.get(i);
                 maxCapacityPerVolume[i] = volume.getTotalSpace();
-                // free space in bytes
-                var free = volume.getFreeSpace();
-                // used = total - free
-                usedPerVolume[i] = maxCapacityPerVolume[i] - free;
+                usedPerVolume[i] = maxCapacityPerVolume[i] - volume.getFreeSpace();
+                _log.debug("Volume {} -> Used: {}, Total: {}", volume.getName(), usedPerVolume[i],
+                        maxCapacityPerVolume[i]);
             }
             return new long[][] { usedPerVolume, maxCapacityPerVolume };
-        } catch (Throwable t) {
+        } catch (final Throwable t) {
             throw Format.getRemoteException("DataMover=" + getRoot(), t);
         }
     }
@@ -380,13 +387,13 @@ public final class MoverServer extends StarterServer implements MoverInterface {
         private boolean endsWithVolumeIndex(final String filename) {
             if (filename == null)
                 return false;
-            var prefix = "volume";
+            final var prefix = "volume";
             if (!filename.startsWith(prefix))
                 return false;
-            var numberPart = filename.substring(prefix.length());
+            final var numberPart = filename.substring(prefix.length());
             if (!numberPart.matches("\\d+"))
                 return false;
-            var value = Integer.parseInt(numberPart);
+            final var value = Integer.parseInt(numberPart);
             return value >= 0 && value <= volumeIndexMax;
         }
 
@@ -1430,7 +1437,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     public void check(final long ticket) throws RemoteException {
         try {
             ticketRepository.check(ticket, Cnf.at("Other", "ticketWaitDuration", 20 * Timer.ONE_MINUTE));
-        } catch (Throwable t) {
+        } catch (final Throwable t) {
             throw Format.getRemoteException("DataMover=" + getRoot(), t);
         }
     }
@@ -1466,7 +1473,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                 transferRepository.removeValue(transfer);
             }
             return size.getSize();
-        } catch (Throwable t) {
+        } catch (final Throwable t) {
             throw Format.getRemoteException("DataMover=" + getRoot(), t);
         } finally {
             if (cookieSet) {
@@ -1502,7 +1509,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             } finally {
                 transferRepository.removeValue(transfer);
             }
-        } catch (Throwable t) {
+        } catch (final Throwable t) {
             throw Format.getRemoteException("DataMover=" + getRoot(), t);
         } finally {
             if (cookieSet) {
@@ -1642,7 +1649,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             }
             _log.debug("Filtering completed successfully ({} byte(s))", size);
             return dataFile;
-        } catch (Throwable t) {
+        } catch (final Throwable t) {
             throw Format.getRemoteException("DataMover=" + getRoot(), t);
         } finally {
             if (cookieSet) {
@@ -1756,7 +1763,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                     new DefaultCallback(HOST_ECTRANS.getECtransSetup(targetHost.getData())), true);
             _log.info("File {} successfully transmitted on {}", fileName, targetHost.getNickname());
             return dataFile;
-        } catch (Throwable t) {
+        } catch (final Throwable t) {
             throw Format.getRemoteException("DataMover=" + getRoot(), t);
         } finally {
             if (cookieSet) {
@@ -1784,7 +1791,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
         try {
             final var rest = getRESTInterface(url, mover, (int) setup.getDuration(HOST_PROXY_TIMEOUT).toMillis());
             return rest.getMoverReport();
-        } catch (Throwable t) {
+        } catch (final Throwable t) {
             throw Format.getRemoteException("DataMover=" + getRoot(),
                     "Error occurred on remote proxy (proxy=" + url + ",mover=" + mover + ")", t);
         }
@@ -1811,7 +1818,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
         try {
             final var rest = getRESTInterface(url, mover, (int) setup.getDuration(HOST_PROXY_TIMEOUT).toMillis());
             return rest.getHostReport(host);
-        } catch (Throwable t) {
+        } catch (final Throwable t) {
             throw Format.getRemoteException("DataMover=" + getRoot(),
                     "Error occurred on remote proxy (proxy=" + url + ",mover=" + mover + ")", t);
         }
@@ -1829,7 +1836,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     public String getReport() throws RemoteException {
         try {
             return _exec(Cnf.notEmptyStringAt("ReportCommand", "mover", "mover-report"));
-        } catch (Throwable t) {
+        } catch (final Throwable t) {
             throw Format.getRemoteException("DataMover=" + getRoot(), t);
         }
     }
@@ -1880,7 +1887,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             Format.replaceAll(sb, "$listenAddress", listenAddress == null ? "" : listenAddress);
             // Run the report!
             return _exec(sb.toString());
-        } catch (Throwable t) {
+        } catch (final Throwable t) {
             throw Format.getRemoteException("DataMover=" + getRoot(), t);
         }
     }
@@ -2139,7 +2146,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             }
             _log.debug("Download completed successfully");
             return dataFile;
-        } catch (Throwable t) {
+        } catch (final Throwable t) {
             throw Format.getRemoteException("DataMover=" + getRoot(), t);
         } finally {
             if (cookieSet) {
@@ -2243,7 +2250,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                 _log.warn("Error occurred on remote proxy (proxy={},mover={})", url, mover, t);
             }
             return false;
-        } catch (Throwable t) {
+        } catch (final Throwable t) {
             throw Format.getRemoteException("DataMover=" + getRoot(), t);
         } finally {
             if (cookieSet) {
@@ -2314,7 +2321,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                 }
             }
             return !OPERATIONAL || deleted;
-        } catch (Throwable t) {
+        } catch (final Throwable t) {
             throw Format.getRemoteException("DataMover=" + getRoot(), t);
         } finally {
             if (cookieSet) {
@@ -2527,7 +2534,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                     transferRepository.removeValue(transfer);
                 }
             }
-        } catch (Throwable t) {
+        } catch (final Throwable t) {
             throw Format.getRemoteException("DataMover=" + getRoot(), t);
         } finally {
             if (cookieSet) {
@@ -2568,7 +2575,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                     new ECproxyCallback(ticket, host.getData()));
             final var socketConfig = new SocketConfig("ECproxyPlugin");
             return new ProxySocket(ticket.getId(), socketConfig.getPublicAddress(), socketConfig.getPort(), true);
-        } catch (Throwable t) {
+        } catch (final Throwable t) {
             throw Format.getRemoteException("DataMover=" + getRoot(), t);
         }
     }
@@ -2605,7 +2612,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                     new ECproxyCallback(ticket, host.getData()));
             final var socketConfig = new SocketConfig("ECproxyPlugin");
             return new ProxySocket(ticket.getId(), socketConfig.getPublicAddress(), socketConfig.getPort(), true);
-        } catch (Throwable t) {
+        } catch (final Throwable t) {
             throw Format.getRemoteException("DataMover=" + getRoot(), t);
         }
     }
@@ -2668,7 +2675,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             throws RemoteException {
         try {
             return get(dataFile, new Host[] { hostForSource }, remotePosn, -1);
-        } catch (Throwable t) {
+        } catch (final Throwable t) {
             throw Format.getRemoteException("DataMover=" + getRoot(), t);
         }
     }
@@ -2703,7 +2710,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             final var ticket = getTicketRepository().add(new FileDescriptorTicket(descriptor));
             final var socketConfig = new SocketConfig("ECproxyPlugin");
             return new ProxySocket(ticket.getId(), socketConfig.getPublicAddress(), socketConfig.getPort(), true);
-        } catch (Throwable t) {
+        } catch (final Throwable t) {
             throw Format.getRemoteException("DataMover=" + getRoot(), t);
         } finally {
             if (cookieSet) {
@@ -2735,7 +2742,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                     host.getECUserName(), host.getName() + "@" + host.getTransferMethodName(), null,
                     new DefaultCallback(HOST_ECTRANS.getECtransSetup(host.getData())), true);
             return size.getSize();
-        } catch (Throwable t) {
+        } catch (final Throwable t) {
             throw Format.getRemoteException("DataMover=" + getRoot(), t);
         }
     }
@@ -2766,7 +2773,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                     host.getECUserName(), host.getName() + "@" + host.getTransferMethodName(), null,
                     new DefaultCallback(HOST_ECTRANS.getECtransSetup(host.getData())), true);
             return list.getListAsStringArray();
-        } catch (Throwable t) {
+        } catch (final Throwable t) {
             throw Format.getRemoteException("DataMover=" + getRoot(), t);
         }
     }
@@ -2813,7 +2820,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                 in = new PipedInputStream(out, StreamPlugThread.DEFAULT_BUFF_SIZE);
             }
             return new RemoteInputStreamImp(in);
-        } catch (Throwable t) {
+        } catch (final Throwable t) {
             throw Format.getRemoteException("DataMover=" + getRoot(), t);
         }
     }
@@ -2864,7 +2871,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             new ECtransContainer(new MoverProvider(new ECproxyRepository(host)), false).syncExec(new ECtransDel(source),
                     null, host.getECUserName(), host.getName() + "@" + host.getTransferMethodName(), null,
                     new DefaultCallback(HOST_ECTRANS.getECtransSetup(host.getData())), true);
-        } catch (Throwable t) {
+        } catch (final Throwable t) {
             throw Format.getRemoteException("DataMover=" + getRoot(), t);
         }
     }
@@ -2888,7 +2895,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             new ECtransContainer(new MoverProvider(new ECproxyRepository(host)), false).syncExec(new ECtransMkdir(dir),
                     null, host.getECUserName(), host.getName() + "@" + host.getTransferMethodName(), null,
                     new DefaultCallback(HOST_ECTRANS.getECtransSetup(host.getData())), true);
-        } catch (Throwable t) {
+        } catch (final Throwable t) {
             throw Format.getRemoteException("DataMover=" + getRoot(), t);
         }
     }
@@ -2912,7 +2919,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             new ECtransContainer(new MoverProvider(new ECproxyRepository(host)), false).syncExec(new ECtransRmdir(dir),
                     null, host.getECUserName(), host.getName() + "@" + host.getTransferMethodName(), null,
                     new DefaultCallback(HOST_ECTRANS.getECtransSetup(host.getData())), true);
-        } catch (Throwable t) {
+        } catch (final Throwable t) {
             throw Format.getRemoteException("DataMover=" + getRoot(), t);
         }
     }
@@ -2939,7 +2946,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                     new ECtransMove(source, target), null, host.getECUserName(),
                     host.getName() + "@" + host.getTransferMethodName(), null,
                     new DefaultCallback(HOST_ECTRANS.getECtransSetup(host.getData())), true);
-        } catch (Throwable t) {
+        } catch (final Throwable t) {
             throw Format.getRemoteException("DataMover=" + getRoot(), t);
         }
     }
@@ -3017,7 +3024,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     public boolean close(final DataTransfer transfer) throws RemoteException {
         try {
             return closeDataTransfer(transfer);
-        } catch (Throwable t) {
+        } catch (final Throwable t) {
             throw Format.getRemoteException("DataMover=" + getRoot(), t);
         }
     }
@@ -3829,7 +3836,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                 if (_ticket.hasError()) {
                     throw new IOException(_ticket.getError());
                 }
-            } catch (Throwable t) {
+            } catch (final Throwable t) {
                 throw Format.getRemoteException("DataMover=" + getRoot(), t);
             }
         }
@@ -4397,7 +4404,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                     final var hostsForSource = desc.getHostsForSource();
                     if (hostsForSource != null && hostsForSource.length > 0) {
                         in = new ECtransInputStream(hostsForSource, dataFile, posn);
-                        if (in instanceof ECtransInputStream ectransIn)
+                        if (in instanceof final ECtransInputStream ectransIn)
                             desc.setSelectedSourceHost(ectransIn.getHost());
                         posn = 0; // No skip required here, will be processed in the ECtransInputStream
                     }
