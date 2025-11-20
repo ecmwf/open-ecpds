@@ -37,8 +37,8 @@ ENV LOG_LEVEL=warn
 # Add OpenECPDS rpms
 COPY rpms/ecpds-mover-${TAG}.*.rpm .
 
-# Install OpenECPDS rpms and lbzip2
-RUN yum install -d1 -y lbzip2 && \
+# Install OpenECPDS rpms, lbzip2, nmap and mtr
+RUN yum install -d1 -y lbzip2 nmap mtr && \
     yum install -d1 -y ecpds-mover-${TAG}.*.rpm && \
     yum clean all && rm -f ecpds-mover-${TAG}.*.rpm
 
