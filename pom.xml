@@ -96,9 +96,7 @@
 						<phase>prepare-package</phase>
 						<configuration>
 							<target>
-								<fixcrlf
-									srcdir="etc"
-									eol="unix" includes="**/sh/*" />
+								<fixcrlf srcdir="etc" eol="unix" includes="**/sh/*" />
 							</target>
 						</configuration>
 						<goals>
@@ -110,10 +108,7 @@
 						<phase>prepare-package</phase>
 						<configuration>
 							<target>
-								<echo
-									file="${project.build.directory}/classes/VERSION">
-									${project.version}-${build.number}
-								</echo>
+								<echo file="${project.build.directory}/classes/VERSION">${project.version}-${build.number}</echo>
 							</target>
 						</configuration>
 						<goals>
@@ -134,55 +129,10 @@
 						</goals>
 						<phase>package</phase>
 						<configuration>
-							<mainClass>
-								ecmwf.common.ectrans.ECtransOptions$MarkdownGenerator</mainClass>
+							<mainClass>ecmwf.common.ectrans.ECtransOptions$MarkdownGenerator</mainClass>
 							<arguments>
 								<argument>${basedir}/Options.md</argument>
 							</arguments>
-						</configuration>
-					</execution>
-					<execution>
-						<id>compile-native</id>
-						<goals>
-							<goal>exec</goal>
-						</goals>
-						<phase>package</phase>
-						<configuration>
-							<executable>gcc</executable>
-							<arguments>
-								<argument>-shared</argument>
-								<argument>-O2</argument>
-								<argument>-D_GNU_SOURCE</argument>
-								<argument>-D_FILE_OFFSET_BITS=64</argument>
-								<argument>-olibsocketoptions.so</argument>
-								<argument>-I${java.home}/include</argument>
-								<argument>-I${java.home}/include/linux</argument>
-								<argument>-fPIC</argument>
-								<argument>
-									${project.basedir}/src/main/c/SocketOptions.c</argument>
-							</arguments>
-							<workingDirectory>${project.build.directory}</workingDirectory>
-						</configuration>
-					</execution>
-					<execution>
-						<id>compile-ecpds</id>
-						<goals>
-							<goal>exec</goal>
-						</goals>
-						<phase>package</phase>
-						<configuration>
-							<executable>gcc</executable>
-							<arguments>
-								<argument>-O2</argument>
-								<argument>-D_GNU_SOURCE</argument>
-								<argument>-D_FILE_OFFSET_BITS=64</argument>
-								<argument>
-									${project.basedir}/src/main/c/ECpdsCmd.c</argument>
-								<argument>-oecpds</argument>
-								<argument>-L/usr/include/openssl</argument>
-								<argument>-lcrypto</argument>
-							</arguments>
-							<workingDirectory>${project.build.directory}</workingDirectory>
 						</configuration>
 					</execution>
 				</executions>
@@ -244,8 +194,7 @@
 							<goal>copy-dependencies</goal>
 						</goals>
 						<configuration>
-							<outputDirectory>
-								${project.basedir}/lib</outputDirectory>
+							<outputDirectory>${project.basedir}/lib</outputDirectory>
 							<includeScope>runtime</includeScope>
 							<overWriteReleases>true</overWriteReleases>
 							<overWriteSnapshots>true</overWriteSnapshots>
@@ -296,250 +245,308 @@
 					</execution>
 				</executions>
 			</plugin>
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>rpm-maven-plugin</artifactId>
-				<version>2.3.0</version>
-				<executions>
-					<execution>
-						<id>rpm-ecpds-master</id>
-						<phase>package</phase>
-						<goals>
-							<goal>rpm</goal>
-						</goals>
-						<configuration>
-							<name>ecpds-master</name>
-							<summary>Master-Server</summary>
-							<description>The Master-Server daemon</description>
-							<group>System Environment/Daemons</group>
-							<version>${project.version}</version>
-							<release>${build.number}</release>
-							<packager>${packager.name} - ${packager.email}</packager>
-							<distribution>${packager.distribution}</distribution>
-							<license>Apache License 2.0</license>
-							<needarch>true</needarch>
-							<requires>
-								<require>java >= ${maven.compiler.target}</require>
-							</requires>
-							<mappings>
-								<mapping>
-									<directory>/usr/local/ecpds/master/conf</directory>
-									<directoryIncluded>true</directoryIncluded>
-									<filemode>0644</filemode>
-									<dirmode>0755</dirmode>
-									<sources>
-										<source>
-											<location>etc/master/conf</location>
-										</source>
-									</sources>
-								</mapping>
-								<mapping>
-									<directory>/usr/local/ecpds/master/sh</directory>
-									<directoryIncluded>true</directoryIncluded>
-									<filemode>0755</filemode>
-									<dirmode>0755</dirmode>
-									<sources>
-										<source>
-											<location>etc/master/sh</location>
-										</source>
-									</sources>
-								</mapping>
-								<mapping>
-									<directory>/usr/local/ecpds/master/lib</directory>
-									<directoryIncluded>true</directoryIncluded>
-									<filemode>0644</filemode>
-									<dirmode>0755</dirmode>
-									<sources>
-										<source>
-											<location>
-												${project.basedir}/lib</location>
-										</source>
-										<source>
-											<location>
-												${project.build.directory}/ecmwf-${project.version}-${build.number}.jar</location>
-										</source>
-									</sources>
-								</mapping>
-								<mapping>
-									<directory>/usr/local/bin</directory>
-									<filemode>0755</filemode>
-									<dirmode>0755</dirmode>
-									<sources>
-										<source>
-											<location>
-												${project.build.directory}/ecpds</location>
-										</source>
-									</sources>
-								</mapping>
-							</mappings>
-						</configuration>
-					</execution>
-					<execution>
-						<id>rpm-ecpds-monitor</id>
-						<phase>package</phase>
-						<goals>
-							<goal>rpm</goal>
-						</goals>
-						<configuration>
-							<name>ecpds-monitor</name>
-							<summary>Monitor-Server</summary>
-							<description>The Monitor-Server daemon</description>
-							<group>System Environment/Daemons</group>
-							<version>${project.version}</version>
-							<release>${build.number}</release>
-							<packager>${packager.name} - ${packager.email}</packager>
-							<distribution>${packager.distribution}</distribution>
-							<license>Apache License 2.0</license>
-							<requires>
-								<require>java >= ${maven.compiler.target}</require>
-							</requires>
-							<mappings>
-								<mapping>
-									<directory>/usr/local/ecpds/monitor/conf</directory>
-									<directoryIncluded>true</directoryIncluded>
-									<filemode>0644</filemode>
-									<dirmode>0755</dirmode>
-									<sources>
-										<source>
-											<location>etc/monitor/conf</location>
-										</source>
-									</sources>
-								</mapping>
-								<mapping>
-									<directory>/usr/local/ecpds/monitor/sh</directory>
-									<directoryIncluded>true</directoryIncluded>
-									<filemode>0755</filemode>
-									<dirmode>0755</dirmode>
-									<sources>
-										<source>
-											<location>etc/monitor/sh</location>
-										</source>
-									</sources>
-								</mapping>
-								<mapping>
-									<directory>/usr/local/ecpds/monitor/lib</directory>
-									<directoryIncluded>true</directoryIncluded>
-									<filemode>0644</filemode>
-									<dirmode>0755</dirmode>
-									<sources>
-										<source>
-											<location>
-												${project.basedir}/lib</location>
-										</source>
-										<source>
-											<location>
-												${project.build.directory}/ecmwf-${project.version}-${build.number}.jar</location>
-										</source>
-									</sources>
-								</mapping>
-								<mapping>
-									<directory>/usr/local/ecpds/monitor/htdocs</directory>
-									<directoryIncluded>true</directoryIncluded>
-									<filemode>0644</filemode>
-									<dirmode>0755</dirmode>
-									<sources>
-										<source>
-											<location>etc/monitor/htdocs</location>
-											<excludes>
-												<exclude>
-													etc/monitor/htdocs/resources/maps/*.kml</exclude>
-												<exclude>
-													/etc/monitor/htdocs/resources/maps/contacts.txt</exclude>
-											</excludes>
-										</source>
-									</sources>
-								</mapping>
-							</mappings>
-						</configuration>
-					</execution>
-					<execution>
-						<id>rpm-ecpds-mover</id>
-						<phase>package</phase>
-						<goals>
-							<goal>rpm</goal>
-						</goals>
-						<configuration>
-							<name>ecpds-mover</name>
-							<summary>Mover-Server</summary>
-							<description>The Mover-Server daemon</description>
-							<group>System Environment/Daemons</group>
-							<version>${project.version}</version>
-							<release>${build.number}</release>
-							<packager>${packager.name} - ${packager.email}</packager>
-							<distribution>${packager.distribution}</distribution>
-							<license>Apache License 2.0</license>
-							<needarch>true</needarch>
-							<requires>
-								<require>java >= ${maven.compiler.target}</require>
-							</requires>
-							<mappings>
-								<mapping>
-									<directory>/usr/local/ecpds/mover/htdocs</directory>
-									<directoryIncluded>true</directoryIncluded>
-									<filemode>0644</filemode>
-									<dirmode>0755</dirmode>
-									<sources>
-										<source>
-											<location>etc/mover/htdocs</location>
-										</source>
-									</sources>
-								</mapping>
-								<mapping>
-									<directory>/usr/local/ecpds/mover/conf</directory>
-									<directoryIncluded>true</directoryIncluded>
-									<filemode>0644</filemode>
-									<dirmode>0755</dirmode>
-									<sources>
-										<source>
-											<location>etc/mover/conf</location>
-										</source>
-									</sources>
-								</mapping>
-								<mapping>
-									<directory>/usr/local/ecpds/mover/sh</directory>
-									<directoryIncluded>true</directoryIncluded>
-									<filemode>0755</filemode>
-									<dirmode>0755</dirmode>
-									<sources>
-										<source>
-											<location>etc/mover/sh</location>
-										</source>
-									</sources>
-								</mapping>
-								<mapping>
-									<directory>/usr/local/ecpds/mover/lib</directory>
-									<directoryIncluded>true</directoryIncluded>
-									<filemode>0644</filemode>
-									<dirmode>0755</dirmode>
-									<sources>
-										<source>
-											<location>
-												${project.basedir}/lib</location>
-										</source>
-										<source>
-											<location>
-												${project.build.directory}/ecmwf-${project.version}-${build.number}.jar</location>
-										</source>
-									</sources>
-								</mapping>
-								<mapping>
-									<directory>/usr/local/ecpds/mover/jni</directory>
-									<filemode>0644</filemode>
-									<dirmode>0755</dirmode>
-									<sources>
-										<source>
-											<location>
-												${project.build.directory}/libsocketoptions.so</location>
-										</source>
-									</sources>
-								</mapping>
-							</mappings>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
 		</plugins>
 	</build>
+	<profiles>
+		<profile>
+			<id>native-build</id>
+			<activation>
+				<property>
+					<name>env.IN_DEV_CONTAINER</name>
+					<value>true</value>
+				</property>
+			</activation>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>exec-maven-plugin</artifactId>
+						<version>3.4.1</version>
+						<executions>
+							<!-- Compile shared library -->
+							<execution>
+								<id>compile-native</id>
+								<goals>
+									<goal>exec</goal>
+								</goals>
+								<phase>package</phase>
+								<configuration>
+									<executable>gcc</executable>
+									<arguments>
+										<argument>-shared</argument>
+										<argument>-O2</argument>
+										<argument>-D_GNU_SOURCE</argument>
+										<argument>-D_FILE_OFFSET_BITS=64</argument>
+										<argument>-olibsocketoptions.so</argument>
+										<argument>-I${java.home}/include</argument>
+										<argument>-I${java.home}/include/linux</argument>
+										<argument>-fPIC</argument>
+										<argument>${project.basedir}/src/main/c/SocketOptions.c</argument>
+									</arguments>
+									<workingDirectory>${project.build.directory}</workingDirectory>
+								</configuration>
+							</execution>
+							<!-- Compile ECpdsCmd binary -->
+							<execution>
+								<id>compile-ecpds</id>
+								<goals>
+									<goal>exec</goal>
+								</goals>
+								<phase>package</phase>
+								<configuration>
+									<executable>gcc</executable>
+									<arguments>
+										<argument>-O2</argument>
+										<argument>-D_GNU_SOURCE</argument>
+										<argument>-D_FILE_OFFSET_BITS=64</argument>
+										<argument>${project.basedir}/src/main/c/ECpdsCmd.c</argument>
+										<argument>-oecpds</argument>
+										<argument>-L/usr/include/openssl</argument>
+										<argument>-lcrypto</argument>
+									</arguments>
+									<workingDirectory>${project.build.directory}</workingDirectory>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>rpm-maven-plugin</artifactId>
+						<version>2.3.0</version>
+						<executions>
+							<execution>
+								<id>rpm-ecpds-master</id>
+								<phase>package</phase>
+								<goals>
+									<goal>rpm</goal>
+								</goals>
+								<configuration>
+									<name>ecpds-master</name>
+									<summary>Master-Server</summary>
+									<description>The Master-Server daemon</description>
+									<group>System Environment/Daemons</group>
+									<version>${project.version}</version>
+									<release>${build.number}</release>
+									<packager>${packager.name} - ${packager.email}</packager>
+									<distribution>${packager.distribution}</distribution>
+									<license>Apache License 2.0</license>
+									<needarch>true</needarch>
+									<requires>
+										<require>java >= ${maven.compiler.target}</require>
+									</requires>
+									<mappings>
+										<mapping>
+											<directory>/usr/local/ecpds/master/conf</directory>
+											<directoryIncluded>true</directoryIncluded>
+											<filemode>0644</filemode>
+											<dirmode>0755</dirmode>
+											<sources>
+												<source>
+													<location>etc/master/conf</location>
+												</source>
+											</sources>
+										</mapping>
+										<mapping>
+											<directory>
+												/usr/local/ecpds/master/sh</directory>
+											<directoryIncluded>true</directoryIncluded>
+											<filemode>0755</filemode>
+											<dirmode>0755</dirmode>
+											<sources>
+												<source>
+													<location>etc/master/sh</location>
+												</source>
+											</sources>
+										</mapping>
+										<mapping>
+											<directory>
+												/usr/local/ecpds/master/lib</directory>
+											<directoryIncluded>true</directoryIncluded>
+											<filemode>0644</filemode>
+											<dirmode>0755</dirmode>
+											<sources>
+												<source>
+													<location>${project.basedir}/lib</location>
+												</source>
+												<source>
+													<location>${project.build.directory}/ecmwf-${project.version}-${build.number}.jar</location>
+												</source>
+											</sources>
+										</mapping>
+										<mapping>
+											<directory>/usr/local/bin</directory>
+											<filemode>0755</filemode>
+											<dirmode>0755</dirmode>
+											<sources>
+												<source>
+													<location>${project.build.directory}/ecpds</location>
+												</source>
+											</sources>
+										</mapping>
+									</mappings>
+								</configuration>
+							</execution>
+							<execution>
+								<id>rpm-ecpds-monitor</id>
+								<phase>package</phase>
+								<goals>
+									<goal>rpm</goal>
+								</goals>
+								<configuration>
+									<name>ecpds-monitor</name>
+									<summary>Monitor-Server</summary>
+									<description>The Monitor-Server daemon</description>
+									<group>System Environment/Daemons</group>
+									<version>${project.version}</version>
+									<release>${build.number}</release>
+									<packager>${packager.name} - ${packager.email}</packager>
+									<distribution>${packager.distribution}</distribution>
+									<license>Apache License 2.0</license>
+									<requires>
+										<require>java >= ${maven.compiler.target}</require>
+									</requires>
+									<mappings>
+										<mapping>
+											<directory>/usr/local/ecpds/monitor/conf</directory>
+											<directoryIncluded>true</directoryIncluded>
+											<filemode>0644</filemode>
+											<dirmode>0755</dirmode>
+											<sources>
+												<source>
+													<location>etc/monitor/conf</location>
+												</source>
+											</sources>
+										</mapping>
+										<mapping>
+											<directory>/usr/local/ecpds/monitor/sh</directory>
+											<directoryIncluded>true</directoryIncluded>
+											<filemode>0755</filemode>
+											<dirmode>0755</dirmode>
+											<sources>
+												<source>
+													<location>etc/monitor/sh</location>
+												</source>
+											</sources>
+										</mapping>
+										<mapping>
+											<directory>/usr/local/ecpds/monitor/lib</directory>
+											<directoryIncluded>true</directoryIncluded>
+											<filemode>0644</filemode>
+											<dirmode>0755</dirmode>
+											<sources>
+												<source>
+													<location>${project.basedir}/lib</location>
+												</source>
+												<source>
+													<location>${project.build.directory}/ecmwf-${project.version}-${build.number}.jar</location>
+												</source>
+											</sources>
+										</mapping>
+										<mapping>
+											<directory>/usr/local/ecpds/monitor/htdocs</directory>
+											<directoryIncluded>true</directoryIncluded>
+											<filemode>0644</filemode>
+											<dirmode>0755</dirmode>
+											<sources>
+												<source>
+													<location>etc/monitor/htdocs</location>
+													<excludes>
+														<exclude>etc/monitor/htdocs/resources/maps/*.kml</exclude>
+														<exclude>/etc/monitor/htdocs/resources/maps/contacts.txt</exclude>
+													</excludes>
+												</source>
+											</sources>
+										</mapping>
+									</mappings>
+								</configuration>
+							</execution>
+							<execution>
+								<id>rpm-ecpds-mover</id>
+								<phase>package</phase>
+								<goals>
+									<goal>rpm</goal>
+								</goals>
+								<configuration>
+									<name>ecpds-mover</name>
+									<summary>Mover-Server</summary>
+									<description>The Mover-Server daemon</description>
+									<group>System Environment/Daemons</group>
+									<version>${project.version}</version>
+									<release>${build.number}</release>
+									<packager>${packager.name} - ${packager.email}</packager>
+									<distribution>${packager.distribution}</distribution>
+									<license>Apache License 2.0</license>
+									<needarch>true</needarch>
+									<requires>
+										<require>java >= ${maven.compiler.target}</require>
+									</requires>
+									<mappings>
+										<mapping>
+											<directory>/usr/local/ecpds/mover/htdocs</directory>
+											<directoryIncluded>true</directoryIncluded>
+											<filemode>0644</filemode>
+											<dirmode>0755</dirmode>
+											<sources>
+												<source>
+													<location>etc/mover/htdocs</location>
+												</source>
+											</sources>
+										</mapping>
+										<mapping>
+											<directory>/usr/local/ecpds/mover/conf</directory>
+											<directoryIncluded>true</directoryIncluded>
+											<filemode>0644</filemode>
+											<dirmode>0755</dirmode>
+											<sources>
+												<source>
+													<location>etc/mover/conf</location>
+												</source>
+											</sources>
+										</mapping>
+										<mapping>
+											<directory>/usr/local/ecpds/mover/sh</directory>
+											<directoryIncluded>true</directoryIncluded>
+											<filemode>0755</filemode>
+											<dirmode>0755</dirmode>
+											<sources>
+												<source>
+													<location>etc/mover/sh</location>
+												</source>
+											</sources>
+										</mapping>
+										<mapping>
+											<directory>/usr/local/ecpds/mover/lib</directory>
+											<directoryIncluded>true</directoryIncluded>
+											<filemode>0644</filemode>
+											<dirmode>0755</dirmode>
+											<sources>
+												<source>
+													<location>${project.basedir}/lib</location>
+												</source>
+												<source>
+													<location>${project.build.directory}/ecmwf-${project.version}-${build.number}.jar</location>
+												</source>
+											</sources>
+										</mapping>
+										<mapping>
+											<directory>/usr/local/ecpds/mover/jni</directory>
+											<filemode>0644</filemode>
+											<dirmode>0755</dirmode>
+											<sources>
+												<source>
+													<location>${project.build.directory}/libsocketoptions.so</location>
+												</source>
+											</sources>
+										</mapping>
+									</mappings>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 	<repositories>
 		<repository>
 			<id>local-repo</id>
@@ -592,9 +599,9 @@
 			</exclusions>
 		</dependency>
 		<dependency>
-    	<groupId>org.bouncycastle</groupId>
-    		<artifactId>bcprov-jdk18on</artifactId>
-    		<version>1.78.1</version>
+			<groupId>org.bouncycastle</groupId>
+			<artifactId>bcprov-jdk18on</artifactId>
+			<version>1.78.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.graalvm.polyglot</groupId>
@@ -992,9 +999,9 @@
 			<version>2.14.0</version>
 		</dependency>
 		<dependency>
-    		<groupId>org.jsoup</groupId>
-    		<artifactId>jsoup</artifactId>
-    		<version>1.20.1</version>
+			<groupId>org.jsoup</groupId>
+			<artifactId>jsoup</artifactId>
+			<version>1.20.1</version>
 		</dependency>
 		<dependency>
 			<groupId>io.opencensus</groupId>
