@@ -34,9 +34,12 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.LongAdder;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -56,9 +59,6 @@ import ecmwf.ecpds.master.MasterServer;
 public final class TransferServerProvider {
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(TransferServerProvider.class);
-
-    /** List of current file system selected for each TransferGroup. */
-    private static final Map<String, SecureRandom> FILE_SYSTEMS = new ConcurrentHashMap<>();
 
     /** The Constant MASTER. */
     private static final MasterServer MASTER = StarterServer.getInstance(MasterServer.class);
@@ -88,27 +88,6 @@ public final class TransferServerProvider {
         TransferServerException(final String message) {
             super(message);
         }
-    }
-
-    /**
-     * Find the current data volume and increment the new value.
-     *
-     * @param group
-     *            the group
-     *
-     * @return the int
-     */
-    private static int _allocateFileSystem(final TransferGroup group) {
-        final var groupName = group.getName();
-        SecureRandom random;
-        synchronized (FILE_SYSTEMS) {
-            if ((random = FILE_SYSTEMS.get(groupName)) == null) {
-                FILE_SYSTEMS.put(groupName, random = new SecureRandom());
-            }
-        }
-        final var index = random.nextInt(group.getVolumeCount());
-        _log.debug("Selected volume for " + groupName + ": " + index);
-        return index;
     }
 
     /**
@@ -179,7 +158,7 @@ public final class TransferServerProvider {
                 // The group provided is not available so force the checking of the
                 // cluster and let's hope that another group from this cluster
                 // is available!
-                _log.warn("Force cluster checking as " + transferGroup + " is not available");
+                _log.warn("Force cluster checking as {} is not available", transferGroup);
                 checkCluster = true;
             }
         } else {
@@ -215,7 +194,7 @@ public final class TransferServerProvider {
                 try {
                     final var setup = HOST_ECPDS.getECtransSetup(primary.getData());
                     final var moverList = setup.getString(ECtransOptions.HOST_ECPDS_MOVER_LIST_FOR_PROCESSING);
-                    if (moverList.length() > 0) {
+                    if (!moverList.isEmpty()) {
                         // Get one of the mandatory mover!
                         final var server = TransferScheduler.getTransferServerName(setup.getBoolean(HOST_ECTRANS_DEBUG),
                                 group.getName(), null, moverList);
@@ -223,9 +202,10 @@ public final class TransferServerProvider {
                             // We know the group and the server are active and
                             // connected (checked in getTransferServerName)!
                             group = server.getTransferGroup();
-                            fileSystem = allocatedFileSystem != null ? allocatedFileSystem : _allocateFileSystem(group);
+                            fileSystem = allocatedFileSystem != null ? allocatedFileSystem
+                                    : WeightedAllocator.allocate(group);
                             servers.add(server);
-                            _log.debug("Force usage of " + server.getName() + " in " + group.getName());
+                            _log.debug("Force usage of {} in {}", server.getName(), group.getName());
                             // No more processing required!
                             return;
                         }
@@ -243,7 +223,7 @@ public final class TransferServerProvider {
             final var clusterName = group.getClusterName();
             if (isNotEmpty(clusterName) && group.getClusterWeight() != null) {
                 group = getRandomGroupFromCluster(group, dataBase.getTransferGroupArray());
-                _log.debug("Choosing TransferGroup " + group.getName() + " from Cluster " + clusterName);
+                _log.debug("Choosing TransferGroup {} from Cluster {}", group.getName(), clusterName);
             }
         }
         // This shouldn't happen but let's check if the TransferGroup is available
@@ -252,7 +232,7 @@ public final class TransferServerProvider {
             throw new TransferServerException("TransferGroup " + group.getName() + " not available");
         }
         // Select one of the file system available for this group!
-        fileSystem = allocatedFileSystem != null ? allocatedFileSystem : _allocateFileSystem(group);
+        fileSystem = allocatedFileSystem != null ? allocatedFileSystem : WeightedAllocator.allocate(group);
         // Now gets the list of active TransferServers for the selected
         // TransferGroup
         servers.addAll(MASTER.getActiveTransferServers("TransferServerProvider." + caller, null, group, fileSystem));
@@ -314,5 +294,187 @@ public final class TransferServerProvider {
         }
         // No other TransferGroup found from the Cluster!
         return original;
+    }
+
+    /**
+     * Weighted allocator for distributing data across multiple volumes in a group. Volumes with more free space are
+     * more likely to be selected.
+     */
+    private static class WeightedAllocator {
+        private static final ConcurrentHashMap<String, SecureRandom> RNGS = new ConcurrentHashMap<>();
+        private static final ConcurrentHashMap<String, GroupStats> GROUPS = new ConcurrentHashMap<>();
+        private static final long MIN_WEIGHT = 1L;
+        private static final ScheduledExecutorService GROUP_USAGE_UPDATER = Executors
+                .newSingleThreadScheduledExecutor(r -> {
+                    final var t = new Thread(r, "GroupUsageUpdater");
+                    t.setDaemon(true);
+                    return t;
+                });
+
+        static {
+            startUsageUpdater();
+        }
+
+        private static class GroupStats {
+            final VolumeStats[] volumes;
+            final LongAdder[] weights;
+            long[] prefixSums;
+            final Object lock = new Object();
+
+            GroupStats(final int volumeCount, final long maxCapacityPerVolume) {
+                volumes = new VolumeStats[volumeCount];
+                weights = new LongAdder[volumeCount];
+                prefixSums = new long[volumeCount];
+                for (var i = 0; i < volumeCount; i++) {
+                    volumes[i] = new VolumeStats(maxCapacityPerVolume);
+                    weights[i] = new LongAdder();
+                    weights[i].add(maxCapacityPerVolume);
+                    prefixSums[i] = (i == 0) ? weights[i].sum() : prefixSums[i - 1] + weights[i].sum();
+                }
+            }
+
+            void rebuildPrefix() {
+                synchronized (lock) {
+                    var sum = 0L;
+                    for (var i = 0; i < weights.length; i++) {
+                        sum += weights[i].sum();
+                        prefixSums[i] = sum;
+                    }
+                }
+            }
+        }
+
+        private static class VolumeStats {
+            final long maxCapacity;
+            final LongAdder currentLoad = new LongAdder();
+
+            VolumeStats(final long maxCapacity) {
+                this.maxCapacity = maxCapacity;
+            }
+
+            long freeSpace() {
+                return Math.max(0, maxCapacity - currentLoad.sum());
+            }
+
+            void setLoad(final long used) {
+                currentLoad.reset();
+                currentLoad.add(used);
+            }
+        }
+
+        /** Initialise a new group */
+        private static GroupStats initializeGroup(final long[] used, final long[] max) {
+            final var gs = new GroupStats(used.length, 0);
+            synchronized (gs.lock) {
+                for (var i = 0; i < used.length; i++) {
+                    gs.volumes[i] = new VolumeStats(max[i]);
+                    gs.volumes[i].setLoad(used[i]);
+                    gs.weights[i].reset();
+                    gs.weights[i].add(Math.max(MIN_WEIGHT, gs.volumes[i].freeSpace()));
+                }
+                gs.rebuildPrefix();
+            }
+            return gs;
+        }
+
+        /**
+         * Update the usage for a transfer group, registering it if necessary.
+         */
+        public static void updateGroupUsage(final TransferGroup group, final long[] usedPerVolume,
+                final long[] maxCapacityPerVolume) {
+            if (usedPerVolume.length != maxCapacityPerVolume.length) {
+                throw new IllegalArgumentException("usedPerVolume and maxCapacityPerVolume must have the same length. "
+                        + "got used=" + usedPerVolume.length + ", max=" + maxCapacityPerVolume.length);
+            }
+            GROUPS.compute(group.getName(), (_, gs) -> {
+                if (gs == null) {
+                    return initializeGroup(usedPerVolume, maxCapacityPerVolume);
+                } else {
+                    updateGroupVolumes(gs, usedPerVolume);
+                    return gs;
+                }
+            });
+            _log.debug("rmiUpdateGroupUsage: TransferGroup {} usage updated.", group.getName());
+        }
+
+        /** Update existing group volumes */
+        private static void updateGroupVolumes(final GroupStats gs, final long[] used) {
+            if (used.length != gs.volumes.length) {
+                _log.warn("Mismatch in volume count for group");
+                return;
+            }
+            synchronized (gs.lock) {
+                for (var i = 0; i < used.length; i++) {
+                    gs.volumes[i].setLoad(used[i]);
+                    gs.weights[i].reset();
+                    gs.weights[i].add(Math.max(MIN_WEIGHT, gs.volumes[i].freeSpace()));
+                }
+                gs.rebuildPrefix();
+            }
+        }
+
+        /**
+         * Starts periodic updates of group usage every minute. Requires MASTER to be initialised and accessible.
+         */
+        public static void startUsageUpdater() {
+            GROUP_USAGE_UPDATER.scheduleAtFixedRate(() -> {
+                try {
+                    final var groups = MASTER.getECpdsBase().getTransferGroupArray();
+                    for (final var group : groups) {
+                        if (!groupIsAvailable(group))
+                            continue;
+                        final var groupName = group.getName();
+                        try {
+                            final var usage = MASTER.computeVolumeUsage(group);
+                            if (usage == null || usage.length != 2) {
+                                _log.warn("Invalid usage array for group {}", groupName);
+                                continue;
+                            }
+                            final var volumeCount = group.getVolumeCount();
+                            if (usage[0].length != volumeCount || usage[1].length != volumeCount) {
+                                _log.warn("Usage array does not match volume count for group {}", groupName);
+                                continue;
+                            }
+                            final var used = usage[0]; // volumeCount long[] (used space per volume)
+                            final var max = usage[1]; // volumeCount long[] (capacity per volume)
+                            updateGroupUsage(group, used, max);
+                        } catch (final Throwable e) {
+                            _log.warn("Error updating usage for group {}", groupName, e);
+                        }
+                    }
+                } catch (final Throwable t) {
+                    _log.error("Global usage update failed", t);
+                }
+            }, 15, 30, TimeUnit.SECONDS);
+        }
+
+        /** Allocate a volume index for a group */
+        public static int allocate(final TransferGroup group) {
+            final var groupName = group.getName();
+            final var random = RNGS.computeIfAbsent(groupName, _ -> new SecureRandom());
+            final var gs = GROUPS.get(groupName);
+            if (gs == null) {
+                _log.debug("Fallback: group {} not registered -> uniform random selection", groupName);
+                return random.nextInt(group.getVolumeCount());
+            }
+            long[] prefix;
+            long totalWeight;
+            synchronized (gs.lock) {
+                prefix = gs.prefixSums.clone();
+                totalWeight = prefix[prefix.length - 1];
+            }
+            final var r = (long) (random.nextDouble() * totalWeight);
+            // Binary search over prefix sums
+            var low = 0;
+            var high = prefix.length - 1;
+            while (low < high) {
+                final var mid = (low + high) / 2;
+                if (r < prefix[mid])
+                    high = mid;
+                else
+                    low = mid + 1;
+            }
+            return low;
+        }
     }
 }
