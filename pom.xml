@@ -19,7 +19,7 @@
 		<packager.name>Laurent Gougeon</packager.name>
 		<packager.email>laurent.gougeon@ecmwf.int</packager.email>
 		<packager.distribution>OpenECPDS</packager.distribution>
-		<build.number>19112025</build.number>
+		<build.number>21112025</build.number>
 	</properties>
 	<licenses>
 		<license>
