@@ -223,15 +223,6 @@
 				<configuration>
 					<errorRemedy>ignore</errorRemedy>
 				</configuration>
-				<executions>
-					<execution>
-						<id>download-licenses</id>
-						<phase>prepare-package</phase>
-						<goals>
-							<goal>download-licenses</goal>
-						</goals>
-					</execution>
-				</executions>
 			</plugin>
 			<plugin>
 				<groupId>org.owasp</groupId>
