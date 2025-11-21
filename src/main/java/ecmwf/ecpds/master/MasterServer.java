@@ -2055,6 +2055,59 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
+     * Computes the aggregated volume usage across all data movers belonging to the specified {@link TransferGroup}.
+     * Each data mover reports usage for a fixed number of metrics per volume (currently two), and the results are
+     * summed volume-by-volume.
+     * <p>
+     * If a mover is unreachable or returns invalid data (null, incorrect dimensions, or incomplete metric rows), its
+     * contribution is ignored and a warning is logged.
+     *
+     * @param group
+     *            the transfer group for which usage statistics should be aggregated. Must not be null and must have a
+     *            defined volume count.
+     *
+     * @return a {@code long[][]} array containing aggregated usage metrics across all connected and valid data movers,
+     *         with one row per volume and two metrics per volume. Never {@code null}.
+     *
+     * @throws RemoteException
+     *             if the underlying remote communication with movers fails.
+     */
+    public long[][] computeVolumeUsage(final TransferGroup group) throws RemoteException {
+        final var volumeCount = group.getVolumeCount();
+        final var metricCount = 2; // fixed
+        final var volumeUsageTotal = new long[volumeCount][metricCount];
+        var initialized = false;
+        for (final TransferServer server : getECpdsBase().getTransferServers(group.getName())) {
+            final var serverName = server.getName();
+            final var mover = getDataMoverInterface(serverName);
+            if (mover == null) {
+                continue;
+            }
+            final var volumeUsage = mover.computeVolumeUsage(volumeCount);
+            // validate dimensions
+            if (volumeUsage == null || volumeUsage.length != volumeCount
+                    || Arrays.stream(volumeUsage).anyMatch(row -> row == null || row.length != metricCount)) {
+                _log.warn("Invalid volumeUsage returned by mover {}", serverName);
+                continue;
+            }
+            if (!initialized) {
+                for (var i = 0; i < volumeCount; i++) {
+                    System.arraycopy(volumeUsage[i], 0, volumeUsageTotal[i], 0, metricCount);
+                }
+                initialized = true;
+                continue;
+            }
+            for (var i = 0; i < volumeCount; i++) {
+                final var src = volumeUsage[i];
+                final var dest = volumeUsageTotal[i];
+                dest[0] += src[0];
+                dest[1] += src[1];
+            }
+        }
+        return volumeUsageTotal;
+    }
+
+    /**
      * Get all incoming connections from all data movers.
      *
      * @return the incoming connection ids
