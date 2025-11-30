@@ -2072,40 +2072,39 @@ public final class MasterServer extends ECaccessProvider
      * @throws RemoteException
      *             if the underlying remote communication with movers fails.
      */
-    public long[][] computeVolumeUsage(final TransferGroup group) throws RemoteException {
-        final var volumeCount = group.getVolumeCount();
-        final var metricCount = 2; // fixed
-        final var volumeUsageTotal = new long[volumeCount][metricCount];
-        var initialized = false;
-        for (final TransferServer server : getECpdsBase().getTransferServers(group.getName())) {
-            final var serverName = server.getName();
-            final var mover = getDataMoverInterface(serverName);
-            if (mover == null) {
-                continue;
-            }
-            final var volumeUsage = mover.computeVolumeUsage(volumeCount);
-            // validate dimensions
-            if (volumeUsage == null || volumeUsage.length != volumeCount
-                    || Arrays.stream(volumeUsage).anyMatch(row -> row == null || row.length != metricCount)) {
-                _log.warn("Invalid volumeUsage returned by mover {}", serverName);
-                continue;
-            }
-            if (!initialized) {
-                for (var i = 0; i < volumeCount; i++) {
-                    System.arraycopy(volumeUsage[i], 0, volumeUsageTotal[i], 0, metricCount);
-                }
-                initialized = true;
-                continue;
-            }
-            for (var i = 0; i < volumeCount; i++) {
-                final var src = volumeUsage[i];
-                final var dest = volumeUsageTotal[i];
-                dest[0] += src[0];
-                dest[1] += src[1];
-            }
-        }
-        return volumeUsageTotal;
-    }
+	public long[][] computeVolumeUsage(final TransferGroup group) throws RemoteException {
+		final var volumeCount = group.getVolumeCount();
+		final var metricCount = 2; // [0]=used, [1]=total
+		final var aggregated = new long[metricCount][volumeCount];
+		var initialized = false;
+		for (final TransferServer server : getECpdsBase().getTransferServers(group.getName())) {
+			final var mover = getDataMoverInterface(server.getName());
+			if (mover == null) {
+				continue;
+			}
+			final var usage = mover.computeVolumeUsage(volumeCount);
+			// usage MUST be [2][volumeCount]
+			if (usage == null || usage.length != metricCount
+					|| Arrays.stream(usage).anyMatch(row -> row == null || row.length != volumeCount)) {
+				_log.warn("Invalid volume usage returned by mover {}", server.getName());
+				continue;
+			}
+			if (!initialized) {
+				// shallow copy: usage[0] -> aggregated[0], usage[1] -> aggregated[1]
+				for (var m = 0; m < metricCount; m++) {
+					System.arraycopy(usage[m], 0, aggregated[m], 0, volumeCount);
+				}
+				initialized = true;
+			} else {
+				// accumulate per volume
+				for (var v = 0; v < volumeCount; v++) {
+					aggregated[0][v] += usage[0][v]; // used
+					aggregated[1][v] += usage[1][v]; // total
+				}
+			}
+		}
+		return aggregated;
+	}
 
     /**
      * Get all incoming connections from all data movers.
