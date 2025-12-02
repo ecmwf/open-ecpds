@@ -2055,9 +2055,9 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * Computes the aggregated volume usage across all data movers belonging to the specified {@link TransferGroup}.
-     * Each data mover reports usage for a fixed number of metrics per volume (currently two), and the results are
-     * summed volume-by-volume.
+     * Computes the maximum volume usage across all data movers belonging to the specified {@link TransferGroup}. Each
+     * data mover reports usage for a fixed number of metrics per volume (currently two), and the maximum is taken
+     * volume-by-volume.
      * <p>
      * If a mover is unreachable or returns invalid data (null, incorrect dimensions, or incomplete metric rows), its
      * contribution is ignored and a warning is logged.
@@ -2066,45 +2066,43 @@ public final class MasterServer extends ECaccessProvider
      *            the transfer group for which usage statistics should be aggregated. Must not be null and must have a
      *            defined volume count.
      *
-     * @return a {@code long[][]} array containing aggregated usage metrics across all connected and valid data movers,
+     * @return a {@code long[][]} array containing the maximum usage metrics across all connected and valid data movers,
      *         with one row per volume and two metrics per volume. Never {@code null}.
      *
      * @throws RemoteException
      *             if the underlying remote communication with movers fails.
      */
-	public long[][] computeVolumeUsage(final TransferGroup group) throws RemoteException {
-		final var volumeCount = group.getVolumeCount();
-		final var metricCount = 2; // [0]=used, [1]=total
-		final var aggregated = new long[metricCount][volumeCount];
-		var initialized = false;
-		for (final TransferServer server : getECpdsBase().getTransferServers(group.getName())) {
-			final var mover = getDataMoverInterface(server.getName());
-			if (mover == null) {
-				continue;
-			}
-			final var usage = mover.computeVolumeUsage(volumeCount);
-			// usage MUST be [2][volumeCount]
-			if (usage == null || usage.length != metricCount
-					|| Arrays.stream(usage).anyMatch(row -> row == null || row.length != volumeCount)) {
-				_log.warn("Invalid volume usage returned by mover {}", server.getName());
-				continue;
-			}
-			if (!initialized) {
-				// shallow copy: usage[0] -> aggregated[0], usage[1] -> aggregated[1]
-				for (var m = 0; m < metricCount; m++) {
-					System.arraycopy(usage[m], 0, aggregated[m], 0, volumeCount);
-				}
-				initialized = true;
-			} else {
-				// accumulate per volume
-				for (var v = 0; v < volumeCount; v++) {
-					aggregated[0][v] += usage[0][v]; // used
-					aggregated[1][v] += usage[1][v]; // total
-				}
-			}
-		}
-		return aggregated;
-	}
+    public long[][] computeVolumeUsage(final TransferGroup group) throws RemoteException {
+        final var volumeCount = group.getVolumeCount();
+        final var volumeUsage = new long[2][volumeCount];
+        var initialised = false;
+        for (final TransferServer server : getECpdsBase().getTransferServers(group.getName())) {
+            final var mover = getDataMoverInterface(server.getName());
+            if (mover == null)
+                continue;
+            final var usage = mover.computeVolumeUsage(volumeCount);
+            if (usage == null || usage.length != 2 || usage[0] == null || usage[1] == null
+                    || usage[0].length != volumeCount || usage[1].length != volumeCount) {
+                _log.warn("Invalid volume usage returned by mover {}", server.getName());
+                continue;
+            }
+            final var used = usage[0];
+            final var total = usage[1];
+            if (!initialised) {
+                System.arraycopy(used, 0, volumeUsage[0], 0, volumeCount);
+                System.arraycopy(total, 0, volumeUsage[1], 0, volumeCount);
+                initialised = true;
+            } else {
+                final var maxUsed = volumeUsage[0];
+                final var minTotal = volumeUsage[1];
+                for (var v = 0; v < volumeCount; v++) {
+                    maxUsed[v] = Math.max(maxUsed[v], used[v]);
+                    minTotal[v] = Math.min(minTotal[v], total[v]);
+                }
+            }
+        }
+        return volumeUsage;
+    }
 
     /**
      * Get all incoming connections from all data movers.

@@ -312,7 +312,8 @@ public final class TransferServerProvider {
                 });
 
         static {
-            startUsageUpdater();
+            if (Cnf.at("TransferServerProvider", "startUsageUpdater", true))
+                startUsageUpdater();
         }
 
         private static class GroupStats {
@@ -394,7 +395,8 @@ public final class TransferServerProvider {
                     return gs;
                 }
             });
-            _log.debug("rmiUpdateGroupUsage: TransferGroup {} usage updated.", group.getName());
+            if (isDebugEnabled())
+                _log.debug("TransferGroup {} usage updated", group.getName());
         }
 
         /** Update existing group volumes */
@@ -417,6 +419,7 @@ public final class TransferServerProvider {
          * Starts periodic updates of group usage every minute. Requires MASTER to be initialised and accessible.
          */
         public static void startUsageUpdater() {
+            final var frequency = Cnf.at("TransferServerProvider", "usageUpdaterFreqInSec", 10);
             GROUP_USAGE_UPDATER.scheduleAtFixedRate(() -> {
                 try {
                     final var groups = MASTER.getECpdsBase().getTransferGroupArray();
@@ -435,9 +438,17 @@ public final class TransferServerProvider {
                                 _log.warn("Usage array does not match volume count for group {}", groupName);
                                 continue;
                             }
-                            final var used = usage[0]; // volumeCount long[] (used space per volume)
-                            final var max = usage[1]; // volumeCount long[] (capacity per volume)
-                            updateGroupUsage(group, used, max);
+                            final var maxUsed = usage[0]; // volumeCount long[] (maximum used space per volume)
+                            final var minCapacity = usage[1]; // volumeCount long[] (minimum capacity per volume)
+                            updateGroupUsage(group, maxUsed, minCapacity);
+                            if (isDebugEnabled()) {
+                                final var usedSum = Arrays.stream(maxUsed).sum();
+                                final var totalSum = Arrays.stream(minCapacity).sum();
+                                final var percentUsed = (totalSum > 0) ? (usedSum * 100.0 / totalSum) : 0.0;
+                                _log.debug("Group {} usage updated: used={}, total={}, used%={}", groupName,
+                                        Arrays.toString(maxUsed), Arrays.toString(minCapacity),
+                                        String.format("%.2f%%", percentUsed));
+                            }
                         } catch (final Throwable e) {
                             _log.warn("Error updating usage for group {}", groupName, e);
                         }
@@ -445,7 +456,7 @@ public final class TransferServerProvider {
                 } catch (final Throwable t) {
                     _log.error("Global usage update failed", t);
                 }
-            }, 15, 30, TimeUnit.SECONDS);
+            }, frequency, frequency, TimeUnit.SECONDS);
         }
 
         /** Allocate a volume index for a group */
@@ -454,7 +465,8 @@ public final class TransferServerProvider {
             final var random = RNGS.computeIfAbsent(groupName, _ -> new SecureRandom());
             final var gs = GROUPS.get(groupName);
             if (gs == null) {
-                _log.debug("Fallback: group {} not registered -> uniform random selection", groupName);
+                if (isDebugEnabled())
+                    _log.debug("Fallback: group {} not registered -> uniform random selection", groupName);
                 return random.nextInt(group.getVolumeCount());
             }
             long[] prefix;
@@ -475,6 +487,10 @@ public final class TransferServerProvider {
                     low = mid + 1;
             }
             return low;
+        }
+
+        private static boolean isDebugEnabled() {
+            return _log.isDebugEnabled() && Cnf.at("TransferServerProvider", "debug", false);
         }
     }
 }
