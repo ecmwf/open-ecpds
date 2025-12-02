@@ -312,6 +312,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      *             the remote exception
      */
     @Override
+
     public long[][] computeVolumeUsage(final int volumeIndexMax) throws RemoteException {
         try {
             final var repository = GenericFile.getGenericFile(getRepository());
@@ -320,7 +321,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                 _log.warn("Repository {} not a directory?", repository.getAbsolutePath());
                 return new long[][] { new long[] {}, new long[] {} };
             }
-            // Map from filesystem ID -> volume with lowest numeric index
+            // Map from file system ID -> volume with lowest numeric index
             final var fsIdToVolume = new HashMap<String, GenericFile>();
             for (final GenericFile dataVolume : volumes) {
                 if (!dataVolume.isDirectory())
@@ -329,17 +330,11 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                 final var index = Integer.parseInt(dataVolume.getName().substring("volume".length()));
                 if (!fsIdToVolume.containsKey(fsId)) {
                     fsIdToVolume.put(fsId, dataVolume);
-                    _log.debug("Mapping {} -> filesystem {}", dataVolume.getName(), fsId);
                 } else {
                     final var existing = fsIdToVolume.get(fsId);
                     final var existingIndex = Integer.parseInt(existing.getName().substring("volume".length()));
                     if (index < existingIndex) {
-                        _log.debug("Replacing {} with {} for filesystem {} (lower index)", existing.getName(),
-                                dataVolume.getName(), fsId);
                         fsIdToVolume.put(fsId, dataVolume);
-                    } else {
-                        _log.debug("Skipping {} for filesystem {} (already mapped to {})", dataVolume.getName(), fsId,
-                                existing.getName());
                     }
                 }
             }
@@ -357,8 +352,6 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                 final var volume = realPathList.get(i);
                 maxCapacityPerVolume[i] = volume.getTotalSpace();
                 usedPerVolume[i] = maxCapacityPerVolume[i] - volume.getFreeSpace();
-                _log.debug("Volume {} -> Used: {}, Total: {}", volume.getName(), usedPerVolume[i],
-                        maxCapacityPerVolume[i]);
             }
             return new long[][] { usedPerVolume, maxCapacityPerVolume };
         } catch (final Throwable t) {
