@@ -152,9 +152,10 @@ final class TransferServerManagement {
         final var fileSystemProvided = fileSystem != null && fileSystem >= 0;
         final var loadPerTransferServer = new HashMap<String, Integer>();
         if (Cnf.at("TransferServerManagement", "orderByFileSystemUsage", true) && fileSystemProvided) {
-            // Let's compare and populate the load per transfer server table
-            // at the same time (we also limit the number of calls to the
-            // TransferScheduler method)!
+            // Let's compare and populate the load per transfer server table at the same
+            // time (we also limit the number of calls to the TransferScheduler method).
+            // Servers with fewer downloads come first and servers with higher load come
+            // later!
             Collections.sort(array,
                     (ts1, ts2) -> loadPerTransferServer
                             .computeIfAbsent(ts1.getName(),

@@ -2505,7 +2505,7 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
             } else {
                 _log.debug("Push mode (file uploaded through client)");
                 send("TARGET " + getPath(dataFile));
-                send("ECPROXY " + getECproxyServers(provider.getTransferServers()));
+                send("ECPROXY " + getECproxyServersReversed(provider.getTransferServers()));
                 // The DataFileId is used to track the DownloadProgress on the
                 // DataMover!
                 dataFileId = dataFile.getId();
@@ -2974,16 +2974,17 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     }
 
     /**
-     * Gets the ecproxy servers.
+     * Gets the ecproxy servers list in reverse order.
      *
      * @param ecproxyList
      *            the ecproxy list
      *
      * @return the string
      */
-    private static String getECproxyServers(final List<TransferServer> ecproxyList) {
+    private static String getECproxyServersReversed(final List<TransferServer> ecproxyList) {
         final var list = new StringBuilder();
-        for (final TransferServer mover : ecproxyList) {
+        for (var i = ecproxyList.size() - 1; i >= 0; i--) {
+            final var mover = ecproxyList.get(i);
             list.append(list.length() > 0 ? "|" : "").append(mover.getHost()).append(":").append(mover.getPort());
         }
         return list.toString();
