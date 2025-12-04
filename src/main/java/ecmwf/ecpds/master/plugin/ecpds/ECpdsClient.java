@@ -49,7 +49,6 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.Socket;
 import java.net.SocketException;
-import java.util.StringTokenizer;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -381,9 +380,9 @@ public final class ECpdsClient {
                 write(master, "-" + message);
                 throw new IOException(message);
             }
-            final var token = new StringTokenizer(ecproxyList, "|");
-            while (token.hasMoreElements()) {
-                final var currentEcproxy = token.nextToken();
+            final var parts = ecproxyList.split("\\|");
+            for (int i = parts.length - 1; i >= 0; i--) {
+                final var currentEcproxy = parts[i];
                 var ecproxyAddress = currentEcproxy;
                 final var index = ecproxyAddress.indexOf(":");
                 if (index != -1) {
@@ -556,10 +555,10 @@ public final class ECpdsClient {
                 write(master, "-" + message);
                 throw new IOException(message);
             }
-            final var token = new StringTokenizer(ecproxyList, "|");
             long effectiveFileSize = -1;
-            while (token.hasMoreElements()) {
-                final var currentEcproxy = token.nextToken();
+            final var parts = ecproxyList.split("\\|");
+            for (int i = parts.length - 1; i >= 0; i--) {
+                final var currentEcproxy = parts[i];
                 var ecproxyAddress = currentEcproxy;
                 final var index = ecproxyAddress.indexOf(":");
                 if (index != -1) {
@@ -968,9 +967,9 @@ public final class ECpdsClient {
                     write(master, "-" + message);
                     throw new IOException(message);
                 }
-                final var token = new StringTokenizer(ecproxyList, "|");
-                while (token.hasMoreElements()) {
-                    final var currentEcproxy = token.nextToken();
+                final var parts = ecproxyList.split("\\|");
+                for (int i = parts.length - 1; i >= 0; i--) {
+                    final var currentEcproxy = parts[i];
                     var ecproxyAddress = currentEcproxy;
                     final var pos = ecproxyAddress.indexOf(":");
                     if (pos != -1) {
