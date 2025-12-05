@@ -63,7 +63,7 @@ select {
 								<td style="width: 80%;"><input class="search"
 									name="transferSearch" type="text"
 									placeholder="e.g. expired=no target=*.dat source=/tmp/* ts&gt;10 ts&lt;=99 size&gt;=700kb case=i"
-									title="Default search is by target. Conduct extended searches using target, source, ts, priority, groupby, identity, checksum, size, replicated, asap, deleted, expired, proxy and event rules."
+									title="Default search is by target. Conduct extended searches using target, source, ts, priority, groupby, identity, checksum, size, replicated, asap, deleted, expired, proxy, mover and event rules."
 									style="width: 100%" value='<c:out value="${transferSearch}"/>'></td>
 								<td style="width: 20%;"><select name="transferType"
 									onchange="form.submit()" title="Sort by Type">

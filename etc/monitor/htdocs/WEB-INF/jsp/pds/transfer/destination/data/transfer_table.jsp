@@ -17,7 +17,7 @@
 						<c:if test="${empty getTransfersError}">
 						  No Data Transfers found based on these criteria! Default search is by target.<p>
 					    </c:if>
-						You can conduct an extensive search using the target, source, ts, priority, groupby, identity, checksum, size, replicated, asap, deleted, expired, proxy and event rules.<p>
+						You can conduct an extensive search using the target, source, ts, priority, groupby, identity, checksum, size, replicated, asap, deleted, expired, proxy, mover and event rules.<p>
 						For instance: asap=yes target=*.dat source=/tmp/* ts&gt;10 ts&lt;=99 size&gt;=700kb case=i<p>
 						<li>The 'case' option allows 's' for case-sensitive (default) or 'i' for case-insensitive search.
 						<li>Ensure all spaces and equal signs in values are enclosed within double quotes (e.g. "a=b" or "United States").

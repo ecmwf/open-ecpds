@@ -24,6 +24,7 @@
 #prompt "deleted;Deleted;%"
 #prompt "expired;Expired;%"
 #prompt "proxy;Proxy;%"
+#prompt "mover;Mover;%"
 #prompt "fromDate;From date;%;java.sql.Timestamp"
 #prompt "toDate;To date;%;java.sql.Timestamp"
 #prompt "sort;Column;%"
@@ -63,6 +64,7 @@ WHERE
 	$deleted
 	$expired
 	$proxy
+	$mover
 #if ('$status' != 'All')
   AND STA_CODE = '$status'
 #fi

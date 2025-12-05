@@ -94,7 +94,7 @@
 <th></th>
 <th></th>
  <td colspan="18">
- 	<input type="text" value="${destinationDetailActionForm.fileNameSearch}" placeholder="e.g. expired=no target=*.dat source=/tmp/* ts&gt;10 ts&lt;=99 size&gt;=700kb case=i" class="search" title="Default search is by target. Conduct extended searches using target, source, ts, priority, groupby, identity, checksum, size, replicated, asap, deleted, expired, proxy and event rules." style="width:100%" id="fileNameSearch" name="fileNameSearch" onkeypress="submitenter(this,event)">
+ 	<input type="text" value="${destinationDetailActionForm.fileNameSearch}" placeholder="e.g. expired=no target=*.dat source=/tmp/* ts&gt;10 ts&lt;=99 size&gt;=700kb case=i" class="search" title="Default search is by target. Conduct extended searches using target, source, ts, priority, groupby, identity, checksum, size, replicated, asap, deleted, expired, proxy, mover and event rules." style="width:100%" id="fileNameSearch" name="fileNameSearch" onkeypress="submitenter(this,event)">
 </td>
 </tr>
 

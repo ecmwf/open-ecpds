@@ -345,6 +345,8 @@ final class ECpdsGet {
      *            the param expired
      * @param paramProxy
      *            the param proxy
+     * @param paramMover
+     *            the param mover
      * @param paramFrom
      *            the param from
      * @param paramTo
@@ -368,17 +370,17 @@ final class ECpdsGet {
             final String paramFileName, final String paramSource, final String paramTs, final String paramPriority,
             final String paramChecksum, final String paramGroupBy, final String paramIdentity, final String paramSize,
             final String paramReplicated, final String paramAsap, final String paramEvent, final String paramDeleted,
-            final String paramExpired, final String paramProxy, final java.sql.Timestamp paramFrom,
-            final java.sql.Timestamp paramTo, final java.lang.String paramPrivilegedUser,
-            final java.sql.Timestamp paramScheduledBefore, final boolean requiresDataFile)
-            throws SQLException, IOException {
+            final String paramExpired, final String paramProxy, final String paramMover,
+            final java.sql.Timestamp paramFrom, final java.sql.Timestamp paramTo,
+            final java.lang.String paramPrivilegedUser, final java.sql.Timestamp paramScheduledBefore,
+            final boolean requiresDataFile) throws SQLException, IOException {
         return _database.executeSelect("ECpdsBase", "getDataTransferCountAndMetaDataByFilter", new String[] {
                 "destination=" + paramDestination, "countBy=" + paramCountBy, "target=" + paramTarget,
                 "stream=" + paramStream, "time=" + paramTime, "status=" + paramStatus, "fileName-=" + paramFileName,
                 "source-=" + paramSource, "ts-=" + paramTs, "priority-=" + paramPriority, "checksum-=" + paramChecksum,
                 "groupby-=" + paramGroupBy, "identity-=" + paramIdentity, "size-=" + paramSize,
                 "replicated-=" + paramReplicated, "asap-=" + paramAsap, "event-=" + paramEvent,
-                "deleted-=" + paramDeleted, "expired-=" + paramExpired, "proxy-=" + paramProxy,
+                "deleted-=" + paramDeleted, "expired-=" + paramExpired, "proxy-=" + paramProxy, "mover-=" + paramMover,
                 "from=" + paramFrom.getTime(), "to=" + paramTo.getTime(), "privilegedUser=" + paramPrivilegedUser,
                 "scheduledBefore=" + paramScheduledBefore.getTime(), "datafile=" + (requiresDataFile ? "yes" : "no") });
     }
@@ -860,8 +862,8 @@ final class ECpdsGet {
             final String paramSource, final String paramTs, final String paramPriority, final String paramChecksum,
             final String paramGroupBy, final String paramIdentity, final String paramSize, final String paramReplicated,
             final String paramAsap, final String paramEvent, final String paramDeleted, final String paramExpired,
-            final String paramProxy, final java.sql.Timestamp paramFrom, final java.sql.Timestamp paramTo)
-            throws SQLException, IOException {
+            final String paramProxy, final String paramMover, final java.sql.Timestamp paramFrom,
+            final java.sql.Timestamp paramTo) throws SQLException, IOException {
         return _database.executeSelect("ECpdsBase", "getDataTransfersByFilter",
                 new String[] { "destination=" + paramDestination, "target=" + paramTarget, "stream=" + paramStream,
                         "time=" + paramTime, "status=" + paramStatus, "privilegedUser=" + paramPrivilegedUser,
@@ -870,7 +872,8 @@ final class ECpdsGet {
                         "checksum-=" + paramChecksum, "groupby-=" + paramGroupBy, "identity-=" + paramIdentity,
                         "size-=" + paramSize, "replicated-=" + paramReplicated, "asap-=" + paramAsap,
                         "event-=" + paramEvent, "deleted-=" + paramDeleted, "expired-=" + paramExpired,
-                        "proxy-=" + paramProxy, "from=" + paramFrom.getTime(), "to=" + paramTo.getTime() });
+                        "proxy-=" + paramProxy, "mover-=" + paramMover, "from=" + paramFrom.getTime(),
+                        "to=" + paramTo.getTime() });
     }
 
     /**
@@ -918,6 +921,8 @@ final class ECpdsGet {
      *            the param expired
      * @param paramProxy
      *            the param proxy
+     * @param paramMover
+     *            the param mover
      * @param paramFrom
      *            the param from
      * @param paramTo
@@ -944,9 +949,9 @@ final class ECpdsGet {
             final String paramSource, final String paramTs, final String paramPriority, final String paramChecksum,
             final String paramGroupBy, final String paramIdentity, final String paramSize, final String paramReplicated,
             final String paramAsap, final String paramEvent, final String paramDeleted, final String paramExpired,
-            final String paramProxy, final java.sql.Timestamp paramFrom, final java.sql.Timestamp paramTo,
-            final String paramSort, final String paramOrder, final int paramStart, final int paramLength)
-            throws SQLException, IOException {
+            final String paramProxy, final String paramMover, final java.sql.Timestamp paramFrom,
+            final java.sql.Timestamp paramTo, final String paramSort, final String paramOrder, final int paramStart,
+            final int paramLength) throws SQLException, IOException {
         return _database.executeSelect("ECpdsBase", "getSortedDataTransfersByFilter",
                 new String[] { "destination=" + paramDestination, "target=" + paramTarget, "stream=" + paramStream,
                         "time=" + paramTime, "status=" + paramStatus, "privilegedUser=" + paramPrivilegedUser,
@@ -955,8 +960,9 @@ final class ECpdsGet {
                         "checksum-=" + paramChecksum, "groupby-=" + paramGroupBy, "identity-=" + paramIdentity,
                         "size-=" + paramSize, "replicated-=" + paramReplicated, "asap-=" + paramAsap,
                         "event-=" + paramEvent, "deleted-=" + paramDeleted, "expired-=" + paramExpired,
-                        "proxy-=" + paramProxy, "from=" + paramFrom.getTime(), "to=" + paramTo.getTime(),
-                        "sort=" + paramSort, "order=" + paramOrder, "start=" + paramStart, "length=" + paramLength });
+                        "proxy-=" + paramProxy, "mover-=" + paramMover, "from=" + paramFrom.getTime(),
+                        "to=" + paramTo.getTime(), "sort=" + paramSort, "order=" + paramOrder, "start=" + paramStart,
+                        "length=" + paramLength });
     }
 
     /**
@@ -1040,6 +1046,8 @@ final class ECpdsGet {
      *            the param expired
      * @param paramProxy
      *            the param proxy
+     * @param paramMover
+     *            the param mover
      * @param paramType
      *            the param type
      * @param paramSort
@@ -1065,17 +1073,17 @@ final class ECpdsGet {
             final String paramTs, final String paramPriority, final String paramChecksum, final String paramGroupBy,
             final String paramIdentity, final String paramSize, final String paramReplicated, final String paramAsap,
             final String paramEvent, final String paramDeleted, final String paramExpired, final String paramProxy,
-            final String paramType, final String paramSort, final String paramOrder, final int paramStart,
-            final int paramLength, final boolean requiresDataFile) throws SQLException, IOException {
-        return _database.executeSelect("ECpdsBase", "getSortedDataTransfersByStatusOnDate",
-                new String[] { "status=" + paramStatus, "fromDate=" + paramFromDate.getTime(),
-                        "toDate=" + paramToDate.getTime(), "fileName-=" + paramFileName, "source-=" + paramSource,
-                        "ts-=" + paramTs, "priority-=" + paramPriority, "checksum-=" + paramChecksum,
-                        "groupby-=" + paramGroupBy, "identity-=" + paramIdentity, "size-=" + paramSize,
-                        "replicated-=" + paramReplicated, "asap-=" + paramAsap, "event-=" + paramEvent,
-                        "deleted-=" + paramDeleted, "expired-=" + paramExpired, "proxy-=" + paramProxy,
-                        "sort=" + paramSort, "order=" + paramOrder, "start=" + paramStart, "length=" + paramLength,
-                        "type=" + paramType, "datafile=" + (requiresDataFile ? "yes" : "no") });
+            final String paramMover, final String paramType, final String paramSort, final String paramOrder,
+            final int paramStart, final int paramLength, final boolean requiresDataFile)
+            throws SQLException, IOException {
+        return _database.executeSelect("ECpdsBase", "getSortedDataTransfersByStatusOnDate", new String[] {
+                "status=" + paramStatus, "fromDate=" + paramFromDate.getTime(), "toDate=" + paramToDate.getTime(),
+                "fileName-=" + paramFileName, "source-=" + paramSource, "ts-=" + paramTs, "priority-=" + paramPriority,
+                "checksum-=" + paramChecksum, "groupby-=" + paramGroupBy, "identity-=" + paramIdentity,
+                "size-=" + paramSize, "replicated-=" + paramReplicated, "asap-=" + paramAsap, "event-=" + paramEvent,
+                "deleted-=" + paramDeleted, "expired-=" + paramExpired, "proxy-=" + paramProxy, "mover-=" + paramMover,
+                "sort=" + paramSort, "order=" + paramOrder, "start=" + paramStart, "length=" + paramLength,
+                "type=" + paramType, "datafile=" + (requiresDataFile ? "yes" : "no") });
     }
 
     /**

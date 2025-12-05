@@ -29,6 +29,7 @@
 #prompt "deleted;Deleted;%"
 #prompt "expired;Expired;%"
 #prompt "proxy;Proxy;%"
+#prompt "mover;Mover;%"
 #prompt "from;From which date;%;java.sql.Timestamp"
 #prompt "to;To what date;%;java.sql.Timestamp"
 #prompt "sort;Column;%"
@@ -79,6 +80,7 @@ WHERE
 	$deleted
 	$expired
 	$proxy
+	$mover
 #if ('$sort' == '0')
 	ORDER BY DAT_FAILED_TIME
 #fi

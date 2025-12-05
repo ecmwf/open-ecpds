@@ -1443,7 +1443,7 @@ public final class ECpdsBase extends DataBase {
         try {
             final var options = new SQLParameterParser(fileName, "target", "source", "ts=d", "priority=d", "checksum",
                     "groupby", "identity", "size=b", "replicated=?", "asap=?", "event=?", "deleted=?", "expired=?",
-                    "proxy=?");
+                    "proxy=?", "mover");
             final List<DataTransfer> array = new ArrayList<>();
             DataTransfer initialTransfer = null; // The first DataTransfer will contain the collection size (total)!
             try (var rs = ecpds.getSortedDataTransfersByStatusOnDate(status, new Timestamp(from.getTime()),
@@ -1452,8 +1452,9 @@ public final class ECpdsBase extends DataBase {
                     options.get(5, "DAF_GROUP_BY"), options.get(6, "DAT_IDENTITY"), options.get(7, "DAT_SIZE"),
                     options.get(8, "DAT_REPLICATED"), options.get(9, "DAT_ASAP"), options.get(10, "DAT_EVENT"),
                     options.get(11, "DAT_DELETED"), options.get(12, "DAT_EXPIRY_TIME < UNIX_TIMESTAMP() * 1000"),
-                    options.get(13, "HOS_NAME_PROXY is not null"), type, cursor.getSort(), cursor.getOrder(),
-                    cursor.getStart(), cursor.getLength(), options.has(1) || options.has(4) || options.has(5))) {
+                    options.get(13, "HOS_NAME_PROXY is not null"), options.get(14, "TRS_NAME"), type, cursor.getSort(),
+                    cursor.getOrder(), cursor.getStart(), cursor.getLength(),
+                    options.has(1) || options.has(4) || options.has(5))) {
                 final var hosts = new HashMap<String, Host>();
                 while (rs.next()) {
                     final var file = new DataFile();
@@ -2524,7 +2525,7 @@ public final class ECpdsBase extends DataBase {
         try {
             final var options = new SQLParameterParser(fileName, "target", "source", "ts=d", "priority=d", "checksum",
                     "groupby", "identity", "size=b", "replicated=?", "asap=?", "event=?", "deleted=?", "expired=?",
-                    "proxy=?");
+                    "proxy=?", "mover");
             final List<List<String>> results = new ArrayList<>();
             try (var rs = ecpds.getDataTransferCountAndMetaDataByFilter(destination, countBy, target, stream, time,
                     status, options.get(0, "DAT_TARGET"), options.get(1, "DAF_ORIGINAL"),
@@ -2532,9 +2533,9 @@ public final class ECpdsBase extends DataBase {
                     options.get(5, "DAF_GROUP_BY"), options.get(6, "DAT_IDENTITY"), options.get(7, "DAT_SIZE"),
                     options.get(8, "DAT_REPLICATED"), options.get(9, "DAT_ASAP"), options.get(10, "DAT_EVENT"),
                     options.get(11, "DAT_DELETED"), options.get(12, "DAT_EXPIRY_TIME < UNIX_TIMESTAMP() * 1000"),
-                    options.get(13, "HOS_NAME_PROXY is not null"), new Timestamp(from.getTime()),
-                    new Timestamp(to.getTime()), privilegedUser, new Timestamp(scheduledBefore.getTime()),
-                    options.has(1) || options.has(4) || options.has(5))) {
+                    options.get(13, "HOS_NAME_PROXY is not null"), options.get(14, "TRS_NAME"),
+                    new Timestamp(from.getTime()), new Timestamp(to.getTime()), privilegedUser,
+                    new Timestamp(scheduledBefore.getTime()), options.has(1) || options.has(4) || options.has(5))) {
                 var total = 0L;
                 var size = 0L;
                 final var addSize = "stream2".equals(countBy) || "target2".equals(countBy) || "status2".equals(countBy);
@@ -2608,17 +2609,16 @@ public final class ECpdsBase extends DataBase {
         try {
             final var options = new SQLParameterParser(fileName, "target", "source", "ts=d", "priority=d", "checksum",
                     "groupby", "identity", "size=b", "replicated=?", "asap=?", "event=?", "deleted=?", "expired=?",
-                    "proxy=?");
-            try (var rs = ecpds.getSortedDataTransfersByFilter(destination, target, stream, time, status,
-                    privilegedUser, new Timestamp(scheduledBefore.getTime()), options.get(0, "DAT_TARGET"),
+                    "proxy=?", "mover");
+            try (var rs = ecpds.getDataTransfersByFilter(destination, target, stream, time, status, privilegedUser,
+                    new Timestamp(scheduledBefore.getTime()), options.get(0, "DAT_TARGET"),
                     options.get(1, "DAF_ORIGINAL"), options.get(2, "DAT_TIME_STEP"), options.get(3, "DAT_PRIORITY"),
                     options.get(4, "DAF_CHECKSUM"), options.get(5, "DAF_GROUP_BY"), options.get(6, "DAT_IDENTITY"),
                     options.get(7, "DAT_SIZE"), options.get(8, "DAT_REPLICATED"), options.get(9, "DAT_ASAP"),
                     options.get(10, "DAT_EVENT"), options.get(11, "DAT_DELETED"),
                     options.get(12, "DAT_EXPIRY_TIME < UNIX_TIMESTAMP() * 1000"),
-                    options.get(13, "HOS_NAME_PROXY is not null"), new Timestamp(from.getTime()),
-                    new Timestamp(to.getTime()), cursor.getSort(), cursor.getOrder(), cursor.getStart(),
-                    cursor.getLength())) {
+                    options.get(13, "HOS_NAME_PROXY is not null"), options.get(14, "TRS_NAME"),
+                    new Timestamp(from.getTime()), new Timestamp(to.getTime()))) {
                 final List<DataTransfer> array = new ArrayList<>();
                 DataTransfer initialTransfer = null; // The first DataTransfer we have the collection size (total)!
                 final var hosts = new HashMap<String, Host>();
@@ -2712,7 +2712,7 @@ public final class ECpdsBase extends DataBase {
         try {
             final var options = new SQLParameterParser(fileName, "target", "source", "ts=d", "priority=d", "checksum",
                     "groupby", "identity", "size=b", "replicated=?", "asap=?", "event=?", "deleted=?", "expired=?",
-                    "proxy=?");
+                    "proxy=?", "mover");
             try (var rs = ecpds.getDataTransfersByFilter(destination, target, stream, time, status, privilegedUser,
                     new Timestamp(scheduledBefore.getTime()), options.get(0, "DAT_TARGET"),
                     options.get(1, "DAF_ORIGINAL"), options.get(2, "DAT_TIME_STEP"), options.get(3, "DAT_PRIORITY"),
@@ -2720,8 +2720,8 @@ public final class ECpdsBase extends DataBase {
                     options.get(7, "DAT_SIZE"), options.get(8, "DAT_REPLICATED"), options.get(9, "DAT_ASAP"),
                     options.get(10, "DAT_EVENT"), options.get(11, "DAT_DELETED"),
                     options.get(12, "DAT_EXPIRY_TIME < UNIX_TIMESTAMP() * 1000"),
-                    options.get(13, "HOS_NAME_PROXY is not null"), new Timestamp(from.getTime()),
-                    new Timestamp(to.getTime()))) {
+                    options.get(13, "HOS_NAME_PROXY is not null"), options.get(14, "TRS_NAME"),
+                    new Timestamp(from.getTime()), new Timestamp(to.getTime()))) {
                 final List<DataTransfer> array = new ArrayList<>();
                 final var hosts = new HashMap<String, Host>();
                 while (rs.next()) {

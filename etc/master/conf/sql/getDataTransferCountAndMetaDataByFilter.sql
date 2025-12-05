@@ -29,6 +29,7 @@
 #prompt "deleted;Deleted;%"
 #prompt "expired;Expired;%"
 #prompt "proxy;Proxy;%"
+#prompt "mover;Mover;%"
 #prompt "from;From which date;%;java.sql.Timestamp"
 #prompt "to;To what date;%;java.sql.Timestamp"
 #prompt "privilegedUser;Can see everything?;%;java.lang.String"
@@ -88,6 +89,7 @@ WHERE
 	$deleted
 	$expired
 	$proxy
+	$mover
 #fi
 #if ('$target' != 'All')
 	AND DAF_META_TARGET = '$target'
