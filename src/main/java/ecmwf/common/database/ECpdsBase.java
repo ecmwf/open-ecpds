@@ -2071,6 +2071,7 @@ public final class ECpdsBase extends DataBase {
                     group.setMinReplicationCount(rs.getInteger("TRG_MIN_REPLICATION_COUNT"));
                     file.setTransferGroup(group);
                     file.setArrivedTime(rs.getTimestamp("DAF_ARRIVED_TIME"));
+                    file.setGetHost(rs.getString("DAF_GET_HOST"));
                     file.setOriginal(rs.getString("DAF_ORIGINAL"));
                     file.setTimeStep(rs.getLong("DAF_TIME_STEP"));
                     file.setFilterTime(rs.getTimestamp("DAF_FILTER_TIME"));
