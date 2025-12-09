@@ -54,6 +54,7 @@ import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 
 import javax.management.AttributeNotFoundException;
@@ -1483,25 +1484,20 @@ public final class TransferScheduler extends MBeanScheduler {
      */
     private static List<TransferServer> _getSortedList(final String sourceMoverName,
             final TransferServer[] serversList) {
-        // Order the TransferServers
-        final List<TransferServer> result = new ArrayList<>();
-        var found = -1;
-        for (final TransferServer transferServer : serversList) {
-            if (found == -1) {
-                if (transferServer.getName().equals(sourceMoverName)) {
-                    result.add(found = 0, transferServer);
-                } else {
-                    result.add(transferServer);
-                }
-            } else {
-                result.add(++found, transferServer);
+        final List<TransferServer> result = new ArrayList<>(serversList.length);
+        for (final TransferServer server : serversList) {
+            if (server.getName().equals(sourceMoverName)) {
+                result.add(server);
+                break;
             }
         }
-        final var dataMoverslist = new StringBuilder();
-        for (final TransferServer server : result) {
-            dataMoverslist.append(dataMoverslist.length() > 0 ? ", " : "").append(server.getName());
+        for (final TransferServer server : serversList) {
+            if (!server.getName().equals(sourceMoverName)) {
+                result.add(server);
+            }
         }
-        _log.debug("DataMover(s) list: {}", dataMoverslist);
+        final var dataMoversList = result.stream().map(TransferServer::getName).collect(Collectors.joining(", "));
+        _log.debug("DataMover(s) list: {} (source={})", dataMoversList, sourceMoverName);
         return result;
     }
 
