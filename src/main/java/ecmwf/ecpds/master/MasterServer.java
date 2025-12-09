@@ -7375,7 +7375,7 @@ public final class MasterServer extends ECaccessProvider
                         if (fromCache != null) {
                             final var code = fromCache.getStatusCode();
                             if (!StatusFactory.WAIT.equals(code) && !StatusFactory.RETR.equals(code)
-                                    && !StatusFactory.HOLD.equals(code)) {
+                                    && !StatusFactory.HOLD.equals(code) && !StatusFactory.DONE.equals(code)) {
                                 _log.debug("Delay Replication for DataTransfer " + transfer.getId() + ": " + code
                                         + " (in cache)");
                                 continue;
