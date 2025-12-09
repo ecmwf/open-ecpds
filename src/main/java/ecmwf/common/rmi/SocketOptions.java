@@ -249,8 +249,8 @@ class SocketOptions {
         if (!ssAvailable) {
             return "exception:ss-not-found";
         }
-        final String[] command = { "ss","-ntepi","state","established","--inet-sockopt","-O","-H","sport = "
-                + socket.getLocalPort() + " and dport = " + socket.getPort() };
+        final String[] command = { "ss", "-ntepi", "state", "established", "--inet-sockopt", "-O", "-H",
+                "sport = " + socket.getLocalPort() + " and dport = " + socket.getPort() };
         final var pb = new ProcessBuilder(command);
         pb.redirectErrorStream(true); // Merge error with output stream
         Process process = null;
