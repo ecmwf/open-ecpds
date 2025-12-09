@@ -16,26 +16,36 @@
 ##
 ## Request(s)
 ##
-SELECT DAT.DAT_ID, DAT.STA_CODE, DAT.DAT_RETRY_TIME, DAT.DAT_QUEUE_TIME
-FROM
-  DATA_TRANSFER DAT
-JOIN DESTINATION DES
-  ON DAT.DES_NAME = DES.DES_NAME
-WHERE
-  (DAT.STA_CODE IN ('WAIT','RETR','INTR'))
-  AND DAT.DES_NAME = '$destination'
-  AND DAT.DAT_QUEUE_TIME <= '$before'
-  AND (NOT DAT.DAT_EXPIRY_TIME < $currentTimeMillis)
-  AND (NOT (DAT.DAT_DELETED<>0))
-  AND (
-    DES.DES_FORCE_PROXY = 0
-    OR DAT.DES_NAME NOT IN (
-      SELECT A.DES_NAME
-      FROM ASSOCIATION A
-      JOIN HOST H ON A.HOS_NAME = H.HOS_NAME
-      WHERE H.HOS_TYPE = 'Proxy' AND H.HOS_ACTIVE <> 0)
-    OR DAT.HOS_NAME_PROXY IS NOT NULL
-  )
-ORDER BY
-  DAT.DAT_PRIORITY ASC, DAT.DAT_QUEUE_TIME ASC, DAT.DAT_ID ASC
-LIMIT $limit
+SELECT 
+    dat.DAT_ID,
+    dat.STA_CODE,
+    dat.DAT_RETRY_TIME,
+    dat.DAT_QUEUE_TIME
+FROM DATA_TRANSFER AS dat
+JOIN DESTINATION AS des 
+    ON dat.DES_NAME = des.DES_NAME
+WHERE 
+    dat.STA_CODE IN ('WAIT', 'RETR', 'INTR')
+    AND dat.DES_NAME = '$destination'
+    AND dat.DAT_QUEUE_TIME <= '$before'
+    AND dat.DAT_EXPIRY_TIME >= $currentTimeMillis
+    AND dat.DAT_DELETED = 0
+    AND (
+        des.DES_FORCE_PROXY = 0
+        OR dat.HOS_NAME_PROXY IS NOT NULL
+        OR NOT EXISTS (
+            SELECT 1
+            FROM ASSOCIATION AS a
+            JOIN HOST AS h 
+                ON a.HOS_NAME = h.HOS_NAME
+            WHERE 
+                a.DES_NAME = dat.DES_NAME
+                AND h.HOS_TYPE = 'Proxy'
+                AND h.HOS_ACTIVE <> 0
+        )
+    )
+ORDER BY 
+    dat.DAT_PRIORITY ASC,
+    dat.DAT_QUEUE_TIME ASC,
+    dat.DAT_ID ASC
+LIMIT $limit;
