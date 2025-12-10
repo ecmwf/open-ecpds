@@ -1340,9 +1340,6 @@ public enum ECtransOptions {
     /** The host http attribute. */
     HOST_HTTP_ATTRIBUTE("attribute", String.class, ""),
 
-    /** The host http alternative path. */
-    HOST_HTTP_ALTERNATIVE_PATH("alternativePath", String.class, ""),
-
     /** The host http list recursive. */
     HOST_HTTP_LIST_RECURSIVE("listRecursive", Boolean.class, false),
 

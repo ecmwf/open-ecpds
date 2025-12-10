@@ -42,7 +42,6 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_TCP_TIME_STAMP;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_TCP_USER_TIMEOUT;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_TCP_WINDOW_CLAMP;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_ALLOW_CIRCULAR_REDIRECTS;
-import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_ALTERNATIVE_PATH;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_ATTRIBUTE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_AUTHCACHE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_AUTHHEADER;
@@ -112,10 +111,12 @@ import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -1757,7 +1758,7 @@ public final class HttpModule extends TransferModule {
                                     new ObjectMapper().readValue(
                                             new String(message.getPayload(), StandardCharsets.UTF_8), Map.class),
                                     "mqttTopic", topic));
-                            final ECtransSetup setup = getSetup();
+                            final var setup = getSetup();
                             ScriptManager.exec(setup.getScriptLanguage(), bindings, setup.getScriptContent(), value -> {
                                 final var href = setup.getString(HOST_HTTP_MQTT_HREF, value);
                                 _log.debug("payload: {} : bindings: {} ; href: {}", new String(message.getPayload()),
@@ -1827,20 +1828,21 @@ public final class HttpModule extends TransferModule {
                 }
             }
         } else {
-            // This is an HTTP/S server! Shall we have a / at the end of the URL? If
-            // requested yes or if the directory does not have a ? and does not end with
-            // .html/ or .txt/
-            if (getSetup().getOptionalBoolean(HOST_HTTP_URLDIR).orElse(directory.indexOf("?") == -1
-                    && !directory.endsWith(".html/") && !directory.endsWith(".htm/") && !directory.endsWith(".txt/"))) {
+            // This is an HTTP/S server. Should we append a '/' at the end of the URL?
+            // If specified, apply the requested behaviour; otherwise, determine
+            // automatically: append '/' if the directory does not contain '?' and does not
+            // end with '.html/', '.htm/', or '.txt/'.
+            boolean shouldAppendSlash = getSetup().getOptionalBoolean(HOST_HTTP_URLDIR)
+                    .orElse(directory.indexOf("?") == -1 && !directory.endsWith(".html/")
+                            && !directory.endsWith(".htm/") && !directory.endsWith(".txt/"));
+            if (shouldAppendSlash) {
                 // Make sure we have a / at the end of the URL
-                if (!"".equals(directory) && !directory.endsWith("/")) {
+                if (!directory.isEmpty() && !directory.endsWith("/")) {
                     directory += "/";
                 }
             } else {
-                // Make sure we don't have a / at then end of the URL
-                while (directory.endsWith("/")) {
-                    directory = directory.substring(0, directory.length() - 1);
-                }
+                // Make sure we don't have a / at the end of the URL
+                directory = directory.replaceAll("/+$", "");
             }
             // At this stage the directory should have a correct format!
             _log.debug("List{}{}", !directory.isEmpty() ? " " + directory : "",
@@ -1904,11 +1906,17 @@ public final class HttpModule extends TransferModule {
                                 _log.debug("Processed maximum number of files: {}", filesCount);
                                 break;
                             }
-                            final var line = getSetup().getString(HOST_HTTP_ALTERNATIVE_PATH)
-                                    + (!attribute.isEmpty() ? element.attr(attribute) : element.text());
-                            listSize++;
-                            addEntry(manager, resultList, rootDirectory, directory, line, level, pattern, counter, null,
-                                    null, null, null, null);
+                            final var href = !attribute.isEmpty() ? element.attr(attribute) : element.text();
+                            try {
+                                final var line = resolveHref(directory, href);
+                                listSize++;
+                                addEntry(manager, resultList, rootDirectory, directory, line, level, pattern, counter,
+                                        null, null, null, null, null);
+                            } catch (final URISyntaxException e) {
+                                if (getDebug()) {
+                                    _log.debug("Resolving HREF {} -> {}", directory, href, e);
+                                }
+                            }
                         }
                     }
                 } finally {
@@ -1925,6 +1933,47 @@ public final class HttpModule extends TransferModule {
         }
         // Now we have the listing!
         _log.debug("{} line(s) selected", listSize);
+    }
+
+    /**
+     * Resolves an href relative to the current URL or path.
+     *
+     * @param currentUrl
+     *            the current URL or path (can be root-relative or full URL)
+     * @param href
+     *            the href to resolve (can be relative or absolute)
+     *
+     * @return the resolved path or URL
+     *
+     * @throws URISyntaxException
+     *             if the URL is invalid
+     */
+    public static String resolveHref(final String currentUrl, final String href) throws URISyntaxException {
+        // If href is absolute URL, return it as-is
+        // If href starts with '/', treat it as root-relative
+        if (href.startsWith("http://") || href.startsWith("https://") || href.startsWith("/")) {
+            return href;
+        }
+        // Otherwise, treat href as relative to the directory of currentUrl
+        final var baseUri = new URI(currentUrl);
+        var basePath = baseUri.getPath();
+        if (!basePath.endsWith("/")) {
+            final var lastSlash = basePath.lastIndexOf('/');
+            if (lastSlash >= 0) {
+                basePath = basePath.substring(0, lastSlash + 1);
+            } else {
+                basePath = "/";
+            }
+        }
+        // Combine base directory and href
+        final var combinedPath = Paths.get(basePath, href).normalize().toString().replace('\\', '/');
+        // Rebuild URI with original scheme/host if present, otherwise just return path
+        if (baseUri.getScheme() != null) {
+            final var resolvedUri = new URI(baseUri.getScheme(), baseUri.getAuthority(), combinedPath, null, null);
+            return resolvedUri.toString();
+        } else {
+            return combinedPath;
+        }
     }
 
     /**
@@ -2147,7 +2196,7 @@ public final class HttpModule extends TransferModule {
             if (authCache != null) { // Is it required?
                 context.setAuthCache(authCache);
             }
-            final ClassicHttpResponse httpResponse = httpClient.executeOpen(targetHost, httpRequest, context);
+            final var httpResponse = httpClient.executeOpen(targetHost, httpRequest, context);
             final var statusCode = httpResponse.getCode();
             final var statusMessage = statusCode + " " + httpResponse.getReasonPhrase() + " "
                     + httpResponse.getVersion().getProtocol();
