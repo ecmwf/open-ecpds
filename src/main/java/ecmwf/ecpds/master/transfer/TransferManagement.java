@@ -363,6 +363,8 @@ public final class TransferManagement {
         // This is only for forecast products with the proper fields!
         final var sb = new StringBuilder();
         append(sb, "version", Version.getFullVersion());
+        append(sb, "source", dataFile.getSource());
+        append(sb, "original", dataFile.getOriginal());
         append(sb, "filename", targetName); // Required to allocate a file for ECcharts (sftp module)
         append(sb, "filesize", dataFile.getSize()); // Required to allocate a file for ECcharts (sftp module)
         append(sb, "timefile", dataFile.getTimeFile().getTime()); // With filesize used to check duplicates on MQTT
