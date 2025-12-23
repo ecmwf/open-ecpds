@@ -27,6 +27,7 @@ package ecmwf.ecpds.mover;
  */
 
 import static ecmwf.common.ectrans.ECtransGroups.Module.HOST_ECTRANS;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_ACQUISITION_SKIP_POST_RETRIEVAL_SIZE_CHECK_PATTERN;
 import static ecmwf.common.text.Util.isNotEmpty;
 import static ecmwf.ecpds.master.DataFilePath.getPath;
 
@@ -46,7 +47,6 @@ import ecmwf.common.database.DataFile;
 import ecmwf.common.database.Host;
 import ecmwf.common.ecaccess.StarterServer;
 import ecmwf.common.ectrans.ECtransOptions;
-import ecmwf.common.ectrans.ECtransSetup;
 import ecmwf.common.technical.CleanableSupport;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.technical.PipedInputStream;
@@ -78,6 +78,12 @@ final class ECtransInputStream extends InputStream implements AutoCloseable {
 
     /** The host for source. */
     private Host hostForSource = null;
+
+    /** The source file name. */
+    private String sourceFileName;
+
+    /** The source file size. */
+    private long sourceFileSize;
 
     /** The in. */
     private SourceInputStream in = null;
@@ -126,89 +132,90 @@ final class ECtransInputStream extends InputStream implements AutoCloseable {
                 final var copy = (Host) hostForSource.clone();
                 final var acquisition = HostOption.ACQUISITION.equals(copy.getType());
                 final var backup = HostOption.BACKUP.equals(copy.getType());
-                final String source;
                 if (!backup && (copy.getUseSourcePath() || acquisition)) {
                     // This is either a source host or a host for acquisition so we
                     // have to set the source with the full original path
-                    source = dataFile.getSource();
+                    sourceFileName = dataFile.getSource();
                     copy.setDir("");
                 } else {
                     // This is a backup host on a data mover host so we have to find
                     // the correct path on the mover
-                    source = getPath(dataFile);
+                    sourceFileName = getPath(dataFile);
                 }
                 hostsList.append(hostsList.isEmpty() ? "" : ", ").append("Host=").append(copy.getName()).append(" (")
                         .append(copy.getNickname()).append(")");
+                final var setup = HOST_ECTRANS.getECtransSetup(copy.getData());
                 final var module = copy.getTransferMethod().getECtransModuleName();
                 final var index = dataFile.getIndex();
                 try {
                     if (index > 0 && !backup && copy.getUseSourcePath()) {
                         // This is an index file
-                        if (HOST_ECTRANS.getECtransSetup(copy.getData())
-                                .getBoolean(ECtransOptions.HOST_ECTRANS_USEMGET)) {
-                            copy.setName(null); // Prevent it to be updated on the
-                                                // master!
+                        sourceFileSize = fileSize;
+                        if (setup.getBoolean(ECtransOptions.HOST_ECTRANS_USEMGET)) {
+                            copy.setName(null); // Prevent it to be updated on the master!
                             // This is a source host and the file is an index but
                             // the list of files will be processed by the transfer
                             // module directly!
-                            final var setup = new ECtransSetup(module, copy.getData());
                             setup.set(ECtransOptions.HOST_ECTRANS_USEMGET, true);
                             copy.setData(setup.getData());
                             final var out = new PipedOutputStream();
-                            this.in = new SimpleInputStream(MOVER.get(out, copy, source, posn, dataFile),
-                                    new PipedInputStream(out, StreamPlugThread.DEFAULT_BUFF_SIZE), copy, source);
+                            this.in = new SimpleInputStream(MOVER.get(out, copy, sourceFileName, posn, dataFile),
+                                    new PipedInputStream(out, StreamPlugThread.DEFAULT_BUFF_SIZE), copy,
+                                    sourceFileName);
                             _log.info("Files in {} will be retrieved from {} (index managed by transfer module {})",
-                                    source, copy.getNickname(), module);
+                                    sourceFileName, copy.getNickname(), module);
                             return;
                         }
                         // This is a source host and the file is an index so we
                         // have to retrieve the list of files first!
                         try {
-                            final var fileNames = loadFileListFor(copy, source);
+                            final var fileNames = loadFileListFor(copy, sourceFileName);
                             final var size = fileNames.size();
                             if (size != index) {
                                 throw new IOException("Wrong number of files in index (" + size + "!=" + index + ")");
                             }
-                            _log.info("Index file {} contains {} name(s)", source, index);
+                            _log.info("Index file {} contains {} name(s)", sourceFileName, index);
                             this.in = new MultipleInputStream(copy, fileNames, posn, dataFile);
-                            _log.info("Files in {} will be retrieved from {}", source, copy.getNickname());
+                            _log.info("Files in {} will be retrieved from {}", sourceFileName, copy.getNickname());
                             return;
                         } catch (final Throwable t) {
                             if (i == hostsForSource.length - 1) {
                                 throw new SourceNotAvailableException("Could not load index file on "
                                         + hostsList.toString() + " from DataMover=" + MOVER.getRoot(), t);
                             } else {
-                                _log.warn("Could not load index file ({}) on {}", source, hostsList, t);
+                                _log.warn("Could not load index file ({}) on {}", sourceFileName, hostsList, t);
                             }
                         }
                     } else {
                         // This is not an index so we try to get the file directly!
-                        final var remoteFileSize = MOVER.size(copy, source);
-                        final var fifo = remoteFileSize == 0 && fileSize == -1;
-                        final var link = remoteFileSize >= 0 && fileSize == -1;
-                        if (fifo || link || remoteFileSize == -1 && acquisition && i == hostsForSource.length - 1
-                                || remoteFileSize == fileSize) {
+                        sourceFileSize = MOVER.size(copy, sourceFileName);
+                        final var fifo = sourceFileSize == 0 && fileSize == -1;
+                        final var link = sourceFileSize >= 0 && fileSize == -1;
+                        if (fifo || link || (sourceFileSize == -1 && acquisition && i == hostsForSource.length - 1)
+                                || (sourceFileSize != fileSize && setup.matches(
+                                        HOST_ACQUISITION_SKIP_POST_RETRIEVAL_SIZE_CHECK_PATTERN, sourceFileName))
+                                || sourceFileSize == fileSize) {
                             if (fifo) {
                                 _log.debug("Fifo detected on the remote host (removing {}.hostList)", module);
                                 // We have to make sure there is no
                                 // ecauth.hostList defined in the Host as with the
                                 // fifo we have to connect to the original node (the
                                 // fifo are not shared among nodes)!
-                                final var setup = new ECtransSetup(module, copy.getData());
                                 setup.remove(ECtransOptions.HOST_ECAUTH_HOST_LIST);
                                 copy.setData(setup.getData());
                             }
                             final var out = new PipedOutputStream();
-                            this.in = new SimpleInputStream(MOVER.get(out, copy, source, posn, dataFile),
-                                    new PipedInputStream(out, StreamPlugThread.DEFAULT_BUFF_SIZE), copy, source);
-                            _log.info("File {} will be retrieved from {}", source, copy.getNickname());
+                            this.in = new SimpleInputStream(MOVER.get(out, copy, sourceFileName, posn, dataFile),
+                                    new PipedInputStream(out, StreamPlugThread.DEFAULT_BUFF_SIZE), copy,
+                                    sourceFileName);
+                            _log.info("File {} will be retrieved from {}", sourceFileName, copy.getNickname());
                             return;
                         }
                         if (i == hostsForSource.length - 1) {
-                            throw new SourceNotAvailableException("Incorrect size (" + remoteFileSize + " bytes) on "
+                            throw new SourceNotAvailableException("Incorrect size (" + sourceFileSize + " bytes) on "
                                     + hostsList.toString() + " from DataMover=" + MOVER.getRoot());
                         } else {
-                            _log.warn("Incorrect size ({} bytes) on {}", remoteFileSize, hostsList);
+                            _log.warn("Incorrect size ({} bytes) on {}", sourceFileSize, hostsList);
                         }
                     }
                 } catch (final SourceNotAvailableException t) {
@@ -216,7 +223,7 @@ final class ECtransInputStream extends InputStream implements AutoCloseable {
                     throw t;
                 } catch (final Throwable t) {
                     throwable = t;
-                    _log.warn("File {} not retrieved from {}", source, copy.getNickname(), t);
+                    _log.warn("File {} not retrieved from {}", sourceFileName, copy.getNickname(), t);
                 }
             }
             final var authHost = dataFile.getEcauthHost();
@@ -235,6 +242,26 @@ final class ECtransInputStream extends InputStream implements AutoCloseable {
                 this.cleaner = null;
             }
         }
+    }
+
+    /**
+     * Get the source file name used when downloading from the source (either the original source name when downloaded
+     * from an acquisition host, or the ECPDS data mover path when downloaded from a source host).
+     *
+     * @return the source file name
+     */
+    public String getSourceFileName() {
+        return sourceFileName;
+    }
+
+    /**
+     * Get the source file size from the remote host. If HOST_ACQUISITION_SKIP_POST_RETRIEVAL_SIZE_CHECK_PATTERN is set,
+     * this may differ from the file size indicated in the data file.
+     *
+     * @return the source file size
+     */
+    public long getSourceFileSize() {
+        return sourceFileSize;
     }
 
     /**

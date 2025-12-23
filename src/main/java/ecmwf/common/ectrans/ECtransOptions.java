@@ -517,6 +517,10 @@ public enum ECtransOptions {
     /** The host acquisition requeue on failure. */
     HOST_ACQUISITION_REQUEUE_ON_FAILURE("requeueOnFailure", Boolean.class, false),
 
+    /** The host acquisition skip post retrieval size check pattern. */
+    HOST_ACQUISITION_SKIP_POST_RETRIEVAL_SIZE_CHECK_PATTERN("skipPostRetrievalSizeCheckPattern", String.class,
+            STRING_NONE),
+
     /** The host proxy http proxy url. */
     HOST_PROXY_HTTP_PROXY_URL("httpProxyUrl", String.class, STRING_NONE),
 

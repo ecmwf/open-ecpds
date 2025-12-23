@@ -1985,7 +1985,6 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     public DataFile download(final DataFile dataFile, final Host hostForSource) throws RemoteException {
         final var cookieSet = ThreadService.setCookieIfNotAlreadySet(_getCookie(dataFile, "download"));
         try {
-            var fileSize = dataFile.getSize();
             final var fileName = getPath(dataFile);
             final var file = GenericFile.getGenericFile(getRepository(), fileName);
             if (!OPERATIONAL) {
@@ -2003,6 +2002,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                 // DataFile to the MasterServer as if the download was
                 // successful!
                 final var start = System.currentTimeMillis();
+                var fileSize = dataFile.getSize();
                 if (fileSize == -1) {
                     // This is an Acquisition file and it was a symbolic link so
                     // let's set a random file size between 10B and 10MB!
@@ -2030,6 +2030,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             // DataFile!
             _log.debug("File to download: {}", file.getAbsolutePath());
             final var ectransIn = new ECtransInputStream(new Host[] { hostForSource }, dataFile, 0);
+            final var sourceFileSize = ectransIn.getSourceFileSize();
             InputStream get = ectransIn; // We need to have a standard input stream for buffering and more!
             Checksum checksum = null;
             String cheksumAlgorithm = null;
@@ -2108,7 +2109,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                         }
                     });
                 }
-                file.receiveFile(get, fileSize);
+                file.receiveFile(get, sourceFileSize);
                 completed.setCharAt(0, '1');
             } finally {
                 // Let's make sure the download is removed from the download
@@ -2117,14 +2118,15 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                 downloadRepository.removeKey(dataFile);
             }
             // The master is still waiting!
-            final var stop = System.currentTimeMillis();
             // TODO: could remove the file on source if
             // dataFile.getDeleteOriginal()
-            if (fileSize == -1) {
-                // This is an Acquisition file and it was a symbolic link so
-                // let's find out the real size of the file!
-                dataFile.setSize(file.length());
-            }
+            final var stop = System.currentTimeMillis();
+            // This may be an acquisition file that was a symbolic link, or the remote file
+            // size may have differed while
+            // HOST_ACQUISITION_SKIP_POST_RETRIEVAL_SIZE_CHECK_PATTERN was set; therefore,
+            // set the data file size to the actual file size.
+            dataFile.setSize(sourceFileSize != -1 ? sourceFileSize : file.length());
+            // Let's set all other parameters on the DataFile
             dataFile.setRemoteHost(ectransIn.getRemoteHostName());
             dataFile.setGetHost(getRoot());
             dataFile.setGetTime(new Timestamp(stop));
@@ -2139,7 +2141,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             }
             _log.debug("Download completed successfully");
             return dataFile;
-        } catch (final Throwable t) {
+        } catch (Throwable t) {
             throw Format.getRemoteException("DataMover=" + getRoot(), t);
         } finally {
             if (cookieSet) {
