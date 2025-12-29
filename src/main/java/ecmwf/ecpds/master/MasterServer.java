@@ -139,6 +139,7 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -244,6 +245,7 @@ import ecmwf.common.technical.ThreadService.ConfigurableRunnable;
 import ecmwf.common.text.Format;
 import ecmwf.common.text.Options;
 import ecmwf.common.version.Version;
+import ecmwf.ecpds.master.MasterServer.VolumeUsageResult;
 import ecmwf.ecpds.master.plugin.ecpds.ECpdsClient;
 import ecmwf.ecpds.master.transfer.DestinationOption;
 import ecmwf.ecpds.master.transfer.HostOption;
@@ -1995,28 +1997,97 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * Formats a 2D long matrix representing used and total space per volume into a human-readable string.
+     * Retrieves information about the data volumes for all transfer servers, grouped by transfer group.
      * <p>
-     * The matrix is expected to have exactly two rows:
-     * <ul>
-     * <li>Row 0: used space per volume (in bytes)</li>
-     * <li>Row 1: total/max space per volume (in bytes)</li>
-     * </ul>
-     * Each value is converted into an approximate size string (e.g., "432.7GB").
+     * For each transfer group, it computes the total used and max capacity per volume, calculates the percentage used,
+     * and then appends the per-server volume usage.
+     *
+     * @return a human-readable string containing the volume usage information for all active transfer servers, grouped
+     *         by transfer group
+     *
+     * @throws RemoteException
+     *             if there is an error communicating with any remote transfer server
+     */
+    private String getDataVolumeInformations() throws RemoteException {
+        final var result = new StringBuilder();
+        for (final TransferGroup group : getECpdsBase().getTransferGroupArray()) {
+            final var groupName = group.getName();
+            final var volumeCount = group.getVolumeCount();
+            final var groupUsed = new long[volumeCount];
+            final var groupMax = new long[volumeCount];
+            final var moverOutputs = new StringBuilder();
+            var hasData = false;
+            for (final TransferServer server : getECpdsBase().getTransferServers(groupName)) {
+                final var mover = getDataMoverInterface(server.getName());
+                if (mover == null)
+                    continue;
+                final var usage = mover.computeVolumeUsage(volumeCount);
+                if (usage == null || usage.length != 2 || usage[0].length != volumeCount
+                        || usage[1].length != volumeCount) {
+                    _log.warn("Invalid volume usage returned by mover {}", server.getName());
+                    continue;
+                }
+                hasData = true;
+                for (var i = 0; i < volumeCount; i++) {
+                    groupUsed[i] += usage[0][i];
+                    groupMax[i] += usage[1][i];
+                }
+                moverOutputs.append(formatLongMatrix(server.getName(), usage));
+            }
+            if (hasData) {
+                // Compute % used per volume
+                final var percentUsed = new StringBuilder();
+                percentUsed.append("  used% [");
+                for (var i = 0; i < volumeCount; i++) {
+                    final var perc = (groupMax[i] > 0) ? (groupUsed[i] * 100.0 / groupMax[i]) : 0.0;
+                    percentUsed.append(String.format("%.1f%%", perc));
+                    if (i < volumeCount - 1)
+                        percentUsed.append(", ");
+                }
+                percentUsed.append("]\n");
+                // Append group-level totals
+                result.append(groupName).append(" [\n");
+                result.append("  used   [").append(Arrays.stream(groupUsed).mapToObj(ByteSize::of)
+                        .map(ByteSize::toApproximateSize).collect(Collectors.joining(", "))).append("]\n");
+                result.append("  max    [").append(Arrays.stream(groupMax).mapToObj(ByteSize::of)
+                        .map(ByteSize::toApproximateSize).collect(Collectors.joining(", "))).append("]\n");
+                result.append(percentUsed);
+                // Append all movers of the group
+                result.append(moverOutputs);
+                result.append("]\n");
+            }
+        }
+        return result.toString();
+    }
+
+    /**
+     * Formats a 2D long array (matrix) representing volume usage into a human-readable string.
+     * <p>
+     * The first row of the matrix is labeled as "used" and the second row as "max". Each value is converted to a
+     * human-readable size using {@link ByteSize#toApproximateSize()}. The resulting string is structured with the given
+     * name as the top-level identifier, followed by the formatted rows.
+     *
+     * <pre>
+     * Example output:
+     * serverName [
+     *   used [123.4GB, 456.7GB, ...],
+     *   max  [1.61TB, 1.61TB, ...]
+     * ]
+     * </pre>
      *
      * @param name
-     *            the name of the entity (e.g., server or group) being formatted
+     *            the name of the entity (e.g., server or group) to include as the top-level label
      * @param matrix
-     *            a 2D long array with [usedPerVolume[], maxCapacityPerVolume[]]
+     *            a 2D array of longs where row 0 is "used" and row 1 is "max" per volume
      *
-     * @return a human-readable string representing the used and max capacity per volume
+     * @return a formatted, human-readable string representing the matrix
      */
     private static String formatLongMatrix(final String name, final long[][] matrix) {
         final var sb = new StringBuilder();
         sb.append(name).append(" [\n");
         for (var i = 0; i < matrix.length; i++) {
-            sb.append("  ").append(i == 0 ? "used" : " max").append(" [");
-            var rowValues = Arrays.stream(matrix[i]).mapToObj(v -> ByteSize.of(v).toApproximateSize())
+            sb.append(" ").append(i == 0 ? "used" : " max").append(" [");
+            final var rowValues = Arrays.stream(matrix[i]).mapToObj(v -> ByteSize.of(v).toApproximateSize())
                     .collect(Collectors.joining(", "));
             sb.append(rowValues).append("]");
             if (i < matrix.length - 1)
@@ -2028,54 +2099,79 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * Retrieves information about the data volumes for all transfer servers.
+     * Holds the result of a combined volume usage computation.
      * <p>
-     * Iterates over all transfer groups and their associated transfer servers, computing the used and total capacity
-     * for each volume. The results are formatted using {@link #formatLongMatrix(String, long[][])} and concatenated
-     * into a single string. Only servers that are currently connected are included.
-     *
-     * @return a human-readable string containing the volume usage information for all active transfer servers
-     *
-     * @throws RemoteException
-     *             if there is an error communicating with any remote transfer server
+     * This object contains:
+     * <ul>
+     * <li>Aggregated volume usage information across all queried data movers, where the first dimension represents used
+     * space and total capacity.</li>
+     * <li>The list of data mover names sorted by ascending usage for a specific volume.</li>
+     * </ul>
      */
-    private String getDataVolumeInformations() throws RemoteException {
-        final var result = new StringBuilder();
-        for (final TransferGroup group : getECpdsBase().getTransferGroupArray()) {
-            for (final TransferServer server : getECpdsBase().getTransferServers(group.getName())) {
-                final var serverName = server.getName();
-                final var mover = getDataMoverInterface(serverName);
-                // Is it still connected?
-                if (mover != null)
-                    result.append(formatLongMatrix(serverName,
-                            mover.computeVolumeUsage(server.getTransferGroup().getVolumeCount())));
-            }
+    public static final class VolumeUsageResult {
+
+        /**
+         * Aggregated volume usage across all data movers.
+         * <p>
+         * Index {@code [0]} contains the used space per volume, and index {@code [1]} contains the total capacity per
+         * volume.
+         */
+        public final long[][] aggregatedUsage;
+
+        /**
+         * Names of data movers sorted by ascending used space for the selected volume.
+         */
+        public final String[] moversSortedByUsage;
+
+        /**
+         * Creates a new {@code VolumeUsageResult}.
+         *
+         * @param aggregatedUsage
+         *            the aggregated volume usage across all data movers
+         * @param moversSortedByUsage
+         *            the list of mover names sorted by increasing usage for the selected volume
+         */
+        public VolumeUsageResult(final long[][] aggregatedUsage, final String[] moversSortedByUsage) {
+            this.aggregatedUsage = aggregatedUsage;
+            this.moversSortedByUsage = moversSortedByUsage;
         }
-        return result.toString();
     }
 
     /**
-     * Computes the maximum volume usage across all data movers belonging to the specified {@link TransferGroup}. Each
-     * data mover reports usage for a fixed number of metrics per volume (currently two), and the maximum is taken
-     * volume-by-volume.
+     * Computes aggregated volume usage information for the given transfer group and returns the list of data movers
+     * sorted by volume usage for a specific volume.
      * <p>
-     * If a mover is unreachable or returns invalid data (null, incorrect dimensions, or incomplete metric rows), its
-     * contribution is ignored and a warning is logged.
+     * The method queries each available data mover in the group exactly once and:
+     * <ul>
+     * <li>Aggregates volume usage across movers by taking, for each volume, the maximum used space and the minimum
+     * total capacity reported.</li>
+     * <li>Sorts the movers by ascending used space for the volume identified by {@code volumeIndex} (least used
+     * first).</li>
+     * </ul>
+     * Movers returning invalid or incomplete usage information are ignored.
      *
      * @param group
-     *            the transfer group for which usage statistics should be aggregated. Must not be null and must have a
-     *            defined volume count.
+     *            the transfer group whose data movers are queried
+     * @param volumeIndex
+     *            the index of the volume to use when sorting movers by usage
      *
-     * @return a {@code long[][]} array containing the maximum usage metrics across all connected and valid data movers,
-     *         with one row per volume and two metrics per volume. Never {@code null}.
+     * @return a {@link VolumeUsageResult} containing the aggregated volume usage and the list of mover names sorted by
+     *         increasing usage for the specified volume
      *
+     * @throws IllegalArgumentException
+     *             if {@code volumeIndex} is out of range for the group's volume count
      * @throws RemoteException
-     *             if the underlying remote communication with movers fails.
+     *             if a remote communication error occurs while querying a data mover
      */
-    public long[][] computeVolumeUsage(final TransferGroup group) throws RemoteException {
+    public VolumeUsageResult computeVolumeUsageAndSortedMovers(final TransferGroup group, final int volumeIndex)
+            throws RemoteException {
         final var volumeCount = group.getVolumeCount();
+        if (volumeIndex < 0 || volumeIndex >= volumeCount) {
+            throw new IllegalArgumentException("Invalid volumeIndex: " + volumeIndex);
+        }
         final var volumeUsage = new long[2][volumeCount];
         var initialised = false;
+        final var moversUsage = new ArrayList<Map.Entry<String, Long>>();
         for (final TransferServer server : getECpdsBase().getTransferServers(group.getName())) {
             final var mover = getDataMoverInterface(server.getName());
             if (mover == null)
@@ -2088,20 +2184,24 @@ public final class MasterServer extends ECaccessProvider
             }
             final var used = usage[0];
             final var total = usage[1];
+            // aggregate usage (same logic as your original method)
             if (!initialised) {
                 System.arraycopy(used, 0, volumeUsage[0], 0, volumeCount);
                 System.arraycopy(total, 0, volumeUsage[1], 0, volumeCount);
                 initialised = true;
             } else {
-                final var maxUsed = volumeUsage[0];
-                final var minTotal = volumeUsage[1];
                 for (var v = 0; v < volumeCount; v++) {
-                    maxUsed[v] = Math.max(maxUsed[v], used[v]);
-                    minTotal[v] = Math.min(minTotal[v], total[v]);
+                    volumeUsage[0][v] = Math.max(volumeUsage[0][v], used[v]);
+                    volumeUsage[1][v] = Math.min(volumeUsage[1][v], total[v]);
                 }
             }
+            // collect usage for sorting
+            moversUsage.add(Map.entry(server.getName(), used[volumeIndex]));
         }
-        return volumeUsage;
+        // least used first
+        final var sortedMovers = moversUsage.stream().sorted(Comparator.comparingLong(Map.Entry::getValue))
+                .map(Map.Entry::getKey).toArray(String[]::new);
+        return new VolumeUsageResult(volumeUsage, sortedMovers);
     }
 
     /**
