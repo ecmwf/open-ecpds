@@ -63,6 +63,9 @@ public final class TransferServerProvider {
     /** The Constant MASTER. */
     private static final MasterServer MASTER = StarterServer.getInstance(MasterServer.class);
 
+    /** The Constant VOLUME_USAGE_CACHE. */
+    private static final ConcurrentHashMap<String, MasterServer.VolumeUsageResult> VOLUME_USAGE_CACHE = new ConcurrentHashMap<>();
+
     /** The servers. */
     private final List<TransferServer> servers = new ArrayList<>();
 
@@ -109,39 +112,83 @@ public final class TransferServerProvider {
     }
 
     /**
-     * Gets the transfer servers.
+     * Returns the list of {@link TransferServer} instances for the current transfer group and file system (volume
+     * index).
+     * <p>
+     * If volume usage statistics are available in the internal cache for the current group and volume index, the
+     * servers are ordered by increasing usage (least used first) for that volume. Otherwise, the servers are returned
+     * in their default order.
+     * <p>
+     * The returned list is mutable and reflects the internal state of this provider. The ordering may change as volume
+     * usage statistics are updated in the background.
+     * <p>
+     * <b>Thread safety:</b> This method is not thread-safe.
      *
-     * @return the transfer servers
+     * @return a list of active {@link TransferServer} instances for the current group and file system, ordered by least
+     *         used volume if available
      */
     public List<TransferServer> getTransferServers() {
+        final var key = group.getName() + ":" + fileSystem;
+        final var cached = VOLUME_USAGE_CACHE.get(key);
+        if (cached == null || cached.moversSortedByUsage == null) {
+            return servers;
+        }
+        final var order = cached.moversSortedByUsage;
+        final var index = new ConcurrentHashMap<String, Integer>();
+        for (var i = 0; i < order.length; i++) {
+            index.put(order[i], i);
+        }
+        servers.sort((a, b) -> {
+            final var ia = index.get(a.getName());
+            final var ib = index.get(b.getName());
+            if (ia == null && ib == null)
+                return 0;
+            if (ia == null)
+                return 1;
+            if (ib == null)
+                return -1;
+            return Integer.compare(ia, ib);
+        });
         return servers;
     }
 
     /**
-     * Instantiates a new transfer server provider.
+     * Constructs a new {@code TransferServerProvider} for the specified transfer group, destination, and file system.
+     * <p>
+     * This constructor determines the appropriate {@link TransferGroup} and file system (volume index) to use for data
+     * transfer, optionally considering cluster membership and primary host preferences. It then retrieves the list of
+     * active {@link TransferServer} instances for the selected group and file system. If no suitable servers are
+     * available, an exception is thrown.
+     * <p>
+     * <b>Parameters:</b>
+     * <ul>
+     * <li>{@code caller} - the name of the calling component (used for logging and context)</li>
+     * <li>{@code checkCluster} - if true, checks if the transfer group is part of a cluster and selects a group
+     * accordingly</li>
+     * <li>{@code allocatedFileSystem} - the file system (volume index) to use; if null, one is allocated
+     * automatically</li>
+     * <li>{@code transferGroup} - the name of the transfer group to use, or null to auto-select</li>
+     * <li>{@code destination} - the destination name for which to find a transfer group and servers</li>
+     * <li>{@code primaryHost} - an optional primary host to force selection of a specific group</li>
+     * </ul>
      *
-     * @param caller
-     *            the caller
-     * @param checkCluster
-     *            allow specifying if we should check if the transfer group is part of a cluster. If it is the case then
-     *            we should allocate one DataMover among the DataMovers who belong to all the cluster. If a transfer
-     *            group is provided as a parameter then this parameter is not used.
-     * @param allocatedFileSystem
-     *            the allocated file system. If it is set to -1 then it will not be used when getting the list of active
-     *            DataMovers. If it is set to null then it will be automatically allocated.
-     * @param transferGroup
-     *            the transfer group
-     * @param destination
-     *            the destination
-     * @param master
-     *            the master
-     * @param primaryHost
-     *            allow forcing the primary host
+     * <b>Behavior:</b>
+     * <ul>
+     * <li>If {@code transferGroup} is provided and available, it is used; otherwise, cluster selection may occur.</li>
+     * <li>If {@code primaryHost} is provided, its group is used if available.</li>
+     * <li>If no group is available, a default is selected from configuration.</li>
+     * <li>The list of active servers is retrieved for the selected group and file system.</li>
+     * </ul>
      *
-     * @throws TransferServerException
-     *             the transfer server exception
-     * @throws DataBaseException
-     *             the data base exception
+     * <b>Exceptions:</b>
+     * <ul>
+     * <li>{@link TransferServerException} if no suitable group or servers are found, or if the group is
+     * unavailable</li>
+     * <li>{@link DataBaseException} if a database error occurs during lookup</li>
+     * </ul>
+     *
+     * <b>Side effects:</b> The internal state of this provider is initialised, including the group, file system, and
+     * server list.
      */
     public TransferServerProvider(final String caller, boolean checkCluster, final Integer allocatedFileSystem,
             final String transferGroup, final String destination, final Host primaryHost)
@@ -297,13 +344,31 @@ public final class TransferServerProvider {
     }
 
     /**
-     * Weighted allocator for distributing data across multiple volumes in a group. Volumes with more free space are
-     * more likely to be selected.
+     * Utility class for weighted allocation and tracking of volume usage within a {@link TransferGroup}.
+     * <p>
+     * This class maintains per-group statistics about volume usage and free space, and provides methods for allocating
+     * a volume index in a way that favors volumes with more available space. It also supports periodic updates of usage
+     * statistics and integrates with the global usage cache for transfer groups.
+     * <p>
+     * <b>Thread safety:</b> All internal state is managed using concurrent data structures and explicit
+     * synchronisation, making this class safe for concurrent use.
+     * <p>
+     * <b>Design:</b>
+     * <ul>
+     * <li>Each group is tracked by name, with per-volume statistics and weights.</li>
+     * <li>Allocation is randomised but weighted by available free space.</li>
+     * <li>If all volumes are roughly equally used, allocation is uniform random among candidates.</li>
+     * <li>Periodic background updates keep usage statistics fresh.</li>
+     * </ul>
+     * <p>
+     * <b>Usage:</b> Call {@link #allocate(TransferGroup)} to select a volume index for a group, and
+     * {@link #updateGroupUsage(TransferGroup, long[], long[])} to refresh usage statistics.
      */
     private static class WeightedAllocator {
         private static final ConcurrentHashMap<String, SecureRandom> RNGS = new ConcurrentHashMap<>();
         private static final ConcurrentHashMap<String, GroupStats> GROUPS = new ConcurrentHashMap<>();
         private static final long MIN_WEIGHT = 1L;
+        private static final double EPSILON_RATIO = 0.01; // 1% tolerance for 'roughly equal' weights
         private static final ScheduledExecutorService GROUP_USAGE_UPDATER = Executors
                 .newSingleThreadScheduledExecutor(r -> {
                     final var t = new Thread(r, "GroupUsageUpdater");
@@ -416,7 +481,9 @@ public final class TransferServerProvider {
         }
 
         /**
-         * Starts periodic updates of group usage every minute. Requires MASTER to be initialised and accessible.
+         * Starts periodic updates of group usage every configured interval. Uses
+         * MASTER.computeVolumeUsageAndSortedMovers() to retrieve both aggregated volume usage and mover ordering, which
+         * are cached and reused for server selection and ordering.
          */
         public static void startUsageUpdater() {
             final var frequency = Cnf.at("TransferServerProvider", "usageUpdaterFreqInSec", 10);
@@ -428,26 +495,33 @@ public final class TransferServerProvider {
                             continue;
                         final var groupName = group.getName();
                         try {
-                            final var usage = MASTER.computeVolumeUsage(group);
-                            if (usage == null || usage.length != 2) {
-                                _log.warn("Invalid usage array for group {}", groupName);
+                            // Volume index used for sorting movers; typically matches allocated filesystem
+                            final var volumeIndex = 0;
+                            final var result = MASTER.computeVolumeUsageAndSortedMovers(group, volumeIndex);
+                            if (result == null || result.aggregatedUsage == null
+                                    || result.aggregatedUsage.length != 2) {
+                                _log.warn("Invalid volume usage result for group {}", groupName);
                                 continue;
                             }
                             final var volumeCount = group.getVolumeCount();
-                            if (usage[0].length != volumeCount || usage[1].length != volumeCount) {
-                                _log.warn("Usage array does not match volume count for group {}", groupName);
+                            final var used = result.aggregatedUsage[0];
+                            final var capacity = result.aggregatedUsage[1];
+                            if (used.length != volumeCount || capacity.length != volumeCount) {
+                                _log.warn("Volume usage size mismatch for group {}", groupName);
                                 continue;
                             }
-                            final var maxUsed = usage[0]; // volumeCount long[] (maximum used space per volume)
-                            final var minCapacity = usage[1]; // volumeCount long[] (minimum capacity per volume)
-                            updateGroupUsage(group, maxUsed, minCapacity);
+                            // Cache the full result (including mover ordering)
+                            VOLUME_USAGE_CACHE.put(groupName + ":" + volumeIndex, result);
+                            // Update weighted allocator
+                            updateGroupUsage(group, used, capacity);
                             if (isDebugEnabled()) {
-                                final var usedSum = Arrays.stream(maxUsed).sum();
-                                final var totalSum = Arrays.stream(minCapacity).sum();
+                                final var usedSum = Arrays.stream(used).sum();
+                                final var totalSum = Arrays.stream(capacity).sum();
                                 final var percentUsed = (totalSum > 0) ? (usedSum * 100.0 / totalSum) : 0.0;
-                                _log.debug("Group {} usage updated: used={}, total={}, used%={}", groupName,
-                                        Arrays.toString(maxUsed), Arrays.toString(minCapacity),
-                                        String.format("%.2f%%", percentUsed));
+                                _log.debug("Group {} usage updated: used={}, total={}, used%={}, movers={}", groupName,
+                                        Arrays.toString(used), Arrays.toString(capacity),
+                                        String.format("%.2f%%", percentUsed),
+                                        Arrays.toString(result.moversSortedByUsage));
                             }
                         } catch (final Throwable e) {
                             _log.warn("Error updating usage for group {}", groupName, e);
@@ -471,9 +545,30 @@ public final class TransferServerProvider {
             }
             long[] prefix;
             long totalWeight;
+            long[] weights;
             synchronized (gs.lock) {
                 prefix = gs.prefixSums.clone();
                 totalWeight = prefix[prefix.length - 1];
+                weights = Arrays.stream(gs.weights).mapToLong(LongAdder::sum).toArray();
+            }
+            final var minWeight = Arrays.stream(weights).min().orElse(0);
+            final var maxWeight = Arrays.stream(weights).max().orElse(0);
+            final var epsilon = Math.max(1, maxWeight * EPSILON_RATIO);
+            final var roughlyEqual = (maxWeight - minWeight) <= epsilon;
+            if (roughlyEqual) {
+                final List<Integer> candidates = new ArrayList<>();
+                for (var i = 0; i < weights.length; i++) {
+                    if (Math.abs(weights[i] - maxWeight) <= epsilon) {
+                        candidates.add(i);
+                    }
+                }
+                final int chosen = candidates.get(random.nextInt(candidates.size()));
+                if (isDebugEnabled()) {
+                    _log.debug(
+                            "Weights roughly equal for group {} (max={}, min={}, epsilon={}). Randomly selected index {} among {} candidates.",
+                            groupName, maxWeight, minWeight, epsilon, chosen, candidates.size());
+                }
+                return chosen;
             }
             final var r = (long) (random.nextDouble() * totalWeight);
             // Binary search over prefix sums
@@ -485,6 +580,10 @@ public final class TransferServerProvider {
                     high = mid;
                 else
                     low = mid + 1;
+            }
+            if (isDebugEnabled()) {
+                _log.debug("Weighted allocation for group {}: selected index {} (r={}, totalWeight={}, weights={})",
+                        groupName, low, r, totalWeight, Arrays.toString(weights));
             }
             return low;
         }
