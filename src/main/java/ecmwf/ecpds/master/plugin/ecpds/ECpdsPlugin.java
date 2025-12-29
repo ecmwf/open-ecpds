@@ -278,9 +278,6 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     /** The transferGroup. */
     private String transferGroup = Cnf.at("ECpdsPlugin", "transferGroup");
 
-    /** The checkCluster. */
-    private final boolean checkCluster = Cnf.at("ECpdsPlugin", "checkCluster", true);
-
     /** The purge. */
     private boolean purge = false;
 
@@ -2330,8 +2327,8 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
                 }
                 // Initialize the new DataTransfer(s) and DataFile!
                 _log.debug("Create new DataTransfer(s) and associated DataFile");
-                provider = new TransferServerProvider("ECpdsPlugin", checkCluster, null, transferGroup,
-                        selectedDestination, null);
+                provider = new TransferServerProvider("ECpdsPlugin", true, null, transferGroup, selectedDestination,
+                        null);
                 final var group = provider.getTransferGroup();
                 dataFile.setTransferGroup(group);
                 dataFile.setTransferGroupName(group.getName());
