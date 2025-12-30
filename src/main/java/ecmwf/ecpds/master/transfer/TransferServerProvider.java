@@ -58,7 +58,18 @@ import ecmwf.common.technical.Cnf;
 import ecmwf.ecpds.master.MasterServer;
 
 /**
- * The Class TransferServerProvider.
+ * Provides a centralised mechanism for selecting, ordering, and managing {@link TransferServer} instances for data
+ * transfer.
+ * <p>
+ * Supports:
+ * <ul>
+ * <li>Stable caller-based load balancing</li>
+ * <li>Cluster fallback for unavailable transfer groups</li>
+ * <li>File system volume-based ordering using cached usage statistics</li>
+ * <li>Weighted allocation of volumes per transfer group</li>
+ * </ul>
+ * <p>
+ * The class maintains internal caches and periodically updates volume usage statistics for optimal server selection.
  */
 public final class TransferServerProvider {
     /** The Constant _log. */
@@ -306,10 +317,8 @@ public final class TransferServerProvider {
      * @return a starting index in the range {@code [0, size)}
      */
     private static int selectStartIndex(final String caller, final String groupName, final int size) {
-
         final var indexName = caller + "." + groupName;
         final var random = ACTIVE_SERVERS_INDEX.computeIfAbsent(indexName, _ -> new SecureRandom());
-
         final var index = random.nextInt(size);
         _log.debug("Selected index for {}: {}", indexName, index);
         return index;
@@ -330,11 +339,9 @@ public final class TransferServerProvider {
      */
     private static void orderByFileSystemUsage(final List<TransferServer> servers,
             final Map<String, Integer> loadPerServer, final int fileSystem) {
-
         for (final TransferServer ts : servers) {
             loadPerServer.put(ts.getName(), TransferScheduler.getNumberOfDownloadsFor(ts, fileSystem));
         }
-
         servers.sort(Comparator.comparingInt(ts -> loadPerServer.get(ts.getName())));
     }
 
@@ -360,19 +367,16 @@ public final class TransferServerProvider {
     private static void logSelectedServers(final String caller, final TransferGroup group,
             final List<TransferServer> servers, final Map<String, Integer> loadPerServer,
             final boolean fileSystemProvided, final Integer fileSystem) {
-
         final var sb = new StringBuilder();
         for (final TransferServer ts : servers) {
             if (sb.length() > 0)
                 sb.append(',');
             sb.append(ts.getName());
-
             final var load = loadPerServer.get(ts.getName());
             if (load != null) {
                 sb.append('(').append(load).append(')');
             }
         }
-
         _log.debug("Selected DataMovers for {}.{}{}: {}", caller, group.getName(),
                 fileSystemProvided ? "[fileSystem=" + fileSystem + "]" : "", sb);
     }
@@ -523,7 +527,7 @@ public final class TransferServerProvider {
      *
      * @return the transfer group is available for use
      */
-    public static boolean groupIsAvailable(final TransferGroup group) {
+    private static boolean groupIsAvailable(final TransferGroup group) {
         return group.getActive() && Arrays.stream(MASTER.getECpdsBase().getTransferServers(group.getName()))
                 .anyMatch(server -> server.getActive() && MASTER.existsClientInterface(server.getName(), "DataMover"));
     }
@@ -538,7 +542,7 @@ public final class TransferServerProvider {
      *
      * @return the transfer group
      */
-    public static TransferGroup getRandomGroupFromCluster(final TransferGroup original,
+    private static TransferGroup getRandomGroupFromCluster(final TransferGroup original,
             final TransferGroup[] transferGroups) {
         final var clusterName = original.getClusterName();
         // What is the sum of all the weightings?
