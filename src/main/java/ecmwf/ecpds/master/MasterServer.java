@@ -258,6 +258,7 @@ import ecmwf.ecpds.master.transfer.TransferScheduler.BackupResult;
 import ecmwf.ecpds.master.transfer.TransferScheduler.DestinationThread;
 import ecmwf.ecpds.master.transfer.TransferScheduler.MonitoringThread;
 import ecmwf.ecpds.master.transfer.TransferScheduler.PurgeResult;
+import ecmwf.ecpds.master.transfer.TransferServerProvider;
 import ecmwf.ecpds.mover.MoverInterface;
 
 /**
@@ -370,9 +371,6 @@ public final class MasterServer extends ECaccessProvider
     /** The data access. */
     private final transient DataFileAccessImpl dataAccess;
 
-    /** The transfer server management. */
-    private final transient TransferServerManagement transferServerManagement;
-
     /** The event script content. */
     private final StringBuffer eventScriptContent = new StringBuffer(
             Cnf.fileContentAt("Scheduler", "eventScriptFile", ""));
@@ -445,7 +443,6 @@ public final class MasterServer extends ECaccessProvider
         _log.info("MasterServer-version: {}", Version.getFullVersion());
         NativeAuthenticationProvider.setProvider(MasterProvider.class);
         DestinationOption.getList(); // Make sure the list of options is loaded!
-        transferServerManagement = new TransferServerManagement(this);
         if (Cnf.at("Server", "transferScheduler", true)) {
             _log.debug("Starting TransferScheduler");
             theTransferScheduler = new TransferScheduler("TransferScheduler");
@@ -1873,7 +1870,7 @@ public final class MasterServer extends ECaccessProvider
             throw new IOException("Report not available for: " + hostName + " (name only resolved at runtime)");
         }
         Throwable throwable = null;
-        for (final TransferServer current : transferServerManagement.getActiveTransferServers("MasterServer", null,
+        for (final TransferServer current : TransferServerProvider.getTransferServers("MasterServer", null,
                 host.getTransferGroup(), null)) {
             final var moverName = current.getName();
             final MoverInterface mover;
@@ -2590,7 +2587,7 @@ public final class MasterServer extends ECaccessProvider
      */
     public List<TransferServer> getActiveTransferServers(final String caller, final TransferServer original,
             final TransferGroup group, final Integer fileSystem) throws DataBaseException {
-        return transferServerManagement.getActiveTransferServers(caller, original, group, fileSystem);
+        return TransferServerProvider.getTransferServers(caller, original, group, fileSystem);
     }
 
     /**
@@ -6721,8 +6718,8 @@ public final class MasterServer extends ECaccessProvider
                 throw new MasterException("TransferGroup " + group.getName() + " not active");
             }
             TransferServer server = null;
-            for (final TransferServer theServer : transferServerManagement
-                    .getActiveTransferServers("HostCheckScheduler", null, group, null)) {
+            for (final TransferServer theServer : TransferServerProvider.getTransferServers("HostCheckScheduler", null,
+                    group, null)) {
                 if (theServer.getCheck()) {
                     server = theServer;
                     break;

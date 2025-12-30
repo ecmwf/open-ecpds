@@ -33,7 +33,10 @@ import static ecmwf.common.text.Util.isNotEmpty;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -45,6 +48,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import ecmwf.common.database.DataBaseException;
+import ecmwf.common.database.ECpdsBase;
 import ecmwf.common.database.Host;
 import ecmwf.common.database.TransferGroup;
 import ecmwf.common.database.TransferServer;
@@ -65,6 +69,9 @@ public final class TransferServerProvider {
 
     /** The Constant VOLUME_USAGE_CACHE. */
     private static final ConcurrentHashMap<String, MasterServer.VolumeUsageResult> VOLUME_USAGE_CACHE = new ConcurrentHashMap<>();
+
+    /** List of index per caller. */
+    private static final HashMap<String, SecureRandom> ACTIVE_SERVERS_INDEX = new HashMap<>();
 
     /** The servers. */
     private final List<TransferServer> servers = new ArrayList<>();
@@ -150,6 +157,203 @@ public final class TransferServerProvider {
             return Integer.compare(ia, ib);
         });
         return servers;
+    }
+
+    /**
+     * Returns the list of active {@link TransferServer}s for a given {@link TransferGroup}.
+     * <p>
+     * The method applies the following logic:
+     * <ul>
+     * <li>Retrieve all TransferServers declared for the given TransferGroup.</li>
+     * <li>If none are found and the group belongs to a cluster, select another available TransferGroup from the cluster
+     * using weighted selection.</li>
+     * <li>Filter servers to keep only those that are active and currently connected.</li>
+     * <li>Ensure stable load-balancing by rotating the starting point of the list using a caller-specific random
+     * index.</li>
+     * <li>If a file system is provided and enabled by configuration, order servers by increasing file system usage
+     * (least used first).</li>
+     * <li>If a preferred (original) TransferServer is provided and available, it is always placed at the beginning of
+     * the result list.</li>
+     * </ul>
+     *
+     * @param caller
+     *            identifier of the calling component (used to ensure stable load-balancing across calls)
+     * @param original
+     *            preferred TransferServer to prioritise, may be {@code null}
+     * @param originalTransferGroup
+     *            transfer group used to select servers (required)
+     * @param fileSystem
+     *            optional file system index used for load-based ordering, or {@code null} if not applicable
+     *
+     * @return ordered list of active TransferServers
+     *
+     * @throws DataBaseException
+     *             if no active TransferServer can be found
+     */
+    public static List<TransferServer> getTransferServers(final String caller, final TransferServer original,
+            final TransferGroup originalTransferGroup, final Integer fileSystem) throws DataBaseException {
+        final var dataBase = MASTER.getECpdsBase();
+        final var fileSystemProvided = fileSystem != null && fileSystem >= 0;
+        // Resolve transfer group (with cluster fallback if needed)
+        var group = originalTransferGroup;
+        var groupName = group.getName();
+        var declaredServers = dataBase.getTransferServers(groupName);
+        if (declaredServers.length == 0) {
+            group = tryClusterFallback(group, dataBase);
+            groupName = group.getName(); // update after fallback
+            declaredServers = dataBase.getTransferServers(groupName);
+        }
+        if (declaredServers.length == 0) {
+            throw new DataBaseException("No DataMover available for TransferGroup " + groupName);
+        }
+        // Stable caller-based rotation index
+        final var startIndex = selectStartIndex(caller, groupName, declaredServers.length);
+        // Filter active and connected servers
+        final List<TransferServer> activeServers = new ArrayList<>();
+        var originalFound = false;
+        for (var i = 0; i < declaredServers.length; i++) {
+            final var server = declaredServers[(startIndex + i) % declaredServers.length];
+            final var serverName = server.getName();
+            if (!server.getActive() || !MASTER.existsClientInterface(serverName, "DataMover")) {
+                continue;
+            }
+            // Keep preferred server aside to force it at the top later
+            if (original != null && serverName.equals(original.getName())) {
+                originalFound = true;
+            } else {
+                activeServers.add(server);
+            }
+        }
+        // Optional ordering by file system usage (least used first)
+        final Map<String, Integer> loadPerServer = new HashMap<>();
+        if (fileSystemProvided && fileSystem != null
+                && Cnf.at("TransferServerManagement", "orderByFileSystemUsage", true)) {
+            orderByFileSystemUsage(activeServers, loadPerServer, fileSystem);
+        }
+        // Reinsert preferred server at the top if available
+        if (originalFound && original != null) {
+            activeServers.add(0, original);
+            if (_log.isDebugEnabled() && fileSystemProvided) {
+                loadPerServer.put(original.getName(), TransferScheduler.getNumberOfDownloadsFor(original, fileSystem));
+            }
+        }
+        // Debug output
+        if (_log.isDebugEnabled()) {
+            logSelectedServers(caller, group, activeServers, loadPerServer, fileSystemProvided, fileSystem);
+        }
+        return activeServers;
+    }
+
+    /**
+     * Attempts to select an alternative {@link TransferGroup} from the same cluster when the original group has no
+     * available TransferServers.
+     * <p>
+     * If the given group belongs to a cluster and has an associated cluster weight, a new group is selected using
+     * weighted random selection among all available groups in the cluster. If the group is not part of a cluster or no
+     * suitable alternative is found, the original group is returned unchanged.
+     *
+     * @param group
+     *            the original transfer group
+     * @param dataBase
+     *            the ECpds database used to retrieve all transfer groups
+     *
+     * @return a transfer group selected from the cluster, or the original group if no fallback is applicable
+     */
+    private static TransferGroup tryClusterFallback(final TransferGroup group, final ECpdsBase dataBase) {
+        final var clusterName = group.getClusterName();
+        if (isNotEmpty(clusterName) && group.getClusterWeight() != null) {
+            final var selected = getRandomGroupFromCluster(group, dataBase.getTransferGroupArray());
+            _log.debug("Choosing TransferGroup {} from Cluster {}", selected.getName(), clusterName);
+            return selected;
+        }
+        return group;
+    }
+
+    /**
+     * Selects a stable starting index used to rotate the list of TransferServers for load-balancing purposes.
+     * <p>
+     * The index is generated using a caller- and group-specific random generator, ensuring that successive calls from
+     * the same caller for the same group produce a consistent ordering while still distributing load across servers.
+     *
+     * @param caller
+     *            identifier of the calling component
+     * @param groupName
+     *            name of the transfer group
+     * @param size
+     *            total number of available servers
+     *
+     * @return a starting index in the range {@code [0, size)}
+     */
+    private static int selectStartIndex(final String caller, final String groupName, final int size) {
+
+        final var indexName = caller + "." + groupName;
+        final var random = ACTIVE_SERVERS_INDEX.computeIfAbsent(indexName, _ -> new SecureRandom());
+
+        final var index = random.nextInt(size);
+        _log.debug("Selected index for {}: {}", indexName, index);
+        return index;
+    }
+
+    /**
+     * Orders the given list of {@link TransferServer}s by increasing usage of the specified file system.
+     * <p>
+     * Servers with lower activity on the given file system are placed first. The method also populates the provided map
+     * with the computed load per server to avoid redundant calls and allow reuse for logging purposes.
+     *
+     * @param servers
+     *            list of servers to be sorted in-place
+     * @param loadPerServer
+     *            map used to cache the load value per server name
+     * @param fileSystem
+     *            file system index used to retrieve usage statistics
+     */
+    private static void orderByFileSystemUsage(final List<TransferServer> servers,
+            final Map<String, Integer> loadPerServer, final int fileSystem) {
+
+        for (final TransferServer ts : servers) {
+            loadPerServer.put(ts.getName(), TransferScheduler.getNumberOfDownloadsFor(ts, fileSystem));
+        }
+
+        servers.sort(Comparator.comparingInt(ts -> loadPerServer.get(ts.getName())));
+    }
+
+    /**
+     * Logs the final ordered list of selected TransferServers for debugging purposes.
+     * <p>
+     * When file system ordering is enabled, the corresponding load value for each server is included in the log output.
+     * This method is intended to be called only when debug logging is enabled.
+     *
+     * @param caller
+     *            identifier of the calling component
+     * @param group
+     *            transfer group used for selection
+     * @param servers
+     *            ordered list of selected servers
+     * @param loadPerServer
+     *            map containing the load per server (may be empty)
+     * @param fileSystemProvided
+     *            whether a file system was used for ordering
+     * @param fileSystem
+     *            file system index used for ordering, if applicable
+     */
+    private static void logSelectedServers(final String caller, final TransferGroup group,
+            final List<TransferServer> servers, final Map<String, Integer> loadPerServer,
+            final boolean fileSystemProvided, final Integer fileSystem) {
+
+        final var sb = new StringBuilder();
+        for (final TransferServer ts : servers) {
+            if (sb.length() > 0)
+                sb.append(',');
+            sb.append(ts.getName());
+
+            final var load = loadPerServer.get(ts.getName());
+            if (load != null) {
+                sb.append('(').append(load).append(')');
+            }
+        }
+
+        _log.debug("Selected DataMovers for {}.{}{}: {}", caller, group.getName(),
+                fileSystemProvided ? "[fileSystem=" + fileSystem + "]" : "", sb);
     }
 
     /**
