@@ -94,6 +94,7 @@ import ecmwf.common.text.Format;
 import ecmwf.ecpds.master.transfer.DestinationOption;
 import ecmwf.ecpds.master.transfer.HostOption;
 import ecmwf.ecpds.master.transfer.StatusFactory;
+import ecmwf.ecpds.master.transfer.TransferServerProvider;
 
 /**
  * The Class ManagementImpl.
@@ -2199,7 +2200,7 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
         Exception exception = null;
         try {
             final var group = host.getTransferGroup();
-            final var servers = master.getActiveTransferServers("ManagementImpl", null, group, null);
+            final var servers = TransferServerProvider.getTransferServers("ManagementImpl", group);
             if (servers.isEmpty()) {
                 throw new MasterException("No TransferServer(s) available for TransferGroup " + group.getName());
             }

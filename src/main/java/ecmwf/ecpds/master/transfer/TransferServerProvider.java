@@ -160,6 +160,27 @@ public final class TransferServerProvider {
     }
 
     /**
+     * Returns the list of {@link TransferServer}s associated with the given transfer group.
+     * <p>
+     * This is a convenience method that delegates to the full {@code getTransferServers(...)} variant using default
+     * parameters. It is typically used when no filtering or additional context is required.
+     *
+     * @param caller
+     *            identifier of the calling component, used for logging and auditing purposes
+     * @param originalTransferGroup
+     *            the transfer group for which the transfer servers must be retrieved
+     *
+     * @return the list of transfer servers associated with the given transfer group
+     *
+     * @throws DataBaseException
+     *             if an error occurs while accessing the database
+     */
+    public static List<TransferServer> getTransferServers(final String caller,
+            final TransferGroup originalTransferGroup) throws DataBaseException {
+        return getTransferServers(caller, null, originalTransferGroup, null);
+    }
+
+    /**
      * Returns the list of active {@link TransferServer}s for a given {@link TransferGroup}.
      * <p>
      * The method applies the following logic:
@@ -233,7 +254,7 @@ public final class TransferServerProvider {
         // Reinsert preferred server at the top if available
         if (originalFound && original != null) {
             activeServers.add(0, original);
-            if (_log.isDebugEnabled() && fileSystemProvided) {
+            if (_log.isDebugEnabled() && fileSystemProvided && fileSystem != null) {
                 loadPerServer.put(original.getName(), TransferScheduler.getNumberOfDownloadsFor(original, fileSystem));
             }
         }
@@ -486,7 +507,7 @@ public final class TransferServerProvider {
         fileSystem = allocatedFileSystem != null ? allocatedFileSystem : WeightedAllocator.allocate(group);
         // Now gets the list of active TransferServers for the selected
         // TransferGroup
-        servers.addAll(MASTER.getActiveTransferServers("TransferServerProvider." + caller, null, group, fileSystem));
+        servers.addAll(getTransferServers("TransferServerProvider." + caller, null, group, fileSystem));
         // And check if we have something? (all the TransferServers might be
         // down)
         if (servers.isEmpty()) {

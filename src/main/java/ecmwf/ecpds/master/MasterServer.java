@@ -2569,28 +2569,6 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * Get the list of active TransferServers.
-     *
-     * @param caller
-     *            the caller
-     * @param original
-     *            the original
-     * @param group
-     *            the group
-     * @param fileSystem
-     *            the file system
-     *
-     * @return the active transfer servers
-     *
-     * @throws DataBaseException
-     *             the data base exception
-     */
-    public List<TransferServer> getActiveTransferServers(final String caller, final TransferServer original,
-            final TransferGroup group, final Integer fileSystem) throws DataBaseException {
-        return TransferServerProvider.getTransferServers(caller, original, group, fileSystem);
-    }
-
-    /**
      * Transfer.
      *
      * @param bytes
