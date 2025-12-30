@@ -245,7 +245,6 @@ import ecmwf.common.technical.ThreadService.ConfigurableRunnable;
 import ecmwf.common.text.Format;
 import ecmwf.common.text.Options;
 import ecmwf.common.version.Version;
-import ecmwf.ecpds.master.MasterServer.VolumeUsageResult;
 import ecmwf.ecpds.master.plugin.ecpds.ECpdsClient;
 import ecmwf.ecpds.master.transfer.DestinationOption;
 import ecmwf.ecpds.master.transfer.HostOption;
