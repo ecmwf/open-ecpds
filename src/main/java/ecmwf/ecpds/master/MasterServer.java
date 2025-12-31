@@ -1869,8 +1869,8 @@ public final class MasterServer extends ECaccessProvider
             throw new IOException("Report not available for: " + hostName + " (name only resolved at runtime)");
         }
         Throwable throwable = null;
-        for (final TransferServer current : TransferServerProvider.getTransferServers("MasterServer", null,
-                host.getTransferGroup(), null)) {
+        for (final TransferServer current : TransferServerProvider.getTransferServers("MasterServer",
+                host.getTransferGroup())) {
             final var moverName = current.getName();
             final MoverInterface mover;
             if ((mover = getDataMoverInterface(moverName)) == null) {

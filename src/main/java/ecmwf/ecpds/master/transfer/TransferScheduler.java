@@ -1807,7 +1807,7 @@ public final class TransferScheduler extends MBeanScheduler {
         // Let's find the list of transfer servers to do the listing. We force a
         // check against the clusters to spread the load evenly on all data
         // movers!
-        final var provider = new TransferServerProvider("TransferScheduler.acquisition", true, -1,
+        final var provider = new TransferServerProvider("TransferScheduler.acquisition", null,
                 host.getTransferGroupName(), destinationName, host);
         for (final TransferServer current : provider.getTransferServers()) {
             final var getHost = current.getName();
@@ -1895,7 +1895,7 @@ public final class TransferScheduler extends MBeanScheduler {
         // Let's find the list of transfer servers to do the execution. We force a
         // check against the clusters to spread the load evenly on all data
         // movers!
-        final var provider = new TransferServerProvider("TransferScheduler.execution", true, -1,
+        final var provider = new TransferServerProvider("TransferScheduler.execution", null,
                 host.getTransferGroupName(), destinationName, host);
         for (final TransferServer current : provider.getTransferServers()) {
             final var getHost = current.getName();
@@ -2060,14 +2060,12 @@ public final class TransferScheduler extends MBeanScheduler {
             if (hostForSource == null || !hostForSource.getActive() || dr.dataFile.getDeleteOriginal()) {
                 _log.warn(dr.message = "Host for source not available or source file deleted");
             } else {
-                final var groupFromHost = hostForSource.getTransferGroupName();
-                final var groupFromData = dr.dataFile.getTransferGroupName();
-                if (groupFromHost != null && !groupFromHost.equals(groupFromData)) {
-                    _log.warn("Using a " + groupFromHost + " host to retrieve a file on a " + groupFromData
-                            + " data mover");
-                }
-                final var provider = new TransferServerProvider("TransferScheduler.download", false,
-                        dr.dataFile.getFileSystem(), groupFromData, transfer.getDestinationName(), null);
+                final var provider = new TransferServerProvider("TransferScheduler.download", null,
+                        hostForSource.getTransferGroupName(), transfer.getDestinationName(), hostForSource);
+                final var group = provider.getTransferGroup();
+                dr.dataFile.setTransferGroup(group);
+                dr.dataFile.setTransferGroupName(group.getName());
+                dr.dataFile.setFileSystem(provider.getFileSystem());
                 for (final TransferServer server : provider.getTransferServers()) {
                     final var moverName = server.getName();
                     final var groupName = server.getTransferGroupName();

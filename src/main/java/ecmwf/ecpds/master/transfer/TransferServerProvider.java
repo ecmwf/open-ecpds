@@ -392,8 +392,6 @@ public final class TransferServerProvider {
      * <b>Parameters:</b>
      * <ul>
      * <li>{@code caller} - the name of the calling component (used for logging and context)</li>
-     * <li>{@code checkCluster} - if true, checks if the transfer group is part of a cluster and selects a group
-     * accordingly</li>
      * <li>{@code allocatedFileSystem} - the file system (volume index) to use; if null, one is allocated
      * automatically</li>
      * <li>{@code transferGroup} - the name of the transfer group to use, or null to auto-select</li>
@@ -419,10 +417,12 @@ public final class TransferServerProvider {
      * <b>Side effects:</b> The internal state of this provider is initialised, including the group, file system, and
      * server list.
      */
-    public TransferServerProvider(final String caller, boolean checkCluster, final Integer allocatedFileSystem,
-            final String transferGroup, final String destination, final Host primaryHost)
-            throws TransferServerException, DataBaseException {
+    public TransferServerProvider(final String caller, final Integer allocatedFileSystem, final String transferGroup,
+            final String destination, final Host primaryHost) throws TransferServerException, DataBaseException {
         final var dataBase = MASTER.getECpdsBase();
+        // if no file system is allocated, checks if the transfer group is part of a
+        // cluster to select a group accordingly
+        var checkCluster = allocatedFileSystem == null;
         if (transferGroup != null && primaryHost == null) {
             // A transfer group was specified and we don't have a default primary host, so
             // let's use it if we can!

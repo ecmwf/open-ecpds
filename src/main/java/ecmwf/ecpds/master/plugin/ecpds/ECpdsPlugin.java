@@ -1888,7 +1888,7 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
                                         .formatTime(DEFAULT_DATE_FORMAT, transfer.getScheduledTime().getTime())));
                     }
                 }
-                if (groupBy == null && provider != null) {
+                if (provider != null) {
                     for (final TransferServer server : provider.getTransferServers()) {
                         if (server.getName().equals(dataFile.getGetHost())) {
                             final var serverName = server.getName();
@@ -2325,14 +2325,16 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
                         return;
                     }
                 }
-                // Initialize the new DataTransfer(s) and DataFile!
+                // Initialise the new DataTransfer(s) and DataFile!
                 _log.debug("Create new DataTransfer(s) and associated DataFile");
-                provider = new TransferServerProvider("ECpdsPlugin", true, null, transferGroup, selectedDestination,
-                        null);
-                final var group = provider.getTransferGroup();
-                dataFile.setTransferGroup(group);
-                dataFile.setTransferGroupName(group.getName());
-                dataFile.setFileSystem(provider.getFileSystem());
+                if (groupBy == null) {
+                    provider = new TransferServerProvider("ECpdsPlugin", null, transferGroup, selectedDestination,
+                            null);
+                    final var group = provider.getTransferGroup();
+                    dataFile.setTransferGroup(group);
+                    dataFile.setTransferGroupName(group.getName());
+                    dataFile.setFileSystem(provider.getFileSystem());
+                }
                 dataFile.setFileInstance(null);
                 DATABASE.insert(dataFile, true);
                 currentTransfer.setStatusCode(StatusFactory.INIT);
@@ -2455,9 +2457,9 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
                 // This is re-queue or force, so overwrite the existing DataTransfer(s)!
                 transferGroup = dataFile.getTransferGroupName();
                 for (final DataTransfer transfer : transfersList) {
-                    if (groupBy == null && provider == null) {
-                        provider = new TransferServerProvider("ECpdsPlugin", false, dataFile.getFileSystem(),
-                                transferGroup, selectedDestination, null);
+                    if (groupBy == null) {
+                        provider = new TransferServerProvider("ECpdsPlugin", dataFile.getFileSystem(), transferGroup,
+                                selectedDestination, null);
                     }
                     transfer.setTransferServer(null);
                     transfer.setTransferServerName(null);
