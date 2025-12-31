@@ -1809,7 +1809,7 @@ public final class TransferScheduler extends MBeanScheduler {
         // movers!
         final var provider = new TransferServerProvider("TransferScheduler.acquisition", null,
                 host.getTransferGroupName(), destinationName, host);
-        for (final TransferServer current : provider.getTransferServersByMostFreeSpace()) {
+        for (final TransferServer current : provider.getTransferServersByLeastActivity()) {
             final var getHost = current.getName();
             MoverInterface mover;
             ar.server = current;
@@ -1897,7 +1897,7 @@ public final class TransferScheduler extends MBeanScheduler {
         // movers!
         final var provider = new TransferServerProvider("TransferScheduler.execution", null,
                 host.getTransferGroupName(), destinationName, host);
-        for (final TransferServer current : provider.getTransferServersByMostFreeSpace()) {
+        for (final TransferServer current : provider.getTransferServersByLeastActivity()) {
             final var getHost = current.getName();
             MoverInterface mover;
             er.server = current;
@@ -2066,7 +2066,7 @@ public final class TransferScheduler extends MBeanScheduler {
                 dr.dataFile.setTransferGroup(group);
                 dr.dataFile.setTransferGroupName(group.getName());
                 dr.dataFile.setFileSystem(provider.getFileSystem());
-                for (final TransferServer server : provider.getTransferServersByLeastActivity()) {
+                for (final TransferServer server : provider.getTransferServersByMostFreeSpace()) {
                     final var moverName = server.getName();
                     final var groupName = server.getTransferGroupName();
                     MoverInterface mover;

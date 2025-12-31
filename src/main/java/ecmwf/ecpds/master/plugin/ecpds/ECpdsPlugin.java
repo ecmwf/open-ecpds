@@ -1889,7 +1889,7 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
                     }
                 }
                 if (provider != null) {
-                    for (final TransferServer server : provider.getTransferServersByMostFreeSpace()) {
+                    for (final TransferServer server : provider.getTransferServersByLeastActivity()) {
                         if (server.getName().equals(dataFile.getGetHost())) {
                             final var serverName = server.getName();
                             transfer.setTransferServerName(serverName);
@@ -2504,7 +2504,7 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
             } else {
                 _log.debug("Push mode (file uploaded through client)");
                 send("TARGET " + getPath(dataFile));
-                send("ECPROXY " + getECproxyServersReversed(provider.getTransferServersByLeastActivity()));
+                send("ECPROXY " + getECproxyServersReversed(provider.getTransferServersByMostFreeSpace()));
                 // The DataFileId is used to track the DownloadProgress on the
                 // DataMover!
                 dataFileId = dataFile.getId();
