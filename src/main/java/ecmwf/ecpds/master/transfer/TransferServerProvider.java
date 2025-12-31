@@ -130,6 +130,15 @@ public final class TransferServerProvider {
     }
 
     /**
+     * Gets the transfer servers list.
+     *
+     * @return the transfer servers list
+     */
+    public List<TransferServer> getTransferServers() {
+        return servers;
+    }
+
+    /**
      * Returns the list of {@link TransferServer} instances for the current transfer group and file system (volume
      * index).
      * <p>
@@ -145,7 +154,7 @@ public final class TransferServerProvider {
      * @return a list of active {@link TransferServer} instances for the current group and file system, ordered by least
      *         used volume if available
      */
-    public List<TransferServer> getTransferServers() {
+    public List<TransferServer> getOrderedTransferServers() {
         final var key = group.getName() + ":" + fileSystem;
         final var cached = VOLUME_USAGE_CACHE.get(key);
         if (cached == null || cached.moversSortedByUsage == null) {

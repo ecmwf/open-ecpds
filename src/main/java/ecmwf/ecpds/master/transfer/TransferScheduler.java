@@ -2066,7 +2066,7 @@ public final class TransferScheduler extends MBeanScheduler {
                 dr.dataFile.setTransferGroup(group);
                 dr.dataFile.setTransferGroupName(group.getName());
                 dr.dataFile.setFileSystem(provider.getFileSystem());
-                for (final TransferServer server : provider.getTransferServers()) {
+                for (final TransferServer server : provider.getOrderedTransferServers()) {
                     final var moverName = server.getName();
                     final var groupName = server.getTransferGroupName();
                     MoverInterface mover;

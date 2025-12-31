@@ -2504,7 +2504,7 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
             } else {
                 _log.debug("Push mode (file uploaded through client)");
                 send("TARGET " + getPath(dataFile));
-                send("ECPROXY " + getECproxyServersReversed(provider.getTransferServers()));
+                send("ECPROXY " + getECproxyServersReversed(provider.getOrderedTransferServers()));
                 // The DataFileId is used to track the DownloadProgress on the
                 // DataMover!
                 dataFileId = dataFile.getId();
