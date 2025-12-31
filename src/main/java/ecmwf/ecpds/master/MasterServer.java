@@ -1869,7 +1869,7 @@ public final class MasterServer extends ECaccessProvider
             throw new IOException("Report not available for: " + hostName + " (name only resolved at runtime)");
         }
         Throwable throwable = null;
-        for (final TransferServer current : TransferServerProvider.getTransferServersByMostFreeSpace("MasterServer",
+        for (final TransferServer current : TransferServerProvider.getTransferServersByLeastActivity("MasterServer",
                 host.getTransferGroup())) {
             final var moverName = current.getName();
             final MoverInterface mover;
@@ -6696,7 +6696,7 @@ public final class MasterServer extends ECaccessProvider
             }
             TransferServer server = null;
             for (final TransferServer theServer : TransferServerProvider
-                    .getTransferServersByMostFreeSpace("HostCheckScheduler", group)) {
+                    .getTransferServersByLeastActivity("HostCheckScheduler", group)) {
                 if (theServer.getCheck()) {
                     server = theServer;
                     break;

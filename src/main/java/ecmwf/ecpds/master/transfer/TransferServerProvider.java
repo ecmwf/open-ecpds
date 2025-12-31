@@ -66,6 +66,7 @@ import ecmwf.ecpds.master.MasterServer;
  * <li>Stable caller-based load balancing</li>
  * <li>Cluster fallback for unavailable transfer groups</li>
  * <li>File system volume-based ordering using cached usage statistics</li>
+ * <li>File system activity-based ordering using cached activity statistics</li>
  * <li>Weighted allocation of volumes per transfer group</li>
  * </ul>
  * <p>
@@ -130,11 +131,11 @@ public final class TransferServerProvider {
     }
 
     /**
-     * Gets the transfer servers list ordered by most available disk space.
+     * Gets the transfer servers list ordered by least disk activity.
      *
      * @return the transfer servers list
      */
-    public List<TransferServer> getTransferServersByMostFreeSpace() {
+    public List<TransferServer> getTransferServersByLeastActivity() {
         return servers;
     }
 
@@ -154,7 +155,7 @@ public final class TransferServerProvider {
      * @return a list of active {@link TransferServer} instances for the current group and file system, ordered by least
      *         used volume if available
      */
-    public List<TransferServer> getTransferServersByLeastActivity() {
+    public List<TransferServer> getTransferServersByMostFreeSpace() {
         final var key = group.getName() + ":" + fileSystem;
         final var cached = VOLUME_USAGE_CACHE.get(key);
         if (cached == null || cached.moversSortedByUsage == null) {
@@ -195,9 +196,9 @@ public final class TransferServerProvider {
      * @throws DataBaseException
      *             if an error occurs while accessing the database
      */
-    public static List<TransferServer> getTransferServersByMostFreeSpace(final String caller,
+    public static List<TransferServer> getTransferServersByLeastActivity(final String caller,
             final TransferGroup originalTransferGroup) throws DataBaseException {
-        return getTransferServersByMostFreeSpace(caller, null, originalTransferGroup, null);
+        return getTransferServersByLeastActivity(caller, null, originalTransferGroup, null);
     }
 
     /**
@@ -232,7 +233,7 @@ public final class TransferServerProvider {
      *             if no active TransferServer can be found
      */
     @SuppressWarnings("null")
-    public static List<TransferServer> getTransferServersByMostFreeSpace(final String caller,
+    public static List<TransferServer> getTransferServersByLeastActivity(final String caller,
             final TransferServer original, final TransferGroup originalTransferGroup, final Integer fileSystem)
             throws DataBaseException {
         final var dataBase = MASTER.getECpdsBase();
@@ -267,10 +268,10 @@ public final class TransferServerProvider {
                 activeServers.add(server);
             }
         }
-        // Optional ordering by file system usage (least used first)
+        // Order by file system usage (least used first)
         final Map<String, Integer> loadPerServer = new HashMap<>();
         if (fileSystemProvided) {
-            orderByFileSystemUsage(activeServers, loadPerServer, fileSystem);
+            orderByFileSystemActivity(activeServers, loadPerServer, fileSystem);
         }
         // Reinsert preferred server at the top if available
         if (originalFound) {
@@ -335,7 +336,7 @@ public final class TransferServerProvider {
     }
 
     /**
-     * Orders the given list of {@link TransferServer}s by increasing usage of the specified file system.
+     * Orders the given list of {@link TransferServer}s by increasing activity of the specified file system.
      * <p>
      * Servers with lower activity on the given file system are placed first. The method also populates the provided map
      * with the computed load per server to avoid redundant calls and allow reuse for logging purposes.
@@ -347,7 +348,7 @@ public final class TransferServerProvider {
      * @param fileSystem
      *            file system index used to retrieve usage statistics
      */
-    private static void orderByFileSystemUsage(final List<TransferServer> servers,
+    private static void orderByFileSystemActivity(final List<TransferServer> servers,
             final Map<String, Integer> loadPerServer, final int fileSystem) {
         for (final TransferServer ts : servers) {
             loadPerServer.put(ts.getName(), TransferScheduler.getNumberOfDownloadsFor(ts, fileSystem));
@@ -521,7 +522,7 @@ public final class TransferServerProvider {
         fileSystem = allocatedFileSystem != null ? allocatedFileSystem : WeightedAllocator.allocate(group);
         // Now gets the list of active TransferServers for the selected
         // TransferGroup
-        servers.addAll(getTransferServersByMostFreeSpace("TransferServerProvider." + caller, null, group, fileSystem));
+        servers.addAll(getTransferServersByLeastActivity("TransferServerProvider." + caller, null, group, fileSystem));
         // And check if we have something? (all the TransferServers might be
         // down)
         if (servers.isEmpty()) {

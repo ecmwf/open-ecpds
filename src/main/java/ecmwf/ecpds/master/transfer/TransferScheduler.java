@@ -845,7 +845,7 @@ public final class TransferScheduler extends MBeanScheduler {
                         // so we have to provide the list of other
                         // TransferServers in the TransferGroup!
                         for (final TransferServer sourceServer : TransferServerProvider
-                                .getTransferServersByMostFreeSpace("TransferScheduler.put", group)) {
+                                .getTransferServersByLeastActivity("TransferScheduler.put", group)) {
                             if (!sourceServer.getName().equals(moverName)) {
                                 final var host = sourceServer.getHostForReplication();
                                 if (host != null && host.getActive()) {
@@ -866,7 +866,7 @@ public final class TransferScheduler extends MBeanScheduler {
             _log.debug("Tranferring DataTransfer " + transfer.getId() + " across TransferGroups (" + sourceGroup
                     + " -> " + targetGroup + ")");
             for (final TransferServer transferServer : TransferServerProvider
-                    .getTransferServersByMostFreeSpace("TransferScheduler.put", source)) {
+                    .getTransferServersByLeastActivity("TransferScheduler.put", source)) {
                 final var host = transferServer.getHostForReplication();
                 if (host != null && host.getActive()) {
                     hostsForSource.add(host);
@@ -1033,7 +1033,7 @@ public final class TransferScheduler extends MBeanScheduler {
     public static ProxySocket get(final DataTransfer transfer, final long remotePosn, final long length)
             throws DataBaseException, MasterException {
         final var dataFile = transfer.getDataFile();
-        final var servers = TransferServerProvider.getTransferServersByMostFreeSpace("TransferScheduler.get",
+        final var servers = TransferServerProvider.getTransferServersByLeastActivity("TransferScheduler.get",
                 transfer.getTransferServer(), dataFile.getTransferGroup(), null);
         final var count = servers.size();
         MasterException exception = null;
@@ -2836,7 +2836,7 @@ public final class TransferScheduler extends MBeanScheduler {
                 targetGroup = originalGroup;
             }
             // Get the list of TransferServers for the selected TargetGroup
-            final var servers = TransferServerProvider.getTransferServersByMostFreeSpace("DestinationThread",
+            final var servers = TransferServerProvider.getTransferServersByLeastActivity("DestinationThread",
                     targetGroup);
             final var retries = transfer.getRequeueCount();
             if (retries == 0 && transfer.getFailedTime() == null) {
