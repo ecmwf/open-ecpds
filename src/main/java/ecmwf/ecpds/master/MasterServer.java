@@ -6695,8 +6695,8 @@ public final class MasterServer extends ECaccessProvider
                 throw new MasterException("TransferGroup " + group.getName() + " not active");
             }
             TransferServer server = null;
-            for (final TransferServer theServer : TransferServerProvider.getTransferServers("HostCheckScheduler", null,
-                    group, null)) {
+            for (final TransferServer theServer : TransferServerProvider.getTransferServers("HostCheckScheduler",
+                    group)) {
                 if (theServer.getCheck()) {
                     server = theServer;
                     break;
