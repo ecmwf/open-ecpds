@@ -130,11 +130,11 @@ public final class TransferServerProvider {
     }
 
     /**
-     * Gets the transfer servers list.
+     * Gets the transfer servers list ordered by most available disk space.
      *
      * @return the transfer servers list
      */
-    public List<TransferServer> getTransferServers() {
+    public List<TransferServer> getTransferServersByMostFreeSpace() {
         return servers;
     }
 
@@ -154,7 +154,7 @@ public final class TransferServerProvider {
      * @return a list of active {@link TransferServer} instances for the current group and file system, ordered by least
      *         used volume if available
      */
-    public List<TransferServer> getOrderedTransferServers() {
+    public List<TransferServer> getTransferServersByLeastActivity() {
         final var key = group.getName() + ":" + fileSystem;
         final var cached = VOLUME_USAGE_CACHE.get(key);
         if (cached == null || cached.moversSortedByUsage == null) {
@@ -195,9 +195,9 @@ public final class TransferServerProvider {
      * @throws DataBaseException
      *             if an error occurs while accessing the database
      */
-    public static List<TransferServer> getTransferServers(final String caller,
+    public static List<TransferServer> getTransferServersByMostFreeSpace(final String caller,
             final TransferGroup originalTransferGroup) throws DataBaseException {
-        return getTransferServers(caller, null, originalTransferGroup, null);
+        return getTransferServersByMostFreeSpace(caller, null, originalTransferGroup, null);
     }
 
     /**
@@ -231,8 +231,10 @@ public final class TransferServerProvider {
      * @throws DataBaseException
      *             if no active TransferServer can be found
      */
-    public static List<TransferServer> getTransferServers(final String caller, final TransferServer original,
-            final TransferGroup originalTransferGroup, final Integer fileSystem) throws DataBaseException {
+    @SuppressWarnings("null")
+    public static List<TransferServer> getTransferServersByMostFreeSpace(final String caller,
+            final TransferServer original, final TransferGroup originalTransferGroup, final Integer fileSystem)
+            throws DataBaseException {
         final var dataBase = MASTER.getECpdsBase();
         final var fileSystemProvided = fileSystem != null && fileSystem >= 0;
         // Resolve transfer group (with cluster fallback if needed)
@@ -267,14 +269,13 @@ public final class TransferServerProvider {
         }
         // Optional ordering by file system usage (least used first)
         final Map<String, Integer> loadPerServer = new HashMap<>();
-        if (fileSystemProvided && fileSystem != null
-                && Cnf.at("TransferServerManagement", "orderByFileSystemUsage", true)) {
+        if (fileSystemProvided) {
             orderByFileSystemUsage(activeServers, loadPerServer, fileSystem);
         }
         // Reinsert preferred server at the top if available
-        if (originalFound && original != null) {
+        if (originalFound) {
             activeServers.add(0, original);
-            if (_log.isDebugEnabled() && fileSystemProvided && fileSystem != null) {
+            if (_log.isDebugEnabled() && fileSystemProvided) {
                 loadPerServer.put(original.getName(), TransferScheduler.getNumberOfDownloadsFor(original, fileSystem));
             }
         }
@@ -520,7 +521,7 @@ public final class TransferServerProvider {
         fileSystem = allocatedFileSystem != null ? allocatedFileSystem : WeightedAllocator.allocate(group);
         // Now gets the list of active TransferServers for the selected
         // TransferGroup
-        servers.addAll(getTransferServers("TransferServerProvider." + caller, null, group, fileSystem));
+        servers.addAll(getTransferServersByMostFreeSpace("TransferServerProvider." + caller, null, group, fileSystem));
         // And check if we have something? (all the TransferServers might be
         // down)
         if (servers.isEmpty()) {

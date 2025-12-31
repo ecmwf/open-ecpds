@@ -2200,7 +2200,7 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
         Exception exception = null;
         try {
             final var group = host.getTransferGroup();
-            final var servers = TransferServerProvider.getTransferServers("ManagementImpl", group);
+            final var servers = TransferServerProvider.getTransferServersByMostFreeSpace("ManagementImpl", group);
             if (servers.isEmpty()) {
                 throw new MasterException("No TransferServer(s) available for TransferGroup " + group.getName());
             }
