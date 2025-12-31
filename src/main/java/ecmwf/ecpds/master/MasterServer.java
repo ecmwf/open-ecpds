@@ -11248,6 +11248,9 @@ public final class MasterServer extends ECaccessProvider
                         // remote site!
                         final var remoteHost = dr.dataFile.getRemoteHost();
                         dataFile.setRemoteHost(remoteHost);
+                        dataFile.setTransferGroup(dr.dataFile.getTransferGroup());
+                        dataFile.setTransferGroupName(dr.dataFile.getTransferGroupName());
+                        dataFile.setFileSystem(dr.dataFile.getFileSystem());
                         dataFile.setGetHost(dr.dataFile.getGetHost());
                         dataFile.setGetTime(dr.dataFile.getGetTime());
                         dataFile.setGetCompleteDuration(completed - start);
