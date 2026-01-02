@@ -133,6 +133,27 @@ public final class Cnf {
     }
 
     /**
+     * At.
+     *
+     * @param group
+     *            the group
+     * @param key
+     *            the key
+     * @param defaultValue
+     *            the default value
+     *
+     * @return the double
+     */
+    public static double at(final String group, final String key, final double defaultValue) {
+        try {
+            final var at = at(group, key);
+            return at == null ? defaultValue : Double.parseDouble(removeDoubleQuote(at));
+        } catch (final Exception _) {
+            return defaultValue;
+        }
+    }
+
+    /**
      * Adds the.
      *
      * @param group
