@@ -2827,12 +2827,12 @@ public final class TransferScheduler extends MBeanScheduler {
             final var clusterName = targetGroup.getClusterName();
             // If the cluster is not defined (empty string) then we cannot
             // compare!
-            // They are part of the same Cluster so if they are different
-            // let's force the usage of the original TransferGroup!
-            if ((clusterName.length() > 0 && clusterName.equals(originalGroup.getClusterName()))
+            if (originalGroup != null && !clusterName.isEmpty() && clusterName.equals(originalGroup.getClusterName())
                     && !targetGroup.getName().equals(originalGroup.getName())) {
-                _log.debug("Force usage of the original TransferGroup (" + targetGroup.getName() + " => "
-                        + originalGroup.getName() + ")");
+                // They are part of the same Cluster so if they are different
+                // let's force the usage of the original TransferGroup!
+                _log.debug("Force usage of the original TransferGroup ({} => {})", targetGroup.getName(),
+                        originalGroup.getName());
                 targetGroup = originalGroup;
             }
             // Get the list of TransferServers for the selected TargetGroup
