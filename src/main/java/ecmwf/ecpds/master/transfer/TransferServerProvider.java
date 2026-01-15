@@ -28,15 +28,16 @@ package ecmwf.ecpds.master.transfer;
 
 import static ecmwf.common.ectrans.ECtransGroups.Module.HOST_ECPDS;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_DEBUG;
+import static ecmwf.common.text.Util.isEmpty;
 import static ecmwf.common.text.Util.isNotEmpty;
 
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.SplittableRandom;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -82,8 +83,8 @@ public final class TransferServerProvider {
     /** The Constant VOLUME_USAGE_CACHE. */
     private static final ConcurrentHashMap<String, MasterServer.VolumeUsageResult> VOLUME_USAGE_CACHE = new ConcurrentHashMap<>();
 
-    /** List of index per caller. */
-    private static final HashMap<String, SecureRandom> ACTIVE_SERVERS_INDEX = new HashMap<>();
+    /** The Constant ACTIVE_SERVERS_INDEX. */
+    private static final ConcurrentHashMap<String, SplittableRandom> ACTIVE_SERVERS_INDEX = new ConcurrentHashMap<>();
 
     /** The servers. */
     private final List<TransferServer> servers = new ArrayList<>();
@@ -136,7 +137,7 @@ public final class TransferServerProvider {
      * @return the transfer servers list
      */
     public List<TransferServer> getTransferServersByLeastActivity() {
-        return servers;
+        return new ArrayList<>(servers);
     }
 
     /**
@@ -147,26 +148,25 @@ public final class TransferServerProvider {
      * servers are ordered by increasing usage (least used first) for that volume. Otherwise, the servers are returned
      * in their default order.
      * <p>
-     * The returned list is mutable and reflects the internal state of this provider. The ordering may change as volume
-     * usage statistics are updated in the background.
-     * <p>
-     * <b>Thread safety:</b> This method is not thread-safe.
+     * The ordering may change as volume usage statistics are updated in the background.
      *
-     * @return a list of active {@link TransferServer} instances for the current group and file system, ordered by least
-     *         used volume if available
+     * @return a list of active {@link TransferServer} instances for the current group and file system, ordered by most
+     *         free space if available
      */
     public List<TransferServer> getTransferServersByMostFreeSpace() {
         final var key = group.getName() + ":" + fileSystem;
         final var cached = VOLUME_USAGE_CACHE.get(key);
         if (cached == null || cached.moversSortedByUsage == null) {
-            return servers;
+            return new ArrayList<>(servers);
         }
         final var order = cached.moversSortedByUsage;
         final var index = new ConcurrentHashMap<String, Integer>();
         for (var i = 0; i < order.length; i++) {
             index.put(order[i], i);
         }
-        servers.sort((a, b) -> {
+        // Return a sorted copy, do not mutate internal servers list
+        final List<TransferServer> sorted = new ArrayList<>(servers);
+        sorted.sort((a, b) -> {
             final var ia = index.get(a.getName());
             final var ib = index.get(b.getName());
             if (ia == null && ib == null)
@@ -177,18 +177,18 @@ public final class TransferServerProvider {
                 return -1;
             return Integer.compare(ia, ib);
         });
-        return servers;
+        return sorted;
     }
 
     /**
      * Returns the list of {@link TransferServer}s associated with the given transfer group.
      * <p>
      * This is a convenience method that delegates to the full {@code getTransferServers(...)} variant using default
-     * parameters. It is typically used when no filtering or additional context is required.
+     * parameters.
      *
      * @param caller
      *            identifier of the calling component, used for logging and auditing purposes
-     * @param originalTransferGroup
+     * @param originalGroup
      *            the transfer group for which the transfer servers must be retrieved
      *
      * @return the list of transfer servers associated with the given transfer group
@@ -197,8 +197,8 @@ public final class TransferServerProvider {
      *             if an error occurs while accessing the database
      */
     public static List<TransferServer> getTransferServersByLeastActivity(final String caller,
-            final TransferGroup originalTransferGroup) throws DataBaseException {
-        return getTransferServersByLeastActivity(caller, null, originalTransferGroup, null);
+            final TransferGroup originalGroup) throws DataBaseException {
+        return getTransferServersByLeastActivity(caller, null, originalGroup, null);
     }
 
     /**
@@ -220,9 +220,9 @@ public final class TransferServerProvider {
      *
      * @param caller
      *            identifier of the calling component (used to ensure stable load-balancing across calls)
-     * @param original
+     * @param originalServer
      *            preferred TransferServer to prioritise, may be {@code null}
-     * @param originalTransferGroup
+     * @param originalGroup
      *            transfer group used to select servers (required)
      * @param fileSystem
      *            optional file system index used for load-based ordering, or {@code null} if not applicable
@@ -234,12 +234,12 @@ public final class TransferServerProvider {
      */
     @SuppressWarnings("null")
     public static List<TransferServer> getTransferServersByLeastActivity(final String caller,
-            final TransferServer original, final TransferGroup originalTransferGroup, final Integer fileSystem)
+            final TransferServer originalServer, final TransferGroup originalGroup, final Integer fileSystem)
             throws DataBaseException {
         final var dataBase = MASTER.getECpdsBase();
         final var fileSystemProvided = fileSystem != null && fileSystem >= 0;
         // Resolve transfer group (with cluster fallback if needed)
-        var group = originalTransferGroup;
+        var group = originalGroup;
         var groupName = group.getName();
         var declaredServers = dataBase.getTransferServers(groupName);
         if (declaredServers.length == 0) {
@@ -253,8 +253,8 @@ public final class TransferServerProvider {
         // Stable caller-based rotation index
         final var startIndex = selectStartIndex(caller, groupName, declaredServers.length);
         // Filter active and connected servers
-        final List<TransferServer> activeServers = new ArrayList<>();
-        var originalFound = false;
+        final List<TransferServer> activeTransferServers = new ArrayList<>();
+        var originalTransferServerFound = false;
         for (var i = 0; i < declaredServers.length; i++) {
             final var server = declaredServers[(startIndex + i) % declaredServers.length];
             final var serverName = server.getName();
@@ -262,29 +262,30 @@ public final class TransferServerProvider {
                 continue;
             }
             // Keep preferred server aside to force it at the top later
-            if (original != null && serverName.equals(original.getName())) {
-                originalFound = true;
+            if (originalServer != null && serverName.equals(originalServer.getName())) {
+                originalTransferServerFound = true;
             } else {
-                activeServers.add(server);
+                activeTransferServers.add(server);
             }
         }
         // Order by file system usage (least used first)
         final Map<String, Integer> loadPerServer = new HashMap<>();
         if (fileSystemProvided) {
-            orderByFileSystemActivity(activeServers, loadPerServer, fileSystem);
+            orderByFileSystemActivity(activeTransferServers, loadPerServer, fileSystem);
         }
         // Reinsert preferred server at the top if available
-        if (originalFound) {
-            activeServers.add(0, original);
+        if (originalTransferServerFound) {
+            activeTransferServers.add(0, originalServer);
             if (_log.isDebugEnabled() && fileSystemProvided) {
-                loadPerServer.put(original.getName(), TransferScheduler.getNumberOfDownloadsFor(original, fileSystem));
+                loadPerServer.put(originalServer.getName(),
+                        TransferScheduler.getNumberOfDownloadsFor(originalServer, fileSystem));
             }
         }
         // Debug output
         if (_log.isDebugEnabled()) {
-            logSelectedServers(caller, group, activeServers, loadPerServer, fileSystemProvided, fileSystem);
+            logSelectedServers(caller, group, activeTransferServers, loadPerServer, fileSystemProvided, fileSystem);
         }
-        return activeServers;
+        return activeTransferServers;
     }
 
     /**
@@ -306,7 +307,9 @@ public final class TransferServerProvider {
         final var clusterName = group.getClusterName();
         if (isNotEmpty(clusterName) && group.getClusterWeight() != null) {
             final var selected = getRandomGroupFromCluster(group, dataBase.getTransferGroupArray());
-            _log.debug("Choosing TransferGroup {} from Cluster {}", selected.getName(), clusterName);
+            if (!selected.getName().equals(group.getName())) {
+                _log.debug("Choosing TransferGroup {} from Cluster {}", selected.getName(), clusterName);
+            }
             return selected;
         }
         return group;
@@ -329,7 +332,7 @@ public final class TransferServerProvider {
      */
     private static int selectStartIndex(final String caller, final String groupName, final int size) {
         final var indexName = caller + "." + groupName;
-        final var random = ACTIVE_SERVERS_INDEX.computeIfAbsent(indexName, _ -> new SecureRandom());
+        final var random = ACTIVE_SERVERS_INDEX.computeIfAbsent(indexName, key -> new SplittableRandom(key.hashCode()));
         final var index = random.nextInt(size);
         _log.debug("Selected index for {}: {}", indexName, index);
         return index;
@@ -403,9 +406,9 @@ public final class TransferServerProvider {
      * <b>Parameters:</b>
      * <ul>
      * <li>{@code caller} - the name of the calling component (used for logging and context)</li>
-     * <li>{@code allocatedFileSystem} - the file system (volume index) to use; if null, one is allocated
+     * <li>{@code allocatedFileSystem} - the file system (volume index) to use; if null or -1, one is allocated
      * automatically</li>
-     * <li>{@code transferGroup} - the name of the transfer group to use, or null to auto-select</li>
+     * <li>{@code groupName} - the name of the transfer group to use, or null to auto-select</li>
      * <li>{@code destination} - the destination name for which to find a transfer group and servers</li>
      * <li>{@code primaryHost} - an optional primary host to force selection of a specific group</li>
      * </ul>
@@ -426,31 +429,32 @@ public final class TransferServerProvider {
      * </ul>
      *
      * <b>Side effects:</b> The internal state of this provider is initialised, including the group, file system, and
-     * server list.
+     * server list ordered by least activity.
      */
-    public TransferServerProvider(final String caller, final Integer allocatedFileSystem, final String transferGroup,
+    public TransferServerProvider(final String caller, final Integer allocatedFileSystem, final String groupName,
             final String destination, final Host primaryHost) throws TransferServerException, DataBaseException {
         final var dataBase = MASTER.getECpdsBase();
         // if no file system is allocated, checks if the transfer group is part of a
         // cluster to select a group accordingly
         var checkCluster = allocatedFileSystem == null;
-        if (transferGroup != null && primaryHost == null) {
-            // A transfer group was specified and we don't have a default primary host, so
-            // let's use it if we can!
-            group = dataBase.getTransferGroup(transferGroup);
+        if (isNotEmpty(groupName) && primaryHost == null) {
+            // A transfer group name was specified and we don't have a default primary host,
+            // so let's use it if we can!
+            group = dataBase.getTransferGroupObject(groupName);
             if (group == null) {
-                throw new TransferServerException("TransferGroup " + transferGroup + " not found");
+                throw new TransferServerException("TransferGroup " + groupName + " not found");
             }
             if (!groupIsAvailable(group)) {
                 // The group provided is not available so force the checking of the
                 // cluster and let's hope that another group from this cluster
                 // is available!
-                _log.warn("Force cluster checking as {} is not available", transferGroup);
+                _log.warn("Force cluster checking as {} is not available", groupName);
                 checkCluster = true;
             }
         } else {
-            // There was no transfer group specified so we have to find one! Either one was
-            // provided, or we look for the dissemination ones attached to this destination!
+            // There was no transfer group name specified or a primary host was specified,
+            // so we have to find it! Either one was provided, or we look from the
+            // dissemination hosts attached to this destination!
             final var hosts = primaryHost != null ? new Host[] { primaryHost }
                     : dataBase.getDestinationHost(destination, HostOption.DISSEMINATION);
             if (hosts.length == 0) {
@@ -459,18 +463,18 @@ public final class TransferServerProvider {
                 if ((group = dataBase.getDestination(destination).getTransferGroup()) == null) {
                     // There is no default transfer group for this Destination
                     // so let's take the default value from the configuration!
-                    final var defaultGroup = Cnf.at("Server", "defaultTransferGroup");
-                    if (defaultGroup == null) {
-                        throw new TransferServerException("No host(s) defined for " + destination);
+                    final var defaultGroupName = Cnf.at("Server", "defaultTransferGroup");
+                    if (isEmpty(defaultGroupName)) {
+                        throw new TransferServerException("No dissemination host(s) defined for " + destination);
                     }
-                    group = dataBase.getTransferGroup(defaultGroup);
+                    group = dataBase.getTransferGroupObject(defaultGroupName);
                     if (group == null) {
-                        throw new TransferServerException("Default TransferGroup " + defaultGroup + " not found");
+                        throw new TransferServerException("Default TransferGroup " + defaultGroupName + " not found");
                     }
                 }
             } else {
-                // We have some hosts defined so we should be able to find a
-                // transfer group from the primary host!
+                // We have some hosts defined so we should be able to find a transfer group from
+                // the primary host!
                 final var primary = hosts[0];
                 group = primary.getTransferGroup();
                 // If no TransferGroup is defined then we can not proceed!
@@ -481,7 +485,7 @@ public final class TransferServerProvider {
                 try {
                     final var setup = HOST_ECPDS.getECtransSetup(primary.getData());
                     final var moverList = setup.getString(ECtransOptions.HOST_ECPDS_MOVER_LIST_FOR_PROCESSING);
-                    if (!moverList.isEmpty()) {
+                    if (isNotEmpty(moverList)) {
                         // Get one of the mandatory mover!
                         final var server = TransferScheduler.getTransferServerName(setup.getBoolean(HOST_ECTRANS_DEBUG),
                                 group.getName(), null, moverList);
@@ -507,11 +511,7 @@ public final class TransferServerProvider {
             // See if the Transfer Group we found is part of a Cluster and if
             // this is the case then let's pick up a random TransferGroup from
             // the Cluster according to the weight
-            final var clusterName = group.getClusterName();
-            if (isNotEmpty(clusterName) && group.getClusterWeight() != null) {
-                group = getRandomGroupFromCluster(group, dataBase.getTransferGroupArray());
-                _log.debug("Choosing TransferGroup {} from Cluster {}", group.getName(), clusterName);
-            }
+            group = tryClusterFallback(group, dataBase);
         }
         // This shouldn't happen but let's check if the TransferGroup is available
         // just in case!
@@ -605,10 +605,11 @@ public final class TransferServerProvider {
      * {@link #updateGroupUsage(TransferGroup, long[], long[])} to refresh usage statistics.
      */
     private static class WeightedAllocator {
-        private static final ConcurrentHashMap<String, SecureRandom> RNGS = new ConcurrentHashMap<>();
+        private static final ConcurrentHashMap<String, SplittableRandom> RNGS = new ConcurrentHashMap<>();
         private static final ConcurrentHashMap<String, GroupStats> GROUPS = new ConcurrentHashMap<>();
         private static final long MIN_WEIGHT = 1L;
-        private static final double EPSILON_RATIO = 0.01; // 1% tolerance for 'roughly equal' weights
+        // Acceptable relative imbalance between volumes (coefficient of variation)
+        private static final double CV_THRESHOLD = Cnf.at("TransferServerProvider", "cvThreshold", 0.05d);
         private static final ScheduledExecutorService GROUP_USAGE_UPDATER = Executors
                 .newSingleThreadScheduledExecutor(r -> {
                     final var t = new Thread(r, "GroupUsageUpdater");
@@ -627,16 +628,17 @@ public final class TransferServerProvider {
             long[] prefixSums;
             final Object lock = new Object();
 
-            GroupStats(final int volumeCount, final long maxCapacityPerVolume) {
-                volumes = new VolumeStats[volumeCount];
-                weights = new LongAdder[volumeCount];
-                prefixSums = new long[volumeCount];
-                for (var i = 0; i < volumeCount; i++) {
-                    volumes[i] = new VolumeStats(maxCapacityPerVolume);
+            GroupStats(final long[] used, final long[] max) {
+                volumes = new VolumeStats[used.length];
+                weights = new LongAdder[used.length];
+                prefixSums = new long[used.length];
+                for (var i = 0; i < used.length; i++) {
+                    volumes[i] = new VolumeStats(max[i]);
+                    volumes[i].setLoad(used[i]);
                     weights[i] = new LongAdder();
-                    weights[i].add(maxCapacityPerVolume);
-                    prefixSums[i] = (i == 0) ? weights[i].sum() : prefixSums[i - 1] + weights[i].sum();
+                    weights[i].add(Math.max(MIN_WEIGHT, volumes[i].freeSpace()));
                 }
+                rebuildPrefix();
             }
 
             void rebuildPrefix() {
@@ -668,21 +670,6 @@ public final class TransferServerProvider {
             }
         }
 
-        /** Initialise a new group */
-        private static GroupStats initializeGroup(final long[] used, final long[] max) {
-            final var gs = new GroupStats(used.length, 0);
-            synchronized (gs.lock) {
-                for (var i = 0; i < used.length; i++) {
-                    gs.volumes[i] = new VolumeStats(max[i]);
-                    gs.volumes[i].setLoad(used[i]);
-                    gs.weights[i].reset();
-                    gs.weights[i].add(Math.max(MIN_WEIGHT, gs.volumes[i].freeSpace()));
-                }
-                gs.rebuildPrefix();
-            }
-            return gs;
-        }
-
         /**
          * Update the usage for a transfer group, registering it if necessary.
          */
@@ -694,7 +681,7 @@ public final class TransferServerProvider {
             }
             GROUPS.compute(group.getName(), (_, gs) -> {
                 if (gs == null) {
-                    return initializeGroup(usedPerVolume, maxCapacityPerVolume);
+                    return new GroupStats(usedPerVolume, maxCapacityPerVolume);
                 } else {
                     updateGroupVolumes(gs, usedPerVolume);
                     return gs;
@@ -736,32 +723,33 @@ public final class TransferServerProvider {
                         final var groupName = group.getName();
                         try {
                             // Volume index used for sorting movers; typically matches allocated filesystem
-                            final var volumeIndex = 0;
-                            final var result = MASTER.computeVolumeUsageAndSortedMovers(group, volumeIndex);
-                            if (result == null || result.aggregatedUsage == null
-                                    || result.aggregatedUsage.length != 2) {
-                                _log.warn("Invalid volume usage result for group {}", groupName);
-                                continue;
-                            }
-                            final var volumeCount = group.getVolumeCount();
-                            final var used = result.aggregatedUsage[0];
-                            final var capacity = result.aggregatedUsage[1];
-                            if (used.length != volumeCount || capacity.length != volumeCount) {
-                                _log.warn("Volume usage size mismatch for group {}", groupName);
-                                continue;
-                            }
-                            // Cache the full result (including mover ordering)
-                            VOLUME_USAGE_CACHE.put(groupName + ":" + volumeIndex, result);
-                            // Update weighted allocator
-                            updateGroupUsage(group, used, capacity);
-                            if (isDebugEnabled()) {
-                                final var usedSum = Arrays.stream(used).sum();
-                                final var totalSum = Arrays.stream(capacity).sum();
-                                final var percentUsed = (totalSum > 0) ? (usedSum * 100.0 / totalSum) : 0.0;
-                                _log.debug("Group {} usage updated: used={}, total={}, used%={}, movers={}", groupName,
-                                        Arrays.toString(used), Arrays.toString(capacity),
-                                        String.format("%.2f%%", percentUsed),
-                                        Arrays.toString(result.moversSortedByUsage));
+                            for (var volumeIndex = 0; volumeIndex < group.getVolumeCount(); volumeIndex++) {
+                                final var result = MASTER.computeVolumeUsageAndSortedMovers(group, volumeIndex);
+                                if (result == null || result.aggregatedUsage == null
+                                        || result.aggregatedUsage.length != 2) {
+                                    _log.warn("Invalid volume usage result for group {}", groupName);
+                                    continue;
+                                }
+                                final var volumeCount = group.getVolumeCount();
+                                final var used = result.aggregatedUsage[0];
+                                final var capacity = result.aggregatedUsage[1];
+                                if (used.length != volumeCount || capacity.length != volumeCount) {
+                                    _log.warn("Volume usage size mismatch for group {}", groupName);
+                                    continue;
+                                }
+                                // Cache the full result (including mover ordering)
+                                VOLUME_USAGE_CACHE.put(groupName + ":" + volumeIndex, result);
+                                // Update weighted allocator
+                                updateGroupUsage(group, used, capacity);
+                                if (isDebugEnabled()) {
+                                    final var usedSum = Arrays.stream(used).sum();
+                                    final var totalSum = Arrays.stream(capacity).sum();
+                                    final var percentUsed = (totalSum > 0) ? (usedSum * 100.0 / totalSum) : 0.0;
+                                    _log.debug("Group {} usage updated: used={}, total={}, used%={}, movers={}",
+                                            groupName, Arrays.toString(used), Arrays.toString(capacity),
+                                            String.format("%.2f%%", percentUsed),
+                                            Arrays.toString(result.moversSortedByUsage));
+                                }
                             }
                         } catch (final Throwable e) {
                             _log.warn("Error updating usage for group {}", groupName, e);
@@ -776,7 +764,7 @@ public final class TransferServerProvider {
         /** Allocate a volume index for a group */
         public static int allocate(final TransferGroup group) {
             final var groupName = group.getName();
-            final var random = RNGS.computeIfAbsent(groupName, _ -> new SecureRandom());
+            final var random = RNGS.computeIfAbsent(groupName, g -> new SplittableRandom(g.hashCode()));
             final var gs = GROUPS.get(groupName);
             if (gs == null) {
                 if (isDebugEnabled())
@@ -791,25 +779,44 @@ public final class TransferServerProvider {
                 totalWeight = prefix[prefix.length - 1];
                 weights = Arrays.stream(gs.weights).mapToLong(LongAdder::sum).toArray();
             }
-            final var minWeight = Arrays.stream(weights).min().orElse(0);
-            final var maxWeight = Arrays.stream(weights).max().orElse(0);
-            final var epsilon = Math.max(1, maxWeight * EPSILON_RATIO);
-            final var roughlyEqual = (maxWeight - minWeight) <= epsilon;
-            if (roughlyEqual) {
-                final List<Integer> candidates = new ArrayList<>();
-                for (var i = 0; i < weights.length; i++) {
-                    if (Math.abs(weights[i] - maxWeight) <= epsilon) {
-                        candidates.add(i);
-                    }
-                }
-                final int chosen = candidates.get(random.nextInt(candidates.size()));
+            final var n = weights.length;
+            // Fast path
+            if (n <= 1) {
+                return 0;
+            }
+            // CV-based "roughly equal" detection
+            var sum = 0L;
+            for (final long w : weights) {
+                sum += w;
+            }
+            // All volumes empty: uniform random
+            if (sum == 0) {
+                final var chosen = random.nextInt(n);
                 if (isDebugEnabled()) {
-                    _log.debug(
-                            "Weights roughly equal for group {} (max={}, min={}, epsilon={}). Randomly selected index {} among {} candidates.",
-                            groupName, maxWeight, minWeight, epsilon, chosen, candidates.size());
+                    _log.debug("All weights zero for group {} -> randomly selected index {}", groupName, chosen);
                 }
                 return chosen;
             }
+            final var mean = (double) sum / n;
+            var variance = 0.0;
+            for (final long w : weights) {
+                final var d = w - mean;
+                variance += d * d;
+            }
+            variance /= n;
+            final var stddev = Math.sqrt(variance);
+            final var cv = stddev / mean;
+            if (cv <= CV_THRESHOLD) {
+                // Roughly equal: random among all volumes
+                final var chosen = random.nextInt(n);
+                if (isDebugEnabled()) {
+                    _log.debug(
+                            "Weights roughly equal for group {} (mean={}, stddev={}, cv={}). Randomly selected index {}.",
+                            groupName, mean, stddev, cv, chosen);
+                }
+                return chosen;
+            }
+            // Weighted allocation
             final var r = (long) (random.nextDouble() * totalWeight);
             // Binary search over prefix sums
             var low = 0;
