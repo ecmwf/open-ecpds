@@ -134,6 +134,9 @@ When listing remote files, this parameter specifies the time zone identifier use
 ### acquisition.shortMonthNames
 When listing remote files, this parameter represents a string containing the short names of the months. It provides an alternative way for the server to indicate month names in abbreviated form.
 
+### acquisition.skipPostRetrievalSizeCheckPattern
+When retrieving a file, a check is performed on the size of the remote file to ensure it matches the size recorded during discovery. In case of a mismatch, the default behaviour is to fail the data retrieval. However, in some situations, we may know that a remote site could have inconsistencies between the initial and current file sizes. This option allows specifying a regex pattern to select files for which the size check should be skipped and ignored.
+
 ### acquisition.standby
 When a new file is discovered and registered as a data transfer, allow specifying if the data transfer should be in standby mode for the dissemination process.
 
@@ -753,9 +756,6 @@ These options help fine-tune the http transfer module and are accessible via the
 
 ### http.allowCircularRedirects
 If enabled, permits the HTTP client to automatically follow redirects even if they form a circular loop, where a request redirects to a URL that has previously been visited in the same redirect chain.
-
-### http.alternativePath
-When parsing the listing output, it allows the addition of a path to the found filename. This can be useful if the HTTP server provides only the filename without its associated path. However, this suppose the path is known in advance.
 
 ### http.attribute
 Specify the anchor element within the parsed HTML document to use for extracting filenames. For instance, using "href" selects all elements with an "href" attribute. By default, it retrieves the text content of each element, excluding HTML tags, while including the textual content of its descendant elements.
