@@ -814,8 +814,6 @@ public final class TransferScheduler extends MBeanScheduler {
     private static Host[] _getHostsForSource(final DataTransfer transfer, final Host hostForSource)
             throws DataBaseException {
         final var dataFile = transfer.getDataFile();
-        final var source = dataFile.getTransferGroup();
-        final var sourceGroup = source.getName();
         final var server = transfer.getTransferServer();
         final var backupHost = transfer.getBackupHost();
         final List<Host> hostsForSource = new ArrayList<>();
@@ -828,7 +826,7 @@ public final class TransferScheduler extends MBeanScheduler {
             if (targetHost != null) {
                 final var setup = HOST_ECPDS.getECtransSetup(targetHost.getData());
                 final var moverList = setup.getString(HOST_ECPDS_MOVER_LIST_FOR_SOURCE);
-                if (moverList.length() > 0) {
+                if (!moverList.isEmpty()) {
                     // Take one of the mandatory mover!
                     final var mandatoryServer = getTransferServerName(setup.getBoolean(HOST_ECTRANS_DEBUG),
                             targetHost.getTransferGroupName(), server, moverList);
@@ -859,14 +857,15 @@ public final class TransferScheduler extends MBeanScheduler {
         } catch (final Throwable t) {
             _log.warn("Could not find alternative TransferServer name" + " (use default: " + moverName + ")", t);
         }
-        if (!targetGroup.equals(sourceGroup)) {
+        final var sourceGroup = dataFile.getTransferGroup();
+        if (sourceGroup != null && !targetGroup.equals(sourceGroup.getName())) {
             // If the file is transferred across transfer groups then let's
             // add the source hosts of the transfer servers in the original
             // transfer group for retrieval!
-            _log.debug("Tranferring DataTransfer " + transfer.getId() + " across TransferGroups (" + sourceGroup
-                    + " -> " + targetGroup + ")");
+            _log.debug("Tranferring DataTransfer " + transfer.getId() + " across TransferGroups ("
+                    + sourceGroup.getName() + " -> " + targetGroup + ")");
             for (final TransferServer transferServer : TransferServerProvider
-                    .getTransferServersByLeastActivity("TransferScheduler.put", source)) {
+                    .getTransferServersByLeastActivity("TransferScheduler.put", sourceGroup)) {
                 final var host = transferServer.getHostForReplication();
                 if (host != null && host.getActive()) {
                     hostsForSource.add(host);
