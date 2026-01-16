@@ -74,7 +74,7 @@ public class DataFilePath {
                     + Format.formatValue(dataFile.getId(), 10) + (originalName.length() > 245 ? "data" : originalName)
                     + (instance != null ? "_" + instance.intValue() : "");
         } catch (final NullPointerException e) {
-            _log.warn("Cannot process path for DataFile: {}", dataFile);
+            _log.warn("Cannot process path for DataFile: {}", dataFile, e);
             throw e;
         }
     }
