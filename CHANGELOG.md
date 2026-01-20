@@ -4,7 +4,7 @@ This document summarizes the most significant changes in OpenECPDS across all re
 
 ---
 
-## open-ecpds 7.3.5-15122026 (2026-12-15)
+## open-ecpds 7.3.5-15012026 (2026-01-15)
 
 - Defer transfer group and filesystem allocation until push/pull for new data files to better match actual disk usage.
 - Consolidate all transfer-server methods for data file allocation and processing into a common class for maintainability.
