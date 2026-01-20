@@ -1048,3 +1048,5 @@ make get-licenses
 ```
 
 If successful, the licenses will be available in the `target/generated-resources` directory. These licenses are also included in the root directory of the container images, along with the `AUTHORS`, `LICENSE.txt`, `NOTICE` and `VERSION` files.
+
+Detailed release notes and version history are available in the [CHANGELOG](CHANGELOG.md).
