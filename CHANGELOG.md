@@ -1,6 +1,6 @@
 # OpenECPDS Release Notes
 
-This document summarizes the most significant changes in OpenECPDS across all releases. The release notes are listed in **descending order**, with the most recent changes first.
+This document summarizes the most significant changes in OpenECPDS across all major releases. The release notes are listed in **descending order**, with the most recent changes first.
 
 ---
 
