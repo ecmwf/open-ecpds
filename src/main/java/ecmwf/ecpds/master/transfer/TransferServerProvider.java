@@ -26,8 +26,6 @@ package ecmwf.ecpds.master.transfer;
  * @since 2024-07-01
  */
 
-import static ecmwf.common.ectrans.ECtransGroups.Module.HOST_ECPDS;
-import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_DEBUG;
 import static ecmwf.common.text.Util.isEmpty;
 import static ecmwf.common.text.Util.isNotEmpty;
 
@@ -49,12 +47,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import ecmwf.common.database.DataBaseException;
-import ecmwf.common.database.ECpdsBase;
 import ecmwf.common.database.Host;
 import ecmwf.common.database.TransferGroup;
 import ecmwf.common.database.TransferServer;
 import ecmwf.common.ecaccess.StarterServer;
-import ecmwf.common.ectrans.ECtransOptions;
 import ecmwf.common.technical.Cnf;
 import ecmwf.ecpds.master.MasterServer;
 
@@ -195,10 +191,16 @@ public final class TransferServerProvider {
      *
      * @throws DataBaseException
      *             if an error occurs while accessing the database
+     * @throws TransferServerException
      */
+    public static List<TransferServer> getTransferServersByLeastActivity(final String caller, final String destination,
+            final TransferGroup originalGroup) throws DataBaseException, TransferServerException {
+        return getTransferServersByLeastActivity(caller, destination, null, originalGroup, null);
+    }
+
     public static List<TransferServer> getTransferServersByLeastActivity(final String caller,
-            final TransferGroup originalGroup) throws DataBaseException {
-        return getTransferServersByLeastActivity(caller, null, originalGroup, null);
+            final TransferGroup originalGroup) throws DataBaseException, TransferServerException {
+        return getTransferServersByLeastActivity(caller, null, originalGroup);
     }
 
     /**
@@ -231,20 +233,22 @@ public final class TransferServerProvider {
      *
      * @throws DataBaseException
      *             if no active TransferServer can be found
+     * @throws TransferServerException
      */
     @SuppressWarnings("null")
-    public static List<TransferServer> getTransferServersByLeastActivity(final String caller,
+    public static List<TransferServer> getTransferServersByLeastActivity(final String caller, final String destination,
             final TransferServer originalServer, final TransferGroup originalGroup, final Integer fileSystem)
-            throws DataBaseException {
+            throws DataBaseException, TransferServerException {
         final var dataBase = MASTER.getECpdsBase();
         final var fileSystemProvided = fileSystem != null && fileSystem >= 0;
-        // Resolve transfer group (with cluster fallback if needed)
-        var group = originalGroup;
+        // Resolve transfer group if not explicitly provided
+        var group = originalGroup != null ? originalGroup : resolveTransferGroup(null, destination, null);
+        // Resolve transfer group servers (with cluster fallback if needed)
         var groupName = group.getName();
         var declaredServers = dataBase.getTransferServers(groupName);
         if (declaredServers.length == 0) {
-            group = tryClusterFallback(group, dataBase);
-            groupName = group.getName(); // update after fallback
+            group = tryClusterFallback(group);
+            groupName = group.getName();
             declaredServers = dataBase.getTransferServers(groupName);
         }
         if (declaredServers.length == 0) {
@@ -298,14 +302,13 @@ public final class TransferServerProvider {
      *
      * @param group
      *            the original transfer group
-     * @param dataBase
-     *            the ECpds database used to retrieve all transfer groups
      *
      * @return a transfer group selected from the cluster, or the original group if no fallback is applicable
      */
-    private static TransferGroup tryClusterFallback(final TransferGroup group, final ECpdsBase dataBase) {
+    private static TransferGroup tryClusterFallback(final TransferGroup group) {
         final var clusterName = group.getClusterName();
         if (isNotEmpty(clusterName) && group.getClusterWeight() != null) {
+            final var dataBase = MASTER.getECpdsBase();
             final var selected = getRandomGroupFromCluster(group, dataBase.getTransferGroupArray());
             if (!selected.getName().equals(group.getName())) {
                 _log.debug("Choosing TransferGroup {} from Cluster {}", selected.getName(), clusterName);
@@ -433,101 +436,106 @@ public final class TransferServerProvider {
      */
     public TransferServerProvider(final String caller, final Integer allocatedFileSystem, final String groupName,
             final String destination, final Host primaryHost) throws TransferServerException, DataBaseException {
-        final var dataBase = MASTER.getECpdsBase();
-        // if no file system is allocated, checks if the transfer group is part of a
-        // cluster to select a group accordingly
-        var checkCluster = allocatedFileSystem == null;
-        if (isNotEmpty(groupName) && primaryHost == null) {
-            // A transfer group name was specified and we don't have a default primary host,
-            // so let's use it if we can!
-            group = dataBase.getTransferGroupObject(groupName);
-            if (group == null) {
-                throw new TransferServerException("TransferGroup " + groupName + " not found");
-            }
-            if (!groupIsAvailable(group)) {
-                // The group provided is not available so force the checking of the
-                // cluster and let's hope that another group from this cluster
-                // is available!
-                _log.warn("Force cluster checking as {} is not available", groupName);
-                checkCluster = true;
-            }
-        } else {
-            // There was no transfer group name specified or a primary host was specified,
-            // so we have to find it! Either one was provided, or we look from the
-            // dissemination hosts attached to this destination!
-            final var hosts = primaryHost != null ? new Host[] { primaryHost }
-                    : dataBase.getDestinationHost(destination, HostOption.DISSEMINATION);
-            if (hosts.length == 0) {
-                // We have no hosts defined for this Destination so let's get
-                // the default transfer group from the Destination!
-                if ((group = dataBase.getDestination(destination).getTransferGroup()) == null) {
-                    // There is no default transfer group for this Destination
-                    // so let's take the default value from the configuration!
-                    final var defaultGroupName = Cnf.at("Server", "defaultTransferGroup");
-                    if (isEmpty(defaultGroupName)) {
-                        throw new TransferServerException("No dissemination host(s) defined for " + destination);
-                    }
-                    group = dataBase.getTransferGroupObject(defaultGroupName);
-                    if (group == null) {
-                        throw new TransferServerException("Default TransferGroup " + defaultGroupName + " not found");
-                    }
-                }
-            } else {
-                // We have some hosts defined so we should be able to find a transfer group from
-                // the primary host!
-                final var primary = hosts[0];
-                group = primary.getTransferGroup();
-                // If no TransferGroup is defined then we can not proceed!
-                if (group == null) {
-                    throw new TransferServerException("No TransferGroup defined for Host " + primary.getNickname());
-                }
-                // Is there a request to use a specific data mover?
-                try {
-                    final var setup = HOST_ECPDS.getECtransSetup(primary.getData());
-                    final var moverList = setup.getString(ECtransOptions.HOST_ECPDS_MOVER_LIST_FOR_PROCESSING);
-                    if (isNotEmpty(moverList)) {
-                        // Get one of the mandatory mover!
-                        final var server = TransferScheduler.getTransferServerName(setup.getBoolean(HOST_ECTRANS_DEBUG),
-                                group.getName(), null, moverList);
-                        if (server != null) {
-                            // We know the group and the server are active and
-                            // connected (checked in getTransferServerName)!
-                            group = server.getTransferGroup();
-                            fileSystem = allocatedFileSystem != null ? allocatedFileSystem
-                                    : WeightedAllocator.allocate(group);
-                            servers.add(server);
-                            _log.debug("Force usage of {} in {}", server.getName(), group.getName());
-                            // No more processing required!
-                            return;
-                        }
-                    }
-                } catch (final Throwable t) {
-                    _log.warn("Could not find mandatory TransferServer", t);
-                }
-            }
-            checkCluster = true;
-        }
+        group = resolveTransferGroup(groupName, destination, primaryHost);
+        final var checkCluster = allocatedFileSystem == null && !groupIsAvailable(group);
         if (checkCluster) {
-            // See if the Transfer Group we found is part of a Cluster and if
-            // this is the case then let's pick up a random TransferGroup from
-            // the Cluster according to the weight
-            group = tryClusterFallback(group, dataBase);
+            _log.warn("Force cluster checking as {} is not available", group.getName());
+            group = tryClusterFallback(group);
         }
-        // This shouldn't happen but let's check if the TransferGroup is available
-        // just in case!
         if (!groupIsAvailable(group)) {
             throw new TransferServerException("TransferGroup " + group.getName() + " not available");
         }
-        // Select one of the file system available for this group!
         fileSystem = allocatedFileSystem != null ? allocatedFileSystem : WeightedAllocator.allocate(group);
-        // Now gets the list of active TransferServers for the selected
-        // TransferGroup
-        servers.addAll(getTransferServersByLeastActivity("TransferServerProvider." + caller, null, group, fileSystem));
-        // And check if we have something? (all the TransferServers might be
-        // down)
+        servers.addAll(getTransferServersByLeastActivity("TransferServerProvider." + caller, destination, null, group,
+                fileSystem));
         if (servers.isEmpty()) {
             throw new TransferServerException("No TransferServer(s) available for TransferGroup " + group.getName());
         }
+    }
+
+    /**
+     * Resolves a {@link TransferGroup} to use when no explicit transfer group has been defined.
+     * <p>
+     * This method determines the most appropriate transfer group based on the provided context, including an optional
+     * group name, destination, and primary host. It applies the same resolution logic as used by
+     * {@link TransferServerProvider}, including:
+     * <ul>
+     * <li>Using an explicitly provided transfer group name if available</li>
+     * <li>Deriving the transfer group from a primary host, if specified</li>
+     * <li>Looking up dissemination hosts associated with the destination</li>
+     * <li>Falling back to the destination’s default transfer group</li>
+     * <li>Using the globally configured default transfer group as a last resort</li>
+     * </ul>
+     * <p>
+     * If the resolved transfer group is part of a cluster and cluster checking is enabled, a suitable group may be
+     * selected from the cluster according to its configured weight.
+     * <p>
+     * The availability of the resolved transfer group is verified before it is returned.
+     *
+     * @param dataBase
+     *            the database instance used to retrieve transfer group, destination, and host information
+     * @param groupName
+     *            the name of the transfer group to use, or {@code null} to auto-select
+     * @param destination
+     *            the destination for which a transfer group should be resolved
+     * @param primaryHost
+     *            an optional primary host that forces selection of its associated transfer group
+     * @param checkCluster
+     *            whether cluster-based fallback should be applied when applicable
+     *
+     * @return the resolved and available {@link TransferGroup}
+     *
+     * @throws TransferServerException
+     *             if no suitable transfer group can be found, if the group is unavailable, or if required configuration
+     *             is missing
+     * @throws DataBaseException
+     *             if an error occurs while accessing the database
+     */
+    private static TransferGroup resolveTransferGroup(final String groupName, final String destination,
+            final Host primaryHost) throws TransferServerException, DataBaseException {
+        final var dataBase = MASTER.getECpdsBase();
+        // Case 1: explicit group name and no primary host
+        if (isNotEmpty(groupName) && primaryHost == null) {
+            final var group = dataBase.getTransferGroupObject(groupName);
+            if (group == null) {
+                throw new TransferServerException("TransferGroup " + groupName + " not found");
+            }
+            return group;
+        }
+        // Case 2: primary host explicitly provided
+        if (primaryHost != null) {
+            final var group = primaryHost.getTransferGroup();
+            if (group == null) {
+                throw new TransferServerException("No TransferGroup defined for Host " + primaryHost.getNickname());
+            }
+            return group;
+        }
+        // Case 3: lookup from destination dissemination hosts
+        final var hosts = dataBase.getDestinationHost(destination, HostOption.DISSEMINATION);
+        if (hosts.length > 0) {
+            final var primary = hosts[0];
+            final var group = primary.getTransferGroup();
+            if (group == null) {
+                throw new TransferServerException("No TransferGroup defined for Host " + primary.getNickname());
+            }
+            return group;
+        }
+        // Case 4: destination default group
+        final var destinationObj = dataBase.getDestination(destination);
+        var group = destinationObj.getTransferGroup();
+        if (group != null) {
+            return group;
+        }
+        // Case 5: global default group
+        final var defaultGroupName = Cnf.at("Server", "defaultTransferGroup");
+        if (isEmpty(defaultGroupName)) {
+            throw new TransferServerException("No dissemination host(s) defined for " + destination);
+        }
+        group = dataBase.getTransferGroupObject(defaultGroupName);
+        if (group == null) {
+            throw new TransferServerException("Default TransferGroup " + defaultGroupName + " not found");
+        }
+        return group;
     }
 
     /**

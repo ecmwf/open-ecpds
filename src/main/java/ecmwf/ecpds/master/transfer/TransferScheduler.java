@@ -810,9 +810,10 @@ public final class TransferScheduler extends MBeanScheduler {
      *
      * @throws DataBaseException
      *             the data base exception
+     * @throws TransferServerException
      */
     private static Host[] _getHostsForSource(final DataTransfer transfer, final Host hostForSource)
-            throws DataBaseException {
+            throws DataBaseException, TransferServerException {
         final var dataFile = transfer.getDataFile();
         final var server = transfer.getTransferServer();
         final var backupHost = transfer.getBackupHost();
@@ -843,7 +844,8 @@ public final class TransferScheduler extends MBeanScheduler {
                         // so we have to provide the list of other
                         // TransferServers in the TransferGroup!
                         for (final TransferServer sourceServer : TransferServerProvider
-                                .getTransferServersByLeastActivity("TransferScheduler.put", group)) {
+                                .getTransferServersByLeastActivity("TransferScheduler.put",
+                                        transfer.getDestinationName(), group)) {
                             if (!sourceServer.getName().equals(moverName)) {
                                 final var host = sourceServer.getHostForReplication();
                                 if (host != null && host.getActive()) {
@@ -864,8 +866,8 @@ public final class TransferScheduler extends MBeanScheduler {
             // transfer group for retrieval!
             _log.debug("Tranferring DataTransfer " + transfer.getId() + " across TransferGroups ("
                     + sourceGroup.getName() + " -> " + targetGroup + ")");
-            for (final TransferServer transferServer : TransferServerProvider
-                    .getTransferServersByLeastActivity("TransferScheduler.put", sourceGroup)) {
+            for (final TransferServer transferServer : TransferServerProvider.getTransferServersByLeastActivity(
+                    "TransferScheduler.put", transfer.getDestinationName(), sourceGroup)) {
                 final var host = transferServer.getHostForReplication();
                 if (host != null && host.getActive()) {
                     hostsForSource.add(host);
@@ -1024,16 +1026,17 @@ public final class TransferScheduler extends MBeanScheduler {
      *
      * @return the proxy socket
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
-     * @throws ecmwf.ecpds.master.MasterException
+     * @throws MasterException
      *             the master exception
+     * @throws TransferServerException
      */
     public static ProxySocket get(final DataTransfer transfer, final long remotePosn, final long length)
-            throws DataBaseException, MasterException {
+            throws DataBaseException, MasterException, TransferServerException {
         final var dataFile = transfer.getDataFile();
         final var servers = TransferServerProvider.getTransferServersByLeastActivity("TransferScheduler.get",
-                transfer.getTransferServer(), dataFile.getTransferGroup(), null);
+                transfer.getDestinationName(), transfer.getTransferServer(), dataFile.getTransferGroup(), null);
         final var count = servers.size();
         MasterException exception = null;
         for (var i = 0; i < count; i++) {
@@ -1079,9 +1082,10 @@ public final class TransferScheduler extends MBeanScheduler {
      *             the master exception
      * @throws DataBaseException
      *             the data base exception
+     * @throws TransferServerException
      */
     private static ProxySocket _get(final Host hostForSource, final DataTransfer transfer, final long remotePosn,
-            final long length) throws MasterException, DataBaseException {
+            final long length) throws MasterException, DataBaseException, TransferServerException {
         // Get the list of hosts for source
         final var hostsForSource = _getHostsForSource(transfer, hostForSource);
         // The Data Mover might have been changed when getting the hosts for source
@@ -2813,10 +2817,17 @@ public final class TransferScheduler extends MBeanScheduler {
          *
          * @return the transfer servers
          *
+         * @param transfer
+         *            the transfer
+         *
+         * @return the transfer servers
+         *
          * @throws DataBaseException
          *             the data base exception
+         * @throws TransferServerException
          */
-        TransferServer[] getTransferServers(final DataTransfer transfer) throws DataBaseException {
+        TransferServer[] getTransferServers(final DataTransfer transfer)
+                throws DataBaseException, TransferServerException {
             // What's the TransferGroup for the current Host?
             var targetGroup = getHost().getTransferGroup();
             // What's the TransferGroup for the DataFile?
@@ -2836,7 +2847,7 @@ public final class TransferScheduler extends MBeanScheduler {
             }
             // Get the list of TransferServers for the selected TargetGroup
             final var servers = TransferServerProvider.getTransferServersByLeastActivity("DestinationThread",
-                    targetGroup);
+                    transfer.getDestinationName(), targetGroup);
             final var retries = transfer.getRequeueCount();
             if (retries == 0 && transfer.getFailedTime() == null) {
                 // This is the first time we are trying to send this
