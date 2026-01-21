@@ -75,6 +75,7 @@ import ecmwf.ecpds.master.transfer.AliasesParser;
 import ecmwf.ecpds.master.transfer.DestinationOption;
 import ecmwf.ecpds.master.transfer.StatusFactory;
 import ecmwf.ecpds.master.transfer.TransferScheduler;
+import ecmwf.ecpds.master.transfer.TransferServerProvider.TransferServerException;
 
 /**
  * The Class DataFileAccessImpl.
@@ -109,7 +110,7 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
     }
 
     /**
-     * Make sure the file is available and that we are allowed to display it: is the scheduled time over or is it asap?.
+     * Make sure the file is available?
      *
      * @param currentTransfer
      *            the current transfer
@@ -118,8 +119,7 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
      */
     private static boolean isAvailable(final DataTransfer currentTransfer) {
         final var file = currentTransfer.getDataFile();
-        return (currentTransfer.getAsap() || currentTransfer.getScheduledTime().before(new Date()))
-                && file.getDownloaded() && !currentTransfer.getDeleted() && !file.getDeleted()
+        return file.getDownloaded() && !currentTransfer.getDeleted() && !file.getDeleted()
                 && !StatusFactory.INIT.equals(currentTransfer.getStatusCode());
     }
 
@@ -407,6 +407,9 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
         } catch (final DataBaseException e) {
             _log.warn(source, e);
             throw new MasterException("DataBase error");
+        } catch (final TransferServerException e) {
+            _log.warn(source, e);
+            throw new MasterException("Master error");
         } catch (final MasterException e) {
             _log.warn(source, e);
             throw e;
