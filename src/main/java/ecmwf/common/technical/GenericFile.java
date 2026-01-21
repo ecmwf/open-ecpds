@@ -76,6 +76,13 @@ public abstract class GenericFile {
     }
 
     /**
+     * Whether the underlying filesystem supports POSIX unlink-while-open semantics
+     *
+     * @return true, if supported unlink while open
+     */
+    public abstract boolean supportsUnlinkWhileOpen();
+
+    /**
      * Exists.
      *
      * @return true, if successful

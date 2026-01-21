@@ -89,6 +89,49 @@ public final class RegularFile extends GenericFile {
     private final File underlyingFile;
 
     /**
+     * Whether the underlying filesystem supports POSIX unlink-while-open semantics.
+     */
+    private static final boolean SUPPORTS_UNLINK_WHILE_OPEN;
+
+    static {
+        var supported = false;
+        Path testDir = null;
+        Path testFile = null;
+        try {
+            // Ensure the test runs on the actual data filesystem
+            final var baseDir = Paths.get(Cnf.at("ECproxyPlugin", "repository", "/tmp")).toAbsolutePath();
+            testDir = Files.createTempDirectory(baseDir, ".fs-unlink-test-");
+            testFile = Files.createTempFile(testDir, "unlink-test", ".dat");
+            Files.writeString(testFile, "test");
+            try (var in = Files.newInputStream(testFile)) {
+                // Delete while file is still open
+                Files.delete(testFile);
+                // Try reading after deletion
+                supported = (in.read() != -1);
+            }
+            if (supported) {
+                _log.info("Filesystem supports unlink-while-open semantics");
+            } else {
+                _log.warn("Filesystem does NOT support unlink-while-open semantics. "
+                        + "Cleanup operations may interfere with active transfers.");
+            }
+        } catch (final Exception e) {
+            _log.warn("Failed to determine filesystem unlink-while-open behavior; " + "assuming unsupported", e);
+            supported = false;
+        } finally {
+            // Best-effort cleanup
+            try {
+                if (testFile != null)
+                    Files.deleteIfExists(testFile);
+                if (testDir != null)
+                    Files.deleteIfExists(testDir);
+            } catch (final IOException ignored) {
+            }
+        }
+        SUPPORTS_UNLINK_WHILE_OPEN = supported;
+    }
+
+    /**
      * Instantiates a new regular file.
      *
      * @param path
@@ -108,6 +151,19 @@ public final class RegularFile extends GenericFile {
      */
     RegularFile(final String parent, final String name) {
         underlyingFile = new File(parent, name);
+    }
+
+    /**
+     * Whether the underlying filesystem supports POSIX unlink-while-open semantics
+     *
+     * @param path
+     *            the path
+     *
+     * @return true, if supported unlink while open
+     */
+    @Override
+    public boolean supportsUnlinkWhileOpen() {
+        return SUPPORTS_UNLINK_WHILE_OPEN;
     }
 
     /**
@@ -359,7 +415,7 @@ public final class RegularFile extends GenericFile {
             for (final Path entry : stream) {
                 result.add(entry.getFileName().toString());
             }
-        } catch (IOException e) {
+        } catch (final IOException e) {
             // Swallow and continue execution
         }
         return result.toArray(String[]::new);

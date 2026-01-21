@@ -79,6 +79,16 @@ public abstract class GenericFileChecker extends GenericFile {
     }
 
     /**
+     * Whether the underlying filesystem supports POSIX unlink-while-open semantics
+     *
+     * @return true, if supported unlink while open
+     */
+    @Override
+    public boolean supportsUnlinkWhileOpen() {
+        return _file.supportsUnlinkWhileOpen();
+    }
+
+    /**
      * {@inheritDoc}
      *
      * Exists.
