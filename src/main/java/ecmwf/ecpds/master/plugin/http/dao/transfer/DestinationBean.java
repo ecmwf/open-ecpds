@@ -1616,9 +1616,9 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
                 }
             });
         } catch (final Exception e) {
-			log.warn("Problem getting download for transfer {} from destination '{}'", t.getId(), name, e);
-			throw new TransferException(
-					"Problem with destination '" + name + "' getting download for transfer " + t.getId(), e);
+            log.warn("Problem getting download for transfer {} from destination '{}'", t.getId(), name, e);
+            throw new TransferException(
+                    "Problem with destination '" + name + "' getting download for transfer " + t.getId(), e);
         }
     }
 
