@@ -258,6 +258,7 @@ import ecmwf.ecpds.master.transfer.TransferScheduler.DestinationThread;
 import ecmwf.ecpds.master.transfer.TransferScheduler.MonitoringThread;
 import ecmwf.ecpds.master.transfer.TransferScheduler.PurgeResult;
 import ecmwf.ecpds.master.transfer.TransferServerProvider;
+import ecmwf.ecpds.master.transfer.TransferServerProvider.TransferServerException;
 import ecmwf.ecpds.mover.MoverInterface;
 
 /**
@@ -1712,7 +1713,7 @@ public final class MasterServer extends ECaccessProvider
                         }
                         _log.debug("Processing DataTransfer-{} (count={})", dataTransfer.getId(), ++count);
                         var dataFile = dataTransfer.getDataFile();
-                        if (!dataFile.getDownloaded() || dataFile.getDeleted()
+                        if (dataFile.getFileSystem() == null || !dataFile.getDownloaded() || dataFile.getDeleted()
                                 || !includeStdby && StatusFactory.HOLD.equals(dataTransfer.getStatusCode())) {
                             continue;
                         }
@@ -1862,8 +1863,9 @@ public final class MasterServer extends ECaccessProvider
      *             the data base exception
      * @throws IOException
      *             Signals that an I/O exception has occurred.
+     * @throws TransferServerException
      */
-    public String getReport(final Host host) throws DataBaseException, IOException {
+    public String getReport(final Host host) throws DataBaseException, IOException, TransferServerException {
         final var hostName = host.getHost();
         if (hostName == null || hostName.isEmpty() || hostName.indexOf("$") != -1) {
             throw new IOException("Report not available for: " + hostName + " (name only resolved at runtime)");
@@ -6661,7 +6663,7 @@ public final class MasterServer extends ECaccessProvider
             for (final Host host : base.getHostsToCheck()) {
                 try {
                     check(host, false, false);
-                } catch (final MasterException | DataBaseException e) {
+                } catch (final MasterException | DataBaseException | TransferServerException e) {
                     _log.warn(e);
                 }
                 waitFor(5 * Timer.ONE_SECOND);
@@ -6685,9 +6687,10 @@ public final class MasterServer extends ECaccessProvider
          *             the data base exception
          * @throws MasterException
          *             the master exception
+         * @throws TransferServerException
          */
         public boolean check(final Host host, final boolean force, final boolean notify)
-                throws DataBaseException, MasterException {
+                throws DataBaseException, MasterException, TransferServerException {
             final var currentTime = System.currentTimeMillis();
             final var group = host.getTransferGroup();
             final var hostStats = host.getHostStats();

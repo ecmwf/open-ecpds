@@ -312,7 +312,6 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      *             the remote exception
      */
     @Override
-
     public long[][] computeVolumeUsage(final int volumeIndexMax) throws RemoteException {
         try {
             final var repository = GenericFile.getGenericFile(getRepository());
@@ -2141,7 +2140,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             }
             _log.debug("Download completed successfully");
             return dataFile;
-        } catch (Throwable t) {
+        } catch (final Throwable t) {
             throw Format.getRemoteException("DataMover=" + getRoot(), t);
         } finally {
             if (cookieSet) {
@@ -2269,6 +2268,13 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      */
     @Override
     public boolean del(final DataFile dataFile) throws RemoteException {
+        if (dataFile.getFileSystem() == null) {
+            // There is no file system allocated which means the file was not retrieved on
+            // the
+            // mover. We can just return true as the file do not need to be deleted anyway.
+            _log.debug("DataFile {} has no file instance, nothing to delete", dataFile.getId());
+            return true;
+        }
         final var cookieSet = ThreadService.setCookieIfNotAlreadySet(_getCookie(dataFile, "del"));
         try {
             GenericFile file = new FileChecker(GenericFile.getGenericFile(getRepository(), getPath(dataFile)));
@@ -2432,7 +2438,8 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             if (!dataFile.getDownloaded()) {
                 _log.warn("DataFile not yet imported: will use source hosts");
             }
-            GenericFile file = new FileChecker(GenericFile.getGenericFile(getRepository(), getPath(dataFile)));
+            GenericFile file = dataFile.getFileSystem() == null ? null
+                    : new FileChecker(GenericFile.getGenericFile(getRepository(), getPath(dataFile)));
             var size = dataFile.getSize();
             final var callBack = new MoverCallback(transfer, targetName);
             final var setup = HOST_ECTRANS.getECtransSetup(host.getData());
@@ -2447,29 +2454,36 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             var toFilter = StreamManagerImp.isFiltered(filter);
             var useFilteredFile = false;
             if (toFilter) {
-                // We have to compress, but maybe a compressed version of the file is available?
-                final var tmp1 = _getFilterGenericFile(file, StreamManagerImp.getExtension(filter).substring(1));
-                final var tmp = tmp1.exists() ? tmp1 : _getFilterGenericFile(file, filter);
-                if (tmp.canRead()) {
-                    // The compressed file exists!
-                    toFilter = false;
-                    if (setup.getBoolean(HOST_ECTRANS_CHECKFILTERSIZE) && tmp.length() >= size) {
-                        _log.info("DataFile {} SMALLER than compressed file: use original file", dataFile.getId());
+                if (file != null) {
+                    // Try to reuse an existing compressed file
+                    final var tmp1 = _getFilterGenericFile(file, StreamManagerImp.getExtension(filter).substring(1));
+                    final var tmp = tmp1.exists() ? tmp1 : _getFilterGenericFile(file, filter);
+                    if (tmp.canRead()) {
+                        // The compressed file exists!
+                        toFilter = false;
+                        if (setup.getBoolean(HOST_ECTRANS_CHECKFILTERSIZE) && tmp.length() >= size) {
+                            _log.info("DataFile {} SMALLER than compressed file: use original file", dataFile.getId());
+                        } else {
+                            _log.info("DataFile {}: use {} file", dataFile.getId(), filter);
+                            _setECtransSetup(callBack, dataFile, filter, size = tmp.length());
+                            useFilteredFile = true;
+                            file = tmp;
+                        }
                     } else {
-                        _log.info("DataFile {}: use {} file", dataFile.getId(), filter);
-                        _setECtransSetup(callBack, dataFile, filter, size = tmp.length());
-                        useFilteredFile = true;
-                        file = tmp;
+                        // Compress on the fly (filesystem present but no usable compressed file)
+                        _log.warn("DataFile {}: {} file not found/readable (will filter while transferring) - {}",
+                                dataFile.getId(), filter, tmp.getAbsolutePath());
+                        _setECtransSetup(callBack, dataFile, filter, size);
                     }
                 } else {
-                    // We will have to compress on the fly!
-                    _log.warn("DataFile {}: {} file not found/readable (will filter while transfering) - {}",
-                            dataFile.getId(), filter, tmp.getAbsolutePath());
+                    // Compress on the fly (no filesystem-backed file)
+                    _log.warn("DataFile {}: {} file not on filesystem (will filter while transferring)",
+                            dataFile.getId(), filter);
                     _setECtransSetup(callBack, dataFile, filter, size);
                 }
             }
             var inputFilter = StreamManager.NONE;
-            if (!useFilteredFile && !file.exists()) {
+            if (file != null && !useFilteredFile && !file.exists()) {
                 // The original Data File is not there! e.g. we could be on a remote data mover
                 // and the file might only exists in one of its compressed form?
                 var found = false;
@@ -2699,7 +2713,8 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             final long length) throws RemoteException {
         final var cookieSet = ThreadService.setCookieIfNotAlreadySet(_getCookie(dataFile, "get"));
         try {
-            final GenericFile file = new FileChecker(GenericFile.getGenericFile(getRepository(), getPath(dataFile)));
+            final GenericFile file = dataFile.getFileSystem() == null ? null
+                    : new FileChecker(GenericFile.getGenericFile(getRepository(), getPath(dataFile)));
             final var descriptor = new FileDescriptor(hostsForSource, dataFile, file, dataFile.getSize(), remotePosn,
                     length, null, null);
             final var ticket = getTicketRepository().add(new FileDescriptorTicket(descriptor));
@@ -3599,10 +3614,24 @@ public final class MoverServer extends StarterServer implements MoverInterface {
         private FileDescriptor(final Host[] hostsForSource, final DataFile dataFile, final GenericFile file,
                 final long size, final long posn, final long length, final String filter, final String inputFilter)
                 throws SourceNotAvailableException, IOException {
-            final var exists = file.exists();
-            final var lengthOk = StreamManager.NONE.equals(inputFilter) ? exists ? file.length() == size : false : true;
-            if (OPERATIONAL && (!lengthOk || !file.canRead())) {
-                _log.debug("DataFile {} not found locally: {}", dataFile.getId(), file.getAbsolutePath());
+            final boolean exists;
+            final boolean readable;
+            final boolean lengthOk;
+            if (file != null) {
+                exists = file.exists();
+                readable = file.canRead();
+                if (StreamManager.NONE.equals(inputFilter)) {
+                    lengthOk = exists && file.length() == size;
+                } else {
+                    lengthOk = true;
+                }
+            } else {
+                exists = false;
+                readable = false;
+                lengthOk = !StreamManager.NONE.equals(inputFilter);
+            }
+            if (OPERATIONAL && (!exists || !lengthOk || !readable)) {
+                _log.debug("DataFile {} not found locally", dataFile.getId());
                 _local = false;
                 if (hostsForSource == null || hostsForSource.length == 0) {
                     throw new SourceNotAvailableException("DataFile " + dataFile.getId() + " not found on " + getRoot()
@@ -3615,8 +3644,8 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             _size = size;
             _posn = posn;
             _length = length;
-            _filter = filter; // only for put and replicate (not get)
-            _inputFilter = inputFilter; // only for put and replicate (not get)
+            _filter = filter;
+            _inputFilter = inputFilter;
         }
 
         /**
