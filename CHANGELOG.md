@@ -15,6 +15,7 @@ This document summarizes the most significant changes in OpenECPDS across all ma
 - Fix issue preventing pre-scheduled file downloads via monitoring interface.
 - Improve SQL query performance when getting data transfers for retrieval, replication, and backup.
 - Allow unlinking uncompressed file on dissemination success if compressed file already exists on the data mover.
+- Prevent NotDirectoryException when listing files if underlying path is not a directory in the data mover repository
 
 ---
 
