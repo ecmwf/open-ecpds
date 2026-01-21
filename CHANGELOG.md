@@ -13,7 +13,8 @@ This document summarizes the most significant changes in OpenECPDS across all ma
 - Resolve HREFs relative to URL/path when parsing HTML files in the HTTP transfer module.
 - Allow skipping post-retrieval size checks when retrieving files from sources with inconsistent file size reporting.
 - Fix issue preventing pre-scheduled file downloads via monitoring interface.
-- Improve SQL query performance when retrieving data transfers for retrieval, replication, and backup.
+- Improve SQL query performance when getting data transfers for retrieval, replication, and backup.
+- Allow unlinking uncompressed file on dissemination success if compressed file already exists on the data mover.
 
 ---
 
