@@ -33,6 +33,7 @@ WHERE
     AND dt.DAT_REPLICATED = 0
     AND tg.TRG_REPLICATE <> 0
     AND df.DAF_DOWNLOADED <> 0
+    AND df.DAF_FILE_SYSTEM IS NOT NULL
     AND (
         -- CASE 1: Filtering is required - ensure filtering is complete and fresh
         EXISTS (
