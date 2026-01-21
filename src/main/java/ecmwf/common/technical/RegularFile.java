@@ -345,9 +345,13 @@ public final class RegularFile extends GenericFile {
      * @return the string[]
      */
     @Override
-    public String[] list(final GenericFileFilter filter) throws IOException {
+    public String[] list(final GenericFileFilter filter) {
         final var dirPath = underlyingFile.toPath();
         final List<String> result = new ArrayList<>();
+        // Fast pre-check: avoid NotDirectoryException entirely
+        if (!Files.isDirectory(dirPath)) {
+            return result.toArray(String[]::new);
+        }
         try (var stream = Files.newDirectoryStream(dirPath, entry -> {
             final var fileName = entry.getFileName();
             return fileName != null && filter.accept(new RegularFile(dirPath.toString()), fileName.toString());
@@ -355,6 +359,8 @@ public final class RegularFile extends GenericFile {
             for (final Path entry : stream) {
                 result.add(entry.getFileName().toString());
             }
+        } catch (IOException e) {
+            // Swallow and continue execution
         }
         return result.toArray(String[]::new);
     }
@@ -407,12 +413,17 @@ public final class RegularFile extends GenericFile {
      * @return the string[]
      */
     @Override
-    public String[] list() throws IOException {
+    public String[] list() {
         final var dirPath = underlyingFile.toPath();
         final List<String> result = new ArrayList<>();
-        try (var stream = Files.newDirectoryStream(dirPath)) {
-            for (final Path entry : stream) {
-                result.add(entry.getFileName().toString());
+        // Fast pre-check: avoid NotDirectoryException entirely
+        if (Files.isDirectory(dirPath)) {
+            try (var stream = Files.newDirectoryStream(dirPath)) {
+                for (final Path entry : stream) {
+                    result.add(entry.getFileName().toString());
+                }
+            } catch (final IOException e) {
+                // Swallow and continue execution
             }
         }
         return result.toArray(String[]::new);
