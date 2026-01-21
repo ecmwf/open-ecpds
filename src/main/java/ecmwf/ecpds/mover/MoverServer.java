@@ -4116,6 +4116,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             final var from = masterManager != null ? "DataMover=" + getRoot() : "Proxy Host="
                     + _transfer.getProxyHostName() + " (" + _transfer.getProxyHost().getNickname() + ")";
             final String comment;
+            boolean usedCompressedFile = false;
             if ("exec".equals(operation)) {
                 comment = "External transfer initiated from " + from + " to " + hostName + " at " + targetName;
             } else if ("copy".equals(operation)) {
@@ -4149,6 +4150,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                     if (_filter != null) {
                         final var onTheFly = _transfer.getCompressedOnTheFly() ? " on-the-fly" : "";
                         compression = " " + _filter + (_filtered ? " (" + ratio + "%" + onTheFly + ")" : "");
+                        usedCompressedFile = !_transfer.getCompressedOnTheFly();
                     } else {
                         compression = "";
                     }
@@ -4168,6 +4170,29 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             }
             _log.info("Transfer {} ({}) completed: {} - statistics: '{}'", _transfer.getId(), targetName, comment,
                     statisticsString != null ? statisticsString : "none");
+            if (usedCompressedFile && _descriptor != null && _descriptor.isLocal()) {
+                // We have successfully transmitted a local compressed file, so we might now
+                // unlink the uncompressed version of it to save some disk space!
+                try {
+                    final var localFile = _descriptor.getFile(false);
+                    if (localFile != null && localFile.supportsUnlinkWhileOpen()) {
+                        if (Cnf.at("Mover", "unlinkUncompressedFileOnSuccess", false)) {
+                            if (localFile.delete()) {
+                                _log.debug("File successfully unlinked after transmission: {}",
+                                        localFile.getAbsolutePath());
+                            } else {
+                                _log.warn("Cannot unlink file after successful transmission: {}",
+                                        localFile.getAbsolutePath());
+                            }
+                        } else {
+                            _log.debug("Unlink of uncompressed file on success is disabled: {}",
+                                    localFile.getAbsolutePath());
+                        }
+                    }
+                } catch (final Throwable t) {
+                    _log.warn("Cannot unlink file after successful transmission", t);
+                }
+            }
         }
 
         /**
