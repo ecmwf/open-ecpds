@@ -4,7 +4,7 @@ This document summarizes the most significant changes in OpenECPDS across all re
 
 ---
 
-## open-ecpds 7.3.5-15012026 (2026-01-15)
+## open-ecpds 7.3.5-20012026 (2026-01-20)
 
 - Defer transfer group and filesystem allocation until push/pull for new data files to better match actual disk usage.
 - Consolidate all transfer-server methods for data file allocation and processing into a common class for maintainability.
@@ -12,6 +12,8 @@ This document summarizes the most significant changes in OpenECPDS across all re
 - Add ICO and PNG favicons to the data portal for cross-browser compatibility.
 - Resolve HREFs relative to URL/path when parsing HTML files in the HTTP transfer module.
 - Allow skipping post-retrieval size checks when retrieving files from sources with inconsistent file size reporting.
+- Fix issue preventing pre-scheduled file downloads via monitoring interface.
+- Improve SQL query performance when retrieving data transfers for retrieval, replication, and backup.
 
 ---
 
