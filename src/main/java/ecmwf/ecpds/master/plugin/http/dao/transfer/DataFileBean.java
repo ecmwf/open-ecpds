@@ -265,7 +265,7 @@ public class DataFileBean extends ModelBeanBase implements DataFile, OjbImplemen
      */
     @Override
     public String getStoragePath() {
-        return getPath(datafile);
+        return datafile.getFileSystem() != null ? getPath(datafile) : null;
     }
 
     /**

@@ -24,7 +24,14 @@
 			${datafile.checksum}
 		</c:if>
 	</td></tr>
-	<tr><th>Storage Path</th><td colspan="3">${datafile.storagePath}</td></tr>
+	<tr><th>Storage Path</th><td colspan="3">
+		<c:if test="${datafile.storagePath == null}">
+			<font color="grey"><span title="Not retrieved">[n/a]</span></font>
+		</c:if>
+		<c:if test="${datafile.storagePath != null}">
+			${datafile.storagePath}
+		</c:if>
+	</td></tr>
 	<tr><th>Group By</th><td colspan="3">${datafile.groupBy}</td></tr>
 	<tr><th>Additional Info</th><td colspan="3">
 		<c:if test="${datafile.formattedCaller == null}">
