@@ -60,13 +60,8 @@ RUN if [ "$(uname -m)" = "aarch64" ]; then \
 # Set VS Code dev container environment variable
 ENV IN_DEV_CONTAINER=true
 
-# Install Node.js (via nvm) and Gemini CLI
-RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash && \
-    export NVM_DIR="/root/.nvm" && \
-    . "$NVM_DIR/nvm.sh" && \
-    nvm install 22 && \
-    nvm use 22 && \
-    npm install -g @google/gemini-cli
+# Install GitHub Copilot CLI
+RUN curl -fsSL https://gh.io/copilot-install | bash
 
 # Optional: clean up DNF caches
 RUN dnf clean all
