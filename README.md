@@ -130,6 +130,14 @@ curl -L -o master.zip https://github.com/ecmwf/open-ecpds/archive/refs/heads/mas
 
 A [Makefile](Makefile) located in the `open-ecpds-master` directory can be used to create the development container that installs all the necessary tools for building the application. The Java classes are compiled, packaged into RPM files, and used to build Docker images for each OpenECPDS component.
 
+#### GitHub Copilot CLI
+
+The GitHub Copilot CLI is installed in the development container. To use it, you must configure a GitHub Personal Access Token (PAT).
+
+Instructions on how to create the required PAT are available in the official documentation: [https://github.com/github/copilot-cli](https://github.com/github/copilot-cli)
+
+The token must be provided via the environment variable `GH_TOKEN` (preferred) or `GITHUB_TOKEN` before creating or logging into the development container.
+
 ### Creating and Logging into the Development Container
 
 To build the development container:
