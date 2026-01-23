@@ -773,6 +773,8 @@ Each event logged by OpenECPDS follows a structured format, with fields that pro
 
 >**Note:** All duration values are measured in milliseconds. All timestamps are formatted as `yyyy-MM-dd HH:mm:ss.fffffffff`, where `yyyy` is the 4-digit year, `MM` is the 2-digit month, `dd` is the 2-digit day, `HH` is the 2-digit hour (24-hour clock), `mm` is minutes, `ss` is seconds, and `fffffffff` represents fractional seconds in nanoseconds.
 
+>**Note:** A `TimeStamp` field has been added to all Splunk log entries to ensure log rotation is correctly detected. This prevents Splunk from misidentifying rotated files due to identical file headers and avoids missing or duplicated log events.
+
 The following sections provide a breakdown of the specific fields recorded for each event category:
 
 #### PRS (Product STatus) Fields
@@ -780,7 +782,7 @@ The following sections provide a breakdown of the specific fields recorded for e
 Each PRS event records a specific moment in the processing of a product, capturing key information about the product’s status and related attributes. The following fields are included in the PRS event:
 
 ```
-PRS;StatusCode=EXEC;DataStream=GWAEF;TimeStep=144;TimeBase=2025-02-12 06:00:00.0;Type=EF;ScheduleTime=2025-02-12 13:04:00.0;LastUpdate=2025-02-12 12:28:44.353
+PRS;TimeStamp=2025-02-12 11:00:00.0;StatusCode=EXEC;DataStream=GWAEF;TimeStep=144;TimeBase=2025-02-12 06:00:00.0;Type=EF;ScheduleTime=2025-02-12 13:04:00.0;LastUpdate=2025-02-12 12:28:44.353
 ```
 
 - **StatusCode**: This field represents the status of the product at a given stage of processing, which can be one of three options: **expected** (indicating the product has been scheduled but not yet started), **started** (indicating the processing has begun), or **completed** (indicating the processing has finished). This status is determined based on the flags used with the `ecpds` command-line tool, namely `-expected`, `-started`, or `-completed`.
@@ -802,7 +804,7 @@ PRS;StatusCode=EXEC;DataStream=GWAEF;TimeStep=144;TimeBase=2025-02-12 06:00:00.0
 The RET category includes the following fields, which provide detailed information about the data retrieval process:
 
 ```
-RET;Monitored=true;DataTransferId=123456789;DestinationName=MyDestination;DestinationType=Gold;FileName=/my/home/datafile-260225.bin;FileSize=9426076326;Identity=/my/home/datafile.bin;ScheduledTime=2025-02-12 13:04:00.0;StartTime=2025-02-12 12:29:43.98;MetaStream=GENFO;MetaType=EF;MetaTime=06;TimeBase=2025-02-12 06:00:00.0;TimeStep=144;Duration=40781;HostId=123456;HostLogin=login;HostAddress=my.host.it;TransferProtocol=sftp;MoverName=my.mover.name.it;UserId=uid;RequestAddress=X.X.X.X;DataOnlyDuration=40189;StandBy=false;RemoteHost=my.remote.host.it
+RET;TimeStamp=2025-02-12 11:00:00.0;Monitored=true;DataTransferId=123456789;DestinationName=MyDestination;DestinationType=Gold;FileName=/my/home/datafile-260225.bin;FileSize=9426076326;Identity=/my/home/datafile.bin;ScheduledTime=2025-02-12 13:04:00.0;StartTime=2025-02-12 12:29:43.98;MetaStream=GENFO;MetaType=EF;MetaTime=06;TimeBase=2025-02-12 06:00:00.0;TimeStep=144;Duration=40781;HostId=123456;HostLogin=login;HostAddress=my.host.it;TransferProtocol=sftp;MoverName=my.mover.name.it;UserId=uid;RequestAddress=X.X.X.X;DataOnlyDuration=40189;StandBy=false;RemoteHost=my.remote.host.it
 ```
 
 - **Monitored**: A flag that indicates whether the destination responsible for processing the data transfer is monitored in the top monitoring display.
@@ -843,7 +845,7 @@ These fields give a comprehensive overview of the retrieval process and help mon
 The UPH category records events whenever a file is disseminated from OpenECPDS to a remote site. Each event captures details about the data transfer, including scheduling, execution, and completion status.
 
 ```
-UPH;Monitored=false;DataTransferId=123456789;DestinationName=MyDestination;DestinationType=Gold;FileName=/my/home/datafile-260225.bin;FileSize=131259312;Identity=/my/home/datafile.bin;MetaStream=GENFO;MetaType=EF;MetaTime=00;Priority=69;QueueTime=2025-02-13 06:53:10.0;RequeueCount=0;ScheduledTime=2025-02-13 06:53:10.0;StartTime=2025-02-13 09:00:53.139;PutTime=2025-02-13 09:00:56.015;Duration=16471;DurationOnClose=18534;BytesSent=131259312;StatusCode=DONE;RetrievalTime=2025-02-13 05:42:01.694;TimeBase=2025-02-13 00:00:00.0;TimeStep=79;FinishTime=2025-02-13 09:01:14.584;TransferProtocol=sftp;TransferServer=my.mover.name.it;NetworkCode=Internet;HostAddress=my.host.it;PreSchedule=false;ProxyHost=X.X.X.X;Proxied=true;SocketStatistics=start:1739437253611 end:1739437274560 0 0 [::ffff:X.X.X.X]:47699 [::ffff:X.X.X.X]:22 timer:(keepalive,119min,0) ino:760715359 sk:32bcfe cgroup:/ inet-sockopt: ( is_icsk mc_loop) sack cubic wscale:8,7 rto:411 rtt:210.21/10.545 ato:40 mss:1374 pmtu:1500 rcvmss:1374 advmss:1460 cwnd:3215 bytes_sent:131602845 bytes_acked:131602846 bytes_received:437502 segs_out:97675 segs_in:19212 data_segs_out:96883 data_segs_in:3763 send:168114172bps lastsnd:1866 lastrcv:8 lastack:8 pacing_rate:336228136bps delivery_rate:85580864bps delivered:96884 app_limited busy:18696ms rwnd_limited:6989ms(37.4%) reordering:6 rcv_rtt:1053.2 rcv_space:37632 rcv_ssthresh:296449 minrtt:203.539 snd_wnd:2598144;Compressed=-;CompressedOnTheFly=false
+UPH;TimeStamp=2025-02-12 11:00:00.0;Monitored=false;DataTransferId=123456789;DestinationName=MyDestination;DestinationType=Gold;FileName=/my/home/datafile-260225.bin;FileSize=131259312;Identity=/my/home/datafile.bin;MetaStream=GENFO;MetaType=EF;MetaTime=00;Priority=69;QueueTime=2025-02-13 06:53:10.0;RequeueCount=0;ScheduledTime=2025-02-13 06:53:10.0;StartTime=2025-02-13 09:00:53.139;PutTime=2025-02-13 09:00:56.015;Duration=16471;DurationOnClose=18534;BytesSent=131259312;StatusCode=DONE;RetrievalTime=2025-02-13 05:42:01.694;TimeBase=2025-02-13 00:00:00.0;TimeStep=79;FinishTime=2025-02-13 09:01:14.584;TransferProtocol=sftp;TransferServer=my.mover.name.it;NetworkCode=Internet;HostAddress=my.host.it;PreSchedule=false;ProxyHost=X.X.X.X;Proxied=true;SocketStatistics=start:1739437253611 end:1739437274560 0 0 [::ffff:X.X.X.X]:47699 [::ffff:X.X.X.X]:22 timer:(keepalive,119min,0) ino:760715359 sk:32bcfe cgroup:/ inet-sockopt: ( is_icsk mc_loop) sack cubic wscale:8,7 rto:411 rtt:210.21/10.545 ato:40 mss:1374 pmtu:1500 rcvmss:1374 advmss:1460 cwnd:3215 bytes_sent:131602845 bytes_acked:131602846 bytes_received:437502 segs_out:97675 segs_in:19212 data_segs_out:96883 data_segs_in:3763 send:168114172bps lastsnd:1866 lastrcv:8 lastack:8 pacing_rate:336228136bps delivery_rate:85580864bps delivered:96884 app_limited busy:18696ms rwnd_limited:6989ms(37.4%) reordering:6 rcv_rtt:1053.2 rcv_space:37632 rcv_ssthresh:296449 minrtt:203.539 snd_wnd:2598144;Compressed=-;CompressedOnTheFly=false
 ```
 
 - **Monitored**: Indicates whether the destination responsible for the data transfer is tracked in the top monitoring display (same as in RET).
@@ -888,7 +890,7 @@ If a problem occurs during dissemination, an **ERR** event will be triggered ins
 The INH event records details whenever a new file is pushed to or retrieved from OpenECPDS via the data portal, or pushed using the `ecpds` command-line tool. It captures information about the data transfer, including metadata, user details, and network parameters.
 
 ```
-INH;Monitored=true;DataTransferId=123456789;DestinationName=MyDestination;DestinationType=Gold;FileName=/my/home/datafile.bin;FileSize=162392;ScheduledTime=2025-02-13 07:41:00.0;StartTime=2025-02-13 09:05:32.616;MetaStream=GENFO-GTS;MetaType=EP;MetaTime=00;TimeBase=2025-02-13 00:00:00.0;TimeStep=240;Duration=1;UserId=uid;CountryCode=uk;UserDescription=User description;BytesSent=162392;TransferProtocol=ftp;TransferServer=my.mover.name.it;HostAddress=my.host.it;Caller=/my/home/datafile.output;ExpiryTime=2025-03-15 07:41:00.0;FileSystem=20;Action=download
+INH;TimeStamp=2025-02-12 11:00:00.0;Monitored=true;DataTransferId=123456789;DestinationName=MyDestination;DestinationType=Gold;FileName=/my/home/datafile.bin;FileSize=162392;ScheduledTime=2025-02-13 07:41:00.0;StartTime=2025-02-13 09:05:32.616;MetaStream=GENFO-GTS;MetaType=EP;MetaTime=00;TimeBase=2025-02-13 00:00:00.0;TimeStep=240;Duration=1;UserId=uid;CountryCode=uk;UserDescription=User description;BytesSent=162392;TransferProtocol=ftp;TransferServer=my.mover.name.it;HostAddress=my.host.it;Caller=/my/home/datafile.output;ExpiryTime=2025-03-15 07:41:00.0;FileSystem=20;Action=download
 ```
 
 - **Monitored**: Indicates whether the destination responsible for the data transfer is monitored in the top-level display (same as RET).
@@ -922,7 +924,7 @@ INH;Monitored=true;DataTransferId=123456789;DestinationName=MyDestination;Destin
 The ERR event is triggered when a data transfer fails in the context of dissemination, providing detailed information about the failed operation. It records metadata about the transfer, including file details, network parameters, and user information, along with an error message describing the issue. This helps diagnose and troubleshoot dissemination failures within OpenECPDS.
 
 ```
-ERR;Monitored=false;DataTransferId=123456789;DestinationName=MyDestination;DestinationType=Gold;FileName=/my/home/datafile.bin;FileSize=35850;ScheduledTime=2025-02-11 06:04:20.0;StartTime=2025-02-11 09:46:35.586;MetaStream=GOPER;MetaType=FC;MetaTime=00;TimeBase=2025-02-11 00:00:00.0;TimeStep=64;Duration=0;UserId=uid;CountryCode=fr;BytesSent=0;TransferProtocol=sftp;TransferServer=my.mover.name.it;HostAddress=my.host.it;Message=Module sftp error <- Failed to connect to X.X.X.X:22 (SSH_MSG_DISCONNECT: 11 Too many bad authentication attempts!) (Trying from DataMover=my.mover.name.it)
+ERR;TimeStamp=2025-02-12 11:00:00.0;Monitored=false;DataTransferId=123456789;DestinationName=MyDestination;DestinationType=Gold;FileName=/my/home/datafile.bin;FileSize=35850;ScheduledTime=2025-02-11 06:04:20.0;StartTime=2025-02-11 09:46:35.586;MetaStream=GOPER;MetaType=FC;MetaTime=00;TimeBase=2025-02-11 00:00:00.0;TimeStep=64;Duration=0;UserId=uid;CountryCode=fr;BytesSent=0;TransferProtocol=sftp;TransferServer=my.mover.name.it;HostAddress=my.host.it;Message=Module sftp error <- Failed to connect to X.X.X.X:22 (SSH_MSG_DISCONNECT: 11 Too many bad authentication attempts!) (Trying from DataMover=my.mover.name.it)
 ```
 
 - **Monitored** – Indicates whether the destination responsible for the data transfer is tracked in the top-level monitoring display (same as REP).
@@ -952,7 +954,7 @@ ERR;Monitored=false;DataTransferId=123456789;DestinationName=MyDestination;Desti
 The CPY event records details about file replication within OpenECPDS. It tracks when a file is duplicated either internally within an OpenECPDS Data Mover or transferred from an internal Data Mover to a Continental Data Mover. This event captures key metadata, transfer details, and any errors encountered during replication, ensuring traceability and monitoring of data movement across the system.
 
 ```
-CPY;Monitored=true;DataTransferId=123456789;DestinationName=MyDestination;DestinationType=Gold;FileName=/my/home/datafile.bin;FileSize=196445574;ScheduledTime=2025-02-13 08:07:46.13;StartTime=2025-02-13 08:07:51.022;MetaStream=-;MetaType=-;MetaTime=00;TimeBase=2025-02-13 00:00:00.0;TimeStep=-1;Duration=1040;CountryCode=ec;Target=my.target.mover.name.it;TransferServer=my.source.mover.name.it;Caller=/my/home/datafile.output;ExpiryTime=2025-02-15 08:07:46.13;FileSystem=18;Status=true;Message=-;Action=replicate
+CPY;TimeStamp=2025-02-12 11:00:00.0;Monitored=true;DataTransferId=123456789;DestinationName=MyDestination;DestinationType=Gold;FileName=/my/home/datafile.bin;FileSize=196445574;ScheduledTime=2025-02-13 08:07:46.13;StartTime=2025-02-13 08:07:51.022;MetaStream=-;MetaType=-;MetaTime=00;TimeBase=2025-02-13 00:00:00.0;TimeStep=-1;Duration=1040;CountryCode=ec;Target=my.target.mover.name.it;TransferServer=my.source.mover.name.it;Caller=/my/home/datafile.output;ExpiryTime=2025-02-15 08:07:46.13;FileSystem=18;Status=true;Message=-;Action=replicate
 ```
 
 - **Monitored** – Indicates whether the destination responsible for the data transfer is tracked in the top-level monitoring display (same as REP).
@@ -984,7 +986,7 @@ CPY;Monitored=true;DataTransferId=123456789;DestinationName=MyDestination;Destin
 The DEA event records authentication and authorization failures within OpenECPDS. These events are generated whenever a data user attempts to access OpenECPDS but is denied due to insufficient permissions, invalid credentials, or failed authentication mechanisms such as TOTP (Time-Based One-Time Password).
 
 ```
-DEA;UserId=uid;Message=Maximum number of connections exceeded (20);Context=Using https on DataMover=my.mover.name.it from uid@my.host.it
+DEA;TimeStamp=2025-02-12 11:00:00.0;UserId=uid;Message=Maximum number of connections exceeded (20);Context=Using https on DataMover=my.mover.name.it from uid@my.host.it
 ```
 
 - **UserId** - holds the identifier of the underlying data user.
