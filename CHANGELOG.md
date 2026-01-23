@@ -17,6 +17,7 @@ This document summarizes the most significant changes in OpenECPDS across all ma
 - Allow unlinking uncompressed file on dissemination success if compressed file already exists on the data mover.
 - Prevent NotDirectoryException when listing files if underlying path is not a directory in the data mover repository.
 - Replace Gemini CLI with Copilot CLI inside the development container.
+- Add timestamp field to all Splunk entries to ensure rotated files are correctly detected and prevent missing or duplicated events.
 
 ---
 
