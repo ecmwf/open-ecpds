@@ -94,10 +94,15 @@ dev: .dev-cntnr .run login ## Build, run and login into the development containe
 		$(IMAGE_NAME) \
 		sleep infinity
 
-login: ## Log in to the running development container (*)
+login: ## Log in to the running development container (*) with GitHub Copilot token
 	@$(call is-dev-container,true,outside)
 	@$(call check-dev-container)
-	@[ -n "$GEMINI_API_KEY" ] && $(DOCKER) exec -it -w $(WORKDIR) $(CONTAINER_NAME) env GEMINI_API_KEY=$(GEMINI_API_KEY) /bin/bash || $(DOCKER) exec -it -w $(WORKDIR) $(CONTAINER_NAME) /bin/bash
+	@[ -n "$$GH_TOKEN" ] && TOKEN="$$GH_TOKEN" || TOKEN="$$GITHUB_TOKEN"; \
+	if [ -n "$$TOKEN" ]; then \
+		$(DOCKER) exec -it -w $(WORKDIR) $(CONTAINER_NAME) env GH_TOKEN=$$TOKEN /bin/bash; \
+	else \
+		$(DOCKER) exec -it -w $(WORKDIR) $(CONTAINER_NAME) /bin/bash; \
+	fi
 
 rm-dev: ## Stop the development container, then remove both its container and image. (*)
 	@$(call is-dev-container,true,outside)
