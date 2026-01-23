@@ -49,6 +49,7 @@ import java.io.InputStream;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -1669,10 +1670,11 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
                     DATABASE.insert(product, true);
                     if (_splunk.isInfoEnabled()) {
                         // For the accounting!
-                        _splunk.info("PRS;{};{};{};{};{};{};{}", "StatusCode=" + product.getStatusCode(),
-                                "DataStream=" + product.getStream(), "TimeStep=" + product.getStep(),
-                                "TimeBase=" + product.getTimeBase(), "Type=" + product.getType(),
-                                "ScheduleTime=" + product.getScheduleTime(), "LastUpdate=" + product.getLastUpdate());
+                        _splunk.info("PRS;{};{};{};{};{};{};{};{}", "TimeStamp=" + Timestamp.from(Instant.now()),
+                                "StatusCode=" + product.getStatusCode(), "DataStream=" + product.getStream(),
+                                "TimeStep=" + product.getStep(), "TimeBase=" + product.getTimeBase(),
+                                "Type=" + product.getType(), "ScheduleTime=" + product.getScheduleTime(),
+                                "LastUpdate=" + product.getLastUpdate());
                     }
                     MASTER.handle(new ProductStatusEvent(product));
                     _log.debug("Notification received: {}", product);
@@ -1802,8 +1804,9 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
                         // For the accounting!
                         final var destination = transfer.getDestination();
                         final var ecuser = DATABASE.getECUserObject(userName);
-                        _splunk.info("INH;{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{}",
-                                "Monitored=" + destination.getMonitor(),
+                        _splunk.info(
+                                "INH;{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{}",
+                                "TimeStamp=" + Timestamp.from(Instant.now()), "Monitored=" + destination.getMonitor(),
                                 "DataTransferId=" + history.getDataTransferId(),
                                 "DestinationName=" + destination.getName(),
                                 "DestinationType=" + DestinationOption.getLabel(destination.getType()),

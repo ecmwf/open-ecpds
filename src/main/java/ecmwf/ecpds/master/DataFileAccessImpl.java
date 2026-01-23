@@ -46,6 +46,7 @@ import java.io.IOException;
 import java.rmi.RemoteException;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -1213,7 +1214,8 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
                                     && setup.getBoolean(USER_PORTAL_RECORD_SPLUNK)) {
                                 final var destination = transfer.getDestination();
                                 _splunk.info(
-                                        "INH;{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{}",
+                                        "INH;{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{}",
+                                        "TimeStamp=" + Timestamp.from(Instant.now()),
                                         "Monitored=" + destination.getMonitor(),
                                         "DataTransferId=" + history.getDataTransferId(),
                                         "DestinationName=" + destination.getName(),

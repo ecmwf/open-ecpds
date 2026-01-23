@@ -46,6 +46,7 @@ import java.io.InputStream;
 import java.io.StringReader;
 import java.sql.Date;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -2920,9 +2921,9 @@ public final class TransferScheduler extends MBeanScheduler {
                 final var destination = transfer.getDestination();
                 final var dataFile = transfer.getDataFile();
                 final var host = transfer.getHost();
-                _splunk.info("ERR;{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{}",
-                        "Monitored=" + destination.getMonitor(), "DataTransferId=" + transfer.getId(),
-                        "DestinationName=" + destination.getName(),
+                _splunk.info("ERR;{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{}",
+                        "TimeStamp=" + Timestamp.from(Instant.now()), "Monitored=" + destination.getMonitor(),
+                        "DataTransferId=" + transfer.getId(), "DestinationName=" + destination.getName(),
                         "DestinationType=" + DestinationOption.getLabel(destination.getType()),
                         "FileName=" + transfer.getTarget(), "FileSize=" + dataFile.getSize(),
                         "ScheduledTime=" + transfer.getScheduledTime(), "StartTime=" + transfer.getStartTime(),
