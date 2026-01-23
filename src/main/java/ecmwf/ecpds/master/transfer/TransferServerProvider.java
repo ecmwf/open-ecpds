@@ -76,23 +76,33 @@ public final class TransferServerProvider {
     /** The Constant MASTER. */
     private static final MasterServer MASTER = StarterServer.getInstance(MasterServer.class);
 
-    /** The Constant VOLUME_USAGE_CACHE. */
+    /**
+     * Cache for volume usage statistics and mover ordering, keyed by group and volume index.
+     */
     private static final ConcurrentHashMap<String, MasterServer.VolumeUsageResult> VOLUME_USAGE_CACHE = new ConcurrentHashMap<>();
 
-    /** The Constant ACTIVE_SERVERS_INDEX. */
+    /**
+     * Map for stable caller-based random rotation indices for server lists.
+     */
     private static final ConcurrentHashMap<String, SplittableRandom> ACTIVE_SERVERS_INDEX = new ConcurrentHashMap<>();
 
-    /** The servers. */
+    /**
+     * List of active TransferServer instances for the selected group and file system.
+     */
     private final List<TransferServer> servers = new ArrayList<>();
 
-    /** The group. */
+    /**
+     * The selected TransferGroup for this provider instance.
+     */
     private TransferGroup group = null;
 
-    /** The file system. */
+    /**
+     * The selected file system (volume index) for this provider instance.
+     */
     private int fileSystem = -1;
 
     /**
-     * The Class TransferServerException.
+     * Exception thrown when a suitable transfer group or server cannot be found.
      */
     public static final class TransferServerException extends Exception {
         /** The Constant serialVersionUID. */
@@ -198,6 +208,22 @@ public final class TransferServerProvider {
         return getTransferServersByLeastActivity(caller, destination, null, originalGroup, null);
     }
 
+    /**
+     * Returns the list of active {@link TransferServer}s for the given transfer group, ordered by least disk activity.
+     * This is a convenience overload that does not require a destination.
+     *
+     * @param caller
+     *            identifier of the calling component (used for logging and load balancing)
+     * @param originalGroup
+     *            the transfer group for which servers are to be retrieved
+     *
+     * @return ordered list of active TransferServers
+     *
+     * @throws DataBaseException
+     *             if a database error occurs
+     * @throws TransferServerException
+     *             if no suitable servers are found
+     */
     public static List<TransferServer> getTransferServersByLeastActivity(final String caller,
             final TransferGroup originalGroup) throws DataBaseException, TransferServerException {
         return getTransferServersByLeastActivity(caller, null, originalGroup);
@@ -386,7 +412,7 @@ public final class TransferServerProvider {
             final boolean fileSystemProvided, final Integer fileSystem) {
         final var sb = new StringBuilder();
         for (final TransferServer ts : servers) {
-            if (sb.length() > 0)
+            if (!sb.isEmpty())
                 sb.append(',');
             sb.append(ts.getName());
             final var load = loadPerServer.get(ts.getName());
@@ -613,11 +639,25 @@ public final class TransferServerProvider {
      * {@link #updateGroupUsage(TransferGroup, long[], long[])} to refresh usage statistics.
      */
     private static class WeightedAllocator {
+        /**
+         * Random number generators for each group, keyed by group name, used for allocation.
+         */
         private static final ConcurrentHashMap<String, SplittableRandom> RNGS = new ConcurrentHashMap<>();
+        /**
+         * Per-group statistics for volume usage and weights, keyed by group name.
+         */
         private static final ConcurrentHashMap<String, GroupStats> GROUPS = new ConcurrentHashMap<>();
+        /**
+         * Minimum weight assigned to a volume to avoid zero-probability selection.
+         */
         private static final long MIN_WEIGHT = 1L;
-        // Acceptable relative imbalance between volumes (coefficient of variation)
-        private static final double CV_THRESHOLD = Cnf.at("TransferServerProvider", "cvThreshold", 0.05d);
+        /**
+         * Coefficient of variation threshold for determining if volumes are roughly equally used.
+         */
+        private static final double CV_THRESHOLD = Cnf.at("TransferServerProvider", "cvThreshold", 0.01d);
+        /**
+         * Scheduled executor for periodic background updates of group usage statistics.
+         */
         private static final ScheduledExecutorService GROUP_USAGE_UPDATER = Executors
                 .newSingleThreadScheduledExecutor(r -> {
                     final var t = new Thread(r, "GroupUsageUpdater");
@@ -630,10 +670,17 @@ public final class TransferServerProvider {
                 startUsageUpdater();
         }
 
+        /**
+         * Holds per-volume statistics and weights for a group.
+         */
         private static class GroupStats {
+            /** Volume statistics for each volume in the group. */
             final VolumeStats[] volumes;
+            /** Weights for each volume, used for allocation. */
             final LongAdder[] weights;
+            /** Prefix sums of weights for efficient weighted random selection. */
             long[] prefixSums;
+            /** Lock for synchronising updates to group statistics. */
             final Object lock = new Object();
 
             GroupStats(final long[] used, final long[] max) {
@@ -660,8 +707,13 @@ public final class TransferServerProvider {
             }
         }
 
+        /**
+         * Tracks maximum capacity and current load for a volume.
+         */
         private static class VolumeStats {
+            /** Maximum capacity of the volume. */
             final long maxCapacity;
+            /** Current load (used space) of the volume. */
             final LongAdder currentLoad = new LongAdder();
 
             VolumeStats(final long maxCapacity) {
@@ -679,7 +731,17 @@ public final class TransferServerProvider {
         }
 
         /**
-         * Update the usage for a transfer group, registering it if necessary.
+         * Updates the usage statistics for a transfer group, registering it if necessary.
+         *
+         * @param group
+         *            the transfer group
+         * @param usedPerVolume
+         *            array of used space per volume
+         * @param maxCapacityPerVolume
+         *            array of maximum capacity per volume
+         *
+         * @throws IllegalArgumentException
+         *             if the input arrays have different lengths
          */
         public static void updateGroupUsage(final TransferGroup group, final long[] usedPerVolume,
                 final long[] maxCapacityPerVolume) {
@@ -699,7 +761,14 @@ public final class TransferServerProvider {
                 _log.debug("TransferGroup {} usage updated", group.getName());
         }
 
-        /** Update existing group volumes */
+        /**
+         * Updates the per-volume statistics for an existing group.
+         *
+         * @param gs
+         *            the group statistics object
+         * @param used
+         *            array of used space per volume
+         */
         private static void updateGroupVolumes(final GroupStats gs, final long[] used) {
             if (used.length != gs.volumes.length) {
                 _log.warn("Mismatch in volume count for group");
@@ -769,7 +838,14 @@ public final class TransferServerProvider {
             }, frequency, frequency, TimeUnit.SECONDS);
         }
 
-        /** Allocate a volume index for a group */
+        /**
+         * Allocates a volume index for the given group, favouring volumes with more available space.
+         *
+         * @param group
+         *            the transfer group
+         *
+         * @return the selected volume index
+         */
         public static int allocate(final TransferGroup group) {
             final var groupName = group.getName();
             final var random = RNGS.computeIfAbsent(groupName, g -> new SplittableRandom(g.hashCode()));
@@ -843,6 +919,11 @@ public final class TransferServerProvider {
             return low;
         }
 
+        /**
+         * Returns true if debug logging is enabled for this class and configuration.
+         *
+         * @return true if debug logging is enabled
+         */
         private static boolean isDebugEnabled() {
             return _log.isDebugEnabled() && Cnf.at("TransferServerProvider", "debug", false);
         }
