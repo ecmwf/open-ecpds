@@ -5743,7 +5743,7 @@ public final class MasterServer extends ECaccessProvider
                         final var startTime = transfer.getStartTime();
                         _splunk.info(
                                 "UPH;{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{}",
-                                "TimeStamp=" + Timestamp.from(Instant.now()), "Monitored=" + destination.getMonitor(),
+                                "Monitored=" + destination.getMonitor(), "TimeStamp=" + Timestamp.from(Instant.now()),
                                 "DataTransferId=" + upload.getDataTransferId(),
                                 "DestinationName=" + destination.getName(),
                                 "DestinationType=" + DestinationOption.getLabel(destination.getType()),
@@ -7597,7 +7597,7 @@ public final class MasterServer extends ECaccessProvider
                     final var dataFile = _transfer.getDataFile();
                     if (_splunk.isInfoEnabled() && !(complete && target.isEmpty()))
                         _splunk.info("CPY;{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{}",
-                                "TimeStamp=" + Timestamp.from(Instant.now()), "Monitored=" + destination.getMonitor(),
+                                "Monitored=" + destination.getMonitor(), "TimeStamp=" + Timestamp.from(Instant.now()),
                                 "DataTransferId=" + _transfer.getId(), "DestinationName=" + destination.getName(),
                                 "DestinationType=" + DestinationOption.getLabel(destination.getType()),
                                 "FileName=" + _transfer.getTarget(), "FileSize=" + dataFile.getSize(),
@@ -8659,7 +8659,7 @@ public final class MasterServer extends ECaccessProvider
                     final var dataFile = _transfer.getDataFile();
                     if (_splunk.isInfoEnabled())
                         _splunk.info("CPY;{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{}",
-                                "TimeStamp=" + Timestamp.from(Instant.now()), "Monitored=" + destination.getMonitor(),
+                                "Monitored=" + destination.getMonitor(), "TimeStamp=" + Timestamp.from(Instant.now()),
                                 "DataTransferId=" + _transfer.getId(), "DestinationName=" + destination.getName(),
                                 "DestinationType=" + DestinationOption.getLabel(destination.getType()),
                                 "FileName=" + _transfer.getTarget(), "FileSize=" + dataFile.getSize(),
@@ -11290,8 +11290,9 @@ public final class MasterServer extends ECaccessProvider
                                 final var host = _source.getHost();
                                 _splunk.info(
                                         "RET;{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{}",
+                                        "Monitored=" + destination.getMonitor(),
                                         "TimeStamp=" + Timestamp.from(Instant.now()),
-                                        "Monitored=" + destination.getMonitor(), "DataTransferId=" + transfer.getId(),
+                                        "DataTransferId=" + transfer.getId(),
                                         "DestinationName=" + destination.getName(),
                                         "DestinationType=" + DestinationOption.getLabel(destination.getType()),
                                         "FileName=" + dataFile.getOriginal(), "FileSize=" + dataFile.getSize(),

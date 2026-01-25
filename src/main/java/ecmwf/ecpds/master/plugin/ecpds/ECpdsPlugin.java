@@ -1806,7 +1806,7 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
                         final var ecuser = DATABASE.getECUserObject(userName);
                         _splunk.info(
                                 "INH;{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{}",
-                                "TimeStamp=" + Timestamp.from(Instant.now()), "Monitored=" + destination.getMonitor(),
+                                "Monitored=" + destination.getMonitor(), "TimeStamp=" + Timestamp.from(Instant.now()),
                                 "DataTransferId=" + history.getDataTransferId(),
                                 "DestinationName=" + destination.getName(),
                                 "DestinationType=" + DestinationOption.getLabel(destination.getType()),

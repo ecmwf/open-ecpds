@@ -2922,7 +2922,7 @@ public final class TransferScheduler extends MBeanScheduler {
                 final var dataFile = transfer.getDataFile();
                 final var host = transfer.getHost();
                 _splunk.info("ERR;{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{}",
-                        "TimeStamp=" + Timestamp.from(Instant.now()), "Monitored=" + destination.getMonitor(),
+                        "Monitored=" + destination.getMonitor(), "TimeStamp=" + Timestamp.from(Instant.now()),
                         "DataTransferId=" + transfer.getId(), "DestinationName=" + destination.getName(),
                         "DestinationType=" + DestinationOption.getLabel(destination.getType()),
                         "FileName=" + transfer.getTarget(), "FileSize=" + dataFile.getSize(),

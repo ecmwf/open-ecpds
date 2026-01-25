@@ -1215,8 +1215,8 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
                                 final var destination = transfer.getDestination();
                                 _splunk.info(
                                         "INH;{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{}",
-                                        "TimeStamp=" + Timestamp.from(Instant.now()),
                                         "Monitored=" + destination.getMonitor(),
+                                        "TimeStamp=" + Timestamp.from(Instant.now()),
                                         "DataTransferId=" + history.getDataTransferId(),
                                         "DestinationName=" + destination.getName(),
                                         "DestinationType=" + DestinationOption.getLabel(destination.getType()),
