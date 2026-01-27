@@ -1851,6 +1851,7 @@ public final class MasterServer extends ECaccessProvider
         try (final var mutex = hostStatsMutexProvider.getMutex(hostId)) {
             synchronized (mutex.lock()) {
                 try {
+                    _log.debug("Resetting HostStats for Host-{}", hostId);
                     getDataBase().update(new HostStats(host.getHostStatsId()));
                 } catch (final Throwable e) {
                     _log.warn("Resetting HostStats for Host-{}", hostId, e);
