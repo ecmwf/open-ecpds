@@ -81,6 +81,9 @@ public final class ECtransPut extends ECtransAction {
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(ECtransPut.class);
 
+    /** The Constant UNKNOWN_SIZE. */
+    private static final long UNKNOWN_SIZE = -1;
+
     /** The ticket. */
     private final Object ticket;
 
@@ -142,9 +145,9 @@ public final class ECtransPut extends ECtransAction {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the name.
+     *
+     * @return the name
      */
     @Override
     protected String getName() {
@@ -152,9 +155,15 @@ public final class ECtransPut extends ECtransAction {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Exec.
+     *
+     * @param module
+     *            the module
+     * @param interruptible
+     *            the interruptible
+     *
+     * @throws Exception
+     *             the exception
      */
     @Override
     protected void exec(final TransferModule module, final boolean interruptible) throws Exception {
@@ -211,7 +220,7 @@ public final class ECtransPut extends ECtransAction {
                     if (decrompressedOnTheFly) {
                         _log.debug("File will be decompressed on-the-fly on remote site");
                         module.setInputFilter(initialInputFilter);
-                        if (initialInputSize != -1) {
+                        if (initialInputSize != UNKNOWN_SIZE) {
                             module.setInputSize(initialInputSize);
                         }
                     } else {
@@ -271,7 +280,7 @@ public final class ECtransPut extends ECtransAction {
                         try {
                             done = module.put(in, target, posn, size);
                         } catch (final Throwable t) {
-                            _log.warn("put", t);
+                            _log.warn("Optimized put failed, falling back to standard put", t);
                             message = t.getMessage();
                             done = true;
                         }
@@ -320,9 +329,10 @@ public final class ECtransPut extends ECtransAction {
                     streamRate = mIn.getRate();
                     _log.debug("InputRate={}, InputRateOnClose={}", mIn.getRate(), mIn.getRateOnClose());
                 }
-                final var contentSize = !decrompressedOnTheFly || initialInputSize == -1 ? posn + sent
+                final var contentSize = !decrompressedOnTheFly || initialInputSize == UNKNOWN_SIZE ? posn + sent
                         : initialInputSize;
-                final var progress = size == -1 ? Format.formatSize(sent) : Format.formatPercentage(size - posn, sent);
+                final var progress = size == UNKNOWN_SIZE ? Format.formatSize(sent)
+                        : Format.formatPercentage(size - posn, sent);
                 final var infoOrWarnMessage = "Sent " + progress + " - " + streamRate + " (bytes=" + sent + ",posn="
                         + posn + ")" + (hasMessage ? " - " + message : "");
                 if (hasMessage) {
@@ -332,7 +342,7 @@ public final class ECtransPut extends ECtransAction {
                     try {
                         module.check(contentSize, checksum, true);
                     } catch (final IOException e) {
-                        _log.warn("check", e);
+                        _log.warn("Transfer module check after transfer error", e);
                         final var eMessage = e.getMessage();
                         if (isNotEmpty(eMessage) && !eMessage.equals(message)) {
                             message = eMessage + " -> " + message;
@@ -350,10 +360,10 @@ public final class ECtransPut extends ECtransAction {
                 try {
                     module.check(contentSize, checksum, false);
                 } catch (final IOException e) {
-                    _log.warn("check", e);
+                    _log.warn("Transfer module check after transfer success", e);
                     throw e;
                 }
-                if (size != -1 && size != contentSize) {
+                if (size != UNKNOWN_SIZE && size != contentSize) {
                     _log.debug("Different sizes: {}!={} (posn={})", size, contentSize, posn);
                     if (initialInputFilter == null) {
                         throw new IOException("Transfer aborted at " + progress);
@@ -380,7 +390,7 @@ public final class ECtransPut extends ECtransAction {
                     final var sourceFile = getRemoteProvider().getDataOutputFile(ticket); // The source on the local
                                                                                           // host!
                     final var targetFile = new File(module.prePut(target, sourceFile.getName(), posn));
-                    final var contentSize = size == -1 ? sourceFile.length() : size;
+                    final var contentSize = size == UNKNOWN_SIZE ? sourceFile.length() : size;
                     final var manager = new TransferManager(getCommand(putHandlerCmd, sourceFile, targetFile),
                             contentSize);
                     manager.setDebug(module.getDebug());
@@ -389,8 +399,7 @@ public final class ECtransPut extends ECtransAction {
                         throw new IOException("Transfer aborted (exitCode: " + result + ")");
                     }
                     module.check(contentSize, checksum, false); // Check and rename if needed (e.g. when a temporary
-                                                                // filename
-                    // is used)
+                                                                // filename is used)
                     history.setComment(target + " (" + manager.getSimplifiedRate() + ")");
                     // Let's set the nature of the operation for the transfer history!
                     module.setAttribute("remote.operation", "exec");
@@ -417,7 +426,7 @@ public final class ECtransPut extends ECtransAction {
             // send a notification
             if (notificationInterface != null) {
                 // The format of the parameter is the following:
-                // test.notifyPublish="topic=ecpds/gts/0000;payload=https://localhost/data/gts/FGTER.bin;metadata=filename=FGTER.bin,metatime=0000;lifetime=4505"
+                // test.notifyPublish="topic=ecpds/gts/0000;payload=https://ecpds.ecmwf.int/data/gts/FGTER.bin;metadata=filename=FGTER.bin,metatime=0000;lifetime=4505"
                 final var notifyPublish = setup.getOptions(HOST_ECTRANS_NOTIFY_PUBLISH, ";\n");
                 notifyPublish.inject(connectOptions);
                 final var url = Format
