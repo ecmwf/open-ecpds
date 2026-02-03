@@ -66,6 +66,9 @@ public final class ECtransGet extends ECtransAction {
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(ECtransGet.class);
 
+    /** The Constant UNKNOWN_SIZE. */
+    private static final long UNKNOWN_SIZE = -1;
+
     /** The ticket. */
     private final Object ticket;
 
@@ -76,7 +79,7 @@ public final class ECtransGet extends ECtransAction {
     private final String source;
 
     /** The _size. */
-    private long size = -1;
+    private long size = UNKNOWN_SIZE;
 
     /** The remove original. */
     private boolean removeOriginal = false;
@@ -97,7 +100,7 @@ public final class ECtransGet extends ECtransAction {
         this.source = source;
         this.ticket = ticket;
         this.posn = posn;
-        this.size = -1;
+        this.size = UNKNOWN_SIZE;
         this.removeOriginal = removeOriginal;
     }
 
@@ -116,7 +119,7 @@ public final class ECtransGet extends ECtransAction {
     }
 
     /**
-     * Sets the removes the original.
+     * Sets whether the original source file should be removed.
      *
      * @param removeOriginal
      *            the new removes the original
@@ -145,9 +148,9 @@ public final class ECtransGet extends ECtransAction {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the name.
+     *
+     * @return the name
      */
     @Override
     protected String getName() {
@@ -155,9 +158,15 @@ public final class ECtransGet extends ECtransAction {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Exec.
+     *
+     * @param module
+     *            the module
+     * @param interruptible
+     *            the interruptible
+     *
+     * @throws Exception
+     *             the exception
      */
     @Override
     protected void exec(final TransferModule module, final boolean interruptible) throws Exception {
@@ -204,7 +213,7 @@ public final class ECtransGet extends ECtransAction {
                     try {
                         done = module.get(out, source, posn);
                     } catch (final Throwable t) {
-                        _log.warn("put", t);
+                        _log.warn("Optimized get failed, falling back to standard get", t);
                         message = t.getMessage();
                         done = true;
                     }
@@ -219,8 +228,8 @@ public final class ECtransGet extends ECtransAction {
                     plug.setFlush(setup.getBoolean(HOST_ECTRANS_PLUG_DO_FLUSH));
                     plug.setReadFully(setup.getBoolean(HOST_ECTRANS_PLUG_READ_FULLY));
                     plug.configurableRun();
-                    plug.close();
                     message = plug.getMessage();
+                    plug.close();
                     in.close();
                 }
                 if (message == null) {
@@ -237,30 +246,36 @@ public final class ECtransGet extends ECtransAction {
             final var sent = monitor.getByteSent();
             final var sentSize = posn + sent;
             final var hostName = (String) module.getAttribute("remote.hostName");
-            final var progress = size == -1 ? Format.formatSize(sent) : Format.formatPercentage(size - posn, sent);
+            final var progress = size == UNKNOWN_SIZE ? Format.formatSize(sent)
+                    : Format.formatPercentage(size - posn, sent);
             final var infoOrWarnMessage = "Received " + progress + (isNotEmpty(hostName) ? " from " + hostName : "")
                     + " - " + monitor.getRate() + " (bytes=" + sent + ",posn=" + posn + ")"
                     + (hasMessage ? " - " + message : "");
-            if (!hasMessage) {
-                _log.info(infoOrWarnMessage);
-            } else {
-                _log.warn(infoOrWarnMessage);
-            }
-            try {
-                module.check(size == -1 ? sentSize : size, null, hasMessage);
-            } catch (final IOException e) {
-                _log.warn("check", e);
-                if (hasMessage) {
-                    final var exception = new IOException(message);
-                    exception.initCause(e);
-                    throw exception;
-                }
-                throw e;
-            }
             if (hasMessage) {
+                _log.warn(infoOrWarnMessage);
+                // We had an error, let's check if we can also get some information from the
+                // transfer module?
+                try {
+                    module.check(size == UNKNOWN_SIZE ? sentSize : size, null, true);
+                } catch (final IOException e) {
+                    _log.warn("Transfer module check after transfer error", e);
+                    final var eMessage = e.getMessage();
+                    if (isNotEmpty(eMessage) && !eMessage.equals(message)) {
+                        message = eMessage + " -> " + message;
+                    }
+                }
                 throw new IOException(message);
             }
-            if (size != -1 && size != sentSize) {
+            _log.info(infoOrWarnMessage);
+            // We had no error on this side, let's check if it also looked good from the
+            // transfer module point of view?
+            try {
+                module.check(size == UNKNOWN_SIZE ? sentSize : size, null, false);
+            } catch (final IOException e) {
+                _log.warn("Transfer module check after transfer success", e);
+                throw e;
+            }
+            if (size != UNKNOWN_SIZE && size != sentSize) {
                 if (!StreamManagerImp.isFiltered(initialFilter)) {
                     _log.warn("Size mismatch: {}!={} (posn={})", size, sentSize, posn);
                     throw new IOException("Transfer aborted at " + progress + " (size mismatch)");
@@ -285,7 +300,7 @@ public final class ECtransGet extends ECtransAction {
             if (setup.getInteger(HOST_ECTRANS_GET_HANDLER_EXIT_CODE) != result) {
                 throw new IOException("Transfer aborted (exitCode: " + result + ")");
             }
-            module.check(size == -1 ? target.length() : size, null, false);
+            module.check(size == UNKNOWN_SIZE ? target.length() : size, null, false);
             history.setComment(source + " (" + manager.getSimplifiedRate() + ")");
         }
         if (removeOriginal) {
