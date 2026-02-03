@@ -50,8 +50,10 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
@@ -818,7 +820,7 @@ public final class TransferScheduler extends MBeanScheduler {
         final var dataFile = transfer.getDataFile();
         final var server = transfer.getTransferServer();
         final var backupHost = transfer.getBackupHost();
-        final List<Host> hostsForSource = new ArrayList<>();
+        final Set<Host> hostsForSource = new LinkedHashSet<>();
         // These values might be adjusted!
         var targetGroup = server.getTransferGroupName();
         var moverName = server.getName();
@@ -865,8 +867,8 @@ public final class TransferScheduler extends MBeanScheduler {
             // If the file is transferred across transfer groups then let's
             // add the source hosts of the transfer servers in the original
             // transfer group for retrieval!
-            _log.debug("Tranferring DataTransfer " + transfer.getId() + " across TransferGroups ("
-                    + sourceGroup.getName() + " -> " + targetGroup + ")");
+            _log.debug("Transferring DataTransfer {} across TransferGroups ({} -> {})", transfer.getId(),
+                    sourceGroup.getName(), targetGroup);
             for (final TransferServer transferServer : TransferServerProvider.getTransferServersByLeastActivity(
                     "TransferScheduler.put", transfer.getDestinationName(), sourceGroup)) {
                 final var host = transferServer.getHostForReplication();
@@ -879,25 +881,25 @@ public final class TransferScheduler extends MBeanScheduler {
             // If the DataTransfer has been backup then let's add it to the list
             // of available hosts for retrieval!
             if (backupHost != null && backupHost.getActive()) {
-                _log.debug("Include the backup Host (" + backupHost.getNickname() + ")");
+                _log.debug("Include the backup Host ({})", backupHost.getNickname());
                 hostsForSource.add(backupHost);
             }
             // If there is an original source host defined and the file was
             // not removed after transmission then let's use it as a
             // potential source host!
             if (hostForSource.getActive() && !dataFile.getDeleteOriginal()) {
-                _log.debug("Include the source Host (" + hostForSource.getNickname() + ")");
+                _log.debug("Include the source Host ({})", hostForSource.getNickname());
                 hostsForSource.add(hostForSource);
             }
         }
-        final var sources = hostsForSource.toArray(new Host[hostsForSource.size()]);
+        final var sources = hostsForSource.toArray(Host[]::new);
         // Log the list of source hosts!
         if (sources.length > 0) {
             final var hostsList = new StringBuilder();
             for (final Host host : sources) {
                 hostsList.append(hostsList.isEmpty() ? "" : ", ").append(host.getNickname());
             }
-            _log.debug("Source hosts list for " + transfer.getId() + ": " + hostsList.toString());
+            _log.debug("Source hosts list for {}: {}", transfer.getId(), hostsList.toString());
         }
         return sources;
     }
@@ -1360,29 +1362,30 @@ public final class TransferScheduler extends MBeanScheduler {
      * @return true, if successful
      */
     public static boolean put(final TransferServer[] servers, final DataTransfer transfer, final Host hostForSource) {
-        final var useSourceHost = hostForSource != null;
+        final var lastIndex = servers.length - 1;
         for (var i = 0; i < servers.length; i++) {
+            final var status = transfer.getStatusCode();
+            if (StatusFactory.INTR.equals(status) || StatusFactory.STOP.equals(status)) {
+                // The transfer has been stopped or interrupted — stop processing
+                break;
+            }
             final var server = servers[i];
             final var serverName = server.getName();
             transfer.setTransferServer(server);
             transfer.setTransferServerName(serverName);
             // If hostForSource is not null, only use it on the last server or if no
             // original server is set
-            final var applySourceHost = useSourceHost
-                    && (i == servers.length - 1 || transfer.getOriginalTransferServer() == null);
-            final var status = transfer.getStatusCode();
-            if (StatusFactory.INTR.equals(status) || StatusFactory.STOP.equals(status)) {
-                // The transfer has been stopped or interrupted — stop processing
-                break;
-            }
-            if (hostForSource != null) {
+            if (hostForSource != null && (i == lastIndex || transfer.getOriginalTransferServer() == null)) {
                 _log.debug("Trying DataTransfer-{} on DataMover {} (include source host {})", transfer.getId(),
                         serverName, hostForSource.getNickname());
+                if (put(transfer, hostForSource)) {
+                    return true;
+                }
             } else {
                 _log.debug("Trying DataTransfer-{} on DataMover {}", transfer.getId(), serverName);
-            }
-            if (put(transfer, applySourceHost ? hostForSource : null)) {
-                return true;
+                if (put(transfer, null)) {
+                    return true;
+                }
             }
         }
         return false;
