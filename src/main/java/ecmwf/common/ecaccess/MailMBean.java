@@ -71,14 +71,17 @@ public class MailMBean extends MBeanRepository<MailMessage> {
         }
     };
 
-    /** The mail host. */
-    private String mailHost;
+    /** SMTP host (sending) */
+    private String smtpHost;
+
+    /** Store host (IMAP / POP) */
+    private String storeHost;
 
     /** The mail user. */
     private String mailUser;
 
     /** The mail password. */
-    private String mailPassword;
+    private char[] mailPassword;
 
     /** The mail store type. */
     private String mailStoreType;
@@ -180,72 +183,136 @@ public class MailMBean extends MBeanRepository<MailMessage> {
             Arrays.stream(to.split("[,;]")).map(String::trim).filter(s -> !s.isEmpty()).forEach(recipient -> put(
                     new MailMessage(from, recipient, cc, subject, content, attachmentName, attachmentContent)));
         } else {
-            _log.warn("Invalid address: null or empty (mail not sent)");
+            _log.warn("Invalid address (mail not sent): to='{}' - subject='{}'", to, subject);
         }
     }
 
     /**
-     * Initializes the mail session and POP/IMAP configuration.
+     * Initializes the mail subsystem by configuring and creating a JavaMail {@link Session} based on the application's
+     * configuration.
+     * <p>
+     * This method sets up:
+     * <ul>
+     * <li><b>SMTP (sending)</b> — always enabled and configured using the "Mail.smtpHost", "Mail.port", "Mail.auth",
+     * and "Mail.starttls" settings.</li>
+     * <li><b>Mail store (receiving)</b> — optionally enabled when both "Mail.storeHost" and "Mail.storeType" are
+     * provided. Supported store protocols include <code>imap</code>, <code>imaps</code>, <code>pop3</code>, and
+     * <code>pop3s</code>.</li>
+     * </ul>
+     *
+     * If no valid store configuration is present, the system operates in <b>send‑only mode</b>, and no IMAP/POP
+     * connection will be attempted.
+     * <p>
+     * All SSL/TLS settings for both SMTP and the mail store are applied using the corresponding configuration keys. A
+     * dedicated {@link javax.mail.Authenticator} is installed to supply credentials for both sending and receiving
+     * actions.
+     * <p>
+     * This method is thread‑safe and will initialize the session only once.
+     *
+     * <h3>Configuration keys used:</h3>
+     * <ul>
+     * <li><b>Mail.smtpHost</b> – SMTP server hostname</li>
+     * <li><b>Mail.port</b> – SMTP port</li>
+     * <li><b>Mail.auth</b> – Enable SMTP authentication</li>
+     * <li><b>Mail.starttls</b> – Enable SMTP STARTTLS</li>
+     * <li><b>Mail.storeHost</b> – IMAP/POP server hostname (optional)</li>
+     * <li><b>Mail.storeType</b> – One of: imap, imaps, pop3, pop3s (optional)</li>
+     * <li><b>Mail.storePort</b> – Store port (optional, defaults per protocol)</li>
+     * <li><b>Mail.user</b> – Username for both SMTP and store</li>
+     * <li><b>Mail.password</b> – Password for authentication</li>
+     * <li><b>Mail.folderName</b> – Folder to open when using a store (default: INBOX)</li>
+     * <li><b>Mail.debug</b> – Enable JavaMail debug output</li>
+     * </ul>
+     *
+     * <h3>Thread-safety</h3> The method is synchronized and will skip initialization if a session already exists,
+     * ensuring that the mail system is configured exactly once.
+     *
+     * <h3>Logging</h3> A summary of the effective configuration is logged, with credentials safely masked.
      */
     @Override
     public synchronized void initialize() {
-        if (session == null) {
-            _log.info("Initializing Mail session");
-            final var props = new Properties();
-            // --- Common settings ---
-            mailHost = Cnf.at("Mail", "host", "");
-            mailUser = Cnf.at("Mail", "user", "");
-            mailPassword = Cnf.at("Mail", "password", "");
-            mailStoreType = Cnf.at("Mail", "storeType", "smtp").toLowerCase();
-            folderName = Cnf.at("Mail", "folderName", "INBOX");
-            // --- Determine default ports ---
-            final var defaultSmtpPort = 25;
-            final var defaultImapPort = 143;
-            final var defaultImapsPort = 993;
-            final var defaultPopPort = 110;
-            final var defaultPopSslPort = 995;
-            // --- SMTP properties (always safe to define) ---
-            var smtpPort = Cnf.at("Mail", "port", "");
-            if (smtpPort.isBlank()) {
-                smtpPort = "smtp".equals(mailStoreType) ? String.valueOf(defaultSmtpPort) : "25";
-            }
-            props.put("mail.transport.protocol", "smtp");
-            props.put("mail.smtp.host", mailHost);
-            props.put("mail.smtp.port", smtpPort);
-            props.put("mail.smtp.starttls.enable", Cnf.at("Mail", "starttls", "true"));
-            props.put("mail.smtp.auth", Cnf.at("Mail", "auth", "true"));
-            // Optional: IMAP/POP properties for receiving mail
-            if (!mailStoreType.startsWith("smtp")) {
-                props.put("mail.store.protocol", mailStoreType);
-                props.put("mail." + mailStoreType + ".host", mailHost);
-                // Determine default store port if not provided
-                var storePort = Cnf.at("Mail", "storePort", "");
-                if (storePort.isBlank()) {
-                    if (mailStoreType.startsWith("imap")) {
-                        storePort = mailStoreType.equals("imaps") ? String.valueOf(defaultImapsPort)
-                                : String.valueOf(defaultImapPort);
-                    } else if (mailStoreType.startsWith("pop")) {
-                        storePort = mailStoreType.equals("pops") ? String.valueOf(defaultPopSslPort)
-                                : String.valueOf(defaultPopPort);
-                    } else {
-                        storePort = "993"; // fallback safe default
-                    }
-                }
-                props.put("mail." + mailStoreType + ".port", storePort);
-                props.put("mail." + mailStoreType + ".ssl.enable", Cnf.at("Mail", "ssl", "true"));
-            }
-            // Enable debug if configured
-            final var debug = Cnf.at("Mail", "debug", false);
-            // Create authenticated session
-            session = Session.getInstance(props, new javax.mail.Authenticator() {
-                @Override
-                protected PasswordAuthentication getPasswordAuthentication() {
-                    return new PasswordAuthentication(mailUser, mailPassword);
-                }
-            });
-            session.setDebug(debug);
-            _log.info("Mail session initialized (protocol=" + mailStoreType + ", debug=" + debug + ")");
+        if (session != null) {
+            return; // already initialized
         }
+        _log.info("Initializing Mail session");
+        final var props = new Properties();
+        // ------------------------------------------------------------------
+        // 1. Load Configuration
+        // ------------------------------------------------------------------
+        final var defaultHost = Cnf.at("Mail", "host", "");
+        smtpHost = Cnf.at("Mail", "smtpHost", defaultHost);
+        storeHost = Cnf.at("Mail", "storeHost", ""); // empty = no store
+        mailUser = Cnf.at("Mail", "user", "");
+        mailPassword = Cnf.at("Mail", "password", "").toCharArray();
+        folderName = Cnf.at("Mail", "folderName", "INBOX");
+        // NOTE: NEW — storeType default = "" (send‑only)
+        mailStoreType = Cnf.at("Mail", "storeType", "").toLowerCase().trim();
+        final var debug = Cnf.at("Mail", "debug", false);
+        // ------------------------------------------------------------------
+        // 2. SMTP Configuration (Always Enabled)
+        // ------------------------------------------------------------------
+        final var smtpPort = Cnf.at("Mail", "port", 25);
+        final var smtpTLS = Cnf.at("Mail", "starttls", true);
+        final var smtpAuth = Cnf.at("Mail", "auth", true);
+        props.put("mail.transport.protocol", "smtp");
+        props.put("mail.smtp.host", smtpHost);
+        props.put("mail.smtp.port", String.valueOf(smtpPort));
+        props.put("mail.smtp.auth", String.valueOf(smtpAuth));
+        props.put("mail.smtp.starttls.enable", String.valueOf(smtpTLS));
+        props.put("mail.smtp.starttls.required", String.valueOf(smtpTLS));
+        // ------------------------------------------------------------------
+        // 3. Store Configuration (Optional)
+        // ------------------------------------------------------------------
+        final var storeConfigured = storeHost != null && !storeHost.isBlank() && mailStoreType != null
+                && !mailStoreType.isBlank();
+        if (storeConfigured) {
+            props.put("mail.store.protocol", mailStoreType);
+            props.put("mail." + mailStoreType + ".host", storeHost);
+            // Determine store port
+            var storePort = Cnf.at("Mail", "storePort", -1);
+            if (storePort == -1) {
+                storePort = switch (mailStoreType) {
+                case "imaps" -> 993;
+                case "imap" -> 143;
+                case "pop3s" -> 995;
+                case "pop3" -> 110;
+                default -> 993; // safe default
+                };
+            }
+            props.put("mail." + mailStoreType + ".port", String.valueOf(storePort));
+            // TLS configuration for store
+            final var tlsRequired = Cnf.at("Mail", "tls", true);
+            if (mailStoreType.endsWith("s")) {
+                // implicit SSL
+                props.put("mail." + mailStoreType + ".ssl.enable", "true");
+            } else {
+                // explicit STARTTLS
+                props.put("mail." + mailStoreType + ".starttls.enable", "true");
+                props.put("mail." + mailStoreType + ".starttls.required", String.valueOf(tlsRequired));
+            }
+        } else {
+            _log.info("Mail store disabled (send‑only mode)");
+        }
+        // ------------------------------------------------------------------
+        // 4. Create Session
+        // ------------------------------------------------------------------
+        session = Session.getInstance(props, new javax.mail.Authenticator() {
+            @Override
+            protected PasswordAuthentication getPasswordAuthentication() {
+                return new PasswordAuthentication(mailUser, new String(mailPassword));
+            }
+        });
+        session.setDebug(debug);
+        // ------------------------------------------------------------------
+        // 5. Log Configuration Summary (Safe)
+        // ------------------------------------------------------------------
+        // mask all but last 2 chars
+        final var userMasked = mailUser.isEmpty() ? "<empty>" : mailUser.replaceAll("(?=..).", "*");
+        _log.info(
+                "Mail configuration:\n" + "  SMTP: host={}, port={}, tls={}, auth={}\n"
+                        + "  Store: type='{}', host='{}'{}\n" + "  Mail user: {}\n" + "  Debug: {}",
+                smtpHost, smtpPort, smtpTLS, smtpAuth, storeConfigured ? mailStoreType : "<disabled>",
+                storeConfigured ? storeHost : "", storeConfigured ? "" : "", userMasked, debug);
     }
 
     /**
@@ -389,53 +456,74 @@ public class MailMBean extends MBeanRepository<MailMessage> {
     }
 
     /**
-     * Connects to the mail store and folder if not already connected.
-     *
-     * @throws MessagingException
-     *             if connection fails
-     */
-    /**
-     * Connects to the configured mail store (IMAP/POP) if applicable.
+     * Establishes a connection to the configured mail store (IMAP or POP) and opens the target folder for message
+     * retrieval.
      * <p>
-     * If the configuration indicates an SMTP-only setup (e.g. host name contains "smtp" or the protocol is "smtp"),
-     * this method will simply log that no store connection is required and return immediately.
+     * This method is invoked automatically by the mail-processing workflow and is responsible only for the receiving
+     * side of the mail subsystem. SMTP sending is handled independently and is always available.
+     *
+     * <h3>Behavior</h3>
+     * <ul>
+     * <li>If a store connection is already established, the method returns immediately.</li>
+     * <li>If no store host or store type is configured (send‑only mode), the method logs this and returns without
+     * attempting any connection.</li>
+     * <li>Otherwise, the method connects to the store using the protocol specified by {@code mailStoreType} (e.g.
+     * {@code imap}, {@code imaps}, {@code pop3}, {@code pop3s}).</li>
+     * <li>After a successful store login, the configured folder (default: {@code INBOX}) is opened in
+     * {@link Folder#READ_WRITE} mode.</li>
+     * </ul>
+     *
+     * <h3>Configuration Requirements</h3> The following properties must be set during {@link #initialize()} in order
+     * for store connectivity to be enabled:
+     * <ul>
+     * <li>{@code Mail.storeHost} – hostname of the IMAP/POP server</li>
+     * <li>{@code Mail.storeType} – store protocol (imap, imaps, pop3, pop3s)</li>
+     * </ul>
+     * If these properties are missing or empty, the system operates in <b>send‑only mode</b> and this method becomes a
+     * no‑op.
+     *
+     * <h3>Exceptions</h3>
+     * <ul>
+     * <li>{@link NoSuchProviderException} if the configured store protocol is unsupported or misspelled.</li>
+     * <li>{@link AuthenticationFailedException} if credentials are rejected by the mail store.</li>
+     * <li>{@link MessagingException} for any other connection or folder‑access errors.</li>
+     * </ul>
+     *
+     * <h3>Thread Safety</h3> The method is synchronized to ensure that the store and folder are opened at most once and
+     * to prevent connection races.
      *
      * @throws MessagingException
-     *             if the connection to the mail store fails
+     *             if the connection or folder opening fails
      */
     private synchronized void connect() throws MessagingException {
+        // Already connected?
         if (store != null) {
             _log.debug("Mail store already connected");
             return;
         }
-        if (mailHost == null || mailHost.isEmpty()) {
-            _log.debug("No mailHost configured — skipping mail store connection");
+        // No store configured (send-only mode)?
+        if (storeHost == null || storeHost.isBlank() || mailStoreType == null || mailStoreType.isBlank()) {
+            _log.debug("Mail store not configured — operating in send‑only mode");
             return;
         }
-        // Determine the store type (imap, imaps, pop3, pop3s, or smtp)
-        // Detect SMTP-only configurations and skip connecting
-        if (mailStoreType.startsWith("smtp")) {
-            _log.debug("Detected SMTP-only configuration for host '{}'; skipping store connection", mailHost);
-            return;
-        }
-        _log.debug("Connecting to mail store '{}', protocol='{}'", mailHost, mailStoreType);
+        _log.debug("Connecting to mail store '{}', protocol='{}'", storeHost, mailStoreType);
         try {
             store = session.getStore(mailStoreType);
-            store.connect(mailHost, mailUser, mailPassword);
-            folder = store.getFolder(folderName); // <- folderName is usually "INBOX"
+            store.connect(storeHost, mailUser, new String(mailPassword));
+            folder = store.getFolder(folderName);
             folder.open(Folder.READ_WRITE);
-            _log.info("Connected to mail store '{}' using {}", mailHost, mailStoreType);
+            _log.info("Connected to mail store '{}' using {}", storeHost, mailStoreType);
         } catch (final NoSuchProviderException e) {
             _log.error("Invalid mail store provider: '{}'", mailStoreType, e);
             throw e;
         } catch (final AuthenticationFailedException e) {
-            _log.error("Authentication failed connecting to mail store '{}': {}", mailHost, e.getMessage());
+            _log.error("Authentication failed connecting to mail store '{}': {}", storeHost, e.getMessage());
             throw e;
         } catch (final MessagingException e) {
-            // Common mistake: connecting IMAP to an SMTP port
+            // Helpful error hint if user mis-configured the store port
             if (e.getMessage() != null && e.getMessage().contains("ESMTP")) {
-                _log.error("Mail connection error: host '{}' appears to be an SMTP server; "
-                        + "use SMTP-only mode or correct mail.store.protocol", mailHost);
+                _log.error("Mail connection error: host '{}' looks like an SMTP server; "
+                        + "check 'Mail.storeType' and 'Mail.storePort'", storeHost);
             }
             throw e;
         }
