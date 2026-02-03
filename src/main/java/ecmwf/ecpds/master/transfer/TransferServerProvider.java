@@ -39,8 +39,8 @@ import java.util.SplittableRandom;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
 
 import org.apache.logging.log4j.LogManager;
@@ -55,19 +55,76 @@ import ecmwf.common.technical.Cnf;
 import ecmwf.ecpds.master.MasterServer;
 
 /**
- * Provides a centralised mechanism for selecting, ordering, and managing {@link TransferServer} instances for data
- * transfer.
- * <p>
- * Supports:
+ * Central provider for selecting {@link TransferServer} instances in ECPDS, ensuring fair, stable, and resource-aware
+ * load distribution across transfer groups, clusters, servers, and storage volumes.
+ *
+ * <h2>Responsibilities</h2>
  * <ul>
- * <li>Stable caller-based load balancing</li>
- * <li>Cluster fallback for unavailable transfer groups</li>
- * <li>File system volume-based ordering using cached usage statistics</li>
- * <li>File system activity-based ordering using cached activity statistics</li>
- * <li>Weighted allocation of volumes per transfer group</li>
+ * <li>Select an appropriate {@link TransferGroup} for a transfer request</li>
+ * <li>Distribute load fairly across clustered transfer groups</li>
+ * <li>Select and order active {@link TransferServer}s for the chosen group</li>
+ * <li>Optionally order servers by file system activity or free space</li>
+ * <li>Allocate storage volumes using weighted, capacity-aware selection</li>
+ * </ul>
+ *
+ * <h2>Cluster-aware fair distribution</h2> When a {@link TransferGroup} belongs to a cluster, this class ensures
+ * <b>global fairness across all callers</b> by applying a <b>weighted round-robin algorithm at cluster level</b>.
+ * <p>
+ * Unlike random or caller-local selection, the cluster selection:
+ * <ul>
+ * <li>Is shared globally across all threads and callers</li>
+ * <li>Respects {@code clusterWeight} configured per transfer group</li>
+ * <li>Avoids bias caused by database ordering or configuration order</li>
+ * <li>Ensures long-term proportional usage of all available groups</li>
  * </ul>
  * <p>
- * The class maintains internal caches and periodically updates volume usage statistics for optimal server selection.
+ * This guarantees that, over time, each transfer group in a cluster receives traffic proportional to its configured
+ * capacity, even under heavy concurrency.
+ *
+ * <h2>Caller-stable server ordering</h2> Within a selected transfer group, servers are ordered using a <b>caller-stable
+ * rotation</b>:
+ * <ul>
+ * <li>The starting point of the server list is derived from the caller identity</li>
+ * <li>The ordering remains stable for a given caller and group</li>
+ * <li>Different callers naturally spread load across servers</li>
+ * </ul>
+ * This avoids thundering-herd effects while preserving predictability.
+ *
+ * <h2>Volume-aware allocation</h2> Storage volumes are allocated using the {@link WeightedAllocator}, which:
+ * <ul>
+ * <li>Tracks per-volume usage and capacity</li>
+ * <li>Favors volumes with more free space</li>
+ * <li>Falls back to uniform random selection when volumes are similarly loaded</li>
+ * <li>Periodically refreshes statistics in the background</li>
+ * </ul>
+ *
+ * <h2>Fallback and resilience</h2>
+ * <ul>
+ * <li>If a transfer group has no active servers, cluster fallback is attempted</li>
+ * <li>If volume statistics are unavailable, safe random allocation is used</li>
+ * <li>All selections verify server activity and connectivity to the master</li>
+ * </ul>
+ *
+ * <h2>Thread safety</h2> This class is safe for concurrent use:
+ * <ul>
+ * <li>All shared state is stored in concurrent data structures</li>
+ * <li>Round-robin counters are atomic and cluster-scoped</li>
+ * <li>Volume statistics updates are synchronised per group</li>
+ * </ul>
+ *
+ * <h2>Design goals</h2>
+ * <ul>
+ * <li>Fairness across all callers, not just per request</li>
+ * <li>Deterministic behavior where possible</li>
+ * <li>Graceful degradation when metrics are unavailable</li>
+ * <li>Operational transparency through detailed debug logging</li>
+ * </ul>
+ *
+ * This class acts as the single authoritative entry point for transfer server selection in ECPDS.
+ *
+ * @author Laurent Gougeon
+ *
+ * @since 6.7.7
  */
 public final class TransferServerProvider {
     /** The Constant _log. */
@@ -81,10 +138,8 @@ public final class TransferServerProvider {
      */
     private static final ConcurrentHashMap<String, MasterServer.VolumeUsageResult> VOLUME_USAGE_CACHE = new ConcurrentHashMap<>();
 
-    /**
-     * Map for stable caller-based random rotation indices for server lists.
-     */
-    private static final ConcurrentHashMap<String, SplittableRandom> ACTIVE_SERVERS_INDEX = new ConcurrentHashMap<>();
+    /** Round-robin counters per cluster */
+    private static final ConcurrentHashMap<String, AtomicInteger> CLUSTER_RR = new ConcurrentHashMap<>();
 
     /**
      * List of active TransferServer instances for the selected group and file system.
@@ -135,6 +190,111 @@ public final class TransferServerProvider {
      */
     public TransferGroup getTransferGroup() {
         return group;
+    }
+
+    /**
+     * Selects a {@link TransferGroup} from the same cluster as the original group using a <b>global weighted
+     * round-robin</b> algorithm.
+     *
+     * <p>
+     * This method ensures <b>fair distribution across all callers</b> by maintaining a shared round-robin counter per
+     * cluster. Each invocation advances the counter, regardless of which caller or thread triggered the selection.
+     * </p>
+     *
+     * <h3>Selection rules</h3>
+     * <ul>
+     * <li>If the original group does not belong to a cluster, it is returned unchanged</li>
+     * <li>Only groups that:
+     * <ul>
+     * <li>belong to the same cluster</li>
+     * <li>are active and available</li>
+     * <li>have a strictly positive {@code clusterWeight}</li>
+     * </ul>
+     * are eligible for selection</li>
+     * <li>Eligible groups are ordered deterministically by name to avoid configuration or database ordering bias</li>
+     * <li>The configured {@code clusterWeight} defines how many slots each group occupies in the round-robin cycle</li>
+     * </ul>
+     *
+     * <h3>Fairness properties</h3>
+     * <ul>
+     * <li>Fair across <b>all callers and threads</b>, not per caller</li>
+     * <li>Long-term proportional usage according to {@code clusterWeight}</li>
+     * <li>No reliance on randomness once the system is running</li>
+     * <li>Stable behavior under high concurrency</li>
+     * </ul>
+     *
+     * <h3>Example</h3> For a cluster with groups {@code A(weight=1)}, {@code B(weight=2)}:
+     *
+     * <pre>
+     * A → B → B → A → B → B → ...
+     * </pre>
+     *
+     * <h3>Fallback behavior</h3>
+     * <ul>
+     * <li>If no eligible group is found, the original group is returned</li>
+     * <li>If the total computed weight is invalid, the original group is returned</li>
+     * </ul>
+     *
+     * @param original
+     *            the originally selected transfer group
+     * @param allGroups
+     *            all known transfer groups, used to resolve cluster membership
+     *
+     * @return the selected transfer group according to weighted round-robin fairness
+     */
+    private static TransferGroup selectGroupFromClusterRoundRobin(final TransferGroup original,
+            final TransferGroup[] allGroups) {
+        final var clusterName = original.getClusterName();
+        if (clusterName == null) {
+            return original;
+        }
+        // Collect eligible groups in the same cluster
+        final List<TransferGroup> candidates = new ArrayList<>();
+        for (final var g : allGroups) {
+            if (clusterName.equals(g.getClusterName()) && getClusterWeight(g) > 0 && groupIsAvailable(g)) {
+                candidates.add(g);
+            }
+        }
+        // No alternative available
+        if (candidates.isEmpty()) {
+            return original;
+        }
+        // Stable order to avoid DB / configuration bias
+        candidates.sort(Comparator.comparing(TransferGroup::getName));
+        // Compute total weight
+        var totalWeight = 0;
+        for (final var g : candidates) {
+            totalWeight += getClusterWeight(g);
+        }
+        // Defensive: should never happen, but avoids /0
+        if (totalWeight <= 0) {
+            return original;
+        }
+        // Global weighted round-robin
+        final var counter = CLUSTER_RR.computeIfAbsent(clusterName, _ -> new AtomicInteger(0));
+        // Slot in the weighted cycle
+        var slot = Math.floorMod(counter.getAndIncrement(), totalWeight);
+        // Select group corresponding to the slot
+        for (final var g : candidates) {
+            slot -= getClusterWeight(g);
+            if (slot < 0) {
+                if (_log.isDebugEnabled() && !g.getName().equals(original.getName())) {
+                    _log.debug("Selected TransferGroup {} from cluster {} (weighted RR)", g.getName(), clusterName);
+                }
+                return g;
+            }
+        }
+        // Fallback: should not happen, but be safe
+        return original;
+    }
+
+    /**
+     * Gets the cluster weight for the group.
+     *
+     * @return the transfer group cluster weight if defined and positive, 0 otherwise
+     */
+    private static int getClusterWeight(final TransferGroup group) {
+        return group.getClusterWeight() != null && group.getClusterWeight() > 0 ? group.getClusterWeight() : 0;
     }
 
     /**
@@ -269,6 +429,9 @@ public final class TransferServerProvider {
         final var fileSystemProvided = fileSystem != null && fileSystem >= 0;
         // Resolve transfer group if not explicitly provided
         var group = originalGroup != null ? originalGroup : resolveTransferGroup(null, destination, null);
+        // Global fair distribution across cluster
+        final var allGroups = MASTER.getECpdsBase().getTransferGroupArray();
+        group = selectGroupFromClusterRoundRobin(group, allGroups);
         // Resolve transfer group servers (with cluster fallback if needed)
         var groupName = group.getName();
         var declaredServers = dataBase.getTransferServers(groupName);
@@ -322,9 +485,9 @@ public final class TransferServerProvider {
      * Attempts to select an alternative {@link TransferGroup} from the same cluster when the original group has no
      * available TransferServers.
      * <p>
-     * If the given group belongs to a cluster and has an associated cluster weight, a new group is selected using
-     * weighted random selection among all available groups in the cluster. If the group is not part of a cluster or no
-     * suitable alternative is found, the original group is returned unchanged.
+     * If the given group belongs to a cluster and has an associated cluster weight, a new group is selected using a
+     * global weighted round-robin selection among all available groups in the cluster. If the group is not part of a
+     * cluster or no suitable alternative is found, the original group is returned unchanged.
      *
      * @param group
      *            the original transfer group
@@ -333,11 +496,12 @@ public final class TransferServerProvider {
      */
     private static TransferGroup tryClusterFallback(final TransferGroup group) {
         final var clusterName = group.getClusterName();
-        if (isNotEmpty(clusterName) && group.getClusterWeight() != null) {
+        if (isNotEmpty(clusterName) && getClusterWeight(group) > 0) {
             final var dataBase = MASTER.getECpdsBase();
-            final var selected = getRandomGroupFromCluster(group, dataBase.getTransferGroupArray());
+            final var allGroups = dataBase.getTransferGroupArray();
+            final var selected = selectGroupFromClusterRoundRobin(group, allGroups);
             if (!selected.getName().equals(group.getName())) {
-                _log.debug("Choosing TransferGroup {} from Cluster {}", selected.getName(), clusterName);
+                _log.debug("Choosing TransferGroup {} from Cluster {} (WRR fallback)", selected.getName(), clusterName);
             }
             return selected;
         }
@@ -345,25 +509,28 @@ public final class TransferServerProvider {
     }
 
     /**
-     * Selects a stable starting index used to rotate the list of TransferServers for load-balancing purposes.
+     * Computes a stable starting index for rotating the list of {@code TransferServers} to achieve load balancing.
      * <p>
-     * The index is generated using a caller- and group-specific random generator, ensuring that successive calls from
-     * the same caller for the same group produce a consistent ordering while still distributing load across servers.
+     * The index is calculated using a combination of the caller identifier, the group name, and the current time
+     * (bucketed by minutes). This ensures that calls from the same caller for the same group within the same minute
+     * yield a consistent ordering, while still distributing load across servers over time.
      *
      * @param caller
-     *            identifier of the calling component
+     *            the identifier of the calling component
      * @param groupName
-     *            name of the transfer group
+     *            the name of the transfer group
      * @param size
-     *            total number of available servers
+     *            the total number of available servers; must be positive
      *
      * @return a starting index in the range {@code [0, size)}
      */
     private static int selectStartIndex(final String caller, final String groupName, final int size) {
-        final var indexName = caller + "." + groupName;
-        final var random = ACTIVE_SERVERS_INDEX.computeIfAbsent(indexName, key -> new SplittableRandom(key.hashCode()));
-        final var index = random.nextInt(size);
-        _log.debug("Selected index for {}: {}", indexName, index);
+        final var bucket = TimeUnit.MINUTES.convert(System.currentTimeMillis(), TimeUnit.MILLISECONDS);
+        final var h = java.util.Objects.hash(caller, groupName, bucket);
+        final var index = Math.floorMod(h, size);
+        if (_log.isDebugEnabled()) {
+            _log.debug("Selected index for {}.{}: {}", caller, groupName, index);
+        }
         return index;
     }
 
@@ -575,46 +742,6 @@ public final class TransferServerProvider {
     private static boolean groupIsAvailable(final TransferGroup group) {
         return group.getActive() && Arrays.stream(MASTER.getECpdsBase().getTransferServers(group.getName()))
                 .anyMatch(server -> server.getActive() && MASTER.existsClientInterface(server.getName(), "DataMover"));
-    }
-
-    /**
-     * Get a random weighted selection of a TransferGroup from a Cluster.
-     *
-     * @param original
-     *            the original
-     * @param transferGroups
-     *            the transfer groups
-     *
-     * @return the transfer group
-     */
-    private static TransferGroup getRandomGroupFromCluster(final TransferGroup original,
-            final TransferGroup[] transferGroups) {
-        final var clusterName = original.getClusterName();
-        // What is the sum of all the weightings?
-        var total = 0;
-        for (final TransferGroup group : transferGroups) {
-            if (clusterName.equals(group.getClusterName()) && group.getClusterWeight() != null
-                    && groupIsAvailable(group)) {
-                total += group.getClusterWeight();
-            }
-        }
-        if (total > 0) {
-            // Select a random value between 0 and the total
-            final var random = ThreadLocalRandom.current().nextInt(total);
-            // Loop through the weightings list until the correct one is found!
-            var current = 0;
-            for (final TransferGroup group : transferGroups) {
-                if (clusterName.equals(group.getClusterName()) && group.getClusterWeight() != null
-                        && groupIsAvailable(group)) {
-                    current += group.getClusterWeight();
-                    if (random < current) {
-                        return group;
-                    }
-                }
-            }
-        }
-        // No other TransferGroup found from the Cluster!
-        return original;
     }
 
     /**
