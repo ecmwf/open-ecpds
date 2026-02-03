@@ -525,12 +525,14 @@ public final class TransferManagement {
             }
             return mover.put(hostsForSource, transfer, targetName, posn, posn);
         } catch (final RemoteException e) {
-            _log.warn("Connection issue with {}", moverName, e);
             if (e.getCause() instanceof NoSuchObjectException || e.getCause() instanceof ConnectException
                     || e.getCause() instanceof ConnectIOException || e.getCause() instanceof UnmarshalException) {
+                _log.warn("Connection issue on {}", moverName, e);
                 throw new ECtransException("DataMover " + moverName + " connection issue");
+            } else {
+                _log.warn("Transmission issue on {}", moverName, e);
+                throw e;
             }
-            throw e;
         }
     }
 
