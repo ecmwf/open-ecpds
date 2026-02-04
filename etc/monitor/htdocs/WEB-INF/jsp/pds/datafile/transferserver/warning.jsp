@@ -2,6 +2,10 @@
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 
+<c:set var="entityLabel" value="Transfer Server" scope="request"/>
+<c:set var="entityName" value="${transferserver.name}" scope="request"/>
+
+<!-- Warning Box -->
 <div class="alert">
 	<span class="closebtn" onclick="parent.history.back();">&times;</span>
 	This operation will remove:

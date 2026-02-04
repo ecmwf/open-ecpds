@@ -1,5 +1,11 @@
-<%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content" %>
+<%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content"%>
+<%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 
+<c:set var="entityLabel" value="Destination" scope="request"/>
+<c:set var="entityName" value="${destination.name}" scope="request"/>
+
+<!-- Warning Box -->
 <div class="alert">
   <span class="closebtn" onclick="parent.history.back();">&times;</span>
 This operation will remove:

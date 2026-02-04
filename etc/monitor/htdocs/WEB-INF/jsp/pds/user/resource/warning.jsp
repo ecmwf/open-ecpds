@@ -1,6 +1,9 @@
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content"%>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 
+<c:set var="entityLabel" value="Web Resource" scope="request"/>
+<c:set var="entityName" value="${resource.path}" scope="request"/>
+
 <div class="alert">
 	<span class="closebtn" onclick="parent.history.back();">&times;</span>
 	This operation will remove:
