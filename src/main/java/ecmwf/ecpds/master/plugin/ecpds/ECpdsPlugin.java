@@ -2520,7 +2520,7 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
             }
         } catch (final Throwable t) {
             _log.warn("put", t);
-            final var error = t.getMessage();
+            final var error = Format.getMessage(t);
             stopAndError(error == null ? "aborted by server" : error);
         }
     }
@@ -2639,6 +2639,31 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     }
 
     /**
+     * Destinationexists req.
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     */
+    public void destinationexistsReq() throws IOException {
+        if (userName == null || remoteIp == null) {
+            stopAndError("Please login first");
+            return;
+        }
+        if (selectedDestination == null || selectedDestination.isBlank()) {
+            stopAndError("Destination not specified");
+            return;
+        }
+        try {
+            final var exists = DATABASE.getDestinationObject(selectedDestination) != null;
+            final var message = exists ? "Destination found" : "Destination not found";
+            send("MESSAGE " + message);
+        } catch (final Throwable t) {
+            stopAndError(Format.getMessage(t));
+        }
+        setLoop(false);
+    }
+
+    /**
      * Destinationstart req.
      *
      * @throws IOException
@@ -2652,7 +2677,7 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
         try {
             MASTER.getTransferScheduler().restartDestination(userName, userName, selectedDestination, true, true);
         } catch (final Throwable t) {
-            stopAndError(t.getMessage());
+            stopAndError(Format.getMessage(t));
             return;
         }
         send("MESSAGE Destination started");
@@ -2673,7 +2698,7 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
         try {
             MASTER.getTransferScheduler().holdDestination(userName, selectedDestination, StatusFactory.STOP, true);
         } catch (final Throwable t) {
-            stopAndError(t.getMessage());
+            stopAndError(Format.getMessage(t));
             return;
         }
         send("MESSAGE Destination stopped");
@@ -2694,7 +2719,7 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
         try {
             MASTER.getDownloadScheduler(acquisition).setPause(false);
         } catch (final Throwable t) {
-            stopAndError(t.getMessage());
+            stopAndError(Format.getMessage(t));
             return;
         }
         send("MESSAGE Scheduler started");
@@ -2715,7 +2740,7 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
         try {
             MASTER.getDownloadScheduler(acquisition).setPause(true);
         } catch (final Throwable t) {
-            stopAndError(t.getMessage());
+            stopAndError(Format.getMessage(t));
             return;
         }
         send("MESSAGE Scheduler stopped");
@@ -2743,7 +2768,7 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
                 downloadScheduler.setTimeOutDownloadThread(currentTimeout);
             }
         } catch (final Throwable t) {
-            stopAndError(t.getMessage());
+            stopAndError(Format.getMessage(t));
             return;
         }
         send("MESSAGE Scheduler " + (downloadScheduler.getPause() ? "stopped" : "started") + " (streams="
