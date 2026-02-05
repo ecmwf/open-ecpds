@@ -26,6 +26,14 @@ package ecmwf.ecpds.master;
  * @since 2024-07-01
  */
 
+/**
+ * ECMWF Product Data Store (ECPDS) Project
+ *
+ * @author Laurent Gougeon <syi@ecmwf.int>, ECMWF.
+ * @version 6.7.7
+ * @since 2024-07-01
+ */
+
 import static ecmwf.common.ectrans.ECtransGroups.Module.DESTINATION_ECTRANS;
 import static ecmwf.common.ectrans.ECtransGroups.Module.DESTINATION_MQTT;
 import static ecmwf.common.ectrans.ECtransGroups.Module.DESTINATION_SCHEDULER;
@@ -33,6 +41,8 @@ import static ecmwf.common.ectrans.ECtransGroups.Module.HOST_ACQUISITION;
 import static ecmwf.common.ectrans.ECtransGroups.Module.HOST_ECTRANS;
 import static ecmwf.common.ectrans.ECtransGroups.Module.HOST_PROXY;
 import static ecmwf.common.ectrans.ECtransGroups.Module.USER_PORTAL;
+import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_ECTRANS_FILTERPATTERN;
+import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_ECTRANS_FILTER_MINIMUM_SIZE;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_MQTT_CLIENT_ID;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_MQTT_CONTENT_TYPE;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_MQTT_EXPIRY_INTERVAL;
@@ -45,8 +55,6 @@ import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_SCHEDULER_FORCE_ST
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_SCHEDULER_MASTER_TO_NOTIFY_ON_DONE;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_SCHEDULER_RESET_QUEUE_ON_CHANGE;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_SCHEDULER_STANDBY;
-import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_ECTRANS_FILTER_MINIMUM_SIZE;
-import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_ECTRANS_FILTERPATTERN;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ACQUISITION_ACTION;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ACQUISITION_DATEDELTA;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ACQUISITION_DATEFORMAT;
@@ -92,14 +100,14 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_ACQUISITION_USE_SYMLINK;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ACQUISITION_USE_TARGET_AS_UNIQUE_NAME;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ACQUISITION_WILDCARD_FILTER;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_FILTERPATTERN;
-import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_LASTUPDATE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_FILTER_MINIMUM_SIZE;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_LASTUPDATE;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_PROXY_USE_DESTINATION_FILTER;
 import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_ANONYMOUS;
 import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_GEOBLOCLING;
 import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_MAX_CONNECTIONS;
 import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_UPDATE_LAST_LOGIN_INFORMATION;
 import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_USE_PASSCODE;
-import static ecmwf.common.ectrans.ECtransOptions.HOST_PROXY_USE_DESTINATION_FILTER;
 import static ecmwf.common.text.Util.isEmpty;
 import static ecmwf.common.text.Util.isNotEmpty;
 import static ecmwf.common.text.Util.nullToNone;
@@ -1756,16 +1764,19 @@ public final class MasterServer extends ECaccessProvider
                 } catch (final Throwable t) {
                     // If an error occurred then we send an email to the
                     // specified address and we stop the computation!
-                    sendECpdsMessage(email,
-                            "Error occurred while computing efficiency of " + filter + " on " + destinationName,
-                            Format.getMessage(t));
+                    _log.warn("Error occurred while computing efficiency of {} on {}", filter, destinationName, t);
+                    if (isNotEmpty(email))
+                        sendECpdsMessage(email,
+                                "Error occurred while computing efficiency of " + filter + " on " + destinationName,
+                                Format.getMessage(t));
                     return;
                 }
                 // Record the result in the logs!
-                _log.info(() -> efficiency.toString());
+                _log.info(efficiency::toString);
                 // Send the outcome at the specified email address!
-                sendECpdsMessage(email, "Efficiency of " + filter + " on " + destinationName,
-                        efficiency.getEmailContent());
+                if (isNotEmpty(email))
+                    sendECpdsMessage(email, "Efficiency of " + filter + " on " + destinationName,
+                            efficiency.getEmailContent());
             }
         };
         thread.execute();
@@ -2895,12 +2906,8 @@ public final class MasterServer extends ECaccessProvider
     @Override
     public MBeanInfo getMBeanInfo() {
         return MBeanManager.addMBeanInfo(super.getMBeanInfo(), "The ECpds MasterServer deals with data transfers",
-                new MBeanAttributeInfo[] {
-                        new MBeanAttributeInfo("Connected", "java.lang.Boolean",
-                                "Connected: connected to the ECcmdServer.", true, false, false),
-                        new MBeanAttributeInfo("sendMailForTransfers", "java.lang.Boolean",
-                                "sendMailForTransfers: send mails for each event on a data transfer.", true, true,
-                                false),
+                new MBeanAttributeInfo[] { new MBeanAttributeInfo("sendMailForTransfers", "java.lang.Boolean",
+                        "sendMailForTransfers: send mails for each event on a data transfer.", true, true, false),
                         new MBeanAttributeInfo("Trace", "java.lang.Boolean",
                                 "Trace: show remote calls from monitoring interface in logs.", true, true, false),
                         new MBeanAttributeInfo("SynchronizedCount", "java.lang.Long",
@@ -3700,21 +3707,23 @@ public final class MasterServer extends ECaccessProvider
     public void sendECpdsMessage(final DataTransfer transfer) {
         if (sendMailNotificationsForTransfers) {
             final var destination = transfer.getDestination();
-            final var comment = transfer.getComment();
-            final var file = transfer.getDataFile();
-            final var ecuser = destination.getECUser();
             final var mailto = destination.getUserMail();
-            sendECpdsMessage(mailto != null ? mailto : ecuser.getName(),
-                    "request: " + file.getId() + " " + transfer.getStatusCode() + " (" + destination.getName() + ")",
-                    "Message concerning ECpds request: " + file.getId() + "\nRequest status: "
-                            + transfer.getStatusCode() + (isNotEmpty(comment) ? "\nComment: " + comment : "")
-                            + "\nRequest owner: " + ecuser.getName() + "\nTarget destination: " + destination.getName()
-                            + "\nOriginal file: " + file.getOriginal() + "\nFile size: " + file.getSize()
-                            + "\nTarget file: " + transfer.getTarget() + "\nMail sent at: "
-                            + Format.formatCurrentTime());
-        } else {
-            _log.warn("Mail notification not sent for DataTransfer {} (email notification for transfer disabled)",
-                    transfer.getId());
+            if (isNotEmpty(mailto)) {
+                final var comment = transfer.getComment();
+                final var file = transfer.getDataFile();
+                final var ecuser = destination.getECUser();
+                sendECpdsMessage(mailto,
+                        "request: " + file.getId() + " " + transfer.getStatusCode() + " (" + destination.getName()
+                                + ")",
+                        "Message concerning ECpds request: " + file.getId() + "\nRequest status: "
+                                + transfer.getStatusCode() + (isNotEmpty(comment) ? "\nComment: " + comment : "")
+                                + "\nRequest owner: " + ecuser.getName() + "\nTarget destination: "
+                                + destination.getName() + "\nOriginal file: " + file.getOriginal() + "\nFile size: "
+                                + file.getSize() + "\nTarget file: " + transfer.getTarget() + "\nMail sent at: "
+                                + Format.formatCurrentTime());
+            } else {
+                _log.warn("Invalid address for DataTransfer {} (mail not sent): to='{}'", transfer.getId(), mailto);
+            }
         }
     }
 
@@ -4953,11 +4962,14 @@ public final class MasterServer extends ECaccessProvider
                             .append(Format.getMessage(exception)).append("\n===============================");
                 }
                 // Send a notification email!
-                sendECpdsMessage(emails.toString(), new StringBuilder(operation).append(" initiated by ")
-                        .append(webUser.getId()).append(": ").append(statusMessage).toString(), content.toString());
+                if (!emails.isEmpty())
+                    sendECpdsMessage(
+                            emails.toString(), new StringBuilder(operation).append(" initiated by ")
+                                    .append(webUser.getId()).append(": ").append(statusMessage).toString(),
+                            content.toString());
             }
         } catch (final Exception e) {
-            _log.warn(e);
+            _log.warn("Failed to log ECpdsAction", e);
         }
     }
 
@@ -4987,6 +4999,10 @@ public final class MasterServer extends ECaccessProvider
      *
      * @throws MasterException
      *             the master exception
+     * @throws DataBaseException
+     *             the data base exception
+     * @throws RemoteException
+     *             the remote exception
      */
     public WebUser getWebUser(final String user, final String credentials, final String root) throws MasterException {
         if (!Cnf.at("Server", "anonymousUser", "anonymous").equals(user)) { // No need to log anonymous requests!
@@ -6190,6 +6206,10 @@ public final class MasterServer extends ECaccessProvider
                 this.publication = publication;
             }
 
+            /**
+             * Configurable run.
+             */
+            @Override
             public void configurableRun() {
                 final var key = _getKey(publication);
                 try {
@@ -6750,25 +6770,27 @@ public final class MasterServer extends ECaccessProvider
             _updateHostStats(host, 0, 0, 0, hostStats.getValid(), new Timestamp(currentTime));
             if (notify || !hostStats.getValid() && host.getMailOnError() && (valid || !host.getNotifyOnce())
                     || hostStats.getValid() && host.getMailOnSuccess() && (!valid || !host.getNotifyOnce())) {
-                var mail = host.getUserMail();
+                final var mail = host.getUserMail();
                 var data = host.getData();
                 if (data != null && data.endsWith("\n")) {
                     data = data.substring(0, data.length() - 1);
                 }
-                mail = isNotEmpty(mail) ? mail : host.getECUserName();
-                sendECpdsMessage(mail,
-                        "Host check " + " for " + host.getHost() + " ("
-                                + (hostStats.getValid() ? "SUCCESSFUL" : "NOT-SUCCESSFUL") + ")",
-                        "Host check " + (hostStats.getValid() ? "successful" : "failure") + ": " + host.getName()
-                                + "\nHost name: " + host.getHost() + "\nHost comment: " + host.getComment()
-                                + "\nTransfer server: " + server.getName() + "\nTransfer group: " + group.getName()
-                                + "\nTransfer method: " + host.getTransferMethodName() + "\nLogin name: "
-                                + host.getLogin() + (isNotEmpty(host.getDir()) ? "\nDirectory: " + host.getDir() : "")
-                                + "\nFile name: " + checkFileName + "\nByte(s) sent: " + sent + "/" + _length
-                                + (!hostStats.getValid() && isNotEmpty(message) ? "\nError message: " + message : "")
-                                + "\nCheck time: " + Format.formatTime(currentTime)
-                                + (isNotEmpty(data) ? "\n\nData:\n===============================\n" + data
-                                        + "\n===============================\n" : ""));
+                if (isNotEmpty(mail))
+                    sendECpdsMessage(mail,
+                            "Host check " + " for " + host.getHost() + " ("
+                                    + (hostStats.getValid() ? "SUCCESSFUL" : "NOT-SUCCESSFUL") + ")",
+                            "Host check " + (hostStats.getValid() ? "successful" : "failure") + ": " + host.getName()
+                                    + "\nHost name: " + host.getHost() + "\nHost comment: " + host.getComment()
+                                    + "\nTransfer server: " + server.getName() + "\nTransfer group: " + group.getName()
+                                    + "\nTransfer method: " + host.getTransferMethodName() + "\nLogin name: "
+                                    + host.getLogin()
+                                    + (isNotEmpty(host.getDir()) ? "\nDirectory: " + host.getDir() : "")
+                                    + "\nFile name: " + checkFileName + "\nByte(s) sent: " + sent + "/" + _length
+                                    + (!hostStats.getValid() && isNotEmpty(message) ? "\nError message: " + message
+                                            : "")
+                                    + "\nCheck time: " + Format.formatTime(currentTime)
+                                    + (isNotEmpty(data) ? "\n\nData:\n===============================\n" + data
+                                            + "\n===============================\n" : ""));
             }
             return hostStats.getValid();
         }
@@ -10080,9 +10102,8 @@ public final class MasterServer extends ECaccessProvider
                         // and return the result string!
                         final var er = TransferScheduler.execution(this, _desName, _host,
                                 script.substring(2, script.length() - 1));
-                        if (!er.complete) {
+                        if (!er.complete)
                             return;
-                        }
                         // We update the string with the result of the code
                         // and we continue the processing!
                         reader = new BufferedReader(new InputStreamReader(er.in));
