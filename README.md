@@ -874,7 +874,7 @@ UPH;Monitored=false;TimeStamp=2025-02-12 11:00:00.0;DataTransferId=123456789;Des
 - **FinishTime**: The time when the data transmission was completed.
 - **TransferProtocol**: The protocol used for the transfer (e.g., FTP, SFTP, HTTPS, S3, GCS).
 - **TransferServer**: The name of the Data Mover responsible for connecting to the host and processing the data dissemination.
-- **NetworkCode**: The network code has configured in the host entity (e.g., Internet, RMDCN).
+- **NetworkCode**: The network code as configured in the host entity (e.g., Internet, RMDCN).
 - **HostAddress**: The address or hostname of the target host.
 - **PreSchedule**: If set to true, the scheduled time is ignored, and the file is sent as soon as possible.
 - **ProxyHost**: If the transfer request was handled by a Continental Data Mover, this field contains the identifier of the proxy host used.
@@ -924,7 +924,7 @@ INH;Monitored=true;TimeStamp=2025-02-12 11:00:00.0;DataTransferId=123456789;Dest
 The ERR event is triggered when a data transfer fails in the context of dissemination, providing detailed information about the failed operation. It records metadata about the transfer, including file details, network parameters, and user information, along with an error message describing the issue. This helps diagnose and troubleshoot dissemination failures within OpenECPDS.
 
 ```
-ERR;Monitored=false;TimeStamp=2025-02-12 11:00:00.0;DataTransferId=123456789;DestinationName=MyDestination;DestinationType=Gold;FileName=/my/home/datafile.bin;FileSize=35850;ScheduledTime=2025-02-11 06:04:20.0;StartTime=2025-02-11 09:46:35.586;MetaStream=GOPER;MetaType=FC;MetaTime=00;TimeBase=2025-02-11 00:00:00.0;TimeStep=64;Duration=0;UserId=uid;CountryCode=fr;BytesSent=0;TransferProtocol=sftp;TransferServer=my.mover.name.it;HostAddress=my.host.it;Message=Module sftp error <- Failed to connect to X.X.X.X:22 (SSH_MSG_DISCONNECT: 11 Too many bad authentication attempts!) (Trying from DataMover=my.mover.name.it)
+ERR;Monitored=false;TimeStamp=2025-02-12 11:00:00.0;DataTransferId=123456789;DestinationName=MyDestination;DestinationType=Gold;FileName=/my/home/datafile.bin;FileSize=35850;ScheduledTime=2025-02-11 06:04:20.0;StartTime=2025-02-11 09:46:35.586;MetaStream=GOPER;MetaType=FC;MetaTime=00;TimeBase=2025-02-11 00:00:00.0;TimeStep=64;Duration=0;UserId=uid;CountryCode=fr;BytesSent=0;TransferProtocol=sftp;TransferServer=my.mover.name.it;HostAddress=my.host.it;NetworkCode=Internet;Message=Module sftp error <- Failed to connect to X.X.X.X:22 (SSH_MSG_DISCONNECT: 11 Too many bad authentication attempts!) (Trying from DataMover=my.mover.name.it)
 ```
 
 - **Monitored** – Indicates whether the destination responsible for the data transfer is tracked in the top-level monitoring display (same as REP).
@@ -947,6 +947,7 @@ ERR;Monitored=false;TimeStamp=2025-02-12 11:00:00.0;DataTransferId=123456789;Des
 - **TransferProtocol** – Protocol used for the transfer (e.g., FTP, SFTP, HTTPS).
 - **TransferServer** – Name of the Data Mover responsible for the transfer.
 - **HostAddress** – IP address or hostname of the remote site for dissemination.
+- **NetworkCode**: The network code as configured in the host entity (e.g., Internet, RMDCN).
 - **Message** – Detailed error message explaining the reason for the failure.
 
 #### CPY (CoPY / Replication) Fields
