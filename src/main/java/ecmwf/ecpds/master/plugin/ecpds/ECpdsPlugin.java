@@ -1600,6 +1600,13 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
                     if (length == 0 && at == -1) {
                         final var notFoundMessage = "Product status not found (-at option required)";
                         if (Cnf.at("ECpdsPlugin", "ignoreMissingScheduleTime", true)) {
+                            if (_splunk.isInfoEnabled()) {
+                                // For the accounting!
+                                _splunk.info("PRS;{};{};{};{};{};{};{}", "TimeStamp=" + Timestamp.from(Instant.now()),
+                                        "StatusCode=" + status, "DataStream=" + domain + metaStream,
+                                        "TimeStep=" + timeStep, "TimeBase=" + new Timestamp(getProductDate()),
+                                        "Type=" + metaType, "ErrorMessage=" + notFoundMessage);
+                            }
                             send("MESSAGE " + notFoundMessage);
                         } else {
                             stopAndError(notFoundMessage);
@@ -1615,6 +1622,16 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
                         if (product.getScheduleTime().getTime() == at) {
                             final var alreadyExpectedMessage = "Product status already expected (notification ignored)";
                             _log.warn("{}: {}", alreadyExpectedMessage, product);
+                            if (_splunk.isInfoEnabled()) {
+                                // For the accounting!
+                                _splunk.info("PRS;{};{};{};{};{};{};{};{};{}",
+                                        "TimeStamp=" + Timestamp.from(Instant.now()),
+                                        "StatusCode=" + product.getStatusCode(), "DataStream=" + product.getStream(),
+                                        "TimeStep=" + product.getStep(), "TimeBase=" + product.getTimeBase(),
+                                        "Type=" + product.getType(), "ScheduleTime=" + product.getScheduleTime(),
+                                        "LastUpdate=" + product.getLastUpdate(),
+                                        "ErrorMessage=" + alreadyExpectedMessage);
+                            }
                             send("MESSAGE " + alreadyExpectedMessage);
                             return;
                         }
@@ -1629,6 +1646,15 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
                         if (!StatusFactory.INIT.equals(product.getStatusCode())) {
                             final var notExpectedMessage = "Product status not expected (notification ignored)";
                             _log.warn("{}: {}", notExpectedMessage, product);
+                            if (_splunk.isInfoEnabled()) {
+                                // For the accounting!
+                                _splunk.info("PRS;{};{};{};{};{};{};{};{};{}",
+                                        "TimeStamp=" + Timestamp.from(Instant.now()),
+                                        "StatusCode=" + product.getStatusCode(), "DataStream=" + product.getStream(),
+                                        "TimeStep=" + product.getStep(), "TimeBase=" + product.getTimeBase(),
+                                        "Type=" + product.getType(), "ScheduleTime=" + product.getScheduleTime(),
+                                        "LastUpdate=" + product.getLastUpdate(), "ErrorMessage=" + notExpectedMessage);
+                            }
                             send("MESSAGE " + notExpectedMessage);
                             return;
                         }
@@ -1638,6 +1664,16 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
                         if (StatusFactory.DONE.equals(product.getStatusCode())) {
                             final var alreadyCompletedMessage = "Product status already completed (notification ignored)";
                             _log.warn("{}: {}", alreadyCompletedMessage, product);
+                            if (_splunk.isInfoEnabled()) {
+                                // For the accounting!
+                                _splunk.info("PRS;{};{};{};{};{};{};{};{};{}",
+                                        "TimeStamp=" + Timestamp.from(Instant.now()),
+                                        "StatusCode=" + product.getStatusCode(), "DataStream=" + product.getStream(),
+                                        "TimeStep=" + product.getStep(), "TimeBase=" + product.getTimeBase(),
+                                        "Type=" + product.getType(), "ScheduleTime=" + product.getScheduleTime(),
+                                        "LastUpdate=" + product.getLastUpdate(),
+                                        "ErrorMessage=" + alreadyCompletedMessage);
+                            }
                             send("MESSAGE " + alreadyCompletedMessage);
                             return;
                         }

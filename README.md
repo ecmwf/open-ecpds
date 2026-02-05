@@ -799,6 +799,8 @@ PRS;TimeStamp=2025-02-12 11:00:00.0;StatusCode=EXEC;DataStream=GWAEF;TimeStep=14
 
 - **LastUpdate**: This field records the last time the status of the product was updated. It provides the most recent timestamp when any change occurred in the processing of the product, helping track progress and status changes.
 
+- **ErrorMessage**: The ErrorMessage field contains a descriptive message when an error or unexpected condition is encountered during product status processing. It indicates issues such as a missing required option, a status that is already expected, not expected, or already completed, in which case the notification is ignored.
+
 #### RET (RETrieval) Fields
 
 The RET category includes the following fields, which provide detailed information about the data retrieval process:
