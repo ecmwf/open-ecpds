@@ -617,9 +617,7 @@ public final class MoverProvider extends NativeAuthenticationProvider {
             final List<FileListElement> vector = new ArrayList<>();
             for (final Destination destination : _profile.getDestinations()) {
                 if (destination.getActive()) {
-                    final var setup = DESTINATION_INCOMING.getECtransSetup(destination.getData());
-                    final var destinationName = setup.get(ECtransOptions.DESTINATION_INCOMING_ROOT_DIR,
-                            destination.getName());
+                    final var destinationName = _getDestinationRootDir(destination);
                     final var update = destination.getUpdate();
                     final var element = new FileListElement();
                     element.setComment(destination.getComment());
@@ -1125,7 +1123,7 @@ public final class MoverProvider extends NativeAuthenticationProvider {
          */
         @Override
         public void moveFile(final String source, final String target) throws EccmdException, IOException {
-            _log.debug("moveFile(" + source + "," + target + ")");
+            _log.debug("moveFile({},{})", source, target);
             _profile.checkPermission("rename", source);
             _profile.checkPermission("rename", target);
             final var sourceElement = _getFileElement(source, true);
@@ -1142,7 +1140,7 @@ public final class MoverProvider extends NativeAuthenticationProvider {
                 }
                 // We have the destination!
                 final var destination = url.nextElement();
-                final var currentDestination = fileElement._destination.getName();
+                final var currentDestination = _getDestinationRootDir(fileElement._destination);
                 // Is it the same destination as the source?
                 if (currentDestination.equals(destination)) {
                     _fileListElementCache.remove(source);
