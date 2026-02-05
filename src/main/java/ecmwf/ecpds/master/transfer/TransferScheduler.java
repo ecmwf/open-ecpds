@@ -2924,7 +2924,7 @@ public final class TransferScheduler extends MBeanScheduler {
                 final var destination = transfer.getDestination();
                 final var dataFile = transfer.getDataFile();
                 final var host = transfer.getHost();
-                _splunk.info("ERR;{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{}",
+                _splunk.info("ERR;{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{}:{}",
                         "Monitored=" + destination.getMonitor(), "TimeStamp=" + Timestamp.from(Instant.now()),
                         "DataTransferId=" + transfer.getId(), "DestinationName=" + destination.getName(),
                         "DestinationType=" + DestinationOption.getLabel(destination.getType()),
@@ -2937,6 +2937,7 @@ public final class TransferScheduler extends MBeanScheduler {
                         "CountryCode=" + destination.getCountryIso(), "BytesSent=" + transfer.getSent(),
                         "TransferProtocol=" + host.getTransferMethod().getECtransModuleName(),
                         "TransferServer=" + transfer.getTransferServerName(), "HostAddress=" + host.getHost(),
+                        "NetworkCode=" + HostOption.getLabel(host.getNetworkCode()),
                         "Message=" + transfer.getComment());
             }
             final var template = Cnf.at("Operator", "template");
