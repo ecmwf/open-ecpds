@@ -4,6 +4,8 @@
 <%@ taglib uri="/WEB-INF/tld/struts-tiles.tld" prefix="tiles" %>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
 
+<c:set var="buttonLabel" value="Permanently Delete" scope="request"/>
+
 <form action="<bean:message key="destination.basepath"/>/deletions/${datatransfer.destinationName}/deleteTransfer/${datatransfer.id}" method="GET">
 
 <div class="alert">
@@ -13,7 +15,7 @@ This operation will result in the following changes:
 <li>The Data Transfer ${datatransfer.id} for Destination ${datatransfer.destinationName} will be set to Deleted</li>
 <li>In the background, if no other Data Transfer is attached to the related Data File (e.g. Aliases) then all physical files will be removed from the Data Movers</li>
 </ul>
-If you are completely sure this is what you want, click Process to proceed.
+If you are completely sure this is what you want, click "<span class="danger-action"><c:out value="${buttonLabel}"/></span>" to proceed. <strong>No further confirmation will be requested.</strong>
 </div>
 </br>
 <tiles:insert page="/WEB-INF/jsp/common/ecmwf/buttons.jsp"><tiles:put name="operation" value="delete"/></tiles:insert>

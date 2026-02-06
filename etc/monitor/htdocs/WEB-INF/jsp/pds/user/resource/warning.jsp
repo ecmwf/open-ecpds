@@ -1,6 +1,7 @@
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content"%>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 
+<c:set var="buttonLabel" value="Permanently Delete" scope="request"/>
 <c:set var="entityLabel" value="Web Resource" scope="request"/>
 <c:set var="entityName" value="${resource.path}" scope="request"/>
 
@@ -10,6 +11,5 @@
 	<ul>
 		<li>The Web Resource <c:out value="${resource.path}" /></li>
 	</ul>
-	If you are completely sure this is what you want, click Process to
-	proceed.
+	If you are completely sure this is what you want, click <span class="danger-action"><c:out value="${buttonLabel}"/></span> to proceed.
 </div>

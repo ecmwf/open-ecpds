@@ -9,6 +9,9 @@
 
 <tiles:importAttribute name="operation" />
 
+<c:set var="buttonLabel" value="${empty buttonLabel ? 'Process' : buttonLabel}" />
+<c:set var="safeButtonLabel" value="${fn:escapeXml(buttonLabel)}" />
+
 <c:if test="${not empty entityLabel and not empty entityName}">
 <div id="confirmDialog"
      title="Confirm Deletion of ${entityLabel} ${entityName}"
@@ -47,8 +50,8 @@ $(document).ready(function () {
                     const val = $("#confirmInput").val().trim();
                     const expected = "${jsEntityName}";
 		    if (val === expected) {
-                $(this).dialog("close");
-            // Show your existing loadingDiv BEFORE form submits
+                        $(this).dialog("close");
+                        // Show your existing loadingDiv BEFORE form submits
 			$("#loadingBackdrop").show();
 			$("#loadingDiv").show();
                         // Allow browser to repaint before the real submission
@@ -73,7 +76,7 @@ $(document).ready(function () {
 </script>
 </c:if>
 
-<button type="submit" onclick="moveToWorkflowStage.value=''">Process</button>
+<button type="submit" onclick="moveToWorkflowStage.value=''"><c:out value="${safeButtonLabel}" /></button>
 <button type="submit" name="org.apache.struts.taglib.html.CANCEL">Cancel</button>
 
 <!-- buttons.jsp -->

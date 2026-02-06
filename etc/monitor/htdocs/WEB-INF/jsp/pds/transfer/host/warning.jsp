@@ -2,6 +2,7 @@
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 
+<c:set var="buttonLabel" value="Permanently Delete" scope="request"/>
 <c:set var="entityLabel" value="Host" scope="request"/>
 <c:set var="entityName" value="${host.nickName}" scope="request"/>
 
@@ -18,6 +19,5 @@
 			</li>
 		</c:if>
 	</ul>
-	If you are completely sure this is what you want, click Process to
-	proceed.
+	If you are completely sure this is what you want, click <span class="danger-action"><c:out value="${buttonLabel}"/></span> to proceed.
 </div>
