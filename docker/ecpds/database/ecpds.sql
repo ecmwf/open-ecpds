@@ -1461,33 +1461,6 @@ INSERT INTO `OPERATION` VALUES
 UNLOCK TABLES;
 
 --
--- Table structure for table `PERMISSION`
---
-
-DROP TABLE IF EXISTS `PERMISSION`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8mb4 */;
-CREATE TABLE `PERMISSION` (
-  `ECU_NAME` varchar(32) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
-  `OPE_NAME` varchar(128) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
-  `PER_VALIDITY` decimal(10,0) NOT NULL,
-  PRIMARY KEY (`ECU_NAME`,`OPE_NAME`),
-  KEY `OPE_NAME` (`OPE_NAME`),
-  CONSTRAINT `PERMISSION_ibfk_1` FOREIGN KEY (`ECU_NAME`) REFERENCES `ECUSER` (`ECU_NAME`),
-  CONSTRAINT `PERMISSION_ibfk_2` FOREIGN KEY (`OPE_NAME`) REFERENCES `OPERATION` (`OPE_NAME`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `PERMISSION`
---
-
-LOCK TABLES `PERMISSION` WRITE;
-/*!40000 ALTER TABLE `PERMISSION` DISABLE KEYS */;
-/*!40000 ALTER TABLE `PERMISSION` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `POLICY_ASSOCIATION`
 --
 
