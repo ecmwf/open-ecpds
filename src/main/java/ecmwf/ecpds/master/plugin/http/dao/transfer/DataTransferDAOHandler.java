@@ -213,8 +213,11 @@ public class DataTransferDAOHandler extends PDSDAOBase implements DAOHandler {
     public void save(final ModelBean b, final Object context) throws DAOException {
         try {
             final var transfer = (ecmwf.common.database.DataTransfer) ((OjbImplementedBean) b).getOjbImplementation();
-            MasterManager.getMI().updateTransferMonitoringValue(Util.getECpdsSessionFromObject(context),
-                    transfer.getMonitoringValue());
+            final var monitoringValue = transfer.getMonitoringValue();
+            if (monitoringValue != null) {
+                MasterManager.getMI().updateTransferMonitoringValue(Util.getECpdsSessionFromObject(context),
+                        monitoringValue);
+            }
         } catch (final Exception e) {
             throw new DAOException("Problem saving object '" + b.getId() + "'", e);
         }

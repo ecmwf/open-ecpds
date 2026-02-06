@@ -115,8 +115,11 @@ public class DataFileDAOHandler extends PDSDAOBase implements DAOHandler {
     public void save(final ModelBean b, final Object context) throws DAOException {
         try {
             final var f = (DataFile) ((OjbImplementedBean) b).getOjbImplementation();
-            MasterManager.getMI().updateFileMonitoringValue(Util.getECpdsSessionFromObject(context),
-                    f.getMonitoringValue());
+            final var monitoringValue = f.getMonitoringValue();
+            if (monitoringValue != null) {
+                MasterManager.getMI().updateFileMonitoringValue(Util.getECpdsSessionFromObject(context),
+                        monitoringValue);
+            }
         } catch (final Exception e) {
             throw new DAOException("Problem saving object '" + b.getId() + "'", e);
         }
