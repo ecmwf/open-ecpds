@@ -46,11 +46,16 @@ $(document).ready(function () {
                 "Confirm": function () {
                     const val = $("#confirmInput").val().trim();
                     const expected = "${jsEntityName}";
-
-                    if (val === expected) {
-                        $(this).dialog("close");
-                        processBtn.off("click");
-                        processBtn.trigger("click");
+		    if (val === expected) {
+                $(this).dialog("close");
+            // Show your existing loadingDiv BEFORE form submits
+			$("#loadingBackdrop").show();
+			$("#loadingDiv").show();
+                        // Allow browser to repaint before the real submission
+			setTimeout(function () {
+				processBtn.off("click");
+				processBtn.closest("form")[0].submit();
+			}, 50);
                     } else {
                         $("#confirmErrorText").text(
                             'Incorrect confirmation. Please type "' + expected + '".'
