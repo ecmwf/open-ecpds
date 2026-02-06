@@ -4,6 +4,16 @@ This document summarizes the most significant changes in OpenECPDS across all ma
 
 ---
 
+## open-ecpds 7.3.6-05022026 (2026-02-05)
+
+- Add the ErrorMessage field to the PRS Splunk event to report product status processing errors, such as a missing required option, a status that is already expected, not expected, or already completed, in which case the notification is ignored.
+- Add the NetworkCode field to the ERR Splunk event to allow tracking of dissemination failures or retries per network type (e.g. Internet or RMDCN).
+- Introduce a server-side check for destination existence, accessible via the ecpds command.
+- In the monitoring interface, add an extra validation step when deleting critical ECPDS entities (such as destinations, hosts, transfer groups, and data movers) by requiring the entity name to be entered to confirm deletion.
+- Align the retrieval module to combine original and secondary errors on retrieval failure, similarly to the push module (e.g. “Pipe Close” will no longer hide the underlying “Permission Denied” error in the transfer history).
+- Allow separate SMTP and store hosts to be defined in the mail subsystem configuration, and add support for IMAPS (in addition to IMAP + TLS).
+- Fix incorrect load balancing in transfer group allocation when new files are registered in ECPDS.
+
 ## open-ecpds 7.3.5-20012026 (2026-01-20)
 
 - Defer transfer group and filesystem allocation until push/pull for new data files to better match actual disk usage.
