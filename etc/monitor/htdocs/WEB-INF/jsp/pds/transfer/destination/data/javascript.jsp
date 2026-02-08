@@ -30,47 +30,94 @@
 	}
 
 	function transferChange(operation, subOp) {
-
-		if (operation == "stop"
-				&& !confirm("Are you sure you want to " + operation
-						+ " transfer " + subOp + " ?"))
-			return;
-
-		var form = document.destinationDetailActionForm;
-		if (subOp) {
-			if (operation == "download") {
-				window.location.href = "<bean:message key="destination.basepath"/>/operations/${destinationDetailActionForm.id}/"
-						+ operation + "/" + subOp;
-				return;
-			} else {
-				form.action = "<bean:message key="destination.basepath"/>/operations/${destinationDetailActionForm.id}/"
-						+ operation + "/" + subOp;
-			}
-		} else {
-			form.action = "<bean:message key="destination.basepath"/>/operations/${destinationDetailActionForm.id}/"
-					+ operation;
-		}
-
-		form.submit();
+	    if (operation === "stop") {
+	        var text = "Are you sure you want to stop transfer " + subOp + " ?";
+	        confirmationDialog({
+	            title: "Confirm Transfer Stop",
+	            message: text,
+	            showLoading: true,
+	            onConfirm: function () {
+	                // Continue with transferChange logic
+	                var form = document.destinationDetailActionForm;
+	                if (subOp) {
+	                    if (operation === "download") {
+	                        window.location.href =
+	                            "<bean:message key='destination.basepath'/>/operations/${destinationDetailActionForm.id}/"
+	                            + operation + "/" + subOp;
+	                        return;
+	                    } else {
+	                        form.action =
+	                            "<bean:message key='destination.basepath'/>/operations/${destinationDetailActionForm.id}/"
+	                            + operation + "/" + subOp;
+	                    }
+	                } else {
+	                    form.action =
+	                        "<bean:message key='destination.basepath'/>/operations/${destinationDetailActionForm.id}/"
+	                        + operation;
+	                }
+	                form.submit();
+	            }
+	        });
+	        return;
+	    }
+	    // No confirmation needed → original logic
+	    var form = document.destinationDetailActionForm;
+	    if (subOp) {
+	        if (operation === "download") {
+	            window.location.href =
+	                "<bean:message key='destination.basepath'/>/operations/${destinationDetailActionForm.id}/"
+	                + operation + "/" + subOp;
+	            return;
+	        } else {
+	            form.action =
+	                "<bean:message key='destination.basepath'/>/operations/${destinationDetailActionForm.id}/"
+	                + operation + "/" + subOp;
+	        }
+	    } else {
+	        form.action =
+	            "<bean:message key='destination.basepath'/>/operations/${destinationDetailActionForm.id}/"
+	            + operation;
+	    }
+	    form.submit();
 	}
 
 	function hostChange(operation, subOp) {
-
-		if (operation == "deactivateHost"
-				&& !confirm("Are you sure you want to deactivate host " + subOp
-						+ " ?"))
-			return;
-
-		if (operation == "duplicateHost"
-				&& !confirm("Are you sure you want to duplicate host " + subOp
-						+ " ?"))
-			return;
-
-		var form = document.destinationDetailActionForm
-		form.action = "<bean:message key="destination.basepath"/>/operations/${destinationDetailActionForm.id}/"
-				+ operation + "/" + subOp;
-
-		form.submit();
+	    var form = document.destinationDetailActionForm;
+	    if (operation === "deactivateHost") {
+	        var text = "Are you sure you want to deactivate host " + subOp + " ?";
+	        confirmationDialog({
+	            title: "Confirm Host Deactivation",
+	            message: text,
+	            showLoading: true,
+	            onConfirm: function () {
+	                form.action =
+	                    "<bean:message key='destination.basepath'/>/operations/${destinationDetailActionForm.id}/"
+	                    + operation + "/" + subOp;
+	                form.submit();
+	            }
+	        });
+	        return;
+	    }
+	    if (operation === "duplicateHost") {
+	        var text = "Are you sure you want to duplicate host " + subOp + " ?";
+	        confirmationDialog({
+	            title: "Confirm Host Duplication",
+	            message: text,
+	            showLoading: true,
+	            onConfirm: function () {
+	                form.action =
+	                    "<bean:message key='destination.basepath'/>/operations/${destinationDetailActionForm.id}/"
+	                    + operation + "/" + subOp;
+	                form.submit();
+	            }
+	        });
+	        return;
+	    }
+	    // No confirmation required → original logic
+	    form.action =
+	        "<bean:message key='destination.basepath'/>/operations/${destinationDetailActionForm.id}/"
+	        + operation + "/" + subOp;
+	    form.submit();
 	}
 
 	function selectFiltered(operation, transfer) {
@@ -144,60 +191,82 @@
 		document.destinationDetailActionForm.submit()
 	}
 
-	function cleanDestination() {
-		var text = "Are you sure you want to remove all Data Transfers from the ${destination.typeText} Destination ${destination.name} and stop it?";
-		form = document.destinationDetailActionForm
-
-		if (confirm(text)) {
-			form.action = "<bean:message key="destination.basepath"/>/operations/${destinationDetailActionForm.id}/cleanDestination"
-			form.submit()
-		}
+	function holdDestination(immediate) {
+	    var immediateText =
+	        "IMMEDIATE: The ongoing data transfers, and associated acquisition host listings, if any, will be interrupted now due to the stopping of the Destination.";
+	    var gracefulText =
+	        "GRACEFUL: The ongoing data transfers, and associated acquisition host listings, if any, will be allowed to complete before the stopping of the Destination.";
+	    // Use HTML with <br/> so the message is readable in the jQuery UI dialog
+	    var text =
+	        "Are you sure you want to stop the ${destination.typeText} Destination ${destination.name}?<br/><br/>" +
+	        (immediate ? immediateText : gracefulText);
+	    var form = document.destinationDetailActionForm;
+	    confirmationDialog({
+	        title: "Confirm Destination Hold",
+	        message: text,
+	        showLoading: true, // overlay shown automatically on Confirm
+	        onConfirm: function () {
+	            form.action =
+	                "<bean:message key='destination.basepath'/>/operations/${destinationDetailActionForm.id}/" +
+	                (immediate ? "immediatePutOnHold" : "gracefulPutOnHold");
+	            form.submit();
+	        }
+	    });
 	}
 
 	function cleanExpiredDestination() {
-		var text = "Are you sure you want to remove all deleted, expired, stopped and failed Data Transfers from the ${destination.typeText} Destination ${destination.name} and stop it?";
-		form = document.destinationDetailActionForm
-
-		if (confirm(text)) {
-			form.action = "<bean:message key="destination.basepath"/>/operations/${destinationDetailActionForm.id}/cleanExpiredDestination"
-			form.submit()
-		}
+	    var text =
+	        "Are you sure you want to remove all deleted, expired, stopped and failed Data Transfers from the " +
+	        "${destination.typeText} Destination ${destination.name} and stop it?";
+	    var form = document.destinationDetailActionForm;
+	    confirmationDialog({
+	        title: "Confirm Cleanup of Expired Transfers",
+	        message: text,
+	        showLoading: true,
+	        onConfirm: function () {
+	            form.action =
+	                "<bean:message key='destination.basepath'/>/operations/${destinationDetailActionForm.id}/cleanExpiredDestination";
+	            form.submit();
+	        }
+	    });
 	}
 
+	function cleanDestination() {
+	    var text =
+	        "Are you sure you want to remove all Data Transfers from the ${destination.typeText} Destination ${destination.name} and stop it?";
+	    var form = document.destinationDetailActionForm;
+	    confirmationDialog({
+	        title: "Confirm Destination Cleanup",
+	        message: text,
+	        showLoading: true,
+	        onConfirm: function () {
+	            form.action =
+	                "<bean:message key='destination.basepath'/>/operations/${destinationDetailActionForm.id}/cleanDestination";
+	            form.submit();
+	        }
+	    });
+	}
+	
 	function restartDestination(immediate) {
-		var immediateText = "IMMEDIATE: The ongoing data transfers, and associated acquisition host listings, if any, will be interrupted now due to the restarting of the Destination.";
-		var gracefulText = "GRACEFUL: The ongoing data transfers, and associated acquisition host listings, if any, will be allowed to complete before the restarting of the Destination."
-		var text = "Are you sure you want to restart the ${destination.typeText} Destination ${destination.name}? \n"
-				+ ((immediate) ? immediateText : gracefulText);
-
-		form = document.destinationDetailActionForm
-
-		if (confirm(text)) {
-			form.action = "<bean:message key="destination.basepath"/>/operations/${destinationDetailActionForm.id}/"
-			if (immediate)
-				form.action += 'immediateRestart';
-			else
-				form.action += 'gracefulRestart';
-			form.submit()
-		}
-	}
-
-	function holdDestination(immediate) {
-		var immediateText = "IMMEDIATE: The ongoing data transfers, and associated acquisition host listings, if any, will be interrupted now due to the stopping of the Destination.";
-		var gracefulText = "GRACEFUL: The ongoing data transfers, and associated acquisition host listings, if any, will be allowed to complete before the stopping of the Destination."
-		var text = "Are you sure you want to stop the ${destination.typeText} Destination ${destination.name}? \n"
-				+ ((immediate) ? immediateText : gracefulText);
-
-		form = document.destinationDetailActionForm
-		if (confirm(text)) {
-			form.action = "<bean:message key="destination.basepath"/>/operations/${destinationDetailActionForm.id}/"
-			if (immediate)
-				form.action += 'immediatePutOnHold';
-			else
-				form.action += 'gracefulPutOnHold';
-
-			form.submit()
-		}
+	    var immediateText =
+	        "IMMEDIATE: The ongoing data transfers, and associated acquisition host listings, if any, will be interrupted now due to the restarting of the Destination.";
+	    var gracefulText =
+	        "GRACEFUL: The ongoing data transfers, and associated acquisition host listings, if any, will be allowed to complete before the restarting of the Destination.";
+	    var text =
+	        "Are you sure you want to restart the ${destination.typeText} Destination ${destination.name}?<br/><br/>" +
+	        (immediate ? immediateText : gracefulText);
+	    var form = document.destinationDetailActionForm;
+	    confirmationDialog({
+	        title: "Confirm Destination Restart",
+	        message: text,
+	        showLoading: true, // overlay shown automatically
+	        onConfirm: function () {
+	            form.action =
+	                "<bean:message key='destination.basepath'/>/operations/${destinationDetailActionForm.id}/" +
+	                (immediate ? "immediateRestart" : "gracefulRestart");
+	            form.submit();
+	        }
+	    });
 	}
 
 	function submitenter(myfield, e) {
@@ -215,3 +284,4 @@
 			return true;
 	}
 </script>
+

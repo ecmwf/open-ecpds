@@ -1161,9 +1161,16 @@
 						});
 	});
 	function validate(path, message) {
-		if (confirm(message)) {
-			window.location = path
-		}
+	    confirmationDialog({
+	        title: "Please Confirm",
+	        message: message,     // HTML allowed by default
+	        onConfirm: function () {
+	            window.location = path;
+	        },
+	        onCancel: function () {
+	            // Nothing needed — simply don't navigate
+	        }
+	    });
 	}
 	function hideChoosers(layerName) {
 		if (layerName != 'disseminationHostChooser')
@@ -1189,4 +1196,3 @@
 		}
 	});
 </script>
-

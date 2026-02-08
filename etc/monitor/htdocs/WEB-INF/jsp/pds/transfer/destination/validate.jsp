@@ -35,33 +35,49 @@
 	}
 
 	function transferChange(operation, transfer) {
-
-		var form = document.destinationDetailActionForm
-
-		if ((operation == "delete" || operation == "stop" || operation == "requeue")
-				&& !confirm("Are you sure you want to "
-						+ operation
-						+ ((transfer) ? " transfer " + transfer
-								: " all selected transfers")))
-			return;
-
-		if (operation == "delete")
-			prefix = "deletions"
-		else
-			prefix = "operations"
-
-		if (transfer) {
-			form.action = "/do/transfer/destination/" + prefix
-					+ "/${destinationDetailActionForm.id}/" + operation + "/"
-					+ transfer;
-		} else {
-			form.action = "/do/transfer/destination/" + prefix
-					+ "/${destinationDetailActionForm.id}/" + operation;
-		}
-
-		form.submit();
+	    var form = document.destinationDetailActionForm;
+	    // Operations that require confirmation
+	    if (operation === "delete" || operation === "stop" || operation === "requeue") {
+	        var msg = "Are you sure you want to "
+	                + operation
+	                + (transfer ? " transfer " + transfer : " all selected transfers");
+	        // Use custom confirmation dialog
+	        confirmationDialog({
+	            title: "Please Confirm",
+	            message: msg,
+	            onConfirm: function () {
+	                var prefix = (operation === "delete") ? "deletions" : "operations";
+	                if (transfer) {
+	                    form.action = "/do/transfer/destination/" + prefix
+	                            + "/${destinationDetailActionForm.id}/"
+	                            + operation + "/" + transfer;
+	                } else {
+	                    form.action = "/do/transfer/destination/" + prefix
+	                            + "/${destinationDetailActionForm.id}/"
+	                            + operation;
+	                }
+	                form.submit();
+	            },
+	            onCancel: function () {
+	                // user canceled → do nothing
+	            }
+	        });
+	        // Important: return here so execution doesn’t continue
+	        return;
+	    }
+	    // If operation does *not* require confirmation:
+	    var prefix = (operation === "delete") ? "deletions" : "operations";
+	    if (transfer) {
+	        form.action = "/do/transfer/destination/" + prefix
+	                + "/${destinationDetailActionForm.id}/" + operation + "/"
+	                + transfer;
+	    } else {
+	        form.action = "/do/transfer/destination/" + prefix
+	                + "/${destinationDetailActionForm.id}/" + operation;
+	    }
+	    form.submit();
 	}
-
+	
 	function select(image, id) {
 		var form = document.destinationDetailActionForm;
 		clickField(form.elements["actionTransfer(" + id + ")"]);

@@ -12,14 +12,20 @@
 <tiles:useAttribute name="isInsert" classname="java.lang.String"/>
 
 <script>
-function validate(path,message) {
-        if (confirm(message)) {
-                window.location = path
-        }
-}
-function hideChoosers(layerName) {
-        if (layerName!='categoryChooser')
-			hide('categoryChooser');
+	function validate(path, message) {
+	    confirmationDialog({
+	        title: "Please Confirm",
+	        message: message,     // HTML allowed by default
+	        onConfirm: function () {
+	            window.location = path;
+	        },
+	        onCancel: function () {
+	            // Nothing needed — simply don't navigate
+	        }
+	    });
+	}
+	function hideChoosers(layerName) {
+        if (layerName!='categoryChooser') hide('categoryChooser');
 }
 </script>
 

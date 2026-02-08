@@ -10,6 +10,7 @@ This document summarizes the most significant changes in OpenECPDS across all ma
 - Add the NetworkCode field to the ERR Splunk event to allow tracking of dissemination failures or retries per network type (e.g. Internet or RMDCN).
 - Introduce a server-side check for destination existence, accessible via the ecpds command.
 - In the monitoring interface, add an extra validation step when deleting critical ECPDS entities (such as destinations, hosts, transfer groups, and data movers) by requiring the entity name to be entered to confirm deletion.
+- Enhance pop-up messages with a clearer, more user-friendly design by replacing browser-native alert and confirmation boxes with a jQuery alternative.
 - Enhanced the loading indicator shown after users confirm an action in the monitoring interface (e.g., deleting an item). Previously, the page could appear unresponsive while the request was being processed, which made it unclear whether the action was in progress.
 - Align the retrieval module to combine original and secondary errors on retrieval failure, similarly to the push module (e.g. “Pipe Close” will no longer hide the underlying “Permission Denied” error in the transfer history).
 - Allow separate SMTP and store hosts to be defined in the mail subsystem configuration, and add support for IMAPS (in addition to IMAP + TLS).

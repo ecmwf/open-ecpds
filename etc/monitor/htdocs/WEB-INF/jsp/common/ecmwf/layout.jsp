@@ -139,6 +139,7 @@
 
 	<div id="loadingBackdrop"></div>
 	<div id="loadingDiv"><div class="loader"></div></div>
+	<div id="confirmationDialog" style="display:none;"><p id="confirmationDialogMessage" style="margin-top:10px;"></p></div>
 	<div style="display: none;" id="contentDiv">
 	<table id="outerTable" width="<tiles:getAsString name="page_width"/>" border="0" cellspacing="0" cellpadding="0" bgcolor="#ffffff" >
 		<tr><td colspan=2 height=100>&nbsp;</td></tr>
@@ -174,4 +175,106 @@ $(window).on('load', function() {
     $("#loadingDiv").hide();
     $("#contentDiv").fadeIn("fast");
 });
+/**
+ * Generic confirmation dialog.
+ *
+ * Usage (simple):
+ *   confirmationDialog("Title", "Message HTML...", function onConfirm(){ ... });
+ *
+ * Usage (options object):
+ *   confirmationDialog({
+ *     title: "Confirm Action",
+ *     message: "Message HTML...",
+ *     onConfirm: function(){ ... },
+ *     showLoading: true,         // default true
+ *     width: 500,                // default 500
+ *     confirmText: "Confirm",    // default "Confirm"
+ *     cancelText: "Cancel",      // default "Cancel"
+ *     onCancel: function(){},    // optional
+ *     allowHtml: true            // message is HTML; keep true if passing <br/> etc.
+ *   });
+ */
+function confirmationDialog(arg1, arg2, arg3) {
+    // Normalize args to options object
+    var opts = {};
+    if (typeof arg1 === "object") {
+        opts = arg1 || {};
+    } else {
+        opts.title     = arg1;
+        opts.message   = arg2;
+        opts.onConfirm = arg3;
+    }
+    var title        = opts.title || "Please Confirm";
+    var message      = opts.message || "";
+    var onConfirm    = typeof opts.onConfirm === "function" ? opts.onConfirm : function(){};
+    var onCancel     = typeof opts.onCancel === "function"  ? opts.onCancel  : function(){};
+    var width        = opts.width || 500;
+    var confirmText  = opts.confirmText || "Confirm";
+    var cancelText   = opts.cancelText  || "Cancel";
+    var showLoading  = (opts.showLoading !== false); // default true
+    var allowHtml    = (opts.allowHtml !== false);   // default true
+    // Inject message
+    if (allowHtml) {
+        $("#confirmationDialogMessage").html(message);
+    } else {
+        $("#confirmationDialogMessage").text(message);
+    }
+    // Open dialog
+    $("#confirmationDialog").dialog({
+        modal: true,
+        width: width,
+        title: title,
+        // Ensure ESC can't accidentally close during confirm flow (optional)
+        closeOnEscape: true,
+        buttons: [
+            {
+                text: confirmText,
+                click: function () {
+                    var dlg = $(this);
+                    // Prevent double clicks
+                    var $buttons = dlg.parent().find(".ui-dialog-buttonpane button");
+                    $buttons.prop("disabled", true);
+
+                    // Show global loading overlay if desired
+                    if (showLoading) {
+                        $("#loadingBackdrop").show();
+                        $("#loadingDiv").show();
+                    }
+                    // Close the dialog to clear the screen
+                    dlg.dialog("close");
+                    // Allow repaint so overlay is visible before heavy work/navigation
+                    setTimeout(function () {
+                        try {
+                            onConfirm();
+                        } finally {
+                            // Typically you do NOT hide overlay here because a navigation
+                            // to a new page will occur; the new page can hide/remove it
+                            // on $(window).on('load', ...) as you already do.
+                            //
+                            // If your onConfirm does not navigate and you want to
+                            // hide the overlay after async work, do it there.
+                        }
+                    }, 50);
+                },
+                "class": "confirm-button" // optional to style as danger
+            },
+            {
+                text: cancelText,
+                click: function () {
+                    // Ensure overlay is not shown if user cancels
+                    $("#loadingBackdrop").hide();
+                    $("#loadingDiv").hide();
+                    $(this).dialog("close");
+                    onCancel();
+                }
+            }
+        ],
+        // Optional: ensure focus is managed
+        open: function () {
+            // Focus the confirm button by default (or cancel per your preference)
+            var $dlg = $(this).parent();
+            $dlg.find(".ui-dialog-buttonpane button:eq(0)").trigger("focus");
+        }
+    });
+}
 </script>
