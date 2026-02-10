@@ -122,7 +122,7 @@ get-licenses: ## Fetch license information for all dependencies (**)
 
 build: ## Compile java sources into JARs, create RPMs and Docker images (**)
 	@$(call is-dev-container,"",inside)
-	@echo "$(TAG)" > VERSION
+	@echo -n "$(TAG)" > VERSION
 	@mvn package
 	@cd docker && $(MAKE) all
 
