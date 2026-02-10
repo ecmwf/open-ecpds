@@ -1634,15 +1634,6 @@ public abstract class DataGet {
     }
 
     /**
-     * Gets the monitoring history iterator.
-     *
-     * @return the monitoring history iterator
-     */
-    DBIterator<MonitoringHistory> getMonitoringHistoryIterator() {
-        return getAll(MonitoringHistory.class);
-    }
-
-    /**
      * Gets the MS user.
      *
      * @param name
