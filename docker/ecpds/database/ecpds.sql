@@ -1376,31 +1376,6 @@ LOCK TABLES `METADATA_VALUE` WRITE;
 UNLOCK TABLES;
 
 --
--- Table structure for table `MONITORING_HISTORY`
---
-
-DROP TABLE IF EXISTS `MONITORING_HISTORY`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8mb4 */;
-CREATE TABLE `MONITORING_HISTORY` (
-  `MOH_KEY` varchar(128) NOT NULL DEFAULT '',
-  `MOH_METADATA` varchar(1024) DEFAULT NULL,
-  `MOH_TIME` decimal(20,0) NOT NULL DEFAULT 0,
-  `MOH_OBJECT` varbinary(5000) NOT NULL,
-  PRIMARY KEY (`MOH_TIME`,`MOH_KEY`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `MONITORING_HISTORY`
---
-
-LOCK TABLES `MONITORING_HISTORY` WRITE;
-/*!40000 ALTER TABLE `MONITORING_HISTORY` DISABLE KEYS */;
-/*!40000 ALTER TABLE `MONITORING_HISTORY` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `MONITORING_VALUE`
 --
 

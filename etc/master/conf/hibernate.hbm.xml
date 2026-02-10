@@ -944,24 +944,6 @@
 		</many-to-one>
 	</class>
 
-	<class name="MonitoringHistory" table="MONITORING_HISTORY">
-		<composite-id>
-			<key-property name="MOH_TIME"
-				type="java.math.BigDecimal">
-				<column name="MOH_TIME" precision="20" scale="0" />
-			</key-property>
-			<key-property name="MOH_KEY" type="java.lang.String">
-				<column name="MOH_KEY" length="128" />
-			</key-property>
-		</composite-id>
-		<property name="MOH_METADATA" type="java.lang.String">
-			<column name="MOH_METADATA" length="1024" />
-		</property>
-		<property name="MOH_OBJECT" type="binary">
-			<column name="MOH_OBJECT" not-null="true" />
-		</property>
-	</class>
-
 	<class name="MonitoringValue" table="MONITORING_VALUE" dynamic-update="true">
 		<cache usage="read-write"/>
 		<id name="MOV_ID" type="java.lang.Long">
