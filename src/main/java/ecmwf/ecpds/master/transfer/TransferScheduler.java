@@ -2185,10 +2185,11 @@ public final class TransferScheduler extends MBeanScheduler {
         result.dataFile = dataFile;
         // Remove the data files on the data movers!
         for (final TransferServer server : transfers) {
-            if (!server.getTransferGroupName().equals(dataFile.getTransferGroupName())) {
-                continue;
-            }
             final var serverName = server.getName();
+            if (!server.getTransferGroupName().equals(dataFile.getTransferGroupName())) {
+                _log.warn("DataMover {} is not in the same group as the DataFile {} ({} != {})", serverName,
+                        dataFile.getId(), server.getTransferGroupName(), dataFile.getTransferGroupName());
+            }
             var deleted = false;
             final var mover = MASTER.getDataMoverInterface(serverName);
             try {
