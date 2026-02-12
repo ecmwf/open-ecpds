@@ -15,12 +15,13 @@
 ## Request(s)
 ##
 SELECT COUNT(*)
-FROM
-  DATA_TRANSFER DAT, DATA_FILE DAF
+FROM DATA_FILE daf
+JOIN DATA_TRANSFER dat
+  ON dat.DAF_ID = daf.DAF_ID
 WHERE
-  DAF.DAF_ID = '$datafile'
-  AND DAF.DAF_ID = DAT.DAF_ID
-  AND NOT DAT_DELETED<>0
+  daf.DAF_ID = '$datafile'
+  AND dat.DAT_DELETED = 0
+  AND daf.DAF_FILE_SYSTEM IS NOT NULL
 #if ('$isproxy' == 'true')
-  AND NOT STA_CODE = 'DONE'
+  AND dat.STA_CODE <> 'DONE'
 #fi
