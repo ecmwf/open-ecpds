@@ -1983,9 +1983,10 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     @Override
     public DataFile download(final DataFile dataFile, final Host hostForSource) throws RemoteException {
         final var cookieSet = ThreadService.setCookieIfNotAlreadySet(_getCookie(dataFile, "download"));
+        GenericFile file = null;
         try {
             final var fileName = getPath(dataFile);
-            final var file = GenericFile.getGenericFile(getRepository(), fileName);
+            file = GenericFile.getGenericFile(getRepository(), fileName);
             if (!OPERATIONAL) {
                 // This is NOT an operational mover. First check if we should
                 // not simulate an error!
@@ -2141,6 +2142,13 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             _log.debug("Download completed successfully");
             return dataFile;
         } catch (final Throwable t) {
+            if (file != null) {
+                try {
+                    file.delete();
+                } catch (final Throwable t2) {
+                    _log.warn("Couldn't delete file after failed download: {}", file.getAbsolutePath(), t2);
+                }
+            }
             throw Format.getRemoteException("DataMover=" + getRoot(), t);
         } finally {
             if (cookieSet) {
