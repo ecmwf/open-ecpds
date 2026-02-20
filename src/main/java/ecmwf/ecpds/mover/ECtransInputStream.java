@@ -48,7 +48,6 @@ import ecmwf.common.database.Host;
 import ecmwf.common.ecaccess.StarterServer;
 import ecmwf.common.ectrans.ECtransOptions;
 import ecmwf.common.technical.CleanableSupport;
-import ecmwf.common.technical.Cnf;
 import ecmwf.common.technical.PipedInputStream;
 import ecmwf.common.technical.PipedOutputStream;
 import ecmwf.common.technical.StreamPlugThread;
@@ -109,8 +108,8 @@ final class ECtransInputStream extends InputStream implements AutoCloseable {
             Throwable throwable = null;
             for (var i = 0; i < hostsForSource.length; i++) {
                 hostForSource = hostsForSource[i];
-                var login = hostForSource.getLogin();
-                var host = hostForSource.getHost();
+                final var login = hostForSource.getLogin();
+                final var host = hostForSource.getHost();
                 // Is it a generic host for source?
                 if ((dataFile.getEcauthUser() == null || dataFile.getEcauthHost() == null)
                         && (login.indexOf(ECAUTH_USER) != -1 || host.indexOf(ECAUTH_HOST) != -1)) {
@@ -120,12 +119,10 @@ final class ECtransInputStream extends InputStream implements AutoCloseable {
                 }
                 _log.debug("Trying getting source from {}", hostForSource.getNickname());
                 if (isNotEmpty(login)) {
-                    login = Cnf.getValue(login);
                     hostForSource.setLogin(Format.replaceAll(login, ECAUTH_USER, dataFile.getEcauthUser()));
                     _log.debug("Using login: {}", hostForSource.getLogin());
                 }
                 if (isNotEmpty(host)) {
-                    host = Cnf.getValue(host);
                     hostForSource.setHost(Format.replaceAll(host, ECAUTH_HOST, dataFile.getEcauthHost()));
                     _log.debug("Using host: {}", hostForSource.getHost());
                 }
