@@ -144,21 +144,11 @@ public final class Format {
         final var buffer = new StringBuilder();
         for (final char c : unix.toCharArray()) {
             switch (c) {
-            case '%':
-                buffer.append("\\%");
-                break;
-            case '_':
-                buffer.append("\\_");
-                break;
-            case '*':
-                buffer.append("%");
-                break;
-            case '?':
-                buffer.append("_");
-                break;
-            default:
-                buffer.append(c);
-                break;
+            case '%' -> buffer.append("\\%");
+            case '_' -> buffer.append("\\_");
+            case '*' -> buffer.append("%");
+            case '?' -> buffer.append("_");
+            default -> buffer.append(c);
             }
         }
         return buffer.toString();
@@ -407,35 +397,29 @@ public final class Format {
      * Format duration.
      *
      * @param duration
-     *            the duration
+     *            duration in milliseconds
      *
-     * @return the string
+     * @return formatted string, e.g., "1h 5m 30s" or "250ms"
      */
-    public static String formatDuration(final long duration) {
-        if (duration < 1000) {
-            return (duration < 0 ? 0 : duration) + "ms";
-        }
-        var seconds = (double) duration / (double) 1000;
-        var remaining = 0L;
-        final String ext;
-        if (seconds > 60) {
-            seconds = seconds / 60;
-            if (seconds > 60) {
-                seconds = seconds / 60;
-                remaining = duration - (long) seconds * 3600000L;
-                ext = "h";
-            } else {
-                remaining = duration - (long) seconds * 60000L;
-                ext = "m";
-            }
-        } else {
-            remaining = duration - (long) seconds * 1000L;
-            ext = "s";
-        }
-        final var result = String.valueOf(seconds);
-        final var pos = result.indexOf('.');
-        return (result.substring(0, pos > -1 ? pos : result.length()) + ext
-                + (remaining > 0 ? ' ' + formatDuration(remaining) : "")).trim();
+    public static String formatDuration(long duration) {
+        if (duration < 0)
+            duration = 0;
+        final var ms = duration % 1000;
+        final var totalSeconds = duration / 1000;
+        final var s = totalSeconds % 60;
+        final var totalMinutes = totalSeconds / 60;
+        final var m = totalMinutes % 60;
+        final var h = totalMinutes / 60;
+        final var sb = new StringBuilder();
+        if (h > 0)
+            sb.append(h).append("h ");
+        if (m > 0)
+            sb.append(m).append("m ");
+        if (s > 0)
+            sb.append(s).append("s ");
+        if (ms > 0 && h == 0 && m == 0)
+            sb.append(ms).append("ms"); // only show ms if no h/m
+        return sb.toString().trim();
     }
 
     /**
