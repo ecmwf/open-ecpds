@@ -32,7 +32,14 @@
 			${datafile.storagePath}
 		</c:if>
 	</td></tr>
-	<tr><th>Group By</th><td colspan="3">${datafile.groupBy}</td></tr>
+	<tr><th>Group By</th><td colspan="3">
+		<c:if test="${datafile.groupBy == null}">
+			<font color="grey"><span title="No additional information">[n/a]</span></font>
+		</c:if>
+		<c:if test="${datafile.groupBy != null}">
+			${datafile.groupBy}
+		</c:if>
+	</td></tr>
 	<tr><th>Additional Info</th><td colspan="3">
 		<c:if test="${datafile.formattedCaller == null}">
 			<font color="grey"><span title="No additional information">[n/a]</span></font>
@@ -49,16 +56,26 @@
 	   ${datafile.index} file(s)
          </c:if>
 	</td></tr>
-
-	<tr><th>Retrieved From</th>
-                <c:if test="${datafile.getHost == null}">
-			<td colspan="3"><font color=red><i>not-retrieved</i></font></td>
-		</c:if>
-                <c:if test="${datafile.getHost != null}">
-			<td colspan="3">${datafile.getHost} (in ${datafile.getDuration} + ${datafile.getProtocolOverhead} protocol overhead)</td>
-		</c:if>
-	</tr>
-
+	<c:if test="${datafile.groupBy == null}">
+	   <tr><th>Pushed To</th>
+                   <c:if test="${datafile.getHost == null}">
+			   <td colspan="3"><font color=red><i>not-pushed</i></font></td>
+		   </c:if>
+                   <c:if test="${datafile.getHost != null}">
+			   <td colspan="3">${datafile.getHost} (in ${datafile.getDuration} + ${datafile.getProtocolOverhead} protocol overhead)</td>
+		   </c:if>
+	   </tr>
+	</c:if>
+	<c:if test="${datafile.groupBy == null}">
+	   <tr><th>Retrieved From</th>
+	               <c:if test="${datafile.getHost == null}">
+			   <td colspan="3"><font color=red><i>not-retrieved</i></font></td>
+		   </c:if>
+	               <c:if test="${datafile.getHost != null}">
+			   <td colspan="3">${datafile.getHost} (in ${datafile.getDuration} + ${datafile.getProtocolOverhead} protocol overhead)</td>
+		   </c:if>
+	   </tr>
+	</c:if>	   
 	<tr><th>Remote Host</th>
 		<c:if test="${datafile.remoteHost == null}">
 	<td colspan="3"><font color=red><i>unknown</i></font></td>
