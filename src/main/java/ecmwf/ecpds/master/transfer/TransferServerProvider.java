@@ -31,6 +31,7 @@ import static ecmwf.common.text.Util.isNotEmpty;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -47,7 +48,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import ecmwf.common.database.DataBaseException;
-import ecmwf.common.database.Host;
 import ecmwf.common.database.TransferGroup;
 import ecmwf.common.database.TransferServer;
 import ecmwf.common.ecaccess.StarterServer;
@@ -55,199 +55,315 @@ import ecmwf.common.technical.Cnf;
 import ecmwf.ecpds.master.MasterServer;
 
 /**
- * Central provider for selecting {@link TransferServer} instances in ECPDS, ensuring fair, stable, and resource-aware
- * load distribution across transfer groups, clusters, servers, and storage volumes.
+ * Central provider for selecting and ordering {@link TransferServer} instances in ECPDS. The provider is responsible
+ * for multi-level load distribution: cluster-level weighted round-robin (WRR), per-group server rotation, and
+ * storage-volume-aware allocation.
  *
- * <h2>Responsibilities</h2>
+ * <h2>Scheduling Layers</h2>
+ * <ol>
+ * <li><b>Group resolution:</b> The provider resolves a {@link TransferGroup} from explicit name, destination mapping,
+ * or default configuration.</li>
+ * <li><b>Cluster WRR:</b> If enabled by construction semantics, a group within the same cluster can be chosen via WRR.
+ * The RR counter resets on topology changes (weights / activation / availability) to avoid skew.</li>
+ * <li><b>Volume allocation:</b> The selected group’s volume index is chosen either explicitly (pre-allocated) or via
+ * {@link WeightedAllocator}, with optional size-aware penalties and CV-based uniform fallback.</li>
+ * <li><b>Server ordering:</b> Within the group, active and reachable DataMovers are ordered by least filesystem
+ * activity on the selected volume, with caller-stable rotation as a tie-breaker. A preferred server, if provided, is
+ * reinserted at index 0.</li>
+ * </ol>
+ *
+ * <h2>State & Caches</h2>
  * <ul>
- * <li>Select an appropriate {@link TransferGroup} for a transfer request</li>
- * <li>Distribute load fairly across clustered transfer groups</li>
- * <li>Select and order active {@link TransferServer}s for the chosen group</li>
- * <li>Optionally order servers by file system activity or free space</li>
- * <li>Allocate storage volumes using weighted, capacity-aware selection</li>
+ * <li>Instances are immutable w.r.t. selected group, volume index, and server ordering.</li>
+ * <li>Static caches maintain cluster RR state, per-group RR counters, volume usage, and allocator statistics.</li>
+ * <li>A background daemon refreshes volume usage and mover ordering.</li>
  * </ul>
  *
- * <h2>Cluster-aware fair distribution</h2> When a {@link TransferGroup} belongs to a cluster, this class ensures
- * <b>global fairness across all callers</b> by applying a <b>weighted round-robin algorithm at cluster level</b>.
- * <p>
- * Unlike random or caller-local selection, the cluster selection:
+ * <h2>Thread Safety</h2>
  * <ul>
- * <li>Is shared globally across all threads and callers</li>
- * <li>Respects {@code clusterWeight} configured per transfer group</li>
- * <li>Avoids bias caused by database ordering or configuration order</li>
- * <li>Ensures long-term proportional usage of all available groups</li>
- * </ul>
- * <p>
- * This guarantees that, over time, each transfer group in a cluster receives traffic proportional to its configured
- * capacity, even under heavy concurrency.
- *
- * <h2>Caller-stable server ordering</h2> Within a selected transfer group, servers are ordered using a <b>caller-stable
- * rotation</b>:
- * <ul>
- * <li>The starting point of the server list is derived from the caller identity</li>
- * <li>The ordering remains stable for a given caller and group</li>
- * <li>Different callers naturally spread load across servers</li>
- * </ul>
- * This avoids thundering-herd effects while preserving predictability.
- *
- * <h2>Volume-aware allocation</h2> Storage volumes are allocated using the {@link WeightedAllocator}, which:
- * <ul>
- * <li>Tracks per-volume usage and capacity</li>
- * <li>Favors volumes with more free space</li>
- * <li>Falls back to uniform random selection when volumes are similarly loaded</li>
- * <li>Periodically refreshes statistics in the background</li>
+ * <li>All public methods are read-only and safe for concurrent calls.</li>
+ * <li>Static schedulers use {@link java.util.concurrent.ConcurrentHashMap} and atomics.</li>
+ * <li>Allocator uses per-group locking for consistent snapshots.</li>
  * </ul>
  *
- * <h2>Fallback and resilience</h2>
+ * <h2>Failure Semantics</h2>
  * <ul>
- * <li>If a transfer group has no active servers, cluster fallback is attempted</li>
- * <li>If volume statistics are unavailable, safe random allocation is used</li>
- * <li>All selections verify server activity and connectivity to the master</li>
+ * <li>Provider construction fails fast if the group is unavailable, has no volumes, or if no active DataMover is
+ * selectable.</li>
+ * <li>Destination/group lookup errors propagate as {@link TransferServerException} or
+ * {@link ecmwf.common.database.DataBaseException}.</li>
  * </ul>
- *
- * <h2>Thread safety</h2> This class is safe for concurrent use:
- * <ul>
- * <li>All shared state is stored in concurrent data structures</li>
- * <li>Round-robin counters are atomic and cluster-scoped</li>
- * <li>Volume statistics updates are synchronised per group</li>
- * </ul>
- *
- * <h2>Design goals</h2>
- * <ul>
- * <li>Fairness across all callers, not just per request</li>
- * <li>Deterministic behavior where possible</li>
- * <li>Graceful degradation when metrics are unavailable</li>
- * <li>Operational transparency through detailed debug logging</li>
- * </ul>
- *
- * This class acts as the single authoritative entry point for transfer server selection in ECPDS.
- *
- * @author Laurent Gougeon
- *
- * @since 6.7.7
  */
 public final class TransferServerProvider {
-    /** The Constant _log. */
+    /** Logger used for diagnostics, rotation trace, and allocator debug output. */
     private static final Logger _log = LogManager.getLogger(TransferServerProvider.class);
 
-    /** The Constant MASTER. */
+    /**
+     * Central {@link MasterServer} entry point used to access the ECpds database, movers presence
+     * ({@code existsClientInterface}), and volume usage computation.
+     *
+     * <p>
+     * Created via {@link StarterServer#getInstance(Class)} and shared across all provider instances.
+     * </p>
+     */
     private static final MasterServer MASTER = StarterServer.getInstance(MasterServer.class);
 
     /**
-     * Cache for volume usage statistics and mover ordering, keyed by group and volume index.
+     * Cache of per-volume usage snapshots and mover orderings:
+     *
+     * <pre>
+     *   key   = "<groupName>:<volumeIndex>"
+     *   value = {@link MasterServer.VolumeUsageResult}
+     * </pre>
+     *
+     * <p>
+     * Populated asynchronously by the background updater in {@link WeightedAllocator#startUsageUpdater()}. This cache
+     * is consulted by {@link #getTransferServersByMostFreeSpace()} to return a free-space-ordered list when available.
+     * </p>
+     *
+     * <p>
+     * Thread-safe: concurrent map with immutable value objects.
+     * </p>
      */
     private static final ConcurrentHashMap<String, MasterServer.VolumeUsageResult> VOLUME_USAGE_CACHE = new ConcurrentHashMap<>();
 
-    /** Round-robin counters per cluster */
-    private static final ConcurrentHashMap<String, AtomicInteger> CLUSTER_RR = new ConcurrentHashMap<>();
+    /**
+     * Per-JVM random salt injected into caller-stable rotation to avoid identical rotation sequences across process
+     * restarts.
+     *
+     * <p>
+     * Combined with (caller, groupName) hash in {@link #computeRotationOffset(String, String, int)} to produce
+     * stable-but-not-globally-repeatable offsets.
+     * </p>
+     */
+    private static final long RUNTIME_SALT = new SplittableRandom().nextLong();
 
     /**
-     * List of active TransferServer instances for the selected group and file system.
+     * Cluster-level WRR state:
+     * <ul>
+     * <li>{@code counter}: the atomic round-robin slot index for the cluster</li>
+     * <li>{@code candidatesHash}: the last-seen topology signature to detect changes</li>
+     * </ul>
+     *
+     * <p>
+     * On candidate-set change, the counter is reset to avoid skew or stale slots.
+     * </p>
+     */
+    private static final class ClusterState {
+        final AtomicInteger counter = new AtomicInteger(0);
+        volatile int candidatesHash = 0;
+    }
+
+    /**
+     * Global map of {@code clusterName -> ClusterState}. Maintains:
+     * <ul>
+     * <li>the WRR counter per cluster, and</li>
+     * <li>the last topology signature (see {@link #hashCandidates(List)}).</li>
+     * </ul>
+     *
+     * <p>
+     * Used by {@link #selectGroupFromClusterRoundRobin(TransferGroup, TransferGroup[])} to implement fair,
+     * topology-aware group selection among peers in the same cluster.
+     * </p>
+     */
+    private static final ConcurrentHashMap<String, ClusterState> CLUSTERS = new ConcurrentHashMap<>();
+
+    /**
+     * Per-group sliding round-robin counters used as a secondary rotation component in
+     * {@link #computeRotationOffset(String, String, int)}.
+     *
+     * <p>
+     * Purpose: prevents successive calls from the same caller from starting at the exact same server, thereby smoothing
+     * burst traffic across servers.
+     * </p>
+     */
+    private static final ConcurrentHashMap<String, AtomicInteger> SERVER_RR = new ConcurrentHashMap<>();
+
+    /**
+     * Final ordered list of active and reachable {@link TransferServer} instances selected for this provider instance.
+     *
+     * <p>
+     * Ordering is computed exactly once at construction via
+     * {@link #computeLeastActivityOrdering(String, TransferGroup, TransferServer, int)} and remains immutable
+     * thereafter. All public accessors return defensive copies.
+     * </p>
      */
     private final List<TransferServer> servers = new ArrayList<>();
 
     /**
-     * The selected TransferGroup for this provider instance.
+     * The selected {@link TransferGroup} for this provider instance. Determined during construction by group resolution
+     * and optional cluster-level fallback.
+     *
+     * <p>
+     * Guaranteed to be available at construction time; never {@code null} thereafter.
+     * </p>
      */
     private TransferGroup group = null;
 
     /**
-     * The selected file system (volume index) for this provider instance.
+     * The selected volume (filesystem) index for this provider instance.
+     *
+     * <p>
+     * Chosen during construction using either:
+     * </p>
+     * <ul>
+     * <li>an explicit {@code allocatedFileSystem} supplied by the caller, or</li>
+     * <li>the {@link WeightedAllocator}, with optional size-aware penalties.</li>
+     * </ul>
      */
     private int fileSystem = -1;
 
     /**
-     * Exception thrown when a suitable transfer group or server cannot be found.
+     * Exception indicating that a suitable transfer group or server could not be found or selected.
+     *
+     * <p>
+     * Typical causes include:
+     * </p>
+     * <ul>
+     * <li>group not found or not available,</li>
+     * <li>no volumes configured for the group,</li>
+     * <li>no active DataMover available after filtering,</li>
+     * <li>destination mapping errors.</li>
+     * </ul>
      */
     public static final class TransferServerException extends Exception {
-        /** The Constant serialVersionUID. */
         private static final long serialVersionUID = -5979035504811469692L;
 
-        /**
-         * Instantiates a new transfer server exception.
-         *
-         * @param message
-         *            the message
-         */
         TransferServerException(final String message) {
             super(message);
         }
     }
 
     /**
-     * Gets the file system.
+     * Returns the storage volume (file system) index selected for this provider instance.
      *
-     * @return the file system
+     * <p>
+     * How the index is obtained:
+     * </p>
+     * <ul>
+     * <li>If the caller provided an explicit {@code allocatedFileSystem} in the constructor, that exact index is
+     * used.</li>
+     * <li>Otherwise, the index is selected during construction by the {@link WeightedAllocator}, using either
+     * size-aware weights (when a positive {@code fileSize} is given) or free-space weights.</li>
+     * </ul>
+     *
+     * <p>
+     * This value is immutable for the lifetime of this provider instance and is guaranteed to be within
+     * {@code [0, group.getVolumeCount())}.
+     * </p>
+     *
+     * @return the selected (0-based) volume index for this provider instance
      */
     public int getFileSystem() {
         return fileSystem;
     }
 
     /**
-     * Gets the transfer group.
+     * Returns the resolved and validated {@link TransferGroup} for this provider instance.
      *
-     * @return the transfer group
+     * <p>
+     * The group is resolved at construction time using (in order):
+     * </p>
+     * <ol>
+     * <li>Explicit {@code groupName}, if provided</li>
+     * <li>Destination mapping (if a {@code destinationName} was provided)</li>
+     * <li>Global default transfer group (from configuration)</li>
+     * </ol>
+     *
+     * <p>
+     * After resolution, the provider may switch to a different group within the same cluster through WRR-based fallback
+     * if either:
+     * </p>
+     * <ul>
+     * <li>the resolved group is not currently available, or</li>
+     * <li>no explicit {@code allocatedFileSystem} was provided and cluster selection is enabled</li>
+     * </ul>
+     *
+     * <p>
+     * The returned group is guaranteed to be {@code active} and to have at least one active/connected {@code DataMover}
+     * at the time of construction; otherwise construction fails.
+     * </p>
+     *
+     * @return the selected and available {@link TransferGroup}; never {@code null}
      */
     public TransferGroup getTransferGroup() {
         return group;
     }
 
     /**
-     * Selects a {@link TransferGroup} from the same cluster as the original group using a <b>global weighted
-     * round-robin</b> algorithm.
+     * Convenience accessor for {@link #getTransferGroup()}{@code .getName()}.
      *
      * <p>
-     * This method ensures <b>fair distribution across all callers</b> by maintaining a shared round-robin counter per
-     * cluster. Each invocation advances the counter, regardless of which caller or thread triggered the selection.
+     * Equivalent to {@code getTransferGroup().getName()}, provided for call sites that only need the name.
      * </p>
      *
-     * <h3>Selection rules</h3>
+     * @return the name of the selected transfer group; never {@code null}
+     */
+    public String getTransferGroupName() {
+        return group.getName();
+    }
+
+    /**
+     * Selects a {@link TransferGroup} within the same cluster as {@code original} using a weighted round‑robin (WRR)
+     * scheduler that is stable across configuration changes and resilient to skew.
+     *
+     * <p>
+     * This method implements cluster-level load distribution among transfer groups that share the same cluster name. It
+     * ensures fairness across groups according to their configured cluster weights and prevents stale rotation when the
+     * candidate group set changes.
+     * </p>
+     *
+     * <h3>Eligibility Rules</h3> A group is considered a WRR candidate if:
      * <ul>
-     * <li>If the original group does not belong to a cluster, it is returned unchanged</li>
-     * <li>Only groups that:
-     * <ul>
-     * <li>belong to the same cluster</li>
-     * <li>are active and available</li>
-     * <li>have a strictly positive {@code clusterWeight}</li>
-     * </ul>
-     * are eligible for selection</li>
-     * <li>Eligible groups are ordered deterministically by name to avoid configuration or database ordering bias</li>
-     * <li>The configured {@code clusterWeight} defines how many slots each group occupies in the round-robin cycle</li>
+     * <li>it belongs to the same cluster as {@code original},</li>
+     * <li>its cluster weight is strictly positive (see {@link #getClusterWeight(TransferGroup)}),</li>
+     * <li>it is currently available (active and has at least one active DataMover), see
+     * {@link #groupIsAvailable(TransferGroup)}.</li>
      * </ul>
      *
-     * <h3>Fairness properties</h3>
+     * <p>
+     * Groups failing any of the above criteria are ignored for WRR.
+     * </p>
+     *
+     * <h3>Topology‑Change Detection</h3>
+     * <p>
+     * The method computes a stable hash of the candidate group set using {@link #hashCandidates(List)}. Whenever this
+     * hash differs from the last recorded hash in {@code CLUSTERS}, the cluster RR counter is reset. This prevents the
+     * scheduler from “carrying over” RR state after reconfiguration, enabling predictable behaviour after topology
+     * changes (e.g., enabling/disabling groups or changing weights).
+     * </p>
+     *
+     * <h3>Scheduling</h3>
+     * <p>
+     * The counter stored in the cluster state is incremented atomically and is used to walk through the weighted sum of
+     * the candidate groups. The next group whose weight interval contains the counter slot is selected.
+     * </p>
+     *
+     * <h3>Return Value</h3>
      * <ul>
-     * <li>Fair across <b>all callers and threads</b>, not per caller</li>
-     * <li>Long-term proportional usage according to {@code clusterWeight}</li>
-     * <li>No reliance on randomness once the system is running</li>
-     * <li>Stable behavior under high concurrency</li>
+     * <li>If no eligible cluster peers exist, {@code original} is returned unchanged.</li>
+     * <li>Otherwise, the selected peer may be the same as {@code original}, or a different group within the same
+     * cluster.</li>
      * </ul>
      *
-     * <h3>Example</h3> For a cluster with groups {@code A(weight=1)}, {@code B(weight=2)}:
-     *
-     * <pre>
-     * A → B → B → A → B → B → ...
-     * </pre>
-     *
-     * <h3>Fallback behavior</h3>
-     * <ul>
-     * <li>If no eligible group is found, the original group is returned</li>
-     * <li>If the total computed weight is invalid, the original group is returned</li>
-     * </ul>
+     * <h3>Thread Safety</h3>
+     * <p>
+     * Fully thread‑safe; cluster state is stored in a {@link ConcurrentHashMap} and uses atomic counters.
+     * </p>
      *
      * @param original
-     *            the originally selected transfer group
+     *            the initial group to base selection on
      * @param allGroups
-     *            all known transfer groups, used to resolve cluster membership
+     *            all transfer groups in the system (typically from database)
      *
-     * @return the selected transfer group according to weighted round-robin fairness
+     * @return the WRR‑selected group, or {@code original} if no alternatives exist
      */
     private static TransferGroup selectGroupFromClusterRoundRobin(final TransferGroup original,
             final TransferGroup[] allGroups) {
         final var clusterName = original.getClusterName();
-        if (clusterName == null) {
+        if (clusterName == null)
             return original;
-        }
+
         // Collect eligible groups in the same cluster
         final List<TransferGroup> candidates = new ArrayList<>();
         for (final var g : allGroups) {
@@ -255,82 +371,146 @@ public final class TransferServerProvider {
                 candidates.add(g);
             }
         }
-        // No alternative available
         if (candidates.isEmpty()) {
             return original;
         }
-        // Stable order to avoid DB / configuration bias
+
+        // Stable order to avoid DB/config bias
         candidates.sort(Comparator.comparing(TransferGroup::getName));
-        // Compute total weight
+
+        // Compute total weight and a stable signature
         var totalWeight = 0;
         for (final var g : candidates) {
             totalWeight += getClusterWeight(g);
         }
-        // Defensive: should never happen, but avoids /0
         if (totalWeight <= 0) {
             return original;
         }
-        // Global weighted round-robin
-        final var counter = CLUSTER_RR.computeIfAbsent(clusterName, _ -> new AtomicInteger(0));
-        // Slot in the weighted cycle
-        var slot = Math.floorMod(counter.getAndIncrement(), totalWeight);
-        // Select group corresponding to the slot
+
+        final var candidatesHash = hashCandidates(candidates);
+        final var state = CLUSTERS.computeIfAbsent(clusterName, _ -> new ClusterState());
+        if (state.candidatesHash != candidatesHash) {
+            state.candidatesHash = candidatesHash;
+            state.counter.set(0);
+            if (_log.isDebugEnabled()) {
+                _log.debug("Cluster {} candidates changed; RR counter reset", clusterName);
+            }
+        }
+
+        var slot = Math.floorMod(state.counter.getAndIncrement(), totalWeight);
         for (final var g : candidates) {
             slot -= getClusterWeight(g);
             if (slot < 0) {
                 if (_log.isDebugEnabled() && !g.getName().equals(original.getName())) {
-                    _log.debug("Selected TransferGroup {} from cluster {} (weighted RR)", g.getName(), clusterName);
+                    _log.debug("Selected TransferGroup {} from cluster {} (WRR)", g.getName(), clusterName);
                 }
                 return g;
             }
         }
-        // Fallback: should not happen, but be safe
+        // Defensive
         return original;
     }
 
     /**
-     * Gets the cluster weight for the group.
+     * Returns the effective cluster weight of the given group for WRR scheduling.
      *
-     * @return the transfer group cluster weight if defined and positive, 0 otherwise
+     * <p>
+     * A weight is considered valid only if it is non-null and strictly positive. All other values (including
+     * {@code null}, zero, or negative numbers) are treated as weight {@code 0}, which effectively excludes the group
+     * from cluster‑level WRR selection.
+     * </p>
+     *
+     * <p>
+     * This method does <strong>not</strong> enforce group availability; that is handled separately by
+     * {@link #groupIsAvailable(TransferGroup)} within
+     * {@link #selectGroupFromClusterRoundRobin(TransferGroup, TransferGroup[])}.
+     * </p>
+     *
+     * @param group
+     *            the transfer group whose cluster weight should be examined
+     *
+     * @return the positive cluster weight, or {@code 0} if the weight is undefined or non-positive
      */
     private static int getClusterWeight(final TransferGroup group) {
         return group.getClusterWeight() != null && group.getClusterWeight() > 0 ? group.getClusterWeight() : 0;
     }
 
     /**
-     * Gets the transfer servers list ordered by least disk activity.
+     * Returns a snapshot of the active {@link TransferServer} list for this provider instance, ordered by the “least
+     * activity” policy that was computed during construction.
      *
-     * @return the transfer servers list
+     * <p>
+     * Ordering policy (computed at construction time):
+     * </p>
+     * <ol>
+     * <li>Caller-stable base rotation (deterministic hash of {@code caller}, group name, and runtime salt) combined
+     * with a per-group round-robin counter to mitigate burst skew.</li>
+     * <li>Filtering of inactive or unreachable servers (only active servers with a reachable {@code DataMover}
+     * interface remain).</li>
+     * <li>Primary sort by per-volume activity: servers with the <em>fewest</em> downloads on {@link #getFileSystem()}
+     * come first.</li>
+     * <li>Tie-breaker by rotation order: among equal loads, the rotated declared order decides.</li>
+     * <li>If a preferred server was provided to the constructor and is available, it is reinserted at index 0.</li>
+     * </ol>
+     *
+     * <p>
+     * The returned list is an independent copy and can be freely modified by the caller. Subsequent calls return a
+     * fresh copy of the same internal ordering (the provider does not recompute ordering after construction).
+     * </p>
+     *
+     * <p>
+     * <strong>Thread-safety:</strong> This method performs no mutation and is safe for concurrent calls. The underlying
+     * ordering is immutable within this provider instance.
+     * </p>
+     *
+     * @return a new {@link List} of active {@link TransferServer} instances, ordered by least activity
      */
     public List<TransferServer> getTransferServersByLeastActivity() {
         return new ArrayList<>(servers);
     }
 
     /**
-     * Returns the list of {@link TransferServer} instances for the current transfer group and file system (volume
-     * index).
-     * <p>
-     * If volume usage statistics are available in the internal cache for the current group and volume index, the
-     * servers are ordered by increasing usage (least used first) for that volume. Otherwise, the servers are returned
-     * in their default order.
-     * <p>
-     * The ordering may change as volume usage statistics are updated in the background.
+     * Returns the active {@link TransferServer} list ordered by highest free space on the selected volume
+     * ({@link #getFileSystem()}), if a cache entry is available.
      *
-     * @return a list of active {@link TransferServer} instances for the current group and file system, ordered by most
-     *         free space if available
+     * <p>
+     * Behaviour:
+     * </p>
+     * <ul>
+     * <li>If a {@code VolumeUsageResult} is present in the internal cache for {@code groupName + ":" + fileSystem}, the
+     * method uses the mover ordering computed by
+     * {@link MasterServer#computeVolumeUsageAndSortedMovers(TransferGroup, int)} (descending free space), intersected
+     * with the provider's active set.</li>
+     * <li>If no cache entry exists, the method returns a shuffled copy of the provider's least-activity list as a
+     * best-effort fallback to avoid persistent hot-spotting.</li>
+     * </ul>
+     *
+     * <p>
+     * <strong>Scope:</strong> This method does not modify the provider's internal least-activity ordering; it returns a
+     * new list each time. The cache is populated asynchronously by the background usage updater.
+     * </p>
+     *
+     * <p>
+     * <strong>Thread-safety:</strong> Safe for concurrent callers; relies on immutable snapshots and concurrent maps.
+     * </p>
+     *
+     * @return a new {@link List} of active {@link TransferServer} instances sorted by descending free space on the
+     *         selected volume when cache is present; otherwise a shuffled best-effort ordering
      */
     public List<TransferServer> getTransferServersByMostFreeSpace() {
         final var key = group.getName() + ":" + fileSystem;
         final var cached = VOLUME_USAGE_CACHE.get(key);
         if (cached == null || cached.moversSortedByUsage == null) {
-            return new ArrayList<>(servers);
+            _log.debug("No cache entry found for {}", key);
+            final var list = new ArrayList<>(servers);
+            Collections.shuffle(list);
+            return list;
         }
         final var order = cached.moversSortedByUsage;
-        final var index = new ConcurrentHashMap<String, Integer>();
+        final Map<String, Integer> index = new HashMap<>(order.length);
         for (var i = 0; i < order.length; i++) {
             index.put(order[i], i);
         }
-        // Return a sorted copy, do not mutate internal servers list
         final List<TransferServer> sorted = new ArrayList<>(servers);
         sorted.sort((a, b) -> {
             final var ia = index.get(a.getName());
@@ -347,239 +527,344 @@ public final class TransferServerProvider {
     }
 
     /**
-     * Returns the list of {@link TransferServer}s associated with the given transfer group.
+     * Computes the final ordered list of active {@link TransferServer} instances for the given caller, transfer group,
+     * and file system index.
+     *
      * <p>
-     * This is a convenience method that delegates to the full {@code getTransferServers(...)} variant using default
-     * parameters.
+     * This method combines several scheduling layers into a single deterministic ordering pipeline. The result is
+     * computed once per provider construction and returned to callers through
+     * {@link #getTransferServersByLeastActivity()}.
+     * </p>
      *
-     * @param caller
-     *            identifier of the calling component, used for logging and auditing purposes
-     * @param originalGroup
-     *            the transfer group for which the transfer servers must be retrieved
+     * <h3>Ordering Pipeline</h3>
+     * <ol>
+     * <li><b>Declared server lookup:</b> Fetch the full set of DataMovers for the group from the database. If none are
+     * configured, construction fails.</li>
      *
-     * @return the list of transfer servers associated with the given transfer group
-     *
-     * @throws DataBaseException
-     *             if an error occurs while accessing the database
-     * @throws TransferServerException
-     */
-    public static List<TransferServer> getTransferServersByLeastActivity(final String caller, final String destination,
-            final TransferGroup originalGroup) throws DataBaseException, TransferServerException {
-        return getTransferServersByLeastActivity(caller, destination, null, originalGroup, null);
-    }
-
-    /**
-     * Returns the list of active {@link TransferServer}s for the given transfer group, ordered by least disk activity.
-     * This is a convenience overload that does not require a destination.
-     *
-     * @param caller
-     *            identifier of the calling component (used for logging and load balancing)
-     * @param originalGroup
-     *            the transfer group for which servers are to be retrieved
-     *
-     * @return ordered list of active TransferServers
-     *
-     * @throws DataBaseException
-     *             if a database error occurs
-     * @throws TransferServerException
-     *             if no suitable servers are found
-     */
-    public static List<TransferServer> getTransferServersByLeastActivity(final String caller,
-            final TransferGroup originalGroup) throws DataBaseException, TransferServerException {
-        return getTransferServersByLeastActivity(caller, null, originalGroup);
-    }
-
-    /**
-     * Returns the list of active {@link TransferServer}s for a given {@link TransferGroup}.
-     * <p>
-     * The method applies the following logic:
+     * <li><b>Caller‑stable rotation seed:</b> Compute a rotation offset via
+     * {@link #computeRotationOffset(String, String, int)} using:
      * <ul>
-     * <li>Retrieve all TransferServers declared for the given TransferGroup.</li>
-     * <li>If none are found and the group belongs to a cluster, select another available TransferGroup from the cluster
-     * using weighted selection.</li>
-     * <li>Filter servers to keep only those that are active and currently connected.</li>
-     * <li>Ensure stable load-balancing by rotating the starting point of the list using a caller-specific random
-     * index.</li>
-     * <li>If a file system is provided and enabled by configuration, order servers by increasing file system usage
-     * (least used first).</li>
-     * <li>If a preferred (original) TransferServer is provided and available, it is always placed at the beginning of
-     * the result list.</li>
+     * <li>the caller identifier,</li>
+     * <li>the group name,</li>
+     * <li>a per‑JVM runtime salt,</li>
+     * <li>a per‑group RR counter.</li>
+     * </ul>
+     * This defines a rotated view of the declared servers to ensure caller‑specific stability and fairness under bursty
+     * workloads.</li>
+     *
+     * <li><b>Filtering of unusable servers:</b> Only servers that are <em>both</em> active and have an active
+     * {@code DataMover} interface registered in {@link MasterServer} are considered. If a preferred server is provided
+     * and active, it is not added here (it will be reinserted later).</li>
+     *
+     * <li><b>Filesystem‑aware activity measurement:</b> For each active server, fetch its current number of downloads
+     * on the selected volume index via {@link TransferScheduler#getNumberOfDownloadsFor(TransferServer, int)}. These
+     * counts are stored in a local map.</li>
+     *
+     * <li><b>Primary sort by filesystem load:</b> Active servers are sorted ascending by their filesystem‑specific
+     * load. Servers performing fewer downloads on this volume are preferred.</li>
+     *
+     * <li><b>Secondary tie‑breaker by rotation order:</b> If two or more servers have identical load, their relative
+     * order is determined by their declared index after rotation. This preserves caller‑stable fairness without
+     * compromising load‑based prioritisation.</li>
+     *
+     * <li><b>Preferred‑server reinsertion:</b> If {@code originalServer} was provided, is active, and reachable, it is
+     * placed at index 0 of the final list. Its load is included in debug output but does not affect the ordering of
+     * others.</li>
+     * </ol>
+     *
+     * <h3>Failure Modes</h3>
+     * <ul>
+     * <li>If the declared server list is empty: {@link DataBaseException}.</li>
+     * <li>If filtering results in no active servers: the caller (constructor) throws a {@link TransferServerException}
+     * after this method returns.</li>
      * </ul>
      *
-     * @param caller
-     *            identifier of the calling component (used to ensure stable load-balancing across calls)
-     * @param originalServer
-     *            preferred TransferServer to prioritise, may be {@code null}
-     * @param originalGroup
-     *            transfer group used to select servers (required)
-     * @param fileSystem
-     *            optional file system index used for load-based ordering, or {@code null} if not applicable
+     * <h3>Thread Safety</h3>
+     * <p>
+     * Fully thread‑safe: all inputs are local snapshots, and the method performs no shared-state mutation. The provider
+     * caches the resulting list immutably.
+     * </p>
      *
-     * @return ordered list of active TransferServers
+     * @param caller
+     *            caller identifier for rotation seeding
+     * @param group
+     *            the resolved and validated {@link TransferGroup}
+     * @param originalServer
+     *            optional preferred server to place at index 0 if active
+     * @param fileSystem
+     *            filesystem/volume index used for activity measurement
+     *
+     * @return the ordered list of active servers (never {@code null})
      *
      * @throws DataBaseException
-     *             if no active TransferServer can be found
-     * @throws TransferServerException
+     *             if declared servers cannot be retrieved
      */
-    @SuppressWarnings("null")
-    public static List<TransferServer> getTransferServersByLeastActivity(final String caller, final String destination,
-            final TransferServer originalServer, final TransferGroup originalGroup, final Integer fileSystem)
-            throws DataBaseException, TransferServerException {
+    private static List<TransferServer> computeLeastActivityOrdering(final String caller, final TransferGroup group,
+            final TransferServer originalServer, final int fileSystem) throws DataBaseException {
+
         final var dataBase = MASTER.getECpdsBase();
-        final var fileSystemProvided = fileSystem != null && fileSystem >= 0;
-        // Resolve transfer group if not explicitly provided
-        var group = originalGroup != null ? originalGroup : resolveTransferGroup(null, destination, null);
-        // Global fair distribution across cluster
-        final var allGroups = MASTER.getECpdsBase().getTransferGroupArray();
-        group = selectGroupFromClusterRoundRobin(group, allGroups);
-        // Resolve transfer group servers (with cluster fallback if needed)
-        var groupName = group.getName();
-        var declaredServers = dataBase.getTransferServers(groupName);
-        if (declaredServers.length == 0) {
-            group = tryClusterFallback(group);
-            groupName = group.getName();
-            declaredServers = dataBase.getTransferServers(groupName);
-        }
+
+        // -----------------------------------------
+        // 1. Resolve declared servers
+        // -----------------------------------------
+        final var groupName = group.getName();
+        final var declaredServers = dataBase.getTransferServers(groupName);
         if (declaredServers.length == 0) {
             throw new DataBaseException("No DataMover available for TransferGroup " + groupName);
         }
-        // Stable caller-based rotation index
-        final var startIndex = selectStartIndex(caller, groupName, declaredServers.length);
-        // Filter active and connected servers
-        final List<TransferServer> activeTransferServers = new ArrayList<>();
-        var originalTransferServerFound = false;
-        for (var i = 0; i < declaredServers.length; i++) {
-            final var server = declaredServers[(startIndex + i) % declaredServers.length];
-            final var serverName = server.getName();
-            if (!server.getActive() || !MASTER.existsClientInterface(serverName, "DataMover")) {
+
+        // -----------------------------------------
+        // 2. Compute rotation offset (stable + per-group RR)
+        // -----------------------------------------
+        final int startIndex = computeRotationOffset(caller, groupName, declaredServers.length);
+
+        // Helper: map server -> declared index
+        final Map<String, Integer> declaredIndex = new HashMap<>();
+        for (int i = 0; i < declaredServers.length; i++) {
+            declaredIndex.put(declaredServers[i].getName(), i);
+        }
+
+        // -----------------------------------------
+        // 3. Filter active servers; detect preferred server
+        // -----------------------------------------
+        final List<TransferServer> active = new ArrayList<>(declaredServers.length);
+        boolean originalFound = false;
+
+        for (int i = 0; i < declaredServers.length; i++) {
+            final var s = declaredServers[(startIndex + i) % declaredServers.length];
+            final var name = s.getName();
+
+            if (!s.getActive() || !MASTER.existsClientInterface(name, "DataMover")) {
                 continue;
             }
-            // Keep preferred server aside to force it at the top later
-            if (originalServer != null && serverName.equals(originalServer.getName())) {
-                originalTransferServerFound = true;
+
+            if (originalServer != null && name.equals(originalServer.getName())) {
+                originalFound = true;
             } else {
-                activeTransferServers.add(server);
+                active.add(s);
             }
         }
-        // Order by file system usage (least used first)
-        final Map<String, Integer> loadPerServer = new HashMap<>();
-        if (fileSystemProvided) {
-            orderByFileSystemActivity(activeTransferServers, loadPerServer, fileSystem);
+
+        // -----------------------------------------
+        // 4. Collect filesystem load
+        // -----------------------------------------
+        final Map<String, Integer> load = new HashMap<>();
+        for (var ts : active) {
+            load.put(ts.getName(), TransferScheduler.getNumberOfDownloadsFor(ts, fileSystem));
         }
-        // Reinsert preferred server at the top if available
-        if (originalTransferServerFound) {
-            activeTransferServers.add(0, originalServer);
-            if (_log.isDebugEnabled() && fileSystemProvided) {
-                loadPerServer.put(originalServer.getName(),
-                        TransferScheduler.getNumberOfDownloadsFor(originalServer, fileSystem));
+
+        // If preferred server should be reinserted, collect its load now
+        if (originalFound && originalServer != null && _log.isDebugEnabled()) {
+            load.put(originalServer.getName(), TransferScheduler.getNumberOfDownloadsFor(originalServer, fileSystem));
+        }
+
+        // -----------------------------------------
+        // 5. Sort by:
+        // (a) least filesystem load
+        // (b) rotation position (tie-breaker)
+        // -----------------------------------------
+        active.sort((a, b) -> {
+            int la = load.get(a.getName());
+            int lb = load.get(b.getName());
+            if (la != lb) {
+                return Integer.compare(la, lb); // primary key: FS load
             }
+
+            // Secondary key: rotation ordering
+            int ia = Math.floorMod(declaredIndex.get(a.getName()) - startIndex, declaredServers.length);
+            int ib = Math.floorMod(declaredIndex.get(b.getName()) - startIndex, declaredServers.length);
+            return Integer.compare(ia, ib);
+        });
+
+        // -----------------------------------------
+        // 6. Reinsert original server on top (if present)
+        // -----------------------------------------
+        if (originalFound && originalServer != null) {
+            active.add(0, originalServer);
         }
-        // Debug output
+
+        // -----------------------------------------
+        // 7. Debug
+        // -----------------------------------------
         if (_log.isDebugEnabled()) {
-            logSelectedServers(caller, group, activeTransferServers, loadPerServer, fileSystemProvided, fileSystem);
+            logSelectedServers(caller, group, active, load, fileSystem);
         }
-        return activeTransferServers;
+
+        return active;
     }
 
     /**
-     * Attempts to select an alternative {@link TransferGroup} from the same cluster when the original group has no
-     * available TransferServers.
+     * Attempts to select an alternative {@link TransferGroup} from the same cluster when the originally resolved group
+     * is not suitable (typically because it is unavailable or lacks active movers).
+     *
      * <p>
-     * If the given group belongs to a cluster and has an associated cluster weight, a new group is selected using a
-     * global weighted round-robin selection among all available groups in the cluster. If the group is not part of a
-     * cluster or no suitable alternative is found, the original group is returned unchanged.
+     * This method delegates to {@link #selectGroupFromClusterRoundRobin(TransferGroup, TransferGroup[])}, which
+     * implements cluster‑wide weighted round‑robin (WRR) selection among eligible groups. If WRR returns a different
+     * group and that group is available, it is used as the fallback.
+     * </p>
      *
-     * @param group
-     *            the original transfer group
+     * <h3>When Fallback Occurs</h3> Fallback may occur when:
+     * <ul>
+     * <li>The caller passed {@code allocatedFileSystem = null} (constructor triggers fallback mode), or</li>
+     * <li>The originally resolved group is not available, or</li>
+     * <li>A load‑balancing policy intentionally rotates among cluster peers.</li>
+     * </ul>
      *
-     * @return a transfer group selected from the cluster, or the original group if no fallback is applicable
+     * <p>
+     * The method never selects a group from a different cluster; if the initial group has no cluster name or no
+     * eligible peers, the original group is returned.
+     * </p>
+     *
+     * <h3>Logging</h3> A debug message is emitted when the fallback selects a different group within the same cluster.
+     * </p>
+     *
+     * @param originalGroup
+     *            the initially resolved group
+     *
+     * @return the fallback group chosen through cluster WRR, or {@code originalGroup} if no alternative exists
      */
-    private static TransferGroup tryClusterFallback(final TransferGroup group) {
-        final var clusterName = group.getClusterName();
-        if (isNotEmpty(clusterName) && getClusterWeight(group) > 0) {
-            final var dataBase = MASTER.getECpdsBase();
-            final var allGroups = dataBase.getTransferGroupArray();
-            final var selected = selectGroupFromClusterRoundRobin(group, allGroups);
-            if (!selected.getName().equals(group.getName())) {
-                _log.debug("Choosing TransferGroup {} from Cluster {} (WRR fallback)", selected.getName(), clusterName);
-            }
-            return selected;
+    private static TransferGroup tryClusterFallback(final TransferGroup originalGroup) {
+        final var clusterName = originalGroup.getClusterName();
+        if (isEmpty(clusterName))
+            return originalGroup;
+
+        final var allGroups = MASTER.getECpdsBase().getTransferGroupArray();
+        final var selected = selectGroupFromClusterRoundRobin(originalGroup, allGroups);
+
+        if (!selected.getName().equals(originalGroup.getName())) {
+            _log.debug("Cluster fallback: selecting TransferGroup {} from cluster {}", selected.getName(), clusterName);
         }
-        return group;
+        return selected;
     }
 
     /**
-     * Computes a stable starting index for rotating the list of {@code TransferServers} to achieve load balancing.
+     * Computes the stable rotation offset used to reorder the declared server list for a given (caller, groupName)
+     * pair.
+     *
      * <p>
-     * The index is calculated using a combination of the caller identifier, the group name, and the current time
-     * (bucketed by minutes). This ensures that calls from the same caller for the same group within the same minute
-     * yield a consistent ordering, while still distributing load across servers over time.
+     * This rotation mechanism has two components:
+     * </p>
+     *
+     * <h3>1. Deterministic base index</h3>
+     * <p>
+     * The base offset is derived from a stable hash of:
+     * </p>
+     * <ul>
+     * <li>{@code caller} – the logical identifier of the calling subsystem,</li>
+     * <li>{@code groupName} – the active transfer group,</li>
+     * <li>{@code RUNTIME_SALT} – a per‑JVM random salt guaranteeing that different JVM runs do not align in the same
+     * rotation pattern.</li>
+     * </ul>
+     * <p>
+     * This ensures that repeated invocations from the same caller yield consistent relative rotations within a single
+     * JVM lifetime, while preventing cross‑restart correlation or hot-spotting.
+     * </p>
+     *
+     * <h3>2. Per‑group round‑robin counter (RR)</h3>
+     * <p>
+     * A per‑group atomic counter is maintained in {@code SERVER_RR}. It increments on each call to this method for a
+     * given group, providing a sliding offset that prevents bursty traffic from concentrating repeatedly on the same
+     * server.
+     * </p>
+     *
+     * <h3>Final Offset</h3>
+     * <p>
+     * The method returns:
+     * </p>
+     *
+     * <pre>
+     * (base + rr) % size
+     * </pre>
+     *
+     * <p>
+     * where {@code size} is the number of declared servers. The result is always within {@code [0, size)}.
+     * </p>
+     *
+     * <h3>Thread‑safety</h3>
+     * <p>
+     * Fully thread‑safe: the RR counter is atomic and each group has its own counter.
+     * </p>
+     *
+     * <h3>Usage</h3>
+     * <p>
+     * The returned offset is used to reindex the declared server array so that iteration begins at a caller‑dependent
+     * position, producing a deterministic but evenly spread rotation.
+     * </p>
      *
      * @param caller
-     *            the identifier of the calling component
+     *            identifier used for deterministic seeding of the rotation
      * @param groupName
-     *            the name of the transfer group
+     *            the name of the transfer group whose servers are being rotated
      * @param size
-     *            the total number of available servers; must be positive
+     *            number of servers in the declared list; must be {@code > 0}
      *
-     * @return a starting index in the range {@code [0, size)}
+     * @return a non‑negative offset within the declared server list
      */
-    private static int selectStartIndex(final String caller, final String groupName, final int size) {
-        final var bucket = TimeUnit.MINUTES.convert(System.currentTimeMillis(), TimeUnit.MILLISECONDS);
-        final var h = java.util.Objects.hash(caller, groupName, bucket);
-        final var index = Math.floorMod(h, size);
+    private static int computeRotationOffset(final String caller, final String groupName, final int size) {
+        final var base = Math.floorMod(java.util.Objects.hash(getCaller(caller), groupName, RUNTIME_SALT), size);
+        final var rr = Math.floorMod(SERVER_RR.computeIfAbsent(groupName, _ -> new AtomicInteger()).getAndIncrement(),
+                size);
+        final var idx = (base + rr) % size;
         if (_log.isDebugEnabled()) {
-            _log.debug("Selected index for {}.{}: {}", caller, groupName, index);
+            _log.debug("Rotation offset for {}.{}: base={}, rr={}, idx={}", getCaller(caller), groupName, base, rr,
+                    idx);
         }
-        return index;
+        return idx;
+    }
+
+    private static String getCaller(final String caller) {
+        return isEmpty(caller) ? "unknown" : caller;
     }
 
     /**
-     * Orders the given list of {@link TransferServer}s by increasing activity of the specified file system.
-     * <p>
-     * Servers with lower activity on the given file system are placed first. The method also populates the provided map
-     * with the computed load per server to avoid redundant calls and allow reuse for logging purposes.
+     * Emits a detailed debug log entry describing the selected server ordering for a particular caller and group,
+     * including per‑server load information.
      *
-     * @param servers
-     *            list of servers to be sorted in-place
-     * @param loadPerServer
-     *            map used to cache the load value per server name
-     * @param fileSystem
-     *            file system index used to retrieve usage statistics
-     */
-    private static void orderByFileSystemActivity(final List<TransferServer> servers,
-            final Map<String, Integer> loadPerServer, final int fileSystem) {
-        for (final TransferServer ts : servers) {
-            loadPerServer.put(ts.getName(), TransferScheduler.getNumberOfDownloadsFor(ts, fileSystem));
-        }
-        servers.sort(Comparator.comparingInt(ts -> loadPerServer.get(ts.getName())));
-    }
-
-    /**
-     * Logs the final ordered list of selected TransferServers for debugging purposes.
      * <p>
-     * When file system ordering is enabled, the corresponding load value for each server is included in the log output.
-     * This method is intended to be called only when debug logging is enabled.
+     * This method is invoked only when debug logging is enabled. It produces a compact diagnostic string of the form:
+     * </p>
+     *
+     * <pre>
+     *   Selected DataMovers for &lt;caller&gt;.&lt;group&gt; [fileSystem=X]: serverA(3),serverB(5),serverC(7)
+     * </pre>
+     *
+     * where:
+     * <ul>
+     * <li>{@code serverA}, {@code serverB}, ... are active transfer servers in the final ordering,</li>
+     * <li>numbers in parentheses represent the filesystem‑specific load obtained via
+     * {@link TransferScheduler#getNumberOfDownloadsFor(TransferServer, int)},</li>
+     * <li>{@code fileSystem} identifies the volume index for which load was computed.</li>
+     * </ul>
+     *
+     * <h3>Purpose</h3>
+     * <ul>
+     * <li>Provides visibility into the final ordering chosen by
+     * {@link #computeLeastActivityOrdering(String, TransferGroup, TransferServer, int)},</li>
+     * <li>Helps diagnose rotation behavior, fallback effects, and unexpected load asymmetries,</li>
+     * <li>Useful to verify correctness of activity-based selection in production clusters.</li>
+     * </ul>
+     *
+     * <h3>Thread‑safety</h3>
+     * <p>
+     * Read‑only; safe for concurrent use.
+     * </p>
      *
      * @param caller
-     *            identifier of the calling component
+     *            identifier of the caller for which the ordering was computed
      * @param group
-     *            transfer group used for selection
+     *            the selected {@link TransferGroup}
      * @param servers
-     *            ordered list of selected servers
+     *            the final sorted list of active servers (in least‑activity order)
      * @param loadPerServer
-     *            map containing the load per server (may be empty)
-     * @param fileSystemProvided
-     *            whether a file system was used for ordering
+     *            map of server name → filesystem load used for ordering
      * @param fileSystem
-     *            file system index used for ordering, if applicable
+     *            the volume index for which load information was computed
      */
     private static void logSelectedServers(final String caller, final TransferGroup group,
-            final List<TransferServer> servers, final Map<String, Integer> loadPerServer,
-            final boolean fileSystemProvided, final Integer fileSystem) {
+            final List<TransferServer> servers, final Map<String, Integer> loadPerServer, final Integer fileSystem) {
         final var sb = new StringBuilder();
         for (final TransferServer ts : servers) {
-            if (!sb.isEmpty())
+            if (sb.length() > 0)
                 sb.append(',');
             sb.append(ts.getName());
             final var load = loadPerServer.get(ts.getName());
@@ -587,157 +872,388 @@ public final class TransferServerProvider {
                 sb.append('(').append(load).append(')');
             }
         }
-        _log.debug("Selected DataMovers for {}.{}{}: {}", caller, group.getName(),
-                fileSystemProvided ? "[fileSystem=" + fileSystem + "]" : "", sb);
+        _log.debug("Selected DataMovers for {}.{} [fileSystem={}]: {}", getCaller(caller), group.getName(), fileSystem,
+                sb);
     }
 
     /**
-     * Constructs a new {@code TransferServerProvider} for the specified transfer group, destination, and file system.
-     * <p>
-     * This constructor determines the appropriate {@link TransferGroup} and file system (volume index) to use for data
-     * transfer, optionally considering cluster membership and primary host preferences. It then retrieves the list of
-     * active {@link TransferServer} instances for the selected group and file system. If no suitable servers are
-     * available, an exception is thrown.
-     * <p>
-     * <b>Parameters:</b>
+     * Convenience constructor that delegates to the canonical constructor with:
      * <ul>
-     * <li>{@code caller} - the name of the calling component (used for logging and context)</li>
-     * <li>{@code allocatedFileSystem} - the file system (volume index) to use; if null or -1, one is allocated
-     * automatically</li>
-     * <li>{@code groupName} - the name of the transfer group to use, or null to auto-select</li>
-     * <li>{@code destination} - the destination name for which to find a transfer group and servers</li>
-     * <li>{@code primaryHost} - an optional primary host to force selection of a specific group</li>
+     * <li>{@code server = null}</li>
+     * <li>{@code allocatedFileSystem = null}</li>
      * </ul>
+     * See {@link #TransferServerProvider(String, String, String, long, TransferServer, Integer)} for detailed
+     * behaviour.
      *
-     * <b>Behavior:</b>
-     * <ul>
-     * <li>If {@code transferGroup} is provided and available, it is used; otherwise, cluster selection may occur.</li>
-     * <li>If {@code primaryHost} is provided, its group is used if available.</li>
-     * <li>If no group is available, a default is selected from configuration.</li>
-     * <li>The list of active servers is retrieved for the selected group and file system.</li>
-     * </ul>
+     * @param caller
+     *            identifier of the caller (used for stable rotation seeding)
+     * @param groupName
+     *            explicit group name; if {@code null}, {@code destination} and/or default are used
+     * @param destination
+     *            optional destination name used for group resolution
+     * @param fileSize
+     *            expected file size in bytes (non-positive disables size-aware allocation)
      *
-     * <b>Exceptions:</b>
-     * <ul>
-     * <li>{@link TransferServerException} if no suitable group or servers are found, or if the group is
-     * unavailable</li>
-     * <li>{@link DataBaseException} if a database error occurs during lookup</li>
-     * </ul>
-     *
-     * <b>Side effects:</b> The internal state of this provider is initialised, including the group, file system, and
-     * server list ordered by least activity.
+     * @throws TransferServerException
+     *             if no suitable group/server can be selected
+     * @throws DataBaseException
+     *             on database errors
      */
-    public TransferServerProvider(final String caller, final Integer allocatedFileSystem, final String groupName,
-            final String destination, final Host primaryHost) throws TransferServerException, DataBaseException {
-        group = resolveTransferGroup(groupName, destination, primaryHost);
-        final var checkCluster = allocatedFileSystem == null && !groupIsAvailable(group);
+    public TransferServerProvider(final String caller, final String groupName, final String destination,
+            final long fileSize) throws TransferServerException, DataBaseException {
+        this(caller, groupName, destination, fileSize, null, null);
+    }
+
+    /**
+     * Convenience constructor that delegates to the canonical constructor with:
+     * <ul>
+     * <li>{@code fileSize = -1} (disables size-aware allocation)</li>
+     * </ul>
+     * See {@link #TransferServerProvider(String, String, String, long, TransferServer, Integer)} for detailed
+     * behaviour.
+     *
+     * @param caller
+     *            identifier of the caller (used for stable rotation seeding)
+     * @param groupName
+     *            explicit group name; if {@code null}, {@code destination} and/or default are used
+     * @param destination
+     *            optional destination name used for group resolution
+     * @param server
+     *            optional preferred server to reinsert at index 0 if active/reachable
+     * @param allocatedFileSystem
+     *            optional explicit volume index; when {@code null}, the allocator is used
+     *
+     * @throws TransferServerException
+     *             if no suitable group/server can be selected
+     * @throws DataBaseException
+     *             on database errors
+     */
+    public TransferServerProvider(final String caller, final String groupName, final String destination,
+            final TransferServer server, final Integer allocatedFileSystem)
+            throws TransferServerException, DataBaseException {
+        this(caller, groupName, destination, -1, server, allocatedFileSystem);
+    }
+
+    /**
+     * Convenience constructor that delegates to the canonical constructor with:
+     * <ul>
+     * <li>{@code fileSize = -1}</li>
+     * <li>{@code server = null}</li>
+     * <li>{@code allocatedFileSystem = null}</li>
+     * </ul>
+     * See {@link #TransferServerProvider(String, String, String, long, TransferServer, Integer)} for detailed
+     * behaviour.
+     *
+     * @param caller
+     *            identifier of the caller (used for stable rotation seeding)
+     * @param groupName
+     *            explicit group name; if {@code null}, {@code destination} and/or default are used
+     * @param destination
+     *            optional destination name used for group resolution
+     *
+     * @throws TransferServerException
+     *             if no suitable group/server can be selected
+     * @throws DataBaseException
+     *             on database errors
+     */
+    public TransferServerProvider(final String caller, final String groupName, final String destination)
+            throws TransferServerException, DataBaseException {
+        this(caller, groupName, destination, -1, null, null);
+    }
+
+    /**
+     * Convenience constructor that delegates to the canonical constructor with:
+     * <ul>
+     * <li>{@code fileSize = -1} (disables size‑aware volume allocation)</li>
+     * <li>{@code server = null} (no preferred server to reinsert)</li>
+     * <li>{@code allocatedFileSystem} explicitly provided by the caller</li>
+     * </ul>
+     *
+     * <p>
+     * This overload is used when the caller wants to:
+     * </p>
+     * <ul>
+     * <li>select a specific transfer group (via {@code groupName} or destination lookup),</li>
+     * <li>optionally resolve the group based on {@code destination},</li>
+     * <li>force the use of a specific storage volume index (bypassing weighted allocation),</li>
+     * <li>and does not wish to use size‑aware volume selection.</li>
+     * </ul>
+     *
+     * <p>
+     * The behaviour of group resolution, availability checks, and cluster‑level fallback follows the rules documented
+     * in the canonical constructor
+     * {@link #TransferServerProvider(String, String, String, long, TransferServer, Integer)}.
+     * </p>
+     *
+     * @param caller
+     *            identifier of the caller (used for stable rotation seeding)
+     * @param groupName
+     *            explicit group name; if {@code null}, group is resolved from {@code destination} or configuration
+     * @param destination
+     *            optional destination used for group resolution
+     * @param allocatedFileSystem
+     *            explicit volume index to use instead of weighted allocation
+     *
+     * @throws TransferServerException
+     *             if the resolved/selected group is not available, has no volumes, or if no active DataMover can be
+     *             selected
+     * @throws DataBaseException
+     *             if database queries for group, destination, or servers fail
+     */
+    public TransferServerProvider(final String caller, final String groupName, final String destination,
+            final Integer allocatedFileSystem) throws TransferServerException, DataBaseException {
+        this(caller, groupName, destination, -1, null, allocatedFileSystem);
+    }
+
+    /**
+     * Convenience constructor that delegates to the canonical constructor with:
+     * <ul>
+     * <li>{@code destinationName = null}</li>
+     * <li>{@code fileSize = -1}</li>
+     * <li>{@code server = null}</li>
+     * <li>{@code allocatedFileSystem = null}</li>
+     * </ul>
+     * See {@link #TransferServerProvider(String, String, String, long, TransferServer, Integer)} for detailed
+     * behaviour.
+     *
+     * @param caller
+     *            identifier of the caller (used for stable rotation seeding)
+     * @param groupName
+     *            explicit group name; if {@code null}, the default is used
+     *
+     * @throws TransferServerException
+     *             if no suitable group/server can be selected
+     * @throws DataBaseException
+     *             on database errors
+     */
+    public TransferServerProvider(final String caller, final String groupName)
+            throws TransferServerException, DataBaseException {
+        this(caller, groupName, null, -1, null, null);
+    }
+
+    /**
+     * Constructs a provider and pre-computes:
+     * <ul>
+     * <li>the {@link TransferGroup} to use (explicit, destination-mapped, or default; may be adjusted within the
+     * cluster by WRR fallback),</li>
+     * <li>the storage volume index ({@link #getFileSystem()}), using either an explicit index or the
+     * {@link WeightedAllocator},</li>
+     * <li>the ordered {@link TransferServer} list according to the least-activity policy (FS activity primary; rotation
+     * tie-breaker; optional preferred server on top).</li>
+     * </ul>
+     *
+     * <p>
+     * <strong>Group resolution & fallback:</strong> The constructor first resolves the group via
+     * {@link #resolveTransferGroup(String, String)}. If {@code allocatedFileSystem} is {@code null} or if the resolved
+     * group is not available, it may select a different group within the same cluster using
+     * {@link #tryClusterFallback(TransferGroup)}, which in turn leverages cluster-wide WRR through
+     * {@link #selectGroupFromClusterRoundRobin(TransferGroup, TransferGroup[])}.
+     * </p>
+     *
+     * <p>
+     * <strong>Volume selection:</strong> If {@code allocatedFileSystem} is non-null, it is used as-is. Otherwise, the
+     * {@link WeightedAllocator} is invoked:
+     * <ul>
+     * <li>when {@code fileSize > 0}, {@link WeightedAllocator#allocate(TransferGroup, long)} is used;</li>
+     * <li>otherwise, {@link WeightedAllocator#allocate(TransferGroup)} is used.</li>
+     * </ul>
+     * </p>
+     *
+     * <p>
+     * <strong>Server ordering:</strong> The final least-activity ordering is computed once during construction via
+     * {@link #computeLeastActivityOrdering(String, TransferGroup, TransferServer, int)}. If the resulting active list
+     * is empty, construction fails.
+     * </p>
+     *
+     * <p>
+     * <strong>Thread-safety:</strong> The constructed instance is immutable with respect to selection decisions (group,
+     * volume index, server ordering). Static caches and background updaters are concurrency-safe.
+     * </p>
+     *
+     * @param caller
+     *            identifier of the caller (used for stable rotation seeding)
+     * @param groupName
+     *            explicit group name; if {@code null}, {@code destinationName} and/or the global default are used
+     * @param destinationName
+     *            optional destination used for group resolution (see {@link #resolveTransferGroup(String, String)})
+     * @param fileSize
+     *            expected file size in bytes; non-positive values disable size-aware allocation
+     * @param server
+     *            optional preferred server to reinsert at index 0 if active/reachable
+     * @param allocatedFileSystem
+     *            optional explicit volume index; when {@code null}, the allocator is used
+     *
+     * @throws TransferServerException
+     *             if the resolved/selected group is not available, has no volumes, or if no active DataMover can be
+     *             selected
+     * @throws DataBaseException
+     *             if the database lookups fail for group, destination, or servers
+     */
+    public TransferServerProvider(final String caller, final String groupName, final String destinationName,
+            final long fileSize, final TransferServer server, final Integer allocatedFileSystem)
+            throws TransferServerException, DataBaseException {
+        group = resolveTransferGroup(groupName, destinationName);
+
+        // Only fall back to cluster if the group is not available or FS not
+        // pre-allocated
+        final var checkCluster = allocatedFileSystem == null || !groupIsAvailable(group);
         if (checkCluster) {
-            _log.warn("Force cluster checking as {} is not available", group.getName());
+            _log.debug("Force cluster checking for {}", group.getName());
             group = tryClusterFallback(group);
         }
         if (!groupIsAvailable(group)) {
             throw new TransferServerException("TransferGroup " + group.getName() + " not available");
         }
-        fileSystem = allocatedFileSystem != null ? allocatedFileSystem : WeightedAllocator.allocate(group);
-        servers.addAll(getTransferServersByLeastActivity("TransferServerProvider." + caller, destination, null, group,
-                fileSystem));
+
+        assertValidVolumeCount(group);
+        fileSystem = allocatedFileSystem != null ? allocatedFileSystem
+                : fileSize > 0 ? WeightedAllocator.allocate(group, fileSize) : WeightedAllocator.allocate(group);
+
+        servers.addAll(computeLeastActivityOrdering(caller, group, server, fileSystem));
+
         if (servers.isEmpty()) {
-            throw new TransferServerException("No TransferServer(s) available for TransferGroup " + group.getName());
+            throw new TransferServerException("No TransferServer available for TransferGroup " + group.getName());
         }
     }
 
     /**
-     * Resolves a {@link TransferGroup} to use when no explicit transfer group has been defined.
+     * Resolves the {@link TransferGroup} to use for this provider by applying the standard multi-stage group resolution
+     * rules used by ECPDS.
+     *
      * <p>
-     * This method determines the most appropriate transfer group based on the provided context, including an optional
-     * group name, destination, and primary host. It applies the same resolution logic as used by
-     * {@link TransferServerProvider}, including:
+     * This method is invoked during provider construction and determines the initial transfer group before any
+     * cluster-level fallback is applied by {@link #tryClusterFallback(TransferGroup)}.
+     * </p>
+     *
+     * <h3>Resolution Algorithm</h3> The method applies the following steps in order:
+     *
+     * <ol>
+     * <li><b>Explicit group name</b><br>
+     * If {@code groupName} is non-null and non-empty, attempt to load the group by name via
+     * {@link ecmwf.common.database.ECpdsBase#getTransferGroupObject(String)}. If the group does not exist, a
+     * {@link TransferServerException} is thrown.</li>
+     *
+     * <li><b>Destination mapping</b> (only if {@code destination} is non-empty)<br>
+     * Resolve the destination via:
      * <ul>
-     * <li>Using an explicitly provided transfer group name if available</li>
-     * <li>Deriving the transfer group from a primary host, if specified</li>
-     * <li>Looking up dissemination hosts associated with the destination</li>
-     * <li>Falling back to the destination’s default transfer group</li>
-     * <li>Using the globally configured default transfer group as a last resort</li>
+     * <li>{@link ecmwf.common.database.ECpdsBase#getDestinationHost(String, HostOption)} using
+     * {@code HostOption.DISSEMINATION},</li>
+     * <li>fallback to {@link ecmwf.common.database.ECpdsBase#getDestination(String)}.</li>
      * </ul>
-     * <p>
-     * If the resolved transfer group is part of a cluster and cluster checking is enabled, a suitable group may be
-     * selected from the cluster according to its configured weight.
-     * <p>
-     * The availability of the resolved transfer group is verified before it is returned.
+     * If a destination or primary host is found and it specifies a transfer group, that group is returned. If a
+     * destination host exists but has no group assigned, a {@link TransferServerException} is thrown.</li>
      *
-     * @param dataBase
-     *            the database instance used to retrieve transfer group, destination, and host information
+     * <li><b>Global default transfer group</b><br>
+     * Falls back to the configured default group specified by {@code Cnf.at("Server", "defaultTransferGroup")}. If the
+     * configuration entry is missing or refers to a nonexistent group, a {@link TransferServerException} is
+     * thrown.</li>
+     * </ol>
+     *
+     * <h3>Postconditions</h3>
+     * <ul>
+     * <li>The returned group is not guaranteed to be available or active; that is checked separately in subsequent
+     * steps (see {@link #groupIsAvailable(TransferGroup)}).</li>
+     * <li>The caller must apply cluster fallback if availability or pre-allocation rules require it (handled in the
+     * provider constructor).</li>
+     * </ul>
+     *
+     * <h3>Failure Conditions</h3>
+     * <ul>
+     * <li>Group not found (explicit name)</li>
+     * <li>Destination not found or has no mapped group</li>
+     * <li>Default group missing or invalid</li>
+     * </ul>
+     *
      * @param groupName
-     *            the name of the transfer group to use, or {@code null} to auto-select
+     *            optional explicit group name
      * @param destination
-     *            the destination for which a transfer group should be resolved
-     * @param primaryHost
-     *            an optional primary host that forces selection of its associated transfer group
-     * @param checkCluster
-     *            whether cluster-based fallback should be applied when applicable
+     *            optional destination used to infer the transfer group
      *
-     * @return the resolved and available {@link TransferGroup}
+     * @return the resolved {@link TransferGroup}; never {@code null}
      *
      * @throws TransferServerException
-     *             if no suitable transfer group can be found, if the group is unavailable, or if required configuration
-     *             is missing
+     *             if no suitable group can be found
      * @throws DataBaseException
-     *             if an error occurs while accessing the database
+     *             on database lookup failures
      */
-    private static TransferGroup resolveTransferGroup(final String groupName, final String destination,
-            final Host primaryHost) throws TransferServerException, DataBaseException {
+    private static TransferGroup resolveTransferGroup(final String groupName, final String destination)
+            throws TransferServerException, DataBaseException {
         final var dataBase = MASTER.getECpdsBase();
-        // Case 1: explicit group name and no primary host
-        if (isNotEmpty(groupName) && primaryHost == null) {
+
+        // 1) explicit group
+        if (isNotEmpty(groupName)) {
             final var group = dataBase.getTransferGroupObject(groupName);
             if (group == null) {
                 throw new TransferServerException("TransferGroup " + groupName + " not found");
             }
             return group;
         }
-        // Case 2: primary host explicitly provided
-        if (primaryHost != null) {
-            final var group = primaryHost.getTransferGroup();
-            if (group == null) {
-                throw new TransferServerException("No TransferGroup defined for Host " + primaryHost.getNickname());
+
+        // 2) from destination (only if provided)
+        if (isNotEmpty(destination)) {
+            final var hosts = dataBase.getDestinationHost(destination, HostOption.DISSEMINATION);
+            if (hosts.length > 0) {
+                final var primary = hosts[0];
+                final var group = primary.getTransferGroup();
+                if (group == null) {
+                    throw new TransferServerException("No TransferGroup defined for Host " + primary.getNickname());
+                }
+                return group;
             }
-            return group;
-        }
-        // Case 3: lookup from destination dissemination hosts
-        final var hosts = dataBase.getDestinationHost(destination, HostOption.DISSEMINATION);
-        if (hosts.length > 0) {
-            final var primary = hosts[0];
-            final var group = primary.getTransferGroup();
-            if (group == null) {
-                throw new TransferServerException("No TransferGroup defined for Host " + primary.getNickname());
+            final var destinationObj = dataBase.getDestination(destination);
+            final var g = destinationObj.getTransferGroup();
+            if (g != null) {
+                return g;
             }
-            return group;
         }
-        // Case 4: destination default group
-        final var destinationObj = dataBase.getDestination(destination);
-        var group = destinationObj.getTransferGroup();
-        if (group != null) {
-            return group;
-        }
-        // Case 5: global default group
+
+        // 3) global default group
         final var defaultGroupName = Cnf.at("Server", "defaultTransferGroup");
         if (isEmpty(defaultGroupName)) {
-            throw new TransferServerException("No dissemination host(s) defined for " + destination);
+            throw new TransferServerException("No default TransferGroup defined in configuration");
         }
-        group = dataBase.getTransferGroupObject(defaultGroupName);
-        if (group == null) {
+        final var def = dataBase.getTransferGroupObject(defaultGroupName);
+        if (def == null) {
             throw new TransferServerException("Default TransferGroup " + defaultGroupName + " not found");
         }
-        return group;
+        return def;
     }
 
     /**
-     * Check if the given transfer group is active and has at least one transfer server connected to the master.
+     * Determines whether the given {@link TransferGroup} is currently available for use, meaning both:
+     * <ol>
+     * <li>the group itself is marked {@code active}, and</li>
+     * <li>at least one of its declared {@link TransferServer} instances is:
+     * <ul>
+     * <li>{@code active}, and</li>
+     * <li>has a reachable {@code DataMover} interface as registered in the {@link MasterServer}.</li>
+     * </ul>
+     * </li>
+     * </ol>
      *
-     * @param transferGroups
-     *            the transfer groups
+     * <p>
+     * This is a strict availability check used by:
+     * </p>
+     * <ul>
+     * <li>{@link #selectGroupFromClusterRoundRobin(TransferGroup, TransferGroup[])}</li>
+     * <li>{@link #tryClusterFallback(TransferGroup)}</li>
+     * <li>the provider constructor before final selection</li>
+     * </ul>
      *
-     * @return the transfer group is available for use
+     * <p>
+     * If no server satisfies these criteria, the group is treated as unavailable, even if it is active at the
+     * configuration level.
+     * </p>
+     *
+     * <h3>Thread Safety</h3>
+     * <p>
+     * Thread-safe; relies only on database lookups and {@link MasterServer} interface tests.
+     * </p>
+     *
+     * @param group
+     *            the group to check
+     *
+     * @return {@code true} if at least one active DataMover is reachable for this group
      */
     private static boolean groupIsAvailable(final TransferGroup group) {
         return group.getActive() && Arrays.stream(MASTER.getECpdsBase().getTransferServers(group.getName()))
@@ -745,45 +1261,156 @@ public final class TransferServerProvider {
     }
 
     /**
-     * Utility class for weighted allocation and tracking of volume usage within a {@link TransferGroup}.
+     * Computes a stable 32‑bit hash signature for a list of WRR candidate groups.
+     *
      * <p>
-     * This class maintains per-group statistics about volume usage and free space, and provides methods for allocating
-     * a volume index in a way that favors volumes with more available space. It also supports periodic updates of usage
-     * statistics and integrates with the global usage cache for transfer groups.
-     * <p>
-     * <b>Thread safety:</b> All internal state is managed using concurrent data structures and explicit
-     * synchronisation, making this class safe for concurrent use.
-     * <p>
-     * <b>Design:</b>
+     * The signature represents the <em>topology</em> of the WRR set, based on:
+     * </p>
      * <ul>
-     * <li>Each group is tracked by name, with per-volume statistics and weights.</li>
-     * <li>Allocation is randomised but weighted by available free space.</li>
-     * <li>If all volumes are roughly equally used, allocation is uniform random among candidates.</li>
-     * <li>Periodic background updates keep usage statistics fresh.</li>
+     * <li>group name hash</li>
+     * <li>cluster weight</li>
      * </ul>
+     *
      * <p>
-     * <b>Usage:</b> Call {@link #allocate(TransferGroup)} to select a volume index for a group, and
-     * {@link #updateGroupUsage(TransferGroup, long[], long[])} to refresh usage statistics.
+     * The signature allows {@link #selectGroupFromClusterRoundRobin(TransferGroup, TransferGroup[])} to detect when the
+     * set of eligible WRR candidates has changed due to:
+     * </p>
+     * <ul>
+     * <li>group activation/deactivation,</li>
+     * <li>changes in cluster weights,</li>
+     * <li>group availability changes,</li>
+     * <li>additions/removals of groups belonging to the cluster.</li>
+     * </ul>
+     *
+     * <p>
+     * Whenever the signature changes, the cluster’s round‑robin counter is reset, ensuring stable and predictable WRR
+     * behaviour across configuration updates.
+     * </p>
+     *
+     * <h3>Implementation Details</h3>
+     * <p>
+     * The method constructs a long array interleaving {@code name.hashCode()} and the cluster weight for each group,
+     * preserving order, then uses {@link Arrays#hashCode(long[])} to produce the final signature.
+     * </p>
+     *
+     * @param c
+     *            the list of candidate groups (already filtered and sorted)
+     *
+     * @return a 32‑bit hash signature representing the WRR candidate topology
+     */
+    private static int hashCandidates(final List<TransferGroup> c) {
+        final var arr = new long[c.size() * 2];
+        for (var i = 0; i < c.size(); i++) {
+            arr[2 * i] = c.get(i).getName().hashCode();
+            arr[2 * i + 1] = getClusterWeight(c.get(i));
+        }
+        return Arrays.hashCode(arr); // better distribution than String.hashCode concatenation
+    }
+
+    /**
+     * Ensures that the selected {@link TransferGroup} defines at least one storage volume. All transfer groups must
+     * specify at least one volume in order for volume allocation and server selection to function correctly.
+     *
+     * <p>
+     * This method is invoked during provider construction after group resolution and fallback, and before volume
+     * allocation. It prevents constructing a provider that cannot determine a valid filesystem index.
+     * </p>
+     *
+     * <h3>Failure Conditions</h3>
+     * <ul>
+     * <li>Group has volume count {@code <= 0}</li>
+     * </ul>
+     *
+     * <p>
+     * In such cases, a {@link TransferServerException} is thrown.
+     * </p>
+     *
+     * @param group
+     *            the transfer group whose volume count must be validated
+     *
+     * @throws TransferServerException
+     *             if the group defines no storage volumes
+     */
+    private static void assertValidVolumeCount(final TransferGroup group) throws TransferServerException {
+        final var vc = group.getVolumeCount();
+        if (vc <= 0) {
+            throw new TransferServerException(
+                    "TransferGroup " + group.getName() + " has no configured volumes (volumeCount=" + vc + ")");
+        }
+    }
+
+    /**
+     * Internal engine responsible for selecting a storage volume (filesystem index) for a given {@link TransferGroup}.
+     * Volume selection is based on dynamic free‑space statistics continuously refreshed in the background.
+     *
+     * <p>
+     * <b>Responsibilities:</b>
+     * </p>
+     * <ul>
+     * <li>maintain per‑group statistics describing the current free space and effective selection weights of each
+     * volume,</li>
+     * <li>provide weighted random allocation based on free‑space or size‑aware metrics,</li>
+     * <li>fallback to uniform random allocation when no statistics are available or when volumes are nearly
+     * balanced,</li>
+     * <li>run a background updater that periodically refreshes free‑space usage via
+     * {@link MasterServer#computeVolumeUsageAndSortedMovers(TransferGroup, int)},</li>
+     * <li>populate the {@code VOLUME_USAGE_CACHE} used by
+     * {@link TransferServerProvider#getTransferServersByMostFreeSpace()}.</li>
+     * </ul>
+     *
+     * <h3>Concurrency Model</h3>
+     * <ul>
+     * <li>Each transfer group has a {@link GroupStats} instance protected by a fine‑grained lock.</li>
+     * <li>Shared maps are {@link ConcurrentHashMap} and safe for multi‑threaded access.</li>
+     * <li>Allocation operations are lock‑free except when snapshotting prefix sums.</li>
+     * <li>The background updater runs as a single‑threaded daemon.</li>
+     * </ul>
+     *
+     * <h3>Allocator Modes</h3>
+     * <ul>
+     * <li><b>Standard allocator</b>: free‑space‑weighted selection.</li>
+     * <li><b>Size‑aware allocator</b>: penalises free space by an amount proportional to the incoming file size
+     * (tunable via configuration).</li>
+     * <li><b>Uniform fallback</b>: used when no stats exist or coefficient‑of‑variation (CV) is below a configurable
+     * threshold.</li>
+     * </ul>
+     *
+     * <p>
+     * This class is internal to the provider and not exposed publicly.
+     * </p>
      */
     private static class WeightedAllocator {
-        /**
-         * Random number generators for each group, keyed by group name, used for allocation.
-         */
+        /** Per-group random-number generators used for volume selection. */
         private static final ConcurrentHashMap<String, SplittableRandom> RNGS = new ConcurrentHashMap<>();
-        /**
-         * Per-group statistics for volume usage and weights, keyed by group name.
-         */
+
+        /** Map of groupName → per-group statistics (volumes, weights, prefix sums). */
         private static final ConcurrentHashMap<String, GroupStats> GROUPS = new ConcurrentHashMap<>();
+
         /**
-         * Minimum weight assigned to a volume to avoid zero-probability selection.
+         * Minimum allowable weight to ensure no volume has zero selection probability.
          */
         private static final long MIN_WEIGHT = 1L;
+
         /**
-         * Coefficient of variation threshold for determining if volumes are roughly equally used.
+         * Coefficient-of-variation threshold below which all volumes are considered to have “roughly equal” free space,
+         * causing a switch to uniform random selection.
          */
-        private static final double CV_THRESHOLD = Cnf.at("TransferServerProvider", "cvThreshold", 0.01d);
+        private static final double CV_THRESHOLD = Cnf.at("TransferServerProvider", "cvThreshold", 0.10d);
+
         /**
-         * Scheduled executor for periodic background updates of group usage statistics.
+         * Enables deterministic seeding for repeatable results across restarts when true.
+         */
+        private static final boolean DETERMINISTIC_RNG = Cnf.at("TransferServerProvider", "deterministicRng", false);
+
+        /**
+         * Scaling factor α controlling how much a file of size S penalises volume free space during size-aware
+         * allocation.
+         */
+        private static final double FILE_SIZE_PENALTY_FACTOR = Cnf.at("TransferServerProvider", "fileSizePenaltyFactor",
+                1.0d);
+
+        /**
+         * Background daemon thread periodically refreshing volume usage and mover ordering from MasterServer.
          */
         private static final ScheduledExecutorService GROUP_USAGE_UPDATER = Executors
                 .newSingleThreadScheduledExecutor(r -> {
@@ -793,21 +1420,34 @@ public final class TransferServerProvider {
                 });
 
         static {
-            if (Cnf.at("TransferServerProvider", "startUsageUpdater", true))
+            if (Cnf.at("TransferServerProvider", "startUsageUpdater", true)) {
                 startUsageUpdater();
+                Runtime.getRuntime()
+                        .addShutdownHook(new Thread(WeightedAllocator::stopUsageUpdater, "GroupUsageUpdaterShutdown"));
+            }
         }
 
         /**
-         * Holds per-volume statistics and weights for a group.
+         * Holds all per‑group volume statistics necessary for weighted volume selection.
+         *
+         * <p>
+         * A single {@link GroupStats} instance is associated with each transfer group. It contains:
+         * </p>
+         * <ul>
+         * <li>one {@link VolumeStats} object per volume, tracking current load (used space),</li>
+         * <li>one {@link LongAdder} weight per volume, derived from free space,</li>
+         * <li>a prefix‑sum array enabling O(log n) weighted selection,</li>
+         * <li>a private lock to protect updates from the background usage updater.</li>
+         * </ul>
+         *
+         * <h3>Thread‑safety</h3> All write operations (load/weight updates and prefix rebuilds) are guarded by the
+         * group-level lock. Read operations during allocation acquire a snapshot of prefix sums and weights under the
+         * same lock to ensure consistency.
          */
         private static class GroupStats {
-            /** Volume statistics for each volume in the group. */
             final VolumeStats[] volumes;
-            /** Weights for each volume, used for allocation. */
             final LongAdder[] weights;
-            /** Prefix sums of weights for efficient weighted random selection. */
             long[] prefixSums;
-            /** Lock for synchronising updates to group statistics. */
             final Object lock = new Object();
 
             GroupStats(final long[] used, final long[] max) {
@@ -835,12 +1475,30 @@ public final class TransferServerProvider {
         }
 
         /**
-         * Tracks maximum capacity and current load for a volume.
+         * Represents the state of a single storage volume for a transfer group.
+         *
+         * <p>
+         * The object tracks:
+         * </p>
+         * <ul>
+         * <li>the maximum configured capacity ({@code maxCapacity}),</li>
+         * <li>the current used space (via a {@link LongAdder}),</li>
+         * <li>derived free space ({@code maxCapacity - currentLoad}).</li>
+         * </ul>
+         *
+         * <p>
+         * The updater overwrites the current load in atomic fashion using {@link LongAdder#reset()} followed by
+         * {@link LongAdder#add(long)}.
+         * </p>
+         *
+         * <h3>Thread Safety</h3>
+         * <p>
+         * {@link VolumeStats} itself is thread‑safe due to use of {@link LongAdder}. Access to multiple
+         * {@code VolumeStats} entries is coordinated by the group lock in {@link GroupStats}.
+         * </p>
          */
         private static class VolumeStats {
-            /** Maximum capacity of the volume. */
             final long maxCapacity;
-            /** Current load (used space) of the volume. */
             final LongAdder currentLoad = new LongAdder();
 
             VolumeStats(final long maxCapacity) {
@@ -858,17 +1516,32 @@ public final class TransferServerProvider {
         }
 
         /**
-         * Updates the usage statistics for a transfer group, registering it if necessary.
+         * Updates or initializes the {@link GroupStats} structure for the specified group using fresh volume usage data
+         * collected by the background updater.
+         *
+         * <p>
+         * If the group has no existing {@link GroupStats}, a new instance is created. Otherwise, only the per‑volume
+         * load and derived weight values are refreshed.
+         * </p>
+         *
+         * <p>
+         * The update procedure guarantees:
+         * </p>
+         * <ul>
+         * <li>strict consistency of all volume statistics within a group,</li>
+         * <li>correct prefix‑sum rebuild after load changes,</li>
+         * <li>atomic replacement of the {@code GROUPS} entry if it did not previously exist.</li>
+         * </ul>
          *
          * @param group
-         *            the transfer group
+         *            the transfer group whose usage data is refreshed
          * @param usedPerVolume
-         *            array of used space per volume
+         *            array of used bytes per volume
          * @param maxCapacityPerVolume
-         *            array of maximum capacity per volume
+         *            array of max capacity per volume
          *
          * @throws IllegalArgumentException
-         *             if the input arrays have different lengths
+         *             if array lengths differ
          */
         public static void updateGroupUsage(final TransferGroup group, final long[] usedPerVolume,
                 final long[] maxCapacityPerVolume) {
@@ -889,12 +1562,31 @@ public final class TransferServerProvider {
         }
 
         /**
-         * Updates the per-volume statistics for an existing group.
+         * Refreshes load and weight statistics for an existing {@link GroupStats} instance without replacing the
+         * object.
+         *
+         * <p>
+         * This method performs the minimal mutation necessary to update:
+         * </p>
+         * <ul>
+         * <li>{@link VolumeStats#currentLoad} for each volume,</li>
+         * <li>{@link GroupStats#weights} (weight = max(MIN_WEIGHT, freeSpace)),</li>
+         * <li>{@link GroupStats#prefixSums} via {@link GroupStats#rebuildPrefix()}.</li>
+         * </ul>
+         *
+         * <p>
+         * If the incoming {@code used} array length does not match the existing volume count, the update is aborted and
+         * a warning is logged. This prevents partial or corrupted updates after configuration changes.
+         * </p>
+         *
+         * <p>
+         * The per‑group lock ensures that all values are updated atomically with respect to allocation calls.
+         * </p>
          *
          * @param gs
-         *            the group statistics object
+         *            the mutable {@link GroupStats} instance
          * @param used
-         *            array of used space per volume
+         *            array of new used‑space values (per volume)
          */
         private static void updateGroupVolumes(final GroupStats gs, final long[] used) {
             if (used.length != gs.volumes.length) {
@@ -912,9 +1604,35 @@ public final class TransferServerProvider {
         }
 
         /**
-         * Starts periodic updates of group usage every configured interval. Uses
-         * MASTER.computeVolumeUsageAndSortedMovers() to retrieve both aggregated volume usage and mover ordering, which
-         * are cached and reused for server selection and ordering.
+         * Starts the background daemon responsible for refreshing volume usage for all known transfer groups at a fixed
+         * interval.
+         *
+         * <p>
+         * The updater:
+         * </p>
+         * <ul>
+         * <li>iterates over all transfer groups in the system,</li>
+         * <li>checks group availability (via {@link TransferServerProvider#groupIsAvailable}),</li>
+         * <li>for each volume of an available group, invokes
+         * {@link MasterServer#computeVolumeUsageAndSortedMovers(TransferGroup, int)},</li>
+         * <li>updates {@link WeightedAllocator#GROUPS} and {@link TransferServerProvider#VOLUME_USAGE_CACHE}
+         * accordingly.</li>
+         * </ul>
+         *
+         * <h3>Failure Handling</h3>
+         * <ul>
+         * <li>Volume update failures log warnings and skip the group update cycle.</li>
+         * <li>Unexpected fatal exceptions are caught and logged without stopping the updater.</li>
+         * </ul>
+         *
+         * <p>
+         * The thread is marked as a daemon so that JVM shutdown is not delayed.
+         * </p>
+         *
+         * <p>
+         * Execution begins after an initial delay and repeats at an interval defined by the configuration parameter
+         * {@code usageUpdaterFreqInSec}.
+         * </p>
          */
         public static void startUsageUpdater() {
             final var frequency = Cnf.at("TransferServerProvider", "usageUpdaterFreqInSec", 10);
@@ -924,39 +1642,51 @@ public final class TransferServerProvider {
                     for (final var group : groups) {
                         if (!groupIsAvailable(group))
                             continue;
+
                         final var groupName = group.getName();
-                        try {
-                            // Volume index used for sorting movers; typically matches allocated filesystem
-                            for (var volumeIndex = 0; volumeIndex < group.getVolumeCount(); volumeIndex++) {
+                        final var volumeCount = group.getVolumeCount();
+                        final var used = new long[volumeCount];
+                        final var capacity = new long[volumeCount];
+
+                        var allOk = true;
+                        for (var volumeIndex = 0; volumeIndex < volumeCount; volumeIndex++) {
+                            try {
                                 final var result = MASTER.computeVolumeUsageAndSortedMovers(group, volumeIndex);
                                 if (result == null || result.aggregatedUsage == null
                                         || result.aggregatedUsage.length != 2) {
                                     _log.warn("Invalid volume usage result for group {}", groupName);
-                                    continue;
+                                    allOk = false;
+                                    break;
                                 }
-                                final var volumeCount = group.getVolumeCount();
-                                final var used = result.aggregatedUsage[0];
-                                final var capacity = result.aggregatedUsage[1];
-                                if (used.length != volumeCount || capacity.length != volumeCount) {
+                                final var usedArr = result.aggregatedUsage[0];
+                                final var capArr = result.aggregatedUsage[1];
+                                if (usedArr.length != volumeCount || capArr.length != volumeCount) {
                                     _log.warn("Volume usage size mismatch for group {}", groupName);
-                                    continue;
+                                    allOk = false;
+                                    break;
                                 }
-                                // Cache the full result (including mover ordering)
                                 VOLUME_USAGE_CACHE.put(groupName + ":" + volumeIndex, result);
-                                // Update weighted allocator
-                                updateGroupUsage(group, used, capacity);
-                                if (isDebugEnabled()) {
-                                    final var usedSum = Arrays.stream(used).sum();
-                                    final var totalSum = Arrays.stream(capacity).sum();
-                                    final var percentUsed = (totalSum > 0) ? (usedSum * 100.0 / totalSum) : 0.0;
-                                    _log.debug("Group {} usage updated: used={}, total={}, used%={}, movers={}",
-                                            groupName, Arrays.toString(used), Arrays.toString(capacity),
-                                            String.format("%.2f%%", percentUsed),
-                                            Arrays.toString(result.moversSortedByUsage));
-                                }
+                                used[volumeIndex] = usedArr[volumeIndex];
+                                capacity[volumeIndex] = capArr[volumeIndex];
+                            } catch (final Throwable e) {
+                                _log.warn("Error computing usage for {} volume {}", groupName, volumeIndex, e);
+                                allOk = false;
+                                break;
                             }
-                        } catch (final Throwable e) {
-                            _log.warn("Error updating usage for group {}", groupName, e);
+                        }
+
+                        if (allOk) {
+                            updateGroupUsage(group, used, capacity);
+                            if (isDebugEnabled()) {
+                                final var usedSum = Arrays.stream(used).sum();
+                                final var totalSum = Arrays.stream(capacity).sum();
+                                final var percentUsed = totalSum > 0 ? (usedSum * 100.0 / totalSum) : 0.0;
+                                _log.debug("Group {} usage updated: used={}, total={}, {}%", groupName,
+                                        Arrays.toString(used), Arrays.toString(capacity),
+                                        String.format("%.2f", percentUsed));
+                            }
+                        } else {
+                            _log.warn("Skipping usage update for group {} due to partial/invalid data", groupName);
                         }
                     }
                 } catch (final Throwable t) {
@@ -966,22 +1696,58 @@ public final class TransferServerProvider {
         }
 
         /**
-         * Allocates a volume index for the given group, favouring volumes with more available space.
+         * Selects a volume index for the given group using free‑space‑weighted random selection.
+         *
+         * <h3>Allocation Strategy</h3>
+         * <ol>
+         * <li>If the group has no volumes, returns 0 (fallback).</li>
+         *
+         * <li>If no {@link GroupStats} exist yet for the group, returns a uniform‑random volume index as a safety
+         * fallback.</li>
+         *
+         * <li>Otherwise:
+         * <ul>
+         * <li>snapshot the per‑volume weights and prefix sums under group lock,</li>
+         * <li>if coefficient‑of‑variation (CV) between weights is below {@code CV_THRESHOLD}, use uniform random
+         * selection,</li>
+         * <li>else, use weighted random selection over the prefix sum distribution.</li>
+         * </ul>
+         * </li>
+         * </ol>
+         *
+         * <h3>RNG Source</h3>
+         * <p>
+         * Each group has a dedicated {@link SplittableRandom}, seeded either deterministically (if enabled in config)
+         * or via a hash of bytecode identity, system nanotime, and runtime salt.
+         * </p>
          *
          * @param group
-         *            the transfer group
+         *            the transfer group whose volumes are being allocated
          *
-         * @return the selected volume index
+         * @return the selected volume index in {@code [0, group.getVolumeCount())}
          */
         public static int allocate(final TransferGroup group) {
             final var groupName = group.getName();
-            final var random = RNGS.computeIfAbsent(groupName, g -> new SplittableRandom(g.hashCode()));
+            final var random = RNGS.computeIfAbsent(groupName, g -> {
+                if (DETERMINISTIC_RNG) {
+                    return new SplittableRandom(g.hashCode());
+                } else {
+                    return new SplittableRandom(((long) g.hashCode()) ^ System.nanoTime() ^ RUNTIME_SALT);
+                }
+            });
+            final var vc = group.getVolumeCount();
+            if (vc <= 0) {
+                if (isDebugEnabled())
+                    _log.debug("Group {} has no volumes - cannot allocate", groupName);
+                return 0;
+            }
             final var gs = GROUPS.get(groupName);
             if (gs == null) {
                 if (isDebugEnabled())
                     _log.debug("Fallback: group {} not registered -> uniform random selection", groupName);
-                return random.nextInt(group.getVolumeCount());
+                return random.nextInt(vc);
             }
+
             long[] prefix;
             long totalWeight;
             long[] weights;
@@ -991,16 +1757,13 @@ public final class TransferServerProvider {
                 weights = Arrays.stream(gs.weights).mapToLong(LongAdder::sum).toArray();
             }
             final var n = weights.length;
-            // Fast path
-            if (n <= 1) {
+            if (n <= 1)
                 return 0;
-            }
-            // CV-based "roughly equal" detection
+
             var sum = 0L;
-            for (final long w : weights) {
+            for (final long w : weights)
                 sum += w;
-            }
-            // All volumes empty: uniform random
+
             if (sum == 0) {
                 final var chosen = random.nextInt(n);
                 if (isDebugEnabled()) {
@@ -1008,6 +1771,7 @@ public final class TransferServerProvider {
                 }
                 return chosen;
             }
+
             final var mean = (double) sum / n;
             var variance = 0.0;
             for (final long w : weights) {
@@ -1017,8 +1781,8 @@ public final class TransferServerProvider {
             variance /= n;
             final var stddev = Math.sqrt(variance);
             final var cv = stddev / mean;
+
             if (cv <= CV_THRESHOLD) {
-                // Roughly equal: random among all volumes
                 final var chosen = random.nextInt(n);
                 if (isDebugEnabled()) {
                     _log.debug(
@@ -1027,13 +1791,12 @@ public final class TransferServerProvider {
                 }
                 return chosen;
             }
-            // Weighted allocation
+
+            // Weighted random using prefix sums
             final var r = (long) (random.nextDouble() * totalWeight);
-            // Binary search over prefix sums
-            var low = 0;
-            var high = prefix.length - 1;
+            int low = 0, high = prefix.length - 1;
             while (low < high) {
-                final var mid = (low + high) / 2;
+                final var mid = (low + high) >>> 1;
                 if (r < prefix[mid])
                     high = mid;
                 else
@@ -1047,12 +1810,205 @@ public final class TransferServerProvider {
         }
 
         /**
-         * Returns true if debug logging is enabled for this class and configuration.
+         * Selects a volume index using size‑aware allocation, where larger files impose a penalty on volumes with less
+         * free space.
          *
-         * @return true if debug logging is enabled
+         * <p>
+         * If {@code fileSize <= 0}, this method delegates to {@link #allocate(TransferGroup)}.
+         * </p>
+         *
+         * <h3>Effective Weight Calculation</h3> For each volume:
+         *
+         * <pre>
+         *   baseFreeSpace = volume.freeSpace()
+         *   penalty       = min(baseFreeSpace, alpha * fileSize)
+         *   effectiveFS   = max(1, baseFreeSpace - penalty)
+         * </pre>
+         *
+         * <p>
+         * Here {@code alpha} is the configuration parameter {@code fileSizePenaltyFactor}.
+         * </p>
+         *
+         * <p>
+         * The effective free‑space values determine volume selection using the same CV‑based uniform fallback and
+         * weighted random prefix mechanism as the standard allocator.
+         * </p>
+         *
+         * <h3>Use Cases</h3>
+         * <ul>
+         * <li>prevent large files from clustering on the same volume,</li>
+         * <li>smooth usage across volumes when some are nearly full,</li>
+         * <li>avoid disproportionately penalising volumes already near capacity.</li>
+         * </ul>
+         *
+         * @param group
+         *            the transfer group whose volumes are being allocated
+         * @param fileSize
+         *            size of the incoming file in bytes
+         *
+         * @return the selected volume index
+         */
+        public static int allocate(final TransferGroup group, final long fileSize) {
+            if (fileSize <= 0) {
+                // Fallback to standard allocator for unknown file sizes
+                return allocate(group);
+            }
+
+            final var groupName = group.getName();
+            final var random = RNGS.computeIfAbsent(groupName, g -> {
+                if (DETERMINISTIC_RNG) {
+                    return new SplittableRandom(g.hashCode());
+                } else {
+                    return new SplittableRandom(((long) g.hashCode()) ^ System.nanoTime() ^ RUNTIME_SALT);
+                }
+            });
+
+            final var vc = group.getVolumeCount();
+            if (vc <= 0) {
+                if (isDebugEnabled())
+                    _log.debug("Group {} has no volumes - cannot allocate", groupName);
+                return 0;
+            }
+            final var gs = GROUPS.get(groupName);
+            if (gs == null) {
+                if (isDebugEnabled())
+                    _log.debug("Fallback: group {} not registered -> uniform random selection", groupName);
+                return random.nextInt(vc);
+            }
+
+            // Fetch freeSpace[] snapshot safely
+            long[] free;
+            synchronized (gs.lock) {
+                free = Arrays.stream(gs.volumes).mapToLong(VolumeStats::freeSpace).toArray();
+            }
+
+            final var n = free.length;
+            if (n <= 1)
+                return 0;
+
+            // Compute size-aware effective free space
+            final var effective = new double[n];
+            final var alpha = FILE_SIZE_PENALTY_FACTOR;
+
+            for (var i = 0; i < n; i++) {
+                final var fs = free[i];
+                final var penalty = (long) Math.min(fs, alpha * fileSize);
+                var eff = fs - penalty;
+                if (eff < 1L)
+                    eff = 1L; // avoid zero or negative weights
+                effective[i] = eff;
+            }
+
+            // Optional CV check
+            var sum = 0.0;
+            for (final double v : effective)
+                sum += v;
+            final var mean = sum / n;
+
+            if (mean > 0) {
+                var variance = 0.0;
+                for (final double v : effective) {
+                    final var d = v - mean;
+                    variance += d * d;
+                }
+                variance /= n;
+                final var stddev = Math.sqrt(variance);
+                final var cv = stddev / mean;
+
+                if (cv <= CV_THRESHOLD) {
+                    final var chosen = random.nextInt(n);
+                    if (isDebugEnabled()) {
+                        _log.debug(
+                                "Size-aware weights roughly equal for group {} (size={}, cv={}). Uniform selected index {}.",
+                                groupName, fileSize, cv, chosen);
+                    }
+                    return chosen;
+                }
+            }
+
+            // Weighted random selection
+            final var prefix = new double[n];
+            var cumulative = 0.0;
+            for (var i = 0; i < n; i++) {
+                cumulative += effective[i];
+                prefix[i] = cumulative;
+            }
+
+            final var r = random.nextDouble() * cumulative;
+
+            int low = 0, high = prefix.length - 1;
+            while (low < high) {
+                final var mid = (low + high) >>> 1;
+                if (r < prefix[mid])
+                    high = mid;
+                else
+                    low = mid + 1;
+            }
+
+            if (isDebugEnabled()) {
+                _log.debug("Size-aware weighted allocation for group {}: fileSize={}, chosen={}, weights={}", groupName,
+                        fileSize, low, Arrays.toString(effective));
+            }
+
+            return low;
+        }
+
+        /**
+         * Gracefully shuts down the background usage updater.
+         *
+         * <p>
+         * The method attempts to stop the executor service, waiting briefly for ongoing tasks to complete. If
+         * termination does not occur within the timeout, a forced shutdown via
+         * {@link ScheduledExecutorService#shutdownNow()} is issued.
+         * </p>
+         *
+         * <p>
+         * Intended to be invoked by the JVM shutdown hook registered in the static initializer of
+         * {@link WeightedAllocator}.
+         * </p>
+         */
+        public static void stopUsageUpdater() {
+            GROUP_USAGE_UPDATER.shutdown();
+            try {
+                if (!GROUP_USAGE_UPDATER.awaitTermination(5, TimeUnit.SECONDS)) {
+                    GROUP_USAGE_UPDATER.shutdownNow();
+                }
+            } catch (final InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                GROUP_USAGE_UPDATER.shutdownNow();
+            }
+        }
+
+        /**
+         * Returns whether allocator-level debug logging is enabled. This requires:
+         * <ul>
+         * <li>the logger to be in debug mode, and</li>
+         * <li>the configuration flag {@code TransferServerProvider.debug = true}.</li>
+         * </ul>
+         *
+         * <p>
+         * This prevents excessive debug output during normal operation.
+         * </p>
          */
         private static boolean isDebugEnabled() {
             return _log.isDebugEnabled() && Cnf.at("TransferServerProvider", "debug", false);
         }
     }
 }
+
+/*
+ * === Lifecycle & Concurrency Notes ===
+ *
+ * - Construction: * Resolves group and may apply cluster WRR fallback. * Selects a volume (explicit or weighted
+ * allocator). * Computes the final least-activity ordering (immutable thereafter).
+ *
+ * - Background Updater: * Singleton daemon periodically refreshes per-volume usage and mover orderings. * Populates
+ * allocator stats (GROUPS) and VOLUME_USAGE_CACHE. * Resilient to partial failures; logs warnings and skips partial
+ * updates.
+ *
+ * - Thread Safety: * Public instance methods are read-only and safe for concurrent callers. * CLUSTERS and SERVER_RR
+ * use concurrent maps and atomics. * WeightedAllocator uses per-group locks for consistent snapshots.
+ *
+ * - Stability: * Cluster WRR resets on topology changes (weights/availability). * Caller-stable rotation includes a
+ * runtime salt to prevent cross-restart alignment.
+ */

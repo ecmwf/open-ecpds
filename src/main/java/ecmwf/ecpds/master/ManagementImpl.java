@@ -2199,10 +2199,10 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
         final var action = master.startECpdsAction(session, "upload", host);
         Exception exception = null;
         try {
-            final var group = host.getTransferGroup();
-            final var servers = TransferServerProvider.getTransferServersByLeastActivity("ManagementImpl", group);
+            final var groupName = host.getTransferGroupName();
+            final var servers = new TransferServerProvider("transfer", groupName).getTransferServersByLeastActivity();
             if (servers.isEmpty()) {
-                throw new MasterException("No TransferServer(s) available for TransferGroup " + group.getName());
+                throw new MasterException("No TransferServer(s) available for TransferGroup " + groupName);
             }
             return monitor.done(master.transfer(bytes, servers.get(0), host, target, remotePosn, -1));
         } catch (DataBaseException | MasterException | IOException e) {

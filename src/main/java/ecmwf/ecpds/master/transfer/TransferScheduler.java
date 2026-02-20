@@ -27,16 +27,16 @@ package ecmwf.ecpds.master.transfer;
  */
 
 import static ecmwf.common.ectrans.ECtransGroups.Module.DESTINATION_SCHEDULER;
-import static ecmwf.common.ectrans.ECtransGroups.Module.HOST_ECPDS;
 import static ecmwf.common.ectrans.ECtransGroups.Module.HOST_ACQUISITION;
+import static ecmwf.common.ectrans.ECtransGroups.Module.HOST_ECPDS;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_SCHEDULER_ACTIVE_TIME_RANGE;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_SCHEDULER_REQUEUEIGNORE;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_SCHEDULER_REQUEUEON;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_SCHEDULER_REQUEUEPATTERN;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_ACQUISITION_REQUEUE_ON_FAILURE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECPDS_MOVER_LIST_FOR_BACKUP;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECPDS_MOVER_LIST_FOR_SOURCE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_DEBUG;
-import static ecmwf.common.ectrans.ECtransOptions.HOST_ACQUISITION_REQUEUE_ON_FAILURE;
 import static ecmwf.common.text.Util.isNotEmpty;
 import static ecmwf.common.text.Util.nullToNone;
 
@@ -217,8 +217,6 @@ public final class TransferScheduler extends MBeanScheduler {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Initialize.
      */
     @Override
@@ -309,7 +307,7 @@ public final class TransferScheduler extends MBeanScheduler {
      *
      * @return the destination thread
      *
-     * @throws ecmwf.ecpds.master.MasterException
+     * @throws MasterException
      *             the master exception
      */
     public DestinationThread getDestinationThread(final String destinationName) throws MasterException {
@@ -391,7 +389,7 @@ public final class TransferScheduler extends MBeanScheduler {
      * @param host
      *            the host
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public void updateHost(final Host host) throws DataBaseException {
@@ -433,7 +431,7 @@ public final class TransferScheduler extends MBeanScheduler {
      * @param graceful
      *            the graceful
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public void holdDestination(final String userName, final String destinationName, final String status,
@@ -462,7 +460,7 @@ public final class TransferScheduler extends MBeanScheduler {
      * @param graceful
      *            the graceful
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public void holdAllDestinations(final String userName, final String status, final boolean graceful)
@@ -480,7 +478,7 @@ public final class TransferScheduler extends MBeanScheduler {
      *
      * @return the destination status
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public String getDestinationStatus(final String destinationName) throws DataBaseException {
@@ -497,7 +495,7 @@ public final class TransferScheduler extends MBeanScheduler {
      *
      * @return the destination status
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public String getDestinationStatus(final String destinationName, String statusCode) throws DataBaseException {
@@ -526,7 +524,7 @@ public final class TransferScheduler extends MBeanScheduler {
      * @param reset
      *            the reset
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public void restartDestination(final String userName, final String comment, final String destinationName,
@@ -553,7 +551,7 @@ public final class TransferScheduler extends MBeanScheduler {
      * @param graceful
      *            the graceful
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public void restartAllDestinations(final String userName, final boolean graceful) throws DataBaseException {
@@ -567,7 +565,7 @@ public final class TransferScheduler extends MBeanScheduler {
      *
      * @return the monitoring thread
      *
-     * @throws ecmwf.ecpds.master.MasterException
+     * @throws MasterException
      *             the master exception
      */
     public MonitoringThread getMonitoringThread() throws MasterException {
@@ -578,9 +576,9 @@ public final class TransferScheduler extends MBeanScheduler {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Next step.
+     *
+     * @return the int
      */
     @Override
     public int nextStep() {
@@ -666,9 +664,9 @@ public final class TransferScheduler extends MBeanScheduler {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the activity.
+     *
+     * @return the activity
      */
     @Override
     public String getActivity() {
@@ -710,7 +708,7 @@ public final class TransferScheduler extends MBeanScheduler {
      *
      * @return the transfer server name
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public static TransferServer getTransferServerName(final boolean debug, final String transferGroupName,
@@ -822,7 +820,7 @@ public final class TransferScheduler extends MBeanScheduler {
         final var backupHost = transfer.getBackupHost();
         final Set<Host> hostsForSource = new LinkedHashSet<>();
         // These values might be adjusted!
-        var targetGroup = server.getTransferGroupName();
+        var targetGroupName = server.getTransferGroupName();
         var moverName = server.getName();
         // Is there a request to use a specific data mover?
         try {
@@ -838,7 +836,7 @@ public final class TransferScheduler extends MBeanScheduler {
                         // We found another one than the current one!
                         moverName = mandatoryServer.getName();
                         final var group = mandatoryServer.getTransferGroup();
-                        targetGroup = group.getName();
+                        targetGroupName = group.getName();
                         // Update the DataTransfer for the history!
                         transfer.setTransferServerName(moverName);
                         transfer.setTransferServer(mandatoryServer);
@@ -846,9 +844,9 @@ public final class TransferScheduler extends MBeanScheduler {
                         // The file might not be on the selected TransferServer
                         // so we have to provide the list of other
                         // TransferServers in the TransferGroup!
-                        for (final TransferServer sourceServer : TransferServerProvider
-                                .getTransferServersByLeastActivity("TransferScheduler.put",
-                                        transfer.getDestinationName(), group)) {
+                        final var provider = new TransferServerProvider("disseminate", targetGroupName,
+                                transfer.getDestinationName(), dataFile.getFileSystem());
+                        for (final TransferServer sourceServer : provider.getTransferServersByLeastActivity()) {
                             if (!sourceServer.getName().equals(moverName)) {
                                 final var host = sourceServer.getHostForReplication();
                                 if (host != null && host.getActive()) {
@@ -863,14 +861,15 @@ public final class TransferScheduler extends MBeanScheduler {
             _log.warn("Could not find alternative TransferServer name" + " (use default: " + moverName + ")", t);
         }
         final var sourceGroup = dataFile.getTransferGroup();
-        if (sourceGroup != null && !targetGroup.equals(sourceGroup.getName())) {
+        if (sourceGroup != null && !targetGroupName.equals(sourceGroup.getName())) {
             // If the file is transferred across transfer groups then let's
             // add the source hosts of the transfer servers in the original
             // transfer group for retrieval!
             _log.debug("Transferring DataTransfer {} across TransferGroups ({} -> {})", transfer.getId(),
-                    sourceGroup.getName(), targetGroup);
-            for (final TransferServer transferServer : TransferServerProvider.getTransferServersByLeastActivity(
-                    "TransferScheduler.put", transfer.getDestinationName(), sourceGroup)) {
+                    sourceGroup.getName(), targetGroupName);
+            final var provider = new TransferServerProvider("disseminate", sourceGroup.getName(),
+                    transfer.getDestinationName(), dataFile.getFileSystem());
+            for (final TransferServer transferServer : provider.getTransferServersByLeastActivity()) {
                 final var host = transferServer.getHostForReplication();
                 if (host != null && host.getActive()) {
                     hostsForSource.add(host);
@@ -961,7 +960,7 @@ public final class TransferScheduler extends MBeanScheduler {
      *
      * @return the proxy socket
      *
-     * @throws ecmwf.ecpds.master.MasterException
+     * @throws MasterException
      *             the master exception
      */
     public static ProxySocket put(final TransferServer server, final Host host, final String target,
@@ -998,7 +997,7 @@ public final class TransferScheduler extends MBeanScheduler {
      *
      * @return the proxy socket
      *
-     * @throws ecmwf.ecpds.master.MasterException
+     * @throws MasterException
      *             the master exception
      */
     public static ProxySocket get(final TransferServer server, final Host host, final String source,
@@ -1038,8 +1037,10 @@ public final class TransferScheduler extends MBeanScheduler {
     public static ProxySocket get(final DataTransfer transfer, final long remotePosn, final long length)
             throws DataBaseException, MasterException, TransferServerException {
         final var dataFile = transfer.getDataFile();
-        final var servers = TransferServerProvider.getTransferServersByLeastActivity("TransferScheduler.get",
-                transfer.getDestinationName(), transfer.getTransferServer(), dataFile.getTransferGroup(), null);
+        final var provider = new TransferServerProvider("get", dataFile.getTransferGroupName(),
+                transfer.getDestinationName(), dataFile.getSize(), transfer.getTransferServer(),
+                dataFile.getFileSystem());
+        final var servers = provider.getTransferServersByLeastActivity();
         final var count = servers.size();
         MasterException exception = null;
         for (var i = 0; i < count; i++) {
@@ -1120,7 +1121,7 @@ public final class TransferScheduler extends MBeanScheduler {
      * @param proxySocket
      *            the proxy socket
      *
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public static void check(final ProxySocket proxySocket) throws IOException {
@@ -1146,7 +1147,7 @@ public final class TransferScheduler extends MBeanScheduler {
      *
      * @return the long
      *
-     * @throws ecmwf.ecpds.master.MasterException
+     * @throws MasterException
      *             the master exception
      */
     public static long size(final TransferServer server, final Host host, final String source) throws MasterException {
@@ -1178,7 +1179,7 @@ public final class TransferScheduler extends MBeanScheduler {
      *
      * @return the string[]
      *
-     * @throws ecmwf.ecpds.master.MasterException
+     * @throws MasterException
      *             the master exception
      */
     public static String[] list(final TransferServer server, final Host host, final String source, final String pattern)
@@ -1207,7 +1208,7 @@ public final class TransferScheduler extends MBeanScheduler {
      * @param source
      *            the source
      *
-     * @throws ecmwf.ecpds.master.MasterException
+     * @throws MasterException
      *             the master exception
      */
     public static void del(final TransferServer server, final Host host, final String source) throws MasterException {
@@ -1233,7 +1234,7 @@ public final class TransferScheduler extends MBeanScheduler {
      * @param ticket
      *            the ticket
      *
-     * @throws ecmwf.ecpds.master.MasterException
+     * @throws MasterException
      *             the master exception
      */
     public static void check(final TransferServer server, final long ticket) throws MasterException {
@@ -1260,7 +1261,7 @@ public final class TransferScheduler extends MBeanScheduler {
      * @param dir
      *            the dir
      *
-     * @throws ecmwf.ecpds.master.MasterException
+     * @throws MasterException
      *             the master exception
      */
     public static void mkdir(final TransferServer server, final Host host, final String dir) throws MasterException {
@@ -1288,7 +1289,7 @@ public final class TransferScheduler extends MBeanScheduler {
      * @param dir
      *            the dir
      *
-     * @throws ecmwf.ecpds.master.MasterException
+     * @throws MasterException
      *             the master exception
      */
     public static void rmdir(final TransferServer server, final Host host, final String dir) throws MasterException {
@@ -1330,7 +1331,7 @@ public final class TransferScheduler extends MBeanScheduler {
      * @param target
      *            the target
      *
-     * @throws ecmwf.ecpds.master.MasterException
+     * @throws MasterException
      *             the master exception
      */
     public static void move(final TransferServer server, final Host host, final String source, final String target)
@@ -1674,7 +1675,7 @@ public final class TransferScheduler extends MBeanScheduler {
      *
      * @return the backup result
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public static BackupResult backup(final Host hostForBackup, final TransferServer[] servers,
@@ -1800,11 +1801,11 @@ public final class TransferScheduler extends MBeanScheduler {
      *
      * @return the acquisition result
      *
-     * @throws ecmwf.ecpds.master.transfer.TransferServerProvider.TransferServerException
+     * @throws TransferServerException
      *             the transfer server exception
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public static AcquisitionResult acquisition(final StatusUpdate out, final String destinationName, final Host host,
@@ -1814,8 +1815,7 @@ public final class TransferScheduler extends MBeanScheduler {
         // Let's find the list of transfer servers to do the listing. We force a
         // check against the clusters to spread the load evenly on all data
         // movers!
-        final var provider = new TransferServerProvider("TransferScheduler.acquisition", null,
-                host.getTransferGroupName(), destinationName, host);
+        final var provider = new TransferServerProvider("acquisition", host.getTransferGroupName(), destinationName);
         for (final TransferServer current : provider.getTransferServersByLeastActivity()) {
             final var getHost = current.getName();
             MoverInterface mover;
@@ -1889,11 +1889,11 @@ public final class TransferScheduler extends MBeanScheduler {
      *
      * @return the execution result
      *
-     * @throws ecmwf.ecpds.master.transfer.TransferServerProvider.TransferServerException
+     * @throws TransferServerException
      *             the transfer server exception
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public static ExecutionResult execution(final StatusUpdate out, final String destinationName, final Host host,
@@ -1902,8 +1902,7 @@ public final class TransferScheduler extends MBeanScheduler {
         // Let's find the list of transfer servers to do the execution. We force a
         // check against the clusters to spread the load evenly on all data
         // movers!
-        final var provider = new TransferServerProvider("TransferScheduler.execution", null,
-                host.getTransferGroupName(), destinationName, host);
+        final var provider = new TransferServerProvider("execution", host.getTransferGroupName(), destinationName);
         for (final TransferServer current : provider.getTransferServersByLeastActivity()) {
             final var getHost = current.getName();
             MoverInterface mover;
@@ -1927,7 +1926,7 @@ public final class TransferScheduler extends MBeanScheduler {
                     er.message = "Execution task interrupted";
                     break;
                 } else {
-                    out.warn("Execution task failed on DataMover=" + getHost + ": " + Format.getMessage(t));
+                    out.warn("Execution task failed on DataMover=" + getHost + " : " + Format.getMessage(t));
                     _log.warn("Execution task for " + destinationName + " on " + getHost, t);
                     er.message = Format.getMessage(t);
                     continue;
@@ -2053,9 +2052,9 @@ public final class TransferScheduler extends MBeanScheduler {
      *
      * @return the download result
      *
-     * @throws ecmwf.ecpds.master.transfer.TransferServerProvider.TransferServerException
+     * @throws TransferServerException
      *             the transfer server exception
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
      */
     public static DownloadResult download(final DataTransfer transfer, final Host hostForSource,
@@ -2067,8 +2066,9 @@ public final class TransferScheduler extends MBeanScheduler {
             if (hostForSource == null || !hostForSource.getActive() || dr.dataFile.getDeleteOriginal()) {
                 _log.warn(dr.message = "Host for source not available or source file deleted");
             } else {
-                final var provider = new TransferServerProvider("TransferScheduler.download", null,
-                        hostForSource.getTransferGroupName(), transfer.getDestinationName(), hostForSource);
+                final var provider = new TransferServerProvider("download", hostForSource.getTransferGroupName(),
+                        transfer.getDestinationName(), transfer.getSize(), transfer.getTransferServer(),
+                        dr.dataFile.getFileSystem());
                 final var group = provider.getTransferGroup();
                 dr.dataFile.setTransferGroup(group);
                 dr.dataFile.setTransferGroupName(group.getName());
@@ -2285,9 +2285,9 @@ public final class TransferScheduler extends MBeanScheduler {
      *
      * @return the mover report
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public static String getMoverReport(final Host proxyHost) throws DataBaseException, IOException {
@@ -2315,9 +2315,9 @@ public final class TransferScheduler extends MBeanScheduler {
      *
      * @return the host report
      *
-     * @throws ecmwf.common.database.DataBaseException
+     * @throws DataBaseException
      *             the data base exception
-     * @throws java.io.IOException
+     * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
     public static String getHostReport(final Host proxyHost, final Host host) throws DataBaseException, IOException {
@@ -2336,8 +2336,6 @@ public final class TransferScheduler extends MBeanScheduler {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Shutdown.
      */
     @Override
@@ -2364,9 +2362,9 @@ public final class TransferScheduler extends MBeanScheduler {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the MBean info.
+     *
+     * @return the MBean info
      */
     @Override
     public MBeanInfo getMBeanInfo() {
@@ -2378,9 +2376,17 @@ public final class TransferScheduler extends MBeanScheduler {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the attribute.
+     *
+     * @param attributeName
+     *            the attribute name
+     *
+     * @return the attribute
+     *
+     * @throws AttributeNotFoundException
+     *             the attribute not found exception
+     * @throws MBeanException
+     *             the MBean exception
      */
     @Override
     public Object getAttribute(final String attributeName) throws AttributeNotFoundException, MBeanException {
@@ -2396,9 +2402,19 @@ public final class TransferScheduler extends MBeanScheduler {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Sets the attribute.
+     *
+     * @param name
+     *            the name
+     * @param value
+     *            the value
+     *
+     * @return true, if successful
+     *
+     * @throws InvalidAttributeValueException
+     *             the invalid attribute value exception
+     * @throws MBeanException
+     *             the MBean exception
      */
     @Override
     public boolean setAttribute(final String name, final Object value)
@@ -2822,11 +2838,6 @@ public final class TransferScheduler extends MBeanScheduler {
          *
          * @return the transfer servers
          *
-         * @param transfer
-         *            the transfer
-         *
-         * @return the transfer servers
-         *
          * @throws DataBaseException
          *             the data base exception
          * @throws TransferServerException
@@ -2842,8 +2853,7 @@ public final class TransferScheduler extends MBeanScheduler {
             final var clusterName = targetGroup.getClusterName();
             // If the cluster is not defined (empty string) then we cannot
             // compare!
-            if (originalGroup != null && !clusterName.isEmpty() && clusterName.equals(originalGroup.getClusterName())
-                    && !targetGroup.getName().equals(originalGroup.getName())) {
+            if (originalGroup != null && !clusterName.isEmpty() && clusterName.equals(originalGroup.getClusterName())) {
                 // They are part of the same Cluster so if they are different
                 // let's force the usage of the original TransferGroup!
                 _log.debug("Force usage of the original TransferGroup ({} => {})", targetGroup.getName(),
@@ -2851,8 +2861,10 @@ public final class TransferScheduler extends MBeanScheduler {
                 targetGroup = originalGroup;
             }
             // Get the list of TransferServers for the selected TargetGroup
-            final var servers = TransferServerProvider.getTransferServersByLeastActivity("DestinationThread",
-                    transfer.getDestinationName(), targetGroup);
+            final var provider = new TransferServerProvider("disseminate", targetGroup.getName(),
+                    transfer.getDestinationName(), transfer.getSize(), transfer.getTransferServer(),
+                    dataFile.getFileSystem());
+            final var servers = provider.getTransferServersByLeastActivity();
             final var retries = transfer.getRequeueCount();
             if (retries == 0 && transfer.getFailedTime() == null) {
                 // This is the first time we are trying to send this
@@ -2925,7 +2937,7 @@ public final class TransferScheduler extends MBeanScheduler {
                 final var destination = transfer.getDestination();
                 final var dataFile = transfer.getDataFile();
                 final var host = transfer.getHost();
-                _splunk.info("ERR;{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{}:{}",
+                _splunk.info("ERR;{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{}",
                         "Monitored=" + destination.getMonitor(), "TimeStamp=" + Timestamp.from(Instant.now()),
                         "DataTransferId=" + transfer.getId(), "DestinationName=" + destination.getName(),
                         "DestinationType=" + DestinationOption.getLabel(destination.getType()),
@@ -3153,7 +3165,7 @@ public final class TransferScheduler extends MBeanScheduler {
         }
 
         /**
-         * Signal is should be reset.
+         * Converts into be reseted.
          *
          * @return true, if successful
          */
@@ -3347,7 +3359,7 @@ public final class TransferScheduler extends MBeanScheduler {
                     // The file was not downloaded so the source acquisition
                     // Host was configured to not retrieve the file on the
                     // data movers.
-                    final Host host = getHost();
+                    final var host = getHost();
                     if (host == null || !HOST_ACQUISITION.getECtransSetup(host.getData())
                             .getBoolean(HOST_ACQUISITION_REQUEUE_ON_FAILURE)) {
                         // In this case we don't want to restart
@@ -4215,7 +4227,7 @@ public final class TransferScheduler extends MBeanScheduler {
         }
 
         /**
-         * Signal if should be reset.
+         * Converts into be reseted.
          *
          * @return true, if successful
          */

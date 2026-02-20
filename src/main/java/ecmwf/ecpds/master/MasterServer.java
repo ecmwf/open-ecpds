@@ -1891,8 +1891,8 @@ public final class MasterServer extends ECaccessProvider
             throw new IOException("Report not available for: " + hostName + " (name only resolved at runtime)");
         }
         Throwable throwable = null;
-        for (final TransferServer current : TransferServerProvider.getTransferServersByLeastActivity("MasterServer",
-                host.getTransferGroup())) {
+        for (final TransferServer current : new TransferServerProvider("report", host.getTransferGroupName())
+                .getTransferServersByLeastActivity()) {
             final var moverName = current.getName();
             final MoverInterface mover;
             if ((mover = getDataMoverInterface(moverName)) == null) {
@@ -6722,22 +6722,18 @@ public final class MasterServer extends ECaccessProvider
         public boolean check(final Host host, final boolean force, final boolean notify)
                 throws DataBaseException, MasterException, TransferServerException {
             final var currentTime = System.currentTimeMillis();
-            final var group = host.getTransferGroup();
             final var hostStats = host.getHostStats();
-            if (!group.getActive()) {
-                throw new MasterException("TransferGroup " + group.getName() + " not active");
-            }
             TransferServer server = null;
-            for (final TransferServer theServer : TransferServerProvider
-                    .getTransferServersByLeastActivity("HostCheckScheduler", group)) {
+            final var provider = new TransferServerProvider("check", host.getTransferGroupName());
+            for (final TransferServer theServer : provider.getTransferServersByLeastActivity()) {
                 if (theServer.getCheck()) {
                     server = theServer;
                     break;
                 }
             }
             if (server == null) {
-                throw new MasterException(
-                        "No TransferServer(s) available for checking in TransferGroup " + group.getName());
+                throw new MasterException("No TransferServer(s) available for checking in TransferGroup "
+                        + provider.getTransferGroupName());
             }
             final var valid = hostStats.getValid();
             Timestamp checkTime = null;
@@ -6781,9 +6777,9 @@ public final class MasterServer extends ECaccessProvider
                                     + (hostStats.getValid() ? "SUCCESSFUL" : "NOT-SUCCESSFUL") + ")",
                             "Host check " + (hostStats.getValid() ? "successful" : "failure") + ": " + host.getName()
                                     + "\nHost name: " + host.getHost() + "\nHost comment: " + host.getComment()
-                                    + "\nTransfer server: " + server.getName() + "\nTransfer group: " + group.getName()
-                                    + "\nTransfer method: " + host.getTransferMethodName() + "\nLogin name: "
-                                    + host.getLogin()
+                                    + "\nTransfer server: " + server.getName() + "\nTransfer group: "
+                                    + provider.getTransferGroupName() + "\nTransfer method: "
+                                    + host.getTransferMethodName() + "\nLogin name: " + host.getLogin()
                                     + (isNotEmpty(host.getDir()) ? "\nDirectory: " + host.getDir() : "")
                                     + "\nFile name: " + checkFileName + "\nByte(s) sent: " + sent + "/" + _length
                                     + (!hostStats.getValid() && isNotEmpty(message) ? "\nError message: " + message
