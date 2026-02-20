@@ -11322,8 +11322,10 @@ public final class MasterServer extends ECaccessProvider
                                         "MetaTime=" + dataFile.getMetaTime(), "TimeBase=" + dataFile.getTimeBase(),
                                         "TimeStep=" + dataFile.getTimeStep(),
                                         "Duration=" + dataFile.getGetCompleteDuration(), "HostId=" + _source.getName(),
-                                        "HostLogin=" + (isNotEmpty(login) ? login : "-"),
-                                        "HostAddress=" + (isNotEmpty(host) ? host : "-"),
+                                        "HostLogin=" + (isNotEmpty(login)
+                                                ? Format.replaceAll(login, "$dataFile[ecauthUser]", ecauthUser) : "-"),
+                                        "HostAddress=" + (isNotEmpty(host)
+                                                ? Format.replaceAll(host, "$dataFile[ecauthHost]", ecauthHost) : "-"),
                                         "TransferProtocol=" + _source.getTransferMethod().getECtransModuleName(),
                                         "MoverName=" + server.getName(),
                                         "UserId=" + (isNotEmpty(ecauthUser) ? ecauthUser : "-"),
