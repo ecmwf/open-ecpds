@@ -114,7 +114,7 @@ The object storage system in OpenECPDS is hierarchy-free but can emulate directo
 
 ### System Requirements and Setup
 
-OpenECPDS requires Docker to be installed and fully functional, with the default Docker socket enabled (Settings -> Advanced -> "Allow the default Docker socket to be used"). The build and run process has been tested on Linux and macOS (Intel/Apple Silicon) using Docker Desktop v4.46.0. It has also been reported to work on Windows with the WSL 2 backend and the host networking option enabled.
+OpenECPDS requires Docker to be installed and fully functional, with the default Docker socket enabled (Settings -> Advanced -> "Allow the default Docker socket to be used"). The build and run process has been tested on Linux and macOS (Intel/Apple Silicon) using Docker Desktop v4.61.0. It has also been reported to work on Windows with the WSL 2 backend and the host networking option enabled.
 
 To test the deployment of OpenECPDS containers to a Kubernetes cluster, Kubernetes must be enabled in Docker (Settings -> Kubernetes -> "Enable Kubernetes").
 
@@ -1050,7 +1050,7 @@ This poster provides an accessible, high-level overview of the system, including
 
 ![GraalVM](https://img.shields.io/badge/GraalVM-25.0.0-brightgreen)
 ![Maven](https://img.shields.io/badge/Maven-3.9.9-brightgreen)
-![Docker](https://img.shields.io/badge/Docker-28.4.0-blue)
+![Docker](https://img.shields.io/badge/Docker-29.2.1-blue)
 ![Kompose](https://img.shields.io/badge/Kompose-1.37.0-blue)
 ![Kubectl](https://img.shields.io/badge/Kubectl-1.37.2-blue)
 
