@@ -4,7 +4,7 @@ This document summarizes the most significant changes in OpenECPDS across all ma
 
 ---
 
-## open-ecpds 7.3.6-05022026 (2026-02-05)
+## open-ecpds 7.3.6-17022026 (2026-02-17)
 
 - Add the ErrorMessage field to the PRS Splunk event to report product status processing errors, such as a missing required option, a status that is already expected, not expected, or already completed, in which case the notification is ignored.
 - Add the NetworkCode field to the ERR Splunk event to allow tracking of dissemination failures or retries per network type (e.g. Internet or RMDCN).
@@ -13,6 +13,8 @@ This document summarizes the most significant changes in OpenECPDS across all ma
 - Enhance pop-up messages with a clearer, more user-friendly design by replacing browser-native alert and confirmation boxes with a jQuery alternative.
 - Enhanced the loading indicator shown after users confirm an action in the monitoring interface (e.g., deleting an item). Previously, the page could appear unresponsive while the request was being processed, which made it unclear whether the action was in progress.
 - Align the retrieval module to combine original and secondary errors on retrieval failure, similarly to the push module (e.g. “Pipe Close” will no longer hide the underlying “Permission Denied” error in the transfer history).
+- Delete the stage file if the download fails during data retrieval on a data mover.
+- Allow a file to be purged on a data mover when its allocated data mover is not in the same group as its data file entry.
 - Allow separate SMTP and store hosts to be defined in the mail subsystem configuration, and add support for IMAPS (in addition to IMAP + TLS).
 - Fix incorrect load balancing in transfer group allocation when new files are registered in ECPDS.
 
