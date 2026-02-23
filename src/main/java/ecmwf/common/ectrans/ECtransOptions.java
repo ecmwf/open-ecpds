@@ -1446,6 +1446,9 @@ public enum ECtransOptions {
     /** The host ecauth passphrase. */
     HOST_ECAUTH_PASSPHRASE("passPhrase", String.class, STRING_NONE),
 
+    /** The host ecauth list options. */
+    HOST_ECAUTH_LIST_OPTIONS("listOptions", String.class, STRING_NONE),
+
     /** The host ecauth listen address. */
     HOST_ECAUTH_LISTEN_ADDRESS("listenAddress", String.class, STRING_NONE),
 

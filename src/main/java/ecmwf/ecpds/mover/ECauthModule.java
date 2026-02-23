@@ -36,6 +36,7 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_ECAUTH_HOST_LIST;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECAUTH_IGNORE_CHECK;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECAUTH_IGNORE_MKDIRS_CMD_ERRORS;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECAUTH_KEEP_ALIVE;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_ECAUTH_LIST_OPTIONS;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECAUTH_MKDIRS;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECAUTH_MKDIRS_CMD_INDEX;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECAUTH_MKSUFFIX;
@@ -850,8 +851,13 @@ public final class ECauthModule extends ProxyModule {
     @Override
     public String[] listAsStringArray(final String directory, final String pattern) throws IOException {
         setStatus("LIST");
+        // Options can be 'a', 'L', 't', 'r'.
+        final var cmd = currentSetup.getOptionalString(HOST_ECAUTH_LIST_OPTIONS).map(String::trim)
+                .filter(value -> value.matches("[aLtr]+")) // only allow a, L, t, r
+                .map(value -> "|l" + value + "|dir") // always prepend 'l'
+                .orElse("|list"); // default if empty/invalid
         final var token = new StringTokenizer(
-                getResult(currentWorkingDirectory + (directory != null ? directory : "") + "|list"), "\r\n");
+                getResult(currentWorkingDirectory + (directory != null ? directory : "") + cmd), "\r\n");
         final List<String> result = new ArrayList<>();
         var i = 0;
         while (token.hasMoreElements()) {
