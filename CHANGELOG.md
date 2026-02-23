@@ -4,7 +4,7 @@ This document summarizes the most significant changes in OpenECPDS across all ma
 
 ---
 
-## open-ecpds 7.3.6-17022026 (2026-02-17)
+## open-ecpds 7.3.6-17022026 (2026-02-05)
 
 - Add the ErrorMessage field to the PRS Splunk event to report product status processing errors, such as a missing required option, a status that is already expected, not expected, or already completed, in which case the notification is ignored.
 - Add the NetworkCode field to the ERR Splunk event to allow tracking of dissemination failures or retries per network type (e.g. Internet or RMDCN).
