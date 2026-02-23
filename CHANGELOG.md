@@ -16,6 +16,7 @@ This document summarizes the most significant changes in OpenECPDS across all ma
 - Delete the stage file if the download fails during data retrieval on a data mover.
 - Allow a file to be purged on a data mover when its allocated data mover is not in the same group as its data file entry.
 - Allow separate SMTP and store hosts to be defined in the mail subsystem configuration, and add support for IMAPS (in addition to IMAP + TLS).
+- Allows defining how directory listings are displayed in the ECAUTH module.
 - Fix incorrect load balancing in transfer group allocation when new files are registered in ECPDS.
 
 ## open-ecpds 7.3.5-20012026 (2026-01-20)
