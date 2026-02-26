@@ -1191,6 +1191,9 @@ public enum ECtransOptions {
     /** The host http upload end point. */
     HOST_HTTP_UPLOAD_END_POINT("uploadEndPoint", String.class, ""),
 
+    /** The host http max redirects. */
+    HOST_HTTP_MAX_REDIRECTS("maxRedirects", Integer.class, 5),
+
     /** The host http multipart mode. */
     HOST_HTTP_MULTIPART_MODE("multipartMode", String.class, "LEGACY", Arrays.asList("LEGACY", "STRICT", "EXTENDED")),
 
