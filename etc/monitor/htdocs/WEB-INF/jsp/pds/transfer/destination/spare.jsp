@@ -99,6 +99,8 @@
 							To</a></td>
 				</tr>
 
+				<auth:if basePathKey="transferhistory.basepath" paths="/">
+					<auth:then>
 				<tr>
 					<td valign="top"><search:icon key="icon.arrow.right"
 							writeFullTag="true" /></td>
@@ -106,6 +108,8 @@
 						href="<bean:message key="incoming.basepath"/>?destinationNameForSearch=${destination.id}">Data
 							Users</a></td>
 				</tr>
+					</auth:then>
+				</auth:if>
 
 				<tr>
 					<td><search:icon key="icon.small.timeline" writeFullTag="true" /></td>
