@@ -18,6 +18,8 @@
 
 package ecmwf.common.database;
 
+import java.util.Objects;
+
 /**
  * ECMWF Product Data Store (OpenECPDS) Project
  *
@@ -25,8 +27,6 @@ package ecmwf.common.database;
  * @version 6.7.7
  * @since 2024-07-01
  */
-
-import java.util.Objects;
 
 /**
  * The Class Host.
@@ -148,6 +148,9 @@ public class Host extends DataBaseObject {
 
     /** The use source path. Not mapped into the database */
     private boolean useSourcePath = false;
+
+    /** The use GeoIP location. Not mapped into the database */
+    private String geoIpLocation = null;
 
     /**
      * Instantiates a new host.
@@ -1001,9 +1004,28 @@ public class Host extends DataBaseObject {
     }
 
     /**
-     * {@inheritDoc}
+     * Gets the GeoIP location.
      *
+     * @return the GeoIP location
+     */
+    public String getGeoIpLocation() {
+        return geoIpLocation;
+    }
+
+    /**
+     * Sets the GeoIP location.
+     *
+     * @param param
+     *            the new GeoIP location
+     */
+    public void setGeoIpLocation(final String param) {
+        geoIpLocation = param;
+    }
+
+    /**
      * Hash code.
+     *
+     * @return the int
      */
     @Override
     public int hashCode() {
@@ -1011,9 +1033,12 @@ public class Host extends DataBaseObject {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Equals.
+     *
+     * @param obj
+     *            the obj
+     *
+     * @return true, if successful
      */
     @Override
     public boolean equals(final Object obj) {

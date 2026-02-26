@@ -558,7 +558,7 @@ public final class ECpdsApplication extends Application {
      * The Interface HostMixIn.
      */
     @JsonIgnoreProperties({ "collectionSize", "ecuser", "transferMethod", "transferGroup", "hostStats", "hostLocation",
-            "hostOutput", "useSourcePath", "name", "hostStatsId", "hostLocationId", "hostOutputId" })
+            "hostOutput", "useSourcePath", "geoIpLocation", "name", "hostStatsId", "hostLocationId", "hostOutputId" })
     public interface HostMixIn {
 
         /**
@@ -614,15 +614,6 @@ public final class ECpdsApplication extends Application {
          */
         @JsonSetter("automaticLocation")
         void setAutomaticLocation(boolean param);
-
-        /**
-         * Sets the use source path.
-         *
-         * @param param
-         *            the new use source path
-         */
-        @JsonSetter("useSourcePath")
-        void setUseSourcePath(boolean param);
 
         /**
          * Sets the check frequency.

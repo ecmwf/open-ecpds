@@ -1108,6 +1108,16 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     }
 
     /**
+     * Gets the GeoIp location.
+     *
+     * @return the GeoIp location
+     */
+    @Override
+    public String getGeoIpLocation() {
+        return host.getGeoIpLocation();
+    }
+
+    /**
      * {@inheritDoc}
      *
      * Gets the latitude.

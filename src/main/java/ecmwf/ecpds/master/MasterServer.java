@@ -4038,6 +4038,13 @@ public final class MasterServer extends ECaccessProvider
                         } catch (final Throwable t) {
                             _log.warn("Could not get geolocation for Host-{}: {}", hostId, hostIp, t);
                         }
+                    } else {
+                        // Automatic location discovery disabled
+                        try {
+                            getDataBase().update(hostLocation);
+                        } catch (final Throwable t) {
+                            _log.warn("Updating location for Host-{}", hostId, t);
+                        }
                     }
                 } catch (final Throwable t) {
                     _log.warn("Updating location for Host-{}", hostId, t);

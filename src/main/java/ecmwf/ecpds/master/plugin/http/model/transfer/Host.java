@@ -100,6 +100,13 @@ public interface Host extends ModelBean, CollectionSizeBean {
     void setAutomaticLocation(boolean b);
 
     /**
+     * Gets the GeoIp location.
+     *
+     * @return the GeoIp location
+     */
+    String getGeoIpLocation();
+
+    /**
      * Gets the latitude.
      *
      * @return the latitude

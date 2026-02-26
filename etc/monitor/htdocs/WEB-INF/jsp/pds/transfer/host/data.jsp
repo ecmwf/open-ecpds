@@ -147,27 +147,30 @@
 				<tr>
 					<th>Type</th>
 					<td>${host.type}</td>
-
-					<auth:if basePathKey="transferhistory.basepath" paths="/">
-						<auth:then>
-							<th>Valid</th>
-							<td><c:if test="${host.valid}">yes</c:if> <c:if
-									test="${!host.valid}">no</c:if></td>
-						</auth:then>
-					</auth:if>
-
-				</tr>
-
-				<tr>
-					<td colspan="4"></td>
-				</tr>
-				<tr>
 					<th>Comment</th>
-					<td colspan="3">${host.comment}</td>
+					<td>${host.comment}</td>
 				</tr>
 
 				<tr>
-					<td colspan="3">&nbsp;</td>
+					<td colspan="4">&nbsp;</td>
+				</tr>
+
+				<tr>
+					<th>Location Source</th>
+					<td><c:if test="${host.automaticLocation}">automatic</c:if><c:if test="${!host.automaticLocation}">manual</c:if></td>
+					<th>Estimated Location</th>
+					<td>${host.geoIpLocation}</td>
+				</tr>
+
+				<tr>
+					<th>Latitude (&deg;)</th>
+					<td>${host.latitude}</td>
+					<th>Longitude (&deg;)</th>
+					<td>${host.longitude}</td>
+				</tr>
+								
+				<tr>
+					<td colspan="4">&nbsp;</td>
 				</tr>
 
 				<tr>
@@ -184,9 +187,9 @@
 				</tr>
 
 
-						<tr>
-							<td colspan="3">&nbsp;</td>
-						</tr>
+				<tr>
+					<td colspan="4">&nbsp;</td>
+				</tr>
 
 						<tr>
 							<th>Options</th>
@@ -233,20 +236,6 @@
 							<td colspan="3">&nbsp;</td>
 						</tr>
 
-						<tr>
-							<th>Automatic Location</th>
-							<td colspan="3"><c:if test="${host.automaticLocation}">yes</c:if>
-								<c:if test="${!host.automaticLocation}">no</c:if></td>
-						</tr>
-						<tr>
-							<td colspan="4"></td>
-						</tr>
-						<tr>
-							<th>Latitude</th>
-							<td>${host.latitude}</td>
-							<th>Longitude</th>
-							<td>${host.longitude}</td>
-						</tr>
 						<tr>
 							<th>Retry Frequency</th>
 							<td>${host.formattedRetryFrequency}</td>
@@ -304,7 +293,13 @@
 						<tr>
 							<th>Acquisition Frequency</th>
 							<td>${host.formattedAcquisitionFrequency}</td>
-							<td>&nbsp;</td>
+							<auth:if basePathKey="transferhistory.basepath" paths="/">
+								<auth:then>
+									<th>Valid</th>
+									<td><c:if test="${host.valid}">yes</c:if> <c:if
+											test="${!host.valid}">no</c:if></td>
+								</auth:then>
+							</auth:if>
 						</tr>
 
 					</auth:then>

@@ -419,11 +419,11 @@
 				property="automaticLocation" /></td>
 	</tr>
 	<tr>
-		<th>Latitude</th>
+		<th>Latitude (&deg;)</th>
 		<td colspan="2"><html:text property="latitude" /></td>
 	</tr>
 	<tr>
-		<th>Longitude</th>
+		<th>Longitude (&deg;)</th>
 		<td colspan="2"><html:text property="longitude" /></td>
 	</tr>
 
