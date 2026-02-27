@@ -6,6 +6,7 @@
 - [Alias Options](#alias-options)
 - [Azure Options](#azure-options)
 - [Ecaccess Options](#ecaccess-options)
+- [Ecauth Options](#ecauth-options)
 - [Ecpds Options](#ecpds-options)
 - [Ectrans Options](#ectrans-options)
 - [Exec Options](#exec-options)
@@ -241,6 +242,13 @@ Allow selecting the ECaccess Gateway for transfer requests. If the "ecaccess.loa
 
 ### ecaccess.loadbalancing
 Enable round-robin load balancing for transfer requests among the specified list of Gateways defined in the "ecaccess.gateway" option.
+
+## Ecauth Options
+
+These options help fine-tune the ecauth transfer module and are accessible via the host editor.
+
+### ecauth.listOptions
+defines how directory listings are displayed. Options a, L, t, and r can be combined to include hidden files, follow links, sort by modification time, or reverse the order. If no options are set, a standard listing is used.
 
 ## Ecpds Options
 
@@ -816,6 +824,9 @@ Set the upper limit for the capacity of the queue handling requests for listing 
 
 ### http.listRecursive
 Allow listing sub-directories recursively.
+
+### http.maxRedirects
+The maximum number of HTTP redirects to follow automatically when a request receives a redirect response (for example, 301 or 302). Prevents infinite redirect loops and allows the client to reach the final destination URL safely.
 
 ### http.maxSize
 Allow setting the maximum size for an HTML document when processing a GET request to retrieve the listing output.
