@@ -6,6 +6,7 @@ This document summarizes the most significant changes in OpenECPDS across all ma
 
 ## open-ecpds 7.3.7-27022026 (2026-02-27)
 
+- Improve DNF resilience in Java container: add timeouts and retries, do not enable CRB.
 - Allow manual host latitude/longitude updates and display location name.
 - Allow setting HTTP max redirects by introducing the http.maxRedirects option and various HTTP module enhancements.
 - Only show Data Users for a destination to privileged users.
