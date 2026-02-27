@@ -62,6 +62,7 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_LIST_MAX_FILES;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_LIST_MAX_THREADS;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_LIST_MAX_WAITING;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_LIST_RECURSIVE;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MAX_REDIRECTS;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MAX_SIZE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_ADD_PAYLOAD;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_ALTERNATIVE_NAME;
@@ -142,6 +143,8 @@ import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.classic.methods.HttpPut;
 import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
 import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.cookie.BasicCookieStore;
+import org.apache.hc.client5.http.cookie.CookieStore;
 import org.apache.hc.client5.http.entity.mime.HttpMultipartMode;
 import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
 import org.apache.hc.client5.http.impl.auth.BasicAuthCache;
@@ -166,6 +169,7 @@ import org.apache.hc.core5.http.ParseException;
 import org.apache.hc.core5.http.config.RegistryBuilder;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.io.entity.InputStreamEntity;
+import org.apache.hc.core5.http.message.BasicHeader;
 import org.apache.hc.core5.http.message.BasicHeaderElementIterator;
 import org.apache.hc.core5.http.protocol.HttpContext;
 import org.apache.hc.core5.util.TimeValue;
@@ -264,6 +268,9 @@ public final class HttpModule extends TransferModule {
     /** The executor manager. */
     private ExecutorManager<ListThread> manager = null;
 
+    /** The cookie store. */
+    private CookieStore cookieStore = null;
+
     /**
      * Gets the status.
      *
@@ -356,6 +363,14 @@ public final class HttpModule extends TransferModule {
             _log.debug("Target host URI: {}", targetHttpHost.toURI());
         }
         final var builder = HttpClients.custom();
+        // ----- Redirects (built-in) -----
+        final var requestConfig = RequestConfig.custom().setRedirectsEnabled(true)
+                .setCircularRedirectsAllowed(getSetup().getBoolean(HOST_HTTP_ALLOW_CIRCULAR_REDIRECTS))
+                .setMaxRedirects(getSetup().getInteger(HOST_HTTP_MAX_REDIRECTS)).build();
+        builder.setDefaultRequestConfig(requestConfig);
+        // ----- Cookie store (persist across redirects/requests) -----
+        cookieStore = new BasicCookieStore();
+        builder.setDefaultCookieStore(cookieStore);
         if (!getSetup().getBoolean(HOST_HTTP_ENABLE_CONTENT_COMPRESSION)) {
             _log.debug("Disable on-the-fly content compression");
             builder.disableContentCompression();
@@ -370,10 +385,6 @@ public final class HttpModule extends TransferModule {
                 _log.debug("Using proxy: {}://{}:{}", proxyProtocol, proxyHost, proxyPort);
                 builder.setProxy(host);
             }
-        }
-        if (getSetup().getBoolean(HOST_HTTP_ALLOW_CIRCULAR_REDIRECTS)) {
-            _log.debug("Allow circular redirects");
-            builder.setDefaultRequestConfig(RequestConfig.custom().setCircularRedirectsAllowed(true).build());
         }
         final ClientSocketStatistics statistics;
         if (setup.getBoolean(HOST_ECTRANS_SOCKET_STATISTICS) && getAttribute("connectOptions") != null) {
@@ -434,6 +445,12 @@ public final class HttpModule extends TransferModule {
                     }
                 }
             }
+            // Default headers at client level (so we don't set them on each request)
+            final var defaults = new ArrayList<Header>(headersList.size());
+            for (final var e : headersList.entrySet()) {
+                defaults.add(new BasicHeader(e.getKey(), e.getValue()));
+            }
+            builder.setDefaultHeaders(defaults);
             httpClient = builder.build();
             connected = true;
         } catch (final Exception e) {
@@ -822,7 +839,13 @@ public final class HttpModule extends TransferModule {
             if (".".equals(token)) { // We should replace "/./" by "/" always!
                 continue;
             }
-            sb.append(encode(token));
+            // IMPORTANT: If token contains any '%': already encoded,
+            // so do NOT encode again (prevents %25XX = double‑encoding)
+            if (token.contains("%")) {
+                sb.append(token);
+            } else {
+                sb.append(encode(token));
+            }
             if (tokenizer.hasMoreTokens()) {
                 sb.append("/");
             }
@@ -1832,7 +1855,7 @@ public final class HttpModule extends TransferModule {
             // If specified, apply the requested behaviour; otherwise, determine
             // automatically: append '/' if the directory does not contain '?' and does not
             // end with '.html/', '.htm/', or '.txt/'.
-            boolean shouldAppendSlash = getSetup().getOptionalBoolean(HOST_HTTP_URLDIR)
+            final boolean shouldAppendSlash = getSetup().getOptionalBoolean(HOST_HTTP_URLDIR)
                     .orElse(directory.indexOf("?") == -1 && !directory.endsWith(".html/")
                             && !directory.endsWith(".htm/") && !directory.endsWith(".txt/"));
             if (shouldAppendSlash) {
@@ -2156,7 +2179,8 @@ public final class HttpModule extends TransferModule {
     }
 
     /**
-     * Execute the http request.
+     * Execute the http request using high-level execute() (non-deprecated). Ensures the request URI is absolute by
+     * resolving against the provided targetHost.
      *
      * @param targetHost
      *            the target host
@@ -2173,49 +2197,60 @@ public final class HttpModule extends TransferModule {
     private ClassicHttpResponse execute(final HttpHost targetHost, final HttpUriRequestBase httpRequest,
             final Integer... acceptedStatusCodes) throws IOException {
         try {
-            httpRequest.setHeader("Host", targetHost.getHostName());
-            for (final String key : headersList.keySet().toArray(new String[0])) {
-                final var value = headersList.get(key);
-                httpRequest.setHeader(key, value);
-            }
+            // Ensure absolute URI (deprecated overloads with target host are avoided)
+            makeAbsoluteUriIfNeeded(targetHost, httpRequest);
             if (getDebug()) {
                 _log.debug("Processing URI {}", httpRequest.getRequestUri());
                 _log.debug("Method: {}", httpRequest.getMethod());
                 _log.debug("Path: {}", httpRequest.getPath());
-                final var entity = httpRequest.getEntity();
-                if (entity != null) {
-                    _log.debug("Content Type: {}", entity.getContentType());
-                    _log.debug("Content Encoding: {}", entity.getContentEncoding());
-                    _log.debug("Content Length: {}", entity.getContentLength());
-                }
-                for (final Header header : httpRequest.getHeaders()) {
-                    _log.debug("Request Header: {}={}", header.getName(), header.getValue());
-                }
             }
             final var context = HttpClientContext.create();
-            if (authCache != null) { // Is it required?
+            if (authCache != null) {
                 context.setAuthCache(authCache);
             }
-            final var httpResponse = httpClient.executeOpen(targetHost, httpRequest, context);
+            if (cookieStore != null) {
+                context.setCookieStore(cookieStore);
+            }
+            // High-level execute -> redirect/cookie/auth handling is automatic.
+            final var httpResponse = httpClient.execute(httpRequest, context);
             final var statusCode = httpResponse.getCode();
-            final var statusMessage = statusCode + " " + httpResponse.getReasonPhrase() + " "
-                    + httpResponse.getVersion().getProtocol();
             if (getDebug()) {
-                _log.debug("Request status: {}", statusMessage);
+                _log.debug("Response status: {} {}", statusCode, httpResponse.getReasonPhrase());
                 for (final Header header : httpResponse.getHeaders()) {
                     _log.debug("Response Header: {}={}", header.getName(), header.getValue());
                 }
             }
-            if (Arrays.stream(acceptedStatusCodes).noneMatch(acceptedStatusCode -> acceptedStatusCode == statusCode)) {
-                throw new IOException("Error " + statusMessage);
+            if (acceptedStatusCodes != null && acceptedStatusCodes.length > 0
+                    && Arrays.stream(acceptedStatusCodes).noneMatch(code -> code == statusCode)) {
+                EntityUtils.consumeQuietly(httpResponse.getEntity());
+                throw new IOException("Error " + statusCode + " " + httpResponse.getReasonPhrase());
             }
             return httpResponse;
         } catch (final Throwable t) {
             _log.warn("Processing {}", httpRequest.getRequestUri(), t);
-            // Only retain the exception message as the MasterServer might not
-            // have the Exception in its class path!
             throw new IOException(Format.getMessage(t));
         }
+    }
+
+    /**
+     * If the request URI is relative (path-only), make it absolute using the target host.
+     *
+     * @throws URISyntaxException
+     */
+    private static void makeAbsoluteUriIfNeeded(final HttpHost targetHost, final HttpUriRequestBase request)
+            throws URISyntaxException {
+        final var uri = request.getUri();
+        if (uri.isAbsolute()) {
+            return;
+        }
+        final var sb = new StringBuilder();
+        sb.append(targetHost.getSchemeName()).append("://").append(targetHost.getHostName());
+        if (targetHost.getPort() > 0) {
+            sb.append(":").append(targetHost.getPort());
+        }
+        // Do NOT re-encode; reuse the raw string the user passed
+        sb.append(uri.toString());
+        request.setUri(new URI(sb.toString()));
     }
 
     /**
