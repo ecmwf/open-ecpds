@@ -58,6 +58,9 @@ public interface Status extends ModelBean {
     /** The fetc. */
     String FETC = StatusFactory.FETC;
 
+    /** The sche. */
+    String SCHE = StatusFactory.SCHE;
+
     /**
      * Gets the name.
      *

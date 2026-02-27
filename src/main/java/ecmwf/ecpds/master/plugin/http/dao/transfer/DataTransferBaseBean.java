@@ -1263,7 +1263,11 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
      */
     @Override
     public boolean getCanBeDownloaded() {
-        return !transfer.getDeleted() && !Status.INIT.equals(transfer.getStatusCode());
+        if (transfer.getDeleted()) {
+            return false;
+        }
+        final var status = transfer.getStatusCode();
+        return !Status.INIT.equals(status) && !Status.FETC.equals(status) && !Status.SCHE.equals(status);
     }
 
     /**
