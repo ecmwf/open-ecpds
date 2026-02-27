@@ -4,6 +4,14 @@ This document summarizes the most significant changes in OpenECPDS across all ma
 
 ---
 
+## open-ecpds 7.3.7-27022026 (2026-02-27)
+
+- Allow manual host latitude/longitude updates and display location name.
+- Allow setting HTTP max redirects by introducing the http.maxRedirects option and various HTTP module enhancements.
+- Only show Data Users for a destination to privileged users.
+- Improve download error handling in browser (show popup on failure) and do not show the download link if the file is not available.
+- Improve compatibility in the HTTP transfer module with encoded and non-encoded URIs.
+
 ## open-ecpds 7.3.6-17022026 (2026-02-05)
 
 - Add the ErrorMessage field to the PRS Splunk event to report product status processing errors, such as a missing required option, a status that is already expected, not expected, or already completed, in which case the notification is ignored.
