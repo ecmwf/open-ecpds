@@ -239,8 +239,15 @@ public class OperationsAction extends PDSAction {
             final var transfer = getValidatedDataTransfer(subActionParameter, d, u);
             transfer.stop(u);
         } else if (DOWNLOAD.equals(subAction)) {
-            final var transfer = getValidatedDataTransfer(subActionParameter, d, u);
-            request.setAttribute("content", d.getTransferContent(transfer, u));
+            try {
+                final var transfer = getValidatedDataTransfer(subActionParameter, d, u);
+                request.setAttribute("size", transfer.getSize());
+                request.setAttribute("content", d.getTransferContent(transfer, u));
+            } catch (Exception e) {
+                request.setAttribute("size", -1L); // force JSP error
+                request.setAttribute("content", null); // force JSP error
+                request.setAttribute("downloadError", Format.getMessage(e));
+            }
             return mapping.findForward("download");
         } else if (SCHEDULE_NOW.equals(subAction)) {
             final var transfer = getValidatedDataTransfer(subActionParameter, d, u);

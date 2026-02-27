@@ -128,14 +128,21 @@
 
 <body bgcolor="#ffffff" text="#000000">
 	
-			<iframe title="sandboxFrame" id="sandboxFrame" style="display:none;"></iframe>
+	<iframe title="sandboxFrame" id="sandboxFrame" style="display:none;"></iframe>
 
-			<tiles:insert name="header">
-				<tiles:put name="title"><%=theTitle%></tiles:put>		
-				<tiles:put name="submenu_width"><tiles:getAsString name="submenu_width"/></tiles:put>		
-				<tiles:put name="location"><tiles:getAsString name="location"/></tiles:put>
-				<tiles:put name="submenu_top"><tiles:getAsString name="submenu_top"/></tiles:put>
-			</tiles:insert>
+	<tiles:insert name="header">
+		<tiles:put name="title"><%=theTitle%></tiles:put>		
+		<tiles:put name="submenu_width"><tiles:getAsString name="submenu_width"/></tiles:put>		
+		<tiles:put name="location"><tiles:getAsString name="location"/></tiles:put>
+		<tiles:put name="submenu_top"><tiles:getAsString name="submenu_top"/></tiles:put>
+	</tiles:insert>
+
+	<iframe id="downloadFrame" style="display:none;"></iframe>
+
+	<div id="downloadResultModal" style="display:none;">
+	  <h3>Download Status</h3>
+	  <div id="downloadResultContent"></div>
+	</div>
 
 	<div id="loadingBackdrop"></div>
 	<div id="loadingDiv"><div class="loader"></div></div>
@@ -277,4 +284,61 @@ function confirmationDialog(arg1, arg2, arg3) {
         }
     });
 }
+$(function() {
+  $('a[href*="/download/"]').on('click', function(e) {
+    e.preventDefault();
+    let url = $(this).attr('href');
+    url += (url.includes('?') ? '&' : '?') + '_ts=' + Date.now();
+	// url += "&debug=1"; // Uncomment for debug probe mode (no streaming, just metadata)
+	$("#downloadFrame").off("load").on("load", function () {
+	    const iframe = document.getElementById("downloadFrame");
+	    const doc = iframe.contentDocument || iframe.contentWindow.document;
+	    let text = "";
+	    if (doc && doc.body && doc.body.innerText) {
+	        text = doc.body.innerText.trim();
+	    }
+	    // Detect any unexpected HTML response
+	    if (text.startsWith("<!DOCTYPE") || text.startsWith("<html")) {
+	        text = "##DOWNLOAD_ERROR## Server returned an HTML page instead of the file.";
+	    }
+	    const isError = text.includes("##DOWNLOAD_ERROR##");
+	    if (isError) {
+	        // Strip the token so it does not appear in the popup
+	        const cleanMsg = text.replace("##DOWNLOAD_ERROR##", "").trim();
+	        $("#downloadResultModal").dialog({
+	            modal: true,
+	            width: 480,
+	            title: "Download Error",
+	            buttons: [
+	                {
+	                    text: "Close",
+	                    click: function () { $(this).dialog("close"); }
+	                }
+	            ],
+	            open: function () {
+	                $("#downloadResultContent")
+	                    .html("<span style='color:#b30000'>" + cleanMsg + "</span>");
+	            }
+	        });
+	    } else {
+	        $("#downloadResultModal").dialog({
+	            modal: true,
+	            width: 480,
+	            title: "Download Started",
+	            buttons: [
+	                {
+	                    text: "OK",
+	                    click: function () { $(this).dialog("close"); }
+	                }
+	            ],
+	            open: function () {
+	                $("#downloadResultContent")
+	                    .html("<span style='color:#007700'>&#10004; Download started successfully.</span>");
+	            }
+	        });
+	    }
+	});
+    $("#downloadFrame").attr("src", url);
+  });
+});
 </script>
