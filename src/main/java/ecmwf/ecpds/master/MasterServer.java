@@ -2881,8 +2881,8 @@ public final class MasterServer extends ECaccessProvider
      * Resolves the effective host address to use for a DataMover.
      *
      * <p>
-     * If the mover advertises a wildcard binding (e.g. 0.0.0.0 or ::), this method attempts to determine a more
-     * suitable externally reachable address using the connection host or root name.
+     * If the mover advertises an empty or wildcard binding (e.g. 0.0.0.0 or ::), this method attempts to determine a
+     * more suitable externally reachable address using the connection host or root name.
      * </p>
      *
      * @param listenAddress
@@ -2895,7 +2895,7 @@ public final class MasterServer extends ECaccessProvider
      * @return the resolved host address to store in the database
      */
     private String resolveHost(final String listenAddress, final String connectionHost, final String root) {
-        if (!isWildcardAddress(listenAddress)) {
+        if (!isEmpty(listenAddress) && !isWildcardAddress(listenAddress)) {
             return listenAddress;
         }
         if (isLocalHost(connectionHost)) {
@@ -2946,14 +2946,15 @@ public final class MasterServer extends ECaccessProvider
      */
     private void updateServerIfChanged(final DataBase base, final TransferServer server, final String newHost,
             final int newPort) {
-        final var hostChanged = !Objects.equals(newHost, server.getHost());
+        final var currentHost = server.getHost();
+        final var hostChanged = !Objects.equals(newHost, currentHost);
         final var portChanged = newPort != server.getPort();
         if (!hostChanged && !portChanged) {
             return;
         }
         _log.info("ECproxy address change detected for TransferServer {}: {}:{} -> {}:{}", server.getName(),
-                server.getHost(), server.getPort(), newHost, newPort);
-        if (Cnf.at("Master", "updateECproxyAddressAndPort", false)) {
+                currentHost, server.getPort(), newHost, newPort);
+        if (isEmpty(currentHost) || Cnf.at("Master", "updateECproxyAddressAndPort", false)) {
             server.setHost(newHost);
             server.setPort(newPort);
             base.tryUpdate(server);
