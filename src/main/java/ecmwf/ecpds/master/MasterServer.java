@@ -191,6 +191,7 @@ import ecmwf.common.database.Alias;
 import ecmwf.common.database.Association;
 import ecmwf.common.database.ChangeLog;
 import ecmwf.common.database.DBIterator;
+import ecmwf.common.database.DataBase;
 import ecmwf.common.database.DataBaseException;
 import ecmwf.common.database.DataBaseObject;
 import ecmwf.common.database.DataFile;
@@ -2779,55 +2780,184 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * Adds the root.
+     * Registers a new service root.
+     *
+     * <p>
+     * If the service is a DataMover or DataProxy, the corresponding TransferServer is reset to reflect a potential
+     * restart.
+     * </p>
+     *
+     * <p>
+     * For DataMover services, this method also verifies the ECproxy address and port advertised by the mover and
+     * optionally updates the database entry if a change is detected.
+     * </p>
      *
      * @param access
-     *            the access
+     *            the client interface used to communicate with the service
      * @param host
-     *            the host
+     *            the hostname from which the service is connecting
      * @param root
-     *            the root
+     *            the logical root name identifying the TransferServer
      * @param service
-     *            the service
+     *            the service type (e.g. "DataMover", "DataProxy")
      */
     @Override
     public void addRoot(final ClientInterface access, final String host, final String root, final String service) {
-        if ("DataMover".equals(service) || "DataProxy".equals(service)) {
+        final var type = ServiceType.from(service);
+        if (type.isMover() || type.isProxy()) {
             resetTransferServer(root, service + " " + root + " restarted");
         }
-        if ("DataMover".equals(service)) {
-            final var base = getDataBase();
-            final var server = base.getTransferServerObject(root);
-            if (server != null) {
-                final var mover = MoverInterface.class.cast(access);
-                try {
-                    final var address = mover.getECproxyAddressAndPort();
-                    _log.debug("Checking ECproxy for TransferServer " + root + ": " + address + " (host=" + host + ")");
-                    final var index = address.lastIndexOf(":");
-                    final var listen = address.substring(0, index);
-                    // Let's try to do the best guess for the IP address used to connect to the
-                    // ECproxyPlugin on the DataMover!
-                    final var newhost = "0.0.0.0".equals(listen) || "::".equals(listen)
-                            ? "localhost".equalsIgnoreCase(host) || "127.0.0.1".equals(host) || "::1".equals(host)
-                                    ? root : host
-                            : listen;
-                    final var newport = address.substring(index + 1);
-                    if (!newhost.equals(server.getHost()) || !newport.equals(Integer.toString(server.getPort()))) {
-                        _log.debug("Change detected in ECproxy address: " + server.getHost() + ":" + server.getPort()
-                                + " -> " + newhost + ":" + newport);
-                        if (Cnf.at("Master", "updateECproxyAddressAndPort", false)) {
-                            _log.debug("Processing update");
-                            base.tryUpdate(server);
-                        }
-                    }
-                } catch (final Throwable t) {
-                    _log.warn("Updating TransferServer " + root, t);
-                }
-            } else {
-                _log.warn("TransferServer " + root + " not registered in the database");
-            }
+        if (type.isMover()) {
+            handleDataMoverRegistration(access, host, root);
         }
         super.addRoot(access, host, root, service);
+    }
+
+    /**
+     * Handles additional registration logic specific to DataMover services.
+     *
+     * <p>
+     * This method retrieves the ECproxy address exposed by the mover, resolves the effective host to use (especially in
+     * the case of wildcard bindings such as 0.0.0.0 or ::), and checks whether the stored TransferServer configuration
+     * needs updating.
+     * </p>
+     *
+     * @param access
+     *            the client interface, expected to implement {@link MoverInterface}
+     * @param host
+     *            the hostname used to connect to the mover
+     * @param root
+     *            the logical root name identifying the TransferServer
+     */
+    private void handleDataMoverRegistration(final ClientInterface access, final String host, final String root) {
+        final var base = getDataBase();
+        final var server = base.getTransferServerObject(root);
+        if (server == null) {
+            _log.warn("TransferServer {} not registered in the database", root);
+            return;
+        }
+        try {
+            final var mover = MoverInterface.class.cast(access);
+            final var address = mover.getECproxyAddressAndPort();
+            _log.debug("Checking ECproxy for TransferServer {}: {} (host={})", root, address, host);
+            final var parsed = parseAddress(address);
+            final var resolvedHost = resolveHost(parsed.host(), host, root);
+            final var resolvedPort = parsed.port();
+            updateServerIfChanged(base, server, resolvedHost, resolvedPort);
+        } catch (final Throwable t) {
+            _log.warn("Failed updating TransferServer {}", root, t);
+        }
+    }
+
+    private record HostPort(String host, int port) {
+    }
+
+    /**
+     * Parses an address string in the format "host:port".
+     *
+     * <p>
+     * This method extracts the host and port components and returns them as a {@code HostPort} record.
+     * </p>
+     *
+     * @param address
+     *            the address string returned by the DataMover
+     *
+     * @return a {@code HostPort} containing the parsed host and port
+     *
+     * @throws IllegalArgumentException
+     *             if the address format is invalid
+     */
+    private HostPort parseAddress(final String address) {
+        final var index = address.lastIndexOf(':');
+        if (index < 0) {
+            throw new IllegalArgumentException("Invalid address format: " + address);
+        }
+        final var host = address.substring(0, index);
+        final var port = Integer.parseInt(address.substring(index + 1));
+        return new HostPort(host, port);
+    }
+
+    /**
+     * Resolves the effective host address to use for a DataMover.
+     *
+     * <p>
+     * If the mover advertises a wildcard binding (e.g. 0.0.0.0 or ::), this method attempts to determine a more
+     * suitable externally reachable address using the connection host or root name.
+     * </p>
+     *
+     * @param listenAddress
+     *            the host address advertised by the mover
+     * @param connectionHost
+     *            the hostname used to connect to the mover
+     * @param root
+     *            the logical root name
+     *
+     * @return the resolved host address to store in the database
+     */
+    private String resolveHost(final String listenAddress, final String connectionHost, final String root) {
+        if (!isWildcardAddress(listenAddress)) {
+            return listenAddress;
+        }
+        if (isLocalHost(connectionHost)) {
+            return root;
+        }
+        return connectionHost;
+    }
+
+    /**
+     * Determines whether the provided address represents a wildcard binding (i.e. listening on all interfaces).
+     *
+     * @param address
+     *            the address to check
+     *
+     * @return true if the address is a wildcard binding, false otherwise
+     */
+    private boolean isWildcardAddress(final String address) {
+        return "0.0.0.0".equals(address) || "::".equals(address);
+    }
+
+    /**
+     * Determines whether the provided hostname represents a local loopback address.
+     *
+     * @param host
+     *            the hostname to evaluate
+     *
+     * @return true if the host refers to the local machine
+     */
+    private boolean isLocalHost(final String host) {
+        return "localhost".equalsIgnoreCase(host) || "127.0.0.1".equals(host) || "::1".equals(host);
+    }
+
+    /**
+     * Updates the TransferServer configuration if the ECproxy host or port differs from the stored values.
+     *
+     * <p>
+     * The update is performed only if the configuration flag "Master.updateECproxyAddressAndPort" is enabled.
+     * </p>
+     *
+     * @param base
+     *            the database instance
+     * @param server
+     *            the TransferServer object to update
+     * @param newHost
+     *            the newly resolved host
+     * @param newPort
+     *            the newly resolved port
+     */
+    private void updateServerIfChanged(final DataBase base, final TransferServer server, final String newHost,
+            final int newPort) {
+        final var hostChanged = !newHost.equals(server.getHost());
+        final var portChanged = newPort != server.getPort();
+        if (!hostChanged && !portChanged) {
+            return;
+        }
+        _log.debug("ECproxy address change detected: {}:{} -> {}:{}", server.getHost(), server.getPort(), newHost,
+                newPort);
+        if (Cnf.at("Master", "updateECproxyAddressAndPort", false)) {
+            server.setHost(newHost);
+            server.setPort(newPort);
+            base.tryUpdate(server);
+        }
     }
 
     /**
