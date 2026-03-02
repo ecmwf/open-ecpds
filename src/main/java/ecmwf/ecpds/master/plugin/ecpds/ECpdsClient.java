@@ -150,7 +150,7 @@ public final class ECpdsClient {
     }
 
     /**
-     * _read.
+     * read.
      *
      * @param in
      *            the in
@@ -165,7 +165,7 @@ public final class ECpdsClient {
     }
 
     /**
-     * _read.
+     * read.
      *
      * @param in
      *            the in
@@ -212,27 +212,27 @@ public final class ECpdsClient {
     }
 
     /**
-     * _write.
+     * write.
      *
-     * @param _out
-     *            the _out
+     * @param out
+     *            the out
      * @param message
      *            the message
      *
      * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    private static void write(final PrintStream _out, final String message) {
+    private static void write(final PrintStream out, final String message) {
         _log.debug("Sending: \"{}\"", message);
-        _out.println(message);
-        _out.flush();
+        out.println(message);
+        out.flush();
     }
 
     /**
-     * _write.
+     * write.
      *
      * @param out
-     *            the _out
+     *            the out
      * @param name
      *            the name
      * @param value
