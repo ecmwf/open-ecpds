@@ -2946,17 +2946,19 @@ public final class MasterServer extends ECaccessProvider
      */
     private void updateServerIfChanged(final DataBase base, final TransferServer server, final String newHost,
             final int newPort) {
-        final var hostChanged = !newHost.equals(server.getHost());
+        final var hostChanged = !Objects.equals(newHost, server.getHost());
         final var portChanged = newPort != server.getPort();
         if (!hostChanged && !portChanged) {
             return;
         }
-        _log.debug("ECproxy address change detected: {}:{} -> {}:{}", server.getHost(), server.getPort(), newHost,
-                newPort);
+        _log.info("ECproxy address change detected for TransferServer {}: {}:{} -> {}:{}", server.getName(),
+                server.getHost(), server.getPort(), newHost, newPort);
         if (Cnf.at("Master", "updateECproxyAddressAndPort", false)) {
             server.setHost(newHost);
             server.setPort(newPort);
             base.tryUpdate(server);
+        } else {
+            _log.warn("Automatic update disabled (Master.updateECproxyAddressAndPort=no)");
         }
     }
 
