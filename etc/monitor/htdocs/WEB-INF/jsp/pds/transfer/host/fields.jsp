@@ -413,18 +413,27 @@
 	</tr>
 
 	<tr>
-		<th>Automatic Location</th>
-		<td colspan="2"><html:checkbox
-				title="Try to get the latitude/longitude from the IP address"
-				property="automaticLocation" /></td>
+	    <th>Automatic Location</th>
+	    <td colspan="2">
+	        <html:checkbox
+	            styleId="automaticLocation"
+	            title="Try to get the latitude/longitude from the IP address"
+	            property="automaticLocation" />
+	    </td>
 	</tr>
+
 	<tr>
-		<th>Latitude (&deg;)</th>
-		<td colspan="2"><html:text property="latitude" /></td>
+	    <th>Latitude (&deg;)</th>
+	    <td colspan="2">
+	        <html:text property="latitude" styleId="latitudeField" />
+	    </td>
 	</tr>
+
 	<tr>
-		<th>Longitude (&deg;)</th>
-		<td colspan="2"><html:text property="longitude" /></td>
+	    <th>Longitude (&deg;)</th>
+	    <td colspan="2">
+	        <html:text property="longitude" styleId="longitudeField" />
+	    </td>
 	</tr>
 
 	<tr>
@@ -859,4 +868,16 @@
 			$this.val(value.replace(/[^a-zA-Z0-9-.]/g, ''));
 		}
 	});
+	function toggleLocationFields() {
+		var checkbox = document.getElementById("automaticLocation");
+    	var latitude = document.getElementById("latitudeField");
+    	var longitude = document.getElementById("longitudeField");
+    	var disabled = checkbox.checked;
+    	latitude.disabled = disabled;
+    	longitude.disabled = disabled;
+    }
+    window.onload = function() {
+    	toggleLocationFields(); // initialize on page load
+    	document.getElementById("automaticLocation").addEventListener("change", toggleLocationFields);
+	};
 </script>
