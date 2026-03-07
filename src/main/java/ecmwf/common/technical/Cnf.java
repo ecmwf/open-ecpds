@@ -355,25 +355,22 @@ public final class Cnf {
     }
 
     /**
-     * List at.
-     *
-     * @param group
-     *            the group
-     * @param key
-     *            the key
-     *
-     * @return the vector
+     * Returns the comma-separated values stored at (group, key).
      */
     public static List<String> listAt(final String group, final String key) {
-        final List<String> params = new ArrayList<>();
+        return listAt(group, key, new String[0]);
+    }
+
+    /**
+     * Returns the comma-separated values stored at (group, key), or the provided default values if the key is not
+     * present.
+     */
+    public static List<String> listAt(final String group, final String key, final String... defaultValues) {
         final var values = at(group, key);
-        if (values != null) {
-            final var tokens = new StringTokenizer(values, ",");
-            while (tokens.hasMoreElements()) {
-                params.add(tokens.nextToken());
-            }
+        if (values == null || values.isBlank()) {
+            return new ArrayList<>(Arrays.asList(defaultValues));
         }
-        return params;
+        return Arrays.stream(values.split(",")).map(String::trim).filter(s -> !s.isEmpty()).toList();
     }
 
     /**
