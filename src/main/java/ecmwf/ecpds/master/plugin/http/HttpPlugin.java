@@ -78,6 +78,7 @@ import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.eclipse.jetty.webapp.Configurations;
 import org.eclipse.jetty.webapp.JettyWebXmlConfiguration;
 import org.eclipse.jetty.webapp.WebAppContext;
+import org.eclipse.jetty.websocket.server.config.JettyWebSocketServletContainerInitializer;
 
 import ecmwf.common.mbean.MBeanManager;
 import ecmwf.common.plugin.PluginEvent;
@@ -130,9 +131,9 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the plugin name.
+     *
+     * @return the plugin name
      */
     @Override
     public String getPluginName() {
@@ -140,9 +141,9 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the version.
+     *
+     * @return the version
      */
     @Override
     public String getVersion() {
@@ -150,9 +151,9 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Start.
+     *
+     * @return true, if successful
      */
     @Override
     public synchronized boolean start() {
@@ -204,6 +205,19 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver {
             monitor.setWar(new File(jettyHome).getAbsolutePath());
             monitor.setExtractWAR(false);
             monitor.addFilter(new FilterHolder(new AccessRestrictionFilter()), "/*", null);
+            JettyWebSocketServletContainerInitializer.configure(monitor, (_, wsContainer) -> {
+                _log.debug("Configuring WebSocket container");
+                wsContainer.setMaxTextMessageSize(1_048_576); // 1 MB
+                wsContainer.addMapping("/ws/ai", (req, _) -> {
+                    _log.debug("WebSocket request from {}", req.getRemoteSocketAddress());
+                    var httpSession = req.getHttpServletRequest().getSession(false);
+                    if (httpSession == null) {
+                        _log.warn("WebSocket connection rejected: no HTTP session");
+                        return null; // reject connection
+                    }
+                    return new AssistantWebSocket(httpSession);
+                });
+            });
             final var sessionHandler = monitor.getSessionHandler();
             sessionHandler.setMaxInactiveInterval(-1);
             final var cookieconfig = sessionHandler.getSessionCookieConfig();
@@ -232,7 +246,7 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver {
             rewrite.addRule(getRule("*", "X-XSS-Protection", "1; mode=block"));
             rewrite.addRule(getRule("*", "X-Content-Type-Options", "nosniff"));
             rewrite.addRule(getRule("*", "Content-Security-Policy",
-                    "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob:; style-src 'self' 'unsafe-inline';"));
+                    "script-src 'self' 'unsafe-inline' blob:; style-src 'self' 'unsafe-inline';"));
             rewrite.addRule(getRule("*", "X-Frame-Options", "SAMEORIGIN"));
             rewrite.addRule(getRule("*", "Strict-Transport-Security", "max-age=31536000;includeSubDomains"));
             // Add all the handlers to the server!
@@ -457,9 +471,10 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Register event handler.
+     *
+     * @param eventHandler
+     *            the event handler
      */
     @Override
     public void registerEventHandler(final EventHandler eventHandler) {
@@ -472,7 +487,7 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver {
      * @param initialiseEventHandler
      *            the initialise event handler
      *
-     * @throws java.rmi.RemoteException
+     * @throws RemoteException
      *             the remote exception
      */
     public void waitForMasterConnection(final boolean initialiseEventHandler) throws RemoteException {
@@ -514,8 +529,6 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Stop.
      */
     @Override
@@ -537,9 +550,17 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the attribute.
+     *
+     * @param attributeName
+     *            the attribute name
+     *
+     * @return the attribute
+     *
+     * @throws AttributeNotFoundException
+     *             the attribute not found exception
+     * @throws MBeanException
+     *             the MBean exception
      */
     @Override
     public Object getAttribute(final String attributeName) throws AttributeNotFoundException, MBeanException {
@@ -578,9 +599,9 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Gets the MBean info.
+     *
+     * @return the MBean info
      */
     @Override
     public MBeanInfo getMBeanInfo() {
@@ -621,9 +642,21 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Invoke.
+     *
+     * @param operationName
+     *            the operation name
+     * @param params
+     *            the params
+     * @param signature
+     *            the signature
+     *
+     * @return the object
+     *
+     * @throws NoSuchMethodException
+     *             the no such method exception
+     * @throws MBeanException
+     *             the MBean exception
      */
     @Override
     public Object invoke(final String operationName, final Object[] params, final String[] signature)
@@ -643,9 +676,10 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Handle.
+     *
+     * @param event
+     *            the event
      */
     @Override
     public void handle(final PluginEvent<?> event) {

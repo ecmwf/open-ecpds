@@ -25,6 +25,11 @@ RUN dnf install -y yum-utils && \
     dnf install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin && \
     dnf clean all
 
+# Declare build argument for Ollama model names
+ENV OLLAMA_FAST_MODEL_NAME=qwen2.5:7b-instruct-q4_K_M
+ENV OLLAMA_DEEP_MODEL_NAME=llama3.1:70b-instruct-q4_K_M
+ENV OLLAMA_EMBD_MODEL_NAME=mxbai-embed-large
+
 # Install SDKMAN for GraalVM and Java
 ENV SDKMAN_DIR=/root/.sdkman
 ENV SDKMAN_JDK=25-graal

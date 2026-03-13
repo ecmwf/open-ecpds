@@ -42,10 +42,10 @@ DOCKER_VERSION := $(shell $(DOCKER) --version)
 HTTPS_ACCESS := $(shell curl -s --max-time 2 -I https://google.com | sed 's/^[^ ]*  *\([0-9]\).*/\1/; 1q')
 
 # Output the help for each task
-.PHONY: help all get-rpms get-licenses build-db build images bk-images rm-images clean .clean info
+.PHONY: help all get-rpms get-licenses build-db build-ai build-backend build images bk-images rm-images clean .clean info
 
 help: ## Show this help message
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-15s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-14s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 # Display help by default
 .DEFAULT_GOAL := help
@@ -73,17 +73,20 @@ get-licenses: ## Get the licenses for the java image
 	cp -fr $(LICENSES_DIR)/licenses* ecpds/java/.
 	cp -f ../AUTHORS  ../LICENSE.txt ../NOTICE ../VERSION ecpds/java/.
 
-build-db: .https-access ## Build database only for VS Code and Eclipse debugging/running
+build-db: .https-access ## Build database image for VS Code and Eclipse debugging/running
 	@$(MAKE) .build app=database tag=$(TAG)
 
-build: build-db ## Build database, Java, and service images
+build-ai: .https-access ## Build AI images for VS Code and Eclipse debugging/running
+	@$(MAKE) .build app=ai tag=$(TAG)
+
+build: build-db build-ai ## Build database, AI, Java, and service images
 	@$(MAKE) .build app=java tag=graalvm
 	@$(MAKE) .build app=mover tag=$(TAG)
 	@$(MAKE) .build app=master tag=$(TAG)
 	@$(MAKE) .build app=monitor tag=$(TAG)
 
 .build: # Build the image (args: app, tag)
-	$(DOCKER) build $(BUILD_OPTS) --build-arg SDKMAN_JDK=$(SDKMAN_JDK) --build-arg TAG=$(tag) --label "app=$(app)" --label "tag=$(tag)" -t ecpds/$(app):$(tag) ecpds/$(app)
+	$(DOCKER) build $(BUILD_OPTS) --build-arg SDKMAN_JDK=$(SDKMAN_JDK) --build-arg OLLAMA_FAST_MODEL_NAME=$(OLLAMA_FAST_MODEL_NAME) --build-arg OLLAMA_DEEP_MODEL_NAME=$(OLLAMA_DEEP_MODEL_NAME) --build-arg OLLAMA_EMBD_MODEL_NAME=$(OLLAMA_EMBD_MODEL_NAME) --build-arg TAG=$(tag) --label "app=$(app)" --label "tag=$(tag)" -t ecpds/$(app):$(tag) ecpds/$(app)
 
 images: ## List images
 	@$(DOCKER) images --format "{{.ID}}@{{.Repository}}:{{.Tag}}" | grep 'ecpds/$(app)' | grep ':$(tag)' | awk -F'[@/]' '{print $$1 "@" $$(NF-1)":"$$NF}' | sed 's/:/-/g' | egrep -v '\-latest$$' | uniq
@@ -113,6 +116,7 @@ login: .checkcr ## Log in to the CR registry (according to '../.settings/.cr-cre
 
 push: .checkcr ## Push images to CR
 	@$(MAKE) .push app=database tag=$(TAG)
+	@$(MAKE) .push app=ai tag=$(TAG)
 	@$(MAKE) .push app=mover tag=$(TAG)
 	@$(MAKE) .push app=master tag=$(TAG)
 	@$(MAKE) .push app=monitor tag=$(TAG)

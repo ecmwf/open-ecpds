@@ -556,6 +556,11 @@
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
+				<groupId>org.jetbrains.kotlin</groupId>
+				<artifactId>kotlin-stdlib</artifactId>
+				<version>1.9.22</version>
+			</dependency>
+			<dependency>
 				<groupId>com.google.cloud</groupId>
 				<artifactId>libraries-bom</artifactId>
 				<version>26.77.0</version>
@@ -775,6 +780,16 @@
 			<version>10.0.25</version>
 		</dependency>
 		<dependency>
+			<groupId>org.eclipse.jetty.websocket</groupId>
+			<artifactId>websocket-jetty-server</artifactId>
+			<version>10.0.25</version>
+		</dependency>
+		<dependency>
+			<groupId>org.eclipse.jetty.websocket</groupId>
+			<artifactId>websocket-jetty-api</artifactId>
+			<version>10.0.25</version>
+		</dependency>
+		<dependency>
 			<groupId>org.apache.wink</groupId>
 			<artifactId>wink-server</artifactId>
 			<version>1.4</version>
@@ -911,7 +926,6 @@
 			<artifactId>jackson-all</artifactId>
 			<version>1.9.11</version>
 		</dependency>
-
 		<dependency>
 			<groupId>com.hivemq</groupId>
 			<artifactId>hivemq-community-edition-embedded</artifactId>
@@ -942,18 +956,49 @@
 			<artifactId>jsoup</artifactId>
 			<version>1.20.1</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.eclipse.paho</groupId>
 			<artifactId>org.eclipse.paho.mqttv5.client</artifactId>
 			<version>1.2.5</version>
 		</dependency>
-
 		<dependency>
 			<groupId>com.github.alexmojaki</groupId>
 			<artifactId>s3-stream-upload</artifactId>
 			<version>2.2.4</version>
 		</dependency>
-
+		<dependency>
+			<groupId>dev.langchain4j</groupId>
+			<artifactId>langchain4j</artifactId>
+			<version>0.35.0</version>
+		</dependency>
+		<dependency>
+			<groupId>dev.langchain4j</groupId>
+			<artifactId>langchain4j-core</artifactId>
+			<version>0.35.0</version>
+		</dependency>
+		<dependency>
+			<groupId>dev.langchain4j</groupId>
+			<artifactId>langchain4j-ollama</artifactId>
+			<version>0.35.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.lucene</groupId>
+			<artifactId>lucene-core</artifactId>
+			<version>9.10.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.lucene</groupId>
+			<artifactId>lucene-queryparser</artifactId>
+			<version>9.10.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.lucene</groupId>
+			<artifactId>lucene-analysis-common</artifactId>
+			<version>9.10.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.jetbrains.kotlin</groupId>
+			<artifactId>kotlin-stdlib</artifactId>
+		</dependency>
 	</dependencies>
 </project>

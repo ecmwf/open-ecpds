@@ -21,6 +21,7 @@ IMAGE_NAME := node-$(PROJECT_NAME)-dev
 CONTAINER_NAME := running-$(PROJECT_NAME)-dev
 WORKDIR := /workspaces/$(PROJECT_NAME)
 DB_DATA_DIR := run/var/lib/ecpds/database
+AI_DATA_DIR := run/var/lib/ecpds/ia
 
 # Extract the tag number from the Maven file
 VERSION=$(shell grep '<version>' pom.xml | head -n 1 | sed 's/.*>\(.*\)<.*/\1/')
@@ -47,7 +48,7 @@ DOCKER_VERSION = $(shell $(DOCKER) --version)
 # Default target
 .PHONY: help
 help: ## Show this help message (*=outside **=inside the development container)
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-12s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-14s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 # Check if inside or outside the development container
 is-dev-container = \
@@ -74,7 +75,7 @@ dev-container-exists = \
   fi
 
 # Conditional targets based on the environment
-.PHONY: dev .dev-cntnr .run login rm-dev get-geodb get-licenses build clean info
+.PHONY: dev .dev-cntnr .run login rm-dev get-geodb get-licenses build start-db stop-db start-ai stop-ai start-backend stop-backend clean info
 dev: .dev-cntnr .run login ## Build, run and login into the development container (*)
 
 .dev-cntnr: ## Build the development container (*)
@@ -126,8 +127,8 @@ build: ## Compile java sources into JARs, create RPMs and Docker images (**)
 	@mvn package
 	@cd docker && $(MAKE) all
 
-start-db: ## Build and run the database for VS Code and Eclipse debugging/running
-	@if [ -d $(DB_DATA_DIR)/mysql ] && [ -d $(DB_DATA_DIR)/ecpds ]; then \
+start-db: ## Build and run the database service for VS Code and Eclipse debugging/running
+	@if [ -d "$(DB_DATA_DIR)/mysql" ] && [ -d "$(DB_DATA_DIR)/ecpds" ]; then \
 		echo "WARNING: A database already exists in '$(DB_DATA_DIR)'."; \
 		echo "If you keep it, the SQL initial script will NOT be executed."; \
 		read -p "Delete existing database data and reinitialize? (y/N) " answer; \
@@ -141,8 +142,34 @@ start-db: ## Build and run the database for VS Code and Eclipse debugging/runnin
 	@cd docker && $(MAKE) build-db
 	@cd run/bin/ecpds && $(MAKE) up container=database
 
-stop-db: ## Stop the database
-	@cd run/bin/ecpds && $(MAKE) down
+stop-db: ## Stop the database service
+	@cd run/bin/ecpds && $(MAKE) down container=database
+
+start-ai: ## Build and run the AI service for VS Code and Eclipse debugging/running
+	@if [ -d "$(AI_DATA_DIR)" ] && find "$(AI_DATA_DIR)" -mindepth 1 -print -quit | grep -q .; then \
+		echo "WARNING: AI data already exists in '$(AI_DATA_DIR)'."; \
+		echo "If you keep it, preloaded models will NOT be pulled again."; \
+		read -p "Delete existing AI data and reinitialize? (y/N) " answer; \
+		if [ "$$answer" = "y" ] || [ "$$answer" = "Y" ]; then \
+			echo "Deleting existing AI data..."; \
+			rm -rf $(AI_DATA_DIR)/*; \
+		else \
+			echo "Keeping existing AI data..."; \
+		fi \
+	fi
+	@cd docker && $(MAKE) build-ai
+	@cd run/bin/ecpds && $(MAKE) up container=ai
+
+stop-ai: ## Stop the AI service
+	@cd run/bin/ecpds && $(MAKE) down container=ai
+
+start-backend: ## Build and run both database and AI services for VS Code and Eclipse debugging/running
+	@$(MAKE) start-db
+	@$(MAKE) start-ai
+
+stop-backend: ## Stop both database and AI services
+	@$(MAKE) stop-ai
+	@$(MAKE) stop-db
 
 clean: ## Stop containers, remove images, JARs, RPMs and dependencies (**)
 	@$(call is-dev-container,"",inside)
