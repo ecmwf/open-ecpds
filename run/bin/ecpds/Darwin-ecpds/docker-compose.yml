@@ -32,6 +32,23 @@ services:
     networks:
       - backbone
 
+  # The AI backend (Ollama) provides language model capabilities for OpenECPDS
+  ai:
+	profiles: ["ai"]   # <-- disabled unless profile is enabled
+    container_name: ai
+    hostname: ecpds-ai
+    image: ${ECPDS_REPOSITORY:-ecpds}/ai:${TAG:-latest}
+    restart: unless-stopped
+    ports:
+      - "11434:11434" # Ollama API port
+    environment:
+      # Optional: limit memory/threads if desired
+      OLLAMA_MAX_MEMORY: 10g
+    volumes:
+      - "${ECPDS_ROOT_PATH:-}/var/lib/ecpds/ai:/var/lib/ai" # persistent models & metadata
+    networks:
+      - backbone
+
   # The OpenECPDS Master-Server (backend) implements the business logic of the application
   # Also check the following configuration file: 'etc/ecpds/master/ecmwf.properties'
   master:

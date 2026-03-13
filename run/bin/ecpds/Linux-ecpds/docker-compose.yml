@@ -26,6 +26,20 @@ services:
       - "${ECPDS_ROOT_PATH:-}/var/lib/ecpds/database:/var/lib/mysql"
       - "${ECPDS_ROOT_PATH:-}/etc/ecpds/database:/etc/mysql/conf.d"
 
+  # The AI backend (Ollama) provides language model capabilities for OpenECPDS
+  ai:
+	profiles: ["ai"]   # <-- disabled unless profile is enabled
+    container_name: ai
+    hostname: ecpds-ai
+    network_mode: host
+    image: ${ECPDS_REPOSITORY:-ecpds}/ai:${TAG:-latest}
+    restart: unless-stopped
+    environment:
+      # Optional: limit memory/threads if desired
+      OLLAMA_MAX_MEMORY: 10g
+    volumes:
+      - "${ECPDS_ROOT_PATH:-}/var/lib/ecpds/ai:/var/lib/ai" # persistent models & metadata
+
   # The ECPDS Master-Server (backend) implements the business logic of the application
   master:
     container_name: master
