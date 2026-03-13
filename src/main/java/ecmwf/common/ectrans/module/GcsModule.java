@@ -58,6 +58,7 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_SCHEME;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_SSL_VALIDATION;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_CHUNK_SIZE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_URL;
+import static ecmwf.common.text.Util.isEmpty;
 import static ecmwf.common.text.Util.isNotEmpty;
 
 import java.io.ByteArrayOutputStream;
@@ -743,10 +744,10 @@ public final class GcsModule extends TransferModule {
      */
     @Override
     public String[] listAsStringArray(final String directory, final String pattern) throws IOException {
-        _log.debug("listAsStringArray: {},{}", directory, pattern);
+        _log.debug("listAsStringArray{}{}", isEmpty(directory) ? "" : " " + directory,
+                isEmpty(pattern) ? "" : " (" + pattern + ")");
         setStatus("LIST");
         final List<String> list = new ArrayList<>();
-
         list(list::add, directory, pattern);
         return list.toArray(new String[list.size()]);
     }
