@@ -145,7 +145,11 @@ clean: check-db down .clean-log .clean-lib .clean-tmp .clean-kml .fix-perms ## R
 	cd ${LOCAL_ROOT_PATH}/etc/ecpds ; chmod -R 755 database/*
 
 logs: check-yaml ## View output from a container (arg: container)
-	@$(COMPOSE) -f ${DOCKER_HOST_OS}-ecpds/docker-compose.yml logs $(container)
+	@TERM=dumb NO_COLOR=1 $(COMPOSE) -f ${DOCKER_HOST_OS}-ecpds/docker-compose.yml logs --no-color --no-log-prefix $(container)
+
+prune: ## Remove unused data (stopped containers, unused networks, and volumes)
+	@$(DOCKER) system prune -f
+	@$(DOCKER) volume prune -f
 
 ps: check-yaml ## List running containers
 	@$(COMPOSE) -f ${DOCKER_HOST_OS}-ecpds/docker-compose.yml ps
