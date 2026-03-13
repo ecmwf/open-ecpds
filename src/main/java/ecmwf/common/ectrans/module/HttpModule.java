@@ -1467,13 +1467,10 @@ public final class HttpModule extends TransferModule {
      */
     @Override
     public String[] listAsStringArray(final String directory, final String pattern) throws IOException {
-        final var resultList = new ProcessEntryAsList();
-        if (_log.isDebugEnabled()) {
-            _log.debug("List{}{}{}", !directory.isEmpty() ? " " + directory : "",
-                    isNotEmpty(pattern) ? " (" + pattern + ")" : "",
-                    getSetup().getBoolean(HOST_HTTP_MQTT_MODE) ? " (MQTT)" : "");
-        }
+        _log.debug("listAsStringArray{}{}", isEmpty(directory) ? "" : " " + directory,
+                isEmpty(pattern) ? "" : " (" + pattern + ")");
         setStatus("LIST");
+        final var resultList = new ProcessEntryAsList();
         manager = getSetup().getBoolean(HOST_HTTP_FTP_LIKE)
                 ? new ExecutorManager<>(getSetup().getInteger(HOST_HTTP_LIST_MAX_WAITING),
                         getSetup().getInteger(HOST_HTTP_LIST_MAX_THREADS))

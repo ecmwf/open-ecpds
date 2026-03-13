@@ -44,6 +44,7 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_AZURE_SCHEME;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_AZURE_URL;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_AZURE_USER_ASSIGNED_CLIENT_ID;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_AZURE_USE_MD5;
+import static ecmwf.common.text.Util.isEmpty;
 import static ecmwf.common.text.Util.isNotEmpty;
 
 import java.io.BufferedInputStream;
@@ -831,7 +832,8 @@ public final class AzureModule extends TransferModule {
      */
     @Override
     public String[] listAsStringArray(final String directory, final String pattern) throws IOException {
-        _log.debug("List {}{}", directory, pattern != null ? " (" + pattern + ")" : "");
+        _log.debug("listAsStringArray{}{}", isEmpty(directory) ? "" : " " + directory,
+                isEmpty(pattern) ? "" : " (" + pattern + ")");
         setStatus("LIST");
         final List<String> list = new ArrayList<>();
         list(list::add, directory, pattern);

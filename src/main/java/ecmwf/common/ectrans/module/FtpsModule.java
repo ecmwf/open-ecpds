@@ -64,6 +64,7 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_FTPS_USESUFFIX;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_FTPS_USETMP;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_FTPS_USE_APPEND;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_FTPS_USE_NOOP;
+import static ecmwf.common.text.Util.isEmpty;
 import static ecmwf.common.text.Util.isNotEmpty;
 
 import java.io.ByteArrayInputStream;
@@ -775,12 +776,12 @@ public final class FtpsModule extends TransferModule {
      */
     @Override
     public String[] listAsStringArray(final String directory, final String pattern) throws IOException {
-        final var notEmpty = isNotEmpty(directory);
-        _log.debug("List{}", notEmpty ? " " + directory : "");
+        _log.debug("listAsStringArray{}{}", isEmpty(directory) ? "" : " " + directory,
+                isEmpty(pattern) ? "" : " (" + pattern + ")");
         setStatus("LIST");
         final List<String> list = new ArrayList<>();
         var i = 0;
-        for (final String line : ftpList(notEmpty ? directory : "")) {
+        for (final String line : ftpList(isNotEmpty(directory) ? directory : "")) {
             if (_log.isDebugEnabled() && getDebug()) {
                 _log.debug("List[{}] {}", i++, line.trim());
             }

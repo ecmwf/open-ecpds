@@ -772,7 +772,8 @@ public final class AmazonS3Module extends TransferModule {
      */
     @Override
     public String[] listAsStringArray(final String directory, final String pattern) throws IOException {
-        _log.debug("listAsStringArray: {},{}", directory, pattern);
+        _log.debug("listAsStringArray{}{}", isEmpty(directory) ? "" : " " + directory,
+                isEmpty(pattern) ? "" : " (" + pattern + ")");
         setStatus("LIST");
         final List<String> list = new ArrayList<>();
         list(list::add, directory, pattern);

@@ -1193,8 +1193,8 @@ public class JSftpModule extends TransferModule {
      */
     @Override
     public String[] listAsStringArray(final String directory, final String pattern) throws IOException {
-        _log.debug("List{}{}", !directory.isEmpty() ? " " + directory : "",
-                pattern != null ? " (" + pattern + ")" : "");
+        _log.debug("listAsStringArray{}{}", isEmpty(directory) ? "" : " " + directory,
+                isEmpty(pattern) ? "" : " (" + pattern + ")");
         setStatus("LIST");
         final List<String> resultList = Collections.synchronizedList(new ArrayList<>());
         final ExecutorManager<ListThread> manager = getSetup().getBoolean(HOST_SFTP_LIST_RECURSIVE)
