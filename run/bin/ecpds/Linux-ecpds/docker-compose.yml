@@ -28,7 +28,7 @@ services:
 
   # The AI backend (Ollama) provides language model capabilities for OpenECPDS
   ai:
-	profiles: ["ai"]   # <-- disabled unless profile is enabled
+    profiles: ["ai"]   # <-- disabled unless profile is enabled
     container_name: ai
     hostname: ecpds-ai
     network_mode: host
