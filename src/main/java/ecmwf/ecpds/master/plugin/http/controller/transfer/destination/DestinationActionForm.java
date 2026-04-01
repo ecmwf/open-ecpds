@@ -1176,7 +1176,7 @@ public class DestinationActionForm extends ECMWFActionForm {
     public Collection<Destination> getAliases() {
         try {
             if (destination != null)
-                destination.getAliases();
+                return destination.getAliases();
         } catch (final TransferException e) {
             log.error("Problem getting Aliases", e);
         }
