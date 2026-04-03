@@ -15,36 +15,31 @@
 <c:if test="${empty isDelete}">
 
 	<style>
-#userData {
-	width: 550px;
-	height: 375px;
-	resize: both;
+.ace-panel {
+	max-width: 100%;
 	overflow: hidden;
 	border: solid 1px lightgray;
+	border-radius: 4px;
 	margin-top: 8px;
-	margin-bottom: 8px;
+	margin-bottom: 4px;
 }
-
-#authorizedSSHKeys {
-	width: 550px;
-	height: 375px;
-	resize: both;
-	overflow: hidden;
-	border: solid 1px lightgray;
-	margin-top: 8px;
-	margin-bottom: 8px;
-}
-
 .scrollable-tab {
-	width: 550px;
-	height: 375px;
-	resize: both;
-	overflow: hidden;
+	height: 300px;
+	overflow-y: auto;
 	border: solid 1px lightgray;
-	margin-top: 8px;
-	margin-bottom: 8px;
-  	overflow-y: scroll;
+	border-radius: 4px;
+	padding: 8px;
 }
+table.fields {
+	width: 100%;
+	min-width: 400px;
+}
+table.fields > tbody > tr > th {
+	width: 1%;
+	white-space: nowrap;
+}
+.assoc-card .card-header { display:flex; align-items:center; gap:.4rem; padding:.5rem .75rem; background:#f8f9fa; font-size:.85rem; }
+.assoc-chip { display:inline-flex; align-items:center; gap:.25rem; background:#e9ecef; border-radius:1rem; padding:.2rem .6rem; font-size:.8rem; margin:.15rem; }
 </style>
 
 	<table border="0">
@@ -73,84 +68,182 @@
 					
 					<tr>
 						<td>&nbsp;</td>
-					</tr>					
-					
+					</tr>
+
 					<tr>
 						<th>TOTP authentication</th>
 						<td><c:if test="${incoming.isSynchronized}">yes</c:if> <c:if
 								test="${!incoming.isSynchronized}">no</c:if></td>
 					</tr>
 
-					<tr>
-						<td>&nbsp;</td>
-					</tr>
+				</table></td>
+			<td width="25"></td>
+			<td valign="top">
+				<div class="row g-2 mt-1" style="max-width:480px">
 
+				  <div class="col-12">
+				    <div class="card assoc-card">
+				      <div class="card-header">
+				        <i class="bi bi-shield-check text-secondary"></i>
+				        <strong>Data Policies</strong>
+				      </div>
+				      <div class="card-body p-2">
+				        <c:choose>
+				          <c:when test="${empty incoming.associatedIncomingPolicies}">
+				            <p class="text-muted small mb-0"><em>No data policies assigned.</em></p>
+				          </c:when>
+				          <c:otherwise>
+				            <div class="d-flex flex-wrap">
+				              <c:forEach var="policy" items="${incoming.associatedIncomingPolicies}">
+				                <span class="assoc-chip">
+				                  <a href="<bean:message key="policy.basepath"/>/${policy.id}" title="${policy.comment}" class="text-decoration-none text-dark">${policy.id}</a>
+				                </span>
+				              </c:forEach>
+				            </div>
+				          </c:otherwise>
+				        </c:choose>
+				      </div>
+				    </div>
+				  </div>
+
+				  <div class="col-12">
+				    <div class="card assoc-card">
+				      <div class="card-header">
+				        <i class="bi bi-geo-alt text-secondary"></i>
+				        <strong>Destinations</strong>
+				      </div>
+				      <div class="card-body p-2">
+				        <c:choose>
+				          <c:when test="${empty incoming.associatedDestinations}">
+				            <p class="text-muted small mb-0"><em>No destinations assigned.</em></p>
+				          </c:when>
+				          <c:otherwise>
+				            <div class="d-flex flex-wrap">
+				              <c:forEach var="destination" items="${incoming.associatedDestinations}">
+				                <span class="assoc-chip">
+				                  <a href="<bean:message key="destination.basepath"/>/${destination.name}" title="${destination.comment}" class="text-decoration-none text-dark">${destination.name}</a>
+				                </span>
+				              </c:forEach>
+				            </div>
+				          </c:otherwise>
+				        </c:choose>
+				      </div>
+				    </div>
+				  </div>
+
+				  <div class="col-12">
+				    <div class="card assoc-card">
+				      <div class="card-header">
+				        <i class="bi bi-gear text-secondary"></i>
+				        <strong>Permissions</strong>
+				      </div>
+				      <div class="card-body p-2">
+				        <c:choose>
+				          <c:when test="${empty incoming.associatedOperations}">
+				            <p class="text-muted small mb-0"><em>No permissions assigned.</em></p>
+				          </c:when>
+				          <c:otherwise>
+				            <div class="d-flex flex-wrap">
+				              <c:forEach var="operation" items="${incoming.associatedOperations}">
+				                <span class="assoc-chip">
+				                  <span title="${operation.comment}">${operation.name}</span>
+				                </span>
+				              </c:forEach>
+				            </div>
+				          </c:otherwise>
+				        </c:choose>
+				      </div>
+				    </div>
+				  </div>
+
+				  <div class="col-12">
+				    <div class="card assoc-card">
+				      <div class="card-header">
+				        <i class="bi bi-plug text-secondary"></i>
+				        <strong>Current Sessions</strong>
+				      </div>
+				      <div class="card-body p-2">
+				        <c:choose>
+				          <c:when test="${empty incoming.incomingConnections}">
+				            <p class="text-muted small mb-0"><em>No active sessions.</em></p>
+				          </c:when>
+				          <c:otherwise>
+				            <div class="d-flex flex-wrap">
+				              <c:forEach var="incomingSession" items="${incoming.incomingConnections}">
+				                <span class="assoc-chip">
+				                  <span title="Mover: ${incomingSession.dataMoverName} | Duration: ${incomingSession.formatedDuration}">${incomingSession.protocol} · ${incomingSession.remoteIpAddress}</span>
+				                </span>
+				              </c:forEach>
+				            </div>
+				          </c:otherwise>
+				        </c:choose>
+				      </div>
+				    </div>
+				  </div>
+
+				</div>
+			</td>
+		</tr>
+		<tr>
+			<td colspan="3">
+				<table class="fields">
 					<tr>
 						<th>Options</th>
-						<td>
-							<div id="tabs">
-								<ul>
-									<li><a href="#tabs-1">Properties</a></li>
-									<li><a href="#tabs-2">Authorized SSH Keys</a></li>
-									<li><a href="#tabs-3">Help</a></li>
-								</ul>
-								<div id="tabs-1">
-									<pre id="userData">
-										<c:out value="${incoming.properties}" />
-									</pre>
-									<textarea id="userData" name="userData" style="display: none;"></textarea>
+						<td colspan="2">
+							<div class="accordion" id="incomingViewOptionsAccordion">
+								<div class="accordion-item">
+									<h2 class="accordion-header" id="incomingViewAccHeadProperties">
+										<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#incomingViewAccProperties" aria-expanded="false" aria-controls="incomingViewAccProperties">
+											Properties
+										</button>
+									</h2>
+									<div id="incomingViewAccProperties" class="accordion-collapse collapse" aria-labelledby="incomingViewAccHeadProperties" data-bs-parent="#incomingViewOptionsAccordion">
+										<div class="accordion-body p-2">
+											<div class="ace-panel">
+												<pre id="userData"><c:out value="${incoming.properties}" /></pre>
+												<textarea id="userData" name="userData" style="display: none;"></textarea>
+											</div>
+										</div>
+									</div>
 								</div>
-								<div id="tabs-2">
-									<pre id="authorizedSSHKeys">
-										<c:out value="${incoming.authorizedSSHKeys}" />
-									</pre>
-									<textarea id="authorizedSSHKeys" name="authorizedSSHKeys"
-										style="display: none;"></textarea>
+								<div class="accordion-item">
+									<h2 class="accordion-header" id="incomingViewAccHeadSSHKeys">
+										<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#incomingViewAccSSHKeys" aria-expanded="false" aria-controls="incomingViewAccSSHKeys">
+											Authorized SSH Keys
+										</button>
+									</h2>
+									<div id="incomingViewAccSSHKeys" class="accordion-collapse collapse" aria-labelledby="incomingViewAccHeadSSHKeys" data-bs-parent="#incomingViewOptionsAccordion">
+										<div class="accordion-body p-2">
+											<div class="ace-panel">
+												<pre id="authorizedSSHKeys"><c:out value="${incoming.authorizedSSHKeys}" /></pre>
+												<textarea id="authorizedSSHKeys" name="authorizedSSHKeys" style="display: none;"></textarea>
+											</div>
+										</div>
+									</div>
 								</div>
-								<div id="tabs-3" class="scrollable-tab">
+								<div class="accordion-item">
+									<h2 class="accordion-header" id="incomingViewAccHeadHelp">
+										<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#incomingViewAccHelp" aria-expanded="false" aria-controls="incomingViewAccHelp">
+											Help
+										</button>
+									</h2>
+									<div id="incomingViewAccHelp" class="accordion-collapse collapse" aria-labelledby="incomingViewAccHeadHelp" data-bs-parent="#incomingViewOptionsAccordion">
+										<div class="accordion-body p-2">
+											<div id="incomingViewHelpContent" class="scrollable-tab"></div>
+										</div>
+									</div>
 								</div>
 							</div>
 						</td>
 					</tr>
-				</table></td>
-			<td width="25"></td>
-			<td valign="top"><display:table id="policy"
-					name="${incoming.associatedIncomingPolicies}" requestURI=""
-					class="listing">
-					<display:column title="Name">
-						<a href="<bean:message key="policy.basepath"/>/${policy.id}">${policy.id}</a>
-					</display:column>
-					<display:column property="comment" />
-					<display:caption>Associated Data Policies</display:caption>
-				</display:table> <display:table id="destination"
-					name="${incoming.associatedDestinations}" requestURI=""
-					class="listing">
-					<display:column title="Name">
-						<a
-							href="<bean:message key="destination.basepath"/>/${destination.name}">${destination.name}</a>
-					</display:column>
-					<display:column property="comment" />
-					<display:caption>Associated Destinations</display:caption>
-				</display:table> <display:table id="operation"
-					name="${incoming.associatedOperations}" requestURI=""
-					class="listing">
-					<display:column title="Name">${operation.name}</display:column>
-					<display:column property="comment" />
-					<display:caption>Associated Permissions</display:caption>
-				</display:table> <display:table id="incomingSession"
-					name="${incoming.incomingConnections}" requestURI=""
-					class="listing">
-					<display:column title="Mover Name">${incomingSession.dataMoverName}</display:column>
-					<display:column title="Protocol">${incomingSession.protocol}</display:column>
-					<display:column title="Remote Address">${incomingSession.remoteIpAddress}</display:column>
-					<display:column title="Duration">${incomingSession.formatedDuration}</display:column>
-					<display:caption>Current Sessions</display:caption>
-				</display:table></td>
+				</table>
+			</td>
 		</tr>
 	</table>
 
 	<script>
 		var editorProperties = getEditorProperties(true, false, "userData", "crystal");
+		editorProperties.setOptions({minLines: 10, maxLines: 20});
 		
 		// Get the completions from the bean!      		
     	var completions = [
@@ -159,7 +252,7 @@
 		
     	// Lets' populate the help tab!
     	$(document).ready(function() {
-    		$('#tabs-3').html(getHelpHtmlContent(completions, 'Available Options for this Data User'));
+    		$('#incomingViewHelpContent').html(getHelpHtmlContent(completions, 'Available Options for this Data User'));
     	});
 
     	// Call the function to process each line
@@ -172,19 +265,37 @@
     	});
 
     	var editorAuthorizedSSHKeys = getEditorProperties(true, false, "authorizedSSHKeys", "text");
+		editorAuthorizedSSHKeys.setOptions({minLines: 10, maxLines: 20});
 
-		var textareaAuthorizedSSHKeys = $('textarea[name="authorizedSSHKeys"]');
-		textareaAuthorizedSSHKeys.closest('form').submit(
-				function() {
-					textareaAuthorizedSSHKeys.val(editorAuthorizedSSHKeys
-							.getSession().getValue());
-				});
+		document.getElementById('incomingViewAccProperties').addEventListener('shown.bs.collapse', function() {
+			editorProperties.resize(true);
+		});
+		document.getElementById('incomingViewAccSSHKeys').addEventListener('shown.bs.collapse', function() {
+			editorAuthorizedSSHKeys.resize(true);
+		});
+		var incomingViewHelpBtn = document.querySelector('button[data-bs-target="#incomingViewAccHelp"]');
+		if (incomingViewHelpBtn) {
+			incomingViewHelpBtn.addEventListener('click', function() {
+				setTimeout(function() {
+					if (!document.getElementById('incomingViewAccHelp').classList.contains('show')) return;
+					var line = editorProperties.session.getLine(editorProperties.selection.getCursor().row) || '';
+					line = line.trim();
+					if (line && !line.startsWith('#') && !line.startsWith('//')) {
+						var eqIdx = line.indexOf('=');
+						var paramName = (eqIdx > 0 ? line.substring(0, eqIdx) : line).trim();
+						if (paramName) scrollHelpToParam('incomingViewHelpContent', paramName);
+					}
+				}, 400);
+			});
+		}
 
 		makeResizable(editorProperties);
 		makeResizable(editorAuthorizedSSHKeys);
 
-		$("#tabs").tabs();
-		$("#tabs").tabs("option", "active", 0);
+		window.addEventListener('resize', function() {
+			editorProperties.resize(true);
+			editorAuthorizedSSHKeys.resize(true);
+		});
 	</script>
 </c:if>
 

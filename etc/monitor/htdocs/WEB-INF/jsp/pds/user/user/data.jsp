@@ -23,6 +23,8 @@
 	margin-top: 8px;
 	margin-bottom: 8px;
 }
+.assoc-card .card-header { display:flex; align-items:center; gap:.4rem; padding:.5rem .75rem; background:#f8f9fa; font-size:.85rem; }
+.assoc-chip { display:inline-flex; align-items:center; gap:.25rem; background:#e9ecef; border-radius:1rem; padding:.2rem .6rem; font-size:.8rem; margin:.15rem; }
 </style>
 
 	<table>
@@ -47,7 +49,7 @@
 				<tr>
 					<td>&nbsp;</td>
 				</tr>
-					<tr>
+					<tr style="display:none">
 						<th>Properties</th>
 						<td><pre id="properties">
 								<c:out value="${user.userData}" />
@@ -56,14 +58,29 @@
 					</tr>
 				</table></td>
 			<td width="25"></td>
-			<td valign="top"><display:table id="category"
-					name="${user.categories}" requestURI="" class="listing">
-					<display:column title="Name">
-						<a href="<bean:message key="category.basepath"/>/${category.id}">${category.name}</a>
-					</display:column>
-					<display:column property="description" />
-					<display:caption>Associated Web Categories</display:caption>
-				</display:table></td>
+			<td valign="top">
+				<div class="card assoc-card mt-2">
+				  <div class="card-header">
+				    <i class="bi bi-folder text-secondary"></i>
+				    <strong>Associated Web Categories</strong>
+				  </div>
+				  <div class="card-body p-2">
+				    <c:choose>
+				      <c:when test="${empty user.categories}">
+				        <p class="text-muted small mb-0"><em>No web categories assigned.</em></p>
+				      </c:when>
+				      <c:otherwise>
+				        <div class="d-flex flex-wrap">
+				          <c:forEach var="category" items="${user.categories}">
+				            <span class="assoc-chip">
+				              <a href="<bean:message key="category.basepath"/>/${category.id}" title="${category.description}" class="text-decoration-none text-dark">${category.name}</a>
+				            </span>
+				          </c:forEach>
+				        </div>
+				      </c:otherwise>
+				    </c:choose>
+				  </div>
+				</div></td>
 		</tr>
 
 	</table>

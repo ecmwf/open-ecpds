@@ -1,1 +1,1 @@
-<a href="/"><%=System.getProperty("monitor.nickName")%> Home</a> &gt; <a href="/do/admin">Admin Tasks</a> &gt;
+<nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="/"><i class="bi bi-house-fill"></i></a></li><li class="breadcrumb-item"><a href="/do/admin">Admin Tasks</a></li></ol></nav>

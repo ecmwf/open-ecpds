@@ -31,7 +31,6 @@
 
 <c:if test="${authorized == 'false'}">
   <div class="alert">
-    <span class="closebtn" onclick="parent.history.back();">&times;</span>
     Error retrieving object by key <- Problem searching by key '${destination.name}' <- Destination not found: {${destination.name}}
   </div>
 </c:if>

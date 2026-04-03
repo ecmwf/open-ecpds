@@ -5,157 +5,315 @@
 <%@ taglib uri="/WEB-INF/tld/fn.tld" prefix="fn"%>
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
 
-<style>
-select {
-	padding: 6px 12px 6px 40px;
-}
-</style>
+<%-- Filter form --%>
+<auth:if basePathKey="transferhistory.basepath" paths="/">
+    <auth:then>
+        <form class="mb-3" id="destinationSearchForm">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body py-2 px-3">
+                    <%-- Row 1: main search + type + button --%>
+                    <div class="row g-2 mb-2">
+                        <div class="col-7">
+                            <div class="input-group">
+                                <span class="input-group-text text-muted bg-white"><i class="bi bi-search"></i></span>
+                                <input class="form-control" name="destinationSearch" id="destinationSearch" type="text"
+                                    placeholder="e.g. enabled=yes name=AB? email=*@meteo.ms comment=*test* country=fr options=*mqtt* case=i"
+                                    title="Default search is by name. Use name, comment, country, email, enabled, monitor, backup, forceproxy and options rules."
+                                    value='<c:out value="${destinationSearch}"/>'>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="input-group">
+                                <span class="input-group-text text-muted bg-white"><i class="bi bi-tag"></i></span>
+                                <select class="form-select" name="destinationType" id="destinationType" onchange="form.submit()" title="Filter by Type">
+                                    <c:forEach var="option" items="${typeOptions}">
+                                        <option value="${option.name}" <c:if test="${destinationType == option.name}">selected</c:if>>${option.value}</option>
+                                    </c:forEach>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-2 d-flex gap-1">
+                            <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-search"></i> Search</button>
+                            <button type="button" class="btn btn-outline-secondary px-2"
+                                    data-bs-toggle="collapse" data-bs-target="#destQueryBuilder"
+                                    title="Build query" aria-expanded="false" aria-controls="destQueryBuilder">
+                                <i class="bi bi-sliders2"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <%-- Row 2: secondary filters --%>
+                    <div class="row g-2">
+                        <div class="col-3">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text text-muted bg-white"><i class="bi bi-activity"></i></span>
+                                <select class="form-select form-select-sm" name="destinationStatus" onchange="form.submit()" title="Filter by Status">
+                                    <c:forEach var="option" items="${statusOptions}">
+                                        <option value="${option}" <c:if test="${destinationStatus == option}">selected</c:if>>${option}</option>
+                                    </c:forEach>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text text-muted bg-white"><i class="bi bi-file-zip"></i></span>
+                                <select class="form-select form-select-sm" name="destinationFilter" onchange="form.submit()" title="Filter by Compression">
+                                    <c:forEach var="option" items="${filterOptions}">
+                                        <option value="${option.name}" <c:if test="${destinationFilter == option.name}">selected</c:if>>${option.value}</option>
+                                    </c:forEach>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text text-muted bg-white"><i class="bi bi-diagram-2"></i></span>
+                                <select class="form-select form-select-sm" name="aliases" onchange="form.submit()" title="Aliased From/To">
+                                    <option value="all" <c:if test="${aliases == 'all'}">selected</c:if>>All Destinations</option>
+                                    <option value="to"  <c:if test="${aliases == 'to'}">selected</c:if>>Aliased From ...</option>
+                                    <option value="from" <c:if test="${aliases == 'from'}">selected</c:if>>Aliases To ...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text text-muted bg-white"><i class="bi bi-sort-alpha-down"></i></span>
+                                <select class="form-select form-select-sm" name="sortDirection" onchange="form.submit()" title="Sort Direction">
+                                    <option value="asc"  <c:if test="${sortDirection == 'asc'}">selected</c:if>>Ascending</option>
+                                    <option value="desc" <c:if test="${sortDirection == 'desc'}">selected</c:if>>Descending</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
 
-<table style="width: 800;">
-	<tr>
-		<td><auth:if basePathKey="transferhistory.basepath" paths="/">
-				<auth:then>
-					<form>
-						<table class="ecpdsSearchBox" style="align: left;">
-							<tr>
-								<td colspan="3" style="width: 80%;"><input class="search"
-									name="destinationSearch" type="text"
-									placeholder="e.g. enabled=yes name=AB? email=*@meteo.ms comment=*test* country=fr options=*mqtt* case=i"
-									title="Default search is by name. Conduct extended searches using name, comment, country, email, enabled, monitor, backup, forceproxy and options (Properties & JavaScript) rules."
-									style="width: 100%"
-									value='<c:out value="${destinationSearch}"/>'></td>
-								<td style="width: 20%;"><select name="destinationType"
-									id="destinationType" onchange="form.submit()"
-									title="Sort by Type">
-										<c:forEach var="option" items="${typeOptions}">
-											<option value="${option.name}"
-												<c:if test="${destinationType == option.name}">selected="selected"</c:if>>${option.value}</option>
-										</c:forEach>
-								</select></td>
-							</tr>
-							<tr>
-								<td><select style="width: 100%" name="destinationStatus"
-									onchange="form.submit()" title="Sort by Status">
-										<c:forEach var="option" items="${statusOptions}">
-											<option value="${option}"
-												<c:if test="${destinationStatus == option}">SELECTED</c:if>>${option}</option>
-										</c:forEach>
-								</select></td>
-								<td><select style="width: 100%" name="destinationFilter"
-									onchange="form.submit()" title="Sort by Compression">
-										<c:forEach var="option" items="${filterOptions}">
-											<option value="${option.name}"
-												<c:if test="${destinationFilter == option.name}">SELECTED</c:if>>${option.value}</option>
-										</c:forEach>
-								</select></td>
-								<td><select style="width: 100%" name="aliases"
-									onchange="form.submit()" title="Aliased From/To">
-										<option value="all"
-											<c:if test="${aliases == 'all'}">SELECTED</c:if>>All
-											Destinations</option>
-										<option value="to"
-											<c:if test="${aliases == 'to'}">SELECTED</c:if>>Aliased
-											From ...</option>
-										<option value="from"
-											<c:if test="${aliases == 'from'}">SELECTED</c:if>>Aliases
-											To ...</option>
-								</select></td>
-								<td><select style="width: 100%" name="sortDirection"
-									onchange="form.submit()" title="Ascending/Descending">
-										<option value="asc"
-											<c:if test="${sortDirection == 'asc'}">SELECTED</c:if>>Ascending</option>
-										<option value="desc"
-											<c:if test="${sortDirection == 'desc'}">SELECTED</c:if>>Descending</option>
-								</select></td>
-							</tr>
-						</table>
-					</form>
-				</auth:then>
-			</auth:if></td>
-	</tr>
-</table>
-<table style="width: 100%;">
-	<tr>
-		<c:if test="${empty columns}">
-			<div class="alert">
-				<c:if test="${!hasDestinationSearch}">
-								No Destinations found matching these criteria!<p>
-				</c:if>
-				<c:if test="${hasDestinationSearch}">
-					<c:if test="${!empty getDestinationsError}">
-						  		  Error in your query: ${getDestinationsError}<p>
-					</c:if>
-					<c:if test="${empty getDestinationsError}">
-						No Destinations found matching these criteria! The default search is by Destination name or email address, if the format matches.<p>
-					</c:if>
-						You can conduct an extensive search using the name, comment, country, email, enabled, monitor, backup, forceproxy and options (Properties & JavaScript) rules.<p>
-						For instance: enabled=yes name=des0?_a* email=*@meteo.ms
-						comment=*test* country=fr options=*mqtt* case=i
-					<p>
-					<li>The 'case' option allows 's' for case-sensitive (default)
-						or 'i' for case-insensitive search.
-					<li>Ensure all spaces and equal signs in values are enclosed
-						within double quotes (e.g. "a=b" or "United States").
-					<li>The double quotes symbol (") can be escaped (e.g.
-						"*.file:&#92;"*&#92;"").
-					<li>The wildcard symbol asterisk (*) matches zero or more
-						characters.
-					<li>The wildcard symbol question mark (?) matches exactly one
-						character.
-				</c:if>
-			</div>
-		</c:if>
-		<c:if test="${not empty columns}">
-			<span class="pagebanner">${fn:length(destinations)} items
-				found</span>
-		</c:if>
-		<c:forEach var="column" items="${columns}">
-			<%
-			boolean odd = false;
-			%>
-			<td valign="top">
-				<table class="destinations">
-					<c:forEach var="d" items="${destinations}" begin="${column.name}"
-						end="${column.name + column.value -1}">
-						<tr class='<%=(odd ? "odd" : "even")%>'>
-							<td><img
-								src="/assets/images/flags/micro/${d.countryIso}.png"
-								alt="Flag of ${d.country.name}"
-								title="Flag of ${d.country.name}" vspace="3"></td>
-							<td><c:set var="desName" value="${d.id}" /> <c:if
-									test="${fn:length(d.id) > 35}">
-									<c:set var="desName" value="${fn:substring(desName,0,31)} ..." />
-								</c:if> <c:if test="${d.showInMonitors}">
-									<b><a href="/do/transfer/destination/${d.id}"
-										title="[${d.typeText}] ${d.comment}">${desName}</a></b>
-								</c:if> <c:if test="${not d.showInMonitors}">
-									<i><a href="/do/transfer/destination/${d.id}"
-										title="[${d.typeText}] ${d.id} is currently NOT shown in the Monitor Display">${desName}</a></i>
-								</c:if></td>
-							<td>${d.formattedStatus}</td>
-							<c:if test="${fn:length(destinations) < 200}">
-								<td><c:set var="aliases" value="${d.aliases}" /> <c:if
-										test="${fn:length(aliases) < 3}">
-										<c:forEach var="alias" items="${aliases}">
-											<a title="${alias.id} is an alias for ${d.id}"
-												href="/do/transfer/destination/${alias.id}"><font
-												color="grey">${alias.id}&nbsp;</font></a>
-										</c:forEach>
-									</c:if> <c:if test="${fn:length(aliases) >= 3}">
-										<font color="grey">[${fn:length(aliases)} Aliases]</font>
-									</c:if> <c:if test="${fn:length(aliases) == 0}">
-										<font color="grey">[No Alias]</font>
-									</c:if></td>
-							</c:if>
-						</tr>
-						<%
-						odd = !odd;
-						%>
-					</c:forEach>
-				</table>
-			</td>
-		</c:forEach>
-	</tr>
-</table>
+                    <%-- Query Builder collapse panel --%>
+                    <div class="collapse mt-2" id="destQueryBuilder">
+                        <div class="border rounded p-2 bg-white" style="font-size:0.85rem">
+                            <div class="row g-2 mb-2">
+                                <div class="col-md-4">
+                                    <label class="form-label mb-1 fw-semibold"><code>name=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
+                                    <input type="text" class="form-control form-control-sm" id="dqb_name" placeholder="e.g. dest_*" oninput="dqbPreview()">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label mb-1 fw-semibold"><code>comment=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
+                                    <input type="text" class="form-control form-control-sm" id="dqb_comment" placeholder="e.g. *test*" oninput="dqbPreview()">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label mb-1 fw-semibold"><code>email=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
+                                    <input type="text" class="form-control form-control-sm" id="dqb_email" placeholder="e.g. *@meteo.ms" oninput="dqbPreview()">
+                                </div>
+                            </div>
+                            <div class="row g-2 mb-2">
+                                <div class="col-md-2">
+                                    <label class="form-label mb-1 fw-semibold"><code>country=</code> <span class="text-muted fw-normal">ISO</span></label>
+                                    <input type="text" class="form-control form-control-sm" id="dqb_country" placeholder="e.g. fr" maxlength="10" oninput="dqbPreview()">
+                                </div>
+                                <div class="col-md-5">
+                                    <label class="form-label mb-1 fw-semibold"><code>options=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
+                                    <input type="text" class="form-control form-control-sm" id="dqb_options" placeholder="e.g. *mqtt*" oninput="dqbPreview()">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label mb-1 fw-semibold"><code>case=</code></label>
+                                    <select class="form-select form-select-sm" id="dqb_case" onchange="dqbPreview()">
+                                        <option value="s">Sensitive (default)</option>
+                                        <option value="i">Case-insensitive</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row g-2 mb-2">
+                                <div class="col">
+                                    <label class="form-label mb-1 fw-semibold"><code>enabled</code></label>
+                                    <select class="form-select form-select-sm" id="dqb_enabled" onchange="dqbPreview()">
+                                        <option value="">Any</option><option value="yes">Yes</option><option value="no">No</option>
+                                    </select>
+                                </div>
+                                <div class="col">
+                                    <label class="form-label mb-1 fw-semibold"><code>monitor</code></label>
+                                    <select class="form-select form-select-sm" id="dqb_monitor" onchange="dqbPreview()">
+                                        <option value="">Any</option><option value="yes">Yes</option><option value="no">No</option>
+                                    </select>
+                                </div>
+                                <div class="col">
+                                    <label class="form-label mb-1 fw-semibold"><code>backup</code></label>
+                                    <select class="form-select form-select-sm" id="dqb_backup" onchange="dqbPreview()">
+                                        <option value="">Any</option><option value="yes">Yes</option><option value="no">No</option>
+                                    </select>
+                                </div>
+                                <div class="col">
+                                    <label class="form-label mb-1 fw-semibold"><code>forceproxy</code></label>
+                                    <select class="form-select form-select-sm" id="dqb_forceproxy" onchange="dqbPreview()">
+                                        <option value="">Any</option><option value="yes">Yes</option><option value="no">No</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-5"></div>
+                            </div>
+                            <%-- Live preview + action buttons --%>
+                            <div class="d-flex align-items-center gap-2 pt-1 border-top mt-1">
+                                <i class="bi bi-terminal text-muted flex-shrink-0"></i>
+                                <code class="text-muted flex-grow-1 text-truncate" id="dqb_preview" style="font-size:0.8rem">-- fill in fields above --</code>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="dqbClear()">
+                                    <i class="bi bi-x-circle me-1"></i>Clear
+                                </button>
+                                <button type="button" class="btn btn-sm btn-primary" onclick="dqbApply()">
+                                    <i class="bi bi-check-lg me-1"></i>Apply &amp; Search
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+        <script>
+        function dqbVal(id) { return document.getElementById(id) ? document.getElementById(id).value.trim() : ''; }
+        function dqbQuote(v) { var q=v.indexOf(' ')>=0||v.indexOf('=')>=0||v.indexOf('"')>=0; return q?'"'+v.replace(/"/g,'\\"')+'"':v; }
+        function dqbBuild() {
+            var p = [];
+            ['name','comment','email','country','options'].forEach(function(f) {
+                var v = dqbVal('dqb_' + f); if (v) p.push(f + '=' + dqbQuote(v));
+            });
+            ['enabled','monitor','backup','forceproxy'].forEach(function(f) {
+                var v = dqbVal('dqb_' + f); if (v) p.push(f + '=' + v);
+            });
+            if (dqbVal('dqb_case') === 'i') p.push('case=i');
+            return p.join(' ');
+        }
+        function dqbPreview() {
+            var q = dqbBuild();
+            document.getElementById('dqb_preview').textContent = q || '-- fill in fields above --';
+        }
+        function dqbApply() {
+            document.getElementById('destinationSearch').value = dqbBuild();
+            document.getElementById('destinationSearchForm').submit();
+        }
+        function dqbClear() {
+            ['name','comment','email','country','options'].forEach(function(f) {
+                document.getElementById('dqb_' + f).value = '';
+            });
+            ['enabled','monitor','backup','forceproxy'].forEach(function(f) {
+                document.getElementById('dqb_' + f).value = '';
+            });
+            document.getElementById('dqb_case').value = 's';
+            dqbPreview();
+        }
+        </script>
+    </auth:then>
+</auth:if>
 
-<br>
+<%-- No results --%>
+<c:if test="${empty columns}">
+    <div class="alert">
+        <c:if test="${!hasDestinationSearch}">
+            No Destinations found matching these criteria.
+        </c:if>
+        <c:if test="${hasDestinationSearch}">
+            <c:if test="${!empty getDestinationsError}">
+                <strong>Error in your query:</strong> ${getDestinationsError}
+            </c:if>
+            <c:if test="${empty getDestinationsError}">
+                No Destinations found. The default search is by name or email address.
+            </c:if>
+            <p class="mb-1 mt-2">You can conduct an extended search using the following rules:</p>
+            <ul class="mb-0">
+                <li><code>name=</code>, <code>comment=</code>, <code>country=</code>, <code>email=</code>, <code>enabled=yes/no</code>, <code>monitor=</code>, <code>backup=</code>, <code>forceproxy=</code>, <code>options=</code></li>
+                <li>Example: <code>enabled=yes name=des0?_a* email=*@meteo.ms comment=*test* country=fr options=*mqtt* case=i</code></li>
+                <li><code>case=i</code> for case-insensitive, <code>case=s</code> for case-sensitive (default)</li>
+                <li>Enclose values with spaces or equals signs in double quotes, e.g. <code>"United States"</code></li>
+                <li>Wildcards: <code>*</code> (zero or more chars), <code>?</code> (exactly one char)</li>
+            </ul>
+        </c:if>
+    </div>
+</c:if>
+
+<%-- Results table --%>
+<c:if test="${not empty columns}">
+    <div class="d-flex align-items-center mb-2 gap-2">
+        <span class="text-muted small"><i class="bi bi-list-ul"></i> <strong>${fn:length(destinations)}</strong> destination(s) found</span>
+    </div>
+    <table id="destinationsTable" class="table table-sm table-hover align-middle" style="width:100%">
+        <thead class="table-light">
+            <tr>
+                <th style="width:28px;"></th>
+                <th>Destination</th>
+                <th style="width:110px;">Status</th>
+                <c:if test="${fn:length(destinations) < 200}">
+                    <th>Aliases</th>
+                </c:if>
+            </tr>
+        </thead>
+        <tbody>
+            <c:forEach var="d" items="${destinations}">
+                <tr>
+                    <td>
+                        <img src="/assets/images/flags/micro/${d.countryIso}.png"
+                             alt="${d.country.name}" title="${d.country.name}"
+                             style="display:block;">
+                    </td>
+                    <td>
+                        <a href="/do/transfer/destination/${d.id}"
+                           class="fw-semibold text-decoration-none dest-list-link"
+                           title="${d.comment}">${d.id}</a>
+                        <c:if test="${not empty d.typeText}">
+                            <span class="badge rounded-pill bg-light text-secondary border ms-1" style="font-size:0.7rem; font-weight:500;">${d.typeText}</span>
+                        </c:if>
+                        <c:if test="${not d.showInMonitors}">
+                            <i class="bi bi-eye-slash text-muted ms-1" title="Not shown in Monitor Display" style="font-size:0.78rem;"></i>
+                        </c:if>
+                        <c:if test="${not empty d.comment}">
+                            <div class="text-muted" style="font-size:0.78rem; line-height:1.3; margin-top:1px;">${d.comment}</div>
+                        </c:if>
+                    </td>
+                    <td>
+                        <c:set var="statusBase" value="${fn:contains(d.formattedStatus, '-') ? fn:substringBefore(d.formattedStatus, '-') : d.formattedStatus}"/>
+                        <c:choose>
+                            <c:when test="${statusBase == 'Running'}">
+                                <span class="badge bg-success" title="${d.formattedStatus}">${d.formattedStatus}</span>
+                            </c:when>
+                            <c:when test="${statusBase == 'Waiting' or statusBase == 'Retrying' or statusBase == 'Interrupted'}">
+                                <span class="badge bg-warning text-dark" title="${d.formattedStatus}">${d.formattedStatus}</span>
+                            </c:when>
+                            <c:when test="${statusBase == 'Restarting' or statusBase == 'Resending'}">
+                                <span class="badge bg-info text-dark" title="${d.formattedStatus}">${d.formattedStatus}</span>
+                            </c:when>
+                            <c:when test="${statusBase == 'Idle'}">
+                                <span class="badge bg-secondary" title="${d.formattedStatus}">${d.formattedStatus}</span>
+                            </c:when>
+                            <c:otherwise>
+                                <span class="badge bg-danger" title="${d.formattedStatus}">${d.formattedStatus}</span>
+                            </c:otherwise>
+                        </c:choose>
+                    </td>
+                    <c:if test="${fn:length(destinations) < 200}">
+                        <td>
+                            <c:set var="destAliases" value="${d.aliases}"/>
+                            <c:choose>
+                                <c:when test="${fn:length(destAliases) == 0}">
+                                    <span class="text-muted" style="font-size:0.8rem;">none</span>
+                                </c:when>
+                                <c:when test="${fn:length(destAliases) < 3}">
+                                    <c:forEach var="alias" items="${destAliases}">
+                                        <a href="/do/transfer/destination/${alias.id}"
+                                           class="badge bg-light text-secondary border text-decoration-none me-1"
+                                           title="${alias.id} is an alias for ${d.id}">${alias.id}</a>
+                                    </c:forEach>
+                                </c:when>
+                                <c:otherwise>
+                                    <span class="badge bg-light text-secondary border">${fn:length(destAliases)} aliases</span>
+                                </c:otherwise>
+                            </c:choose>
+                        </td>
+                    </c:if>
+                </tr>
+            </c:forEach>
+        </tbody>
+    </table>
+    <script>
+    $(function() {
+        $('#destinationsTable').DataTable({
+            paging:    true,
+            pageLength: 25,
+            searching: false,
+            order:     [],
+            columnDefs: [{ orderable: false, targets: [0] }],
+            language: { lengthMenu: 'Show _MENU_ per page', info: 'Showing _START_-_END_ of _TOTAL_' }
+        });
+    });
+    </script>
+</c:if>

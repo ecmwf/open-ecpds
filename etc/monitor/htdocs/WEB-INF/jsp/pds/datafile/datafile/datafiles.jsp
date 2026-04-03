@@ -9,6 +9,7 @@
 <tiles:insert name="date.select" />
 <tiles:insert name="metadata.select" />
 
+<p class="fw-bold mb-1 mt-2">Data Files for MetaData <b>${selectedMetaDataName}</b> = "${selectedMetaDataValue}"</p>
 <display:table name="${datafileList}" id="datafile" requestURI=""
 	sort="external" defaultsort="2" partialList="true"
 	size="${datafileListSize}" pagesize="${recordsPerPage}" class="listing">
@@ -18,7 +19,4 @@
 	<display:column property="productTime" sortable="true" />
 	<display:column property="size" sortable="true" />
 	<display:column property="timeStep" title="TS" sortable="true" />
-	<display:caption>
-			Data Files for MetaData <b>${selectedMetaDataName}</b> = "${selectedMetaDataValue}"
-	</display:caption>
 </display:table>

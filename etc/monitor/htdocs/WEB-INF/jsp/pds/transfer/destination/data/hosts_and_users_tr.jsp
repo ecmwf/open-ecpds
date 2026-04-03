@@ -22,9 +22,10 @@
 		</auth:then>
 	</auth:if>
 
+	<p class="fw-bold mb-1 mt-2">Dissemination Host(s)</p>
 	<display:table id="disseminationHost"
 		name="${destination.disseminationHostsAndPriorities}" requestURI=""
-		class="listing">
+		class="listing no-dt">
 
 		<c:set var="disseminationHostname"
 			value=" (${disseminationHost.name.host})" scope="page" />
@@ -32,7 +33,7 @@
 			<c:set var="disseminationHostname" value="" scope="page" />
 		</c:if>
 
-		<display:column title="Name" sortable="true">
+		<display:column title="Name">
 			<c:if test="${disseminationHost.name.active}">
 				<a
 					title="This Host is Activated (id=${disseminationHost.name.name})"
@@ -41,12 +42,12 @@
 			<c:if test="${!disseminationHost.name.active}">
 				<a
 					title="This Host is NOT Activated (id=${disseminationHost.name.name})"
-					href="/do/transfer/host/${disseminationHost.name.name}"><font
-					color="grey">${disseminationHost.name.nickName}</font></a>${disseminationHostname}
+					href="/do/transfer/host/${disseminationHost.name.name}">${disseminationHost.name.nickName}</a>
+				<i class="bi bi-pause-circle-fill text-warning" title="Host is disabled" style="font-size:0.85rem;"></i>${disseminationHostname}
 	</c:if>
 		</display:column>
 
-		<display:column property="value" title="Priority" sortable="true" />
+		<display:column property="value" title="Priority" />
 
 		<c:if test="${not empty ecpdsCanHandleHosts}">
 			<display:column class="buttons" title="Actions">
@@ -101,7 +102,6 @@
 				</table>
 			</display:column>
 		</c:if>
-		<display:caption>Dissemination Host(s)</display:caption>
 		<display:setProperty name="basic.msg.empty_list">
 		</display:setProperty>
 	</display:table>
@@ -116,9 +116,9 @@
 				<auth:then>
 					<c:set var="ecpdsCanHandleHosts" value="true" scope="page" />
 				</auth:then>
-			</auth:if> <display:table id="acquisitionHost"
+			</auth:if> <p class="fw-bold mb-1 mt-2">Acquisition Host(s)</p><display:table id="acquisitionHost"
 				name="${destination.acquisitionHostsAndPriorities}" requestURI=""
-				class="listing">
+				class="listing no-dt">
 
 				<c:set var="acquisitionHostname"
 					value=" (${acquisitionHost.name.host})" scope="page" />
@@ -126,7 +126,7 @@
 					<c:set var="acquisitionHostname" value="" scope="page" />
 				</c:if>
 
-				<display:column title="Name" sortable="true">
+				<display:column title="Name">
 					<c:if test="${acquisitionHost.name.active}">
 						<a
 							title="This Host is Activated (id=${acquisitionHost.name.name})"
@@ -135,12 +135,12 @@
 					<c:if test="${!acquisitionHost.name.active}">
 						<a
 							title="This Host is NOT Activated (id=${acquisitionHost.name.name})"
-							href="/do/transfer/host/${acquisitionHost.name.name}"><font
-							color="grey">${acquisitionHost.name.nickName}</font></a>${acquisitionHostname}
+							href="/do/transfer/host/${acquisitionHost.name.name}">${acquisitionHost.name.nickName}</a>
+						<i class="bi bi-pause-circle-fill text-warning" title="Host is disabled" style="font-size:0.85rem;"></i>${acquisitionHostname}
 					</c:if>
 				</display:column>
 
-				<display:column property="value" title="Priority" sortable="true" />
+				<display:column property="value" title="Priority" />
 
 				<c:if test="${not empty ecpdsCanHandleHosts}">
 					<display:column class="buttons" title="Actions">
@@ -195,7 +195,6 @@
 						</table>
 					</display:column>
 				</c:if>
-				<display:caption>Acquisition Host(s)</display:caption>
 				<display:setProperty name="basic.msg.empty_list">
 				</display:setProperty>
 			</display:table></td>

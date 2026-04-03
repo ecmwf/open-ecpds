@@ -5,12 +5,6 @@
 <%@ taglib uri="/WEB-INF/tld/displaytag.tld" prefix="display" %> 
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
 
-<style>
-select {
-   padding: 6px 12px 6px 40px;
-}   
-</style>
-
 <form>
 <input class="search" name="search" type="text" placeholder="Search.." title="Search is performed across the Ressource Path in case-insensitive" value="${param['search']}">
 </form>
@@ -18,7 +12,6 @@ select {
 <c:if test="${empty resources}">
 <br/>
 <div class="alert">
-  <span class="closebtn" onclick="parent.history.back();">&times;</span>
   No Web Resources found based on these criteria!
 </div>
 </c:if>

@@ -18,13 +18,13 @@
 
 <c:if test="${!empty aliasedFrom}">
 
+<p class="fw-bold mb-1 mt-2">Destination ${destination.name} is Aliased From the following Destination(s):</p>
 <display:table id="alias" name="${aliasedFrom}" requestURI="" class="listing">
     <display:column sortable="true" title="Name"><a href="/do/transfer/destination/${alias.name}">${alias.name}</a></display:column>
     <display:column sortable="true" title="Type">${alias.typeText}</display:column>
     <display:column sortable="true" title="Status">${alias.formattedStatus}</display:column>
     <display:column sortable="false" title="Rules">${alias.dataAlias}</display:column>
     <display:column sortable="false" title="Comment">${alias.comment}</display:column>
-    <display:caption>Destination ${destination.name} is Aliased From the following Destination(s):</display:caption>
 </display:table>
 
 </c:if>

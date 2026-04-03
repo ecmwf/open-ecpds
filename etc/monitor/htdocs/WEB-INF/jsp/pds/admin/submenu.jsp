@@ -8,9 +8,9 @@
 		<td></td>
 	</tr>
 	<auth:link basePathKey="admin.basepath" href="/filter"
-		wrappingTags="tr,td">Compress Files</auth:link>
+		wrappingTags="tr,td"><i class="bi bi-file-zip"></i> Compress Files</auth:link>
 	<auth:link basePathKey="admin.basepath" href="/requeue"
-		wrappingTags="tr,td">Outstanding Files</auth:link>
+		wrappingTags="tr,td"><i class="bi bi-hourglass-split"></i> Outstanding Files</auth:link>
 	<auth:link basePathKey="admin.basepath" href="/upload"
-		wrappingTags="tr,td">Upload Files</auth:link>
+		wrappingTags="tr,td"><i class="bi bi-upload"></i> Upload Files</auth:link>
 </table>

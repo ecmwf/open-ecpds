@@ -6,12 +6,6 @@
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content"%>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 
-<style>
-select {
-	padding: 6px 12px 6px 40px;
-}
-</style>
-
 <tiles:insert name="date.select" />
 <br>
 <tiles:insert name="destination.select" />
@@ -56,7 +50,7 @@ select {
 			</c:if>
 			<c:if test="${history.hostName == null}">
 				<font color="grey"><span
-					title="Data not transferred to remote host">[n/a]</span></font>
+					title="Data not transferred to remote host"><i class="bi bi-dash text-muted" title="Not applicable"></i></span></font>
 			</c:if>
 		</display:column>
 		<display:column title="Comment" property="formattedComment" />

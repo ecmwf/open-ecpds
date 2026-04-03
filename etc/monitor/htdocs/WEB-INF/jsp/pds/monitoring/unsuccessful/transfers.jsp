@@ -28,7 +28,6 @@
 
 <c:if test="${authorized == 'false'}">
 	<div class="alert">
-		<span class="closebtn" onclick="parent.history.back();">&times;</span>
 		Error retrieving object by key <- Problem searching by key
 		'${destination.name}' <- Destination not found: {${destination.name}}
 	</div>
@@ -37,11 +36,11 @@
 <c:if test="${authorized == 'true'}">
 	<c:if test="${empty transfers}">
 		<div class="alert">
-			<span class="closebtn" onclick="parent.history.back();">&times;</span>
 			No Outstanding Files found
 		</div>
 	</c:if>
 	<c:if test="${!empty transfers}">
+		<p class="fw-bold mb-1 mt-2">Unsuccessful Data Transfers</p>
 		<display:table name="${transfers}" id="transfer" pagesize="25"
 			requestURI="" class="listing">
 			<display:column title="Dest" sortable="true">
@@ -57,7 +56,6 @@
 			<display:column title="B/s" property="transferRate" sortable="true" />
 			<display:column property="priority" sortable="true" />
 			<display:column property="comment" sortable="true" />
-			<display:caption>Unsuccessful Data Transfers</display:caption>
 		</display:table>
 		<table border=0>
 			<tr>

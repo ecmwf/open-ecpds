@@ -83,18 +83,20 @@
 
 	function hostChange(operation, subOp) {
 	    var form = document.destinationDetailActionForm;
+	    function submitWithScroll() {
+	        sessionStorage.setItem('hostChangeScrollY', window.scrollY);
+	        form.action =
+	            "<bean:message key='destination.basepath'/>/operations/${destinationDetailActionForm.id}/"
+	            + operation + "/" + subOp;
+	        form.submit();
+	    }
 	    if (operation === "deactivateHost") {
 	        var text = "Are you sure you want to deactivate host " + subOp + " ?";
 	        confirmationDialog({
 	            title: "Confirm Host Deactivation",
 	            message: text,
 	            showLoading: true,
-	            onConfirm: function () {
-	                form.action =
-	                    "<bean:message key='destination.basepath'/>/operations/${destinationDetailActionForm.id}/"
-	                    + operation + "/" + subOp;
-	                form.submit();
-	            }
+	            onConfirm: function () { submitWithScroll(); }
 	        });
 	        return;
 	    }
@@ -104,20 +106,12 @@
 	            title: "Confirm Host Duplication",
 	            message: text,
 	            showLoading: true,
-	            onConfirm: function () {
-	                form.action =
-	                    "<bean:message key='destination.basepath'/>/operations/${destinationDetailActionForm.id}/"
-	                    + operation + "/" + subOp;
-	                form.submit();
-	            }
+	            onConfirm: function () { submitWithScroll(); }
 	        });
 	        return;
 	    }
-	    // No confirmation required → original logic
-	    form.action =
-	        "<bean:message key='destination.basepath'/>/operations/${destinationDetailActionForm.id}/"
-	        + operation + "/" + subOp;
-	    form.submit();
+	    // No confirmation required
+	    submitWithScroll();
 	}
 
 	function selectFiltered(operation, transfer) {
@@ -283,5 +277,12 @@
 		} else
 			return true;
 	}
+	$(document).ready(function () {
+	    var savedY = sessionStorage.getItem('hostChangeScrollY');
+	    if (savedY !== null) {
+	        sessionStorage.removeItem('hostChangeScrollY');
+	        window.scrollTo({ top: parseInt(savedY, 10), behavior: 'instant' });
+	    }
+	});
 </script>
 

@@ -3,20 +3,9 @@
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content"%>
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
 
-<table class="select" style="width: 700px">
+<table class="select info-panel" style="width: 700px">
 
 	<tr>
-		<th>Status</th>
-		<c:set var="desStatus" value="${destination.formattedStatus}" />
-		<c:if test="${desStatus != 'Initialized'}">
-			<td>${destination.formattedStatus}</td>
-		</c:if>
-		<c:if test="${desStatus == 'Initialized'}">
-			<td style="background-color: #f44336"><font
-				title="Need to be started in order to process" color="white">${destination.formattedStatus}</font>
-			</td>
-		</c:if>
-
 		<th>Last Transfer</th>
 		<td><c:set var="transL" value="${destination.lastTransfer}" /> <c:if
 				test="${not empty transL}">
@@ -48,21 +37,21 @@
 		<th>Started</th>
 		<td><c:catch var="ex">
 				<c:set var="startT" value="${destination.startTime}" />
-				<div
-					title="<content:content name="startT" dateFormatKey="date.format.long.iso" defaultValue="Not Set" ignoreNull="true"/>">
-					<content:content name="startT"
-						dateFormatKey="date.format.time.short" defaultValue="Not Set"
-						ignoreNull="true" />
-				</div>
+				<c:if test="${not empty startT}">
+					<div
+						title="<content:content name="startT" dateFormatKey="date.format.long.iso" defaultValue="Not Set" ignoreNull="true"/>">
+						<content:content name="startT"
+							dateFormatKey="date.format.time.short" defaultValue="Not Set"
+							ignoreNull="true" />
+					</div>
+				</c:if>
+				<c:if test="${empty startT}">
+					<i>None</i>
+				</c:if>
 			</c:catch> <c:if test="${not empty ex}">
 				<i>None</i>
 			</c:if></td>
 			
-		<th>Monitor</th>
-		<td><c:if test="${destination.showInMonitors}">yes</c:if> <c:if
-				test="${!destination.showInMonitors}">
-				<font color="red">no</font>
-			</c:if></td>
 
 		<th>Filter</th>
 		<c:set var="filter" value="${destination.filterName}" />
@@ -87,13 +76,8 @@
 		<auth:if basePathKey="transferhistory.basepath" paths="/">
 			<auth:then>
 				<th>Acquisition</th>
-				<td><c:if test="${destination.acquisition}">yes</c:if> <c:if
-						test="${!destination.acquisition}">no</c:if></td>
-				<th>Enabled</th>
-				<td><c:if test="${destination.active}">yes</c:if> <c:if
-						test="${!destination.active}">
-						<font color="red">no</font>
-					</c:if></td>
+				<td><c:if test="${destination.acquisition}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
+						test="${!destination.acquisition}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></td>
 			</auth:then>
 		</auth:if>
 

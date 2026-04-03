@@ -1,49 +1,18 @@
-html {
-	Font-family: Verdana, Arial, Helvetica;
-	Color: black;
-	Font-size: 10pt;
-	Background-color: white;
-	Text-decoration: None;
+/* ============================================================
+   ECPDS custom styles — loaded after Bootstrap so these act
+   as targeted overrides.  Bootstrap handles base typography,
+   form elements and buttons; we only re-declare what needs to
+   differ from the Bootstrap defaults.
+   ============================================================ */
+
+/* ---- Layout: fixed header / footer spacing ---- */
+#contentDiv {
+    padding-top:  85px;    /* clears the fixed topheader + breathing room */
+    padding-bottom: 44px;  /* clears the fixed bottomfooter */
+    min-height: 100vh;
 }
 
-a:link {
-    text-decoration: none;
-    color: black;
-}
-
-a:visited {
-    text-decoration: none;
-    color: black;
-}
-
-a:hover {
-    text-decoration: underline;
-    color: black;
-}
-
-a:active {
-    text-decoration: underline;
-    color: black;
-}
-
-h1 {	
-	Font-size: 10pt;
-	font-weight: bold;
-	color: navy;
-	padding-top: 8pt;
-}
-
-h2 {
-	Font-size: 10pt;
-        width: 100%;
-        font-weight: bold;
-        border-width: 0pt 0pt 0pt 0pt;
-}
-
-h3 {
-	Font-size: 10pt;
-        width: 100%;
-}
+/* ---- Fixed header & footer ---- */
 
 .login_simple {
 	background: #000000;
@@ -53,89 +22,94 @@ h3 {
 }
 
 .location_simple {
-        padding-left: 123px;
-        margin-top: 1px;
-        margin-botttom: 2px;
-        background: #000000;
-        color: white;
-        font-family: "Open Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
-        font-size: 11pt;
+    padding: 4px 14px;
+    background: rgba(0,0,0,0.22);
+    border-top: 1px solid rgba(255,255,255,0.1);
 }
-
-.location_simple a:link {
+.location_simple .breadcrumb {
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    font-size: 0.78rem;
+    flex-wrap: nowrap;
+    overflow: hidden;
+}
+.location_simple .breadcrumb-item {
+    color: rgba(255,255,255,0.7);
+    white-space: nowrap;
+}
+.location_simple .breadcrumb-item + .breadcrumb-item::before {
+    content: "›";
+    color: rgba(255,255,255,0.4);
+    font-size: 1rem;
+    line-height: 1;
+    vertical-align: middle;
+}
+.location_simple .breadcrumb-item a {
+    color: rgba(255,255,255,0.82);
     text-decoration: none;
-    color: white;
 }
-
-.location_simple a:visited {
-    text-decoration: none;
-    color: white;
-}
-
-.location_simple a:hover {
+.location_simple .breadcrumb-item a:hover {
+    color: #fff;
     text-decoration: underline;
-    color: white;
 }
-
-.location_simple a:active {
-    text-decoration: underline;
-    color: white;
+.location_simple .breadcrumb-item.active {
+    color: #fff;
+    font-weight: 500;
 }
 
 .footer_simple_title {
-        font-size: 11pt;
-        font-weight: none;
-        color: white;
-        padding-top: 0px;
-        padding-left: 8pt;
-        padding-right: 8pt;
-        font-family: "Open Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.85);
+    font-family: "Open Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
 }
-
-.footer_simple_title a:link {
+.footer_simple_title a {
+    color: #fff;
     text-decoration: none;
-    color: white;
+    font-weight: 600;
 }
-
-.footer_simple_title a:visited {
-    text-decoration: none;
-    color: white;
-}
-
 .footer_simple_title a:hover {
+    color: #fff;
     text-decoration: underline;
-    color: white;
-}
-
-.footer_simple_title a:active {
-    text-decoration: underline;
-    color: white;
 }
 
 .topheader {
-  position: fixed;
-  z-index:2147483646 !important;
-  top: 0;
-  left: 0;
-  width: 100%;
-  margin: 0;
+    position: fixed;
+    z-index: 1030;
+    top: 0;
+    left: 0;
+    width: 100%;
+    margin: 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.30);
 }
 
 .bottomfooter {
-   position:fixed;
-   z-index:2147483646 !important;
-   bottom:0;
-   left: 0;
-   width:100%;
-   margin: 0;
+    position: fixed;
+    z-index: 1030;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    margin: 0;
 }
 
 .header_simple_title {
-        font-size: 16pt;
-        font-weight: bold;
-        color: white;
-        padding-top: 8px;
-        font-family: "Open Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: rgba(255,255,255,0.9);
+    padding-top: 0;
+    font-family: "Open Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
+    padding-left: 0.75rem;
+}
+
+/* Thin vertical divider between logo and page title */
+.header_nav_divider {
+    display: inline-block;
+    width: 1px;
+    height: 22px;
+    background: rgba(255,255,255,0.3);
+    margin: 0 0.5rem;
+    flex-shrink: 0;
+    vertical-align: middle;
 }
    
 td.content {
@@ -146,24 +120,18 @@ td.content {
 }   
 
 table.listing a {
-	Font-size: 10pt;
-	text-decoration: None;
-	color: black;
-	width: 100%;
+    font-size: 0.875rem;
+    width: 100%;
 }
 
 table.listing caption {
+	caption-side: top;   /* Bootstrap 5 sets bottom by default; restore to top */
 	Font-size: 10pt;
 	background:white;
-	margin-top: 5;
-	margin-bottom: 5;
+	padding: 0;
+	margin: 0;
 	font-weight: bold;
 	text-align: left;
-}
-
-table.listing a:hover {
-	Font-size: 10pt;
-	text-decoration: Underline;
 }
 
 table.listing {
@@ -196,36 +164,29 @@ table.listing th {
 }
 
 table.listing th a {
-	Font-size: 10pt;
-	background-repeat:no-repeat;
-	background-position: right;
-	display: block;
-	width: 100%;
-        font-weight:bold;
+    font-size: 0.875rem;
+    font-weight: bold;
+    color: #fff !important;
+    text-decoration: none;
+    white-space: nowrap;
+    background-image: none;
 }
-
-
+table.listing th a:hover {
+    color: rgba(255,255,255,0.82) !important;
+    text-decoration: none;
+}
 table.listing tr.selected {
-   Font-size: 10pt;
+   font-size: 0.875rem;
    background: #666666;
-   font-weight:bold;
-
+   font-weight: bold;
 }
-
 table.listing th.sorted {
-    Font-size: 10pt;
     background-color: #666666;
 }
-
-table.listing th.sortable a {
-	background-image:url(/assets/icons/displaytag/arrow_off.png);
-}
-table.listing th.order1 a {
-	background-image: url(/assets/icons/displaytag/arrow_down.png);
-}
-table.listing th.order2 a {
-	background-image: url(/assets/icons/displaytag/arrow_up.png);
-}
+/* Sort direction indicators via CSS — no PNG images needed */
+table.listing th.sortable a::after { content: " ⇅"; font-size: 0.72em; opacity: 0.55; font-weight: normal; }
+table.listing th.order1 a::after   { content: " ↓"; font-size: 0.8em;  opacity: 0.9;  font-weight: normal; }
+table.listing th.order2 a::after   { content: " ↑"; font-size: 0.8em;  opacity: 0.9;  font-weight: normal; }
 
 table.listing td {
 	vertical-align: top;
@@ -374,13 +335,22 @@ td.code {
 }
 
 input {
-	Font-size: 10pt;
-	border: 1pt solid #d5d5d5;
+	font-family: var(--bs-font-sans-serif, "Open Sans", Helvetica, Arial, sans-serif);
+	font-size: 0.875rem;
+	color: #555;
+	border: 1px solid #aaa;
+	border-radius: 4px;
 }
 
-input[type="text"] 
+input[type="text"],
+input[type="password"]
 {
+    padding: 2px 6px;
     width: 250px;
+    height: 28px;
+    box-sizing: border-box;
+    line-height: 1.5;
+    vertical-align: middle;
 }
 
 input[type="checkbox"] 
@@ -389,19 +359,20 @@ input[type="checkbox"]
     height: 16px;
 }
 
+input[type="radio"] {
+    margin-right: 5px;
+    vertical-align: middle;
+}
+
 input.number {
-	Font-size: 10pt;
-	border: 1pt solid #d5d5d5;
-    	padding-left: 2;
-    	width: 100pt;
+	padding: 2px 6px;
+	width: 100pt;
 }
 
 input.small_number {
-	Font-size: 10pt;
-	border: 1pt solid #d5d5d5;
-    	padding-left: 2;
-    	margin: 0pt;
-    	width: 25pt;
+	padding: 2px 4px;
+	margin: 0;
+	width: 25pt;
 }
 
 textarea {
@@ -412,46 +383,39 @@ textarea {
     	height: 100pt;
 }
 
-.search {
-    font-family: "Open Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
-    font-weight: bold;
-    font-size: 12px;  
+input[type="text"].search, .search {
+    font-family: var(--bs-font-sans-serif, "Open Sans", Helvetica, Arial, sans-serif);
+    font-size: 0.875rem;
+    color: #555;
     box-sizing: border-box;
-    border: 2px solid #ccc;
+    border: 1px solid #aaa;
     border-radius: 4px;
     background-color: white;
     background-image: url('/assets/images/webapp/searchicon.png');
-    background-position: 10px 4px;
-    background-repeat: no-repeat; 
-    padding: 6px 12px 6px 40px;   
+    background-position: 8px 3px;
+    background-repeat: no-repeat;
+    padding: 2px 6px 2px 36px;
 }
 
 select {
-   -webkit-appearance: button;
-   -webkit-border-radius: 2px;
-   -webkit-box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.1);
-   -webkit-padding-end: 0px;
-   -webkit-padding-start: 0px;
-   -webkit-user-select: none;
-   background-image: url(/assets/images/webapp/15xvbd5.png), -webkit-linear-gradient(#FAFAFA, #F4F4F4 40%, #E5E5E5);
-   background-position: 97% center;
-   background-repeat: no-repeat;  
-   border: 1px solid #AAA;
+   font-family: var(--bs-font-sans-serif, "Open Sans", Helvetica, Arial, sans-serif);
+   font-size: 0.875rem;
    color: #555;
-   font-family: "Open Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
-   font-weight: bold;
-   font-size: 12px;
-   margin: 0px;
-   overflow: hidden;
-   padding: 0px 0px;
-   text-overflow: ellipsis;
-   white-space: nowrap;
+   border: 1px solid #aaa;
+   border-radius: 4px;
+   padding: 2px 4px;
    width: 200px;
+   height: 28px;
+   box-sizing: border-box;
+   line-height: 1.5;
+   vertical-align: middle;
 }
-
-select.search {
-    padding: 6px 12px 6px 40px;   
-}
+/* Let Bootstrap form-select and form-control control their own height/border */
+select.form-select { height: auto; width: auto; padding: 0.375rem 2.25rem 0.375rem 0.75rem; border: 1px solid #ced4da; border-radius: var(--bs-border-radius); }
+select.form-select-sm { padding: 0.25rem 2.25rem 0.25rem 0.5rem; font-size: 0.875rem; }
+input.form-control  { height: auto; width: auto; padding: 0.375rem 0.75rem; border: 1px solid #ced4da; border-radius: var(--bs-border-radius); }
+input.form-control-sm { padding: 0.25rem 0.5rem; font-size: 0.875rem; }
+.input-group-text { border-color: #ced4da; background-color: #f8f9fa; color: #6c757d; }
 
 textarea {
 	Font-size: 10pt;
@@ -523,6 +487,7 @@ div.chooser {
 	Font-size: 10pt;
 	color: black;
 	font-weight: bold;
+	text-decoration: none;
 }
 
 table.spareBox, table.spareBox2, table.spareBox3 {
@@ -672,42 +637,156 @@ table.destinations tr {
 	vertical-align: top;
 }
 
+/* ---- table.select — filter rows (Status, Prod_Date, streams) ---- */
 table.select {
-	Font-size: 10pt;
-	width: 100%;
-	border: 1pt solid #d5d5d5;
+    font-size: 10pt;
+    width: 100%;
+    border: 1pt solid #d5d5d5;
 }
-
 table.select a {
-	Font-size: 10pt;
-	text-decoration: none;
-	color:black;	
+    font-size: 10pt;
+    text-decoration: none;
+    color: black;
 }
 table.select a:hover {
-	Font-size: 10pt;
-	text-decoration:underline;
+    font-size: 10pt;
+    text-decoration: underline;
 }
-
 table.select td {
-	Font-size: 10pt;
-	text-align:center;
-	background: #d5d5d5;
+    font-size: 10pt;
+    text-align: center;
+    background: #d5d5d5;
 }
-
 table.select th {
-	Font-size: 10pt;
-	text-align:right;
-	background: white;
-	font-weight: normal;
+    font-size: 10pt;
+    text-align: right;
+    background: white;
+    font-weight: normal;
+}
+table.select td.selected {
+    font-size: 10pt;
+    background: white;
+    padding-right: 0;
+    padding-left: 0;
+    font-weight: bold;
+    text-decoration: none;
 }
 
-table.select td.selected {
-	Font-size: 10pt;
-   	background: white;
-	padding-right: 0;
-	padding-left: 0;
-	font-weight: bold;
-	text-decoration: none;
+/* ---- Date selector pill strip ---- */
+.date-strip {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    padding: 0.5rem 0.75rem;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    margin-bottom: 0.75rem;
+}
+
+.date-strip-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    flex: 1;
+}
+
+.date-pill {
+    display: inline-block;
+    padding: 0.2rem 0.65rem;
+    font-size: 0.78rem;
+    font-weight: 500;
+    border-radius: 20px;
+    text-decoration: none;
+    border: 1px solid #ced4da;
+    background: #fff;
+    color: #495057;
+    transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+    white-space: nowrap;
+    line-height: 1.4;
+    vertical-align: middle;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.date-pill:hover {
+    background: #e9ecef;
+    border-color: #adb5bd;
+    color: #212529;
+    text-decoration: none;
+}
+
+.date-pill.active {
+    background: #0d6efd;
+    border-color: #0d6efd;
+    color: #fff;
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(13,110,253,0.3);
+}
+
+.date-strip-chart-toggle {
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+/* ---- Modern badge-strip for destination info panel ---- */
+table.info-panel {
+    display: block;
+    width: auto !important;
+    border: none;
+    background: none;
+    margin-bottom: 0.6rem;
+}
+table.info-panel tbody,
+table.info-panel tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 0.35rem;
+    border: none;
+    background: none;
+}
+table.info-panel th,
+table.info-panel td {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 9px;
+    font-size: 0.75rem;
+    border: none;
+    white-space: nowrap;
+    line-height: 1.4;
+}
+table.info-panel th {
+    background: #495057;
+    color: #fff;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-radius: 4px 0 0 4px;
+    margin-right: 0;
+    padding-right: 7px;
+}
+table.info-panel td {
+    background: #e9ecef;
+    color: #212529;
+    border-radius: 0 4px 4px 0;
+    margin-left: 0;
+    padding-left: 7px;
+    font-weight: 500;
+}
+table.info-panel td a {
+    color: inherit;
+    text-decoration: none;
+}
+table.info-panel td a:hover {
+    color: #0d6efd;
+}
+/* Status-specific badge colours */
+table.info-panel td[style*="background-color"] {
+    color: #fff;
+    border-radius: 0 4px 4px 0;
 }
 
 table.fields {
@@ -814,21 +893,9 @@ th.header {
 }
 
 th.header a, th.sorted a, th.sortable a {
-	Font-size: 10pt;
-        background-repeat:no-repeat;
-        background-position: right;
-        display: block;
-        width: 100%;
-}
-
-th.sortable a {
-        background-image: url(/assets/icons/displaytag/arrow_off.png);
-}
-th.order1 a {
-        background-image: url(/assets/icons/displaytag/arrow_down.png);
-}
-th.order2 a {
-        background-image: url(/assets/icons/displaytag/arrow_up.png);
+    font-size: 0.875rem;
+    background-image: none;
+    white-space: nowrap;
 }
 
 table.fieldsDetail {
@@ -883,82 +950,517 @@ A.menusubitem:visited {
     Helvetica, sans-serif
 }
 
+/* ---- Alerts & messages ---- */
+/* .alert: previously solid red; now a Bootstrap 5-style warning callout.
+   Works for all existing bare <div class="alert"> across 44+ pages — no JSP changes needed.
+   Uses position:absolute for the icon so inner block content (ul, li, br) flows naturally. */
 .alert {
-    padding: 20px;
-    background-color: #f44336;
-    color: white;
-    margin-bottom: 15px;
-    font-size: 12px;
+    position: relative;
+    padding: 0.7rem 1rem 0.7rem 2.6rem;
+    background-color: #fff8e6;
+    border: 1px solid #ffe49e;
+    border-left: 4px solid #ffc107;
+    border-radius: 6px;
+    color: #664d03;
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+.alert::before {
+    font-family: "bootstrap-icons";
+    content: "\f33a"; /* bi-exclamation-triangle-fill */
+    font-size: 1rem;
+    color: #e6a800;
+    position: absolute;
+    left: 0.8rem;
+    top: 0.68rem;
 }
 
-/* The close button */
+/* .closebtn: back-navigation × used inside warning alerts */
 .closebtn {
-    margin-left: 15px;
-    color: white;
-    font-weight: bold;
     float: right;
-    font-size: 22px;
-    line-height: 20px;
+    margin-left: 1rem;
+    color: #664d03;
+    font-size: 1.1rem;
+    font-weight: bold;
+    line-height: 1;
     cursor: pointer;
-    transition: 0.3s;
+    opacity: 0.55;
+    transition: opacity 0.15s;
 }
+.closebtn:hover { opacity: 1; }
 
+/* .info: previously garish yellow; now a calm Bootstrap 5-style info callout */
 .info {
-    padding: 20px;
-    background-color: #f5f092;
-    color: black;
-    margin-bottom: 15px;
-    font-size: 12px;
+    position: relative;
+    padding: 0.7rem 1rem 0.7rem 2.6rem;
+    background-color: #e8f4fd;
+    border: 1px solid #b8dffc;
+    border-left: 4px solid #0d6efd;
+    border-radius: 6px;
+    color: #084298;
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+.info::before {
+    font-family: "bootstrap-icons";
+    content: "\f430"; /* bi-info-circle-fill */
+    font-size: 1rem;
+    color: #0d6efd;
+    position: absolute;
+    left: 0.8rem;
+    top: 0.68rem;
 }
 
-/* The close button */
+/* .infobtn: dismiss button inside info alerts */
 .infobtn {
-    margin-left: 15px;
-    color: black;
-    font-weight: bold;
     float: right;
-    font-size: 22px;
-    line-height: 20px;
+    margin-left: 1rem;
+    color: #084298;
+    font-size: 1.1rem;
+    font-weight: bold;
+    line-height: 1;
     cursor: pointer;
-    transition: 0.3s;
+    opacity: 0.55;
+    transition: opacity 0.15s;
 }
-
-/* When moving the mouse over the close button */
-.closebtn:hover {
-    color: black;
-}
+.infobtn:hover { opacity: 1; }
 
 .ui-datepicker {
   z-index: 2147483647 !important
 }
 
-button{
+/* Let Bootstrap handle base <button> styling.
+   Plain <button> elements without .btn get a neutral look. */
+button:not(.btn):not(.btn-close):not(.date-pill) {
  display: inline-block;
- border:1px solid #bfbfbf;
- color: #8c8c8c;
- border-radius: 5px 5px 5px 5px;
- -webkit-border-radius: 5px 5px 5px 5px;
- -moz-border-radius: 5px 5px 5px 5px;
- font-family: Verdana;
- width: auto;
- height: auto;
- font-size: 11px;
- padding: 6px 25px;
- box-shadow: inset 0 1px 0 0 #fff,inset 0 -1px 0 0 #d9d9d9,inset 0 0 0 1px #f2f2f2,0 2px 4px 0 #f2f2f2;
- -moz-box-shadow: inset 0 1px 0 0 #fff,inset 0 -1px 0 0 #d9d9d9,inset 0 0 0 1px #f2f2f2,0 2px 4px 0 #f2f2f2;
- -webkit-box-shadow: inset 0 1px 0 0 #fff,inset 0 -1px 0 0 #d9d9d9,inset 0 0 0 1px #f2f2f2,0 2px 4px 0 #f2f2f2;
- text-shadow: 0 1px 0 #fff;
- background-image: linear-gradient(to top, #f2f2f2, #f2f2f2);
- background-color: #f2f2f2;
+ border: 1px solid #bfbfbf;
+ color: #555;
+ border-radius: 4px;
+ font-family: var(--bs-font-sans-serif, Verdana, sans-serif);
+ font-size: 0.85rem;
+ padding: 5px 20px;
+ background: #f8f9fa;
+ cursor: pointer;
 }
-button:hover, button:active{
- border:1px solid #8c8c8c;
- color: #8c8c8c;
- box-shadow: inset 0 1px 0 0 #ffffff,inset 0 -1px 0 0 #d9d9d9,inset 0 0 0 1px #f2f2f2;
- -moz-box-shadow: inset 0 1px 0 0 #ffffff,inset 0 -1px 0 0 #d9d9d9,inset 0 0 0 1px #f2f2f2;
- -webkit-box-shadow: inset 0 1px 0 0 #ffffff,inset 0 -1px 0 0 #d9d9d9,inset 0 0 0 1px #f2f2f2;
- background-color: #f2f2f2;
+button:not(.btn):not(.btn-close):not(.date-pill):hover {
+ border-color: #8c8c8c;
+ background: #e9ecef;
 }
 .danger-action {
  font-weight: bold;
 }
+
+/* ---- Bootstrap harmonisation ---- */
+
+/* Modern link defaults: inherit text colour, no underline.
+   On hover the brand blue signals interactivity without noise.
+   Bootstrap components (.btn, .nav-link, .dropdown-item etc.)
+   use their own explicit colour rules and are unaffected. */
+a {
+    color: inherit;
+    text-decoration: none;
+}
+a:hover {
+    color: #0d6efd;
+    text-decoration: none;
+}
+
+/* Sidebar boxes — add some breathing room */
+#sidebarMenu {
+    padding: 8px 4px 8px 8px;
+}
+
+/* Gap between the sidebar and the main content column */
+#outerTable {
+    gap: 1.25rem;
+}
+
+/* Match the sidebar's top padding so both columns start at the same visual level */
+#outerTable > .content {
+    padding-top: 8px;
+    padding-right: 12px;
+}
+
+/* Leading empty <p/> spacers on content pages push content down; eliminate them */
+#outerTable > .content > p:first-child:empty {
+    display: none;
+}
+
+/* Keep listing table header colours (override Bootstrap's .table) */
+table.listing th {
+    background: #6c757d;
+    color: #fff;
+    font-weight: 600;
+}
+table.listing th.sorted {
+    background: #495057;
+}
+
+/* Align DataTables wrapper with page content */
+.dataTables_wrapper {
+    font-size: 0.875rem;
+}
+
+/* .fields form layout table — tighten up with Bootstrap spacing */
+table.fields {
+    margin: 0.75rem;
+}
+table.fields > tbody > tr > th {
+    background: #f8f9fa;
+    border-right: 2px solid #dee2e6;
+    padding: 0.4rem 0.6rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+table.fields > tbody > tr > td {
+    padding: 0.4rem 0.6rem;
+    color: #343a40;
+}
+
+/* Form page info banner (insert/edit pages) */
+.form-info-banner {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.75rem 0.75rem 0.5rem;
+    padding: 0.45rem 0.75rem;
+    border-radius: 5px;
+    border-left: 3px solid #0d6efd;
+    background: rgba(13,110,253,0.06);
+    font-size: 0.83rem;
+    color: #495057;
+}
+.form-info-banner .bi {
+    font-size: 1rem;
+}
+
+/* Spared sidebar box headings */
+table.spareBox2 th, table.spareBox th {
+    background: #e9ecef;
+    padding: 4px 6px;
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+table.spareBox2 td, table.spareBox td {
+    font-size: 0.8rem;
+    padding: 2px 6px;
+}
+
+/* ---- Modern sidebar nav (CSS-only, no JSP changes) ---- */
+
+/* Card shell */
+#sidebarMenu table.spareBox2,
+#sidebarMenu table.editSpareBox,
+#sidebarMenu table.spareBox {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+}
+
+/* Section header */
+#sidebarMenu table.spareBox2 th,
+#sidebarMenu table.editSpareBox th,
+#sidebarMenu table.spareBox th {
+    background: #495057;
+    color: #fff;
+    padding: 8px 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    border: none;
+    text-align: left;
+    overflow: hidden;
+}
+/* Ellipsis on the <a> so its title= controls the only tooltip shown */
+#sidebarMenu table.editSpareBox th a {
+    display: block;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: clip;
+    position: relative;
+}
+/* Gradient fade-out instead of ellipsis — avoids browser overflow tooltip */
+#sidebarMenu table.editSpareBox th a::after {
+    content: '';
+    position: absolute;
+    right: 0; top: 0;
+    width: 24px; height: 100%;
+    background: linear-gradient(to right, transparent, #495057);
+    pointer-events: none;
+}
+#sidebarMenu table.spareBox2 th a,
+#sidebarMenu table.editSpareBox th a,
+#sidebarMenu table.spareBox th a {
+    color: #fff !important;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+#sidebarMenu table.spareBox2 th a:hover,
+#sidebarMenu table.editSpareBox th a:hover,
+#sidebarMenu table.spareBox th a:hover {
+    color: #dee2e6 !important;
+}
+
+/* Nav items */
+#sidebarMenu table.spareBox2 td,
+#sidebarMenu table.editSpareBox td,
+#sidebarMenu table.spareBox td {
+    padding: 0;
+    background: #fff;
+    border-top: 1px solid #f0f2f4;
+    font-size: 0.875rem;
+    vertical-align: middle;
+}
+
+/* Icon column in editSpareBox — left-aligned, carries the row's accent border */
+#sidebarMenu table.editSpareBox td:first-child:not([colspan]) {
+    width: 32px;
+    padding: 0 4px 0 10px;
+    text-align: left;
+    vertical-align: middle;
+    border-left: 3px solid transparent;
+    transition: border-color 0.12s ease;
+}
+
+/* editSpareBox links — no separate left border; the icon cell handles it */
+#sidebarMenu table.editSpareBox td a {
+    padding: 7px 14px 7px 4px;
+    border-left: none;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+
+/* Hover: highlight whole row (both cells) and accent the icon cell's left border */
+#sidebarMenu table.editSpareBox tr:hover td {
+    background: #f0f4f8;
+}
+#sidebarMenu table.editSpareBox tr:hover td:first-child:not([colspan]) {
+    border-left-color: #0d6efd;
+}
+#sidebarMenu table.editSpareBox td a:hover {
+    background: transparent;
+    border-left: none;
+    color: #0d6efd !important;
+}
+
+/* Bootstrap Icon replacements in sidebar */
+#sidebarMenu .sidebar-icon {
+    font-size: 0.95rem;
+    vertical-align: middle;
+    color: #6c757d;
+}
+
+/* Action icons in table rows and content areas */
+.action-icon {
+    font-size: 1rem;
+    vertical-align: middle;
+    line-height: 1;
+    margin: 0 3px;
+}
+a:hover .action-icon {
+    opacity: 0.75;
+}
+/* Disabled priority buttons — block child pointer events so span title shows, not img title */
+.priority-disabled {
+    opacity: 0.25;
+    cursor: not-allowed;
+}
+.priority-disabled * {
+    pointer-events: none;
+}
+
+/* Hide all /assets/icons/ images immediately — JS replaces them with Bootstrap Icons */
+img[src*="/assets/icons/"] {
+    display: none;
+}
+
+/* Hide the blank spacer row */
+#sidebarMenu table.spareBox2 tr:has(> td:only-child:empty),
+#sidebarMenu table.editSpareBox tr:has(> td:only-child:empty),
+#sidebarMenu table.spareBox tr:has(> td[colspan]:empty) {
+    display: none;
+}
+
+/* spareBox has a narrow icon column — hide it, let the text column span full width */
+#sidebarMenu table.spareBox td:first-child:not([colspan]) {
+    width: 0;
+    padding: 0;
+    border: none;
+}
+
+#sidebarMenu table.spareBox2 td a,
+#sidebarMenu table.spareBox td a {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.4em;
+    padding: 7px 14px 7px 18px;
+    color: #495057 !important;
+    font-size: 0.875rem;
+    font-weight: normal;
+    text-decoration: none;
+    border-left: 3px solid transparent;
+    transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+/* Fixed-width icon slot — all labels start at the same x position */
+#sidebarMenu table.spareBox2 td a > i,
+#sidebarMenu table.spareBox td a > i {
+    flex-shrink: 0;
+    width: 1.1em;
+    text-align: center;
+    margin-top: 2px;
+    color: #8a9bb0;
+    transition: color 0.12s ease;
+}
+#sidebarMenu table.spareBox2 td a:hover > i,
+#sidebarMenu table.spareBox td a:hover > i {
+    color: #0d6efd;
+}
+#sidebarMenu table.editSpareBox td a {
+    display: block;
+    color: #495057 !important;
+    font-size: 0.875rem;
+    font-weight: normal;
+    text-decoration: none;
+}
+#sidebarMenu table.spareBox2 td a:hover,
+#sidebarMenu table.spareBox td a:hover {
+    background: #f0f4f8;
+    color: #0d6efd !important;
+    border-left-color: #0d6efd;
+}
+
+/* Align icons with text inside nav links */
+#sidebarMenu table.spareBox2 td a img,
+#sidebarMenu table.spareBox td a img {
+    vertical-align: middle;
+    margin-right: 4px;
+}
+
+/* Active/selected item in spareBox (plain text td, no link, grey inline bg) */
+#sidebarMenu table.spareBox td:last-child:not(:has(a)):not(:empty) {
+    padding: 7px 14px 7px 18px;
+    background: #e8f0fe !important;
+    color: #0d6efd;
+    font-weight: 600;
+    border-left: 3px solid #0d6efd;
+    font-size: 0.875rem;
+}
+
+/* Override jQuery UI datepicker z-index */
+.ui-datepicker {
+    z-index: 1060 !important;
+}
+
+/* AI chat — keep above Bootstrap modals */
+#ai-chat-open, #ai-chat-widget {
+    z-index: 1070 !important;
+}
+
+/* ---- Help content (getHelpHtmlContent) ---- */
+.help-content { padding: 0.4rem 0.6rem; font-size: 0.78rem; }
+.help-title {
+    font-size: 0.72rem; font-weight: 600; color: #6c757d;
+    border-bottom: 1px solid #dee2e6; padding-bottom: 0.3rem; margin-bottom: 0.4rem;
+}
+.help-nav {
+    position: sticky; top: 0; z-index: 5;
+    background: #fff;
+    border-bottom: 1px solid #e9ecef;
+    padding: 0.3rem 0 0.3rem;
+    margin-bottom: 0.35rem;
+    display: flex; flex-wrap: wrap; gap: 0.25rem;
+}
+.help-nav-pill {
+    font-size: 0.62rem; line-height: 1.5;
+    padding: 0.1em 0.6em; border-radius: 10px;
+    cursor: pointer; white-space: nowrap;
+    background: #e9ecef; color: #495057;
+    border: 1px solid transparent;
+    transition: background 0.15s, color 0.15s;
+}
+.help-nav-pill:hover { background: #0d6efd; color: #fff; border-color: #0d6efd; }
+.help-group-hdr {
+    display: inline-block; font-size: 0.65rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.07em;
+    color: #fff; background: #495057;
+    padding: 0.1rem 0.5rem; border-radius: 3px;
+    margin: 0.5rem 0 0.25rem;
+}
+.help-row {
+    display: flex; gap: 0.5rem; align-items: baseline;
+    padding: 0.18rem 0; border-bottom: 1px solid #f0f0f0;
+    flex-wrap: wrap;
+}
+.help-row:last-child { border-bottom: none; }
+.help-row code { font-size: 0.71rem; color: #0d6efd; white-space: nowrap; min-width: 220px; }
+.help-type {
+    font-size: 0.6rem !important; padding: 0.1em 0.4em !important;
+    border-radius: 3px; white-space: nowrap; flex-shrink: 0;
+}
+.help-tip { font-size: 0.72rem; color: #495057; line-height: 1.4; }
+
+/* ---- Destination list table ---- */
+.dest-list-link { color: #212529; }
+.dest-list-link:hover { color: #0d6efd; }
+
+/* ---- Destination / entity page header ---- */
+.dest-page-header {
+    border-left: 4px solid #0d6efd;
+    padding: 0.5rem 0.75rem 0.4rem;
+    background: rgba(13,110,253,0.04);
+    border-radius: 0 6px 6px 0;
+}
+.dest-page-name {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+}
+.dest-page-id {
+    font-size: 0.72rem;
+    background: #e9ecef;
+    color: #495057;
+    padding: 0.1em 0.45em;
+    border-radius: 4px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    vertical-align: middle;
+}
+.dest-page-comment {
+    margin: 0.2rem 0 0;
+    font-size: 0.85rem;
+    color: #6c757d;
+    line-height: 1.5;
+}
+.fs-status { font-size: 0.72rem !important; vertical-align: middle; }
+
+/* ---- Section index / home page cards ---- */
+.home-section-card { border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.06); height: 100%; }
+.home-section-hdr  { padding: 0.6rem 1rem; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; border-bottom: 1px solid #dee2e6; }
+.home-section-hdr-link { color: inherit; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; }
+.home-section-hdr-link:hover { text-decoration: underline; color: inherit; }
+.home-menu         { list-style: none; margin: 0; padding: 0; }
+.home-menu li      { border-bottom: 1px solid #f0f0f0; }
+.home-menu li:last-child { border-bottom: none; }
+.home-menu li a    { display: flex; align-items: center; gap: 0.55rem; padding: 0.45rem 1rem; font-size: 0.83rem; color: #343a40; text-decoration: none; transition: background 0.12s, color 0.12s; }
+.home-menu li a:hover { background: rgba(13,110,253,0.06); color: #0d6efd; }
+.home-menu li a i  { color: #6c757d; font-size: 0.9rem; flex-shrink: 0; }
+.home-menu li a:hover i { color: #0d6efd; }
+/* Admin tool cards */
+.admin-tool { border: 1px solid #dee2e6; border-radius: 8px; background: #fafafa; transition: box-shadow 0.15s; }
+.admin-tool:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.admin-tool a.tool-title { font-size: 0.9rem; font-weight: 600; color: #212529; text-decoration: none; }
+.admin-tool a.tool-title:hover { color: #0d6efd; }
+.admin-tool .tool-desc { font-size: 0.8rem; color: #6c757d; margin: 0.25rem 0 0; line-height: 1.5; }
+
+/* Association chooser: used by assocSearch() to hide non-matching items */
+.assoc-hidden { display: none !important; }

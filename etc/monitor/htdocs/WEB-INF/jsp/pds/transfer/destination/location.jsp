@@ -1,4 +1,2 @@
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
-
-<a href="/"><%=System.getProperty("monitor.nickName")%> Home</a> &gt; <a href="/do/transfer">Transmission</a> &gt; <a href="/do/transfer/destination">Destinations</a> &gt;
-<c:if test="${not empty destination}">${destination.name}</c:if>
+<nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="/"><i class="bi bi-house-fill"></i></a></li><li class="breadcrumb-item"><a href="/do/transfer">Transmission</a></li><li class="breadcrumb-item"><a href="/do/transfer/destination">Destinations</a></li><c:if test="${not empty destination}"><li class="breadcrumb-item active">${destination.name}</li></c:if></ol></nav>

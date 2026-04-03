@@ -9,34 +9,34 @@
 <%@ taglib uri="/WEB-INF/tld/displaytag.tld" prefix="display"%>
 
 <style>
+table.fields {
+	width: 100%;
+	min-width: 600px;
+}
+
+table.fields > tbody > tr > th {
+	width: 1%;
+	white-space: nowrap;
+}
+
 #dir {
-	width: 850px;
+	width: 100%;
+	min-width: 300px;
 	height: 375px;
-	resize: both;
+	resize: vertical;
 	overflow: hidden;
 	border: solid 1px lightgray;
 	margin-top: 8px;
 	margin-bottom: 8px;
 }
 
-#properties {
-	width: 850px;
-	height: 375px;
-	resize: both;
+.ace-panel {
+	max-width: 100%;
 	overflow: hidden;
 	border: solid 1px lightgray;
+	border-radius: 4px;
 	margin-top: 8px;
-	margin-bottom: 8px;
-}
-
-#javascript {
-	width: 850px;
-	height: 375px;
-	resize: both;
-	overflow: hidden;
-	border: solid 1px lightgray;
-	margin-top: 8px;
-	margin-bottom: 8px;
+	margin-bottom: 4px;
 }
 
 #maxConnectionsHandle {
@@ -57,24 +57,14 @@
 	line-height: 1.6em;
 }
 
-#retryFrequencyHandle {
-	width: 3em;
-	height: 1.6em;
-	top: 50%;
-	margin-top: -.8em;
-	text-align: center;
-	line-height: 1.6em;
-}
 
 .scrollable-tab {
-	width: 850px;
-	height: 375px;
-	resize: both;
-	overflow: hidden;
+	height: 300px;
+	overflow-y: auto;
 	border: solid 1px lightgray;
-	margin-top: 8px;
-	margin-bottom: 8px;
-	overflow-y: scroll;
+	border-radius: 4px;
+	padding: 8px;
+	position: relative;
 }
 </style>
 
@@ -83,11 +73,26 @@
 	<tiles:useAttribute id="actionFormName" name="action.form.name"
 		classname="java.lang.String" />
 	<tiles:useAttribute name="isInsert" classname="java.lang.String" />
+<c:choose>
+    <c:when test="${isInsert == 'true'}">
+        <div class="form-info-banner">
+            <i class="bi bi-hdd-network text-primary flex-shrink-0"></i>
+            Register a new Host for data transfer operations.
+        </div>
+    </c:when>
+    <c:otherwise>
+        <div class="form-info-banner">
+            <i class="bi bi-hdd-network text-primary flex-shrink-0"></i>
+            Edit the Host configuration.
+        </div>
+    </c:otherwise>
+</c:choose>
+
+
 
 	<c:if test="${isInsert != 'true'}">
 		<c:if test="${requestScope[actionFormName].type == 'Proxy'}">
 			<div class="alert">
-				<span class="closebtn" onclick="parent.history.back();">&times;</span>
 				<b>THIS CONFIGURATION CONTROLS THE BEHAVIOR OF THE PROXY HOST.<br>
 				DO NOT MODIFY IT UNLESS YOU FULLY UNDERSTAND THE CONSEQUENCES.<br>
 				ANY CHANGES MAY DIRECTLY AFFECT REPLICATION TO THIS PROXY AND<br>
@@ -107,9 +112,8 @@
 		<th>Comment</th>
 		<td><html:text property="comment" /></td>
 	<tr>
-		<th>Transfer Protocol</th>
+		<th>Transfer Protocol <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Select the Transfer Protocol to connect to the remote site" tabindex="0"></i></th>
 		<td><select
-			title="Select the Transfer Protocol to connect to the remote site"
 			id="transferMethod" name="transferMethod">
 				<c:forEach var="method"
 					items="${requestScope[actionFormName].transferMethodOptions}">
@@ -129,19 +133,29 @@
 	</tr>
 
 	<tr>
-		<th>Hostname/IP</th>
-		<td><input title="DNS name or IP address" property="host"
-			id="host" name="host" type="text"
-			value="${requestScope[actionFormName].host}">&nbsp;(please
-			use letters, digits, '-' and '.' only)</td>
+		<th>Hostname/IP <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="DNS hostname or IPv4/IPv6 address" tabindex="0"></i></th>
+		<td>
+			<div class="d-flex align-items-center gap-2">
+				<input id="host" name="host" type="text"
+					value="${requestScope[actionFormName].host}"
+					oninput="validateHostInput(this)" />
+				<span id="hostFeedback"></span>
+			</div>
+		</td>
 	</tr>
 
 	<tr>
-		<th>Nickname</th>
-		<td><input title="As it will appear on the Destination page"
-			property="nickName" id="nickName" name="nickName" type="text"
-			value="${requestScope[actionFormName].nickName}">&nbsp;(please
-			use letters, digits, '_' and '-' only)</td>
+		<th>Nickname <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="As it will appear on the Destination page. Alphanumeric only; '-' and '_' may be used as separators (e.g. 'test_file'), not at the start, end, or consecutively." tabindex="0"></i></th>
+		<td>
+			<div class="d-flex align-items-center gap-2">
+				<input id="nickName" name="nickName" type="text"
+					value="${requestScope[actionFormName].nickName}"
+					pattern="[A-Za-z0-9]+([_\-][A-Za-z0-9]+)*"
+					title="Use alphanumeric characters, with '-' or '_' as separators only (e.g. 'test_file', not '_test' or 'test_')"
+					oninput="validatePatternInput(this,'nickNameFeedback')" />
+				<span id="nickNameFeedback"></span>
+			</div>
+		</td>
 	</tr>
 	<tr>
 		<th>Login</th>
@@ -154,8 +168,8 @@
 
 	<c:if test="${isInsert == 'true'}">
 		<tr>
-			<th>Type</th>
-			<td><select title="Select the Host Type" id="type" name="type">
+			<th>Type <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Select the Host Type" tabindex="0"></i></th>
+			<td><select id="type" name="type">
 					<c:forEach var="hostType"
 						items="${requestScope[actionFormName].typeOptions}">
 						<c:choose>
@@ -182,10 +196,9 @@
 
 
 	<tr>
-		<th>Label</th>
+		<th>Label <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="This is only used for the monitoring display (shown in the Host column)" tabindex="0"></i></th>
 		<td><bean:define id="networks" name="hostActionForm"
 				property="networkOptions" type="java.util.Collection" /> <html:select
-				title="This is only used for the monitoring display (shown in the Host column)"
 				property="networkCode">
 				<html:options collection="networks" property="name"
 					labelProperty="value" />
@@ -193,10 +206,9 @@
 	</tr>
 
 	<tr>
-		<th>Transfer Group</th>
+		<th>Transfer Group <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="From which Data Movers this host can be accessed?" tabindex="0"></i></th>
 		<td><bean:define id="groups" name="hostActionForm"
 				property="transferGroupOptions" type="java.util.Collection" /> <html:select
-				title="From which Data Movers this host can be accessed?"
 				property="transferGroup">
 				<html:options collection="groups" property="name"
 					labelProperty="name" />
@@ -232,13 +244,16 @@
 	</tr>
 
 	<tr>
-		<th>Retry Frequency</th>
+		<th>Retry Frequency <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Time in seconds to wait before to retry a failed transfer on this host" tabindex="0"></i></th>
 		<td>
-			<div id="retryFrequencySlider" style="width: 210px; margin: 6px;">
-				<input type="hidden" name="retryFrequency" id="retryFrequency">
-				<div
-					title="Time in seconds to wait before to retry a failed transfer on this host"
-					id="retryFrequencyHandle" class="ui-slider-handle"></div>
+			<input type="hidden" name="retryFrequency" id="retryFrequency"
+				value='<c:out value="${requestScope[actionFormName].retryFrequency}"/>'>
+			<div class="dur-picker d-flex align-items-center gap-1 flex-wrap" data-target="retryFrequency">
+				<input type="number" class="form-control form-control-sm dur-h" min="0" style="width:65px" placeholder="0">
+				<span class="text-muted small">h</span>
+				<input type="number" class="form-control form-control-sm dur-m" min="0" max="59" style="width:60px" placeholder="0">
+				<span class="text-muted small">m</span>
+				<span class="text-muted small ms-1 dur-display"></span>
 			</div>
 		</td>
 	</tr>
@@ -275,6 +290,7 @@
 			</div> <pre id="dir">
 				<c:out value="${requestScope[actionFormName].dir}" />
 			</pre> <textarea id="dir" name="dir" style="display: none;"></textarea>
+			<div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap; margin-top:0.4rem;">
 			<button type="button" id="formatDir" name="formatDir"
 				onclick="formatSource(editorDir); return false">Format</button>
 			<button type="button" id="testDir" name="testDir"
@@ -365,6 +381,7 @@
 					<option>$moverName</option>
 				</optgroup>
 		</select>
+		</div>
 		</td>
 	</tr>
 
@@ -375,35 +392,59 @@
 	<tr>
 		<th>Options</th>
 		<td colspan="2">
-			<div id="tabs">
-				<ul>
-					<li><a href="#tabs-1">Properties</a></li>
-					<li><a href="#tabs-2">JavaScript</a></li>
-					<li><a href="#tabs-3">Help</a></li>
-				</ul>
-				<div id="tabs-1">
-					<pre id="properties">
-						<c:out value="${requestScope[actionFormName].properties}" />
-					</pre>
-					<textarea id="properties" name="properties" style="display: none;"></textarea>
-					<button type="button"
-						onclick="formatSource(editorProperties); return false">Format</button>
-					<button type="button"
-						onclick="clearSource(editorProperties); return false">Clear</button>
+			<div class="accordion" id="hostOptionsAccordion">
+				<div class="accordion-item">
+					<h2 class="accordion-header" id="hostAccHeadProperties">
+						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#hostAccProperties" aria-expanded="false" aria-controls="hostAccProperties">
+							Properties
+						</button>
+					</h2>
+					<div id="hostAccProperties" class="accordion-collapse collapse" aria-labelledby="hostAccHeadProperties" data-bs-parent="#hostOptionsAccordion">
+						<div class="accordion-body p-2">
+							<div class="ace-panel">
+								<pre id="properties"><c:out value="${requestScope[actionFormName].properties}" /></pre>
+								<textarea id="properties" name="properties" style="display: none;"></textarea>
+							</div>
+							<div class="d-flex align-items-center gap-2 mt-2">
+								<button type="button" class="btn btn-sm btn-outline-secondary" onclick="formatSource(editorProperties); return false">Format</button>
+								<button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearSource(editorProperties); return false">Clear</button>
+								<small class="text-muted ms-auto"><i class="bi bi-keyboard"></i> Ctrl+Space for completions</small>
+							</div>
+						</div>
+					</div>
 				</div>
-				<div id="tabs-2">
-					<pre id="javascript">
-						<c:out value="${requestScope[actionFormName].javascript}" />
-					</pre>
-					<textarea id="javascript" name="javascript" style="display: none;"></textarea>
-					<button type="button"
-						onclick="formatSource(editorJavascript); return false">Format</button>
-					<button type="button"
-						onclick="testSource(editorJavascript); return false">Test</button>
-					<button type="button"
-						onclick="clearSource(editorJavascript); return false">Clear</button>
+				<div class="accordion-item">
+					<h2 class="accordion-header" id="hostAccHeadJavascript">
+						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#hostAccJavascript" aria-expanded="false" aria-controls="hostAccJavascript">
+							JavaScript
+						</button>
+					</h2>
+					<div id="hostAccJavascript" class="accordion-collapse collapse" aria-labelledby="hostAccHeadJavascript" data-bs-parent="#hostOptionsAccordion">
+						<div class="accordion-body p-2">
+							<div class="ace-panel">
+								<pre id="javascript"><c:out value="${requestScope[actionFormName].javascript}" /></pre>
+								<textarea id="javascript" name="javascript" style="display: none;"></textarea>
+							</div>
+							<div class="d-flex align-items-center gap-2 mt-2">
+								<button type="button" class="btn btn-sm btn-outline-secondary" onclick="formatSource(editorJavascript); return false">Format</button>
+								<button type="button" class="btn btn-sm btn-outline-secondary" onclick="testSource(editorJavascript); return false">Test</button>
+								<button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearSource(editorJavascript); return false">Clear</button>
+							</div>
+						</div>
+					</div>
 				</div>
-				<div id="tabs-3" class="scrollable-tab"></div>
+				<div class="accordion-item">
+					<h2 class="accordion-header" id="hostAccHeadHelp">
+						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#hostAccHelp" aria-expanded="false" aria-controls="hostAccHelp">
+							Help
+						</button>
+					</h2>
+					<div id="hostAccHelp" class="accordion-collapse collapse" aria-labelledby="hostAccHeadHelp" data-bs-parent="#hostOptionsAccordion">
+						<div class="accordion-body p-2">
+							<div id="hostHelpContent" class="scrollable-tab"></div>
+						</div>
+					</div>
+				</div>
 			</div>
 		</td>
 	</tr>
@@ -413,11 +454,10 @@
 	</tr>
 
 	<tr>
-	    <th>Automatic Location</th>
+	    <th>Automatic Location <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Try to get the latitude/longitude from the IP address" tabindex="0"></i></th>
 	    <td colspan="2">
 	        <html:checkbox
 	            styleId="automaticLocation"
-	            title="Try to get the latitude/longitude from the IP address"
 	            property="automaticLocation" />
 	    </td>
 	</tr>
@@ -441,67 +481,79 @@
 	</tr>
 
 	<tr>
-		<th>Check</th>
-		<td colspan="2"><html:checkbox property="check" />
-			<content:icon key="icon.help.medium"
-				title="Allow automatically checking the host by transferring a test file on a regular schedule."
-				writeFullTag="true" /></td>
+		<th>Check <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Allow automatically checking the host by transferring a test file on a regular schedule." tabindex="0"></i></th>
+		<td colspan="2"><html:checkbox property="check" styleId="checkFlag" onchange="toggleCheckRows()" /></td>
 	</tr>
-	<tr>
-		<th>Notify Once</th>
-		<td colspan="2"><html:checkbox property="notifyOnce" />
-			<content:icon key="icon.help.medium"
-				title="Only notify once for consecutive errors." writeFullTag="true" /></td>
+	<tr id="notifyOnceRow">
+		<th>Notify Once <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Only notify once for consecutive errors." tabindex="0"></i></th>
+		<td colspan="2"><html:checkbox property="notifyOnce" /></td>
 	</tr>
-	<tr>
-		<th>Check Frequency</th>
-		<td colspan="2"><html:text property="checkFrequency" />
-			<content:icon key="icon.help.medium"
-				title="Define the delay in ms between two checks."
-				writeFullTag="true" /></td>
+	<tr id="checkFrequencyRow">
+		<th>Check Frequency <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Define the delay in ms between two checks." tabindex="0"></i></th>
+		<td colspan="2">
+			<input type="hidden" name="checkFrequency" id="checkFrequency"
+				value='<c:out value="${requestScope[actionFormName].checkFrequency}"/>'>
+			<div class="dur-picker d-flex align-items-center gap-1 flex-wrap" data-target="checkFrequency">
+				<input type="number" class="form-control form-control-sm dur-h" min="0" style="width:65px" placeholder="0">
+				<span class="text-muted small">h</span>
+				<input type="number" class="form-control form-control-sm dur-m" min="0" max="59" style="width:60px" placeholder="0">
+				<span class="text-muted small">m</span>
+				<span class="text-muted small ms-1 dur-display"></span>
+			</div>
+		</td>
 	</tr>
-	<tr>
-		<th>Check Filename</th>
-		<td colspan="2"><html:text property="checkFilename" />
-			<content:icon key="icon.help.medium"
-				title="Define the name for the temporary test file."
-				writeFullTag="true" /></td>
+	<tr id="checkFilenameRow">
+		<th>Check Filename <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Define the name for the temporary test file." tabindex="0"></i></th>
+		<td colspan="2"><html:text property="checkFilename" /></td>
 	</tr>
 	<tr>
 		<td colspan="3">&nbsp;</td>
 	</tr>
 
-	<tr>
-		<th>Acquisition Frequency</th>
-		<td colspan="2"><html:text
-				title="If this host is for acquisition then define the delay in ms between two listings of remote files"
-				property="acquisitionFrequency" /></td>
+	<tr id="acquisitionFrequencyRow">
+		<th>Acquisition Frequency <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If this host is for acquisition then define the delay in ms between two listings of remote files" tabindex="0"></i></th>
+		<td colspan="2">
+			<input type="hidden" name="acquisitionFrequency" id="acquisitionFrequency"
+				value='<c:out value="${requestScope[actionFormName].acquisitionFrequency}"/>'>
+			<div class="dur-picker d-flex align-items-center gap-1 flex-wrap" data-target="acquisitionFrequency">
+				<input type="number" class="form-control form-control-sm dur-h" min="0" style="width:65px" placeholder="0">
+				<span class="text-muted small">h</span>
+				<input type="number" class="form-control form-control-sm dur-m" min="0" max="59" style="width:60px" placeholder="0">
+				<span class="text-muted small">m</span>
+				<span class="text-muted small ms-1 dur-display"></span>
+			</div>
+		</td>
 	</tr>
 
-	<tr>
+	<tr id="acquisitionFrequencySpacer">
 		<td colspan="3">&nbsp;</td>
 	</tr>
 
 	<tr>
-		<th>Owner</th>
+		<th>Owner <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="For the record" tabindex="0"></i></th>
 		<td><bean:define id="users" name="hostActionForm"
 				property="ownerOptions" type="java.util.Collection" /> <html:select
-				title="For the record" property="owner">
+				property="owner">
 				<html:options collection="users" property="name"
 					labelProperty="comment" />
 			</html:select></td>
 	</tr>
 	<tr>
-		<th>Mail Address</th>
-		<td><html:text
-				title="Email address used when sending notifications"
-				property="userMail" /></td>
+		<th>Mail Address <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Email address used when sending notifications" tabindex="0"></i></th>
+		<td>
+			<div class="d-flex align-items-center gap-2">
+				<input type="email" name="userMail" id="userMailInput"
+					value='<c:out value="${requestScope[actionFormName].userMail}"/>'
+					oninput="validateMailInput(this); toggleMailRows()" />
+				<span id="userMailFeedback"></span>
+			</div>
+		</td>
 	</tr>
-	<tr>
+	<tr id="mailOnSuccessRow">
 		<th>Mail on Success</th>
 		<td colspan="2"><html:checkbox property="mailOnSuccess" /></td>
 	</tr>
-	<tr>
+	<tr id="mailOnErrorRow">
 		<th>Mail on Error</th>
 		<td colspan="2"><html:checkbox property="mailOnError" /></td>
 	</tr>
@@ -520,6 +572,7 @@
 <script>
 	var editorDir = getEditorProperties(false, false, "dir", "toml");
 	var editorProperties = getEditorProperties(false, true, "properties", "crystal");
+	editorProperties.setOptions({minLines: 10, maxLines: 20});
 	
 	// Get the completions from the bean!
 	var transferModuleNames = [${requestScope[actionFormName].transferModuleNames}];
@@ -529,7 +582,31 @@
     
 	$(document).ready(function() {
 		populateHelpTab();
+		toggleCheckRows();
+		toggleAcquisitionRow();
+		toggleMailRows();
 	});
+	
+	function toggleCheckRows() {
+		var show = document.getElementById('checkFlag').checked;
+		['notifyOnceRow','checkFrequencyRow','checkFilenameRow'].forEach(function(id) {
+			document.getElementById(id).style.display = show ? '' : 'none';
+		});
+	}
+
+	function toggleMailRows() {
+		var show = document.getElementById('userMailInput').value.trim() !== '';
+		['mailOnSuccessRow','mailOnErrorRow'].forEach(function(id) {
+			document.getElementById(id).style.display = show ? '' : 'none';
+		});
+	}
+
+	function toggleAcquisitionRow() {
+		var show = getHostType() === 'Acquisition';
+		['acquisitionFrequencyRow','acquisitionFrequencySpacer'].forEach(function(id) {
+			document.getElementById(id).style.display = show ? '' : 'none';
+		});
+	}
 	
 	function isInvalidModuleName(moduleName) {
 		var hostType = getHostType();
@@ -542,7 +619,7 @@
 	// Lets' populate the help tab!
 	function populateHelpTab() {
 		var transferModuleName = getTransferModuleName();
-		$('#tabs-3').html(getHelpHtmlContent(
+		$('#hostHelpContent').html(getHelpHtmlContent(
 				completions.filter(function(item) {
 	           		var moduleName = item.caption.split(".")[0];
 	       	    	if (transferModuleName !== "ecaccess" && transferModuleNames.includes(moduleName) && moduleName !== transferModuleName) {
@@ -681,7 +758,7 @@
 	document.getElementById("transferMethod").addEventListener("change", function() {
     	editorProperties.session.setAnnotations(
     		getAnnotations(editorProperties, editorProperties.selection.getCursor().row));
-    	$("#tabs").tabs("option", "active", 0);
+    	bootstrap.Collapse.getOrCreateInstance(document.getElementById('hostAccProperties')).show();
     	checkEachLine(editorProperties);
     	populateHelpTab();
 	});
@@ -691,9 +768,10 @@
 		document.getElementById("type").addEventListener("change", function() {
     		editorProperties.session.setAnnotations(
     			getAnnotations(editorProperties, editorProperties.selection.getCursor().row));
-    		$("#tabs").tabs("option", "active", 0);
+    		bootstrap.Collapse.getOrCreateInstance(document.getElementById('hostAccProperties')).show();
     		checkEachLine(editorProperties);
     		populateHelpTab();
+    		toggleAcquisitionRow();
 		});
    	};
 
@@ -717,6 +795,30 @@
 	});
 	
 	var editorJavascript = getEditorProperties(false, false, "javascript", "javascript");
+	editorJavascript.setOptions({minLines: 10, maxLines: 20});
+
+	document.getElementById('hostAccProperties').addEventListener('shown.bs.collapse', function() {
+		editorProperties.resize(true);
+	});
+	document.getElementById('hostAccJavascript').addEventListener('shown.bs.collapse', function() {
+		editorJavascript.resize(true);
+	});
+	// When Help panel opens, scroll to the parameter at the current cursor position
+	var hostHelpBtn = document.querySelector('button[data-bs-target="#hostAccHelp"]');
+	if (hostHelpBtn) {
+		hostHelpBtn.addEventListener('click', function() {
+			setTimeout(function() {
+				if (!document.getElementById('hostAccHelp').classList.contains('show')) return;
+				var line = editorProperties.session.getLine(editorProperties.selection.getCursor().row) || '';
+				line = line.trim();
+				if (line && !line.startsWith('#') && !line.startsWith('//')) {
+					var eqIdx = line.indexOf('=');
+					var paramName = (eqIdx > 0 ? line.substring(0, eqIdx) : line).trim();
+					if (paramName) scrollHelpToParam('hostHelpContent', paramName);
+				}
+			}, 400);
+		});
+	}
 
 	var textareaDir = $('textarea[name="dir"]');
 	textareaDir.closest('form').submit(
@@ -747,6 +849,12 @@
 	makeResizable(editorDir);
 	makeResizable(editorProperties);
 	makeResizable(editorJavascript);
+
+	window.addEventListener('resize', function() {
+		editorDir.resize(true);
+		editorProperties.resize(true);
+		editorJavascript.resize(true);
+	});
 
 	$('select[name="type"]').on(
 			'change',
@@ -790,8 +898,6 @@
 		$(this).prop("selectedIndex", 0);
 		editorDir.insert(str);
 	});
-	$("#tabs").tabs();
-	$("#tabs").tabs("option", "active", 0);
 	$(function() {
 		$("#maxConnectionsSlider")
 				.slider(
@@ -829,28 +935,40 @@
 								$("#retryCount").val(ui.value);
 							}
 						});
-		$("#retryFrequencySlider")
-				.slider(
-						{
-							min : 0,
-							max : 600,
-							step : 5,
-							value : <c:out value="${requestScope[actionFormName].retryFrequency/1000}"/>,
-							range : "min",
-							animate : true,
-							create : function() {
-								var value = $(this).slider("value");
-								$("#retryFrequencyHandle").text(value + " s");
-								$("#retryFrequency").val(value * 1000);
-							},
-							slide : function(event, ui) {
-								$("#retryFrequencyHandle")
-										.text(ui.value + " s");
-								$("#retryFrequency").val(ui.value * 1000);
-							}
-						});
-	});
-	$('#nickName').on('input', function() {
+	// Duration picker: h + m only. Rounds existing ms value to nearest minute (min 1m unless 0).
+	(function() {
+		function msToHM(ms) {
+			ms = parseInt(ms) || 0;
+			if (ms === 0) return {h: 0, m: 0};
+			var totalMin = Math.round(ms / 60000);
+			if (totalMin < 1) totalMin = 1;
+			return {h: Math.floor(totalMin / 60), m: totalMin % 60};
+		}
+		function hmToMs(h, m) {
+			return ((parseInt(h) || 0) * 60 + (parseInt(m) || 0)) * 60000;
+		}
+		function fmtHM(h, m) {
+			var parts = [];
+			if (h) parts.push(h + 'h');
+			if (m) parts.push(m + 'm');
+			return parts.length ? '= ' + parts.join(' ') : (h === 0 && m === 0 ? '= 0 (disabled)' : '');
+		}
+		$('.dur-picker').each(function() {
+			var $picker = $(this);
+			var $hidden = $('#' + $picker.data('target'));
+			var p = msToHM($hidden.val());
+			$picker.find('.dur-h').val(p.h || '');
+			$picker.find('.dur-m').val(p.m || '');
+			$picker.find('.dur-display').text(fmtHM(p.h, p.m));
+			$picker.find('.dur-h, .dur-m').on('input change', function() {
+				var h = parseInt($picker.find('.dur-h').val()) || 0;
+				var m = parseInt($picker.find('.dur-m').val()) || 0;
+				$hidden.val(hmToMs(h, m));
+				$picker.find('.dur-display').text(fmtHM(h, m));
+			});
+		});
+	})();
+	});	$('#nickName').on('input', function() {
 		const regex = /^[a-zA-Z0-9_-]+$/;
 		const $this = $(this);
 		const value = $this.val();
@@ -879,5 +997,11 @@
     window.onload = function() {
     	toggleLocationFields(); // initialize on page load
     	document.getElementById("automaticLocation").addEventListener("change", toggleLocationFields);
+    	var mailInput = document.getElementById('userMailInput');
+    	if (mailInput) validateMailInput(mailInput);
+    	var hostInput = document.getElementById('host');
+    	if (hostInput) validateHostInput(hostInput);
+    	var nickInput = document.getElementById('nickName');
+    	if (nickInput) validatePatternInput(nickInput, 'nickNameFeedback');
 	};
 </script>

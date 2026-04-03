@@ -1,14 +1,18 @@
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="search" %>
 <%@ taglib uri="/WEB-INF/tld/struts-tiles.tld" prefix="tiles" %>
 
-<div id="bottomfooter" class="bottomfooter">
-      <table border=0 height="40" border="0" cellspacing="0" cellpadding="0" width="100%">
-        <tr>
-          <td bgcolor="#000000" width="30%" align="left" valign="middle"><div class="footer_simple_title">Powered by <a href="https://github.com/ecmwf/open-ecpds" target="_blank">OpenECPDS</a></div></td>
-          <td bgcolor="#000000" align="middle" valign="middle">
-              <a href="/do/user/detailer"><img alt="Page Details" title="Page Details" src="/assets/images/webapp/detailer.gif" border="0" width="18" height="18"></a>
-          </td>
-          <td bgcolor="#000000" width="30%" align="right" valign="middle"><div class="footer_simple_title">v<%=ecmwf.common.version.Version.getVersion()%> <font size=-1>(<%=ecmwf.common.version.Version.getBuild()%>)</font></div></td>
-        </tr>
-      </table>
+<div id="bottomfooter" class="bottomfooter d-flex align-items-center justify-content-between text-white px-3"
+     style="background-color:<%=System.getProperty("monitor.color")%>; height:34px; border-top:1px solid rgba(255,255,255,0.15);">
+    <div class="footer_simple_title">
+        Powered by <a href="https://github.com/ecmwf/open-ecpds" target="_blank" rel="noopener noreferrer" class="fw-semibold">OpenECPDS</a>
+    </div>
+    <div>
+        <a href="/do/user/detailer" title="Page Details">
+            <i class="bi bi-info-circle text-white-50"></i>
+        </a>
+    </div>
+    <div class="footer_simple_title">
+        <span class="text-white-50">v</span><%=ecmwf.common.version.Version.getVersion()%>
+        <span class="text-white-50 small ms-1">(<%=ecmwf.common.version.Version.getBuild()%>)</span>
+    </div>
 </div>

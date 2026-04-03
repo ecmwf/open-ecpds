@@ -59,7 +59,7 @@ function createAndSubmitDynamicForm(action,bcc,subject,body) {
                 document.body.appendChild(form);
                 form.submit();
         }catch(e){
-                alert("Error"+e);
+                showToast("Error: " + e, "danger");
         }
 }
 </script>

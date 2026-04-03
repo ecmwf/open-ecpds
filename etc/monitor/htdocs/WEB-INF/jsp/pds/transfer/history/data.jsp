@@ -12,5 +12,5 @@
 <tr><th>Status</th><td>${item.formattedStatus}</td></tr>
 <tr><th>Sent</th><td>${item.formattedSent}</td></tr>
 <tr><th>Comment</th><td>${item.formattedComment}</td></tr>
-<tr><th>Error</th><td><c:if test="${item.error}">yes</c:if><c:if test="${!item.error}">no</c:if></td></tr>
+<tr><th>Error</th><td><c:if test="${item.error}"><i class="bi bi-x-circle-fill text-danger" title="Yes"></i></c:if><c:if test="${!item.error}"><i class="bi bi-check-circle-fill text-success" title="No"></i></c:if></td></tr>
 </table>

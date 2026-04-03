@@ -119,6 +119,7 @@
 	<tr>
 	<th>Timestep</th><td valign="top">${datafile.timeStep}</td>
 	<td valign="top" rowspan="5" colspan="2">
+		<p class="fw-bold mb-1 mt-2">Meta Data for ${datafile.id}</p>
 		<display:table id="metadata" name="${datafile.metaData}" requestURI="" class="listing">
 			<display:setProperty name="basic.msg.empty_list">
 				<table class="listing" id="metadata">
@@ -127,7 +128,6 @@
 			</display:setProperty>
 		 	<display:column sortable="true" title="Name"><a href="/do/datafile/metadata/attribute/${metadata.name}">${metadata.name}</a></display:column>
 		 	<display:column property="value"/>    				
-		 	<display:caption>Meta Data for ${datafile.id}</display:caption>
 		</display:table>
 	</td>
 	</tr>
@@ -136,18 +136,19 @@
 	<th>Size</th><td><a STYLE="TEXT-DECORATION: NONE" title="Size: ${datafile.formattedSize}">${datafile.size} bytes</a></td>
 	</tr>
 	<tr>
-	<th>Delete Original</th><td valign="top"><c:if test="${datafile.deleteOriginal}">yes</c:if><c:if test="${!datafile.deleteOriginal}">no</c:if></td>
+	<th>Delete Original</th><td valign="top"><c:if test="${datafile.deleteOriginal}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if><c:if test="${!datafile.deleteOriginal}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></td>
 	</tr>
 	<tr>
-	<th>Deleted</th><td valign="top"><c:if test="${datafile.deleted}"><font color="red">yes</font></c:if><c:if test="${!datafile.deleted}">no</c:if></td>
+	<th>Deleted</th><td valign="top"><c:if test="${datafile.deleted}"><font color="red"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></font></c:if><c:if test="${!datafile.deleted}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></td>
 	</tr>
 	<tr>
-	<th>Removed</th><td valign="top"><c:if test="${datafile.removed}"><font color="red">yes</font></c:if><c:if test="${!datafile.removed}">no</c:if></td>
+	<th>Removed</th><td valign="top"><c:if test="${datafile.removed}"><font color="red"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></font></c:if><c:if test="${!datafile.removed}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></td>
 	</tr>
 
 	
 	</table>
 
+<p class="fw-bold mb-1 mt-2">Transfers for this datafile</p>
 <display:table name="${datafile.dataTransfers}" id="transfer"  pagesize="35" requestURI="" sort="list" class="listing">
 
     <display:column title="Destination" sortable="true">	
@@ -196,7 +197,5 @@
 
     <display:column title="Prior" property="priority" sortable="true"/>
 
-    <display:caption>Transfers for this datafile</display:caption>
-	
 </display:table>
 </c:if>

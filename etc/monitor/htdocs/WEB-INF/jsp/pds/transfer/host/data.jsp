@@ -14,46 +14,62 @@
 <c:if test="${empty isDelete}">
 
 	<style>
-#dir {
-	width: 850px;
-	height: 375px;
-	resize: both;
+.ace-panel {
+	max-width: 100%;
 	overflow: hidden;
 	border: solid 1px lightgray;
+	border-radius: 4px;
 	margin-top: 8px;
-	margin-bottom: 8px;
+	margin-bottom: 4px;
 }
-
-#properties {
-	width: 850px;
-	height: 375px;
-	resize: both;
-	overflow: hidden;
-	border: solid 1px lightgray;
-	margin-top: 8px;
-	margin-bottom: 8px;
-}
-
-#javascript {
-	width: 850px;
-	height: 375px;
-	resize: both;
-	overflow: hidden;
-	border: solid 1px lightgray;
-	margin-top: 8px;
-	margin-bottom: 8px;
-}
-
 .scrollable-tab {
-	width: 850px;
+	height: 300px;
+	overflow-y: auto;
+	border: solid 1px lightgray;
+	border-radius: 4px;
+	padding: 8px;
+}
+table.fields {
+	width: 100%;
+	min-width: 600px;
+}
+table.fields > tbody > tr > th {
+	width: 1%;
+	white-space: nowrap;
+}
+#dir {
+	width: 100%;
+	min-width: 300px;
 	height: 375px;
-	resize: both;
+	resize: vertical;
 	overflow: hidden;
 	border: solid 1px lightgray;
 	margin-top: 8px;
 	margin-bottom: 8px;
-  	overflow-y: scroll; /* Enable vertical scrolling */
 }
+.progress-terminal { border-radius: 4px; overflow: hidden; margin-top: 2px; }
+.progress-terminal-hdr {
+    background: #2d2d2d; color: #ccc; padding: 0.25rem 0.75rem;
+    font-size: 0.75rem; border-bottom: 1px solid #444;
+    display: flex; align-items: center; gap: 0.4rem;
+}
+.progress-terminal-body {
+    background: #1e1e1e; color: #d4d4d4;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 0.75rem; line-height: 1.7;
+    padding: 0.5rem 0.75rem;
+    height: 200px; min-height: 80px; max-height: 500px;
+    overflow-y: auto; resize: vertical;
+    white-space: pre-wrap; word-break: break-word;
+}
+.progress-terminal-body font[color="black"],
+.progress-terminal-body font[color="#000000"] { color: #6c9abd; }
+.progress-terminal-body font[color="red"]   { color: #f88; }
+.progress-terminal-body font[color="green"] { color: #8f8; }
+.progress-terminal-body a { color: #79b8ff; text-decoration: none; }
+.progress-terminal-body a:hover { text-decoration: underline; }
+.assoc-card .card-header { display:flex; align-items:center; gap:.4rem; padding:.5rem .75rem; background:#f8f9fa; font-size:.85rem; }
+.assoc-chip { display:inline-flex; align-items:center; gap:.25rem; background:#e9ecef; border-radius:1rem; padding:.2rem .6rem; font-size:.8rem; margin:.15rem; }
 </style>
 
 	<c:set var="authorized" value="false" />
@@ -84,7 +100,6 @@
 	<c:if test="${authorized == 'false'}">
 		<br />
 		<div class="alert">
-			<span class="closebtn" onclick="parent.history.back();">&times;</span>
 			Error getting object <- Problem searching by key '${host.name}' <-
 			Host not found: {${host.name}}
 		</div>
@@ -139,9 +154,9 @@
 							href="/${host.transferMethodName}"
 							alternativeText="${host.transferMethodName}">${host.transferMethodName}</auth:link></td>
 					<th>Enabled</th>
-					<td><c:if test="${host.active}">yes</c:if> <c:if
+					<td><c:if test="${host.active}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
 							test="${!host.active}">
-							<font color="red">no</font>
+							<i class="bi bi-x-circle-fill text-danger" title="No"></i>
 						</c:if></td>
 				</tr>
 				<tr>
@@ -194,43 +209,84 @@
 						<tr>
 							<th>Options</th>
 							<td colspan="3">
-								<div id="tabs">
-									<ul>
-										<li><a href="#tabs-1">Properties</a></li>
-										<li><a href="#tabs-2">JavaScript</a></li>
-										<li><a href="#tabs-3">Help</a></li>
-									</ul>
-									<div id="tabs-1">
-										<pre id="properties">
-											<c:out value="${host.properties}" />
-										</pre>
-										<textarea id="properties" name="properties"
-											style="display: none;"></textarea>
-									</div>
-									<div id="tabs-2">
-										<pre id="javascript">
-											<c:out value="${host.javascript}" />
-										</pre>
-										<textarea id="javascript" name="javascript"
-											style="display: none;"></textarea>
-									</div>
-									<div id="tabs-3" class="scrollable-tab">
+								<div class="accordion" id="hostViewOptionsAccordion">
+								<div class="accordion-item">
+									<h2 class="accordion-header" id="hostViewAccHeadProperties">
+										<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#hostViewAccProperties" aria-expanded="false" aria-controls="hostViewAccProperties">
+											Properties
+										</button>
+									</h2>
+									<div id="hostViewAccProperties" class="accordion-collapse collapse" aria-labelledby="hostViewAccHeadProperties" data-bs-parent="#hostViewOptionsAccordion">
+										<div class="accordion-body p-2">
+											<div class="ace-panel">
+												<pre id="properties"><c:out value="${host.properties}" /></pre>
+												<textarea id="properties" name="properties" style="display: none;"></textarea>
+											</div>
+										</div>
 									</div>
 								</div>
+								<div class="accordion-item">
+									<h2 class="accordion-header" id="hostViewAccHeadJavascript">
+										<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#hostViewAccJavascript" aria-expanded="false" aria-controls="hostViewAccJavascript">
+											JavaScript
+										</button>
+									</h2>
+									<div id="hostViewAccJavascript" class="accordion-collapse collapse" aria-labelledby="hostViewAccHeadJavascript" data-bs-parent="#hostViewOptionsAccordion">
+										<div class="accordion-body p-2">
+											<div class="ace-panel">
+												<pre id="javascript"><c:out value="${host.javascript}" /></pre>
+												<textarea id="javascript" name="javascript" style="display: none;"></textarea>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div class="accordion-item">
+									<h2 class="accordion-header" id="hostViewAccHeadHelp">
+										<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#hostViewAccHelp" aria-expanded="false" aria-controls="hostViewAccHelp">
+											Help
+										</button>
+									</h2>
+									<div id="hostViewAccHelp" class="accordion-collapse collapse" aria-labelledby="hostViewAccHeadHelp" data-bs-parent="#hostViewOptionsAccordion">
+										<div class="accordion-body p-2">
+											<div id="hostViewHelpContent" class="scrollable-tab"></div>
+										</div>
+									</div>
+								</div>
+							</div>
 							</td>
 						</tr>
 
 						<auth:if basePathKey="transferhistory.basepath" paths="/">
 							<auth:then>
 
+						<c:if test="${host.type == 'Acquisition'}">
 						<tr>
 							<td colspan="3">&nbsp;</td>
 						</tr>
 
 						<tr>
 							<th>Progress</th>
-							<td colspan="3"><pre class="delimiters">${host.formattedLastOutput}</pre></td>
+							<td colspan="3">
+								<div class="progress-terminal">
+									<div class="progress-terminal-hdr">
+										<i class="bi bi-activity text-success"></i> Activity Log
+										<button class="btn btn-sm btn-outline-secondary border-secondary text-white-50 py-0 px-2 ms-auto"
+												style="font-size:0.7rem;"
+												onclick="(function(btn){
+													var text = document.getElementById('progressBody').innerText;
+													navigator.clipboard.writeText(text).then(function(){
+														btn.innerHTML='<i class=\'bi bi-check-lg\'></i> Copied';
+														setTimeout(function(){ btn.innerHTML='<i class=\'bi bi-clipboard\'></i> Copy'; }, 1500);
+													});
+												})(this)">
+											<i class="bi bi-clipboard"></i> Copy
+										</button>
+									</div>
+									<div class="progress-terminal-body" id="progressBody">${host.formattedLastOutput}</div>
+								</div>
+							</td>
 						</tr>
+						</c:if>
 
 						<tr>
 							<td colspan="3">&nbsp;</td>
@@ -264,43 +320,76 @@
 
 						<tr>
 							<th>Check</th>
-							<td><c:if test="${host.check}">yes</c:if> <c:if
-									test="${!host.check}">no</c:if></td>
-							<th>Mail On Success</th>
-							<td><c:if test="${host.mailOnSuccess}">yes</c:if> <c:if
-									test="${!host.mailOnSuccess}">no</c:if></td>
+							<td><c:if test="${host.check}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
+									test="${!host.check}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></td>
+							<c:choose>
+								<c:when test="${not empty host.userMail}">
+									<th>Mail On Success</th>
+									<td><c:if test="${host.mailOnSuccess}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
+											test="${!host.mailOnSuccess}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></td>
+								</c:when>
+								<c:otherwise><td colspan="2"></td></c:otherwise>
+							</c:choose>
 						</tr>
+						<c:if test="${host.check || not empty host.userMail}">
 						<tr>
-							<th>Check Time</th>
-							<td class="date">${host.checkTime}</td>
-							<th>Mail On Error</th>
-							<td><c:if test="${host.mailOnError}">yes</c:if> <c:if
-									test="${!host.mailOnError}">no</c:if></td>
+							<c:choose>
+								<c:when test="${host.check}">
+									<th>Check Time</th>
+									<td class="date">${host.checkTime}</td>
+								</c:when>
+								<c:otherwise><td colspan="2"></td></c:otherwise>
+							</c:choose>
+							<c:choose>
+								<c:when test="${not empty host.userMail}">
+									<th>Mail On Error</th>
+									<td><c:if test="${host.mailOnError}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
+											test="${!host.mailOnError}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></td>
+								</c:when>
+								<c:otherwise><td colspan="2"></td></c:otherwise>
+							</c:choose>
 						</tr>
+						</c:if>
+						<c:if test="${host.check}">
 						<tr>
 							<th>Check Frequency</th>
 							<td>${host.formattedCheckFrequency}</td>
 							<th>Notify Once</th>
-							<td><c:if test="${host.notifyOnce}">yes</c:if> <c:if
-									test="${!host.notifyOnce}">no</c:if></td>
+							<td><c:if test="${host.notifyOnce}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
+									test="${!host.notifyOnce}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></td>
 						</tr>
+						</c:if>
+						<c:if test="${host.type == 'Acquisition' || not empty host.userMail}">
 						<tr>
-							<th>Acquisition Time</th>
-							<td class="date">${host.acquisitionTime}</td>
-							<th>Owner Mail</th>
-							<td>${host.userMail}</td>
+							<c:choose>
+								<c:when test="${host.type == 'Acquisition'}">
+									<th>Acquisition Time</th>
+									<td class="date">${host.acquisitionTime}</td>
+								</c:when>
+								<c:otherwise><td colspan="2"></td></c:otherwise>
+							</c:choose>
+							<c:choose>
+								<c:when test="${not empty host.userMail}">
+									<th>Owner Mail</th>
+									<td>${host.userMail}</td>
+								</c:when>
+								<c:otherwise><td colspan="2"></td></c:otherwise>
+							</c:choose>
 						</tr>
+						</c:if>
+						<c:if test="${host.type == 'Acquisition'}">
 						<tr>
 							<th>Acquisition Frequency</th>
 							<td>${host.formattedAcquisitionFrequency}</td>
 							<auth:if basePathKey="transferhistory.basepath" paths="/">
 								<auth:then>
 									<th>Valid</th>
-									<td><c:if test="${host.valid}">yes</c:if> <c:if
-											test="${!host.valid}">no</c:if></td>
+									<td><c:if test="${host.valid}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
+											test="${!host.valid}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></td>
 								</auth:then>
 							</auth:if>
 						</tr>
+						</c:if>
 
 					</auth:then>
 				</auth:if>
@@ -308,19 +397,28 @@
 			</table>
 
 			<c:if test="${host.type != 'Replication' && host.type != 'Source' && host.type != 'Backup'}">
-				<table width="100%" border=0>
-					<tr>
-						<td><display:table id="destination"
-							name="${host.destinations}" requestURI="" class="listing">
-							<display:column sortable="true" title="Name">
-								<a
-									href="<bean:message key="destination.basepath"/>/${destination.id}">${destination.name}</a>
-							</display:column>
-							<display:column sortable="false" title="Comment">${destination.comment}</display:column>
-							<display:caption>Destination(s) using this Host</display:caption>
-						</display:table></td>
-					</tr>
-				</table>
+				<div class="card assoc-card mt-3" style="max-width:480px">
+				  <div class="card-header">
+				    <i class="bi bi-geo-alt text-secondary"></i>
+				    <strong>Destination(s) using this Host</strong>
+				  </div>
+				  <div class="card-body p-2">
+				    <c:choose>
+				      <c:when test="${empty host.destinations}">
+				        <p class="text-muted small mb-0"><em>No destinations assigned.</em></p>
+				      </c:when>
+				      <c:otherwise>
+				        <div class="d-flex flex-wrap">
+				          <c:forEach var="destination" items="${host.destinations}">
+				            <span class="assoc-chip">
+				              <a href="<bean:message key="destination.basepath"/>/${destination.id}" title="${destination.comment}" class="text-decoration-none text-dark">${destination.name}</a>
+				            </span>
+				          </c:forEach>
+				        </div>
+				      </c:otherwise>
+				    </c:choose>
+				  </div>
+				</div>
 			</c:if>
 		</c:if>
 	</c:if>
@@ -330,6 +428,7 @@
 		makeResizable(editorDir);
 
 		var editorProperties = getEditorProperties(true, false, "properties", "crystal");
+		editorProperties.setOptions({minLines: 10, maxLines: 20});
 		
 		// Get the completions from the bean!
 		var hostType = "${host.type}";
@@ -342,7 +441,7 @@
     	
     	// Lets' populate the help tab!
     	$(document).ready(function() {
-    		$('#tabs-3').html(getHelpHtmlContent(
+    		$('#hostViewHelpContent').html(getHelpHtmlContent(
     				completions.filter(function(item) {
     	           		var moduleName = item.caption.split(".")[0];
     	       	    	if (transferModuleName !== "ecaccess" && transferModuleNames.includes(moduleName) && moduleName !== transferModuleName) {
@@ -423,9 +522,38 @@
     	});
 
 		var editorJavascript = getEditorProperties(true, false, "javascript", "javascript");
+		editorJavascript.setOptions({minLines: 10, maxLines: 20});
+
+		document.getElementById('hostViewAccProperties').addEventListener('shown.bs.collapse', function() {
+			editorProperties.resize(true);
+		});
+		document.getElementById('hostViewAccJavascript').addEventListener('shown.bs.collapse', function() {
+			editorJavascript.resize(true);
+		});
+		var hostViewHelpBtn = document.querySelector('button[data-bs-target="#hostViewAccHelp"]');
+		if (hostViewHelpBtn) {
+			hostViewHelpBtn.addEventListener('click', function() {
+				setTimeout(function() {
+					if (!document.getElementById('hostViewAccHelp').classList.contains('show')) return;
+					var line = editorProperties.session.getLine(editorProperties.selection.getCursor().row) || '';
+					line = line.trim();
+					if (line && !line.startsWith('#') && !line.startsWith('//')) {
+						var eqIdx = line.indexOf('=');
+						var paramName = (eqIdx > 0 ? line.substring(0, eqIdx) : line).trim();
+						if (paramName) scrollHelpToParam('hostViewHelpContent', paramName);
+					}
+				}, 400);
+			});
+		}
 
 		makeResizable(editorProperties);
 		makeResizable(editorJavascript);
+
+		window.addEventListener('resize', function() {
+			editorDir.resize(true);
+			editorProperties.resize(true);
+			editorJavascript.resize(true);
+		});
 
 		$('#istext').prop('disabled', true);
 		$('#isjs').prop('disabled', true);
@@ -438,8 +566,6 @@
 				+ (dirType === "js" ? "javascript"
 						: dirType === "text" ? "toml" : dirType));
 
-		$("#tabs").tabs();
-		$("#tabs").tabs("option", "active", 0);
 	</script>
 
 </c:if>

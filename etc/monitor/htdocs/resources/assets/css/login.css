@@ -148,6 +148,8 @@ CONTENT
 .login-form .content .input {
 	width: 188px;
 	padding: 15px 25px;
+	height: auto;
+	box-sizing: content-box;
 	
 	font-family: "Open Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
 	font-weight: 400;

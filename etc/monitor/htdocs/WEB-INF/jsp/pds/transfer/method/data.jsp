@@ -29,13 +29,13 @@
 		</tr>
 		<tr>
 			<th>Restrict</th>
-			<td><c:if test="${method.restrict}">yes</c:if> <c:if
-					test="${!method.restrict}">no</c:if></td>
+			<td><c:if test="${method.restrict}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
+					test="${!method.restrict}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></td>
 		</tr>
 		<tr>
 			<th>Resolve</th>
-			<td><c:if test="${method.resolve}">yes</c:if> <c:if
-					test="${!method.resolve}">no</c:if></td>
+			<td><c:if test="${method.resolve}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
+					test="${!method.resolve}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></td>
 		</tr>
 		<tr>
 			<th>Comment</th>
@@ -43,9 +43,9 @@
 		</tr>
 		<tr>
 			<th>Enabled</th>
-			<td><c:if test="${method.active}">yes</c:if> <c:if
+			<td><c:if test="${method.active}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
 					test="${!method.active}">
-					<font color="red">no</font>
+					<i class="bi bi-x-circle-fill text-danger" title="No"></i>
 				</c:if></td>
 		</tr>
 	</table>

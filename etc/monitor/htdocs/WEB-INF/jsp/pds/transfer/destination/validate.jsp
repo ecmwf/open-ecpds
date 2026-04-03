@@ -153,12 +153,13 @@
 									<auth:then>
 										<c:set var="ecpdsCanHandleQueue" value="true" scope="page" />
 									</auth:then>
-								</auth:if> <display:table id="transfer"
+								</auth:if>
+								<p class="fw-bold mb-1 mt-2">Global Actions apply only to Transfers in the table below which are also selected</p>
+								<display:table id="transfer"
 									name="${destinationDetailActionForm.getSelectedTransfers(start,end)}"
 									requestURI="" sort="external" partialList="true"
 									size="${destinationDetailActionForm.selectedTransfersCount}"
 									pagesize="<%=pageSize%>" class="listing">
-									<display:caption>Global Actions apply only to Transfers in the table below which are also selected</display:caption>
 
 									<display:column title="Err" style="padding-right:30px;">
 										<c:if
@@ -174,7 +175,7 @@
 										<jsp:useBean id="nickName" type="java.lang.String" />
 										<c:if test='<%="".equals(nickName)%>'>
 											<font color="grey"><span
-												title="Data not transferred to remote host">[not-transferred]</span></font>
+												title="Data not transferred to remote host"><i class="bi bi-x-circle text-warning" title="Not transferred to remote host"></i></span></font>
 										</c:if>
 										<c:if test="<%=nickName.length() > 0%>">
 											<c:if test="${transfer.transferServerName == null}">
@@ -199,7 +200,7 @@
 										</c:if>
 										<c:if test="${transfer.startTime == null}">
 											<font color="grey"><span
-												title="Data not transferred to remote host">[n/a]</span></font>
+												title="Data not transferred to remote host"><i class="bi bi-dash text-muted" title="Not applicable"></i></span></font>
 										</c:if>
 									</display:column>
 									<display:column title="Finish Time">
@@ -209,7 +210,7 @@
 										</c:if>
 										<c:if test="${transfer.realFinishTime == null}">
 											<font color="grey"><span
-												title="Data not transferred to remote host">[n/a]</span></font>
+												title="Data not transferred to remote host"><i class="bi bi-dash text-muted" title="Not applicable"></i></span></font>
 										</c:if>
 									</display:column>
 
@@ -228,7 +229,7 @@
 										</c:if>
 										<c:if test="${transfer.transferRate == 0}">
 											<font color="grey"><span
-												title="Data not transferred to remote host">[n/a]</span></font>
+												title="Data not transferred to remote host"><i class="bi bi-dash text-muted" title="Not applicable"></i></span></font>
 										</c:if>
 									</display:column>
 

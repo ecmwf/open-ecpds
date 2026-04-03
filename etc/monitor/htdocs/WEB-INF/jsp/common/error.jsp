@@ -37,7 +37,6 @@ String message = e != null ? e.getMessage() : "";
 %>
 
 <div class="alert">
-  <span class="closebtn" onclick="parent.history.back();">&times;</span>
   <%=message%>
 </div>
 

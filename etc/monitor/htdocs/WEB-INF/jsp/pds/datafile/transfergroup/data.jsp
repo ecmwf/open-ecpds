@@ -24,16 +24,16 @@
 		</tr>
 		<tr>
 			<th>Enabled</th>
-			<td><c:if test="${transfergroup.active}">yes</c:if> <c:if
+			<td><c:if test="${transfergroup.active}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
 					test="${!transfergroup.active}">
-					<font color="red">no</font>
+					<i class="bi bi-x-circle-fill text-danger" title="No"></i>
 				</c:if></td>
 		</tr>
 		<tr>
 			<th>Replicate</th>
-			<td><c:if test="${transfergroup.replicate}">yes</c:if> <c:if
+			<td><c:if test="${transfergroup.replicate}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
 					test="${!transfergroup.replicate}">
-					<font color="red">no</font>
+					<i class="bi bi-x-circle-fill text-danger" title="No"></i>
 				</c:if></td>
 		</tr>
 		<tr>
@@ -46,9 +46,9 @@
 		</tr>
 		<tr>
 			<th>Filter</th>
-			<td><c:if test="${transfergroup.filter}">yes</c:if> <c:if
+			<td><c:if test="${transfergroup.filter}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
 					test="${!transfergroup.filter}">
-					<font color="red">no</font>
+					<i class="bi bi-x-circle-fill text-danger" title="No"></i>
 				</c:if></td>
 		</tr>
 		<tr>
@@ -57,9 +57,9 @@
 		</tr>
 		<tr>
 			<th>Backup</th>
-			<td><c:if test="${transfergroup.backup}">yes</c:if> <c:if
+			<td><c:if test="${transfergroup.backup}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
 					test="${!transfergroup.backup}">
-					<font color="red">no</font>
+					<i class="bi bi-x-circle-fill text-danger" title="No"></i>
 				</c:if></td>
 		</tr>
 		<c:set var="hostForBackup" value="${transfergroup.hostForBackup}" />
@@ -86,6 +86,7 @@
 
 	</table>
 
+	<p class="fw-bold mb-1 mt-2">Transfer Servers</p>
 	<display:table id="server" name="${transfergroup.transferServers}"
 		requestURI="" pagesize="50" defaultsort="1" sort="list"
 		class="listing">
@@ -94,9 +95,14 @@
 		</display:column>
 		<display:column property="host" />
 		<display:column property="port" />
-		<display:column property="active" sortable="true" />
-		<display:column property="replicate" />
-		<display:caption>Transfer Servers</display:caption>
+		<display:column sortable="true" title="Active">
+			<c:if test="${transferserver.active}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if>
+			<c:if test="${!transferserver.active}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if>
+		</display:column>
+		<display:column title="Replicate">
+			<c:if test="${transferserver.replicate}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if>
+			<c:if test="${!transferserver.replicate}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if>
+		</display:column>
 	</display:table>
 
 </c:if>

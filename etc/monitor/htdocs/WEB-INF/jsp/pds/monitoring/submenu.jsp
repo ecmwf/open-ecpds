@@ -29,19 +29,19 @@
 <tr><th>
 <auth:if basePathKey="transferhistory.basepath" paths="/">
 	<auth:then>
-		<a href="/do/monitoring">Monitoring</a></th></tr>
+		<a href="/do/monitoring"><i class="bi bi-eye"></i> Monitoring</a></th></tr>
 	</auth:then>
-	<auth:else>Monitoring</auth:else>
+	<auth:else><i class="bi bi-eye"></i> Monitoring</auth:else>
 </auth:if>
 <tr><td></td></tr>	
 <auth:if basePathKey="transferhistory.basepath" paths="/">
 	<auth:then>
-		<tr><td><a href="/do/monitoring/arrival/${destination.name}/${product}/${time}?date=${param['date']}">${destination.name} ${time}-${product} Arrivals </a></td></tr>
-		<tr><td><a href="/do/monitoring/transfer/${destination.name}/${product}/${time}?date=${param['date']}">${destination.name} ${time}-${product} Transfers</a></td></tr>
+		<tr><td><a href="/do/monitoring/arrival/${destination.name}/${product}/${time}?date=${param['date']}"><i class="bi bi-broadcast-pin"></i> ${destination.name} ${time}-${product} Arrivals</a></td></tr>
+		<tr><td><a href="/do/monitoring/transfer/${destination.name}/${product}/${time}?date=${param['date']}"><i class="bi bi-arrow-left-right"></i> ${destination.name} ${time}-${product} Transfers</a></td></tr>
 	</auth:then>
 </auth:if>
-<tr><td><a href="/do/monitoring/timeline/${destination.name}?date=${param['date']}">${destination.name} Timeline</a></td></tr>
-<tr><td><a href="/do/monitoring/unsuccessful/${destination.name}">${destination.name} Outstanding</a></td></tr>
+<tr><td><a href="/do/monitoring/timeline/${destination.name}?date=${param['date']}"><i class="bi bi-calendar3"></i> ${destination.name} Timeline</a></td></tr>
+<tr><td><a href="/do/monitoring/unsuccessful/${destination.name}"><i class="bi bi-hourglass-split"></i> ${destination.name} Outstanding</a></td></tr>
 </table>
 
 </c:if>

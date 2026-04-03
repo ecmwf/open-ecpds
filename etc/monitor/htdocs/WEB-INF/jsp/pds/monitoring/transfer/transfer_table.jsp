@@ -31,7 +31,6 @@
 
 <c:if test="${authorized == 'false'}">
   <div class="alert">
-    <span class="closebtn" onclick="parent.history.back();">&times;</span>
     Error retrieving object by key <- Problem searching by key '${destination.name}' <- Destination not found: {${destination.name}}
   </div>
 </c:if>
@@ -46,7 +45,6 @@
 
 <c:if test="${empty datatransfers}">
 <div class="alert">
-  <span class="closebtn" onclick="parent.history.back();">&times;</span>
   No Data Transfers found based on these criteria!
 </div>  
 </c:if>

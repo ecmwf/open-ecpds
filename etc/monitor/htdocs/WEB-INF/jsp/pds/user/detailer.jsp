@@ -5,9 +5,12 @@
 <%@ taglib uri="/WEB-INF/tld/displaytag.tld" prefix="display" %> 
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
 
-<h2>Path: ${resource.path}</h2>
+<div class="d-flex align-items-center gap-2 mb-2">
+    <i class="bi bi-folder2-open text-secondary"></i>
+    <code class="fs-6 text-body">${resource.path}</code>
+</div>
 
-<h3>Belongs to Categories</h3>
+<h6 class="text-muted fw-semibold mt-3 mb-1" style="font-size:0.78rem; text-transform:uppercase; letter-spacing:0.05em;">Belongs to Categories</h6>
 
 <display:table name="${categories}" id="category" requestURI="" sort="list" class="listing">
   <display:column title="Name"><a href="<bean:message key="category.basepath"/>/${category.id}">${category.name}</a></display:column>	

@@ -71,9 +71,22 @@ body{background:#fff;color:#000;font-family:Arial,sans-serif;margin:0;padding:0;
 
 <iframe id="downloadFrame" style="display:none;"></iframe>
 
-<div id="downloadResultModal" style="display:none;">
-  <h3>Download Status</h3>
-  <div id="downloadResultContent"></div>
+<div class="modal fade" id="downloadResultModal" tabindex="-1"
+     aria-labelledby="downloadResultModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="downloadResultModalLabel">Download Status</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="downloadResultContent"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <logic:present name="<%=ecmwf.web.model.users.User.SESSION_KEY%>">
@@ -341,29 +354,45 @@ $(document).ready(function() {
 
 <div id="loadingBackdrop"></div>
 <div id="loadingDiv"><div class="loader"></div></div>
-<div id="confirmationDialog"><p id="confirmationDialogMessage" style="margin-top:10px;"></p></div>
+
+<div class="modal fade" id="confirmationModal" tabindex="-1"
+     aria-labelledby="confirmationModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="confirmationModalLabel">Please Confirm</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p id="confirmationDialogMessage"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="confirmationModalCancelBtn"
+                data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary"
+                id="confirmationModalConfirmBtn">Confirm</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div id="contentDiv">
-    <table id="outerTable" width="<tiles:getAsString name="page_width"/>" border="0" cellspacing="0" cellpadding="0" bgcolor="#ffffff">
-        <tr><td colspan=2 height=100>&nbsp;</td></tr>
-        <tr>
-            <td valign="top" width="<tiles:getAsString name="submenu_width"/>">
-                <tiles:get name="submenu" />
-                <tiles:get name="spare" />
-                <tiles:get name="spare2" ignore="true"/>
-                <tiles:get name="spare3" ignore="true"/>
-            </td>
-            <td valign="top" class="content">
-                <tiles:insert name="content">
-                    <tiles:put name="subcontent"><tiles:getAsString name="subcontent" ignore="true"/></tiles:put>
-                    <tiles:put name="date.select"><tiles:getAsString name="date.select" ignore="true"/></tiles:put>
-                    <tiles:put name="destination.select"><tiles:getAsString name="destination.select" ignore="true"/></tiles:put>
-                    <tiles:put name="metadata.select"><tiles:getAsString name="metadata.select" ignore="true"/></tiles:put>
-                </tiles:insert>
-            </td>
-        </tr>
-        <tr><td colspan=2 height=40>&nbsp;</td></tr>
-    </table>
+    <div id="outerTable" class="d-flex">
+        <div id="sidebarMenu" style="width:<tiles:getAsString name="submenu_width"/>; flex-shrink:0;">
+            <tiles:get name="submenu" />
+            <tiles:get name="spare" />
+            <tiles:get name="spare2" ignore="true"/>
+            <tiles:get name="spare3" ignore="true"/>
+        </div>
+        <div class="flex-grow-1 content">
+            <tiles:insert name="content">
+                <tiles:put name="subcontent"><tiles:getAsString name="subcontent" ignore="true"/></tiles:put>
+                <tiles:put name="date.select"><tiles:getAsString name="date.select" ignore="true"/></tiles:put>
+                <tiles:put name="destination.select"><tiles:getAsString name="destination.select" ignore="true"/></tiles:put>
+                <tiles:put name="metadata.select"><tiles:getAsString name="metadata.select" ignore="true"/></tiles:put>
+            </tiles:insert>
+        </div>
+    </div>
 </div>
 
 <tiles:get name="html.bottom" />
@@ -372,7 +401,6 @@ $(document).ready(function() {
 $(document).tooltip();
 $(window).on('load',function(){$("#loadingBackdrop,#loadingDiv").fadeOut(150);$("#contentDiv").fadeIn("fast");});
 function confirmationDialog(arg1, arg2, arg3) {
-    // Normalize args to options object
     var opts = {};
     if (typeof arg1 === "object") {
         opts = arg1 || {};
@@ -381,78 +409,47 @@ function confirmationDialog(arg1, arg2, arg3) {
         opts.message   = arg2;
         opts.onConfirm = arg3;
     }
-    var title        = opts.title || "Please Confirm";
-    var message      = opts.message || "";
-    var onConfirm    = typeof opts.onConfirm === "function" ? opts.onConfirm : function(){};
-    var onCancel     = typeof opts.onCancel === "function"  ? opts.onCancel  : function(){};
-    var width        = opts.width || 500;
-    var confirmText  = opts.confirmText || "Confirm";
-    var cancelText   = opts.cancelText  || "Cancel";
-    var showLoading  = (opts.showLoading !== false); // default true
-    var allowHtml    = (opts.allowHtml !== false);   // default true
-    // Inject message
+    var title       = opts.title       || "Please Confirm";
+    var message     = opts.message     || "";
+    var onConfirm   = typeof opts.onConfirm === "function" ? opts.onConfirm : function(){};
+    var onCancel    = typeof opts.onCancel  === "function" ? opts.onCancel  : function(){};
+    var confirmText = opts.confirmText || "Confirm";
+    var cancelText  = opts.cancelText  || "Cancel";
+    var showLoading = (opts.showLoading !== false);
+    var allowHtml   = (opts.allowHtml  !== false);
+
+    $("#confirmationModalLabel").text(title);
     if (allowHtml) {
         $("#confirmationDialogMessage").html(message);
     } else {
         $("#confirmationDialogMessage").text(message);
     }
-    // Open dialog
-    $("#confirmationDialog").dialog({
-        modal: true,
-        width: width,
-        title: title,
-        // Ensure ESC can't accidentally close during confirm flow (optional)
-        closeOnEscape: true,
-        buttons: [
-            {
-                text: confirmText,
-                click: function () {
-                    var dlg = $(this);
-                    // Prevent double clicks
-                    var $buttons = dlg.parent().find(".ui-dialog-buttonpane button");
-                    $buttons.prop("disabled", true);
+    $("#confirmationModalConfirmBtn").text(confirmText);
+    $("#confirmationModalCancelBtn").text(cancelText);
 
-                    // Show global loading overlay if desired
-                    if (showLoading) {
-                        $("#loadingBackdrop").show();
-                        $("#loadingDiv").show();
-                    }
-                    // Close the dialog to clear the screen
-                    dlg.dialog("close");
-                    // Allow repaint so overlay is visible before heavy work/navigation
-                    setTimeout(function () {
-                        try {
-                            onConfirm();
-                        } finally {
-                            // Typically you do NOT hide overlay here because a navigation
-                            // to a new page will occur; the new page can hide/remove it
-                            // on $(window).on('load', ...) as you already do.
-                            //
-                            // If your onConfirm does not navigate and you want to
-                            // hide the overlay after async work, do it there.
-                        }
-                    }, 50);
-                },
-                "class": "confirm-button" // optional to style as danger
-            },
-            {
-                text: cancelText,
-                click: function () {
-                    // Ensure overlay is not shown if user cancels
-                    $("#loadingBackdrop").hide();
-                    $("#loadingDiv").hide();
-                    $(this).dialog("close");
-                    onCancel();
-                }
-            }
-        ],
-        // Optional: ensure focus is managed
-        open: function () {
-            // Focus the confirm button by default (or cancel per your preference)
-            var $dlg = $(this).parent();
-            $dlg.find(".ui-dialog-buttonpane button:eq(0)").trigger("focus");
+    var $modal = $("#confirmationModal");
+    var bsModal = bootstrap.Modal.getOrCreateInstance($modal[0]);
+
+    $modal.off("click.confirmDlg").on("click.confirmDlg", "#confirmationModalConfirmBtn", function () {
+        var $btn = $(this);
+        $btn.prop("disabled", true);
+        bsModal.hide();
+        if (showLoading) {
+            $("#loadingBackdrop").show();
+            $("#loadingDiv").show();
         }
+        setTimeout(function () {
+            try { onConfirm(); } finally { $btn.prop("disabled", false); }
+        }, 50);
     });
+
+    $modal.off("click.cancelDlg").on("click.cancelDlg", "#confirmationModalCancelBtn, [data-bs-dismiss='modal']", function () {
+        $("#loadingBackdrop").hide();
+        $("#loadingDiv").hide();
+        onCancel();
+    });
+
+    bsModal.show();
 }
 $(function() {
   $('a[href*="/download/"]').on('click', function(e) {
@@ -467,46 +464,18 @@ $(function() {
 	    if (doc && doc.body && doc.body.innerText) {
 	        text = doc.body.innerText.trim();
 	    }
-	    // Detect any unexpected HTML response
 	    if (text.startsWith("<!DOCTYPE") || text.startsWith("<html")) {
 	        text = "##DOWNLOAD_ERROR## Server returned an HTML page instead of the file.";
 	    }
 	    const isError = text.includes("##DOWNLOAD_ERROR##");
+	    const cleanMsg = text.replace("##DOWNLOAD_ERROR##", "").trim();
+	    $("#downloadResultModalLabel").text(isError ? "Download Error" : "Download Started");
 	    if (isError) {
-	        // Strip the token so it does not appear in the popup
-	        const cleanMsg = text.replace("##DOWNLOAD_ERROR##", "").trim();
-	        $("#downloadResultModal").dialog({
-	            modal: true,
-	            width: 480,
-	            title: "Download Error",
-	            buttons: [
-	                {
-	                    text: "Close",
-	                    click: function () { $(this).dialog("close"); }
-	                }
-	            ],
-	            open: function () {
-	                $("#downloadResultContent")
-	                    .html("<span style='color:#b30000'>" + cleanMsg + "</span>");
-	            }
-	        });
+	        $("#downloadResultContent").html("<span class='text-danger'>" + cleanMsg + "</span>");
 	    } else {
-	        $("#downloadResultModal").dialog({
-	            modal: true,
-	            width: 480,
-	            title: "Download Started",
-	            buttons: [
-	                {
-	                    text: "OK",
-	                    click: function () { $(this).dialog("close"); }
-	                }
-	            ],
-	            open: function () {
-	                $("#downloadResultContent")
-	                    .html("<span style='color:#007700'>&#10004; Download started successfully.</span>");
-	            }
-	        });
+	        $("#downloadResultContent").html("<span class='text-success'>&#10004; Download started successfully.</span>");
 	    }
+	    bootstrap.Modal.getOrCreateInstance(document.getElementById("downloadResultModal")).show();
 	});
     $("#downloadFrame").attr("src", url);
   });

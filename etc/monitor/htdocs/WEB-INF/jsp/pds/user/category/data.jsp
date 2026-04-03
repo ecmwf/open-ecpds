@@ -27,32 +27,61 @@
 
 	</table>
 
-	<table>
-		<tr>
-			<td valign="top"><display:table id="resource"
-					name="${category.accessibleResources}" requestURI="" sort="list"
-					class="listing">
-					<display:column title="Path" sortable="true">
-						<a href="/do/user/resource/${resource.id}">${resource.path}</a>
-					</display:column>
-					<display:caption>Associated Web Resources</display:caption>
-				</display:table></td>
+<style>
+.assoc-card .card-header { display:flex; align-items:center; gap:.4rem; padding:.5rem .75rem; background:#f8f9fa; font-size:.85rem; }
+.assoc-chip { display:inline-flex; align-items:center; gap:.25rem; background:#e9ecef; border-radius:1rem; padding:.2rem .6rem; font-size:.8rem; margin:.15rem; }
+</style>
 
-			<td valign="top"><display:table id="user"
-					name="${category.usersWithProfile}" requestURI="" sort="list"
-					class="listing">
-					<display:column title="Uid" sortable="true">
-						<a href="/do/user/user/${user.id}">${user.id}</a>
-					</display:column>
-					<display:column title="Name" sortable="true">
-						<!-- ${user.commonName} -->
-						<a href="/do/user/user/${user.id}">${user.commonName}</a>
-					</display:column>
-					<display:caption>Associated Web Users</display:caption>
-				</display:table></td>
-
-		</tr>
-	</table>
+	<div class="row g-2 mt-2" style="max-width:700px">
+	  <div class="col-12 col-md-6">
+	    <div class="card assoc-card">
+	      <div class="card-header">
+	        <i class="bi bi-globe text-secondary"></i>
+	        <strong>Associated Web Resources</strong>
+	      </div>
+	      <div class="card-body p-2">
+	        <c:choose>
+	          <c:when test="${empty category.accessibleResources}">
+	            <p class="text-muted small mb-0"><em>No web resources assigned.</em></p>
+	          </c:when>
+	          <c:otherwise>
+	            <div class="d-flex flex-wrap">
+	              <c:forEach var="resource" items="${category.accessibleResources}">
+	                <span class="assoc-chip">
+	                  <a href="/do/user/resource/${resource.id}" class="text-decoration-none text-dark">${resource.path}</a>
+	                </span>
+	              </c:forEach>
+	            </div>
+	          </c:otherwise>
+	        </c:choose>
+	      </div>
+	    </div>
+	  </div>
+	  <div class="col-12 col-md-6">
+	    <div class="card assoc-card">
+	      <div class="card-header">
+	        <i class="bi bi-person text-secondary"></i>
+	        <strong>Associated Web Users</strong>
+	      </div>
+	      <div class="card-body p-2">
+	        <c:choose>
+	          <c:when test="${empty category.usersWithProfile}">
+	            <p class="text-muted small mb-0"><em>No web users assigned.</em></p>
+	          </c:when>
+	          <c:otherwise>
+	            <div class="d-flex flex-wrap">
+	              <c:forEach var="user" items="${category.usersWithProfile}">
+	                <span class="assoc-chip">
+	                  <a href="/do/user/user/${user.id}" title="${user.commonName}" class="text-decoration-none text-dark">${user.id}</a>
+	                </span>
+	              </c:forEach>
+	            </div>
+	          </c:otherwise>
+	        </c:choose>
+	      </div>
+	    </div>
+	  </div>
+	</div>
 
 </c:if>
 

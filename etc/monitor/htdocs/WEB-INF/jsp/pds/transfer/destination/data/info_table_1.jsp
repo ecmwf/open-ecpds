@@ -42,7 +42,7 @@
 		</auth:if>
 
 		<c:if test="${not empty ecpdsCanHandleQueue}">
-			<td class="buttons">
+			<td class="buttons" style="vertical-align: middle;">
 				<table>
 					<tr>
 						<auth:if basePathKey="transferhistory.basepath" paths="/">
@@ -82,10 +82,25 @@
 				</table>
 			</td>
 		</c:if>
-		<td><input title="Screen Refresh Period (0 is No Refresh)"
-			class="small_number" type="text" size="5" name="refreshPeriod"
-			value="${destinationDetailActionForm.refreshPeriod}"
-			onKeyPress="submitenter(this,event)" /></td>
+		<td style="vertical-align: middle;">
+			<input type="hidden" name="refreshPeriod" id="refreshPeriodVal"
+				value="${destinationDetailActionForm.refreshPeriod}"/>
+			<div class="d-flex align-items-center gap-1 flex-shrink-0">
+				<i class="bi bi-arrow-clockwise text-muted me-1" style="font-size:0.85rem;" title="Auto-refresh interval"></i>
+				<button type="button" class="date-pill dest-refresh-pill ${destinationDetailActionForm.refreshPeriod == 0 ? 'active' : ''}" data-value="0">Off</button>
+				<button type="button" class="date-pill dest-refresh-pill ${destinationDetailActionForm.refreshPeriod == 60 ? 'active' : ''}" data-value="60">1m</button>
+				<button type="button" class="date-pill dest-refresh-pill ${destinationDetailActionForm.refreshPeriod == 300 ? 'active' : ''}" data-value="300">5m</button>
+				<button type="button" class="date-pill dest-refresh-pill ${destinationDetailActionForm.refreshPeriod == 600 ? 'active' : ''}" data-value="600">10m</button>
+			</div>
+			<script>
+				document.querySelectorAll('.dest-refresh-pill').forEach(function(btn) {
+					btn.addEventListener('click', function() {
+						document.getElementById('refreshPeriodVal').value = this.dataset.value;
+						document.forms['destinationDetailActionForm'].submit();
+					});
+				});
+			</script>
+		</td>
 	</tr>
 
 </table>

@@ -1,7 +1,10 @@
 // Loading ace editor library
-var beautify = ace.require("ace/ext/beautify");
-var ltools = ace.require("ace/ext/language_tools");
-var Range = ace.require("ace/range").Range;
+var beautify, ltools, Range;
+try {
+    beautify = ace.require("ace/ext/beautify");
+    ltools   = ace.require("ace/ext/language_tools");
+    Range    = ace.require("ace/range").Range;
+} catch(e) {}
 
 // Hide a layer
 function hide(layerName) {
@@ -34,7 +37,6 @@ function getPassword() {
 			* str.length + 1);
 		pass += str.charAt(char)
 	}
-	alert("Please take note of the generated password: " + pass + "\nClick the 'Process' button to save it!");
 	return pass;
 }
 
@@ -197,12 +199,13 @@ function testSource(aceEditor) {
           const result = await (async function() {
             ${userCode}
           })();
-          alert(result != null && result.length > 0 ? result : "No return from script");
+          const msg = result != null && result.length > 0 ? result : "No return from script";
+          parent.postMessage({ type: 'ecpds-sandbox-result', message: msg, level: 'info' }, '*');
         } catch (e) {
-          alert(e.message);
+          parent.postMessage({ type: 'ecpds-sandbox-result', message: e.message, level: 'danger' }, '*');
         }
       })();
-    </script>
+    <\/script>
   </body>
   </html>`;
   const blob = new Blob([iframeHTML], { type: 'text/html' });
@@ -232,19 +235,81 @@ function getEditorType(aceEditor) {
 }
 
 // Lets' populate the help tab!
+function helpScrollToGroup(groupId) {
+	var t = document.getElementById('hgrp-' + groupId);
+	if (!t) return;
+	var c = t.closest('.scrollable-tab');
+	if (!c) return;
+	var nav = c.querySelector('.help-nav');
+	var navH = nav ? nav.getBoundingClientRect().height : 0;
+	c.scrollTop += t.getBoundingClientRect().top - c.getBoundingClientRect().top - navH - 16;
+}
+
 function getHelpHtmlContent(completions, title) {
-	let htmlContent = '<h1>' + title + '</h1><p>';
+	var typeClass = {
+		'boolean': 'bg-info text-dark',
+		'string':  'bg-secondary',
+		'integer': 'bg-warning text-dark',
+		'numeric': 'bg-warning text-dark',
+		'list':    'bg-primary'
+	};
+
+	/* Collect ordered unique groups */
+	var groups = [], seen = {};
+	completions.forEach(function(o) {
+		var g = o.caption.split('.')[0];
+		if (!seen[g]) { seen[g] = true; groups.push(g); }
+	});
+
+	var html = '<div class="help-content">';
+
+	/* Sticky group nav — only shown when there is more than one group */
+	if (groups.length > 1) {
+		html += '<div class="help-nav">';
+		groups.forEach(function(g) {
+			html += '<button type="button" class="help-nav-pill" onclick="helpScrollToGroup(\'' + g + '\')">' + g + '</button>';
+		});
+		html += '</div>';
+	}
+
+	html += '<div class="help-title">' + title + '</div>';
+
 	var currentGroup;
 	for (var j = 0; j < completions.length; j++) {
-		var tipObject = completions[j];
-		var group = tipObject.caption.split('.')[0];
+		var o = completions[j];
+		var group = o.caption.split('.')[0];
 		if (!currentGroup || group !== currentGroup) {
-			htmlContent += '<hr>Group <i>"' + group + '"</i><hr>';
+			html += '<div class="help-group-hdr" id="hgrp-' + group + '">' + group + '</div>';
 			currentGroup = group;
 		}
-		htmlContent += '<h3><u>' + tipObject.caption + '</u> (' + tipObject.type + ')</h3><p>' + escapeHtml(tipObject.tips) + '</p>\n';
+		var bc = typeClass[o.type] || 'bg-light text-dark';
+		html += '<div class="help-row" data-param="' + o.caption + '">'
+			+ '<code>' + o.caption + '</code>'
+			+ '<span class="help-type badge ' + bc + '">' + o.type + '</span>'
+			+ '<span class="help-tip">' + escapeHtml(o.tips || '') + '</span>'
+			+ '</div>';
 	}
-	return htmlContent + "</p>";
+	if (!completions.length) {
+		html += '<div style="color:#6c757d; font-size:0.75rem; padding:0.5rem 0;">No options available for this configuration.</div>';
+	}
+	return html + '</div>';
+}
+
+/**
+ * Scroll the help panel (scrollable-tab div) to the entry matching paramName.
+ * helpContainerId: the id of the scrollable help div (e.g. 'pill-help')
+ * paramName: the full parameter name as it appears in the editor line (e.g. 'group.param')
+ */
+function scrollHelpToParam(helpContainerId, paramName) {
+	if (!paramName) return;
+	var helpPanel = document.getElementById(helpContainerId);
+	if (!helpPanel) return;
+	var row = helpPanel.querySelector('.help-row[data-param="' + paramName + '"]');
+	if (row) {
+		var panelRect = helpPanel.getBoundingClientRect();
+		var rowRect = row.getBoundingClientRect();
+		helpPanel.scrollTop = Math.max(0, helpPanel.scrollTop + (rowRect.top - panelRect.top) - 8);
+	}
 }
 
 function checkKeyIsMatching(event, regexPattern) {

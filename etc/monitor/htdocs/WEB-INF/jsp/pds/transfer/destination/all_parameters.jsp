@@ -94,8 +94,8 @@
 
 	<tr>
 		<th>Group By Date</th>
-		<td><c:if test="${destination.groupByDate}">yes</c:if> <c:if
-				test="${!destination.groupByDate}">no</c:if></td>
+		<td><c:if test="${destination.groupByDate}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
+				test="${!destination.groupByDate}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></td>
 	</tr>
 	<tr>
 		<th>Date Format</th>
@@ -153,46 +153,46 @@
 
 	<tr>
 		<th>Mail on Update</th>
-		<td><c:if test="${destination.mailOnUpdate}">yes</c:if> <c:if
-				test="${!destination.mailOnUpdate}">no</c:if></td>
+		<td><c:if test="${destination.mailOnUpdate}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
+				test="${!destination.mailOnUpdate}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></td>
 	</tr>
 	<tr>
 		<th>Mail on Start</th>
-		<td><c:if test="${destination.mailOnStart}">yes</c:if> <c:if
-				test="${!destination.mailOnStart}">no</c:if></td>
+		<td><c:if test="${destination.mailOnStart}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
+				test="${!destination.mailOnStart}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></td>
 	</tr>
 	<tr>
 		<th>Mail on End</th>
-		<td><c:if test="${destination.mailOnEnd}">yes</c:if> <c:if
-				test="${!destination.mailOnEnd}">no</c:if></td>
+		<td><c:if test="${destination.mailOnEnd}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
+				test="${!destination.mailOnEnd}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></td>
 	</tr>
 	<tr>
 		<th>Mail on Error</th>
-		<td><c:if test="${destination.mailOnError}">yes</c:if> <c:if
-				test="${!destination.mailOnError}">no</c:if></td>
+		<td><c:if test="${destination.mailOnError}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
+				test="${!destination.mailOnError}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></td>
 	</tr>
 	<tr>
 		<th>Restart If Dirty</th>
-		<td><c:if test="${destination.stopIfDirty}">yes</c:if> <c:if
-				test="${!destination.stopIfDirty}">no</c:if></td>
+		<td><c:if test="${destination.stopIfDirty}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
+				test="${!destination.stopIfDirty}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></td>
 	</tr>
 	<tr>
 		<th>Acquisition</th>
-		<td><c:if test="${destination.acquisition}">yes</c:if> <c:if
-				test="${!destination.acquisition}">no</c:if></td>
+		<td><c:if test="${destination.acquisition}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
+				test="${!destination.acquisition}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></td>
 	</tr>
 	<tr>
 		<th>Enabled</th>
-		<td><c:if test="${destination.active}">yes</c:if> <c:if
+		<td><c:if test="${destination.active}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
 				test="${!destination.active}">
-				<font color="red">no</font>
+				<i class="bi bi-x-circle-fill text-danger" title="No"></i>
 			</c:if></td>
 	</tr>
 	<tr>
 		<th>Show In Monitors</th>
-		<td><c:if test="${destination.showInMonitors}">yes</c:if> <c:if
+		<td><c:if test="${destination.showInMonitors}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
 				test="${!destination.showInMonitors}">
-				<font color="red">no</font>
+				<i class="bi bi-x-circle-fill text-danger" title="No"></i>
 			</c:if></td>
 	</tr>
 

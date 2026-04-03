@@ -9,21 +9,21 @@
 		<td></td>
 	      </tr>
               <tr>
-                <td><auth:link basePathKey="data.basepath" href="">Data Storage</auth:link></td>
+                <td><auth:link basePathKey="data.basepath" href=""><i class="bi bi-database"></i> Data Storage</auth:link></td>
               </tr>
               <tr>
-                <td><auth:link basePathKey="transfer.basepath" href="">Transmission</auth:link></td>
+                <td><auth:link basePathKey="transfer.basepath" href=""><i class="bi bi-send"></i> Transmission</auth:link></td>
               </tr>
               <tr>
-                <td><auth:link basePathKey="accesscontrol.basepath" href="">Access Control</auth:link></td>
+                <td><auth:link basePathKey="accesscontrol.basepath" href=""><i class="bi bi-shield-lock"></i> Access Control</auth:link></td>
               </tr>
               <tr>
-                <td><auth:link basePathKey="admin.basepath" href="">Admin Tasks</auth:link></td>
+                <td><auth:link basePathKey="admin.basepath" href=""><i class="bi bi-gear"></i> Admin Tasks</auth:link></td>
               </tr>
 	      <auth:if basePathKey="transferhistory.basepath" paths="/">
 	      	<auth:then>
 	      		<tr>
-                	  <td><auth:link basePathKey="monitoring.basepath" href="">Monitoring</auth:link></td>
+                	  <td><auth:link basePathKey="monitoring.basepath" href=""><i class="bi bi-eye"></i> Monitoring</auth:link></td>
               		</tr>
 		</auth:then>
 	      </auth:if>

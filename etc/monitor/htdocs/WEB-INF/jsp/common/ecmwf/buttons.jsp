@@ -13,23 +13,38 @@
 <c:set var="safeButtonLabel" value="${fn:escapeXml(buttonLabel)}" />
 
 <c:if test="${not empty entityLabel and not empty entityName}">
-<div id="confirmDialog"
-     title="Confirm Deletion of ${entityLabel} ${entityName}"
-     style="display:none;">
-    <p>
-        This action cannot be undone. If you are unsure, please click the
-        Cancel button and carefully review the red warning above.
-    </p>
-    <p>
-        If you understand the implications and wish to proceed, type
-        <strong>${entityName}</strong> in the box below to confirm the action:
-    </p>
-    <input type="text" id="confirmInput" style="width:95%; padding:5px;" />
-    <div id="confirmError" class="ui-state-error ui-corner-all"
-         style="display:none; margin-top:10px; padding:8px;">
-        <span class="ui-icon ui-icon-alert"
-              style="float:left; margin-right:6px;"></span>
-        <span id="confirmErrorText"></span>
+<div class="modal fade" id="confirmDialog" tabindex="-1"
+     aria-labelledby="confirmDialogLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmDialogLabel">
+                    Confirm Deletion of ${entityLabel} ${entityName}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>
+                    This action cannot be undone. If you are unsure, please click the
+                    Cancel button and carefully review the red warning above.
+                </p>
+                <p>
+                    If you understand the implications and wish to proceed, type
+                    <strong>${entityName}</strong> in the box below to confirm the action:
+                </p>
+                <input type="text" id="confirmInput" class="form-control" />
+                <div id="confirmError" class="alert alert-danger mt-2" style="display:none;">
+                    <span id="confirmErrorText"></span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary"
+                        data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger"
+                        id="confirmDialogSubmitBtn">Confirm</button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -38,39 +53,32 @@
 <script>
 $(document).ready(function () {
     const processBtn = $('button[type="submit"]').first();
+    const confirmModal = new bootstrap.Modal(document.getElementById('confirmDialog'));
+
     processBtn.on("click", function (e) {
         e.preventDefault();
         $("#confirmInput").val("");
         $("#confirmError").hide();
-        $("#confirmDialog").dialog({
-            modal: true,
-            width: 400,
-            buttons: {
-                "Confirm": function () {
-                    const val = $("#confirmInput").val().trim();
-                    const expected = "${jsEntityName}";
-		    if (val === expected) {
-                        $(this).dialog("close");
-                        // Show your existing loadingDiv BEFORE form submits
-			$("#loadingBackdrop").show();
-			$("#loadingDiv").show();
-                        // Allow browser to repaint before the real submission
-			setTimeout(function () {
-				processBtn.off("click");
-				processBtn.closest("form")[0].submit();
-			}, 50);
-                    } else {
-                        $("#confirmErrorText").text(
-                            'Incorrect confirmation. Please type "' + expected + '".'
-                        );
-                        $("#confirmError").show();
-                    }
-                },
-                "Cancel": function () {
-                    $(this).dialog("close");
-                }
-            }
-        });
+        confirmModal.show();
+    });
+
+    $("#confirmDialogSubmitBtn").on("click", function () {
+        const val = $("#confirmInput").val().trim();
+        const expected = "${jsEntityName}";
+        if (val === expected) {
+            confirmModal.hide();
+            $("#loadingBackdrop").show();
+            $("#loadingDiv").show();
+            setTimeout(function () {
+                processBtn.off("click");
+                processBtn.closest("form")[0].submit();
+            }, 50);
+        } else {
+            $("#confirmErrorText").text(
+                'Incorrect confirmation. Please type "' + expected + '".'
+            );
+            $("#confirmError").show();
+        }
     });
 });
 </script>

@@ -12,10 +12,10 @@
 					</c:if>
 					<c:if test="${hasFileNameSearch}">
 						<c:if test="${!empty getTransfersError}">
-						  Error in your query: ${getTransfersError}<p>
+						  Error in your query: ${getTransfersError}<br><br>
 					    </c:if>
 						<c:if test="${empty getTransfersError}">
-						  No Data Transfers found based on these criteria! Default search is by target.<p>
+						  No Data Transfers found based on these criteria! Default search is by target.<br><br>
 					    </c:if>
 						You can conduct an extensive search using the target, source, ts, priority, groupby, identity, checksum, size, replicated, asap, deleted, expired, proxy, mover and event rules.<p>
 						For instance: asap=yes target=*.dat source=/tmp/* ts&gt;10 ts&lt;=99 size&gt;=700kb case=i<p>
@@ -29,15 +29,14 @@
 </c:if>
 
 <c:if test="${!empty filteredTransfers}">
+	<p class="fw-bold mb-1 mt-2">Current selection: ${destinationDetailActionForm.dataTransferCaption}&nbsp;&nbsp;<i>Current
+			date <content:content name="currentDate"
+				dateFormatKey="date.format.long.iso" ignoreNull="true" />
+		</i></p>
 	<display:table id="transfer" name="${filteredTransfers}" requestURI=""
 		sort="external" defaultsort="3" partialList="true"
 		size="${dataTransfersSize}" pagesize="${recordsPerPage}"
 		class="listing">
-		<display:caption>Current selection: ${destinationDetailActionForm.dataTransferCaption}&nbsp;&nbsp;<i>Current
-				date <content:content name="currentDate"
-					dateFormatKey="date.format.long.iso" ignoreNull="true" />
-			</i>
-		</display:caption>
 		<display:column sortable="true" title="Err" style="padding-right:30px;">
 			<c:if test="${not empty transfer.failedTime}">
 				<content:icon title="Help" key="icon.micro.cancel"
@@ -53,7 +52,7 @@
 			<jsp:useBean id="nickName" type="java.lang.String" />
 			<c:if test='<%="".equals(nickName)%>'>
 				<font color="grey"><span
-					title="Data not transferred to remote host">[not-transferred]</span></font>
+					title="Data not transferred to remote host"><i class="bi bi-x-circle text-warning" title="Not transferred to remote host"></i></span></font>
 			</c:if>
 			<c:if test="<%=nickName.length() > 0%>">
 				<c:if test="${transfer.transferServerName == null}">
@@ -78,7 +77,7 @@
 			</c:if>
 			<c:if test="${transfer.startTime == null}">
 				<font color="grey"><span
-					title="Data not transferred to remote host">[n/a]</span></font>
+					title="Data not transferred to remote host"><i class="bi bi-dash text-muted" title="Not applicable"></i></span></font>
 			</c:if>
 		</display:column>
 		<display:column title="Finish Time" sortable="true"
@@ -89,7 +88,7 @@
 			</c:if>
 			<c:if test="${transfer.realFinishTime == null}">
 				<font color="grey"><span
-					title="Data not transferred to remote host">[n/a]</span></font>
+					title="Data not transferred to remote host"><i class="bi bi-dash text-muted" title="Not applicable"></i></span></font>
 			</c:if>
 		</display:column>
 		<display:column title="Target" sortable="true">
@@ -112,7 +111,7 @@
 			</c:if>
 			<c:if test="${transfer.transferRate == 0}">
 				<font color="grey"><span
-					title="Data not transferred to remote host">[n/a]</span></font>
+					title="Data not transferred to remote host"><i class="bi bi-dash text-muted" title="Not applicable"></i></span></font>
 			</c:if>
 		</display:column>
 		<display:column title="Status" sortable="true">
@@ -165,18 +164,42 @@
 											altKey="ecpds.destination.stop" writeFullTag="true"
 											height="9" width="9" /></a>
 								</c:if></td>
-							<td><a
-								href="javascript:transferChange('increaseTransferPriority','${transfer.id}')"><content:icon
-										key="icon.small.increase"
-										titleKey="ecpds.destination.increasePriority"
-										altKey="ecpds.destination.increasePriority"
-										writeFullTag="true" height="9" width="7" /></a></td>
-							<td><a
-								href="javascript:transferChange('decreaseTransferPriority','${transfer.id}')"><content:icon
-										key="icon.small.decrease"
-										titleKey="ecpds.destination.decreasePriority"
-										altKey="ecpds.destination.decreasePriority"
-										writeFullTag="true" height="9" width="7" /></a></td>
+							<td>
+								<c:choose>
+									<c:when test="${transfer.priority == 0}">
+										<span class="priority-disabled" title="Already at highest priority (0)"><content:icon
+											key="icon.small.increase"
+											titleKey="ecpds.destination.increasePriority"
+											altKey="ecpds.destination.increasePriority"
+											writeFullTag="true" height="9" width="7" /></span>
+									</c:when>
+									<c:otherwise>
+										<a href="javascript:transferChange('increaseTransferPriority','${transfer.id}')"><content:icon
+											key="icon.small.increase"
+											titleKey="ecpds.destination.increasePriority"
+											altKey="ecpds.destination.increasePriority"
+											writeFullTag="true" height="9" width="7" /></a>
+									</c:otherwise>
+								</c:choose>
+							</td>
+							<td>
+								<c:choose>
+									<c:when test="${transfer.priority >= 99}">
+										<span class="priority-disabled" title="Already at lowest priority (99)"><content:icon
+											key="icon.small.decrease"
+											titleKey="ecpds.destination.decreasePriority"
+											altKey="ecpds.destination.decreasePriority"
+											writeFullTag="true" height="9" width="7" /></span>
+									</c:when>
+									<c:otherwise>
+										<a href="javascript:transferChange('decreaseTransferPriority','${transfer.id}')"><content:icon
+											key="icon.small.decrease"
+											titleKey="ecpds.destination.decreasePriority"
+											altKey="ecpds.destination.decreasePriority"
+											writeFullTag="true" height="9" width="7" /></a>
+									</c:otherwise>
+								</c:choose>
+							</td>
 						</tr>
 					</table>
 				</c:if>

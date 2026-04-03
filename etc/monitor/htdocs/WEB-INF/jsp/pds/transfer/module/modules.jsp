@@ -13,7 +13,7 @@
 	<c:if test="${fn:length(row.archive) gt 0}">${row.archive}</c:if><c:if test="${fn:length(row.archive) eq 0}"><i><font color="red">default</font></i></c:if>
     </display:column>
     <display:column sortable="true" title="Enabled">
-        <c:if test="${row.active}">yes</c:if><c:if test="${!row.active}"><font color="red">no</font></c:if>
+        <c:if test="${row.active}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if><c:if test="${!row.active}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if>
     </display:column>
     <display:column class="buttons">
     	<auth:link styleClass="menuitem" basePathKey="module.basepath" href="/edit/update_form/${row.id}" imageKey="icon.small.update"/>

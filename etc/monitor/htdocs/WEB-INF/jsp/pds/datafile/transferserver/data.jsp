@@ -45,21 +45,21 @@
 
 		<tr>
 			<th>Check</th>
-			<td><c:if test="${transferserver.check}">yes</c:if> <c:if
-					test="${!transferserver.check}">no</c:if></td>
+			<td><c:if test="${transferserver.check}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
+					test="${!transferserver.check}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></td>
 		</tr>
 		<tr>
 			<th>Enabled</th>
-			<td><c:if test="${transferserver.active}">yes</c:if> <c:if
+			<td><c:if test="${transferserver.active}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
 					test="${!transferserver.active}">
-					<font color="red">no</font>
+					<i class="bi bi-x-circle-fill text-danger" title="No"></i>
 				</c:if></td>
 		</tr>
 		<tr>
 			<th>Replicate</th>
-			<td><c:if test="${transferserver.replicate}">yes</c:if> <c:if
+			<td><c:if test="${transferserver.replicate}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
 					test="${!transferserver.replicate}">
-					<font color="red">no</font>
+					<i class="bi bi-x-circle-fill text-danger" title="No"></i>
 				</c:if></td>
 		</tr>
 		<tr>

@@ -10,6 +10,22 @@
 	<tiles:useAttribute id="actionFormName" name="action.form.name"
 		classname="java.lang.String" />
 	<tiles:useAttribute name="isInsert" classname="java.lang.String" />
+<c:choose>
+    <c:when test="${isInsert == 'true'}">
+        <div class="form-info-banner">
+            <i class="bi bi-puzzle text-primary flex-shrink-0"></i>
+            Create a new Transfer Module plugin.
+        </div>
+    </c:when>
+    <c:otherwise>
+        <div class="form-info-banner">
+            <i class="bi bi-puzzle text-primary flex-shrink-0"></i>
+            Edit the Transfer Module configuration.
+        </div>
+    </c:otherwise>
+</c:choose>
+
+
 
 	<logic:match name="isInsert" value="true">
 		<tr>

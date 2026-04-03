@@ -33,9 +33,9 @@
 		</tr>
 		<tr>
 			<th>Enabled</th>
-			<td><c:if test="${module.active}">yes</c:if> <c:if
+			<td><c:if test="${module.active}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
 					test="${!module.active}">
-					<font color="red">no</font>
+					<i class="bi bi-x-circle-fill text-danger" title="No"></i>
 				</c:if></td>
 		</tr>
 	</table>

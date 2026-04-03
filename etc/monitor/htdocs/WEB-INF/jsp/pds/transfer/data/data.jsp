@@ -59,6 +59,7 @@ Error retrieving object by key <- DataBase problem searching by key '${datatrans
 </c:if>
 
 <c:if test="${historyItemsSize != '0'}">
+<p class="fw-bold mb-1 mt-2">Transfer History</p>
 <display:table id="history" name="${historyItems}" requestURI="" sort="external" defaultsort="2"
         partialList="true" size="${historyItemsSize}" pagesize="${recordsPerPage}" class="listing">
 
@@ -82,18 +83,17 @@ Error retrieving object by key <- DataBase problem searching by key '${datatrans
 		<a href="<bean:message key="host.basepath"/>/${history.hostName}">${history.hostNickName}</a>
        </c:if>
        <c:if test="${history.hostName == null}">
-                <font color="grey"><span title="Data not transferred to remote host">[n/a]</span></font>
+                <font color="grey"><span title="Data not transferred to remote host"><i class="bi bi-dash text-muted" title="Not applicable"></i></span></font>
        </c:if>
     </display:column>    
     <display:column title="Comment" property="formattedComment" />
-
-    <display:caption>Transfer History</display:caption>
 
 </display:table>
 </c:if>
 
 <br/>
 
+<p class="fw-bold mb-1 mt-3">All Data Transfers with the same identity. &nbsp;&nbsp;&nbsp;<i>(${datatransfer.identity})</i></p>
 <display:table name="${datatransfer.olderTransfersForSameDataFile}" id="transfer" sort="list" pagesize="25" requestURI=""
 	class="listing" defaultsort="3" defaultorder="descending">
 
@@ -105,7 +105,7 @@ Error retrieving object by key <- DataBase problem searching by key '${datatrans
 		<c:set var="nickName" value="${transfer.hostNickName}" />
 		<jsp:useBean id="nickName" type="java.lang.String" />
 		<c:if test='<%="".equals(nickName)%>'>
-			<font color="grey"><span title="Data not transferred to remote host">[not-transferred]</span></font>
+			<font color="grey"><span title="Data not transferred to remote host"><i class="bi bi-x-circle text-warning" title="Not transferred to remote host"></i></span></font>
 		</c:if>
 		<c:if test="<%=nickName.length()>0%>">
 			<c:if test="${transfer.transferServerName == null}">
@@ -126,7 +126,7 @@ Error retrieving object by key <- DataBase problem searching by key '${datatrans
 			<content:content name="transfer.startTime" dateFormatKey="date.format.transfer" ignoreNull="true" />
 		</c:if>
 		<c:if test="${transfer.startTime == null}">
-        		<font color="grey"><span title="Data not transferred to remote host">[n/a]</span></font>
+        		<font color="grey"><span title="Data not transferred to remote host"><i class="bi bi-dash text-muted" title="Not applicable"></i></span></font>
 		</c:if>
 	</display:column>
 	<display:column title="Finish Time" sortable="true" sortProperty="realFinishTime">
@@ -134,7 +134,7 @@ Error retrieving object by key <- DataBase problem searching by key '${datatrans
 			<content:content name="transfer.realFinishTime" dateFormatKey="date.format.transfer" ignoreNull="true" />
 		</c:if>
 		<c:if test="${transfer.realFinishTime == null}">
-        		<font color="grey"><span title="Data not transferred to remote host">[n/a]</span></font>
+        		<font color="grey"><span title="Data not transferred to remote host"><i class="bi bi-dash text-muted" title="Not applicable"></i></span></font>
 		</c:if>
 	</display:column>
 
@@ -156,19 +156,16 @@ Error retrieving object by key <- DataBase problem searching by key '${datatrans
 		</c:if>
                 <c:if test="${transfer.transferRate == 0}">
                         <c:if test="${transfer.size != 0}">
-                                <font color="grey"><span title="Data not transferred to remote host">[n/a]</span></font>
+                                <font color="grey"><span title="Data not transferred to remote host"><i class="bi bi-dash text-muted" title="Not applicable"></i></span></font>
                         </c:if>
                         <c:if test="${transfer.size == 0}">
-                                <font color="grey"><span title="Empty file">[n/a]</span></font>
+                                <font color="grey"><span title="Empty file"><i class="bi bi-dash text-muted" title="Not applicable"></i></span></font>
                         </c:if>
 		</c:if>
         </display:column>
 
 
     <display:column property="formattedStatus" title="Status">
-	<display:caption>
-			All Data Transfers with the same identity. &nbsp;&nbsp;&nbsp;<i>(${datatransfer.identity})</i>
-	</display:caption>
         <c:if test="${transfer.deleted}"><font color="red"></c:if>${transfer.formattedStatus}<c:if test="${transfer.deleted}"></font></c:if>
     </display:column> 
 

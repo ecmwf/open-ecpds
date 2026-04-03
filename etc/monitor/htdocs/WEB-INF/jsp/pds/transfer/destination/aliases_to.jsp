@@ -20,13 +20,13 @@
 
 <td colspan="2" valign="top">
 
+<p class="fw-bold mb-1 mt-2">Destination ${destination.name} has Aliases To the following Destination(s):</p>
 <display:table id="alias" name="${aliases}" requestURI="" class="listing">
     <display:column sortable="true" title="Name"><a href="/do/transfer/destination/${alias.name}">${alias.name}</a></display:column>
     <display:column sortable="true" title="Type">${alias.typeText}</display:column>
     <display:column sortable="true" title="Status">${alias.formattedStatus}</display:column>
     <display:column sortable="false" title="Rules">${alias.dataAlias}</font></display:column>
     <display:column sortable="false" title="Comment">${alias.comment}</display:column>
-    <display:caption>Destination ${destination.name} has Aliases To the following Destination(s):</display:caption>
 </display:table>
 
 </c:if>

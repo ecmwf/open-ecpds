@@ -8,13 +8,13 @@
     <display:column sortable="true" title="Name"><a href="/do/datafile/transfergroup/${row.id}">${row.name}</a></display:column>
     <display:column	property="comment"/>
     <display:column sortable="true" title="Enabled">
-        <c:if test="${row.active}">yes</c:if><c:if test="${!row.active}"><font color="red">no</font></c:if>
+        <c:if test="${row.active}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if><c:if test="${!row.active}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if>
     </display:column>
     <display:column title="Replicating">
-        <c:if test="${row.replicate}">yes</c:if><c:if test="${!row.replicate}"><font color="red">no</font></c:if>
+        <c:if test="${row.replicate}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if><c:if test="${!row.replicate}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if>
     </display:column>
     <display:column title="Filtering">
-        <c:if test="${row.filter}">yes</c:if><c:if test="${!row.filter}"><font color="red">no</font></c:if>
+        <c:if test="${row.filter}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if><c:if test="${!row.filter}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if>
     </display:column>
     <display:column sortable="true" title="Cluster Name" property="clusterName"/>
     <display:column title="Weight" property="clusterWeight"/>

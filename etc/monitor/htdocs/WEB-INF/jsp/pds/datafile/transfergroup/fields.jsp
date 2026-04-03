@@ -14,6 +14,22 @@
 	<html:hidden property="id" />
 
 	<tiles:useAttribute name="isInsert" classname="java.lang.String" />
+<c:choose>
+    <c:when test="${isInsert == 'true'}">
+        <div class="form-info-banner">
+            <i class="bi bi-collection text-primary flex-shrink-0"></i>
+            Create a new Transfer Group to organise transfer servers.
+        </div>
+    </c:when>
+    <c:otherwise>
+        <div class="form-info-banner">
+            <i class="bi bi-collection text-primary flex-shrink-0"></i>
+            Edit the Transfer Group configuration.
+        </div>
+    </c:otherwise>
+</c:choose>
+
+
 	<tiles:useAttribute id="actionFormName" name="action.form.name"
 		classname="java.lang.String" />
 
@@ -86,6 +102,10 @@
 
 </table>
 
+<p class="fw-bold mb-1 mt-2">Transfer Servers <a
+		href="/do/datafile/transferserver/edit/insert_form?transferGroupName=${transferGroupActionForm.id}"><content:icon
+			key="icon.small.insert" titleKey="button.insert"
+			altKey="button.insert" writeFullTag="true" /></a></p>
 <display:table id="server"
 	name="${transferGroupActionForm.transferServers}" requestURI=""
 	class="listing">
@@ -104,11 +124,6 @@
 			</tr>
 		</table>
 	</display:column>
-	<display:caption>Transfer Servers <a
-			href="/do/datafile/transferserver/edit/insert_form?transferGroupName=${transferGroupActionForm.id}"><content:icon
-				key="icon.small.insert" titleKey="button.insert"
-				altKey="button.insert" writeFullTag="true" /></a>
-	</display:caption>
 </display:table>
 
 <script>

@@ -2,7 +2,7 @@
 <%@ taglib uri="/WEB-INF/tld/struts-html.tld" prefix="html" %>
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth" %>
 
-<link href="/assets/css/login.css" rel="stylesheet" type="text/css"/>
+<link href="/assets/css/login.css?v=20260401f" rel="stylesheet" type="text/css"/>
 
 <script>
 $(document).ready(function() {

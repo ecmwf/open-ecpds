@@ -43,13 +43,13 @@
 </tr>
 
 <tr>
-<th>Expired</th><td><c:if test="${datatransfer.expired}"><font color="red">yes</font></c:if><c:if test="${!datatransfer.expired}">no</c:if></td>
-<th>Deleted</th><td class="boolean"><c:if test="${datatransfer.deleted}"><font color="red">yes</font></c:if><c:if test="${!datatransfer.deleted}">no</c:if></td>
+<th>Expired</th><td><c:if test="${datatransfer.expired}"><i class="bi bi-x-circle-fill text-danger" title="Yes"></i></c:if><c:if test="${!datatransfer.expired}"><i class="bi bi-check-circle-fill text-success" title="No"></i></c:if></td>
+<th>Deleted</th><td class="boolean"><c:if test="${datatransfer.deleted}"><i class="bi bi-x-circle-fill text-danger" title="Yes"></i></c:if><c:if test="${!datatransfer.deleted}"><i class="bi bi-check-circle-fill text-success" title="No"></i></c:if></td>
 </tr>
 
 <tr>
-<th>Replicated</th><td class="boolean"><c:if test="${datatransfer.replicated}">yes</c:if><c:if test="${!datatransfer.replicated}"><font color="red">no</font></c:if></td>
-<th>Backup</th><td class="boolean"><c:if test="${datatransfer.backup}">yes</c:if><c:if test="${!datatransfer.backup}"><font color="red">no</font></c:if></td>
+<th>Replicated</th><td class="boolean"><c:if test="${datatransfer.replicated}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if><c:if test="${!datatransfer.replicated}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></td>
+<th>Backup</th><td class="boolean"><c:if test="${datatransfer.backup}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if><c:if test="${!datatransfer.backup}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></td>
 </tr>
 
 <tr>
@@ -89,13 +89,13 @@
 </c:if>
 <c:if test="${datatransfer.transferRate <= 0}">
   <c:if test="${datatransfer.size == 0}">
-    <th>Rate</th><td class="number"><font color="grey"><span title="Empty file">[n/a]</span></font></td>
+    <th>Rate</th><td class="number"><font color="grey"><span title="Empty file"><i class="bi bi-dash text-muted" title="Not applicable"></i></span></font></td>
   </c:if>
   <c:if test="${datatransfer.size > 0}">
-    <th>Rate</th><td class="number"><font color="grey"><span title="Data not transferred to remote host">[n/a]</span></font></td>
+    <th>Rate</th><td class="number"><font color="grey"><span title="Data not transferred to remote host"><i class="bi bi-dash text-muted" title="Not applicable"></i></span></font></td>
   </c:if>
 </c:if>
-<th>On Proxy</th><td class="boolean"><c:if test="${datatransfer.proxy}"><font color="red">yes</font></c:if><c:if test="${!datatransfer.proxy}">no</c:if></td>
+<th>On Proxy</th><td class="boolean"><c:if test="${datatransfer.proxy}"><font color="red"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></font></c:if><c:if test="${!datatransfer.proxy}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></td>
 </tr>
 
 <c:set var="schedTimeTitle" value="Sch. Time"/>
@@ -113,7 +113,7 @@
 <tr>
 <th><c:out value="${schedTimeTitle}"/></th>
 <td class="date"><content:content name="datatransfer.scheduledTime" dateFormatKey="date.format.long.iso" ignoreNull="true"/></td>
-<th>ASAP</th><td class="boolean"><c:if test="${datatransfer.asap}">yes</c:if><c:if test="${!datatransfer.asap}">no</c:if></td>
+<th>ASAP</th><td class="boolean"><c:if test="${datatransfer.asap}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if><c:if test="${!datatransfer.asap}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></td>
 </tr>
 
 <tr>

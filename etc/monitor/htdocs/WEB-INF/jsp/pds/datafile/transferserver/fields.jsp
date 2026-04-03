@@ -11,6 +11,22 @@
 	<html:hidden property="id" />
 
 	<tiles:useAttribute name="isInsert" classname="java.lang.String" />
+<c:choose>
+    <c:when test="${isInsert == 'true'}">
+        <div class="form-info-banner">
+            <i class="bi bi-server text-primary flex-shrink-0"></i>
+            Register a new Transfer Server for data file processing.
+        </div>
+    </c:when>
+    <c:otherwise>
+        <div class="form-info-banner">
+            <i class="bi bi-server text-primary flex-shrink-0"></i>
+            Edit the Transfer Server configuration.
+        </div>
+    </c:otherwise>
+</c:choose>
+
+
 	<tiles:useAttribute id="actionFormName" name="action.form.name"
 		classname="java.lang.String" />
 
@@ -41,8 +57,8 @@
 	</tr>
 
 	<tr>
-		<th>Hostname</tg>
-		<td><input title="DNS name" property="host" id="host" name="host"
+		<th>Hostname <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="DNS name" tabindex="0"></i></tg>
+		<td><input property="host" id="host" name="host"
 			type="text" value="${requestScope[actionFormName].host}">&nbsp;(please
 			use letters, digits, '-' and '.' only)</td>
 	</tr>

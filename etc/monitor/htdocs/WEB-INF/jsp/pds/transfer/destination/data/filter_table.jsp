@@ -90,12 +90,191 @@
 	</c:forEach>
 </tr>
 
-<tr>	
+<tr>
 <th></th>
 <th></th>
  <td colspan="18">
- 	<input type="text" value="${destinationDetailActionForm.fileNameSearch}" placeholder="e.g. expired=no target=*.dat source=/tmp/* ts&gt;10 ts&lt;=99 size&gt;=700kb case=i" class="search" title="Default search is by target. Conduct extended searches using target, source, ts, priority, groupby, identity, checksum, size, replicated, asap, deleted, expired, proxy, mover and event rules." style="width:100%" id="fileNameSearch" name="fileNameSearch" onkeypress="submitenter(this,event)">
+ 	<div class="d-flex gap-1 align-items-center">
+ 		<input type="text" value="${destinationDetailActionForm.fileNameSearch}" placeholder="e.g. expired=no target=*.dat source=/tmp/* ts&gt;10 ts&lt;=99 size&gt;=700kb case=i" class="search" title="Default search is by target. Conduct extended searches using target, source, ts, priority, groupby, identity, checksum, size, replicated, asap, deleted, expired, proxy, mover and event rules. Wildcards: * (zero or more chars), ? (exactly one char)." style="flex:1" id="fileNameSearch" name="fileNameSearch" onkeypress="submitenter(this,event)">
+ 		<button type="button" class="btn btn-sm btn-outline-secondary px-2"
+ 		        data-bs-toggle="collapse" data-bs-target="#dftQueryBuilder"
+ 		        title="Build query" aria-expanded="false" aria-controls="dftQueryBuilder">
+ 			<i class="bi bi-sliders2"></i>
+ 		</button>
+ 	</div>
+</td>
+</tr>
+
+<tr>
+<th colspan="2"></th>
+<td colspan="18">
+    <div class="collapse" id="dftQueryBuilder">
+        <div class="border rounded p-2 bg-white mt-1" style="font-size:0.85rem">
+            <div class="row g-2 mb-2">
+                <div class="col-md-6">
+                    <label class="form-label mb-1 fw-semibold"><code>target=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
+                    <input type="text" class="form-control form-control-sm" id="dft_target" placeholder="e.g. *.dat" oninput="dftPreview()">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label mb-1 fw-semibold"><code>source=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
+                    <input type="text" class="form-control form-control-sm" id="dft_source" placeholder="e.g. /tmp/*" oninput="dftPreview()">
+                </div>
+            </div>
+            <div class="row g-2 mb-2">
+                <div class="col">
+                    <label class="form-label mb-1 fw-semibold"><code>asap</code></label>
+                    <select class="form-select form-select-sm" id="dft_asap" onchange="dftPreview()">
+                        <option value="">Any</option><option value="yes">Yes</option><option value="no">No</option>
+                    </select>
+                </div>
+                <div class="col">
+                    <label class="form-label mb-1 fw-semibold"><code>deleted</code></label>
+                    <select class="form-select form-select-sm" id="dft_deleted" onchange="dftPreview()">
+                        <option value="">Any</option><option value="yes">Yes</option><option value="no">No</option>
+                    </select>
+                </div>
+                <div class="col">
+                    <label class="form-label mb-1 fw-semibold"><code>expired</code></label>
+                    <select class="form-select form-select-sm" id="dft_expired" onchange="dftPreview()">
+                        <option value="">Any</option><option value="yes">Yes</option><option value="no">No</option>
+                    </select>
+                </div>
+                <div class="col">
+                    <label class="form-label mb-1 fw-semibold"><code>replicated</code></label>
+                    <select class="form-select form-select-sm" id="dft_replicated" onchange="dftPreview()">
+                        <option value="">Any</option><option value="yes">Yes</option><option value="no">No</option>
+                    </select>
+                </div>
+                <div class="col">
+                    <label class="form-label mb-1 fw-semibold"><code>proxy</code></label>
+                    <select class="form-select form-select-sm" id="dft_proxy" onchange="dftPreview()">
+                        <option value="">Any</option><option value="yes">Yes</option><option value="no">No</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row g-2 mb-2">
+                <div class="col-md-6">
+                    <label class="form-label mb-1 fw-semibold"><code>ts</code> <span class="text-muted fw-normal">range (numeric)</span></label>
+                    <div class="input-group input-group-sm">
+                        <select class="form-select form-select-sm" id="dft_ts_op1" style="max-width:65px" onchange="dftPreview()">
+                            <option value="=">=</option><option value=">">&gt;</option><option value=">=">&gt;=</option><option value="<">&lt;</option><option value="<=">&lt;=</option>
+                        </select>
+                        <input type="number" class="form-control form-control-sm" id="dft_ts_val1" placeholder="from" oninput="dftPreview()">
+                        <select class="form-select form-select-sm" id="dft_ts_op2" style="max-width:65px" onchange="dftPreview()">
+                            <option value="<=">&lt;=</option><option value="<">&lt;</option><option value=">=">&gt;=</option><option value=">">&gt;</option>
+                        </select>
+                        <input type="number" class="form-control form-control-sm" id="dft_ts_val2" placeholder="to" oninput="dftPreview()">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label mb-1 fw-semibold"><code>size</code> <span class="text-muted fw-normal">range</span></label>
+                    <div class="input-group input-group-sm">
+                        <select class="form-select form-select-sm" id="dft_size_op1" style="max-width:65px" onchange="dftPreview()">
+                            <option value=">=">&gt;=</option><option value=">">&gt;</option><option value="=">=</option><option value="<=">&lt;=</option><option value="<">&lt;</option>
+                        </select>
+                        <input type="number" class="form-control form-control-sm" id="dft_size_val1" placeholder="min" oninput="dftPreview()">
+                        <select class="form-select form-select-sm" id="dft_size_unit1" style="max-width:60px" onchange="dftPreview()">
+                            <option value="">b</option><option value="kb" selected>kb</option><option value="mb">mb</option><option value="gb">gb</option>
+                        </select>
+                        <select class="form-select form-select-sm" id="dft_size_op2" style="max-width:65px" onchange="dftPreview()">
+                            <option value="<=">&lt;=</option><option value="<">&lt;</option><option value=">=">&gt;=</option><option value=">">&gt;</option>
+                        </select>
+                        <input type="number" class="form-control form-control-sm" id="dft_size_val2" placeholder="max" oninput="dftPreview()">
+                        <select class="form-select form-select-sm" id="dft_size_unit2" style="max-width:60px" onchange="dftPreview()">
+                            <option value="">b</option><option value="kb" selected>kb</option><option value="mb">mb</option><option value="gb">gb</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="row g-2 mb-2">
+                <div class="col-md-2">
+                    <label class="form-label mb-1 fw-semibold"><code>priority=</code></label>
+                    <input type="number" class="form-control form-control-sm" id="dft_priority" min="0" max="99" oninput="dftPreview()">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label mb-1 fw-semibold"><code>mover=</code></label>
+                    <input type="text" class="form-control form-control-sm" id="dft_mover" oninput="dftPreview()">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label mb-1 fw-semibold"><code>identity=</code></label>
+                    <input type="text" class="form-control form-control-sm" id="dft_identity" oninput="dftPreview()">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label mb-1 fw-semibold"><code>groupby=</code></label>
+                    <input type="text" class="form-control form-control-sm" id="dft_groupby" oninput="dftPreview()">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label mb-1 fw-semibold"><code>event=</code></label>
+                    <input type="text" class="form-control form-control-sm" id="dft_event" oninput="dftPreview()">
+                </div>
+            </div>
+            <div class="row g-2 mb-2">
+                <div class="col-md-6">
+                    <label class="form-label mb-1 fw-semibold"><code>checksum=</code></label>
+                    <input type="text" class="form-control form-control-sm" id="dft_checksum" oninput="dftPreview()">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label mb-1 fw-semibold"><code>case=</code></label>
+                    <select class="form-select form-select-sm" id="dft_case" onchange="dftPreview()">
+                        <option value="s">Sensitive (default)</option>
+                        <option value="i">Case-insensitive</option>
+                    </select>
+                </div>
+            </div>
+            <div class="d-flex align-items-center gap-2 pt-1 border-top mt-1">
+                <i class="bi bi-terminal text-muted flex-shrink-0"></i>
+                <code class="text-muted flex-grow-1 text-truncate" id="dft_preview" style="font-size:0.8rem">-- fill in fields above --</code>
+                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="dftClear()">
+                    <i class="bi bi-x-circle me-1"></i>Clear
+                </button>
+                <button type="button" class="btn btn-sm btn-primary" onclick="dftApply()">
+                    <i class="bi bi-check-lg me-1"></i>Apply &amp; Search
+                </button>
+            </div>
+        </div>
+    </div>
 </td>
 </tr>
 
 </table>
+
+<script>
+function dftVal(id) { return document.getElementById(id) ? document.getElementById(id).value.trim() : ''; }
+function dftQuote(v) { var q=v.indexOf(' ')>=0||v.indexOf('=')>=0||v.indexOf('"')>=0; return q?'"'+v.replace(/"/g,'\\"')+'"':v; }
+function dftBuild() {
+    var p = [];
+    ['target','source','mover','identity','checksum','groupby','event'].forEach(function(f) {
+        var v = dftVal('dft_' + f); if (v) p.push(f + '=' + dftQuote(v));
+    });
+    ['asap','deleted','expired','replicated','proxy'].forEach(function(f) {
+        var v = dftVal('dft_' + f); if (v) p.push(f + '=' + v);
+    });
+    var prio = dftVal('dft_priority'); if (prio) p.push('priority=' + prio);
+    var tv1 = dftVal('dft_ts_val1'); if (tv1) p.push('ts' + dftVal('dft_ts_op1') + tv1);
+    var tv2 = dftVal('dft_ts_val2'); if (tv2) p.push('ts' + dftVal('dft_ts_op2') + tv2);
+    var sv1 = dftVal('dft_size_val1'); if (sv1) p.push('size' + dftVal('dft_size_op1') + sv1 + dftVal('dft_size_unit1'));
+    var sv2 = dftVal('dft_size_val2'); if (sv2) p.push('size' + dftVal('dft_size_op2') + sv2 + dftVal('dft_size_unit2'));
+    if (dftVal('dft_case') === 'i') p.push('case=i');
+    return p.join(' ');
+}
+function dftPreview() {
+    document.getElementById('dft_preview').textContent = dftBuild() || '-- fill in fields above --';
+}
+function dftApply() {
+    document.getElementById('fileNameSearch').value = dftBuild();
+    document.destinationDetailActionForm.submit();
+}
+function dftClear() {
+    ['target','source','mover','identity','checksum','groupby','event','priority'].forEach(function(f) {
+        var el = document.getElementById('dft_' + f); if (el) el.value = '';
+    });
+    ['ts_val1','ts_val2','size_val1','size_val2'].forEach(function(f) {
+        var el = document.getElementById('dft_' + f); if (el) el.value = '';
+    });
+    ['asap','deleted','expired','replicated','proxy'].forEach(function(f) {
+        document.getElementById('dft_' + f).value = '';
+    });
+    document.getElementById('dft_case').value = 's';
+    dftPreview();
+}
+</script>

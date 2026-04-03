@@ -2,38 +2,61 @@
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content"%>
 <%@ taglib uri="/WEB-INF/tld/struts-tiles.tld" prefix="tiles"%>
 
-<table class="select">
-	<tr>
-		<c:if test="${not empty dateOptions}">
-			<c:forEach items="${dateOptions}" var="dateOption">
-				<c:if test="${dateOption == selectedDate}">
-					<td class="selected"><a
-						href="?mode=${param['mode']}&date=${dateOption}">${dateOption}</a></td>
-				</c:if>
-				<c:if test="${dateOption != selectedDate}">
-					<td><a href="?mode=${param['mode']}&date=${dateOption}">${dateOption}</a></td>
-				</c:if>
-			</c:forEach>
-		</c:if>
+<div class="date-strip">
+    <c:if test="${not empty dateOptions}">
+        <div class="date-strip-pills">
+            <c:forEach items="${dateOptions}" var="dateOption">
+                <c:choose>
+                    <c:when test="${dateOption == selectedDate}">
+                        <a class="date-pill active" href="?mode=${param['mode']}&date=${dateOption}">${dateOption}</a>
+                    </c:when>
+                    <c:otherwise>
+                        <a class="date-pill" href="?mode=${param['mode']}&date=${dateOption}">${dateOption}</a>
+                    </c:otherwise>
+                </c:choose>
+            </c:forEach>
+        </div>
+    </c:if>
 
-		<c:if test="${empty dateOptions}">
-			<td>Please supply a "dateOptions" attribute from the request</td>
-		</c:if>
+    <c:if test="${empty dateOptions}">
+        <span class="text-muted fst-italic small">No dates available</span>
+    </c:if>
 
-		<tiles:importAttribute name="show_chart_button" ignore="true" />
+    <tiles:importAttribute name="show_chart_button" ignore="true" />
 
-		<c:if test="${not empty show_chart_button}">
-			<td><c:if test="${param['mode'] == 'chart'}">
-					<a href="?mode=table&date=${selectedDate}"><content:icon
-							key="icon.small.chart.off" writeFullTag="true"
-							altKey="ecpds.monitoring.showTable"
-							titleKey="ecpds.monitoring.showTable" /></a>
-				</c:if> <c:if test="${param['mode'] != 'chart'}">
-					<a href="?mode=chart&date=${selectedDate}"><content:icon
-							key="icon.small.chart" writeFullTag="true"
-							altKey="ecpds.monitoring.showChart"
-							titleKey="ecpds.monitoring.showChart" /></a>
-				</c:if></td>
-		</c:if>
-	</tr>
-</table>
+    <c:if test="${not empty show_chart_button}">
+        <div class="date-strip-chart-toggle">
+            <c:choose>
+                <c:when test="${param['mode'] == 'chart'}">
+                    <a href="?mode=table&date=${selectedDate}" class="btn btn-sm btn-outline-secondary" title="Show as table">
+                        <i class="bi bi-table"></i>
+                    </a>
+                </c:when>
+                <c:otherwise>
+                    <a href="?mode=chart&date=${selectedDate}" class="btn btn-sm btn-outline-secondary" title="Show as chart">
+                        <i class="bi bi-bar-chart-line"></i>
+                    </a>
+                </c:otherwise>
+            </c:choose>
+        </div>
+    </c:if>
+</div>
+<script>
+(function () {
+    document.querySelectorAll('.date-pill').forEach(function (pill) {
+        var raw = pill.textContent.trim();
+        var d;
+        // Handle compact YYYYMMDD format
+        if (/^\d{8}$/.test(raw)) {
+            d = new Date(raw.slice(0,4) + '-' + raw.slice(4,6) + '-' + raw.slice(6,8));
+        } else {
+            d = new Date(raw);
+        }
+        if (!isNaN(d.getTime())) {
+            pill.title = d.toLocaleDateString(undefined, {
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+            });
+        }
+    });
+})();
+</script>

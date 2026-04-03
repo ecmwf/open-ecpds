@@ -7,12 +7,12 @@
 
 <c:if test="${empty ratesList}">
   <div class="alert">
-    <span class="closebtn" onclick="parent.history.back();">&times;</span>
     No Rates found based on these criteria!
   </div>
 </c:if>
 <c:if test="${!empty ratesList}">
 <c:if test="${option == 'rates'}">
+<p class="fw-bold mb-1 mt-2">Rates per Transfer Group (selection: ${caller}/${sourceHost})</p>
 <display:table name="${ratesList}" id="rates" requestURI="" sort="list" pagesize="25" class="listing">
 	<display:column title="Date" sortable="true">${rates.date}</display:column>
 	<display:column title="Transfer Group" sortable="true">${rates.transferGroupName}</display:column>
@@ -20,10 +20,10 @@
 	<display:column title="Bytes" sortable="true" sortProperty="bytes"><a STYLE="TEXT-DECORATION: NONE" title="Size: ${rates.formattedBytes}">${rates.bytes}</a></display:column>
 	<display:column title="Duration (ms)" sortable="true" sortProperty="duration"><a STYLE="TEXT-DECORATION: NONE" title="Duration: ${rates.formattedDuration}">${rates.duration}</a></display:column>
 	<display:column title="Mbits/s" sortable="true" sortProperty="rate"><a STYLE="TEXT-DECORATION: NONE" title="Rate: ${rates.formattedRate}">${rates.rate}</a></display:column>
-        <display:caption>Rates per Transfer Group (selection: ${caller}/${sourceHost})</display:caption>
 </display:table>
 </c:if>
 <c:if test="${option == 'ratesPerTransferServer'}">
+<p class="fw-bold mb-1 mt-2">Rates per Transfer Server (selection: ${caller}/${sourceHost})</p>
 <display:table name="${ratesList}" id="rates" requestURI="" sort="list" pagesize="25" class="listing">
 	<display:column title="Date" sortable="true">${rates.date}</display:column>
 	<display:column title="Transfer Group" sortable="true">${rates.transferGroupName}</display:column>
@@ -32,10 +32,10 @@
 	<display:column title="Bytes" sortable="true" sortProperty="bytes"><a STYLE="TEXT-DECORATION: NONE" title="Size: ${rates.formattedBytes}">${rates.bytes}</a></display:column>
 	<display:column title="Duration (ms)" sortable="true" sortProperty="duration"><a STYLE="TEXT-DECORATION: NONE" title="Duration: ${rates.formattedDuration}">${rates.duration}</a></display:column>
 	<display:column title="Mbits/s" sortable="true" sortProperty="rate"><a STYLE="TEXT-DECORATION: NONE" title="Rate: ${rates.formattedRate}">${rates.rate}</a></display:column>
-	<display:caption>Rates per Transfer Server (selection: ${caller}/${sourceHost})</display:caption>
 </display:table>
 </c:if>
 <c:if test="${option == 'ratesPerFileSystem'}">
+<p class="fw-bold mb-1 mt-2">Rates per File System for Transfer Server ${transferServerName} (selection: ${caller}/${sourceHost})</p>
 <display:table name="${ratesList}" id="rates" requestURI="" sort="list" pagesize="25" class="listing">
 	<display:column title="Date" sortable="true">${rates.date}</display:column>
 	<display:column title="File System" sortable="true">${rates.fileSystem}</display:column>
@@ -43,7 +43,6 @@
 	<display:column title="Bytes" sortable="true" sortProperty="bytes"><a STYLE="TEXT-DECORATION: NONE" title="Size: ${rates.formattedBytes}">${rates.bytes}</a></display:column>
 	<display:column title="Duration (ms)" sortable="true" sortProperty="duration"><a STYLE="TEXT-DECORATION: NONE" title="Duration: ${rates.formattedDuration}">${rates.duration}</a></display:column>
 	<display:column title="Mbits/s" sortable="true" sortProperty="rate"><a STYLE="TEXT-DECORATION: NONE" title="Rate: ${rates.formattedRate}">${rates.rate}</a></display:column>
-	<display:caption>Rates per File System for Transfer Server ${transferServerName} (selection: ${caller}/${sourceHost})</display:caption>
 </display:table>
 </c:if>
 </c:if>

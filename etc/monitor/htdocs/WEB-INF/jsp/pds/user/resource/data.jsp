@@ -33,12 +33,31 @@
 		</auth:if>
 	</table>
 
-	<display:table id="category" name="${resource.categories}"
-		requestURI="" class="listing">
-		<display:column title="Name">
-			<a href="/do/user/category/${category.id}">${category.name}</a>
-		</display:column>
-		<display:column property="description" />
-		<display:caption>Associated Web Categories</display:caption>
-	</display:table>
+<style>
+.assoc-card .card-header { display:flex; align-items:center; gap:.4rem; padding:.5rem .75rem; background:#f8f9fa; font-size:.85rem; }
+.assoc-chip { display:inline-flex; align-items:center; gap:.25rem; background:#e9ecef; border-radius:1rem; padding:.2rem .6rem; font-size:.8rem; margin:.15rem; }
+</style>
+
+	<div class="card assoc-card mt-2" style="max-width:480px">
+	  <div class="card-header">
+	    <i class="bi bi-folder text-secondary"></i>
+	    <strong>Associated Web Categories</strong>
+	  </div>
+	  <div class="card-body p-2">
+	    <c:choose>
+	      <c:when test="${empty resource.categories}">
+	        <p class="text-muted small mb-0"><em>No web categories assigned.</em></p>
+	      </c:when>
+	      <c:otherwise>
+	        <div class="d-flex flex-wrap">
+	          <c:forEach var="category" items="${resource.categories}">
+	            <span class="assoc-chip">
+	              <a href="/do/user/category/${category.id}" title="${category.description}" class="text-decoration-none text-dark">${category.name}</a>
+	            </span>
+	          </c:forEach>
+	        </div>
+	      </c:otherwise>
+	    </c:choose>
+	  </div>
+	</div>
 </c:if>

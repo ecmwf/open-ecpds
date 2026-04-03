@@ -9,168 +9,341 @@
 
 <tiles:insert name="date.select" />
 
-<table>
-	<tr>
-		<td>
-			<table class="select">
-				<tr>
-					<c:forEach var="transferStatus" items="${transferStatusOptions}">
-						<c:if test="${transferStatus.id == currentTransferStatus.id}">
-							<td width="100" class="selected"><a
-								href="?transferStatus=${transferStatus.id}">${transferStatus.name}</a></td>
-						</c:if>
-						<c:if test="${transferStatus.id != currentTransferStatus.id}">
-							<td width="100"><a
-								href="?transferStatus=${transferStatus.id}&refreshPeriod=${param['refreshPeriod']}">${transferStatus.name}</a></td>
-						</c:if>
-					</c:forEach>
-				</tr>
-			</table>
-		</td>
-		<td><form action="" style="margin: 0; padding: 0">
-				<input title="Screen Refresh Period (0 is No Refresh)"
-					class="small_number" type="text" size="5" name="refreshPeriod"
-					value="${param['refreshPeriod']}">
-			</form></td>
-	</tr>
-</table>
+<%-- Status tabs + refresh --%>
+<c:set var="currentRefresh" value="${empty param['refreshPeriod'] ? '0' : param['refreshPeriod']}"/>
+<div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
+    <div class="d-flex flex-wrap gap-1">
+        <c:forEach var="transferStatus" items="${transferStatusOptions}">
+            <c:choose>
+                <c:when test="${transferStatus.id == currentTransferStatus.id}">
+                    <a href="?transferStatus=${transferStatus.id}&refreshPeriod=${currentRefresh}"
+                       class="badge text-decoration-none"
+                       style="background:#0d6efd; color:#fff; padding:0.35em 0.7em; font-size:0.8rem;">${transferStatus.name}</a>
+                </c:when>
+                <c:otherwise>
+                    <a href="?transferStatus=${transferStatus.id}&refreshPeriod=${currentRefresh}"
+                       class="badge text-decoration-none"
+                       style="background:#e9ecef; color:#495057; padding:0.35em 0.7em; font-size:0.8rem;">${transferStatus.name}</a>
+                </c:otherwise>
+            </c:choose>
+        </c:forEach>
+    </div>
+    <div class="d-flex align-items-center gap-1 flex-shrink-0">
+        <i class="bi bi-arrow-clockwise text-muted me-1" style="font-size:0.85rem;" title="Auto-refresh interval"></i>
+        <a href="#" class="date-pill refresh-pill ${currentRefresh == '0' ? 'active' : ''}" data-value="0">Off</a>
+        <a href="#" class="date-pill refresh-pill ${currentRefresh == '30' ? 'active' : ''}" data-value="30">30s</a>
+        <a href="#" class="date-pill refresh-pill ${currentRefresh == '60' ? 'active' : ''}" data-value="60">1m</a>
+        <a href="#" class="date-pill refresh-pill ${currentRefresh == '300' ? 'active' : ''}" data-value="300">5m</a>
+        <a href="#" class="date-pill refresh-pill ${currentRefresh == '600' ? 'active' : ''}" data-value="600">10m</a>
+    </div>
+</div>
 
 <script>
-	var refresh = '${param["refreshPeriod"]}';
-		if (refresh != '' && refresh > 0) {
-			setTimeout(function() {
-				window.location.reload(true);
-			}, refresh * 1000);
-		}
+    var refresh = '${param["refreshPeriod"]}';
+    if (refresh != '' && refresh > 0) {
+        setTimeout(function() { window.location.reload(true); }, refresh * 1000);
+    }
+    document.querySelectorAll('.refresh-pill').forEach(function(pill) {
+        pill.addEventListener('click', function(e) {
+            e.preventDefault();
+            var params = new URLSearchParams(window.location.search);
+            params.set('refreshPeriod', this.dataset.value);
+            window.location.href = '?' + params.toString();
+        });
+    });
 </script>
 
-<br />
+<%-- Search form --%>
+<auth:if basePathKey="transferhistory.basepath" paths="/">
+    <auth:then>
+        <form class="mb-3" id="transferSearchForm">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body py-2 px-3">
+                    <div class="row g-2">
+                        <div class="col-7">
+                            <div class="input-group">
+                                <span class="input-group-text text-muted bg-white"><i class="bi bi-search"></i></span>
+                                <input class="form-control" name="transferSearch" id="transferSearch" type="text"
+                                    placeholder="e.g. expired=no target=*.dat source=/tmp/* ts&gt;10 ts&lt;=99 size&gt;=700kb case=i"
+                                    title="Default search is by target. Use target, source, ts, priority, groupby, identity, checksum, size, replicated, asap, deleted, expired, proxy, mover and event rules."
+                                    value='<c:out value="${transferSearch}"/>'>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="input-group">
+                                <span class="input-group-text text-muted bg-white"><i class="bi bi-tag"></i></span>
+                                <select class="form-select" name="transferType" onchange="form.submit()" title="Filter by Type">
+                                    <c:forEach var="option" items="${transferTypeOptions}">
+                                        <option value="${option.name}" <c:if test="${transferType == option.name}">selected</c:if>>${option.value}</option>
+                                    </c:forEach>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-2 d-flex gap-1">
+                            <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-search"></i> Search</button>
+                            <button type="button" class="btn btn-outline-secondary px-2"
+                                    data-bs-toggle="collapse" data-bs-target="#queryBuilder"
+                                    title="Build query" aria-expanded="false" aria-controls="queryBuilder">
+                                <i class="bi bi-sliders2"></i>
+                            </button>
+                        </div>
+                    </div>
 
-<style>
-select {
-	padding: 6px 12px 6px 40px;
-	width: 250px;
-}
-</style>
+                    <%-- Query Builder collapse panel --%>
+                    <div class="collapse mt-2" id="queryBuilder">
+                        <div class="border rounded p-2 bg-white" style="font-size:0.85rem">
+                            <div class="row g-2 mb-2">
+                                <div class="col-md-6">
+                                    <label class="form-label mb-1 fw-semibold"><code>target=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
+                                    <input type="text" class="form-control form-control-sm" id="qb_target" placeholder="e.g. *.dat" oninput="qbPreview()">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label mb-1 fw-semibold"><code>source=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
+                                    <input type="text" class="form-control form-control-sm" id="qb_source" placeholder="e.g. /tmp/*" oninput="qbPreview()">
+                                </div>
+                            </div>
+                            <div class="row g-2 mb-2">
+                                <div class="col">
+                                    <label class="form-label mb-1 fw-semibold"><code>asap</code></label>
+                                    <select class="form-select form-select-sm" id="qb_asap" onchange="qbPreview()">
+                                        <option value="">Any</option><option value="yes">Yes</option><option value="no">No</option>
+                                    </select>
+                                </div>
+                                <div class="col">
+                                    <label class="form-label mb-1 fw-semibold"><code>deleted</code></label>
+                                    <select class="form-select form-select-sm" id="qb_deleted" onchange="qbPreview()">
+                                        <option value="">Any</option><option value="yes">Yes</option><option value="no">No</option>
+                                    </select>
+                                </div>
+                                <div class="col">
+                                    <label class="form-label mb-1 fw-semibold"><code>expired</code></label>
+                                    <select class="form-select form-select-sm" id="qb_expired" onchange="qbPreview()">
+                                        <option value="">Any</option><option value="yes">Yes</option><option value="no">No</option>
+                                    </select>
+                                </div>
+                                <div class="col">
+                                    <label class="form-label mb-1 fw-semibold"><code>replicated</code></label>
+                                    <select class="form-select form-select-sm" id="qb_replicated" onchange="qbPreview()">
+                                        <option value="">Any</option><option value="yes">Yes</option><option value="no">No</option>
+                                    </select>
+                                </div>
+                                <div class="col">
+                                    <label class="form-label mb-1 fw-semibold"><code>proxy</code></label>
+                                    <select class="form-select form-select-sm" id="qb_proxy" onchange="qbPreview()">
+                                        <option value="">Any</option><option value="yes">Yes</option><option value="no">No</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row g-2 mb-2">
+                                <div class="col-md-6">
+                                    <label class="form-label mb-1 fw-semibold"><code>ts</code> <span class="text-muted fw-normal">range (numeric)</span></label>
+                                    <div class="input-group input-group-sm">
+                                        <select class="form-select form-select-sm" id="qb_ts_op1" style="max-width:65px" onchange="qbPreview()">
+                                            <option value="=">=</option><option value=">">&gt;</option><option value=">=">&gt;=</option><option value="<">&lt;</option><option value="<=">&lt;=</option>
+                                        </select>
+                                        <input type="number" class="form-control form-control-sm" id="qb_ts_val1" placeholder="from" oninput="qbPreview()">
+                                        <select class="form-select form-select-sm" id="qb_ts_op2" style="max-width:65px" onchange="qbPreview()">
+                                            <option value="<=">&lt;=</option><option value="<">&lt;</option><option value=">=">&gt;=</option><option value=">">&gt;</option>
+                                        </select>
+                                        <input type="number" class="form-control form-control-sm" id="qb_ts_val2" placeholder="to" oninput="qbPreview()">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label mb-1 fw-semibold"><code>size</code> <span class="text-muted fw-normal">range</span></label>
+                                    <div class="input-group input-group-sm">
+                                        <select class="form-select form-select-sm" id="qb_size_op1" style="max-width:65px" onchange="qbPreview()">
+                                            <option value=">=">&gt;=</option><option value=">">&gt;</option><option value="=">=</option><option value="<=">&lt;=</option><option value="<">&lt;</option>
+                                        </select>
+                                        <input type="number" class="form-control form-control-sm" id="qb_size_val1" placeholder="min" oninput="qbPreview()">
+                                        <select class="form-select form-select-sm" id="qb_size_unit1" style="max-width:60px" onchange="qbPreview()">
+                                            <option value="">b</option><option value="kb" selected>kb</option><option value="mb">mb</option><option value="gb">gb</option>
+                                        </select>
+                                        <select class="form-select form-select-sm" id="qb_size_op2" style="max-width:65px" onchange="qbPreview()">
+                                            <option value="<=">&lt;=</option><option value="<">&lt;</option><option value=">=">&gt;=</option><option value=">">&gt;</option>
+                                        </select>
+                                        <input type="number" class="form-control form-control-sm" id="qb_size_val2" placeholder="max" oninput="qbPreview()">
+                                        <select class="form-select form-select-sm" id="qb_size_unit2" style="max-width:60px" onchange="qbPreview()">
+                                            <option value="">b</option><option value="kb" selected>kb</option><option value="mb">mb</option><option value="gb">gb</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row g-2 mb-2">
+                                <div class="col-md-2">
+                                    <label class="form-label mb-1 fw-semibold"><code>priority=</code></label>
+                                    <input type="number" class="form-control form-control-sm" id="qb_priority" min="0" max="99" oninput="qbPreview()">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label mb-1 fw-semibold"><code>mover=</code></label>
+                                    <input type="text" class="form-control form-control-sm" id="qb_mover" oninput="qbPreview()">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label mb-1 fw-semibold"><code>identity=</code></label>
+                                    <input type="text" class="form-control form-control-sm" id="qb_identity" oninput="qbPreview()">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label mb-1 fw-semibold"><code>groupby=</code></label>
+                                    <input type="text" class="form-control form-control-sm" id="qb_groupby" oninput="qbPreview()">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label mb-1 fw-semibold"><code>event=</code></label>
+                                    <input type="text" class="form-control form-control-sm" id="qb_event" oninput="qbPreview()">
+                                </div>
+                            </div>
+                            <div class="row g-2 mb-2">
+                                <div class="col-md-6">
+                                    <label class="form-label mb-1 fw-semibold"><code>checksum=</code></label>
+                                    <input type="text" class="form-control form-control-sm" id="qb_checksum" oninput="qbPreview()">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label mb-1 fw-semibold"><code>case=</code></label>
+                                    <select class="form-select form-select-sm" id="qb_case" onchange="qbPreview()">
+                                        <option value="s">Sensitive (default)</option>
+                                        <option value="i">Case-insensitive</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <%-- Live preview + action buttons --%>
+                            <div class="d-flex align-items-center gap-2 pt-1 border-top mt-1">
+                                <i class="bi bi-terminal text-muted flex-shrink-0"></i>
+                                <code class="text-muted flex-grow-1 text-truncate" id="qb_preview" style="font-size:0.8rem">-- fill in fields above --</code>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="qbClear()">
+                                    <i class="bi bi-x-circle me-1"></i>Clear
+                                </button>
+                                <button type="button" class="btn btn-sm btn-primary" onclick="qbApply()">
+                                    <i class="bi bi-check-lg me-1"></i>Apply &amp; Search
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+        <script>
+        function qbVal(id) { return document.getElementById(id) ? document.getElementById(id).value.trim() : ''; }
+        function qbQuote(v) { var q=v.indexOf(' ')>=0||v.indexOf('=')>=0||v.indexOf('"')>=0; return q?'"'+v.replace(/"/g,'\\"')+'"':v; }
+        function qbBuild() {
+            var p = [];
+            ['target','source','mover','identity','checksum','groupby','event'].forEach(function(f) {
+                var v = qbVal('qb_' + f); if (v) p.push(f + '=' + qbQuote(v));
+            });
+            ['asap','deleted','expired','replicated','proxy'].forEach(function(f) {
+                var v = qbVal('qb_' + f); if (v) p.push(f + '=' + v);
+            });
+            var prio = qbVal('qb_priority'); if (prio) p.push('priority=' + prio);
+            var tv1 = qbVal('qb_ts_val1'); if (tv1) p.push('ts' + qbVal('qb_ts_op1') + tv1);
+            var tv2 = qbVal('qb_ts_val2'); if (tv2) p.push('ts' + qbVal('qb_ts_op2') + tv2);
+            var sv1 = qbVal('qb_size_val1'); if (sv1) p.push('size' + qbVal('qb_size_op1') + sv1 + qbVal('qb_size_unit1'));
+            var sv2 = qbVal('qb_size_val2'); if (sv2) p.push('size' + qbVal('qb_size_op2') + sv2 + qbVal('qb_size_unit2'));
+            if (qbVal('qb_case') === 'i') p.push('case=i');
+            return p.join(' ');
+        }
+        function qbPreview() {
+            var q = qbBuild();
+            document.getElementById('qb_preview').textContent = q || '-- fill in fields above --';
+        }
+        function qbApply() {
+            document.getElementById('transferSearch').value = qbBuild();
+            document.getElementById('transferSearchForm').submit();
+        }
+        function qbClear() {
+            ['target','source','mover','identity','checksum','groupby','event','priority','qb_ts_val1','qb_ts_val2','qb_size_val1','qb_size_val2'].forEach(function(id) {
+                var el = document.getElementById(id.startsWith('qb_') ? id : 'qb_' + id); if (el) el.value = '';
+            });
+            ['asap','deleted','expired','replicated','proxy'].forEach(function(f) {
+                document.getElementById('qb_' + f).value = '';
+            });
+            document.getElementById('qb_case').value = 's';
+            qbPreview();
+        }
+        </script>
+    </auth:then>
+</auth:if>
 
-<table style="width: 800;">
-	<tr>
-		<td><auth:if basePathKey="transferhistory.basepath" paths="/">
-				<auth:then>
-					<form>
-						<table class="ecpdsSearchBox" style="align: left;">
-							<tr>
-								<td style="width: 80%;"><input class="search"
-									name="transferSearch" type="text"
-									placeholder="e.g. expired=no target=*.dat source=/tmp/* ts&gt;10 ts&lt;=99 size&gt;=700kb case=i"
-									title="Default search is by target. Conduct extended searches using target, source, ts, priority, groupby, identity, checksum, size, replicated, asap, deleted, expired, proxy, mover and event rules."
-									style="width: 100%" value='<c:out value="${transferSearch}"/>'></td>
-								<td style="width: 20%;"><select name="transferType"
-									onchange="form.submit()" title="Sort by Type">
-										<c:forEach var="option" items="${transferTypeOptions}">
-											<option value="${option.name}"
-												<c:if test="${transferType == option.name}">SELECTED</c:if>>${option.value}</option>
-										</c:forEach>
-								</select></td>
-							</tr>
-						</table>
-					</form>
-				</auth:then>
-			</auth:if></td>
-	</tr>
-</table>
-<table style="width: 100%;">
-	<tr>
-		<td><c:if test="${empty transferList}">
-				<div class="alert">
-					<c:if test="${!hasFileNameSearch}">
-						No Data Transfers found based on these criteria!
-					</c:if>
-					<c:if test="${hasFileNameSearch}">
-						<c:if test="${!empty getTransfersError}">
-						  Error in your query: ${getTransfersError}<p>
-						</c:if>
-						<c:if test="${empty getTransfersError}">
-						  No Data Transfers found based on these criteria! Default search is by target.<p>
-						</c:if>
-						You can conduct an extensive search using the target, source, ts, priority, groupby, identity, checksum, size, replicated, asap, deleted and event rules.<p>
-							For instance: asap=yes target=*.dat source=/tmp/* ts&gt;10
-							ts&lt;=99 size&gt;=700kb case=i
-						<p>
-						<li>The 'case' option allows 's' for case-sensitive (default)
-							or 'i' for case-insensitive search.
-						<li>Ensure all spaces and equal signs in values are enclosed
-							within double quotes (e.g. "a=b" or "United States").
-						<li>The double quotes symbol (") can be escaped (e.g.
-							"*.file:&#92;"*&#92;"").
-						<li>The wildcard symbol asterisk (*) matches zero or more
-							characters.
-						<li>The wildcard symbol question mark (?) matches exactly one
-							character.
-					</c:if>
-				</div>
-			</c:if> <c:if test="${!empty transferList}">
-				<display:table id="transfer" name="${transferList}" requestURI=""
-					sort="external" defaultsort="3" partialList="true"
-					size="${transferListSize}" pagesize="${recordsPerPage}"
-					class="listing">
+<%-- No results --%>
+<c:if test="${empty transferList}">
+    <div class="alert">
+        <c:if test="${!hasFileNameSearch}">
+            No Data Transfers found based on these criteria.
+        </c:if>
+        <c:if test="${hasFileNameSearch}">
+            <c:if test="${!empty getTransfersError}">
+                <strong>Error in your query:</strong> ${getTransfersError}
+            </c:if>
+            <c:if test="${empty getTransfersError}">
+                No Data Transfers found. Default search is by target.
+            </c:if>
+            <p class="mb-1 mt-2">You can conduct an extended search using the following rules:</p>
+            <ul class="mb-0">
+                <li><code>target=</code>, <code>source=</code>, <code>ts=</code>, <code>priority=</code>, <code>groupby=</code>, <code>identity=</code>, <code>checksum=</code>, <code>size=</code>, <code>replicated=</code>, <code>asap=</code>, <code>deleted=</code>, <code>expired=</code>, <code>proxy=</code>, <code>mover=</code>, <code>event=</code></li>
+                <li>Example: <code>asap=yes target=*.dat source=/tmp/* ts&gt;10 ts&lt;=99 size&gt;=700kb case=i</code></li>
+                <li><code>case=i</code> for case-insensitive, <code>case=s</code> for case-sensitive (default)</li>
+                <li>Enclose values with spaces or equals signs in double quotes, e.g. <code>"United States"</code></li>
+                <li>Wildcards: <code>*</code> (zero or more chars), <code>?</code> (exactly one char)</li>
+            </ul>
+        </c:if>
+    </div>
+</c:if>
 
-					<display:column title="Destination" sortable="true">
-						<a title="${transfer.destination.comment}"
-							href="<bean:message key="destination.basepath"/>/${transfer.destinationName}">${transfer.destinationName}</a>
-					</display:column>
+<%-- Results table --%>
+<c:if test="${!empty transferList}">
+    <display:table id="transfer" name="${transferList}" requestURI=""
+        sort="external" defaultsort="3" partialList="true"
+        size="${transferListSize}" pagesize="${recordsPerPage}"
+        class="listing">
 
-					<display:column title="Transfer Host" sortable="true">
-						<c:set var="nickName" value="${transfer.hostNickName}" />
-						<jsp:useBean id="nickName" type="java.lang.String" />
-						<c:if test='<%="".equals(nickName)%>'>
-							<font color="grey"><span
-								title="Data not transferred to remote host">[not-transferred]</span></font>
-						</c:if>
-						<c:if test="<%=nickName.length() > 0%>">
-							<c:if test="${transfer.transferServerName == null}">
-								<a href="/do/transfer/host/${transfer.hostName}">${transfer.hostNickName}</a>
-							</c:if>
-							<c:if test="${transfer.transferServerName != null}">
-								<a title="Transmitted through ${transfer.transferServerName}"
-									href="/do/transfer/host/${transfer.hostName}">${transfer.hostNickName}</a>
-							</c:if>
-						</c:if>
-					</display:column>
+        <display:column title="Destination" sortable="true">
+            <a title="${transfer.destination.comment}"
+               href="<bean:message key="destination.basepath"/>/${transfer.destinationName}">${transfer.destinationName}</a>
+        </display:column>
 
-					<display:column title="Sched. Time" sortable="true">
-						<content:content name="transfer.scheduledTime"
-							dateFormatKey="date.format.transfer" ignoreNull="true" />
-					</display:column>
+        <display:column title="Transfer Host" sortable="true">
+            <c:set var="nickName" value="${transfer.hostNickName}" />
+            <jsp:useBean id="nickName" type="java.lang.String" />
+            <c:if test='<%="".equals(nickName)%>'>
+                <i class="bi bi-x-circle text-warning" title="Not transferred to remote host"></i>
+            </c:if>
+            <c:if test="<%=nickName.length() > 0%>">
+                <c:if test="${transfer.transferServerName == null}">
+                    <a href="/do/transfer/host/${transfer.hostName}">${transfer.hostNickName}</a>
+                </c:if>
+                <c:if test="${transfer.transferServerName != null}">
+                    <a title="Transmitted through ${transfer.transferServerName}"
+                       href="/do/transfer/host/${transfer.hostName}">${transfer.hostNickName}</a>
+                </c:if>
+            </c:if>
+        </display:column>
 
-					<display:column title="Target" sortable="true">
-						<c:if test="${!transfer.deleted}">
-							<a title="Size: ${transfer.formattedSize}"
-								href="/do/transfer/data/${transfer.id}">${transfer.target}</a>
-						</c:if>
-						<c:if test="${transfer.deleted}">
-							<a title="Size: ${transfer.formattedSize}"
-								href="/do/transfer/data/${transfer.id}"><font color="red">${transfer.target}</font></a>
-						</c:if>
-					</display:column>
+        <display:column title="Sched. Time" sortable="true">
+            <content:content name="transfer.scheduledTime"
+                dateFormatKey="date.format.transfer" ignoreNull="true" />
+        </display:column>
 
-					<display:column title="%" property="progress" sortable="true" />
+        <display:column title="Target" sortable="true">
+            <c:if test="${!transfer.deleted}">
+                <a title="Size: ${transfer.formattedSize}"
+                   href="/do/transfer/data/${transfer.id}">${transfer.target}</a>
+            </c:if>
+            <c:if test="${transfer.deleted}">
+                <a title="Size: ${transfer.formattedSize}"
+                   href="/do/transfer/data/${transfer.id}" class="text-danger">${transfer.target}</a>
+            </c:if>
+        </display:column>
 
-					<display:column title="Mbits/s" sortable="true"
-						sortProperty="formattedTransferRateInMBitsPerSeconds">
-						<c:if test="${transfer.transferRate != '0'}">
-							<a STYLE="TEXT-DECORATION: NONE"
-								title="Rate: ${transfer.formattedTransferRate}">${transfer.formattedTransferRateInMBitsPerSeconds}</a>
-						</c:if>
-						<c:if test="${transfer.transferRate == 0}">
-							<font color="grey"><span
-								title="Data not transferred to remote host">[n/a]</span></font>
-						</c:if>
-					</display:column>
+        <display:column title="%" property="progress" sortable="true" />
 
-					<display:column title="Prior" property="priority" sortable="true" />
+        <display:column title="Mbits/s" sortable="true"
+            sortProperty="formattedTransferRateInMBitsPerSeconds">
+            <c:if test="${transfer.transferRate != '0'}">
+                <a style="text-decoration:none;"
+                   title="Rate: ${transfer.formattedTransferRate}">${transfer.formattedTransferRateInMBitsPerSeconds}</a>
+            </c:if>
+            <c:if test="${transfer.transferRate == 0}">
+                <i class="bi bi-dash text-muted" title="Not applicable"></i>
+            </c:if>
+        </display:column>
 
-				</display:table>
-			</c:if></td>
-	</tr>
-</table>
+        <display:column title="Prior" property="priority" sortable="true" />
+
+    </display:table>
+</c:if>

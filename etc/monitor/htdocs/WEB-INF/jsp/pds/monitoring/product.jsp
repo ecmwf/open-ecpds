@@ -36,7 +36,7 @@ th {
 					+ escape('operators@ecmwf.int') + '?bcc=' + bcc;
 
 		} catch (e) {
-			alert("Error" + e);
+			showToast("Error: " + e, "danger");
 		}
 	}
 	function isDuration(value) {
@@ -237,7 +237,6 @@ th {
 
 <c:if test="${!productStatus.calculated}">
 	<div class="alert">
-		<span class="closebtn" onclick="parent.history.back();">&times;</span>
 		No information about this product and cycle yet!
 	</div>
 </c:if>
@@ -270,7 +269,7 @@ th {
         <script>
             function copyToClipboard(text) {
                 if (!text || text.trim() === 'undefined') {
-                    alert("No emails to copy!");
+                    showToast("No emails to copy!", "warning");
                     return;
                 }
 
@@ -286,7 +285,7 @@ th {
                 document.body.removeChild(textarea);
 
                 // Show the number of emails copied
-                alert("Number of emails copied to clipboard: " + emailCount);
+                showToast(emailCount + " email" + (emailCount !== 1 ? "s" : "") + " copied to clipboard", "success");
             }
 
             setHrefForSendingEmail(

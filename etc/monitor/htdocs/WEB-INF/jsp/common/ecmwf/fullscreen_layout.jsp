@@ -103,15 +103,9 @@
 
 	<div style="" id="loadingDiv"><div style="" class="loader"></div></div>
 	<div style="display: none;" id="contentDiv">
-	<table border=0 id="outerTable" width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#ffffff">
-		<tr><td height=100>&nbsp;</td></tr>
-		<tr>
-			<td valign="top" class="content" width="100%">
-				<tiles:get name="content" /><br/>
-			</td>
-		</tr>
-		<tr><td height=40>&nbsp;</td></tr>
-	</table>
+	<div id="outerTable" class="content" style="width:100%;">
+		<tiles:get name="content" />
+	</div>
 
 </body>
 

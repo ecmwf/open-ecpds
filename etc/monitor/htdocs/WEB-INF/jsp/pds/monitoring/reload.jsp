@@ -33,7 +33,25 @@
 	    </td>
 	    <td align="left">
 	      <form name="refresh" action="" method="GET" style="display:inline">
-	        <b><font size="+1"><content:content name="monSesForm.updated" dateFormatKey="date.format.time" ignoreNull="true" defaultValue="*"/></font></b> <input title="Screen reload period" class="small_number" type="text" size="5" name="refreshPeriod" value="${monSesForm.refreshPeriod}"/>
+	        <b><font size="+1"><content:content name="monSesForm.updated" dateFormatKey="date.format.time" ignoreNull="true" defaultValue="*"/></font></b>
+<div class="d-flex align-items-center gap-1 flex-shrink-0 mt-1">
+<i class="bi bi-arrow-clockwise text-muted me-1" style="font-size:0.85rem;" title="Auto-refresh interval"></i>
+<a href="#" class="date-pill mon-refresh-pill ${monSesForm.refreshPeriod == 30 ? 'active' : ''}" data-value="30">30s</a>
+<a href="#" class="date-pill mon-refresh-pill ${monSesForm.refreshPeriod == 60 ? 'active' : ''}" data-value="60">1m</a>
+<a href="#" class="date-pill mon-refresh-pill ${monSesForm.refreshPeriod == 300 ? 'active' : ''}" data-value="300">5m</a>
+<a href="#" class="date-pill mon-refresh-pill ${monSesForm.refreshPeriod == 600 ? 'active' : ''}" data-value="600">10m</a>
+<a href="#" class="date-pill mon-refresh-pill ${monSesForm.refreshPeriod == 1800 ? 'active' : ''}" data-value="1800">30m</a>
+</div>
+<script>
+document.querySelectorAll('.mon-refresh-pill').forEach(function(pill) {
+pill.addEventListener('click', function(e) {
+e.preventDefault();
+var params = new URLSearchParams(window.location.search);
+params.set('refreshPeriod', this.dataset.value);
+window.location.href = '?' + params.toString();
+});
+});
+</script>
 	      </form>
 	      <c:if test="${not productStatus.calculated}">
 	      <table border="0" cellspacing="0" cellpadding="0">
