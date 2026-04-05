@@ -244,7 +244,7 @@ table.fields > tbody > tr > th {
 	</tr>
 
 	<tr>
-		<th>Retry Frequency <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Time in seconds to wait before to retry a failed transfer on this host" tabindex="0"></i></th>
+		<th>Retry Frequency <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Time to wait before to retry a failed transfer on this host" tabindex="0"></i></th>
 		<td>
 			<input type="hidden" name="retryFrequency" id="retryFrequency"
 				value='<c:out value="${requestScope[actionFormName].retryFrequency}"/>'>

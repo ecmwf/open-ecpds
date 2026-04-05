@@ -9,12 +9,11 @@
 <tiles:insert page="/WEB-INF/jsp/pds/user/incoming/data.jsp"/>
 
 <table>
-<tr >
-<td width="25">
-<a valign="top" href="/do/user/incoming"><img src="<content:icon key="icon.arrow.left"/>" border="0"/></a>
-</td>
-<td>
-<a valign="top" href="/do/user/incoming">All Data Users</a>
+<tr>
+<td colspan="2" class="pt-2">
+<a href="/do/user/incoming" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i> All Data Users
+</a>
 </td>
 </tr>
 

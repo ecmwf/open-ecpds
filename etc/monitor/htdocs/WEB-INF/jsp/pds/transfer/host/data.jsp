@@ -112,17 +112,26 @@ table.fields > tbody > tr > th {
 			<tiles:insert page="./pds/transfer/host/warning.jsp" />
 		</c:if>
 		<c:if test="${empty isDelete}">
+			<div class="dest-page-header mb-3">
+				<div class="d-flex align-items-baseline gap-2 flex-wrap mb-1">
+					<span class="dest-page-name">${host.nickName}</span>
+					<c:if test="${host.name != host.nickName}">
+						<code class="dest-page-id">${host.name}</code>
+					</c:if>
+					<c:if test="${not host.active}">
+						<i class="bi bi-pause-circle-fill text-warning" title="Host is disabled" style="font-size:0.9rem;align-self:center;"></i>
+					</c:if>
+					<span class="badge bg-secondary fs-status">${host.type}</span>
+				</div>
+				<c:if test="${not empty host.comment}">
+					<p class="dest-page-comment">${host.comment}</p>
+				</c:if>
+			</div>
 			<table class="fields">
 
 				<tr>
-					<th>Id</th>
-					<td>${host.name}</td>
 					<th>Hostname/IP</th>
 					<td>${host.host}</td>
-				</tr>
-				<tr>
-					<th>Nickname</th>
-					<td>${host.nickName}</td>
 					<th>Label</th>
 					<td>${host.networkCode}:${host.networkName}</td>
 				</tr>
@@ -150,21 +159,9 @@ table.fields > tbody > tr > th {
 
 				<tr>
 					<th>Transfer Method</th>
-					<td><auth:link basePathKey="method.basepath"
+					<td colspan="3"><auth:link basePathKey="method.basepath"
 							href="/${host.transferMethodName}"
 							alternativeText="${host.transferMethodName}">${host.transferMethodName}</auth:link></td>
-					<th>Enabled</th>
-					<td><c:if test="${host.active}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
-							test="${!host.active}">
-							<i class="bi bi-x-circle-fill text-danger" title="No"></i>
-						</c:if></td>
-				</tr>
-				<tr>
-					<th>Type</th>
-					<td>${host.type}</td>
-					<th>Comment</th>
-					<td>${host.comment}</td>
-				</tr>
 
 				<tr>
 					<td colspan="4">&nbsp;</td>

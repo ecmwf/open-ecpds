@@ -22,12 +22,11 @@
 
 <auth:if basePathKey="datatransfer.basepath" paths="">
 <auth:then>
-<tr >
-<td width="25">
-<a valign="top" href="<bean:message key="datatransfer.basepath"/>"><img src="<content:icon key="icon.arrow.left"/>" border="0"/></a>
-</td>
-<td>
-<a valign="top" class="menuitem" href="<bean:message key="datatransfer.basepath"/>">All Data Transfers</a>
+<tr>
+<td colspan="2" class="pt-2">
+<a href="<bean:message key="datatransfer.basepath"/>" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i> All Data Transfers
+</a>
 </td>
 </tr>
 </auth:then>

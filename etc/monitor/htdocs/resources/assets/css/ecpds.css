@@ -975,6 +975,15 @@ A.menusubitem:visited {
     left: 0.8rem;
     top: 0.68rem;
 }
+/* Bootstrap-variant alerts use their own explicit <i> icon — suppress the ::before pseudo-element */
+.alert-warning::before,
+.alert-info::before,
+.alert-danger::before,
+.alert-success::before,
+.alert-primary::before,
+.alert-secondary::before {
+    content: none;
+}
 
 /* .closebtn: back-navigation × used inside warning alerts */
 .closebtn {
@@ -1065,6 +1074,10 @@ a {
 a:hover {
     color: #0d6efd;
     text-decoration: none;
+}
+/* Badges used as links must keep their own text colour on hover */
+a.badge:hover {
+    color: #fff !important;
 }
 
 /* Sidebar boxes — add some breathing room */
@@ -1444,7 +1457,7 @@ img[src*="/assets/icons/"] {
 .fs-status { font-size: 0.72rem !important; vertical-align: middle; }
 
 /* ---- Section index / home page cards ---- */
-.home-section-card { border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.06); height: 100%; }
+.home-section-card { border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.06); flex: 1; }
 .home-section-hdr  { padding: 0.6rem 1rem; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; border-bottom: 1px solid #dee2e6; }
 .home-section-hdr-link { color: inherit; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; }
 .home-section-hdr-link:hover { text-decoration: underline; color: inherit; }

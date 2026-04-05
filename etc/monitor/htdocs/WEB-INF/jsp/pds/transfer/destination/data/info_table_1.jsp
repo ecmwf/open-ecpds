@@ -2,6 +2,8 @@
 <%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean"%>
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content"%>
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
+<script>window._validIso=new Set(["AC","AD","AE","AF","AG","AI","AL","AM","AO","AQ","AR","AS","AT","AU","AW","AX","AZ","BA","BB","BD","BE","BF","BG","BH","BI","BJ","BL","BM","BN","BO","BQ","BR","BS","BT","BV","BW","BY","BZ","CA","CC","CD","CF","CG","CH","CI","CK","CL","CM","CN","CO","CP","CR","CU","CV","CW","CX","CY","CZ","DE","DG","DJ","DK","DM","DO","DZ","EA","EE","EG","EH","ER","ES","ET","EU","FI","FJ","FK","FM","FO","FR","GA","GB","GD","GE","GF","GG","GH","GI","GL","GM","GN","GP","GQ","GR","GS","GT","GU","GW","GY","HK","HM","HN","HR","HT","HU","IC","ID","IE","IL","IM","IN","IO","IQ","IR","IS","IT","JE","JM","JO","JP","KE","KG","KH","KI","KM","KN","KP","KR","KW","KY","KZ","LA","LB","LC","LI","LK","LR","LS","LT","LU","LV","LY","MA","MC","MD","ME","MF","MG","MH","MK","ML","MM","MN","MO","MP","MQ","MR","MS","MT","MU","MV","MW","MX","MY","MZ","NA","NC","NE","NF","NG","NI","NL","NO","NP","NR","NU","NZ","OM","PA","PE","PF","PG","PH","PK","PL","PM","PN","PR","PS","PT","PW","PY","QA","RE","RO","RS","RU","RW","SA","SB","SC","SD","SE","SG","SH","SI","SJ","SK","SL","SM","SN","SO","SR","SS","ST","SV","SX","SY","SZ","TA","TC","TD","TF","TG","TH","TJ","TK","TL","TM","TN","TO","TR","TT","TV","TW","TZ","UA","UG","UM","UN","US","UY","UZ","VA","VC","VE","VG","VI","VN","VU","WF","WS","XK","YE","YT","ZA","ZM","ZW"]);</script>
 
 <table class="fields" style="width: 700px" border=0>
 
@@ -11,7 +13,7 @@
 				<td><a
 					href="<bean:message key="destination.basepath"/>?destinationSearch=country=${destination.country.iso}&destinationStatus=&destinationType="><img
 						style="margin: 1" align="middle" border="0"
-						src="/assets/images/flags/small/${destination.countryIso}.png"
+						src="https://flagcdn.com/24x18/${fn:toLowerCase(destination.countryIso)}.png" onload="var m=this.src.match(/\/([a-z]{2})\./);if(!m||!window._validIso||!window._validIso.has(m[1].toUpperCase()))this.style.display='none';" onerror="this.style.display='none'"
 						alt="Flag for ${destination.country.name}"
 						title="See all destinations in ${destination.country.name}" /></a></td>
 				<td><a title="See all destinations in the group"
@@ -34,7 +36,7 @@
 			</auth:then>
 			<auth:else>
 				<td><img style="margin: 1" align="middle" border="0"
-					src="/assets/images/flags/small/${destination.countryIso}.png"
+					src="https://flagcdn.com/24x18/${fn:toLowerCase(destination.countryIso)}.png" onload="var m=this.src.match(/\/([a-z]{2})\./);if(!m||!window._validIso||!window._validIso.has(m[1].toUpperCase()))this.style.display='none';" onerror="this.style.display='none'"
 					alt="Flag for ${destination.country.name}"
 					title="${destination.country.name}" /></td>
 				<td>${destination.typeText}</td>
@@ -45,33 +47,54 @@
 			<td class="buttons" style="vertical-align: middle;">
 				<table>
 					<tr>
-						<auth:if basePathKey="transferhistory.basepath" paths="/">
-							<auth:then>
-								<td><a href="javascript:cleanDestination()"><content:icon
+						<c:set var="statusBase" value="${fn:contains(destination.formattedStatus, '-') ? fn:substringBefore(destination.formattedStatus, '-') : destination.formattedStatus}"/>
+						<c:set var="isStopped" value="${statusBase == 'Stopped' or statusBase == 'Initialized' or statusBase == 'NoHosts' or statusBase == 'Interrupted' or statusBase == 'Failed'}"/>
+						<c:if test="${isStopped}">
+							<auth:if basePathKey="transferhistory.basepath" paths="/">
+								<auth:then>
+									<td><a href="javascript:cleanDestination()" title="Remove All Data Transfers"><img src="/assets/icons/webapp/trash.png" border="0" /></a></td>
+									<td><a href="javascript:cleanExpiredDestination()" title="Remove Deleted, Expired, Stopped, Failed Data Transfers"><img src="/assets/icons/webapp/kde31/delete.png" border="0" /></a></td>
+									<td>&nbsp;&nbsp;</td>
+								</auth:then>
+							</auth:if>
+						</c:if>
+						<c:if test="${not isStopped}">
+							<auth:if basePathKey="transferhistory.basepath" paths="/">
+								<auth:then>
+									<td><a href="javascript:cleanDestination()"><content:icon
 											key="icon.trash" altKey="ecpds.destination.clean.all"
 											titleKey="ecpds.destination.clean.all" writeFullTag="true" /></a></td>
-								<td><a href="javascript:cleanExpiredDestination()"><content:icon
+									<td><a href="javascript:cleanExpiredDestination()"><content:icon
 											key="icon.delete" altKey="ecpds.destination.cleanexpired.all"
-											titleKey="ecpds.destination.cleanexpired.all"
+											titleKey="ecpds.destination.cleanexpired.all" writeFullTag="true" /></a></td>
+									<td>&nbsp;&nbsp;</td>
+								</auth:then>
+							</auth:if>
+						</c:if>
+						<c:choose>
+							<c:when test="${statusBase == 'Stopped' or statusBase == 'Initialized' or statusBase == 'NoHosts' or statusBase == 'Interrupted' or statusBase == 'Failed'}">
+								<td><a href="javascript:startDestination()" title="Start Destination"><i class="bi bi-play-circle-fill text-success" style="font-size:1.1rem;vertical-align:middle;"></i></a></td>
+							</c:when>
+							<c:otherwise>
+								<td><a href="javascript:restartDestination(false)"><content:icon
+											key="icon.requeue" altKey="ecpds.destination.restart"
+											titleKey="ecpds.destination.restart" writeFullTag="true" /></a></td>
+								<td><a href="javascript:restartDestination(true)"><content:icon
+											key="icon.requeue2"
+											altKey="ecpds.destination.restart.immediate"
+											titleKey="ecpds.destination.restart.immediate"
 											writeFullTag="true" /></a></td>
-								<td>&nbsp;&nbsp;</td>
-							</auth:then>
-						</auth:if>
-						<td><a href="javascript:restartDestination(false)"><content:icon
-									key="icon.requeue" altKey="ecpds.destination.restart"
-									titleKey="ecpds.destination.restart" writeFullTag="true" /></a></td>
-						<td><a href="javascript:restartDestination(true)"><content:icon
-									key="icon.requeue2"
-									altKey="ecpds.destination.restart.immediate"
-									titleKey="ecpds.destination.restart.immediate"
-									writeFullTag="true" /></a></td>
+							</c:otherwise>
+						</c:choose>
 						<td>&nbsp;&nbsp;</td>
+						<c:if test="${statusBase != 'Stopped' and statusBase != 'Initialized' and statusBase != 'NoHosts' and statusBase != 'Interrupted' and statusBase != 'Failed'}">
 						<td><a href="javascript:holdDestination(false)"><content:icon
 									key="icon.stop2" altKey="ecpds.destination.hold"
 									titleKey="ecpds.destination.hold" writeFullTag="true" /></a></td>
 						<td><a href="javascript:holdDestination(true)"><content:icon
 									key="icon.stop" altKey="ecpds.destination.hold.immediate"
 									titleKey="ecpds.destination.hold.immediate" writeFullTag="true" /></a></td>
+						</c:if>
 						<c:if test="${destination.dirty}">
 							<td>&nbsp;&nbsp;</td>
 							<td><content:icon key="icon.dirty"

@@ -5,8 +5,7 @@
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 
 <c:if test="${empty destination.changeLogList}">
-	<div class="alert alert-info d-flex align-items-center gap-2 mt-2">
-		<i class="bi bi-info-circle-fill"></i>
+	<div class="alert">
 		No change log available for destination <strong><c:out value="${destination.name}" /></strong>
 	</div>
 </c:if>

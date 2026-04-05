@@ -46,7 +46,15 @@
 <tr><th>Path</th><td>${resourceActionForm.path}<html:hidden property="path"/></td></tr>
 </c:if>
 <c:if test="${isInsert == 'true'}">
-<tr><th>Path</th><td><html:text property="path"/></td></tr>
+<tr><th>Path</th><td>
+	<div class="d-flex align-items-center gap-2">
+		<input id="path" name="path" type="text"
+			pattern="/[a-zA-Z0-9_./-]*"
+			title="Path must start with '/' and contain only letters, digits, '_', '-', '.' and '/' (e.g. /do/transfer/destination/edit/)"
+			oninput="validatePatternInput(this, 'path-feedback')">
+		<span id="path-feedback"></span>
+	</div>
+</td></tr>
 </c:if>
 
 </table>

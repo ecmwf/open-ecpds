@@ -15,12 +15,11 @@
 </td>
 </tr>
 
-<tr >
-<td width="25">
-<a valign="top" href="/do/datafile/transfergroup"><img src="<content:icon key="icon.arrow.left"/>" border="0"/></a>
-</td>
-<td>
-<a valign="top" href="/do/datafile/transfergroup">All Transfer Groups</a>
+<tr>
+<td colspan="2" class="pt-2">
+<a href="/do/datafile/transfergroup" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i> All Transfer Groups
+</a>
 </td>
 </tr>
 

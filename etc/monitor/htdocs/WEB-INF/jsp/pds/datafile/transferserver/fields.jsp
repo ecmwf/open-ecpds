@@ -33,8 +33,15 @@
 	<logic:match name="isInsert" value="true">
 		<tr>
 			<th>Name</th>
-			<td><input id="name" name="name" type="text">&nbsp;(please
-				use letters, digits, '_' and '-' only)</td>
+			<td>
+				<div class="d-flex align-items-center gap-2">
+					<input id="name" name="name" type="text"
+						pattern="[a-zA-Z0-9]+([_-][a-zA-Z0-9]+)*"
+						title="Must start and end with a letter or digit; '_' or '-' allowed as single separators (e.g. server-1)"
+						oninput="validatePatternInput(this, 'name-feedback')">
+					<span id="name-feedback"></span>
+				</div>
+			</td>
 		</tr>
 	</logic:match>
 
@@ -57,10 +64,15 @@
 	</tr>
 
 	<tr>
-		<th>Hostname <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="DNS name" tabindex="0"></i></tg>
-		<td><input property="host" id="host" name="host"
-			type="text" value="${requestScope[actionFormName].host}">&nbsp;(please
-			use letters, digits, '-' and '.' only)</td>
+		<th>Hostname <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="DNS name" tabindex="0"></i></th>
+		<td>
+			<div class="d-flex align-items-center gap-2">
+				<input id="host" name="host" type="text"
+					value="${requestScope[actionFormName].host}"
+					oninput="validateHostInput(this)">
+				<span id="hostFeedback"></span>
+			</div>
+		</td>
 	</tr>
 	<tr>
 		<th>Host For Replication</th>
@@ -74,7 +86,17 @@
 
 	<tr>
 		<th>Port</th>
-		<td><html:text property="port" /></td>
+		<td>
+			<div class="d-flex align-items-center gap-2">
+				<input type="number" id="port" name="port"
+					min="1" max="65535"
+					value="${requestScope[actionFormName].port}"
+					title="Valid port number (1-65535)"
+					style="width:100px"
+					oninput="validatePatternInput(this, 'port-feedback')">
+				<span id="port-feedback"></span>
+			</div>
+		</td>
 	</tr>
 	<tr>
 		<th>Check</th>
@@ -92,22 +114,4 @@
 </table>
 
 <script>
-	$('#name').on('input', function() {
-			const regex = /^[a-zA-Z0-9_-]+$/;
-			const $this = $(this);
-			const value = $this.val();
-			if (!regex.test(value)) {
-				// Remove all invalid characters
-				$this.val(value.replace(/[^a-zA-Z0-9_-]/g, ''));
-			}
-	});
-	$('#host').on('input', function() {
-		const regex = /^[a-zA-Z0-9-.]+$/;
-		const $this = $(this);
-		const value = $this.val();
-		if (!regex.test(value)) {
-			// Remove all invalid characters
-			$this.val(value.replace(/[^a-zA-Z0-9-.]/g, ''));
-		}
-	});
 </script>

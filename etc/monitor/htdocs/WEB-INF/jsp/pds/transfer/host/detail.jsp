@@ -20,12 +20,11 @@
 
 <auth:if basePathKey="host.basepath" paths="">
 <auth:then>
-<tr >
-<td width="25">
-<a valign="top" href="<bean:message key="host.basepath"/>"><img src="<content:icon key="icon.arrow.left"/>" border="0"/></a>
-</td>
-<td>
-<a valign="top" href="<bean:message key="host.basepath"/>">All Transfer Hosts</a>
+<tr>
+<td colspan="2" class="pt-2">
+<a href="<bean:message key="host.basepath"/>" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i> All Transfer Hosts
+</a>
 </td>
 </tr>
 </auth:then>

@@ -31,8 +31,15 @@
 	<logic:match name="isInsert" value="true">
 		<tr>
 			<th>Name</th>
-			<td><input id="name" name="name" type="text">&nbsp;(please
-				use letters and digits only)</td>
+			<td>
+				<div class="d-flex align-items-center gap-2">
+					<input id="name" name="name" type="text"
+						pattern="[a-zA-Z0-9]+"
+						title="Letters and digits only (e.g. Ftp)"
+						oninput="validatePatternInput(this, 'name-feedback')">
+					<span id="name-feedback"></span>
+				</div>
+			</td>
 		</tr>
 	</logic:match>
 
@@ -79,15 +86,4 @@
 </table>
 
 <script>
-	$('#name').bind(
-			'keypress',
-			function(event) {
-				var regex = new RegExp("^[a-zA-Z0-9]+$");
-				var key = String.fromCharCode(!event.charCode ? event.which
-						: event.charCode);
-				if (!regex.test(key)) {
-					event.preventDefault();
-					return false;
-				}
-			});
 </script>

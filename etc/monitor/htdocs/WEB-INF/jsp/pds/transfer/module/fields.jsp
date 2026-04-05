@@ -25,13 +25,21 @@
     </c:otherwise>
 </c:choose>
 
-
-
 	<logic:match name="isInsert" value="true">
 		<tr>
 			<th>Name</th>
-			<td><input id="name" name="name" type="text">&nbsp;(please
-				use letters and digits only)</td>
+			<td>
+				<div class="d-flex align-items-center gap-2">
+					<input id="name" name="name" type="text"
+						pattern="[a-zA-Z0-9]+"
+						title="Letters and digits only (e.g. FtpModule)"
+						oninput="validatePatternInput(this, 'name-feedback')">
+					<span id="name-feedback"></span>
+				</div>
+				<div id="name-feedback-msg" class="invalid-feedback" style="display:none">
+					Letters and digits only (e.g. <code>FtpModule</code>).
+				</div>
+			</td>
 		</tr>
 	</logic:match>
 
@@ -45,9 +53,19 @@
 
 	<tr>
 		<th>Class Name</th>
-		<td><input id="classe" name="classe" type="text"
-			value="<c:out value='${requestScope[actionFormName].classe}' />">&nbsp;(please
-			use letters, digits and '.' only)</td>
+		<td>
+			<div class="d-flex align-items-center gap-2">
+				<input id="classe" name="classe" type="text"
+					pattern="[a-zA-Z0-9]+(\.[a-zA-Z0-9]+)*"
+					title="Fully qualified class name (e.g. com.example.FtpModule)"
+					value="<c:out value='${requestScope[actionFormName].classe}' />"
+					oninput="validatePatternInput(this, 'classe-feedback')">
+				<span id="classe-feedback"></span>
+			</div>
+			<div id="classe-feedback-msg" class="invalid-feedback" style="display:none">
+				Fully qualified class name using letters, digits and <code>.</code> separators (e.g. <code>com.example.FtpModule</code>).
+			</div>
+		</td>
 	</tr>
 	<tr>
 		<th>Class Path</th>
@@ -58,16 +76,3 @@
 		<td><html:checkbox property="active" /></td>
 	</tr>
 </table>
-
-<script>
-	$('#name').bind(
-			'keypress',
-			function(event) {
-				return checkKeyIsMatching(event, "^[a-zA-Z0-9]+$");
-			});
-	$('#classe').bind(
-			'keypress',
-			function(event) {
-				return checkKeyIsMatching(event, "^[a-zA-Z0-9.]+$");
-			});
-</script>

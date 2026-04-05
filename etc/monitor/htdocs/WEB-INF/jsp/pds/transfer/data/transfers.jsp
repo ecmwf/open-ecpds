@@ -173,20 +173,22 @@
                                     <label class="form-label mb-1 fw-semibold"><code>priority=</code></label>
                                     <input type="number" class="form-control form-control-sm" id="qb_priority" min="0" max="99" oninput="qbPreview()">
                                 </div>
-                                <div class="col-md-2">
-                                    <label class="form-label mb-1 fw-semibold"><code>mover=</code></label>
+                                <div class="col-md-4">
+                                    <label class="form-label mb-1 fw-semibold"><code>mover=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
                                     <input type="text" class="form-control form-control-sm" id="qb_mover" oninput="qbPreview()">
                                 </div>
-                                <div class="col-md-3">
-                                    <label class="form-label mb-1 fw-semibold"><code>identity=</code></label>
+                                <div class="col-md-6">
+                                    <label class="form-label mb-1 fw-semibold"><code>identity=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
                                     <input type="text" class="form-control form-control-sm" id="qb_identity" oninput="qbPreview()">
                                 </div>
-                                <div class="col-md-2">
-                                    <label class="form-label mb-1 fw-semibold"><code>groupby=</code></label>
+                            </div>
+                            <div class="row g-2 mb-2">
+                                <div class="col-md-4">
+                                    <label class="form-label mb-1 fw-semibold"><code>groupby=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
                                     <input type="text" class="form-control form-control-sm" id="qb_groupby" oninput="qbPreview()">
                                 </div>
-                                <div class="col-md-3">
-                                    <label class="form-label mb-1 fw-semibold"><code>event=</code></label>
+                                <div class="col-md-8">
+                                    <label class="form-label mb-1 fw-semibold"><code>event=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
                                     <input type="text" class="form-control form-control-sm" id="qb_event" oninput="qbPreview()">
                                 </div>
                             </div>

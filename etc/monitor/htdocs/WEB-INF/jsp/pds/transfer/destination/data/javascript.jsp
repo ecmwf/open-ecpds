@@ -209,9 +209,11 @@
 	}
 
 	function cleanExpiredDestination() {
-	    var text =
-	        "Are you sure you want to remove all deleted, expired, stopped and failed Data Transfers from the " +
-	        "${destination.typeText} Destination ${destination.name} and stop it?";
+		var stopped = ['Stopped','Initialized','NoHosts','Interrupted','Failed'].indexOf(
+			'${destination.formattedStatus}'.replace(/-.*/, '')) >= 0;
+	    var text = stopped
+	        ? "Are you sure you want to remove all deleted, expired, stopped and failed Data Transfers from the ${destination.typeText} Destination ${destination.name}?"
+	        : "Are you sure you want to remove all deleted, expired, stopped and failed Data Transfers from the ${destination.typeText} Destination ${destination.name} and stop it?";
 	    var form = document.destinationDetailActionForm;
 	    confirmationDialog({
 	        title: "Confirm Cleanup of Expired Transfers",
@@ -226,8 +228,11 @@
 	}
 
 	function cleanDestination() {
-	    var text =
-	        "Are you sure you want to remove all Data Transfers from the ${destination.typeText} Destination ${destination.name} and stop it?";
+		var stopped = ['Stopped','Initialized','NoHosts','Interrupted','Failed'].indexOf(
+			'${destination.formattedStatus}'.replace(/-.*/, '')) >= 0;
+	    var text = stopped
+	        ? "Are you sure you want to remove all Data Transfers from the ${destination.typeText} Destination ${destination.name}?"
+	        : "Are you sure you want to remove all Data Transfers from the ${destination.typeText} Destination ${destination.name} and stop it?";
 	    var form = document.destinationDetailActionForm;
 	    confirmationDialog({
 	        title: "Confirm Destination Cleanup",
@@ -241,6 +246,20 @@
 	    });
 	}
 	
+	function startDestination() {
+	    var form = document.destinationDetailActionForm;
+	    confirmationDialog({
+	        title: "Confirm Destination Start",
+	        message: "Are you sure you want to start the ${destination.typeText} Destination ${destination.name}?",
+	        showLoading: true,
+	        onConfirm: function () {
+	            form.action =
+	                "<bean:message key='destination.basepath'/>/operations/${destinationDetailActionForm.id}/gracefulRestart";
+	            form.submit();
+	        }
+	    });
+	}
+
 	function restartDestination(immediate) {
 	    var immediateText =
 	        "IMMEDIATE: The ongoing data transfers, and associated acquisition host listings, if any, will be interrupted now due to the restarting of the Destination.";

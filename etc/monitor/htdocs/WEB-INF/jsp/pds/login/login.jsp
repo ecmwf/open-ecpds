@@ -2,52 +2,63 @@
 <%@ taglib uri="/WEB-INF/tld/struts-html.tld" prefix="html" %>
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth" %>
 
-<link href="/assets/css/login.css?v=20260401f" rel="stylesheet" type="text/css"/>
+<link href="/assets/css/login.css?v=20260405" rel="stylesheet" type="text/css"/>
+
+<div id="login-backdrop"></div>
+
+<div id="login-wrap">
+  <div id="login-card">
+
+    <div id="login-header">
+      <div id="login-logo"><i class="bi bi-cloud-arrow-up-fill"></i></div>
+      <h1 id="login-title"><%=System.getProperty("monitor.nickName")%></h1>
+      <p id="login-subtitle"><%=System.getProperty("monitor.title")%></p>
+    </div>
+
+    <form name="login-form" action="/do/login" method="post" autocomplete="off" id="login-form">
+
+      <c:if test="${not empty requestScope['org.apache.struts.action.ERROR']}">
+        <div class="login-error">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+          <html:errors property="login"/>
+        </div>
+      </c:if>
+
+      <div class="login-field">
+        <label for="login-user"><i class="bi bi-person"></i> Username</label>
+        <input id="login-user" name="user" type="text" placeholder="Enter your username" autocomplete="username" autofocus>
+      </div>
+
+      <div class="login-field">
+        <label for="login-pass"><i class="bi bi-lock"></i> Password</label>
+        <div class="login-pass-wrap">
+          <input id="login-pass" name="password" type="password" placeholder="Enter your password" autocomplete="current-password">
+          <button type="button" id="login-toggle-pass" tabindex="-1" title="Show/hide password">
+            <i class="bi bi-eye" id="login-eye"></i>
+          </button>
+        </div>
+      </div>
+
+      <button type="submit" id="login-btn">
+        <i class="bi bi-box-arrow-in-right"></i> Sign in
+      </button>
+
+    </form>
+
+  </div>
+</div>
 
 <script>
-$(document).ready(function() {
-        $(".username").focus(function() {
-                $(".user-icon").css("left","-48px");
-        });
-        $(".username").blur(function() {
-                $(".user-icon").css("left","0px");
-        });
-       
-        $(".password").focus(function() {
-                $(".pass-icon").css("left","-48px");
-        });   
-        $(".password").blur(function() {
-                $(".pass-icon").css("left","0px");
-        });
+document.getElementById('login-toggle-pass').addEventListener('click', function() {
+    var inp = document.getElementById('login-pass');
+    var eye = document.getElementById('login-eye');
+    if (inp.type === 'password') {
+        inp.type = 'text';
+        eye.className = 'bi bi-eye-slash';
+    } else {
+        inp.type = 'password';
+        eye.className = 'bi bi-eye';
+    }
 });
 </script>
 
-<div id="wrapper">
-  <div class="user-icon"></div>
-  <div class="pass-icon"></div>
-
-<form name="login-form" class="login-form" action="/do/login" method="post" autocomplete="off">
-
-    <div class="header">
-    <h1>Sign in</h1>
-    <span>Please type a User name and Password to sign in to your account.</span>
-    </div>
-        
-    <div class="content">
-      <input name="user" type="text" class="input username" value="User name" onfocus="this.value=''"/>
-      <input name="password" type="password" class="input password" value="Password" onfocus="this.value=''"/>
-    </div>
-
-    <div class="message">
-    <span><html:errors/></span>
-    </div>
-
-    <div class="footer">
-      <input type="submit" name="submit" value="Login" class="button"/>
-    </div>
-
-</form>
-
-</div>
-
-<div class="gradient"></div>

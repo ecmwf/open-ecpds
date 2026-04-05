@@ -15,12 +15,11 @@
 <tiles:insert page="/WEB-INF/jsp/pds/datafile/transferserver/data.jsp"/>
 </td>
 </tr>
-<tr >
-<td width="25">
-<a valign="top" href="/do/datafile/transferserver"><img src="<content:icon key="icon.arrow.left"/>" border="0"/></a>
-</td>
-<td>
-<a valign="top" href="/do/datafile/transferserver">All Transfer Servers</a>
+<tr>
+<td colspan="2" class="pt-2">
+<a href="/do/datafile/transferserver" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i> All Transfer Servers
+</a>
 </td>
 </tr>
 

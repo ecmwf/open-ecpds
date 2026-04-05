@@ -221,7 +221,7 @@
         requestURI="" sort="external" defaultsort="1" partialList="true"
         size="${hostsSize}" pagesize="${recordsPerPage}" class="listing">
         <display:column sortable="true" title="Nickname">
-            <a href="<bean:message key="host.basepath"/>/${host.name}">${host.nickName}</a>
+            <a href="<bean:message key="host.basepath"/>/${host.name}">${host.nickName}</a><c:if test="${!host.active}"><i class="bi bi-pause-circle-fill text-warning ms-1" title="Disabled" style="font-size:0.85rem;vertical-align:middle;"></i></c:if>
         </display:column>
         <display:column title="Hostname/IP" property="host" sortable="true" />
         <display:column title="Associated Destinations" sortable="false">

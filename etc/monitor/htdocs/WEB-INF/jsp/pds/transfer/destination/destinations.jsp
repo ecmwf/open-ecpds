@@ -4,6 +4,7 @@
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 <%@ taglib uri="/WEB-INF/tld/fn.tld" prefix="fn"%>
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
+<script>window._validIso=new Set(["AC","AD","AE","AF","AG","AI","AL","AM","AO","AQ","AR","AS","AT","AU","AW","AX","AZ","BA","BB","BD","BE","BF","BG","BH","BI","BJ","BL","BM","BN","BO","BQ","BR","BS","BT","BV","BW","BY","BZ","CA","CC","CD","CF","CG","CH","CI","CK","CL","CM","CN","CO","CP","CR","CU","CV","CW","CX","CY","CZ","DE","DG","DJ","DK","DM","DO","DZ","EA","EE","EG","EH","ER","ES","ET","EU","FI","FJ","FK","FM","FO","FR","GA","GB","GD","GE","GF","GG","GH","GI","GL","GM","GN","GP","GQ","GR","GS","GT","GU","GW","GY","HK","HM","HN","HR","HT","HU","IC","ID","IE","IL","IM","IN","IO","IQ","IR","IS","IT","JE","JM","JO","JP","KE","KG","KH","KI","KM","KN","KP","KR","KW","KY","KZ","LA","LB","LC","LI","LK","LR","LS","LT","LU","LV","LY","MA","MC","MD","ME","MF","MG","MH","MK","ML","MM","MN","MO","MP","MQ","MR","MS","MT","MU","MV","MW","MX","MY","MZ","NA","NC","NE","NF","NG","NI","NL","NO","NP","NR","NU","NZ","OM","PA","PE","PF","PG","PH","PK","PL","PM","PN","PR","PS","PT","PW","PY","QA","RE","RO","RS","RU","RW","SA","SB","SC","SD","SE","SG","SH","SI","SJ","SK","SL","SM","SN","SO","SR","SS","ST","SV","SX","SY","SZ","TA","TC","TD","TF","TG","TH","TJ","TK","TL","TM","TN","TO","TR","TT","TV","TW","TZ","UA","UG","UM","UN","US","UY","UZ","VA","VC","VE","VG","VI","VN","VU","WF","WS","XK","YE","YT","ZA","ZM","ZW"]);</script>
 
 <%-- Filter form --%>
 <auth:if basePathKey="transferhistory.basepath" paths="/">
@@ -102,11 +103,16 @@
                                 </div>
                             </div>
                             <div class="row g-2 mb-2">
-                                <div class="col-md-2">
-                                    <label class="form-label mb-1 fw-semibold"><code>country=</code> <span class="text-muted fw-normal">ISO</span></label>
-                                    <input type="text" class="form-control form-control-sm" id="dqb_country" placeholder="e.g. fr" maxlength="10" oninput="dqbPreview()">
+                                <div class="col-md-3">
+                                    <label class="form-label mb-1 fw-semibold"><code>country=</code></label>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <select class="form-select form-select-sm" id="dqb_country" onchange="dqbPreview()">
+                                            <option value="">Any</option>
+                                        </select>
+                                        <img id="dqb_country_flag" src="" alt="" style="height:16px;display:none;flex-shrink:0">
+                                    </div>
                                 </div>
-                                <div class="col-md-5">
+                                <div class="col-md-4">
                                     <label class="form-label mb-1 fw-semibold"><code>options=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
                                     <input type="text" class="form-control form-control-sm" id="dqb_options" placeholder="e.g. *mqtt*" oninput="dqbPreview()">
                                 </div>
@@ -193,6 +199,36 @@
             document.getElementById('dqb_case').value = 's';
             dqbPreview();
         }
+        // Populate country selector from rendered destination rows
+        document.addEventListener('DOMContentLoaded', function() {
+            var seen = {}, opts = [];
+            document.querySelectorAll('img[data-iso][data-name]').forEach(function(img) {
+                var iso = img.getAttribute('data-iso');
+                var name = img.getAttribute('data-name');
+                if (iso && name && !seen[iso]) {
+                    seen[iso] = true;
+                    opts.push({iso: iso, name: name});
+                }
+            });
+            opts.sort(function(a, b) { return a.name.localeCompare(b.name); });
+            var sel = document.getElementById('dqb_country');
+            opts.forEach(function(c) {
+                var o = document.createElement('option');
+                o.value = c.iso;
+                o.textContent = c.name;
+                sel.appendChild(o);
+            });
+            // Flag preview inline with select
+            var flag = document.getElementById('dqb_country_flag');
+            function updateFlag() {
+                var iso = sel.value;
+                if (!iso) { flag.style.display = 'none'; return; }
+                flag.src = 'https://flagcdn.com/24x18/' + iso + '.png';
+                flag.style.display = 'inline';
+                flag.onerror = function() { flag.style.display = 'none'; };
+            }
+            sel.addEventListener('change', updateFlag);
+        });
         </script>
     </auth:then>
 </auth:if>
@@ -242,8 +278,9 @@
             <c:forEach var="d" items="${destinations}">
                 <tr>
                     <td>
-                        <img src="/assets/images/flags/micro/${d.countryIso}.png"
+                        <img src="https://flagcdn.com/16x12/${fn:toLowerCase(d.countryIso)}.png" onload="var m=this.src.match(/\/([a-z]{2})\./);if(!m||!window._validIso||!window._validIso.has(m[1].toUpperCase()))this.style.display='none';" onerror="this.style.display='none'"
                              alt="${d.country.name}" title="${d.country.name}"
+                             data-iso="${fn:toLowerCase(d.countryIso)}" data-name="${d.country.name}"
                              style="display:block;">
                     </td>
                     <td>

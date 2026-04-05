@@ -17,12 +17,11 @@
 
 <tr><td colspan="2"> &nbsp; </td></tr>
 
-<tr >
-<td width="25">
-<a valign="top" href="/do/user/resource"><img src="<content:icon key="icon.arrow.left"/>" border="0"/></a>
-</td>
-<td>
-<a valign="top" href="/do/user/resource">All Web Resources</a>
+<tr>
+<td colspan="2" class="pt-2">
+<a href="/do/user/resource" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i> All Web Resources
+</a>
 </td>
 </tr>
 

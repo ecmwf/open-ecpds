@@ -173,8 +173,15 @@
 					</tr>
 					<tr>
 						<th>New Name</th>
-						<td><input id="toDestination" name="toDestination" type="text"
-							oninput="var n=document.getElementById('name');if(n)n.value=this.value;">&nbsp;(please use letters, digits, '_' and '-' only)</td>
+						<td>
+							<div class="d-flex align-items-center gap-2">
+								<input id="toDestination" name="toDestination" type="text"
+									pattern="[a-zA-Z0-9]+([_-][a-zA-Z0-9]+)*"
+									title="Must start and end with a letter or digit; '_' or '-' allowed as single separators (e.g. my-destination)"
+									oninput="validatePatternInput(this, 'toDestination-feedback'); var n=document.getElementById('name');if(n)n.value=this.value;">
+								<span id="toDestination-feedback"></span>
+							</div>
+						</td>
 					</tr>
 					<tr>
 						<th>Comment</th>
@@ -237,7 +244,15 @@
 					<c:if test="${not empty destinationActionForm.fromDestinationOptions}">class="d-none"</c:if>>
 					<tr>
 						<th>Name</th>
-						<td><input id="name" name="name" type="text">&nbsp;(please use letters, digits, '_' and '-' only)</td>
+						<td>
+							<div class="d-flex align-items-center gap-2">
+								<input id="name" name="name" type="text"
+									pattern="[a-zA-Z0-9]+([_-][a-zA-Z0-9]+)*"
+									title="Must start and end with a letter or digit; '_' or '-' allowed as single separators (e.g. my-destination)"
+									oninput="validatePatternInput(this, 'name-feedback')">
+								<span id="name-feedback"></span>
+							</div>
+						</td>
 					</tr>
 				</tbody>
 				</c:if>
@@ -294,7 +309,7 @@
 					<th>Country</th>
 					<td><c:set var="countries"
 							value="${destinationActionForm.countryOptions}" /> <html:select
-							property="countryIso">
+							property="countryIso" styleId="countryIso">
 							<html:options collection="countries" property="iso"
 								labelProperty="name" />
 						</html:select></td>
@@ -356,7 +371,7 @@
 						</div>
 					</td>
 				</tr>
-				<tr>
+				<tr id="startFrequencyRow" style="display:none">
 					<th>Start Frequency <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Define the delay mentioned in the previous parameter (Max Start)." tabindex="0"></i></th>
 					<td>
 						<input type="hidden" name="startFrequency" id="startFrequency"
@@ -392,8 +407,24 @@
 				</tr>
 				<tr>
 					<th>Max File Size <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Define the maximum size for a file in the queue (attempt of queueing bigger files are rejected)" tabindex="0"></i></th>
-					<td><html:text
-							property="maxFileSize" /></td>
+					<td>
+						<html:hidden property="maxFileSize" styleId="maxFileSize" />
+						<div class="d-flex align-items-center gap-2 flex-wrap" id="maxFileSizePicker">
+							<div class="form-check form-switch mb-0 d-flex align-items-center gap-2">
+								<input class="form-check-input mt-0" type="checkbox" id="maxFileSizeEnabled" />
+								<label class="form-check-label small text-muted" for="maxFileSizeEnabled">Limit file size</label>
+							</div>
+							<div id="maxFileSizeInputs" class="d-flex align-items-center gap-1 d-none">
+								<input type="number" id="maxFileSizeValue" min="1" class="form-control form-control-sm" style="width:90px" />
+								<select id="maxFileSizeUnit" class="form-select form-select-sm" style="width:80px">
+									<option value="1">B</option>
+									<option value="1024">KB</option>
+									<option value="1048576" selected>MB</option>
+									<option value="1073741824">GB</option>
+								</select>
+							</div>
+						</div>
+					</td>
 				</tr>
 				<tr>
 					<th>Reset Frequency <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If set and the Destination is successfully using a backup host for more than this duration, it will restart." tabindex="0"></i></th>
@@ -1023,6 +1054,73 @@
 		$('#pill-help').html(getHelpHtmlContent(completions, 'Available Options for this Destination'));
 		var chk = document.getElementById('groupByDate');
 		if (chk) document.getElementById('dateFormatRow').style.display = chk.checked ? '' : 'none';
+
+		// Country flag image next to select
+		(function() {
+			var VALID_ISO = new Set(['AC','AD','AE','AF','AG','AI','AL','AM','AO','AQ','AR','AS','AT','AU','AW','AX','AZ','BA','BB','BD','BE','BF','BG','BH','BI','BJ','BL','BM','BN','BO','BQ','BR','BS','BT','BV','BW','BY','BZ','CA','CC','CD','CF','CG','CH','CI','CK','CL','CM','CN','CO','CP','CR','CU','CV','CW','CX','CY','CZ','DE','DG','DJ','DK','DM','DO','DZ','EA','EE','EG','EH','ER','ES','ET','EU','FI','FJ','FK','FM','FO','FR','GA','GB','GD','GE','GF','GG','GH','GI','GL','GM','GN','GP','GQ','GR','GS','GT','GU','GW','GY','HK','HM','HN','HR','HT','HU','IC','ID','IE','IL','IM','IN','IO','IQ','IR','IS','IT','JE','JM','JO','JP','KE','KG','KH','KI','KM','KN','KP','KR','KW','KY','KZ','LA','LB','LC','LI','LK','LR','LS','LT','LU','LV','LY','MA','MC','MD','ME','MF','MG','MH','MK','ML','MM','MN','MO','MP','MQ','MR','MS','MT','MU','MV','MW','MX','MY','MZ','NA','NC','NE','NF','NG','NI','NL','NO','NP','NR','NU','NZ','OM','PA','PE','PF','PG','PH','PK','PL','PM','PN','PR','PS','PT','PW','PY','QA','RE','RO','RS','RU','RW','SA','SB','SC','SD','SE','SG','SH','SI','SJ','SK','SL','SM','SN','SO','SR','SS','ST','SV','SX','SY','SZ','TA','TC','TD','TF','TG','TH','TJ','TK','TL','TM','TN','TO','TR','TT','TV','TW','TZ','UA','UG','UM','UN','US','UY','UZ','VA','VC','VE','VG','VI','VN','VU','WF','WS','XK','YE','YT','ZA','ZM','ZW']);
+			var $sel = $('#countryIso');
+			var $flag = $('<img class="ms-2" style="vertical-align:middle;height:16px" />');
+			$sel.after($flag);
+			function updateFlag() {
+				var iso = ($sel.val() || '').toUpperCase();
+				if (VALID_ISO.has(iso)) {
+					$flag.attr('src', 'https://flagcdn.com/24x18/' + iso.toLowerCase() + '.png').show();
+				} else {
+					$flag.hide();
+				}
+			}
+			$sel.on('change', updateFlag);
+			updateFlag();
+		})();
+
+		// Max File Size picker init
+		(function() {
+			var $hidden = $('#maxFileSize');
+			var $enabled = $('#maxFileSizeEnabled');
+			var $inputs = $('#maxFileSizeInputs');
+			var $value = $('#maxFileSizeValue');
+			var $unit = $('#maxFileSizeUnit');
+
+			function bytesToPicker(bytes) {
+				if (bytes <= 0) {
+					$enabled.prop('checked', false);
+					$inputs.addClass('d-none');
+					return;
+				}
+				$enabled.prop('checked', true);
+				$inputs.removeClass('d-none');
+				var units = [1073741824, 1048576, 1024, 1];
+				var names = ['1073741824', '1048576', '1024', '1'];
+				for (var i = 0; i < units.length; i++) {
+					if (bytes % units[i] === 0) {
+						$value.val(bytes / units[i]);
+						$unit.val(names[i]);
+						return;
+					}
+				}
+				$value.val(bytes);
+				$unit.val('1');
+			}
+
+			function pickerToBytes() {
+				if (!$enabled.prop('checked')) {
+					$hidden.val(-1);
+					return;
+				}
+				var v = parseInt($value.val(), 10);
+				var u = parseInt($unit.val(), 10);
+				$hidden.val((v > 0 ? v * u : -1));
+			}
+
+			bytesToPicker(parseInt($hidden.val(), 10));
+			$enabled.on('change', function() {
+				$inputs.toggleClass('d-none', !this.checked);
+				if (this.checked && !$value.val()) $value.val(1);
+				pickerToBytes();
+			});
+			$value.on('input change', pickerToBytes);
+			$unit.on('change', pickerToBytes);
+		})();
 		document.getElementById('acc-properties').addEventListener('shown.bs.collapse', function() {
 			editorProperties.resize(true);
 		});
@@ -1164,6 +1262,22 @@
 	})();
 
 
+	// Enforce minimum 1 minute on Start Frequency picker
+	function enforceStartFreqMin() {
+		var $hidden = $('#startFrequency');
+		var ms = parseInt($hidden.val()) || 0;
+		if (ms < 60000) {
+			$hidden.val(60000);
+			var $picker = $('[data-target="startFrequency"]');
+			$picker.find('.dur-h').val(0);
+			$picker.find('.dur-m').val(1);
+			$picker.find('.dur-display').text('= 1m');
+		}
+	}
+	$('[data-target="startFrequency"] input[type=number]').on('change blur', function() {
+		if ($('#maxStart').val() != 0) enforceStartFreqMin();
+	});
+
 	$(function() {
 		$("#maxConnectionsSlider")
 				.slider(
@@ -1214,10 +1328,14 @@
 				var value = $(this).slider("value");
 				$("#maxStartHandle").text(value == 0 ? "Off" : value);
 				$("#maxStart").val(value);
+				$("#startFrequencyRow").toggle(value != 0);
+				if (value != 0) enforceStartFreqMin();
 			},
 			slide : function(event, ui) {
 				$("#maxStartHandle").text(ui.value == 0 ? "Off" : ui.value);
 				$("#maxStart").val(ui.value);
+				$("#startFrequencyRow").toggle(ui.value != 0);
+				if (ui.value != 0) enforceStartFreqMin();
 			}
 		});
 		$("#maxRequeueSlider")

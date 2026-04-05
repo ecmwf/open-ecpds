@@ -36,8 +36,15 @@
 	<logic:match name="isInsert" value="true">
 		<tr>
 			<th>Name</th>
-			<td><input id="name" name="name" type="text">&nbsp;(please
-				use letters, digits, '_' and '-' only)</td>
+			<td>
+				<div class="d-flex align-items-center gap-2">
+					<input id="name" name="name" type="text"
+						pattern="[a-zA-Z0-9]+([_-][a-zA-Z0-9]+)*"
+						title="Must start and end with a letter or digit; '_' or '-' allowed as single separators (e.g. group-1)"
+						oninput="validatePatternInput(this, 'name-feedback')">
+					<span id="name-feedback"></span>
+				</div>
+			</td>
 		</tr>
 	</logic:match>
 	<logic:notMatch name="isInsert" value="true">
@@ -127,13 +134,4 @@
 </display:table>
 
 <script>
-	$('#name').on('input', function() {
-			const regex = /^[a-zA-Z0-9_-]+$/;
-			const $this = $(this);
-			const value = $this.val();
-			if (!regex.test(value)) {
-				// Remove all invalid characters
-				$this.val(value.replace(/[^a-zA-Z0-9_-]/g, ''));
-			}
-	});
 </script>

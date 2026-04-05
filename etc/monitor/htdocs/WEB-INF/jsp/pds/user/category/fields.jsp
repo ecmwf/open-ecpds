@@ -52,7 +52,15 @@
 				<c:if test="${isInsert == 'true'}">
 					<tr>
 						<th>Name</th>
-						<td><html:text property="name" /></td>
+						<td>
+							<div class="d-flex align-items-center gap-2">
+								<input id="name" name="name" type="text"
+									pattern="[a-zA-Z0-9]+([_-][a-zA-Z0-9]+)*"
+									title="Must start and end with a letter or digit; '_' or '-' allowed as single separators (e.g. admin-users)"
+									oninput="validatePatternInput(this, 'name-feedback')">
+								<span id="name-feedback"></span>
+							</div>
+						</td>
 					</tr>
 				</c:if>
 
