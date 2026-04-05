@@ -4,6 +4,10 @@ This document summarizes the most significant changes in OpenECPDS across all ma
 
 ---
 
+## open-ecpds 7.5.0-05042026 (2026-04-05)
+
+- A major new release of the web interface, featuring significant updates that enhance both design and functionality. The previous stack (JSP + Apache Struts 1.x + jQuery) has been fully modernized to incorporate the latest technologies, including Bootstrap 5, Bootstrap Icons, and DataTables.js. These upgrades not only deliver a sleeker, more responsive interface, but also introduce advanced features and significantly improved performance across all pages. A broad range of UI improvements ensures a fresh, user-friendly, and highly interactive experience for all users.
+
 ## open-ecpds 7.3.7-27022026 (2026-02-27)
 
 - Improve DNF resilience in Java container: add timeouts and retries, do not enable CRB.
