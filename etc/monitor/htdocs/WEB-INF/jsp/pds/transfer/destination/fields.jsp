@@ -522,25 +522,31 @@
 				</tr>
 				<tr>
 					<th>Mail Address <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Email address used when sending notifications" tabindex="0"></i></th>
-					<td><html:text
-							property="userMail" /></td>
+					<td>
+						<div class="d-flex align-items-center gap-2">
+							<input type="email" name="userMail" id="userMailInput"
+								value='<c:out value="${requestScope[actionFormName].userMail}"/>'
+								oninput="validateMailInput(this); toggleMailRows()" />
+							<span id="userMailFeedback"></span>
+						</div>
+					</td>
 				</tr>
-				<tr>
+				<tr id="mailOnUpdateRow">
 					<th>Mail on Update <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="When enabled, an email is sent when a change is made to the Destination or its related Hosts." tabindex="0"></i></th>
 					<td><html:checkbox
 						property="mailOnUpdate" /></td>
 				</tr>
-				<tr>
+				<tr id="mailOnStartRow">
 					<th>Mail on Start <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="When enabled, an email is sent when a data transfer starts for this Destination." tabindex="0"></i></th>
 					<td><html:checkbox
 						property="mailOnStart" /></td>
 				</tr>
-				<tr>
+				<tr id="mailOnEndRow">
 					<th>Mail on End <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="When enabled, an email is sent when a data transfer has completed successfully for this Destination." tabindex="0"></i></th>
 					<td><html:checkbox
 						property="mailOnEnd" /></td>
 				</tr>
-				<tr>
+				<tr id="mailOnErrorRow">
 					<th>Mail on Error <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="When enabled, an email is sent when a data transfer has failed for this Destination." tabindex="0"></i></th>
 					<td><html:checkbox
 						property="mailOnError" /></td>
@@ -1055,6 +1061,10 @@
 		var chk = document.getElementById('groupByDate');
 		if (chk) document.getElementById('dateFormatRow').style.display = chk.checked ? '' : 'none';
 
+		// Mail address field init
+		var mailInput = document.getElementById('userMailInput');
+		if (mailInput) { validateMailInput(mailInput); toggleMailRows(); }
+
 		// Country flag image next to select
 		(function() {
 			var VALID_ISO = new Set(['AC','AD','AE','AF','AG','AI','AL','AM','AO','AQ','AR','AS','AT','AU','AW','AX','AZ','BA','BB','BD','BE','BF','BG','BH','BI','BJ','BL','BM','BN','BO','BQ','BR','BS','BT','BV','BW','BY','BZ','CA','CC','CD','CF','CG','CH','CI','CK','CL','CM','CN','CO','CP','CR','CU','CV','CW','CX','CY','CZ','DE','DG','DJ','DK','DM','DO','DZ','EA','EE','EG','EH','ER','ES','ET','EU','FI','FJ','FK','FM','FO','FR','GA','GB','GD','GE','GF','GG','GH','GI','GL','GM','GN','GP','GQ','GR','GS','GT','GU','GW','GY','HK','HM','HN','HR','HT','HU','IC','ID','IE','IL','IM','IN','IO','IQ','IR','IS','IT','JE','JM','JO','JP','KE','KG','KH','KI','KM','KN','KP','KR','KW','KY','KZ','LA','LB','LC','LI','LK','LR','LS','LT','LU','LV','LY','MA','MC','MD','ME','MF','MG','MH','MK','ML','MM','MN','MO','MP','MQ','MR','MS','MT','MU','MV','MW','MX','MY','MZ','NA','NC','NE','NF','NG','NI','NL','NO','NP','NR','NU','NZ','OM','PA','PE','PF','PG','PH','PK','PL','PM','PN','PR','PS','PT','PW','PY','QA','RE','RO','RS','RU','RW','SA','SB','SC','SD','SE','SG','SH','SI','SJ','SK','SL','SM','SN','SO','SR','SS','ST','SV','SX','SY','SZ','TA','TC','TD','TF','TG','TH','TJ','TK','TL','TM','TN','TO','TR','TT','TV','TW','TZ','UA','UG','UM','UN','US','UY','UZ','VA','VC','VE','VG','VI','VN','VU','WF','WS','XK','YE','YT','ZA','ZM','ZW']);
@@ -1498,4 +1508,11 @@
 			$('#dateFormatInput').on('input change', updatePreview);
 		});
 	})();
+
+	function toggleMailRows() {
+		var show = document.getElementById('userMailInput').value.trim() !== '';
+		['mailOnUpdateRow','mailOnStartRow','mailOnEndRow','mailOnErrorRow'].forEach(function(id) {
+			document.getElementById(id).style.display = show ? '' : 'none';
+		});
+	}
 </script>

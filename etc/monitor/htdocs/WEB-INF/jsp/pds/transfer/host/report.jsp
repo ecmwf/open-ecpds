@@ -17,17 +17,73 @@
                 </c:otherwise>
             </c:choose>
         </span>
-        <button class="btn btn-sm btn-outline-secondary border-secondary text-white-50 py-0 px-2"
-                onclick="(function(){navigator.clipboard.writeText(document.getElementById('reportPre').textContent);this.innerHTML='<i class=\'bi bi-check-lg\'></i> Copied';setTimeout(function(){document.querySelector('.report-copy-btn').innerHTML='<i class=\'bi bi-clipboard\'></i> Copy';},1500);}).call(this)"
-                title="Copy to clipboard" class="report-copy-btn" style="font-size:0.75rem;">
-            <i class="bi bi-clipboard"></i> Copy
-        </button>
+        <div class="d-flex gap-2">
+            <button id="reportRefreshBtn"
+                    class="btn btn-sm btn-outline-secondary border-secondary text-white-50 py-0 px-2"
+                    onclick="fetchReport()" title="Refresh report" style="font-size:0.75rem;">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
+            <button id="reportCopyBtn"
+                    class="btn btn-sm btn-outline-secondary border-secondary text-white-50 py-0 px-2"
+                    onclick="copyReport(this)" title="Copy to clipboard" style="font-size:0.75rem;" disabled>
+                <i class="bi bi-clipboard"></i> Copy
+            </button>
+        </div>
     </div>
     <div class="card-body p-0">
         <pre id="reportPre"
              style="background:#1e1e1e; color:#d4d4d4; margin:0; padding:1rem 1.25rem;
                     font-size:0.78rem; line-height:1.6; max-height:75vh;
                     overflow-y:auto; border-radius:0 0 4px 4px;
-                    white-space:pre-wrap; word-break:break-all;">${message}</pre>
+                    white-space:pre-wrap; word-break:break-all;">
+            <span id="reportSpinner" class="text-white-50" style="font-style:italic;">
+                <i class="bi bi-hourglass-split me-1"></i> Generating report, please wait&hellip;
+            </span>
+        </pre>
     </div>
 </div>
+
+<script>
+(function() {
+    var dataUrl = '<c:out value="${reportDataUrl}"/>';
+
+    function fetchReport() {
+        var pre = document.getElementById('reportPre');
+        var copyBtn = document.getElementById('reportCopyBtn');
+        var refreshBtn = document.getElementById('reportRefreshBtn');
+        pre.innerHTML = '<span id="reportSpinner" class="text-white-50" style="font-style:italic;">'
+            + '<i class="bi bi-hourglass-split me-1"></i> Generating report, please wait\u2026</span>';
+        copyBtn.disabled = true;
+        refreshBtn.disabled = true;
+        fetch(dataUrl)
+            .then(function(r) {
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return r.text();
+            })
+            .then(function(text) {
+                pre.innerHTML = text;
+                copyBtn.disabled = false;
+                refreshBtn.disabled = false;
+            })
+            .catch(function(err) {
+                pre.innerHTML = '<span class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i>Failed to load report: ' + err.message + '</span>';
+                refreshBtn.disabled = false;
+            });
+    }
+
+    window.fetchReport = fetchReport;
+
+    window.copyReport = function(btn) {
+        var text = document.getElementById('reportPre').textContent;
+        navigator.clipboard.writeText(text).then(function() {
+            btn.innerHTML = '<i class="bi bi-check-lg"></i> Copied';
+            setTimeout(function() {
+                btn.innerHTML = '<i class="bi bi-clipboard"></i> Copy';
+            }, 1500);
+        });
+    };
+
+    // Fetch immediately on page load
+    fetchReport();
+})();
+</script>

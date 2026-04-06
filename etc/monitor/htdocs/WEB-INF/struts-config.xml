@@ -405,6 +405,12 @@
 			type="ecmwf.ecpds.master.plugin.http.controller.transfer.host.GetReportAction">
 			<forward name="success" path=".pds.transfer.host.report" />
 		</action>
+		<action path="/transfer/host/edit/getReportData/*" parameter="{1}"
+			type="ecmwf.ecpds.master.plugin.http.controller.transfer.host.GetReportDataAction">
+		</action>
+		<action path="/transfer/host/edit/getReportData/*/*" parameter="{1}|{2}"
+			type="ecmwf.ecpds.master.plugin.http.controller.transfer.host.GetReportDataAction">
+		</action>
 		<action path="/transfer/host/edit/insert_form"
 			type="ecmwf.ecpds.master.plugin.http.controller.transfer.host.InsertFormAction"
 			name="hostActionForm" scope="request">

@@ -20,7 +20,7 @@
       <c:if test="${not empty requestScope['org.apache.struts.action.ERROR']}">
         <div class="login-error">
           <i class="bi bi-exclamation-triangle-fill"></i>
-          <html:errors property="login"/>
+          <html:errors/>
         </div>
       </c:if>
 

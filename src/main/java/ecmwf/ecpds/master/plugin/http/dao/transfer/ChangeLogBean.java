@@ -45,10 +45,10 @@ import ecmwf.web.dao.ModelBeanBase;
 public class ChangeLogBean extends ModelBeanBase implements ChangeLog {
 
     /** The Constant HTML_MULTIPLE_LINES. */
-    private static final String HTML_MULTIPLE_LINES = "<i><font color='grey'>(across-multiple-lines)</font></i>";
+    private static final String HTML_MULTIPLE_LINES = "<i><span class=\"cl-note\">(across-multiple-lines)</span></i>";
 
     /** The Constant PARAMETER_MODIFIED. */
-    private static final String PARAMETER_MODIFIED = "<i><font color='grey'>(modified)</font></i>";
+    private static final String PARAMETER_MODIFIED = "<i><span class=\"cl-note\">(modified)</span></i>";
 
     /** The Constant translationMap. */
     private static final Map<String, String> translationMap = new HashMap<>();
@@ -270,8 +270,8 @@ public class ChangeLogBean extends ModelBeanBase implements ChangeLog {
         final var result = new StringBuilder();
         for (final DiffRow row : DiffRowGenerator.create().showInlineDiffs(true).mergeOriginalRevised(true)
                 .inlineDiffByWord(true)
-                .oldTag((_, f) -> Boolean.TRUE.equals(f) ? "<font color='red'><s>" : "</s></font>")
-                .newTag((_, f) -> Boolean.TRUE.equals(f) ? "<font color='green'>" : "</font>").build()
+                .oldTag((_, f) -> Boolean.TRUE.equals(f) ? "<span class=\"cl-del\"><s>" : "</s></span>")
+                .newTag((_, f) -> Boolean.TRUE.equals(f) ? "<span class=\"cl-add\">" : "</span>").build()
                 .generateDiffRows(Arrays.asList(from.split("\n")), Arrays.asList(to.split("\n")))) {
             if (!result.isEmpty()) {
                 result.append("\n");
@@ -280,8 +280,8 @@ public class ChangeLogBean extends ModelBeanBase implements ChangeLog {
         }
         return result.toString()
                 .replace(DataBaseObject.TAG_ACROSS_MULTIPLE_LINES,
-                        HTML_MULTIPLE_LINES + "<font style='background-color:lightyellow;'>")
-                .replace(DataBaseObject.TAG_END_OF_LINES, "");
+                        HTML_MULTIPLE_LINES + "<span class=\"cl-multiline\">")
+                .replace(DataBaseObject.TAG_END_OF_LINES, "</span>");
     }
 
     /**
@@ -339,10 +339,10 @@ public class ChangeLogBean extends ModelBeanBase implements ChangeLog {
     private static void addParameter(final StringBuilder result, final String paramName, final String paramValue) {
         final var displayName = translate(paramName);
         final var invisible = displayName.endsWith("(*)");
-        if (!displayName.isEmpty() && (paramValue.indexOf("<font color='red'><s>") != -1
-                || paramValue.indexOf("<font color='green'>") != -1) && paramValue.indexOf("</font>") != -1) {
+        if (!displayName.isEmpty() && (paramValue.indexOf("<span class=\"cl-del\">") != -1
+                || paramValue.indexOf("<span class=\"cl-add\">") != -1)) {
             result.append("<b>").append(invisible ? displayName.substring(0, displayName.length() - 3) : displayName)
-                    .append(":</b> ").append(invisible ? PARAMETER_MODIFIED : paramValue.trim()).append("</font>\n");
+                    .append(":</b> ").append(invisible ? PARAMETER_MODIFIED : paramValue.trim()).append("\n");
         }
     }
 }

@@ -27,17 +27,12 @@
     font-family:'Consolas','Monaco',monospace;
     white-space:pre; overflow-x:auto;
 }
-.diff-pre .dl-add  { color:#8f8; }
-.diff-pre .dl-del  { color:#f88; }
-.diff-pre .dl-hunk { color:#79b8ff; }
-.diff-pre .dl-meta { color:#6c757d; }
-/* HTML diff markup from server */
-.diff-pre font[color="red"],   .diff-pre font[color="#ff0000"] { color:#f88 !important; }
-.diff-pre font[color="green"], .diff-pre font[color="#00aa00"] { color:#8f8 !important; }
-.diff-pre font[color="blue"],  .diff-pre font[color="#0000ff"] { color:#79b8ff !important; }
-.diff-pre s   { color:#f88; text-decoration:line-through; opacity:0.85; }
-.diff-pre ins { color:#8f8; text-decoration:none; }
-.diff-pre del { color:#f88; text-decoration:line-through; opacity:0.85; }
+.diff-pre .cl-del  { color:#f88; }
+.diff-pre .cl-del s { text-decoration:line-through; opacity:0.85; }
+.diff-pre .cl-add  { color:#8f8; }
+.diff-pre .cl-note { color:#888; font-style:italic; }
+.diff-pre .cl-multiline { background:rgba(255,255,180,0.07); }
+.diff-pre b { color:#79b8ff; }
 </style>
 
 	<display:table name="${host.changeLogList}" id="changelog"

@@ -166,7 +166,7 @@ table.fields > tbody > tr > th {
 	<c:if test="${not empty destination.filterName}">
 	<tr>
 		<th>Data Compression <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If requested data files are compressed in the queue if there is enough time before transmission (otherwise files are compressed on the fly)" tabindex="0"></i></th>
-		<td>${destination.filterName}</td>
+		<td><c:choose><c:when test="${destination.filterName eq 'none'}"><span class="text-muted fst-italic">none</span></c:when><c:otherwise>${destination.filterName}</c:otherwise></c:choose></td>
 	</tr>
 	</c:if>
 	<c:if test="${not empty destination.hostForSource.nickName}">
@@ -185,8 +185,9 @@ table.fields > tbody > tr > th {
 	</tr>
 	<tr>
 		<th>Mail Address <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Email address used when sending notifications" tabindex="0"></i></th>
-		<td>${destination.userMail}</td>
+		<td><c:choose><c:when test="${empty destination.userMail}"><span class="text-muted fst-italic">none</span></c:when><c:otherwise>${destination.userMail}</c:otherwise></c:choose></td>
 	</tr>
+	<c:if test="${not empty destination.userMail}">
 	<tr>
 		<th>Mail on Update <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="When enabled, an email is sent when a change is made to the Destination or its related Hosts." tabindex="0"></i></th>
 		<td><c:if test="${destination.mailOnUpdate}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if><c:if test="${!destination.mailOnUpdate}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></td>
@@ -203,6 +204,7 @@ table.fields > tbody > tr > th {
 		<th>Mail on Error <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="When enabled, an email is sent when a data transfer has failed for this Destination." tabindex="0"></i></th>
 		<td><c:if test="${destination.mailOnError}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if><c:if test="${!destination.mailOnError}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></td>
 	</tr>
+	</c:if>
 
 	<tr><td colspan="2">&nbsp;</td></tr>
 

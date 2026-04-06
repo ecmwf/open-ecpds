@@ -21,6 +21,8 @@ package ecmwf.ecpds.master.plugin.http.controller.transfer.host;
 /**
  * ECMWF Product Data Store (OpenECPDS) Project
  *
+ * Returns the network report as plain text for async consumption by the UI.
+ *
  * @author Laurent Gougeon <sy8iecmwf.int>, ECMWF.
  * @version 6.7.7
  * @since 2004-10-09
@@ -45,9 +47,12 @@ import ecmwf.web.controller.ECMWFActionFormException;
 import ecmwf.web.model.users.User;
 
 /**
- * The Class GetReportAction.
+ * The Class GetReportDataAction.
+ *
+ * Writes the host network report directly to the HTTP response as plain text, allowing the browser to fetch it
+ * asynchronously without blocking page render.
  */
-public class GetReportAction extends PDSAction {
+public class GetReportDataAction extends PDSAction {
 
     /**
      * {@inheritDoc}
@@ -61,27 +66,30 @@ public class GetReportAction extends PDSAction {
         final ArrayList<?> c = ECMWFActionForm.getPathParameters(mapping, request);
         final Iterator<?> i = c.iterator();
         try {
+            final String report;
             if (c.size() == 1) {
-                final var hostId = i.next().toString();
-                final var host = HostHome.findByPrimaryKey(hostId);
-                request.setAttribute("host", host);
-                request.setAttribute("reportDataUrl", "/do/transfer/host/edit/getReportData/" + hostId);
-                return mapping.findForward("success");
-            }
-            if (c.size() == 2) {
-                final var hostId = i.next().toString();
-                final var proxyId = i.next().toString();
-                final var host = HostHome.findByPrimaryKey(hostId);
-                final var proxy = HostHome.findByPrimaryKey(proxyId);
-                request.setAttribute("host", host);
-                request.setAttribute("proxy", proxy);
-                request.setAttribute("reportDataUrl", "/do/transfer/host/edit/getReportData/" + hostId + "/" + proxyId);
-                return mapping.findForward("success");
+                final var host = HostHome.findByPrimaryKey(i.next().toString());
+                report = host.getReport(user);
+            } else if (c.size() == 2) {
+                final var host = HostHome.findByPrimaryKey(i.next().toString());
+                final var proxy = HostHome.findByPrimaryKey(i.next().toString());
+                report = host.getReport(user, proxy);
             } else {
                 throw new ECMWFActionFormException("Unsupported number of parameters " + c);
             }
+            response.setContentType("text/plain; charset=UTF-8");
+            response.setCharacterEncoding("UTF-8");
+            response.getWriter().write(report != null ? report : "");
+            response.getWriter().flush();
         } catch (final Throwable t) {
-            throw new ECMWFActionFormException(Format.getMessage(t));
+            try {
+                response.setContentType("text/plain; charset=UTF-8");
+                response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                response.getWriter().write("Error generating report: " + Format.getMessage(t));
+                response.getWriter().flush();
+            } catch (final Exception ignored) {
+            }
         }
+        return null;
     }
 }

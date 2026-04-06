@@ -5,7 +5,7 @@
 #
 # Purpose: Helper for nmap and mtr (OpenECPDS)
 #
-# (c) Copyright ECMWF 2013-2022 - Laurent Gougeon (syi@ecmwf.int)
+# (c) Copyright ECMWF 2013-2026 - Laurent Gougeon (syi@ecmwf.int)
 #
 
 ##########################
@@ -14,19 +14,22 @@
 if [ -f "/usr/local/ecpds/mover/sh/ecenv" ]; then
   source /usr/local/ecpds/mover/sh/ecenv
 else
-  # Started from Eclipse? 
+  # Started from Eclipse/development - resolve binaries without relying on PATH
+  # (JVM-spawned processes inherit a minimal environment that may not include
+  # Homebrew or other non-standard locations)
+  find_bin() {
+    for dir in /opt/homebrew/bin /opt/homebrew/sbin /usr/local/bin /usr/local/sbin \
+               /usr/bin /usr/sbin /bin /sbin; do
+      [ -x "$dir/$1" ] && echo "$dir/$1" && return 0
+    done
+    return 1
+  }
   echo=echo
   hostname=hostname
-  nmap=nmap
-  mtr=mtr
-  ping=ping
-  for cmd in $nmap $mtr $ping; do
-    if ! command -v $cmd &> /dev/null
-    then
-      echo "Binary '$cmd' not found on `$hostname` (please install)"
-      exit 0
-    fi
-  done
+  nmap=$(find_bin nmap)  || { $echo "Binary 'nmap' not found on `$hostname` (please install)"; exit 0; }
+  mtr=$(find_bin mtr)    || { $echo "Binary 'mtr' not found on `$hostname` (please install)"; exit 0; }
+  ping=$(find_bin ping)  || { $echo "Binary 'ping' not found on `$hostname` (please install)"; exit 0; }
+  grep=$(find_bin grep)  || { $echo "Binary 'grep' not found on `$hostname` (please install)"; exit 0; }
 fi
 
 ########################
