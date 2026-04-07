@@ -398,7 +398,11 @@ $(document).ready(function() {
 <tiles:get name="html.bottom" />
 
 <script>
-$(document).tooltip();
+if (typeof bootstrap !== 'undefined' && typeof bootstrap.Tooltip === 'function') {
+        document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) { bootstrap.Tooltip.getOrCreateInstance(el); });
+    } else {
+        // Bootstrap tooltip not available; skip
+    }
 $(window).on('load',function(){$("#loadingBackdrop,#loadingDiv").fadeOut(150);$("#contentDiv").fadeIn("fast");});
 function confirmationDialog(arg1, arg2, arg3) {
     var opts = {};

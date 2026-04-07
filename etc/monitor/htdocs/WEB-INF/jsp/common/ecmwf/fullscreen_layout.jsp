@@ -113,7 +113,11 @@
 
 <script>
 $( function() {
-    $( document ).tooltip();  
+    if (typeof bootstrap !== 'undefined' && typeof bootstrap.Tooltip === 'function') {
+        document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) { bootstrap.Tooltip.getOrCreateInstance(el); });
+    } else {
+        // Bootstrap tooltip not available; skip
+    }
   } );
   $(window).on('load', function() {
     $("#loadingDiv").remove();

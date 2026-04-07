@@ -5,6 +5,60 @@
    differ from the Bootstrap defaults.
    ============================================================ */
 
+/* Monitoring status dots (moved from reload.jsp) */
+.mon-dot { 
+  flex-shrink: 0; 
+  width: 12px; height: 12px; 
+  border-radius: 50%;
+  display: inline-block;
+  vertical-align: middle;
+}
+.mon-dot-n1, .mon-dot-0 { background: #adb5bd !important; }  /* no info - neutral grey */
+.mon-dot-1  { background: #20c997 !important; }               /* completed/ahead - green */
+.mon-dot-2  { background: #28a745 !important; }               /* ahead - green */
+.mon-dot-3  { background: #fd7e14 !important; }               /* slightly late - orange */
+.mon-dot-4  { background: #ffc107 !important; }               /* late - yellow */
+.mon-dot-5  { background: #dc3545 !important; }               /* very late/error - red */
+.mon-dot-6, .mon-dot-7 { background: #6f42c1 !important; }    /* other statuses - purple */
+
+/* Big Sister / OV status mapping */
+.mon-dot-bs0 { background: #28a745 !important; }  /* Green - Success */
+.mon-dot-bs1 { background: #ffc107 !important; }  /* Yellow - Warning */
+.mon-dot-bs2 { background: #dc3545 !important; }  /* Red - Critical */
+.mon-dot-bs3 { background: #0d6efd !important; }  /* Blue - Unknown */
+
+/* Arrival & Transfer status dots — exact match to a*.png / t*.png
+   Used wherever arrivalStatus or transferStatus (0-6) drives a .mon-dot */
+.mon-dot-s0 { background: #adb5bd !important; }           /* 0 = none  (white in PNG → grey) */
+.mon-dot-s1 { background: #00ffff !important; }           /* 1 = cyan  */
+.mon-dot-s2 { background: #00db00 !important; }           /* 2 = green */
+.mon-dot-s3 { background: #0000e7 !important; }           /* 3 = blue  */
+.mon-dot-s4 { background: #ffff00 !important; }           /* 4 = yellow */
+.mon-dot-s5 { background: #ffb800 !important; }           /* 5 = orange */
+.mon-dot-s6 { background: #ff0000 !important; }           /* 6 = red   */
+
+/* Arrival & Transfer letter badges — same scale, used on index.jsp */
+.mon-letter {
+    display: inline-block;
+    width: 16px; height: 16px; border-radius: 3px;
+    font-size: 10px !important;  /* override .editSpareBox a { Font-size: 10pt } */
+    font-weight: 700 !important;
+    color: #fff !important;
+    line-height: 16px;      /* matches height → vertical centre for single line */
+    text-align: center;     /* horizontal centre */
+    text-decoration: none !important;
+    vertical-align: middle;
+    padding: 0 !important; box-sizing: border-box; /* override sidebar td a padding */
+}
+.mon-letter:hover { opacity: 0.82; text-decoration: none !important; }
+.mon-letter-s0 { background: #adb5bd !important; }
+.mon-letter-s1 { background: #00ffff !important; color: #212529 !important; }
+.mon-letter-s2 { background: #00db00 !important; }
+.mon-letter-s3 { background: #0000e7 !important; }
+.mon-letter-s4 { background: #ffff00 !important; color: #212529 !important; }
+.mon-letter-s5 { background: #ffb800 !important; color: #212529 !important; }
+.mon-letter-s6 { background: #ff0000 !important; }
+
 /* ---- Layout: fixed header / footer spacing ---- */
 #contentDiv {
     padding-top:  85px;    /* clears the fixed topheader + breathing room */
@@ -1107,6 +1161,12 @@ table.listing th {
     background: #6c757d;
     color: #fff;
     font-weight: 600;
+}
+table.listing tr th,
+table.listing tr.even th,
+table.listing tr.odd th {
+    background: #6c757d !important;
+    color: #fff !important;
 }
 table.listing th.sorted {
     background: #495057;

@@ -102,38 +102,52 @@
 
     <c:if test="${destination.monitoringStatus.present}">
         <c:if test="${empty time}"><c:set var="time" value="00" /></c:if>
-        <c:if test="${not empty products}">
-            <tr><td colspan="3"></td></tr>
-            <tr><td colspan="3" style="padding-left:10px; font-size:0.8rem; color:#6c757d; font-weight:600;">Products</td></tr>
-            <c:forEach var="product" items="${products}">
-                <c:set var="key" value="${product.name}@${product.value}" />
-                <c:if test="${destination.statusMapForProducts[key].present}">
-                    <tr>
-                        <auth:if basePathKey="transferhistory.basepath" paths="/">
-                            <auth:then>
-                                <td><a title="Arrival Status" href="/do/monitoring/arrival/${destination.id}/${product.name}/${product.value}?mode=${mode}&date=${date}"><img src='<bean:message key="image.arrival.status.${destination.statusMapForProducts[key].arrivalStatus}"/>' border="0"></a></td>
-                            </auth:then>
-                        </auth:if>
-                        <td><a title="Transfer Status" href="/do/monitoring/transfer/${destination.id}/${product.name}/${product.value}?mode=${mode}&date=${date}"><img src='<bean:message key="image.transfer.status.${destination.statusMapForProducts[key].transferStatus}"/>' border="0"></a></td>
-                        <td>${product.value}-${product.name}</td>
-                    </tr>
-                </c:if>
-            </c:forEach>
-        </c:if>
-    </c:if>
-
-    <c:if test="${not empty times}">
-        <tr><td colspan="3"></td></tr>
-        <tr><td colspan="3" style="padding-left:10px; font-size:0.8rem; color:#6c757d; font-weight:600;">Times</td></tr>
-        <tr>
-            <td colspan="3" style="padding-left:10px;">
-                <c:forEach var="time" items="${times}">
-                    <a href="${time}?mode=${mode}&date=${date}">${time}</a>/
-                </c:forEach>
-            </td>
-        </tr>
     </c:if>
 </table>
+
+<%-- Products: separate menu table, product names in tooltips only --%>
+<c:if test="${destination.monitoringStatus.present and not empty products}">
+    <table class="editSpareBox">
+        <tr><th colspan="2"><i class="bi bi-box-seam sidebar-icon"></i> Products</th></tr>
+        <c:forEach var="product" items="${products}">
+            <c:set var="key" value="${product.name}@${product.value}" />
+            <c:if test="${destination.statusMapForProducts[key].present}">
+                <c:set var="aStatus" value="${destination.statusMapForProducts[key].arrivalStatus}" />
+                <c:set var="tStatus" value="${destination.statusMapForProducts[key].transferStatus}" />
+                <tr>
+                    <auth:if basePathKey="transferhistory.basepath" paths="/">
+                        <auth:then>
+                            <td style="padding: 5px 4px 5px 10px;"><a class="mon-letter mon-letter-s${aStatus lt 0 ? '0' : aStatus}"
+                                   title="${product.value}-${product.name} Arrival (status ${aStatus})"
+                                   href="/do/monitoring/arrival/${destination.id}/${product.name}/${product.value}?mode=${mode}&date=${date}">a</a></td>
+                        </auth:then>
+                    </auth:if>
+                    <td style="padding: 5px 10px 5px 4px;"><a class="mon-letter mon-letter-s${tStatus lt 0 ? '0' : tStatus}"
+                           title="${product.value}-${product.name} Transfer (status ${tStatus})"
+                           href="/do/monitoring/transfer/${destination.id}/${product.name}/${product.value}?mode=${mode}&date=${date}">t</a></td>
+                </tr>
+            </c:if>
+        </c:forEach>
+    </table>
+</c:if>
+
+<%-- Times: separate menu table --%>
+<c:if test="${not empty times}">
+    <table class="editSpareBox">
+        <tr><th><i class="bi bi-clock sidebar-icon"></i> Times</th></tr>
+        <tr>
+            <td style="padding: 8px 12px;">
+                <div class="d-flex flex-wrap gap-1">
+                <c:forEach var="time" items="${times}">
+                    <a class="badge text-decoration-none bg-secondary bg-opacity-25 text-dark border"
+                       style="font-size:0.75rem; font-weight:500;"
+                       href="${time}?mode=${mode}&date=${date}">${time}</a>
+                </c:forEach>
+                </div>
+            </td>
+        </tr>
+    </table>
+</c:if>
 
 <auth:if basePathKey="transferhistory.basepath" paths="/">
     <auth:then>

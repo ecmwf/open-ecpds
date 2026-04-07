@@ -12,7 +12,7 @@ request.setAttribute("jsp_date_before", new java.util.Date());
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><tiles:getAsString name="title" /></title>
 
-<!-- Hide page before first paint if we need to restore scroll — prevents visible jump -->
+<!-- Hide page before first paint if we need to restore scroll â prevents visible jump -->
 <script>(function(){if(sessionStorage.getItem('scrollY'))document.documentElement.style.visibility='hidden';}());</script>
 <!-- Bootstrap 5 -->
 <link rel="stylesheet" href="/bootstrap/css/bootstrap.min.css">
@@ -23,7 +23,7 @@ request.setAttribute("jsp_date_before", new java.util.Date());
 <!-- jQuery UI (kept for sliders and date pickers) -->
 <link rel="stylesheet" href="/jquery/jquery-ui.min.css">
 <!-- Application styles (loaded last to override where needed) -->
-<link rel="stylesheet" href="/assets/css/ecpds.css?v=20260406" type="text/css">
+<link rel="stylesheet" href="/assets/css/ecpds.css?v=20260407d" type="text/css">
 
 <script src="/ace-editor/ace.js" charset="utf-8"></script>
 <script src="/ace-editor/ext-language_tools.js" charset="utf-8"></script>
@@ -33,6 +33,12 @@ request.setAttribute("jsp_date_before", new java.util.Date());
 <!-- jQuery (required by jQuery UI, DataTables, and application scripts) -->
 <script src="/jquery/jquery-3.7.0.min.js"></script>
 <script src="/jquery/jquery-ui.min.js"></script>
+<script>
+// Preserve jQuery UI tooltip in case Bootstrap overrides $.fn.tooltip
+if (typeof $.fn.tooltip === 'function' && typeof $.ui !== 'undefined' && $.ui.tooltip) {
+    $.fn.uiTooltip = $.fn.tooltip;
+}
+</script>
 <!-- Bootstrap 5 bundle (includes Popper.js for dropdowns and tooltips) -->
 <script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
 <!-- DataTables with Bootstrap 5 integration -->
@@ -74,7 +80,7 @@ function showToast(message, type) {
     toast.show();
 }
 
-// Global handler for association card search — called directly via oninput
+// Global handler for association card search - called directly via oninput
 function assocSearch(inp) {
     var q = inp.value.toLowerCase();
     var container = inp.closest('.collapse');
@@ -167,7 +173,7 @@ $(document).ready(function() {
         setTimeout(function() { sessionStorage.removeItem('scrollY'); }, 3000);
     });
 
-    // Suppress DataTables browser alert() errors — log to console instead.
+    // Suppress DataTables browser alert() errors - log to console instead.
     $.fn.dataTable.ext.errMode = 'none';
     $(document).on('error.dt', function(e, settings, techNote, message) {
         console.warn('DataTables warning (tn/' + techNote + '):', message);
@@ -177,10 +183,10 @@ $(document).ready(function() {
     $('table.listing').addClass('table table-sm table-hover table-bordered');
     // Apply DataTables only to tables NOT already managed by DisplayTag.
     // DisplayTag signals its presence via:
-    //   .pagebanner   — server-side paging wrapper
-    //   th.sortable / th.sorted — sortable column headers
-    //   tr.empty      — "Nothing found" colspan row (empty list)
-    //   <caption>     — explicit caption element (belt-and-suspenders)
+    //   .pagebanner   - server-side paging wrapper
+    //   th.sortable / th.sorted - sortable column headers
+    //   tr.empty      - "Nothing found" colspan row (empty list)
+    //   <caption>     - explicit caption element (belt-and-suspenders)
     // Tables that should never use DataTables can add class="no-dt".
     $('table.listing').each(function() {
         var $t = $(this);
@@ -219,8 +225,8 @@ $(document).ready(function() {
         }
     });
 
-    // Unified icon replacement: all /assets/icons/ images → Bootstrap Icons.
-    // Order matters — more specific patterns must come before generic ones.
+    // Unified icon replacement: all /assets/icons/ images - Bootstrap Icons.
+    // Order matters - more specific patterns must come before generic ones.
     // Each entry: [srcFragment, bootstrapIconClass, colorClass]
     // colorClass is used for action icons outside the sidebar.
     var iconMap = [
@@ -247,7 +253,7 @@ $(document).ready(function() {
         ['anonymous',          'bi-person-dash',               'text-muted'],
         ['today',              'bi-calendar-check',            'text-primary'],
         ['mail',               'bi-envelope',                  'text-primary'],
-        // KDE webapp icons — specific patterns first
+        // KDE webapp icons - specific patterns first
         ['view_text',          'bi-file-text',                 'text-secondary'],
         ['monitor_ok',         'bi-check-circle-fill',         'text-success'],
         ['button_ok',          'bi-check-circle-fill',         'text-success'],
