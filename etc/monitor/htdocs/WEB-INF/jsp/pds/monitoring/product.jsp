@@ -278,58 +278,74 @@ th {
 	value="Dear colleagues%2C%0A%3C%3C Due to if known%2C please give some information of the reason for the%0Adelay%2C the or otherwise The %3E%3E dissemination of ECMWF %3C%3Catmospheric or%0Awave%3E%3E products for the %3C%3C00%2C 06%2C 12 or 18%3E%3EZ cycle of the%0A%3C%3C%22high-resolution forecast%22 or %22BC high-resolution forecast%22 or %22ensemble forecast%22 or %22Limited-area wave forecast%22%3E%3E will be delayed.%0A%0AAs soon as we have further details we will inform you.%0A%0AFor more up to date information%2C you may refer to ECMWF service status%0Apage at http%3A%2F%2Fwww.ecmwf.int%2Fen%2Fservice-status .%0A%0AOur sincere apologies for the inconvenience caused by this delay.%0A%0AKind regards%0A%0AECMWF Duty Manager" />
 <c:set var="ECMWFProducts"
 	value="Dear colleagues,%0D%0A%0D%0AI am pleased to inform you that the problems we encountered earlier%0D%0Awithin the operational production have been resolved and the dissemination of products has started.%0D%0A%0D%0AOur sincere apologies for the inconvenience caused by this delay.%0D%0A%0D%0AKind regards%0D%0A%0D%0AECMWF Duty Manager%0D%0A" />
-<c:choose>
-    <c:when test="${not empty emails}">
-        <img src="/assets/icons/ecpds/mail.png" alt="Emails">
+<c:if test="${not empty emails}">
+    <div class="card mt-4 border-secondary-subtle">
+        <div class="card-header py-2 px-3 d-flex align-items-center gap-2 bg-light">
+            <i class="bi bi-envelope-fill text-secondary"></i>
+            <span class="fw-semibold text-secondary" style="font-size:0.82rem;">Email Notifications &mdash; ${productStatus.time}-${productStatus.product}</span>
+        </div>
+        <div class="card-body py-2 px-3 d-flex align-items-center flex-wrap gap-2">
+            <a id="delayEmail" target="_blank"
+               title="Open Outlook: Products Delay Email for ${productStatus.time}-${productStatus.product}"
+               class="btn btn-sm btn-outline-warning">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i>Products Delay
+            </a>
+            <a id="productEmail" target="_blank"
+               title="Open Outlook: Products Resumed Email for ${productStatus.time}-${productStatus.product}"
+               class="btn btn-sm btn-outline-success">
+                <i class="bi bi-check-circle-fill me-1"></i>Products Resumed
+            </a>
+            <button type="button"
+                    class="btn btn-sm btn-outline-secondary"
+                    title="Copy CC email addresses to clipboard"
+                    onclick="copyToClipboard('<c:out value="${emails}" />')">
+                <i class="bi bi-clipboard me-1"></i>Copy CC Emails
+            </button>
+        </div>
+    </div>
 
-        <a title="Open Outlook" style="text-decoration: none" target="_blank"
-            id="delayEmail">Products Delay Email for
-            ${productStatus.time}-${productStatus.product}</a>&nbsp;|&nbsp;
-
-        <a title="Open Outlook" style="text-decoration: none"
-            target="_blank" id="productEmail">Products Email for
-            ${productStatus.time}-${productStatus.product}</a>&nbsp;|&nbsp;
-
-        <a href="javascript:void(0);" 
-            title="Click to copy CC Emails" 
-            onclick="copyToClipboard('<c:out value="${emails}" />')">
-            Copy CC Emails</a>
-
-        <script>
-            function copyToClipboard(text) {
-                if (!text || text.trim() === 'undefined') {
-                    showToast("No emails to copy!", "warning");
-                    return;
-                }
-
-                const emailArray = text.split(','); // Split the emails by comma
-                const emailCount = emailArray.length; // Count the number of emails
-
-                // Create a textarea element for copying the emails
+    <script>
+        function copyToClipboard(text) {
+            if (!text || text.trim() === 'undefined') {
+                showToast("No emails to copy!", "warning");
+                return;
+            }
+            const emailArray = text.split(',');
+            const emailCount = emailArray.length;
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(function() {
+                    showToast(emailCount + " email" + (emailCount !== 1 ? "s" : "") + " copied to clipboard", "success");
+                }, function() {
+                    showToast("Failed to copy to clipboard", "danger");
+                });
+            } else {
                 const textarea = document.createElement("textarea");
                 textarea.value = text;
+                textarea.style.position = "fixed";
+                textarea.style.opacity = "0";
                 document.body.appendChild(textarea);
                 textarea.select();
-                document.execCommand("copy");
-                document.body.removeChild(textarea);
-
-                // Show the number of emails copied
-                showToast(emailCount + " email" + (emailCount !== 1 ? "s" : "") + " copied to clipboard", "success");
+                try {
+                    document.execCommand("copy");
+                    showToast(emailCount + " email" + (emailCount !== 1 ? "s" : "") + " copied to clipboard", "success");
+                } catch (e) {
+                    showToast("Failed to copy to clipboard", "danger");
+                } finally {
+                    document.body.removeChild(textarea);
+                }
             }
+        }
 
-            setHrefForSendingEmail(
-                document.getElementById('delayEmail'),
-                'op_delay_ecmwf@lists.ecmwf.int,ecpds-product-${productStatus.time}-${productStatus.product}@ecmwf.int',
-                'ECMWF Products Delay (${productStatus.time}-${productStatus.product})',
-                '${ECMWFProductsDelay}');
+        setHrefForSendingEmail(
+            document.getElementById('delayEmail'),
+            'op_delay_ecmwf@lists.ecmwf.int,ecpds-product-${productStatus.time}-${productStatus.product}@ecmwf.int',
+            'ECMWF Products Delay (${productStatus.time}-${productStatus.product})',
+            '${ECMWFProductsDelay}');
 
-            setHrefForSendingEmail(
-                document.getElementById('productEmail'),
-                'op_delay_ecmwf@lists.ecmwf.int,ecpds-product-${productStatus.time}-${productStatus.product}@ecmwf.int',
-                'ECMWF Products (${productStatus.time}-${productStatus.product})',
-                '${ECMWFProducts}');
-        </script>
-    </c:when>
-    <c:otherwise>
-    </c:otherwise>
-</c:choose>
+        setHrefForSendingEmail(
+            document.getElementById('productEmail'),
+            'op_delay_ecmwf@lists.ecmwf.int,ecpds-product-${productStatus.time}-${productStatus.product}@ecmwf.int',
+            'ECMWF Products (${productStatus.time}-${productStatus.product})',
+            '${ECMWFProducts}');
+    </script>
+</c:if>
