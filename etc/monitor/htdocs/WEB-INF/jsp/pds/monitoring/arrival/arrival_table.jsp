@@ -44,7 +44,7 @@
 		<content:content name="transfer.scheduledTime" dateFormatKey="date.format.time" ignoreNull="true"/>
 	</display:column>
 	<display:column title="Status">
-		<img src="<bean:message key='image.arrival.status.${transfer.arrivalStatus}'/>" border="0" height="12" /> &nbsp; (${transfer.arrivalStatus})
+		<span class="mon-letter mon-letter-s${transfer.arrivalStatus lt 0 ? '0' : transfer.arrivalStatus}" title="Arrival Status ${transfer.arrivalStatus}">a</span> &nbsp; (${transfer.arrivalStatus})
 	</display:column>
 
 </display:table>

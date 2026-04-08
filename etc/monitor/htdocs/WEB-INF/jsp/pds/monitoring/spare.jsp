@@ -26,12 +26,12 @@
 	
 	<c:if test="${pair.value.isArrival}">
 		<a class="menuitem" href="/do/monitoring/arrival/<c:out value="${pair.name.name.name}/${pair.name.value.value}?mode=${param['mode']}"/>">
-			<img src="<bean:message key="image.arrival.status.${pair.value.status}"/>" border="0">	</a>
+			<span class="mon-letter mon-letter-s${pair.value.status lt 0 ? '0' : pair.value.status}">a</span></a>
 	</c:if>
 
 	<c:if test="${pair.value.isTransfer}">
 		<a class="menuitem" href="/do/monitoring/transfer/<c:out value="${pair.name.name.name}/${pair.name.value.value}?mode=${param['mode']}"/>">
-			<img src="<bean:message key="image.transfer.status.${pair.value.status}"/>" border="0">	</a>
+			<span class="mon-letter mon-letter-s${pair.value.status lt 0 ? '0' : pair.value.status}">t</span></a>
 	</c:if>
 	
 	

@@ -70,7 +70,7 @@
 		<b><content:content name="transfer.finishTime" dateFormatKey="date.format.time" ignoreNull="true"/></b>
 	</display:column>
 	<display:column title="Status"> 
-		<img src="<bean:message key='image.transfer.status.${transfer.transferStatus}'/>" border="0" height="12" title="Transfer Status ${transfer.transferStatus}"> &nbsp; (${transfer.formattedStatus})	
+		<span class="mon-letter mon-letter-s${transfer.transferStatus lt 0 ? '0' : transfer.transferStatus}" title="Transfer Status ${transfer.transferStatus}">t</span> &nbsp; (${transfer.formattedStatus})
 	</display:column>
 	
 </display:table>
