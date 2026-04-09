@@ -28,10 +28,9 @@
 </script>
 
 <c:if test="${historyItemsSize == '0'}">
-    <div class="alert alert-info mt-3">
-        No Transfer History available for Destination
-        <strong><c:out value="${selectedDestination.name}" /></strong>
-        on <c:out value="${selectedDate}" />.
+    <div class="alert alert-info d-flex align-items-center gap-2 mt-3">
+        <i class="bi bi-info-circle-fill"></i>
+        <span>No transfer history available for destination <strong><c:out value="${selectedDestination.name}" /></strong> on <c:out value="${selectedDate}" />.</span>
     </div>
 </c:if>
 

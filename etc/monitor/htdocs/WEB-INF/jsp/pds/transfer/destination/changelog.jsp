@@ -6,8 +6,9 @@
 <jsp:include page="/WEB-INF/jsp/pds/transfer/destination/destination_header.jsp"/>
 
 <c:if test="${empty destination.changeLogList}">
-	<div class="alert alert-info">
-		No change log available for destination <strong><c:out value="${destination.name}" /></strong>
+	<div class="alert alert-info d-flex align-items-center gap-2 mt-3">
+		<i class="bi bi-info-circle-fill"></i>
+		<span>No change log available for destination <strong><c:out value="${destination.name}" /></strong>.</span>
 	</div>
 </c:if>
 

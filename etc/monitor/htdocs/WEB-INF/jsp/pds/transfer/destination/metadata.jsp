@@ -9,8 +9,9 @@
 <jsp:include page="/WEB-INF/jsp/pds/transfer/destination/destination_header.jsp"/>
 
 <c:if test="${metaDataSize == 0}">
-    <div class="alert alert-info mt-2">
-        No Metadata files available for this destination.
+    <div class="alert alert-info d-flex align-items-center gap-2 mt-3">
+        <i class="bi bi-info-circle-fill"></i>
+        <span>No metadata files available for this destination.</span>
     </div>
 </c:if>
 

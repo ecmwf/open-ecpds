@@ -2,6 +2,8 @@
 
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 
+<jsp:include page="/WEB-INF/jsp/pds/transfer/host/host_header.jsp"/>
+
 <style>
 /* Structured output blocks */
 .output-block { border-bottom: 1px solid #333; }

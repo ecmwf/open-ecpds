@@ -29,11 +29,23 @@
             </tr>
             <tr>
                 <td><i class="bi bi-sliders sidebar-icon"></i></td>
-                <td colspan="2"><a href='<bean:message key="host.basepath"/>/edit/cleanDataWindow/${host.id}'>Clean Options</a></td>
+                <td colspan="2"><a href="#" onclick="confirmationDialog({
+                    title: 'Clean Options',
+                    message: 'Clean the data window options for host <b>${host.nickName}</b>?<br/><br/>This will remove all options with default values from the option properties editor, simplifying the configuration. This action cannot be undone.',
+                    confirmText: 'Clean',
+                    showLoading: true,
+                    onConfirm: function() { window.location.href='<bean:message key="host.basepath"/>/edit/cleanDataWindow/${host.id}'; }
+                }); return false;">Clean Options</a></td>
             </tr>
             <tr>
                 <td><i class="bi bi-arrow-counterclockwise sidebar-icon"></i></td>
-                <td colspan="2"><a href='<bean:message key="host.basepath"/>/edit/resetStats/${host.id}'>Reset Stats</a></td>
+                <td colspan="2"><a href="#" onclick="confirmationDialog({
+                    title: 'Reset Stats',
+                    message: 'Reset transfer statistics for host <b>${host.nickName}</b>?<br/><br/>This will permanently clear all accumulated transfer counters (bytes sent, transfer counts, error counts, etc.). This action cannot be undone.',
+                    confirmText: 'Reset',
+                    showLoading: true,
+                    onConfirm: function() { window.location.href='<bean:message key="host.basepath"/>/edit/resetStats/${host.id}'; }
+                }); return false;">Reset Stats</a></td>
             </tr>
         </auth:then>
     </auth:if>

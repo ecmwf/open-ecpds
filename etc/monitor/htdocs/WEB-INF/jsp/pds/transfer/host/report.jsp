@@ -2,6 +2,8 @@
 
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 
+<jsp:include page="/WEB-INF/jsp/pds/transfer/host/host_header.jsp"/>
+
 <div class="card shadow-sm mt-2" style="max-width:900px;">
     <div class="card-header d-flex align-items-center justify-content-between py-2 px-3"
          style="background:#2d2d2d; border-bottom:1px solid #444;">
@@ -45,13 +47,25 @@
 
 <script>
 (function() {
-    var dataUrl = '<c:out value="${reportDataUrl}"/>';
+    var dataUrl   = '<c:out value="${reportDataUrl}"/>';
+    var cacheKey  = 'hostReport_<c:out value="${host.name}"/>';
+
+    function showCached(html, isStale) {
+        var pre = document.getElementById('reportPre');
+        var copyBtn = document.getElementById('reportCopyBtn');
+        pre.innerHTML = html;
+        if (isStale) {
+            pre.innerHTML += '<div style="font-size:0.7rem;color:#555;margin-top:0.5rem;font-style:italic;">'
+                + '<i class="bi bi-clock me-1"></i>Cached result &mdash; click Refresh to update.</div>';
+        }
+        copyBtn.disabled = false;
+    }
 
     function fetchReport() {
         var pre = document.getElementById('reportPre');
         var copyBtn = document.getElementById('reportCopyBtn');
         var refreshBtn = document.getElementById('reportRefreshBtn');
-        pre.innerHTML = '<span id="reportSpinner" class="text-white-50" style="font-style:italic;">'
+        pre.innerHTML = '<span class="text-white-50" style="font-style:italic;">'
             + '<i class="bi bi-hourglass-split me-1"></i> Generating report, please wait\u2026</span>';
         copyBtn.disabled = true;
         refreshBtn.disabled = true;
@@ -61,6 +75,7 @@
                 return r.text();
             })
             .then(function(text) {
+                try { sessionStorage.setItem(cacheKey, text); } catch(e) {}
                 pre.innerHTML = text;
                 copyBtn.disabled = false;
                 refreshBtn.disabled = false;
@@ -77,13 +92,17 @@
         var text = document.getElementById('reportPre').textContent;
         navigator.clipboard.writeText(text).then(function() {
             btn.innerHTML = '<i class="bi bi-check-lg"></i> Copied';
-            setTimeout(function() {
-                btn.innerHTML = '<i class="bi bi-clipboard"></i> Copy';
-            }, 1500);
+            setTimeout(function() { btn.innerHTML = '<i class="bi bi-clipboard"></i> Copy'; }, 1500);
         });
     };
 
-    // Fetch immediately on page load
-    fetchReport();
+    // On load: show cached result if available, otherwise fetch
+    var cached = null;
+    try { cached = sessionStorage.getItem(cacheKey); } catch(e) {}
+    if (cached) {
+        showCached(cached, true);
+    } else {
+        fetchReport();
+    }
 })();
 </script>

@@ -86,7 +86,7 @@
         <auth:then>
             <tr>
                 <td><i class="bi bi-clock-history sidebar-icon"></i></td>
-                <td colspan="2"><a href='<bean:message key="transferhistory.basepath"/>?destinationName=${destination.id}&date=${date}'>Transfer History</a></td>
+                <td colspan="2"><a href='<bean:message key="transferhistory.basepath"/>?destinationName=${destination.id}&date=${date}&fromDestination=true'>Transfer History</a></td>
             </tr>
         </auth:then>
     </auth:if>

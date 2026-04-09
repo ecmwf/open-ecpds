@@ -12,8 +12,9 @@
 <c:set var="aliasedFrom" value="${destination.aliasedFrom}" scope="page"/>
 
 <c:if test="${empty aliasedFrom}">
-<div class="alert alert-info">
-  Destination <c:out value="${destination.name}" /> is not Aliased From any Destination
+<div class="alert alert-info d-flex align-items-center gap-2 mt-3">
+  <i class="bi bi-info-circle-fill"></i>
+  <span>Destination <strong><c:out value="${destination.name}" /></strong> is not aliased from any destination.</span>
 </div>
 </c:if>
 

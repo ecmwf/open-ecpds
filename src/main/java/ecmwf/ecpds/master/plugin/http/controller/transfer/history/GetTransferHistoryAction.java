@@ -98,7 +98,11 @@ public class GetTransferHistoryAction extends PDSAction {
             // And now save the options and values.
             request.setAttribute("historyItems", historyItems);
             request.setAttribute("historyItemsSize", Util.getCollectionSizeFrom(historyItems));
-            request.setAttribute("destination", currentDestination);
+            // Only expose 'destination' (which triggers the header and hides the selector)
+            // when explicitly navigated from the Destination menu, not from the Transmission menu.
+            if ("true".equals(request.getParameter("fromDestination"))) {
+                request.setAttribute("destination", currentDestination);
+            }
             request.setAttribute("destinationOptions", destinationNamesAndComment);
             request.setAttribute("selectedDestination", currentDestination);
             request.setAttribute("selectedDate", date);

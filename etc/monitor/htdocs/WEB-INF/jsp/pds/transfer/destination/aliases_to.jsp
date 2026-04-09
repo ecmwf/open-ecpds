@@ -12,8 +12,9 @@
 <c:set var="aliases" value="${destination.aliases}" scope="page"/>
 
 <c:if test="${empty aliases}">
-<div class="alert alert-info">
-  No Alias defined on Destination <c:out value="${destination.name}"/>
+<div class="alert alert-info d-flex align-items-center gap-2 mt-3">
+  <i class="bi bi-info-circle-fill"></i>
+  <span>No alias defined on destination <strong><c:out value="${destination.name}"/></strong>.</span>
 </div>
 </c:if>
 

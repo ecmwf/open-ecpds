@@ -1,12 +1,14 @@
 <%@ page session="true"%>
 
-<%@ taglib uri="/WEB-INF/tld/displaytag.tld" prefix="display"%>
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content"%>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 
+<jsp:include page="/WEB-INF/jsp/pds/transfer/host/host_header.jsp"/>
+
 <c:if test="${empty host.changeLogList}">
-	<div class="alert">
-		No change log available for host <strong><c:out value="${host.name}" /></strong>
+	<div class="alert alert-info d-flex align-items-center gap-2 mt-3">
+		<i class="bi bi-info-circle-fill"></i>
+		<span>No change log available for host <strong><c:out value="${host.name}" /></strong>.</span>
 	</div>
 </c:if>
 
