@@ -1,9 +1,17 @@
-<p style="margin: 25px">
-<h3>${message}</h3>
+<%@ page session="true"%>
+<%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 
-<table border=0 class='listing'><caption>${comment}</caption><tbody><tr class=odd><td>
-<pre>
-${requirements}
-</pre>
-</td></tr></tbody></table>
-</p>
+<c:if test="${not empty message}">
+    <div class="alert alert-success mt-2">
+        <strong>${message}</strong>
+    </div>
+</c:if>
+
+<c:if test="${not empty requirements}">
+<div class="card mt-2">
+    <div class="card-header"><c:out value="${comment}"/></div>
+    <div class="card-body p-0">
+        <pre class="m-0 p-3" style="white-space:pre-wrap;word-break:break-word;font-size:0.85rem;background:#f8f9fa">${requirements}</pre>
+    </div>
+</div>
+</c:if>

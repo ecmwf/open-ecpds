@@ -625,6 +625,13 @@
 			value="/WEB-INF/jsp/pds/transfer/destination/aliases_to.jsp" />
 	</definition>
 
+	<definition name=".pds.transfer.destination.datausers"
+		extends=".pds.transfer.destination.detail">
+		<put name="title.expression" value="Data Users for %{destination.name}" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/transfer/destination/datausers.jsp" />
+	</definition>
+
 	<definition name=".pds.transfer.destination.metadata"
 		extends=".pds.transfer.destination.detail">
 		<put name="content"
@@ -905,6 +912,8 @@
 		<put name="spare" value=".pds.user.incoming.spare.edit" />
 		<put name="date.select"
 			value="/WEB-INF/jsp/pds/common/date_select.jsp" />
+		<put name="destination.select"
+			value="/WEB-INF/jsp/pds/common/destination_select.jsp" />
 		<put name="content"
 			value="/WEB-INF/jsp/pds/user/incoming/users.jsp" />
 	</definition>

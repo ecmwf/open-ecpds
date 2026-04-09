@@ -50,7 +50,9 @@ import ecmwf.ecpds.master.plugin.http.dao.Util;
 import ecmwf.ecpds.master.plugin.http.dao.transfer.DataTransferLightBean;
 import ecmwf.ecpds.master.plugin.http.home.monitoring.ProductStatusHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.DestinationHome;
+import ecmwf.ecpds.master.plugin.http.home.transfer.IncomingUserHome;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Destination;
+import ecmwf.ecpds.master.plugin.http.model.transfer.IncomingUser;
 import ecmwf.ecpds.master.plugin.http.model.transfer.TransferException;
 import ecmwf.ecpds.master.transfer.DestinationOption;
 import ecmwf.ecpds.master.transfer.StatusFactory;
@@ -129,6 +131,22 @@ public class GetDestinationAction extends PDSAction {
             } else if ("aliasesto".equals(mode)) {
                 // This is the aliases_to.jsp page!
                 return mapping.findForward("aliasesto");
+            } else if ("datausers".equals(mode)) {
+                // This is the data users page for this destination!
+                final List<IncomingUser> users = new ArrayList<>();
+                for (final IncomingUser incoming : IncomingUserHome.findAll()) {
+                    try {
+                        for (final Destination dest : incoming.getAssociatedDestinations()) {
+                            if (dest.getName().equals(id)) {
+                                users.add(incoming);
+                                break;
+                            }
+                        }
+                    } catch (final Exception ignored) {
+                    }
+                }
+                request.setAttribute("incomingUsers", users);
+                return mapping.findForward("datausers");
             } else {
                 // This is the main Destination page!
                 final var isNotDissemination = !DestinationOption.isDissemination(destination.getType());

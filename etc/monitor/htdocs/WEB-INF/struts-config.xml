@@ -503,6 +503,8 @@
 				path=".pds.transfer.destination.aliasesfrom" />
 			<forward name="aliasesto"
 				path=".pds.transfer.destination.aliasesto" />
+			<forward name="datausers"
+				path=".pds.transfer.destination.datausers" />
 		</action>
 		<action path="/transfer/destination/edit/update_form/*"
 			parameter="{1}"

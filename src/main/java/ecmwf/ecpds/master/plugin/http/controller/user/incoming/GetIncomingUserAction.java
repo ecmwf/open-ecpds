@@ -75,6 +75,12 @@ public class GetIncomingUserAction extends PDSAction {
                 .addAll(Util.getDestinationPairList(DestinationHome.findAllNamesAndComments(), List.of()));
         request.setAttribute("destinationOptions", destinationNamesAndComment);
         final var destinationNameForSearch = Util.getValue(request, "destinationNameForSearch", "Any Destination");
+        // Set selectedDestination so destination_select.jsp can display the current choice.
+        final var selectedDestination = destinationNamesAndComment.stream()
+                .filter(p -> destinationNameForSearch.equals(p.getName())).findFirst()
+                .orElse(destinationNamesAndComment.get(0));
+        request.setAttribute("selectedDestination", selectedDestination);
+        request.setAttribute("destinationNameForSearch", destinationNameForSearch);
         if (!"Any Destination".equals(destinationNameForSearch)) {
             users = associatedTo(users, destinationNameForSearch);
         }

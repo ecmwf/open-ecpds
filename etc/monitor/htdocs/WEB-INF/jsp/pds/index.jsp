@@ -140,7 +140,10 @@
             <div class="col-xl-4 col-md-6 d-flex flex-column">
                 <div class="home-section-card">
                     <div class="home-section-hdr" style="background:#e8f7f7;">
-                        <i class="bi bi-eye text-info"></i> Monitoring
+                        <auth:if basePathKey="monitoring.basepath" paths="/">
+                            <auth:then><a href="/do/monitoring" class="home-section-hdr-link"><i class="bi bi-eye text-info"></i> Monitoring</a></auth:then>
+                            <auth:else><i class="bi bi-eye text-info"></i> Monitoring</auth:else>
+                        </auth:if>
                     </div>
                     <ul class="home-menu">
                         <li><a href="/maps/maps.html"><i class="bi bi-map"></i>Hosts on Map</a></li>

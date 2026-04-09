@@ -72,7 +72,7 @@
         <auth:then>
             <tr>
                 <td><i class="bi bi-person-badge sidebar-icon"></i></td>
-                <td colspan="2"><a href='<bean:message key="incoming.basepath"/>?destinationNameForSearch=${destination.id}'>Data Users</a></td>
+                <td colspan="2"><a href='<bean:message key="destination.basepath"/>/${destination.id}?mode=datausers'>Data Users</a></td>
             </tr>
         </auth:then>
     </auth:if>
