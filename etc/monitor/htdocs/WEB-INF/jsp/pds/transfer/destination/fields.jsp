@@ -267,12 +267,12 @@
 				</c:if>
 				<tr>
 					<th>Type</th>
-					<td><c:set var="types"
+					<td><div style="display:inline-flex;align-items:center;gap:0.5rem;"><c:set var="types"
 							value="${destinationActionForm.typeOptions}" /> <html:select
-							property="type">
+							property="type" styleId="destType">
 							<html:options collection="types" property="name"
 								labelProperty="value" />
-						</html:select></td>
+						</html:select></div></td>
 				</tr>
 				<tr>
 					<th>Comment</th>
@@ -1081,6 +1081,25 @@
 			}
 			$sel.on('change', updateFlag);
 			updateFlag();
+		})();
+
+		// Type tier badge next to select
+		(function() {
+			var ICONS = {
+				'Gold':   '<span class="dest-page-type dest-type-gold"><i class="bi bi-trophy-fill"></i></span>',
+				'Silver': '<span class="dest-page-type dest-type-silver"><i class="bi bi-award-fill"></i></span>',
+				'Bronze': '<span class="dest-page-type dest-type-bronze"><i class="bi bi-award"></i></span>',
+				'Basic':  '<span class="dest-page-type dest-type-basic"><i class="bi bi-patch-check"></i></span>'
+			};
+			var $sel = $('#destType');
+			var $badge = $('<span></span>');
+			$sel.parent().append($badge);
+			function updateBadge() {
+				var label = $sel.find('option:selected').text().trim();
+				$badge.html(ICONS[label] || '');
+			}
+			$sel.on('change', updateBadge);
+			updateBadge();
 		})();
 
 		// Max File Size picker init

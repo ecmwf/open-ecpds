@@ -1277,14 +1277,13 @@
 	<!-- Timeline -->
 
 	<definition name=".pds.monitoring.timeline.chart"
-		extends=".pds.monitoring">
+		extends=".pds.transfer.destination.detail">
 		<put name="title.expression"
 			value="Transfer Timeline for %{destination.name}" />
-		<put name="location"
-			value="/WEB-INF/jsp/pds/monitoring/timeline/location.jsp" />
+		<put name="date.select"
+			value="/WEB-INF/jsp/pds/common/date_select.jsp" />
 		<put name="content"
 			value="/WEB-INF/jsp/pds/monitoring/timeline/timeline_chart.jsp" />
-		<put name="spare" value=".pds.spare.monitoring" />
 	</definition>
 
 	<!-- Unsuccessful -->

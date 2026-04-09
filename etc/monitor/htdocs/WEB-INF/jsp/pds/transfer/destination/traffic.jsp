@@ -6,6 +6,8 @@
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth" %>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
 
+<jsp:include page="/WEB-INF/jsp/pds/transfer/destination/destination_header.jsp"/>
+
 <c:if test="${empty destination.trafficList}">
   <div class="alert alert-info d-flex align-items-center gap-2 mt-3">
     <i class="bi bi-info-circle-fill"></i>
@@ -74,7 +76,7 @@ const tDuration = _si.map(i=>_tDuration[i]);
 <%-- Header bar: title + view toggle --%>
 <div class="d-flex justify-content-between align-items-center mb-3 mt-2 flex-wrap gap-2">
   <h6 class="fw-semibold text-secondary mb-0">
-    <i class="bi bi-bar-chart-line-fill me-1"></i>Traffic Statistics &mdash; <c:out value="${destination.name}"/>
+    <i class="bi bi-bar-chart-line-fill me-1"></i>Traffic Statistics
   </h6>
   <div class="btn-group btn-group-sm" role="group">
     <button type="button" class="btn btn-outline-secondary" id="btnTable" onclick="setView('table')">

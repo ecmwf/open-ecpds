@@ -6,7 +6,7 @@
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
 
 <c:if test="${empty filteredTransfers}">
-				<div class="alert">
+				<div class="alert mt-3">
 					<c:if test="${!hasFileNameSearch}">
 						No Data Transfers found based on these criteria!
 					</c:if>

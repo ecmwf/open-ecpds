@@ -3,44 +3,28 @@
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content"%>
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
-<script>window._validIso=new Set(["AC","AD","AE","AF","AG","AI","AL","AM","AO","AQ","AR","AS","AT","AU","AW","AX","AZ","BA","BB","BD","BE","BF","BG","BH","BI","BJ","BL","BM","BN","BO","BQ","BR","BS","BT","BV","BW","BY","BZ","CA","CC","CD","CF","CG","CH","CI","CK","CL","CM","CN","CO","CP","CR","CU","CV","CW","CX","CY","CZ","DE","DG","DJ","DK","DM","DO","DZ","EA","EE","EG","EH","ER","ES","ET","EU","FI","FJ","FK","FM","FO","FR","GA","GB","GD","GE","GF","GG","GH","GI","GL","GM","GN","GP","GQ","GR","GS","GT","GU","GW","GY","HK","HM","HN","HR","HT","HU","IC","ID","IE","IL","IM","IN","IO","IQ","IR","IS","IT","JE","JM","JO","JP","KE","KG","KH","KI","KM","KN","KP","KR","KW","KY","KZ","LA","LB","LC","LI","LK","LR","LS","LT","LU","LV","LY","MA","MC","MD","ME","MF","MG","MH","MK","ML","MM","MN","MO","MP","MQ","MR","MS","MT","MU","MV","MW","MX","MY","MZ","NA","NC","NE","NF","NG","NI","NL","NO","NP","NR","NU","NZ","OM","PA","PE","PF","PG","PH","PK","PL","PM","PN","PR","PS","PT","PW","PY","QA","RE","RO","RS","RU","RW","SA","SB","SC","SD","SE","SG","SH","SI","SJ","SK","SL","SM","SN","SO","SR","SS","ST","SV","SX","SY","SZ","TA","TC","TD","TF","TG","TH","TJ","TK","TL","TM","TN","TO","TR","TT","TV","TW","TZ","UA","UG","UM","UN","US","UY","UZ","VA","VC","VE","VG","VI","VN","VU","WF","WS","XK","YE","YT","ZA","ZM","ZW"]);</script>
 
-<table class="fields" style="width: 700px" border=0>
+<table class="fields" style="width: 700px;" border=0>
 
 	<tr>
 		<auth:if basePathKey="transferhistory.basepath" paths="/">
 			<auth:then>
-				<td><a
-					href="<bean:message key="destination.basepath"/>?destinationSearch=country=${destination.country.iso}&destinationStatus=&destinationType="><img
-						style="margin: 1" align="middle" border="0"
-						src="https://flagcdn.com/24x18/${fn:toLowerCase(destination.countryIso)}.png" onload="var m=this.src.match(/\/([a-z]{2})\./);if(!m||!window._validIso||!window._validIso.has(m[1].toUpperCase()))this.style.display='none';" onerror="this.style.display='none'"
-						alt="Flag for ${destination.country.name}"
-						title="See all destinations in ${destination.country.name}" /></a></td>
-				<td><a title="See all destinations in the group"
-					href="<bean:message key="destination.basepath"/>?destinationSearch=&destinationStatus=&destinationType=${destination.type}">${destination.typeText}</a></td>
-					<td>Notify <c:if test="${destination.mailOnUpdate}">  &nbsp; <content:icon
-								key="icon.mail1" altKey="ecpds.destination.mailOnUpdate"
-								titleKey="ecpds.destination.mailOnUpdate" writeFullTag="true" />
-						</c:if> <c:if test="${destination.mailOnStart}"> &nbsp; <content:icon
-									key="icon.mail2" altKey="ecpds.destination.mailOnStart"
-									titleKey="ecpds.destination.mailOnStart" writeFullTag="true" />
-						</c:if> <c:if test="${destination.mailOnEnd}"> &nbsp; <content:icon
-							key="icon.mail2" altKey="ecpds.destination.mailOnEnd"
-							titleKey="ecpds.destination.mailOnEnd" writeFullTag="true" />
-					</c:if> <c:if test="${destination.mailOnError}"> &nbsp; <content:icon
-							key="icon.mail3" altKey="ecpds.destination.mailOnError"
-							titleKey="ecpds.destination.mailOnError" writeFullTag="true" />
-					</c:if> to
+				<td>Notify <c:if test="${destination.mailOnUpdate}">  &nbsp; <content:icon
+							key="icon.mail1" altKey="ecpds.destination.mailOnUpdate"
+							titleKey="ecpds.destination.mailOnUpdate" writeFullTag="true" />
+					</c:if> <c:if test="${destination.mailOnStart}"> &nbsp; <content:icon
+								key="icon.mail2" altKey="ecpds.destination.mailOnStart"
+								titleKey="ecpds.destination.mailOnStart" writeFullTag="true" />
+					</c:if> <c:if test="${destination.mailOnEnd}"> &nbsp; <content:icon
+						key="icon.mail2" altKey="ecpds.destination.mailOnEnd"
+						titleKey="ecpds.destination.mailOnEnd" writeFullTag="true" />
+				</c:if> <c:if test="${destination.mailOnError}"> &nbsp; <content:icon
+						key="icon.mail3" altKey="ecpds.destination.mailOnError"
+						titleKey="ecpds.destination.mailOnError" writeFullTag="true" />
+				</c:if> to
 				</td>
 				<td><a href="mailto:${destination.userMail}">${destination.userMail}</a></td>
 			</auth:then>
-			<auth:else>
-				<td><img style="margin: 1" align="middle" border="0"
-					src="https://flagcdn.com/24x18/${fn:toLowerCase(destination.countryIso)}.png" onload="var m=this.src.match(/\/([a-z]{2})\./);if(!m||!window._validIso||!window._validIso.has(m[1].toUpperCase()))this.style.display='none';" onerror="this.style.display='none'"
-					alt="Flag for ${destination.country.name}"
-					title="${destination.country.name}" /></td>
-				<td>${destination.typeText}</td>
-			</auth:else>
 		</auth:if>
 
 		<c:if test="${not empty ecpdsCanHandleQueue}">

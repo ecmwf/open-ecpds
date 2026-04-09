@@ -7,11 +7,12 @@
 <%@ taglib uri="/WEB-INF/tld/displaytag.tld" prefix="display" %>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
 
+<jsp:include page="/WEB-INF/jsp/pds/transfer/destination/destination_header.jsp"/>
+
 <c:set var="aliasedFrom" value="${destination.aliasedFrom}" scope="page"/>
 
 <c:if test="${empty aliasedFrom}">
-<br/>
-<div class="alert">
+<div class="alert alert-info">
   Destination <c:out value="${destination.name}" /> is not Aliased From any Destination
 </div>
 </c:if>

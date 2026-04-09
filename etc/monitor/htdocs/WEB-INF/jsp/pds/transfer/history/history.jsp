@@ -6,9 +6,14 @@
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content"%>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 
+<c:if test="${not empty destination}">
+<jsp:include page="/WEB-INF/jsp/pds/transfer/destination/destination_header.jsp"/>
+</c:if>
 <tiles:insert name="date.select" />
 <div class="mb-2"></div>
+<c:if test="${empty destination}">
 <tiles:insert name="destination.select" />
+</c:if>
 <script>
 (function() {
     var destName = new URLSearchParams(window.location.search).get('destinationName');

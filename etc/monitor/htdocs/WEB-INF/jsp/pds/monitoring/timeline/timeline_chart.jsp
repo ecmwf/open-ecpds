@@ -35,6 +35,8 @@
 
 <c:if test="${authorized == 'true'}">
 
+<jsp:include page="/WEB-INF/jsp/pds/transfer/destination/destination_header.jsp"/>
+
 <tiles:insert name="date.select"/>
 
 <c:if test="${empty datatransfers}">

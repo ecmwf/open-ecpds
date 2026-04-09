@@ -846,7 +846,7 @@ table.info-panel td[style*="background-color"] {
 
 table.fields {
 	Font-size: 10pt;
-	margin: 10pt;
+	margin: 0 10pt 10pt;
         border-collapse: collapse;
 }
 
@@ -1179,7 +1179,7 @@ table.listing th.sorted {
 
 /* .fields form layout table — tighten up with Bootstrap spacing */
 table.fields {
-    margin: 0.75rem;
+    margin: 0 0.75rem 0.75rem;
 }
 table.fields > tbody > tr > th {
     background: #f8f9fa;
@@ -1508,6 +1508,36 @@ img[src*="/assets/icons/"] {
     border-radius: 4px;
     font-family: 'Consolas', 'Monaco', monospace;
     vertical-align: middle;
+}
+.dest-page-type {
+    font-size: 0.72rem;
+    background: #dce8fb;
+    color: #1a5fa8;
+    padding: 0.1em 0.45em;
+    border-radius: 4px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    vertical-align: middle;
+}
+.dest-type-gold {
+    background: #fef3c7;
+    color: #78350f;
+    border: 1px solid #f59e0b;
+}
+.dest-type-silver {
+    background: #f1f5f9;
+    color: #334155;
+    border: 1px solid #94a3b8;
+}
+.dest-type-bronze {
+    background: #fff7ed;
+    color: #7c2d12;
+    border: 1px solid #c2863b;
+}
+.dest-type-basic {
+    background: #eff6ff;
+    color: #1e40af;
+    border: 1px solid #93c5fd;
 }
 .dest-page-comment {
     margin: 0.2rem 0 0;

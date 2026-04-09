@@ -7,11 +7,12 @@
 <%@ taglib uri="/WEB-INF/tld/displaytag.tld" prefix="display" %>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
 
+<jsp:include page="/WEB-INF/jsp/pds/transfer/destination/destination_header.jsp"/>
+
 <c:set var="aliases" value="${destination.aliases}" scope="page"/>
 
 <c:if test="${empty aliases}">
-<br/>
-<div class="alert">
+<div class="alert alert-info">
   No Alias defined on Destination <c:out value="${destination.name}"/>
 </div>
 </c:if>

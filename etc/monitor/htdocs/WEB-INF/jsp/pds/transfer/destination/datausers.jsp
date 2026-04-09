@@ -4,6 +4,8 @@
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth" %>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
 
+<jsp:include page="/WEB-INF/jsp/pds/transfer/destination/destination_header.jsp"/>
+
 <c:if test="${empty incomingUsers}">
     <div class="alert alert-info mt-2">No Data Users are associated with this destination.</div>
 </c:if>

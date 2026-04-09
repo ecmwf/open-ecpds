@@ -40,6 +40,8 @@ table.fields > tbody > tr > th {
 		<c:if test="${destination.id != destination.name}">
 			<code class="dest-page-id">${destination.id}</code>
 		</c:if>
+		<jsp:include page="/WEB-INF/jsp/pds/transfer/destination/destination_flag.jsp"/>
+		<jsp:include page="/WEB-INF/jsp/pds/transfer/destination/destination_type_badge.jsp"/>
 		<c:if test="${not destination.active}">
 			<i class="bi bi-pause-circle-fill text-warning" title="Destination is disabled" style="font-size:0.9rem;align-self:center;"></i>
 		</c:if>
@@ -75,10 +77,6 @@ table.fields > tbody > tr > th {
 <table class="fields">
 
 	<tr>
-		<th>Type</th>
-		<td>${destination.typeText}</td>
-	</tr>
-	<tr>
 		<th>On Host Failure <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="In case of error on a data transmission then try the next host in the list and stick to it if it works or restart with the first host in the list?" tabindex="0"></i></th>
 		<td>${destination.onHostFailureText}</td>
 	</tr>
@@ -90,10 +88,7 @@ table.fields > tbody > tr > th {
 		<th>Delete From Spool</th>
 		<td>${destination.keepInSpoolText}</td>
 	</tr>
-	<tr>
-		<th>Country</th>
-		<td><img src="https://flagcdn.com/16x12/${fn:toLowerCase(destination.country.iso)}.png" alt="" onload="var m=this.src.match(/\/([a-z]{2})\./);if(!m||!window._validIso||!window._validIso.has(m[1].toUpperCase()))this.style.display='none';" onerror="this.style.display='none'" class="me-1" style="vertical-align:middle"> ${destination.country.name}</td>
-	</tr>
+
 
 	<tr><td colspan="2">&nbsp;</td></tr>
 

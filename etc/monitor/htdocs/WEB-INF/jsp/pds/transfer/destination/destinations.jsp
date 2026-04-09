@@ -287,9 +287,13 @@
                         <a href="/do/transfer/destination/${d.id}"
                            class="fw-semibold text-decoration-none dest-list-link"
                            title="${d.comment}">${d.id}</a>
-                        <c:if test="${not empty d.typeText}">
-                            <span class="badge rounded-pill bg-light text-secondary border ms-1" style="font-size:0.7rem; font-weight:500;">${d.typeText}</span>
-                        </c:if>
+                        <c:if test="${not empty d.typeText}"><c:choose
+><c:when test="${d.typeText == 'Gold'}"><span class="dest-page-type dest-type-gold ms-1"><i class="bi bi-trophy-fill"></i> Gold</span
+></c:when><c:when test="${d.typeText == 'Silver'}"><span class="dest-page-type dest-type-silver ms-1"><i class="bi bi-award-fill"></i> Silver</span
+></c:when><c:when test="${d.typeText == 'Bronze'}"><span class="dest-page-type dest-type-bronze ms-1"><i class="bi bi-award"></i> Bronze</span
+></c:when><c:when test="${d.typeText == 'Basic'}"><span class="dest-page-type dest-type-basic ms-1"><i class="bi bi-patch-check"></i> Basic</span
+></c:when><c:otherwise><span class="dest-page-type ms-1">${d.typeText}</span
+></c:otherwise></c:choose></c:if>
                         <c:if test="${not d.showInMonitors}">
                             <i class="bi bi-eye-slash text-muted ms-1" title="Not shown in Monitor Display" style="font-size:0.78rem;"></i>
                         </c:if>

@@ -20,34 +20,18 @@
 
 <tiles:insert page="./pds/transfer/destination/data/javascript.jsp" />
 
-<form name="destinationDetailActionForm" method="GET"
-	action="<bean:message key="destination.basepath"/>/${destinationDetailActionForm.id}">
-
-	<html:form action="/transfer/destination/*">
-		<html:hidden property="status" />
-		<html:hidden property="dataStream" />
-		<html:hidden property="dataTime" />
-		<html:hidden property="disseminationStream" />
-		<html:hidden property="date" />
-
-		<c:forEach var="param"
-			items="${destinationDetailActionForm.displayTagsParamCollection}">
-			<input type="hidden" name="${param.name}" value="${param.value}" />
-		</c:forEach>
-
-		<tiles:importAttribute name="isDelete" ignore="true" />
-		<c:if test="${not empty isDelete}">
-			<tiles:insert page="./pds/transfer/destination/data/warning.jsp" />
-		</c:if>
-		<c:if test="${empty isDelete}">
-			<c:set var="desStatus" value="${destination.formattedStatus}" />
-			<c:set var="desStatusBase" value="${fn:contains(desStatus, '-') ? fn:substringBefore(desStatus, '-') : desStatus}"/>
-			<div class="dest-page-header mb-3">
+<tiles:importAttribute name="isDelete" ignore="true" />
+<c:if test="${empty isDelete}">
+	<c:set var="desStatus" value="${destination.formattedStatus}" />
+	<c:set var="desStatusBase" value="${fn:contains(desStatus, '-') ? fn:substringBefore(desStatus, '-') : desStatus}"/>
+	<div class="dest-page-header mb-3">
 				<div class="d-flex align-items-baseline gap-2 flex-wrap mb-1">
 					<span class="dest-page-name">${destination.name}</span>
 					<c:if test="${destination.id != destination.name}">
 						<code class="dest-page-id">${destination.id}</code>
 					</c:if>
+					<jsp:include page="/WEB-INF/jsp/pds/transfer/destination/destination_flag.jsp"/>
+					<jsp:include page="/WEB-INF/jsp/pds/transfer/destination/destination_type_badge.jsp"/>
 					<c:if test="${not destination.active}">
 						<i class="bi bi-pause-circle-fill text-warning" title="Destination is disabled" style="font-size:0.9rem;align-self:center;"></i>
 					</c:if>
@@ -79,33 +63,34 @@
 					<p class="dest-page-comment">${destination.comment}</p>
 				</c:if>
 			</div>
-			<table border=0>
-				<tr>
-					<td><tiles:insert
-							page="./pds/transfer/destination/data/info_table_1.jsp" /> <tiles:insert
-							page="./pds/transfer/destination/data/info_table_2.jsp" /></td>
-				</tr>
-				<tr>
-					<td><tiles:insert
-							page="./pds/transfer/destination/data/messages.jsp" /></td>
-				</tr>
-				<tr>
-					<td><tiles:insert
-							page="./pds/transfer/destination/data/filter_table.jsp" /></td>
-				</tr>
-				<tr>
-					<td valign="top">
-						<table border=0 width="100%">
-							<tr>
-								<td valign="top" colspan="3"><tiles:insert
-										page="./pds/transfer/destination/data/transfer_table.jsp" /></td>
-							</tr>
-							<tiles:insert
-								page="./pds/transfer/destination/data/hosts_and_users_tr.jsp" />
-						</table>
-					</td>
-				</tr>
-			</table>
+</c:if>
+
+<form name="destinationDetailActionForm" method="GET"
+	action="<bean:message key="destination.basepath"/>/${destinationDetailActionForm.id}">
+
+	<html:form action="/transfer/destination/*">
+		<html:hidden property="status" />
+		<html:hidden property="dataStream" />
+		<html:hidden property="dataTime" />
+		<html:hidden property="disseminationStream" />
+		<html:hidden property="date" />
+
+		<c:forEach var="param"
+			items="${destinationDetailActionForm.displayTagsParamCollection}">
+			<input type="hidden" name="${param.name}" value="${param.value}" />
+		</c:forEach>
+
+		<c:if test="${not empty isDelete}">
+			<tiles:insert page="./pds/transfer/destination/data/warning.jsp" />
+		</c:if>
+		<c:if test="${empty isDelete}">
+<tiles:insert page="./pds/transfer/destination/data/info_table_1.jsp" /><tiles:insert page="./pds/transfer/destination/data/info_table_2.jsp" />
+<tiles:insert page="./pds/transfer/destination/data/messages.jsp" />
+<tiles:insert page="./pds/transfer/destination/data/filter_table.jsp" />
+<table border=0 width="100%">
+<tr><td valign="top" colspan="3"><tiles:insert page="./pds/transfer/destination/data/transfer_table.jsp" /></td></tr>
+<tiles:insert page="./pds/transfer/destination/data/hosts_and_users_tr.jsp" />
+</table>
 		</c:if>
 
 		<script>
