@@ -46,6 +46,8 @@ th {
 <tiles:insert page="./pds/monitoring/reload.jsp" />
 
 <script>
+	var _pLayout = localStorage.getItem('productLayout') || 'split';
+
 	function setHrefForSendingEmail(anchor, bcc, subject, body) {
 		try {
 			anchor.href = 'https://outlook.office365.com/mail/deeplink/compose'
@@ -98,15 +100,74 @@ th {
 	        var activeIcon = t.rows[0].cells[columnIndex].querySelector('i.bi');
 	        if (activeIcon) { activeIcon.className = 'bi ' + (isAscending ? 'bi-arrow-up' : 'bi-arrow-down') + ' text-primary'; activeIcon.style.fontSize = '0.6rem'; }
 	    });
-	    // Redistribute rows evenly: first half to table[0], second half to table[1]
-	    var half = Math.ceil(rows.length / 2);
+	    // Redistribute rows based on current layout
 	    tables.forEach(function(t) { while (t.tBodies[0].rows.length) t.tBodies[0].deleteRow(0); });
-	    rows.forEach(function(row, i) {
-	        (i < half ? tables[0] : tables[tables.length > 1 ? 1 : 0]).tBodies[0].appendChild(row);
-	    });
+	    if (_pLayout === 'split' && tables.length > 1) {
+	        var half = Math.ceil(rows.length / 2);
+	        rows.forEach(function(row, i) {
+	            (i < half ? tables[0] : tables[1]).tBodies[0].appendChild(row);
+	        });
+	    } else {
+	        rows.forEach(function(row) { tables[0].tBodies[0].appendChild(row); });
+	    }
+	}
+	function _updateProductLayoutBtn() {
+	    var icon  = document.getElementById('btnProductLayoutIcon');
+	    var label = document.getElementById('btnProductLayoutLabel');
+	    var btn   = document.getElementById('btnProductLayout');
+	    if (!icon) return;
+	    var canSplit = !!document.getElementById('productTable2Wrap');
+	    if (_pLayout === 'split') {
+	        icon.className    = 'bi bi-layout-three-columns';
+	        label.textContent = 'Single';
+	        btn.disabled      = false;
+	    } else {
+	        icon.className    = 'bi bi-layout-sidebar-inset';
+	        label.textContent = 'Split';
+	        btn.disabled      = !canSplit;
+	    }
+	}
+	function toggleProductLayout() {
+	    var tables = document.querySelectorAll('.sortableTable');
+	    var wrap2  = document.getElementById('productTable2Wrap');
+	    if (_pLayout === 'split') {
+	        _pLayout = 'single';
+	        // Move all rows from table[1] into table[0]
+	        if (tables.length > 1) {
+	            var r2 = Array.prototype.slice.call(tables[1].tBodies[0].rows);
+	            r2.forEach(function(row) { tables[0].tBodies[0].appendChild(row); });
+	        }
+	        if (wrap2) wrap2.style.display = 'none';
+	    } else {
+	        _pLayout = 'split';
+	        if (wrap2) wrap2.style.display = '';
+	        // Redistribute rows evenly
+	        var allRows = [];
+	        tables.forEach(function(t) {
+	            allRows = allRows.concat(Array.prototype.slice.call(t.tBodies[0].rows));
+	        });
+	        var half = Math.ceil(allRows.length / 2);
+	        tables.forEach(function(t) { while (t.tBodies[0].rows.length) t.tBodies[0].deleteRow(0); });
+	        allRows.forEach(function(row, i) {
+	            (i < half ? tables[0] : (tables[1] || tables[0])).tBodies[0].appendChild(row);
+	        });
+	    }
+	    localStorage.setItem('productLayout', _pLayout);
+	    _updateProductLayoutBtn();
 	}
 	document.addEventListener("DOMContentLoaded", function () {
 		sortTable(2); // Sort by 'Type' column when the page loads
+		// Apply saved layout preference
+		if (_pLayout === 'single') {
+		    var tables = document.querySelectorAll('.sortableTable');
+		    var wrap2  = document.getElementById('productTable2Wrap');
+		    if (tables.length > 1) {
+		        var r2 = Array.prototype.slice.call(tables[1].tBodies[0].rows);
+		        r2.forEach(function(row) { tables[0].tBodies[0].appendChild(row); });
+		    }
+		    if (wrap2) wrap2.style.display = 'none';
+		}
+		_updateProductLayoutBtn();
 	});
 </script>
 
@@ -155,7 +216,7 @@ th {
 
 	<c:set var="arrival" value="${empty step ? 'Arrival' : 'Update'}"/>
 	<c:set var="totalSteps" value="${fn:length(productStepStatii)}"/>
-	<c:set var="splitIndex" value="${totalSteps % 2 == 0 ? totalSteps / 2 : (totalSteps / 2) + 1}"/>
+	<c:set var="splitIndex" value="${totalSteps % 2 == 0 ? totalSteps / 2 : (totalSteps + 1) / 2}"/>
 
 	<%-- Shared thead macro --%>
 	<div class="d-flex gap-2 align-items-start">
@@ -177,7 +238,7 @@ th {
 			<c:forEach var="stepStatus" items="${productStepStatii}" varStatus="loopStatus">
 				<c:if test="${loopStatus.index == splitIndex}">
 					</tbody></table></div>
-					<div style="flex:1; min-width:0;">
+				<div id="productTable2Wrap" style="flex:1; min-width:0;">
 					<table class="sortableTable table table-sm table-striped table-hover table-bordered align-middle" style="font-size:0.78rem; white-space:nowrap;">
 						<thead class="table-light">
 							<tr>

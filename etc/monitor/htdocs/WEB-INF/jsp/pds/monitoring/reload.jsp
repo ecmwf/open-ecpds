@@ -78,6 +78,15 @@
       <a href="#" class="date-pill mon-refresh-pill ${monSesForm.refreshPeriod == 600 ? 'active' : ''}" data-value="600">10m</a>
       <a href="#" class="date-pill mon-refresh-pill ${monSesForm.refreshPeriod == 1800 ? 'active' : ''}" data-value="1800">30m</a>
     </div>
+    <%-- Split/Single toggle (only on product detail page with enough rows to split) --%>
+    <c:if test="${productStatus.calculated && fn:length(productStepStatii) > 1}">
+      <span class="text-muted" style="font-size:0.75rem;">|</span>
+      <button id="btnProductLayout" type="button" class="btn btn-sm btn-outline-secondary"
+              onclick="toggleProductLayout()" title="Toggle between split and single table view">
+        <i class="bi bi-layout-three-columns" id="btnProductLayoutIcon"></i>
+        <span id="btnProductLayoutLabel">Single</span>
+      </button>
+    </c:if>
     <%-- Page selector (only on the main monitoring page, not product detail) --%>
     <c:if test="${not productStatus.calculated}">
       <span class="text-muted" style="font-size:0.75rem;">|</span>
