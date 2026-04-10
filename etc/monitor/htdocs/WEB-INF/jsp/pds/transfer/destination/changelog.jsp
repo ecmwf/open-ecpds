@@ -98,7 +98,8 @@
 $(document).ready(function() {
 	$('#changelogTable').DataTable({
 		order:       [[0, 'desc']],
-		pageLength:  10,
+		pageLength:  5,
+		lengthMenu:  [5, 10, 25, 50],
 		columnDefs:  [{ orderable: false, targets: 2 }]
 	});
 });

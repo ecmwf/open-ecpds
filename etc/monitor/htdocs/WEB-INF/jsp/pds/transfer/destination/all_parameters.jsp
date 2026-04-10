@@ -35,7 +35,7 @@ table.fields > tbody > tr > th {
 <c:set var="desStatus" value="${destination.formattedStatus}" />
 <c:set var="desStatusBase" value="${fn:contains(desStatus, '-') ? fn:substringBefore(desStatus, '-') : desStatus}"/>
 <div class="dest-page-header mb-3">
-	<div class="d-flex align-items-baseline gap-2 flex-wrap mb-1">
+	<div class="d-flex align-items-center gap-2 flex-wrap mb-1">
 		<span class="dest-page-name">${destination.name}</span>
 		<c:if test="${destination.id != destination.name}">
 			<code class="dest-page-id">${destination.id}</code>
@@ -68,9 +68,20 @@ table.fields > tbody > tr > th {
 		<c:if test="${not destination.showInMonitors}">
 			<i class="bi bi-eye-slash text-muted" title="Not shown in Monitor Display" style="font-size:0.85rem;"></i>
 		</c:if>
+		<c:if test="${not empty destination.filterName and destination.filterName ne 'none'}">
+			<i class="bi bi-file-zip text-muted" title="Data compression enabled (${destination.filterName})" style="font-size:0.85rem;"></i>
+		</c:if>
 	</div>
 	<c:if test="${not empty destination.comment}">
 		<p class="dest-page-comment">${destination.comment}</p>
+	</c:if>
+	<c:if test="${not empty destination.ecUserName}">
+		<p class="mb-0 small text-muted">
+			<i class="bi bi-person-fill me-1"></i><c:choose>
+				<c:when test="${not empty destination.userMail}"><a href="mailto:${destination.userMail}" class="text-muted">${destination.ecUserName}</a></c:when>
+				<c:otherwise>${destination.ecUserName}</c:otherwise>
+			</c:choose>
+		</p>
 	</c:if>
 </div>
 
@@ -174,10 +185,6 @@ table.fields > tbody > tr > th {
 
 	<tr><td colspan="2">&nbsp;</td></tr>
 
-	<tr>
-		<th>Owner <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Only for the record" tabindex="0"></i></th>
-		<td>${destination.ecUserName}</td>
-	</tr>
 	<tr>
 		<th>Mail Address <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Email address used when sending notifications" tabindex="0"></i></th>
 		<td><c:choose><c:when test="${empty destination.userMail}"><span class="text-muted fst-italic">none</span></c:when><c:otherwise>${destination.userMail}</c:otherwise></c:choose></td>

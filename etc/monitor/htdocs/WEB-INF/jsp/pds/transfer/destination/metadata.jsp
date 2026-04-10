@@ -1,10 +1,7 @@
 <%@ page session="true"%>
 
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content"%>
-<%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean"%>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
-<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
-<script>window._validIso=new Set(["AC","AD","AE","AF","AG","AI","AL","AM","AO","AQ","AR","AS","AT","AU","AW","AX","AZ","BA","BB","BD","BE","BF","BG","BH","BI","BJ","BL","BM","BN","BO","BQ","BR","BS","BT","BV","BW","BY","BZ","CA","CC","CD","CF","CG","CH","CI","CK","CL","CM","CN","CO","CP","CR","CU","CV","CW","CX","CY","CZ","DE","DG","DJ","DK","DM","DO","DZ","EA","EE","EG","EH","ER","ES","ET","EU","FI","FJ","FK","FM","FO","FR","GA","GB","GD","GE","GF","GG","GH","GI","GL","GM","GN","GP","GQ","GR","GS","GT","GU","GW","GY","HK","HM","HN","HR","HT","HU","IC","ID","IE","IL","IM","IN","IO","IQ","IR","IS","IT","JE","JM","JO","JP","KE","KG","KH","KI","KM","KN","KP","KR","KW","KY","KZ","LA","LB","LC","LI","LK","LR","LS","LT","LU","LV","LY","MA","MC","MD","ME","MF","MG","MH","MK","ML","MM","MN","MO","MP","MQ","MR","MS","MT","MU","MV","MW","MX","MY","MZ","NA","NC","NE","NF","NG","NI","NL","NO","NP","NR","NU","NZ","OM","PA","PE","PF","PG","PH","PK","PL","PM","PN","PR","PS","PT","PW","PY","QA","RE","RO","RS","RU","RW","SA","SB","SC","SD","SE","SG","SH","SI","SJ","SK","SL","SM","SN","SO","SR","SS","ST","SV","SX","SY","SZ","TA","TC","TD","TF","TG","TH","TJ","TK","TL","TM","TN","TO","TR","TT","TV","TW","TZ","UA","UG","UM","UN","US","UY","UZ","VA","VC","VE","VG","VI","VN","VU","WF","WS","XK","YE","YT","ZA","ZM","ZW"]);</script>
 
 <jsp:include page="/WEB-INF/jsp/pds/transfer/destination/destination_header.jsp"/>
 
@@ -17,18 +14,7 @@
 
 <c:if test="${metaDataSize != 0}">
 
-<div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
-    <span>
-        <a href="<bean:message key="destination.basepath"/>?destinationSearch=country=${destination.country.iso}&amp;destinationStatus=&amp;destinationType=">
-            <span class="fi fi-${fn:toLowerCase(destination.countryIso)}"
-                  title="See all destinations in ${destination.country.name}"
-                  style="font-size:1.4em;vertical-align:middle;border-radius:2px"></span>
-        </a>
-        <span class="ms-1">${destination.country.name}</span>
-    </span>
-    <c:if test="${not empty destination.ecUser.comment}">
-        <span class="text-muted"><i class="bi bi-person-fill me-1"></i><c:out value="${destination.ecUser.comment}"/></span>
-    </c:if>
+<div class="mb-3">
     <span class="badge bg-secondary rounded-pill">${metaDataSize} metadata file<c:if test="${metaDataSize != 1}">s</c:if></span>
 </div>
 

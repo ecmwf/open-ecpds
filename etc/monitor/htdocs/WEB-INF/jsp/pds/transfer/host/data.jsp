@@ -113,18 +113,32 @@ table.fields > tbody > tr > th {
 		</c:if>
 		<c:if test="${empty isDelete}">
 			<div class="dest-page-header mb-3">
-				<div class="d-flex align-items-baseline gap-2 flex-wrap mb-1">
+				<div class="d-flex align-items-center gap-2 flex-wrap mb-1">
 					<span class="dest-page-name">${host.nickName}</span>
 					<c:if test="${host.name != host.nickName}">
 						<code class="dest-page-id">${host.name}</code>
 					</c:if>
 					<c:if test="${not host.active}">
-						<i class="bi bi-pause-circle-fill text-warning" title="Host is disabled" style="font-size:0.9rem;align-self:center;"></i>
+						<i class="bi bi-pause-circle-fill text-warning" title="Host is disabled" style="font-size:0.9rem;"></i>
 					</c:if>
 					<span class="badge bg-secondary fs-status">${host.type}</span>
+					<c:if test="${not empty host.transferMethodName}">
+						<span class="badge bg-info text-dark fs-status"><i class="bi bi-hdd-network me-1"></i>${host.transferMethodName}</span>
+					</c:if>
+					<c:if test="${not empty host.filterName and host.filterName ne 'none'}">
+						<i class="bi bi-file-zip text-muted" title="Data compression enabled (${host.filterName})" style="font-size:0.85rem;"></i>
+					</c:if>
 				</div>
 				<c:if test="${not empty host.comment}">
 					<p class="dest-page-comment">${host.comment}</p>
+				</c:if>
+				<c:if test="${not empty host.ECUserName}">
+					<p class="mb-0 small text-muted">
+						<i class="bi bi-person-fill me-1"></i><c:choose>
+							<c:when test="${not empty host.userMail}"><a href="mailto:${host.userMail}" class="text-muted">${host.ECUserName}</a></c:when>
+							<c:otherwise>${host.ECUserName}</c:otherwise>
+						</c:choose>
+					</p>
 				</c:if>
 			</div>
 			<table class="fields">
@@ -136,32 +150,23 @@ table.fields > tbody > tr > th {
 					<td>${host.networkCode}:${host.networkName}</td>
 				</tr>
 				<tr>
-					<th>Owner</th>
-					<td>${host.ecUser.comment}</td>
 					<th>Login</th>
 					<td>${host.login}</td>
-				</tr>
-				<tr>
 					<th>Transfer Group</th>
 					<td><auth:link basePathKey="transfergroup.basepath"
 							href="/${host.transferGroupName}"
 							alternativeText="${host.transferGroupName}">${host.transferGroupName}</auth:link></td>
+				</tr>
+				<tr>
 					<th>Passwd</th>
 					<td>*********</td>
-				</tr>
-
-				<tr>
 					<th>Max Connections</th>
 					<td>${host.maxConnections}</td>
-					<th>Filter Name</th>
-					<td>${host.filterName}</td>
 				</tr>
-
 				<tr>
-					<th>Transfer Method</th>
-					<td colspan="3"><auth:link basePathKey="method.basepath"
-							href="/${host.transferMethodName}"
-							alternativeText="${host.transferMethodName}">${host.transferMethodName}</auth:link></td>
+					<th>Filter Name</th>
+					<td colspan="3">${host.filterName}</td>
+				</tr>
 
 				<tr>
 					<td colspan="4">&nbsp;</td>
@@ -267,7 +272,26 @@ table.fields > tbody > tr > th {
 								<div class="progress-terminal">
 									<div class="progress-terminal-hdr">
 										<i class="bi bi-activity text-success"></i> Activity Log
-										<button class="btn btn-sm btn-outline-secondary border-secondary text-white-50 py-0 px-2 ms-auto"
+										<button id="refreshLogBtn"
+												class="btn btn-sm btn-outline-secondary border-secondary text-white-50 py-0 px-2 ms-auto"
+												style="font-size:0.7rem;"
+												onclick="(function(btn){
+													btn.disabled=true;
+													var orig=btn.innerHTML;
+													btn.innerHTML='<span class=\'spinner-border spinner-border-sm\' role=\'status\'></span> Refreshing...';
+													fetch(window.location.href)
+														.then(function(r){return r.text();})
+														.then(function(html){
+															var doc=new DOMParser().parseFromString(html,'text/html');
+															var el=doc.getElementById('progressBody');
+															if(el) document.getElementById('progressBody').innerHTML=el.innerHTML;
+															btn.disabled=false; btn.innerHTML=orig;
+														})
+														.catch(function(){ btn.disabled=false; btn.innerHTML=orig; });
+												})(this)">
+											<i class="bi bi-arrow-clockwise"></i> Refresh
+										</button>
+										<button class="btn btn-sm btn-outline-secondary border-secondary text-white-50 py-0 px-2"
 												style="font-size:0.7rem;"
 												onclick="(function(btn){
 													var text = document.getElementById('progressBody').innerText;

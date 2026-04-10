@@ -7,25 +7,6 @@
 <table class="fields" style="width: 700px;" border=0>
 
 	<tr>
-		<auth:if basePathKey="transferhistory.basepath" paths="/">
-			<auth:then>
-				<td>Notify <c:if test="${destination.mailOnUpdate}">  &nbsp; <content:icon
-							key="icon.mail1" altKey="ecpds.destination.mailOnUpdate"
-							titleKey="ecpds.destination.mailOnUpdate" writeFullTag="true" />
-					</c:if> <c:if test="${destination.mailOnStart}"> &nbsp; <content:icon
-								key="icon.mail2" altKey="ecpds.destination.mailOnStart"
-								titleKey="ecpds.destination.mailOnStart" writeFullTag="true" />
-					</c:if> <c:if test="${destination.mailOnEnd}"> &nbsp; <content:icon
-						key="icon.mail2" altKey="ecpds.destination.mailOnEnd"
-						titleKey="ecpds.destination.mailOnEnd" writeFullTag="true" />
-				</c:if> <c:if test="${destination.mailOnError}"> &nbsp; <content:icon
-						key="icon.mail3" altKey="ecpds.destination.mailOnError"
-						titleKey="ecpds.destination.mailOnError" writeFullTag="true" />
-				</c:if> to
-				</td>
-				<td><a href="mailto:${destination.userMail}">${destination.userMail}</a></td>
-			</auth:then>
-		</auth:if>
 
 		<c:if test="${not empty ecpdsCanHandleQueue}">
 			<td class="buttons" style="vertical-align: middle;">

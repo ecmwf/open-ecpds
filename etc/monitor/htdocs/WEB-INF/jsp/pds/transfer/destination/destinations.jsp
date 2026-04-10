@@ -283,19 +283,19 @@
                              style="font-size:1.1em;display:block"></span>
                     </td>
                     <td>
-                        <a href="/do/transfer/destination/${d.id}"
+                        <span style="white-space:nowrap"><a href="/do/transfer/destination/${d.id}"
                            class="fw-semibold text-decoration-none dest-list-link"
-                           title="${d.comment}">${d.id}</a>
-                        <c:if test="${not empty d.typeText}"><c:choose
+                           title="${d.comment}">${d.id}</a><c:if test="${not empty d.typeText}"><c:choose
 ><c:when test="${d.typeText == 'Gold'}"><span class="dest-page-type dest-type-gold ms-1"><i class="bi bi-trophy-fill"></i> Gold</span
 ></c:when><c:when test="${d.typeText == 'Silver'}"><span class="dest-page-type dest-type-silver ms-1"><i class="bi bi-award-fill"></i> Silver</span
 ></c:when><c:when test="${d.typeText == 'Bronze'}"><span class="dest-page-type dest-type-bronze ms-1"><i class="bi bi-award"></i> Bronze</span
 ></c:when><c:when test="${d.typeText == 'Basic'}"><span class="dest-page-type dest-type-basic ms-1"><i class="bi bi-patch-check"></i> Basic</span
 ></c:when><c:otherwise><span class="dest-page-type ms-1">${d.typeText}</span
-></c:otherwise></c:choose></c:if>
-                        <c:if test="${not d.showInMonitors}">
+></c:otherwise></c:choose></c:if><c:if test="${not d.showInMonitors}">
                             <i class="bi bi-eye-slash text-muted ms-1" title="Not shown in Monitor Display" style="font-size:0.78rem;"></i>
-                        </c:if>
+                        </c:if><c:if test="${not empty d.filterName and d.filterName ne 'none'}">
+                            <i class="bi bi-file-zip text-muted ms-1" title="Data compression enabled (${d.filterName})" style="font-size:0.78rem;"></i>
+                        </c:if></span>
                         <c:if test="${not empty d.comment}">
                             <div class="text-muted" style="font-size:0.78rem; line-height:1.3; margin-top:1px;">${d.comment}</div>
                         </c:if>

@@ -2,16 +2,20 @@
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content"%>
 <%@ taglib uri="/WEB-INF/tld/struts-tiles.tld" prefix="tiles"%>
 
+<%-- Preserve fromDestination and destinationName params across date navigation --%>
+<c:set var="_fdParam" value="${not empty param['fromDestination'] ? '&fromDestination='.concat(param['fromDestination']) : ''}"/>
+<c:set var="_dnParam" value="${not empty param['destinationName'] ? '&destinationName='.concat(param['destinationName']) : ''}"/>
+
 <div class="date-strip">
     <c:if test="${not empty dateOptions}">
         <div class="date-strip-pills">
             <c:forEach items="${dateOptions}" var="dateOption">
                 <c:choose>
                     <c:when test="${dateOption == selectedDate}">
-                        <a class="date-pill active" href="?mode=${param['mode']}&date=${dateOption}">${dateOption}</a>
+                        <a class="date-pill active" href="?mode=${param['mode']}&date=${dateOption}${_fdParam}${_dnParam}">${dateOption}</a>
                     </c:when>
                     <c:otherwise>
-                        <a class="date-pill" href="?mode=${param['mode']}&date=${dateOption}">${dateOption}</a>
+                        <a class="date-pill" href="?mode=${param['mode']}&date=${dateOption}${_fdParam}${_dnParam}">${dateOption}</a>
                     </c:otherwise>
                 </c:choose>
             </c:forEach>
@@ -28,12 +32,12 @@
         <div class="date-strip-chart-toggle">
             <c:choose>
                 <c:when test="${param['mode'] == 'chart'}">
-                    <a href="?mode=table&date=${selectedDate}" class="btn btn-sm btn-outline-secondary" title="Show as table">
+                    <a href="?mode=table&date=${selectedDate}${_fdParam}${_dnParam}" class="btn btn-sm btn-outline-secondary" title="Show as table">
                         <i class="bi bi-table"></i>
                     </a>
                 </c:when>
                 <c:otherwise>
-                    <a href="?mode=chart&date=${selectedDate}" class="btn btn-sm btn-outline-secondary" title="Show as chart">
+                    <a href="?mode=chart&date=${selectedDate}${_fdParam}${_dnParam}" class="btn btn-sm btn-outline-secondary" title="Show as chart">
                         <i class="bi bi-bar-chart-line"></i>
                     </a>
                 </c:otherwise>
