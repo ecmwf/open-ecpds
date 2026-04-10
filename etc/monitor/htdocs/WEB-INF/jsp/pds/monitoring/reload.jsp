@@ -48,12 +48,20 @@
 
   <%-- Product status grid --%>
   <div id="prodHeaderGrid" class="prod-header" style="grid-template-columns: repeat(${fn:length(reqData.productWindowHeader)}, 1fr);">
-    <c:forEach var="pro" items="${reqData.productWindowHeader}">
+    <c:forEach var="pro" items="${reqData.productWindowHeader}" varStatus="proIdx">
       <c:set var="isSelected" value="${not empty productStatus && productStatus.product==pro.product && productStatus.time==pro.time}"/>
       <c:set var="dotClass" value="mon-dot mon-dot-${pro.generationStatus lt 0 ? 'n1' : pro.generationStatus}"/>
       <a href="/do/monitoring/summary/${pro.product}/${pro.time}"
          class="prod-pill ${isSelected ? 'active' : ''}"
-         title="Scheduled for ${pro.scheduledTime} - Status: ${pro.generationStatusFormattedCode}">
+         title="Scheduled for ${pro.scheduledTime} - Status: ${pro.generationStatusFormattedCode}"
+         data-sort-natural="${proIdx.index}"
+         data-sort-product="${pro.product}"
+         data-sort-time="${pro.time}"
+         data-sort-ptime="${not empty pro.productTime ? pro.productTime.time : 0}"
+         data-sort-scheduled="${not empty pro.scheduledTime ? pro.scheduledTime.time : 0}"
+         data-sort-lastupdate="${not empty pro.lastUpdate ? pro.lastUpdate.time : 0}"
+         data-sort-arrival="${not empty pro.arrivalTime ? pro.arrivalTime.time : 0}"
+         data-sort-status="${pro.generationStatus}">
         <span class="${dotClass}"></span>${pro.time}-${pro.product}
       </a>
     </c:forEach>
@@ -193,6 +201,30 @@ document.querySelectorAll('.mon-refresh-pill').forEach(function(pill) {
     document.getElementById('headerColPanel').style.display = 'none';
   };
 
+  function _sortPills(key) {
+    var grid = document.getElementById('prodHeaderGrid');
+    if (!grid) return;
+    var pills = Array.prototype.slice.call(grid.querySelectorAll('.prod-pill'));
+    var isStr = (key === 'product');
+    pills.sort(function(a, b) {
+      var av = a.getAttribute('data-sort-' + key);
+      var bv = b.getAttribute('data-sort-' + key);
+      var diff = isStr
+        ? (av || '').localeCompare(bv || '')
+        : ((parseFloat(av) || 0) - (parseFloat(bv) || 0));
+      if (diff !== 0) return diff;
+      return (parseInt(a.getAttribute('data-sort-natural')) || 0)
+           - (parseInt(b.getAttribute('data-sort-natural')) || 0);
+    });
+    pills.forEach(function(p) { grid.appendChild(p); });
+    document.querySelectorAll('#headerSortChips .hdr-chip').forEach(function(c) {
+      c.classList.toggle('selected', c.getAttribute('data-hsort') === key);
+    });
+    localStorage.setItem('monHeaderSort', key);
+  }
+
+  window.setHeaderSort = function(key) { _sortPills(key); };
+
   window.toggleHeaderColPanel = function() {
     var panel = document.getElementById('headerColPanel');
     var btn = document.getElementById('btnHeaderCols');
@@ -216,6 +248,7 @@ document.querySelectorAll('.mon-refresh-pill').forEach(function(pill) {
 
   document.addEventListener('DOMContentLoaded', function() {
     _applyHeaderCols(localStorage.getItem('monHeaderCols') || 'all');
+    _sortPills(localStorage.getItem('monHeaderSort') || 'natural');
   });
 
   window.addEventListener('resize', function() {

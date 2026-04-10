@@ -429,6 +429,20 @@ function createAndSubmitDynamicForm(action,bcc,subject,body) {
         <span class="hdr-chip" data-hcol="20"    onclick="setHeaderCols(20)">20</span>
         <span class="hdr-chip" data-hcol="all"   onclick="setHeaderCols('all')">All</span>
       </div>
+      <div style="border-top:1px solid #dee2e6; margin:8px 0 4px; padding-top:8px;">
+        <div class="mb-1" style="font-size:0.72rem; color:#6c757d; font-weight:700; text-transform:uppercase; letter-spacing:.05em;">
+          <i class="bi bi-sort-down-alt me-1"></i>Sort by
+        </div>
+        <div class="d-flex flex-wrap gap-1" id="headerSortChips">
+          <span class="hdr-chip" data-hsort="natural"    onclick="setHeaderSort('natural')">Natural</span>
+          <span class="hdr-chip" data-hsort="product"    onclick="setHeaderSort('product')">Name</span>
+          <span class="hdr-chip" data-hsort="time"       onclick="setHeaderSort('time')">Time</span>
+          <span class="hdr-chip" data-hsort="scheduled"  onclick="setHeaderSort('scheduled')">Scheduled</span>
+          <span class="hdr-chip" data-hsort="lastupdate" onclick="setHeaderSort('lastupdate')">Last update</span>
+          <span class="hdr-chip" data-hsort="arrival"    onclick="setHeaderSort('arrival')">Arrival</span>
+          <span class="hdr-chip" data-hsort="status"     onclick="setHeaderSort('status')">Status</span>
+        </div>
+      </div>
     </div>
   </div>
 
