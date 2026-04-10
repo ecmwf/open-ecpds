@@ -3,7 +3,7 @@
 
 <c:forEach var="product" items="${reqData.productWindow}"
 	varStatus="status">
-	<td colspan="2" style="white-space: nowrap"><a
+	<td colspan="2" data-prod-idx="${status.index}" style="white-space: nowrap"><a
 		title="Product for <content:content name="product.productTime" ignoreNull="true" defaultValue="*" dateFormatKey="date.format.medium"/>"
 		href="/do/monitoring/summary/${product.product}/${product.time}">
 			${product.product}<br> <content:content

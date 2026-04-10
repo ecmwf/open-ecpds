@@ -5,9 +5,10 @@
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content"%>
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth" %>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
+<%@ taglib uri="/WEB-INF/tld/fn.tld" prefix="fn"%>
 
 <style>
-/*�� Table layout�� */
+/* Table layout */
 table.pagelevel {
     border-collapse: collapse;
     font-size: 0.78rem;
@@ -68,7 +69,7 @@ function createAndSubmitDynamicForm(action,bcc,subject,body) {
         }
 }
 
-/* ── Horizontal / Vertical layout toggle ──
+/* -- Horizontal / Vertical layout toggle --
    Horizontal: destinations split across multiple side-by-side sub-tables (default)
    Vertical  : all destinations in one single continuous table (same columns, no side-by-side split)
 */
@@ -135,6 +136,7 @@ function createAndSubmitDynamicForm(action,bcc,subject,body) {
         }
         /* Re-attach sort handlers to newly built table */
         if (window.attachSortHandlers) window.attachSortHandlers();
+        if (window.applyProductLimit) window.applyProductLimit();
     };
 
     document.addEventListener('DOMContentLoaded', function() {
@@ -144,7 +146,7 @@ function createAndSubmitDynamicForm(action,bcc,subject,body) {
     });
 })();
 
-/* ── Column sort ── */
+/* -- Column sort -- */
 (function() {
     var sortCol = -1;
     var sortAsc = true;
@@ -154,19 +156,19 @@ function createAndSubmitDynamicForm(action,bcc,subject,body) {
         var cell = row.cells[col];
         if (!cell) return '';
         switch (col) {
-            case 0: /* Host — text */
-            case 1: /* Dest — text */
+            case 0: /* Host ? text */
+            case 1: /* Dest ? text */
                 return (cell.querySelector('a') || cell).innerText.trim().toLowerCase();
-            case 2: /* Outs — numeric; badge = count, check icon = 0 */
+            case 2: /* Outs ? numeric; badge = count, check icon = 0 */
                 var badge = cell.querySelector('.badge');
                 return badge ? (parseInt(badge.innerText, 10) || 0) : 0;
-            case 3: /* Q'd — numeric */
+            case 3: /* Q'd ? numeric */
                 return parseInt(cell.innerText.trim(), 10) || 0;
-            case 4: /* Last Tr — use <a title> for full datetime, "None" sorts last */
-            case 5: /* Last Er — same */
+            case 4: /* Last Tr ? use <a title> for full datetime, "None" sorts last */
+            case 5: /* Last Er ? same */
                 var a = cell.querySelector('a');
                 return a ? (a.title || 'ZZZ') : 'ZZZ';
-            case 6: /* OV — extract numeric level from mon-dot class */
+            case 6: /* OV ? extract numeric level from mon-dot class */
                 var dot = cell.querySelector('.mon-dot');
                 if (!dot) return 99;
                 var mn = dot.className.match(/mon-dot-n(\d+)/);
@@ -205,7 +207,7 @@ function createAndSubmitDynamicForm(action,bcc,subject,body) {
         /* Redistribute rows back into their sub-tables, maintaining split sizes */
         var idx = 0;
         tables.forEach(function(tbl, ti) {
-            /* Remove existing data rows — use r.remove() so it works whether the row's
+            /* Remove existing data rows ? use r.remove() so it works whether the row's
                parent is <table> (DOM-built, single mode) or implicit <tbody> (HTML-parsed, split mode) */
             Array.from(tbl.rows).forEach(function(r) {
                 if (!r.classList.contains('titles')) r.remove();
@@ -244,13 +246,111 @@ function createAndSubmitDynamicForm(action,bcc,subject,body) {
         document.querySelectorAll('table.pagelevel tr.titles').forEach(function(titleRow) {
             Array.from(titleRow.cells).slice(0, DEST_COLS).forEach(function(td, i) {
                 td.style.cursor = 'pointer';
-                td.title = (td.getAttribute('title') || '') + (td.getAttribute('title') ? ' — ' : '') + 'Click to sort';
+                td.title = (td.getAttribute('title') || '') + (td.getAttribute('title') ? ' ? ' : '') + 'Click to sort';
                 td.onclick = function() { sortTable(i); };
             });
         });
     };
 
     document.addEventListener('DOMContentLoaded', window.attachSortHandlers);
+})();
+
+/* -- Products per line -- */
+(function() {
+    var _saved = localStorage.getItem('monProductsLimit') || 'all';
+
+    function _computeAutoLimit() {
+        var vw = window.innerWidth;
+        /* Measure fixed dest columns from first data row */
+        var fixedW = 320, pairW = 28;
+        var row = document.querySelector('table.pagelevel tr:not(.titles)');
+        if (row) {
+            var f = 0;
+            Array.from(row.cells).forEach(function(c) {
+                if (!c.hasAttribute('data-prod-idx')) f += c.offsetWidth || 0;
+            });
+            if (f > 0) fixedW = f;
+            var p0 = row.querySelectorAll('[data-prod-idx="0"]');
+            var pw = 0;
+            p0.forEach(function(c) { pw += c.offsetWidth || 0; });
+            if (pw > 0) pairW = pw;
+        }
+        return Math.max(1, Math.floor((vw - fixedW - 20) / pairW));
+    }
+
+    window.applyProductLimit = function() {
+        var val = localStorage.getItem('monProductsLimit') || 'all';
+        var limit;
+        if (val === 'auto') {
+            limit = _computeAutoLimit();
+        } else if (val === 'all') {
+            limit = 9999;
+        } else {
+            limit = parseInt(val, 10) || 9999;
+        }
+        document.querySelectorAll('[data-prod-idx]').forEach(function(el) {
+            var idx = parseInt(el.getAttribute('data-prod-idx'), 10);
+            el.style.display = (idx < limit) ? '' : 'none';
+        });
+        /* Update button label */
+        var btn = document.getElementById('btnProductsLimit');
+        if (btn) {
+            var label = (val === 'auto') ? 'Auto' : (val === 'all') ? 'All' : val;
+            btn.innerHTML = '<i class="bi bi-table"></i> Products: ' + label;
+        }
+        /* Highlight active chip */
+        document.querySelectorAll('#productLimitPanel [data-plimit]').forEach(function(chip) {
+            chip.classList.toggle('selected', chip.getAttribute('data-plimit') === val);
+        });
+    };
+
+    window.setProductLimit = function(val) {
+        localStorage.setItem('monProductsLimit', String(val));
+        window.applyProductLimit();
+        document.getElementById('productLimitPanel').style.display = 'none';
+    };
+
+    window.toggleProductLimitPanel = function() {
+        var panel = document.getElementById('productLimitPanel');
+        var btn = document.getElementById('btnProductsLimit');
+        if (panel.style.display === 'block') { panel.style.display = 'none'; return; }
+        if (panel.parentElement !== document.body) { document.body.appendChild(panel); }
+        panel.style.position = 'absolute';
+        panel.style.zIndex = '9999';
+        panel.style.visibility = 'hidden';
+        panel.style.display = 'block';
+        var pw = panel.offsetWidth;
+        panel.style.display = 'none';
+        panel.style.visibility = '';
+        var r = btn.getBoundingClientRect();
+        var sy = window.pageYOffset || document.documentElement.scrollTop;
+        var sx = window.pageXOffset || document.documentElement.scrollLeft;
+        panel.style.top  = (r.bottom + sy + 4) + 'px';
+        panel.style.left = Math.max(sx, r.right + sx - pw) + 'px';
+        panel.style.right = 'auto';
+        panel.style.display = 'block';
+    };
+
+    document.addEventListener('DOMContentLoaded', function() {
+        window.applyProductLimit();
+    });
+
+    /* Re-apply on resize when in auto mode */
+    window.addEventListener('resize', function() {
+        if ((localStorage.getItem('monProductsLimit') || 'all') === 'auto') {
+            window.applyProductLimit();
+        }
+    });
+
+    /* Close panel on outside click */
+    document.addEventListener('click', function(e) {
+        var panel = document.getElementById('productLimitPanel');
+        var btn   = document.getElementById('btnProductsLimit');
+        if (panel && panel.style.display === 'block'
+                && !panel.contains(e.target) && btn && !btn.contains(e.target)) {
+            panel.style.display = 'none';
+        }
+    });
 })();
 </script>
 
@@ -307,11 +407,71 @@ function createAndSubmitDynamicForm(action,bcc,subject,body) {
 
   <span class="text-muted px-1">|</span>
 
+  <div style="position:relative; display:inline-block;">
+    <button id="btnHeaderCols" class="btn btn-sm btn-outline-secondary"
+            onclick="toggleHeaderColPanel()"
+            title="Set number of product columns per row in the header">
+      <i class="bi bi-grid"></i> Cols
+    </button>
+    <div id="headerColPanel" style="position:absolute; z-index:9999; min-width:260px;
+                                    background:#fff; border:1px solid #dee2e6; border-radius:8px;
+                                    box-shadow:0 4px 16px rgba(0,0,0,0.12); padding:12px 14px 10px; display:none;">
+      <div class="mb-2" style="font-size:0.78rem; color:#495057;">
+        <i class="bi bi-info-circle me-1 text-muted"></i>
+        Product pills per row. <strong>Auto</strong> fits your screen width.
+      </div>
+      <div class="d-flex flex-wrap gap-1 mb-1" id="headerColChips">
+        <span class="hdr-chip" data-hcol="auto"  onclick="setHeaderCols('auto')">Auto</span>
+        <span class="hdr-chip" data-hcol="5"     onclick="setHeaderCols(5)">5</span>
+        <span class="hdr-chip" data-hcol="8"     onclick="setHeaderCols(8)">8</span>
+        <span class="hdr-chip" data-hcol="10"    onclick="setHeaderCols(10)">10</span>
+        <span class="hdr-chip" data-hcol="15"    onclick="setHeaderCols(15)">15</span>
+        <span class="hdr-chip" data-hcol="20"    onclick="setHeaderCols(20)">20</span>
+        <span class="hdr-chip" data-hcol="all"   onclick="setHeaderCols('all')">All</span>
+      </div>
+    </div>
+  </div>
+
+  <span class="text-muted px-1">|</span>
+
   <button id="btnLayoutToggle" class="btn btn-sm btn-outline-secondary"
           onclick="toggleMonitorLayout()"
           title="Single: all rows in one table. Split: split into side-by-side tables.">
     <i class="bi bi-layout-three-columns"></i> Single
   </button>
+
+  <div style="position:relative; display:inline-block;">
+    <button id="btnProductsLimit" class="btn btn-sm btn-outline-secondary"
+            onclick="toggleProductLimitPanel()"
+            title="Set maximum number of product columns shown per line">
+      <i class="bi bi-table"></i> Products
+    </button>
+    <div id="productLimitPanel" class="filter-panel" style="min-width:260px;">
+      <div class="mb-2" style="font-size:0.78rem; color:#495057;">
+        <i class="bi bi-info-circle me-1 text-muted"></i>
+        Max product columns per line. <strong>Auto</strong> fits your screen width.
+      </div>
+      <div class="d-flex flex-wrap gap-1 mb-2">
+        <div class="filter-chip" data-plimit="auto" onclick="setProductLimit('auto')">Auto</div>
+        <c:if test="${fn:length(reqData.productWindow) >= 3}">
+          <div class="filter-chip" data-plimit="3"  onclick="setProductLimit(3)">3</div>
+        </c:if>
+        <c:if test="${fn:length(reqData.productWindow) >= 5}">
+          <div class="filter-chip" data-plimit="5"  onclick="setProductLimit(5)">5</div>
+        </c:if>
+        <c:if test="${fn:length(reqData.productWindow) >= 8}">
+          <div class="filter-chip" data-plimit="8"  onclick="setProductLimit(8)">8</div>
+        </c:if>
+        <c:if test="${fn:length(reqData.productWindow) >= 10}">
+          <div class="filter-chip" data-plimit="10" onclick="setProductLimit(10)">10</div>
+        </c:if>
+        <c:if test="${fn:length(reqData.productWindow) >= 15}">
+          <div class="filter-chip" data-plimit="15" onclick="setProductLimit(15)">15</div>
+        </c:if>
+        <div class="filter-chip" data-plimit="all"  onclick="setProductLimit('all')">All (${fn:length(reqData.productWindow)})</div>
+      </div>
+    </div>
+  </div>
 
 </div>
 
@@ -391,7 +551,7 @@ function createAndSubmitDynamicForm(action,bcc,subject,body) {
 
 					<!-- Per Product Info -->
 
-					<c:forEach var="productStatus" items="${reqData.productWindow}">
+					<c:forEach var="productStatus" items="${reqData.productWindow}" varStatus="pIdx">
 
 						<c:set var="key"
 							value="${d.name}@${productStatus.product}@${productStatus.time}" />
@@ -403,21 +563,21 @@ function createAndSubmitDynamicForm(action,bcc,subject,body) {
 							<c:set var="tranStatus" value="${status.realTimeTransferStatus}" />
 
 							<c:if test="${genStatus == '1'}">
-							<td><a class="mon-letter mon-letter-s${arrStatus lt 0 ? '0' : arrStatus}"
+							<td data-prod-idx="${pIdx.index}"><a class="mon-letter mon-letter-s${arrStatus lt 0 ? '0' : arrStatus}"
 								href="/do/monitoring/arrival/${d.name}/${productStatus.product}/${productStatus.time}?date=<content:content name="productStatus.productTime" ignoreNull="true" defaultValue="" dateFormatKey="date.format.iso"/>"
 								title="${d.name}: ${productStatus.time}-${productStatus.product} Arrival">a</a></td>
-							<td><a class="mon-letter mon-letter-s${tranStatus lt 0 ? '0' : tranStatus}"
+							<td data-prod-idx="${pIdx.index}"><a class="mon-letter mon-letter-s${tranStatus lt 0 ? '0' : tranStatus}"
 								href="/do/monitoring/transfer/${d.name}/${productStatus.product}/${productStatus.time}?date=<content:content name="productStatus.productTime" ignoreNull="true" defaultValue="" dateFormatKey="date.format.iso"/>"
 								title="${d.name}: ${productStatus.time}-${productStatus.product} Transfer">t</a></td>
 							</c:if>
 							<c:if test="${genStatus != '1'}">
-								<td>&nbsp;</td>
-								<td>&nbsp;</td>
+								<td data-prod-idx="${pIdx.index}">&nbsp;</td>
+								<td data-prod-idx="${pIdx.index}">&nbsp;</td>
 							</c:if>
 						</c:if>
 						<c:if test="${empty status}">
-							<td>&nbsp;</td>
-							<td>&nbsp;</td>
+							<td data-prod-idx="${pIdx.index}">&nbsp;</td>
+							<td data-prod-idx="${pIdx.index}">&nbsp;</td>
 						</c:if>
 
 					</c:forEach>

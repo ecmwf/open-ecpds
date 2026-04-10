@@ -24,7 +24,7 @@
   text-decoration: none;
 }
 .filter-panel {
-  position: absolute;
+  position: fixed;
   z-index: 1050;
   min-width: 500px;
   background: #fff;
@@ -46,7 +46,7 @@
 
 <%-- Trigger button --%>
 <div style="position:relative; display:inline-block;">
-  <button class="btn btn-sm ${not empty reqData.filtered ? 'btn-warning' : 'btn-outline-secondary'}"
+  <button id="btnShowHide" class="btn btn-sm ${not empty reqData.filtered ? 'btn-warning' : 'btn-outline-secondary'}"
           onclick="toggleFilterDialogue()" title="${not empty reqData.filtered ? 'Some items hidden: '.concat(reqData.filtered) : 'Show or hide destinations by status, type or network'}">
     <i class="bi bi-eye-fill me-1"></i>Show/Hide
     <c:if test="${not empty reqData.filtered}">
@@ -133,7 +133,7 @@
       var type = bits[0];
       for (var j = 1; j < bits.length; j++) {
         if (bits[j] !== "") {
-          // This value is in the exclusion list → mark as NOT selected (hidden)
+          // This value is in the exclusion list -> mark as NOT selected (hidden)
           var el = document.getElementById("filter_" + type + "_" + bits[j]);
           if (el) el.classList.remove('selected');
         }
@@ -160,7 +160,7 @@
 
   function applyFilter() {
     var dic = { type: "", status: "", network: "" };
-    // Collect the UNSELECTED chips → these are excluded by the backend
+    // Collect the UNSELECTED chips -> these are excluded by the backend
     document.querySelectorAll('#filter [id^="filter_"]:not(.selected)').forEach(function(el) {
       var bits = el.id.split("_");
       dic[bits[1]] = dic[bits[1]] ? dic[bits[1]] + "|" + bits[2] : bits[2];
@@ -172,7 +172,18 @@
 
   function toggleFilterDialogue() {
     var panel = document.getElementById('filter');
-    panel.style.display = (panel.style.display === 'block') ? 'none' : 'block';
+    var btn = document.getElementById('btnShowHide');
+    if (panel.style.display === 'block') { panel.style.display = 'none'; return; }
+    if (panel.parentElement !== document.body) { document.body.appendChild(panel); }
+    panel.style.position = 'absolute';
+    panel.style.zIndex = '9999';
+    var r = btn.getBoundingClientRect();
+    var sy = window.pageYOffset || document.documentElement.scrollTop;
+    var sx = window.pageXOffset || document.documentElement.scrollLeft;
+    panel.style.top   = (r.bottom + sy + 4) + 'px';
+    panel.style.left  = (r.left + sx) + 'px';
+    panel.style.right = 'auto';
+    panel.style.display = 'block';
   }
 
   function setDisseminationType() {
@@ -196,13 +207,13 @@
     applyFilter();
   }
 
-  // Apply saved URL params (exclusion list → unselect those chips)
+  // Apply saved URL params (exclusion list -> unselect those chips)
   setFromParameters(['status|${monSesForm.status}', 'type|${monSesForm.type}', 'network|${monSesForm.network}']);
 
   // Close panel on outside click
   document.addEventListener('click', function(e) {
     var panel = document.getElementById('filter');
-    var btn = panel && panel.previousElementSibling;
+    var btn = document.getElementById('btnShowHide');
     if (panel && panel.style.display === 'block' && !panel.contains(e.target) && btn && !btn.contains(e.target)) {
       panel.style.display = 'none';
     }

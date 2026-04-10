@@ -15,8 +15,6 @@
 .prod-header { 
   display: grid; 
   gap: 6px; 
-  flex-grow: 1;
-  min-width: 1400px;
 }
 .prod-pill {
   display: flex; align-items: center; justify-content: flex-start; gap: 8px;
@@ -46,10 +44,10 @@
 .page-nav .page-pill.active { background: #0d6efd; color: #fff; border-color: #0a58ca; font-weight: 600; }
 </style>
 
-<div class="d-flex flex-wrap gap-3 align-items-start mb-2">
+<div class="d-flex flex-column gap-2 mb-2">
 
   <%-- Product status grid --%>
-  <div class="prod-header" style="grid-template-columns: repeat(${fn:length(reqData.productWindow)}, 1fr);">
+  <div id="prodHeaderGrid" class="prod-header" style="grid-template-columns: repeat(${fn:length(reqData.productWindowHeader)}, 1fr);">
     <c:forEach var="pro" items="${reqData.productWindowHeader}">
       <c:set var="isSelected" value="${not empty productStatus && productStatus.product==pro.product && productStatus.time==pro.time}"/>
       <c:set var="dotClass" value="mon-dot mon-dot-${pro.generationStatus lt 0 ? 'n1' : pro.generationStatus}"/>
@@ -61,8 +59,9 @@
     </c:forEach>
   </div>
 
-  <%-- Refresh controls and page nav — all on one line --%>
-  <div class="d-flex flex-row align-items-center flex-wrap gap-2 flex-shrink-0">
+  <%-- Header controls: clock | refresh | page nav --%>
+  <div class="d-flex flex-row align-items-center flex-wrap gap-2">
+
     <%-- Current time --%>
     <div class="d-flex align-items-center gap-1">
       <i class="bi bi-clock text-muted" style="font-size:0.85rem;"></i>
@@ -87,7 +86,7 @@
         <span id="btnProductLayoutLabel">Single</span>
       </button>
     </c:if>
-    <%-- Page selector (only on the main monitoring page, not product detail) --%>
+        <%-- Page selector (only on the main monitoring page, not product detail) --%>
     <c:if test="${not productStatus.calculated}">
       <span class="text-muted" style="font-size:0.75rem;">|</span>
       <div class="page-nav">
@@ -116,6 +115,20 @@
 
 </div>
 
+<style>
+.hdr-chip {
+  display: inline-block; padding: 2px 9px; border-radius: 20px;
+  font-size: 0.75rem; cursor: pointer; border: 1px solid #ced4da;
+  background: #f8f9fa; color: #adb5bd; transition: all 0.15s;
+  white-space: nowrap; user-select: none; text-decoration: line-through;
+}
+.hdr-chip:hover { border-color: #adb5bd; }
+.hdr-chip.selected {
+  background: #e8f5e9; border-color: #28a745; color: #155724;
+  font-weight: 500; text-decoration: none;
+}
+</style>
+
 <script>
 document.querySelectorAll('.mon-refresh-pill').forEach(function(pill) {
   pill.addEventListener('click', function(e) {
@@ -125,4 +138,99 @@ document.querySelectorAll('.mon-refresh-pill').forEach(function(pill) {
     window.location.href = '?' + params.toString();
   });
 });
+
+/* -- Header product columns per row -- */
+(function() {
+  function _computeAutoCols() {
+    var grid = document.getElementById('prodHeaderGrid');
+    if (!grid) return 10;
+    var pills = grid.querySelectorAll('.prod-pill');
+    if (!pills.length) return 10;
+    /* Grid is now full-width (controls are below it), so measure it directly */
+    var avail = grid.getBoundingClientRect().width || grid.offsetWidth;
+    var gap = parseFloat(getComputedStyle(grid).columnGap) || 6;
+    /* Temporarily set max-content to measure each pill's natural width */
+    var prev = grid.style.gridTemplateColumns;
+    grid.style.gridTemplateColumns = 'repeat(' + pills.length + ', max-content)';
+    var maxW = 0;
+    pills.forEach(function(p) { if (p.offsetWidth > maxW) maxW = p.offsetWidth; });
+    grid.style.gridTemplateColumns = prev;
+    if (!maxW || avail <= 0) return 10;
+    return Math.max(1, Math.min(
+      Math.floor((avail + gap) / (maxW + gap)),
+      pills.length
+    ));
+  }
+
+  function _applyHeaderCols(val) {
+    var grid = document.getElementById('prodHeaderGrid');
+    if (!grid) return;
+    var total = grid.querySelectorAll('.prod-pill').length;
+    var cols;
+    if (val === 'auto') {
+      cols = _computeAutoCols();
+    } else if (val === 'all') {
+      cols = total;
+    } else {
+      cols = Math.min(parseInt(val, 10) || total, total);
+    }
+    grid.style.gridTemplateColumns = 'repeat(' + cols + ', 1fr)';
+    /* button label */
+    var btn = document.getElementById('btnHeaderCols');
+    if (btn) {
+      var lbl = (val === 'auto') ? 'Auto' : (val === 'all') ? 'All' : String(val);
+      btn.innerHTML = '<i class="bi bi-grid"></i> Cols: ' + lbl;
+    }
+    /* chip highlight */
+    document.querySelectorAll('#headerColChips .hdr-chip').forEach(function(c) {
+      c.classList.toggle('selected', c.getAttribute('data-hcol') === String(val));
+    });
+    localStorage.setItem('monHeaderCols', String(val));
+  }
+
+  window.setHeaderCols = function(val) {
+    _applyHeaderCols(val);
+    document.getElementById('headerColPanel').style.display = 'none';
+  };
+
+  window.toggleHeaderColPanel = function() {
+    var panel = document.getElementById('headerColPanel');
+    var btn = document.getElementById('btnHeaderCols');
+    if (panel.style.display === 'block') { panel.style.display = 'none'; return; }
+    if (panel.parentElement !== document.body) { document.body.appendChild(panel); }
+    panel.style.position = 'absolute';
+    panel.style.zIndex = '9999';
+    panel.style.visibility = 'hidden';
+    panel.style.display = 'block';
+    var pw = panel.offsetWidth;
+    panel.style.display = 'none';
+    panel.style.visibility = '';
+    var r = btn.getBoundingClientRect();
+    var sy = window.pageYOffset || document.documentElement.scrollTop;
+    var sx = window.pageXOffset || document.documentElement.scrollLeft;
+    panel.style.top  = (r.bottom + sy + 4) + 'px';
+    panel.style.left = Math.max(sx, r.right + sx - pw) + 'px';
+    panel.style.right = 'auto';
+    panel.style.display = 'block';
+  };
+
+  document.addEventListener('DOMContentLoaded', function() {
+    _applyHeaderCols(localStorage.getItem('monHeaderCols') || 'all');
+  });
+
+  window.addEventListener('resize', function() {
+    if ((localStorage.getItem('monHeaderCols') || 'all') === 'auto') {
+      _applyHeaderCols('auto');
+    }
+  });
+
+  document.addEventListener('click', function(e) {
+    var panel = document.getElementById('headerColPanel');
+    var btn   = document.getElementById('btnHeaderCols');
+    if (panel && panel.style.display === 'block'
+        && !panel.contains(e.target) && btn && !btn.contains(e.target)) {
+      panel.style.display = 'none';
+    }
+  });
+})();
 </script>
