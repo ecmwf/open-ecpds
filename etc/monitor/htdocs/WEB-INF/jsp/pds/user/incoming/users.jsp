@@ -48,9 +48,8 @@
             <td><a href="<bean:message key="incoming.basepath"/>/${user.id}">${user.id}</a></td>
             <td>${user.comment}</td>
             <td>
-                <img src="https://flagcdn.com/16x12/${fn:toLowerCase(user.country.iso)}.png"
-                     onload="var m=this.src.match(/\/([a-z]{2})\./);if(!m||!window._validIso||!window._validIso.has(m[1].toUpperCase()))this.style.display='none';"
-                     onerror="this.style.display='none'" alt="" class="me-1" style="vertical-align:middle">
+                <span class="fi fi-${fn:toLowerCase(user.country.iso)} me-1"
+                      title="${user.country.name}" style="font-size:1.1em;vertical-align:middle"></span>
                 ${user.country.name}
             </td>
             <td class="text-center" data-order="${user.active ? 1 : 0}">

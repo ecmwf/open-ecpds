@@ -58,7 +58,7 @@ table.fields > tbody > tr > th {
 					</tr>
 					<tr>
 						<th>Country</th>
-						<td><img src="https://flagcdn.com/16x12/${fn:toLowerCase(incoming.country.iso)}.png" onload="var m=this.src.match(/\/([a-z]{2})\./);if(!m||!window._validIso||!window._validIso.has(m[1].toUpperCase()))this.style.display='none';" onerror="this.style.display='none'" alt="" class="me-1" style="vertical-align:middle">${incoming.country.name}</td>
+						<td><span class="fi fi-${fn:toLowerCase(incoming.country.iso)} me-1" title="${incoming.country.name}" style="font-size:1.1em;vertical-align:middle"></span>${incoming.country.name}</td>
 					</tr>
 					<tr>
 						<th>Enabled</th>

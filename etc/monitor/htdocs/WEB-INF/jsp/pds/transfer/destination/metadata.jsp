@@ -20,12 +20,9 @@
 <div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
     <span>
         <a href="<bean:message key="destination.basepath"/>?destinationSearch=country=${destination.country.iso}&amp;destinationStatus=&amp;destinationType=">
-            <img src="https://flagcdn.com/24x18/${fn:toLowerCase(destination.countryIso)}.png"
-                 onload="var m=this.src.match(/\/([a-z]{2})\./);if(!m||!window._validIso||!window._validIso.has(m[1].toUpperCase()))this.style.display='none';"
-                 onerror="this.style.display='none'"
-                 alt="Flag for ${destination.country.name}"
-                 title="See all destinations in ${destination.country.name}"
-                 style="vertical-align:middle">
+            <span class="fi fi-${fn:toLowerCase(destination.countryIso)}"
+                  title="See all destinations in ${destination.country.name}"
+                  style="font-size:1.4em;vertical-align:middle;border-radius:2px"></span>
         </a>
         <span class="ms-1">${destination.country.name}</span>
     </span>

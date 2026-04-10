@@ -109,7 +109,7 @@
                                         <select class="form-select form-select-sm" id="dqb_country" onchange="dqbPreview()">
                                             <option value="">Any</option>
                                         </select>
-                                        <img id="dqb_country_flag" src="" alt="" style="height:16px;display:none;flex-shrink:0">
+                        <span id="dqb_country_flag" class="fi" style="font-size:1.4em;display:none;flex-shrink:0"></span>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
@@ -202,9 +202,9 @@
         // Populate country selector from rendered destination rows
         document.addEventListener('DOMContentLoaded', function() {
             var seen = {}, opts = [];
-            document.querySelectorAll('img[data-iso][data-name]').forEach(function(img) {
-                var iso = img.getAttribute('data-iso');
-                var name = img.getAttribute('data-name');
+            document.querySelectorAll('[data-iso][data-name]').forEach(function(el) {
+                var iso = el.getAttribute('data-iso');
+                var name = el.getAttribute('data-name');
                 if (iso && name && !seen[iso]) {
                     seen[iso] = true;
                     opts.push({iso: iso, name: name});
@@ -223,9 +223,8 @@
             function updateFlag() {
                 var iso = sel.value;
                 if (!iso) { flag.style.display = 'none'; return; }
-                flag.src = 'https://flagcdn.com/24x18/' + iso + '.png';
-                flag.style.display = 'inline';
-                flag.onerror = function() { flag.style.display = 'none'; };
+                flag.className = 'fi fi-' + iso.toLowerCase();
+                flag.style.display = 'inline-block';
             }
             sel.addEventListener('change', updateFlag);
         });
@@ -278,10 +277,10 @@
             <c:forEach var="d" items="${destinations}">
                 <tr>
                     <td>
-                        <img src="https://flagcdn.com/16x12/${fn:toLowerCase(d.countryIso)}.png" onload="var m=this.src.match(/\/([a-z]{2})\./);if(!m||!window._validIso||!window._validIso.has(m[1].toUpperCase()))this.style.display='none';" onerror="this.style.display='none'"
-                             alt="${d.country.name}" title="${d.country.name}"
+                        <span class="fi fi-${fn:toLowerCase(d.countryIso)}"
+                             title="${d.country.name}"
                              data-iso="${fn:toLowerCase(d.countryIso)}" data-name="${d.country.name}"
-                             style="display:block;">
+                             style="font-size:1.1em;display:block"></span>
                     </td>
                     <td>
                         <a href="/do/transfer/destination/${d.id}"
