@@ -1,25 +1,92 @@
-<%@ page session="true" %>
+<%@ page session="true"%>
 
-<%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth" %>
-<%@ taglib uri="/WEB-INF/tld/displaytag.tld" prefix="display" %>
-<%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content" %>
-<%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
+<%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
+<%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 
-<display:table id="server" name="${transferservers}" requestURI="" pagesize="50" defaultsort="1" sort="list" class="listing">
-    <display:column title="Name" sortable="true"><a href="/do/datafile/transferserver/${server.name}">${server.name}</a></display:column>
-    <display:column property="host" />
-    <display:column property="port" />
-    <display:column title="Enabled" sortable="true">
-        <c:if test="${server.active}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if><c:if test="${!server.active}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if>
-    </display:column>
-    <display:column title="Replicating">
-        <c:if test="${server.replicate}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if><c:if test="${!server.replicate}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if>
-    </display:column>
-    <display:column title="Last Update" sortable="true">
-    	<content:content name="server.lastUpdateDate" dateFormatKey="date.format.transfer" ignoreNull="true"/>
-    </display:column>
-    <display:column title="Actions" class="buttons">
-    	<auth:link styleClass="menuitem" href="/do/datafile/transferserver/edit/update_form/${server.id}" imageKey="icon.small.update"/>
-		<auth:link styleClass="menuitem" href="/do/datafile/transferserver/edit/delete_form/${server.id}" imageKey="icon.small.delete"/>
-	</display:column>
-</display:table>
+<c:if test="${empty transferservers}">
+    <div class="alert">No Transfer Servers found.</div>
+</c:if>
+
+<c:if test="${not empty transferservers}">
+    <div class="d-flex align-items-center mb-2 gap-2">
+        <span class="text-muted small"><i class="bi bi-list-ul"></i> <strong>${fn:length(transferservers)}</strong> transfer server(s)</span>
+    </div>
+    <table id="transferserversTable" class="table table-sm table-hover align-middle" style="width:100%">
+        <thead class="table-light">
+            <tr>
+                <th>Name</th>
+                <th>Host / Port</th>
+                <th>Group</th>
+                <th class="text-center">Enabled</th>
+                <th class="text-center">Replicate</th>
+                <th class="text-center">Check</th>
+                <th>Max Transfers</th>
+                <th>Last Update</th>
+                <th class="text-end">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <c:forEach var="server" items="${transferservers}">
+                <tr>
+                    <td class="fw-semibold">
+                        <a href="/do/datafile/transferserver/${server.name}" class="text-decoration-none dest-list-link">${server.name}</a>
+                    </td>
+                    <td class="small text-muted" style="white-space:nowrap">
+                        ${server.host}<c:if test="${server.port gt 0}">:<strong class="text-body">${server.port}</strong></c:if>
+                    </td>
+                    <td class="small">
+                        <c:if test="${not empty server.transferGroupName}">
+                            <a href="/do/datafile/transfergroup/${server.transferGroupName}"
+                               class="badge bg-light text-secondary border text-decoration-none">${server.transferGroupName}</a>
+                        </c:if>
+                    </td>
+                    <td class="text-center">
+                        <c:choose>
+                            <c:when test="${server.active}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:when>
+                            <c:otherwise><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:otherwise>
+                        </c:choose>
+                    </td>
+                    <td class="text-center">
+                        <c:choose>
+                            <c:when test="${server.replicate}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:when>
+                            <c:otherwise><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:otherwise>
+                        </c:choose>
+                    </td>
+                    <td class="text-center">
+                        <c:choose>
+                            <c:when test="${server.check}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:when>
+                            <c:otherwise><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:otherwise>
+                        </c:choose>
+                    </td>
+                    <td class="small text-center">${server.maxTransfers}</td>
+                    <td class="small text-muted" style="white-space:nowrap">
+                        <c:if test="${not empty server.lastUpdateDate}">
+                            <span title="${server.lastUpdateDate}">${server.lastUpdateDuration}</span>
+                        </c:if>
+                    </td>
+                    <td class="text-end" style="white-space:nowrap">
+                        <auth:link href="/do/datafile/transferserver/edit/update_form/${server.id}"
+                                   styleClass="btn btn-outline-secondary btn-sm py-0 px-1">
+                            <i class="bi bi-pencil" title="Edit"></i>
+                        </auth:link>
+                        <auth:link href="/do/datafile/transferserver/edit/delete_form/${server.id}"
+                                   styleClass="btn btn-outline-danger btn-sm py-0 px-1 ms-1">
+                            <i class="bi bi-trash" title="Delete"></i>
+                        </auth:link>
+                    </td>
+                </tr>
+            </c:forEach>
+        </tbody>
+    </table>
+    <script>
+    $(function() {
+        $('#transferserversTable').DataTable({
+            paging:    false,
+            searching: false,
+            order:     [[0, 'asc']],
+            language: { info: 'Showing _START_-_END_ of _TOTAL_' }
+        });
+    });
+    </script>
+</c:if>

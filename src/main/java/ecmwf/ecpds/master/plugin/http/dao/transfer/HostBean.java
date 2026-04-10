@@ -1114,7 +1114,19 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
      */
     @Override
     public String getGeoIpLocation() {
-        return host.getGeoIpLocation();
+        var location = host.getGeoIpLocation();
+        if (location == null) {
+            try {
+                location = MasterManager.getDB().getHost(host.getName()).getGeoIpLocation();
+            } catch (final Exception e) {
+                location = "";
+            }
+            if (location == null) {
+                location = "";
+            }
+            host.setGeoIpLocation(location);
+        }
+        return location.isBlank() ? null : location;
     }
 
     /**

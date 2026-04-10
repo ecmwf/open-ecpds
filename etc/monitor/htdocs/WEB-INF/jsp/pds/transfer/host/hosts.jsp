@@ -1,7 +1,6 @@
 <%@ page session="true"%>
 
 <%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean"%>
-<%@ taglib uri="/WEB-INF/tld/displaytag.tld" prefix="display"%>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
@@ -217,35 +216,88 @@
 
 <%-- Results table --%>
 <c:if test="${not empty hosts}">
-    <display:table name="${hosts}" id="host"
-        requestURI="" sort="external" defaultsort="1" partialList="true"
-        size="${hostsSize}" pagesize="${recordsPerPage}" class="listing">
-        <display:column sortable="true" title="Nickname">
-            <a href="<bean:message key="host.basepath"/>/${host.name}">${host.nickName}</a><c:if test="${!host.active}"><i class="bi bi-pause-circle-fill text-warning ms-1" title="Disabled" style="font-size:0.85rem;vertical-align:middle;"></i></c:if>
-        </display:column>
-        <display:column title="Hostname/IP" property="host" sortable="true" />
-        <display:column title="Associated Destinations" sortable="false">
-            <c:if test="${fn:length(host.destinations) le 3}">
-                <c:forEach var="destination" items="${host.destinations}">
-                    <b><a href="<bean:message key="destination.basepath"/>/${destination.name}">${destination.name}</a></b>
-                </c:forEach>
-            </c:if>
-            <c:if test="${fn:length(host.destinations) eq 0}">
-                <span class="text-muted">[none]</span>
-            </c:if>
-            <c:if test="${fn:length(host.destinations) gt 3}">
-                <span class="text-muted">[${fn:length(host.destinations)}-destinations]</span>
-            </c:if>
-        </display:column>
-        <display:column property="type" title="Type" sortable="true" />
-        <display:column title="Method" sortable="true">
-            <a href="<bean:message key="method.basepath"/>/${host.transferMethodName}">${host.transferMethodName}</a>
-        </display:column>
-        <display:column property="transferGroupName" title="Network" sortable="true" />
-        <display:column property="networkName" title="Label" sortable="true" />
-        <display:column sortable="true" title="Enabled">
-            <c:if test="${host.active}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if>
-            <c:if test="${!host.active}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if>
-        </display:column>
-    </display:table>
+    <div class="d-flex align-items-center mb-2 gap-2">
+        <span class="text-muted small"><i class="bi bi-list-ul"></i> <strong>${hostsSize}</strong> host(s) found</span>
+    </div>
+    <table id="hostsTable" class="table table-sm table-hover align-middle" style="width:100%">
+        <thead class="table-light">
+            <tr>
+                <th style="width:28px;"></th>
+                <th>Host</th>
+                <th>Hostname/IP</th>
+                <th>Network</th>
+                <th>Label</th>
+                <th>Destinations</th>
+            </tr>
+        </thead>
+        <tbody>
+            <c:forEach var="host" items="${hosts}">
+                <c:if test="${not empty host.geoIpLocation}">
+                    <c:set var="_hGeoParts" value="${fn:split(host.geoIpLocation, '/')}"/>
+                    <c:set var="_hGeoPart0" value="${fn:trim(_hGeoParts[0])}"/>
+                    <c:set var="_hGeoPart1" value="${fn:trim(_hGeoParts[1])}"/>
+                    <c:set var="_hGeoIso" value="${fn:toLowerCase(fn:length(_hGeoPart0) == 2 ? _hGeoPart0 : _hGeoPart1)}"/>
+                </c:if>
+                <tr>
+                    <td>
+                        <c:if test="${not empty host.geoIpLocation}">
+                            <span class="fi fi-${_hGeoIso}"
+                                  title="${host.geoIpLocation}"
+                                  style="font-size:1.1em;display:block"></span>
+                        </c:if>
+                    </td>
+                    <td>
+                        <span style="white-space:nowrap"><a href="<bean:message key="host.basepath"/>/${host.name}"
+                               class="fw-semibold text-decoration-none dest-list-link"
+                               title="${host.comment}">${host.nickName}</a><c:if test="${host.name != host.nickName}">
+                            <code class="dest-page-id ms-1" style="font-size:0.75rem;">${host.name}</code></c:if>
+                            <span class="badge bg-secondary ms-1" style="font-size:0.7rem;">${host.type}</span>
+                            <c:if test="${not empty host.transferMethodName}">
+                                <span class="badge bg-info text-dark ms-1" style="font-size:0.7rem;"><i class="bi bi-hdd-network me-1"></i>${host.transferMethodName}</span>
+                            </c:if>
+                            <c:if test="${not host.active}">
+                                <i class="bi bi-pause-circle-fill text-warning ms-1" title="Disabled" style="font-size:0.78rem;"></i>
+                            </c:if>
+                            <c:if test="${not empty host.filterName and host.filterName ne 'none'}">
+                                <i class="bi bi-file-zip text-muted ms-1" title="Data compression enabled (${host.filterName})" style="font-size:0.78rem;"></i>
+                            </c:if></span>
+                        <c:if test="${not empty host.comment}">
+                            <div class="text-muted" style="font-size:0.78rem; line-height:1.3; margin-top:1px;">${host.comment}</div>
+                        </c:if>
+                    </td>
+                    <td class="text-muted small">${host.host}</td>
+                    <td class="small">${host.transferGroupName}</td>
+                    <td class="small">${host.networkName}</td>
+                    <td class="small">
+                        <c:choose>
+                            <c:when test="${fn:length(host.destinations) == 0}">
+                                <span class="text-muted">none</span>
+                            </c:when>
+                            <c:when test="${fn:length(host.destinations) le 3}">
+                                <c:forEach var="destination" items="${host.destinations}">
+                                    <a href="<bean:message key="destination.basepath"/>/${destination.name}"
+                                       class="badge bg-light text-secondary border text-decoration-none me-1">${destination.name}</a>
+                                </c:forEach>
+                            </c:when>
+                            <c:otherwise>
+                                <span class="badge bg-light text-secondary border">${fn:length(host.destinations)} destinations</span>
+                            </c:otherwise>
+                        </c:choose>
+                    </td>
+                </tr>
+            </c:forEach>
+        </tbody>
+    </table>
+    <script>
+    $(function() {
+        $('#hostsTable').DataTable({
+            paging:    true,
+            pageLength: 25,
+            searching: false,
+            order:     [],
+            columnDefs: [{ orderable: false, targets: [0] }],
+            language: { lengthMenu: 'Show _MENU_ per page', info: 'Showing _START_-_END_ of _TOTAL_' }
+        });
+    });
+    </script>
 </c:if>

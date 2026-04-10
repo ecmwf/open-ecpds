@@ -6,6 +6,7 @@
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content"%>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 
 <tiles:importAttribute name="isDelete" ignore="true" />
 <c:if test="${not empty isDelete}">
@@ -112,11 +113,20 @@ table.fields > tbody > tr > th {
 			<tiles:insert page="./pds/transfer/host/warning.jsp" />
 		</c:if>
 		<c:if test="${empty isDelete}">
+			<c:if test="${not empty host.geoIpLocation}">
+				<c:set var="_hGeoParts" value="${fn:split(host.geoIpLocation, '/')}"/>
+				<c:set var="_hGeoPart0" value="${fn:trim(_hGeoParts[0])}"/>
+				<c:set var="_hGeoPart1" value="${fn:trim(_hGeoParts[1])}"/>
+				<c:set var="_hGeoIso" value="${fn:toLowerCase(fn:length(_hGeoPart0) == 2 ? _hGeoPart0 : _hGeoPart1)}"/>
+			</c:if>
 			<div class="dest-page-header mb-3">
 				<div class="d-flex align-items-center gap-2 flex-wrap mb-1">
 					<span class="dest-page-name">${host.nickName}</span>
 					<c:if test="${host.name != host.nickName}">
 						<code class="dest-page-id">${host.name}</code>
+					</c:if>
+					<c:if test="${not empty host.geoIpLocation}">
+						<span class="fi fi-${_hGeoIso}" title="${host.geoIpLocation}" style="font-size:1.2em;border-radius:2px;"></span>
 					</c:if>
 					<c:if test="${not host.active}">
 						<i class="bi bi-pause-circle-fill text-warning" title="Host is disabled" style="font-size:0.9rem;"></i>
@@ -176,7 +186,19 @@ table.fields > tbody > tr > th {
 					<th>Location Source</th>
 					<td><c:if test="${host.automaticLocation}">automatic</c:if><c:if test="${!host.automaticLocation}">manual</c:if></td>
 					<th>Estimated Location</th>
-					<td>${host.geoIpLocation}</td>
+					<td>
+						<c:choose>
+							<c:when test="${not empty host.geoIpLocation}">
+								<c:set var="_geoParts" value="${fn:split(host.geoIpLocation, '/')}"/>
+								<c:set var="_geoPart0" value="${fn:trim(_geoParts[0])}"/>
+								<c:set var="_geoPart1" value="${fn:trim(_geoParts[1])}"/>
+								<c:set var="_geoIso" value="${fn:toLowerCase(fn:length(_geoPart0) == 2 ? _geoPart0 : _geoPart1)}"/>
+								<span class="fi fi-${_geoIso}" title="${host.geoIpLocation}" style="font-size:1.1em;vertical-align:middle;border-radius:2px;"></span>
+								<span class="ms-1">${host.geoIpLocation}</span>
+							</c:when>
+							<c:otherwise><span class="text-muted fst-italic">unknown</span></c:otherwise>
+						</c:choose>
+					</td>
 				</tr>
 
 				<tr>
