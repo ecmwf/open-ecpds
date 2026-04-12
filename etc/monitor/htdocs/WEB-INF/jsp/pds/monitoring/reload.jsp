@@ -4,11 +4,13 @@
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth" %>
 
 <script>
-	// Refresh the page with the given period. Set additional reloads in case the server is down.
+	// Refresh the page with the given period. 0 = disabled.
 	var refresh = ${monSesForm.refreshPeriod};
-	setTimeout(function() {
-		window.location.reload(true);
-	}, refresh * 1000);
+	if (refresh > 0) {
+		setTimeout(function() {
+			window.location.reload(true);
+		}, refresh * 1000);
+	}
 </script>
 
 <style>
@@ -44,7 +46,7 @@
 .page-nav .page-pill.active { background: #0d6efd; color: #fff; border-color: #0a58ca; font-weight: 600; }
 </style>
 
-<div class="d-flex flex-column gap-2 mb-2">
+<div class="d-flex flex-column gap-2 mb-0 px-1 py-1" style="border-bottom:1px solid #dee2e6;">
 
   <%-- Product status grid --%>
   <div id="prodHeaderGrid" class="prod-header" style="grid-template-columns: repeat(${fn:length(reqData.productWindowHeader)}, 1fr);">
@@ -84,6 +86,7 @@
       <a href="#" class="date-pill mon-refresh-pill ${monSesForm.refreshPeriod == 300 ? 'active' : ''}" data-value="300">5m</a>
       <a href="#" class="date-pill mon-refresh-pill ${monSesForm.refreshPeriod == 600 ? 'active' : ''}" data-value="600">10m</a>
       <a href="#" class="date-pill mon-refresh-pill ${monSesForm.refreshPeriod == 1800 ? 'active' : ''}" data-value="1800">30m</a>
+      <a href="#" class="date-pill mon-refresh-pill ${monSesForm.refreshPeriod == 0 ? 'active' : ''}" data-value="0">Off</a>
     </div>
     <%-- Split/Single toggle (only on product detail page with enough rows to split) --%>
     <c:if test="${productStatus.calculated && fn:length(productStepStatii) > 1}">
@@ -260,6 +263,36 @@ document.querySelectorAll('.mon-refresh-pill').forEach(function(pill) {
   document.addEventListener('click', function(e) {
     var panel = document.getElementById('headerColPanel');
     var btn   = document.getElementById('btnHeaderCols');
+    if (panel && panel.style.display === 'block'
+        && !panel.contains(e.target) && btn && !btn.contains(e.target)) {
+      panel.style.display = 'none';
+    }
+  });
+
+  window.toggleLegendPanel = function() {
+    var panel = document.getElementById('legendPanel');
+    var btn   = document.getElementById('btnLegend');
+    if (panel.style.display === 'block') { panel.style.display = 'none'; return; }
+    if (panel.parentElement !== document.body) { document.body.appendChild(panel); }
+    panel.style.position = 'absolute';
+    panel.style.zIndex   = '9999';
+    panel.style.visibility = 'hidden';
+    panel.style.display  = 'block';
+    var pw = panel.offsetWidth;
+    panel.style.display  = 'none';
+    panel.style.visibility = '';
+    var r  = btn.getBoundingClientRect();
+    var sy = window.pageYOffset || document.documentElement.scrollTop;
+    var sx = window.pageXOffset || document.documentElement.scrollLeft;
+    panel.style.top  = (r.bottom + sy + 4) + 'px';
+    panel.style.left = Math.max(sx, r.right + sx - pw) + 'px';
+    panel.style.right = 'auto';
+    panel.style.display = 'block';
+  };
+
+  document.addEventListener('click', function(e) {
+    var panel = document.getElementById('legendPanel');
+    var btn   = document.getElementById('btnLegend');
     if (panel && panel.style.display === 'block'
         && !panel.contains(e.target) && btn && !btn.contains(e.target)) {
       panel.style.display = 'none';

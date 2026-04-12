@@ -81,15 +81,30 @@
                             <div class="row g-2 mb-2">
                                 <div class="col-md-3">
                                     <label class="form-label mb-1 fw-semibold"><code>nickname=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
-                                    <input type="text" class="form-control form-control-sm" id="hqb_nickname" placeholder="e.g. Test_0?" oninput="hqbPreview()">
+                                    <input type="text" class="form-control form-control-sm" id="hqb_nickname" placeholder="e.g. Test_0?" oninput="hqbPreview()" list="hqb_nickname_list" autocomplete="off">
+                                    <datalist id="hqb_nickname_list">
+                                        <c:forEach var="n" items="${hostNickNames}">
+                                            <option value="${n}">
+                                        </c:forEach>
+                                    </datalist>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label mb-1 fw-semibold"><code>hostname=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
-                                    <input type="text" class="form-control form-control-sm" id="hqb_hostname" placeholder="e.g. *.test.fr" oninput="hqbPreview()">
+                                    <input type="text" class="form-control form-control-sm" id="hqb_hostname" placeholder="e.g. *.test.fr" oninput="hqbPreview()" list="hqb_hostname_list" autocomplete="off">
+                                    <datalist id="hqb_hostname_list">
+                                        <c:forEach var="h" items="${hostHostNames}">
+                                            <option value="${h}">
+                                        </c:forEach>
+                                    </datalist>
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label mb-1 fw-semibold"><code>method=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
-                                    <input type="text" class="form-control form-control-sm" id="hqb_method" placeholder="e.g. *Http" oninput="hqbPreview()">
+                                    <input type="text" class="form-control form-control-sm" id="hqb_method" placeholder="e.g. *Http" oninput="hqbPreview()" list="hqb_method_list" autocomplete="off">
+                                    <datalist id="hqb_method_list">
+                                        <c:forEach var="m" items="${transferMethodOptions}">
+                                            <option value="${m.name}">
+                                        </c:forEach>
+                                    </datalist>
                                 </div>
                                 <div class="col-md-2">
                                     <label class="form-label mb-1 fw-semibold"><code>id</code> <span class="text-muted fw-normal">numeric</span></label>
@@ -249,11 +264,21 @@
                     <td>
                         <span style="white-space:nowrap"><a href="<bean:message key="host.basepath"/>/${host.name}"
                                class="fw-semibold text-decoration-none dest-list-link"
-                               title="${host.comment}">${host.nickName}</a><c:if test="${host.name != host.nickName}">
-                            <code class="dest-page-id ms-1" style="font-size:0.75rem;">${host.name}</code></c:if>
-                            <span class="badge bg-secondary ms-1" style="font-size:0.7rem;">${host.type}</span>
+                               >${host.nickName}</a><c:if test="${host.name != host.nickName}">
+                            <code class="dest-page-id ms-1" style="font-size:0.75rem;" title="Host identifier">${host.name}</code></c:if>
+                            <c:choose>
+                                <c:when test="${host.type == 'Dissemination'}">
+                                    <span class="badge bg-secondary ms-1" style="font-size:0.7rem;" title="Dissemination"><i class="bi bi-send-fill"></i></span>
+                                </c:when>
+                                <c:when test="${host.type == 'Acquisition'}">
+                                    <span class="badge bg-secondary ms-1" style="font-size:0.7rem;" title="Acquisition"><i class="bi bi-cloud-download-fill"></i></span>
+                                </c:when>
+                                <c:otherwise>
+                                    <span class="badge bg-secondary ms-1" style="font-size:0.7rem;">${host.type}</span>
+                                </c:otherwise>
+                            </c:choose>
                             <c:if test="${not empty host.transferMethodName}">
-                                <span class="badge bg-info text-dark ms-1" style="font-size:0.7rem;"><i class="bi bi-hdd-network me-1"></i>${host.transferMethodName}</span>
+                                <span class="badge bg-info text-dark ms-1" style="font-size:0.7rem;" title="${host.transferMethod.comment}"><i class="bi bi-hdd-network me-1"></i>${host.transferMethodName}</span>
                             </c:if>
                             <c:if test="${not host.active}">
                                 <i class="bi bi-pause-circle-fill text-warning ms-1" title="Disabled" style="font-size:0.78rem;"></i>
@@ -271,7 +296,7 @@
                     <td class="small">
                         <c:choose>
                             <c:when test="${fn:length(host.destinations) == 0}">
-                                <span class="text-muted">none</span>
+                                <span class="text-muted fst-italic">none</span>
                             </c:when>
                             <c:when test="${fn:length(host.destinations) le 3}">
                                 <c:forEach var="destination" items="${host.destinations}">

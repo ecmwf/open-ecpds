@@ -10,20 +10,30 @@
     <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
         <span class="dest-page-name">${host.nickName}</span>
         <c:if test="${host.name != host.nickName}">
-            <code class="dest-page-id">${host.name}</code>
+            <code class="dest-page-id" title="Host identifier">${host.name}</code>
         </c:if>
         <c:if test="${not empty host.geoIpLocation}">
             <span class="fi fi-${_hGeoIso}" title="${host.geoIpLocation}" style="font-size:1.2em;border-radius:2px;"></span>
         </c:if>
-        <c:if test="${not host.active}">
-            <i class="bi bi-pause-circle-fill text-warning" title="Host is disabled" style="font-size:0.9rem;"></i>
-        </c:if>
-        <span class="badge bg-secondary fs-status">${host.type}</span>
+        <c:choose>
+            <c:when test="${host.type == 'Dissemination'}">
+                <span class="badge bg-secondary fs-status" title="Dissemination"><i class="bi bi-send-fill"></i></span>
+            </c:when>
+            <c:when test="${host.type == 'Acquisition'}">
+                <span class="badge bg-secondary fs-status" title="Acquisition"><i class="bi bi-cloud-download-fill"></i></span>
+            </c:when>
+            <c:otherwise>
+                <span class="badge bg-secondary fs-status">${host.type}</span>
+            </c:otherwise>
+        </c:choose>
         <c:if test="${not empty host.transferMethodName}">
-            <span class="badge bg-info text-dark fs-status"><i class="bi bi-hdd-network me-1"></i>${host.transferMethodName}</span>
+            <span class="badge bg-info text-dark fs-status" title="${host.transferMethod.comment}"><i class="bi bi-hdd-network me-1"></i>${host.transferMethodName}</span>
         </c:if>
         <c:if test="${not empty host.filterName and host.filterName ne 'none'}">
             <i class="bi bi-file-zip text-muted" title="Data compression enabled (${host.filterName})" style="font-size:0.85rem;"></i>
+        </c:if>
+        <c:if test="${not host.active}">
+            <i class="bi bi-pause-circle-fill text-warning" title="Host is disabled" style="font-size:0.9rem;"></i>
         </c:if>
     </div>
     <c:if test="${not empty host.comment}">

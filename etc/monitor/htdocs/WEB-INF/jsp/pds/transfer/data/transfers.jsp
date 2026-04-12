@@ -175,7 +175,12 @@
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label mb-1 fw-semibold"><code>mover=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
-                                    <input type="text" class="form-control form-control-sm" id="qb_mover" oninput="qbPreview()">
+                                    <input type="text" class="form-control form-control-sm" id="qb_mover" oninput="qbPreview()" list="qb_mover_list" autocomplete="off">
+                                    <datalist id="qb_mover_list">
+                                        <c:forEach var="ts" items="${transferServerOptions}">
+                                            <option value="${ts.name}">
+                                        </c:forEach>
+                                    </datalist>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label mb-1 fw-semibold"><code>identity=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>

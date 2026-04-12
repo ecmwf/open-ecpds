@@ -39,6 +39,8 @@
     </tr>
     <tr><td colspan="3"></td></tr>
 
+    <c:if test="${not empty destination.id}">
+
     <auth:if basePathKey="transferhistory.basepath" paths="/">
         <auth:then>
             <tr>
@@ -103,6 +105,8 @@
     <c:if test="${destination.monitoringStatus.present}">
         <c:if test="${empty time}"><c:set var="time" value="00" /></c:if>
     </c:if>
+
+    </c:if><%-- end: not empty destination.id --%>
 </table>
 
 <%-- Products: separate menu table, product names in tooltips only --%>

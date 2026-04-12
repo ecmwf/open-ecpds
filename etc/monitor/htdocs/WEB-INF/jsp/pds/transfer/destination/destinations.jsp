@@ -91,7 +91,12 @@
                             <div class="row g-2 mb-2">
                                 <div class="col-md-4">
                                     <label class="form-label mb-1 fw-semibold"><code>name=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
-                                    <input type="text" class="form-control form-control-sm" id="dqb_name" placeholder="e.g. dest_*" oninput="dqbPreview()">
+                                    <input type="text" class="form-control form-control-sm" id="dqb_name" placeholder="e.g. dest_*" oninput="dqbPreview()" list="dqb_name_list" autocomplete="off">
+                                    <datalist id="dqb_name_list">
+                                        <c:forEach var="d" items="${destinationNames}">
+                                            <option value="${d.name}">
+                                        </c:forEach>
+                                    </datalist>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label mb-1 fw-semibold"><code>comment=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
@@ -285,7 +290,7 @@
                     <td>
                         <span style="white-space:nowrap"><a href="/do/transfer/destination/${d.id}"
                            class="fw-semibold text-decoration-none dest-list-link"
-                           title="${d.comment}">${d.id}</a><c:if test="${not empty d.typeText}"><c:choose
+                           >${d.id}</a><c:if test="${not empty d.typeText}"><c:choose
 ><c:when test="${d.typeText == 'Gold'}"><span class="dest-page-type dest-type-gold ms-1"><i class="bi bi-trophy-fill"></i> Gold</span
 ></c:when><c:when test="${d.typeText == 'Silver'}"><span class="dest-page-type dest-type-silver ms-1"><i class="bi bi-award-fill"></i> Silver</span
 ></c:when><c:when test="${d.typeText == 'Bronze'}"><span class="dest-page-type dest-type-bronze ms-1"><i class="bi bi-award"></i> Bronze</span
@@ -325,7 +330,7 @@
                             <c:set var="destAliases" value="${d.aliases}"/>
                             <c:choose>
                                 <c:when test="${fn:length(destAliases) == 0}">
-                                    <span class="text-muted" style="font-size:0.8rem;">none</span>
+                                    <span class="text-muted fst-italic" style="font-size:0.8rem;">none</span>
                                 </c:when>
                                 <c:when test="${fn:length(destAliases) < 3}">
                                     <c:forEach var="alias" items="${destAliases}">

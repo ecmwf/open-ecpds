@@ -571,8 +571,11 @@
 				</tr>
 				<tr>
 					<th>Show In Monitors <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="When enabled, this Destination is monitored in the monitoring display." tabindex="0"></i></th>
-					<td><html:checkbox
-						property="showInMonitors" /></td>
+					<td>
+					<html:checkbox property="showInMonitors" styleId="chk_showInMonitors" onchange="(function(c){document.getElementById('icon_showInMonitors').style.display=c.checked?'none':'';})(this)" />
+					<i id="icon_showInMonitors" class="bi bi-eye-slash text-muted ms-1" title="Not shown in Monitor Display" style="font-size:0.78rem;"></i>
+					<script>(function(){var c=document.getElementById('chk_showInMonitors');if(c)document.getElementById('icon_showInMonitors').style.display=c.checked?'none':'';})()</script>
+				</td>
 				</tr>
 				<tr>
 					<th>Backup <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Request the storage of the data files on the backup system (if available for the Transfer Group where the files are stored)" tabindex="0"></i></th>

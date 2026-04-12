@@ -224,7 +224,7 @@ table.fields > tbody > tr > th {
 	</tr>
 	<tr>
 		<th>Show In Monitors <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="When enabled, this Destination is monitored in the monitoring display." tabindex="0"></i></th>
-		<td><c:if test="${destination.showInMonitors}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if><c:if test="${!destination.showInMonitors}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></td>
+		<td><c:if test="${destination.showInMonitors}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if><c:if test="${!destination.showInMonitors}"><i class="bi bi-x-circle-fill text-danger" title="No"></i> <i class="bi bi-eye-slash text-muted ms-1" title="Not shown in Monitor Display" style="font-size:0.78rem;"></i></c:if></td>
 	</tr>
 
 </table>

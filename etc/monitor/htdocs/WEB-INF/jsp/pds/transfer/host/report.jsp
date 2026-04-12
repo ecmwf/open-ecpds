@@ -48,7 +48,7 @@
 <script>
 (function() {
     var dataUrl   = '<c:out value="${reportDataUrl}"/>';
-    var cacheKey  = 'hostReport_<c:out value="${host.name}"/>';
+    var cacheKey  = 'hostReport_<c:out value="${host.name}"/>_<c:choose><c:when test="${not empty proxy}"><c:out value="${proxy.nickName}"/></c:when><c:otherwise>__direct__</c:otherwise></c:choose>';
 
     function showCached(html, isStale) {
         var pre = document.getElementById('reportPre');
@@ -81,7 +81,9 @@
                 refreshBtn.disabled = false;
             })
             .catch(function(err) {
-                pre.innerHTML = '<span class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i>Failed to load report: ' + err.message + '</span>';
+                var html = '<span class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i>Failed to load report: ' + err.message + '</span>';
+                try { sessionStorage.setItem(cacheKey, html); } catch(e) {}
+                pre.innerHTML = html;
                 refreshBtn.disabled = false;
             });
     }

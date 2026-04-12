@@ -356,7 +356,7 @@ function createAndSubmitDynamicForm(action,bcc,subject,body) {
 
 <tiles:insert page="./pds/monitoring/reload.jsp" />
 
-<div class="d-flex flex-wrap align-items-center gap-1 mb-2 py-1 px-1" style="border-bottom:1px solid #dee2e6; font-size:0.82rem;">
+<div class="d-flex flex-wrap align-items-center gap-1 mb-2 py-1 px-1 mt-1" style="border-bottom:1px solid #dee2e6; font-size:0.82rem;">
 
   <tiles:insert page="./pds/monitoring/filter.jsp" />
 
@@ -404,6 +404,152 @@ function createAndSubmitDynamicForm(action,bcc,subject,body) {
      title="Show <%=System.getProperty("monitor.nickName")%> Destination Hosts on OpenStreetMap">
     <i class="bi bi-map"></i> Map
   </a>
+
+  <div style="position:relative; display:inline-block;">
+    <button id="btnLegend" class="btn btn-sm btn-outline-secondary"
+            onclick="toggleLegendPanel()"
+            title="Show colour coding legend for this page">
+      <i class="bi bi-palette"></i> Legend
+    </button>
+    <div id="legendPanel" style="position:absolute; z-index:9999; background:#fff; border:1px solid #dee2e6; border-radius:8px; box-shadow:0 4px 16px rgba(0,0,0,0.12); padding:14px 16px 12px; display:none;">
+      <div class="fw-semibold mb-3" style="font-size:0.82rem; color:#212529; border-bottom:1px solid #dee2e6; padding-bottom:6px;">
+        <i class="bi bi-palette me-1 text-muted"></i>Colour Legend
+      </div>
+      <div class="d-flex gap-4 align-items-start">
+
+        <%-- Arrival (a) / Transfer (t) shared colour scale --%>
+        <div>
+          <div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#6c757d; margin-bottom:6px;">
+            Arrival &amp; Transfer status
+          </div>
+          <table style="font-size:0.76rem; border-collapse:collapse;">
+            <thead>
+              <tr>
+                <th style="font-weight:600; padding:0 8px 4px 0; color:#495057; text-align:center;">Color</th>
+                <th style="font-weight:600; padding:0 12px 4px 0; color:#495057;">Arrival (<a class="mon-letter mon-letter-s2" style="text-decoration:none;">a</a>)</th>
+                <th style="font-weight:600; padding:0 0 4px 0; color:#495057;">Transfer (<a class="mon-letter mon-letter-s2" style="text-decoration:none;">t</a>)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="padding:2px 8px 2px 0; text-align:center;">
+                  <a class="mon-letter mon-letter-s0 me-1" style="text-decoration:none;">a</a><a class="mon-letter mon-letter-s0" style="text-decoration:none;">t</a>
+                </td>
+                <td style="padding:2px 12px 2px 0; color:#495057;">No data yet</td>
+                <td style="padding:2px 0; color:#495057;">No data yet</td>
+              </tr>
+              <tr>
+                <td style="padding:2px 8px 2px 0; text-align:center;">
+                  <a class="mon-letter mon-letter-s1 me-1" style="text-decoration:none;">a</a><a class="mon-letter mon-letter-s1" style="text-decoration:none;">t</a>
+                </td>
+                <td style="padding:2px 12px 2px 0;">&gt;75 min ahead of schedule</td>
+                <td style="padding:2px 0;">Transferred before target time</td>
+              </tr>
+              <tr>
+                <td style="padding:2px 8px 2px 0; text-align:center;">
+                  <a class="mon-letter mon-letter-s2 me-1" style="text-decoration:none;">a</a><a class="mon-letter mon-letter-s2" style="text-decoration:none;">t</a>
+                </td>
+                <td style="padding:2px 12px 2px 0;">Before predicted time (on time)</td>
+                <td style="padding:2px 0;">Before predicted time (on time)</td>
+              </tr>
+              <tr>
+                <td style="padding:2px 8px 2px 0; text-align:center;">
+                  <a class="mon-letter mon-letter-s3 me-1" style="text-decoration:none;">a</a><a class="mon-letter mon-letter-s3" style="text-decoration:none;">t</a>
+                </td>
+                <td style="padding:2px 12px 2px 0;">Behind prediction, &gt;40 min ahead</td>
+                <td style="padding:2px 0;">Slightly late (within 2x predicted range)</td>
+              </tr>
+              <tr>
+                <td style="padding:2px 8px 2px 0; text-align:center;">
+                  <a class="mon-letter mon-letter-s4 me-1" style="text-decoration:none;">a</a><a class="mon-letter mon-letter-s4" style="text-decoration:none;">t</a>
+                </td>
+                <td style="padding:2px 12px 2px 0;">25-40 min ahead of schedule (late)</td>
+                <td style="padding:2px 0;">Late (beyond 2x predicted range)</td>
+              </tr>
+              <tr>
+                <td style="padding:2px 8px 2px 0; text-align:center;">
+                  <a class="mon-letter mon-letter-s5 me-1" style="text-decoration:none;">a</a><a class="mon-letter mon-letter-s5" style="text-decoration:none;">t</a>
+                </td>
+                <td style="padding:2px 12px 2px 0;">10-25 min ahead of schedule (very late)</td>
+                <td style="padding:2px 0;">Very late (beyond 4x predicted range)</td>
+              </tr>
+              <tr>
+                <td style="padding:2px 8px 2px 0; text-align:center;">
+                  <a class="mon-letter mon-letter-s6 me-1" style="text-decoration:none;">a</a><a class="mon-letter mon-letter-s6" style="text-decoration:none;">t</a>
+                </td>
+                <td style="padding:2px 12px 2px 0;">&lt;10 min ahead / overdue (critical)</td>
+                <td style="padding:2px 0;">Critical (beyond 6x predicted range)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <%-- Right column: Product Generation + OV --%>
+        <div>
+          <div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#6c757d; margin-bottom:6px;">
+            Product Generation
+          </div>
+          <table style="font-size:0.76rem; border-collapse:collapse; margin-bottom:12px;">
+            <tr>
+              <td style="padding:2px 8px 2px 0;"><span class="mon-dot mon-dot-0"></span></td>
+              <td style="color:#495057;">No data / pending</td>
+            </tr>
+            <tr>
+              <td style="padding:2px 8px 2px 0;"><span class="mon-dot mon-dot-1"></span></td>
+              <td>Received &gt;30 min ahead of schedule</td>
+            </tr>
+            <tr>
+              <td style="padding:2px 8px 2px 0;"><span class="mon-dot mon-dot-2"></span></td>
+              <td>Received 15-30 min ahead of schedule</td>
+            </tr>
+            <tr>
+              <td style="padding:2px 8px 2px 0;"><span class="mon-dot mon-dot-3"></span></td>
+              <td>Received 0-15 min ahead of schedule</td>
+            </tr>
+            <tr>
+              <td style="padding:2px 8px 2px 0;"><span class="mon-dot mon-dot-4"></span></td>
+              <td>On schedule / slightly late, still generating</td>
+            </tr>
+            <tr>
+              <td style="padding:2px 8px 2px 0;"><span class="mon-dot mon-dot-5"></span></td>
+              <td>Not received / overdue (&gt;60 min late)</td>
+            </tr>
+            <tr>
+              <td style="padding:2px 8px 2px 0;"><span class="mon-dot mon-dot-6"></span></td>
+              <td>Transitional / other status</td>
+            </tr>
+          </table>
+
+          <div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#6c757d; margin-bottom:6px;">
+            OV Status
+          </div>
+          <table style="font-size:0.76rem; border-collapse:collapse;">
+            <tr>
+              <td style="padding:2px 8px 2px 0;"><span class="mon-dot mon-dot-0"></span></td>
+              <td style="color:#495057;">Disabled / not configured</td>
+            </tr>
+            <tr>
+              <td style="padding:2px 8px 2px 0;"><span class="mon-dot mon-dot-bs0"></span></td>
+              <td>OK / Success</td>
+            </tr>
+            <tr>
+              <td style="padding:2px 8px 2px 0;"><span class="mon-dot mon-dot-bs1"></span></td>
+              <td>Warning</td>
+            </tr>
+            <tr>
+              <td style="padding:2px 8px 2px 0;"><span class="mon-dot mon-dot-bs2"></span></td>
+              <td>Critical</td>
+            </tr>
+            <tr>
+              <td style="padding:2px 8px 2px 0;"><span class="mon-dot mon-dot-bs3"></span></td>
+              <td>Unknown</td>
+            </tr>
+          </table>
+        </div>
+
+      </div>
+    </div>
+  </div>
 
   <span class="text-muted px-1">|</span>
 
@@ -558,8 +704,14 @@ function createAndSubmitDynamicForm(action,bcc,subject,body) {
 						<i>None</i>
 					</c:if></td>
 
-					<td><span class="mon-dot mon-dot-${destStatus.bigSisterStatus lt 0 ? 'n1' : destStatus.bigSisterStatus}"
-						title="${empty destStatus.bigSisterStatusComment ? 'OV disabled' : 'OV Status: '.concat(destStatus.bigSisterStatusComment)}"></span></td>
+					<td><c:choose>
+						<c:when test="${empty destStatus.bigSisterStatusComment}">
+							<span class="mon-dot mon-dot-0" title="OV disabled"></span>
+						</c:when>
+						<c:otherwise>
+							<span class="mon-dot mon-dot-bs${destStatus.bigSisterStatus}" title="OV Status: ${destStatus.bigSisterStatusComment}"></span>
+						</c:otherwise>
+					</c:choose></td>
 
 					<!-- End Destination Info -->
 

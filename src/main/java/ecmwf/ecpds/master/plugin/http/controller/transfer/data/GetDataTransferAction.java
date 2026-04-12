@@ -36,6 +36,8 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
@@ -43,6 +45,7 @@ import org.apache.struts.action.ActionMapping;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.ecpds.master.plugin.http.dao.Util;
 import ecmwf.ecpds.master.plugin.http.dao.transfer.StatusBean;
+import ecmwf.ecpds.master.plugin.http.home.datafile.TransferServerHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.DataTransferHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.TransferHistoryHome;
 import ecmwf.ecpds.master.plugin.http.model.transfer.DataTransfer;
@@ -60,6 +63,9 @@ import ecmwf.web.util.bean.Pair;
  * The Class GetDataTransferAction.
  */
 public class GetDataTransferAction extends PDSAction {
+
+    /** The Constant log. */
+    private static final Logger log = LogManager.getLogger(GetDataTransferAction.class);
 
     /** The Constant DAYS_BACK. */
     private static final int DAYS_BACK = 7;
@@ -106,6 +112,11 @@ public class GetDataTransferAction extends PDSAction {
                 request.setAttribute("transferStatusOptions", getStatusOptions());
                 request.setAttribute("currentTransferStatus", new StatusBean(status));
                 request.setAttribute("hasFileNameSearch", search != null && !search.isBlank());
+                try {
+                    request.setAttribute("transferServerOptions", TransferServerHome.findAll());
+                } catch (final Exception e) {
+                    log.warn("Could not load transfer servers for autocomplete", e);
+                }
             } else {
                 final var transfer = DataTransferHome.findByPrimaryKey(parameters.get(0).toString());
                 // To allow setting the links in the comments!

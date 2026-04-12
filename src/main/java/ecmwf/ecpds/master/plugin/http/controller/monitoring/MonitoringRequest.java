@@ -74,6 +74,7 @@ import ecmwf.ecpds.master.plugin.http.model.transfer.Destination;
 import ecmwf.ecpds.master.plugin.http.model.transfer.TransferException;
 import ecmwf.ecpds.master.plugin.http.model.transfer.TransferMonitoringParameters;
 import ecmwf.ecpds.master.transfer.DestinationOption;
+import ecmwf.ecpds.master.transfer.HostOption;
 import ecmwf.web.ECMWFException;
 import ecmwf.web.util.bean.StringPair;
 
@@ -757,21 +758,22 @@ public class MonitoringRequest {
      *            the new filter options
      */
     private void setFilterOptions(final Collection<Destination> c) {
+        allStatus = new ArrayList<>();
+        allStatus.add(new StringPair("ok", "Ok"));
+        allStatus.add(new StringPair("warning", "Warning"));
+        allNetworks = new ArrayList<>();
+        for (var i = 0; i < HostOption.networkCode.length; i++) {
+            allNetworks.add(new StringPair(HostOption.networkCode[i],
+                    HostOption.networkName.length > i ? HostOption.networkName[i] : HostOption.networkCode[i]));
+        }
         if (isEmpty(c)) {
             log.warn("No Destinations found in monitoring. Filters left uninitialized");
         } else {
             Destination first = null;
             try {
                 first = c.iterator().next();
-                final var hostForSource = first.getHostForSource();
-                if (hostForSource != null) {
-                    allNetworks = first.getHostForSource().getAllNetworks();
-                    allTypes = first.getAllTypes();
-                    allStatus = new ArrayList<>();
-                    allStatus.add(new StringPair("ok", "Ok"));
-                    allStatus.add(new StringPair("warning", "Warning"));
-                }
-            } catch (final TransferException e) {
+                allTypes = first.getAllTypes();
+            } catch (final Exception e) {
                 log.warn("Problem initializing filters from destination " + first, e);
             }
         }

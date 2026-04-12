@@ -28,6 +28,7 @@ package ecmwf.ecpds.master.plugin.http.controller.transfer.host;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.TreeSet;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -43,6 +44,7 @@ import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.ecpds.master.plugin.http.dao.Util;
 import ecmwf.ecpds.master.plugin.http.home.datafile.TransferGroupHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.HostHome;
+import ecmwf.ecpds.master.plugin.http.home.transfer.TransferMethodHome;
 import ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException;
 import ecmwf.ecpds.master.plugin.http.model.datafile.TransferGroup;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Host;
@@ -94,6 +96,25 @@ public class GetHostAction extends PDSAction {
             request.setAttribute("hostsSize", Util.getCollectionSizeFrom(hosts));
             request.setAttribute("hosts", hosts);
             request.setAttribute("hasHostSearch", hostSearch != null && !hostSearch.isBlank());
+            try {
+                request.setAttribute("transferMethodOptions", TransferMethodHome.findAll());
+            } catch (final Exception e) {
+                log.warn("Could not load transfer methods for autocomplete", e);
+            }
+            try {
+                final var nickNames = new TreeSet<String>();
+                final var hostNames = new TreeSet<String>();
+                for (final Host h : HostHome.findAll()) {
+                    nickNames.add(h.getNickName());
+                    if (h.getHost() != null && !h.getHost().isBlank()) {
+                        hostNames.add(h.getHost());
+                    }
+                }
+                request.setAttribute("hostNickNames", nickNames);
+                request.setAttribute("hostHostNames", hostNames);
+            } catch (final Exception e) {
+                log.warn("Could not load host names for autocomplete", e);
+            }
             return mapping.findForward("success");
         }
         final var host = HostHome.findByPrimaryKey(parameters.get(0).toString());

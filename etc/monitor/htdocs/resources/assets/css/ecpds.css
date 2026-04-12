@@ -879,66 +879,7 @@ table.fields > tr > td a {
 	color: black;
 }
 
-div#filter {
-	Font-size: 10pt;
-	display:none; 
-	position: absolute; 
-	top:50pt; 
-	left:25pt;
-	border:  1pt solid #d5d5d5;
-	background: white;
-        z-index: 2147483647 !important;
-}
 
-div#filter td {
-	Font-size: 10pt;
-	vertical-align: top;
-	padding: 5pt;
-}
-div#filter th {
-	Font-size: 10pt;
-	text-align: left;
-	color: #d5d5d5;
-	border-bottom: 1pt solid  #d5d5d5;
-}
-
-div#filter div {
-	Font-size: 10pt;
-	display: block;
-	margin: 2pt;
-}
-
-div#filter div  a {
-	Font-size: 10pt;
-	color: black;
-	text-decoration: none;
-	font-weight:bold;
-}
-div#filter div.selected a {
-	Font-size: 10pt;
-	color: #aaaaaa;
-}
-
-div#filter td.foot {
-	Font-size: 10pt;
-	text-align:center;
-	border-top: 1pt solid #d5d5d5;
-}
-div#filter td.foot a {
-	Font-size: 10pt;
-	font-weight:bold;
-	color: #d5d5d5;
-}
-div#filterButton a {
-	Font-size: 10pt;
-	font-weight:bold;
-	color: #aaaaaa;
-	text-decoration:none;
-}
-div#filterButton a.selected {
-	Font-size: 10pt;
-	color: red;
-}
 
 th.header {
 	Font-size: 10pt;
@@ -1130,9 +1071,12 @@ a:hover {
     color: #0d6efd;
     text-decoration: none;
 }
-/* Badges used as links must keep their own text colour on hover */
+/* Badges used as links keep white text on hover, except light badges which use dark text */
 a.badge:hover {
     color: #fff !important;
+}
+a.badge.bg-light:hover, a.badge.text-dark:hover, a.badge.text-secondary:hover {
+    color: #343a40 !important;
 }
 
 /* Sidebar boxes — add some breathing room */
@@ -1311,6 +1255,16 @@ table.spareBox2 td, table.spareBox td {
     padding: 7px 14px 7px 4px;
     border-left: none;
     transition: background 0.12s ease, color 0.12s ease;
+}
+/* Badge links inside editSpareBox (e.g. proxy host badges) keep badge styling */
+#sidebarMenu table.editSpareBox td a.badge {
+    padding: 0.35em 0.65em;
+    text-align: center;
+    color: #fff !important;
+}
+#sidebarMenu table.editSpareBox td a.badge:hover {
+    color: #fff !important;
+    background: transparent;
 }
 
 /* Hover: highlight whole row (both cells) and accent the icon cell's left border */

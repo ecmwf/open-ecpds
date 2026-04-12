@@ -106,6 +106,11 @@ public class GetDestinationAction extends PDSAction {
             request.setAttribute("destinations", destinationList);
             request.setAttribute("columns", getColumns(destinationList.size()));
             request.setAttribute("hasDestinationSearch", search != null && !search.isBlank());
+            try {
+                request.setAttribute("destinationNames", DestinationHome.findAllNamesAndComments());
+            } catch (final Exception e) {
+                log.warn("Could not load destination names for autocomplete", e);
+            }
         } else {
             // We are dealing with a Destination!
             final var daf = (DetailActionForm) form;

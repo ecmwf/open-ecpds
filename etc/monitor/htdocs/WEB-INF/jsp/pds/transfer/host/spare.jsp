@@ -52,17 +52,23 @@
 
     <tr>
         <td><i class="bi bi-wifi sidebar-icon"></i></td>
-        <td colspan="2"><a href='<bean:message key="host.basepath"/>/edit/getReport/${host.id}'>Network Info</a>
-            <c:forEach var="destination" items="${host.destinations}">
-                <c:forEach var="proxy" items="${destination.proxyHostsAndPriorities}">
-                    <c:if test="${host.type == 'Dissemination'}">
-                        <li><a class="menusubitem"
-                               href='<bean:message key="host.basepath"/>/edit/getReport/${host.id}/${proxy.name.id}'>${proxy.name.nickName}</a></li>
-                    </c:if>
-                </c:forEach>
-            </c:forEach>
-        </td>
+        <td colspan="2"><a href='<bean:message key="host.basepath"/>/edit/getReport/${host.id}'>Network Info</a></td>
     </tr>
+    <c:if test="${host.type == 'Dissemination'}">
+        <tr>
+            <td colspan="3" style="border-top:none; padding-bottom:6px;">
+                <div class="d-flex flex-wrap gap-1 justify-content-center">
+                <c:forEach var="destination" items="${host.destinations}">
+                    <c:forEach var="proxy" items="${destination.proxyHostsAndPriorities}">
+                        <a class="badge bg-secondary text-white text-decoration-none"
+                           href='<bean:message key="host.basepath"/>/edit/getReport/${host.id}/${proxy.name.id}'
+                           title="via ${proxy.name.nickName}">${proxy.name.nickName}</a>
+                    </c:forEach>
+                </c:forEach>
+                </div>
+            </td>
+        </tr>
+    </c:if>
 </table>
 
     </auth:then>
