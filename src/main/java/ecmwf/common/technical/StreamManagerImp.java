@@ -139,6 +139,9 @@ public final class StreamManagerImp implements StreamManager {
             return new LZ4FrameOutputStream(out);
         } else if (SNAPPY.equalsIgnoreCase(filter)) {
             return getCompressorOutputStream(CompressorStreamFactory.SNAPPY_FRAMED, out);
+        } else if (ZSTD.equalsIgnoreCase(filter)) {
+            // Using binary ZSTD implementation!
+            return new CommandOutputStream(out, Cnf.getCommand("Filter", "fly.out." + ZSTD));
         } else {
             _log.warn("Filter {} not supported", filter);
             throw new IOException("Filter " + filter + " not supported for output stream");
@@ -234,6 +237,9 @@ public final class StreamManagerImp implements StreamManager {
             return new LZ4FrameInputStream(in);
         } else if (SNAPPY.equalsIgnoreCase(filter)) {
             return getCompressorInputStream(CompressorStreamFactory.SNAPPY_FRAMED, in);
+        } else if (ZSTD.equalsIgnoreCase(filter)) {
+            // Using binary zstd implementation!
+            return new CommandInputStream(in, Cnf.getCommand("Filter", "fly.in." + ZSTD));
         } else {
             _log.warn("Filter {} not supported", filter);
             throw new IOException("Filter " + filter + " not supported for input stream");
@@ -316,6 +322,8 @@ public final class StreamManagerImp implements StreamManager {
             return "lz4";
         } else if (SNAPPY.equalsIgnoreCase(filter)) {
             return "sz";
+        } else if (ZSTD.equalsIgnoreCase(filter)) {
+            return "zst";
         } else {
             _log.warn("Filter {} not supported", filter);
             throw new IOException("Filter " + filter + " not supported");
@@ -377,7 +385,8 @@ public final class StreamManagerImp implements StreamManager {
                 final var filter = token.nextToken();
                 result = LZMA.equalsIgnoreCase(filter) || ZIP.equalsIgnoreCase(filter) || GZIP.equalsIgnoreCase(filter)
                         || BZIP2a.equalsIgnoreCase(filter) || LBZIP2.equalsIgnoreCase(filter)
-                        || LZ4.equalsIgnoreCase(filter) || SNAPPY.equalsIgnoreCase(filter);
+                        || LZ4.equalsIgnoreCase(filter) || SNAPPY.equalsIgnoreCase(filter)
+                        || ZSTD.equalsIgnoreCase(filter);
             }
         }
         return result;

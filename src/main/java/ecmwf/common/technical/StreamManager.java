@@ -52,10 +52,13 @@ public interface StreamManager {
     /** The Constant SNAPPY. */
     String SNAPPY = "snappy";
 
+    /** The Constant ZSTD. */
+    String ZSTD = "zstd";
+
     /** The Constant names. */
     String[] names = { "none", "lzma (.lzma)", "zip (.zip)", "gzip (.gz)", "bzip2 (.bz2)", "bzip2 (.bz2)", "lz4 (.lz4)",
-            "snappy (.sz)" };
+            "snappy (.sz)", "zstd (.zst)" };
 
     /** The Constant modes. */
-    String[] modes = { "none", "lzma", "zip", "gzip", "lbzip2", "bzip2a", "lz4", "snappy" };
+    String[] modes = { "none", "lzma", "zip", "gzip", "lbzip2", "bzip2a", "lz4", "snappy", "zstd" };
 }
