@@ -19,7 +19,7 @@ request.setAttribute("jsp_date_before", new java.util.Date());
 <!-- Bootstrap Icons -->
 <link rel="stylesheet" href="/bootstrap-icons/bootstrap-icons.min.css">
 <!-- Flag Icons (local SVG, best quality) -->
-<link rel="stylesheet" href="/flag-icons/css/flag-icons.min.css">
+<link rel="stylesheet" href="/flag-icons/css/flag-icons.min.css?v=20260413a">
 <!-- DataTables with Bootstrap 5 styling -->
 <link rel="stylesheet" href="/datatables/css/dataTables.bootstrap5.min.css">
 <!-- jQuery UI (kept for sliders and date pickers) -->
