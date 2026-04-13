@@ -2,7 +2,7 @@
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
 
 <%-- Page intro: system description + Data Portal + login notice --%>
-<div class="mb-4 px-3 py-3 rounded" style="background:rgba(13,110,253,0.05); border-left:4px solid #0d6efd; font-size:0.85rem; color:#495057; max-width:860px;">
+<div class="mb-4 px-3 py-3 rounded" style="background:rgba(13,110,253,0.05); border-left:4px solid #0d6efd; font-size:0.85rem; color:var(--bs-body-color); max-width:860px;">
 
     <%-- Block 1: system description --%>
     <div class="d-flex align-items-start gap-2">
@@ -37,7 +37,7 @@
                 <span class="badge bg-secondary">HTTPS</span>
                 <span class="badge bg-secondary">Amazon S3</span>
             </span>
-            <span class="d-block mt-1" style="color:#6c757d;">
+            <span class="d-block mt-1" style="color:var(--bs-secondary-color);">
                 <i class="bi bi-person-badge text-secondary"></i>
                 Data User credentials are required to access this service.
                 Key-Based Authentication is allowed with <strong>SFTP</strong> and <strong>SCP</strong>.
@@ -52,7 +52,7 @@
         <i class="bi bi-person-circle text-secondary flex-shrink-0 mt-1"></i>
         <span>
             You are logged in as <strong><auth:info property="commonName"/></strong> (<auth:info property="uid"/>).
-            <span class="d-block mt-1" style="color:#6c757d;">
+            <span class="d-block mt-1" style="color:var(--bs-secondary-color);">
                 <i class="bi bi-lock text-secondary"></i>
                 The sections and menu items displayed below reflect your access permissions; options you are not authorised to use are automatically hidden.
             </span>

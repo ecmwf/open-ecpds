@@ -5,14 +5,16 @@
 request.setAttribute("jsp_date_before", new java.util.Date());
 %>
 
-<html>
+<html data-bs-theme="light">
 <head>
 
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><tiles:getAsString name="title" /></title>
 
-<!-- Hide page before first paint if we need to restore scroll â prevents visible jump -->
+<!-- Apply saved theme before first paint to prevent flash -->
+<script>(function(){var t=localStorage.getItem('ecpds-theme');if(t)document.documentElement.setAttribute('data-bs-theme',t);}());</script>
+<!-- Hide page before first paint if we need to restore scroll - prevents visible jump -->
 <script>(function(){if(sessionStorage.getItem('scrollY'))document.documentElement.style.visibility='hidden';}());</script>
 <!-- Bootstrap 5 -->
 <link rel="stylesheet" href="/bootstrap/css/bootstrap.min.css">
@@ -25,7 +27,7 @@ request.setAttribute("jsp_date_before", new java.util.Date());
 <!-- jQuery UI (kept for sliders and date pickers) -->
 <link rel="stylesheet" href="/jquery/jquery-ui.min.css">
 <!-- Application styles (loaded last to override where needed) -->
-<link rel="stylesheet" href="/assets/css/ecpds.css?v=20260412c" type="text/css">
+<link rel="stylesheet" href="/assets/css/ecpds.css?v=20260413f" type="text/css">
 
 <script src="/ace-editor/ace.js" charset="utf-8"></script>
 <script src="/ace-editor/ext-language_tools.js" charset="utf-8"></script>

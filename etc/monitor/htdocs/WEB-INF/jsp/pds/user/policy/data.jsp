@@ -78,7 +78,7 @@ table.fields > tbody > tr > th {
 				        <div class="d-flex flex-wrap">
 				          <c:forEach var="destination" items="${policy.associatedDestinations}">
 				            <span class="assoc-chip">
-				              <a href="<bean:message key="destination.basepath"/>/${destination.name}" title="${destination.comment}" class="text-decoration-none text-dark">${destination.name}</a>
+				              <a href="<bean:message key="destination.basepath"/>/${destination.name}" title="${destination.comment}" class="text-decoration-none text-body">${destination.name}</a>
 				            </span>
 				          </c:forEach>
 				        </div>

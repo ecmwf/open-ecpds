@@ -22,7 +22,7 @@
 </script>
 
 <div class="d-flex align-items-center gap-2 mb-3 px-1 py-2 rounded"
-     style="background:rgba(13,110,253,0.06); font-size:0.83rem; color:#495057; border-left:3px solid #0d6efd;">
+     style="background:rgba(13,110,253,0.06); font-size:0.83rem; color:var(--bs-body-color); border-left:3px solid #0d6efd;">
     <i class="bi bi-funnel text-primary ms-1 flex-shrink-0"></i>
     Use this form to request a Compression Simulation for a Destination.
 </div>
@@ -38,7 +38,7 @@
 				<input type="hidden" name="destination" id="destinationHidden" value="<c:out value="${filterActionForm.destination}"/>">
 				<div style="position:relative;display:inline-flex;align-items:center" id="filterDestWrap">
 					<div class="input-group input-group-sm">
-						<span class="input-group-text bg-white text-muted"><i class="bi bi-search"></i></span>
+						<span class="input-group-text text-muted"><i class="bi bi-search"></i></span>
 						<input type="text" id="filterDestInput" class="form-control" style="width:280px"
 							placeholder="Search destination..." autocomplete="off"
 							value="<c:out value="${filterActionForm.destination}"/>"
@@ -48,7 +48,7 @@
 							onkeydown="filterDestKey(event)">
 					</div>
 					<ul id="filterDestDropdown" role="listbox"
-						class="list-unstyled border rounded bg-white shadow-sm mb-0"
+						class="list-unstyled border rounded bg-body shadow-sm mb-0"
 						style="display:none;position:absolute;z-index:1050;min-width:360px;max-height:260px;overflow-y:auto;top:100%;left:0;margin-top:2px;padding:3px 0"></ul>
 				</div>
 				<ul id="filterDestData" style="display:none">
@@ -86,7 +86,7 @@
 						var items = document.querySelectorAll('#filterDestDropdown li[data-idx]');
 						items.forEach(function(el){ el.style.background=''; });
 						active = (idx>=0 && idx<items.length) ? idx : -1;
-						if(active>=0){ items[active].style.background='#e9ecef'; items[active].scrollIntoView({block:'nearest'}); }
+						if(active>=0){ items[active].style.background='var(--bs-secondary-bg)'; items[active].scrollIntoView({block:'nearest'}); }
 					}
 
 					function pick(o){

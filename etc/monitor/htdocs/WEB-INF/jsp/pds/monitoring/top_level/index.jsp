@@ -23,25 +23,25 @@ table.toplevel td.holder {
     padding: 4px 6px;
 }
 table.toplevel td {
-    border: 1px solid #dee2e6;
+    border: 1px solid var(--bs-border-color);
     padding: 2px 4px;
     white-space: nowrap;
     text-align: center;
 }
 table.toplevel tr.titles td {
-    background: #e9ecef;
-    color: #495057;
+    background: var(--bs-secondary-bg);
+    color: var(--bs-secondary-color);
     font-weight: 600;
     font-size: 0.72rem;
     text-align: center;
     padding: 3px 4px;
     text-transform: uppercase;
     letter-spacing: 0.03em;
-    border: 1px solid #ced4da;
+    border: 1px solid var(--bs-border-color);
 }
-table.pagelevel tr.odd td  { background: #fff; }
-table.pagelevel tr.even td { background: #f8f9fa; }
-table.pagelevel tr:hover td { background: #e8f4fd; }
+table.pagelevel tr.odd td  { background: var(--bs-body-bg); }
+table.pagelevel tr.even td { background: var(--bs-tertiary-bg); }
+table.pagelevel tr:hover td { background: var(--bs-primary-bg-subtle); }
 
 </style>
 
@@ -388,15 +388,28 @@ function createAndSubmitDynamicForm(action,bcc,subject,body) {
 
   <form action="/do/monitoring" method="get" class="d-flex align-items-center gap-0 mb-0">
     <div class="input-group input-group-sm" style="width:210px;">
-      <span class="input-group-text" title="Filter by application name"><i class="bi bi-app"></i></span>
-      <input type="text" name="application" class="form-control"
-             placeholder="Application name"
+      <span class="input-group-text" title="Filter by product name (use * or ? as wildcards)"><i class="bi bi-box"></i></span>
+      <input type="text" name="application" id="productNameInput" class="form-control"
+             placeholder="Product name"
+             list="productNameList"
+             autocomplete="off"
              value="${param.application != null ? param.application : ''}"/>
-      <button type="submit" class="btn btn-primary" title="Apply application filter">
+      <button type="submit" class="btn btn-primary" title="Apply product filter">
         <i class="bi bi-search"></i>
       </button>
     </div>
+    <datalist id="productNameList"></datalist>
   </form>
+  <script>
+  (function() {
+    var seen = {}, dl = document.getElementById('productNameList');
+    document.querySelectorAll('.prod-pill[data-sort-product]').forEach(function(pill) {
+      var p = pill.getAttribute('data-sort-product');
+      if (p && !seen[p]) { seen[p] = true; var o = document.createElement('option'); o.value = p; dl.appendChild(o); }
+    });
+  })();
+  </script>
+
 
   <span class="text-muted px-1">|</span>
 
@@ -411,23 +424,23 @@ function createAndSubmitDynamicForm(action,bcc,subject,body) {
             title="Show colour coding legend for this page">
       <i class="bi bi-palette"></i> Legend
     </button>
-    <div id="legendPanel" style="position:absolute; z-index:9999; background:#fff; border:1px solid #dee2e6; border-radius:8px; box-shadow:0 4px 16px rgba(0,0,0,0.12); padding:14px 16px 12px; display:none;">
-      <div class="fw-semibold mb-3" style="font-size:0.82rem; color:#212529; border-bottom:1px solid #dee2e6; padding-bottom:6px;">
+    <div id="legendPanel" style="position:absolute; z-index:9999; background:var(--bs-body-bg); border:1px solid var(--bs-border-color); border-radius:8px; box-shadow:0 4px 16px rgba(0,0,0,0.12); padding:14px 16px 12px; display:none;">
+      <div class="fw-semibold mb-3" style="font-size:0.82rem; color:var(--bs-body-color); border-bottom:1px solid var(--bs-border-color); padding-bottom:6px;">
         <i class="bi bi-palette me-1 text-muted"></i>Colour Legend
       </div>
       <div class="d-flex gap-4 align-items-start">
 
         <%-- Arrival (a) / Transfer (t) shared colour scale --%>
         <div>
-          <div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#6c757d; margin-bottom:6px;">
+          <div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--bs-secondary-color); margin-bottom:6px;">
             Arrival &amp; Transfer status
           </div>
           <table style="font-size:0.76rem; border-collapse:collapse;">
             <thead>
               <tr>
-                <th style="font-weight:600; padding:0 8px 4px 0; color:#495057; text-align:center;">Color</th>
-                <th style="font-weight:600; padding:0 12px 4px 0; color:#495057;">Arrival (<a class="mon-letter mon-letter-s2" style="text-decoration:none;">a</a>)</th>
-                <th style="font-weight:600; padding:0 0 4px 0; color:#495057;">Transfer (<a class="mon-letter mon-letter-s2" style="text-decoration:none;">t</a>)</th>
+                <th style="font-weight:600; padding:0 8px 4px 0; color:var(--bs-body-color); text-align:center;">Color</th>
+                <th style="font-weight:600; padding:0 12px 4px 0; color:var(--bs-body-color);">Arrival (<a class="mon-letter mon-letter-s2" style="text-decoration:none;">a</a>)</th>
+                <th style="font-weight:600; padding:0 0 4px 0; color:var(--bs-body-color);">Transfer (<a class="mon-letter mon-letter-s2" style="text-decoration:none;">t</a>)</th>
               </tr>
             </thead>
             <tbody>
@@ -435,8 +448,8 @@ function createAndSubmitDynamicForm(action,bcc,subject,body) {
                 <td style="padding:2px 8px 2px 0; text-align:center;">
                   <a class="mon-letter mon-letter-s0 me-1" style="text-decoration:none;">a</a><a class="mon-letter mon-letter-s0" style="text-decoration:none;">t</a>
                 </td>
-                <td style="padding:2px 12px 2px 0; color:#495057;">No data yet</td>
-                <td style="padding:2px 0; color:#495057;">No data yet</td>
+                <td style="padding:2px 12px 2px 0; color:var(--bs-body-color);">No data yet</td>
+                <td style="padding:2px 0; color:var(--bs-body-color);">No data yet</td>
               </tr>
               <tr>
                 <td style="padding:2px 8px 2px 0; text-align:center;">
@@ -486,13 +499,13 @@ function createAndSubmitDynamicForm(action,bcc,subject,body) {
 
         <%-- Right column: Product Generation + OV --%>
         <div>
-          <div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#6c757d; margin-bottom:6px;">
+          <div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--bs-secondary-color); margin-bottom:6px;">
             Product Generation
           </div>
           <table style="font-size:0.76rem; border-collapse:collapse; margin-bottom:12px;">
             <tr>
               <td style="padding:2px 8px 2px 0;"><span class="mon-dot mon-dot-0"></span></td>
-              <td style="color:#495057;">No data / pending</td>
+              <td style="color:var(--bs-body-color);">No data / pending</td>
             </tr>
             <tr>
               <td style="padding:2px 8px 2px 0;"><span class="mon-dot mon-dot-1"></span></td>
@@ -520,13 +533,13 @@ function createAndSubmitDynamicForm(action,bcc,subject,body) {
             </tr>
           </table>
 
-          <div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#6c757d; margin-bottom:6px;">
+          <div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--bs-secondary-color); margin-bottom:6px;">
             OV Status
           </div>
           <table style="font-size:0.76rem; border-collapse:collapse;">
             <tr>
               <td style="padding:2px 8px 2px 0;"><span class="mon-dot mon-dot-0"></span></td>
-              <td style="color:#495057;">Disabled / not configured</td>
+              <td style="color:var(--bs-body-color);">Disabled / not configured</td>
             </tr>
             <tr>
               <td style="padding:2px 8px 2px 0;"><span class="mon-dot mon-dot-bs0"></span></td>
@@ -560,9 +573,9 @@ function createAndSubmitDynamicForm(action,bcc,subject,body) {
       <i class="bi bi-grid"></i> Cols
     </button>
     <div id="headerColPanel" style="position:absolute; z-index:9999; min-width:260px;
-                                    background:#fff; border:1px solid #dee2e6; border-radius:8px;
+                                    background:var(--bs-body-bg); border:1px solid var(--bs-border-color); border-radius:8px;
                                     box-shadow:0 4px 16px rgba(0,0,0,0.12); padding:12px 14px 10px; display:none;">
-      <div class="mb-2" style="font-size:0.78rem; color:#495057;">
+      <div class="mb-2" style="font-size:0.78rem; color:var(--bs-body-color);">
         <i class="bi bi-info-circle me-1 text-muted"></i>
         Product pills per row. <strong>Auto</strong> fits your screen width.
       </div>
@@ -575,8 +588,8 @@ function createAndSubmitDynamicForm(action,bcc,subject,body) {
         <span class="hdr-chip" data-hcol="20"    onclick="setHeaderCols(20)">20</span>
         <span class="hdr-chip" data-hcol="all"   onclick="setHeaderCols('all')">All</span>
       </div>
-      <div style="border-top:1px solid #dee2e6; margin:8px 0 4px; padding-top:8px;">
-        <div class="mb-1" style="font-size:0.72rem; color:#6c757d; font-weight:700; text-transform:uppercase; letter-spacing:.05em;">
+      <div style="border-top:1px solid var(--bs-border-color); margin:8px 0 4px; padding-top:8px;">
+        <div class="mb-1" style="font-size:0.72rem; color:var(--bs-secondary-color); font-weight:700; text-transform:uppercase; letter-spacing:.05em;">
           <i class="bi bi-sort-down-alt me-1"></i>Sort by
         </div>
         <div class="d-flex flex-wrap gap-1" id="headerSortChips">
@@ -607,7 +620,7 @@ function createAndSubmitDynamicForm(action,bcc,subject,body) {
       <i class="bi bi-table"></i> Products
     </button>
     <div id="productLimitPanel" class="filter-panel" style="min-width:260px;">
-      <div class="mb-2" style="font-size:0.78rem; color:#495057;">
+      <div class="mb-2" style="font-size:0.78rem; color:var(--bs-body-color);">
         <i class="bi bi-info-circle me-1 text-muted"></i>
         Max product columns per line. <strong>Auto</strong> fits your screen width.
       </div>

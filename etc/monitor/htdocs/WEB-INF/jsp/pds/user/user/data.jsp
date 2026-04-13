@@ -73,7 +73,7 @@
 				        <div class="d-flex flex-wrap">
 				          <c:forEach var="category" items="${user.categories}">
 				            <span class="assoc-chip">
-				              <a href="<bean:message key="category.basepath"/>/${category.id}" title="${category.description}" class="text-decoration-none text-dark">${category.name}</a>
+				              <a href="<bean:message key="category.basepath"/>/${category.id}" title="${category.description}" class="text-decoration-none text-body">${category.name}</a>
 				            </span>
 				          </c:forEach>
 				        </div>

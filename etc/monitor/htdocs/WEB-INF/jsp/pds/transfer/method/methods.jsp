@@ -9,7 +9,7 @@
 </c:if>
 
 <c:if test="${not empty methods}">
-<table id="methodsTable" class="table table-sm table-hover align-middle" style="width:100%">
+<table id="methodsTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
     <thead class="table-light">
         <tr>
             <th>Name</th>

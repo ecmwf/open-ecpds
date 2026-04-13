@@ -1,7 +1,7 @@
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth" %>
 
 <div class="d-flex align-items-start gap-2 mb-4 px-2 py-2 rounded"
-     style="background:rgba(25,135,84,0.05); border-left:4px solid #198754; font-size:0.85rem; color:#495057; max-width:700px;">
+     style="background:rgba(25,135,84,0.05); border-left:4px solid #198754; font-size:0.85rem; color:var(--bs-body-color); max-width:700px;">
     <i class="bi bi-send text-success ms-1 flex-shrink-0 mt-1"></i>
     <span>
         <strong><%=System.getProperty("monitor.nickName")%></strong> manages Data Transfers, each transfer request is linked to

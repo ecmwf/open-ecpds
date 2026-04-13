@@ -52,7 +52,7 @@
 	        <div class="d-flex flex-wrap">
 	          <c:forEach var="category" items="${resource.categories}">
 	            <span class="assoc-chip">
-	              <a href="/do/user/category/${category.id}" title="${category.description}" class="text-decoration-none text-dark">${category.name}</a>
+	              <a href="/do/user/category/${category.id}" title="${category.description}" class="text-decoration-none text-body">${category.name}</a>
 	            </span>
 	          </c:forEach>
 	        </div>

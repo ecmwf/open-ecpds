@@ -12,7 +12,7 @@
     <div class="d-flex align-items-center mb-2 gap-2">
         <span class="text-muted small"><i class="bi bi-list-ul"></i> <strong>${fn:length(transfergroups)}</strong> transfer group(s)</span>
     </div>
-    <table id="transfergroupsTable" class="table table-sm table-hover align-middle" style="width:100%">
+    <table id="transfergroupsTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
         <thead class="table-light">
             <tr>
                 <th>Name</th>

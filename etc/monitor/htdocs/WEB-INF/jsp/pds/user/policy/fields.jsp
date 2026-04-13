@@ -168,7 +168,7 @@ function validate(path, message) {
 <tr>
 <td colspan="3" style="padding:0">
 <div class="d-flex align-items-stretch" id="options-row">
-<div id="options-label" style="flex:0 0 auto;background:#f8f9fa;border-right:2px solid #dee2e6;font-weight:600;white-space:nowrap;padding:0.4rem 0.6rem">Options</div>
+<div id="options-label" style="flex:0 0 auto;background:var(--bs-tertiary-bg);border-right:2px solid var(--bs-border-color);font-weight:600;white-space:nowrap;padding:0.4rem 0.6rem">Options</div>
 <div style="flex:1;min-width:0;padding:0.4rem 0.6rem">
 <div class="accordion" id="policyOptionsAccordion">
 <div class="accordion-item">

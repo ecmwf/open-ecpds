@@ -27,26 +27,26 @@
   border: 1px solid #dee2e6;
   transition: all 0.15s ease-in-out;
 }
-.prod-pill:hover { background: #e9ecef; border-color: #ced4da; color: #212529; text-decoration: none; }
+.prod-pill:hover { background: var(--bs-secondary-bg); border-color: var(--bs-border-color); color: var(--bs-body-color); text-decoration: none; }
 .prod-pill.active { background: #0d6efd; color: #fff; border-color: #0a58ca; font-weight: 600; box-shadow: 0 2px 4px rgba(13,110,253,0.2); }
 .prod-pill.active:hover { background: #0b5ed7; color: #fff; }
 
-.mon-updated { font-size: 0.9rem; font-weight: 600; color: #343a40; }
+.mon-updated { font-size: 0.9rem; font-weight: 600; color: var(--bs-body-color); }
 .page-nav { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
-.page-nav .page-label { font-size: 0.78rem; color: #6c757d; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+.page-nav .page-label { font-size: 0.78rem; color: var(--bs-secondary-color); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
 .page-nav .page-pill {
   display: inline-flex; align-items: center; justify-content: center;
   padding: 2px 8px; border-radius: 4px;
-  font-size: 0.78rem; background: #f8f9fa; color: #495057;
-  text-decoration: none; border: 1px solid #dee2e6;
+  font-size: 0.78rem; background: var(--bs-tertiary-bg); color: var(--bs-body-color);
+  text-decoration: none; border: 1px solid var(--bs-border-color);
   width: 45px;
   transition: all 0.15s;
 }
-.page-nav .page-pill:hover { background: #e9ecef; border-color: #ced4da; color: #212529; text-decoration: none; }
+.page-nav .page-pill:hover { background: var(--bs-secondary-bg); border-color: var(--bs-secondary-color); color: var(--bs-body-color); text-decoration: none; }
 .page-nav .page-pill.active { background: #0d6efd; color: #fff; border-color: #0a58ca; font-weight: 600; }
 </style>
 
-<div class="d-flex flex-column gap-2 mb-0 px-1 py-1" style="border-bottom:1px solid #dee2e6;">
+<div class="d-flex flex-column gap-2 mb-0 px-1 py-1" style="border-bottom:1px solid var(--bs-border-color);">
 
   <%-- Product status grid --%>
   <div id="prodHeaderGrid" class="prod-header" style="grid-template-columns: repeat(${fn:length(reqData.productWindowHeader)}, 1fr);">
@@ -129,13 +129,17 @@
 <style>
 .hdr-chip {
   display: inline-block; padding: 2px 9px; border-radius: 20px;
-  font-size: 0.75rem; cursor: pointer; border: 1px solid #ced4da;
-  background: #f8f9fa; color: #adb5bd; transition: all 0.15s;
+  font-size: 0.75rem; cursor: pointer; border: 1px solid var(--bs-border-color);
+  background: var(--bs-tertiary-bg); color: var(--bs-secondary-color); transition: all 0.15s;
   white-space: nowrap; user-select: none; text-decoration: line-through;
 }
-.hdr-chip:hover { border-color: #adb5bd; }
+.hdr-chip:hover { border-color: var(--bs-secondary-color); }
 .hdr-chip.selected {
   background: #e8f5e9; border-color: #28a745; color: #155724;
+  font-weight: 500; text-decoration: none;
+}
+[data-bs-theme=dark] .hdr-chip.selected {
+  background: #1a3a1f; border-color: #28a745; color: #75c983;
   font-weight: 500; text-decoration: none;
 }
 </style>

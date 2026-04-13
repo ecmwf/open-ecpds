@@ -71,6 +71,8 @@ table.fields > tbody > tr > th {
 .progress-terminal-body a:hover { text-decoration: underline; }
 .assoc-card .card-header { display:flex; align-items:center; gap:.4rem; padding:.5rem .75rem; background:#f8f9fa; font-size:.85rem; }
 .assoc-chip { display:inline-flex; align-items:center; gap:.25rem; background:#e9ecef; border-radius:1rem; padding:.2rem .6rem; font-size:.8rem; margin:.15rem; }
+[data-bs-theme=dark] .assoc-card .card-header { background: var(--bs-tertiary-bg); }
+[data-bs-theme=dark] .assoc-chip { background: var(--bs-secondary-bg); }
 </style>
 
 	<c:set var="authorized" value="false" />
@@ -417,7 +419,7 @@ table.fields > tbody > tr > th {
 				        <div class="d-flex flex-wrap">
 				          <c:forEach var="destination" items="${host.destinations}">
 				            <span class="assoc-chip">
-				              <a href="<bean:message key="destination.basepath"/>/${destination.id}" title="${destination.comment}" class="text-decoration-none text-dark">${destination.name}</a>
+				              <a href="<bean:message key="destination.basepath"/>/${destination.id}" title="${destination.comment}" class="text-decoration-none text-body">${destination.name}</a>
 				            </span>
 				          </c:forEach>
 				        </div>

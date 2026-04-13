@@ -15,7 +15,7 @@
                     <div class="row g-2 mb-2">
                         <div class="col-7">
                             <div class="input-group">
-                                <span class="input-group-text text-muted bg-white"><i class="bi bi-search"></i></span>
+                                <span class="input-group-text text-muted"><i class="bi bi-search"></i></span>
                                 <input class="form-control" name="hostSearch" id="hostSearch" type="text"
                                     placeholder="e.g. enabled=yes method=*Http hostname=*.test.fr id&gt;=100 options=*mqtt* nickname=Test_0? case=i"
                                     title="Default search is by nickname. Use id, hostname, login, password, nickname, comment, dir, enabled, method, email and options rules."
@@ -24,7 +24,7 @@
                         </div>
                         <div class="col-3">
                             <div class="input-group">
-                                <span class="input-group-text text-muted bg-white"><i class="bi bi-tag"></i></span>
+                                <span class="input-group-text text-muted"><i class="bi bi-tag"></i></span>
                                 <select class="form-select" name="hostType" id="hostType" onchange="form.submit()" title="Filter by Type">
                                     <c:forEach var="option" items="${typeOptions}">
                                         <option value="${option.name}" <c:if test="${hostType == option.name}">selected</c:if>>${option.value}</option>
@@ -45,7 +45,7 @@
                     <div class="row g-2">
                         <div class="col-4">
                             <div class="input-group input-group-sm">
-                                <span class="input-group-text text-muted bg-white"><i class="bi bi-diagram-3"></i></span>
+                                <span class="input-group-text text-muted"><i class="bi bi-diagram-3"></i></span>
                                 <select class="form-select form-select-sm" name="network" onchange="form.submit()" title="Filter by Network">
                                     <c:forEach var="option" items="${networkOptions}">
                                         <option value="${option.name}" <c:if test="${network == option.name}">selected</c:if>>${option.value}</option>
@@ -55,7 +55,7 @@
                         </div>
                         <div class="col-4">
                             <div class="input-group input-group-sm">
-                                <span class="input-group-text text-muted bg-white"><i class="bi bi-bookmark"></i></span>
+                                <span class="input-group-text text-muted"><i class="bi bi-bookmark"></i></span>
                                 <select class="form-select form-select-sm" name="label" onchange="form.submit()" title="Filter by Label">
                                     <c:forEach var="option" items="${labelOptions}">
                                         <option value="${option.name}" <c:if test="${label == option.name}">selected</c:if>>${option.value}</option>
@@ -65,7 +65,7 @@
                         </div>
                         <div class="col-4">
                             <div class="input-group input-group-sm">
-                                <span class="input-group-text text-muted bg-white"><i class="bi bi-file-zip"></i></span>
+                                <span class="input-group-text text-muted"><i class="bi bi-file-zip"></i></span>
                                 <select class="form-select form-select-sm" name="hostFilter" onchange="form.submit()" title="Filter by Compression">
                                     <c:forEach var="option" items="${filterOptions}">
                                         <option value="${option.name}" <c:if test="${hostFilter == option.name}">selected</c:if>>${option.value}</option>
@@ -77,7 +77,7 @@
 
                     <%-- Query Builder collapse panel --%>
                     <div class="collapse mt-2" id="hostQueryBuilder">
-                        <div class="border rounded p-2 bg-white" style="font-size:0.85rem">
+                        <div class="border rounded p-2" style="font-size:0.85rem">
                             <div class="row g-2 mb-2">
                                 <div class="col-md-3">
                                     <label class="form-label mb-1 fw-semibold"><code>nickname=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
@@ -234,7 +234,7 @@
     <div class="d-flex align-items-center mb-2 gap-2">
         <span class="text-muted small"><i class="bi bi-list-ul"></i> <strong>${hostsSize}</strong> host(s) found</span>
     </div>
-    <table id="hostsTable" class="table table-sm table-hover align-middle" style="width:100%">
+    <table id="hostsTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
         <thead class="table-light">
             <tr>
                 <th style="width:28px;"></th>

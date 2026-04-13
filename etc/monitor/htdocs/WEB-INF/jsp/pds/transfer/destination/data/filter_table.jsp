@@ -95,7 +95,10 @@
 <th></th>
  <td colspan="18">
  	<div class="d-flex gap-1 align-items-center">
- 		<input type="text" value="${destinationDetailActionForm.fileNameSearch}" placeholder="e.g. expired=no target=*.dat source=/tmp/* ts&gt;10 ts&lt;=99 size&gt;=700kb case=i" class="search" title="Default search is by target. Conduct extended searches using target, source, ts, priority, groupby, identity, checksum, size, replicated, asap, deleted, expired, proxy, mover and event rules. Wildcards: * (zero or more chars), ? (exactly one char)." style="flex:1" id="fileNameSearch" name="fileNameSearch" onkeypress="submitenter(this,event)">
+ 		<div class="input-group" style="flex:1">
+		<span class="input-group-text"><i class="bi bi-search"></i></span>
+		<input type="text" value="${destinationDetailActionForm.fileNameSearch}" placeholder="e.g. expired=no target=*.dat source=/tmp/* ts&gt;10 ts&lt;=99 size&gt;=700kb case=i" class="form-control form-control-sm" title="Default search is by target. Conduct extended searches using target, source, ts, priority, groupby, identity, checksum, size, replicated, asap, deleted, expired, proxy, mover and event rules. Wildcards: * (zero or more chars), ? (exactly one char)." id="fileNameSearch" name="fileNameSearch" onkeypress="submitenter(this,event)">
+		</div>
  		<button type="button" class="btn btn-sm btn-outline-secondary px-2"
  		        data-bs-toggle="collapse" data-bs-target="#dftQueryBuilder"
  		        title="Build query" aria-expanded="false" aria-controls="dftQueryBuilder">
@@ -109,7 +112,7 @@
 <th colspan="2"></th>
 <td colspan="18">
     <div class="collapse" id="dftQueryBuilder">
-        <div class="border rounded p-2 bg-white mt-1" style="font-size:0.85rem">
+        <div class="border rounded p-2 mt-1" style="font-size:0.85rem">
             <div class="row g-2 mb-2">
                 <div class="col-md-6">
                     <label class="form-label mb-1 fw-semibold"><code>target=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>

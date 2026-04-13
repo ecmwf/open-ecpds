@@ -16,7 +16,7 @@
                     <div class="row g-2 mb-2">
                         <div class="col-7">
                             <div class="input-group">
-                                <span class="input-group-text text-muted bg-white"><i class="bi bi-search"></i></span>
+                                <span class="input-group-text text-muted"><i class="bi bi-search"></i></span>
                                 <input class="form-control" name="destinationSearch" id="destinationSearch" type="text"
                                     placeholder="e.g. enabled=yes name=AB? email=*@meteo.ms comment=*test* country=fr options=*mqtt* case=i"
                                     title="Default search is by name. Use name, comment, country, email, enabled, monitor, backup, forceproxy and options rules."
@@ -25,7 +25,7 @@
                         </div>
                         <div class="col-3">
                             <div class="input-group">
-                                <span class="input-group-text text-muted bg-white"><i class="bi bi-tag"></i></span>
+                                <span class="input-group-text text-muted"><i class="bi bi-tag"></i></span>
                                 <select class="form-select" name="destinationType" id="destinationType" onchange="form.submit()" title="Filter by Type">
                                     <c:forEach var="option" items="${typeOptions}">
                                         <option value="${option.name}" <c:if test="${destinationType == option.name}">selected</c:if>>${option.value}</option>
@@ -46,7 +46,7 @@
                     <div class="row g-2">
                         <div class="col-3">
                             <div class="input-group input-group-sm">
-                                <span class="input-group-text text-muted bg-white"><i class="bi bi-activity"></i></span>
+                                <span class="input-group-text text-muted"><i class="bi bi-activity"></i></span>
                                 <select class="form-select form-select-sm" name="destinationStatus" onchange="form.submit()" title="Filter by Status">
                                     <c:forEach var="option" items="${statusOptions}">
                                         <option value="${option}" <c:if test="${destinationStatus == option}">selected</c:if>>${option}</option>
@@ -56,7 +56,7 @@
                         </div>
                         <div class="col-3">
                             <div class="input-group input-group-sm">
-                                <span class="input-group-text text-muted bg-white"><i class="bi bi-file-zip"></i></span>
+                                <span class="input-group-text text-muted"><i class="bi bi-file-zip"></i></span>
                                 <select class="form-select form-select-sm" name="destinationFilter" onchange="form.submit()" title="Filter by Compression">
                                     <c:forEach var="option" items="${filterOptions}">
                                         <option value="${option.name}" <c:if test="${destinationFilter == option.name}">selected</c:if>>${option.value}</option>
@@ -66,7 +66,7 @@
                         </div>
                         <div class="col-3">
                             <div class="input-group input-group-sm">
-                                <span class="input-group-text text-muted bg-white"><i class="bi bi-diagram-2"></i></span>
+                                <span class="input-group-text text-muted"><i class="bi bi-diagram-2"></i></span>
                                 <select class="form-select form-select-sm" name="aliases" onchange="form.submit()" title="Aliased From/To">
                                     <option value="all" <c:if test="${aliases == 'all'}">selected</c:if>>All Destinations</option>
                                     <option value="to"  <c:if test="${aliases == 'to'}">selected</c:if>>Aliased From ...</option>
@@ -76,7 +76,7 @@
                         </div>
                         <div class="col-3">
                             <div class="input-group input-group-sm">
-                                <span class="input-group-text text-muted bg-white"><i class="bi bi-sort-alpha-down"></i></span>
+                                <span class="input-group-text text-muted"><i class="bi bi-sort-alpha-down"></i></span>
                                 <select class="form-select form-select-sm" name="sortDirection" onchange="form.submit()" title="Sort Direction">
                                     <option value="asc"  <c:if test="${sortDirection == 'asc'}">selected</c:if>>Ascending</option>
                                     <option value="desc" <c:if test="${sortDirection == 'desc'}">selected</c:if>>Descending</option>
@@ -87,7 +87,7 @@
 
                     <%-- Query Builder collapse panel --%>
                     <div class="collapse mt-2" id="destQueryBuilder">
-                        <div class="border rounded p-2 bg-white" style="font-size:0.85rem">
+                        <div class="border rounded p-2" style="font-size:0.85rem">
                             <div class="row g-2 mb-2">
                                 <div class="col-md-4">
                                     <label class="form-label mb-1 fw-semibold"><code>name=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
@@ -266,8 +266,13 @@
 <c:if test="${not empty columns}">
     <div class="d-flex align-items-center mb-2 gap-2">
         <span class="text-muted small"><i class="bi bi-list-ul"></i> <strong>${fn:length(destinations)}</strong> destination(s) found</span>
+        <button id="btnDestLayout" type="button" class="btn btn-sm btn-outline-secondary ms-auto"
+                onclick="toggleDestLayout()"
+                title="Toggle between single-column and two-column split view">
+            <i class="bi bi-layout-three-columns"></i> Split
+        </button>
     </div>
-    <table id="destinationsTable" class="table table-sm table-hover align-middle" style="width:100%">
+    <table id="destinationsTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
         <thead class="table-light">
             <tr>
                 <th style="width:28px;"></th>
@@ -350,15 +355,185 @@
         </tbody>
     </table>
     <script>
-    $(function() {
-        $('#destinationsTable').DataTable({
-            paging:    true,
-            pageLength: 25,
-            searching: false,
-            order:     [],
+    (function() {
+        var _opts = {
+            paging: true, pageLength: 25, searching: false, order: [],
             columnDefs: [{ orderable: false, targets: [0] }],
-            language: { lengthMenu: 'Show _MENU_ per page', info: 'Showing _START_-_END_ of _TOTAL_' }
+            language: { lengthMenu: 'Show _MENU_per page', info: 'Showing _START_-_END_ of _TOTAL_' }
+        };
+        var _isSplit = false;
+        var _allRows = [];
+        var _sortCol = -1;
+        var _sortAsc = true;
+        var _pageLen = 25;
+        var _curPage = 0;
+
+        function _destroyDT(sel) {
+            if ($.fn.dataTable.isDataTable(sel)) { $(sel).DataTable().destroy(); }
+        }
+
+        function _colText(row, col) {
+            var c = row.querySelectorAll('td')[col];
+            return c ? c.textContent.trim().toLowerCase() : '';
+        }
+
+        function _redistribute() {
+            var start = _curPage * _pageLen;
+            var end   = Math.min(start + _pageLen, _allRows.length);
+            var page  = _allRows.slice(start, end);
+            var half  = Math.ceil(page.length / 2);
+
+            $('#destTableL tbody').empty();
+            $('#destTableR tbody').empty();
+            page.slice(0, half).forEach(function(r) { $('#destTableL tbody').append(r); });
+            page.slice(half).forEach(function(r)    { $('#destTableR tbody').append(r); });
+
+            /* Info label */
+            $('#destSplitInfo').text(_allRows.length > 0
+                ? 'Showing ' + (start + 1) + '\u2013' + end + ' of ' + _allRows.length
+                : 'No entries');
+
+            /* Pagination buttons */
+            var tp    = Math.max(1, Math.ceil(_allRows.length / _pageLen));
+            var $pager = $('#destSplitPager').empty();
+            var $ul = $('<ul class="pagination mb-0">');
+            function mkNavLi(label, targetPage, disabled) {
+                var $li = $('<li class="dt-paging-button page-item' + (disabled ? ' disabled' : '') + '">');
+                var $a = $('<a class="page-link" href="#">').html(label);
+                if (!disabled) { $a.on('click', function(e) { e.preventDefault(); _curPage = targetPage; _redistribute(); }); }
+                return $li.append($a);
+            }
+            $ul.append(mkNavLi('&laquo;', 0, _curPage === 0));
+            $ul.append(mkNavLi('&lsaquo;', _curPage - 1, _curPage === 0));
+            for (var p = 0; p < tp; p++) {
+                $('<li class="dt-paging-button page-item' + (p === _curPage ? ' active' : '') + '">')
+                    .append((function(pg) {
+                        return $('<a class="page-link" href="#">').text(pg + 1).on('click', function(e) {
+                            e.preventDefault(); _curPage = pg; _redistribute();
+                        });
+                    })(p)).appendTo($ul);
+            }
+            $ul.append(mkNavLi('&rsaquo;', _curPage + 1, _curPage >= tp - 1));
+            $ul.append(mkNavLi('&raquo;', tp - 1, _curPage >= tp - 1));
+            $pager.append($('<nav>').append($ul));
+
+            /* Sort indicators */
+            ['#destTableL', '#destTableR'].forEach(function(sel) {
+                $(sel + ' thead th').each(function(i) {
+                    $(this).removeClass('sorting sorting_asc sorting_desc');
+                    if (i === 0) return;
+                    $(this).addClass(i === _sortCol ? (_sortAsc ? 'sorting_asc' : 'sorting_desc') : 'sorting');
+                });
+            });
+
+            /* Sync row heights between the two columns */
+            var $rowsL = $('#destTableL tbody tr').css('height', '');
+            var $rowsR = $('#destTableR tbody tr').css('height', '');
+            $rowsL.each(function(i) {
+                var $r = $rowsR.eq(i);
+                if ($r.length) {
+                    var h = Math.max($(this).outerHeight(), $r.outerHeight());
+                    $(this).css('height', h + 'px');
+                    $r.css('height', h + 'px');
+                }
+            });
+        }
+
+        function _attachSplitSort() {
+            ['#destTableL', '#destTableR'].forEach(function(sel) {
+                $(sel + ' thead th').each(function(colIdx) {
+                    if (colIdx === 0) return;
+                    $(this).addClass('sorting').css('cursor', 'pointer')
+                           .off('click.dsort').on('click.dsort', function() {
+                        if (_sortCol === colIdx) { _sortAsc = !_sortAsc; }
+                        else { _sortCol = colIdx; _sortAsc = true; }
+                        _allRows.sort(function(a, b) {
+                            var va = _colText(a, colIdx), vb = _colText(b, colIdx);
+                            return _sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+                        });
+                        _curPage = 0;
+                        _redistribute();
+                    });
+                });
+            });
+        }
+
+        window.toggleDestLayout = function() {
+            var btn = document.getElementById('btnDestLayout');
+            _isSplit = !_isSplit;
+
+            if (_isSplit) {
+                var dt   = $('#destinationsTable').DataTable();
+                _pageLen = dt.page.len();
+                _allRows = dt.rows({ order: 'current' }).nodes().toArray();
+                var $head = $('#destinationsTable thead').clone();
+                _destroyDT('#destinationsTable');
+                _curPage = 0; _sortCol = -1; _sortAsc = true;
+
+                function makeCol(id) {
+                    return $('<div style="flex:1;min-width:0">').append(
+                        $('<table>', { id: id, 'class': 'table table-sm table-hover table-striped align-middle dataTable', style: 'width:100%' })
+                        .append($head.clone()).append($('<tbody>'))
+                    );
+                }
+
+                var $lenSel = $('<select id="destSplitLenSel" class="form-select form-select-sm" style="display:inline-block;width:auto;margin-right:0.5em">');
+                [10, 25, 50, 100].forEach(function(v) {
+                    $('<option>', { value: v, selected: v === _pageLen }).text(v).appendTo($lenSel);
+                });
+                $lenSel.on('change', function() { _pageLen = +this.value; _curPage = 0; _redistribute(); });
+
+                var $toolbar = $('<div class="row mb-2">').append(
+                    $('<div class="col-auto">').append(
+                        $('<div class="dataTables_length">').append(
+                            $('<label>').append('Show ').append($lenSel).append('per page')
+                        )
+                    )
+                );
+
+                var $tables = $('<div class="d-flex gap-3 align-items-start">')
+                    .append(makeCol('destTableL'))
+                    .append(makeCol('destTableR'));
+
+                var $footer = $('<div class="row mt-2">').append(
+                    $('<div class="col-sm-12 col-md-5">').append(
+                        $('<div id="destSplitInfo" class="dataTables_info" style="padding-top:.85em">')
+                    )
+                ).append(
+                    $('<div class="col-sm-12 col-md-7">').append(
+                        $('<div id="destSplitPager" class="dataTables_paginate d-flex justify-content-md-end">')
+                    )
+                );
+
+                $('#destinationsTable').replaceWith(
+                    $('<div id="destSplitWrap">').append($toolbar).append($tables).append($footer)
+                );
+                _attachSplitSort();
+                _redistribute();
+                btn.innerHTML = '<i class="bi bi-layout-sidebar-inset"></i> Single';
+            } else {
+                /* Restore ALL rows from _allRows (includes off-page rows not in DOM) */
+                var $head = $('#destTableL thead').clone();
+                $head.find('th').removeClass('sorting sorting_asc sorting_desc');
+                var $tbody = $('<tbody>');
+                _allRows.forEach(function(r) { $tbody.append(r); });
+                $('#destSplitWrap').replaceWith(
+                    $('<table>', { id: 'destinationsTable', 'class': 'table table-sm table-hover table-striped align-middle', style: 'width:100%' })
+                    .append($head).append($tbody)
+                );
+                $('#destinationsTable').DataTable($.extend({}, _opts, { pageLength: _pageLen }));
+                _sortCol = -1; _sortAsc = true; _allRows = [];
+                btn.innerHTML = '<i class="bi bi-layout-three-columns"></i> Split';
+            }
+            localStorage.setItem('destLayout', _isSplit ? 'split' : 'single');
+        };
+
+        $(function() {
+            $('#destinationsTable').DataTable(_opts);
+            if (localStorage.getItem('destLayout') === 'split') {
+                window.toggleDestLayout();
+            }
         });
-    });
+    })();
     </script>
 </c:if>

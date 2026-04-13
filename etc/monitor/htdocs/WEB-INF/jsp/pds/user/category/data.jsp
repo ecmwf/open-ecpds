@@ -48,7 +48,7 @@
 	            <div class="d-flex flex-wrap">
 	              <c:forEach var="resource" items="${category.accessibleResources}">
 	                <span class="assoc-chip">
-	                  <a href="/do/user/resource/${resource.id}" class="text-decoration-none text-dark">${resource.path}</a>
+	                  <a href="/do/user/resource/${resource.id}" class="text-decoration-none text-body">${resource.path}</a>
 	                </span>
 	              </c:forEach>
 	            </div>
@@ -72,7 +72,7 @@
 	            <div class="d-flex flex-wrap">
 	              <c:forEach var="user" items="${category.usersWithProfile}">
 	                <span class="assoc-chip">
-	                  <a href="/do/user/user/${user.id}" title="${user.commonName}" class="text-decoration-none text-dark">${user.id}</a>
+	                  <a href="/do/user/user/${user.id}" title="${user.commonName}" class="text-decoration-none text-body">${user.id}</a>
 	                </span>
 	              </c:forEach>
 	            </div>

@@ -98,7 +98,7 @@ table.fields > tbody > tr > th {
 				            <div class="d-flex flex-wrap">
 				              <c:forEach var="policy" items="${incoming.associatedIncomingPolicies}">
 				                <span class="assoc-chip">
-				                  <a href="<bean:message key="policy.basepath"/>/${policy.id}" title="${policy.comment}" class="text-decoration-none text-dark">${policy.id}</a>
+				                  <a href="<bean:message key="policy.basepath"/>/${policy.id}" title="${policy.comment}" class="text-decoration-none text-body">${policy.id}</a>
 				                </span>
 				              </c:forEach>
 				            </div>
@@ -123,7 +123,7 @@ table.fields > tbody > tr > th {
 				            <div class="d-flex flex-wrap">
 				              <c:forEach var="destination" items="${incoming.associatedDestinations}">
 				                <span class="assoc-chip">
-				                  <a href="<bean:message key="destination.basepath"/>/${destination.name}" title="${destination.comment}" class="text-decoration-none text-dark">${destination.name}</a>
+				                  <a href="<bean:message key="destination.basepath"/>/${destination.name}" title="${destination.comment}" class="text-decoration-none text-body">${destination.name}</a>
 				                </span>
 				              </c:forEach>
 				            </div>

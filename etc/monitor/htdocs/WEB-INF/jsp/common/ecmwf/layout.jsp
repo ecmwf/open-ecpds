@@ -57,6 +57,8 @@ body{background:#fff;color:#000;font-family:Arial,sans-serif;margin:0;padding:0;
 .typing-indicator .dot:nth-child(2){animation-delay:.2s;}
 .typing-indicator .dot:nth-child(3){animation-delay:.4s;}
 @keyframes blink{0%,80%,100%{opacity:.3;}40%{opacity:1;}}
+[data-bs-theme=dark] .input-group-text{background-color:var(--bs-tertiary-bg)!important;color:var(--bs-secondary-color)!important;border-color:var(--bs-border-color)!important;}
+[data-bs-theme=dark] input[type="text"].search,[data-bs-theme=dark] .search{background-color:var(--bs-body-bg)!important;color:var(--bs-body-color)!important;border-color:var(--bs-border-color)!important;}
 </style>
 
 <body>

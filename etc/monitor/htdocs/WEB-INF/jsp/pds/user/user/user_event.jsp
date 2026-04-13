@@ -8,7 +8,10 @@
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
 
 <form>
-<input class="search" name="search" type="text" placeholder="Search.." title="Search is performed across the Host, Action and Comment in case-insensitive" value="${param['search']}">
+<div class="input-group input-group-sm mb-2" style="max-width:400px">
+<span class="input-group-text"><i class="bi bi-search"></i></span>
+<input class="form-control" name="search" type="text" placeholder="Search.." title="Search is performed across the Host, Action and Comment in case-insensitive" value="${param['search']}">
+</div>
 </form>
 
 <tiles:insert name="date.select"/>

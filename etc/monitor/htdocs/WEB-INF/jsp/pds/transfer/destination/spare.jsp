@@ -31,6 +31,7 @@
 </c:if>
 <c:set var="mode" value="${param['mode']}" />
 
+<c:if test="${not empty destination.id}">
 <table class="editSpareBox">
     <tr>
         <th colspan="3" title="">
@@ -38,8 +39,6 @@
         </th>
     </tr>
     <tr><td colspan="3"></td></tr>
-
-    <c:if test="${not empty destination.id}">
 
     <auth:if basePathKey="transferhistory.basepath" paths="/">
         <auth:then>
@@ -106,8 +105,8 @@
         <c:if test="${empty time}"><c:set var="time" value="00" /></c:if>
     </c:if>
 
-    </c:if><%-- end: not empty destination.id --%>
 </table>
+</c:if><%-- end: not empty destination.id (guards whole table) --%>
 
 <%-- Products: separate menu table, product names in tooltips only --%>
 <c:if test="${destination.monitoringStatus.present and not empty products}">

@@ -182,10 +182,10 @@ const tDuration = _si.map(i=>_tDuration[i]);
     </div>
     <span id="chartPeriodLabel" class="text-muted ms-1" style="font-size:0.78rem;"></span>
   </div>
-  <div class="mb-4 p-2 border rounded bg-white" style="position:relative; height:320px;">
+  <div class="mb-4 p-2 border rounded" style="position:relative; height:320px;">
     <canvas id="chartBytesRate"></canvas>
   </div>
-  <div class="p-2 border rounded bg-white" style="position:relative; height:220px;">
+  <div class="p-2 border rounded" style="position:relative; height:220px;">
     <canvas id="chartFiles"></canvas>
   </div>
 </div>

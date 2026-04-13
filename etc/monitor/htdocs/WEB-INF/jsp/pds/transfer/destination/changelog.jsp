@@ -43,7 +43,7 @@
 #changelogTable td:first-child, #changelogTable td:nth-child(2) { white-space:nowrap; vertical-align:top; padding-top:0.6rem; }
 </style>
 
-<table id="changelogTable" class="table table-sm table-hover" style="width:100%">
+<table id="changelogTable" class="table table-sm table-hover table-striped" style="width:100%">
 	<thead class="table-light">
 		<tr>
 			<th>Date &amp; Time</th>

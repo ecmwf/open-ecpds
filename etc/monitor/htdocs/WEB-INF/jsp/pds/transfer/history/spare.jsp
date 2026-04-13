@@ -7,11 +7,11 @@
 
  <c:if test="${param['mode'] != 'productDate'}">
   <tr><td colspan="2"><a href="?destinationName=${destination.id}&mode=productDate&date=${param['date']}"><i class="bi bi-tag"></i> Product Date</a></td></tr>
-  <tr><td colspan="2" style="background-color:#d5d5d5; padding-left:10px;"><i class="bi bi-clock-history"></i> History Date</td></tr>
+  <tr><td colspan="2" style="background-color:var(--bs-secondary-bg); padding-left:10px;"><i class="bi bi-clock-history"></i> History Date</td></tr>
  </c:if>
 
  <c:if test="${param['mode'] == 'productDate'}">
-  <tr><td colspan="2" style="background-color:#d5d5d5; padding-left:10px;"><i class="bi bi-tag"></i> Product Date</td></tr>
+  <tr><td colspan="2" style="background-color:var(--bs-secondary-bg); padding-left:10px;"><i class="bi bi-tag"></i> Product Date</td></tr>
   <tr><td colspan="2"><a href="?destinationName=${destination.id}&mode=historyDate&date=${param['date']}"><i class="bi bi-clock-history"></i> History Date</a></td></tr>
  </c:if>
 </table>

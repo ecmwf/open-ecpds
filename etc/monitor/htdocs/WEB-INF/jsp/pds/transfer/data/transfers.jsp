@@ -17,13 +17,13 @@
             <c:choose>
                 <c:when test="${transferStatus.id == currentTransferStatus.id}">
                     <a href="?transferStatus=${transferStatus.id}&refreshPeriod=${currentRefresh}"
-                       class="badge text-decoration-none"
-                       style="background:#0d6efd; color:#fff; padding:0.35em 0.7em; font-size:0.8rem;">${transferStatus.name}</a>
+                       class="badge text-decoration-none bg-primary"
+                       style="padding:0.35em 0.7em; font-size:0.8rem;">${transferStatus.name}</a>
                 </c:when>
                 <c:otherwise>
                     <a href="?transferStatus=${transferStatus.id}&refreshPeriod=${currentRefresh}"
-                       class="badge text-decoration-none"
-                       style="background:#e9ecef; color:#495057; padding:0.35em 0.7em; font-size:0.8rem;">${transferStatus.name}</a>
+                       class="badge text-decoration-none bg-secondary-subtle text-body"
+                       style="padding:0.35em 0.7em; font-size:0.8rem;">${transferStatus.name}</a>
                 </c:otherwise>
             </c:choose>
         </c:forEach>
@@ -62,7 +62,7 @@
                     <div class="row g-2">
                         <div class="col-7">
                             <div class="input-group">
-                                <span class="input-group-text text-muted bg-white"><i class="bi bi-search"></i></span>
+                                <span class="input-group-text text-muted"><i class="bi bi-search"></i></span>
                                 <input class="form-control" name="transferSearch" id="transferSearch" type="text"
                                     placeholder="e.g. expired=no target=*.dat source=/tmp/* ts&gt;10 ts&lt;=99 size&gt;=700kb case=i"
                                     title="Default search is by target. Use target, source, ts, priority, groupby, identity, checksum, size, replicated, asap, deleted, expired, proxy, mover and event rules."
@@ -71,7 +71,7 @@
                         </div>
                         <div class="col-3">
                             <div class="input-group">
-                                <span class="input-group-text text-muted bg-white"><i class="bi bi-tag"></i></span>
+                                <span class="input-group-text text-muted"><i class="bi bi-tag"></i></span>
                                 <select class="form-select" name="transferType" onchange="form.submit()" title="Filter by Type">
                                     <c:forEach var="option" items="${transferTypeOptions}">
                                         <option value="${option.name}" <c:if test="${transferType == option.name}">selected</c:if>>${option.value}</option>
@@ -91,7 +91,7 @@
 
                     <%-- Query Builder collapse panel --%>
                     <div class="collapse mt-2" id="queryBuilder">
-                        <div class="border rounded p-2 bg-white" style="font-size:0.85rem">
+                        <div class="border rounded p-2" style="font-size:0.85rem">
                             <div class="row g-2 mb-2">
                                 <div class="col-md-6">
                                     <label class="form-label mb-1 fw-semibold"><code>target=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>

@@ -470,7 +470,7 @@ select.form-select { height: auto; width: auto; padding: 0.375rem 2.25rem 0.375r
 select.form-select-sm { padding: 0.25rem 2.25rem 0.25rem 0.5rem; font-size: 0.875rem; }
 input.form-control  { height: auto; width: auto; padding: 0.375rem 0.75rem; border: 1px solid #ced4da; border-radius: var(--bs-border-radius); }
 input.form-control-sm { padding: 0.25rem 0.5rem; font-size: 0.875rem; }
-.input-group-text { border-color: #ced4da; background-color: #f8f9fa; color: #6c757d; }
+.input-group-text { border-color: var(--bs-border-color) !important; background-color: var(--bs-tertiary-bg) !important; color: var(--bs-secondary-color) !important; }
 
 textarea {
 	Font-size: 10pt;
@@ -1522,3 +1522,233 @@ img[src*="/assets/icons/"] {
 
 /* Association chooser: used by assocSearch() to hide non-matching items */
 .assoc-hidden { display: none !important; }
+
+/* ============================================================
+   DARK MODE OVERRIDES
+   Bootstrap handles its own components via data-bs-theme=dark.
+   These rules cover legacy custom CSS elements.
+   ============================================================ */
+
+/* Body background (overrides legacy inline bgcolor/color attributes) */
+[data-bs-theme=dark] body { background-color: var(--bs-body-bg) !important; color: var(--bs-body-color) !important; }
+[data-bs-theme=dark] #loadingDiv { background: var(--bs-body-bg) !important; }
+
+/* Legacy form elements that bypass Bootstrap classes */
+[data-bs-theme=dark] input:not(.form-control):not(.form-check-input):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="file"]),
+[data-bs-theme=dark] select:not(.form-select),
+[data-bs-theme=dark] textarea:not(.form-control) {
+    color: var(--bs-body-color);
+    background-color: var(--bs-body-bg);
+    border-color: var(--bs-border-color);
+}
+[data-bs-theme=dark] input[type="text"].search,
+[data-bs-theme=dark] .search {
+    color: var(--bs-body-color);
+    background-color: var(--bs-body-bg);
+    border-color: var(--bs-border-color);
+}
+[data-bs-theme=dark] button:not(.btn):not(.btn-close):not(.date-pill) {
+    background: var(--bs-secondary-bg);
+    color: var(--bs-body-color);
+    border-color: var(--bs-border-color);
+}
+[data-bs-theme=dark] button:not(.btn):not(.btn-close):not(.date-pill):hover {
+    background: var(--bs-tertiary-bg);
+    border-color: var(--bs-secondary-color);
+}
+
+/* Legacy link colours */
+[data-bs-theme=dark] table.destination a,
+[data-bs-theme=dark] table.biggerListing a,
+[data-bs-theme=dark] table.toplevel a,
+[data-bs-theme=dark] table.destinations a,
+[data-bs-theme=dark] table.select a,
+[data-bs-theme=dark] table.products a,
+[data-bs-theme=dark] .spareBox a,
+[data-bs-theme=dark] .editSpareBox a,
+[data-bs-theme=dark] .spareBox2 a,
+[data-bs-theme=dark] .spareBox3 a { color: var(--bs-body-color); }
+
+/* table.listing */
+[data-bs-theme=dark] table.listing caption { background: var(--bs-body-bg); color: var(--bs-body-color); }
+[data-bs-theme=dark] table.listing td { border-color: var(--bs-border-color); }
+[data-bs-theme=dark] tr.odd { background: var(--bs-tertiary-bg); }
+[data-bs-theme=dark] tr.even { background: var(--bs-body-bg); }
+
+/* table.fields */
+[data-bs-theme=dark] table.fields > tbody > tr > th {
+    background: var(--bs-secondary-bg);
+    color: var(--bs-body-color);
+    border-right-color: var(--bs-border-color);
+}
+[data-bs-theme=dark] table.fields > tbody > tr > td {
+    background: var(--bs-body-bg);
+    color: var(--bs-body-color);
+}
+
+/* table.spareBox / editSpareBox */
+[data-bs-theme=dark] table.spareBox th,
+[data-bs-theme=dark] table.spareBox2 th,
+[data-bs-theme=dark] table.spareBox3 th,
+[data-bs-theme=dark] table.editSpareBox th { background: var(--bs-secondary-bg); color: var(--bs-body-color); }
+[data-bs-theme=dark] table.spareBox td,
+[data-bs-theme=dark] table.spareBox2 td,
+[data-bs-theme=dark] table.spareBox3 td,
+[data-bs-theme=dark] table.editSpareBox td { background: var(--bs-body-bg); }
+
+/* table.warning */
+[data-bs-theme=dark] table.warning td { background: var(--bs-body-bg); color: var(--bs-body-color); }
+
+/* table.select */
+[data-bs-theme=dark] table.select td { background: var(--bs-secondary-bg); color: var(--bs-body-color); }
+[data-bs-theme=dark] table.select th,
+[data-bs-theme=dark] table.select td.selected { background: var(--bs-body-bg); color: var(--bs-body-color); }
+
+/* table.toplevel / destinations / products */
+[data-bs-theme=dark] table.toplevel tr.titles td { background: var(--bs-secondary-bg); color: var(--bs-body-color); }
+[data-bs-theme=dark] table.toplevel td.selected { background: var(--bs-body-bg); }
+[data-bs-theme=dark] table.products td { background: var(--bs-secondary-bg); }
+[data-bs-theme=dark] table.products td.icon,
+[data-bs-theme=dark] table.products td.selected { background: var(--bs-body-bg); }
+
+/* table.fieldsDetail */
+[data-bs-theme=dark] table.fieldsDetail th { background: var(--bs-secondary-bg); color: var(--bs-body-color); }
+
+/* th.header (orange header row) */
+[data-bs-theme=dark] th.header { background: #6b4c1e; color: #ffe0b2; }
+
+/* table.info-panel */
+[data-bs-theme=dark] table.info-panel td { background: var(--bs-secondary-bg); color: var(--bs-body-color); }
+
+/* div.chooser */
+[data-bs-theme=dark] div.chooser {
+    background: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    border-color: var(--bs-border-color);
+}
+
+/* Date pills and strips */
+[data-bs-theme=dark] .date-strip {
+    background: var(--bs-tertiary-bg);
+    border-color: var(--bs-border-color);
+}
+[data-bs-theme=dark] .date-pill:not(.active) {
+    background: var(--bs-body-bg);
+    border-color: var(--bs-border-color);
+    color: var(--bs-body-color);
+}
+[data-bs-theme=dark] .date-pill:not(.active):hover {
+    background: var(--bs-secondary-bg);
+    border-color: var(--bs-secondary-color);
+    color: var(--bs-body-color);
+}
+
+/* Filter / legend panels (defined in filter.jsp / reload.jsp) */
+[data-bs-theme=dark] .filter-panel,
+[data-bs-theme=dark] .legend-panel {
+    background: var(--bs-body-bg);
+    border-color: var(--bs-border-color);
+    color: var(--bs-body-color);
+}
+[data-bs-theme=dark] .filter-chip {
+    background: var(--bs-secondary-bg);
+    border-color: var(--bs-border-color);
+    color: var(--bs-secondary-color);
+}
+[data-bs-theme=dark] .filter-chip.selected {
+    background: #1b3729;
+    border-color: #28a745;
+    color: #7dc899;
+    text-decoration: none;
+}
+
+/* Alert and info callouts (.alert is legacy custom, not Bootstrap .alert-*) */
+[data-bs-theme=dark] .alert {
+    background-color: #2a1f00;
+    border-color: #6b5000;
+    border-left-color: #ffc107;
+    color: #ffd966;
+}
+[data-bs-theme=dark] .alert::before { color: #ffc107; }
+[data-bs-theme=dark] .closebtn { color: #ffd966; }
+[data-bs-theme=dark] .info {
+    background-color: #001830;
+    border-color: #083d73;
+    border-left-color: #0d6efd;
+    color: #7bb6fa;
+}
+[data-bs-theme=dark] .info::before { color: #4d9bfc; }
+[data-bs-theme=dark] .infobtn { color: #7bb6fa; }
+
+/* Help panel */
+[data-bs-theme=dark] .help-nav {
+    background: var(--bs-body-bg);
+    border-bottom-color: var(--bs-border-color);
+}
+[data-bs-theme=dark] .help-nav-pill { background: var(--bs-secondary-bg); color: var(--bs-body-color); border-color: transparent; }
+[data-bs-theme=dark] .help-row { border-bottom-color: var(--bs-border-color); }
+[data-bs-theme=dark] .help-tip { color: var(--bs-secondary-color); }
+
+/* Sidebar nav */
+[data-bs-theme=dark] #sidebarMenu table.spareBox2 td,
+[data-bs-theme=dark] #sidebarMenu table.editSpareBox td,
+[data-bs-theme=dark] #sidebarMenu table.spareBox td {
+    background: var(--bs-body-bg);
+    border-top-color: var(--bs-border-color);
+    color: var(--bs-body-color);
+}
+[data-bs-theme=dark] #sidebarMenu table.spareBox2 td a,
+[data-bs-theme=dark] #sidebarMenu table.spareBox td a,
+[data-bs-theme=dark] #sidebarMenu table.editSpareBox td a { color: var(--bs-body-color) !important; }
+[data-bs-theme=dark] #sidebarMenu table.editSpareBox tr:hover td,
+[data-bs-theme=dark] #sidebarMenu table.spareBox2 td a:hover,
+[data-bs-theme=dark] #sidebarMenu table.spareBox td a:hover { background: var(--bs-secondary-bg) !important; }
+[data-bs-theme=dark] #sidebarMenu table.editSpareBox th a::after { background: linear-gradient(to right, transparent, #343a40); }
+[data-bs-theme=dark] #sidebarMenu table.spareBox td:last-child:not(:has(a)):not(:empty) {
+    background: #0d2547 !important;
+    color: #6ea8fe;
+    border-left-color: #0d6efd;
+}
+
+/* Destination page header */
+[data-bs-theme=dark] .dest-page-name { color: var(--bs-emphasis-color); }
+[data-bs-theme=dark] .dest-page-id { background: var(--bs-secondary-bg); color: var(--bs-secondary-color); }
+[data-bs-theme=dark] .dest-page-type { background: #0d2547; color: #6ea8fe; }
+[data-bs-theme=dark] .dest-type-gold   { background: #2e1a00; color: #fbbf24; border-color: #78350f; }
+[data-bs-theme=dark] .dest-type-silver { background: #151e2b; color: #94a3b8; border-color: #334155; }
+[data-bs-theme=dark] .dest-type-bronze { background: #261408; color: #fb923c; border-color: #7c3404; }
+[data-bs-theme=dark] .dest-type-basic  { background: #0d1f3c; color: #93c5fd; border-color: #1e3a6e; }
+[data-bs-theme=dark] .dest-page-comment { color: var(--bs-secondary-color); }
+[data-bs-theme=dark] .dest-list-link { color: var(--bs-body-color); }
+[data-bs-theme=dark] .dest-page-header { background: rgba(13,110,253,0.1); }
+
+/* Form info banner */
+[data-bs-theme=dark] .form-info-banner { background: rgba(13,110,253,0.12); color: var(--bs-secondary-color); }
+
+/* Home page cards and admin tools */
+[data-bs-theme=dark] .home-section-card { border-color: var(--bs-border-color); }
+[data-bs-theme=dark] .home-section-hdr { border-bottom-color: var(--bs-border-color); }
+[data-bs-theme=dark] .home-menu li { border-bottom-color: var(--bs-border-color); }
+[data-bs-theme=dark] .home-menu li a { color: var(--bs-body-color); }
+[data-bs-theme=dark] .admin-tool { background: var(--bs-tertiary-bg); border-color: var(--bs-border-color); }
+[data-bs-theme=dark] .admin-tool .tool-title { color: var(--bs-body-color); }
+[data-bs-theme=dark] .admin-tool .tool-desc { color: var(--bs-secondary-color); }
+
+/* Home section card headers have inline background colours — force-override in dark mode */
+[data-bs-theme=dark] .home-section-hdr {
+    background: var(--bs-secondary-bg) !important;
+    color: var(--bs-body-color) !important;
+    border-bottom-color: var(--bs-border-color);
+}
+[data-bs-theme=dark] .home-section-card {
+    background: var(--bs-body-bg);
+    border-color: var(--bs-border-color);
+}
+[data-bs-theme=dark] .home-menu li a i { color: var(--bs-secondary-color); }
+
+/* assoc-chip / assoc-card dark mode (user, category, resource, policy, incoming pages) */
+[data-bs-theme=dark] .assoc-card .card-header { background: var(--bs-tertiary-bg); }
+[data-bs-theme=dark] .assoc-chip { background: var(--bs-secondary-bg); }
+[data-bs-theme=dark] .assoc-chip a { color: var(--bs-secondary-color); }
+[data-bs-theme=dark] .assoc-chooser-item { color: var(--bs-body-color); }
+[data-bs-theme=dark] .assoc-chooser-item:hover { background: var(--bs-secondary-bg); }

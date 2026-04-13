@@ -19,6 +19,10 @@
         <div class="d-flex align-items-center gap-2 flex-shrink-0">
             <tiles:insert name="submenu_top" />
 
+            <button id="btnTheme" class="btn btn-sm btn-outline-light p-1 lh-1" onclick="ecpdsToggleTheme()" title="Toggle light/dark theme" style="width:28px;height:28px;">
+              <i id="themeIcon" class="bi bi-moon-fill" style="font-size:0.8rem;"></i>
+            </button>
+
             <logic:present name="<%=ecmwf.web.model.users.User.SESSION_KEY%>">
                 <div class="dropdown">
                     <a class="dropdown-toggle text-white text-decoration-none fw-semibold small"
@@ -40,3 +44,17 @@
         <tiles:insert name="location" />
     </div>
 </nav>
+<script>
+function ecpdsToggleTheme() {
+  var t = document.documentElement.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-bs-theme', t);
+  localStorage.setItem('ecpds-theme', t);
+  var ic = document.getElementById('themeIcon');
+  if (ic) ic.className = t === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-fill';
+}
+(function(){
+  var t = document.documentElement.getAttribute('data-bs-theme') || 'light';
+  var ic = document.getElementById('themeIcon');
+  if (ic) ic.className = t === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-fill';
+}());
+</script>

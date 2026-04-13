@@ -1,7 +1,7 @@
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth" %>
 
 <div class="d-flex align-items-start gap-2 mb-4 px-2 py-2 rounded"
-     style="background:rgba(13,110,253,0.05); border-left:4px solid #0d6efd; font-size:0.85rem; color:#495057; max-width:640px;">
+     style="background:rgba(13,110,253,0.05); border-left:4px solid #0d6efd; font-size:0.85rem; color:var(--bs-body-color); max-width:640px;">
     <i class="bi bi-database text-primary ms-1 flex-shrink-0 mt-1"></i>
     <span>
         <strong><%=System.getProperty("monitor.nickName")%></strong> stores Data Files with their associated Metadata

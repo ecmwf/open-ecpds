@@ -1,7 +1,7 @@
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth" %>
 
 <div class="d-flex align-items-start gap-2 mb-4 px-2 py-2 rounded"
-     style="background:rgba(255,193,7,0.07); border-left:4px solid #ffc107; font-size:0.85rem; color:#495057; max-width:680px;">
+     style="background:rgba(255,193,7,0.07); border-left:4px solid #ffc107; font-size:0.85rem; color:var(--bs-body-color); max-width:680px;">
     <i class="bi bi-shield-lock text-warning ms-1 flex-shrink-0 mt-1"></i>
     <span>
         <strong><%=System.getProperty("monitor.nickName")%></strong> maintains two user types:

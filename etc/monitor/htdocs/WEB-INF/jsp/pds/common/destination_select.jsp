@@ -8,7 +8,7 @@
 
 <div style="position:relative;display:inline-flex;align-items:center" id="destPickerWrap">
     <div class="input-group input-group-sm">
-        <span class="input-group-text bg-white text-muted"><i class="bi bi-search"></i></span>
+        <span class="input-group-text text-muted"><i class="bi bi-search"></i></span>
         <input type="text" id="destPickerInput" class="form-control" style="width:280px"
                placeholder="Search destination..." autocomplete="off"
                value="<c:out value="${selectedDestination.name}"/>"
@@ -18,7 +18,7 @@
                onkeydown="destPickerKey(event)">
     </div>
     <ul id="destPickerDropdown" role="listbox"
-        class="list-unstyled border rounded bg-white shadow-sm mb-0"
+        class="list-unstyled border rounded bg-body shadow-sm mb-0"
         style="display:none;position:absolute;z-index:1050;min-width:360px;max-height:260px;overflow-y:auto;top:100%;left:0;margin-top:2px;padding:3px 0"></ul>
 </div>
 
@@ -50,7 +50,7 @@
         }) : opts.slice();
         active = -1;
         if (!filtered.length) {
-            drop.innerHTML = '<li style="padding:4px 10px;font-size:0.875rem;color:#6c757d">No match</li>';
+            drop.innerHTML = '<li style="padding:4px 10px;font-size:0.875rem;color:var(--bs-secondary-color)">No match</li>';
             return;
         }
         drop.innerHTML = filtered.map(function(o, i) {
@@ -66,7 +66,7 @@
         var items = document.querySelectorAll('#destPickerDropdown li[data-idx]');
         items.forEach(function(el) { el.style.background = ''; });
         active = (idx >= 0 && idx < items.length) ? idx : -1;
-        if (active >= 0) { items[active].style.background = '#e9ecef'; items[active].scrollIntoView({ block: 'nearest' }); }
+        if (active >= 0) { items[active].style.background = 'var(--bs-secondary-bg)'; items[active].scrollIntoView({ block: 'nearest' }); }
     }
 
     window.destPickerFilter = function() {

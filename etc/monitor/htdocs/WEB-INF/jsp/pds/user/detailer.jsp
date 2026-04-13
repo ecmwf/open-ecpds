@@ -8,7 +8,7 @@
 
 <%-- Resource path header --%>
 <div class="d-flex align-items-center gap-2 mb-3 px-2 py-2 rounded"
-     style="background:rgba(13,110,253,0.05); border-left:4px solid #0d6efd; font-size:0.85rem; color:#495057;">
+     style="background:rgba(13,110,253,0.05); border-left:4px solid #0d6efd; font-size:0.85rem; color:var(--bs-body-color);">
     <i class="bi bi-link-45deg text-primary flex-shrink-0"></i>
     <span>Resource path: <code class="fw-semibold">${resource.path}</code></span>
 </div>
@@ -16,7 +16,7 @@
 <%-- Categories this resource belongs to --%>
 <div class="d-flex align-items-center gap-2 mb-2 mt-3">
     <i class="bi bi-folder2-open text-secondary"></i>
-    <span class="fw-semibold" style="font-size:0.78rem; text-transform:uppercase; letter-spacing:0.05em; color:#6c757d;">Belongs to Categories</span>
+    <span class="fw-semibold" style="font-size:0.78rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--bs-secondary-color);">Belongs to Categories</span>
 </div>
 
 <display:table name="${categories}" id="category" requestURI="" sort="list" class="listing">
@@ -27,7 +27,7 @@
 <%-- Users with access --%>
 <div class="d-flex align-items-center gap-2 mb-2 mt-4">
     <i class="bi bi-person-check-fill text-success"></i>
-    <span class="fw-semibold" style="font-size:0.78rem; text-transform:uppercase; letter-spacing:0.05em; color:#6c757d;">Users with Access</span>
+    <span class="fw-semibold" style="font-size:0.78rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--bs-secondary-color);">Users with Access</span>
 </div>
 
 <display:table name="${users}" id="userWith" requestURI="" sort="list" class="listing">
@@ -44,7 +44,7 @@
 <%-- Users without access --%>
 <div class="d-flex align-items-center gap-2 mb-2 mt-4">
     <i class="bi bi-person-x-fill text-danger"></i>
-    <span class="fw-semibold" style="font-size:0.78rem; text-transform:uppercase; letter-spacing:0.05em; color:#6c757d;">Users without Access</span>
+    <span class="fw-semibold" style="font-size:0.78rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--bs-secondary-color);">Users without Access</span>
 </div>
 
 <display:table name="${usersNo}" id="userNo" requestURI="" sort="list" class="listing">
