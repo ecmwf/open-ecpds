@@ -12,7 +12,7 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-body py-2 px-3">
                     <%-- Row 1: search + type + button --%>
-                    <div class="row g-2 mb-2">
+                    <div class="row g-1 mb-1">
                         <div class="col-7">
                             <div class="input-group">
                                 <span class="input-group-text text-muted"><i class="bi bi-search"></i></span>
@@ -35,8 +35,9 @@
                         <div class="col-2 d-flex gap-1">
                             <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-search"></i> Search</button>
                             <button type="button" class="btn btn-outline-secondary px-2"
-                                    data-bs-toggle="collapse" data-bs-target="#hostQueryBuilder"
-                                    title="Build query" aria-expanded="false" aria-controls="hostQueryBuilder">
+                                    id="btnHostQB"
+                                    onclick="toggleQBPanel('hostQueryBuilder','btnHostQB')"
+                                    title="Build query">
                                 <i class="bi bi-sliders2"></i>
                             </button>
                         </div>
@@ -75,12 +76,12 @@
                         </div>
                     </div>
 
-                    <%-- Query Builder collapse panel --%>
-                    <div class="collapse mt-2" id="hostQueryBuilder">
-                        <div class="border rounded p-2" style="font-size:0.85rem">
-                            <div class="row g-2 mb-2">
-                                <div class="col-md-3">
-                                    <label class="form-label mb-1 fw-semibold"><code>nickname=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
+                    <%-- Query Builder panel --%>
+                    <div id="hostQueryBuilder" class="border rounded p-2"
+                         style="display:none; position:absolute; z-index:9999; background:var(--bs-body-bg); box-shadow:0 4px 16px rgba(0,0,0,0.15); font-size:0.85rem">
+                        <div class="row g-1 mb-1">
+                                <div class="col-4">
+                                    <label class="form-label mb-0 fw-semibold"><code>nickname=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
                                     <input type="text" class="form-control form-control-sm" id="hqb_nickname" placeholder="e.g. Test_0?" oninput="hqbPreview()" list="hqb_nickname_list" autocomplete="off">
                                     <datalist id="hqb_nickname_list">
                                         <c:forEach var="n" items="${hostNickNames}">
@@ -88,8 +89,8 @@
                                         </c:forEach>
                                     </datalist>
                                 </div>
-                                <div class="col-md-4">
-                                    <label class="form-label mb-1 fw-semibold"><code>hostname=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
+                                <div class="col-4">
+                                    <label class="form-label mb-0 fw-semibold"><code>hostname=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
                                     <input type="text" class="form-control form-control-sm" id="hqb_hostname" placeholder="e.g. *.test.fr" oninput="hqbPreview()" list="hqb_hostname_list" autocomplete="off">
                                     <datalist id="hqb_hostname_list">
                                         <c:forEach var="h" items="${hostHostNames}">
@@ -97,8 +98,8 @@
                                         </c:forEach>
                                     </datalist>
                                 </div>
-                                <div class="col-md-3">
-                                    <label class="form-label mb-1 fw-semibold"><code>method=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
+                                <div class="col-4">
+                                    <label class="form-label mb-0 fw-semibold"><code>method=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
                                     <input type="text" class="form-control form-control-sm" id="hqb_method" placeholder="e.g. *Http" oninput="hqbPreview()" list="hqb_method_list" autocomplete="off">
                                     <datalist id="hqb_method_list">
                                         <c:forEach var="m" items="${transferMethodOptions}">
@@ -106,8 +107,10 @@
                                         </c:forEach>
                                     </datalist>
                                 </div>
-                                <div class="col-md-2">
-                                    <label class="form-label mb-1 fw-semibold"><code>id</code> <span class="text-muted fw-normal">numeric</span></label>
+                            </div>
+                            <div class="row g-1 mb-1">
+                                <div class="col-4">
+                                    <label class="form-label mb-0 fw-semibold"><code>id</code> <span class="text-muted fw-normal">numeric</span></label>
                                     <div class="input-group input-group-sm">
                                         <select class="form-select form-select-sm" id="hqb_id_op" style="max-width:65px" onchange="hqbPreview()">
                                             <option value="=">=</option><option value=">=">&gt;=</option><option value=">">&gt;</option><option value="<=">&lt;=</option><option value="<">&lt;</option>
@@ -115,38 +118,38 @@
                                         <input type="number" class="form-control form-control-sm" id="hqb_id_val" placeholder="e.g. 100" oninput="hqbPreview()">
                                     </div>
                                 </div>
+                                <div class="col-4">
+                                    <label class="form-label mb-0 fw-semibold"><code>login=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
+                                    <input type="text" class="form-control form-control-sm" id="hqb_login" oninput="hqbPreview()">
+                                </div>
+                                <div class="col-4">
+                                    <label class="form-label mb-0 fw-semibold"><code>dir=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
+                                    <input type="text" class="form-control form-control-sm" id="hqb_dir" oninput="hqbPreview()">
+                                </div>
                             </div>
-                            <div class="row g-2 mb-2">
-                                <div class="col-md-4">
-                                    <label class="form-label mb-1 fw-semibold"><code>comment=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
+                            <div class="row g-1 mb-1">
+                                <div class="col-4">
+                                    <label class="form-label mb-0 fw-semibold"><code>comment=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
                                     <input type="text" class="form-control form-control-sm" id="hqb_comment" placeholder="e.g. *test*" oninput="hqbPreview()">
                                 </div>
-                                <div class="col-md-4">
-                                    <label class="form-label mb-1 fw-semibold"><code>email=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
+                                <div class="col-4">
+                                    <label class="form-label mb-0 fw-semibold"><code>email=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
                                     <input type="text" class="form-control form-control-sm" id="hqb_email" placeholder="e.g. *@domain.com" oninput="hqbPreview()">
                                 </div>
-                                <div class="col-md-4">
-                                    <label class="form-label mb-1 fw-semibold"><code>options=</code> <span class="text-muted fw-normal">Properties &amp; JS wildcards * ?</span></label>
+                                <div class="col-4">
+                                    <label class="form-label mb-0 fw-semibold"><code>options=</code> <span class="text-muted fw-normal">Properties &amp; JS wildcards * ?</span></label>
                                     <input type="text" class="form-control form-control-sm" id="hqb_options" placeholder="e.g. *mqtt*" oninput="hqbPreview()">
                                 </div>
                             </div>
-                            <div class="row g-2 mb-2">
-                                <div class="col-md-3">
-                                    <label class="form-label mb-1 fw-semibold"><code>login=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
-                                    <input type="text" class="form-control form-control-sm" id="hqb_login" oninput="hqbPreview()">
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label mb-1 fw-semibold"><code>dir=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
-                                    <input type="text" class="form-control form-control-sm" id="hqb_dir" oninput="hqbPreview()">
-                                </div>
-                                <div class="col-md-2">
-                                    <label class="form-label mb-1 fw-semibold"><code>enabled</code></label>
+                            <div class="row g-1 mb-1">
+                                <div class="col-6">
+                                    <label class="form-label mb-0 fw-semibold"><code>enabled</code></label>
                                     <select class="form-select form-select-sm" id="hqb_enabled" onchange="hqbPreview()">
                                         <option value="">Any</option><option value="yes">Yes</option><option value="no">No</option>
                                     </select>
                                 </div>
-                                <div class="col-md-2">
-                                    <label class="form-label mb-1 fw-semibold"><code>case=</code></label>
+                                <div class="col-6">
+                                    <label class="form-label mb-0 fw-semibold"><code>case=</code></label>
                                     <select class="form-select form-select-sm" id="hqb_case" onchange="hqbPreview()">
                                         <option value="s">Sensitive (default)</option>
                                         <option value="i">Case-insensitive</option>
@@ -154,9 +157,9 @@
                                 </div>
                             </div>
                             <%-- Live preview + action buttons --%>
-                            <div class="d-flex align-items-center gap-2 pt-1 border-top mt-1">
+                            <div class="d-flex align-items-start gap-1 pt-1 border-top mt-1">
                                 <i class="bi bi-terminal text-muted flex-shrink-0"></i>
-                                <code class="text-muted flex-grow-1 text-truncate" id="hqb_preview" style="font-size:0.8rem">-- fill in fields above --</code>
+                                <code class="text-muted flex-grow-1" style="font-size:0.8rem;word-break:break-all" id="hqb_preview">-- fill in fields above --</code>
                                 <button type="button" class="btn btn-sm btn-outline-secondary" onclick="hqbClear()">
                                     <i class="bi bi-x-circle me-1"></i>Clear
                                 </button>
@@ -165,7 +168,6 @@
                                 </button>
                             </div>
                         </div>
-                    </div>
                 </div>
             </div>
         </form>
@@ -200,6 +202,27 @@
             document.getElementById('hqb_case').value = 's';
             hqbPreview();
         }
+        function toggleQBPanel(panelId, btnId) {
+            var panel = document.getElementById(panelId);
+            var btn = document.getElementById(btnId);
+            if (panel.style.display === 'block') { panel.style.display = 'none'; return; }
+            if (panel.parentElement !== document.body) { document.body.appendChild(panel); }
+            var r = btn.getBoundingClientRect();
+            var sy = window.pageYOffset || document.documentElement.scrollTop;
+            var sx = window.pageXOffset || document.documentElement.scrollLeft;
+            var pw = 740;
+            panel.style.top = (r.bottom + sy + 4) + 'px';
+            panel.style.left = Math.max(sx, r.right + sx - pw) + 'px';
+            panel.style.width = pw + 'px';
+            panel.style.right = 'auto';
+            panel.style.display = 'block';
+        }
+        document.addEventListener('click', function(e) {
+            var panel = document.getElementById('hostQueryBuilder');
+            var btn = document.getElementById('btnHostQB');
+            if (panel && panel.style.display === 'block' && !panel.contains(e.target) && btn && !btn.contains(e.target))
+                panel.style.display = 'none';
+        });
         </script>
     </auth:then>
 </auth:if>
@@ -262,9 +285,15 @@
                         </c:if>
                     </td>
                     <td>
-                        <span style="white-space:nowrap"><a href="<bean:message key="host.basepath"/>/${host.name}"
+                        <span style="white-space:nowrap"><c:if test="${not host.active}"><i class="bi bi-slash-circle-fill text-danger me-1" title="Disabled" style="font-size:0.78rem;"></i></c:if><c:choose>
+                            <c:when test="${not host.active}"><a href="<bean:message key="host.basepath"/>/${host.name}"
+                               class="fw-semibold dest-list-link"
+                               style="text-decoration:line-through;color:var(--bs-secondary-color)"
+                               >${host.nickName}</a></c:when>
+                            <c:otherwise><a href="<bean:message key="host.basepath"/>/${host.name}"
                                class="fw-semibold text-decoration-none dest-list-link"
-                               >${host.nickName}</a><c:if test="${host.name != host.nickName}">
+                               >${host.nickName}</a></c:otherwise>
+                        </c:choose><c:if test="${host.name != host.nickName}">
                             <code class="dest-page-id ms-1" style="font-size:0.75rem;" title="Host identifier">${host.name}</code></c:if>
                             <c:choose>
                                 <c:when test="${host.type == 'Dissemination'}">
@@ -280,11 +309,8 @@
                             <c:if test="${not empty host.transferMethodName}">
                                 <span class="badge bg-info text-dark ms-1" style="font-size:0.7rem;" title="${host.transferMethod.comment}"><i class="bi bi-hdd-network me-1"></i>${host.transferMethodName}</span>
                             </c:if>
-                            <c:if test="${not host.active}">
-                                <i class="bi bi-pause-circle-fill text-warning ms-1" title="Disabled" style="font-size:0.78rem;"></i>
-                            </c:if>
                             <c:if test="${not empty host.filterName and host.filterName ne 'none'}">
-                                <i class="bi bi-file-zip text-muted ms-1" title="Data compression enabled (${host.filterName})" style="font-size:0.78rem;"></i>
+                                <jsp:include page="/WEB-INF/jsp/pds/transfer/compression_icon.jsp"><jsp:param name="name" value="${host.filterName}"/></jsp:include>
                             </c:if></span>
                         <c:if test="${not empty host.comment}">
                             <div class="text-muted" style="font-size:0.78rem; line-height:1.3; margin-top:1px;">${host.comment}</div>

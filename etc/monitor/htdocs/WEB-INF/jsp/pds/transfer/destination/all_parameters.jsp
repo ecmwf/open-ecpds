@@ -9,7 +9,7 @@
 .ace-panel {
 	max-width: 100%;
 	overflow: hidden;
-	border: solid 1px lightgray;
+	border: solid 1px var(--bs-border-color);
 	border-radius: 4px;
 	margin-top: 8px;
 	margin-bottom: 4px;
@@ -17,7 +17,7 @@
 .scrollable-tab {
 	height: 300px;
 	overflow-y: auto;
-	border: solid 1px lightgray;
+	border: solid 1px var(--bs-border-color);
 	border-radius: 4px;
 	padding: 8px;
 	position: relative;
@@ -36,15 +36,13 @@ table.fields > tbody > tr > th {
 <c:set var="desStatusBase" value="${fn:contains(desStatus, '-') ? fn:substringBefore(desStatus, '-') : desStatus}"/>
 <div class="dest-page-header mb-3">
 	<div class="d-flex align-items-center gap-2 flex-wrap mb-1">
-		<span class="dest-page-name">${destination.name}</span>
+		<c:if test="${not destination.active}"><i class="bi bi-slash-circle-fill text-danger" title="Destination is disabled" style="font-size:0.9rem;align-self:center;"></i></c:if>
+		<span class="dest-page-name"<c:if test="${not destination.active}"> style="text-decoration:line-through;color:var(--bs-secondary-color)"</c:if>>${destination.name}</span>
 		<c:if test="${destination.id != destination.name}">
 			<code class="dest-page-id">${destination.id}</code>
 		</c:if>
 		<jsp:include page="/WEB-INF/jsp/pds/transfer/destination/destination_flag.jsp"/>
 		<jsp:include page="/WEB-INF/jsp/pds/transfer/destination/destination_type_badge.jsp"/>
-		<c:if test="${not destination.active}">
-			<i class="bi bi-pause-circle-fill text-warning" title="Destination is disabled" style="font-size:0.9rem;align-self:center;"></i>
-		</c:if>
 		<c:choose>
 			<c:when test="${desStatusBase == 'Idle'}">
 				<span class="badge bg-secondary fs-status" title="${desStatus}">${desStatus}</span>
@@ -69,7 +67,7 @@ table.fields > tbody > tr > th {
 			<i class="bi bi-eye-slash text-muted" title="Not shown in Monitor Display" style="font-size:0.85rem;"></i>
 		</c:if>
 		<c:if test="${not empty destination.filterName and destination.filterName ne 'none'}">
-			<i class="bi bi-file-zip text-muted" title="Data compression enabled (${destination.filterName})" style="font-size:0.85rem;"></i>
+			<jsp:include page="/WEB-INF/jsp/pds/transfer/compression_icon.jsp"><jsp:param name="name" value="${destination.filterName}"/></jsp:include>
 		</c:if>
 	</div>
 	<c:if test="${not empty destination.comment}">
@@ -172,7 +170,7 @@ table.fields > tbody > tr > th {
 	<c:if test="${not empty destination.filterName}">
 	<tr>
 		<th>Data Compression <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If requested data files are compressed in the queue if there is enough time before transmission (otherwise files are compressed on the fly)" tabindex="0"></i></th>
-		<td><c:choose><c:when test="${destination.filterName eq 'none'}"><span class="text-muted fst-italic">none</span></c:when><c:otherwise>${destination.filterName}</c:otherwise></c:choose></td>
+		<td><jsp:include page="/WEB-INF/jsp/pds/transfer/compression_icon.jsp"><jsp:param name="name" value="${destination.filterName}"/><jsp:param name="showName" value="true"/></jsp:include></td>
 	</tr>
 	</c:if>
 	<c:if test="${not empty destination.hostForSource.nickName}">
@@ -227,12 +225,11 @@ table.fields > tbody > tr > th {
 		<td><c:if test="${destination.showInMonitors}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if><c:if test="${!destination.showInMonitors}"><i class="bi bi-x-circle-fill text-danger" title="No"></i> <i class="bi bi-eye-slash text-muted ms-1" title="Not shown in Monitor Display" style="font-size:0.78rem;"></i></c:if></td>
 	</tr>
 
-</table>
-
-<div class="d-flex align-items-stretch mt-2" id="params-options-row">
-	<div style="flex:0 0 auto;background:#f8f9fa;border-right:2px solid #dee2e6;font-weight:600;white-space:nowrap;padding:0.4rem 0.6rem">Options</div>
-	<div style="flex:1;min-width:0;padding:0.4rem 0.6rem">
-		<div class="accordion" id="paramsOptionsAccordion">
+	<tr><td colspan="2">&nbsp;</td></tr>
+	<tr id="params-options-row">
+		<th style="vertical-align:top;padding-top:0.5rem">Options</th>
+		<td>
+			<div class="accordion" id="paramsOptionsAccordion" style="min-width:860px;max-width:860px">
 			<div class="accordion-item">
 				<h2 class="accordion-header" id="paramsAccHeadProperties">
 					<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#paramsAccProperties" aria-expanded="false" aria-controls="paramsAccProperties">
@@ -272,8 +269,9 @@ table.fields > tbody > tr > th {
 				</div>
 			</div>
 		</div>
-	</div>
-</div>
+		</td>
+	</tr>
+</table>
 
 <script>
 	var editorProperties = getEditorProperties(true, false, "properties", "crystal");

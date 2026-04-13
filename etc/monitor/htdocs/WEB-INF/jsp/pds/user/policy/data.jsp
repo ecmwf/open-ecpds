@@ -93,7 +93,7 @@ table.fields > tbody > tr > th {
 					<tr>
 						<th>Options</th>
 						<td colspan="2">
-							<div class="accordion" id="policyViewOptionsAccordion">
+							<div class="accordion" id="policyViewOptionsAccordion" style="min-width:860px;max-width:860px">
 								<div class="accordion-item">
 									<h2 class="accordion-header" id="policyViewAccHeadProperties">
 										<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#policyViewAccProperties" aria-expanded="false" aria-controls="policyViewAccProperties">

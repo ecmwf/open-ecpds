@@ -7,8 +7,9 @@
     <c:set var="_hGeoIso" value="${fn:toLowerCase(fn:length(_hGeoPart0) == 2 ? _hGeoPart0 : _hGeoPart1)}"/>
 </c:if>
 <div class="dest-page-header mb-3">
-    <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
-        <span class="dest-page-name">${host.nickName}</span>
+        <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+					<c:if test="${not host.active}"><i class="bi bi-slash-circle-fill text-danger" title="Host is disabled" style="font-size:0.9rem;"></i></c:if>
+                    <span class="dest-page-name"<c:if test="${not host.active}"> style="text-decoration:line-through;color:var(--bs-secondary-color)"</c:if>>${host.nickName}</span>
         <c:if test="${host.name != host.nickName}">
             <code class="dest-page-id" title="Host identifier">${host.name}</code>
         </c:if>
@@ -30,10 +31,7 @@
             <span class="badge bg-info text-dark fs-status" title="${host.transferMethod.comment}"><i class="bi bi-hdd-network me-1"></i>${host.transferMethodName}</span>
         </c:if>
         <c:if test="${not empty host.filterName and host.filterName ne 'none'}">
-            <i class="bi bi-file-zip text-muted" title="Data compression enabled (${host.filterName})" style="font-size:0.85rem;"></i>
-        </c:if>
-        <c:if test="${not host.active}">
-            <i class="bi bi-pause-circle-fill text-warning" title="Host is disabled" style="font-size:0.9rem;"></i>
+            <jsp:include page="/WEB-INF/jsp/pds/transfer/compression_icon.jsp"><jsp:param name="name" value="${host.filterName}"/></jsp:include>
         </c:if>
     </div>
     <c:if test="${not empty host.comment}">

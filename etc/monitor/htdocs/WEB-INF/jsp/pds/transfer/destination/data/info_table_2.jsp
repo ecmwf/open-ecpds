@@ -55,12 +55,7 @@
 
 		<th>Filter</th>
 		<c:set var="filter" value="${destination.filterName}" />
-		<c:if test="${filter == 'none'}">
-			<td><i>None</i></td>
-		</c:if>
-		<c:if test="${filter != 'none'}">
-			<td>${destination.filterName}</td>
-		</c:if>
+		<td><jsp:include page="/WEB-INF/jsp/pds/transfer/compression_icon.jsp"><jsp:param name="name" value="${destination.filterName}"/><jsp:param name="showName" value="true"/></jsp:include></td>
 
 		<th>Parallel</th>
 

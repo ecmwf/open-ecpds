@@ -1752,3 +1752,30 @@ img[src*="/assets/icons/"] {
 [data-bs-theme=dark] .assoc-chip a { color: var(--bs-secondary-color); }
 [data-bs-theme=dark] .assoc-chooser-item { color: var(--bs-body-color); }
 [data-bs-theme=dark] .assoc-chooser-item:hover { background: var(--bs-secondary-bg); }
+
+/* jQuery UI slider dark mode overrides */
+html[data-bs-theme=dark] .ui-widget-content {
+    background: var(--bs-tertiary-bg) !important;
+    border-color: var(--bs-border-color) !important;
+    color: var(--bs-body-color) !important;
+}
+html[data-bs-theme=dark] .ui-widget-header {
+    background: var(--bs-primary) !important;
+    border-color: var(--bs-primary) !important;
+    color: #fff !important;
+}
+html[data-bs-theme=dark] .ui-state-default,
+html[data-bs-theme=dark] .ui-widget-content .ui-state-default {
+    background: var(--bs-secondary-bg) !important;
+    border-color: var(--bs-border-color) !important;
+    color: var(--bs-body-color) !important;
+}
+html[data-bs-theme=dark] .ui-state-hover,
+html[data-bs-theme=dark] .ui-widget-content .ui-state-hover,
+html[data-bs-theme=dark] .ui-state-focus,
+html[data-bs-theme=dark] .ui-widget-content .ui-state-focus {
+    background: var(--bs-primary) !important;
+    border-color: var(--bs-primary) !important;
+    color: #fff !important;
+}
+html[data-bs-theme=dark] .ui-slider-handle { outline: none; }

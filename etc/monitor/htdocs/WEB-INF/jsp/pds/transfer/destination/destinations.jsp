@@ -13,7 +13,7 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-body py-2 px-3">
                     <%-- Row 1: main search + type + button --%>
-                    <div class="row g-2 mb-2">
+                    <div class="row g-1 mb-1">
                         <div class="col-7">
                             <div class="input-group">
                                 <span class="input-group-text text-muted"><i class="bi bi-search"></i></span>
@@ -36,8 +36,9 @@
                         <div class="col-2 d-flex gap-1">
                             <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-search"></i> Search</button>
                             <button type="button" class="btn btn-outline-secondary px-2"
-                                    data-bs-toggle="collapse" data-bs-target="#destQueryBuilder"
-                                    title="Build query" aria-expanded="false" aria-controls="destQueryBuilder">
+                                    id="btnDestQB"
+                                    onclick="toggleQBPanel('destQueryBuilder','btnDestQB')"
+                                    title="Build query">
                                 <i class="bi bi-sliders2"></i>
                             </button>
                         </div>
@@ -85,12 +86,12 @@
                         </div>
                     </div>
 
-                    <%-- Query Builder collapse panel --%>
-                    <div class="collapse mt-2" id="destQueryBuilder">
-                        <div class="border rounded p-2" style="font-size:0.85rem">
-                            <div class="row g-2 mb-2">
+                    <%-- Query Builder panel --%>
+                    <div id="destQueryBuilder" class="border rounded p-2"
+                         style="display:none; position:absolute; z-index:9999; background:var(--bs-body-bg); box-shadow:0 4px 16px rgba(0,0,0,0.15); font-size:0.85rem">
+                        <div class="row g-1 mb-1">
                                 <div class="col-md-4">
-                                    <label class="form-label mb-1 fw-semibold"><code>name=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
+                                    <label class="form-label mb-0 fw-semibold"><code>name=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
                                     <input type="text" class="form-control form-control-sm" id="dqb_name" placeholder="e.g. dest_*" oninput="dqbPreview()" list="dqb_name_list" autocomplete="off">
                                     <datalist id="dqb_name_list">
                                         <c:forEach var="d" items="${destinationNames}">
@@ -99,67 +100,66 @@
                                     </datalist>
                                 </div>
                                 <div class="col-md-4">
-                                    <label class="form-label mb-1 fw-semibold"><code>comment=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
+                                    <label class="form-label mb-0 fw-semibold"><code>comment=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
                                     <input type="text" class="form-control form-control-sm" id="dqb_comment" placeholder="e.g. *test*" oninput="dqbPreview()">
                                 </div>
                                 <div class="col-md-4">
-                                    <label class="form-label mb-1 fw-semibold"><code>email=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
+                                    <label class="form-label mb-0 fw-semibold"><code>email=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
                                     <input type="text" class="form-control form-control-sm" id="dqb_email" placeholder="e.g. *@meteo.ms" oninput="dqbPreview()">
                                 </div>
                             </div>
-                            <div class="row g-2 mb-2">
+                            <div class="row g-1 mb-1">
                                 <div class="col-md-3">
-                                    <label class="form-label mb-1 fw-semibold"><code>country=</code></label>
-                                    <div class="d-flex align-items-center gap-2">
+                                    <label class="form-label mb-0 fw-semibold"><code>country=</code></label>
+                                    <div class="d-flex align-items-center gap-1">
                                         <select class="form-select form-select-sm" id="dqb_country" onchange="dqbPreview()">
                                             <option value="">Any</option>
                                         </select>
                         <span id="dqb_country_flag" class="fi" style="font-size:1.4em;display:none;flex-shrink:0"></span>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
-                                    <label class="form-label mb-1 fw-semibold"><code>options=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
+                                <div class="col-md-5">
+                                    <label class="form-label mb-0 fw-semibold"><code>options=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
                                     <input type="text" class="form-control form-control-sm" id="dqb_options" placeholder="e.g. *mqtt*" oninput="dqbPreview()">
                                 </div>
-                                <div class="col-md-2">
-                                    <label class="form-label mb-1 fw-semibold"><code>case=</code></label>
+                                <div class="col-md-4">
+                                    <label class="form-label mb-0 fw-semibold"><code>case=</code></label>
                                     <select class="form-select form-select-sm" id="dqb_case" onchange="dqbPreview()">
                                         <option value="s">Sensitive (default)</option>
                                         <option value="i">Case-insensitive</option>
                                     </select>
                                 </div>
                             </div>
-                            <div class="row g-2 mb-2">
-                                <div class="col">
-                                    <label class="form-label mb-1 fw-semibold"><code>enabled</code></label>
+                            <div class="row g-1 mb-1">
+                                <div class="col-md-3">
+                                    <label class="form-label mb-0 fw-semibold"><code>enabled</code></label>
                                     <select class="form-select form-select-sm" id="dqb_enabled" onchange="dqbPreview()">
                                         <option value="">Any</option><option value="yes">Yes</option><option value="no">No</option>
                                     </select>
                                 </div>
-                                <div class="col">
-                                    <label class="form-label mb-1 fw-semibold"><code>monitor</code></label>
+                                <div class="col-md-3">
+                                    <label class="form-label mb-0 fw-semibold"><code>monitor</code></label>
                                     <select class="form-select form-select-sm" id="dqb_monitor" onchange="dqbPreview()">
                                         <option value="">Any</option><option value="yes">Yes</option><option value="no">No</option>
                                     </select>
                                 </div>
-                                <div class="col">
-                                    <label class="form-label mb-1 fw-semibold"><code>backup</code></label>
+                                <div class="col-md-3">
+                                    <label class="form-label mb-0 fw-semibold"><code>backup</code></label>
                                     <select class="form-select form-select-sm" id="dqb_backup" onchange="dqbPreview()">
                                         <option value="">Any</option><option value="yes">Yes</option><option value="no">No</option>
                                     </select>
                                 </div>
-                                <div class="col">
-                                    <label class="form-label mb-1 fw-semibold"><code>forceproxy</code></label>
+                                <div class="col-md-3">
+                                    <label class="form-label mb-0 fw-semibold"><code>forceproxy</code></label>
                                     <select class="form-select form-select-sm" id="dqb_forceproxy" onchange="dqbPreview()">
                                         <option value="">Any</option><option value="yes">Yes</option><option value="no">No</option>
                                     </select>
                                 </div>
-                                <div class="col-md-5"></div>
                             </div>
                             <%-- Live preview + action buttons --%>
-                            <div class="d-flex align-items-center gap-2 pt-1 border-top mt-1">
+                            <div class="d-flex align-items-start gap-1 pt-1 border-top mt-1">
                                 <i class="bi bi-terminal text-muted flex-shrink-0"></i>
-                                <code class="text-muted flex-grow-1 text-truncate" id="dqb_preview" style="font-size:0.8rem">-- fill in fields above --</code>
+                                <code class="text-muted flex-grow-1" style="font-size:0.8rem;word-break:break-all" id="dqb_preview">-- fill in fields above --</code>
                                 <button type="button" class="btn btn-sm btn-outline-secondary" onclick="dqbClear()">
                                     <i class="bi bi-x-circle me-1"></i>Clear
                                 </button>
@@ -170,7 +170,6 @@
                         </div>
                     </div>
                 </div>
-            </div>
         </form>
         <script>
         function dqbVal(id) { return document.getElementById(id) ? document.getElementById(id).value.trim() : ''; }
@@ -233,6 +232,27 @@
             }
             sel.addEventListener('change', updateFlag);
         });
+        function toggleQBPanel(panelId, btnId) {
+            var panel = document.getElementById(panelId);
+            var btn = document.getElementById(btnId);
+            if (panel.style.display === 'block') { panel.style.display = 'none'; return; }
+            if (panel.parentElement !== document.body) { document.body.appendChild(panel); }
+            var r = btn.getBoundingClientRect();
+            var sy = window.pageYOffset || document.documentElement.scrollTop;
+            var sx = window.pageXOffset || document.documentElement.scrollLeft;
+            var pw = 740;
+            panel.style.top = (r.bottom + sy + 4) + 'px';
+            panel.style.left = Math.max(sx, r.right + sx - pw) + 'px';
+            panel.style.width = pw + 'px';
+            panel.style.right = 'auto';
+            panel.style.display = 'block';
+        }
+        document.addEventListener('click', function(e) {
+            var panel = document.getElementById('destQueryBuilder');
+            var btn = document.getElementById('btnDestQB');
+            if (panel && panel.style.display === 'block' && !panel.contains(e.target) && btn && !btn.contains(e.target))
+                panel.style.display = 'none';
+        });
         </script>
     </auth:then>
 </auth:if>
@@ -293,9 +313,15 @@
                              style="font-size:1.1em;display:block"></span>
                     </td>
                     <td>
-                        <span style="white-space:nowrap"><a href="/do/transfer/destination/${d.id}"
-                           class="fw-semibold text-decoration-none dest-list-link"
-                           >${d.id}</a><c:if test="${not empty d.typeText}"><c:choose
+                        <span style="white-space:nowrap"><c:if test="${not d.active}"><i class="bi bi-slash-circle-fill text-danger me-1" title="Disabled" style="font-size:0.78rem;"></i></c:if><c:choose>
+                            <c:when test="${not d.active}"><a href="/do/transfer/destination/${d.id}"
+                               class="fw-semibold dest-list-link"
+                               style="text-decoration:line-through;color:var(--bs-secondary-color)"
+                               >${d.id}</a></c:when>
+                            <c:otherwise><a href="/do/transfer/destination/${d.id}"
+                               class="fw-semibold text-decoration-none dest-list-link"
+                               >${d.id}</a></c:otherwise>
+                        </c:choose><c:if test="${not empty d.typeText}"><c:choose
 ><c:when test="${d.typeText == 'Gold'}"><span class="dest-page-type dest-type-gold ms-1"><i class="bi bi-trophy-fill"></i> Gold</span
 ></c:when><c:when test="${d.typeText == 'Silver'}"><span class="dest-page-type dest-type-silver ms-1"><i class="bi bi-award-fill"></i> Silver</span
 ></c:when><c:when test="${d.typeText == 'Bronze'}"><span class="dest-page-type dest-type-bronze ms-1"><i class="bi bi-award"></i> Bronze</span
@@ -304,7 +330,7 @@
 ></c:otherwise></c:choose></c:if><c:if test="${not d.showInMonitors}">
                             <i class="bi bi-eye-slash text-muted ms-1" title="Not shown in Monitor Display" style="font-size:0.78rem;"></i>
                         </c:if><c:if test="${not empty d.filterName and d.filterName ne 'none'}">
-                            <i class="bi bi-file-zip text-muted ms-1" title="Data compression enabled (${d.filterName})" style="font-size:0.78rem;"></i>
+                            <jsp:include page="/WEB-INF/jsp/pds/transfer/compression_icon.jsp"><jsp:param name="name" value="${d.filterName}"/></jsp:include>
                         </c:if></span>
                         <c:if test="${not empty d.comment}">
                             <div class="text-muted" style="font-size:0.78rem; line-height:1.3; margin-top:1px;">${d.comment}</div>

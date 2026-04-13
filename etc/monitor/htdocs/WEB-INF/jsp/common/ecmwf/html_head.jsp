@@ -27,12 +27,12 @@ request.setAttribute("jsp_date_before", new java.util.Date());
 <!-- jQuery UI (kept for sliders and date pickers) -->
 <link rel="stylesheet" href="/jquery/jquery-ui.min.css">
 <!-- Application styles (loaded last to override where needed) -->
-<link rel="stylesheet" href="/assets/css/ecpds.css?v=20260413f" type="text/css">
+<link rel="stylesheet" href="/assets/css/ecpds.css?v=20260413g" type="text/css">
 
 <script src="/ace-editor/ace.js" charset="utf-8"></script>
 <script src="/ace-editor/ext-language_tools.js" charset="utf-8"></script>
 <script src="/ace-editor/ext-beautify.js" charset="utf-8"></script>
-<script src="/assets/js/ecpds.js?v=20260403a"></script>
+<script src="/assets/js/ecpds.js?v=20260413a"></script>
 
 <!-- jQuery (required by jQuery UI, DataTables, and application scripts) -->
 <script src="/jquery/jquery-3.7.0.min.js"></script>
@@ -115,6 +115,15 @@ function selectDestMode(mode, btn) {
     if (editorRow) editorRow.classList.toggle('d-none', mode !== 'create');
     var nameRow = document.getElementById('row-name-create');
     if (nameRow) nameRow.classList.toggle('d-none', mode !== 'create');
+    // Require name only in create mode so pattern validation blocks submit
+    var nameInput = document.getElementById('name');
+    if (nameInput) nameInput.required = (mode === 'create');
+    // Require toDestination only in copy mode
+    var toDestInput = document.getElementById('toDestination');
+    if (toDestInput) toDestInput.required = (mode === 'copy');
+    // Require fromDestination (source) only in copy mode
+    var fromDestInput = document.getElementById('fromDestination');
+    if (fromDestInput) fromDestInput.required = (mode === 'copy');
     // Update the hidden actionRequested field for form submission
     var ar = document.getElementById('actionRequested');
     if (ar) ar.value = mode;
@@ -210,6 +219,8 @@ $(document).ready(function() {
             } catch(e) {
                 console.warn('DataTables init failed for table:', $t.attr('id'), e);
             }
+        } else {
+            $t.addClass('table-striped');
         }
     });
     // Bootstrap tooltip initialisation for elements using data-bs-toggle="tooltip"

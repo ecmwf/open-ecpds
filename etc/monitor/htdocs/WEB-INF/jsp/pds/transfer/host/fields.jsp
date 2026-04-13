@@ -266,7 +266,7 @@ table.fields > tbody > tr > th {
 		<th>Data Compression</th>
 		<td><bean:define id="filters" name="hostActionForm"
 				property="filterNameOptions" type="java.util.Collection	" /> <html:select
-				property="filterName">
+				property="filterName" styleId="filterName">
 				<html:options collection="filters" property="name"
 					labelProperty="name" />
 			</html:select></td>
@@ -283,6 +283,7 @@ table.fields > tbody > tr > th {
 	<tr>
 		<th>Directory</th>
 		<td colspan="2">
+			<div style="max-width:860px">
 			<div id='dirType'>
 				<input type='radio' id='istext' name='dirType' />Plain Text <input
 					type='radio' id='isjs' name='dirType' />JavaScript <input
@@ -382,6 +383,7 @@ table.fields > tbody > tr > th {
 				</optgroup>
 		</select>
 		</div>
+		</div>
 		</td>
 	</tr>
 
@@ -392,7 +394,7 @@ table.fields > tbody > tr > th {
 	<tr>
 		<th>Options</th>
 		<td colspan="2">
-			<div class="accordion" id="hostOptionsAccordion">
+			<div class="accordion" id="hostOptionsAccordion" style="min-width:860px;max-width:860px">
 				<div class="accordion-item">
 					<h2 class="accordion-header" id="hostAccHeadProperties">
 						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#hostAccProperties" aria-expanded="false" aria-controls="hostAccProperties">
@@ -585,6 +587,30 @@ table.fields > tbody > tr > th {
 		toggleCheckRows();
 		toggleAcquisitionRow();
 		toggleMailRows();
+
+		// Compression icon next to select
+		(function() {
+			var ICONS = {
+				'zip':    'bi-file-zip',
+				'gzip':   'bi-file-earmark-zip',
+				'lzma':   'bi-box-seam',
+				'bzip2a': 'bi-archive',
+				'lbzip2': 'bi-cpu',
+				'lz4':    'bi-lightning',
+				'snappy': 'bi-lightning-charge',
+				'zstd':   'bi-stack'
+			};
+			var $sel = $('#filterName');
+			var $icon = $('<i class="bi text-muted ms-2" style="font-size:1.2em;vertical-align:middle"></i>');
+			$sel.after($icon);
+			function updateIcon() {
+				var cls = ICONS[$sel.val()];
+				if (cls) { $icon.attr('class', 'bi ' + cls + ' text-muted ms-2').css('display', 'inline'); }
+				else { $icon.hide(); }
+			}
+			$sel.on('change', updateIcon);
+			updateIcon();
+		})();
 	});
 	
 	function toggleCheckRows() {

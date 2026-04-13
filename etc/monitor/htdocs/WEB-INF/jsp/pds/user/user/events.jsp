@@ -17,7 +17,6 @@
 </form>
 
 <c:if test="${empty events}">
-	<br />
 	<div class="alert">
 		No Web Event Log available with the criteria selected
 	</div>

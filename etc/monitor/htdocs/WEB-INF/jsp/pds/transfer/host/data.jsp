@@ -140,7 +140,7 @@ table.fields > tbody > tr > th {
 				</tr>
 				<tr>
 					<th>Filter Name</th>
-					<td colspan="3">${host.filterName}</td>
+					<td colspan="3"><jsp:include page="/WEB-INF/jsp/pds/transfer/compression_icon.jsp"><jsp:param name="name" value="${host.filterName}"/><jsp:param name="showName" value="true"/></jsp:include></td>
 				</tr>
 
 				<tr>
@@ -180,6 +180,7 @@ table.fields > tbody > tr > th {
 				<tr>
 					<th>Directory</th>
 					<td colspan="3">
+						<div style="max-width:860px">
 						<div id='dirType'>
 							<input type='radio' id='istext' name='dirType' />Plain Text <input
 								type='radio' id='isjs' name='dirType' />JavaScript <input
@@ -187,6 +188,7 @@ table.fields > tbody > tr > th {
 						</div> <pre id="dir">
 				<c:out value="${host.dir}" />
 			</pre> <textarea id="dir" name="dir" style="display: none;"></textarea>
+						</div>
 					</td>
 				</tr>
 
@@ -198,7 +200,7 @@ table.fields > tbody > tr > th {
 						<tr>
 							<th>Options</th>
 							<td colspan="3">
-								<div class="accordion" id="hostViewOptionsAccordion">
+								<div class="accordion" id="hostViewOptionsAccordion" style="min-width:860px;max-width:860px">
 								<div class="accordion-item">
 									<h2 class="accordion-header" id="hostViewAccHeadProperties">
 										<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#hostViewAccProperties" aria-expanded="false" aria-controls="hostViewAccProperties">

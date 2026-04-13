@@ -14,7 +14,7 @@
 	height: 375px;
 	resize: both;
 	overflow: hidden;
-	border: solid 1px lightgray;
+	border: solid 1px var(--bs-border-color);
 	margin-top: 8px;
 	margin-bottom: 8px;
 }
@@ -24,7 +24,7 @@
 	height: 375px;
 	resize: both;
 	overflow: hidden;
-	border: solid 1px lightgray;
+	border: solid 1px var(--bs-border-color);
 	margin-top: 8px;
 	margin-bottom: 8px;
 }
@@ -77,24 +77,24 @@
 .scrollable-tab {
 	height: 300px;
 	overflow-y: auto;
-	border: solid 1px #dee2e6;
+	border: solid 1px var(--bs-border-color);
 	border-radius: 4px;
 	position: relative;
 }
 .ace-clip {
-	border: solid 1px #dee2e6;
+	border: solid 1px var(--bs-border-color);
 	border-radius: 4px;
 	position: relative;
 }
 .ace-panel {
 	max-width: 100%;
 	overflow: hidden;
-	border: solid 1px #dee2e6;
+	border: solid 1px var(--bs-border-color);
 	border-radius: 4px;
 }
 </style>
 
-<table>
+<table style="width:100%">
 	<tr>
 		<td style="width:1%;white-space:nowrap;vertical-align:top">
 			<table class="fields">
@@ -134,14 +134,12 @@
 									onclick="selectDestMode('create',this)">
 									<i class="bi bi-plus-circle me-1"></i>Create from Scratch
 								</button>
-								<c:if test="${not empty destinationActionForm.fromDestinationOptions}">
-									<c:if test="${not empty destinationActionForm.masterOptions}">
-										<button type="button" id="btn-export"
-											class="btn btn-sm btn-outline-secondary dest-mode-btn"
-											onclick="selectDestMode('export',this)">
-											<i class="bi bi-box-arrow-up-right me-1"></i>Export to Master
-										</button>
-									</c:if>
+								<c:if test="${not empty destinationActionForm.masterOptions}">
+									<button type="button" id="btn-export"
+										class="btn btn-sm btn-outline-secondary dest-mode-btn"
+										onclick="selectDestMode('export',this)">
+										<i class="bi bi-box-arrow-up-right me-1"></i>Export to Master
+									</button>
 								</c:if>
 							</div>
 							<%-- Single hidden field for form submission — value set by JSP default and updated by selectDestMode() --%>
@@ -157,6 +155,7 @@
 					<tr>
 						<td colspan="2"><small class="text-muted">Select a source destination and provide a name for the new copy.</small></td>
 					</tr>
+					<script>document.addEventListener('DOMContentLoaded',function(){var s=document.getElementById('fromDestination');if(s)s.required=true;});</script>
 					<tr>
 						<th>Source Destination</th>
 						<td>
@@ -178,7 +177,8 @@
 								<input id="toDestination" name="toDestination" type="text"
 									pattern="[a-zA-Z0-9]+([_-][a-zA-Z0-9]+)*"
 									title="Must start and end with a letter or digit; '_' or '-' allowed as single separators (e.g. my-destination)"
-									oninput="validatePatternInput(this, 'toDestination-feedback'); var n=document.getElementById('name');if(n)n.value=this.value;">
+									oninput="validatePatternInput(this, 'toDestination-feedback'); var n=document.getElementById('name');if(n)n.value=this.value;"
+									<c:if test="${not empty destinationActionForm.fromDestinationOptions}">required</c:if>>
 								<span id="toDestination-feedback"></span>
 							</div>
 						</td>
@@ -249,7 +249,8 @@
 								<input id="name" name="name" type="text"
 									pattern="[a-zA-Z0-9]+([_-][a-zA-Z0-9]+)*"
 									title="Must start and end with a letter or digit; '_' or '-' allowed as single separators (e.g. my-destination)"
-									oninput="validatePatternInput(this, 'name-feedback')">
+									oninput="validatePatternInput(this, 'name-feedback')"
+									<c:if test="${empty destinationActionForm.fromDestinationOptions}">required</c:if>>
 								<span id="name-feedback"></span>
 							</div>
 						</td>
@@ -491,7 +492,7 @@
 					<th>Data Compression <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If requested data files are compressed in the queue if there is enough time before transmission (otherwise files are compressed on the fly)" tabindex="0"></i></th>
 					<td><bean:define id="filters" name="destinationActionForm"
 							property="filterNameOptions" type="java.util.Collection	" /> <html:select
-							property="filterName">
+							property="filterName" styleId="filterName">
 							<html:options collection="filters" property="name"
 								labelProperty="name" />
 						</html:select>
@@ -586,11 +587,11 @@
 					<td colspan="2">&nbsp;</td>
 				</tr>
 				</tbody>
-			</table>
+		</table>
 		</td>
 		<td colspan="2" style="vertical-align:top"><c:if test="${isInsert != 'true'}">
 <style>
-.assoc-card .card-header { display:flex; align-items:center; gap:.4rem; padding:.5rem .75rem; background:#f8f9fa; font-size:.85rem; }
+.assoc-card .card-header { display:flex; align-items:center; gap:.4rem; padding:.5rem .75rem; background:var(--bs-secondary-bg); font-size:.85rem; }
 .assoc-card .card-header .ms-auto { margin-left:auto !important; }
 .assoc-table { font-size:.82rem; }
 .assoc-table td, .assoc-table th { padding:.25rem .4rem; vertical-align:middle; }
@@ -985,27 +986,27 @@
 	<tbody id="dest-editor-tbody"
 		<c:if test="${isInsert == 'true' and not empty destinationActionForm.fromDestinationOptions}">class="d-none"</c:if>>
 	<tr>
-		<td colspan="3" style="padding:0">
+		<td colspan="3" style="padding:0 0 0 10pt">
 			<div class="d-flex align-items-stretch" id="options-row">
-				<div id="options-label" style="flex:0 0 auto;background:#f8f9fa;border-right:2px solid #dee2e6;font-weight:600;white-space:nowrap;padding:0.4rem 0.6rem">Options</div>
+				<div id="options-label" style="background:var(--bs-secondary-bg);border-right:2px solid var(--bs-border-color);font-weight:600;white-space:nowrap;padding:0.4rem 0.6rem;flex-shrink:0">Options</div>
 				<div style="flex:1;min-width:0;padding:0.4rem 0.6rem">
-					<div class="accordion" id="optionsAccordion">
-						<div class="accordion-item">
-							<h2 class="accordion-header" id="acc-properties-heading">
-								<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-									data-bs-target="#acc-properties" aria-expanded="false"
-									aria-controls="acc-properties">Properties</button>
-							</h2>
-							<div id="acc-properties" class="accordion-collapse collapse"
-								aria-labelledby="acc-properties-heading" data-bs-parent="#optionsAccordion">
-								<div class="accordion-body p-2">
-									<pre id="properties" class="ace-panel"><c:out value="${requestScope[actionFormName].properties}" /></pre>
-									<textarea id="properties" name="properties" style="display:none;"></textarea>
-									<div class="d-flex align-items-center gap-2 mt-1">
-									<button type="button" class="btn btn-sm btn-outline-secondary" onclick="formatSource(editorProperties); return false">Format</button>
-									<button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearSource(editorProperties); return false">Clear</button>
-									<small class="text-muted ms-auto"><i class="bi bi-keyboard"></i> Ctrl+Space for completions</small>
-									</div>
+					<div class="accordion" id="optionsAccordion" style="min-width:860px;max-width:860px">
+					<div class="accordion-item">
+						<h2 class="accordion-header" id="acc-properties-heading">
+							<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+								data-bs-target="#acc-properties" aria-expanded="false"
+								aria-controls="acc-properties">Properties</button>
+						</h2>
+						<div id="acc-properties" class="accordion-collapse collapse"
+							aria-labelledby="acc-properties-heading" data-bs-parent="#optionsAccordion">
+							<div class="accordion-body p-2">
+								<pre id="properties" class="ace-panel"><c:out value="${requestScope[actionFormName].properties}" /></pre>
+								<textarea id="properties" name="properties" style="display:none;"></textarea>
+								<div class="d-flex align-items-center gap-2 mt-1">
+								<button type="button" class="btn btn-sm btn-outline-secondary" onclick="formatSource(editorProperties); return false">Format</button>
+								<button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearSource(editorProperties); return false">Clear</button>
+								<small class="text-muted ms-auto"><i class="bi bi-keyboard"></i> Ctrl+Space for completions</small>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -1018,7 +1019,7 @@
 						<div id="acc-javascript" class="accordion-collapse collapse"
 							aria-labelledby="acc-javascript-heading" data-bs-parent="#optionsAccordion">
 							<div class="accordion-body p-2">
-									<pre id="javascript" class="ace-panel"><c:out value="${requestScope[actionFormName].javascript}" /></pre>
+								<pre id="javascript" class="ace-panel"><c:out value="${requestScope[actionFormName].javascript}" /></pre>
 								<textarea id="javascript" name="javascript" style="display:none;"></textarea>
 								<div class="d-flex align-items-center gap-2 mt-1">
 								<button type="button" class="btn btn-sm btn-outline-secondary" onclick="formatSource(editorJavascript); return false">Format</button>
@@ -1067,6 +1068,30 @@
 		// Mail address field init
 		var mailInput = document.getElementById('userMailInput');
 		if (mailInput) { validateMailInput(mailInput); toggleMailRows(); }
+
+		// Compression icon next to select
+		(function() {
+			var ICONS = {
+				'zip':    'bi-file-zip',
+				'gzip':   'bi-file-earmark-zip',
+				'lzma':   'bi-box-seam',
+				'bzip2a': 'bi-archive',
+				'lbzip2': 'bi-cpu',
+				'lz4':    'bi-lightning',
+				'snappy': 'bi-lightning-charge',
+				'zstd':   'bi-stack'
+			};
+			var $sel = $('#filterName');
+			var $icon = $('<i class="bi text-muted ms-2" style="font-size:1.2em;vertical-align:middle"></i>');
+			$sel.after($icon);
+			function updateIcon() {
+				var cls = ICONS[$sel.val()];
+				if (cls) { $icon.attr('class', 'bi ' + cls + ' text-muted ms-2').css('display', 'inline'); }
+				else { $icon.hide(); }
+			}
+			$sel.on('change', updateIcon);
+			updateIcon();
+		})();
 
 		// Country flag image next to select
 		(function() {

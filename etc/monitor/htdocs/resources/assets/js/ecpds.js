@@ -167,10 +167,22 @@ function clearSource(aceEditor) {
 	aceEditor.setValue("");
 }
 
+var _ecpdsAceEditors = [];
+
+function _ecpdsAceTheme() {
+	return document.documentElement.getAttribute('data-bs-theme') === 'dark'
+		? 'ace/theme/ecpds_dark' : 'ace/theme/eclipse';
+}
+
+function ecpdsUpdateAceTheme(theme) {
+	var aceTheme = (theme === 'dark') ? 'ace/theme/ecpds_dark' : 'ace/theme/eclipse';
+	_ecpdsAceEditors.forEach(function(ed) { ed.setTheme(aceTheme); });
+}
+
 function getEditorProperties(readOnly, autocompletion, name, mode) {
 	var editorProperties = ace.edit(name);
 	autocompletion = !readOnly && autocompletion;
-	editorProperties.setTheme("ace/theme/eclipse");
+	editorProperties.setTheme(_ecpdsAceTheme());
 	editorProperties.session.setMode("ace/mode/" + mode);
 	editorProperties.setAutoScrollEditorIntoView(true);
 	editorProperties.setOptions({
@@ -184,6 +196,7 @@ function getEditorProperties(readOnly, autocompletion, name, mode) {
 		enableLiveAutocompletion: autocompletion,
 		tabSize: 2
 	});
+	_ecpdsAceEditors.push(editorProperties);
 	return editorProperties;
 }
 

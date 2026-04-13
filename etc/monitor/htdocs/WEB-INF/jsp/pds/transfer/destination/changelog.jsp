@@ -43,11 +43,11 @@
 #changelogTable td:first-child, #changelogTable td:nth-child(2) { white-space:nowrap; vertical-align:top; padding-top:0.6rem; }
 </style>
 
-<table id="changelogTable" class="table table-sm table-hover table-striped" style="width:100%">
+<table id="changelogTable" class="table table-sm table-hover table-striped table-bordered" style="width:100%">
 	<thead class="table-light">
 		<tr>
 			<th>Date &amp; Time</th>
-			<th>Web User</th>
+			<th style="white-space:nowrap">Web User</th>
 			<th>Differences</th>
 		</tr>
 	</thead>
@@ -100,7 +100,11 @@ $(document).ready(function() {
 		order:       [[0, 'desc']],
 		pageLength:  5,
 		lengthMenu:  [5, 10, 25, 50],
-		columnDefs:  [{ orderable: false, targets: 2 }]
+		columnDefs:  [
+			{ width: '155px', targets: 0 },
+			{ width: '1%',    targets: 1 },
+			{ orderable: false, targets: 2 }
+		]
 	});
 });
 </script>

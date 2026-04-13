@@ -40,10 +40,10 @@
 					href="/do/transfer/host/${disseminationHost.name.name}">${disseminationHost.name.nickName}</a>${disseminationHostname}
 	</c:if>
 			<c:if test="${!disseminationHost.name.active}">
-				<a
+				<i class="bi bi-slash-circle-fill text-danger me-1" title="Host is disabled" style="font-size:0.85rem;"></i><a
 					title="This Host is NOT Activated (id=${disseminationHost.name.name})"
-					href="/do/transfer/host/${disseminationHost.name.name}">${disseminationHost.name.nickName}</a>
-				<i class="bi bi-pause-circle-fill text-warning" title="Host is disabled" style="font-size:0.85rem;"></i>${disseminationHostname}
+					href="/do/transfer/host/${disseminationHost.name.name}"
+					style="text-decoration:line-through;color:var(--bs-secondary-color)">${disseminationHost.name.nickName}</a>${disseminationHostname}
 	</c:if>
 		</display:column>
 
@@ -133,10 +133,10 @@
 							href="/do/transfer/host/${acquisitionHost.name.name}">${acquisitionHost.name.nickName}</a>${acquisitionHostname}
 					</c:if>
 					<c:if test="${!acquisitionHost.name.active}">
-						<a
+						<i class="bi bi-slash-circle-fill text-danger me-1" title="Host is disabled" style="font-size:0.85rem;"></i><a
 							title="This Host is NOT Activated (id=${acquisitionHost.name.name})"
-							href="/do/transfer/host/${acquisitionHost.name.name}">${acquisitionHost.name.nickName}</a>
-						<i class="bi bi-pause-circle-fill text-warning" title="Host is disabled" style="font-size:0.85rem;"></i>${acquisitionHostname}
+							href="/do/transfer/host/${acquisitionHost.name.name}"
+							style="text-decoration:line-through;color:var(--bs-secondary-color)">${acquisitionHost.name.nickName}</a>${acquisitionHostname}
 					</c:if>
 				</display:column>
 

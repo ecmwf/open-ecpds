@@ -26,15 +26,13 @@
 	<c:set var="desStatusBase" value="${fn:contains(desStatus, '-') ? fn:substringBefore(desStatus, '-') : desStatus}"/>
 	<div class="dest-page-header mb-3">
 				<div class="d-flex align-items-center gap-2 flex-wrap mb-1">
-					<span class="dest-page-name">${destination.name}</span>
+					<c:if test="${not destination.active}"><i class="bi bi-slash-circle-fill text-danger" title="Destination is disabled" style="font-size:0.9rem;align-self:center;"></i></c:if>
+					<span class="dest-page-name"<c:if test="${not destination.active}"> style="text-decoration:line-through;color:var(--bs-secondary-color)"</c:if>>${destination.name}</span>
 					<c:if test="${destination.id != destination.name}">
 						<code class="dest-page-id">${destination.id}</code>
 					</c:if>
 					<jsp:include page="/WEB-INF/jsp/pds/transfer/destination/destination_flag.jsp"/>
 					<jsp:include page="/WEB-INF/jsp/pds/transfer/destination/destination_type_badge.jsp"/>
-					<c:if test="${not destination.active}">
-						<i class="bi bi-pause-circle-fill text-warning" title="Destination is disabled" style="font-size:0.9rem;align-self:center;"></i>
-					</c:if>
 					<c:choose>
 						<c:when test="${desStatusBase == 'Idle'}">
 							<span class="badge bg-secondary fs-status" title="${desStatus}">${desStatus}</span>
@@ -59,7 +57,7 @@
 						<i class="bi bi-eye-slash text-muted" title="Not shown in Monitor Display" style="font-size:0.85rem;"></i>
 					</c:if>
 					<c:if test="${not empty destination.filterName and destination.filterName ne 'none'}">
-						<i class="bi bi-file-zip text-muted" title="Data compression enabled (${destination.filterName})" style="font-size:0.85rem;"></i>
+						<jsp:include page="/WEB-INF/jsp/pds/transfer/compression_icon.jsp"><jsp:param name="name" value="${destination.filterName}"/></jsp:include>
 					</c:if>
 				</div>
 				<c:if test="${not empty destination.comment}">

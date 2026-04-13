@@ -82,61 +82,69 @@
                         <div class="col-2 d-flex gap-1">
                             <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-search"></i> Search</button>
                             <button type="button" class="btn btn-outline-secondary px-2"
-                                    data-bs-toggle="collapse" data-bs-target="#queryBuilder"
-                                    title="Build query" aria-expanded="false" aria-controls="queryBuilder">
+                                    id="btnTransferQB"
+                                    onclick="toggleQBPanel('queryBuilder','btnTransferQB')"
+                                    title="Build query">
                                 <i class="bi bi-sliders2"></i>
                             </button>
                         </div>
                     </div>
 
-                    <%-- Query Builder collapse panel --%>
-                    <div class="collapse mt-2" id="queryBuilder">
-                        <div class="border rounded p-2" style="font-size:0.85rem">
-                            <div class="row g-2 mb-2">
+                    <%-- Query Builder panel --%>
+                    <div id="queryBuilder" class="border rounded p-2"
+                         style="display:none; position:absolute; z-index:9999; background:var(--bs-body-bg); box-shadow:0 4px 16px rgba(0,0,0,0.15); font-size:0.85rem">
+                        <div class="row g-1 mb-1">
                                 <div class="col-md-6">
-                                    <label class="form-label mb-1 fw-semibold"><code>target=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
+                                    <label class="form-label mb-0 fw-semibold"><code>target=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
                                     <input type="text" class="form-control form-control-sm" id="qb_target" placeholder="e.g. *.dat" oninput="qbPreview()">
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label mb-1 fw-semibold"><code>source=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
+                                    <label class="form-label mb-0 fw-semibold"><code>source=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
                                     <input type="text" class="form-control form-control-sm" id="qb_source" placeholder="e.g. /tmp/*" oninput="qbPreview()">
                                 </div>
                             </div>
-                            <div class="row g-2 mb-2">
+                            <div class="row g-1 mb-1">
                                 <div class="col">
-                                    <label class="form-label mb-1 fw-semibold"><code>asap</code></label>
+                                    <label class="form-label mb-0 fw-semibold"><code>asap</code></label>
                                     <select class="form-select form-select-sm" id="qb_asap" onchange="qbPreview()">
                                         <option value="">Any</option><option value="yes">Yes</option><option value="no">No</option>
                                     </select>
                                 </div>
                                 <div class="col">
-                                    <label class="form-label mb-1 fw-semibold"><code>deleted</code></label>
+                                    <label class="form-label mb-0 fw-semibold"><code>deleted</code></label>
                                     <select class="form-select form-select-sm" id="qb_deleted" onchange="qbPreview()">
                                         <option value="">Any</option><option value="yes">Yes</option><option value="no">No</option>
                                     </select>
                                 </div>
                                 <div class="col">
-                                    <label class="form-label mb-1 fw-semibold"><code>expired</code></label>
+                                    <label class="form-label mb-0 fw-semibold"><code>expired</code></label>
                                     <select class="form-select form-select-sm" id="qb_expired" onchange="qbPreview()">
                                         <option value="">Any</option><option value="yes">Yes</option><option value="no">No</option>
                                     </select>
                                 </div>
                                 <div class="col">
-                                    <label class="form-label mb-1 fw-semibold"><code>replicated</code></label>
+                                    <label class="form-label mb-0 fw-semibold"><code>replicated</code></label>
                                     <select class="form-select form-select-sm" id="qb_replicated" onchange="qbPreview()">
                                         <option value="">Any</option><option value="yes">Yes</option><option value="no">No</option>
                                     </select>
                                 </div>
                                 <div class="col">
-                                    <label class="form-label mb-1 fw-semibold"><code>proxy</code></label>
+                                    <label class="form-label mb-0 fw-semibold"><code>proxy</code></label>
                                     <select class="form-select form-select-sm" id="qb_proxy" onchange="qbPreview()">
                                         <option value="">Any</option><option value="yes">Yes</option><option value="no">No</option>
                                     </select>
                                 </div>
+                                <div class="col">
+                                    <label class="form-label mb-0 fw-semibold"><code>case=</code></label>
+                                    <select class="form-select form-select-sm" id="qb_case" onchange="qbPreview()">
+                                        <option value="s">Sensitive</option>
+                                        <option value="i">Insensitive</option>
+                                    </select>
+                                </div>
                             </div>
-                            <div class="row g-2 mb-2">
+                            <div class="row g-1 mb-1">
                                 <div class="col-md-6">
-                                    <label class="form-label mb-1 fw-semibold"><code>ts</code> <span class="text-muted fw-normal">range (numeric)</span></label>
+                                    <label class="form-label mb-0 fw-semibold"><code>ts</code> <span class="text-muted fw-normal">range (numeric)</span></label>
                                     <div class="input-group input-group-sm">
                                         <select class="form-select form-select-sm" id="qb_ts_op1" style="max-width:65px" onchange="qbPreview()">
                                             <option value="=">=</option><option value=">">&gt;</option><option value=">=">&gt;=</option><option value="<">&lt;</option><option value="<=">&lt;=</option>
@@ -149,7 +157,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label mb-1 fw-semibold"><code>size</code> <span class="text-muted fw-normal">range</span></label>
+                                    <label class="form-label mb-0 fw-semibold"><code>size</code> <span class="text-muted fw-normal">range</span></label>
                                     <div class="input-group input-group-sm">
                                         <select class="form-select form-select-sm" id="qb_size_op1" style="max-width:65px" onchange="qbPreview()">
                                             <option value=">=">&gt;=</option><option value=">">&gt;</option><option value="=">=</option><option value="<=">&lt;=</option><option value="<">&lt;</option>
@@ -168,13 +176,13 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="row g-2 mb-2">
+                            <div class="row g-1 mb-1">
                                 <div class="col-md-2">
-                                    <label class="form-label mb-1 fw-semibold"><code>priority=</code></label>
+                                    <label class="form-label mb-0 fw-semibold"><code>priority=</code></label>
                                     <input type="number" class="form-control form-control-sm" id="qb_priority" min="0" max="99" oninput="qbPreview()">
                                 </div>
                                 <div class="col-md-4">
-                                    <label class="form-label mb-1 fw-semibold"><code>mover=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
+                                    <label class="form-label mb-0 fw-semibold"><code>mover=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
                                     <input type="text" class="form-control form-control-sm" id="qb_mover" oninput="qbPreview()" list="qb_mover_list" autocomplete="off">
                                     <datalist id="qb_mover_list">
                                         <c:forEach var="ts" items="${transferServerOptions}">
@@ -183,37 +191,28 @@
                                     </datalist>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label mb-1 fw-semibold"><code>identity=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
+                                    <label class="form-label mb-0 fw-semibold"><code>identity=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
                                     <input type="text" class="form-control form-control-sm" id="qb_identity" oninput="qbPreview()">
                                 </div>
                             </div>
-                            <div class="row g-2 mb-2">
-                                <div class="col-md-4">
-                                    <label class="form-label mb-1 fw-semibold"><code>groupby=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
+                            <div class="row g-1 mb-1">
+                                <div class="col-4">
+                                    <label class="form-label mb-0 fw-semibold"><code>groupby=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
                                     <input type="text" class="form-control form-control-sm" id="qb_groupby" oninput="qbPreview()">
                                 </div>
-                                <div class="col-md-8">
-                                    <label class="form-label mb-1 fw-semibold"><code>event=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
+                                <div class="col-4">
+                                    <label class="form-label mb-0 fw-semibold"><code>event=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
                                     <input type="text" class="form-control form-control-sm" id="qb_event" oninput="qbPreview()">
                                 </div>
-                            </div>
-                            <div class="row g-2 mb-2">
-                                <div class="col-md-6">
-                                    <label class="form-label mb-1 fw-semibold"><code>checksum=</code></label>
+                                <div class="col-4">
+                                    <label class="form-label mb-0 fw-semibold"><code>checksum=</code></label>
                                     <input type="text" class="form-control form-control-sm" id="qb_checksum" oninput="qbPreview()">
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label mb-1 fw-semibold"><code>case=</code></label>
-                                    <select class="form-select form-select-sm" id="qb_case" onchange="qbPreview()">
-                                        <option value="s">Sensitive (default)</option>
-                                        <option value="i">Case-insensitive</option>
-                                    </select>
                                 </div>
                             </div>
                             <%-- Live preview + action buttons --%>
-                            <div class="d-flex align-items-center gap-2 pt-1 border-top mt-1">
+                            <div class="d-flex align-items-start gap-1 pt-1 border-top mt-1">
                                 <i class="bi bi-terminal text-muted flex-shrink-0"></i>
-                                <code class="text-muted flex-grow-1 text-truncate" id="qb_preview" style="font-size:0.8rem">-- fill in fields above --</code>
+                                <code class="text-muted flex-grow-1" style="font-size:0.8rem;word-break:break-all" id="qb_preview">-- fill in fields above --</code>
                                 <button type="button" class="btn btn-sm btn-outline-secondary" onclick="qbClear()">
                                     <i class="bi bi-x-circle me-1"></i>Clear
                                 </button>
@@ -224,7 +223,6 @@
                         </div>
                     </div>
                 </div>
-            </div>
         </form>
         <script>
         function qbVal(id) { return document.getElementById(id) ? document.getElementById(id).value.trim() : ''; }
@@ -263,6 +261,27 @@
             document.getElementById('qb_case').value = 's';
             qbPreview();
         }
+        function toggleQBPanel(panelId, btnId) {
+            var panel = document.getElementById(panelId);
+            var btn = document.getElementById(btnId);
+            if (panel.style.display === 'block') { panel.style.display = 'none'; return; }
+            if (panel.parentElement !== document.body) { document.body.appendChild(panel); }
+            var r = btn.getBoundingClientRect();
+            var sy = window.pageYOffset || document.documentElement.scrollTop;
+            var sx = window.pageXOffset || document.documentElement.scrollLeft;
+            var pw = 740;
+            panel.style.top = (r.bottom + sy + 4) + 'px';
+            panel.style.left = Math.max(sx, r.right + sx - pw) + 'px';
+            panel.style.width = pw + 'px';
+            panel.style.right = 'auto';
+            panel.style.display = 'block';
+        }
+        document.addEventListener('click', function(e) {
+            var panel = document.getElementById('queryBuilder');
+            var btn = document.getElementById('btnTransferQB');
+            if (panel && panel.style.display === 'block' && !panel.contains(e.target) && btn && !btn.contains(e.target))
+                panel.style.display = 'none';
+        });
         </script>
     </auth:then>
 </auth:if>

@@ -170,7 +170,7 @@ function validate(path, message) {
 <div class="d-flex align-items-stretch" id="options-row">
 <div id="options-label" style="flex:0 0 auto;background:var(--bs-tertiary-bg);border-right:2px solid var(--bs-border-color);font-weight:600;white-space:nowrap;padding:0.4rem 0.6rem">Options</div>
 <div style="flex:1;min-width:0;padding:0.4rem 0.6rem">
-<div class="accordion" id="policyOptionsAccordion">
+<div class="accordion" id="policyOptionsAccordion" style="min-width:860px;max-width:860px">
 <div class="accordion-item">
 <h2 class="accordion-header" id="policyAccHeadProperties">
 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#policyAccProperties" aria-expanded="false" aria-controls="policyAccProperties">

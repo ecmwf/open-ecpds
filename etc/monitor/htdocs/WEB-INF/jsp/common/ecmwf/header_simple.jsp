@@ -51,6 +51,7 @@ function ecpdsToggleTheme() {
   localStorage.setItem('ecpds-theme', t);
   var ic = document.getElementById('themeIcon');
   if (ic) ic.className = t === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-fill';
+  if (typeof ecpdsUpdateAceTheme === 'function') ecpdsUpdateAceTheme(t);
 }
 (function(){
   var t = document.documentElement.getAttribute('data-bs-theme') || 'light';

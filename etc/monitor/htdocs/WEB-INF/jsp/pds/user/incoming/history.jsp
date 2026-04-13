@@ -17,7 +17,6 @@
 </form>
 
 <c:if test="${empty events}">
-	<br />
 	<div class="alert">
 		No Data Events found based on these criteria!
 	</div>
