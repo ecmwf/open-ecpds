@@ -51,6 +51,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 
 import javax.management.timer.Timer;
 import javax.servlet.http.HttpServletRequest;
@@ -668,8 +669,11 @@ public class MonitoringRequest {
                 log.debug("Finished adding products. Discarding: " + name + ", Sched: " + scheduledTime
                         + ", Window size is already " + window.size());
             } else if (!PRODUCTS_TO_SHOW_MONITORED_ONLY || isProductSentToAnyOfTheseDestinations(ps, destinations)) {
-                if (isEmpty(application) || application.length() > 0 && (name.endsWith("-" + application)
-                        || application.startsWith("no-") && !name.endsWith("-" + application.substring(3)))) {
+                final var product = ps.getProduct();
+                final var hasWildcard = application.contains("*") || application.contains("?");
+                if (isEmpty(application) || hasWildcard && matchesWildcard(application, product)
+                        || !hasWildcard && (name.endsWith("-" + application)
+                                || application.startsWith("no-") && !name.endsWith("-" + application.substring(3)))) {
                     log.debug("Adding product: " + name);
                     window.add(ps);
                 } else {
@@ -685,6 +689,32 @@ public class MonitoringRequest {
         }
         log.debug("Product window: " + window);
         return window;
+    }
+
+    /**
+     * Matches a product name against a wildcard pattern where {@code *} matches any sequence of characters and
+     * {@code ?} matches exactly one character. Matching is case-insensitive.
+     *
+     * @param pattern
+     *            the wildcard pattern
+     * @param text
+     *            the product name to test
+     *
+     * @return true if the text matches the pattern
+     */
+    private static boolean matchesWildcard(final String pattern, final String text) {
+        final var sb = new StringBuilder("(?i)");
+        for (int i = 0; i < pattern.length(); i++) {
+            final char c = pattern.charAt(i);
+            if (c == '*') {
+                sb.append(".*");
+            } else if (c == '?') {
+                sb.append('.');
+            } else {
+                sb.append(Pattern.quote(String.valueOf(c)));
+            }
+        }
+        return text.matches(sb.toString());
     }
 
     /**
