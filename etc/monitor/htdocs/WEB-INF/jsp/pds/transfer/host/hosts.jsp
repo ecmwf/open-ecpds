@@ -191,6 +191,7 @@
         }
         function hqbApply() {
             document.getElementById('hostSearch').value = hqbBuild();
+            document.getElementById('hostQueryBuilder').style.display = 'none';
             hostsTableReload();
         }
         function hqbClear() {
@@ -202,6 +203,41 @@
             document.getElementById('hqb_case').value = 's';
             hqbPreview();
         }
+        function parseQBQuery(q, prefix, pairFields, singleFields) {
+            if (!q || !q.trim()) return;
+            var rangeCount = {};
+            var re = /([a-zA-Z]+)(>=|<=|>|<|=)"([^"]*)"|([a-zA-Z]+)(>=|<=|>|<|=)([^\s]*)/g;
+            var m;
+            while ((m = re.exec(q)) !== null) {
+                try {
+                    var field = m[1] || m[4], op = m[2] || m[5], val = m[1] ? m[3] : m[6];
+                    if (pairFields && pairFields.indexOf(field) >= 0) {
+                        rangeCount[field] = (rangeCount[field] || 0) + 1;
+                        var idx = rangeCount[field];
+                        var opEl = document.getElementById(prefix + field + '_op' + idx);
+                        var valEl = document.getElementById(prefix + field + '_val' + idx);
+                        var unitEl = document.getElementById(prefix + field + '_unit' + idx);
+                        if (opEl) opEl.value = op;
+                        if (unitEl) {
+                            var unit = '', num = val;
+                            ['gb','mb','kb'].forEach(function(u) { if (num.toLowerCase().endsWith(u)) { unit = u; num = num.slice(0, -u.length); } });
+                            if (valEl) valEl.value = num; unitEl.value = unit;
+                        } else { if (valEl) valEl.value = val; }
+                    } else if (singleFields && singleFields.indexOf(field) >= 0) {
+                        var opEl2 = document.getElementById(prefix + field + '_op');
+                        var valEl2 = document.getElementById(prefix + field + '_val');
+                        if (opEl2) opEl2.value = op; if (valEl2) valEl2.value = val;
+                    } else if (op === '=') {
+                        var el = document.getElementById(prefix + field);
+                        if (el) { var lv = val.toLowerCase(); el.value = (lv==='true'||lv==='yes') ? 'yes' : (lv==='false'||lv==='no') ? 'no' : val; }
+                    }
+                } catch(e) { /* ignore unparseable token */ }
+            }
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            parseQBQuery(document.getElementById('hostSearch').value, 'hqb_', [], ['id']);
+            hqbPreview();
+        });
         function toggleQBPanel(panelId, btnId) {
             var panel = document.getElementById(panelId);
             var btn = document.getElementById(btnId);
@@ -215,6 +251,8 @@
             panel.style.left = Math.max(sx, r.right + sx - pw) + 'px';
             panel.style.width = pw + 'px';
             panel.style.right = 'auto';
+            parseQBQuery(document.getElementById('hostSearch').value, 'hqb_', [], ['id']);
+            hqbPreview();
             panel.style.display = 'block';
         }
         document.addEventListener('click', function(e) {
@@ -222,6 +260,10 @@
             var btn = document.getElementById('btnHostQB');
             if (panel && panel.style.display === 'block' && !panel.contains(e.target) && btn && !btn.contains(e.target))
                 panel.style.display = 'none';
+        });
+        window.addEventListener('resize', function() {
+            var panel = document.getElementById('hostQueryBuilder');
+            if (panel) panel.style.display = 'none';
         });
         </script>
     </auth:then>

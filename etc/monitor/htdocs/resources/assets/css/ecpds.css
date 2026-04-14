@@ -696,7 +696,6 @@ table.destinations tr {
 table.select {
     font-size: 10pt;
     width: 100%;
-    border: 1pt solid #d5d5d5;
 }
 table.select a {
     font-size: 10pt;
@@ -789,10 +788,12 @@ table.select td.selected {
 /* ---- Modern badge-strip for destination info panel ---- */
 table.info-panel {
     display: block;
-    width: auto !important;
-    border: none;
+    width: fit-content !important;
+    border: 1px solid #d5d5d5;
+    border-radius: 4px;
     background: none;
     margin-bottom: 0.6rem;
+    padding: 3px;
 }
 table.info-panel tbody,
 table.info-panel tr {
@@ -1617,6 +1618,7 @@ img[src*="/assets/icons/"] {
 [data-bs-theme=dark] th.header { background: #6b4c1e; color: #ffe0b2; }
 
 /* table.info-panel */
+[data-bs-theme=dark] table.info-panel { border-color: var(--bs-border-color); }
 [data-bs-theme=dark] table.info-panel td { background: var(--bs-secondary-bg); color: var(--bs-body-color); }
 
 /* div.chooser */

@@ -31,8 +31,8 @@
 body{background:#fff;color:#000;font-family:Arial,sans-serif;margin:0;padding:0;}
 #loadingBackdrop,#loadingDiv{display:none;position:fixed;inset:0;z-index:99999;}
 #loadingBackdrop{background:rgba(0,0,0,.35);}
-#loadingDiv{top:50%;left:50%;width:160px;height:160px;margin:-80px 0 0 -80px;background:#fff;border-radius:12px;box-shadow:0 8px 20px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;}
-.loader{border-radius:50%;width:80px;height:80px;border:10px solid rgba(0,0,0,.15);border-left-color:#333;animation:load8 1.1s linear infinite;}
+#loadingDiv{top:50%;left:50%;width:120px;height:120px;margin:-60px 0 0 -60px;background:var(--bs-body-bg,#fff);border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;}
+.loader{border-radius:50%;width:56px;height:56px;border:6px solid var(--bs-border-color,rgba(0,0,0,.1));border-left-color:var(--bs-primary,#0d6efd);animation:load8 .9s linear infinite;}
 @keyframes load8{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
 
 #ai-chat-open{position:fixed;bottom:50px;right:20px;background:#2a6db0;color:#fff;border:none;border-radius:20px;padding:10px 18px;cursor:pointer;z-index:2147483647;}

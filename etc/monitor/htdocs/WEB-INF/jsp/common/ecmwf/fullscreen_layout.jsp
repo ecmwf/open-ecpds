@@ -30,58 +30,9 @@
 %>
 
 <style>
-.loader,
-.loader:after {
-            border-radius: 50%;
-            width: 10em;
-            height: 10em;
-        }
-.loader {
-	    margin: auto;
-            font-size: 10px;
-            position: static;
-            text-indent: -9999em;
-            border-top: 1.1em solid rgba(255, 255, 255, 0.2);
-            border-right: 1.1em solid rgba(255, 255, 255, 0.2);
-            border-bottom: 1.1em solid rgba(255, 255, 255, 0.2);
-            border-left: 1.1em solid #eeeeee;
-            -webkit-transform: translateZ(0);
-            -ms-transform: translateZ(0);
-            transform: translateZ(0);
-            -webkit-animation: load8 1.1s infinite linear;
-            animation: load8 1.1s infinite linear;
-        }
-@-webkit-keyframes load8 {
-	    0% {
-                -webkit-transform: rotate(0deg);
-                transform: rotate(0deg);
-            }
-            100% {
-                -webkit-transform: rotate(360deg);
-                transform: rotate(360deg);
-            }
-        }
-@keyframes load8 {
-            0% {
-                -webkit-transform: rotate(0deg);
-                transform: rotate(0deg);
-            }
-            100% {
-                -webkit-transform: rotate(360deg);
-                transform: rotate(360deg);
-            }
-        }
-#loadingDiv {
-   position:fixed;
-    top: 50%;
-    left: 50%;
-    width:10%;
-    height:10%;
-    margin-top: -9em; /*set to a negative number 1/2 of your height*/
-    margin-left: -9em; /*set to a negative number 1/2 of your width*/
-    background-color: #ffffff;
-    z-index: 2147483647 !important;
-}
+#loadingDiv{position:fixed;top:50%;left:50%;width:120px;height:120px;margin:-60px 0 0 -60px;background:var(--bs-body-bg,#fff);border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;z-index:2147483647;}
+.loader{border-radius:50%;width:56px;height:56px;border:6px solid var(--bs-border-color,rgba(0,0,0,.1));border-left-color:var(--bs-primary,#0d6efd);animation:load8 .9s linear infinite;}
+@keyframes load8{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
 </style>
 
 <tiles:insert name="html.head">

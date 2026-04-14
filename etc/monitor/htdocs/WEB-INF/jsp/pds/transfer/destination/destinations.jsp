@@ -109,25 +109,21 @@
                                 </div>
                             </div>
                             <div class="row g-1 mb-1">
-                                <div class="col-md-3">
+                                <div class="col-md-8">
                                     <label class="form-label mb-0 fw-semibold"><code>country=</code></label>
                                     <div class="d-flex align-items-center gap-1">
                                         <select class="form-select form-select-sm" id="dqb_country" onchange="dqbPreview()">
                                             <option value="">Any</option>
+                                            <c:forEach var="c" items="${countryOptions}">
+                                                <option value="${fn:toLowerCase(c.iso)}">${c.name}</option>
+                                            </c:forEach>
                                         </select>
-                        <span id="dqb_country_flag" class="fi" style="font-size:1.4em;display:none;flex-shrink:0"></span>
+                                        <span id="dqb_country_flag" class="fi" style="font-size:1.4em;display:none;flex-shrink:0"></span>
                                     </div>
                                 </div>
-                                <div class="col-md-5">
+                                <div class="col-md-4">
                                     <label class="form-label mb-0 fw-semibold"><code>options=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
                                     <input type="text" class="form-control form-control-sm" id="dqb_options" placeholder="e.g. *mqtt*" oninput="dqbPreview()">
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label mb-0 fw-semibold"><code>case=</code></label>
-                                    <select class="form-select form-select-sm" id="dqb_case" onchange="dqbPreview()">
-                                        <option value="s">Sensitive (default)</option>
-                                        <option value="i">Case-insensitive</option>
-                                    </select>
                                 </div>
                             </div>
                             <div class="row g-1 mb-1">
@@ -153,6 +149,15 @@
                                     <label class="form-label mb-0 fw-semibold"><code>forceproxy</code></label>
                                     <select class="form-select form-select-sm" id="dqb_forceproxy" onchange="dqbPreview()">
                                         <option value="">Any</option><option value="yes">Yes</option><option value="no">No</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row g-1 mb-1">
+                                <div class="col-md-4">
+                                    <label class="form-label mb-0 fw-semibold"><code>case=</code></label>
+                                    <select class="form-select form-select-sm" id="dqb_case" onchange="dqbPreview()">
+                                        <option value="s">Sensitive (default)</option>
+                                        <option value="i">Case-insensitive</option>
                                     </select>
                                 </div>
                             </div>
@@ -191,6 +196,7 @@
         }
         function dqbApply() {
             document.getElementById('destinationSearch').value = dqbBuild();
+            document.getElementById('destQueryBuilder').style.display = 'none';
             destsTableReload();
         }
         function dqbClear() {
@@ -203,35 +209,54 @@
             document.getElementById('dqb_case').value = 's';
             dqbPreview();
         }
-        // Populate country selector from rendered destination rows
-        document.addEventListener('DOMContentLoaded', function() {
-            var seen = {}, opts = [];
-            document.querySelectorAll('[data-iso][data-name]').forEach(function(el) {
-                var iso = el.getAttribute('data-iso');
-                var name = el.getAttribute('data-name');
-                if (iso && name && !seen[iso]) {
-                    seen[iso] = true;
-                    opts.push({iso: iso, name: name});
-                }
-            });
-            opts.sort(function(a, b) { return a.name.localeCompare(b.name); });
+        // Flag preview inline with country select
+        function updateFlag() {
             var sel = document.getElementById('dqb_country');
-            opts.forEach(function(c) {
-                var o = document.createElement('option');
-                o.value = c.iso;
-                o.textContent = c.name;
-                sel.appendChild(o);
-            });
-            // Flag preview inline with select
             var flag = document.getElementById('dqb_country_flag');
-            function updateFlag() {
-                var iso = sel.value;
-                if (!iso) { flag.style.display = 'none'; return; }
-                flag.className = 'fi fi-' + iso.toLowerCase();
-                flag.style.display = 'inline-block';
-            }
-            sel.addEventListener('change', updateFlag);
+            if (!sel || !flag) return;
+            var iso = sel.value;
+            if (!iso) { flag.style.display = 'none'; return; }
+            flag.className = 'fi fi-' + iso.toLowerCase();
+            flag.style.display = 'inline-block';
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            var sel = document.getElementById('dqb_country');
+            if (sel) sel.addEventListener('change', updateFlag);
+            parseQBQuery(document.getElementById('destinationSearch').value, 'dqb_', [], []);
+            updateFlag();
+            dqbPreview();
         });
+        function parseQBQuery(q, prefix, pairFields, singleFields) {
+            if (!q || !q.trim()) return;
+            var rangeCount = {};
+            var re = /([a-zA-Z]+)(>=|<=|>|<|=)"([^"]*)"|([a-zA-Z]+)(>=|<=|>|<|=)([^\s]*)/g;
+            var m;
+            while ((m = re.exec(q)) !== null) {
+                try {
+                    var field = m[1] || m[4], op = m[2] || m[5], val = m[1] ? m[3] : m[6];
+                    if (pairFields && pairFields.indexOf(field) >= 0) {
+                        rangeCount[field] = (rangeCount[field] || 0) + 1;
+                        var idx = rangeCount[field];
+                        var opEl = document.getElementById(prefix + field + '_op' + idx);
+                        var valEl = document.getElementById(prefix + field + '_val' + idx);
+                        var unitEl = document.getElementById(prefix + field + '_unit' + idx);
+                        if (opEl) opEl.value = op;
+                        if (unitEl) {
+                            var unit = '', num = val;
+                            ['gb','mb','kb'].forEach(function(u) { if (num.toLowerCase().endsWith(u)) { unit = u; num = num.slice(0, -u.length); } });
+                            if (valEl) valEl.value = num; unitEl.value = unit;
+                        } else { if (valEl) valEl.value = val; }
+                    } else if (singleFields && singleFields.indexOf(field) >= 0) {
+                        var opEl2 = document.getElementById(prefix + field + '_op');
+                        var valEl2 = document.getElementById(prefix + field + '_val');
+                        if (opEl2) opEl2.value = op; if (valEl2) valEl2.value = val;
+                    } else if (op === '=') {
+                        var el = document.getElementById(prefix + field);
+                        if (el) { var lv = val.toLowerCase(); el.value = (lv==='true'||lv==='yes') ? 'yes' : (lv==='false'||lv==='no') ? 'no' : val; }
+                    }
+                } catch(e) { /* ignore unparseable token */ }
+            }
+        }
         function toggleQBPanel(panelId, btnId) {
             var panel = document.getElementById(panelId);
             var btn = document.getElementById(btnId);
@@ -245,6 +270,9 @@
             panel.style.left = Math.max(sx, r.right + sx - pw) + 'px';
             panel.style.width = pw + 'px';
             panel.style.right = 'auto';
+            parseQBQuery(document.getElementById('destinationSearch').value, 'dqb_', [], []);
+            updateFlag();
+            dqbPreview();
             panel.style.display = 'block';
         }
         document.addEventListener('click', function(e) {
@@ -252,6 +280,10 @@
             var btn = document.getElementById('btnDestQB');
             if (panel && panel.style.display === 'block' && !panel.contains(e.target) && btn && !btn.contains(e.target))
                 panel.style.display = 'none';
+        });
+        window.addEventListener('resize', function() {
+            var panel = document.getElementById('destQueryBuilder');
+            if (panel) panel.style.display = 'none';
         });
         </script>
     </auth:then>

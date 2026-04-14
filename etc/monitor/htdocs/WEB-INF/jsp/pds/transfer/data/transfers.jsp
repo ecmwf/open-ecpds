@@ -135,6 +135,12 @@
                                     </select>
                                 </div>
                                 <div class="col">
+                                    <label class="form-label mb-0 fw-semibold"><code>event</code></label>
+                                    <select class="form-select form-select-sm" id="qb_event" onchange="qbPreview()">
+                                        <option value="">Any</option><option value="yes">Yes</option><option value="no">No</option>
+                                    </select>
+                                </div>
+                                <div class="col">
                                     <label class="form-label mb-0 fw-semibold"><code>case=</code></label>
                                     <select class="form-select form-select-sm" id="qb_case" onchange="qbPreview()">
                                         <option value="s">Sensitive</option>
@@ -143,34 +149,38 @@
                                 </div>
                             </div>
                             <div class="row g-1 mb-1">
-                                <div class="col-md-6">
+                                <div class="col-12">
                                     <label class="form-label mb-0 fw-semibold"><code>ts</code> <span class="text-muted fw-normal">range (numeric)</span></label>
-                                    <div class="input-group input-group-sm">
-                                        <select class="form-select form-select-sm" id="qb_ts_op1" style="max-width:65px" onchange="qbPreview()">
+                                    <div class="d-flex align-items-center gap-1">
+                                        <select class="form-select form-select-sm" id="qb_ts_op1" style="width:75px;flex:none" onchange="qbPreview()">
                                             <option value="=">=</option><option value=">">&gt;</option><option value=">=">&gt;=</option><option value="<">&lt;</option><option value="<=">&lt;=</option>
                                         </select>
                                         <input type="number" class="form-control form-control-sm" id="qb_ts_val1" placeholder="from" oninput="qbPreview()">
-                                        <select class="form-select form-select-sm" id="qb_ts_op2" style="max-width:65px" onchange="qbPreview()">
+                                        <span class="text-muted small px-1">to</span>
+                                        <select class="form-select form-select-sm" id="qb_ts_op2" style="width:75px;flex:none" onchange="qbPreview()">
                                             <option value="<=">&lt;=</option><option value="<">&lt;</option><option value=">=">&gt;=</option><option value=">">&gt;</option>
                                         </select>
                                         <input type="number" class="form-control form-control-sm" id="qb_ts_val2" placeholder="to" oninput="qbPreview()">
                                     </div>
                                 </div>
-                                <div class="col-md-6">
+                            </div>
+                            <div class="row g-1 mb-1">
+                                <div class="col-12">
                                     <label class="form-label mb-0 fw-semibold"><code>size</code> <span class="text-muted fw-normal">range</span></label>
-                                    <div class="input-group input-group-sm">
-                                        <select class="form-select form-select-sm" id="qb_size_op1" style="max-width:65px" onchange="qbPreview()">
+                                    <div class="d-flex align-items-center gap-1">
+                                        <select class="form-select form-select-sm" id="qb_size_op1" style="width:75px;flex:none" onchange="qbPreview()">
                                             <option value=">=">&gt;=</option><option value=">">&gt;</option><option value="=">=</option><option value="<=">&lt;=</option><option value="<">&lt;</option>
                                         </select>
-                                        <input type="number" class="form-control form-control-sm" id="qb_size_val1" placeholder="min" oninput="qbPreview()">
-                                        <select class="form-select form-select-sm" id="qb_size_unit1" style="max-width:60px" onchange="qbPreview()">
+                                        <input type="number" class="form-control form-control-sm" id="qb_size_val1" placeholder="min" min="0" oninput="qbPreview()">
+                                        <select class="form-select form-select-sm" id="qb_size_unit1" style="width:70px;flex:none" onchange="qbPreview()">
                                             <option value="">b</option><option value="kb" selected>kb</option><option value="mb">mb</option><option value="gb">gb</option>
                                         </select>
-                                        <select class="form-select form-select-sm" id="qb_size_op2" style="max-width:65px" onchange="qbPreview()">
+                                        <span class="text-muted small px-1">to</span>
+                                        <select class="form-select form-select-sm" id="qb_size_op2" style="width:75px;flex:none" onchange="qbPreview()">
                                             <option value="<=">&lt;=</option><option value="<">&lt;</option><option value=">=">&gt;=</option><option value=">">&gt;</option>
                                         </select>
-                                        <input type="number" class="form-control form-control-sm" id="qb_size_val2" placeholder="max" oninput="qbPreview()">
-                                        <select class="form-select form-select-sm" id="qb_size_unit2" style="max-width:60px" onchange="qbPreview()">
+                                        <input type="number" class="form-control form-control-sm" id="qb_size_val2" placeholder="max" min="0" oninput="qbPreview()">
+                                        <select class="form-select form-select-sm" id="qb_size_unit2" style="width:70px;flex:none" onchange="qbPreview()">
                                             <option value="">b</option><option value="kb" selected>kb</option><option value="mb">mb</option><option value="gb">gb</option>
                                         </select>
                                     </div>
@@ -201,10 +211,6 @@
                                     <input type="text" class="form-control form-control-sm" id="qb_groupby" oninput="qbPreview()">
                                 </div>
                                 <div class="col-4">
-                                    <label class="form-label mb-0 fw-semibold"><code>event=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
-                                    <input type="text" class="form-control form-control-sm" id="qb_event" oninput="qbPreview()">
-                                </div>
-                                <div class="col-4">
                                     <label class="form-label mb-0 fw-semibold"><code>checksum=</code></label>
                                     <input type="text" class="form-control form-control-sm" id="qb_checksum" oninput="qbPreview()">
                                 </div>
@@ -229,10 +235,10 @@
         function qbQuote(v) { var q=v.indexOf(' ')>=0||v.indexOf('=')>=0||v.indexOf('"')>=0; return q?'"'+v.replace(/"/g,'\\"')+'"':v; }
         function qbBuild() {
             var p = [];
-            ['target','source','mover','identity','checksum','groupby','event'].forEach(function(f) {
+            ['target','source','mover','identity','checksum','groupby'].forEach(function(f) {
                 var v = qbVal('qb_' + f); if (v) p.push(f + '=' + qbQuote(v));
             });
-            ['asap','deleted','expired','replicated','proxy'].forEach(function(f) {
+            ['asap','deleted','expired','replicated','proxy','event'].forEach(function(f) {
                 var v = qbVal('qb_' + f); if (v) p.push(f + '=' + v);
             });
             var prio = qbVal('qb_priority'); if (prio) p.push('priority=' + prio);
@@ -249,18 +255,57 @@
         }
         function qbApply() {
             document.getElementById('transferSearch').value = qbBuild();
+            document.getElementById('queryBuilder').style.display = 'none';
             document.getElementById('transferSearchForm').submit();
         }
         function qbClear() {
-            ['target','source','mover','identity','checksum','groupby','event','priority','qb_ts_val1','qb_ts_val2','qb_size_val1','qb_size_val2'].forEach(function(id) {
-                var el = document.getElementById(id.startsWith('qb_') ? id : 'qb_' + id); if (el) el.value = '';
+            ['target','source','mover','identity','checksum','groupby','priority'].forEach(function(f) {
+                var el = document.getElementById('qb_' + f); if (el) el.value = '';
             });
-            ['asap','deleted','expired','replicated','proxy'].forEach(function(f) {
+            ['qb_ts_val1','qb_ts_val2','qb_size_val1','qb_size_val2'].forEach(function(id) {
+                var el = document.getElementById(id); if (el) el.value = '';
+            });
+            ['asap','deleted','expired','replicated','proxy','event'].forEach(function(f) {
                 document.getElementById('qb_' + f).value = '';
             });
             document.getElementById('qb_case').value = 's';
             qbPreview();
         }
+        function parseQBQuery(q, prefix, pairFields, singleFields) {
+            if (!q || !q.trim()) return;
+            var rangeCount = {};
+            var re = /([a-zA-Z]+)(>=|<=|>|<|=)"([^"]*)"|([a-zA-Z]+)(>=|<=|>|<|=)([^\s]*)/g;
+            var m;
+            while ((m = re.exec(q)) !== null) {
+                try {
+                    var field = m[1] || m[4], op = m[2] || m[5], val = m[1] ? m[3] : m[6];
+                    if (pairFields && pairFields.indexOf(field) >= 0) {
+                        rangeCount[field] = (rangeCount[field] || 0) + 1;
+                        var idx = rangeCount[field];
+                        var opEl = document.getElementById(prefix + field + '_op' + idx);
+                        var valEl = document.getElementById(prefix + field + '_val' + idx);
+                        var unitEl = document.getElementById(prefix + field + '_unit' + idx);
+                        if (opEl) opEl.value = op;
+                        if (unitEl) {
+                            var unit = '', num = val;
+                            ['gb','mb','kb'].forEach(function(u) { if (num.toLowerCase().endsWith(u)) { unit = u; num = num.slice(0, -u.length); } });
+                            if (valEl) valEl.value = num; unitEl.value = unit;
+                        } else { if (valEl) valEl.value = val; }
+                    } else if (singleFields && singleFields.indexOf(field) >= 0) {
+                        var opEl2 = document.getElementById(prefix + field + '_op');
+                        var valEl2 = document.getElementById(prefix + field + '_val');
+                        if (opEl2) opEl2.value = op; if (valEl2) valEl2.value = val;
+                    } else if (op === '=') {
+                        var el = document.getElementById(prefix + field);
+                        if (el) { var lv = val.toLowerCase(); el.value = (lv==='true'||lv==='yes') ? 'yes' : (lv==='false'||lv==='no') ? 'no' : val; }
+                    }
+                } catch(e) { /* ignore unparseable token */ }
+            }
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            parseQBQuery(document.getElementById('transferSearch').value, 'qb_', ['ts','size'], []);
+            qbPreview();
+        });
         function toggleQBPanel(panelId, btnId) {
             var panel = document.getElementById(panelId);
             var btn = document.getElementById(btnId);
@@ -274,6 +319,8 @@
             panel.style.left = Math.max(sx, r.right + sx - pw) + 'px';
             panel.style.width = pw + 'px';
             panel.style.right = 'auto';
+            parseQBQuery(document.getElementById('transferSearch').value, 'qb_', ['ts','size'], []);
+            qbPreview();
             panel.style.display = 'block';
         }
         document.addEventListener('click', function(e) {
@@ -281,6 +328,10 @@
             var btn = document.getElementById('btnTransferQB');
             if (panel && panel.style.display === 'block' && !panel.contains(e.target) && btn && !btn.contains(e.target))
                 panel.style.display = 'none';
+        });
+        window.addEventListener('resize', function() {
+            var panel = document.getElementById('queryBuilder');
+            if (panel) panel.style.display = 'none';
         });
         </script>
     </auth:then>

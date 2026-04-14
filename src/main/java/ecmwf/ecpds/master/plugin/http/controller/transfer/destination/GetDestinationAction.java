@@ -49,8 +49,10 @@ import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.ecpds.master.plugin.http.dao.Util;
 import ecmwf.ecpds.master.plugin.http.dao.transfer.DataTransferLightBean;
 import ecmwf.ecpds.master.plugin.http.home.monitoring.ProductStatusHome;
+import ecmwf.ecpds.master.plugin.http.home.transfer.CountryHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.DestinationHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.IncomingUserHome;
+import ecmwf.ecpds.master.plugin.http.home.datafile.TransferServerHome;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Destination;
 import ecmwf.ecpds.master.plugin.http.model.transfer.IncomingUser;
 import ecmwf.ecpds.master.plugin.http.model.transfer.TransferException;
@@ -106,6 +108,11 @@ public class GetDestinationAction extends PDSAction {
             request.setAttribute("destinations", destinationList);
             request.setAttribute("columns", getColumns(destinationList.size()));
             request.setAttribute("hasDestinationSearch", search != null && !search.isBlank());
+            try {
+                request.setAttribute("countryOptions", CountryHome.findAll());
+            } catch (final Exception e) {
+                log.warn("Could not load country options for QB", e);
+            }
             try {
                 request.setAttribute("destinationNames", DestinationHome.findAllNamesAndComments());
             } catch (final Exception e) {
@@ -221,6 +228,12 @@ public class GetDestinationAction extends PDSAction {
                 request.setAttribute("currentDate", new Date());
                 final var fileNameSearch = daf.getFileNameSearch();
                 request.setAttribute("hasFileNameSearch", fileNameSearch != null && !fileNameSearch.isBlank());
+                try {
+                    request.setAttribute("transferServerNames",
+                            TransferServerHome.findAll().stream().map(ts -> ts.getName()).sorted().toList());
+                } catch (final Exception e) {
+                    request.setAttribute("transferServerNames", java.util.Collections.emptyList());
+                }
             }
         }
         return mapping.findForward("success");
