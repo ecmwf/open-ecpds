@@ -67,8 +67,7 @@ $(document).ready(function () {
         const expected = "${jsEntityName}";
         if (val === expected) {
             confirmModal.hide();
-            $("#loadingBackdrop").show();
-            $("#loadingDiv").show();
+            _loaderShow();
             setTimeout(function () {
                 processBtn.off("click");
                 processBtn.closest("form")[0].submit();

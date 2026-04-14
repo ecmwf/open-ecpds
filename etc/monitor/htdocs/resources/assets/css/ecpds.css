@@ -1531,7 +1531,6 @@ img[src*="/assets/icons/"] {
 
 /* Body background (overrides legacy inline bgcolor/color attributes) */
 [data-bs-theme=dark] body { background-color: var(--bs-body-bg) !important; color: var(--bs-body-color) !important; }
-[data-bs-theme=dark] #loadingDiv { background: var(--bs-body-bg) !important; }
 
 /* Legacy form elements that bypass Bootstrap classes */
 [data-bs-theme=dark] input:not(.form-control):not(.form-check-input):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="file"]),

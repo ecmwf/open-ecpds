@@ -26,7 +26,7 @@
                         <div class="col-3">
                             <div class="input-group">
                                 <span class="input-group-text text-muted"><i class="bi bi-tag"></i></span>
-                                <select class="form-select" name="destinationType" id="destinationType" onchange="form.submit()" title="Filter by Type">
+                                <select class="form-select" name="destinationType" id="destinationType" onchange="destsTableReload()" title="Filter by Type">
                                     <c:forEach var="option" items="${typeOptions}">
                                         <option value="${option.name}" <c:if test="${destinationType == option.name}">selected</c:if>>${option.value}</option>
                                     </c:forEach>
@@ -48,7 +48,7 @@
                         <div class="col-3">
                             <div class="input-group input-group-sm">
                                 <span class="input-group-text text-muted"><i class="bi bi-activity"></i></span>
-                                <select class="form-select form-select-sm" name="destinationStatus" onchange="form.submit()" title="Filter by Status">
+                                <select class="form-select form-select-sm" name="destinationStatus" onchange="destsTableReload()" title="Filter by Status">
                                     <c:forEach var="option" items="${statusOptions}">
                                         <option value="${option}" <c:if test="${destinationStatus == option}">selected</c:if>>${option}</option>
                                     </c:forEach>
@@ -58,7 +58,7 @@
                         <div class="col-3">
                             <div class="input-group input-group-sm">
                                 <span class="input-group-text text-muted"><i class="bi bi-file-zip"></i></span>
-                                <select class="form-select form-select-sm" name="destinationFilter" onchange="form.submit()" title="Filter by Compression">
+                                <select class="form-select form-select-sm" name="destinationFilter" onchange="destsTableReload()" title="Filter by Compression">
                                     <c:forEach var="option" items="${filterOptions}">
                                         <option value="${option.name}" <c:if test="${destinationFilter == option.name}">selected</c:if>>${option.value}</option>
                                     </c:forEach>
@@ -68,7 +68,7 @@
                         <div class="col-3">
                             <div class="input-group input-group-sm">
                                 <span class="input-group-text text-muted"><i class="bi bi-diagram-2"></i></span>
-                                <select class="form-select form-select-sm" name="aliases" onchange="form.submit()" title="Aliased From/To">
+                                <select class="form-select form-select-sm" name="aliases" onchange="destsTableReload()" title="Aliased From/To">
                                     <option value="all" <c:if test="${aliases == 'all'}">selected</c:if>>All Destinations</option>
                                     <option value="to"  <c:if test="${aliases == 'to'}">selected</c:if>>Aliased From ...</option>
                                     <option value="from" <c:if test="${aliases == 'from'}">selected</c:if>>Aliases To ...</option>
@@ -78,7 +78,7 @@
                         <div class="col-3">
                             <div class="input-group input-group-sm">
                                 <span class="input-group-text text-muted"><i class="bi bi-sort-alpha-down"></i></span>
-                                <select class="form-select form-select-sm" name="sortDirection" onchange="form.submit()" title="Sort Direction">
+                                <select class="form-select form-select-sm" name="sortDirection" onchange="destsTableReload()" title="Sort Direction">
                                     <option value="asc"  <c:if test="${sortDirection == 'asc'}">selected</c:if>>Ascending</option>
                                     <option value="desc" <c:if test="${sortDirection == 'desc'}">selected</c:if>>Descending</option>
                                 </select>
@@ -191,7 +191,7 @@
         }
         function dqbApply() {
             document.getElementById('destinationSearch').value = dqbBuild();
-            document.getElementById('destinationSearchForm').submit();
+            destsTableReload();
         }
         function dqbClear() {
             ['name','comment','email','country','options'].forEach(function(f) {
@@ -282,284 +282,285 @@
     </div>
 </c:if>
 
+
 <%-- Results table --%>
-<c:if test="${not empty columns}">
-    <div class="d-flex align-items-center mb-2 gap-2">
-        <span class="text-muted small"><i class="bi bi-list-ul"></i> <strong>${fn:length(destinations)}</strong> destination(s) found</span>
-        <button id="btnDestLayout" type="button" class="btn btn-sm btn-outline-secondary ms-auto"
-                onclick="toggleDestLayout()"
-                title="Toggle between single-column and two-column split view">
-            <i class="bi bi-layout-three-columns"></i> Split
-        </button>
-    </div>
-    <table id="destinationsTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
-        <thead class="table-light">
-            <tr>
-                <th style="width:28px;"></th>
-                <th>Destination</th>
-                <th style="width:110px;">Status</th>
-                <c:if test="${fn:length(destinations) < 200}">
-                    <th>Aliases</th>
-                </c:if>
-            </tr>
-        </thead>
-        <tbody>
-            <c:forEach var="d" items="${destinations}">
-                <tr>
-                    <td>
-                        <span class="fi fi-${fn:toLowerCase(d.countryIso)}"
-                             title="${d.country.name}"
-                             data-iso="${fn:toLowerCase(d.countryIso)}" data-name="${d.country.name}"
-                             style="font-size:1.1em;display:block"></span>
-                    </td>
-                    <td>
-                        <span style="white-space:nowrap"><c:if test="${not d.active}"><i class="bi bi-slash-circle-fill text-danger me-1" title="Disabled" style="font-size:0.78rem;"></i></c:if><c:choose>
-                            <c:when test="${not d.active}"><a href="/do/transfer/destination/${d.id}"
-                               class="fw-semibold dest-list-link"
-                               style="text-decoration:line-through;color:var(--bs-secondary-color)"
-                               >${d.id}</a></c:when>
-                            <c:otherwise><a href="/do/transfer/destination/${d.id}"
-                               class="fw-semibold text-decoration-none dest-list-link"
-                               >${d.id}</a></c:otherwise>
-                        </c:choose><c:if test="${not empty d.typeText}"><c:choose
-><c:when test="${d.typeText == 'Gold'}"><span class="dest-page-type dest-type-gold ms-1"><i class="bi bi-trophy-fill"></i> Gold</span
-></c:when><c:when test="${d.typeText == 'Silver'}"><span class="dest-page-type dest-type-silver ms-1"><i class="bi bi-award-fill"></i> Silver</span
-></c:when><c:when test="${d.typeText == 'Bronze'}"><span class="dest-page-type dest-type-bronze ms-1"><i class="bi bi-award"></i> Bronze</span
-></c:when><c:when test="${d.typeText == 'Basic'}"><span class="dest-page-type dest-type-basic ms-1"><i class="bi bi-patch-check"></i> Basic</span
-></c:when><c:otherwise><span class="dest-page-type ms-1">${d.typeText}</span
-></c:otherwise></c:choose></c:if><c:if test="${not d.showInMonitors}">
-                            <i class="bi bi-eye-slash text-muted ms-1" title="Not shown in Monitor Display" style="font-size:0.78rem;"></i>
-                        </c:if><c:if test="${not empty d.filterName and d.filterName ne 'none'}">
-                            <jsp:include page="/WEB-INF/jsp/pds/transfer/compression_icon.jsp"><jsp:param name="name" value="${d.filterName}"/></jsp:include>
-                        </c:if></span>
-                        <c:if test="${not empty d.comment}">
-                            <div class="text-muted" style="font-size:0.78rem; line-height:1.3; margin-top:1px;">${d.comment}</div>
-                        </c:if>
-                    </td>
-                    <td>
-                        <c:set var="statusBase" value="${fn:contains(d.formattedStatus, '-') ? fn:substringBefore(d.formattedStatus, '-') : d.formattedStatus}"/>
-                        <c:choose>
-                            <c:when test="${statusBase == 'Running'}">
-                                <span class="badge bg-success" title="${d.formattedStatus}">${d.formattedStatus}</span>
-                            </c:when>
-                            <c:when test="${statusBase == 'Waiting' or statusBase == 'Retrying' or statusBase == 'Interrupted'}">
-                                <span class="badge bg-warning text-dark" title="${d.formattedStatus}">${d.formattedStatus}</span>
-                            </c:when>
-                            <c:when test="${statusBase == 'Restarting' or statusBase == 'Resending'}">
-                                <span class="badge bg-info text-dark" title="${d.formattedStatus}">${d.formattedStatus}</span>
-                            </c:when>
-                            <c:when test="${statusBase == 'Idle'}">
-                                <span class="badge bg-secondary" title="${d.formattedStatus}">${d.formattedStatus}</span>
-                            </c:when>
-                            <c:otherwise>
-                                <span class="badge bg-danger" title="${d.formattedStatus}">${d.formattedStatus}</span>
-                            </c:otherwise>
-                        </c:choose>
-                    </td>
-                    <c:if test="${fn:length(destinations) < 200}">
-                        <td>
-                            <c:set var="destAliases" value="${d.aliases}"/>
-                            <c:choose>
-                                <c:when test="${fn:length(destAliases) == 0}">
-                                    <span class="text-muted fst-italic" style="font-size:0.8rem;">none</span>
-                                </c:when>
-                                <c:when test="${fn:length(destAliases) < 3}">
-                                    <c:forEach var="alias" items="${destAliases}">
-                                        <a href="/do/transfer/destination/${alias.id}"
-                                           class="badge bg-light text-secondary border text-decoration-none me-1"
-                                           title="${alias.id} is an alias for ${d.id}">${alias.id}</a>
-                                    </c:forEach>
-                                </c:when>
-                                <c:otherwise>
-                                    <span class="badge bg-light text-secondary border">${fn:length(destAliases)} aliases</span>
-                                </c:otherwise>
-                            </c:choose>
-                        </td>
-                    </c:if>
-                </tr>
-            </c:forEach>
-        </tbody>
-    </table>
-    <script>
-    (function() {
-        var _opts = {
-            paging: true, pageLength: 25, searching: false, order: [],
-            columnDefs: [{ orderable: false, targets: [0] }],
-            language: { lengthMenu: 'Show _MENU_per page', info: 'Showing _START_-_END_ of _TOTAL_' }
+<div class="d-flex align-items-center mb-2 gap-2">
+    <span class="text-muted small" id="destsFoundLabel"><i class="bi bi-list-ul"></i> Loading...</span>
+    <button id="btnDestLayout" type="button" class="btn btn-sm btn-outline-secondary ms-auto"
+            onclick="toggleDestLayout()"
+            title="Toggle between single-column and two-column split view">
+        <i class="bi bi-layout-three-columns"></i> Split
+    </button>
+</div>
+<table id="destinationsTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
+    <thead class="table-light">
+        <tr>
+            <th style="width:28px;"></th>
+            <th>Destination</th>
+            <th style="width:110px;">Status</th>
+            <th>Aliases</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+<script>
+(function() {
+    var _opts = {
+        serverSide: true,
+        processing: true,
+        ajax: {
+            url: '/do/transfer/destination/list',
+            type: 'GET',
+            data: function(d) {
+                d.destinationSearch  = $('#destinationSearch').val() || '';
+                d.sortDirection      = $('#destinationSearchForm [name="sortDirection"]').val() || 'asc';
+                d.aliases            = $('#destinationSearchForm [name="aliases"]').val() || 'All';
+                d.destinationStatus  = $('#destinationSearchForm [name="destinationStatus"]').val() || 'All Status';
+                d.destinationType    = $('#destinationSearchForm [name="destinationType"]').val() || '-1';
+                d.destinationFilter  = $('#destinationSearchForm [name="destinationFilter"]').val() || 'All';
+            }
+        },
+        paging: true, pageLength: 25, searching: false, order: [],
+        columns: [
+            { orderable: false, data: 0 },
+            { orderable: true,  data: 1 },
+            { orderable: false, data: 2 },
+            { orderable: false, data: 3 }
+        ],
+        columnDefs: [{ targets: '_all', render: $.fn.dataTable.render.text() }],
+        createdRow: function(row, data) {
+            $('td', row).each(function(i) { $(this).html(data[i]); });
+        },
+        drawCallback: function(settings) {
+            var total = settings.json ? settings.json.recordsTotal : 0;
+            $('#destsFoundLabel').html('<i class="bi bi-list-ul"></i> <strong>' + total + '</strong> destination(s) found');
+        },
+        language: { lengthMenu: 'Show _MENU_ per page', info: 'Showing _START_-_END_ of _TOTAL_', processing: 'Loading...' }
+    };
+    var _isSplit = false;
+    var _allRows = [];
+    var _sortCol = -1;
+    var _sortAsc = true;
+    var _pageLen = 25;
+    var _curPage = 0;
+    var _destsTable;
+
+    window.destsTableReload = function() {
+        if (_isSplit) {
+            _loadSplitRows();
+        } else if (_destsTable) {
+            _destsTable.ajax.reload();
+        }
+    };
+
+    function _currentFilters() {
+        return {
+            destinationSearch:  $('#destinationSearch').val() || '',
+            sortDirection:      $('#destinationSearchForm [name="sortDirection"]').val() || 'asc',
+            aliases:            $('#destinationSearchForm [name="aliases"]').val() || 'All',
+            destinationStatus:  $('#destinationSearchForm [name="destinationStatus"]').val() || 'All Status',
+            destinationType:    $('#destinationSearchForm [name="destinationType"]').val() || '-1',
+            destinationFilter:  $('#destinationSearchForm [name="destinationFilter"]').val() || 'All'
         };
-        var _isSplit = false;
-        var _allRows = [];
-        var _sortCol = -1;
-        var _sortAsc = true;
-        var _pageLen = 25;
-        var _curPage = 0;
+    }
 
-        function _destroyDT(sel) {
-            if ($.fn.dataTable.isDataTable(sel)) { $(sel).DataTable().destroy(); }
+    function _colText(row, col) {
+        var c = row.querySelectorAll('td')[col];
+        return c ? c.textContent.trim().toLowerCase() : '';
+    }
+
+    function _redistribute() {
+        var start = _curPage * _pageLen;
+        var end   = Math.min(start + _pageLen, _allRows.length);
+        var page  = _allRows.slice(start, end);
+        var half  = Math.ceil(page.length / 2);
+
+        $('#destTableL tbody').empty();
+        $('#destTableR tbody').empty();
+        page.slice(0, half).forEach(function(r) { $('#destTableL tbody').append(r); });
+        page.slice(half).forEach(function(r)    { $('#destTableR tbody').append(r); });
+
+        $('#destSplitInfo').text(_allRows.length > 0
+            ? 'Showing ' + (start + 1) + '\u2013' + end + ' of ' + _allRows.length
+            : 'No entries');
+
+        var tp    = Math.max(1, Math.ceil(_allRows.length / _pageLen));
+        var $pager = $('#destSplitPager').empty();
+        var $ul = $('<ul class="pagination mb-0">');
+        function mkNavLi(label, targetPage, disabled) {
+            var $li = $('<li class="dt-paging-button page-item' + (disabled ? ' disabled' : '') + '">');
+            var $a = $('<a class="page-link" href="#">').html(label);
+            if (!disabled) { $a.on('click', function(e) { e.preventDefault(); _curPage = targetPage; _redistribute(); }); }
+            return $li.append($a);
         }
-
-        function _colText(row, col) {
-            var c = row.querySelectorAll('td')[col];
-            return c ? c.textContent.trim().toLowerCase() : '';
-        }
-
-        function _redistribute() {
-            var start = _curPage * _pageLen;
-            var end   = Math.min(start + _pageLen, _allRows.length);
-            var page  = _allRows.slice(start, end);
-            var half  = Math.ceil(page.length / 2);
-
-            $('#destTableL tbody').empty();
-            $('#destTableR tbody').empty();
-            page.slice(0, half).forEach(function(r) { $('#destTableL tbody').append(r); });
-            page.slice(half).forEach(function(r)    { $('#destTableR tbody').append(r); });
-
-            /* Info label */
-            $('#destSplitInfo').text(_allRows.length > 0
-                ? 'Showing ' + (start + 1) + '\u2013' + end + ' of ' + _allRows.length
-                : 'No entries');
-
-            /* Pagination buttons */
-            var tp    = Math.max(1, Math.ceil(_allRows.length / _pageLen));
-            var $pager = $('#destSplitPager').empty();
-            var $ul = $('<ul class="pagination mb-0">');
-            function mkNavLi(label, targetPage, disabled) {
-                var $li = $('<li class="dt-paging-button page-item' + (disabled ? ' disabled' : '') + '">');
-                var $a = $('<a class="page-link" href="#">').html(label);
-                if (!disabled) { $a.on('click', function(e) { e.preventDefault(); _curPage = targetPage; _redistribute(); }); }
-                return $li.append($a);
+        $ul.append(mkNavLi('&laquo;', 0, _curPage === 0));
+        $ul.append(mkNavLi('&lsaquo;', _curPage - 1, _curPage === 0));
+        // DataTables-style windowed pagination: first, ...gap, cur±2, ...gap, last
+        var pages = [];
+        for (var p = 0; p < tp; p++) {
+            if (p === 0 || p === tp - 1 || (p >= _curPage - 2 && p <= _curPage + 2)) {
+                pages.push(p);
             }
-            $ul.append(mkNavLi('&laquo;', 0, _curPage === 0));
-            $ul.append(mkNavLi('&lsaquo;', _curPage - 1, _curPage === 0));
-            for (var p = 0; p < tp; p++) {
-                $('<li class="dt-paging-button page-item' + (p === _curPage ? ' active' : '') + '">')
-                    .append((function(pg) {
-                        return $('<a class="page-link" href="#">').text(pg + 1).on('click', function(e) {
-                            e.preventDefault(); _curPage = pg; _redistribute();
-                        });
-                    })(p)).appendTo($ul);
-            }
-            $ul.append(mkNavLi('&rsaquo;', _curPage + 1, _curPage >= tp - 1));
-            $ul.append(mkNavLi('&raquo;', tp - 1, _curPage >= tp - 1));
-            $pager.append($('<nav>').append($ul));
-
-            /* Sort indicators */
-            ['#destTableL', '#destTableR'].forEach(function(sel) {
-                $(sel + ' thead th').each(function(i) {
-                    $(this).removeClass('sorting sorting_asc sorting_desc');
-                    if (i === 0) return;
-                    $(this).addClass(i === _sortCol ? (_sortAsc ? 'sorting_asc' : 'sorting_desc') : 'sorting');
-                });
-            });
-
-            /* Sync row heights between the two columns */
-            var $rowsL = $('#destTableL tbody tr').css('height', '');
-            var $rowsR = $('#destTableR tbody tr').css('height', '');
-            $rowsL.each(function(i) {
-                var $r = $rowsR.eq(i);
-                if ($r.length) {
-                    var h = Math.max($(this).outerHeight(), $r.outerHeight());
-                    $(this).css('height', h + 'px');
-                    $r.css('height', h + 'px');
-                }
-            });
         }
-
-        function _attachSplitSort() {
-            ['#destTableL', '#destTableR'].forEach(function(sel) {
-                $(sel + ' thead th').each(function(colIdx) {
-                    if (colIdx === 0) return;
-                    $(this).addClass('sorting').css('cursor', 'pointer')
-                           .off('click.dsort').on('click.dsort', function() {
-                        if (_sortCol === colIdx) { _sortAsc = !_sortAsc; }
-                        else { _sortCol = colIdx; _sortAsc = true; }
-                        _allRows.sort(function(a, b) {
-                            var va = _colText(a, colIdx), vb = _colText(b, colIdx);
-                            return _sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
-                        });
-                        _curPage = 0;
-                        _redistribute();
+        var prev = -1;
+        pages.forEach(function(p) {
+            if (prev !== -1 && p > prev + 1) {
+                $('<li class="dt-paging-button page-item disabled">')
+                    .append($('<a class="page-link">').text('\u2026')).appendTo($ul);
+            }
+            $('<li class="dt-paging-button page-item' + (p === _curPage ? ' active' : '') + '">')
+                .append((function(pg) {
+                    return $('<a class="page-link" href="#">').text(pg + 1).on('click', function(e) {
+                        e.preventDefault(); _curPage = pg; _redistribute();
                     });
-                });
+                })(p)).appendTo($ul);
+            prev = p;
+        });
+        $ul.append(mkNavLi('&rsaquo;', _curPage + 1, _curPage >= tp - 1));
+        $ul.append(mkNavLi('&raquo;', tp - 1, _curPage >= tp - 1));
+        $pager.append($('<nav>').append($ul));
+
+        ['#destTableL', '#destTableR'].forEach(function(sel) {
+            $(sel + ' thead th').each(function(i) {
+                $(this).removeClass('sorting sorting_asc sorting_desc');
+                if (i === 0) return;
+                $(this).addClass(i === _sortCol ? (_sortAsc ? 'sorting_asc' : 'sorting_desc') : 'sorting');
             });
-        }
+        });
 
-        window.toggleDestLayout = function() {
-            var btn = document.getElementById('btnDestLayout');
-            _isSplit = !_isSplit;
-
-            if (_isSplit) {
-                var dt   = $('#destinationsTable').DataTable();
-                _pageLen = dt.page.len();
-                _allRows = dt.rows({ order: 'current' }).nodes().toArray();
-                var $head = $('#destinationsTable thead').clone();
-                _destroyDT('#destinationsTable');
-                _curPage = 0; _sortCol = -1; _sortAsc = true;
-
-                function makeCol(id) {
-                    return $('<div style="flex:1;min-width:0">').append(
-                        $('<table>', { id: id, 'class': 'table table-sm table-hover table-striped align-middle dataTable', style: 'width:100%' })
-                        .append($head.clone()).append($('<tbody>'))
-                    );
-                }
-
-                var $lenSel = $('<select id="destSplitLenSel" class="form-select form-select-sm" style="display:inline-block;width:auto;margin-right:0.5em">');
-                [10, 25, 50, 100].forEach(function(v) {
-                    $('<option>', { value: v, selected: v === _pageLen }).text(v).appendTo($lenSel);
-                });
-                $lenSel.on('change', function() { _pageLen = +this.value; _curPage = 0; _redistribute(); });
-
-                var $toolbar = $('<div class="row mb-2">').append(
-                    $('<div class="col-auto">').append(
-                        $('<div class="dataTables_length">').append(
-                            $('<label>').append('Show ').append($lenSel).append('per page')
-                        )
-                    )
-                );
-
-                var $tables = $('<div class="d-flex gap-3 align-items-start">')
-                    .append(makeCol('destTableL'))
-                    .append(makeCol('destTableR'));
-
-                var $footer = $('<div class="row mt-2">').append(
-                    $('<div class="col-sm-12 col-md-5">').append(
-                        $('<div id="destSplitInfo" class="dataTables_info" style="padding-top:.85em">')
-                    )
-                ).append(
-                    $('<div class="col-sm-12 col-md-7">').append(
-                        $('<div id="destSplitPager" class="dataTables_paginate d-flex justify-content-md-end">')
-                    )
-                );
-
-                $('#destinationsTable').replaceWith(
-                    $('<div id="destSplitWrap">').append($toolbar).append($tables).append($footer)
-                );
-                _attachSplitSort();
-                _redistribute();
-                btn.innerHTML = '<i class="bi bi-layout-sidebar-inset"></i> Single';
-            } else {
-                /* Restore ALL rows from _allRows (includes off-page rows not in DOM) */
-                var $head = $('#destTableL thead').clone();
-                $head.find('th').removeClass('sorting sorting_asc sorting_desc');
-                var $tbody = $('<tbody>');
-                _allRows.forEach(function(r) { $tbody.append(r); });
-                $('#destSplitWrap').replaceWith(
-                    $('<table>', { id: 'destinationsTable', 'class': 'table table-sm table-hover table-striped align-middle', style: 'width:100%' })
-                    .append($head).append($tbody)
-                );
-                $('#destinationsTable').DataTable($.extend({}, _opts, { pageLength: _pageLen }));
-                _sortCol = -1; _sortAsc = true; _allRows = [];
-                btn.innerHTML = '<i class="bi bi-layout-three-columns"></i> Split';
-            }
-            localStorage.setItem('destLayout', _isSplit ? 'split' : 'single');
-        };
-
-        $(function() {
-            $('#destinationsTable').DataTable(_opts);
-            if (localStorage.getItem('destLayout') === 'split') {
-                window.toggleDestLayout();
+        var $rowsL = $('#destTableL tbody tr').css('height', '');
+        var $rowsR = $('#destTableR tbody tr').css('height', '');
+        $rowsL.each(function(i) {
+            var $r = $rowsR.eq(i);
+            if ($r.length) {
+                var h = Math.max($(this).outerHeight(), $r.outerHeight());
+                $(this).css('height', h + 'px');
+                $r.css('height', h + 'px');
             }
         });
-    })();
-    </script>
-</c:if>
+    }
+
+    function _attachSplitSort() {
+        ['#destTableL', '#destTableR'].forEach(function(sel) {
+            $(sel + ' thead th').each(function(colIdx) {
+                if (colIdx === 0) return;
+                $(this).addClass('sorting').css('cursor', 'pointer')
+                       .off('click.dsort').on('click.dsort', function() {
+                    if (_sortCol === colIdx) { _sortAsc = !_sortAsc; }
+                    else { _sortCol = colIdx; _sortAsc = true; }
+                    _allRows.sort(function(a, b) {
+                        var va = _colText(a, colIdx), vb = _colText(b, colIdx);
+                        return _sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+                    });
+                    _curPage = 0;
+                    _redistribute();
+                });
+            });
+        });
+    }
+
+    function _rowsFromData(data) {
+        return data.map(function(cols) {
+            var tr = document.createElement('tr');
+            cols.forEach(function(html) {
+                var td = document.createElement('td');
+                td.innerHTML = html;
+                tr.appendChild(td);
+            });
+            return tr;
+        });
+    }
+
+    function _loadSplitRows() {
+        var params = $.extend(_currentFilters(), { draw: 1, start: 0, length: -1 });
+        $.getJSON('/do/transfer/destination/list', params, function(json) {
+            _allRows = _rowsFromData(json.data || []);
+            $('#destsFoundLabel').html('<i class="bi bi-list-ul"></i> <strong>' + _allRows.length + '</strong> destination(s) found');
+            _curPage = 0;
+            _redistribute();
+            _attachSplitSort();
+        });
+    }
+
+    window.toggleDestLayout = function() {
+        var btn = document.getElementById('btnDestLayout');
+        _isSplit = !_isSplit;
+
+        if (_isSplit) {
+            if (_destsTable) {
+                _pageLen = _destsTable.page.len();
+                _destsTable.destroy();
+                _destsTable = null;
+            }
+            $('#destinationsTable tbody').empty();
+            var $head = $('#destinationsTable thead').clone();
+            _curPage = 0; _sortCol = -1; _sortAsc = true;
+
+            function makeCol(id) {
+                return $('<div style="flex:1;min-width:0">').append(
+                    $('<table>', { id: id, 'class': 'table table-sm table-hover table-striped align-middle dataTable', style: 'width:100%' })
+                    .append($head.clone()).append($('<tbody>'))
+                );
+            }
+
+            var $lenSel = $('<select id="destSplitLenSel" class="form-select form-select-sm" style="display:inline-block;width:auto;margin-right:0.5em">');
+            [10, 25, 50, 100].forEach(function(v) {
+                $('<option>', { value: v, selected: v === _pageLen }).text(v).appendTo($lenSel);
+            });
+            $lenSel.on('change', function() { _pageLen = +this.value; _curPage = 0; _redistribute(); });
+
+            var $toolbar = $('<div class="row mb-2">').append(
+                $('<div class="col-auto">').append(
+                    $('<div class="dataTables_length">').append(
+                        $('<label>').append('Show ').append($lenSel).append('per page')
+                    )
+                )
+            );
+
+            var $tables = $('<div class="d-flex gap-3 align-items-start">')
+                .append(makeCol('destTableL'))
+                .append(makeCol('destTableR'));
+
+            var $footer = $('<div class="row mt-2">').append(
+                $('<div class="col-sm-12 col-md-5">').append(
+                    $('<div id="destSplitInfo" class="dataTables_info" style="padding-top:.85em">')
+                )
+            ).append(
+                $('<div class="col-sm-12 col-md-7">').append(
+                    $('<div id="destSplitPager" class="dataTables_paginate d-flex justify-content-md-end">')
+                )
+            );
+
+            $('#destinationsTable').replaceWith(
+                $('<div id="destSplitWrap">').append($toolbar).append($tables).append($footer)
+            );
+            _loadSplitRows();
+            btn.innerHTML = '<i class="bi bi-layout-sidebar-inset"></i> Single';
+        } else {
+            var $head = $('#destTableL thead').clone();
+            $head.find('th').removeClass('sorting sorting_asc sorting_desc');
+            $('#destSplitWrap').replaceWith(
+                $('<table>', { id: 'destinationsTable', 'class': 'table table-sm table-hover table-striped align-middle', style: 'width:100%' })
+                .append($head).append($('<tbody>'))
+            );
+            _sortCol = -1; _sortAsc = true; _allRows = [];
+            _destsTable = $('#destinationsTable').DataTable($.extend({}, _opts, { pageLength: _pageLen }));
+            btn.innerHTML = '<i class="bi bi-layout-three-columns"></i> Split';
+        }
+        localStorage.setItem('destLayout', _isSplit ? 'split' : 'single');
+    };
+
+    $(function() {
+        _destsTable = $('#destinationsTable').DataTable(_opts);
+        $('#destinationSearch').on('keydown', function(e) {
+            if (e.key === 'Enter') { e.preventDefault(); destsTableReload(); }
+        });
+        $('#destinationSearchForm button[type="submit"]').on('click', function(e) {
+            e.preventDefault(); destsTableReload();
+        });
+        if (localStorage.getItem('destLayout') === 'split') {
+            window.toggleDestLayout();
+        }
+    });
+})();
+</script>

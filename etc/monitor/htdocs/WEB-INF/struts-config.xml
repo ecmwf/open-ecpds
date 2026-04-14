@@ -329,6 +329,9 @@
 			type="ecmwf.ecpds.master.plugin.http.controller.transfer.host.GetHostAction">
 			<forward name="success" path=".pds.transfer.host" />
 		</action>
+		<action path="/transfer/host/list"
+			type="ecmwf.ecpds.master.plugin.http.controller.transfer.host.GetHostListJsonAction">
+		</action>
 		<action path="/transfer/host/*" parameter="{1}"
 			type="ecmwf.ecpds.master.plugin.http.controller.transfer.host.GetHostAction">
 			<forward name="success" path=".pds.transfer.host.detail" />
@@ -487,6 +490,9 @@
 			type="ecmwf.ecpds.master.plugin.http.controller.transfer.destination.GetDestinationAction"
 			name="destinationDetailActionForm" scope="session">
 			<forward name="success" path=".pds.transfer.destination" />
+		</action>
+		<action path="/transfer/destination/list"
+			type="ecmwf.ecpds.master.plugin.http.controller.transfer.destination.GetDestinationListJsonAction">
 		</action>
 		<action path="/transfer/destination/*" parameter="{1}"
 			type="ecmwf.ecpds.master.plugin.http.controller.transfer.destination.GetDestinationAction"

@@ -25,7 +25,7 @@
                         <div class="col-3">
                             <div class="input-group">
                                 <span class="input-group-text text-muted"><i class="bi bi-tag"></i></span>
-                                <select class="form-select" name="hostType" id="hostType" onchange="form.submit()" title="Filter by Type">
+                                <select class="form-select" name="hostType" id="hostType" onchange="hostsTableReload()" title="Filter by Type">
                                     <c:forEach var="option" items="${typeOptions}">
                                         <option value="${option.name}" <c:if test="${hostType == option.name}">selected</c:if>>${option.value}</option>
                                     </c:forEach>
@@ -47,7 +47,7 @@
                         <div class="col-4">
                             <div class="input-group input-group-sm">
                                 <span class="input-group-text text-muted"><i class="bi bi-diagram-3"></i></span>
-                                <select class="form-select form-select-sm" name="network" onchange="form.submit()" title="Filter by Network">
+                                <select class="form-select form-select-sm" name="network" onchange="hostsTableReload()" title="Filter by Network">
                                     <c:forEach var="option" items="${networkOptions}">
                                         <option value="${option.name}" <c:if test="${network == option.name}">selected</c:if>>${option.value}</option>
                                     </c:forEach>
@@ -57,7 +57,7 @@
                         <div class="col-4">
                             <div class="input-group input-group-sm">
                                 <span class="input-group-text text-muted"><i class="bi bi-bookmark"></i></span>
-                                <select class="form-select form-select-sm" name="label" onchange="form.submit()" title="Filter by Label">
+                                <select class="form-select form-select-sm" name="label" onchange="hostsTableReload()" title="Filter by Label">
                                     <c:forEach var="option" items="${labelOptions}">
                                         <option value="${option.name}" <c:if test="${label == option.name}">selected</c:if>>${option.value}</option>
                                     </c:forEach>
@@ -67,7 +67,7 @@
                         <div class="col-4">
                             <div class="input-group input-group-sm">
                                 <span class="input-group-text text-muted"><i class="bi bi-file-zip"></i></span>
-                                <select class="form-select form-select-sm" name="hostFilter" onchange="form.submit()" title="Filter by Compression">
+                                <select class="form-select form-select-sm" name="hostFilter" onchange="hostsTableReload()" title="Filter by Compression">
                                     <c:forEach var="option" items="${filterOptions}">
                                         <option value="${option.name}" <c:if test="${hostFilter == option.name}">selected</c:if>>${option.value}</option>
                                     </c:forEach>
@@ -191,7 +191,7 @@
         }
         function hqbApply() {
             document.getElementById('hostSearch').value = hqbBuild();
-            document.getElementById('hostSearchForm').submit();
+            hostsTableReload();
         }
         function hqbClear() {
             ['nickname','hostname','method','comment','email','options','login','dir','id_val'].forEach(function(f) {
@@ -253,102 +253,73 @@
 </c:if>
 
 <%-- Results table --%>
-<c:if test="${not empty hosts}">
-    <div class="d-flex align-items-center mb-2 gap-2">
-        <span class="text-muted small"><i class="bi bi-list-ul"></i> <strong>${hostsSize}</strong> host(s) found</span>
-    </div>
-    <table id="hostsTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
+<div class="d-flex align-items-center mb-2">
+    <span class="text-muted small" id="hostsFoundLabel"><i class="bi bi-list-ul"></i> Loading...</span>
+</div>
+<table id="hostsTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
         <thead class="table-light">
             <tr>
                 <th style="width:28px;"></th>
                 <th>Host</th>
                 <th>Hostname/IP</th>
+                <th>Transfer Group</th>
                 <th>Network</th>
-                <th>Label</th>
                 <th>Destinations</th>
             </tr>
         </thead>
-        <tbody>
-            <c:forEach var="host" items="${hosts}">
-                <c:if test="${not empty host.geoIpLocation}">
-                    <c:set var="_hGeoParts" value="${fn:split(host.geoIpLocation, '/')}"/>
-                    <c:set var="_hGeoPart0" value="${fn:trim(_hGeoParts[0])}"/>
-                    <c:set var="_hGeoPart1" value="${fn:trim(_hGeoParts[1])}"/>
-                    <c:set var="_hGeoIso" value="${fn:toLowerCase(fn:length(_hGeoPart0) == 2 ? _hGeoPart0 : _hGeoPart1)}"/>
-                </c:if>
-                <tr>
-                    <td>
-                        <c:if test="${not empty host.geoIpLocation}">
-                            <span class="fi fi-${_hGeoIso}"
-                                  title="${host.geoIpLocation}"
-                                  style="font-size:1.1em;display:block"></span>
-                        </c:if>
-                    </td>
-                    <td>
-                        <span style="white-space:nowrap"><c:if test="${not host.active}"><i class="bi bi-slash-circle-fill text-danger me-1" title="Disabled" style="font-size:0.78rem;"></i></c:if><c:choose>
-                            <c:when test="${not host.active}"><a href="<bean:message key="host.basepath"/>/${host.name}"
-                               class="fw-semibold dest-list-link"
-                               style="text-decoration:line-through;color:var(--bs-secondary-color)"
-                               >${host.nickName}</a></c:when>
-                            <c:otherwise><a href="<bean:message key="host.basepath"/>/${host.name}"
-                               class="fw-semibold text-decoration-none dest-list-link"
-                               >${host.nickName}</a></c:otherwise>
-                        </c:choose><c:if test="${host.name != host.nickName}">
-                            <code class="dest-page-id ms-1" style="font-size:0.75rem;" title="Host identifier">${host.name}</code></c:if>
-                            <c:choose>
-                                <c:when test="${host.type == 'Dissemination'}">
-                                    <span class="badge bg-secondary ms-1" style="font-size:0.7rem;" title="Dissemination"><i class="bi bi-send-fill"></i></span>
-                                </c:when>
-                                <c:when test="${host.type == 'Acquisition'}">
-                                    <span class="badge bg-secondary ms-1" style="font-size:0.7rem;" title="Acquisition"><i class="bi bi-cloud-download-fill"></i></span>
-                                </c:when>
-                                <c:otherwise>
-                                    <span class="badge bg-secondary ms-1" style="font-size:0.7rem;">${host.type}</span>
-                                </c:otherwise>
-                            </c:choose>
-                            <c:if test="${not empty host.transferMethodName}">
-                                <span class="badge bg-info text-dark ms-1" style="font-size:0.7rem;" title="${host.transferMethod.comment}"><i class="bi bi-hdd-network me-1"></i>${host.transferMethodName}</span>
-                            </c:if>
-                            <c:if test="${not empty host.filterName and host.filterName ne 'none'}">
-                                <jsp:include page="/WEB-INF/jsp/pds/transfer/compression_icon.jsp"><jsp:param name="name" value="${host.filterName}"/></jsp:include>
-                            </c:if></span>
-                        <c:if test="${not empty host.comment}">
-                            <div class="text-muted" style="font-size:0.78rem; line-height:1.3; margin-top:1px;">${host.comment}</div>
-                        </c:if>
-                    </td>
-                    <td class="text-muted small">${host.host}</td>
-                    <td class="small">${host.transferGroupName}</td>
-                    <td class="small">${host.networkName}</td>
-                    <td class="small">
-                        <c:choose>
-                            <c:when test="${fn:length(host.destinations) == 0}">
-                                <span class="text-muted fst-italic">none</span>
-                            </c:when>
-                            <c:when test="${fn:length(host.destinations) le 3}">
-                                <c:forEach var="destination" items="${host.destinations}">
-                                    <a href="<bean:message key="destination.basepath"/>/${destination.name}"
-                                       class="badge bg-light text-secondary border text-decoration-none me-1">${destination.name}</a>
-                                </c:forEach>
-                            </c:when>
-                            <c:otherwise>
-                                <span class="badge bg-light text-secondary border">${fn:length(host.destinations)} destinations</span>
-                            </c:otherwise>
-                        </c:choose>
-                    </td>
-                </tr>
-            </c:forEach>
-        </tbody>
+        <tbody></tbody>
     </table>
     <script>
+    var _hostsTable;
+    function hostsTableReload() {
+        if (_hostsTable) {
+            _hostsTable.ajax.reload();
+        }
+    }
     $(function() {
-        $('#hostsTable').DataTable({
-            paging:    true,
+        _hostsTable = $('#hostsTable').DataTable({
+            serverSide: true,
+            processing: true,
+            ajax: {
+                url: '/do/transfer/host/list',
+                type: 'GET',
+                data: function(d) {
+                    d.label      = $('#hostSearchForm [name="label"]').val() || 'All';
+                    d.hostFilter = $('#hostSearchForm [name="hostFilter"]').val() || 'All';
+                    d.network    = $('#hostSearchForm [name="network"]').val() || 'All';
+                    d.hostType   = $('#hostSearchForm [name="hostType"]').val() || 'All';
+                    d.hostSearch = $('#hostSearch').val() || '';
+                }
+            },
             pageLength: 25,
             searching: false,
-            order:     [],
-            columnDefs: [{ orderable: false, targets: [0] }],
-            language: { lengthMenu: 'Show _MENU_ per page', info: 'Showing _START_-_END_ of _TOTAL_' }
+            order: [],
+            columns: [
+                { orderable: false, data: 0 },
+                { orderable: true,  data: 1 },
+                { orderable: true,  data: 2 },
+                { orderable: true,  data: 3 },
+                { orderable: true,  data: 4 },
+                { orderable: false, data: 5 }
+            ],
+            columnDefs: [{ targets: '_all', render: $.fn.dataTable.render.text() }],
+            createdRow: function(row, data) {
+                // Columns contain pre-built HTML — render as HTML not escaped text
+                $('td', row).each(function(i) { $(this).html(data[i]); });
+            },
+            drawCallback: function(settings) {
+                var total = settings.json ? settings.json.recordsTotal : 0;
+                $('#hostsFoundLabel').html('<i class="bi bi-list-ul"></i> <strong>' + total + '</strong> host(s) found');
+            },
+            language: { lengthMenu: 'Show _MENU_ per page', info: 'Showing _START_-_END_ of _TOTAL_', processing: 'Loading...' }
+        });
+        // Allow pressing Enter in the search box to reload
+        $('#hostSearch').on('keydown', function(e) {
+            if (e.key === 'Enter') { e.preventDefault(); hostsTableReload(); }
+        });
+        // Search button
+        $('#hostSearchForm button[type="submit"]').on('click', function(e) {
+            e.preventDefault(); hostsTableReload();
         });
     });
     </script>
-</c:if>

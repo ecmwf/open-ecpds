@@ -275,7 +275,7 @@ public class GetDestinationAction extends PDSAction {
      *
      * @return the destination type ids
      */
-    private static final String getDestinationTypeIds(final String category) {
+    static final String getDestinationTypeIds(final String category) {
         return DestinationOption.getTypeIds(category);
     }
 

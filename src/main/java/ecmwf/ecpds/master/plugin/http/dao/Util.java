@@ -424,6 +424,40 @@ public final class Util {
     }
 
     /**
+     * Gets a DataBaseCursor from DataTables server-side protocol parameters (start, length, order[0][dir]).
+     *
+     * @param defaultSort
+     *            the default sort column index
+     * @param descending
+     *            the default order direction (true = descending)
+     * @param request
+     *            the HTTP request carrying DataTables parameters
+     *
+     * @return the data base cursor
+     */
+    public static DataBaseCursor getDataBaseCursorForDataTables(final int defaultSort, final boolean descending,
+            final HttpServletRequest request) {
+        var start = 0;
+        var length = 25;
+        try {
+            start = Integer.parseInt(request.getParameter("start"));
+        } catch (final Throwable _) {
+            // Ignored
+        }
+        try {
+            length = Integer.parseInt(request.getParameter("length"));
+            if (length < 1) {
+                length = 25;
+            }
+        } catch (final Throwable _) {
+            // Ignored
+        }
+        final var dir = request.getParameter("order[0][dir]");
+        final var order = "asc".equalsIgnoreCase(dir) ? "1" : (descending ? "2" : "1");
+        return new DataBaseCursor(String.valueOf(defaultSort), order, start, start + length);
+    }
+
+    /**
      * Gets the collection from.
      *
      * @param collection
