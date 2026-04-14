@@ -258,7 +258,7 @@ table.fields > tbody > tr > th {
 						<tr>
 							<th>Progress</th>
 							<td colspan="3">
-								<div class="progress-terminal">
+								<div class="progress-terminal" style="min-width:860px;max-width:860px">
 									<div class="progress-terminal-hdr">
 										<i class="bi bi-activity text-success"></i> Activity Log
 										<button id="refreshLogBtn"
