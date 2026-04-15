@@ -2,7 +2,7 @@
 <%@ taglib uri="/WEB-INF/tld/struts-html.tld" prefix="html" %>
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth" %>
 
-<link href="/assets/css/login.css?v=20260405" rel="stylesheet" type="text/css"/>
+<link href="/assets/css/login.css?v=20260415" rel="stylesheet" type="text/css"/>
 
 <div id="login-backdrop"></div>
 
@@ -30,13 +30,14 @@
       </div>
 
       <div class="login-field">
-        <label for="login-pass"><i class="bi bi-lock"></i> Password</label>
+        <label for="login-pass"><i class="bi bi-lock"></i> Password / OTP</label>
         <div class="login-pass-wrap">
-          <input id="login-pass" name="password" type="password" placeholder="Enter your password" autocomplete="current-password">
+          <input id="login-pass" name="password" type="password" placeholder="Password or 8-digit one-time code" autocomplete="current-password">
           <button type="button" id="login-toggle-pass" tabindex="-1" title="Show/hide password">
             <i class="bi bi-eye" id="login-eye"></i>
           </button>
         </div>
+        <div id="login-pass-hint" class="login-pass-hint"></div>
       </div>
 
       <button type="submit" id="login-btn">
@@ -58,6 +59,22 @@ document.getElementById('login-toggle-pass').addEventListener('click', function(
     } else {
         inp.type = 'password';
         eye.className = 'bi bi-eye';
+    }
+});
+
+document.getElementById('login-pass').addEventListener('input', function() {
+    var val = this.value;
+    var hint = document.getElementById('login-pass-hint');
+    var isOtp = val.length === 8 && /^\d+$/.test(val);
+    if (isOtp) {
+        hint.innerHTML = '<i class="bi bi-shield-check"></i> One-time passcode (OTP) detected';
+        hint.className = 'login-pass-hint login-pass-hint-otp';
+    } else if (val.length > 0) {
+        hint.innerHTML = '<i class="bi bi-key"></i> Standard password';
+        hint.className = 'login-pass-hint login-pass-hint-pwd';
+    } else {
+        hint.innerHTML = '';
+        hint.className = 'login-pass-hint';
     }
 });
 </script>

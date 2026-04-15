@@ -167,3 +167,15 @@
 #login-btn:hover  { background: #0b5ed7; box-shadow: 0 4px 12px rgba(13,110,253,0.35); }
 #login-btn:active { background: #0a58ca; }
 #login-btn:focus  { outline: none; box-shadow: 0 0 0 3px rgba(13,110,253,0.35); }
+
+/* Live password/OTP hint */
+.login-pass-hint {
+    font-size: 0.75rem;
+    margin-top: 0.35rem;
+    min-height: 1.1em;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+.login-pass-hint-otp { color: #198754; }
+.login-pass-hint-pwd { color: #6c757d; }
