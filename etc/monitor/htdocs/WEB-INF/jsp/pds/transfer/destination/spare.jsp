@@ -32,72 +32,45 @@
 <c:set var="mode" value="${param['mode']}" />
 
 <c:if test="${not empty destination.id}">
-<table class="editSpareBox">
+<table class="spareBox2">
     <tr>
-        <th colspan="3" title="">
+        <th>
             <a title="${destination.id} (${destination.formattedStatus})" href='<bean:message key="destination.basepath"/>/${destination.id}'>${destination.id}</a>
         </th>
     </tr>
-    <tr><td colspan="3"></td></tr>
+    <tr><td></td></tr>
 
     <auth:if basePathKey="transferhistory.basepath" paths="/">
         <auth:then>
-            <tr>
-                <td><i class="bi bi-sliders sidebar-icon"></i></td>
-                <td colspan="2"><a href='<bean:message key="destination.basepath"/>/${destination.id}?mode=parameters'>Parameters</a></td>
-            </tr>
+            <tr><td><a href='<bean:message key="destination.basepath"/>/${destination.id}?mode=parameters'><i class="bi bi-sliders sidebar-icon"></i> Parameters</a></td></tr>
         </auth:then>
     </auth:if>
 
-    <tr>
-        <td><i class="bi bi-graph-up sidebar-icon"></i></td>
-        <td colspan="2"><a href='<bean:message key="destination.basepath"/>/${destination.id}?mode=traffic'>Data Rates</a></td>
-    </tr>
+    <tr><td><a href='<bean:message key="destination.basepath"/>/${destination.id}?mode=traffic'><i class="bi bi-graph-up sidebar-icon"></i> Data Rates</a></td></tr>
 
-    <tr>
-        <td><i class="bi bi-clock-history sidebar-icon"></i></td>
-        <td colspan="2"><a href='<bean:message key="destination.basepath"/>/${destination.id}?mode=changelog'>Changes Log</a></td>
-    </tr>
+    <tr><td><a href='<bean:message key="destination.basepath"/>/${destination.id}?mode=changelog'><i class="bi bi-clock-history sidebar-icon"></i> Changes Log</a></td></tr>
 
-    <tr>
-        <td><i class="bi bi-arrow-left sidebar-icon"></i></td>
-        <td colspan="2"><a href='<bean:message key="destination.basepath"/>/${destination.id}?mode=aliasesfrom'>Aliased From</a></td>
-    </tr>
+    <tr><td><a href='<bean:message key="destination.basepath"/>/${destination.id}?mode=aliasesfrom'><i class="bi bi-arrow-left sidebar-icon"></i> Aliased From</a></td></tr>
 
-    <tr>
-        <td><i class="bi bi-arrow-right sidebar-icon"></i></td>
-        <td colspan="2"><a href='<bean:message key="destination.basepath"/>/${destination.id}?mode=aliasesto'>Aliases To</a></td>
-    </tr>
+    <tr><td><a href='<bean:message key="destination.basepath"/>/${destination.id}?mode=aliasesto'><i class="bi bi-arrow-right sidebar-icon"></i> Aliases To</a></td></tr>
 
     <auth:if basePathKey="transferhistory.basepath" paths="/">
         <auth:then>
-            <tr>
-                <td><i class="bi bi-person-badge sidebar-icon"></i></td>
-                <td colspan="2"><a href='<bean:message key="destination.basepath"/>/${destination.id}?mode=datausers'>Data Users</a></td>
-            </tr>
+            <tr><td><a href='<bean:message key="destination.basepath"/>/${destination.id}?mode=datausers'><i class="bi bi-person-badge sidebar-icon"></i> Data Users</a></td></tr>
         </auth:then>
     </auth:if>
 
-    <tr>
-        <td><i class="bi bi-calendar3 sidebar-icon"></i></td>
-        <td colspan="2"><a href='<bean:message key="monitoring.timeline.basepath"/>/${destination.id}?date=${date}'>Transfer Timeline</a></td>
-    </tr>
+    <tr><td><a href='<bean:message key="monitoring.timeline.basepath"/>/${destination.id}?date=${date}'><i class="bi bi-calendar3 sidebar-icon"></i> Transfer Timeline</a></td></tr>
 
     <auth:if basePathKey="transferhistory.basepath" paths="/">
         <auth:then>
-            <tr>
-                <td><i class="bi bi-clock-history sidebar-icon"></i></td>
-                <td colspan="2"><a href='<bean:message key="transferhistory.basepath"/>?destinationName=${destination.id}&date=${date}&fromDestination=true'>Transfer History</a></td>
-            </tr>
+            <tr><td><a href='<bean:message key="transferhistory.basepath"/>?destinationName=${destination.id}&date=${date}&fromDestination=true'><i class="bi bi-clock-history sidebar-icon"></i> Transfer History</a></td></tr>
         </auth:then>
     </auth:if>
 
     <auth:if basePathKey="destination.basepath" paths="/metadata/${destination.id}">
         <auth:then>
-            <tr>
-                <td><i class="bi bi-paperclip sidebar-icon"></i></td>
-                <td colspan="2"><a href='<bean:message key="destination.basepath"/>/metadata/${destination.id}'>Metadata</a></td>
-            </tr>
+            <tr><td><a href='<bean:message key="destination.basepath"/>/metadata/${destination.id}'><i class="bi bi-paperclip sidebar-icon"></i> Metadata</a></td></tr>
         </auth:then>
     </auth:if>
 
@@ -110,24 +83,26 @@
 
 <%-- Products: separate menu table, product names in tooltips only --%>
 <c:if test="${destination.monitoringStatus.present and not empty products}">
-    <table class="editSpareBox">
-        <tr><th colspan="2"><i class="bi bi-box-seam sidebar-icon"></i> Products</th></tr>
+    <table class="spareBox2">
+        <tr><th><i class="bi bi-box-seam sidebar-icon"></i> Products</th></tr>
         <c:forEach var="product" items="${products}">
             <c:set var="key" value="${product.name}@${product.value}" />
             <c:if test="${destination.statusMapForProducts[key].present}">
                 <c:set var="aStatus" value="${destination.statusMapForProducts[key].arrivalStatus}" />
                 <c:set var="tStatus" value="${destination.statusMapForProducts[key].transferStatus}" />
                 <tr>
+                    <td style="padding: 5px 10px;">
                     <auth:if basePathKey="transferhistory.basepath" paths="/">
                         <auth:then>
-                            <td style="padding: 5px 4px 5px 10px;"><a class="mon-letter mon-letter-s${aStatus lt 0 ? '0' : aStatus}"
-                                   title="${product.value}-${product.name} Arrival (status ${aStatus})"
-                                   href="/do/monitoring/arrival/${destination.id}/${product.name}/${product.value}?mode=${mode}&date=${date}">a</a></td>
+                            <a class="mon-letter mon-letter-s${aStatus lt 0 ? '0' : aStatus}"
+                               title="${product.value}-${product.name} Arrival (status ${aStatus})"
+                               href="/do/monitoring/arrival/${destination.id}/${product.name}/${product.value}?mode=${mode}&date=${date}">a</a>
                         </auth:then>
                     </auth:if>
-                    <td style="padding: 5px 10px 5px 4px;"><a class="mon-letter mon-letter-s${tStatus lt 0 ? '0' : tStatus}"
-                           title="${product.value}-${product.name} Transfer (status ${tStatus})"
-                           href="/do/monitoring/transfer/${destination.id}/${product.name}/${product.value}?mode=${mode}&date=${date}">t</a></td>
+                    <a class="mon-letter mon-letter-s${tStatus lt 0 ? '0' : tStatus}"
+                       title="${product.value}-${product.name} Transfer (status ${tStatus})"
+                       href="/do/monitoring/transfer/${destination.id}/${product.name}/${product.value}?mode=${mode}&date=${date}">t</a>
+                    </td>
                 </tr>
             </c:if>
         </c:forEach>
@@ -136,7 +111,7 @@
 
 <%-- Times: separate menu table --%>
 <c:if test="${not empty times}">
-    <table class="editSpareBox">
+    <table class="spareBox2">
         <tr><th><i class="bi bi-clock sidebar-icon"></i> Times</th></tr>
         <tr>
             <td style="padding: 8px 12px;">
@@ -154,11 +129,8 @@
 
 <auth:if basePathKey="transferhistory.basepath" paths="/">
     <auth:then>
-        <table class="editSpareBox">
-            <tr>
-                <td><i class="bi bi-eye sidebar-icon"></i></td>
-                <td><a title="Go to the Monitoring Display" href='<bean:message key="monitoring.basepath"/>'>Monitoring</a></td>
-            </tr>
+        <table class="spareBox2">
+            <tr><td><a title="Go to the Monitoring Display" href='<bean:message key="monitoring.basepath"/>'><i class="bi bi-eye sidebar-icon"></i> Monitoring</a></td></tr>
         </table>
     </auth:then>
 </auth:if>

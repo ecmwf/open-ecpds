@@ -21,10 +21,10 @@
 .prod-pill {
   display: flex; align-items: center; justify-content: flex-start; gap: 8px;
   padding: 4px 10px;
-  background: #f8f9fa; border-radius: 6px;
+  background: var(--bs-tertiary-bg); border-radius: 6px;
   font-size: 0.8rem; white-space: nowrap;
-  text-decoration: none; color: #495057;
-  border: 1px solid #dee2e6;
+  text-decoration: none; color: var(--bs-body-color);
+  border: 1px solid var(--bs-border-color);
   transition: all 0.15s ease-in-out;
 }
 .prod-pill:hover { background: var(--bs-secondary-bg); border-color: var(--bs-border-color); color: var(--bs-body-color); text-decoration: none; }

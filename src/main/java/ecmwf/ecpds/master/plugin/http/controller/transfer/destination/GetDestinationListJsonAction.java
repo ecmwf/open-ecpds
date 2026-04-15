@@ -90,13 +90,40 @@ public class GetDestinationListJsonAction extends PDSAction {
         final var type = Util.getValue(request, "destinationType", "-1");
         final var filter = Util.getValue(request, "destinationFilter", "All");
 
+        // DataTables server-side sort params take priority over legacy sortDirection
+        final var orderColParam = request.getParameter("order[0][column]");
+        final var orderDirParam = request.getParameter("order[0][dir]");
+        final int orderCol = orderColParam != null ? parseSafeInt(orderColParam, 1) : 1;
+        final boolean ascending = orderDirParam != null ? "asc".equals(orderDirParam) : "asc".equals(sortDirection);
+
         Collection<Destination> allDestinations;
         try {
-            allDestinations = DestinationHome.findByUser(user, search, aliases, "asc".equals(sortDirection),
+            // DB-level sort only applies to the name column (1); other columns sort in-memory
+            allDestinations = DestinationHome.findByUser(user, search, aliases, orderCol != 1 || ascending,
                     StatusFactory.getDestinationStatusCode(status), GetDestinationAction.getDestinationTypeIds(type),
                     filter);
         } catch (final TransferException e) {
             allDestinations = new ArrayList<>(0);
+        }
+
+        // In-memory sort for Status (col 2) and Aliases (col 3)
+        if (orderCol == 2 || orderCol == 3) {
+            final var list = allDestinations instanceof List ? (List<Destination>) allDestinations
+                    : new ArrayList<>(allDestinations);
+            if (orderCol == 2) {
+                list.sort((a, b) -> {
+                    final var va = a.getFormattedStatus() != null ? a.getFormattedStatus() : "";
+                    final var vb = b.getFormattedStatus() != null ? b.getFormattedStatus() : "";
+                    return ascending ? va.compareTo(vb) : vb.compareTo(va);
+                });
+            } else {
+                list.sort((a, b) -> {
+                    final int ca = safeAliasCount(a);
+                    final int cb = safeAliasCount(b);
+                    return ascending ? Integer.compare(ca, cb) : Integer.compare(cb, ca);
+                });
+            }
+            allDestinations = list;
         }
 
         final var recordsTotal = allDestinations.size();
@@ -340,6 +367,15 @@ public class GetDestinationListJsonAction extends PDSAction {
             err.put("error", message);
             MAPPER.writeValue(response.getWriter(), err);
         } catch (final Exception ignored) {
+        }
+    }
+
+    private static int safeAliasCount(final Destination d) {
+        try {
+            final var a = d.getAliases();
+            return a != null ? a.size() : 0;
+        } catch (final Exception e) {
+            return 0;
         }
     }
 }

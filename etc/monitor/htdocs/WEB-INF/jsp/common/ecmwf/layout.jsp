@@ -378,15 +378,42 @@ $(document).ready(function() {
   </div>
 </div>
 
-<div id="contentDiv">
-    <div id="outerTable" class="d-flex">
-        <div id="sidebarMenu" style="width:<tiles:getAsString name="submenu_width"/>; flex-shrink:0;">
+<div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarMenu" aria-labelledby="sidebarMenuLabel">
+    <div class="offcanvas-header border-bottom py-2 px-3">
+        <span class="fw-semibold small" id="sidebarMenuLabel"><i class="bi bi-layout-sidebar me-2"></i>Navigation</span>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body p-0 d-flex flex-column">
+        <div class="flex-grow-1 overflow-auto">
+            <table class="spareBox2">
+                <tr><td><a href="/do/start"><i class="bi bi-house-fill"></i> Home</a></td></tr>
+            </table>
+            <jsp:include page="/WEB-INF/jsp/pds/submenu.jsp" />
             <tiles:get name="submenu" />
             <tiles:get name="spare" />
             <tiles:get name="spare2" ignore="true"/>
             <tiles:get name="spare3" ignore="true"/>
         </div>
-        <div class="flex-grow-1 content">
+        <div class="px-3 py-2" style="border-top:1px solid var(--bs-border-color); flex-shrink:0;">
+            <a href="https://github.com/ecmwf/open-ecpds" target="_blank" rel="noopener"
+               style="display:flex; align-items:center; gap:6px; font-size:0.78rem; color:var(--bs-secondary-color); text-decoration:none;">
+                <i class="bi bi-github"></i> GitHub Repository
+                <i class="bi bi-box-arrow-up-right" style="font-size:0.65rem; opacity:0.6;"></i>
+            </a>
+        </div>
+    </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var body = document.querySelector('#sidebarMenu .offcanvas-body');
+    var btn = document.querySelector('[data-bs-target="#sidebarMenu"]');
+    if (btn && body && !body.querySelector('a, table, button')) btn.style.display = 'none';
+});
+</script>
+
+<div id="contentDiv">
+    <div id="outerTable">
+        <div class="content">
             <tiles:insert name="content">
                 <tiles:put name="subcontent"><tiles:getAsString name="subcontent" ignore="true"/></tiles:put>
                 <tiles:put name="date.select"><tiles:getAsString name="date.select" ignore="true"/></tiles:put>

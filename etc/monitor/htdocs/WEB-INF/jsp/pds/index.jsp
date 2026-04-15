@@ -2,7 +2,7 @@
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
 
 <%-- Page intro: system description + Data Portal + login notice --%>
-<div class="mb-4 px-3 py-3 rounded" style="background:rgba(13,110,253,0.05); border-left:4px solid #0d6efd; font-size:0.85rem; color:var(--bs-body-color); max-width:860px;">
+<div class="mb-4 px-3 py-3 rounded" style="background:rgba(13,110,253,0.05); border-left:4px solid #0d6efd; font-size:0.85rem; color:var(--bs-body-color);">
 
     <%-- Block 1: system description --%>
     <div class="d-flex align-items-start gap-2">
@@ -61,7 +61,7 @@
 
 </div>
 
-<div class="row g-3" style="max-width:1100px;">
+<div class="row g-3">
 
     <%-- Data Storage --%>
     <div class="col-xl-4 col-md-6 d-flex flex-column">

@@ -356,7 +356,7 @@ function createAndSubmitDynamicForm(action,bcc,subject,body) {
 
 <tiles:insert page="./pds/monitoring/reload.jsp" />
 
-<div class="d-flex flex-wrap align-items-center gap-1 mb-2 py-1 px-1 mt-1" style="border-bottom:1px solid #dee2e6; font-size:0.82rem;">
+<div class="d-flex flex-wrap align-items-center gap-1 mb-2 py-1 px-1 mt-1" style="border-bottom:1px solid var(--bs-border-color); font-size:0.82rem;">
 
   <tiles:insert page="./pds/monitoring/filter.jsp" />
 

@@ -1082,22 +1082,29 @@ a.badge.bg-light:hover, a.badge.text-dark:hover, a.badge.text-secondary:hover {
 
 /* Sidebar boxes — add some breathing room */
 #sidebarMenu {
+    width: 240px;
+    border-radius: 0 16px 16px 0;
+    overflow: hidden;
+}
+#sidebarMenu .offcanvas-body {
     padding: 8px 4px 8px 8px;
 }
 
-/* Gap between the sidebar and the main content column */
-#outerTable {
-    gap: 1.25rem;
-}
-
-/* Match the sidebar's top padding so both columns start at the same visual level */
-#outerTable > .content {
+/* Content area takes full width now that sidebar is an offcanvas overlay */
+.content {
     padding-top: 8px;
     padding-right: 12px;
+    padding-left: 12px;
+}
+
+/* Cap content width and centre it on wide screens */
+#contentDiv {
+    max-width: 1400px;
+    margin: 0 auto;
 }
 
 /* Leading empty <p/> spacers on content pages push content down; eliminate them */
-#outerTable > .content > p:first-child:empty {
+.content > p:first-child:empty {
     display: none;
 }
 
@@ -1120,6 +1127,17 @@ table.listing th.sorted {
 /* Align DataTables wrapper with page content */
 .dataTables_wrapper {
     font-size: 0.875rem;
+}
+
+/* DataTables sort arrows: default opacity 0.125 becomes invisible when th color is forced
+   white (#fff !important on table.listing th). Raise to a visible level globally. */
+table.dataTable thead > tr > th span.dt-column-order::before,
+table.dataTable thead > tr > th span.dt-column-order::after {
+    opacity: 0.45 !important;
+}
+table.dataTable thead > tr > th.dt-ordering-asc span.dt-column-order::before,
+table.dataTable thead > tr > th.dt-ordering-desc span.dt-column-order::after {
+    opacity: 0.9 !important;
 }
 
 /* .fields form layout table — tighten up with Bootstrap spacing */
@@ -1167,125 +1185,137 @@ table.spareBox2 td, table.spareBox td {
     padding: 2px 6px;
 }
 
-/* ---- Modern sidebar nav (CSS-only, no JSP changes) ---- */
+/* ---- GitHub-style sidebar nav ---- */
 
-/* Card shell */
 #sidebarMenu table.spareBox2,
 #sidebarMenu table.editSpareBox,
 #sidebarMenu table.spareBox {
     width: 100%;
-    table-layout: fixed;
-    border-collapse: separate;
-    border-spacing: 0;
-    border: 1px solid #dee2e6;
-    border-radius: 6px;
-    overflow: hidden;
-    margin-bottom: 0.75rem;
-    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    border-collapse: collapse;
+    border: none;
+    box-shadow: none;
+    margin-bottom: 0.5rem;
 }
 
-/* Section header */
+/* Section header — plain label, no filled background */
 #sidebarMenu table.spareBox2 th,
 #sidebarMenu table.editSpareBox th,
 #sidebarMenu table.spareBox th {
-    background: #495057;
-    color: #fff;
-    padding: 8px 12px;
+    background: none;
+    color: #57606a;
+    padding: 10px 16px 4px;
     font-size: 0.75rem;
     font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    text-transform: none;
+    letter-spacing: 0;
     border: none;
     text-align: left;
-    overflow: hidden;
 }
-/* Ellipsis on the <a> so its title= controls the only tooltip shown */
-#sidebarMenu table.editSpareBox th a {
-    display: block;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: clip;
-    position: relative;
-}
-/* Gradient fade-out instead of ellipsis — avoids browser overflow tooltip */
-#sidebarMenu table.editSpareBox th a::after {
-    content: '';
-    position: absolute;
-    right: 0; top: 0;
-    width: 24px; height: 100%;
-    background: linear-gradient(to right, transparent, #495057);
-    pointer-events: none;
-}
+
+/* Section header links (e.g. destination name, "Transmission") */
 #sidebarMenu table.spareBox2 th a,
 #sidebarMenu table.editSpareBox th a,
 #sidebarMenu table.spareBox th a {
-    color: #fff !important;
-    font-size: 0.75rem;
+    color: #24292f !important;
+    font-size: 0.8125rem;
     font-weight: 600;
     text-decoration: none;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
+#sidebarMenu table.spareBox2 th a::after,
+#sidebarMenu table.editSpareBox th a::after { content: none; }
 #sidebarMenu table.spareBox2 th a:hover,
 #sidebarMenu table.editSpareBox th a:hover,
 #sidebarMenu table.spareBox th a:hover {
-    color: #dee2e6 !important;
+    color: #0969da !important;
+    text-decoration: none;
 }
 
-/* Nav items */
+/* Nav item rows */
 #sidebarMenu table.spareBox2 td,
 #sidebarMenu table.editSpareBox td,
 #sidebarMenu table.spareBox td {
     padding: 0;
-    background: #fff;
-    border-top: 1px solid #f0f2f4;
-    font-size: 0.875rem;
+    background: transparent;
+    border: none;
     vertical-align: middle;
 }
 
-/* Icon column in editSpareBox — left-aligned, carries the row's accent border */
-#sidebarMenu table.editSpareBox td:first-child:not([colspan]) {
-    width: 32px;
-    padding: 0 4px 0 10px;
-    text-align: left;
-    vertical-align: middle;
-    border-left: 3px solid transparent;
-    transition: border-color 0.12s ease;
+/* Nav links — full-width flex row with icon + text */
+#sidebarMenu table.spareBox2 td a,
+#sidebarMenu table.editSpareBox td a,
+#sidebarMenu table.spareBox td a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 5px 12px 5px 16px;
+    color: #24292f !important;
+    font-size: 0.8125rem;
+    font-weight: 400;
+    text-decoration: none;
+    border-radius: 6px;
+    border-left: 2px solid transparent;
+    transition: background 0.1s ease, color 0.1s ease, border-color 0.1s ease;
+}
+#sidebarMenu table.spareBox2 td a:hover,
+#sidebarMenu table.editSpareBox td a:hover,
+#sidebarMenu table.spareBox td a:hover {
+    background: #f6f8fa;
+    color: #0969da !important;
+    border-left-color: #0969da;
 }
 
-/* editSpareBox links — no separate left border; the icon cell handles it */
-#sidebarMenu table.editSpareBox td a {
-    padding: 7px 14px 7px 4px;
-    border-left: none;
-    transition: background 0.12s ease, color 0.12s ease;
-}
-/* Badge links inside editSpareBox (e.g. proxy host badges) keep badge styling */
-#sidebarMenu table.editSpareBox td a.badge {
-    padding: 0.35em 0.65em;
+/* Icons in nav links */
+#sidebarMenu .sidebar-icon,
+#sidebarMenu table.spareBox2 td a > i,
+#sidebarMenu table.editSpareBox td a > i,
+#sidebarMenu table.spareBox td a > i {
+    flex-shrink: 0;
+    width: 1em;
     text-align: center;
-    color: #fff !important;
+    color: #57606a;
+    font-size: 0.875rem;
+    transition: color 0.1s ease;
 }
-#sidebarMenu table.editSpareBox td a.badge:hover {
-    color: #fff !important;
-    background: transparent;
+#sidebarMenu table.spareBox2 td a:hover > i,
+#sidebarMenu table.editSpareBox td a:hover > i,
+#sidebarMenu table.spareBox td a:hover > i {
+    color: #0969da;
 }
 
-/* Hover: highlight whole row (both cells) and accent the icon cell's left border */
-#sidebarMenu table.editSpareBox tr:hover td {
-    background: #f0f4f8;
-}
-#sidebarMenu table.editSpareBox tr:hover td:first-child:not([colspan]) {
-    border-left-color: #0d6efd;
-}
-#sidebarMenu table.editSpareBox td a:hover {
-    background: transparent;
+/* Badge links keep badge styling */
+#sidebarMenu table.spareBox2 td a.badge,
+#sidebarMenu table.editSpareBox td a.badge,
+#sidebarMenu table.spareBox td a.badge {
+    display: inline-flex;
+    padding: 0.25em 0.5em;
     border-left: none;
-    color: #0d6efd !important;
+    border-radius: 4px;
+    color: #fff !important;
 }
 
-/* Bootstrap Icon replacements in sidebar */
-#sidebarMenu .sidebar-icon {
-    font-size: 0.95rem;
-    vertical-align: middle;
-    color: #6c757d;
+/* Active/selected item (plain text td, no link) */
+#sidebarMenu table.spareBox td:last-child:not(:has(a)):not(:empty) {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 5px 12px 5px 16px;
+    background: #ddf4ff;
+    color: #0969da;
+    font-weight: 600;
+    border-left: 2px solid #0969da;
+    border-radius: 6px;
+    font-size: 0.8125rem;
+}
+
+/* Hide blank spacer rows */
+#sidebarMenu table.spareBox2 tr:has(> td:only-child:empty),
+#sidebarMenu table.editSpareBox tr:has(> td:only-child:empty),
+#sidebarMenu table.spareBox tr:has(> td[colspan]:empty) {
+    display: none;
 }
 
 /* Action icons in table rows and content areas */
@@ -1317,71 +1347,6 @@ img[src*="/assets/icons/"] {
 #sidebarMenu table.editSpareBox tr:has(> td:only-child:empty),
 #sidebarMenu table.spareBox tr:has(> td[colspan]:empty) {
     display: none;
-}
-
-/* spareBox has a narrow icon column — hide it, let the text column span full width */
-#sidebarMenu table.spareBox td:first-child:not([colspan]) {
-    width: 0;
-    padding: 0;
-    border: none;
-}
-
-#sidebarMenu table.spareBox2 td a,
-#sidebarMenu table.spareBox td a {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.4em;
-    padding: 7px 14px 7px 18px;
-    color: #495057 !important;
-    font-size: 0.875rem;
-    font-weight: normal;
-    text-decoration: none;
-    border-left: 3px solid transparent;
-    transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
-}
-/* Fixed-width icon slot — all labels start at the same x position */
-#sidebarMenu table.spareBox2 td a > i,
-#sidebarMenu table.spareBox td a > i {
-    flex-shrink: 0;
-    width: 1.1em;
-    text-align: center;
-    margin-top: 2px;
-    color: #8a9bb0;
-    transition: color 0.12s ease;
-}
-#sidebarMenu table.spareBox2 td a:hover > i,
-#sidebarMenu table.spareBox td a:hover > i {
-    color: #0d6efd;
-}
-#sidebarMenu table.editSpareBox td a {
-    display: block;
-    color: #495057 !important;
-    font-size: 0.875rem;
-    font-weight: normal;
-    text-decoration: none;
-}
-#sidebarMenu table.spareBox2 td a:hover,
-#sidebarMenu table.spareBox td a:hover {
-    background: #f0f4f8;
-    color: #0d6efd !important;
-    border-left-color: #0d6efd;
-}
-
-/* Align icons with text inside nav links */
-#sidebarMenu table.spareBox2 td a img,
-#sidebarMenu table.spareBox td a img {
-    vertical-align: middle;
-    margin-right: 4px;
-}
-
-/* Active/selected item in spareBox (plain text td, no link, grey inline bg) */
-#sidebarMenu table.spareBox td:last-child:not(:has(a)):not(:empty) {
-    padding: 7px 14px 7px 18px;
-    background: #e8f0fe !important;
-    color: #0d6efd;
-    font-weight: 600;
-    border-left: 3px solid #0d6efd;
-    font-size: 0.875rem;
 }
 
 /* Override jQuery UI datepicker z-index */
@@ -1604,6 +1569,26 @@ img[src*="/assets/icons/"] {
 [data-bs-theme=dark] table.select th,
 [data-bs-theme=dark] table.select td.selected { background: var(--bs-body-bg); color: var(--bs-body-color); }
 
+/* thead.table-light — Bootstrap's fixed #f8f9fa is too bright in dark mode */
+[data-bs-theme=dark] thead.table-light > tr > th,
+[data-bs-theme=dark] thead.table-light > tr > td {
+    background-color: var(--bs-secondary-bg) !important;
+    color: var(--bs-body-color) !important;
+    border-color: var(--bs-border-color) !important;
+}
+
+/* table.listing th — override hardcoded #6c757d in dark mode */
+[data-bs-theme=dark] table.listing th,
+[data-bs-theme=dark] table.listing tr th,
+[data-bs-theme=dark] table.listing tr.even th,
+[data-bs-theme=dark] table.listing tr.odd th {
+    background: var(--bs-secondary-bg) !important;
+    color: var(--bs-body-color) !important;
+}
+[data-bs-theme=dark] table.listing th.sorted {
+    background: var(--bs-tertiary-bg) !important;
+}
+
 /* table.toplevel / destinations / products */
 [data-bs-theme=dark] table.toplevel tr.titles td { background: var(--bs-secondary-bg); color: var(--bs-body-color); }
 [data-bs-theme=dark] table.toplevel td.selected { background: var(--bs-body-bg); }
@@ -1690,25 +1675,34 @@ img[src*="/assets/icons/"] {
 [data-bs-theme=dark] .help-row { border-bottom-color: var(--bs-border-color); }
 [data-bs-theme=dark] .help-tip { color: var(--bs-secondary-color); }
 
-/* Sidebar nav */
-[data-bs-theme=dark] #sidebarMenu table.spareBox2 td,
-[data-bs-theme=dark] #sidebarMenu table.editSpareBox td,
-[data-bs-theme=dark] #sidebarMenu table.spareBox td {
-    background: var(--bs-body-bg);
-    border-top-color: var(--bs-border-color);
-    color: var(--bs-body-color);
-}
+/* Sidebar nav — dark mode */
+[data-bs-theme=dark] #sidebarMenu table.spareBox2 th,
+[data-bs-theme=dark] #sidebarMenu table.editSpareBox th,
+[data-bs-theme=dark] #sidebarMenu table.spareBox th { color: #848d97; }
+[data-bs-theme=dark] #sidebarMenu table.spareBox2 th a,
+[data-bs-theme=dark] #sidebarMenu table.editSpareBox th a,
+[data-bs-theme=dark] #sidebarMenu table.spareBox th a { color: #e6edf3 !important; }
 [data-bs-theme=dark] #sidebarMenu table.spareBox2 td a,
-[data-bs-theme=dark] #sidebarMenu table.spareBox td a,
-[data-bs-theme=dark] #sidebarMenu table.editSpareBox td a { color: var(--bs-body-color) !important; }
-[data-bs-theme=dark] #sidebarMenu table.editSpareBox tr:hover td,
+[data-bs-theme=dark] #sidebarMenu table.editSpareBox td a,
+[data-bs-theme=dark] #sidebarMenu table.spareBox td a { color: #e6edf3 !important; }
 [data-bs-theme=dark] #sidebarMenu table.spareBox2 td a:hover,
-[data-bs-theme=dark] #sidebarMenu table.spareBox td a:hover { background: var(--bs-secondary-bg) !important; }
-[data-bs-theme=dark] #sidebarMenu table.editSpareBox th a::after { background: linear-gradient(to right, transparent, #343a40); }
+[data-bs-theme=dark] #sidebarMenu table.editSpareBox td a:hover,
+[data-bs-theme=dark] #sidebarMenu table.spareBox td a:hover {
+    background: rgba(177,186,196,.12);
+    color: #58a6ff !important;
+    border-left-color: #1f6feb;
+}
+[data-bs-theme=dark] #sidebarMenu .sidebar-icon,
+[data-bs-theme=dark] #sidebarMenu table.spareBox2 td a > i,
+[data-bs-theme=dark] #sidebarMenu table.editSpareBox td a > i,
+[data-bs-theme=dark] #sidebarMenu table.spareBox td a > i { color: #848d97; }
+[data-bs-theme=dark] #sidebarMenu table.spareBox2 td a:hover > i,
+[data-bs-theme=dark] #sidebarMenu table.editSpareBox td a:hover > i,
+[data-bs-theme=dark] #sidebarMenu table.spareBox td a:hover > i { color: #58a6ff; }
 [data-bs-theme=dark] #sidebarMenu table.spareBox td:last-child:not(:has(a)):not(:empty) {
-    background: #0d2547 !important;
-    color: #6ea8fe;
-    border-left-color: #0d6efd;
+    background: #121d2f;
+    color: #58a6ff;
+    border-left-color: #1f6feb;
 }
 
 /* Destination page header */

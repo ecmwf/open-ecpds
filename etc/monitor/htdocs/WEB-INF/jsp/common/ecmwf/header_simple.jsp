@@ -2,12 +2,22 @@
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content"%>
 <%@ taglib uri="/WEB-INF/tld/struts-logic.tld" prefix="logic"%>
 <%@ taglib uri="/WEB-INF/tld/struts-tiles.tld" prefix="tiles"%>
+<%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 
 <nav id="topheader" class="topheader navbar py-0" style="background-color:<%=System.getProperty("monitor.color")%>;">
-    <div class="container-fluid px-3 py-2">
+    <div class="container-fluid d-flex align-items-center px-3 py-2">
+
+        <c:set var="smw"><tiles:getAsString name="submenu_width" ignore="true"/></c:set>
+        <c:if test="${not empty smw and smw != '0'}">
+        <button class="btn btn-sm btn-outline-light p-0 me-2 flex-shrink-0" type="button"
+                data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu"
+                title="Toggle navigation" style="width:28px;height:28px;line-height:1;">
+            <i class="bi bi-list" style="font-size:1.2rem;"></i>
+        </button>
+        </c:if>
 
         <a class="navbar-brand p-0 me-0 flex-shrink-0" href="/">
-            <img src="/assets/images/logo.production.png" alt="Home page" width="140" height="24">
+            <img src="/assets/images/logo.production.png" alt="Home page" width="140" height="24" style="display:block;">
         </a>
 
         <span class="header_nav_divider"></span>

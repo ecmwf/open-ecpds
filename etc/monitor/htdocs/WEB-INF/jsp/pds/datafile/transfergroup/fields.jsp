@@ -109,6 +109,7 @@
 
 </table>
 
+<c:if test="${isInsert != 'true'}">
 <p class="fw-bold mb-1 mt-2">Transfer Servers <a
 		href="/do/datafile/transferserver/edit/insert_form?transferGroupName=${transferGroupActionForm.id}"><content:icon
 			key="icon.small.insert" titleKey="button.insert"
@@ -132,6 +133,7 @@
 		</table>
 	</display:column>
 </display:table>
+</c:if>
 
 <script>
 </script>

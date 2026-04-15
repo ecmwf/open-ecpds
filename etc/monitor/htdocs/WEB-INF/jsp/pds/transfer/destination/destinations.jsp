@@ -356,8 +356,8 @@
         columns: [
             { orderable: false, data: 0 },
             { orderable: true,  data: 1 },
-            { orderable: false, data: 2 },
-            { orderable: false, data: 3 }
+            { orderable: true,  data: 2 },
+            { orderable: true,  data: 3 }
         ],
         columnDefs: [{ targets: '_all', render: $.fn.dataTable.render.text() }],
         createdRow: function(row, data) {
@@ -454,9 +454,11 @@
 
         ['#destTableL', '#destTableR'].forEach(function(sel) {
             $(sel + ' thead th').each(function(i) {
-                $(this).removeClass('sorting sorting_asc sorting_desc');
+                $(this).removeClass('dt-ordering-asc dt-ordering-desc');
                 if (i === 0) return;
-                $(this).addClass(i === _sortCol ? (_sortAsc ? 'sorting_asc' : 'sorting_desc') : 'sorting');
+                if (i === _sortCol) {
+                    $(this).addClass(_sortAsc ? 'dt-ordering-asc' : 'dt-ordering-desc');
+                }
             });
         });
 
@@ -476,8 +478,12 @@
         ['#destTableL', '#destTableR'].forEach(function(sel) {
             $(sel + ' thead th').each(function(colIdx) {
                 if (colIdx === 0) return;
-                $(this).addClass('sorting').css('cursor', 'pointer')
-                       .off('click.dsort').on('click.dsort', function() {
+                var $th = $(this);
+                $th.addClass('dt-orderable-asc dt-orderable-desc').css('cursor', 'pointer');
+                if (!$th.find('span.dt-column-order').length) {
+                    $th.append('<span class="dt-column-order"></span>');
+                }
+                $th.off('click.dsort').on('click.dsort', function() {
                     if (_sortCol === colIdx) { _sortAsc = !_sortAsc; }
                     else { _sortCol = colIdx; _sortAsc = true; }
                     _allRows.sort(function(a, b) {
@@ -570,7 +576,8 @@
             btn.innerHTML = '<i class="bi bi-layout-sidebar-inset"></i> Single';
         } else {
             var $head = $('#destTableL thead').clone();
-            $head.find('th').removeClass('sorting sorting_asc sorting_desc');
+            $head.find('th').removeClass('dt-orderable-asc dt-orderable-desc dt-ordering-asc dt-ordering-desc');
+            $head.find('span.dt-column-order').remove();
             $('#destSplitWrap').replaceWith(
                 $('<table>', { id: 'destinationsTable', 'class': 'table table-sm table-hover table-striped align-middle', style: 'width:100%' })
                 .append($head).append($('<tbody>'))

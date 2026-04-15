@@ -1,6 +1,9 @@
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth" %>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
-
+<%-- Render-once guard: this menu is statically included in layout.jsp and may also be
+     referenced via a tile; the guard ensures it only renders once per request. --%>
+<% if (request.getAttribute("_globalNavRendered") == null) {
+   request.setAttribute("_globalNavRendered", "true"); %>
 <table class="spareBox2">
 	      <tr>
 		<th><a href="/"><%=System.getProperty("monitor.nickName")%> Home</a></th>
@@ -28,3 +31,4 @@
 		</auth:then>
 	      </auth:if>
 </table>
+<% } %>

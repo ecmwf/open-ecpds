@@ -26,8 +26,8 @@ th {
 
 /* Status info card at top of page */
 .mon-info-card {
-    background: #f8f9fa;
-    border: 1px solid #dee2e6;
+    background: var(--bs-tertiary-bg);
+    border: 1px solid var(--bs-border-color);
     border-radius: 8px;
     padding: 0.75rem 1rem;
     margin-bottom: 1rem;
@@ -38,8 +38,8 @@ th {
     font-size: 0.85rem;
 }
 .mon-info-card .mon-field { display: flex; flex-direction: column; }
-.mon-info-card .mon-label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; color: #6c757d; letter-spacing: 0.04em; }
-.mon-info-card .mon-value { color: #212529; font-weight: 500; }
+.mon-info-card .mon-label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; color: var(--bs-secondary-color); letter-spacing: 0.04em; }
+.mon-info-card .mon-value { color: var(--bs-body-color); font-weight: 500; }
 .mon-info-card .mon-status { display: flex; align-items: center; gap: 0.4rem; }
 </style>
 

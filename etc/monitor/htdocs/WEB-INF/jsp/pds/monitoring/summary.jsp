@@ -26,14 +26,14 @@
   border-radius: 6px;
   font-size: 0.8rem;
   text-decoration: none;
-  color: #495057;
+  color: var(--bs-secondary-color);
   border: 1px solid transparent;
   transition: all 0.15s;
 }
 .sum-sidebar .sum-nav-link:hover {
-  background: #e9ecef;
-  border-color: #ced4da;
-  color: #212529;
+  background: var(--bs-secondary-bg);
+  border-color: var(--bs-border-color);
+  color: var(--bs-body-color);
   text-decoration: none;
 }
 .sum-content { flex: 1; min-width: 0; }
@@ -67,8 +67,8 @@
     <div class="d-flex flex-wrap gap-2 mb-4">
       <c:forEach var="tagStatus" items="${tagStatii}">
         <a href="/do/monitoring/summary/<c:out value="${tagStatus.name}"/>"
-           class="d-flex align-items-center gap-2 px-3 py-2 border rounded text-decoration-none text-dark"
-           style="background:#f8f9fa; font-size:0.82rem; white-space:nowrap;">
+           class="d-flex align-items-center gap-2 px-3 py-2 border rounded text-decoration-none text-body"
+           style="background:var(--bs-tertiary-bg); font-size:0.82rem; white-space:nowrap;">
           <span class="mon-dot mon-dot-s${tagStatus.value.arrivalStatus lt 0 ? '0' : tagStatus.value.arrivalStatus}"
                 title="Arrival Status: ${tagStatus.value.arrivalStatus}"></span>
           <span class="mon-dot mon-dot-s${tagStatus.value.transferStatus lt 0 ? '0' : tagStatus.value.transferStatus}"
@@ -166,8 +166,8 @@
     <div class="d-flex flex-wrap gap-2 mb-4">
       <c:forEach var="destination" items="${destinations}">
         <a href="<bean:message key="destination.basepath"/>/<c:out value="${destination.name}"/>"
-           class="d-flex align-items-center gap-2 px-3 py-2 border rounded text-decoration-none text-dark"
-           style="background:#f8f9fa; font-size:0.82rem; white-space:nowrap;"
+           class="d-flex align-items-center gap-2 px-3 py-2 border rounded text-decoration-none text-body"
+           style="background:var(--bs-tertiary-bg); font-size:0.82rem; white-space:nowrap;"
            title="Status for '${destination.name}' last updated on '${destination.simplifiedMonitoringStatus.calculationDate}'">
           <span class="mon-dot mon-dot-s${destination.simplifiedMonitoringStatus.arrivalStatus lt 0 ? '0' : destination.simplifiedMonitoringStatus.arrivalStatus}"
                 title="Arrival Status: ${destination.simplifiedMonitoringStatus.arrivalStatus}"></span>
