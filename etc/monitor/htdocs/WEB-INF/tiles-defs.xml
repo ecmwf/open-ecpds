@@ -152,7 +152,7 @@
 
 	<definition name=".pds.datafile"
 		extends=".pds.datafile.base">
-		<put name="title" value="Data Storage" />
+		<put name="title" value="Data Storage Home" />
 		<put name="submenu" value="/WEB-INF/jsp/pds/submenu.jsp" />
 		<put name="content" value="/WEB-INF/jsp/pds/datafile/index.jsp" />
 	</definition>
@@ -404,7 +404,7 @@
 
 	<definition name=".pds.transfer"
 		extends=".pds.transfer.base">
-		<put name="title" value="Transmission" />
+		<put name="title" value="Transmission Home" />
 		<put name="submenu" value="/WEB-INF/jsp/pds/submenu.jsp" />
 		<put name="content" value="/WEB-INF/jsp/pds/transfer/index.jsp" />
 	</definition>
@@ -818,7 +818,7 @@
 	</definition>
 
 	<definition name=".pds.user" extends=".pds.user.base">
-		<put name="title" value="Access Control" />
+		<put name="title" value="Access Control Home" />
 		<put name="submenu" value="/WEB-INF/jsp/pds/submenu.jsp" />
 		<put name="content" value="/WEB-INF/jsp/pds/user/index.jsp" />
 	</definition>
@@ -1178,7 +1178,7 @@
 	<definition name=".pds.monitoring" extends=".pds.base">
 		<put name="date.select"
 			value="/WEB-INF/jsp/pds/common/date_select.jsp" />
-		<put name="title" value="Monitoring" />
+		<put name="title" value="Top Monitoring Display" />
 		<put name="location"
 			value="/WEB-INF/jsp/pds/monitoring/location.jsp" />
 		<put name="submenu"
@@ -1192,7 +1192,7 @@
 
 	<definition name=".pds.monitoring.toplevel"
 		extends=".ecmwf.fullscreen.base">
-		<put name="title" value="Monitoring" />
+		<put name="title" value="Top Monitoring Display" />
 		<put name="location"
 			value="/WEB-INF/jsp/pds/monitoring/location.jsp" />
 		<put name="content"

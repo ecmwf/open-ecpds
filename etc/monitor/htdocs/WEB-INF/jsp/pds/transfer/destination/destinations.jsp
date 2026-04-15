@@ -327,7 +327,7 @@
 <table id="destinationsTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
     <thead class="table-light">
         <tr>
-            <th style="width:28px;"></th>
+            <th style="width:36px;"></th>
             <th>Destination</th>
             <th style="width:110px;">Status</th>
             <th>Aliases</th>
@@ -352,9 +352,9 @@
                 d.destinationFilter  = $('#destinationSearchForm [name="destinationFilter"]').val() || 'All';
             }
         },
-        paging: true, pageLength: 25, searching: false, order: [],
+        paging: true, pageLength: 25, searching: false, autoWidth: false, order: [],
         columns: [
-            { orderable: false, data: 0 },
+            { orderable: false, data: 0, width: '36px' },
             { orderable: true,  data: 1 },
             { orderable: true,  data: 2 },
             { orderable: true,  data: 3 }

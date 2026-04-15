@@ -1129,6 +1129,21 @@ table.listing th.sorted {
     font-size: 0.875rem;
 }
 
+/* DataTables headers — restore default table-light background, add bottom border for separation */
+table.dataTable thead > tr > th {
+    white-space: nowrap;
+    border-bottom: 2px solid #adb5bd !important;
+}
+
+/* Flag column — remove horizontal padding so the column stays tight around the icon */
+#hostsTable th:first-child,       #hostsTable td:first-child,
+#destinationsTable th:first-child, #destinationsTable td:first-child,
+#destTableL th:first-child,        #destTableL td:first-child,
+#destTableR th:first-child,        #destTableR td:first-child {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
 /* DataTables sort arrows: default opacity 0.125 becomes invisible when th color is forced
    white (#fff !important on table.listing th). Raise to a visible level globally. */
 table.dataTable thead > tr > th span.dt-column-order::before,
@@ -1569,12 +1584,13 @@ img[src*="/assets/icons/"] {
 [data-bs-theme=dark] table.select th,
 [data-bs-theme=dark] table.select td.selected { background: var(--bs-body-bg); color: var(--bs-body-color); }
 
-/* thead.table-light — Bootstrap's fixed #f8f9fa is too bright in dark mode */
+/* thead.table-light / DataTables thead — dark mode: tone down Bootstrap's fixed #f8f9fa, add border */
 [data-bs-theme=dark] thead.table-light > tr > th,
-[data-bs-theme=dark] thead.table-light > tr > td {
+[data-bs-theme=dark] thead.table-light > tr > td,
+[data-bs-theme=dark] table.dataTable thead > tr > th {
     background-color: var(--bs-secondary-bg) !important;
     color: var(--bs-body-color) !important;
-    border-color: var(--bs-border-color) !important;
+    border-bottom: 2px solid var(--bs-border-color-translucent) !important;
 }
 
 /* table.listing th — override hardcoded #6c757d in dark mode */
