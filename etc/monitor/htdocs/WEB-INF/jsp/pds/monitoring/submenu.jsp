@@ -40,8 +40,6 @@
 		<tr><td><a href="/do/monitoring/transfer/${destination.name}/${product}/${time}?date=${param['date']}"><i class="bi bi-arrow-left-right"></i> ${destination.name} ${time}-${product} Transfers</a></td></tr>
 	</auth:then>
 </auth:if>
-<tr><td><a href="/do/monitoring/timeline/${destination.name}?date=${param['date']}"><i class="bi bi-calendar3"></i> ${destination.name} Timeline</a></td></tr>
-<tr><td><a href="/do/monitoring/unsuccessful/${destination.name}"><i class="bi bi-hourglass-split"></i> ${destination.name} Outstanding</a></td></tr>
 </table>
 
 </c:if>

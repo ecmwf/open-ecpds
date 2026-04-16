@@ -34,6 +34,7 @@
 </c:if>
 
 <c:if test="${authorized == 'true'}">
+	<jsp:include page="/WEB-INF/jsp/pds/transfer/destination/destination_header.jsp"/>
 	<c:if test="${empty transfers}">
 		<div class="alert">
 			No Outstanding Files found

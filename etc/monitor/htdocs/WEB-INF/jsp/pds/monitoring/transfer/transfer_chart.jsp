@@ -47,7 +47,7 @@
 .tc-legend-bar    { display:inline-block; width:18px; height:2px; background:#888; vertical-align:middle; }
 </style>
 
-<%-- ── Embed transfer data ───────────────────────────────────────────────── --%>
+<%-- -- Embed transfer data ------------------------------------------------- --%>
 <script>
 var _tr = [];
 <c:forEach var="transfer" items="${datatransfers}">
@@ -74,7 +74,7 @@ _tr.push({id:'${transfer.id}',target:'${tcTarget}',status:${tcStatus},fmtStatus:
 </c:forEach>
 </script>
 
-<%-- ── Header ─────────────────────────────────────────────────────────────── --%>
+<%-- -- Header --------------------------------------------------------------- --%>
 <div class="d-flex justify-content-between align-items-center mt-2 mb-2 flex-wrap gap-2">
   <h6 class="fw-semibold text-secondary mb-0">
     <i class="bi bi-activity me-1"></i>Transfer Chart &mdash;
@@ -101,7 +101,7 @@ _tr.push({id:'${transfer.id}',target:'${tcTarget}',status:${tcStatus},fmtStatus:
   </div>
 </div>
 
-<%-- ── Legend ─────────────────────────────────────────────────────────────── --%>
+<%-- -- Legend --------------------------------------------------------------- --%>
 <div id="tcLegend" class="mb-2 d-flex flex-wrap align-items-center">
   <span class="tc-legend-item"><span class="tc-legend-tick" style="background:#6c757d;"></span>S &mdash; Scheduled</span>
   <span class="tc-legend-item"><span class="tc-legend-tick" style="background:#e91e8c;"></span>E &mdash; Earliest</span>
@@ -112,7 +112,7 @@ _tr.push({id:'${transfer.id}',target:'${tcTarget}',status:${tcStatus},fmtStatus:
   <span class="tc-legend-item ms-3"><span class="tc-legend-bar"></span>&nbsp;E &rarr; L window</span>
 </div>
 
-<%-- ── Chart container ────────────────────────────────────────────────────── --%>
+<%-- -- Chart container ------------------------------------------------------ --%>
 <div id="tcChartView">
   <div id="tcChart" style="width:100%; border:1px solid #dee2e6; border-radius:6px;"></div>
 </div>
@@ -121,11 +121,11 @@ _tr.push({id:'${transfer.id}',target:'${tcTarget}',status:${tcStatus},fmtStatus:
   Scroll to browse rows &nbsp;&middot;&nbsp; use +/- to zoom time axis &nbsp;&middot;&nbsp; drag to pan &nbsp;&middot;&nbsp; click a row to open the transfer
 </div>
 
-<%-- ── Table container ────────────────────────────────────────────────────── --%>
+<%-- -- Table container ------------------------------------------------------ --%>
 <div id="tcTableView" class="d-none">
   <div class="mb-2">
     <input type="text" id="tcFilter" class="form-control form-control-sm"
-           placeholder="Filter by filename, status…" oninput="tcFilterTable()" style="max-width:360px;">
+           placeholder="Filter by filename, status..." oninput="tcFilterTable()" style="max-width:360px;">
   </div>
   <div style="max-height:75vh; overflow-y:auto; border:1px solid #dee2e6; border-radius:6px;">
     <table class="table table-sm table-hover table-bordered mb-0" style="font-size:0.8rem;">
@@ -148,7 +148,7 @@ _tr.push({id:'${transfer.id}',target:'${tcTarget}',status:${tcStatus},fmtStatus:
 </div>
 
 <script>
-// ── Marker colours (S, E, L, T, P, A) ─────────────────────────────────────────
+// -- Marker colours (S, E, L, T, P, A) -----------------------------------------
 var _TCM = ['#6c757d', '#e91e8c', '#dc3545', '#198754', '#fd7e14', '#0d6efd'];
 var _TCML = ['S', 'E', 'L', 'T', 'P', 'A'];
 var _TCMD = ['Scheduled', 'Earliest', 'Latest', 'Target', 'Predicted', 'Actual'];
@@ -158,7 +158,7 @@ var _TCS  = ['#adb5bd','#17a2b8','#28a745','#4040d0','#d4a000','#e07800','#dc354
 var _TCSBG  = ['#e2e3e5','#d1ecf1','#d4edda','#cce0ff','#fff3cd','#ffe5d0','#f8d7da'];
 var _TCSTXT = ['#41464b','#0c5460','#155724','#084298','#856404','#5c2e00','#721c24'];
 
-// ── Format helpers ────────────────────────────────────────────────────────────
+// -- Format helpers ------------------------------------------------------------
 function _fmtMs(ms) {
   if (!ms || ms <= 0) return '--';
   var d = new Date(ms);
@@ -172,13 +172,13 @@ function _markers(t) {
   return [t.scheduled, t.earliest, t.latest, t.targetT, t.predicted, t.finish];
 }
 
-// ── State ─────────────────────────────────────────────────────────────────────
+// -- State ---------------------------------------------------------------------
 var _tcView    = localStorage.getItem('tcView') || 'chart';
 var _tcChart   = null;
 var _tcOrigMin = null, _tcOrigMax = null;
 var _xMin = 0, _xMax = 0;
 
-// ── View toggle ───────────────────────────────────────────────────────────────
+// -- View toggle ---------------------------------------------------------------
 function tcSetView(v) {
   _tcView = v;
   localStorage.setItem('tcView', v);
@@ -196,7 +196,7 @@ function tcSetView(v) {
   if (isChart) setTimeout(function() { _tcEnsureChart(); if (_tcChart) _tcChart.resize(); }, 0);
 }
 
-// ── Zoom helpers ──────────────────────────────────────────────────────────────
+// -- Zoom helpers --------------------------------------------------------------
 function _tcCurrentXRange() {
   if (!_tcChart) return { min: _tcOrigMin, max: _tcOrigMax };
   var opt = _tcChart.getOption();
@@ -223,7 +223,7 @@ function _tcZoomBy(f) {
 }
 function _tcResetZoom() { _tcApplyXZoom(_tcOrigMin, _tcOrigMax); }
 
-// ── renderItem: draw S/E/L/T/P/A tick marks + E→L bar for each row ─────────
+// -- renderItem: draw S/E/L/T/P/A tick marks + E->L bar for each row ---------
 function _tcRenderItem(params, api) {
   var rowIdx = api.value(0);
   var t      = _tr[rowIdx];
@@ -234,7 +234,7 @@ function _tcRenderItem(params, api) {
   var tickH  = Math.max(10, Math.min(20, api.size([0, 1])[1] * 0.65));
   var children = [];
 
-  // E→L horizontal range bar
+  // E->L horizontal range bar
   var eVal = ms[1], lVal = ms[2];
   if (eVal > 0 && lVal > 0) {
     var ex = api.coord([eVal, rowIdx])[0];
@@ -273,7 +273,7 @@ function _tcRenderItem(params, api) {
   return { type:'group', children: children };
 }
 
-// ── Chart init (lazy) ─────────────────────────────────────────────────────────
+// -- Chart init (lazy) ---------------------------------------------------------
 var _tcInited = false;
 function _tcEnsureChart() {
   if (_tcInited) return;
@@ -345,7 +345,7 @@ function _tcEnsureChart() {
     yAxis: {
       type: 'category',
       data: _tr.map(function(t) {
-        var s = t.target; return s.length > 32 ? s.slice(0,29)+'…' : s;
+        var s = t.target; return s.length > 32 ? s.slice(0,29)+'...' : s;
       }),
       inverse: true,
       axisLabel: { fontSize: 10, width: 188, overflow: 'truncate', interval: 0 },
@@ -386,7 +386,7 @@ function _tcEnsureChart() {
   document.getElementById('tcZoomHint').classList.remove('d-none');
 }
 
-// ── Table ─────────────────────────────────────────────────────────────────────
+// -- Table ---------------------------------------------------------------------
 function tcBuildTable() {
   var rows = [];
   _tr.forEach(function(t, i) {
@@ -431,7 +431,7 @@ function _tcUpdateCount(vis) {
     vis < total ? ('Showing ' + vis + ' of ' + total + ' transfers') : (total + ' transfers');
 }
 
-// ── CSV export ────────────────────────────────────────────────────────────────
+// -- CSV export ----------------------------------------------------------------
 function tcExportCsv() {
   var lines = ['#,ID,Target,TS,S (Scheduled),E (Earliest),L (Latest),T (Target),P (Predicted),A (Actual),Status'];
   _tr.forEach(function(t, i) {
@@ -447,7 +447,7 @@ function tcExportCsv() {
   a.click();
 }
 
-// ── Boot ──────────────────────────────────────────────────────────────────────
+// -- Boot ----------------------------------------------------------------------
 document.addEventListener('DOMContentLoaded', _tcInit);
 if (document.readyState !== 'loading') { _tcInit(); }
 function _tcInit() {

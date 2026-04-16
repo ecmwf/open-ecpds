@@ -24,7 +24,7 @@
 .ac-legend-bar    { display:inline-block; width:18px; height:2px; background:#888; vertical-align:middle; }
 </style>
 
-<%-- ── Embed arrival data ─────────────────────────────────────────────────── --%>
+<%-- -- Embed arrival data --------------------------------------------------- --%>
 <script>
 var _ar = [];
 <c:forEach var="transfer" items="${datatransfers}">
@@ -49,7 +49,7 @@ _ar.push({id:'${transfer.dataFileId}',target:'${acTarget}',status:${acStatus},ea
 </c:forEach>
 </script>
 
-<%-- ── Header ─────────────────────────────────────────────────────────────── --%>
+<%-- -- Header --------------------------------------------------------------- --%>
 <div class="d-flex justify-content-between align-items-center mt-2 mb-2 flex-wrap gap-2">
   <h6 class="fw-semibold text-secondary mb-0">
     <i class="bi bi-activity me-1"></i>Arrival Chart &mdash;
@@ -76,7 +76,7 @@ _ar.push({id:'${transfer.dataFileId}',target:'${acTarget}',status:${acStatus},ea
   </div>
 </div>
 
-<%-- ── Legend ─────────────────────────────────────────────────────────────── --%>
+<%-- -- Legend --------------------------------------------------------------- --%>
 <div id="acLegend" class="mb-2 d-flex flex-wrap align-items-center">
   <span class="ac-legend-item"><span class="ac-legend-tick" style="background:#6c757d;"></span>S &mdash; Scheduled</span>
   <span class="ac-legend-item"><span class="ac-legend-tick" style="background:#e91e8c;"></span>E &mdash; Earliest</span>
@@ -87,7 +87,7 @@ _ar.push({id:'${transfer.dataFileId}',target:'${acTarget}',status:${acStatus},ea
   <span class="ac-legend-item ms-3"><span class="ac-legend-bar"></span>&nbsp;E &rarr; L window</span>
 </div>
 
-<%-- ── Chart container ────────────────────────────────────────────────────── --%>
+<%-- -- Chart container ------------------------------------------------------ --%>
 <div id="acChartView">
   <div id="acChart" style="width:100%; border:1px solid #dee2e6; border-radius:6px;"></div>
 </div>
@@ -96,11 +96,11 @@ _ar.push({id:'${transfer.dataFileId}',target:'${acTarget}',status:${acStatus},ea
   Scroll to browse rows &nbsp;&middot;&nbsp; use +/- to zoom time axis &nbsp;&middot;&nbsp; drag to pan &nbsp;&middot;&nbsp; click a row to open the data file
 </div>
 
-<%-- ── Table container ────────────────────────────────────────────────────── --%>
+<%-- -- Table container ------------------------------------------------------ --%>
 <div id="acTableView" class="d-none">
   <div class="mb-2">
     <input type="text" id="acFilter" class="form-control form-control-sm"
-           placeholder="Filter by filename…" oninput="acFilterTable()" style="max-width:360px;">
+           placeholder="Filter by filename..." oninput="acFilterTable()" style="max-width:360px;">
   </div>
   <div style="max-height:75vh; overflow-y:auto; border:1px solid #dee2e6; border-radius:6px;">
     <table class="table table-sm table-hover table-bordered mb-0" style="font-size:0.8rem;">
@@ -123,7 +123,7 @@ _ar.push({id:'${transfer.dataFileId}',target:'${acTarget}',status:${acStatus},ea
 </div>
 
 <script>
-// ── Marker colours (S, E, L, T, P, A) ─────────────────────────────────────────
+// -- Marker colours (S, E, L, T, P, A) -----------------------------------------
 var _ACM  = ['#6c757d', '#e91e8c', '#dc3545', '#198754', '#fd7e14', '#0d6efd'];
 var _ACML = ['S', 'E', 'L', 'T', 'P', 'A'];
 var _ACMD = ['Scheduled', 'Earliest', 'Latest', 'Target', 'Predicted', 'Actual arrival'];
@@ -133,7 +133,7 @@ var _ACSBG  = ['#e2e3e5','#d1ecf1','#d4edda','#cce0ff','#fff3cd','#ffe5d0','#f8d
 var _ACSTXT = ['#41464b','#0c5460','#155724','#084298','#856404','#5c2e00','#721c24'];
 var _ACSLBL = ['unknown','scheduled','done','executing','warning','retrying','failed'];
 
-// ── Format helpers ────────────────────────────────────────────────────────────
+// -- Format helpers ------------------------------------------------------------
 function _fmtAc(ms) {
   if (!ms || ms <= 0) return '--';
   var d = new Date(ms);
@@ -146,13 +146,13 @@ function _acMarkers(r) {
   return [r.scheduled, r.earliest, r.latest, r.targetT, r.predicted, r.arrived];
 }
 
-// ── State ─────────────────────────────────────────────────────────────────────
+// -- State ---------------------------------------------------------------------
 var _acView    = localStorage.getItem('acView') || 'chart';
 var _acChart   = null;
 var _acOrigMin = null, _acOrigMax = null;
 var _axMin = 0, _axMax = 0;
 
-// ── View toggle ───────────────────────────────────────────────────────────────
+// -- View toggle ---------------------------------------------------------------
 function acSetView(v) {
   _acView = v;
   localStorage.setItem('acView', v);
@@ -170,7 +170,7 @@ function acSetView(v) {
   if (isChart) setTimeout(function() { _acEnsureChart(); if (_acChart) _acChart.resize(); }, 0);
 }
 
-// ── Zoom helpers ──────────────────────────────────────────────────────────────
+// -- Zoom helpers --------------------------------------------------------------
 function _acCurrentXRange() {
   if (!_acChart) return { min: _acOrigMin, max: _acOrigMax };
   var opt = _acChart.getOption();
@@ -197,7 +197,7 @@ function _acZoomBy(f) {
 }
 function _acResetZoom() { _acApplyXZoom(_acOrigMin, _acOrigMax); }
 
-// ── renderItem: draw S/E/L/T/P/A tick marks + E→L bar for each row ─────────
+// -- renderItem: draw S/E/L/T/P/A tick marks + E->L bar for each row ---------
 function _acRenderItem(params, api) {
   var rowIdx = api.value(0);
   var r      = _ar[rowIdx];
@@ -209,7 +209,7 @@ function _acRenderItem(params, api) {
   var tickH  = Math.max(10, Math.min(20, api.size([0, 1])[1] * 0.65));
   var children = [];
 
-  // E→L horizontal range bar
+  // E->L horizontal range bar
   var eVal = ms[1], lVal = ms[2];
   if (eVal > 0 && lVal > 0) {
     var ex = api.coord([eVal, rowIdx])[0];
@@ -247,7 +247,7 @@ function _acRenderItem(params, api) {
   return { type:'group', children: children };
 }
 
-// ── Chart init (lazy) ─────────────────────────────────────────────────────────
+// -- Chart init (lazy) ---------------------------------------------------------
 var _acInited = false;
 function _acEnsureChart() {
   if (_acInited) return;
@@ -317,7 +317,7 @@ function _acEnsureChart() {
     yAxis: {
       type: 'category',
       data: _ar.map(function(r) {
-        var s = r.target; return s.length > 32 ? s.slice(0,29)+'…' : s;
+        var s = r.target; return s.length > 32 ? s.slice(0,29)+'...' : s;
       }),
       inverse: true,
       axisLabel: { fontSize: 10, width: 188, overflow: 'truncate', interval: 0 },
@@ -358,7 +358,7 @@ function _acEnsureChart() {
   document.getElementById('acZoomHint').classList.remove('d-none');
 }
 
-// ── Table ─────────────────────────────────────────────────────────────────────
+// -- Table ---------------------------------------------------------------------
 function acBuildTable() {
   var rows = [];
   _ar.forEach(function(r, i) {
@@ -403,7 +403,7 @@ function _acUpdateCount(vis) {
     vis < total ? ('Showing ' + vis + ' of ' + total + ' transfers') : (total + ' transfers');
 }
 
-// ── CSV export ────────────────────────────────────────────────────────────────
+// -- CSV export ----------------------------------------------------------------
 function acExportCsv() {
   var lines = ['#,File ID,Target,TS,S (Scheduled),E (Earliest),L (Latest),T (Target),P (Predicted),A (Actual),Status'];
   _ar.forEach(function(r, i) {
@@ -420,7 +420,7 @@ function acExportCsv() {
   a.click();
 }
 
-// ── Boot ──────────────────────────────────────────────────────────────────────
+// -- Boot ----------------------------------------------------------------------
 document.addEventListener('DOMContentLoaded', _acInit);
 if (document.readyState !== 'loading') { _acInit(); }
 function _acInit() {

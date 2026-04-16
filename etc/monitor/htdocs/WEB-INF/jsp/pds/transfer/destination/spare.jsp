@@ -61,6 +61,7 @@
     </auth:if>
 
     <tr><td><a href='<bean:message key="monitoring.timeline.basepath"/>/${destination.id}?date=${date}'><i class="bi bi-calendar3 sidebar-icon"></i> Transfer Timeline</a></td></tr>
+    <tr><td><a href='/do/monitoring/unsuccessful/${destination.id}'><i class="bi bi-hourglass-split sidebar-icon"></i> Outstanding</a></td></tr>
 
     <auth:if basePathKey="transferhistory.basepath" paths="/">
         <auth:then>
