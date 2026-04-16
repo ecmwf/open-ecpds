@@ -32,7 +32,7 @@
       <div class="login-field">
         <label for="login-pass"><i class="bi bi-lock"></i> Password / OTP</label>
         <div class="login-pass-wrap">
-          <input id="login-pass" name="password" type="password" placeholder="Password or 8-digit one-time code" autocomplete="current-password">
+          <input id="login-pass" name="password" type="password" placeholder="Password or 6-digit one-time code" autocomplete="current-password">
           <button type="button" id="login-toggle-pass" tabindex="-1" title="Show/hide password">
             <i class="bi bi-eye" id="login-eye"></i>
           </button>
@@ -65,7 +65,7 @@ document.getElementById('login-toggle-pass').addEventListener('click', function(
 document.getElementById('login-pass').addEventListener('input', function() {
     var val = this.value;
     var hint = document.getElementById('login-pass-hint');
-    var isOtp = val.length === 8 && /^\d+$/.test(val);
+    var isOtp = val.length === 6 && /^\d+$/.test(val);
     if (isOtp) {
         hint.innerHTML = '<i class="bi bi-shield-check"></i> One-time passcode (OTP) detected';
         hint.className = 'login-pass-hint login-pass-hint-otp';

@@ -1260,9 +1260,9 @@ table.spareBox2 td, table.spareBox td {
 }
 
 /* Nav links — full-width flex row with icon + text */
-#sidebarMenu table.spareBox2 td a,
-#sidebarMenu table.editSpareBox td a,
-#sidebarMenu table.spareBox td a {
+#sidebarMenu table.spareBox2 td a:not(.mon-letter),
+#sidebarMenu table.editSpareBox td a:not(.mon-letter),
+#sidebarMenu table.spareBox td a:not(.mon-letter) {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -1310,6 +1310,27 @@ table.spareBox2 td, table.spareBox td {
     border-left: none;
     border-radius: 4px;
     color: #fff !important;
+}
+
+/* mon-letter (a/t product status badges) — keep inline, no sidebar nav override */
+#sidebarMenu table.spareBox2 td a.mon-letter,
+#sidebarMenu table.editSpareBox td a.mon-letter,
+#sidebarMenu table.spareBox td a.mon-letter {
+    display: inline-block;
+    padding: 0 !important;
+    border-left: none;
+    border-radius: 3px;
+}
+
+/* Product status rows: indent badges past the section header (24px vs th's 16px) */
+#sidebarMenu table.spb-products td {
+    padding: 4px 12px 4px 24px !important;
+    line-height: 1;
+}
+
+/* Times rows: same indent treatment as Products */
+#sidebarMenu table.spb-times td {
+    padding: 6px 12px 6px 24px !important;
 }
 
 /* Active/selected item (plain text td, no link) */

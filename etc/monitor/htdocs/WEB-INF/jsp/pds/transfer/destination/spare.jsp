@@ -83,7 +83,7 @@
 
 <%-- Products: separate menu table, product names in tooltips only --%>
 <c:if test="${destination.monitoringStatus.present and not empty products}">
-    <table class="spareBox2">
+    <table class="spareBox2 spb-products">
         <tr><th><i class="bi bi-box-seam sidebar-icon"></i> Products</th></tr>
         <c:forEach var="product" items="${products}">
             <c:set var="key" value="${product.name}@${product.value}" />
@@ -111,7 +111,7 @@
 
 <%-- Times: separate menu table --%>
 <c:if test="${not empty times}">
-    <table class="spareBox2">
+    <table class="spareBox2 spb-times">
         <tr><th><i class="bi bi-clock sidebar-icon"></i> Times</th></tr>
         <tr>
             <td style="padding: 8px 12px;">
