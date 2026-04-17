@@ -2,7 +2,6 @@
 
 <%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean"%>
 <%@ taglib uri="/WEB-INF/tld/struts-tiles.tld" prefix="tiles"%>
-<%@ taglib uri="/WEB-INF/tld/displaytag.tld" prefix="display"%>
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content"%>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
@@ -87,23 +86,45 @@
 	</table>
 
 	<p class="fw-bold mb-1 mt-2">Transfer Servers</p>
-	<display:table id="server" name="${transfergroup.transferServers}"
-		requestURI="" pagesize="50" defaultsort="1" sort="list"
-		class="listing">
-		<display:column title="Name" sortable="true">
-			<a href="/do/datafile/transferserver/${server.name}">${server.name}</a>
-		</display:column>
-		<display:column property="host" />
-		<display:column property="port" />
-		<display:column sortable="true" title="Active">
-			<c:if test="${transferserver.active}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if>
-			<c:if test="${!transferserver.active}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if>
-		</display:column>
-		<display:column title="Replicate">
-			<c:if test="${transferserver.replicate}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if>
-			<c:if test="${!transferserver.replicate}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if>
-		</display:column>
-	</display:table>
+	<table id="tgServersTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
+		<thead class="table-light">
+			<tr>
+				<th>Name</th>
+				<th>Host</th>
+				<th>Port</th>
+				<th class="text-center">Active</th>
+				<th class="text-center">Replicate</th>
+			</tr>
+		</thead>
+		<tbody>
+		<c:forEach var="server" items="${transfergroup.transferServers}">
+			<tr>
+				<td><a href="/do/datafile/transferserver/${server.name}">${server.name}</a></td>
+				<td>${server.host}</td>
+				<td>${server.port}</td>
+				<td class="text-center" data-order="${server.active ? 1 : 0}">
+					<c:if test="${server.active}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if>
+					<c:if test="${!server.active}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if>
+				</td>
+				<td class="text-center" data-order="${server.replicate ? 1 : 0}">
+					<c:if test="${server.replicate}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if>
+					<c:if test="${!server.replicate}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if>
+				</td>
+			</tr>
+		</c:forEach>
+		</tbody>
+	</table>
+	<script>
+	$(document).ready(function() {
+		$('#tgServersTable').DataTable({
+			paging:    false,
+			searching: false,
+			ordering:  true,
+			info:      false,
+			order:     [[0, 'asc']]
+		});
+	});
+	</script>
 
 </c:if>
 

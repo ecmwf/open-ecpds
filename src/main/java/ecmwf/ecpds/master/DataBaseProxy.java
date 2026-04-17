@@ -942,6 +942,16 @@ final class DataBaseProxy implements DataBaseInterface {
         return monitor.done(dataBaseInterface.getBadDataTransfersByDestination(destinationName));
     }
 
+    @Override
+    public Collection<DataTransfer> getSortedBadDataTransfersByDestination(final String destinationName,
+            final DataBaseCursor cursor) throws DataBaseException, RemoteException {
+        if (isEmpty(destinationName)) {
+            throw new DataBaseException("Invalid parameter(s) for getSortedBadDataTransfersByDestination");
+        }
+        final var monitor = new MonitorCall("getSortedBadDataTransfersByDestination(" + destinationName + ")");
+        return monitor.done(dataBaseInterface.getSortedBadDataTransfersByDestination(destinationName, cursor));
+    }
+
     /**
      * {@inheritDoc}
      *

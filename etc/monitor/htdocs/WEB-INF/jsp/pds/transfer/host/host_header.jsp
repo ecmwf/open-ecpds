@@ -9,7 +9,7 @@
 <div class="dest-page-header mb-3">
         <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
 					<c:if test="${not host.active}"><i class="bi bi-slash-circle-fill text-danger" title="Host is disabled" style="font-size:0.9rem;"></i></c:if>
-                    <span class="dest-page-name"<c:if test="${not host.active}"> style="text-decoration:line-through;color:var(--bs-secondary-color)"</c:if>>${host.nickName}</span>
+                    <a class="dest-page-name text-decoration-none" href="/do/transfer/host/${host.name}"<c:if test="${not host.active}"> style="text-decoration:line-through !important;color:var(--bs-secondary-color)"</c:if>>${host.nickName}</a>
         <c:if test="${host.name != host.nickName}">
             <code class="dest-page-id" title="Host identifier">${host.name}</code>
         </c:if>

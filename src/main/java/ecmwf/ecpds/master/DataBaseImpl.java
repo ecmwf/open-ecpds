@@ -1490,6 +1490,13 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
         return monitor.done(ecpds.getBadDataTransfersByDestination(master.dataCache, destinationName));
     }
 
+    @Override
+    public Collection<DataTransfer> getSortedBadDataTransfersByDestination(final String destinationName,
+            final DataBaseCursor cursor) throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getSortedBadDataTransfersByDestination(" + destinationName + ")");
+        return monitor.done(ecpds.getSortedBadDataTransfersByDestination(master.dataCache, destinationName, cursor));
+    }
+
     /**
      * Gets the bad data transfers by destination count.
      *

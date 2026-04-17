@@ -1199,6 +1199,9 @@
 			<forward name="binary_dump"
 				path="/WEB-INF/jsp/pds/monitoring/binary_dump.jsp" />
 		</action>
+		<action path="/monitoring/unsuccessful/list/*" parameter="{1}"
+			type="ecmwf.ecpds.master.plugin.http.controller.monitoring.GetBadTransfersJsonAction">
+		</action>
 		<action path="/monitoring/unsuccessful/*" parameter="{1}"
 			type="ecmwf.ecpds.master.plugin.http.controller.monitoring.GetUnSuccessfulTransfersAction">
 			<forward name="success"

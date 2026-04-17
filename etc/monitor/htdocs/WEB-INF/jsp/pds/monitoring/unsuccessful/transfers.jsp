@@ -2,7 +2,6 @@
 
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
 <%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean"%>
-<%@ taglib uri="/WEB-INF/tld/displaytag.tld" prefix="display"%>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 
 <c:set var="authorized" value="false" />
@@ -27,49 +26,82 @@
 </auth:if>
 
 <c:if test="${authorized == 'false'}">
-	<div class="alert">
-		Error retrieving object by key <- Problem searching by key
-		'${destination.name}' <- Destination not found: {${destination.name}}
+	<div class="alert alert-danger">
+		Error retrieving object by key &larr; Destination not found: ${destination.name}
 	</div>
 </c:if>
 
 <c:if test="${authorized == 'true'}">
 	<jsp:include page="/WEB-INF/jsp/pds/transfer/destination/destination_header.jsp"/>
-	<c:if test="${empty transfers}">
-		<div class="alert">
-			No Outstanding Files found
-		</div>
-	</c:if>
-	<c:if test="${!empty transfers}">
-		<p class="fw-bold mb-1 mt-2">Unsuccessful Data Transfers</p>
-		<display:table name="${transfers}" id="transfer" pagesize="25"
-			requestURI="" class="listing">
-			<display:column title="Dest" sortable="true">
-				<a
-					href="<bean:message key="destination.basepath"/>/${transfer.destinationName}">${transfer.destinationName}</a>
-			</display:column>
-			<display:column property="hostNickName" title="Host" sortable="true" />
-			<display:column title="Target" sortable="true">
-				<a href="/do/transfer/data/${transfer.id}">${transfer.target}</a>
-			</display:column>
-			<display:column property="formattedStatus" title="Status" />
-			<display:column title="%" property="progress" sortable="true" />
-			<display:column title="B/s" property="transferRate" sortable="true" />
-			<display:column property="priority" sortable="true" />
-			<display:column property="comment" sortable="true" />
-		</display:table>
-		<table border=0>
+
+	<div class="d-flex align-items-center mb-2 mt-2">
+		<span class="text-muted small" id="badTransfersFoundLabel"><i class="bi bi-list-ul"></i> Loading...</span>
+	</div>
+
+	<table id="badTransfersTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
+		<thead class="table-light">
 			<tr>
-				<td><auth:link basePathKey="admin.basepath"
-						href="/requeue?restart=true" imageKey="icon.requeue"
-						imageTitleKey="ecpds.destination.requeue"
-						imageAltKey="ecpds.destination.requeue" /></td>
-				<td width="15"></td>
-				<td><auth:link basePathKey="admin.basepath"
-						href="/delete?delete=true" imageKey="icon.delete"
-						imageTitleKey="ecpds.destination.delete"
-						imageAltKey="ecpds.destination.delete" /></td>
+				<th>Host</th>
+				<th>Target</th>
+				<th>Status</th>
+				<th>%</th>
+				<th>B/s</th>
+				<th>Priority</th>
+				<th>Comment</th>
 			</tr>
-		</table>
-	</c:if>
+		</thead>
+		<tbody></tbody>
+	</table>
+
+	<div class="mt-2">
+		<auth:link basePathKey="admin.basepath"
+			href="/requeue?restart=true" imageKey="icon.requeue"
+			imageTitleKey="ecpds.destination.requeue"
+			imageAltKey="ecpds.destination.requeue" />
+		&nbsp;&nbsp;
+		<auth:link basePathKey="admin.basepath"
+			href="/delete?delete=true" imageKey="icon.delete"
+			imageTitleKey="ecpds.destination.delete"
+			imageAltKey="ecpds.destination.delete" />
+	</div>
+
+	<script>
+	$(function() {
+		var _table = $('#badTransfersTable').DataTable({
+			serverSide: true,
+			processing: true,
+			ajax: {
+				url: '/do/monitoring/unsuccessful/list/${destination.name}',
+				type: 'GET'
+			},
+			pageLength: 25,
+			searching: false,
+			autoWidth: false,
+			order: [[0, 'asc']],
+			columns: [
+				{ orderable: true,  data: 0 },
+				{ orderable: true,  data: 1 },
+				{ orderable: true,  data: 2 },
+				{ orderable: false, data: 3 },
+				{ orderable: false, data: 4 },
+				{ orderable: true,  data: 5 },
+				{ orderable: true,  data: 6 }
+			],
+			columnDefs: [{ targets: '_all', render: $.fn.dataTable.render.text() }],
+			createdRow: function(row, data) {
+				$('td', row).each(function(i) { $(this).html(data[i]); });
+			},
+			drawCallback: function(settings) {
+				var total = settings.json ? settings.json.recordsTotal : 0;
+				$('#badTransfersFoundLabel').html('<i class="bi bi-list-ul"></i> <strong>' + total + '</strong> outstanding transfer(s)');
+			},
+			language: {
+				lengthMenu: 'Show _MENU_ per page',
+				info: 'Showing _START_-_END_ of _TOTAL_',
+				processing: 'Loading...',
+				emptyTable: 'No outstanding transfers found'
+			}
+		});
+	});
+	</script>
 </c:if>

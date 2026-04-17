@@ -55,7 +55,6 @@ public class GetUnSuccessfulTransfersAction extends PDSAction {
             throws ECMWFException, ClassCastException {
         final var destination = DestinationHome.findByPrimaryKey(ECMWFActionForm.getPathParameter(mapping, request, 0));
         request.setAttribute("destination", destination);
-        request.setAttribute("transfers", destination.getBadDataTransfers());
         return mapping.findForward("success");
     }
 }

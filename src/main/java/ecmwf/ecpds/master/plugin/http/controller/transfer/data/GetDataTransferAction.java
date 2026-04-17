@@ -84,7 +84,15 @@ public class GetDataTransferAction extends PDSAction {
             if (parameters.isEmpty()) {
                 // There are no DataTransfer specified so we are requested to list the
                 // DataTransfers!
-                final var date = Util.getValue(request, "date", getISOFormat().format(new Date()));
+                var date = Util.getValue(request, "date", getISOFormat().format(new Date()));
+                // Guard against a stale non-ISO value (e.g. "All") left in the session by
+                // another page. Reset to today and fix the session so the error doesn't recur.
+                try {
+                    getISOFormat().parse(date);
+                } catch (final ParseException ignored) {
+                    date = getISOFormat().format(new Date());
+                    request.getSession().setAttribute("date", date);
+                }
                 final var status = Util.getValue(request, "transferStatus", Status.EXEC);
                 final var search = Util.getValue(request, "transferSearch", "");
                 final var type = Util.getValue(request, "transferType", "");

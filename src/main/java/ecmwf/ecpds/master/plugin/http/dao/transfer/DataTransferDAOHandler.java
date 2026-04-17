@@ -50,6 +50,7 @@ import ecmwf.ecpds.master.plugin.http.home.transfer.searches.DataTransfersByDest
 import ecmwf.ecpds.master.plugin.http.home.transfer.searches.DataTransfersByDestinationAndTransmissionDate;
 import ecmwf.ecpds.master.plugin.http.home.transfer.searches.DataTransfersByDestinationNameAndIdentity;
 import ecmwf.ecpds.master.plugin.http.home.transfer.searches.DataTransfersByDestinationNameProductAndTime;
+import ecmwf.ecpds.master.plugin.http.home.transfer.searches.SortedBadDataTransfersByDestination;
 import ecmwf.ecpds.master.plugin.http.home.transfer.searches.DataTransfersByFilter;
 import ecmwf.ecpds.master.plugin.http.home.transfer.searches.DataTransfersByHost;
 import ecmwf.ecpds.master.plugin.http.home.transfer.searches.DataTransfersByStatusCode;
@@ -177,6 +178,9 @@ public class DataTransferDAOHandler extends PDSDAOBase implements DAOHandler {
                         .getTransferCountWithDestinationAndMetadataValueByMetadataName(s.getMetaDataName());
             } else if (search instanceof final BadDataTransfersByDestination s) {
                 beans = MasterManager.getDB().getBadDataTransfersByDestination(s.getDestination().getName());
+            } else if (search instanceof final SortedBadDataTransfersByDestination s) {
+                beans = MasterManager.getDB().getSortedBadDataTransfersByDestination(s.getDestination().getName(),
+                        s.getCursor());
             } else if (search instanceof final BadDataTransferCountByDestination s) {
                 final var i = MasterManager.getDB().getBadDataTransfersByDestinationCount(s.getDestination().getName());
                 final List<Integer> l = new ArrayList<>(1);

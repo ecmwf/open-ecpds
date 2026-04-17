@@ -5,7 +5,7 @@
 <div class="dest-page-header mb-3">
     <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
         <c:if test="${not destination.active}"><i class="bi bi-slash-circle-fill text-danger" title="Destination is disabled" style="font-size:0.9rem;align-self:center;"></i></c:if>
-        <span class="dest-page-name"<c:if test="${not destination.active}"> style="text-decoration:line-through;color:var(--bs-secondary-color)"</c:if>>${destination.name}</span>
+        <a class="dest-page-name text-decoration-none" href="/do/transfer/destination/${destination.name}"<c:if test="${not destination.active}"> style="text-decoration:line-through !important;color:var(--bs-secondary-color)"</c:if>>${destination.name}</a>
         <c:if test="${destination.id != destination.name}">
             <code class="dest-page-id">${destination.id}</code>
         </c:if>

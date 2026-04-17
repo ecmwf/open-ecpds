@@ -1,10 +1,8 @@
 <%@ page session="true" %>
 
-<%@ taglib uri="/WEB-INF/tld/displaytag.tld" prefix="display" %>
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth" %>
-<%@ taglib uri="/WEB-INF/tld/struts-tiles.tld" prefix="tiles" %>
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content" %>
-<%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean" %>
+<%@ taglib uri="/WEB-INF/tld/struts-tiles.tld" prefix="tiles" %>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
 
 <c:set var="authorized" value="false" />
@@ -41,39 +39,57 @@
 	<tiles:put name="show_chart_button">true</tiles:put>
 </tiles:insert>
 
-</br>
+<br/>
 
 <c:if test="${empty datatransfers}">
 <div class="alert">
   No Data Transfers found based on these criteria!
-</div>  
+</div>
 </c:if>
 
-<c:if test="${!empty datatransfers}">  
-<display:table id="transfer" name="${datatransfers}" requestURI="" class="listing">
-
-	<display:column title="Target" sortable="true">
-			<a href="/do/transfer/data/${transfer.id}">${transfer.target}</a>
-	</display:column>
-	<display:column property="dataFile.timeStep" title="TS" sortable="true"/>
-
-	<display:column title="Scheduled"> 
-		<content:content name="transfer.scheduledTime" dateFormatKey="date.format.time" ignoreNull="true"/>
-	</display:column>
-	<display:column title="Target">
-		<content:content name="transfer.transferTargetTime" dateFormatKey="date.format.time" ignoreNull="true"/>
-	</display:column>
-	<display:column title="Predicted"> 
-		<content:content name="transfer.transferPredictedTime" dateFormatKey="date.format.time" ignoreNull="true"/>
-	</display:column>
-	<display:column title="Finished"> 
-		<b><content:content name="transfer.finishTime" dateFormatKey="date.format.time" ignoreNull="true"/></b>
-	</display:column>
-	<display:column title="Status"> 
-		<span class="mon-letter mon-letter-s${transfer.transferStatus lt 0 ? '0' : transfer.transferStatus}" title="Transfer Status ${transfer.transferStatus}">t</span> &nbsp; (${transfer.formattedStatus})
-	</display:column>
-	
-</display:table>
+<c:if test="${!empty datatransfers}">
+<table id="transferMonTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
+    <thead class="table-light">
+        <tr>
+            <th>Target</th>
+            <th>TS</th>
+            <th>Scheduled</th>
+            <th>Target Time</th>
+            <th>Predicted</th>
+            <th>Finished</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+    <c:forEach var="transfer" items="${datatransfers}">
+        <c:catch var="_ex"><c:set var="_trSt" value="${transfer.transferStatus}"/></c:catch>
+        <c:if test="${not empty _ex}"><c:set var="_trSt" value="-1"/></c:if>
+        <c:catch var="_ex"><c:set var="_fmtSt" value="${transfer.formattedStatus}"/></c:catch>
+        <c:if test="${not empty _ex}"><c:set var="_fmtSt" value=""/></c:if>
+        <tr>
+            <td><a href="/do/transfer/data/${transfer.id}">${transfer.target}</a></td>
+            <td>${transfer.dataFile.timeStep}</td>
+            <td><content:content name="transfer.scheduledTime" dateFormatKey="date.format.time" ignoreNull="true"/></td>
+            <td><content:content name="transfer.transferTargetTime" dateFormatKey="date.format.time" ignoreNull="true"/></td>
+            <td><content:content name="transfer.transferPredictedTime" dateFormatKey="date.format.time" ignoreNull="true"/></td>
+            <td><b><content:content name="transfer.finishTime" dateFormatKey="date.format.time" ignoreNull="true"/></b></td>
+            <td>
+                <span class="mon-letter mon-letter-s${_trSt lt 0 ? '0' : _trSt}" title="Transfer Status ${_trSt}">t</span>&nbsp;(${_fmtSt})
+            </td>
+        </tr>
+    </c:forEach>
+    </tbody>
+</table>
+<script>
+$(document).ready(function() {
+    $('#transferMonTable').DataTable({
+        paging:    false,
+        searching: true,
+        ordering:  true,
+        info:      false
+    });
+});
+</script>
 </c:if>
 
 </c:if>

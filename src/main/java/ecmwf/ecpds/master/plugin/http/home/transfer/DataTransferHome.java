@@ -47,6 +47,7 @@ import ecmwf.ecpds.master.plugin.http.home.transfer.searches.DataTransfersByStat
 import ecmwf.ecpds.master.plugin.http.home.transfer.searches.DataTransfersByTransferServer;
 import ecmwf.ecpds.master.plugin.http.home.transfer.searches.DataTransfersCountByFilter;
 import ecmwf.ecpds.master.plugin.http.home.transfer.searches.NotDoneTransferCount;
+import ecmwf.ecpds.master.plugin.http.home.transfer.searches.SortedBadDataTransfersByDestination;
 import ecmwf.ecpds.master.plugin.http.model.datafile.DataFile;
 import ecmwf.ecpds.master.plugin.http.model.datafile.TransferServer;
 import ecmwf.ecpds.master.plugin.http.model.transfer.DataTransfer;
@@ -554,6 +555,11 @@ public class DataTransferHome extends ModelHomeBase {
      */
     public static final Collection<DataTransfer> findBadByDestination(final Destination d) throws TransferException {
         return find(new BadDataTransfersByDestination(d));
+    }
+
+    public static final Collection<DataTransfer> findSortedBadByDestination(final Destination d,
+            final DataBaseCursor cursor) throws TransferException {
+        return find(new SortedBadDataTransfersByDestination(d, cursor));
     }
 
     /**

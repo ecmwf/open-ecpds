@@ -80,7 +80,10 @@ public class GetTransferHistoryAction extends PDSAction {
             final var currentDate = getISOFormat().format(new Date());
             var date = Util.getValue(request, "date", currentDate);
             if ("All".equals(date)) {
+                // Util.getValue already wrote "All" to the session; fix it so other pages
+                // (e.g. GetDataTransferAction) don't later receive an unparseable date.
                 date = currentDate;
+                request.getSession().setAttribute("date", date);
             }
             final var mode = request.getParameter("mode");
             // Initialize the cursor for the database search

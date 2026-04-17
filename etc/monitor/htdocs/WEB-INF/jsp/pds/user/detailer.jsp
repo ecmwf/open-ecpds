@@ -2,7 +2,6 @@
 
 <%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean" %>
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth" %>
-<%@ taglib uri="/WEB-INF/tld/displaytag.tld" prefix="display" %>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
 <%@ taglib uri="/WEB-INF/tld/fn.tld" prefix="fn" %>
 
@@ -19,10 +18,27 @@
     <span class="fw-semibold" style="font-size:0.78rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--bs-secondary-color);">Belongs to Categories</span>
 </div>
 
-<display:table name="${categories}" id="category" requestURI="" sort="list" class="listing">
-    <display:column title="Name" sortable="true"><a href="<bean:message key="category.basepath"/>/${category.id}">${category.name}</a></display:column>
-    <display:column property="description" title="Description" sortable="true"/>
-</display:table>
+<table id="detailerCatTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
+    <thead class="table-light">
+        <tr>
+            <th>Name</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+    <c:forEach var="category" items="${categories}">
+        <tr>
+            <td><a href="<bean:message key="category.basepath"/>/${category.id}">${category.name}</a></td>
+            <td>${category.description}</td>
+        </tr>
+    </c:forEach>
+    </tbody>
+</table>
+<script>
+$(document).ready(function() {
+    $('#detailerCatTable').DataTable({ paging: false, searching: false, ordering: true, info: false });
+});
+</script>
 
 <%-- Users with access --%>
 <div class="d-flex align-items-center gap-2 mb-2 mt-4">
@@ -30,16 +46,34 @@
     <span class="fw-semibold" style="font-size:0.78rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--bs-secondary-color);">Users with Access</span>
 </div>
 
-<display:table name="${users}" id="userWith" requestURI="" sort="list" class="listing">
-    <display:column title="UID" sortable="true"><a href="<bean:message key="user.basepath"/>/${userWith.id}">${userWith.id}</a></display:column>
-    <display:column title="Name" sortable="true">${userWith.commonName}</display:column>
-    <display:column title="Categories" sortable="false">
-        <c:forEach var="cat" items="${userWith.categories}">
-            <a href="<bean:message key="category.basepath"/>/${cat.id}" title="${cat.description}"
-               class="badge bg-primary text-decoration-none me-1" style="width:auto">${cat.name}</a>
-        </c:forEach>
-    </display:column>
-</display:table>
+<table id="detailerUsersWithTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
+    <thead class="table-light">
+        <tr>
+            <th>UID</th>
+            <th>Name</th>
+            <th>Categories</th>
+        </tr>
+    </thead>
+    <tbody>
+    <c:forEach var="userWith" items="${users}">
+        <tr>
+            <td><a href="<bean:message key="user.basepath"/>/${userWith.id}">${userWith.id}</a></td>
+            <td>${userWith.commonName}</td>
+            <td>
+                <c:forEach var="cat" items="${userWith.categories}">
+                    <a href="<bean:message key="category.basepath"/>/${cat.id}" title="${cat.description}"
+                       class="badge bg-primary text-decoration-none me-1" style="width:auto">${cat.name}</a>
+                </c:forEach>
+            </td>
+        </tr>
+    </c:forEach>
+    </tbody>
+</table>
+<script>
+$(document).ready(function() {
+    $('#detailerUsersWithTable').DataTable({ paging: false, searching: true, ordering: true, info: false, columnDefs: [{ orderable: false, targets: -1 }] });
+});
+</script>
 
 <%-- Users without access --%>
 <div class="d-flex align-items-center gap-2 mb-2 mt-4">
@@ -47,16 +81,34 @@
     <span class="fw-semibold" style="font-size:0.78rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--bs-secondary-color);">Users without Access</span>
 </div>
 
-<display:table name="${usersNo}" id="userNo" requestURI="" sort="list" class="listing">
-    <display:column title="UID" sortable="true"><a href="<bean:message key="user.basepath"/>/${userNo.id}">${userNo.id}</a></display:column>
-    <display:column title="Name" sortable="true">${userNo.commonName}</display:column>
-    <display:column title="Categories" sortable="false">
-        <c:forEach var="cat" items="${userNo.categories}">
-            <a href="<bean:message key="category.basepath"/>/${cat.id}" title="${cat.description}"
-               class="badge bg-primary text-decoration-none me-1" style="width:auto">${cat.name}</a>
-        </c:forEach>
-    </display:column>
-</display:table>
+<table id="detailerUsersNoTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
+    <thead class="table-light">
+        <tr>
+            <th>UID</th>
+            <th>Name</th>
+            <th>Categories</th>
+        </tr>
+    </thead>
+    <tbody>
+    <c:forEach var="userNo" items="${usersNo}">
+        <tr>
+            <td><a href="<bean:message key="user.basepath"/>/${userNo.id}">${userNo.id}</a></td>
+            <td>${userNo.commonName}</td>
+            <td>
+                <c:forEach var="cat" items="${userNo.categories}">
+                    <a href="<bean:message key="category.basepath"/>/${cat.id}" title="${cat.description}"
+                       class="badge bg-primary text-decoration-none me-1" style="width:auto">${cat.name}</a>
+                </c:forEach>
+            </td>
+        </tr>
+    </c:forEach>
+    </tbody>
+</table>
+<script>
+$(document).ready(function() {
+    $('#detailerUsersNoTable').DataTable({ paging: false, searching: true, ordering: true, info: false, columnDefs: [{ orderable: false, targets: -1 }] });
+});
+</script>
 
 <%-- Back button: ref must be a local path (starts with /) to prevent open redirect --%>
 <div class="mt-4">

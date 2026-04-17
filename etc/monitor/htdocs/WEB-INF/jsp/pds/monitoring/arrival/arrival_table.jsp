@@ -1,10 +1,8 @@
 <%@ page session="true" %>
 
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth" %>
-<%@ taglib uri="/WEB-INF/tld/displaytag.tld" prefix="display" %>
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content" %>
 <%@ taglib uri="/WEB-INF/tld/struts-tiles.tld" prefix="tiles" %>
-<%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean" %>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
 
 <tiles:insert name="date.select">
@@ -23,31 +21,46 @@
 </c:if>
 
 <c:if test="${!empty datatransfers}">
-<display:table id="transfer" name="${datatransfers}" requestURI="" class="listing">
-
-	<display:column title="Original" sortable="true">
-		<a href="/do/transfer/data/${transfer.id}">${transfer.target}</a>
-	</display:column>
-	
-	<display:column property="dataFile.timeStep" title="TS" sortable="true"/>
-
-	<display:column title="Target">
-		<content:content name="transfer.arrivalTargetTime" dateFormatKey="date.format.time" ignoreNull="true"/>
-	</display:column>
-	<display:column title="Predicted"> 
-		<content:content name="transfer.arrivalPredictedTime" dateFormatKey="date.format.time" ignoreNull="true"/>
-	</display:column>
-	<display:column title="Arrival"> 
-		<b><content:content name="transfer.dataFile.arrivedTime" dateFormatKey="date.format.time" ignoreNull="true"/></b>
-	</display:column>
-	<display:column title="Scheduled"> 
-		<content:content name="transfer.scheduledTime" dateFormatKey="date.format.time" ignoreNull="true"/>
-	</display:column>
-	<display:column title="Status">
-		<span class="mon-letter mon-letter-s${transfer.arrivalStatus lt 0 ? '0' : transfer.arrivalStatus}" title="Arrival Status ${transfer.arrivalStatus}">a</span> &nbsp; (${transfer.arrivalStatus})
-	</display:column>
-
-</display:table>
+<table id="arrivalTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
+    <thead class="table-light">
+        <tr>
+            <th>Original</th>
+            <th>TS</th>
+            <th>Target</th>
+            <th>Predicted</th>
+            <th>Arrival</th>
+            <th>Scheduled</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+    <c:forEach var="transfer" items="${datatransfers}">
+        <c:catch var="_ex"><c:set var="_arrSt" value="${transfer.arrivalStatus}"/></c:catch>
+        <c:if test="${not empty _ex}"><c:set var="_arrSt" value="-1"/></c:if>
+        <tr>
+            <td><a href="/do/transfer/data/${transfer.id}">${transfer.target}</a></td>
+            <td>${transfer.dataFile.timeStep}</td>
+            <td><content:content name="transfer.arrivalTargetTime" dateFormatKey="date.format.time" ignoreNull="true"/></td>
+            <td><content:content name="transfer.arrivalPredictedTime" dateFormatKey="date.format.time" ignoreNull="true"/></td>
+            <td><b><content:content name="transfer.dataFile.arrivedTime" dateFormatKey="date.format.time" ignoreNull="true"/></b></td>
+            <td><content:content name="transfer.scheduledTime" dateFormatKey="date.format.time" ignoreNull="true"/></td>
+            <td>
+                <span class="mon-letter mon-letter-s${_arrSt lt 0 ? '0' : _arrSt}" title="Arrival Status ${_arrSt}">a</span>&nbsp;(${_arrSt})
+            </td>
+        </tr>
+    </c:forEach>
+    </tbody>
+</table>
+<script>
+$(document).ready(function() {
+    $('#arrivalTable').DataTable({
+        paging:    false,
+        searching: true,
+        ordering:  true,
+        info:      false
+    });
+});
+</script>
 </c:if>
 
 </auth:then>

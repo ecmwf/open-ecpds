@@ -92,6 +92,13 @@ final class ECpdsGet {
                 new String[] { "destination=" + paramDestination });
     }
 
+    DBResultSet getSortedBadDataTransfersByDestination(final String paramDestination, final String paramSort,
+            final String paramOrder, final int paramStart, final int paramLength) throws SQLException, IOException {
+        return _database.executeSelect("ECpdsBase", "getSortedBadDataTransfersByDestination",
+                new String[] { "destination=" + paramDestination, "sort=" + paramSort, "order=" + paramOrder,
+                        "start=" + paramStart, "length=" + paramLength });
+    }
+
     /**
      * Gets the data files by group by count.
      *

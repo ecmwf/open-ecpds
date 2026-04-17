@@ -68,7 +68,14 @@ public class GetDataFileAction extends PDSAction {
             throws ECMWFException, ClassCastException {
         final ArrayList<?> parameters = ECMWFActionForm.getPathParameters(mapping, request);
         if (parameters.isEmpty()) {
-            final var date = Util.getValue(request, "date", getISOFormat().format(new Date()));
+            var date = Util.getValue(request, "date", getISOFormat().format(new Date()));
+            // Guard against a stale non-ISO value left in the session by another page.
+            try {
+                getISOFormat().parse(date);
+            } catch (final ParseException ignored) {
+                date = getISOFormat().format(new Date());
+                request.getSession().setAttribute("date", date);
+            }
             final var metadataNames = getMetaDataNames();
             final var originalMetadataName = (String) request.getSession().getAttribute("metaDataName");
             final var metaDataName = Util.getValue(request, "metaDataName", () -> {

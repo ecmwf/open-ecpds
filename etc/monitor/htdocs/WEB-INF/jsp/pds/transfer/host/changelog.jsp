@@ -37,46 +37,67 @@
 .diff-pre b { color:#79b8ff; }
 </style>
 
-	<display:table name="${host.changeLogList}" id="changelog"
-		requestURI="" sort="list" pagesize="4" class="listing">
-		<display:column title="Date &amp; Time" sortable="true"
-			sortProperty="date" style="width:130px; white-space:nowrap;">
-			<content:content name="changelog.date"
-				dateFormatKey="date.format.long.iso" ignoreNull="true" />
-		</display:column>
-		<display:column title="Web User" sortable="true" style="width:100px; white-space:nowrap;">${changelog.webUserId}</display:column>
-		<display:column title="Differences">
-			<div class="cl-tabs">
-				<ul class="nav nav-tabs" role="tablist">
-					<li class="nav-item" role="presentation">
-						<button class="nav-link active"
-							data-bs-toggle="tab"
-							data-bs-target="#cl-prev-${changelog.changeLogId}"
-							type="button" role="tab">
-							<i class="bi bi-clock-history me-1"></i>vs Previous
-						</button>
-					</li>
-					<li class="nav-item" role="presentation">
-						<button class="nav-link<c:if test="${empty changelog.differencesFromCurrent}"> disabled</c:if>"
-							data-bs-toggle="tab"
-							data-bs-target="#cl-curr-${changelog.changeLogId}"
-							type="button" role="tab"
-							<c:if test="${empty changelog.differencesFromCurrent}">disabled</c:if>>
-							<i class="bi bi-arrow-repeat me-1"></i>vs Current
-						</button>
-					</li>
-				</ul>
-				<div class="tab-content">
-					<div class="tab-pane show active" id="cl-prev-${changelog.changeLogId}" role="tabpanel">
-						<pre class="diff-pre">${changelog.differences}</pre>
-					</div>
-					<div class="tab-pane" id="cl-curr-${changelog.changeLogId}" role="tabpanel">
-						<pre class="diff-pre">${changelog.differencesFromCurrent}</pre>
-					</div>
-				</div>
-			</div>
-		</display:column>
-	</display:table>
+<table id="changelogTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
+    <thead class="table-light">
+        <tr>
+            <th style="width:130px; white-space:nowrap">Date &amp; Time</th>
+            <th style="width:100px; white-space:nowrap">Web User</th>
+            <th>Differences</th>
+        </tr>
+    </thead>
+    <tbody>
+    <c:forEach var="changelog" items="${host.changeLogList}">
+        <tr>
+            <td style="white-space:nowrap"><content:content name="changelog.date" dateFormatKey="date.format.long.iso" ignoreNull="true"/></td>
+            <td style="white-space:nowrap">${changelog.webUserId}</td>
+            <td>
+                <div class="cl-tabs">
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active"
+                                data-bs-toggle="tab"
+                                data-bs-target="#cl-prev-${changelog.changeLogId}"
+                                type="button" role="tab">
+                                <i class="bi bi-clock-history me-1"></i>vs Previous
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link<c:if test="${empty changelog.differencesFromCurrent}"> disabled</c:if>"
+                                data-bs-toggle="tab"
+                                data-bs-target="#cl-curr-${changelog.changeLogId}"
+                                type="button" role="tab"
+                                <c:if test="${empty changelog.differencesFromCurrent}">disabled</c:if>>
+                                <i class="bi bi-arrow-repeat me-1"></i>vs Current
+                            </button>
+                        </li>
+                    </ul>
+                    <div class="tab-content">
+                        <div class="tab-pane show active" id="cl-prev-${changelog.changeLogId}" role="tabpanel">
+                            <pre class="diff-pre">${changelog.differences}</pre>
+                        </div>
+                        <div class="tab-pane" id="cl-curr-${changelog.changeLogId}" role="tabpanel">
+                            <pre class="diff-pre">${changelog.differencesFromCurrent}</pre>
+                        </div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+    </c:forEach>
+    </tbody>
+</table>
+<script>
+$(document).ready(function() {
+    $('#changelogTable').DataTable({
+        paging:    true,
+        pageLength: 10,
+        searching: true,
+        ordering:  true,
+        info:      true,
+        order:     [[0, 'desc']],
+        columnDefs: [{ orderable: false, targets: 2 }]
+    });
+});
+</script>
 
 </c:if>
 

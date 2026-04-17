@@ -1025,6 +1025,9 @@ public interface DataBaseInterface extends Remote {
     Collection<DataTransfer> getBadDataTransfersByDestination(String destinationName)
             throws DataBaseException, RemoteException;
 
+    Collection<DataTransfer> getSortedBadDataTransfersByDestination(String destinationName, DataBaseCursor cursor)
+            throws DataBaseException, RemoteException;
+
     /**
      * Gets the bad data transfers by destination count.
      *

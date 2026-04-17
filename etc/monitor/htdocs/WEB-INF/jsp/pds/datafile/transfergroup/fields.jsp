@@ -6,7 +6,6 @@
 <%@ taglib uri="/WEB-INF/tld/struts-logic.tld" prefix="logic"%>
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content"%>
-<%@ taglib uri="/WEB-INF/tld/displaytag.tld" prefix="display"%>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 
 <table class="fields">
@@ -114,25 +113,42 @@
 		href="/do/datafile/transferserver/edit/insert_form?transferGroupName=${transferGroupActionForm.id}"><content:icon
 			key="icon.small.insert" titleKey="button.insert"
 			altKey="button.insert" writeFullTag="true" /></a></p>
-<display:table id="server"
-	name="${transferGroupActionForm.transferServers}" requestURI=""
-	class="listing">
-	<display:column property="name" sortable="true" />
-	<display:column>
-		<table width="10">
-			<tr>
-				<td><auth:link styleClass="menuitem"
-						href="/do/datafile/transferserver/edit/update_form/${server.id}"
-						imageKey="icon.small.update" imageTitleKey="button.update"
-						imageAltKey="button.update" /></td>
-				<td><auth:link styleClass="menuitem"
-						href="/do/datafile/transferserver/edit/delete_form/${server.id}"
-						imageKey="icon.small.delete" imageTitleKey="button.delete"
-						imageAltKey="button.delete" /></td>
-			</tr>
-		</table>
-	</display:column>
-</display:table>
+<table id="tgFieldsServersTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
+	<thead class="table-light">
+		<tr>
+			<th>Name</th>
+			<th class="text-center">Actions</th>
+		</tr>
+	</thead>
+	<tbody>
+	<c:forEach var="server" items="${transferGroupActionForm.transferServers}">
+		<tr>
+			<td>${server.name}</td>
+			<td class="buttons text-center">
+				<auth:link styleClass="menuitem"
+					href="/do/datafile/transferserver/edit/update_form/${server.id}"
+					imageKey="icon.small.update" imageTitleKey="button.update"
+					imageAltKey="button.update" />
+				<auth:link styleClass="menuitem"
+					href="/do/datafile/transferserver/edit/delete_form/${server.id}"
+					imageKey="icon.small.delete" imageTitleKey="button.delete"
+					imageAltKey="button.delete" />
+			</td>
+		</tr>
+	</c:forEach>
+	</tbody>
+</table>
+<script>
+$(document).ready(function() {
+	$('#tgFieldsServersTable').DataTable({
+		paging:    false,
+		searching: false,
+		ordering:  true,
+		info:      false,
+		columnDefs: [{ orderable: false, targets: -1 }]
+	});
+});
+</script>
 </c:if>
 
 <script>

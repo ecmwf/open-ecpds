@@ -3441,6 +3441,46 @@ public final class ECpdsBase extends DataBase {
         }
     }
 
+    public Collection<DataTransfer> getSortedBadDataTransfersByDestination(final DataTransferCache cache,
+            final String destinationName, final DataBaseCursor cursor) throws DataBaseException {
+        try (var rs = ecpds.getSortedBadDataTransfersByDestination(destinationName, cursor.getSort(), cursor.getOrder(),
+                cursor.getStart(), cursor.getLength())) {
+            final List<DataTransfer> array = new ArrayList<>();
+            final var hosts = new HashMap<String, Host>();
+            DataTransfer initialTransfer = null;
+            while (rs.next()) {
+                final var transfer = new DataTransfer();
+                transfer.setId(rs.getLong("DAT_ID"));
+                transfer.setDestinationName(rs.getString("DES_NAME"));
+                transfer.setTarget(rs.getString("DAT_TARGET"));
+                transfer.setStatusCode(rs.getString("STA_CODE"));
+                transfer.setUserStatus(rs.getString("DAT_USER_STATUS"));
+                transfer.setSent(rs.getLong("DAT_SENT"));
+                transfer.setSize(rs.getLong("DAT_SIZE"));
+                transfer.setDuration(rs.getLong("DAT_DURATION"));
+                transfer.setPriority(rs.getInt("DAT_PRIORITY"));
+                transfer.setComment(rs.getString("DAT_COMMENT"));
+                transfer.setScheduledTime(rs.getTimestamp("DAT_SCHEDULED_TIME"));
+                transfer.setFailedTime(rs.getTimestamp("DAT_FAILED_TIME"));
+                transfer.setStartCount(rs.getInt("DAT_START_COUNT"));
+                _setHost(this, transfer, rs.getString("HOS_NAME"), hosts);
+                final var used = cache.getFromCache(transfer);
+                if (initialTransfer == null) {
+                    initialTransfer = used;
+                }
+                array.add(used);
+            }
+            if (initialTransfer != null) {
+                initialTransfer.setCollectionSize(rs.getFoundRows(cursor));
+            }
+            logSqlRequest("getSortedBadDataTransfersByDestination(" + cursor + ")", array.size());
+            return array;
+        } catch (SQLException | IOException e) {
+            _log.warn("getSortedBadDataTransfersByDestination", e);
+            throw new DataBaseException("getSortedBadDataTransfersByDestination", e);
+        }
+    }
+
     /**
      * Gets the bad data transfers by destination count.
      *

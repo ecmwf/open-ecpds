@@ -3,7 +3,6 @@
 <%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean" %>
 <%@ taglib uri="/WEB-INF/tld/struts-tiles.tld" prefix="tiles" %>
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content" %>
-<%@ taglib uri="/WEB-INF/tld/displaytag.tld" prefix="display" %>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
 
 <tiles:importAttribute name="isDelete" ignore="true"/>
@@ -117,85 +116,110 @@
 	</tr>
 
 	<tr>
-	<th>Timestep</th><td valign="top">${datafile.timeStep}</td>
-	<td valign="top" rowspan="5" colspan="2">
-		<p class="fw-bold mb-1 mt-2">Meta Data for ${datafile.id}</p>
-		<display:table id="metadata" name="${datafile.metaData}" requestURI="" class="listing">
-			<display:setProperty name="basic.msg.empty_list">
-				<table class="listing" id="metadata">
-					<caption style="white-space: nowrap;">No Meta Data for ${datafile.id}</caption>
-				</table>
-			</display:setProperty>
-		 	<display:column sortable="true" title="Name"><a href="/do/datafile/metadata/attribute/${metadata.name}">${metadata.name}</a></display:column>
-		 	<display:column property="value"/>    				
-		</display:table>
-	</td>
+	<th>Timestep</th><td colspan="3">${datafile.timeStep}</td>
 	</tr>
-
 	<tr>
 	<th>Size</th><td><a STYLE="TEXT-DECORATION: NONE" title="Size: ${datafile.formattedSize}">${datafile.size} bytes</a></td>
+	<th>Delete Original</th><td><c:if test="${datafile.deleteOriginal}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if><c:if test="${!datafile.deleteOriginal}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></td>
 	</tr>
 	<tr>
-	<th>Delete Original</th><td valign="top"><c:if test="${datafile.deleteOriginal}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if><c:if test="${!datafile.deleteOriginal}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></td>
-	</tr>
-	<tr>
-	<th>Deleted</th><td valign="top"><c:if test="${datafile.deleted}"><font color="red"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></font></c:if><c:if test="${!datafile.deleted}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></td>
-	</tr>
-	<tr>
-	<th>Removed</th><td valign="top"><c:if test="${datafile.removed}"><font color="red"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></font></c:if><c:if test="${!datafile.removed}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></td>
+	<th>Deleted</th><td><c:if test="${datafile.deleted}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if><c:if test="${!datafile.deleted}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></td>
+	<th>Removed</th><td><c:if test="${datafile.removed}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if><c:if test="${!datafile.removed}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></td>
 	</tr>
 
-	
 	</table>
 
-<p class="fw-bold mb-1 mt-2">Transfers for this datafile</p>
-<display:table name="${datafile.dataTransfers}" id="transfer"  pagesize="35" requestURI="" sort="list" class="listing">
+<p class="fw-bold mb-1 mt-3">Meta Data for ${datafile.id}</p>
+<c:if test="${empty datafile.metaData}">
+<div class="alert alert-info mt-1">No Meta Data for ${datafile.id}</div>
+</c:if>
+<c:if test="${not empty datafile.metaData}">
+<table id="metadataTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
+	<thead class="table-light">
+		<tr>
+			<th>Name</th>
+			<th>Value</th>
+		</tr>
+	</thead>
+	<tbody>
+	<c:forEach var="metadata" items="${datafile.metaData}">
+		<tr>
+			<td><a href="/do/datafile/metadata/attribute/${metadata.name}">${metadata.name}</a></td>
+			<td>${metadata.value}</td>
+		</tr>
+	</c:forEach>
+	</tbody>
+</table>
+<script>
+$(document).ready(function() {
+    $('#metadataTable').DataTable({ paging: false, searching: false, ordering: true, info: false });
+});
+</script>
+</c:if>
 
-    <display:column title="Destination" sortable="true">	
-    		<a title="${transfer.destination.comment}" href="<bean:message key="destination.basepath"/>/${transfer.destinationName}">${transfer.destinationName}</a>
-    </display:column>
-
-	<display:column title="Transfer Host" sortable="true">
-		<c:set var="nickName" value="${transfer.hostNickName}" />
-		<jsp:useBean id="nickName" type="java.lang.String" />
-		<c:if test='<%="".equals(nickName)%>'>
-			<font color="grey"><span title="Data not transferred to remote host">[not-transferred]</span></font>
-		</c:if>
-		<c:if test="<%=nickName.length()>0%>">
-			<c:if test="${transfer.transferServerName == null}">
-				<a href="/do/transfer/host/${transfer.hostName}">${transfer.hostNickName}</a>
-			</c:if>
-                	<c:if test="${transfer.transferServerName != null}">
-				<a title="Transmitted through ${transfer.transferServerName}" href="/do/transfer/host/${transfer.hostName}">${transfer.hostNickName}</a>
-			</c:if>
-		</c:if>
-	</display:column>
-
-	<display:column title="Sched. Time" sortable="true">	
-			<content:content name="transfer.scheduledTime" dateFormatKey="date.format.transfer" ignoreNull="true"/>									
-	</display:column>
-    				
-    <display:column title="Target" sortable="true">
-    		<a  title="Size: ${transfer.formattedSize}" href="/do/transfer/data/${transfer.id}"><c:if test="${transfer.deleted}"><font color="red"></c:if>${transfer.target}<c:if test="${transfer.deleted}"></font></c:if></a>
-    </display:column>
-    				
-    <display:column title="%" property="progress" sortable="true"/>
-
-    <display:column title="Mbits/s" sortable="true" sortProperty="formattedTransferRateInMBitsPerSeconds">
-		<c:if test="${transfer.transferRate != 0}">
-			<a STYLE="TEXT-DECORATION: NONE" title="Rate: ${transfer.formattedTransferRate}">${transfer.formattedTransferRateInMBitsPerSeconds}</a>
-		</c:if>
-		<c:if test="${transfer.transferRate == 0}">
-			<c:if test="${transfer.size != 0}">
-				<font color="grey"><span title="Data not transferred to remote host">[n/a]</span></font>
-			</c:if>
-			<c:if test="${transfer.size == 0}">
-				<font color="grey"><span title="Empty file">[n/a]</span></font>
-			</c:if>
-		</c:if>
-    </display:column>
-
-    <display:column title="Prior" property="priority" sortable="true"/>
-
-</display:table>
+<p class="fw-bold mb-1 mt-3">Transfers for this datafile</p>
+<table id="datafileTransfersTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
+    <thead class="table-light">
+        <tr>
+            <th>Destination</th>
+            <th>Transfer Host</th>
+            <th>Sched. Time</th>
+            <th>Target</th>
+            <th>%</th>
+            <th>Mbits/s</th>
+            <th>Prior</th>
+        </tr>
+    </thead>
+    <tbody>
+    <c:forEach var="transfer" items="${datafile.dataTransfers}">
+        <c:set var="nickName" value="${transfer.hostNickName}" />
+        <jsp:useBean id="nickName" type="java.lang.String" />
+        <tr>
+            <td><a title="${transfer.destination.comment}" href="<bean:message key="destination.basepath"/>/${transfer.destinationName}">${transfer.destinationName}</a></td>
+            <td>
+                <c:if test='<%="".equals(nickName)%>'>
+                    <font color="grey"><span title="Data not transferred to remote host">[not-transferred]</span></font>
+                </c:if>
+                <c:if test="<%=nickName.length()>0%>">
+                    <c:if test="${transfer.transferServerName == null}">
+                        <a href="/do/transfer/host/${transfer.hostName}">${transfer.hostNickName}</a>
+                    </c:if>
+                    <c:if test="${transfer.transferServerName != null}">
+                        <a title="Transmitted through ${transfer.transferServerName}" href="/do/transfer/host/${transfer.hostName}">${transfer.hostNickName}</a>
+                    </c:if>
+                </c:if>
+            </td>
+            <td><content:content name="transfer.scheduledTime" dateFormatKey="date.format.transfer" ignoreNull="true"/></td>
+            <td><a title="Size: ${transfer.formattedSize}" href="/do/transfer/data/${transfer.id}"><c:if test="${transfer.deleted}"><font color="red"></c:if>${transfer.target}<c:if test="${transfer.deleted}"></font></c:if></a></td>
+            <td>${transfer.progress}</td>
+            <td>
+                <c:if test="${transfer.transferRate != 0}">
+                    <a STYLE="TEXT-DECORATION: NONE" title="Rate: ${transfer.formattedTransferRate}">${transfer.formattedTransferRateInMBitsPerSeconds}</a>
+                </c:if>
+                <c:if test="${transfer.transferRate == 0}">
+                    <c:if test="${transfer.size != 0}">
+                        <font color="grey"><span title="Data not transferred to remote host">[n/a]</span></font>
+                    </c:if>
+                    <c:if test="${transfer.size == 0}">
+                        <font color="grey"><span title="Empty file">[n/a]</span></font>
+                    </c:if>
+                </c:if>
+            </td>
+            <td>${transfer.priority}</td>
+        </tr>
+    </c:forEach>
+    </tbody>
+</table>
+<script>
+$(document).ready(function() {
+    $('#datafileTransfersTable').DataTable({
+        paging:    true,
+        pageLength: 25,
+        searching: true,
+        ordering:  true,
+        info:      true,
+        order:     [[2, 'asc']]
+    });
+});
+</script>
 </c:if>
