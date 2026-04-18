@@ -5,7 +5,11 @@
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
 
 <c:if test="${empty categories}">
-<div class="alert alert-info mt-2">No Web Categories found.</div>
+<div class="d-flex align-items-center alert alert-info mt-2 gap-2">
+    No Web Categories found.
+    <a href="<bean:message key="category.basepath"/>/edit/insert_form"
+       class="btn btn-sm btn-outline-success ms-auto"><i class="bi bi-plus-circle"></i> Create</a>
+</div>
 </c:if>
 
 <c:if test="${not empty categories}">
@@ -41,13 +45,20 @@
 </table>
 <script>
 $(document).ready(function() {
-    $('#categoriesTable').DataTable({
-        paging:    false,
-        searching: true,
-        ordering:  true,
-        info:      false,
-        columnDefs: [{ orderable: false, targets: -1 }]
+    var createUrl = '<bean:message key="category.basepath"/>/edit/insert_form';
+    var table = $('#categoriesTable').DataTable({
+        paging:     true,
+        pageLength: 25,
+        searching:  true,
+        ordering:   true,
+        info:       true,
+        columnDefs: [{ orderable: false, targets: -1 }],
+        dom: "<'d-flex align-items-center gap-2 mb-3'<'count-slot'>l<'ms-auto d-flex align-items-center gap-2'f<'categories-create-slot'>>>t<'d-flex align-items-center mt-2'i<'ms-auto'p>>"
     });
+    $('.count-slot').html('<span class="text-muted small"><i class="bi bi-list-ul"></i> <strong>' + table.rows().count() + '</strong> category(ies)</span>');
+    $('.categories-create-slot').html(
+        '<a href="' + createUrl + '" class="btn btn-sm btn-outline-success"><i class="bi bi-plus-circle"></i> Create</a>'
+    );
 });
 </script>
 </c:if>

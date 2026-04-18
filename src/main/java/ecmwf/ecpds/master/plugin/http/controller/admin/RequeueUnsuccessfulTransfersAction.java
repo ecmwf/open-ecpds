@@ -21,13 +21,18 @@ package ecmwf.ecpds.master.plugin.http.controller.admin;
 /**
  * ECMWF Product Data Store (OpenECPDS) Project
  *
+ * Requeues all outstanding (bad) transfers across ALL destinations without
+ * loading the full set into Java memory. Transfers are processed in batches;
+ * after each batch is requeued its status changes so the next iteration always
+ * fetches the new first page of remaining bad transfers. The list view is
+ * served via AJAX server-side pagination (see GetAllBadTransfersJsonAction).
+ *
  * @author Laurent Gougeon <sy8iecmwf.int>, ECMWF.
  * @version 6.7.7
  * @since 2004-10-09
  */
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -38,10 +43,10 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
+import ecmwf.common.database.DataBaseCursor;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
-import ecmwf.ecpds.master.plugin.http.home.transfer.DestinationHome;
+import ecmwf.ecpds.master.plugin.http.home.transfer.DataTransferHome;
 import ecmwf.ecpds.master.plugin.http.model.transfer.DataTransfer;
-import ecmwf.ecpds.master.plugin.http.model.transfer.Destination;
 import ecmwf.web.ECMWFException;
 import ecmwf.web.controller.ECMWFActionFormException;
 import ecmwf.web.model.ModelException;
@@ -55,6 +60,9 @@ public class RequeueUnsuccessfulTransfersAction extends PDSAction {
     /** The Constant log. */
     private static final Logger log = LogManager.getLogger(RequeueUnsuccessfulTransfersAction.class);
 
+    /** Number of transfers to process per database fetch. */
+    private static final int BATCH_SIZE = 100;
+
     /**
      * {@inheritDoc}
      *
@@ -64,25 +72,33 @@ public class RequeueUnsuccessfulTransfersAction extends PDSAction {
     public ActionForward safeAuthorizedPerform(final ActionMapping mapping, final ActionForm form,
             final HttpServletRequest request, final HttpServletResponse response, final User user)
             throws ECMWFException, ModelException, ClassCastException, ECMWFActionFormException {
-        final List<DataTransfer> unsuccessful = new ArrayList<>();
-        for (final Destination d : DestinationHome.findAll()) {
-            unsuccessful.addAll(d.getBadDataTransfers());
-        }
         if ("true".equals(request.getParameter("restart"))) {
-            var requeuedFilesCount = 0;
-            for (final DataTransfer transfer : unsuccessful) {
-                try {
-                    transfer.requeue(user);
-                    requeuedFilesCount++;
-                } catch (final Exception e) {
-                    log.warn("Problem trying to requeue Data Transfer '" + transfer.getId() + "'", e);
+            // Process in batches. After requeue, status changes so we always fetch from
+            // offset 0 — the next batch of still-bad transfers becomes the new first page.
+            final var cursor = new DataBaseCursor("0", "1", 0, BATCH_SIZE, "");
+            Collection<DataTransfer> batch;
+            var count = 0;
+            do {
+                batch = DataTransferHome.findSortedBad(cursor);
+                var processed = 0;
+                for (final DataTransfer transfer : batch) {
+                    try {
+                        transfer.requeue(user);
+                        count++;
+                        processed++;
+                    } catch (final Exception e) {
+                        log.warn("Problem trying to requeue Data Transfer '{}'", transfer.getId(), e);
+                    }
                 }
-            }
+                if (processed == 0) {
+                    break; // No progress — avoid infinite loop
+                }
+            } while (!batch.isEmpty());
+            log.info("Requeued {} outstanding transfer(s) across all destinations", count);
             request.setAttribute("action", "Requeued");
-            request.setAttribute("requeuedSize", requeuedFilesCount);
-            return mapping.findForward("list");
+            request.setAttribute("requeuedSize", count);
         }
-        request.setAttribute("transfers", unsuccessful);
+        // The list is rendered via DataTables AJAX — no need to pre-load transfers here.
         return mapping.findForward("list");
     }
 }

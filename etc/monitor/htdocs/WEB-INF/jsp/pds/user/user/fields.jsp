@@ -45,16 +45,20 @@
 			<table class="fields">
 <c:choose>
     <c:when test="${isInsert == 'true'}">
+        <tr><td colspan="2">
         <div class="form-info-banner">
             <i class="bi bi-person-badge text-primary flex-shrink-0"></i>
             Create a new User account.
         </div>
+        </td></tr>
     </c:when>
     <c:otherwise>
+        <tr><td colspan="2">
         <div class="form-info-banner">
             <i class="bi bi-person-badge text-primary flex-shrink-0"></i>
             Edit the User account details.
         </div>
+        </td></tr>
     </c:otherwise>
 </c:choose>
 				<c:if test="${isInsert != 'true'}">
@@ -99,9 +103,6 @@
 				<tr>
 					<th>Enabled</th>
 					<td><html:checkbox property="active" /></td>
-				</tr>
-				<tr>
-					<td colspan="2">&nbsp;</td>
 				</tr>
 			</table>
 
@@ -180,9 +181,7 @@
 	<tr>
 		<td colspan="3">
 			<table class="fields">
-				<tr>
-					<td colspan="2">&nbsp;</td>
-				</tr>
+			</table>
 				<tr style="display:none">
 					<th>Properties</th>
 					<td colspan="2"><pre id="userData">

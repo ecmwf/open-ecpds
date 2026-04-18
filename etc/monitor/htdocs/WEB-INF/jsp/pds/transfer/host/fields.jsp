@@ -75,16 +75,20 @@ table.fields > tbody > tr > th {
 	<tiles:useAttribute name="isInsert" classname="java.lang.String" />
 <c:choose>
     <c:when test="${isInsert == 'true'}">
+        <tr><td colspan="3">
         <div class="form-info-banner">
             <i class="bi bi-hdd-network text-primary flex-shrink-0"></i>
             Register a new Host for data transfer operations.
         </div>
+        </td></tr>
     </c:when>
     <c:otherwise>
+        <tr><td colspan="3">
         <div class="form-info-banner">
             <i class="bi bi-hdd-network text-primary flex-shrink-0"></i>
             Edit the Host configuration.
         </div>
+        </td></tr>
     </c:otherwise>
 </c:choose>
 
@@ -151,7 +155,9 @@ table.fields > tbody > tr > th {
 				<input id="nickName" name="nickName" type="text"
 					value="${requestScope[actionFormName].nickName}"
 					pattern="[A-Za-z0-9]+([_\-][A-Za-z0-9]+)*"
-					title="Use alphanumeric characters, with '-' or '_' as separators only (e.g. 'test_file', not '_test' or 'test_')"
+					title="Use alphanumeric characters, with '-' or '_' as separators only (e.g. 'test_file', not '_test' or 'test_'). Maximum 128 characters."
+					maxlength="128"
+					required
 					oninput="validatePatternInput(this,'nickNameFeedback')" />
 				<span id="nickNameFeedback"></span>
 			</div>

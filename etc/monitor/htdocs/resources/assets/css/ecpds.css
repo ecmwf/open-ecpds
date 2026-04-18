@@ -1087,7 +1087,7 @@ a.badge.bg-light:hover, a.badge.text-dark:hover, a.badge.text-secondary:hover {
     overflow: hidden;
 }
 #sidebarMenu .offcanvas-body {
-    padding: 8px 4px 8px 8px;
+    padding: 8px !important;
 }
 
 /* Content area takes full width now that sidebar is an offcanvas overlay */
@@ -1227,6 +1227,7 @@ table.spareBox2 td, table.spareBox td {
     border: none;
     text-align: left;
     overflow: hidden;
+    max-width: 0;
 }
 
 /* Section header links (e.g. destination name, "Transmission") */

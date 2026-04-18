@@ -12,16 +12,20 @@
 	<tiles:useAttribute name="isInsert" classname="java.lang.String" />
 <c:choose>
     <c:when test="${isInsert == 'true'}">
+        <tr><td colspan="2">
         <div class="form-info-banner">
             <i class="bi bi-puzzle text-primary flex-shrink-0"></i>
             Create a new Transfer Module plugin.
         </div>
+        </td></tr>
     </c:when>
     <c:otherwise>
+        <tr><td colspan="2">
         <div class="form-info-banner">
             <i class="bi bi-puzzle text-primary flex-shrink-0"></i>
             Edit the Transfer Module configuration.
         </div>
+        </td></tr>
     </c:otherwise>
 </c:choose>
 

@@ -30,16 +30,20 @@
 			<table class="fields">
 <c:choose>
     <c:when test="${isInsert == 'true'}">
+        <tr><td colspan="2">
         <div class="form-info-banner">
             <i class="bi bi-folder2 text-primary flex-shrink-0"></i>
             Create a new Category to group access control resources.
         </div>
+        </td></tr>
     </c:when>
     <c:otherwise>
+        <tr><td colspan="2">
         <div class="form-info-banner">
             <i class="bi bi-folder2 text-primary flex-shrink-0"></i>
             Edit the Category details.
         </div>
+        </td></tr>
     </c:otherwise>
 </c:choose>
 

@@ -15,16 +15,20 @@
 	<tiles:useAttribute name="isInsert" classname="java.lang.String" />
 <c:choose>
     <c:when test="${isInsert == 'true'}">
+        <tr><td colspan="2">
         <div class="form-info-banner">
             <i class="bi bi-collection text-primary flex-shrink-0"></i>
             Create a new Transfer Group to organise transfer servers.
         </div>
+        </td></tr>
     </c:when>
     <c:otherwise>
+        <tr><td colspan="2">
         <div class="form-info-banner">
             <i class="bi bi-collection text-primary flex-shrink-0"></i>
             Edit the Transfer Group configuration.
         </div>
+        </td></tr>
     </c:otherwise>
 </c:choose>
 

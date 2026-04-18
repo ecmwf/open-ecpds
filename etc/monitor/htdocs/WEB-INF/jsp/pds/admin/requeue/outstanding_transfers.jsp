@@ -5,6 +5,21 @@
 
 <div class="d-flex align-items-center mb-2 mt-2">
 	<span class="text-muted small" id="requeueFoundLabel"><i class="bi bi-list-ul"></i> Loading...</span>
+	<button class="btn btn-link btn-sm text-muted ms-2 p-0" type="button" data-bs-toggle="collapse" data-bs-target="#outstandingLegend" aria-expanded="false" title="What are outstanding transfers?">
+		<i class="bi bi-info-circle"></i>
+	</button>
+</div>
+<div class="collapse mb-2" id="outstandingLegend">
+	<div class="card card-body py-2 px-3" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd);">
+		<strong class="d-block mb-1">Outstanding transfers include:</strong>
+		<ul class="mb-0 ps-3">
+			<li><span class="badge bg-warning text-dark me-1">WAIT</span> with at least one prior attempt &mdash; waiting to be retried</li>
+			<li><span class="badge bg-info text-dark me-1">RETR</span> not stopped by a user, comment indicates a scheduler requeue or limit reached</li>
+			<li><span class="badge bg-secondary me-1">STOP</span> stopped by the system (not manually by a user)</li>
+			<li><span class="badge bg-danger me-1">FAIL</span> transfer failed</li>
+		</ul>
+		<div class="mt-1 text-muted">Deleted transfers and transfers manually stopped by a user are excluded.</div>
+	</div>
 </div>
 
 <table id="requeueTransfersTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
@@ -20,68 +35,18 @@
 			<th>Comment</th>
 		</tr>
 	</thead>
-	<tbody>
-	<c:forEach var="t" items="${transfers}">
-		<c:catch var="progressEx"><c:set var="pct" value="${t.progress}"/></c:catch>
-		<c:if test="${progressEx != null}"><c:set var="pct" value="0"/></c:if>
-		<c:catch var="sentEx"><c:set var="sentBytes" value="${t.sent}"/></c:catch>
-		<c:if test="${sentEx != null}"><c:set var="sentBytes" value="0"/></c:if>
-		<c:catch var="durEx"><c:set var="durMs" value="${t.duration}"/></c:catch>
-		<c:if test="${durEx != null}"><c:set var="durMs" value="0"/></c:if>
-		<tr>
-			<td><a href="/do/transfer/destination/<c:out value="${t.destinationName}"/>" class="text-decoration-none"><c:out value="${t.destinationName}"/></a></td>
-			<td><c:out value="${t.hostNickName}"/></td>
-			<td><a href="/do/transfer/data/<c:out value="${t.id}"/>" class="text-decoration-none"><c:out value="${t.target}"/></a></td>
-			<td><c:out value="${t.statusCode}"/></td>
-			<td><c:out value="${pct}"/></td>
-			<td><c:choose>
-				<c:when test="${durMs > 0}"><c:out value="${sentBytes * 1000 / durMs}"/></c:when>
-				<c:otherwise>0</c:otherwise>
-			</c:choose></td>
-			<td><c:out value="${t.priority}"/></td>
-			<td><c:out value="${t.comment}"/></td>
-		</tr>
-	</c:forEach>
-	</tbody>
+	<tbody></tbody>
 </table>
-
-<script>
-$(function() {
-	$('#requeueTransfersTable').DataTable({
-		paging:       true,
-		pageLength:   25,
-		lengthChange: true,
-		searching:    true,
-		ordering:     true,
-		info:         true,
-		language: {
-			emptyTable: 'No outstanding transfers found',
-			info: 'Showing _START_-_END_ of _TOTAL_ outstanding transfer(s)',
-			search: 'Filter:'
-		},
-		drawCallback: function(settings) {
-			var api = this.api();
-			var total = api.rows().count();
-			var filtered = api.rows({ search: 'applied' }).count();
-			var label = '<i class="bi bi-list-ul"></i> <strong>' + total + '</strong> outstanding transfer(s)';
-			if (filtered !== total) {
-				label += ' &mdash; <strong>' + filtered + '</strong> matching filter';
-			}
-			$('#requeueFoundLabel').html(label);
-		}
-	});
-});
-</script>
 
 <auth:if basePathKey="admin.basepath" paths="/requeue">
 <auth:then>
 <div class="mt-3 d-flex gap-2">
-	<button type="button" class="btn btn-sm btn-warning" ${empty transfers ? 'disabled' : ''} data-bs-toggle="modal" data-bs-target="#requeueConfirmModal">
+	<button type="button" id="requeueBtn" class="btn btn-sm btn-warning" disabled data-bs-toggle="modal" data-bs-target="#requeueConfirmModal">
 		<i class="bi bi-arrow-repeat"></i> Requeue all
 	</button>
 	<auth:if basePathKey="admin.basepath" paths="/delete">
 	<auth:then>
-	<button type="button" class="btn btn-sm btn-danger" ${empty transfers ? 'disabled' : ''} data-bs-toggle="modal" data-bs-target="#deleteConfirmModal">
+	<button type="button" id="deleteBtn" class="btn btn-sm btn-danger" disabled data-bs-toggle="modal" data-bs-target="#deleteConfirmModal">
 		<i class="bi bi-trash"></i> Delete all
 	</button>
 	</auth:then>
@@ -96,7 +61,7 @@ $(function() {
 				<h5 class="modal-title" id="requeueConfirmModalLabel"><i class="bi bi-arrow-repeat text-warning"></i> Confirm Requeue</h5>
 				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 			</div>
-			<div class="modal-body">
+			<div class="modal-body" id="requeueModalBody">
 				Are you sure you want to requeue all outstanding transfers across <strong>all destinations</strong>?
 			</div>
 			<div class="modal-footer">
@@ -131,4 +96,54 @@ $(function() {
 </div>
 </auth:then>
 </auth:if>
+
+<script>
+$(function() {
+	var _table = $('#requeueTransfersTable').DataTable({
+		serverSide: true,
+		processing: true,
+		ajax: {
+			url: '/do/admin/requeue/list',
+			type: 'GET'
+		},
+		pageLength: 25,
+		searching: true,
+		autoWidth: false,
+		order: [[0, 'asc']],
+		columns: [
+			{ orderable: true,  data: 0 },
+			{ orderable: true,  data: 1 },
+			{ orderable: true,  data: 2 },
+			{ orderable: true,  data: 3 },
+			{ orderable: false, data: 4 },
+			{ orderable: false, data: 5 },
+			{ orderable: true,  data: 6 },
+			{ orderable: true,  data: 7 }
+		],
+		columnDefs: [{ targets: '_all', render: $.fn.dataTable.render.text() }],
+		createdRow: function(row, data) {
+			$('td', row).each(function(i) { $(this).html(data[i]); });
+		},
+		drawCallback: function(settings) {
+			var json = settings.json || {};
+			var total = json.recordsTotal || 0;
+			var filtered = json.recordsFiltered || 0;
+			var label = '<i class="bi bi-list-ul"></i> <strong>' + total + '</strong> outstanding transfer(s)';
+			if (filtered !== total) {
+				label += ' &mdash; <strong>' + filtered + '</strong> matching filter';
+			}
+			$('#requeueFoundLabel').html(label);
+			$('#requeueBtn, #deleteBtn').prop('disabled', total === 0);
+		},
+		language: {
+			lengthMenu: 'Show _MENU_ per page',
+			info: 'Showing _START_-_END_ of _TOTAL_',
+			processing: 'Loading...',
+			emptyTable: 'No outstanding transfers found',
+			search: 'Filter:'
+		}
+	});
+});
+</script>
+
 

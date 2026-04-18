@@ -37,14 +37,14 @@
         </c:if>
         <auth:if basePathKey="host.basepath" paths="/edit/insert_form">
         <auth:then>
-        <div class="btn-group btn-group-sm ms-auto" role="group">
+        <div class="d-flex gap-1 ms-auto align-items-center">
             <a href='<bean:message key="host.basepath"/>/edit/insert_form'
-               class="btn btn-outline-success" title="Create new host"><i class="bi bi-plus-circle"></i></a>
+               class="btn btn-sm btn-outline-success" title="Create new host"><i class="bi bi-plus-circle"></i></a>
             <c:if test="${not empty host.id}">
             <a href='<bean:message key="host.basepath"/>/edit/update_form/${host.id}'
-               class="btn btn-outline-primary" title="Edit this host"><i class="bi bi-pencil"></i></a>
+               class="btn btn-sm btn-outline-primary" title="Edit this host"><i class="bi bi-pencil"></i></a>
             <a href='<bean:message key="host.basepath"/>/edit/delete_form/${host.id}'
-               class="btn btn-outline-danger" title="Delete this host"><i class="bi bi-trash"></i></a>
+               class="btn btn-sm btn-outline-danger" title="Delete this host"><i class="bi bi-trash"></i></a>
             </c:if>
         </div>
         </auth:then>

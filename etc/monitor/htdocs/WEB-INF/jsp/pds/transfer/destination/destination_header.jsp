@@ -41,14 +41,14 @@
         </c:if>
         <auth:if basePathKey="destination.basepath" paths="/edit/insert_form">
         <auth:then>
-        <div class="btn-group btn-group-sm ms-auto" role="group">
+        <div class="d-flex gap-1 ms-auto align-items-center">
             <a href='<bean:message key="destination.basepath"/>/edit/insert_form'
-               class="btn btn-outline-success" title="Create new destination"><i class="bi bi-plus-circle"></i></a>
+               class="btn btn-sm btn-outline-success" title="Create new destination"><i class="bi bi-plus-circle"></i></a>
             <c:if test="${not empty destination.id}">
             <a href='<bean:message key="destination.basepath"/>/edit/update_form/${destination.id}'
-               class="btn btn-outline-primary" title="Edit this destination"><i class="bi bi-pencil"></i></a>
+               class="btn btn-sm btn-outline-primary" title="Edit this destination"><i class="bi bi-pencil"></i></a>
             <a href='<bean:message key="destination.basepath"/>/edit/delete_form/${destination.id}'
-               class="btn btn-outline-danger" title="Delete this destination"><i class="bi bi-trash"></i></a>
+               class="btn btn-sm btn-outline-danger" title="Delete this destination"><i class="bi bi-trash"></i></a>
             </c:if>
         </div>
         </auth:then>

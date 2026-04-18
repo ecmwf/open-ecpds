@@ -1230,6 +1230,9 @@
 			<forward name="form" path=".pds.admin.filter" />
 			<forward name="success" path=".pds.admin.filter.success" />
 		</action>
+		<action path="/admin/requeue/list"
+			type="ecmwf.ecpds.master.plugin.http.controller.admin.GetAllBadTransfersJsonAction">
+		</action>
 		<action path="/admin/requeue/*"
 			type="ecmwf.ecpds.master.plugin.http.controller.admin.RequeueDestinationBadTransfersAction">
 		</action>

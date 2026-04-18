@@ -21,13 +21,17 @@ package ecmwf.ecpds.master.plugin.http.controller.admin;
 /**
  * ECMWF Product Data Store (OpenECPDS) Project
  *
+ * Deletes all outstanding (bad) transfers across ALL destinations without
+ * loading the full set into Java memory. Transfers are processed in batches;
+ * after each batch is deleted it no longer appears in the query so the next
+ * iteration always fetches the new first page of remaining bad transfers.
+ *
  * @author Laurent Gougeon <sy8iecmwf.int>, ECMWF.
  * @version 6.7.7
  * @since 2004-10-09
  */
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -38,10 +42,10 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
+import ecmwf.common.database.DataBaseCursor;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
-import ecmwf.ecpds.master.plugin.http.home.transfer.DestinationHome;
+import ecmwf.ecpds.master.plugin.http.home.transfer.DataTransferHome;
 import ecmwf.ecpds.master.plugin.http.model.transfer.DataTransfer;
-import ecmwf.ecpds.master.plugin.http.model.transfer.Destination;
 import ecmwf.web.ECMWFException;
 import ecmwf.web.model.users.User;
 
@@ -53,6 +57,9 @@ public class DeleteUnsuccessfulTransfersAction extends PDSAction {
     /** The Constant log. */
     private static final Logger log = LogManager.getLogger(DeleteUnsuccessfulTransfersAction.class);
 
+    /** Number of transfers to process per database fetch. */
+    private static final int BATCH_SIZE = 100;
+
     /**
      * {@inheritDoc}
      *
@@ -62,25 +69,30 @@ public class DeleteUnsuccessfulTransfersAction extends PDSAction {
     public ActionForward safeAuthorizedPerform(final ActionMapping mapping, final ActionForm form,
             final HttpServletRequest request, final HttpServletResponse response, final User user)
             throws ECMWFException, ClassCastException {
-        final List<DataTransfer> unsuccessful = new ArrayList<>();
-        for (final Destination d : DestinationHome.findAll()) {
-            unsuccessful.addAll(d.getBadDataTransfers());
-        }
         if ("true".equals(request.getParameter("delete"))) {
-            var requeuedFilesCount = 0;
-            for (final DataTransfer transfer : unsuccessful) {
-                try {
-                    transfer.delete(user);
-                    requeuedFilesCount++;
-                } catch (final Exception e) {
-                    log.warn("Problem trying to delete Data Transfer '" + transfer.getId() + "'", e);
+            final var cursor = new DataBaseCursor("0", "1", 0, BATCH_SIZE, "");
+            Collection<DataTransfer> batch;
+            var count = 0;
+            do {
+                batch = DataTransferHome.findSortedBad(cursor);
+                var processed = 0;
+                for (final DataTransfer transfer : batch) {
+                    try {
+                        transfer.delete(user);
+                        count++;
+                        processed++;
+                    } catch (final Exception e) {
+                        log.warn("Problem trying to delete Data Transfer '{}'", transfer.getId(), e);
+                    }
                 }
-            }
+                if (processed == 0) {
+                    break; // No progress — avoid infinite loop
+                }
+            } while (!batch.isEmpty());
+            log.info("Deleted {} outstanding transfer(s) across all destinations", count);
             request.setAttribute("action", "Deleted");
-            request.setAttribute("requeuedSize", requeuedFilesCount);
-            return mapping.findForward("list");
+            request.setAttribute("requeuedSize", count);
         }
-        request.setAttribute("transfers", unsuccessful);
         return mapping.findForward("list");
     }
 }

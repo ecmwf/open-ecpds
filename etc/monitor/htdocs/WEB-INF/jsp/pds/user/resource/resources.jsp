@@ -5,7 +5,11 @@
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
 
 <c:if test="${empty resources}">
-<div class="alert alert-info mt-2">No Web Resources found.</div>
+<div class="d-flex align-items-center alert alert-info mt-2 gap-2">
+    No Web Resources found.
+    <a href="<bean:message key="resource.basepath"/>/edit/insert_form"
+       class="btn btn-sm btn-outline-success ms-auto"><i class="bi bi-plus-circle"></i> Create</a>
+</div>
 </c:if>
 
 <c:if test="${not empty resources}">
@@ -37,13 +41,20 @@
 </table>
 <script>
 $(document).ready(function() {
-    $('#resourcesTable').DataTable({
-        paging:    false,
-        searching: true,
-        ordering:  true,
-        info:      false,
-        columnDefs: [{ orderable: false, targets: -1 }]
+    var createUrl = '<bean:message key="resource.basepath"/>/edit/insert_form';
+    var table = $('#resourcesTable').DataTable({
+        paging:     true,
+        pageLength: 25,
+        searching:  true,
+        ordering:   true,
+        info:       true,
+        columnDefs: [{ orderable: false, targets: -1 }],
+        dom: "<'d-flex align-items-center gap-2 mb-3'<'count-slot'>l<'ms-auto d-flex align-items-center gap-2'f<'resources-create-slot'>>>t<'d-flex align-items-center mt-2'i<'ms-auto'p>>"
     });
+    $('.count-slot').html('<span class="text-muted small"><i class="bi bi-list-ul"></i> <strong>' + table.rows().count() + '</strong> resource(s)</span>');
+    $('.resources-create-slot').html(
+        '<a href="' + createUrl + '" class="btn btn-sm btn-outline-success"><i class="bi bi-plus-circle"></i> Create</a>'
+    );
 });
 </script>
 </c:if>

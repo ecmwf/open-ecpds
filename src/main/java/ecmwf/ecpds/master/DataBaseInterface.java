@@ -1028,6 +1028,8 @@ public interface DataBaseInterface extends Remote {
     Collection<DataTransfer> getSortedBadDataTransfersByDestination(String destinationName, DataBaseCursor cursor)
             throws DataBaseException, RemoteException;
 
+    Collection<DataTransfer> getSortedBadDataTransfers(DataBaseCursor cursor) throws DataBaseException, RemoteException;
+
     /**
      * Gets the bad data transfers by destination count.
      *

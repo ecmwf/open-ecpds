@@ -52,16 +52,20 @@ function validate(path, message) {
 <table class="fields">
 <c:choose>
     <c:when test="${isInsert == 'true'}">
+        <tr><td colspan="2">
         <div class="form-info-banner">
             <i class="bi bi-shield-check text-primary flex-shrink-0"></i>
             Create a new Access Policy.
         </div>
+        </td></tr>
     </c:when>
     <c:otherwise>
+        <tr><td colspan="2">
         <div class="form-info-banner">
             <i class="bi bi-shield-check text-primary flex-shrink-0"></i>
             Edit the Access Policy configuration.
         </div>
+        </td></tr>
     </c:otherwise>
 </c:choose>
 <c:if test="${isInsert != 'true'}">

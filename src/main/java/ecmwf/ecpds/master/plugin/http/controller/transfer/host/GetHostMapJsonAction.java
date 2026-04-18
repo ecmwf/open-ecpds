@@ -97,46 +97,50 @@ public class GetHostMapJsonAction extends PDSAction {
         final var features = root.putArray("features");
 
         for (final Host host : hosts) {
-            Double lat, lon;
             try {
-                // GeoIP resolution only runs on the Master; call getHost() via RMI so the
-                // Master performs the lookup and returns a fully-populated Host with lat/lon.
+                // The HostBean from findByCriteria() does not have HostLocation populated,
+                // so we must call getHost() on the master to get fully-resolved coordinates.
+                // For automatic-location hosts the GeoIP result is served from an in-memory
+                // cache after the first lookup, making this one RMI call (vs. the original
+                // two per host) the remaining bottleneck.
                 final var dbHost = MasterManager.getDB().getHost(host.getName());
                 final var loc = dbHost.getHostLocation();
                 if (loc == null) {
                     continue;
                 }
-                lat = loc.getLatitude();
-                lon = loc.getLongitude();
+                final var lat = loc.getLatitude();
+                final var lon = loc.getLongitude();
+                if (lat == null || lon == null || (lat == 0.0 && lon == 0.0)) {
+                    continue;
+                }
+
+                final var feature = MAPPER.createObjectNode();
+                feature.put("type", "Feature");
+
+                final var geometry = feature.putObject("geometry");
+                geometry.put("type", "Point");
+                final var coords = geometry.putArray("coordinates");
+                coords.add(lon);
+                coords.add(lat);
+
+                final var props = feature.putObject("properties");
+                props.put("id", safeStr(host.getName()));
+                props.put("nickname", safeStr(host.getNickName()));
+                props.put("hostname", safeStr(host.getHost()));
+                props.put("type", safeStr(host.getType()));
+                props.put("active", host.getActive());
+                // Use dbHost.getGeoIpLocation() directly — avoids a second RMI call that
+                // HostBean.getGeoIpLocation() would otherwise trigger.
+                props.put("geo", safeStr(dbHost.getGeoIpLocation()));
+                props.put("network", safeStr(host.getNetworkName()));
+                props.put("method", safeStr(host.getTransferMethodName()));
+                props.put("comment", safeStr(host.getComment()));
+                props.put("url", HOST_BASE_PATH + "/" + escapeHtml(host.getName()));
+
+                features.add(feature);
             } catch (final Exception e) {
                 continue;
             }
-            if (lat == null || lon == null || (lat == 0.0 && lon == 0.0)) {
-                continue;
-            }
-
-            final var feature = MAPPER.createObjectNode();
-            feature.put("type", "Feature");
-
-            final var geometry = feature.putObject("geometry");
-            geometry.put("type", "Point");
-            final var coords = geometry.putArray("coordinates");
-            coords.add(lon);
-            coords.add(lat);
-
-            final var props = feature.putObject("properties");
-            props.put("id", safeStr(host.getName()));
-            props.put("nickname", safeStr(host.getNickName()));
-            props.put("hostname", safeStr(host.getHost()));
-            props.put("type", safeStr(host.getType()));
-            props.put("active", host.getActive());
-            props.put("geo", safeStr(host.getGeoIpLocation()));
-            props.put("network", safeStr(host.getNetworkName()));
-            props.put("method", safeStr(host.getTransferMethodName()));
-            props.put("comment", safeStr(host.getComment()));
-            props.put("url", HOST_BASE_PATH + "/" + escapeHtml(host.getName()));
-
-            features.add(feature);
         }
 
         try {

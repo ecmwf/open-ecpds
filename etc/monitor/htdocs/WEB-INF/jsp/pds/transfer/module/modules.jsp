@@ -6,10 +6,19 @@
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
 <c:if test="${empty ectransmodules}">
-    <div class="alert alert-info mt-2">No Transfer Modules found.</div>
+    <div class="d-flex align-items-center alert alert-info mt-2 gap-2">
+        No Transfer Modules found.
+        <auth:link basePathKey="module.basepath" href="/edit/insert_form"
+                   styleClass="btn btn-sm btn-outline-success ms-auto"><i class="bi bi-plus-circle"></i> Create</auth:link>
+    </div>
 </c:if>
 
 <c:if test="${not empty ectransmodules}">
+<div class="d-flex align-items-center mb-2 gap-2">
+    <span class="text-muted small"><i class="bi bi-list-ul"></i> <strong>${fn:length(ectransmodules)}</strong> transfer module(s)</span>
+    <auth:link basePathKey="module.basepath" href="/edit/insert_form"
+               styleClass="btn btn-sm btn-outline-success ms-auto"><i class="bi bi-plus-circle"></i> Create</auth:link>
+</div>
 <table id="modulesTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
     <thead class="table-light">
         <tr>
@@ -47,7 +56,7 @@
 $(document).ready(function() {
     $('#modulesTable').DataTable({
         paging:    false,
-        searching: true,
+        searching: false,
         ordering:  true,
         info:      false,
         columnDefs: [{ orderable: false, targets: -1 }]

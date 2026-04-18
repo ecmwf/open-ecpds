@@ -36,6 +36,21 @@
 
 	<div class="d-flex align-items-center mb-2 mt-2">
 		<span class="text-muted small" id="badTransfersFoundLabel"><i class="bi bi-list-ul"></i> Loading...</span>
+		<button class="btn btn-link btn-sm text-muted ms-2 p-0" type="button" data-bs-toggle="collapse" data-bs-target="#outstandingLegend" aria-expanded="false" title="What are outstanding transfers?">
+			<i class="bi bi-info-circle"></i>
+		</button>
+	</div>
+	<div class="collapse mb-2" id="outstandingLegend">
+		<div class="card card-body py-2 px-3" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd);">
+			<strong class="d-block mb-1">Outstanding transfers include:</strong>
+			<ul class="mb-0 ps-3">
+				<li><span class="badge bg-warning text-dark me-1">WAIT</span> with at least one prior attempt &mdash; waiting to be retried</li>
+				<li><span class="badge bg-info text-dark me-1">RETR</span> not stopped by a user, comment indicates a scheduler requeue or limit reached</li>
+				<li><span class="badge bg-secondary me-1">STOP</span> stopped by the system (not manually by a user)</li>
+				<li><span class="badge bg-danger me-1">FAIL</span> transfer failed</li>
+			</ul>
+			<div class="mt-1 text-muted">Deleted transfers and transfers manually stopped by a user are excluded.</div>
+		</div>
 	</div>
 
 	<table id="badTransfersTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">

@@ -4,14 +4,17 @@
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 
+<div class="d-flex align-items-center mb-2 gap-2">
+    <span class="text-muted small"><i class="bi bi-list-ul"></i> <strong>${fn:length(transfergroups)}</strong> transfer group(s)</span>
+    <auth:link basePathKey="transfergroup.basepath" href="/edit/insert_form"
+               styleClass="btn btn-sm btn-outline-success ms-auto"><i class="bi bi-plus-circle"></i> Create</auth:link>
+</div>
+
 <c:if test="${empty transfergroups}">
     <div class="alert">No Transfer Groups found.</div>
 </c:if>
 
 <c:if test="${not empty transfergroups}">
-    <div class="d-flex align-items-center mb-2 gap-2">
-        <span class="text-muted small"><i class="bi bi-list-ul"></i> <strong>${fn:length(transfergroups)}</strong> transfer group(s)</span>
-    </div>
     <table id="transfergroupsTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
         <thead class="table-light">
             <tr>
@@ -77,13 +80,9 @@
                     </td>
                     <td class="text-end" style="white-space:nowrap">
                         <auth:link basePathKey="transfergroup.basepath" href="/edit/update_form/${row.id}"
-                                   styleClass="btn btn-outline-secondary btn-sm py-0 px-1">
-                            <i class="bi bi-pencil" title="Edit"></i>
-                        </auth:link>
+                                   imageKey="icon.small.update" styleClass="menuitem"/>
                         <auth:link basePathKey="transfergroup.basepath" href="/edit/delete_form/${row.id}"
-                                   styleClass="btn btn-outline-danger btn-sm py-0 px-1 ms-1">
-                            <i class="bi bi-trash" title="Delete"></i>
-                        </auth:link>
+                                   imageKey="icon.small.delete" styleClass="menuitem"/>
                     </td>
                 </tr>
             </c:forEach>

@@ -103,16 +103,20 @@
 				<tiles:useAttribute name="isInsert" classname="java.lang.String" />
 <c:choose>
     <c:when test="${isInsert == 'true'}">
+        <tr><td colspan="2">
         <div class="form-info-banner">
             <i class="bi bi-geo-alt text-primary flex-shrink-0"></i>
             Create a new Destination to define a data delivery target.
         </div>
+        </td></tr>
     </c:when>
     <c:otherwise>
+        <tr><td colspan="2">
         <div class="form-info-banner">
             <i class="bi bi-geo-alt text-primary flex-shrink-0"></i>
             Edit the Destination configuration.
         </div>
+        </td></tr>
     </c:otherwise>
 </c:choose>
 
@@ -175,8 +179,9 @@
 						<td>
 							<div class="d-flex align-items-center gap-2">
 								<input id="toDestination" name="toDestination" type="text"
+									maxlength="32"
 									pattern="[a-zA-Z0-9]+([_-][a-zA-Z0-9]+)*"
-									title="Must start and end with a letter or digit; '_' or '-' allowed as single separators (e.g. my-destination)"
+									title="Must start and end with a letter or digit; '_' or '-' allowed as single separators (e.g. my-destination). Maximum 32 characters."
 									oninput="validatePatternInput(this, 'toDestination-feedback'); var n=document.getElementById('name');if(n)n.value=this.value;"
 									<c:if test="${not empty destinationActionForm.fromDestinationOptions}">required</c:if>>
 								<span id="toDestination-feedback"></span>
@@ -247,8 +252,9 @@
 						<td>
 							<div class="d-flex align-items-center gap-2">
 								<input id="name" name="name" type="text"
+									maxlength="32"
 									pattern="[a-zA-Z0-9]+([_-][a-zA-Z0-9]+)*"
-									title="Must start and end with a letter or digit; '_' or '-' allowed as single separators (e.g. my-destination)"
+									title="Must start and end with a letter or digit; '_' or '-' allowed as single separators (e.g. my-destination). Maximum 32 characters."
 									oninput="validatePatternInput(this, 'name-feedback')"
 									<c:if test="${empty destinationActionForm.fromDestinationOptions}">required</c:if>>
 								<span id="name-feedback"></span>

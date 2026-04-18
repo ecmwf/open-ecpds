@@ -13,16 +13,20 @@
 	<tiles:useAttribute name="isInsert" classname="java.lang.String" />
 <c:choose>
     <c:when test="${isInsert == 'true'}">
+        <tr><td colspan="2">
         <div class="form-info-banner">
             <i class="bi bi-server text-primary flex-shrink-0"></i>
             Register a new Transfer Server for data file processing.
         </div>
+        </td></tr>
     </c:when>
     <c:otherwise>
+        <tr><td colspan="2">
         <div class="form-info-banner">
             <i class="bi bi-server text-primary flex-shrink-0"></i>
             Edit the Transfer Server configuration.
         </div>
+        </td></tr>
     </c:otherwise>
 </c:choose>
 

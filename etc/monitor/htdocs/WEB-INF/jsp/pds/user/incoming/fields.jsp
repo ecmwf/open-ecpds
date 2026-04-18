@@ -56,16 +56,20 @@ table.fields > tbody > tr > th {
 			<table class="fields">
 <c:choose>
     <c:when test="${isInsert == 'true'}">
+        <tr><td colspan="2">
         <div class="form-info-banner">
             <i class="bi bi-person-plus text-primary flex-shrink-0"></i>
             Create a new Incoming User account.
         </div>
+        </td></tr>
     </c:when>
     <c:otherwise>
+        <tr><td colspan="2">
         <div class="form-info-banner">
             <i class="bi bi-person-plus text-primary flex-shrink-0"></i>
             Edit the Incoming User account.
         </div>
+        </td></tr>
     </c:otherwise>
 </c:choose>
 				<c:if test="${isInsert != 'true'}">

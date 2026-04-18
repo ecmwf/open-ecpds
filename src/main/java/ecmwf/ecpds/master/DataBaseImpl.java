@@ -40,10 +40,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -118,6 +122,17 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
 
     /** The email pattern **/
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+
+    /** Cached GeoIP result (latitude, longitude, textual description). */
+    private record GeoIpResult(Double latitude, Double longitude, String description) {
+    }
+
+    /**
+     * GeoIP cache: hostname → resolved coordinates and description. Entries expire after 24 hours so stale results
+     * don't persist indefinitely. Max 5 000 entries covers any realistic fleet size.
+     */
+    private static final Cache<String, GeoIpResult> GEOIP_CACHE = CacheBuilder.newBuilder().maximumSize(5_000)
+            .expireAfterWrite(24, TimeUnit.HOURS).build();
 
     /** The _ecpds. */
     private final transient ECpdsBase ecpds;
@@ -1497,6 +1512,13 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
         return monitor.done(ecpds.getSortedBadDataTransfersByDestination(master.dataCache, destinationName, cursor));
     }
 
+    @Override
+    public Collection<DataTransfer> getSortedBadDataTransfers(final DataBaseCursor cursor)
+            throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getSortedBadDataTransfers(" + cursor + ")");
+        return monitor.done(ecpds.getSortedBadDataTransfers(master.dataCache, cursor));
+    }
+
     /**
      * Gets the bad data transfers by destination count.
      *
@@ -2334,28 +2356,42 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
         }
         try {
             if (Boolean.TRUE.equals(host.getAutomaticLocation())) {
-                // Automatic location via GeoIP
-                final var response = GeoIP2Helper.getCityResponse(hostName);
-                final var continentObj = response.getContinent();
-                final var countryObj = response.getCountry();
-                final var cityObj = response.getCity();
-                final var continent = continentObj != null ? continentObj.getName() : null;
-                final var country = countryObj != null ? countryObj.getIsoCode() : null;
-                final var city = cityObj != null ? cityObj.getName() : null;
-                final var textualLocation = Stream.of(city, country, continent).filter(Objects::nonNull)
-                        .filter(s -> !s.isBlank()).collect(Collectors.joining(" / "));
-                final var locationData = response.getLocation();
-                final var latitude = locationData != null ? locationData.getLatitude() : null;
-                final var longitude = locationData != null ? locationData.getLongitude() : null;
-                hostLocation.setLatitude(latitude);
-                hostLocation.setLongitude(longitude);
-                if (!textualLocation.isEmpty()) {
-                    host.setGeoIpLocation(textualLocation);
-                } else if (latitude != null && longitude != null) {
-                    host.setGeoIpLocation(String.format("Coordinates: %.4f / %.4f", latitude, longitude));
-                } else {
-                    host.setGeoIpLocation("No geolocation available");
+                // Automatic location via GeoIP — check in-memory cache first to avoid
+                // repeated network lookups for the same hostname across map refreshes.
+                var cached = GEOIP_CACHE.getIfPresent(hostName);
+                if (cached == null) {
+                    try {
+                        final var response = GeoIP2Helper.getCityResponse(hostName);
+                        final var continentObj = response.getContinent();
+                        final var countryObj = response.getCountry();
+                        final var cityObj = response.getCity();
+                        final var continent = continentObj != null ? continentObj.getName() : null;
+                        final var country = countryObj != null ? countryObj.getIsoCode() : null;
+                        final var city = cityObj != null ? cityObj.getName() : null;
+                        final var textualLocation = Stream.of(city, country, continent).filter(Objects::nonNull)
+                                .filter(s -> !s.isBlank()).collect(Collectors.joining(" / "));
+                        final var locationData = response.getLocation();
+                        final var latitude = locationData != null ? locationData.getLatitude() : null;
+                        final var longitude = locationData != null ? locationData.getLongitude() : null;
+                        final String description;
+                        if (!textualLocation.isEmpty()) {
+                            description = textualLocation;
+                        } else if (latitude != null && longitude != null) {
+                            description = String.format("Coordinates: %.4f / %.4f", latitude, longitude);
+                        } else {
+                            description = "No geolocation available";
+                        }
+                        cached = new GeoIpResult(latitude, longitude, description);
+                        GEOIP_CACHE.put(hostName, cached);
+                    } catch (final Exception e) {
+                        _log.warn("Unable to determine geolocation for host: {}", hostName, e);
+                        cached = new GeoIpResult(null, null, "No geolocation available");
+                        GEOIP_CACHE.put(hostName, cached);
+                    }
                 }
+                hostLocation.setLatitude(cached.latitude());
+                hostLocation.setLongitude(cached.longitude());
+                host.setGeoIpLocation(cached.description());
             } else {
                 // Manual location - do NOT use GeoIP
                 final var latitude = hostLocation.getLatitude();

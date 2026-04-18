@@ -5,8 +5,6 @@
 <%@ taglib uri="/WEB-INF/tld/struts-logic.tld" prefix="logic" %>
 <%@ taglib uri="/WEB-INF/tld/struts-tiles.tld" prefix="tiles" %>
 
-<p>
-
 <html:errors />
 
 <tiles:useAttribute name="action" classname="java.lang.String"/>
@@ -40,14 +38,12 @@
 	<tiles:put name="isDelete" value='<%=Boolean.toString(action.indexOf("/delete/")>=0)%>' />
 	<tiles:put name="action.form.name" value="<%=actionFormName%>" />
 </tiles:insert>
-<br/>
 </td>
 <tr>
 <td align="left">
 <tiles:insert name="buttons">
 	<tiles:put name="operation" value="<%=operation%>" />
-</tiles:insert>	
-<br/>
+</tiles:insert>
 </td>
 </tr>
 </table>

@@ -5,7 +5,11 @@
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
 
 <c:if test="${empty policies}">
-<div class="alert alert-info mt-2">No Data Policies found.</div>
+<div class="d-flex align-items-center alert alert-info mt-2 gap-2">
+    No Data Policies found.
+    <a href="<bean:message key="policy.basepath"/>/edit/insert_form"
+       class="btn btn-sm btn-outline-success ms-auto"><i class="bi bi-plus-circle"></i> Create</a>
+</div>
 </c:if>
 
 <c:if test="${not empty policies}">
@@ -43,13 +47,20 @@
 </table>
 <script>
 $(document).ready(function() {
-    $('#policiesTable').DataTable({
-        paging:    false,
-        searching: true,
-        ordering:  true,
-        info:      false,
-        columnDefs: [{ orderable: false, targets: -1 }]
+    var createUrl = '<bean:message key="policy.basepath"/>/edit/insert_form';
+    var table = $('#policiesTable').DataTable({
+        paging:     true,
+        pageLength: 25,
+        searching:  true,
+        ordering:   true,
+        info:       true,
+        columnDefs: [{ orderable: false, targets: -1 }],
+        dom: "<'d-flex align-items-center gap-2 mb-3'<'count-slot'>l<'ms-auto d-flex align-items-center gap-2'f<'policies-create-slot'>>>t<'d-flex align-items-center mt-2'i<'ms-auto'p>>"
     });
+    $('.count-slot').html('<span class="text-muted small"><i class="bi bi-list-ul"></i> <strong>' + table.rows().count() + '</strong> policy(ies)</span>');
+    $('.policies-create-slot').html(
+        '<a href="' + createUrl + '" class="btn btn-sm btn-outline-success"><i class="bi bi-plus-circle"></i> Create</a>'
+    );
 });
 </script>
 </c:if>

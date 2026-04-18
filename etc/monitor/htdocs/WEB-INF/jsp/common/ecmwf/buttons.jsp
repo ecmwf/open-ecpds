@@ -67,7 +67,7 @@ $(document).ready(function () {
         const expected = "${jsEntityName}";
         if (val === expected) {
             confirmModal.hide();
-            _loaderShow();
+            $("#loadingBackdrop,#loadingDiv").show();
             setTimeout(function () {
                 processBtn.off("click");
                 processBtn.closest("form")[0].submit();
@@ -83,7 +83,7 @@ $(document).ready(function () {
 </script>
 </c:if>
 
-<button type="submit" onclick="moveToWorkflowStage.value=''"><c:out value="${safeButtonLabel}" /></button>
+<button type="submit"><c:out value="${safeButtonLabel}" /></button>
 <button type="button" onclick="history.back()">Cancel</button>
 
 <!-- buttons.jsp -->
