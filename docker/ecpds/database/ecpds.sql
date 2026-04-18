@@ -402,7 +402,7 @@ INSERT INTO `COUNTRY` VALUES
 ('dm','Dominica'),
 ('do','Dominican Republic'),
 ('dz','Algeria'),
-('ec','ECMWF'),
+('ew','ECMWF'),
 ('ee','Estonia'),
 ('eg','Egypt'),
 ('eh','Western Sahara'),
@@ -1026,8 +1026,8 @@ DROP TABLE IF EXISTS `HOST_LOCATION`;
 CREATE TABLE `HOST_LOCATION` (
   `HLO_ID` decimal(10,0) NOT NULL DEFAULT 0,
   `HLO_IP` varchar(255) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
-  `HLO_LATITUDE` decimal(20,0) DEFAULT NULL,
-  `HLO_LONGITUDE` decimal(20,0) DEFAULT NULL,
+  `HLO_LATITUDE` decimal(9,6) DEFAULT NULL,
+  `HLO_LONGITUDE` decimal(9,6) DEFAULT NULL,
   PRIMARY KEY (`HLO_ID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -1319,7 +1319,7 @@ CREATE TABLE `INCOMING_USER` (
 LOCK TABLES `INCOMING_USER` WRITE;
 /*!40000 ALTER TABLE `INCOMING_USER` DISABLE KEYS */;
 INSERT INTO `INCOMING_USER` VALUES
-('test','test2021','For accessing the test destinations',1,1759148604470,'Using sftp on DataMover=ecpds-mover from test@127.0.0.1','ec','portal.domain = \"data\"\r\nportal.color = \"dodgerblue\"\r\nportal.headerRegistry = \"\r\n(== {.*.grib2?$}) Content-Type=application/grib\r\n(== {.*.index$}) Content-Type=application/json\r\n\"\r\nportal.maxConnections = \"100\"\r\nportal.order = \"asc\"\r\nportal.recordHistory = \"no\"\r\nportal.recordSplunk = \"yes\"\r\nportal.simpleList = \"no\"\r\nportal.sort = \"target\"\r\nportal.triggerEvent = \"yes\"\r\nportal.triggerLastRangeOnly = \"yes\"\r\nportal.updateLastLoginInformation = \"no\"',0,'','portal.welcome = \"\r\n***********************************************\r\nPDS Data Portal\r\n\r\nPlease note you can also access the Data Portal\r\nwith the same credentials through https/sftp.\r\n***********************************************\r\n\"');
+('test','test2021','For accessing the test destinations',1,1759148604470,'Using sftp on DataMover=ecpds-mover from test@127.0.0.1','ew','portal.domain = \"data\"\r\nportal.color = \"dodgerblue\"\r\nportal.headerRegistry = \"\r\n(== {.*.grib2?$}) Content-Type=application/grib\r\n(== {.*.index$}) Content-Type=application/json\r\n\"\r\nportal.maxConnections = \"100\"\r\nportal.order = \"asc\"\r\nportal.recordHistory = \"no\"\r\nportal.recordSplunk = \"yes\"\r\nportal.simpleList = \"no\"\r\nportal.sort = \"target\"\r\nportal.triggerEvent = \"yes\"\r\nportal.triggerLastRangeOnly = \"yes\"\r\nportal.updateLastLoginInformation = \"no\"',0,'','portal.welcome = \"\r\n***********************************************\r\nPDS Data Portal\r\n\r\nPlease note you can also access the Data Portal\r\nwith the same credentials through https/sftp.\r\n***********************************************\r\n\"');
 /*!40000 ALTER TABLE `INCOMING_USER` ENABLE KEYS */;
 UNLOCK TABLES;
 

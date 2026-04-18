@@ -53,17 +53,60 @@
 		<tbody></tbody>
 	</table>
 
-	<div class="mt-2">
-		<auth:link basePathKey="admin.basepath"
-			href="/requeue?restart=true" imageKey="icon.requeue"
-			imageTitleKey="ecpds.destination.requeue"
-			imageAltKey="ecpds.destination.requeue" />
-		&nbsp;&nbsp;
-		<auth:link basePathKey="admin.basepath"
-			href="/delete?delete=true" imageKey="icon.delete"
-			imageTitleKey="ecpds.destination.delete"
-			imageAltKey="ecpds.destination.delete" />
+	<auth:if basePathKey="admin.basepath" paths="/requeue">
+	<auth:then>
+	<div class="mt-3 d-flex gap-2">
+		<button type="button" id="requeueBtn" class="btn btn-sm btn-warning" disabled data-bs-toggle="modal" data-bs-target="#requeueConfirmModal">
+			<i class="bi bi-arrow-repeat"></i> Requeue all
+		</button>
+		<auth:if basePathKey="admin.basepath" paths="/delete">
+		<auth:then>
+		<button type="button" id="deleteBtn" class="btn btn-sm btn-danger" disabled data-bs-toggle="modal" data-bs-target="#deleteConfirmModal">
+			<i class="bi bi-trash"></i> Delete all
+		</button>
+		</auth:then>
+		</auth:if>
 	</div>
+
+	<!-- Requeue confirmation modal -->
+	<div class="modal fade" id="requeueConfirmModal" tabindex="-1" aria-labelledby="requeueConfirmModalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="requeueConfirmModalLabel"><i class="bi bi-arrow-repeat text-warning"></i> Confirm Requeue</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body" id="requeueModalBody"></div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+					<a id="requeueConfirmBtn" href="#" class="btn btn-warning">
+						<i class="bi bi-arrow-repeat"></i> Requeue
+					</a>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Delete confirmation modal -->
+	<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="deleteConfirmModalLabel"><i class="bi bi-trash text-danger"></i> Confirm Delete</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body" id="deleteModalBody"></div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+					<a id="deleteConfirmBtn" href="#" class="btn btn-danger">
+						<i class="bi bi-trash"></i> Delete
+					</a>
+				</div>
+			</div>
+		</div>
+	</div>
+	</auth:then>
+	</auth:if>
 
 	<script>
 	$(function() {
@@ -75,7 +118,7 @@
 				type: 'GET'
 			},
 			pageLength: 25,
-			searching: false,
+			searching: true,
 			autoWidth: false,
 			order: [[0, 'asc']],
 			columns: [
@@ -92,15 +135,60 @@
 				$('td', row).each(function(i) { $(this).html(data[i]); });
 			},
 			drawCallback: function(settings) {
-				var total = settings.json ? settings.json.recordsTotal : 0;
-				$('#badTransfersFoundLabel').html('<i class="bi bi-list-ul"></i> <strong>' + total + '</strong> outstanding transfer(s)');
+				var json = settings.json || {};
+				var total = json.recordsTotal || 0;
+				var filtered = json.recordsFiltered || 0;
+				var label = '<i class="bi bi-list-ul"></i> <strong>' + total + '</strong> outstanding transfer(s)';
+				if (filtered !== total) {
+					label += ' &mdash; <strong>' + filtered + '</strong> matching filter';
+				}
+				$('#badTransfersFoundLabel').html(label);
+				$('#requeueBtn, #deleteBtn').prop('disabled', total === 0);
 			},
 			language: {
 				lengthMenu: 'Show _MENU_ per page',
 				info: 'Showing _START_-_END_ of _TOTAL_',
 				processing: 'Loading...',
-				emptyTable: 'No outstanding transfers found'
+				emptyTable: 'No outstanding transfers found',
+				search: 'Filter:'
 			}
+		});
+
+		var _dest = '<c:out value="${destination.name}"/>';
+
+		function _buildModalContent(action, search, filtered, total) {
+			var safeSearch = $('<span>').text(search).html();
+			var dest = '<strong>' + $('<span>').text(_dest).html() + '</strong>';
+			var isRequeue = action === 'requeue';
+			var baseUrl = '/do/admin/' + action + '/' + encodeURIComponent(_dest)
+				+ '?' + (isRequeue ? 'restart=true' : 'delete=true');
+			if (search) {
+				baseUrl += '&search=' + encodeURIComponent(search);
+			}
+			var count = search ? filtered : total;
+			var scope = search
+				? '<strong>' + count + '</strong> transfer(s) matching filter <strong>&ldquo;' + safeSearch + '&rdquo;</strong> for destination ' + dest
+				: '<strong>all ' + total + '</strong> outstanding transfer(s) for destination ' + dest;
+			var body = isRequeue
+				? 'Are you sure you want to requeue ' + scope + '?'
+				: 'Are you sure you want to <strong>permanently delete</strong> ' + scope + '? This action cannot be undone.';
+			return { url: baseUrl, body: body };
+		}
+
+		$('#requeueConfirmModal').on('show.bs.modal', function() {
+			var search = _table.search();
+			var info = _table.page.info();
+			var c = _buildModalContent('requeue', search, info.recordsDisplay, info.recordsTotal);
+			$('#requeueModalBody').html(c.body);
+			$('#requeueConfirmBtn').attr('href', c.url);
+		});
+
+		$('#deleteConfirmModal').on('show.bs.modal', function() {
+			var search = _table.search();
+			var info = _table.page.info();
+			var c = _buildModalContent('delete', search, info.recordsDisplay, info.recordsTotal);
+			$('#deleteModalBody').html(c.body);
+			$('#deleteConfirmBtn').attr('href', c.url);
 		});
 	});
 	</script>

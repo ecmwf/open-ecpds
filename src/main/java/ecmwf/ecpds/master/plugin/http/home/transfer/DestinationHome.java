@@ -27,9 +27,12 @@ package ecmwf.ecpds.master.plugin.http.home.transfer;
  */
 
 import java.util.Collection;
+import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import ecmwf.ecpds.master.MasterManager;
 
 import ecmwf.ecpds.master.plugin.http.home.transfer.searches.DestinationAliasedFrom;
 import ecmwf.ecpds.master.plugin.http.home.transfer.searches.DestinationAliases;
@@ -338,5 +341,21 @@ public class DestinationHome extends ModelHomeBase {
         final var search = ModelHomeBase.getDefaultSearch(s);
         search.setCacheable(false);
         return search;
+    }
+
+    /**
+     * Gets the destination counts per host in a single GROUP BY query on the ASSOCIATION table.
+     *
+     * @return map of host name → destination count
+     *
+     * @throws TransferException
+     *             the transfer exception
+     */
+    public static final Map<String, Integer> getCountsByHost() throws TransferException {
+        try {
+            return MasterManager.getDB().getDestinationCountsByHost();
+        } catch (final Exception e) {
+            throw new TransferException("Could not get destination counts by host", e);
+        }
     }
 }

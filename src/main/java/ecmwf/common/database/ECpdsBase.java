@@ -3444,7 +3444,7 @@ public final class ECpdsBase extends DataBase {
     public Collection<DataTransfer> getSortedBadDataTransfersByDestination(final DataTransferCache cache,
             final String destinationName, final DataBaseCursor cursor) throws DataBaseException {
         try (var rs = ecpds.getSortedBadDataTransfersByDestination(destinationName, cursor.getSort(), cursor.getOrder(),
-                cursor.getStart(), cursor.getLength())) {
+                cursor.getStart(), cursor.getLength(), cursor.getSearch())) {
             final List<DataTransfer> array = new ArrayList<>();
             final var hosts = new HashMap<String, Host>();
             DataTransfer initialTransfer = null;
@@ -3820,6 +3820,28 @@ public final class ECpdsBase extends DataBase {
         } catch (SQLException | IOException e) {
             _log.warn("getTrafficByDestinationName", e);
             throw new DataBaseException("getTrafficByDestinationName", e);
+        }
+    }
+
+    /**
+     * Gets a map of host name to destination count using a single GROUP BY query on the ASSOCIATION table.
+     *
+     * @return map of host name → destination count
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public Map<String, Integer> getDestinationCountsByHost() throws DataBaseException {
+        try (var rs = ecpds.getDestinationCountsByHost()) {
+            final Map<String, Integer> counts = new HashMap<>();
+            while (rs.next()) {
+                counts.put(rs.getString("HOS_NAME"), rs.getInt("CNT"));
+            }
+            logSqlRequest("getDestinationCountsByHost", counts.size());
+            return counts;
+        } catch (SQLException | IOException e) {
+            _log.warn("getDestinationCountsByHost", e);
+            throw new DataBaseException("getDestinationCountsByHost", e);
         }
     }
 

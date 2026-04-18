@@ -297,7 +297,18 @@
 <%-- Results table --%>
 <div class="d-flex align-items-center mb-2">
     <span class="text-muted small" id="hostsFoundLabel"><i class="bi bi-list-ul"></i> Loading...</span>
+    <div class="ms-auto btn-group btn-group-sm" role="group">
+        <button type="button" class="btn btn-outline-secondary active" id="btnViewList"
+                onclick="switchHostView('list')" title="List view">
+            <i class="bi bi-list-ul"></i> List
+        </button>
+        <button type="button" class="btn btn-outline-secondary" id="btnViewMap"
+                onclick="switchHostView('map')" title="Map view">
+            <i class="bi bi-geo-alt"></i> Map
+        </button>
+    </div>
 </div>
+<div id="hostListView">
 <table id="hostsTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
         <thead class="table-light">
             <tr>
@@ -365,3 +376,218 @@
         });
     });
     </script>
+</div><%-- /hostListView --%>
+
+<%-- Map view container --%>
+<div id="hostMapContainer" style="display:none">
+    <div class="d-flex align-items-center mb-2">
+        <span class="text-muted small" id="mapFoundLabel"></span>
+    </div>
+    <div id="hostMap" style="height:calc(100vh - 300px); min-height:420px; border-radius:0.375rem; border:1px solid var(--bs-border-color)"></div>
+</div>
+
+<script src="/openlayer/ol.js"></script>
+<script src="/openlayer/ol-layerswitcher.js"></script>
+<script>
+(function() {
+    var viewMode = 'list';
+    var mapInitDone = false;
+    var olMap, olSource;
+
+    // ---- View switcher ----
+    window.switchHostView = function(mode) {
+        viewMode = mode;
+        var isList = mode === 'list';
+        document.getElementById('hostListView').style.display    = isList ? '' : 'none';
+        document.getElementById('hostMapContainer').style.display = isList ? 'none' : '';
+        document.getElementById('btnViewList').classList.toggle('active', isList);
+        document.getElementById('btnViewMap').classList.toggle('active', !isList);
+        if (!isList) {
+            if (!mapInitDone) { initMap(); mapInitDone = true; }
+            else { loadMapFeatures(); }
+            // Trigger OL resize since container was hidden during init
+            setTimeout(function() { if (olMap) olMap.updateSize(); }, 50);
+        }
+    };
+
+    // ---- Style helpers ----
+    function makeStyle(color, r) {
+        return new ol.style.Style({
+            image: new ol.style.Circle({
+                radius: r || 7,
+                fill: new ol.style.Fill({ color: color }),
+                stroke: new ol.style.Stroke({ color: '#fff', width: 1.5 })
+            })
+        });
+    }
+
+    var STYLES = {
+        'Dissemination': { normal: makeStyle('rgba(13,110,253,0.85)'),   hover: makeStyle('rgba(13,110,253,1)',9) },
+        'Acquisition':   { normal: makeStyle('rgba(25,135,84,0.85)'),    hover: makeStyle('rgba(25,135,84,1)',9) },
+        'Source':        { normal: makeStyle('rgba(253,126,20,0.85)'),   hover: makeStyle('rgba(253,126,20,1)',9) },
+        'inactive':      { normal: makeStyle('rgba(108,117,125,0.55)',6), hover: makeStyle('rgba(108,117,125,0.9)',8) }
+    };
+
+    function styleFor(f, hover) {
+        if (!f.get('active')) return hover ? STYLES.inactive.hover : STYLES.inactive.normal;
+        var t = f.get('type');
+        var s = STYLES[t] || STYLES['Dissemination'];
+        return hover ? s.hover : s.normal;
+    }
+
+    // ---- Map init ----
+    function initMap() {
+        olSource = new ol.source.Vector();
+
+        var layer = new ol.layer.Vector({
+            source: olSource,
+            style: function(f) { return styleFor(f, false); }
+        });
+
+        olMap = new ol.Map({
+            target: 'hostMap',
+            layers: [
+                new ol.layer.Tile({ source: new ol.source.OSM() }),
+                layer
+            ],
+            view: new ol.View({ center: ol.proj.fromLonLat([10, 48]), zoom: 3 })
+        });
+
+        // Initial load with current filters
+        loadMapFeatures();
+
+        // Hover
+        var hovered = null;
+        olMap.on('pointermove', function(evt) {
+            var f = olMap.forEachFeatureAtPixel(evt.pixel, function(f) { return f; });
+            olMap.getTargetElement().style.cursor = f ? 'pointer' : '';
+            if (hovered && hovered !== f) { hovered.setStyle(null); hovered = null; }
+            if (f && f !== hovered) { f.setStyle(styleFor(f, true)); hovered = f; }
+        });
+
+        // Click → offcanvas
+        olMap.on('click', function(evt) {
+            var f = olMap.forEachFeatureAtPixel(evt.pixel, function(f) { return f; });
+            if (!f) return;
+            showHostPanel(f.getProperties());
+        });
+    }
+
+    // ---- Server-side filtered fetch ----
+    function getFormVal(name) {
+        var el = document.querySelector('#hostSearchForm [name="' + name + '"]');
+        return el ? el.value : '';
+    }
+
+    function buildMapUrl() {
+        var p = new URLSearchParams();
+        p.set('hostType',   getFormVal('hostType')   || 'All');
+        p.set('network',    getFormVal('network')    || 'All');
+        p.set('label',      getFormVal('label')      || 'All');
+        p.set('hostFilter', getFormVal('hostFilter') || 'All');
+        p.set('hostSearch', (document.getElementById('hostSearch') || {}).value || '');
+        return '/do/transfer/mapjson?' + p.toString();
+    }
+
+    var _loadTimer = null;
+    function loadMapFeatures() {
+        document.getElementById('mapFoundLabel').textContent = 'Loading…';
+        fetch(buildMapUrl())
+            .then(function(r) { return r.json(); })
+            .then(function(geojson) {
+                var fmt = new ol.format.GeoJSON();
+                var features = fmt.readFeatures(geojson, { featureProjection: 'EPSG:3857' });
+                olSource.clear(true);
+                olSource.addFeatures(features);
+                var n = features.length;
+                document.getElementById('mapFoundLabel').textContent =
+                    n + ' host' + (n === 1 ? '' : 's') + ' with coordinates';
+                if (n > 0) {
+                    var ext = olSource.getExtent();
+                    if (!ol.extent.isEmpty(ext)) {
+                        olMap.getView().fit(ext, { padding: [40,40,40,40], maxZoom: 7, duration: 300 });
+                    }
+                }
+            })
+            .catch(function(e) {
+                console.error('Map load error:', e);
+                document.getElementById('mapFoundLabel').textContent = 'Error loading hosts';
+            });
+    }
+
+    // Debounced reload so rapid typing doesn't fire many requests
+    function scheduleMapReload() {
+        clearTimeout(_loadTimer);
+        _loadTimer = setTimeout(loadMapFeatures, 400);
+    }
+
+    // ---- Host detail panel ----
+    var _offcanvas = null;
+    function showHostPanel(p) {
+        var badge = p.active
+            ? '<span class="badge bg-success">Active</span>'
+            : '<span class="badge bg-secondary">Inactive</span>';
+        var typeColors = { Dissemination:'primary', Acquisition:'success', Source:'warning' };
+        var tc = typeColors[p.type] || 'secondary';
+        var typeBadge = '<span class="badge bg-' + tc + ' ms-1">' + esc(p.type) + '</span>';
+
+        var html = '<div class="mb-3">' + badge + typeBadge + '</div>'
+            + '<table class="table table-sm table-borderless mb-0">'
+            + row('Nickname', '<a href="' + p.url + '" class="fw-semibold">' + esc(p.nickname) + '</a>')
+            + row('Host ID', '<code>' + esc(p.id) + '</code>')
+            + row('Hostname', esc(p.hostname) || '<span class="text-muted">—</span>')
+            + row('Network',  esc(p.network)  || '<span class="text-muted">—</span>')
+            + row('Method',   esc(p.method)   || '<span class="text-muted">—</span>')
+            + row('Location', esc(p.geo)      || '<span class="text-muted">—</span>')
+            + (p.comment ? row('Comment', '<span class="text-muted small">' + esc(p.comment) + '</span>') : '')
+            + '</table>'
+            + '<div class="mt-3"><a href="' + p.url + '" class="btn btn-sm btn-outline-primary w-100">'
+            + '<i class="bi bi-arrow-right-circle me-1"></i>Open host page</a></div>';
+
+        document.getElementById('hostDetailTitle').innerHTML =
+            '<i class="bi bi-hdd-network me-1"></i>' + esc(p.nickname || p.id);
+        document.getElementById('hostDetailBody').innerHTML = html;
+
+        if (!_offcanvas) {
+            _offcanvas = new bootstrap.Offcanvas(document.getElementById('hostDetailPanel'));
+        }
+        _offcanvas.show();
+    }
+
+    function row(label, val) {
+        return '<tr><th class="text-muted fw-normal pe-2" style="width:85px;white-space:nowrap">'
+            + label + '</th><td>' + val + '</td></tr>';
+    }
+    function esc(s) {
+        return s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+                             .replace(/"/g,'&quot;').replace(/'/g,'&#39;') : '';
+    }
+
+    // Wire form filter changes to reload map when in map mode
+    document.addEventListener('DOMContentLoaded', function() {
+        ['hostType','network','label','hostFilter'].forEach(function(name) {
+            var el = document.querySelector('#hostSearchForm [name="' + name + '"]');
+            if (el) el.addEventListener('change', function() {
+                if (viewMode === 'map') scheduleMapReload();
+            });
+        });
+        var searchEl = document.getElementById('hostSearch');
+        if (searchEl) searchEl.addEventListener('input', function() {
+            if (viewMode === 'map') scheduleMapReload();
+        });
+        // Search form submit in map mode → immediate reload
+        document.getElementById('hostSearchForm').addEventListener('submit', function(e) {
+            if (viewMode === 'map') { e.preventDefault(); loadMapFeatures(); }
+        });
+    });
+})();
+</script>
+
+<%-- Host detail offcanvas (shared between list and map view) --%>
+<div class="offcanvas offcanvas-end" tabindex="-1" id="hostDetailPanel" style="width:360px;">
+    <div class="offcanvas-header border-bottom py-2 px-3">
+        <h6 class="offcanvas-title mb-0" id="hostDetailTitle">Host Details</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body p-3" id="hostDetailBody"></div>
+</div>

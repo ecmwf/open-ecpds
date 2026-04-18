@@ -1318,7 +1318,7 @@
 		<put name="content"
 			value="/WEB-INF/jsp/pds/admin/requeue/requeued.jsp" />
 		<put name="subcontent"
-			value="/WEB-INF/jsp/pds/monitoring/unsuccessful/transfers.jsp" />
+			value="/WEB-INF/jsp/pds/admin/requeue/outstanding_transfers.jsp" />
 	</definition>
 
 	<definition name=".pds.admin.requeue.success"
@@ -1326,7 +1326,7 @@
 		<put name="content"
 			value="/WEB-INF/jsp/pds/admin/requeue/requeued.jsp" />
 		<put name="subcontent"
-			value="/WEB-INF/jsp/pds/monitoring/unsuccessful/transfers.jsp" />
+			value="/WEB-INF/jsp/pds/admin/requeue/outstanding_transfers.jsp" />
 	</definition>
 
 	<definition name=".pds.admin.upload" extends=".pds.admin">

@@ -31,6 +31,8 @@ package ecmwf.ecpds.master.plugin.http.controller.transfer.host;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -40,13 +42,12 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.ecpds.master.plugin.http.dao.Util;
+import ecmwf.ecpds.master.plugin.http.home.transfer.DestinationHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.HostHome;
-import ecmwf.ecpds.master.plugin.http.model.transfer.Destination;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Host;
 import ecmwf.ecpds.master.plugin.http.model.transfer.TransferException;
 import ecmwf.web.controller.ECMWFActionFormException;
@@ -62,9 +63,6 @@ public class GetHostListJsonAction extends PDSAction {
 
     /** Base path for host detail pages. */
     private static final String HOST_BASE_PATH = "/do/transfer/host";
-
-    /** Base path for destination detail pages. */
-    private static final String DEST_BASE_PATH = "/do/transfer/destination";
 
     /** Shared Jackson mapper. */
     private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -91,6 +89,13 @@ public class GetHostListJsonAction extends PDSAction {
         } catch (final TransferException e) {
             hosts = new ArrayList<>(0);
         }
+        // Pre-load destination counts in ONE query to avoid N+1 per host row
+        Map<String, Integer> destCounts;
+        try {
+            destCounts = DestinationHome.getCountsByHost();
+        } catch (final Exception e) {
+            destCounts = Collections.emptyMap();
+        }
         final var recordsTotal = Util.getCollectionSizeFrom(hosts);
         final var root = MAPPER.createObjectNode();
         root.put("draw", draw);
@@ -104,7 +109,7 @@ public class GetHostListJsonAction extends PDSAction {
             row.add(escapeHtml(host.getHost()));
             row.add(escapeHtml(host.getTransferGroupName()));
             row.add(escapeHtml(host.getNetworkName()));
-            row.add(buildDestinationsHtml(host));
+            row.add(buildDestinationsHtml(host, destCounts));
         }
         try {
             response.setContentType("application/json; charset=UTF-8");
@@ -180,19 +185,11 @@ public class GetHostListJsonAction extends PDSAction {
             sb.append("<span class=\"badge bg-secondary ms-1\" style=\"font-size:0.7rem;\">").append(escapeHtml(type))
                     .append("</span>");
         }
-        // Transfer method badge
+        // Transfer method badge — method name is on the host object, no DB call needed
         final var method = host.getTransferMethodName();
         if (method != null && !method.isBlank()) {
-            String methodTitle = "";
-            try {
-                final var tm = host.getTransferMethod();
-                if (tm != null && tm.getComment() != null) {
-                    methodTitle = escapeHtml(tm.getComment());
-                }
-            } catch (final Exception ignored) {
-            }
-            sb.append("<span class=\"badge bg-info text-dark ms-1\" style=\"font-size:0.7rem;\" title=\"")
-                    .append(methodTitle).append("\"><i class=\"bi bi-hdd-network me-1\"></i>")
+            sb.append(
+                    "<span class=\"badge bg-info text-dark ms-1\" style=\"font-size:0.7rem;\"><i class=\"bi bi-hdd-network me-1\"></i>")
                     .append(escapeHtml(method)).append("</span>");
         }
         sb.append("</span>");
@@ -205,27 +202,14 @@ public class GetHostListJsonAction extends PDSAction {
         return sb.toString();
     }
 
-    private static String buildDestinationsHtml(final Host host) {
-        Collection<Destination> destinations;
-        try {
-            destinations = host.getDestinations();
-        } catch (final Exception e) {
-            return "";
-        }
-        if (destinations == null || destinations.isEmpty()) {
+    private static String buildDestinationsHtml(final Host host, final Map<String, Integer> destCounts) {
+        final var count = destCounts.getOrDefault(host.getName(), 0);
+        if (count == 0) {
             return "<span class=\"text-muted fst-italic\">none</span>";
         }
-        final var count = destinations.size();
-        if (count > 3) {
-            return "<span class=\"badge bg-light text-secondary border\">" + count + " destinations</span>";
-        }
-        final var sb = new StringBuilder();
-        for (final Destination d : destinations) {
-            sb.append("<a href=\"").append(DEST_BASE_PATH).append("/").append(escapeHtml(d.getName()))
-                    .append("\" class=\"badge bg-light text-secondary border text-decoration-none me-1\">")
-                    .append(escapeHtml(d.getName())).append("</a>");
-        }
-        return sb.toString();
+        final var href = HOST_BASE_PATH + "/" + escapeHtml(host.getName());
+        return "<a href=\"" + href + "\" class=\"badge bg-light text-secondary border text-decoration-none\">" + count
+                + " destination" + (count == 1 ? "" : "s") + "</a>";
     }
 
     // -------------------------------------------------------------------------

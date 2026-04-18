@@ -1617,6 +1617,17 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
+     * Gets the destination counts by host.
+     */
+    @Override
+    public Map<String, Integer> getDestinationCountsByHost() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getDestinationCountsByHost()");
+        return monitor.done(ecpds.getDestinationCountsByHost());
+    }
+
+    /**
      * Gets the change log by key.
      *
      * @param keyName

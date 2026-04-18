@@ -146,7 +146,6 @@
                         </auth:if>
                     </div>
                     <ul class="home-menu">
-                        <li><a href="/maps/maps.html"><i class="bi bi-map"></i>Hosts on Map</a></li>
                         <auth:link basePathKey="monitoring.basepath" href="?type=9|10|11|12|13|14|15|16|17|19|21|22|24|25|26|28|29|30&status=&network=&" wrappingTags="li"><i class="bi bi-broadcast-pin"></i>Dissemination</auth:link>
                         <auth:link basePathKey="monitoring.basepath" href="?type=0|1|2|3|4|5|6|7|8|18|20|21|22|23|27&status=&network=&" wrappingTags="li"><i class="bi bi-cloud-arrow-down"></i>Acquisition</auth:link>
                     </ul>

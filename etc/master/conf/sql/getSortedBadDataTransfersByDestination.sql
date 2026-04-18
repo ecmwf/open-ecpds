@@ -13,6 +13,7 @@
 #prompt "order;Ordering (Descending=2,Ascending=1);%"
 #prompt "start;Start column;%"
 #prompt "length;Column length;%"
+#prompt "search;Search term;%"
 
 ##
 ## Request(s)
@@ -32,6 +33,9 @@ WHERE
     OR (STA_CODE = 'STOP' AND DAT_USER_STATUS IS NULL)
     OR STA_CODE = 'FAIL'
   )
+#if ('$search' != '')
+  AND (HOS_NAME LIKE '%$search%' OR DAT_TARGET LIKE '%$search%' OR STA_CODE LIKE '%$search%' OR DAT_COMMENT LIKE '%$search%')
+#fi
 #if ('$sort' == '0')
 ORDER BY (HOS_NAME IS NULL), HOS_NAME
 #fi

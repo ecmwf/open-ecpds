@@ -332,6 +332,9 @@
 		<action path="/transfer/host/list"
 			type="ecmwf.ecpds.master.plugin.http.controller.transfer.host.GetHostListJsonAction">
 		</action>
+		<action path="/transfer/mapjson"
+			type="ecmwf.ecpds.master.plugin.http.controller.transfer.host.GetHostMapJsonAction">
+		</action>
 		<action path="/transfer/host/*" parameter="{1}"
 			type="ecmwf.ecpds.master.plugin.http.controller.transfer.host.GetHostAction">
 			<forward name="success" path=".pds.transfer.host.detail" />
@@ -1226,6 +1229,12 @@
 			name="filterActionForm" scope="request">
 			<forward name="form" path=".pds.admin.filter" />
 			<forward name="success" path=".pds.admin.filter.success" />
+		</action>
+		<action path="/admin/requeue/*"
+			type="ecmwf.ecpds.master.plugin.http.controller.admin.RequeueDestinationBadTransfersAction">
+		</action>
+		<action path="/admin/delete/*"
+			type="ecmwf.ecpds.master.plugin.http.controller.admin.DeleteDestinationBadTransfersAction">
 		</action>
 		<action path="/admin/requeue"
 			type="ecmwf.ecpds.master.plugin.http.controller.admin.RequeueUnsuccessfulTransfersAction">

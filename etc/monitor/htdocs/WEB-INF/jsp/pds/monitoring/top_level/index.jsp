@@ -411,13 +411,6 @@ function createAndSubmitDynamicForm(action,bcc,subject,body) {
   </script>
 
 
-  <span class="text-muted px-1">|</span>
-
-  <a class="btn btn-sm btn-outline-secondary" href="/maps/maps.html"
-     title="Show <%=System.getProperty("monitor.nickName")%> Destination Hosts on OpenStreetMap">
-    <i class="bi bi-map"></i> Map
-  </a>
-
   <div style="position:relative; display:inline-block;">
     <button id="btnLegend" class="btn btn-sm btn-outline-secondary"
             onclick="toggleLegendPanel()"

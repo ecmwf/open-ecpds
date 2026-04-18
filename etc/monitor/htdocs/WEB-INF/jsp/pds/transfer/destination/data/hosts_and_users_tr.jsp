@@ -90,7 +90,8 @@
 			lengthChange: false,
 			searching: false,
 			ordering:  true,
-			info:      false<c:if test="${not empty ecpdsCanHandleHosts}">,
+			info:      false,
+			language:  { emptyTable: 'No hosts assigned' }<c:if test="${not empty ecpdsCanHandleHosts}">,
 			columnDefs: [{ orderable: false, targets: -1 }]</c:if>
 		});
 	});
@@ -172,13 +173,14 @@
 			</table>
 			<script>
 			$(document).ready(function() {
-				$('#acquisitionHostsTable').DataTable({
+				var dt = $('#acquisitionHostsTable').DataTable({
 					paging:       true,
 					pageLength:   10,
 					lengthChange: false,
 					searching: false,
 					ordering:  true,
-					info:      false<c:if test="${not empty ecpdsCanHandleHosts}">,
+					info:      false,
+					language:  { emptyTable: 'No hosts assigned' }<c:if test="${not empty ecpdsCanHandleHosts}">,
 					columnDefs: [{ orderable: false, targets: -1 }]</c:if>
 				});
 			});

@@ -48,6 +48,9 @@ public class DataBaseCursor implements Serializable {
     /** The end. */
     private final int end;
 
+    /** The search. */
+    private final String search;
+
     /**
      * Instantiates a new data base cursor.
      *
@@ -61,10 +64,29 @@ public class DataBaseCursor implements Serializable {
      *            the end
      */
     public DataBaseCursor(final String sort, final String order, final int start, final int end) {
+        this(sort, order, start, end, "");
+    }
+
+    /**
+     * Instantiates a new data base cursor.
+     *
+     * @param sort
+     *            the sort
+     * @param order
+     *            the order
+     * @param start
+     *            the start
+     * @param end
+     *            the end
+     * @param search
+     *            the search term (may be empty, never null)
+     */
+    public DataBaseCursor(final String sort, final String order, final int start, final int end, final String search) {
         this.sort = sort;
         this.order = order;
         this.start = start;
         this.end = end;
+        this.search = search != null ? search : "";
     }
 
     /**
@@ -113,12 +135,21 @@ public class DataBaseCursor implements Serializable {
     }
 
     /**
+     * Gets the search.
+     *
+     * @return the search term (never null, may be empty)
+     */
+    public String getSearch() {
+        return search;
+    }
+
+    /**
      * {@inheritDoc}
      *
      * To string.
      */
     @Override
     public String toString() {
-        return "sort=" + sort + ",order=" + order + ",start=" + start + ",end=" + end;
+        return "sort=" + sort + ",order=" + order + ",start=" + start + ",end=" + end + ",search=" + search;
     }
 }

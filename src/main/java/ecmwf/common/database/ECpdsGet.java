@@ -93,10 +93,11 @@ final class ECpdsGet {
     }
 
     DBResultSet getSortedBadDataTransfersByDestination(final String paramDestination, final String paramSort,
-            final String paramOrder, final int paramStart, final int paramLength) throws SQLException, IOException {
+            final String paramOrder, final int paramStart, final int paramLength, final String paramSearch)
+            throws SQLException, IOException {
         return _database.executeSelect("ECpdsBase", "getSortedBadDataTransfersByDestination",
                 new String[] { "destination=" + paramDestination, "sort=" + paramSort, "order=" + paramOrder,
-                        "start=" + paramStart, "length=" + paramLength });
+                        "start=" + paramStart, "length=" + paramLength, "search=" + paramSearch });
     }
 
     /**
@@ -200,6 +201,20 @@ final class ECpdsGet {
     DBResultSet getTrafficByDestinationName(final String paramDestination) throws SQLException, IOException {
         return _database.executeSelect("ECpdsBase", "getTrafficByDestinationName",
                 new String[] { "destination=" + paramDestination });
+    }
+
+    /**
+     * Gets the destination count per host (all hosts, single query).
+     *
+     * @return the DB result set
+     *
+     * @throws SQLException
+     *             the SQL exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     */
+    DBResultSet getDestinationCountsByHost() throws SQLException, IOException {
+        return _database.executeSelect("ECpdsBase", "getDestinationCountsByHost", new String[0]);
     }
 
     /**

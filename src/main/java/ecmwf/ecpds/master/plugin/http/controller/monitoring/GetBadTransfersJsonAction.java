@@ -108,7 +108,10 @@ public class GetBadTransfersJsonAction extends PDSAction {
             }
         } catch (final Throwable _) {
         }
-        final var cursor = new DataBaseCursor(String.valueOf(sqlSort), order, start, start + length);
+        // Sanitize search term: strip single quotes to prevent SQL injection
+        final var rawSearch = request.getParameter("search[value]");
+        final var search = rawSearch != null ? rawSearch.replace("'", "").replace("\\", "").trim() : "";
+        final var cursor = new DataBaseCursor(String.valueOf(sqlSort), order, start, start + length, search);
 
         Collection<DataTransfer> transfers;
         try {

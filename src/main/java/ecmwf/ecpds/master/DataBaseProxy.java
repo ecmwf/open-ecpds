@@ -1040,6 +1040,17 @@ final class DataBaseProxy implements DataBaseInterface {
     /**
      * {@inheritDoc}
      *
+     * Gets the destination counts by host.
+     */
+    @Override
+    public Map<String, Integer> getDestinationCountsByHost() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getDestinationCountsByHost()");
+        return monitor.done(dataBaseInterface.getDestinationCountsByHost());
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * Gets the change log by key.
      */
     @Override

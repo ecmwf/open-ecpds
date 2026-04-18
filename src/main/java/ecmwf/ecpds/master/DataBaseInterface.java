@@ -1119,6 +1119,18 @@ public interface DataBaseInterface extends Remote {
             throws DataBaseException, RemoteException;
 
     /**
+     * Gets a map of host name to destination count using a single GROUP BY query on the ASSOCIATION table.
+     *
+     * @return map of host name → destination count
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    Map<String, Integer> getDestinationCountsByHost() throws DataBaseException, RemoteException;
+
+    /**
      * Gets the change log by key.
      *
      * @param keyName

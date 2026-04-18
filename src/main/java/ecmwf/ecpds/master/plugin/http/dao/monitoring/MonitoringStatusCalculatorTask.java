@@ -24,15 +24,11 @@ package ecmwf.ecpds.master.plugin.http.dao.monitoring;
  * Takes in consideration PRODUCT_STATUS information to generate
  * monitoring information.
  *
- * Laurent Gougeon: added creation of the KML file(s) for the map application.
- *
  * @author Laurent Gougeon - syi@ecmwf.int, ECMWF.
  * @author Daniel Varela Santoalla - sy8@ecmwf.int, ECMWF.
  * @version 6.7.7
  * @since 2004-10-09
  */
-
-import static ecmwf.common.text.Util.isNotEmpty;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -46,8 +42,6 @@ import org.apache.logging.log4j.Logger;
 
 import ecmwf.common.ecaccess.MBeanScheduler;
 import ecmwf.common.monitor.MonitorManager;
-import ecmwf.common.technical.Cnf;
-import ecmwf.common.technical.GeoLocation;
 import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.controller.monitoring.MonitoringRequest;
 import ecmwf.ecpds.master.plugin.http.home.monitoring.DestinationProductStatusHome;
@@ -60,7 +54,6 @@ import ecmwf.ecpds.master.plugin.http.model.monitoring.GenerationMonitoringStatu
 import ecmwf.ecpds.master.plugin.http.model.monitoring.MonitoringException;
 import ecmwf.ecpds.master.plugin.http.model.monitoring.ProductStatus;
 import ecmwf.ecpds.master.plugin.http.model.monitoring.ProductStepStatus;
-import ecmwf.ecpds.master.plugin.http.model.transfer.DataTransfer;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Destination;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Host;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Status;
@@ -77,14 +70,6 @@ public class MonitoringStatusCalculatorTask extends MBeanScheduler {
 
     /** The Constant CODES. */
     private static final String[] CODES = { Status.INIT, Status.EXEC, Status.DONE, "" };
-
-    /** The Constant disseminationFileName. */
-    private static final String disseminationFileName = Cnf.at("MonitorPlugin", "disseminationKmlFileName",
-            Cnf.at("MonitorPlugin", "htdocs") + "/resources/maps/dissemination.kml");
-
-    /** The Constant acquisitionFileName. */
-    private static final String acquisitionFileName = Cnf.at("MonitorPlugin", "acquisitionKmlFileName",
-            Cnf.at("MonitorPlugin", "htdocs") + "/resources/maps/acquisition.kml");
 
     /**
      * Instantiates a new monitoring status calculator task.
@@ -128,9 +113,6 @@ public class MonitoringStatusCalculatorTask extends MBeanScheduler {
     private static final HashMap<String, String> fillDestinationStatii() {
         final var contactsPerDestinations = new HashMap<String, String>();
         try {
-            final var lastErrors = new HashMap<String, DataTransfer>();
-            final List<GeoLocation.GeoEntry> dissemination = new ArrayList<>();
-            final List<GeoLocation.GeoEntry> acquisition = new ArrayList<>();
             try {
                 contactsPerDestinations.putAll(MasterManager.getMI().getContacts());
             } catch (final Throwable t) {
@@ -143,11 +125,6 @@ public class MonitoringStatusCalculatorTask extends MBeanScheduler {
                 ds.setBadDataTransfersSize(destination.getBadDataTransfersSize());
                 // Last successful transfer
                 ds.setLastTransfer(destination.getLastTransfer());
-                // Last error
-                final var lastError = destination.getLastError();
-                if (lastError != null) {
-                    lastErrors.put(destination.getName(), lastError);
-                }
                 // Queue size
                 try {
                     ds.setQueueSize(MasterManager.getMI().getPendingDataTransfersCount(destination.getName()));
@@ -178,149 +155,11 @@ public class MonitoringStatusCalculatorTask extends MBeanScheduler {
                         log.warn("Problem getting Monitor status for destination '" + destination.getName() + "'", e);
                     }
                 }
-                if (destination.getAcquisition()) {
-                    // Processing all the acquisition hosts
-                    for (final Pair pair : destination.getAcquisitionHostsAndPriorities()) {
-                        _createEntry(lastErrors, contactsPerDestinations, (Host) pair.getName(), destination, ds,
-                                acquisition);
-                    }
-                } else {
-                    // Processing the primary hosts
-                    _createEntry(lastErrors, contactsPerDestinations, primaryHost, destination, ds, dissemination);
-                }
             }
-            // Creating the kml files
-            _createKmlFile(disseminationFileName, "Dissemination Hosts", dissemination);
-            _createKmlFile(acquisitionFileName, "Acquisition Hosts", acquisition);
         } catch (final TransferException e) {
             log.warn("Problem writing 'DestinationProductStatus' cache entry", e);
         }
         return contactsPerDestinations;
-    }
-
-    /**
-     * Creates the entry.
-     *
-     * @param lastErrors
-     *            the last errors
-     * @param contactsPerDestinations
-     *            the contacts per destinations
-     * @param host
-     *            the host
-     * @param destination
-     *            the destination
-     * @param ds
-     *            the ds
-     * @param list
-     *            the list
-     */
-    private static final void _createEntry(final HashMap<String, DataTransfer> lastErrors,
-            final HashMap<String, String> contactsPerDestinations, final Host host, final Destination destination,
-            final DestinationStatus ds, final List<GeoLocation.GeoEntry> list) {
-        try {
-            if (host != null && host.getActive() && "I".equals(host.getNetworkCode())) {
-                final var location = new GeoLocation.GeoEntry();
-                location.latitude = host.getLatitude();
-                location.longitude = host.getLongitude();
-                if (location.latitude == null || location.latitude == 0 || location.longitude == null
-                        || location.longitude == 0) {
-                    log.debug("Skiping kml processing for Host-{}: {} -> latitude={}, longitude={}", host.getName(),
-                            host.getHost(), location.latitude, location.longitude);
-                    return;
-                }
-                final var s = ds.getBigSisterStatus();
-                final var desName = destination.getName();
-                final var lastSuccess = ds.getLastTransfer();
-                final var lastError = lastErrors.get(desName);
-                final var comment = destination.getComment();
-                var statusComment = ds.getBigSisterStatusComment();
-                final var statusString = ds.getStatus();
-                if (statusString != null) {
-                    if (statusString.startsWith(statusComment)) {
-                        statusComment = statusString;
-                    } else {
-                        statusComment = statusString + " (" + statusComment + ")";
-                    }
-                }
-                final var login = host.getLogin();
-                final var hostname = host.getHost();
-                final var contacts = contactsPerDestinations.get(desName);
-                location.name = desName + (isNotEmpty(comment) ? ": " + comment : "");
-                location.description = "<p>"
-                        + (isNotEmpty(hostname) ? host.getType() + " Host Informations: " + hostname
-                                + (isNotEmpty(login) ? " (user " + login + ")" : "") : "")
-                        + "<br>" + "Network Name: " + host.getNetworkName() + " (" + host.getNetworkCode() + ")"
-                        + "<br>" + "Destination Status: " + statusComment + "<br>" + "Number of Queued Files: "
-                        + ds.getQueueSize() + "<br>" + "Outstanding Transfers: " + ds.getBadDataTransfersSize() + "<br>"
-                        + "Last Transfer: " + _getTransferHTML(lastSuccess) + "<br>" + "Last Error: "
-                        + _getTransferHTML(lastError) + "<br>" + "Contact(s): " + _getContactsHTML(contacts) + "<br>"
-                        + "</p><br><i><font size=\"-1\">More informations on <a href=\"/do/transfer/destination/"
-                        + destination.getName() + "\">Destination " + destination.getName()
-                        + "</a> and <a href=\"/do/transfer/host/" + host.getName() + "\">Host " + host.getNickName()
-                        + "</a></font></i></p>";
-                location.iconScale = 1.0;
-                location.iconUrl = s == MonitorManager.BLUE ? GeoLocation.ICON_URL_BLUE_CIRCLE
-                        : s == MonitorManager.RED ? GeoLocation.ICON_URL_RED_CIRCLE
-                                : s == MonitorManager.GREEN ? GeoLocation.ICON_URL_GREEN_CIRCLE
-                                        : s == MonitorManager.YELLOW ? GeoLocation.ICON_URL_YELLOW_CIRCLE
-                                                : GeoLocation.ICON_URL_WHITE_CIRCLE;
-                list.add(location);
-            }
-        } catch (final Throwable t) {
-            log.warn("Problem creating klm entry for destination '" + destination.getName() + "'", t);
-        }
-    }
-
-    /**
-     * Gets the contacts HTML.
-     *
-     * @param contacts
-     *            the contacts
-     *
-     * @return the string
-     */
-    private static final String _getContactsHTML(final String contacts) {
-        final var result = new StringBuilder();
-        if (isNotEmpty(contacts)) {
-            for (String contact : contacts.trim().split(",")) {
-                contact = contact.trim();
-                result.append(result.length() > 0 ? ", " : "").append("<a href=\"mailto:").append(contact).append("\">")
-                        .append(contact).append("</a>");
-            }
-        }
-        return result.isEmpty() ? "none" : result.toString();
-    }
-
-    /**
-     * Gets the transfer HTML.
-     *
-     * @param transfer
-     *            the transfer
-     *
-     * @return the string
-     */
-    private static final String _getTransferHTML(final DataTransfer transfer) {
-        return transfer != null ? "<a href=\"/do/transfer/data/" + transfer.getId() + "\">" + transfer.getId() + "</a>"
-                : "none";
-    }
-
-    /**
-     * Creates the kml file.
-     *
-     * @param kmlFileName
-     *            the kml file name
-     * @param kmlName
-     *            the kml name
-     * @param locations
-     *            the locations
-     */
-    private static final void _createKmlFile(final String kmlFileName, final String kmlName,
-            final List<GeoLocation.GeoEntry> locations) {
-        try {
-            GeoLocation.createKML(kmlFileName, kmlName, locations.toArray(new GeoLocation.GeoEntry[locations.size()]));
-        } catch (final Throwable t) {
-            log.warn("Coudln't create kml file: " + kmlFileName, t);
-        }
     }
 
     /**

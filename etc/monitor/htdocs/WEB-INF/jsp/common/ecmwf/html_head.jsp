@@ -21,9 +21,18 @@ request.setAttribute("jsp_date_before", new java.util.Date());
 <!-- Bootstrap Icons -->
 <link rel="stylesheet" href="/bootstrap-icons/bootstrap-icons.min.css">
 <!-- Flag Icons (local SVG, best quality) -->
-<link rel="stylesheet" href="/flag-icons/css/flag-icons.min.css?v=20260413a">
+<link rel="stylesheet" href="/flag-icons/css/flag-icons.min.css?v=20260417b">
 <!-- DataTables with Bootstrap 5 styling -->
 <link rel="stylesheet" href="/datatables/css/dataTables.bootstrap5.min.css">
+<style>
+/* Subtle column separators for all DataTables */
+table.dataTable td + td, table.dataTable th + th { border-left: 1px solid rgba(0,0,0,0.08); }
+/* Hide pagination controls when all data fits on a single page.
+   DT2/BS5: li buttons are dt-paging-button page-item [active|disabled] — no previous/next class.
+   When ≤1 page every button is either active (current page) or disabled (prev/next arrows),
+   so there is no li that is neither active nor disabled → hide the whole dt-paging block. */
+.dt-paging:not(:has(li.dt-paging-button:not(.active):not(.disabled))) { display: none !important; }
+</style>
 <!-- jQuery UI (kept for sliders and date pickers) -->
 <link rel="stylesheet" href="/jquery/jquery-ui.min.css">
 <!-- Application styles (loaded last to override where needed) -->
