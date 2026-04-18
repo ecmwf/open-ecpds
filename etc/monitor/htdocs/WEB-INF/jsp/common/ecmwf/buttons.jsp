@@ -84,6 +84,6 @@ $(document).ready(function () {
 </c:if>
 
 <button type="submit" onclick="moveToWorkflowStage.value=''"><c:out value="${safeButtonLabel}" /></button>
-<button type="submit" name="org.apache.struts.taglib.html.CANCEL" formnovalidate>Cancel</button>
+<button type="button" onclick="history.back()">Cancel</button>
 
 <!-- buttons.jsp -->

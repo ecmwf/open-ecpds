@@ -1,6 +1,7 @@
 <%@ page session="true"%>
 
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content"%>
+<%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean"%>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 <%@ taglib uri="/WEB-INF/tld/fn.tld" prefix="fn"%>
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
@@ -318,11 +319,21 @@
 <%-- Results table --%>
 <div class="d-flex align-items-center mb-2 gap-2">
     <span class="text-muted small" id="destsFoundLabel"><i class="bi bi-list-ul"></i> Loading...</span>
-    <button id="btnDestLayout" type="button" class="btn btn-sm btn-outline-secondary ms-auto"
+    <div class="ms-auto d-flex gap-2 align-items-center">
+        <auth:if basePathKey="destination.basepath" paths="/edit/insert_form">
+        <auth:then>
+            <a href='<bean:message key="destination.basepath"/>/edit/insert_form'
+               class="btn btn-sm btn-outline-success" title="Create new destination">
+                <i class="bi bi-plus-circle"></i> Create
+            </a>
+        </auth:then>
+        </auth:if>
+        <button id="btnDestLayout" type="button" class="btn btn-sm btn-outline-secondary"
             onclick="toggleDestLayout()"
             title="Toggle between single-column and two-column split view">
         <i class="bi bi-layout-three-columns"></i> Split
     </button>
+    </div>
 </div>
 <table id="destinationsTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
     <thead class="table-light">

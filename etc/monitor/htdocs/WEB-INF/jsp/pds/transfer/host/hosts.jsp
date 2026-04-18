@@ -295,10 +295,19 @@
 </c:if>
 
 <%-- Results table --%>
-<div class="d-flex align-items-center mb-2">
+<div class="d-flex align-items-center mb-2 gap-2">
     <span class="text-muted small" id="hostsFoundLabel"><i class="bi bi-list-ul"></i> Loading...</span>
-    <div class="ms-auto btn-group btn-group-sm" role="group">
-        <button type="button" class="btn btn-outline-secondary active" id="btnViewList"
+    <div class="ms-auto d-flex gap-2 align-items-center">
+        <auth:if basePathKey="host.basepath" paths="/edit/insert_form">
+        <auth:then>
+            <a href='<bean:message key="host.basepath"/>/edit/insert_form'
+               class="btn btn-sm btn-outline-success" title="Create new host">
+                <i class="bi bi-plus-circle"></i> Create
+            </a>
+        </auth:then>
+        </auth:if>
+        <div class="btn-group btn-group-sm" role="group">
+            <button type="button" class="btn btn-outline-secondary active" id="btnViewList"
                 onclick="switchHostView('list')" title="List view">
             <i class="bi bi-list-ul"></i> List
         </button>
@@ -306,6 +315,7 @@
                 onclick="switchHostView('map')" title="Map view">
             <i class="bi bi-geo-alt"></i> Map
         </button>
+        </div>
     </div>
 </div>
 <div id="hostListView">
@@ -446,8 +456,9 @@
 
         olMap = new ol.Map({
             target: 'hostMap',
+            controls: ol.control.defaults.defaults({ rotate: false, attribution: false }),
             layers: [
-                new ol.layer.Tile({ source: new ol.source.OSM() }),
+                new ol.layer.Tile({ source: new ol.source.OSM({ attributions: [] }) }),
                 layer
             ],
             view: new ol.View({ center: ol.proj.fromLonLat([10, 48]), zoom: 3 })

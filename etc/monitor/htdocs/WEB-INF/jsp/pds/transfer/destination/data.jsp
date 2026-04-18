@@ -59,6 +59,20 @@
 					<c:if test="${not empty destination.filterName and destination.filterName ne 'none'}">
 						<jsp:include page="/WEB-INF/jsp/pds/transfer/compression_icon.jsp"><jsp:param name="name" value="${destination.filterName}"/></jsp:include>
 					</c:if>
+					<auth:if basePathKey="destination.basepath" paths="/edit/insert_form">
+					<auth:then>
+					<div class="btn-group btn-group-sm ms-auto" role="group">
+						<a href='<bean:message key="destination.basepath"/>/edit/insert_form'
+						   class="btn btn-outline-success" title="Create new destination"><i class="bi bi-plus-circle"></i></a>
+						<c:if test="${not empty destination.id}">
+						<a href='<bean:message key="destination.basepath"/>/edit/update_form/${destination.id}'
+						   class="btn btn-outline-primary" title="Edit this destination"><i class="bi bi-pencil"></i></a>
+						<a href='<bean:message key="destination.basepath"/>/edit/delete_form/${destination.id}'
+						   class="btn btn-outline-danger" title="Delete this destination"><i class="bi bi-trash"></i></a>
+						</c:if>
+					</div>
+					</auth:then>
+					</auth:if>
 				</div>
 				<c:if test="${not empty destination.comment}">
 					<p class="dest-page-comment">${destination.comment}</p>

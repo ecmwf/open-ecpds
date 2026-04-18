@@ -6,7 +6,7 @@
    request.setAttribute("_globalNavRendered", "true"); %>
 <table class="spareBox2">
 	      <tr>
-		<th><a href="/"><%=System.getProperty("monitor.nickName")%> Home</a></th>
+		<th><a href="/"><%=System.getProperty("monitor.nickName")%></a></th>
 	      </tr>
 	      <tr>
 		<td></td>

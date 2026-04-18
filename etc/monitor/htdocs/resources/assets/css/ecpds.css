@@ -1206,6 +1206,7 @@ table.spareBox2 td, table.spareBox td {
 #sidebarMenu table.editSpareBox,
 #sidebarMenu table.spareBox {
     width: 100%;
+    table-layout: fixed;
     border-collapse: collapse;
     border: none;
     box-shadow: none;
@@ -1225,6 +1226,7 @@ table.spareBox2 td, table.spareBox td {
     letter-spacing: 0;
     border: none;
     text-align: left;
+    overflow: hidden;
 }
 
 /* Section header links (e.g. destination name, "Transmission") */

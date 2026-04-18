@@ -128,14 +128,6 @@
     </table>
 </c:if>
 
-<auth:if basePathKey="transferhistory.basepath" paths="/">
-    <auth:then>
-        <table class="spareBox2">
-            <tr><td><a title="Go to the Monitoring Display" href='<bean:message key="monitoring.basepath"/>'><i class="bi bi-eye sidebar-icon"></i> Monitoring</a></td></tr>
-        </table>
-    </auth:then>
-</auth:if>
-
 </auth:then>
 </auth:if>
 </c:if>

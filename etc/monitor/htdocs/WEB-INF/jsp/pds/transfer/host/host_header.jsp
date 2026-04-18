@@ -1,5 +1,7 @@
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
+<%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
+<%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean"%>
 <c:if test="${not empty host.geoIpLocation}">
     <c:set var="_hGeoParts" value="${fn:split(host.geoIpLocation, '/')}"/>
     <c:set var="_hGeoPart0" value="${fn:trim(_hGeoParts[0])}"/>
@@ -33,6 +35,20 @@
         <c:if test="${not empty host.filterName and host.filterName ne 'none'}">
             <jsp:include page="/WEB-INF/jsp/pds/transfer/compression_icon.jsp"><jsp:param name="name" value="${host.filterName}"/></jsp:include>
         </c:if>
+        <auth:if basePathKey="host.basepath" paths="/edit/insert_form">
+        <auth:then>
+        <div class="btn-group btn-group-sm ms-auto" role="group">
+            <a href='<bean:message key="host.basepath"/>/edit/insert_form'
+               class="btn btn-outline-success" title="Create new host"><i class="bi bi-plus-circle"></i></a>
+            <c:if test="${not empty host.id}">
+            <a href='<bean:message key="host.basepath"/>/edit/update_form/${host.id}'
+               class="btn btn-outline-primary" title="Edit this host"><i class="bi bi-pencil"></i></a>
+            <a href='<bean:message key="host.basepath"/>/edit/delete_form/${host.id}'
+               class="btn btn-outline-danger" title="Delete this host"><i class="bi bi-trash"></i></a>
+            </c:if>
+        </div>
+        </auth:then>
+        </auth:if>
     </div>
     <c:if test="${not empty host.comment}">
         <p class="dest-page-comment">${host.comment}</p>
