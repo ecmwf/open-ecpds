@@ -78,7 +78,7 @@
 
                     <%-- Query Builder panel --%>
                     <div id="hostQueryBuilder" class="border rounded p-2"
-                         style="display:none; position:absolute; z-index:9999; background:var(--bs-body-bg); box-shadow:0 4px 16px rgba(0,0,0,0.15); font-size:0.85rem">
+                         style="display:none; position:absolute; z-index:9999; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd) !important; box-shadow:0 8px 28px rgba(0,0,0,0.18),0 2px 6px rgba(0,0,0,0.10); font-size:0.85rem">
                         <div class="row g-1 mb-1">
                                 <div class="col-4">
                                     <label class="form-label mb-0 fw-semibold"><code>nickname=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
@@ -502,7 +502,7 @@
 
     var _loadTimer = null;
     function loadMapFeatures() {
-        document.getElementById('mapFoundLabel').textContent = 'Loading…';
+        document.getElementById('mapFoundLabel').textContent = 'Loading...';
         fetch(buildMapUrl())
             .then(function(r) { return r.json(); })
             .then(function(geojson) {

@@ -27,10 +27,11 @@
   position: fixed;
   z-index: 1050;
   min-width: 500px;
-  background: #fff;
-  border: 1px solid #dee2e6;
-  border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  background: var(--bs-tertiary-bg,#e9ecef);
+  border: 1px solid var(--bs-border-color);
+  border-top: 3px solid var(--bs-primary,#0d6efd) !important;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.18), 0 2px 6px rgba(0,0,0,0.10);
   padding: 12px 14px 10px;
   display: none;
 }
