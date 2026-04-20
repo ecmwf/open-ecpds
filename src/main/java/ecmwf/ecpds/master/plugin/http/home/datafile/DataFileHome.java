@@ -90,8 +90,8 @@ public class DataFileHome extends ModelHomeBase {
      *             the data file exception
      */
     public static final Collection<DataFile> findByMetaDataAndDate(final String name, final String value,
-            final Date date, final DataBaseCursor cursor) throws DataFileException {
-        return find(new DataFilesByMetaDataAndDate(name, value, date, cursor));
+            final String search, final Date date, final DataBaseCursor cursor) throws DataFileException {
+        return find(new DataFilesByMetaDataAndDate(name, value, search, date, cursor));
     }
 
     /**

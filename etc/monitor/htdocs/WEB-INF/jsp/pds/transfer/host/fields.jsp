@@ -1036,4 +1036,5 @@ table.fields > tbody > tr > th {
     	var nickInput = document.getElementById('nickName');
     	if (nickInput) validatePatternInput(nickInput, 'nickNameFeedback');
 	};
+
 </script>

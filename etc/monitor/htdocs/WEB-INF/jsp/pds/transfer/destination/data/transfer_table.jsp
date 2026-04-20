@@ -1,272 +1,209 @@
-<%@ taglib uri="/WEB-INF/tld/displaytag.tld" prefix="display"%>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 <%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean"%>
-<%@ taglib uri="/WEB-INF/tld/struts-html.tld" prefix="html"%>
-<%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content"%>
-<%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
 
-<c:if test="${empty filteredTransfers}">
-				<div class="alert mt-3">
-					<c:if test="${!hasFileNameSearch}">
-						No Data Transfers found based on these criteria!
-					</c:if>
-					<c:if test="${hasFileNameSearch}">
-						<c:if test="${!empty getTransfersError}">
-						  Error in your query: ${getTransfersError}<br><br>
-					    </c:if>
-						<c:if test="${empty getTransfersError}">
-						  No Data Transfers found based on these criteria! Default search is by target.<br><br>
-					    </c:if>
-						You can conduct an extensive search using the target, source, ts, priority, groupby, identity, checksum, size, replicated, asap, deleted, expired, proxy, mover and event rules.<p>
-						For instance: asap=yes target=*.dat source=/tmp/* ts&gt;10 ts&lt;=99 size&gt;=700kb case=i<p>
-						<li>The 'case' option allows 's' for case-sensitive (default) or 'i' for case-insensitive search.
-						<li>Ensure all spaces and equal signs in values are enclosed within double quotes (e.g. "a=b" or "United States").
-						<li>The double quotes symbol (") can be escaped (e.g. "*.file:&#92;"*&#92;"").
-						<li>The wildcard symbol asterisk (*) matches zero or more characters.
-						<li>The wildcard symbol question mark (?) matches exactly one character.
-					</c:if>
-				</div>
-</c:if>
+<%-- Hidden inputs carrying current filter state for DataTables AJAX requests --%>
+<input type="hidden" id="dt-dest-name"   value="${destinationDetailActionForm.id}">
+<input type="hidden" id="dt-dissStream"  value="${destinationDetailActionForm.disseminationStream}">
+<input type="hidden" id="dt-dataStream"  value="${destinationDetailActionForm.dataStream}">
+<input type="hidden" id="dt-dataTime"    value="${destinationDetailActionForm.dataTime}">
+<input type="hidden" id="dt-status"      value="${destinationDetailActionForm.status}">
+<input type="hidden" id="dt-date"        value="${destinationDetailActionForm.date}">
+<input type="hidden" id="dt-search"      value="${destinationDetailActionForm.fileNameSearch}">
+<input type="hidden" id="dt-can-queue"   value="${not empty ecpdsCanHandleQueue ? 'true' : 'false'}">
 
-<c:if test="${!empty filteredTransfers}">
-	<p class="fw-bold mb-1 mt-2">Current selection: ${destinationDetailActionForm.dataTransferCaption}&nbsp;&nbsp;<i>Current
-			date <content:content name="currentDate"
-				dateFormatKey="date.format.long.iso" ignoreNull="true" />
-		</i></p>
-	<display:table id="transfer" name="${filteredTransfers}" requestURI=""
-		sort="external" defaultsort="3" partialList="true"
-		size="${dataTransfersSize}" pagesize="${recordsPerPage}"
-		class="listing">
-		<display:column sortable="true" title="Err" style="padding-right:30px;">
-			<c:if test="${not empty transfer.failedTime}">
-				<content:icon title="Help" key="icon.micro.cancel"
-					writeFullTag="true" />
-			</c:if>
-			<c:if test="${empty transfer.failedTime}">
-				<content:icon title="Help" key="icon.micro.submit"
-					writeFullTag="true" />
-			</c:if>
-		</display:column>
-		<display:column title="Host" sortable="true">
-			<c:set var="nickName" value="${transfer.hostNickName}" />
-			<jsp:useBean id="nickName" type="java.lang.String" />
-			<c:if test='<%="".equals(nickName)%>'>
-				<font color="grey"><span
-					title="Data not transferred to remote host"><i class="bi bi-x-circle text-warning" title="Not transferred to remote host"></i></span></font>
-			</c:if>
-			<c:if test="<%=nickName.length() > 0%>">
-				<c:if test="${transfer.transferServerName == null}">
-					<a href="/do/transfer/host/${transfer.hostName}">${transfer.hostNickName}</a>
-				</c:if>
-				<c:if test="${transfer.transferServerName != null}">
-					<a title="Transmitted through ${transfer.transferServerName}"
-						href="/do/transfer/host/${transfer.hostName}">${transfer.hostNickName}</a>
-				</c:if>
-			</c:if>
-		</display:column>
-		<display:column title="Sched. Time" sortable="true"
-			sortProperty="scheduledTime">
-			<content:content name="transfer.scheduledTime"
-				dateFormatKey="date.format.transfer" ignoreNull="true" />
-		</display:column>
-		<display:column title="Start Time" sortable="true"
-			sortProperty="startTime">
-			<c:if test="${transfer.startTime != null}">
-				<content:content name="transfer.startTime"
-					dateFormatKey="date.format.transfer" ignoreNull="true" />
-			</c:if>
-			<c:if test="${transfer.startTime == null}">
-				<font color="grey"><span
-					title="Data not transferred to remote host"><i class="bi bi-dash text-muted" title="Not applicable"></i></span></font>
-			</c:if>
-		</display:column>
-		<display:column title="Finish Time" sortable="true"
-			sortProperty="realFinishTime">
-			<c:if test="${transfer.realFinishTime != null}">
-				<content:content name="transfer.realFinishTime"
-					dateFormatKey="date.format.transfer" ignoreNull="true" />
-			</c:if>
-			<c:if test="${transfer.realFinishTime == null}">
-				<font color="grey"><span
-					title="Data not transferred to remote host"><i class="bi bi-dash text-muted" title="Not applicable"></i></span></font>
-			</c:if>
-		</display:column>
-		<display:column title="Target" sortable="true">
-			<a title="Size: ${transfer.formattedSize}"
-				href="/do/transfer/data/${transfer.id}"><c:if
-					test="${transfer.expired == true || transfer.deleted == true}">
-					<font color="red">
-				</c:if>${transfer.target}<c:if test="${transfer.expired == true || transfer.deleted == true}">
-					</font>
-				</c:if></a>
-		</display:column>
-		<display:column property="dataFile.timeStep" title="TS"
-			sortable="true" />
-		<display:column title="%" property="progress" sortable="true" />
-		<display:column title="Mbits/s" sortable="true"
-			sortProperty="formattedTransferRateInMBitsPerSeconds">
-			<c:if test="${transfer.transferRate != '0'}">
-				<a STYLE="TEXT-DECORATION: NONE"
-					title="Rate: ${transfer.formattedTransferRate}">${transfer.formattedTransferRateInMBitsPerSeconds}</a>
-			</c:if>
-			<c:if test="${transfer.transferRate == 0}">
-				<font color="grey"><span
-					title="Data not transferred to remote host"><i class="bi bi-dash text-muted" title="Not applicable"></i></span></font>
-			</c:if>
-		</display:column>
-		<display:column title="Status" sortable="true">
-			<c:set var="expiredDate" scope="page">
-				<content:content name="transfer.expiryDate"
-					dateFormatKey="date.format.long.iso" ignoreNull="true" />
-			</c:set>
-			<c:if test="${transfer.expired == true && transfer.deleted == true}">
-				<font color="red"><span
-					title="Data Transfer expired on ${expiredDate}"> <c:if
-							test="${destinationDetailActionForm.memberState}">${transfer.memberStateDetailedStatus}</c:if>
-						<c:if test="${not destinationDetailActionForm.memberState}">${transfer.detailedStatus}</c:if>
-				</span></font>
-			</c:if>
-			<c:if test="${transfer.expired == false && transfer.deleted == true}">
-				<font color="red"><span
-					title="Data Transfer deleted"> <c:if
-							test="${destinationDetailActionForm.memberState}">${transfer.memberStateDetailedStatus}</c:if>
-						<c:if test="${not destinationDetailActionForm.memberState}">${transfer.detailedStatus}</c:if>
-				</span></font>
-			</c:if>
-			<c:if test="${transfer.expired == false && transfer.deleted == false}">
-				<c:if test="${destinationDetailActionForm.memberState}">${transfer.memberStateDetailedStatus}</c:if>
-				<c:if test="${not destinationDetailActionForm.memberState}">${transfer.detailedStatus}</c:if>
-			</c:if>
-		</display:column>
-		<display:column property="priority" title="Prior" sortable="true" />
-		<c:if test="${not empty ecpdsCanHandleQueue}">
-			<display:column class="buttons" title="Actions" sortable="false">
-				<c:if
-					test="${transfer.expired == false && transfer.deleted == false}">
-					<table>
-						<tr>
-							<td><c:if test="${transfer.canBeDownloaded}">
-									<a
-										href="javascript:transferChange('download','${transfer.id}')"><img
-										src="/assets/icons/ecpds/ktorrent.png" border="0"
-										alt="Download"
-										title="Download ${transfer.target} (${transfer.dataFile.formattedSize})" /></a>
-								</c:if></td>
-							<td><c:if test="${transfer.canBeRequeued}">
-									<a href="javascript:transferChange('requeue','${transfer.id}')"><content:icon
-											key="icon.small.requeue" titleKey="ecpds.destination.requeue"
-											altKey="ecpds.destination.requeue" writeFullTag="true"
-											height="12" width="12" /></a>
-								</c:if></td>
-							<td><c:if test="${transfer.canBeStopped}">
-									<a href="javascript:transferChange('stop','${transfer.id}')"><content:icon
-											key="icon.small.stop" titleKey="ecpds.destination.stop"
-											altKey="ecpds.destination.stop" writeFullTag="true"
-											height="9" width="9" /></a>
-								</c:if></td>
-							<td>
-								<c:choose>
-									<c:when test="${transfer.priority == 0}">
-										<span class="priority-disabled" title="Already at highest priority (0)"><content:icon
-											key="icon.small.increase"
-											titleKey="ecpds.destination.increasePriority"
-											altKey="ecpds.destination.increasePriority"
-											writeFullTag="true" height="9" width="7" /></span>
-									</c:when>
-									<c:otherwise>
-										<a href="javascript:transferChange('increaseTransferPriority','${transfer.id}')"><content:icon
-											key="icon.small.increase"
-											titleKey="ecpds.destination.increasePriority"
-											altKey="ecpds.destination.increasePriority"
-											writeFullTag="true" height="9" width="7" /></a>
-									</c:otherwise>
-								</c:choose>
-							</td>
-							<td>
-								<c:choose>
-									<c:when test="${transfer.priority >= 99}">
-										<span class="priority-disabled" title="Already at lowest priority (99)"><content:icon
-											key="icon.small.decrease"
-											titleKey="ecpds.destination.decreasePriority"
-											altKey="ecpds.destination.decreasePriority"
-											writeFullTag="true" height="9" width="7" /></span>
-									</c:when>
-									<c:otherwise>
-										<a href="javascript:transferChange('decreaseTransferPriority','${transfer.id}')"><content:icon
-											key="icon.small.decrease"
-											titleKey="ecpds.destination.decreasePriority"
-											altKey="ecpds.destination.decreasePriority"
-											writeFullTag="true" height="9" width="7" /></a>
-									</c:otherwise>
-								</c:choose>
-							</td>
-						</tr>
-					</table>
-				</c:if>
-				<c:if
-					test="${transfer.expired == true && transfer.deleted == false}">
-					<c:set var="expiredDate" scope="page">
-						<content:content name="transfer.expiryDate"
-							dateFormatKey="date.format.long.iso" ignoreNull="true" />
-					</c:set>
-					<font color="grey"><span
-						title="Data Transfer expired on ${expiredDate}">[expired]</span></font>
-				</c:if>
-				<c:if test="${transfer.deleted == true}">
-					<font color="grey"><span title="Data Transfer deleted">[deleted]</span></font>
-				</c:if>
-			</display:column>
-		</c:if>
+<%-- Inline error message shown by drawCallback --%>
+<div id="destTableError" class="alert alert-warning mt-2 mb-0" style="display:none"></div>
 
-		<display:column class="buttons" title="Select">
-			<c:if test="${transfer.expired == false}">
-				<html:hidden property="selectedTransfer(${transfer.id})" />
-				<table>
-					<tr>
-						<td><img onClick="select(this,'${transfer.id}')"
-							src="/assets/icons/ecpds/favorites.png"
-							title="<bean:message key="ecpds.destination.select"/>"
-							alt="<bean:message key="ecpds.destination.select" />" /></td>
-						<td><a href="javascript:transferChange('validate','select')"><img
-								border="0"
-								src="<content:icon key="icon.small.arrow.right" writeFullTag="false"/>"
-								title="<bean:message key="ecpds.destination.goSelected"/>"
-								alt="<bean:message key="ecpds.destination.goSelected" />" /></a></td>
-					</tr>
-				</table>
-			</c:if>
-			<c:if test="${transfer.expired == true}">
-	&nbsp;
-	</c:if>
-		</display:column>
+<%-- Entries-per-page row — also shows current filter selection and last-refresh time --%>
+<div class="d-flex align-items-center gap-2 my-2 flex-wrap">
+  <span class="d-flex align-items-center gap-2 small bg-body-tertiary border rounded px-2 py-1" id="destSelectionInfo"></span>
+  <span class="ms-auto text-muted small">Show</span>
+  <select id="destPageLen" class="form-select form-select-sm" style="width:auto">
+    <option value="10">10</option>
+    <option value="25">25</option>
+    <option value="50">50</option>
+    <option value="100">100</option>
+    <option value="250">250</option>
+  </select>
+  <span class="text-muted small">entries per page</span>
+</div>
 
-		<display:footer>
-			<tr>
-				<td colspan="${numberOfColumns}" class="buttons"></td>
-				<td class="buttons">
-					<table>
-						<tr>
-							<td><a title="Select All"
-								href="javascript:checkAll(true,false)">A/</a></td>
-							<td><a title="Unselect All"
-								href="javascript:checkAll(false,false)">N/</a></td>
-							<td><a title="Reverse Selection"
-								href="javascript:checkAll(false,true)">R</a></td>
-						</tr>
-					</table>
-				</td>
-				<td class="buttons">
-					<table>
-						<tr>
-							<td><img onClick="transferChange('selectFiltered')"
-								src="<content:icon key="icon.text.arrow" writeFullTag="false"/>"
-								title="<bean:message key="ecpds.destination.selectAllPages"/>"
-								alt="<bean:message key="ecpds.destination.selectAllPages" />" /></td>
-							<td>${dataTransfersSize}</td>
-						</tr>
-					</table>
-				</td>
-			</tr>
-		</display:footer>
-	</display:table>
-</c:if>
+<%-- DataTable: 13 columns (Actions hidden when user lacks queue access) --%>
+<table id="destTransferTable" class="table table-striped table-sm table-hover w-100">
+  <thead>
+    <tr>
+      <th>Err</th>
+      <th>Host</th>
+      <th>Sched. Time</th>
+      <th>Start Time</th>
+      <th>Finish Time</th>
+      <th>Target</th>
+      <th>TS</th>
+      <th>%</th>
+      <th>Mbits/s</th>
+      <th>Status</th>
+      <th>Prior</th>
+      <th>Actions</th>
+      <th>Select</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<%-- Selection controls (A/N/R) and select-filtered button, below the table --%>
+<div class="d-flex align-items-center justify-content-end gap-3 mt-1">
+  <span class="d-flex gap-1 align-items-center">
+    <a href="javascript:checkAll(true,false)"  title="Select All"        class="text-decoration-none text-body">A</a>
+    <span class="text-muted">/</span>
+    <a href="javascript:checkAll(false,false)" title="Unselect All"      class="text-decoration-none text-body">N</a>
+    <span class="text-muted">/</span>
+    <a href="javascript:checkAll(false,true)"  title="Reverse Selection" class="text-decoration-none text-body">R</a>
+  </span>
+  <span class="d-flex gap-1 align-items-center">
+    <a href="javascript:transferChange('selectFiltered')" title="Select all filtered transfers">
+      <i class="bi bi-arrow-right-circle"></i>
+    </a>
+    <span id="destTransferTotal" class="text-muted small"></span>
+  </span>
+</div>
+
+<script>
+(function () {
+    var STORAGE_KEY = 'destTransferPageLen';
+    var savedLen = parseInt(localStorage.getItem(STORAGE_KEY), 10) || 25;
+
+    // Reflect stored value in the selector
+    var sel = document.getElementById('destPageLen');
+    sel.value = String(savedLen);
+    if (!sel.value) { sel.value = '25'; savedLen = 25; } // fallback if stored value not in list
+
+    var canQueue = document.getElementById('dt-can-queue').value === 'true';
+
+    var table = $('#destTransferTable').DataTable({
+        serverSide: true,
+        processing: true,
+        pageLength: savedLen,
+        ajax: {
+            url: '/do/transfer/destination/data/list',
+            type: 'GET',
+            data: function (d) {
+                d.destinationName      = document.getElementById('dt-dest-name').value;
+                d.disseminationStream  = document.getElementById('dt-dissStream').value;
+                d.dataStream           = document.getElementById('dt-dataStream').value;
+                d.dataTime             = document.getElementById('dt-dataTime').value;
+                d.status               = document.getElementById('dt-status').value;
+                d.date                 = document.getElementById('dt-date').value;
+                d.fileNameSearch       = document.getElementById('dt-search').value;
+            }
+        },
+        columns: [
+            { data: 0 },
+            { data: 1 },
+            { data: 2 },
+            { data: 3 },
+            { data: 4 },
+            { data: 5 },
+            { data: 6 },
+            { data: 7 },
+            { data: 8 },
+            { data: 9 },
+            { data: 10 },
+            { data: 11 },
+            { data: 12 }
+        ],
+        columnDefs: [
+            { targets: 0,  orderable: false },
+            { targets: 11, orderable: false, visible: canQueue },
+            { targets: 12, orderable: false }
+        ],
+        order: [[2, 'desc']],
+        dom: "t<'d-flex align-items-center mt-2'i<'ms-auto'p>>",
+        language: {
+            processing: '<span class="spinner-border spinner-border-sm me-1"></span> Loading&hellip;',
+            emptyTable: 'No Data Transfers found based on these criteria.'
+        },
+        drawCallback: function (settings) {
+            // Restore session-selected transfers from JSON into the JS selectedTransfers map
+            var json = settings.json;
+            if (json && json.selectedIds && json.selectedIds.length) {
+                json.selectedIds.forEach(function (id) {
+                    // Only restore if the user hasn't explicitly deselected it this session
+                    if (selectedTransfers[String(id)] !== false) {
+                        selectedTransfers[String(id)] = true;
+                    }
+                });
+            }
+            // Show/hide query errors
+            var err = document.getElementById('destTableError');
+            if (json && json.error) {
+                err.style.display = '';
+                var hint = 'You can conduct an extensive search using the target, source, ts, priority, '
+                    + 'groupby, identity, checksum, size, replicated, asap, deleted, expired, proxy, mover and event rules.<br>'
+                    + 'For instance: <code>asap=yes target=*.dat source=/tmp/* ts&gt;10 ts&lt;=99 size&gt;=700kb case=i</code>';
+                err.innerHTML = '<strong>Query error:</strong> ' + json.error + '<br><small class="text-muted">' + hint + '</small>';
+            } else {
+                err.style.display = 'none';
+                err.innerHTML = '';
+            }
+            // Update total counter in tfoot
+            var total = json && json.recordsTotal != null ? json.recordsTotal : '';
+            document.getElementById('destTransferTotal').textContent = total;
+            // Re-apply visual selection for rows loaded in this page
+            $('#destTransferTable tbody tr').each(function () {
+                var span = $(this).find('span.star-select');
+                if (span.length) {
+                    var id = String(span.data('transferId'));
+                    if (id && selectedTransfers[id]) {
+                        $(this).addClass('selected');
+                        span.find('i').removeClass('bi-star').addClass('bi-star-fill text-warning');
+                    }
+                }
+            });
+            // Update selection info + last-refresh timestamp
+            var STATUS_NAMES = {
+                'INIT':'Arriving','SCHE':'Preset','FETC':'Fetching','HOLD':'StandBy',
+                'WAIT':'Queued','EXEC':'Transferring','DONE':'Done','RETR':'ReQueued',
+                'STOP':'Stopped','FAIL':'Failed','INTR':'Interrupted'
+            };
+            var status = document.getElementById('dt-status').value || 'All';
+            var ds     = document.getElementById('dt-dataStream').value || 'All';
+            var dtime  = document.getElementById('dt-dataTime').value || 'All';
+            var diss   = document.getElementById('dt-dissStream').value || 'All';
+            var date   = document.getElementById('dt-date').value || '*';
+            var statusLabel = STATUS_NAMES[status] || status;
+            var now    = new Date();
+            var pad    = function(n) { return String(n).padStart(2, '0'); };
+            var ts     = now.getFullYear() + '-' + pad(now.getMonth()+1) + '-' + pad(now.getDate())
+                       + ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
+            // Only include filters which are visible on the page (some pages hide certain selectors)
+            var hasDiss   = $('th:contains("Dissem_Str")').length > 0;
+            var hasDS     = $('th:contains("Data_Str")').length > 0;
+            var hasDTime  = $('th:contains("Base_Time")').length > 0;
+            var hasStatus = $('th:contains("Status")').length > 0;
+            var hasDate   = $('th:contains("Prod_Date")').length > 0;
+            var parts = [];
+            if (hasDiss)  parts.push(document.getElementById('dt-dissStream').value || 'All');
+            if (hasDS)    parts.push(document.getElementById('dt-dataStream').value || 'All');
+            if (hasDTime) parts.push(document.getElementById('dt-dataTime').value || 'All');
+            if (hasStatus)parts.push(statusLabel);
+            if (hasDate)  parts.push(document.getElementById('dt-date').value || '*');
+            var selectionText = parts.join('/');
+            document.getElementById('destSelectionInfo').innerHTML =
+                '<span class="text-secondary">Selection:</span>'
+                + '&ensp;<strong>' + (selectionText || 'All') + '</strong>'
+                + '&ensp;<span class="vr"></span>&ensp;'
+                + '<i class="bi bi-arrow-clockwise text-secondary"></i>&thinsp;<strong>' + ts + '</strong>';
+        }
+    });
+
+    // Wire entries-per-page selector — persist choice in localStorage
+    document.getElementById('destPageLen').addEventListener('change', function () {
+        var len = parseInt(this.value, 10);
+        localStorage.setItem(STORAGE_KEY, len);
+        table.page.len(len).draw();
+    });
+
+    // Expose table globally so checkAll() in javascript.jsp can access it
+    window._destTransferTable = table;
+})();
+</script>

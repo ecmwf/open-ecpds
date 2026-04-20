@@ -60,7 +60,17 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-body py-2 px-3">
                     <div class="row g-2">
-                        <div class="col-7">
+                        <div class="col-auto d-flex align-items-center gap-1">
+                            <span class="text-nowrap text-muted small">Show</span>
+                            <select id="transferPageLen" class="form-select form-select-sm" style="width:auto" title="Entries per page">
+                                <option value="10">10</option>
+                                <option value="25" selected>25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                            <span class="text-nowrap text-muted small">entries</span>
+                        </div>
+                        <div class="col">
                             <div class="input-group">
                                 <span class="input-group-text text-muted"><i class="bi bi-search"></i></span>
                                 <input class="form-control" name="transferSearch" id="transferSearch" type="text"
@@ -337,90 +347,99 @@
     </auth:then>
 </auth:if>
 
-<%-- No results --%>
-<c:if test="${empty transferList}">
-    <div class="alert">
-        <c:if test="${!hasFileNameSearch}">
-            No Data Transfers found based on these criteria.
-        </c:if>
-        <c:if test="${hasFileNameSearch}">
-            <c:if test="${!empty getTransfersError}">
-                <strong>Error in your query:</strong> ${getTransfersError}
-            </c:if>
-            <c:if test="${empty getTransfersError}">
-                No Data Transfers found. Default search is by target.
-            </c:if>
-            <p class="mb-1 mt-2">You can conduct an extended search using the following rules:</p>
-            <ul class="mb-0">
-                <li><code>target=</code>, <code>source=</code>, <code>ts=</code>, <code>priority=</code>, <code>groupby=</code>, <code>identity=</code>, <code>checksum=</code>, <code>size=</code>, <code>replicated=</code>, <code>asap=</code>, <code>deleted=</code>, <code>expired=</code>, <code>proxy=</code>, <code>mover=</code>, <code>event=</code></li>
-                <li>Example: <code>asap=yes target=*.dat source=/tmp/* ts&gt;10 ts&lt;=99 size&gt;=700kb case=i</code></li>
-                <li><code>case=i</code> for case-insensitive, <code>case=s</code> for case-sensitive (default)</li>
-                <li>Enclose values with spaces or equals signs in double quotes, e.g. <code>"United States"</code></li>
-                <li>Wildcards: <code>*</code> (zero or more chars), <code>?</code> (exactly one char)</li>
-            </ul>
-        </c:if>
-    </div>
-</c:if>
+<%-- Error banner (populated by DataTables drawCallback on query errors) --%>
+<div id="transferQueryError" class="alert alert-danger d-none mb-2" role="alert"></div>
 
-<%-- Results table --%>
-<c:if test="${!empty transferList}">
-    <display:table id="transfer" name="${transferList}" requestURI=""
-        sort="external" defaultsort="3" partialList="true"
-        size="${transferListSize}" pagesize="${recordsPerPage}"
-        class="listing">
+<%-- Filter params for DataTables AJAX --%>
+<input type="hidden" id="dt-date"   value="<c:out value="${selectedDate}"/>">
+<input type="hidden" id="dt-status" value="<c:out value="${currentTransferStatus.id}"/>">
+<input type="hidden" id="dt-search" value="<c:out value="${transferSearch}"/>">
+<input type="hidden" id="dt-type"   value="<c:out value="${transferType}"/>">
 
-        <display:column title="Destination" sortable="true">
-            <a title="${transfer.destination.comment}"
-               href="<bean:message key="destination.basepath"/>/${transfer.destinationName}">${transfer.destinationName}</a>
-        </display:column>
+<table id="transferTable" class="table table-sm table-hover align-middle w-100">
+    <thead>
+        <tr>
+            <th>Destination</th>
+            <th>Transfer Host</th>
+            <th>Sched. Time</th>
+            <th>Target</th>
+            <th>%</th>
+            <th>Mbits/s</th>
+            <th>Prior</th>
+        </tr>
+    </thead>
+</table>
 
-        <display:column title="Transfer Host" sortable="true">
-            <c:set var="nickName" value="${transfer.hostNickName}" />
-            <jsp:useBean id="nickName" type="java.lang.String" />
-            <c:if test='<%="".equals(nickName)%>'>
-                <i class="bi bi-x-circle text-warning" title="Not transferred to remote host"></i>
-            </c:if>
-            <c:if test="<%=nickName.length() > 0%>">
-                <c:if test="${transfer.transferServerName == null}">
-                    <a href="/do/transfer/host/${transfer.hostName}">${transfer.hostNickName}</a>
-                </c:if>
-                <c:if test="${transfer.transferServerName != null}">
-                    <a title="Transmitted through ${transfer.transferServerName}"
-                       href="/do/transfer/host/${transfer.hostName}">${transfer.hostNickName}</a>
-                </c:if>
-            </c:if>
-        </display:column>
+<script>
+(function () {
+    var date   = document.getElementById('dt-date').value;
+    var status = document.getElementById('dt-status').value;
+    var search = document.getElementById('dt-search').value;
+    var type   = document.getElementById('dt-type').value;
+    var errorDiv = document.getElementById('transferQueryError');
 
-        <display:column title="Sched. Time" sortable="true">
-            <content:content name="transfer.scheduledTime"
-                dateFormatKey="date.format.transfer" ignoreNull="true" />
-        </display:column>
+    $.fn.dataTable.ext.errMode = 'none';
 
-        <display:column title="Target" sortable="true">
-            <c:if test="${!transfer.deleted}">
-                <a title="Size: ${transfer.formattedSize}"
-                   href="/do/transfer/data/${transfer.id}">${transfer.target}</a>
-            </c:if>
-            <c:if test="${transfer.deleted}">
-                <a title="Size: ${transfer.formattedSize}"
-                   href="/do/transfer/data/${transfer.id}" class="text-danger">${transfer.target}</a>
-            </c:if>
-        </display:column>
+    var table = $('#transferTable').DataTable({
+        serverSide: true,
+        processing: true,
+        ajax: {
+            url: '/do/transfer/data/list',
+            data: function (d) {
+                d.date           = date;
+                d.transferStatus = status;
+                d.transferSearch = search;
+                d.transferType   = type;
+            },
+            error: function () {
+                errorDiv.textContent = 'Error loading transfers. Please try again.';
+                errorDiv.classList.remove('d-none');
+            }
+        },
+        order: [[2, 'desc']],
+        columns: [
+            { title: 'Destination',   orderable: true,  render: function (d) { return d; } },
+            { title: 'Transfer Host', orderable: true,  render: function (d) { return d; } },
+            { title: 'Sched. Time',   orderable: true,  className: 'text-nowrap' },
+            { title: 'Target',        orderable: true,  render: function (d) { return d; } },
+            { title: '%',             orderable: true,  className: 'text-end' },
+            { title: 'Mbits/s',       orderable: true,  className: 'text-end', render: function (d) { return d; } },
+            { title: 'Prior',         orderable: true,  className: 'text-end' }
+        ],
+        pageLength: 25,
+        lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+        language: {
+            emptyTable:     'No Data Transfers found for the selected criteria.',
+            loadingRecords: 'Loading&hellip;',
+            processing:     '<i class="bi bi-hourglass-split"></i> Loading&hellip;'
+        },
+        dom: "t<'d-flex align-items-center mt-2'i<'ms-auto'p>>",
+        drawCallback: function (settings) {
+            var json = settings.json;
+            if (json && json.error) {
+                errorDiv.innerHTML =
+                    '<strong>Error in your query:</strong> ' + $('<span>').text(json.error).html() +
+                    '<p class="mb-1 mt-2">You can conduct an extended search using the following rules:</p>' +
+                    '<ul class="mb-0">' +
+                    '<li><code>target=</code>, <code>source=</code>, <code>ts=</code>, <code>priority=</code>, ' +
+                    '<code>groupby=</code>, <code>identity=</code>, <code>checksum=</code>, <code>size=</code>, ' +
+                    '<code>replicated=</code>, <code>asap=</code>, <code>deleted=</code>, <code>expired=</code>, ' +
+                    '<code>proxy=</code>, <code>mover=</code>, <code>event=</code></li>' +
+                    '<li>Example: <code>asap=yes target=*.dat source=/tmp/* ts&gt;10 ts&lt;=99 size&gt;=700kb case=i</code></li>' +
+                    '<li><code>case=i</code> for case-insensitive, <code>case=s</code> for case-sensitive (default)</li>' +
+                    '<li>Enclose values with spaces or equals signs in double quotes, e.g. <code>&quot;United States&quot;</code></li>' +
+                    '<li>Wildcards: <code>*</code> (zero or more chars), <code>?</code> (exactly one char)</li>' +
+                    '</ul>';
+                errorDiv.classList.remove('d-none');
+            } else {
+                errorDiv.classList.add('d-none');
+                errorDiv.innerHTML = '';
+            }
+        }
+    });
 
-        <display:column title="%" property="progress" sortable="true" />
-
-        <display:column title="Mbits/s" sortable="true"
-            sortProperty="formattedTransferRateInMBitsPerSeconds">
-            <c:if test="${transfer.transferRate != '0'}">
-                <a style="text-decoration:none;"
-                   title="Rate: ${transfer.formattedTransferRate}">${transfer.formattedTransferRateInMBitsPerSeconds}</a>
-            </c:if>
-            <c:if test="${transfer.transferRate == 0}">
-                <i class="bi bi-dash text-muted" title="Not applicable"></i>
-            </c:if>
-        </display:column>
-
-        <display:column title="Prior" property="priority" sortable="true" />
-
-    </display:table>
-</c:if>
+    $('#transferPageLen').on('change', function () {
+        table.page.len(parseInt(this.value, 10)).draw();
+    });
+})();
+</script>

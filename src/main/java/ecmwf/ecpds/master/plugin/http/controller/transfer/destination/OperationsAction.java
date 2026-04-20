@@ -144,6 +144,9 @@ public class OperationsAction extends PDSAction {
     /** The Constant CLEAN. */
     private static final String CLEAN = "clean";
 
+    /** The Constant UNSELECT_TRANSFER. */
+    private static final String UNSELECT_TRANSFER = "unselectTransfer";
+
     /** The Constant TRANSFER_PRIORITY_STEP. */
     private static final int TRANSFER_PRIORITY_STEP = 1;
 
@@ -289,6 +292,14 @@ public class OperationsAction extends PDSAction {
             h.decreasePriorityWithinDestination(d, HOST_PRIORITY_STEP);
             h.save(u);
             return mapping.findForward("detail");
+        } else if (UNSELECT_TRANSFER.equals(subAction)) {
+            final var daf = (DetailActionForm) request.getSession().getAttribute("destinationDetailActionForm");
+            if (daf != null) {
+                daf.setId(d.getName());
+                daf.setSelectedTransfer(subActionParameter, "off");
+                daf.setActionTransfer(subActionParameter, "off");
+            }
+            return mapping.findForward("validate.redir");
         } else {
             throw new ECMWFException(
                     "The subAction '" + subAction + "' is not defined for class " + this.getClass().getName());

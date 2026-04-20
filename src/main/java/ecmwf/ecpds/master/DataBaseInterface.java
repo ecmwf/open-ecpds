@@ -693,8 +693,8 @@ public interface DataBaseInterface extends Remote {
      * @throws java.rmi.RemoteException
      *             the remote exception
      */
-    Collection<DataFile> getDataFilesByMetaData(String name, String value, Date from, Date to, DataBaseCursor cursor)
-            throws DataBaseException, RemoteException;
+    Collection<DataFile> getDataFilesByMetaData(String name, String value, String search, Date from, Date to,
+            DataBaseCursor cursor) throws DataBaseException, RemoteException;
 
     /**
      * Gets the transfer count and meta data by filter.

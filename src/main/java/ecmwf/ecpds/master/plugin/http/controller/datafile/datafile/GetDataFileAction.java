@@ -97,8 +97,8 @@ public class GetDataFileAction extends PDSAction {
             final var cursor = Util.getDataBaseCursor("datafile", 25, 2, true, request);
             final Collection<DataFile> datafiles;
             try {
-                datafiles = DataFileHome.findByMetaDataAndDate(metaDataName, metaDataValue, getISOFormat().parse(date),
-                        cursor);
+                datafiles = DataFileHome.findByMetaDataAndDate(metaDataName, metaDataValue, "",
+                        getISOFormat().parse(date), cursor);
             } catch (final ParseException e) {
                 throw new ECMWFActionFormException("Error parsing date", e);
             }

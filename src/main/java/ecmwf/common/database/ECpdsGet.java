@@ -321,13 +321,13 @@ final class ECpdsGet {
      * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    DBResultSet getDataFilesByMetaData(final String paramName, final String paramValue,
+    DBResultSet getDataFilesByMetaData(final String paramName, final String paramValue, final String paramSearch,
             final java.sql.Timestamp paramFromDate, final java.sql.Timestamp paramToDate, final String paramSort,
             final String paramOrder, final int paramStart, final int paramLength) throws SQLException, IOException {
         return _database.executeSelect("ECpdsBase", "getDataFilesByMetaData",
-                new String[] { "name=" + paramName, "value=" + paramValue, "fromDate=" + paramFromDate.getTime(),
-                        "toDate=" + paramToDate.getTime(), "sort=" + paramSort, "order=" + paramOrder,
-                        "start=" + paramStart, "length=" + paramLength });
+                new String[] { "name=" + paramName, "value=" + paramValue, "search=" + paramSearch,
+                        "fromDate=" + paramFromDate.getTime(), "toDate=" + paramToDate.getTime(), "sort=" + paramSort,
+                        "order=" + paramOrder, "start=" + paramStart, "length=" + paramLength });
     }
 
     /**

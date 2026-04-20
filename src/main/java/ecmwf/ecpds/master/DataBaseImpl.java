@@ -1069,11 +1069,11 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
      *             the remote exception
      */
     @Override
-    public Collection<DataFile> getDataFilesByMetaData(final String name, final String value, final Date from,
-            final Date to, final DataBaseCursor cursor) throws DataBaseException, RemoteException {
+    public Collection<DataFile> getDataFilesByMetaData(final String name, final String value, final String search,
+            final Date from, final Date to, final DataBaseCursor cursor) throws DataBaseException, RemoteException {
         final var monitor = new MonitorCall(
                 "getDataFilesByMetaData(" + name + "," + value + "," + from + "," + to + ")");
-        return monitor.done(ecpds.getDataFilesByMetaData(name, value, from, to, cursor));
+        return monitor.done(ecpds.getDataFilesByMetaData(name, value, search, from, to, cursor));
     }
 
     /**

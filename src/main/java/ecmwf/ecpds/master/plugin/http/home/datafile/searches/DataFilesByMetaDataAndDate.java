@@ -42,6 +42,9 @@ public class DataFilesByMetaDataAndDate extends ModelSearchBase {
     /** The value. */
     private final String value;
 
+    /** The search. */
+    private final String search;
+
     /** The date. */
     private final Date date;
 
@@ -55,15 +58,18 @@ public class DataFilesByMetaDataAndDate extends ModelSearchBase {
      *            the name
      * @param value
      *            the value
+     * @param search
+     *            the original file name filter (LIKE pattern, empty = all)
      * @param date
      *            the date
      * @param cursor
      *            the cursor
      */
-    public DataFilesByMetaDataAndDate(final String name, final String value, final Date date,
+    public DataFilesByMetaDataAndDate(final String name, final String value, final String search, final Date date,
             final DataBaseCursor cursor) {
         this.name = name;
         this.value = value;
+        this.search = search != null ? search : "";
         this.date = date;
         this.cursor = cursor;
     }
@@ -84,6 +90,15 @@ public class DataFilesByMetaDataAndDate extends ModelSearchBase {
      */
     public String getValue() {
         return this.value;
+    }
+
+    /**
+     * Gets the search (LIKE pattern for DAF_ORIGINAL, empty = no filter).
+     *
+     * @return the search
+     */
+    public String getSearch() {
+        return this.search;
     }
 
     /**

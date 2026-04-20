@@ -2455,9 +2455,9 @@ public final class ECpdsBase extends DataBase {
      * @throws DataBaseException
      *             the data base exception
      */
-    public Collection<DataFile> getDataFilesByMetaData(final String name, final String value, final Date from,
-            final Date to, final DataBaseCursor cursor) throws DataBaseException {
-        try (var rs = ecpds.getDataFilesByMetaData(name, value, new Timestamp(from.getTime()),
+    public Collection<DataFile> getDataFilesByMetaData(final String name, final String value, final String search,
+            final Date from, final Date to, final DataBaseCursor cursor) throws DataBaseException {
+        try (var rs = ecpds.getDataFilesByMetaData(name, value, search, new Timestamp(from.getTime()),
                 new Timestamp(to.getTime()), cursor.getSort(), cursor.getOrder(), cursor.getStart(),
                 cursor.getLength())) {
             final List<DataFile> array = new ArrayList<>();
@@ -2611,15 +2611,16 @@ public final class ECpdsBase extends DataBase {
             final var options = new SQLParameterParser(fileName, "target", "source", "ts=d", "priority=d", "checksum",
                     "groupby", "identity", "size=b", "replicated=?", "asap=?", "event=?", "deleted=?", "expired=?",
                     "proxy=?", "mover");
-            try (var rs = ecpds.getDataTransfersByFilter(destination, target, stream, time, status, privilegedUser,
-                    new Timestamp(scheduledBefore.getTime()), options.get(0, "DAT_TARGET"),
+            try (var rs = ecpds.getSortedDataTransfersByFilter(destination, target, stream, time, status,
+                    privilegedUser, new Timestamp(scheduledBefore.getTime()), options.get(0, "DAT_TARGET"),
                     options.get(1, "DAF_ORIGINAL"), options.get(2, "DAT_TIME_STEP"), options.get(3, "DAT_PRIORITY"),
                     options.get(4, "DAF_CHECKSUM"), options.get(5, "DAF_GROUP_BY"), options.get(6, "DAT_IDENTITY"),
                     options.get(7, "DAT_SIZE"), options.get(8, "DAT_REPLICATED"), options.get(9, "DAT_ASAP"),
                     options.get(10, "DAT_EVENT"), options.get(11, "DAT_DELETED"),
                     options.get(12, "DAT_EXPIRY_TIME < UNIX_TIMESTAMP() * 1000"),
                     options.get(13, "HOS_NAME_PROXY is not null"), options.get(14, "TRS_NAME"),
-                    new Timestamp(from.getTime()), new Timestamp(to.getTime()))) {
+                    new Timestamp(from.getTime()), new Timestamp(to.getTime()), cursor.getSort(), cursor.getOrder(),
+                    cursor.getStart(), cursor.getLength())) {
                 final List<DataTransfer> array = new ArrayList<>();
                 DataTransfer initialTransfer = null; // The first DataTransfer we have the collection size (total)!
                 final var hosts = new HashMap<String, Host>();

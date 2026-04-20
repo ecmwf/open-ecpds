@@ -10,6 +10,7 @@
 ##
 #prompt "name;MetaData Name;%"
 #prompt "value;MetaData Value;%"
+#prompt "search;Original filter (LIKE pattern, empty=all);%"
 #prompt "fromDate;From date;%;java.sql.Timestamp"
 #prompt "toDate;To date;%;java.sql.Timestamp"
 #prompt "sort;Column;%"
@@ -29,6 +30,9 @@ WHERE
   AND MV.MEV_VALUE = '$value'
   AND DF.DAF_TIME_BASE >= '$fromDate'
   AND DF.DAF_TIME_BASE < '$toDate'
+#if ('$search' != '')
+  AND DAF_ORIGINAL LIKE '$search'
+#fi
 #if ('$sort' == '0')
 	ORDER BY DF.DAF_ID
 #fi

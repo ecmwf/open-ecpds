@@ -88,7 +88,7 @@ public class DataFileDAOHandler extends PDSDAOBase implements DAOHandler {
                 final var from = getBaseDate(s.getDate(), 0);
                 final var to = getBaseDate(s.getDate(), 1);
                 return convertToModelBeanCollection(MasterManager.getDB().getDataFilesByMetaData(s.getName(),
-                        s.getValue(), from, to, s.getDataBaseCursor()));
+                        s.getValue(), s.getSearch(), from, to, s.getDataBaseCursor()));
             }
             throw new DAOException("find method with query '" + search.getQuery() + "' not supported!");
         } catch (DataBaseException | RemoteException e) {

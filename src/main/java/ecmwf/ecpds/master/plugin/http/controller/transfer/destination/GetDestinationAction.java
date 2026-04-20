@@ -47,7 +47,6 @@ import ecmwf.common.technical.Cnf;
 import ecmwf.common.technical.StreamManager;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.ecpds.master.plugin.http.dao.Util;
-import ecmwf.ecpds.master.plugin.http.dao.transfer.DataTransferLightBean;
 import ecmwf.ecpds.master.plugin.http.home.monitoring.ProductStatusHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.CountryHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.DestinationHome;
@@ -201,33 +200,8 @@ public class GetDestinationAction extends PDSAction {
                 request.setAttribute("cellsAtTheRightForStatus", biggest - statusOptionsWithSizes.size() + 1);
                 request.setAttribute("cellsAtTheRightForDate", biggest - dateOptions.size() + 1);
                 request.setAttribute("fileNameSearchColspan", dateOptions.size() * 2 + 1);
-                // Check if the user has access to the full list of DataTransfers (if it doesn't
-                // have any privilege then it should not see the file which have not passed
-                // their schedule time.
-                var hasAccess = true;
-                try {
-                    hasAccess = user.hasAccess(getResource(request, "datatransfer.basepath"));
-                } catch (final Exception e) {
-                    log.error(
-                            "Problem checking access for user '{}' to this destination data transfers. Returning all without filtering.",
-                            user);
-                }
-                // Initialize the cursor for the database search
-                final var cursor = Util.getDataBaseCursor("transfer", 25, 2, true, request);
-                Collection<DataTransferLightBean> transfers;
-                try {
-                    transfers = daf.getDataTransfers(hasAccess, cursor);
-                    request.setAttribute("getTransfersError", "");
-                } catch (final TransferException e) {
-                    request.setAttribute("getTransfersError", e.getMessage());
-                    transfers = new ArrayList<>(0);
-                }
-                request.setAttribute("filteredTransfers", transfers);
-                request.setAttribute("dataTransfersSize", Util.getCollectionSizeFrom(transfers));
                 request.setAttribute("products", ProductStatusHome.findAllProductNameTimePairs());
                 request.setAttribute("currentDate", new Date());
-                final var fileNameSearch = daf.getFileNameSearch();
-                request.setAttribute("hasFileNameSearch", fileNameSearch != null && !fileNameSearch.isBlank());
                 try {
                     request.setAttribute("transferServerNames",
                             TransferServerHome.findAll().stream().map(ts -> ts.getName()).sorted().toList());

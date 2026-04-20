@@ -94,6 +94,9 @@
 			type="ecmwf.ecpds.master.plugin.http.controller.datafile.datafile.GetDataFileAction">
 			<forward name="success" path=".pds.datafile.datafile" />
 		</action>
+		<action path="/datafile/datafile/list"
+			type="ecmwf.ecpds.master.plugin.http.controller.datafile.datafile.GetDataFileListJsonAction">
+		</action>
 		<action path="/datafile/datafile/*" parameter="{1}"
 			type="ecmwf.ecpds.master.plugin.http.controller.datafile.datafile.GetDataFileAction">
 			<forward name="success" path=".pds.datafile.datafile.detail" />
@@ -497,6 +500,13 @@
 		<action path="/transfer/destination/list"
 			type="ecmwf.ecpds.master.plugin.http.controller.transfer.destination.GetDestinationListJsonAction">
 		</action>
+		<action path="/transfer/destination/data/list"
+			type="ecmwf.ecpds.master.plugin.http.controller.transfer.destination.GetDestinationTransferListJsonAction">
+		</action>
+		<action path="/transfer/destination/validate/list"
+			type="ecmwf.ecpds.master.plugin.http.controller.transfer.destination.GetValidateTransferListJsonAction"
+			name="destinationDetailActionForm" scope="session">
+		</action>
 		<action path="/transfer/destination/*" parameter="{1}"
 			type="ecmwf.ecpds.master.plugin.http.controller.transfer.destination.GetDestinationAction"
 			name="destinationDetailActionForm" scope="session" input="error">
@@ -665,6 +675,9 @@
 		<action path="/transfer/data"
 			type="ecmwf.ecpds.master.plugin.http.controller.transfer.data.GetDataTransferAction">
 			<forward name="success" path=".pds.transfer.data" />
+		</action>
+		<action path="/transfer/data/list"
+			type="ecmwf.ecpds.master.plugin.http.controller.transfer.data.GetDataTransferListJsonAction">
 		</action>
 		<action path="/transfer/data/*" parameter="{1}"
 			type="ecmwf.ecpds.master.plugin.http.controller.transfer.data.GetDataTransferAction">

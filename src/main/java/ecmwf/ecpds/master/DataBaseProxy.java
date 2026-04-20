@@ -678,14 +678,14 @@ final class DataBaseProxy implements DataBaseInterface {
      * Gets the data files by meta data.
      */
     @Override
-    public Collection<DataFile> getDataFilesByMetaData(final String name, final String value, final Date from,
-            final Date to, final DataBaseCursor cursor) throws DataBaseException, RemoteException {
+    public Collection<DataFile> getDataFilesByMetaData(final String name, final String value, final String search,
+            final Date from, final Date to, final DataBaseCursor cursor) throws DataBaseException, RemoteException {
         if (name == null || value == null || from == null || to == null) {
             throw new DataBaseException("Invalid parameter(s) for getDataFilesByMetaData");
         }
         final var monitor = new MonitorCall(
                 "getDataFilesByMetaData(" + name + "," + value + "," + from + "," + to + ")");
-        return monitor.done(dataBaseInterface.getDataFilesByMetaData(name, value, from, to, cursor));
+        return monitor.done(dataBaseInterface.getDataFilesByMetaData(name, value, search, from, to, cursor));
     }
 
     /**

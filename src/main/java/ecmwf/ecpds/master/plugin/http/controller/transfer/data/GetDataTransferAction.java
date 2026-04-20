@@ -48,9 +48,7 @@ import ecmwf.ecpds.master.plugin.http.dao.transfer.StatusBean;
 import ecmwf.ecpds.master.plugin.http.home.datafile.TransferServerHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.DataTransferHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.TransferHistoryHome;
-import ecmwf.ecpds.master.plugin.http.model.transfer.DataTransfer;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Status;
-import ecmwf.ecpds.master.plugin.http.model.transfer.TransferException;
 import ecmwf.ecpds.master.transfer.DestinationOption;
 import ecmwf.ecpds.master.transfer.StatusFactory;
 import ecmwf.web.ECMWFException;
@@ -80,97 +78,68 @@ public class GetDataTransferAction extends PDSAction {
             final HttpServletRequest request, final HttpServletResponse response, final User user)
             throws ECMWFException, ClassCastException {
         final ArrayList<?> parameters = ECMWFActionForm.getPathParameters(mapping, request);
-        try {
-            if (parameters.isEmpty()) {
-                // There are no DataTransfer specified so we are requested to list the
-                // DataTransfers!
-                var date = Util.getValue(request, "date", getISOFormat().format(new Date()));
-                // Guard against a stale non-ISO value (e.g. "All") left in the session by
-                // another page. Reset to today and fix the session so the error doesn't recur.
-                try {
-                    getISOFormat().parse(date);
-                } catch (final ParseException ignored) {
-                    date = getISOFormat().format(new Date());
-                    request.getSession().setAttribute("date", date);
-                }
-                final var status = Util.getValue(request, "transferStatus", Status.EXEC);
-                final var search = Util.getValue(request, "transferSearch", "");
-                final var type = Util.getValue(request, "transferType", "");
-                // Initialize the cursor for the database search
-                final var cursor = Util.getDataBaseCursor("transfer", 25, 2, true, request);
-                // Now get the transfers
-                Collection<DataTransfer> transfers;
-                try {
-                    transfers = DataTransferHome.findByStatusIdAndDate(status, getISOFormat().parse(date), search,
-                            getDestinationTypeIds(type), cursor);
-                    request.setAttribute("getTransfersError", "");
-                } catch (final TransferException e) {
-                    request.setAttribute("getTransfersError", e.getMessage());
-                    transfers = new ArrayList<>(0);
-                }
-                try {
-                    request.setAttribute("transferTypeOptions", getTypeOptions());
-                } catch (final Exception e) {
-                    throw new ECMWFActionFormException("Bad date", e);
-                }
-                request.setAttribute("selectedDate", date);
-                request.setAttribute("dateOptions", getDateOptions(DAYS_BACK, false));
-                request.setAttribute("transferList", transfers);
-                request.setAttribute("transferListSize", Util.getCollectionSizeFrom(transfers));
-                request.setAttribute("transferStatusOptions", getStatusOptions());
-                request.setAttribute("currentTransferStatus", new StatusBean(status));
-                request.setAttribute("hasFileNameSearch", search != null && !search.isBlank());
-                try {
-                    request.setAttribute("transferServerOptions", TransferServerHome.findAll());
-                } catch (final Exception e) {
-                    log.warn("Could not load transfer servers for autocomplete", e);
-                }
-            } else {
-                final var transfer = DataTransferHome.findByPrimaryKey(parameters.get(0).toString());
-                // To allow setting the links in the comments!
-                transfer.setUser(user);
-                final var dataTransfersBasePath = getResource(request, "datatransfer.basepath");
-                final var canSeeTransferList = user.hasAccess(dataTransfersBasePath);
-                // Only "privileged users" can ScheduleNow and only before the
-                // scheduled time
-                final var now = new Date();
-                final var statusCode = transfer.getStatusCode();
-                if ((Status.WAIT.equals(statusCode) || Status.RETR.equals(statusCode)) && canSeeTransferList
-                        && (now.before(transfer.getScheduledTime()) || now.before(transfer.getQueueTime()))) {
-                    request.setAttribute("showScheduleNow", "YES");
-                }
-                // Either "priveleged users" or everybody after scheduled time
-                // can see size
-                if (canSeeTransferList || now.after(transfer.getScheduledTime())) {
-                    request.setAttribute("showFileSize", "YES");
-                }
-                request.setAttribute("datatransfer", transfer);
-                request.setAttribute("datafile", transfer.getDataFile());
-                // Initialize the cursor for the database search
-                final var cursor = Util.getDataBaseCursor("history", 15, 1, true, request);
-                // Can the user see the transfer history details?
-                final var transferHistoryBasePath = getResource(request, "transferhistory.basepath");
-                final var canSeeHistoryDetail = user.hasAccess(transferHistoryBasePath);
-                final var historyItems = TransferHistoryHome.findByDataTransfer(transfer, !canSeeHistoryDetail, cursor);
-                request.setAttribute("historyItems", historyItems);
-                request.setAttribute("historyItemsSize", Util.getCollectionSizeFrom(historyItems));
+        if (parameters.isEmpty()) {
+            // There are no DataTransfer specified so we are requested to list the
+            // DataTransfers! Just set up the filter options — the actual data is
+            // fetched via DataTables AJAX (GetDataTransferListJsonAction).
+            var date = Util.getValue(request, "date", getISOFormat().format(new Date()));
+            // Guard against a stale non-ISO value (e.g. "All") left in the session by
+            // another page. Reset to today and fix the session so the error doesn't recur.
+            try {
+                getISOFormat().parse(date);
+            } catch (final ParseException ignored) {
+                date = getISOFormat().format(new Date());
+                request.getSession().setAttribute("date", date);
             }
-        } catch (final ParseException e) {
-            throw new ECMWFActionFormException("Bad date", e);
+            final var status = Util.getValue(request, "transferStatus", Status.EXEC);
+            final var search = Util.getValue(request, "transferSearch", "");
+            Util.getValue(request, "transferType", ""); // read/persist in session for form state
+            try {
+                request.setAttribute("transferTypeOptions", getTypeOptions());
+            } catch (final Exception e) {
+                throw new ECMWFActionFormException("Bad date", e);
+            }
+            request.setAttribute("selectedDate", date);
+            request.setAttribute("dateOptions", getDateOptions(DAYS_BACK, false));
+            request.setAttribute("transferStatusOptions", getStatusOptions());
+            request.setAttribute("currentTransferStatus", new StatusBean(status));
+            request.setAttribute("hasFileNameSearch", search != null && !search.isBlank());
+            try {
+                request.setAttribute("transferServerOptions", TransferServerHome.findAll());
+            } catch (final Exception e) {
+                log.warn("Could not load transfer servers for autocomplete", e);
+            }
+        } else {
+            final var transfer = DataTransferHome.findByPrimaryKey(parameters.get(0).toString());
+            // To allow setting the links in the comments!
+            transfer.setUser(user);
+            final var dataTransfersBasePath = getResource(request, "datatransfer.basepath");
+            final var canSeeTransferList = user.hasAccess(dataTransfersBasePath);
+            // Only "privileged users" can ScheduleNow and only before the
+            // scheduled time
+            final var now = new Date();
+            final var statusCode = transfer.getStatusCode();
+            if ((Status.WAIT.equals(statusCode) || Status.RETR.equals(statusCode)) && canSeeTransferList
+                    && (now.before(transfer.getScheduledTime()) || now.before(transfer.getQueueTime()))) {
+                request.setAttribute("showScheduleNow", "YES");
+            }
+            // Either "priveleged users" or everybody after scheduled time
+            // can see size
+            if (canSeeTransferList || now.after(transfer.getScheduledTime())) {
+                request.setAttribute("showFileSize", "YES");
+            }
+            request.setAttribute("datatransfer", transfer);
+            request.setAttribute("datafile", transfer.getDataFile());
+            // Initialize the cursor for the database search
+            final var cursor = Util.getDataBaseCursor("history", 15, 1, true, request);
+            // Can the user see the transfer history details?
+            final var transferHistoryBasePath = getResource(request, "transferhistory.basepath");
+            final var canSeeHistoryDetail = user.hasAccess(transferHistoryBasePath);
+            final var historyItems = TransferHistoryHome.findByDataTransfer(transfer, !canSeeHistoryDetail, cursor);
+            request.setAttribute("historyItems", historyItems);
+            request.setAttribute("historyItemsSize", Util.getCollectionSizeFrom(historyItems));
         }
         return mapping.findForward("success");
-    }
-
-    /**
-     * Gets the destination type ids.
-     *
-     * @param category
-     *            the category
-     *
-     * @return the destination type ids
-     */
-    private static final String getDestinationTypeIds(final String category) {
-        return DestinationOption.getTypeIds(category);
     }
 
     /**

@@ -3,30 +3,35 @@
 
 <script>
 	var OLD_STYLE = new Array();
+	// Tracks which transfer IDs are selected (id → boolean)
+	var selectedTransfers = {};
 
 	function checkAll(all, reverse) {
-		var form = document.destinationDetailActionForm
-		for (i = 0; i < form.length; i++) {
-			var field = form.elements[i]
-			if (field.type.toLowerCase() == "hidden"
-					&& field.name.substr(0, 16) == "selectedTransfer") {
-				if (reverse)
-					clickField(field)
-				else
-					setField(field, all ? "on" : "off");
+		$('#destTransferTable tbody tr').each(function () {
+			var span = $(this).find('span.star-select');
+			if (span.length) {
+				var id = String(span.data('transferId'));
+				if (id) {
+					var current = selectedTransfers[id] ? true : false;
+					var target  = reverse ? !current : all;
+					if (target !== current) {
+						select(span[0], id);
+					}
+				}
 			}
-		}
+		});
 	}
 
 	function setAll() {
-		var form = document.destinationDetailActionForm
-		for (i = 0; i < form.length; i++) {
-			var field = form.elements[i]
-			if (field.type.toLowerCase() == "hidden"
-					&& field.name.substr(0, 16) == "selectedTransfer") {
-				setField(field);
+		$('#destTransferTable tbody tr').each(function () {
+			var span = $(this).find('span.star-select');
+			if (span.length) {
+				var id = String(span.data('transferId'));
+				if (id && !selectedTransfers[id]) {
+					select(span[0], id);
+				}
 			}
-		}
+		});
 	}
 
 	function transferChange(operation, subOp) {
@@ -128,10 +133,18 @@
 		form.submit();
 	}
 
-	function select(image, id) {
-		//alert("Selecting "+id+" in element "+image.parentNode.parentNode)
-		var form = document.destinationDetailActionForm;
-		clickField(form.elements["selectedTransfer(" + id + ")"]);
+	function select(el, id) {
+		var isOn = selectedTransfers[id] ? false : true;
+		selectedTransfers[id] = isOn;
+		var tr = $(el).closest('tr');
+		var icon = $(el).find('i');
+		if (isOn) {
+			tr.addClass('selected');
+			icon.removeClass('bi-star').addClass('bi-star-fill text-warning');
+		} else {
+			tr.removeClass('selected');
+			icon.removeClass('bi-star-fill text-warning').addClass('bi-star');
+		}
 	}
 
 	function clickField(field) {
@@ -139,11 +152,9 @@
 	}
 
 	function setField(field, value) {
-		// If a value is not supplied, the value is not changed, just the color
-
+		// Legacy helper kept for backward compatibility
 		var tr = field.parentNode.parentNode;
 		var destValue = (value) ? value : field.value;
-
 		if (destValue == 'on') {
 			if (tr.className != 'selected')
 				OLD_STYLE[field.name] = tr.className;
@@ -152,7 +163,6 @@
 			if (OLD_STYLE[field.name])
 				tr.className = OLD_STYLE[field.name];
 		}
-
 		field.value = destValue;
 	}
 
@@ -301,6 +311,23 @@
 	    if (savedY !== null) {
 	        sessionStorage.removeItem('hostChangeScrollY');
 	        window.scrollTo({ top: parseInt(savedY, 10), behavior: 'instant' });
+	    }
+	    // Intercept all form submits to inject selected-transfer hidden fields
+	    var frm = document.destinationDetailActionForm;
+	    if (frm) {
+	        var _orig = HTMLFormElement.prototype.submit.bind(frm);
+	        frm.submit = function () {
+	            $(frm).find('input.injected-selection').remove();
+	            $.each(selectedTransfers, function (id, on) {
+	                $('<input>').attr({
+	                    type:  'hidden',
+	                    name:  'selectedTransfer(' + id + ')',
+	                    value: on ? 'on' : 'off',
+	                    class: 'injected-selection'
+	                }).appendTo(frm);
+	            });
+	            _orig();
+	        };
 	    }
 	});
 </script>

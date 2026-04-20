@@ -2,38 +2,44 @@
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content"%>
 <%@ taglib uri="/WEB-INF/tld/struts-tiles.tld" prefix="tiles"%>
 
-<table class="select">
-	<tr>
-		<c:forEach items="${metaDataNameOptions}" var="metaDataNameOption"
-			varStatus="stat">
-			<c:if test="${metaDataNameOption.name == selectedMetaDataName}">
-				<td width="100" class="selected"><a
-					href="?metaDataName=${metaDataNameOption.name}">${metaDataNameOption.name}</a></td>
-			</c:if>
-			<c:if test="${metaDataNameOption.name != selectedMetaDataName}">
-				<td width="100"><a
-					href="?metaDataName=${metaDataNameOption.name}">${metaDataNameOption.name}</a></td>
-			</c:if>
-		</c:forEach>
-	</tr>
-</table>
+<%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 
-<table class="select">
-	<tr>
-		<c:forEach items="${metaDataValueOptions}" var="metaDataValueOption"
-			varStatus="stat">
-			<c:if test="${metaDataValueOption.value == selectedMetaDataValue}">
-				<td width="100" class="selected"><a
-					href="?metaDataValue=${metaDataValueOption.value}">${metaDataValueOption.value}</a></td>
-			</c:if>
-			<c:if test="${metaDataValueOption.value != selectedMetaDataValue}">
-				<td width="100"><a
-					href="?metaDataValue=${metaDataValueOption.value}">${metaDataValueOption.value}</a></td>
-			</c:if>
-			<c:if test="${stat.count % 20 == 0}">
-	</tr>
-	<tr>
-		</c:if>
-		</c:forEach>
-	</tr>
-</table>
+<div class="metadata-strip">
+    <%-- Metadata name selector --%>
+    <c:if test="${not empty metaDataNameOptions}">
+        <div class="metadata-strip-row">
+            <span class="metadata-strip-label">Field</span>
+            <div class="metadata-strip-pills">
+                <c:forEach items="${metaDataNameOptions}" var="opt">
+                    <c:choose>
+                        <c:when test="${opt.name == selectedMetaDataName}">
+                            <a class="metadata-pill active" href="?metaDataName=${opt.name}">${opt.name}</a>
+                        </c:when>
+                        <c:otherwise>
+                            <a class="metadata-pill" href="?metaDataName=${opt.name}">${opt.name}</a>
+                        </c:otherwise>
+                    </c:choose>
+                </c:forEach>
+            </div>
+        </div>
+    </c:if>
+
+    <%-- Metadata value selector --%>
+    <c:if test="${not empty metaDataValueOptions}">
+        <div class="metadata-strip-row">
+            <span class="metadata-strip-label">Value</span>
+            <div class="metadata-strip-pills">
+                <c:forEach items="${metaDataValueOptions}" var="opt">
+                    <c:choose>
+                        <c:when test="${opt.value == selectedMetaDataValue}">
+                            <a class="metadata-pill value active" href="?metaDataName=${selectedMetaDataName}&amp;metaDataValue=${opt.value}">${opt.value}</a>
+                        </c:when>
+                        <c:otherwise>
+                            <a class="metadata-pill value" href="?metaDataName=${selectedMetaDataName}&amp;metaDataValue=${opt.value}">${opt.value}</a>
+                        </c:otherwise>
+                    </c:choose>
+                </c:forEach>
+            </div>
+        </div>
+    </c:if>
+</div>
