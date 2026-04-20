@@ -384,7 +384,7 @@
         serverSide: true,
         processing: true,
         ajax: {
-            url: '/do/transfer/data/list',
+            url: '/transfer/data?json=list',
             data: function (d) {
                 d.date           = date;
                 d.transferStatus = status;

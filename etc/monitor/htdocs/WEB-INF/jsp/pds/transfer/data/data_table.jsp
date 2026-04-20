@@ -15,7 +15,22 @@
 </tr>
 
 <tr>
-<th>Data File Id</th><td><a href="<bean:message key="datafile.basepath"/>/${datatransfer.dataFileId}">${datatransfer.dataFileId}</a></td>
+<th>Data File Id</th>
+<td>
+
+<auth:if basePathKey="datafile.basepath" paths="/${datatransfer.dataFileId}">
+<auth:then>
+  <a href="<bean:message key="datafile.basepath"/>/${datatransfer.dataFileId}">
+    ${datatransfer.dataFileId}
+  </a>
+</auth:then>
+<auth:else>
+  ${datatransfer.dataFileId}
+</auth:else>
+</auth:if>
+
+</td>
+
 <th>Dissemination Host</th>
 <td><a href="/do/transfer/host/${datatransfer.hostName}">${datatransfer.hostNickName}</a></td>
 </tr>

@@ -203,7 +203,7 @@
         pageLength: savedLen,
         ordering: false,
         ajax: {
-            url: '/do/transfer/destination/validate/list',
+            url: '/do/transfer/destination?json=validateList',
             type: 'GET',
             data: function (d) {
                 d.destinationName = destName;

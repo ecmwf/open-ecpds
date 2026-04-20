@@ -64,6 +64,7 @@
 <div class="row g-3">
 
     <%-- Data Storage --%>
+    <c:if test="${hasDataStorage}">
     <div class="col-xl-4 col-md-6 d-flex flex-column">
         <div class="home-section-card">
             <div class="home-section-hdr" style="background:#e8f4fd;">
@@ -78,8 +79,10 @@
             </ul>
         </div>
     </div>
+	</c:if>
 
     <%-- Transmission --%>
+    <c:if test="${hasTransmission}">
     <div class="col-xl-4 col-md-6 d-flex flex-column">
         <div class="home-section-card">
             <div class="home-section-hdr" style="background:#e9f7ef;">
@@ -101,8 +104,10 @@
             </ul>
         </div>
     </div>
+	</c:if>
 
     <%-- Access Control --%>
+    <c:if test="${hasAccessControl}">
     <div class="col-xl-4 col-md-6 d-flex flex-column">
         <div class="home-section-card">
             <div class="home-section-hdr" style="background:#fff8e6;">
@@ -119,8 +124,10 @@
             </ul>
         </div>
     </div>
+    </c:if>
 
     <%-- Admin Tasks --%>
+    <c:if test="${hasAdmin}">
     <div class="col-xl-4 col-md-6 d-flex flex-column">
         <div class="home-section-card">
             <div class="home-section-hdr" style="background:#f3f4f6;">
@@ -133,6 +140,7 @@
             </ul>
         </div>
     </div>
+    </c:if>
 
     <%-- Monitoring (conditional) --%>
     <auth:if basePathKey="transferhistory.basepath" paths="/">

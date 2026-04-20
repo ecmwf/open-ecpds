@@ -352,7 +352,7 @@
         serverSide: true,
         processing: true,
         ajax: {
-            url: '/do/transfer/destination/list',
+            url: '/do/transfer/destination?json=list',
             type: 'GET',
             data: function(d) {
                 d.destinationSearch  = $('#destinationSearch').val() || '';
@@ -522,7 +522,7 @@
 
     function _loadSplitRows() {
         var params = $.extend(_currentFilters(), { draw: 1, start: 0, length: -1 });
-        $.getJSON('/do/transfer/destination/list', params, function(json) {
+        $.getJSON('/do/transfer/destination?json=list', params, function(json) {
             _allRows = _rowsFromData(json.data || []);
             $('#destsFoundLabel').html('<i class="bi bi-list-ul"></i> <strong>' + _allRows.length + '</strong> destination(s) found');
             _curPage = 0;

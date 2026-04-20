@@ -50,6 +50,33 @@ public class StartAction extends PDSAction {
     public ActionForward safeAuthorizedPerform(final ActionMapping mapping, final ActionForm form,
             final HttpServletRequest request, final HttpServletResponse response, final User user)
             throws ECMWFException, ClassCastException {
+
+        request.setAttribute("hasDataStorage",
+                user.hasAccess(getResource(request, "datafile.basepath"))
+                        || user.hasAccess(getResource(request, "metadata.basepath"))
+                        || user.hasAccess(getResource(request, "transfergroup.basepath"))
+                        || user.hasAccess(getResource(request, "transferserver.basepath"))
+                        || user.hasAccess(getResource(request, "retrievalmonitoring.basepath")));
+
+        request.setAttribute("hasTransmission",
+                user.hasAccess(getResource(request, "datatransfer.basepath"))
+                        || user.hasAccess(getResource(request, "destination.basepath"))
+                        || user.hasAccess(getResource(request, "host.basepath"))
+                        || user.hasAccess(getResource(request, "transferhistory.basepath"))
+                        || user.hasAccess(getResource(request, "method.basepath"))
+                        || user.hasAccess(getResource(request, "module.basepath")));
+
+        request.setAttribute("hasAccessControl",
+                user.hasAccess(getResource(request, "user.basepath"))
+                        || user.hasAccess(getResource(request, "category.basepath"))
+                        || user.hasAccess(getResource(request, "resource.basepath"))
+                        || user.hasAccess(getResource(request, "event.basepath"))
+                        || user.hasAccess(getResource(request, "incoming.basepath"))
+                        || user.hasAccess(getResource(request, "policy.basepath"))
+                        || user.hasAccess(getResource(request, "history.basepath")));
+
+        request.setAttribute("hasAdmin", user.hasAccess(getResource(request, "admin.basepath")));
+
         request.setAttribute("title", System.getProperty("monitor.title"));
         return mapping.findForward("success");
     }

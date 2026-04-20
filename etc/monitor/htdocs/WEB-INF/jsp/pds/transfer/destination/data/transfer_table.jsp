@@ -84,7 +84,7 @@
         processing: true,
         pageLength: savedLen,
         ajax: {
-            url: '/do/transfer/destination/data/list',
+            url: '/do/transfer/destination?json=dataList',
             type: 'GET',
             data: function (d) {
                 d.destinationName      = document.getElementById('dt-dest-name').value;
