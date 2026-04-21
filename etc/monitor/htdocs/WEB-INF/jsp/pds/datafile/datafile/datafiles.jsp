@@ -40,7 +40,7 @@
     </div>
 </div>
 
-<table id="datafileTable" class="table table-sm table-hover align-middle w-100">
+<table id="datafileTable" class="table table-sm table-hover table-striped align-middle w-100">
     <thead>
         <tr>
             <th>Original</th>

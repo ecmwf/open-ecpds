@@ -41,7 +41,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import ecmwf.common.ecaccess.MBeanScheduler;
-import ecmwf.common.monitor.MonitorManager;
 import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.controller.monitoring.MonitoringRequest;
 import ecmwf.ecpds.master.plugin.http.home.monitoring.DestinationProductStatusHome;
@@ -49,7 +48,6 @@ import ecmwf.ecpds.master.plugin.http.home.monitoring.ProductStatusHome;
 import ecmwf.ecpds.master.plugin.http.home.monitoring.ProductStepStatusHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.DestinationHome;
 import ecmwf.ecpds.master.plugin.http.model.monitoring.DestinationProductStatus;
-import ecmwf.ecpds.master.plugin.http.model.monitoring.DestinationStatus;
 import ecmwf.ecpds.master.plugin.http.model.monitoring.GenerationMonitoringStatus;
 import ecmwf.ecpds.master.plugin.http.model.monitoring.MonitoringException;
 import ecmwf.ecpds.master.plugin.http.model.monitoring.ProductStatus;

@@ -356,7 +356,7 @@
 <input type="hidden" id="dt-search" value="<c:out value="${transferSearch}"/>">
 <input type="hidden" id="dt-type"   value="<c:out value="${transferType}"/>">
 
-<table id="transferTable" class="table table-sm table-hover align-middle w-100">
+<table id="transferTable" class="table table-sm table-hover table-striped align-middle w-100">
     <thead>
         <tr>
             <th>Destination</th>
@@ -384,7 +384,7 @@
         serverSide: true,
         processing: true,
         ajax: {
-            url: '/transfer/data?json=list',
+            url: '/do/transfer/data?json=list',
             data: function (d) {
                 d.date           = date;
                 d.transferStatus = status;

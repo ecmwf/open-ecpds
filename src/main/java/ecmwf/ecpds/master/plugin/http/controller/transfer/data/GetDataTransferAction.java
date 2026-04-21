@@ -19,7 +19,7 @@
 package ecmwf.ecpds.master.plugin.http.controller.transfer.data;
 
 /**
- * ECMWF Product Data Store (OpenECPDS) Project
+ * ECMWF Product Data Store (ECPDS) Project
  *
  * @author Laurent Gougeon <sy8iecmwf.int>, ECMWF.
  * @version 6.7.7
@@ -60,6 +60,9 @@ import ecmwf.web.util.bean.Pair;
 /**
  * The Class GetDataTransferAction.
  */
+/**
+ * The Class GetDataTransferAction.
+ */
 public class GetDataTransferAction extends PDSAction {
 
     /** The Constant log. */
@@ -68,13 +71,27 @@ public class GetDataTransferAction extends PDSAction {
     /** The Constant DAYS_BACK. */
     private static final int DAYS_BACK = 7;
 
+    @Override
+    public ActionForward safeAuthorizedPerform(ActionMapping mapping, ActionForm form, HttpServletRequest request,
+            HttpServletResponse response, User user) throws ECMWFException {
+        String json = request.getParameter("json");
+        try {
+            if ("list".equalsIgnoreCase(json)) {
+                new GetDataTransferListJsonAction().safeAuthorizedPerform(mapping, form, request, response, user);
+                return null;
+            }
+
+            return authorizedPerform(mapping, form, request, response, user);
+
+        } catch (Exception e) {
+            throw new ECMWFActionFormException(e.getMessage(), e);
+        }
+    }
+
     /**
-     * {@inheritDoc}
-     *
      * Safe authorized perform.
      */
-    @Override
-    public ActionForward safeAuthorizedPerform(final ActionMapping mapping, final ActionForm form,
+    public ActionForward authorizedPerform(final ActionMapping mapping, final ActionForm form,
             final HttpServletRequest request, final HttpServletResponse response, final User user)
             throws ECMWFException, ClassCastException {
         final ArrayList<?> parameters = ECMWFActionForm.getPathParameters(mapping, request);

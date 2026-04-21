@@ -658,10 +658,8 @@
 		<!-- Data transfer -->
 
 		<action path="/transfer/data"
-        	type="ecmwf.ecpds.master.plugin.http.controller.transfer.data.DataTransferDispatcherAction"
-        	name="dataTransferActionForm"
-        	scope="request">
-    		<forward name="success" path=".pds.transfer.data" />
+			type="ecmwf.ecpds.master.plugin.http.controller.transfer.data.GetDataTransferAction">
+			<forward name="success" path=".pds.transfer.data" />
 		</action>
 		<action path="/transfer/data/*" parameter="{1}"
 			type="ecmwf.ecpds.master.plugin.http.controller.transfer.data.GetDataTransferAction">
