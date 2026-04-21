@@ -58,29 +58,63 @@ public class GetReportAction extends PDSAction {
     public ActionForward safeAuthorizedPerform(final ActionMapping mapping, final ActionForm form,
             final HttpServletRequest request, final HttpServletResponse response, final User user)
             throws TransferException, ECMWFActionFormException {
-        final ArrayList<?> c = ECMWFActionForm.getPathParameters(mapping, request);
-        final Iterator<?> i = c.iterator();
         try {
+            String format = request.getParameter("format");
+            boolean isDataRequest = "data".equalsIgnoreCase(format);
+            ArrayList<?> c = ECMWFActionForm.getPathParameters(mapping, request);
+            Iterator<?> i = c.iterator();
+
+            // =========================================================
+            // 1. DATA MODE (replacement for GetReportDataAction)
+            // =========================================================
+            if (isDataRequest) {
+                final String report;
+                if (c.size() == 1) {
+                    String hostId = i.next().toString();
+                    var host = HostHome.findByPrimaryKey(hostId);
+                    report = host.getReport(user);
+                } else if (c.size() == 2) {
+                    String hostId = i.next().toString();
+                    String proxyId = i.next().toString();
+                    var host = HostHome.findByPrimaryKey(hostId);
+                    var proxy = HostHome.findByPrimaryKey(proxyId);
+                    report = host.getReport(user, proxy);
+                } else {
+                    throw new ECMWFActionFormException("Unsupported number of parameters " + c);
+                }
+                response.setContentType("text/plain; charset=UTF-8");
+                response.setCharacterEncoding("UTF-8");
+                response.getWriter().write(report != null ? report : "");
+                response.getWriter().flush();
+                return null;
+            }
+
+            // =========================================================
+            // 2. HTML/UI MODE
+            // =========================================================
             if (c.size() == 1) {
-                final var hostId = i.next().toString();
-                final var host = HostHome.findByPrimaryKey(hostId);
+                String hostId = i.next().toString();
+                var host = HostHome.findByPrimaryKey(hostId);
                 request.setAttribute("host", host);
-                request.setAttribute("reportDataUrl", "/do/transfer/host/edit/getReportData/" + hostId);
+                request.setAttribute("reportDataUrl", "/do/transfer/host/edit/getReport/" + hostId + "?format=data");
                 return mapping.findForward("success");
             }
+
             if (c.size() == 2) {
-                final var hostId = i.next().toString();
-                final var proxyId = i.next().toString();
-                final var host = HostHome.findByPrimaryKey(hostId);
-                final var proxy = HostHome.findByPrimaryKey(proxyId);
+                String hostId = i.next().toString();
+                String proxyId = i.next().toString();
+                var host = HostHome.findByPrimaryKey(hostId);
+                var proxy = HostHome.findByPrimaryKey(proxyId);
                 request.setAttribute("host", host);
                 request.setAttribute("proxy", proxy);
-                request.setAttribute("reportDataUrl", "/do/transfer/host/edit/getReportData/" + hostId + "/" + proxyId);
+                request.setAttribute("reportDataUrl",
+                        "/do/transfer/host/edit/getReport/" + hostId + "/" + proxyId + "?format=data");
                 return mapping.findForward("success");
-            } else {
-                throw new ECMWFActionFormException("Unsupported number of parameters " + c);
             }
-        } catch (final Throwable t) {
+
+            throw new ECMWFActionFormException("Unsupported number of parameters " + c);
+
+        } catch (Throwable t) {
             throw new ECMWFActionFormException(Format.getMessage(t));
         }
     }

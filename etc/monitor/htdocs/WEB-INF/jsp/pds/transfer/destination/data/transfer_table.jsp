@@ -112,7 +112,6 @@
             { data: 12 }
         ],
         columnDefs: [
-            { targets: 0,  orderable: false },
             { targets: 11, orderable: false, visible: canQueue },
             { targets: 12, orderable: false }
         ],
