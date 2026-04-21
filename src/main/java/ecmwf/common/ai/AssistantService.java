@@ -589,7 +589,7 @@ public class AssistantService {
             var file = seg.metadata().getString("filename");
             if (file == null)
                 file = "unknown";
-            byDoc.computeIfAbsent(file, k -> new ArrayList<>()).add(seg);
+            byDoc.computeIfAbsent(file, _ -> new ArrayList<>()).add(seg);
         }
         final List<TextSegment> result = new ArrayList<>();
         var docs = 0;
