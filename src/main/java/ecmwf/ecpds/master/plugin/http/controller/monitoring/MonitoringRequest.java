@@ -95,7 +95,7 @@ public class MonitoringRequest {
     private static final int PRODUCTS_TO_SHOW_COUNT = Cnf.at("MonitorPlugin", "productsToShowCount", 10);
 
     /** The Constant PRODUCTS_TO_SHOW_HEADER_COUNT. */
-    private static final int PRODUCTS_TO_SHOW_HEADER_COUNT = Cnf.at("MonitorPlugin", "productsToShowHeaderCount", 45);
+    private static final int PRODUCTS_TO_SHOW_HEADER_COUNT = Cnf.at("MonitorPlugin", "productsToShowHeaderCount", 80);
 
     /** The Constant PRODUCTS_TO_SHOW_PERIOD. */
     private static final int PRODUCTS_TO_SHOW_PERIOD = Cnf.at("MonitorPlugin", "productsToShowPeriod", 168);
@@ -106,7 +106,7 @@ public class MonitoringRequest {
 
     /** The Constant CONTACTS_FILE_NAME. */
     private static final String CONTACTS_FILE_NAME = Cnf.at("MonitorPlugin", "contactsFileName",
-            Cnf.at("MonitorPlugin", "htdocs") + "/resources/maps/contacts.txt");
+            Cnf.at("MonitorPlugin", "htdocs") + "/resources/contacts.txt");
 
     /** The last contact list update. */
     private static long lastContactListUpdate = System.currentTimeMillis();
