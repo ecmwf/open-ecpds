@@ -669,9 +669,8 @@ public class MonitoringRequest {
                 log.debug("Finished adding products. Discarding: " + name + ", Sched: " + scheduledTime
                         + ", Window size is already " + window.size());
             } else if (!PRODUCTS_TO_SHOW_MONITORED_ONLY || isProductSentToAnyOfTheseDestinations(ps, destinations)) {
-                final var product = ps.getProduct();
                 final var hasWildcard = application.contains("*") || application.contains("?");
-                if (isEmpty(application) || hasWildcard && matchesWildcard(application, product)
+                if (isEmpty(application) || hasWildcard && matchesWildcard(application, name)
                         || !hasWildcard && (name.endsWith("-" + application)
                                 || application.startsWith("no-") && !name.endsWith("-" + application.substring(3)))) {
                     log.debug("Adding product: " + name);
