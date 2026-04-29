@@ -117,7 +117,6 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -1928,7 +1927,10 @@ public final class HttpModule extends TransferModule {
                             }
                             final var href = !attribute.isEmpty() ? element.attr(attribute) : element.text();
                             try {
-                                final var line = resolveHref(directory, href);
+                                final var line = resolveHref(
+                                        (directory != null && !directory.isEmpty() && !directory.endsWith("/"))
+                                                ? directory + "/" : directory,
+                                        href);
                                 listSize++;
                                 addEntry(manager, resultList, rootDirectory, directory, line, level, pattern, counter,
                                         null, null, null, null, null);
@@ -1969,31 +1971,7 @@ public final class HttpModule extends TransferModule {
      *             if the URL is invalid
      */
     public static String resolveHref(final String currentUrl, final String href) throws URISyntaxException {
-        // If href is absolute URL, return it as-is
-        // If href starts with '/', treat it as root-relative
-        if (href.startsWith("http://") || href.startsWith("https://") || href.startsWith("/")) {
-            return href;
-        }
-        // Otherwise, treat href as relative to the directory of currentUrl
-        final var baseUri = new URI(currentUrl);
-        var basePath = baseUri.getPath();
-        if (!basePath.endsWith("/")) {
-            final var lastSlash = basePath.lastIndexOf('/');
-            if (lastSlash >= 0) {
-                basePath = basePath.substring(0, lastSlash + 1);
-            } else {
-                basePath = "/";
-            }
-        }
-        // Combine base directory and href
-        final var combinedPath = Paths.get(basePath, href).normalize().toString().replace('\\', '/');
-        // Rebuild URI with original scheme/host if present, otherwise just return path
-        if (baseUri.getScheme() != null) {
-            final var resolvedUri = new URI(baseUri.getScheme(), baseUri.getAuthority(), combinedPath, null, null);
-            return resolvedUri.toString();
-        } else {
-            return combinedPath;
-        }
+        return new URI(currentUrl).resolve(href).toString();
     }
 
     /**
@@ -2194,6 +2172,11 @@ public final class HttpModule extends TransferModule {
     private ClassicHttpResponse execute(final HttpHost targetHost, final HttpUriRequestBase httpRequest,
             final Integer... acceptedStatusCodes) throws IOException {
         try {
+            httpRequest.setHeader("Host", targetHost.getHostName());
+            for (final String key : headersList.keySet().toArray(new String[0])) {
+                final var value = headersList.get(key);
+                httpRequest.setHeader(key, value);
+            }
             // Ensure absolute URI (deprecated overloads with target host are avoided)
             makeAbsoluteUriIfNeeded(targetHost, httpRequest);
             if (getDebug()) {
@@ -2209,7 +2192,7 @@ public final class HttpModule extends TransferModule {
                 context.setCookieStore(cookieStore);
             }
             // High-level execute -> redirect/cookie/auth handling is automatic.
-            final var httpResponse = httpClient.execute(httpRequest, context);
+            final var httpResponse = httpClient.execute(targetHost, httpRequest, context);
             final var statusCode = httpResponse.getCode();
             if (getDebug()) {
                 _log.debug("Response status: {} {}", statusCode, httpResponse.getReasonPhrase());
