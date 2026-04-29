@@ -96,7 +96,7 @@ public class GetDestinationTransferListJsonAction extends PDSAction {
         final var fileNameSearch = Util.getValue(request, "fileNameSearch", "");
         final var dateParam = Util.getValue(request, "date", "");
 
-        // Parse date: "All" or unparseable → today
+        // Parse date: only set if defined and not "All"; otherwise, leave null (fetch all dates)
         final var iso = new SimpleDateFormat("yyyy-MM-dd");
         Date date = null;
         if (!dateParam.isEmpty() && !"All".equalsIgnoreCase(dateParam)) {
@@ -105,9 +105,7 @@ public class GetDestinationTransferListJsonAction extends PDSAction {
             } catch (final ParseException _) {
             }
         }
-        if (date == null) {
-            date = new Date();
-        }
+        // If date is null ("All" or not defined), leave as null to fetch all dates
 
         // Compute permissions server-side
         boolean hasAccess = true;
@@ -151,7 +149,6 @@ public class GetDestinationTransferListJsonAction extends PDSAction {
         final var dbOrder = "asc".equalsIgnoreCase(dir) ? "1" : "2";
         final var cursor = new DataBaseCursor(String.valueOf(dbSortCol), dbOrder, start, start + length);
 
-        @SuppressWarnings("unchecked")
         Collection<DataTransfer> transfers;
         String queryError = null;
         try {
