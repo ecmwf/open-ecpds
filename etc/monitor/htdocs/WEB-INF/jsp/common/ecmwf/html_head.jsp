@@ -332,10 +332,17 @@ function validateMailInput(input) {
     var val = input.value.trim();
     if (val === '') {
         fb.innerHTML = '';
-    } else if (input.validity.valid) {
-        fb.innerHTML = '<i class="bi bi-check-circle-fill text-success" title="Valid email address"></i>';
+        return;
+    }
+    /* Allow one or more addresses separated by ';' */
+    var emailRe = /^[^\s@;]+@[^\s@;]+\.[^\s@;]+$/;
+    var parts = val.split(';').map(function(s) { return s.trim(); }).filter(function(s) { return s !== ''; });
+    var invalid = parts.filter(function(s) { return !emailRe.test(s); });
+    if (invalid.length === 0) {
+        var label = parts.length > 1 ? parts.length + ' addresses' : 'Valid email address';
+        fb.innerHTML = '<i class="bi bi-check-circle-fill text-success" title="' + label + '"></i>';
     } else {
-        fb.innerHTML = '<i class="bi bi-x-circle-fill text-danger" title="Invalid email address"></i>';
+        fb.innerHTML = '<i class="bi bi-x-circle-fill text-danger" title="Invalid: ' + invalid.map(function(s){return s||'(empty)';}).join('; ') + '"></i>';
     }
 }
 

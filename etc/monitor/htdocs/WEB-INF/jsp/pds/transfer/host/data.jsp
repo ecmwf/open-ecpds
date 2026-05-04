@@ -69,6 +69,17 @@ table.fields > tbody > tr > th {
 .progress-terminal-body font[color="green"] { color: #8f8; }
 .progress-terminal-body a { color: #79b8ff; text-decoration: none; }
 .progress-terminal-body a:hover { text-decoration: underline; }
+.progress-terminal-btn { color: rgba(255,255,255,0.5); border-color: #555; }
+/* Light theme overrides */
+[data-bs-theme=light] .progress-terminal-hdr { background: #f0f2f4; color: #24292f; border-bottom-color: #d0d7de; }
+[data-bs-theme=light] .progress-terminal-body { background: #f6f8fa; color: #24292f; }
+[data-bs-theme=light] .progress-terminal-body font[color="black"],
+[data-bs-theme=light] .progress-terminal-body font[color="#000000"] { color: #0550ae; }
+[data-bs-theme=light] .progress-terminal-body font[color="red"]   { color: #cf222e; }
+[data-bs-theme=light] .progress-terminal-body font[color="green"] { color: #1a7f37; }
+[data-bs-theme=light] .progress-terminal-body a { color: #0969da; }
+[data-bs-theme=light] .progress-terminal-btn { color: #57606a; border-color: #d0d7de; }
+[data-bs-theme=light] .progress-terminal-btn:hover { color: #fff; }
 .assoc-card .card-header { display:flex; align-items:center; gap:.4rem; padding:.5rem .75rem; background:#f8f9fa; font-size:.85rem; }
 .assoc-chip { display:inline-flex; align-items:center; gap:.25rem; background:#e9ecef; border-radius:1rem; padding:.2rem .6rem; font-size:.8rem; margin:.15rem; }
 [data-bs-theme=dark] .assoc-card .card-header { background: var(--bs-tertiary-bg); }
@@ -262,7 +273,7 @@ table.fields > tbody > tr > th {
 									<div class="progress-terminal-hdr">
 										<i class="bi bi-activity text-success"></i> Activity Log
 										<button id="refreshLogBtn"
-												class="btn btn-sm btn-outline-secondary border-secondary text-white-50 py-0 px-2 ms-auto"
+												class="btn btn-sm btn-outline-secondary progress-terminal-btn py-0 px-2 ms-auto"
 												style="font-size:0.7rem;"
 												onclick="(function(btn){
 													btn.disabled=true;
@@ -280,7 +291,7 @@ table.fields > tbody > tr > th {
 												})(this)">
 											<i class="bi bi-arrow-clockwise"></i> Refresh
 										</button>
-										<button class="btn btn-sm btn-outline-secondary border-secondary text-white-50 py-0 px-2"
+										<button class="btn btn-sm btn-outline-secondary progress-terminal-btn py-0 px-2"
 												style="font-size:0.7rem;"
 												onclick="(function(btn){
 													var text = document.getElementById('progressBody').innerText;

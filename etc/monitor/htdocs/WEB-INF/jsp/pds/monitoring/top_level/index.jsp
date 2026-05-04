@@ -332,7 +332,12 @@ function createAndSubmitDynamicForm(action,bcc,subject,body) {
     };
 
     document.addEventListener('DOMContentLoaded', function() {
+        var savedLimit = localStorage.getItem('monProductsLimit') || 'all';
         window.applyProductLimit();
+        if (savedLimit === 'auto') {
+            /* Re-measure after layout is complete */
+            requestAnimationFrame(function() { requestAnimationFrame(function() { window.applyProductLimit(); }); });
+        }
     });
 
     /* Re-apply on resize when in auto mode */

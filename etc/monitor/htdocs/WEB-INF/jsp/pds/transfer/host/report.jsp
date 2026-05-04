@@ -4,15 +4,41 @@
 
 <jsp:include page="/WEB-INF/jsp/pds/transfer/host/host_header.jsp"/>
 
+<style>
+.report-card-hdr { background: #2d2d2d; border-bottom: 1px solid #444; color: #fff; }
+.report-card-hdr-sub { color: rgba(255,255,255,0.5); }
+.report-card-hdr-btn { color: rgba(255,255,255,0.5); border-color: #555; }
+.report-pre-spinner { color: rgba(255,255,255,0.5); }
+.report-pre {
+    background: #1e1e1e; color: #d4d4d4; margin: 0; padding: 1rem 1.25rem;
+    font-size: 0.78rem; line-height: 1.6; max-height: 75vh;
+    overflow-y: auto; border-radius: 0 0 4px 4px;
+    white-space: pre-wrap; word-break: break-all;
+}
+.report-pre font[color="red"]   { color: #f88; }
+.report-pre font[color="green"] { color: #8f8; }
+.report-pre a { color: #79b8ff; text-decoration: none; }
+.report-pre a:hover { text-decoration: underline; }
+/* Light theme overrides */
+[data-bs-theme=light] .report-card-hdr { background: #f0f2f4; border-bottom-color: #d0d7de; color: #24292f; }
+[data-bs-theme=light] .report-card-hdr-sub { color: #57606a; }
+[data-bs-theme=light] .report-card-hdr-btn { color: #57606a; border-color: #d0d7de; }
+[data-bs-theme=light] .report-card-hdr-btn:hover { color: #fff; }
+[data-bs-theme=light] .report-pre-spinner { color: #57606a; }
+[data-bs-theme=light] .report-pre { background: #f6f8fa; color: #24292f; }
+[data-bs-theme=light] .report-pre font[color="red"]   { color: #cf222e; }
+[data-bs-theme=light] .report-pre font[color="green"] { color: #1a7f37; }
+[data-bs-theme=light] .report-pre a { color: #0969da; }
+</style>
+
 <div class="card shadow-sm mt-2" style="max-width:900px;">
-    <div class="card-header d-flex align-items-center justify-content-between py-2 px-3"
-         style="background:#2d2d2d; border-bottom:1px solid #444;">
-        <span class="text-white fw-semibold" style="font-size:0.875rem;">
+    <div class="card-header d-flex align-items-center justify-content-between py-2 px-3 report-card-hdr">
+        <span class="fw-semibold" style="font-size:0.875rem;">
             <i class="bi bi-terminal-fill me-2 text-success"></i>
             <c:choose>
                 <c:when test="${not empty proxy}">
                     Network Report: <c:out value="${host.nickName}" />
-                    <span class="text-white-50 fw-normal"> via <c:out value="${proxy.nickName}" /></span>
+                    <span class="fw-normal report-card-hdr-sub"> via <c:out value="${proxy.nickName}" /></span>
                 </c:when>
                 <c:otherwise>
                     Network Report: <c:out value="${host.nickName}" />
@@ -21,24 +47,20 @@
         </span>
         <div class="d-flex gap-2">
             <button id="reportRefreshBtn"
-                    class="btn btn-sm btn-outline-secondary border-secondary text-white-50 py-0 px-2"
+                    class="btn btn-sm btn-outline-secondary py-0 px-2 report-card-hdr-btn"
                     onclick="fetchReport()" title="Refresh report" style="font-size:0.75rem;">
                 <i class="bi bi-arrow-clockwise"></i> Refresh
             </button>
             <button id="reportCopyBtn"
-                    class="btn btn-sm btn-outline-secondary border-secondary text-white-50 py-0 px-2"
+                    class="btn btn-sm btn-outline-secondary py-0 px-2 report-card-hdr-btn"
                     onclick="copyReport(this)" title="Copy to clipboard" style="font-size:0.75rem;" disabled>
                 <i class="bi bi-clipboard"></i> Copy
             </button>
         </div>
     </div>
     <div class="card-body p-0">
-        <pre id="reportPre"
-             style="background:#1e1e1e; color:#d4d4d4; margin:0; padding:1rem 1.25rem;
-                    font-size:0.78rem; line-height:1.6; max-height:75vh;
-                    overflow-y:auto; border-radius:0 0 4px 4px;
-                    white-space:pre-wrap; word-break:break-all;">
-            <span id="reportSpinner" class="text-white-50" style="font-style:italic;">
+        <pre id="reportPre" class="report-pre">
+            <span id="reportSpinner" class="report-pre-spinner" style="font-style:italic;">
                 <i class="bi bi-hourglass-split me-1"></i> Generating report, please wait&hellip;
             </span>
         </pre>
@@ -65,7 +87,7 @@
         var pre = document.getElementById('reportPre');
         var copyBtn = document.getElementById('reportCopyBtn');
         var refreshBtn = document.getElementById('reportRefreshBtn');
-        pre.innerHTML = '<span class="text-white-50" style="font-style:italic;">'
+        pre.innerHTML = '<span class="report-pre-spinner" style="font-style:italic;">'
             + '<i class="bi bi-hourglass-split me-1"></i> Generating report, please wait\u2026</span>';
         copyBtn.disabled = true;
         refreshBtn.disabled = true;

@@ -149,13 +149,13 @@ table.fields > tbody > tr > th {
 	</tr>
 
 	<tr>
-		<th>Nickname <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="As it will appear on the Destination page. Alphanumeric only; '-' and '_' may be used as separators (e.g. 'test_file'), not at the start, end, or consecutively." tabindex="0"></i></th>
+		<th>Nickname <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="As it will appear on the Destination page. Alphanumeric only; '-', '_' and '.' may be used as separators (e.g. 'test_file', 'host.name'), not at the start, end, or consecutively." tabindex="0"></i></th>
 		<td>
 			<div class="d-flex align-items-center gap-2">
 				<input id="nickName" name="nickName" type="text"
 					value="${requestScope[actionFormName].nickName}"
-					pattern="[A-Za-z0-9]+([_\-][A-Za-z0-9]+)*"
-					title="Use alphanumeric characters, with '-' or '_' as separators only (e.g. 'test_file', not '_test' or 'test_'). Maximum 128 characters."
+					pattern="[A-Za-z0-9]+([_\-\.][A-Za-z0-9]+)*"
+					title="Use alphanumeric characters, with '-', '_' or '.' as separators only (e.g. 'test_file', 'host.name', not '.test' or 'test.'). Maximum 128 characters."
 					maxlength="128"
 					required
 					oninput="validatePatternInput(this,'nickNameFeedback')" />
@@ -547,11 +547,12 @@ table.fields > tbody > tr > th {
 			</html:select></td>
 	</tr>
 	<tr>
-		<th>Mail Address <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Email address used when sending notifications" tabindex="0"></i></th>
+		<th>Mail Address <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="One or more email addresses used when sending notifications. Separate multiple addresses with ';' (e.g. 'a@example.com;b@example.com')." tabindex="0"></i></th>
 		<td>
 			<div class="d-flex align-items-center gap-2">
-				<input type="email" name="userMail" id="userMailInput"
+				<input type="text" name="userMail" id="userMailInput"
 					value='<c:out value="${requestScope[actionFormName].userMail}"/>'
+					title="Enter one or more email addresses separated by ';'"
 					oninput="validateMailInput(this); toggleMailRows()" />
 				<span id="userMailFeedback"></span>
 			</div>

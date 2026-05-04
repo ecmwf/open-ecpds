@@ -35,6 +35,18 @@
 .diff-pre .cl-note { color:#888; font-style:italic; }
 .diff-pre .cl-multiline { background:rgba(255,255,180,0.07); }
 .diff-pre b { color:#79b8ff; }
+/* Light theme overrides */
+[data-bs-theme=light] .cl-tabs .nav-tabs { background:#f0f2f4; border-bottom-color:#d0d7de; }
+[data-bs-theme=light] .cl-tabs .nav-tabs .nav-link { color:#57606a; }
+[data-bs-theme=light] .cl-tabs .nav-tabs .nav-link.active { background:#fff; border-color:#d0d7de #d0d7de #fff; color:#24292f; }
+[data-bs-theme=light] .cl-tabs .nav-tabs .nav-link:hover:not(.active):not([disabled]) { color:#24292f; border-color:#d0d7de; }
+[data-bs-theme=light] .cl-tabs .nav-tabs .nav-link[disabled] { color:#bbb; }
+[data-bs-theme=light] .diff-pre { background:#f6f8fa; color:#24292f; }
+[data-bs-theme=light] .diff-pre .cl-del  { color:#cf222e; }
+[data-bs-theme=light] .diff-pre .cl-add  { color:#1a7f37; }
+[data-bs-theme=light] .diff-pre .cl-note { color:#57606a; }
+[data-bs-theme=light] .diff-pre .cl-multiline { background:rgba(255,240,0,0.15); }
+[data-bs-theme=light] .diff-pre b { color:#0550ae; }
 </style>
 
 <table id="changelogTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">

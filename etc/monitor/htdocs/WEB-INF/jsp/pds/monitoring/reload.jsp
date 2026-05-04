@@ -254,7 +254,12 @@ document.querySelectorAll('.mon-refresh-pill').forEach(function(pill) {
   };
 
   document.addEventListener('DOMContentLoaded', function() {
-    _applyHeaderCols(localStorage.getItem('monHeaderCols') || 'all');
+    var savedCols = localStorage.getItem('monHeaderCols') || 'all';
+    _applyHeaderCols(savedCols);
+    if (savedCols === 'auto') {
+      /* Re-measure after layout is complete (DOMContentLoaded fires before first paint) */
+      requestAnimationFrame(function() { requestAnimationFrame(function() { _applyHeaderCols('auto'); }); });
+    }
     _sortPills(localStorage.getItem('monHeaderSort') || 'natural');
   });
 

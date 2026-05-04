@@ -528,11 +528,12 @@
 						</html:select></td>
 				</tr>
 				<tr>
-					<th>Mail Address <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Email address used when sending notifications" tabindex="0"></i></th>
+					<th>Mail Address <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="One or more email addresses used when sending notifications. Separate multiple addresses with ';' (e.g. 'a@example.com;b@example.com')." tabindex="0"></i></th>
 					<td>
 						<div class="d-flex align-items-center gap-2">
-							<input type="email" name="userMail" id="userMailInput"
+							<input type="text" name="userMail" id="userMailInput"
 								value='<c:out value="${requestScope[actionFormName].userMail}"/>'
+								title="Enter one or more email addresses separated by ';'"
 								oninput="validateMailInput(this); toggleMailRows()" />
 							<span id="userMailFeedback"></span>
 						</div>
