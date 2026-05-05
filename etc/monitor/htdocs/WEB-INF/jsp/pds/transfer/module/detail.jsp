@@ -6,7 +6,7 @@
 <%@ taglib uri="/WEB-INF/tld/struts-logic.tld" prefix="logic" %>
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth" %>
 
-<table>
+<table style="width:100%">
 
 <tr>
 <td colspan="2">

@@ -248,10 +248,23 @@ function getEditorType(aceEditor) {
 }
 
 // Lets' populate the help tab!
+
+/* Find the nearest scrollable ancestor of an element */
+function _findScrollableParent(el) {
+	var p = el.parentElement;
+	while (p && p !== document.body) {
+		var s = window.getComputedStyle(p);
+		if ((s.overflowY === 'auto' || s.overflowY === 'scroll') && p.scrollHeight > p.clientHeight) return p;
+		p = p.parentElement;
+	}
+	return null;
+}
+
 function helpScrollToGroup(groupId) {
 	var t = document.getElementById('hgrp-' + groupId);
 	if (!t) return;
-	var c = t.closest('.scrollable-tab');
+	/* Works for both .scrollable-tab and offcanvas content divs */
+	var c = t.closest('.scrollable-tab') || _findScrollableParent(t);
 	if (!c) return;
 	var nav = c.querySelector('.help-nav');
 	var navH = nav ? nav.getBoundingClientRect().height : 0;
@@ -309,20 +322,27 @@ function getHelpHtmlContent(completions, title) {
 }
 
 /**
- * Scroll the help panel (scrollable-tab div) to the entry matching paramName.
- * helpContainerId: the id of the scrollable help div (e.g. 'pill-help')
- * paramName: the full parameter name as it appears in the editor line (e.g. 'group.param')
+ * Scroll the help panel to the entry matching paramName.
+ * Works for both .scrollable-tab divs and offcanvas content divs.
  */
 function scrollHelpToParam(helpContainerId, paramName) {
 	if (!paramName) return;
 	var helpPanel = document.getElementById(helpContainerId);
 	if (!helpPanel) return;
+	/* Clear any previous highlight */
+	helpPanel.querySelectorAll('.help-row--active').forEach(function(el) {
+		el.classList.remove('help-row--active');
+	});
 	var row = helpPanel.querySelector('.help-row[data-param="' + paramName + '"]');
-	if (row) {
-		var panelRect = helpPanel.getBoundingClientRect();
-		var rowRect = row.getBoundingClientRect();
-		helpPanel.scrollTop = Math.max(0, helpPanel.scrollTop + (rowRect.top - panelRect.top) - 8);
-	}
+	if (!row) return;
+	row.classList.add('help-row--active');
+	/* Use the helpPanel itself if it is the scroll container, otherwise walk up */
+	var scrollEl = (helpPanel.scrollHeight > helpPanel.clientHeight)
+		? helpPanel
+		: (_findScrollableParent(row) || helpPanel);
+	var containerRect = scrollEl.getBoundingClientRect();
+	var rowRect = row.getBoundingClientRect();
+	scrollEl.scrollTop = Math.max(0, scrollEl.scrollTop + (rowRect.top - containerRect.top) - 8);
 }
 
 function checkKeyIsMatching(event, regexPattern) {

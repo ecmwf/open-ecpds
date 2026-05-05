@@ -409,6 +409,18 @@ document.addEventListener('DOMContentLoaded', function() {
     var btn = document.querySelector('[data-bs-target="#sidebarMenu"]');
     if (btn && body && !body.querySelector('a, table, button')) btn.style.display = 'none';
 });
+// When browser restores this page from bfcache (e.g. Cancel → history.back()),
+// close the sidebar offcanvas if it was open at the time of navigation.
+window.addEventListener('pageshow', function(event) {
+    if (event.persisted) {
+        var offcanvasEl = document.getElementById('sidebarMenu');
+        if (offcanvasEl && offcanvasEl.classList.contains('show')) {
+            var instance = bootstrap.Offcanvas.getInstance(offcanvasEl);
+            if (instance) instance.hide();
+            else bootstrap.Offcanvas.getOrCreateInstance(offcanvasEl).hide();
+        }
+    }
+});
 </script>
 
 <div id="contentDiv">

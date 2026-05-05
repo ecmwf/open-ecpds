@@ -66,31 +66,40 @@ table.fields > tbody > tr > th {
 	padding: 8px;
 	position: relative;
 }
+.acc-help-btn {
+    position: absolute; top: 50%; right: 3rem;
+    transform: translateY(-50%);
+    color: var(--bs-secondary-color); font-size: 0.9rem; line-height: 1;
+    cursor: pointer; z-index: 10;
+    transition: color 0.15s;
+}
+.acc-help-btn:hover { color: var(--bs-primary); }
+.acc-help-btn.acc-help-active { color: var(--bs-primary); }
 </style>
+
+<tiles:useAttribute id="actionFormName" name="action.form.name"
+	classname="java.lang.String" />
+<tiles:useAttribute name="isInsert" classname="java.lang.String" />
+<c:choose>
+    <c:when test="${isInsert == 'true'}">
+        <div class="form-info-banner" style="margin-left:0;margin-bottom:0.5rem">
+            <i class="bi bi-hdd-network text-primary flex-shrink-0"></i>
+            Register a new Host for data transfer operations.
+        </div>
+    </c:when>
+    <c:otherwise>
+        <div class="form-info-banner" style="margin-left:0;margin-bottom:0.5rem">
+            <i class="bi bi-hdd-network text-primary flex-shrink-0"></i>
+            Edit the Host configuration.
+        </div>
+    </c:otherwise>
+</c:choose>
 
 <table class="fields" border=0>
 
 	<tiles:useAttribute id="actionFormName" name="action.form.name"
 		classname="java.lang.String" />
 	<tiles:useAttribute name="isInsert" classname="java.lang.String" />
-<c:choose>
-    <c:when test="${isInsert == 'true'}">
-        <tr><td colspan="3">
-        <div class="form-info-banner">
-            <i class="bi bi-hdd-network text-primary flex-shrink-0"></i>
-            Register a new Host for data transfer operations.
-        </div>
-        </td></tr>
-    </c:when>
-    <c:otherwise>
-        <tr><td colspan="3">
-        <div class="form-info-banner">
-            <i class="bi bi-hdd-network text-primary flex-shrink-0"></i>
-            Edit the Host configuration.
-        </div>
-        </td></tr>
-    </c:otherwise>
-</c:choose>
 
 
 
@@ -402,10 +411,14 @@ table.fields > tbody > tr > th {
 		<td colspan="2">
 			<div class="accordion" id="hostOptionsAccordion" style="min-width:860px;max-width:860px">
 				<div class="accordion-item">
-					<h2 class="accordion-header" id="hostAccHeadProperties">
+					<h2 class="accordion-header" id="hostAccHeadProperties" style="position:relative;">
 						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#hostAccProperties" aria-expanded="false" aria-controls="hostAccProperties">
 							Properties
 						</button>
+						<span role="button" tabindex="0" class="acc-help-btn" id="hostEditPropsHelpBtn"
+							onclick="openHostEditHelp();" onkeydown="if(event.key==='Enter'||event.key===' ')openHostEditHelp();" title="Open properties reference">
+							<i class="bi bi-question-circle"></i>
+						</span>
 					</h2>
 					<div id="hostAccProperties" class="accordion-collapse collapse" aria-labelledby="hostAccHeadProperties" data-bs-parent="#hostOptionsAccordion">
 						<div class="accordion-body p-2">
@@ -438,18 +451,6 @@ table.fields > tbody > tr > th {
 								<button type="button" class="btn btn-sm btn-outline-secondary" onclick="testSource(editorJavascript); return false">Test</button>
 								<button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearSource(editorJavascript); return false">Clear</button>
 							</div>
-						</div>
-					</div>
-				</div>
-				<div class="accordion-item">
-					<h2 class="accordion-header" id="hostAccHeadHelp">
-						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#hostAccHelp" aria-expanded="false" aria-controls="hostAccHelp">
-							Help
-						</button>
-					</h2>
-					<div id="hostAccHelp" class="accordion-collapse collapse" aria-labelledby="hostAccHeadHelp" data-bs-parent="#hostOptionsAccordion">
-						<div class="accordion-body p-2">
-							<div id="hostHelpContent" class="scrollable-tab"></div>
 						</div>
 					</div>
 				</div>
@@ -578,6 +579,21 @@ table.fields > tbody > tr > th {
 
 </table>
 
+<%-- Help offcanvas panel --%>
+<div class="offcanvas offcanvas-end" tabindex="-1" id="hostEditHelpOffcanvas"
+     aria-labelledby="hostEditHelpOffcanvasLabel" style="width:min(480px,42vw);">
+    <div class="offcanvas-header border-bottom py-2 px-3">
+        <h6 class="offcanvas-title mb-0 fw-semibold" id="hostEditHelpOffcanvasLabel">
+            <i class="bi bi-book me-2 text-primary"></i>Properties Reference
+        </h6>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body p-0" style="display:flex; flex-direction:column; overflow:hidden;">
+        <div id="hostEditHelpNav" style="flex:0 0 auto; padding:0 1rem;"></div>
+        <div id="hostEditHelpContent" style="padding:0.75rem 1rem; overflow-y:auto; flex:1; min-height:0;"></div>
+    </div>
+</div>
+
 <script>
 	var editorDir = getEditorProperties(false, false, "dir", "toml");
 	var editorProperties = getEditorProperties(false, true, "properties", "crystal");
@@ -652,7 +668,7 @@ table.fields > tbody > tr > th {
 	// Lets' populate the help tab!
 	function populateHelpTab() {
 		var transferModuleName = getTransferModuleName();
-		$('#hostHelpContent').html(getHelpHtmlContent(
+		$('#hostEditHelpContent').html(getHelpHtmlContent(
 				completions.filter(function(item) {
 	           		var moduleName = item.caption.split(".")[0];
 	       	    	if (transferModuleName !== "ecaccess" && transferModuleNames.includes(moduleName) && moduleName !== transferModuleName) {
@@ -661,6 +677,9 @@ table.fields > tbody > tr > th {
 	       	    		return !isInvalidModuleName(moduleName);
 	       	    	}
 	    	    }), 'Available Options for Host of Type ' + getHostType() + ' with Transfer Method ' + getTransferMethodName()))
+		/* Move the group nav pills to the fixed slot above the scrollable area */
+		var navEl = document.querySelector('#hostEditHelpContent .help-nav');
+		if (navEl) document.getElementById('hostEditHelpNav').appendChild(navEl);
 	}
     
 	// Create a custom completer
@@ -813,6 +832,11 @@ table.fields > tbody > tr > th {
     	editorProperties.session.setAnnotations(
     		getAnnotations(editorProperties, editorProperties.selection.getCursor().row));
     	checkEachLine(editorProperties);
+    	/* Live-track help offcanvas when open */
+    	var _oc = document.getElementById('hostEditHelpOffcanvas');
+    	if (_oc && _oc.classList.contains('show')) {
+    		_scrollEditHelpToCursor();
+    	}
     });
     
 	// Track changes in the editor's content
@@ -836,20 +860,33 @@ table.fields > tbody > tr > th {
 	document.getElementById('hostAccJavascript').addEventListener('shown.bs.collapse', function() {
 		editorJavascript.resize(true);
 	});
-	// When Help panel opens, scroll to the parameter at the current cursor position
-	var hostHelpBtn = document.querySelector('button[data-bs-target="#hostAccHelp"]');
-	if (hostHelpBtn) {
-		hostHelpBtn.addEventListener('click', function() {
-			setTimeout(function() {
-				if (!document.getElementById('hostAccHelp').classList.contains('show')) return;
-				var line = editorProperties.session.getLine(editorProperties.selection.getCursor().row) || '';
-				line = line.trim();
-				if (line && !line.startsWith('#') && !line.startsWith('//')) {
-					var eqIdx = line.indexOf('=');
-					var paramName = (eqIdx > 0 ? line.substring(0, eqIdx) : line).trim();
-					if (paramName) scrollHelpToParam('hostHelpContent', paramName);
-				}
-			}, 400);
+	/* Help offcanvas */
+	function _scrollEditHelpToCursor() {
+		var row = editorProperties.selection.getCursor().row;
+		var line = editorProperties.session.getLine(row) || '';
+		line = line.trim();
+		if (line && !line.startsWith('#') && !line.startsWith('//')) {
+			var eqIdx = line.indexOf('=');
+			var paramName = (eqIdx > 0 ? line.substring(0, eqIdx) : line).trim();
+			if (paramName) scrollHelpToParam('hostEditHelpContent', paramName);
+		}
+	}
+	window.openHostEditHelp = function() {
+		var el = document.getElementById('hostEditHelpOffcanvas');
+		if (el) bootstrap.Offcanvas.getOrCreateInstance(el).show();
+	};
+	var _editHelpOffcanvasEl = document.getElementById('hostEditHelpOffcanvas');
+	if (_editHelpOffcanvasEl) {
+		_editHelpOffcanvasEl.addEventListener('show.bs.offcanvas', function() {
+			var btn = document.getElementById('hostEditPropsHelpBtn');
+			if (btn) btn.classList.add('acc-help-active');
+		});
+		_editHelpOffcanvasEl.addEventListener('shown.bs.offcanvas', function() {
+			_scrollEditHelpToCursor();
+		});
+		_editHelpOffcanvasEl.addEventListener('hide.bs.offcanvas', function() {
+			var btn = document.getElementById('hostEditPropsHelpBtn');
+			if (btn) btn.classList.remove('acc-help-active');
 		});
 	}
 

@@ -14,6 +14,15 @@
 </c:if>
 <c:if test="${empty isDelete}">
 
+	<div class="form-info-banner" style="margin-left:0">
+		<i class="bi bi-globe text-primary flex-shrink-0"></i>
+		Web Resource: <strong><c:out value="${resource.path}"/></strong>
+	</div>
+
+	<table style="width:100%;margin-bottom:1.25rem">
+	<tr>
+	<td style="width:1%;white-space:nowrap;vertical-align:top">
+
 	<table class="fields">
 		<tr>
 			<th>Path</th>
@@ -33,12 +42,15 @@
 		</auth:if>
 	</table>
 
+	</td>
+	<td style="vertical-align:top;padding-left:1rem">
+
 <style>
 .assoc-card .card-header { display:flex; align-items:center; gap:.4rem; padding:.5rem .75rem; background:#f8f9fa; font-size:.85rem; }
 .assoc-chip { display:inline-flex; align-items:center; gap:.25rem; background:#e9ecef; border-radius:1rem; padding:.2rem .6rem; font-size:.8rem; margin:.15rem; }
 </style>
 
-	<div class="card assoc-card mt-2" style="max-width:480px">
+	<div class="card assoc-card" style="max-width:480px">
 	  <div class="card-header">
 	    <i class="bi bi-folder text-secondary"></i>
 	    <strong>Associated Web Categories</strong>
@@ -60,4 +72,8 @@
 	    </c:choose>
 	  </div>
 	</div>
+
+	</td>
+	</tr>
+	</table>
 </c:if>

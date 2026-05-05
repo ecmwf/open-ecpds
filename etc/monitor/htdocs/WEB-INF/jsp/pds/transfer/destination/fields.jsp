@@ -74,13 +74,14 @@
 	line-height: 1.6em;
 }
 
-.scrollable-tab {
-	height: 300px;
-	overflow-y: auto;
-	border: solid 1px var(--bs-border-color);
-	border-radius: 4px;
-	position: relative;
+.acc-help-btn {
+    position: absolute; top: 50%; right: 3rem;
+    transform: translateY(-50%);
+    color: var(--bs-secondary-color); font-size: 0.9rem; line-height: 1;
+    cursor: pointer; z-index: 10; transition: color 0.15s;
 }
+.acc-help-btn:hover { color: var(--bs-primary); }
+.acc-help-btn.acc-help-active { color: var(--bs-primary); }
 .ace-clip {
 	border: solid 1px var(--bs-border-color);
 	border-radius: 4px;
@@ -94,31 +95,27 @@
 }
 </style>
 
-<table style="width:100%">
+<tiles:useAttribute id="actionFormName" name="action.form.name"
+	classname="java.lang.String" />
+<tiles:useAttribute name="isInsert" classname="java.lang.String" />
+<c:choose>
+    <c:when test="${isInsert == 'true'}">
+    <div class="form-info-banner" style="margin-left:0; margin-bottom:0.5rem">
+        <i class="bi bi-geo-alt text-primary flex-shrink-0"></i>
+        Create a new Destination to define a data delivery target.
+    </div>
+    </c:when>
+    <c:otherwise>
+    <div class="form-info-banner" style="margin-left:0; margin-bottom:0.5rem">
+        <i class="bi bi-geo-alt text-primary flex-shrink-0"></i>
+        Edit the Destination configuration.
+    </div>
+    </c:otherwise>
+</c:choose>
+<table style="width:100%; margin-bottom:1.25rem">
 	<tr>
 		<td style="width:1%;white-space:nowrap;vertical-align:top">
 			<table class="fields">
-				<tiles:useAttribute id="actionFormName" name="action.form.name"
-					classname="java.lang.String" />
-				<tiles:useAttribute name="isInsert" classname="java.lang.String" />
-<c:choose>
-    <c:when test="${isInsert == 'true'}">
-        <tr><td colspan="2">
-        <div class="form-info-banner">
-            <i class="bi bi-geo-alt text-primary flex-shrink-0"></i>
-            Create a new Destination to define a data delivery target.
-        </div>
-        </td></tr>
-    </c:when>
-    <c:otherwise>
-        <tr><td colspan="2">
-        <div class="form-info-banner">
-            <i class="bi bi-geo-alt text-primary flex-shrink-0"></i>
-            Edit the Destination configuration.
-        </div>
-        </td></tr>
-    </c:otherwise>
-</c:choose>
 
 
 				<c:if test="${isInsert == 'true'}">
@@ -580,8 +577,10 @@
 				<tr>
 					<th>Show In Monitors <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="When enabled, this Destination is monitored in the monitoring display." tabindex="0"></i></th>
 					<td>
+					<div class="d-flex align-items-center gap-1">
 					<html:checkbox property="showInMonitors" styleId="chk_showInMonitors" onchange="(function(c){document.getElementById('icon_showInMonitors').style.display=c.checked?'none':'';})(this)" />
-					<i id="icon_showInMonitors" class="bi bi-eye-slash text-muted ms-1" title="Not shown in Monitor Display" style="font-size:0.78rem;"></i>
+					<i id="icon_showInMonitors" class="bi bi-eye-slash text-muted" title="Not shown in Monitor Display" style="font-size:0.78rem;"></i>
+					</div>
 					<script>(function(){var c=document.getElementById('chk_showInMonitors');if(c)document.getElementById('icon_showInMonitors').style.display=c.checked?'none':'';})()</script>
 				</td>
 				</tr>
@@ -611,7 +610,7 @@
 .assoc-chooser-item:hover { background:#e9ecef; }
 .assoc-empty { display:flex; align-items:center; gap:.35rem; color:#856404; background:#fff3cd; border:1px solid #ffc107; border-radius:.25rem; font-size:.8rem; padding:.3rem .5rem; margin:0; }
 </style>
-<div class="row g-3 mt-0" style="max-width:480px">
+<div class="row g-3" style="max-width:480px">
 
   <%-- Dissemination Hosts --%>
   <div class="col-12">
@@ -995,14 +994,18 @@
 	<tr>
 		<td colspan="3" style="padding:0 0 0 10pt">
 			<div class="d-flex align-items-stretch" id="options-row">
-				<div id="options-label" style="background:var(--bs-secondary-bg);border-right:2px solid var(--bs-border-color);font-weight:600;white-space:nowrap;padding:0.4rem 0.6rem;flex-shrink:0">Options</div>
+				<div id="options-label" style="background:var(--bs-secondary-bg);border-right:2px solid var(--bs-border-color);font-weight:600;white-space:nowrap;padding:0.4rem 0.6rem;flex-shrink:0;text-align:right;font-size:10pt">Options</div>
 				<div style="flex:1;min-width:0;padding:0.4rem 0.6rem">
 					<div class="accordion" id="optionsAccordion" style="min-width:860px;max-width:860px">
 					<div class="accordion-item">
-						<h2 class="accordion-header" id="acc-properties-heading">
+						<h2 class="accordion-header" id="acc-properties-heading" style="position:relative;">
 							<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
 								data-bs-target="#acc-properties" aria-expanded="false"
 								aria-controls="acc-properties">Properties</button>
+							<span role="button" tabindex="0" class="acc-help-btn" id="destPropsHelpBtn"
+								onclick="openDestHelp();" onkeydown="if(event.key==='Enter'||event.key===' ')openDestHelp();" title="Open properties reference">
+								<i class="bi bi-question-circle"></i>
+							</span>
 						</h2>
 						<div id="acc-properties" class="accordion-collapse collapse"
 							aria-labelledby="acc-properties-heading" data-bs-parent="#optionsAccordion">
@@ -1036,19 +1039,6 @@
 							</div>
 						</div>
 					</div>
-					<div class="accordion-item">
-						<h2 class="accordion-header" id="acc-help-heading">
-							<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-								data-bs-target="#acc-help" aria-expanded="false"
-								aria-controls="acc-help">Help</button>
-						</h2>
-						<div id="acc-help" class="accordion-collapse collapse"
-							aria-labelledby="acc-help-heading" data-bs-parent="#optionsAccordion">
-							<div class="accordion-body p-2">
-								<div class="scrollable-tab" id="pill-help"></div>
-							</div>
-						</div>
-					</div>
 					</div>
 				</div>
 			</div>
@@ -1056,6 +1046,21 @@
 	</tr>
 	</tbody>
 </table>
+
+<%-- Help offcanvas panel --%>
+<div class="offcanvas offcanvas-end" tabindex="-1" id="destHelpOffcanvas"
+     aria-labelledby="destHelpOffcanvasLabel" style="width:min(480px,42vw);">
+	<div class="offcanvas-header border-bottom py-2 px-3">
+		<h6 class="offcanvas-title mb-0 fw-semibold" id="destHelpOffcanvasLabel">
+			<i class="bi bi-book me-2 text-primary"></i>Properties Reference
+		</h6>
+		<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+	</div>
+	<div class="offcanvas-body p-0" style="display:flex; flex-direction:column; overflow:hidden;">
+		<div id="destHelpNav" style="flex:0 0 auto; padding:0 1rem;"></div>
+		<div id="destHelpContent" style="padding:0.75rem 1rem; overflow-y:auto; flex:1; min-height:0;"></div>
+	</div>
+</div>
 
 <script>
 	var editorProperties = getEditorProperties(false, true, "properties", "crystal");
@@ -1066,9 +1071,10 @@
     	${requestScope[actionFormName].completions}
     ];
 	
-	// Lets' populate the help tab and refresh Ace editors when accordion panels open!
 	$(document).ready(function() {
-		$('#pill-help').html(getHelpHtmlContent(completions, 'Available Options for this Destination'));
+		$('#destHelpContent').html(getHelpHtmlContent(completions, 'Available Options for this Destination'));
+		var navEl = document.querySelector('#destHelpContent .help-nav');
+		if (navEl) document.getElementById('destHelpNav').appendChild(navEl);
 		var chk = document.getElementById('groupByDate');
 		if (chk) document.getElementById('dateFormatRow').style.display = chk.checked ? '' : 'none';
 
@@ -1191,21 +1197,22 @@
 		document.getElementById('acc-javascript').addEventListener('shown.bs.collapse', function() {
 			editorJavascript.resize(true);
 		});
-		// When Help panel opens, scroll to the parameter at the current cursor position
-		var helpBtn = document.querySelector('button[data-bs-target="#acc-help"]');
-		if (helpBtn) {
-			helpBtn.addEventListener('click', function() {
-				// Wait for Bootstrap accordion animation to complete (350ms) before scrolling
-				setTimeout(function() {
-					if (!document.getElementById('acc-help').classList.contains('show')) return;
-					var line = editorProperties.session.getLine(editorProperties.selection.getCursor().row) || '';
-					line = line.trim();
-					if (line && !line.startsWith('#') && !line.startsWith('//')) {
-						var eqIdx = line.indexOf('=');
-						var paramName = (eqIdx > 0 ? line.substring(0, eqIdx) : line).trim();
-						if (paramName) scrollHelpToParam('pill-help', paramName);
-					}
-				}, 400);
+		window.openDestHelp = function() {
+			var el = document.getElementById('destHelpOffcanvas');
+			if (el) bootstrap.Offcanvas.getOrCreateInstance(el).show();
+		};
+		var _destOffcanvasEl = document.getElementById('destHelpOffcanvas');
+		if (_destOffcanvasEl) {
+			_destOffcanvasEl.addEventListener('show.bs.offcanvas', function() {
+				var btn = document.getElementById('destPropsHelpBtn');
+				if (btn) btn.classList.add('acc-help-active');
+			});
+			_destOffcanvasEl.addEventListener('shown.bs.offcanvas', function() {
+				_scrollDestHelpToCursor();
+			});
+			_destOffcanvasEl.addEventListener('hide.bs.offcanvas', function() {
+				var btn = document.getElementById('destPropsHelpBtn');
+				if (btn) btn.classList.remove('acc-help-active');
 			});
 		}
 		// Align "Options" label width with the <th> column in table.fields
@@ -1245,22 +1252,22 @@
 	// Set the custom completer for the editor
 	editorProperties.completers = [customCompleter];
 		
-	// Add a click event listener to the properties editor
+	function _scrollDestHelpToCursor() {
+		var row = editorProperties.selection.getCursor().row;
+		var line = editorProperties.session.getLine(row) || '';
+		line = line.trim();
+		if (line && !line.startsWith('#') && !line.startsWith('//')) {
+			var eqIdx = line.indexOf('=');
+			var paramName = (eqIdx > 0 ? line.substring(0, eqIdx) : line).trim();
+			if (paramName) scrollHelpToParam('destHelpContent', paramName);
+		}
+	}
     editorProperties.addEventListener("changeSelection", function (event) {
     	editorProperties.session.setAnnotations(
     		getAnnotations(editorProperties, editorProperties.selection.getCursor().row));
     	checkEachLine(editorProperties);
-    	// If the Help panel is open, scroll it to the matching parameter
-    	if (document.getElementById('acc-help').classList.contains('show')) {
-    		var line = editorProperties.session.getLine(editorProperties.selection.getCursor().row) || '';
-    		line = line.trim();
-    		// Skip blank lines and comment lines
-    		if (line && !line.startsWith('#') && !line.startsWith('//')) {
-    			var eqIdx = line.indexOf('=');
-    			var paramName = (eqIdx > 0 ? line.substring(0, eqIdx) : line).trim();
-    			if (paramName) scrollHelpToParam('pill-help', paramName);
-    		}
-    	}
+		var _oc = document.getElementById('destHelpOffcanvas');
+		if (_oc && _oc.classList.contains('show')) _scrollDestHelpToCursor();
     });
     
 	// Track changes in the editor's content

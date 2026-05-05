@@ -9,7 +9,7 @@
 
 <tiles:insert page="/WEB-INF/jsp/pds/user/policy/data.jsp"/>
 
-<table>
+<table style="width:100%">
 <tr>
 <td colspan="2" class="pt-2">
 <a href="/do/user/policy" class="btn btn-sm btn-outline-secondary">

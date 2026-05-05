@@ -13,6 +13,11 @@
 </c:if>
 <c:if test="${empty isDelete}">
 
+	<div class="form-info-banner" style="margin-left:0">
+		<i class="bi bi-diagram-3 text-primary flex-shrink-0"></i>
+		Transfer Method: <strong><c:out value="${method.name}"/></strong>
+	</div>
+
 	<table class="fields">
 		<tr>
 			<th>Name</th>

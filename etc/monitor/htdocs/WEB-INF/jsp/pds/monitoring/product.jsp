@@ -341,7 +341,7 @@ th {
 	value="Dear colleagues,%0D%0A%0D%0AI am pleased to inform you that the problems we encountered earlier%0D%0Awithin the operational production have been resolved and the dissemination of products has started.%0D%0A%0D%0AOur sincere apologies for the inconvenience caused by this delay.%0D%0A%0D%0AKind regards%0D%0A%0D%0AECMWF Duty Manager%0D%0A" />
 <c:if test="${not empty emails}">
     <div class="card mt-4 border-secondary-subtle">
-        <div class="card-header py-2 px-3 d-flex align-items-center gap-2 bg-light">
+        <div class="card-header py-2 px-3 d-flex align-items-center gap-2">
             <i class="bi bi-envelope-fill text-secondary"></i>
             <span class="fw-semibold text-secondary" style="font-size:0.82rem;">Email Notifications &mdash; ${productStatus.time}-${productStatus.product}</span>
         </div>

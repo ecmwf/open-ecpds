@@ -14,14 +14,6 @@
 	margin-top: 8px;
 	margin-bottom: 4px;
 }
-.scrollable-tab {
-	height: 300px;
-	overflow-y: auto;
-	border: solid 1px var(--bs-border-color);
-	border-radius: 4px;
-	padding: 8px;
-	position: relative;
-}
 table.fields {
 	width: 100%;
 	min-width: 600px;
@@ -30,6 +22,15 @@ table.fields > tbody > tr > th {
 	width: 1%;
 	white-space: nowrap;
 }
+.acc-help-btn {
+	position: absolute; top: 50%; right: 3rem;
+	transform: translateY(-50%);
+	color: var(--bs-secondary-color); font-size: 0.9rem; line-height: 1;
+	cursor: pointer; z-index: 10;
+	transition: color 0.15s;
+}
+.acc-help-btn:hover { color: var(--bs-primary); }
+.acc-help-btn.acc-help-active { color: var(--bs-primary); }
 </style>
 
 <c:set var="desStatus" value="${destination.formattedStatus}" />
@@ -231,10 +232,14 @@ table.fields > tbody > tr > th {
 		<td>
 			<div class="accordion" id="paramsOptionsAccordion" style="min-width:860px;max-width:860px">
 			<div class="accordion-item">
-				<h2 class="accordion-header" id="paramsAccHeadProperties">
+				<h2 class="accordion-header" id="paramsAccHeadProperties" style="position:relative;">
 					<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#paramsAccProperties" aria-expanded="false" aria-controls="paramsAccProperties">
 						Properties
 					</button>
+					<span role="button" tabindex="0" class="acc-help-btn" id="paramsPropsHelpBtn"
+						onclick="openParamsHelp();" onkeydown="if(event.key==='Enter'||event.key===' ')openParamsHelp();" title="Open properties reference">
+						<i class="bi bi-question-circle"></i>
+					</span>
 				</h2>
 				<div id="paramsAccProperties" class="accordion-collapse collapse" aria-labelledby="paramsAccHeadProperties" data-bs-parent="#paramsOptionsAccordion">
 					<div class="accordion-body p-2">
@@ -256,22 +261,25 @@ table.fields > tbody > tr > th {
 					</div>
 				</div>
 			</div>
-			<div class="accordion-item">
-				<h2 class="accordion-header" id="paramsAccHeadHelp">
-					<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#paramsAccHelp" aria-expanded="false" aria-controls="paramsAccHelp">
-						Help
-					</button>
-				</h2>
-				<div id="paramsAccHelp" class="accordion-collapse collapse" aria-labelledby="paramsAccHeadHelp" data-bs-parent="#paramsOptionsAccordion">
-					<div class="accordion-body p-2">
-						<div id="paramsHelpContent" class="scrollable-tab"></div>
-					</div>
-				</div>
-			</div>
 		</div>
 		</td>
 	</tr>
 </table>
+
+<%-- Help offcanvas panel --%>
+<div class="offcanvas offcanvas-end" tabindex="-1" id="paramsHelpOffcanvas"
+     aria-labelledby="paramsHelpOffcanvasLabel" style="width:min(480px,42vw);">
+	<div class="offcanvas-header border-bottom py-2 px-3">
+		<h6 class="offcanvas-title mb-0 fw-semibold" id="paramsHelpOffcanvasLabel">
+			<i class="bi bi-book me-2 text-primary"></i>Properties Reference
+		</h6>
+		<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+	</div>
+	<div class="offcanvas-body p-0" style="display:flex; flex-direction:column; overflow:hidden;">
+		<div id="paramsHelpNav" style="flex:0 0 auto; padding:0 1rem;"></div>
+		<div id="paramsHelpContent" style="padding:0.75rem 1rem; overflow-y:auto; flex:1; min-height:0;"></div>
+	</div>
+</div>
 
 <script>
 	var editorProperties = getEditorProperties(true, false, "properties", "crystal");
@@ -283,13 +291,28 @@ table.fields > tbody > tr > th {
 
 	$(document).ready(function() {
 		$('#paramsHelpContent').html(getHelpHtmlContent(completions, 'Available Options for this Destination'));
+		var navEl = document.querySelector('#paramsHelpContent .help-nav');
+		if (navEl) document.getElementById('paramsHelpNav').appendChild(navEl);
 	});
 
 	checkEachLine(editorProperties);
 
+	function _scrollParamsHelpToCursor() {
+		var row = editorProperties.selection.getCursor().row;
+		var line = editorProperties.session.getLine(row) || '';
+		line = line.trim();
+		if (line && !line.startsWith('#') && !line.startsWith('//')) {
+			var eqIdx = line.indexOf('=');
+			var paramName = (eqIdx > 0 ? line.substring(0, eqIdx) : line).trim();
+			if (paramName) scrollHelpToParam('paramsHelpContent', paramName);
+		}
+	}
+
 	editorProperties.addEventListener("changeSelection", function (event) {
 		editorProperties.session.setAnnotations(
 			getAnnotations(editorProperties, editorProperties.selection.getCursor().row));
+		var _oc = document.getElementById('paramsHelpOffcanvas');
+		if (_oc && _oc.classList.contains('show')) _scrollParamsHelpToCursor();
 	});
 
 	var editorJavascript = getEditorProperties(true, false, "javascript", "javascript");
@@ -301,19 +324,22 @@ table.fields > tbody > tr > th {
 		editorJavascript.resize(true);
 	});
 
-	var paramsHelpBtn = document.querySelector('button[data-bs-target="#paramsAccHelp"]');
-	if (paramsHelpBtn) {
-		paramsHelpBtn.addEventListener('click', function() {
-			setTimeout(function() {
-				if (!document.getElementById('paramsAccHelp').classList.contains('show')) return;
-				var line = editorProperties.session.getLine(editorProperties.selection.getCursor().row) || '';
-				line = line.trim();
-				if (line && !line.startsWith('#') && !line.startsWith('//')) {
-					var eqIdx = line.indexOf('=');
-					var paramName = (eqIdx > 0 ? line.substring(0, eqIdx) : line).trim();
-					if (paramName) scrollHelpToParam('paramsHelpContent', paramName);
-				}
-			}, 400);
+	window.openParamsHelp = function() {
+		var el = document.getElementById('paramsHelpOffcanvas');
+		if (el) bootstrap.Offcanvas.getOrCreateInstance(el).show();
+	};
+	var _paramsOffcanvasEl = document.getElementById('paramsHelpOffcanvas');
+	if (_paramsOffcanvasEl) {
+		_paramsOffcanvasEl.addEventListener('show.bs.offcanvas', function() {
+			var btn = document.getElementById('paramsPropsHelpBtn');
+			if (btn) btn.classList.add('acc-help-active');
+		});
+		_paramsOffcanvasEl.addEventListener('shown.bs.offcanvas', function() {
+			_scrollParamsHelpToCursor();
+		});
+		_paramsOffcanvasEl.addEventListener('hide.bs.offcanvas', function() {
+			var btn = document.getElementById('paramsPropsHelpBtn');
+			if (btn) btn.classList.remove('acc-help-active');
 		});
 	}
 

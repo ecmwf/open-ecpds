@@ -8,29 +8,25 @@
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content"%>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 
-<table class="fields">
-
-	<html:hidden property="id" />
-
-	<tiles:useAttribute name="isInsert" classname="java.lang.String" />
+<tiles:useAttribute name="isInsert" classname="java.lang.String" />
 <c:choose>
     <c:when test="${isInsert == 'true'}">
-        <tr><td colspan="2">
-        <div class="form-info-banner">
+        <div class="form-info-banner" style="margin-left:0;margin-bottom:0.5rem">
             <i class="bi bi-collection text-primary flex-shrink-0"></i>
             Create a new Transfer Group to organise transfer servers.
         </div>
-        </td></tr>
     </c:when>
     <c:otherwise>
-        <tr><td colspan="2">
-        <div class="form-info-banner">
+        <div class="form-info-banner" style="margin-left:0;margin-bottom:0.5rem">
             <i class="bi bi-collection text-primary flex-shrink-0"></i>
             Edit the Transfer Group configuration.
         </div>
-        </td></tr>
     </c:otherwise>
 </c:choose>
+
+<table class="fields">
+
+	<html:hidden property="id" />
 
 
 	<tiles:useAttribute id="actionFormName" name="action.form.name"
@@ -38,10 +34,11 @@
 
 	<logic:match name="isInsert" value="true">
 		<tr>
-			<th>Name</th>
+			<th>Name <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Must start and end with a letter or digit; '_' or '-' allowed as single separators (e.g. group-1)" tabindex="0"></i></th>
 			<td>
 				<div class="d-flex align-items-center gap-2">
 					<input id="name" name="name" type="text"
+						required
 						pattern="[a-zA-Z0-9]+([_-][a-zA-Z0-9]+)*"
 						title="Must start and end with a letter or digit; '_' or '-' allowed as single separators (e.g. group-1)"
 						oninput="validatePatternInput(this, 'name-feedback')">
@@ -70,21 +67,47 @@
 		<td><html:checkbox property="replicate" /></td>
 	</tr>
 	<tr>
-		<th>Min. Replication Count</th>
-		<td><html:text property="minReplicationCount"
-				styleClass="comment" /></td>
+		<th>Min. Replication Count <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Integer >= 0; must not exceed the number of active Transfer Servers in this group" tabindex="0"></i></th>
+		<td>
+			<div class="d-flex align-items-center gap-2">
+				<input type="number" name="minReplicationCount" id="minReplicationCount"
+					min="0" step="1" class="comment"
+					title="Must be an integer >= 0"
+					value="<c:out value='${requestScope[actionFormName].minReplicationCount}'/>"
+					oninput="validatePatternInput(this, 'minRepFeedback')">
+				<span id="minRepFeedback"></span>
+			</div>
+		</td>
 	</tr>
 	<tr>
-		<th>Volume Count</th>
-		<td><html:text property="volumeCount" styleClass="comment" /></td>
+		<th>Volume Count <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Integer >= 1; number of storage volumes to distribute data across" tabindex="0"></i></th>
+		<td>
+			<div class="d-flex align-items-center gap-2">
+				<input type="number" name="volumeCount" id="volumeCount"
+					min="1" step="1" class="comment"
+					title="Must be an integer >= 1"
+					value="<c:out value='${requestScope[actionFormName].volumeCount}'/>"
+					oninput="validatePatternInput(this, 'volCountFeedback')">
+				<span id="volCountFeedback"></span>
+			</div>
+		</td>
 	</tr>
 	<tr>
 		<th>Filter</th>
 		<td><html:checkbox property="filter" /></td>
 	</tr>
 	<tr>
-		<th>Min. Filtering Count</th>
-		<td><html:text property="minFilteringCount" styleClass="comment" /></td>
+		<th>Min. Filtering Count <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Integer >= 0; must not exceed the number of active Transfer Servers in this group" tabindex="0"></i></th>
+		<td>
+			<div class="d-flex align-items-center gap-2">
+				<input type="number" name="minFilteringCount" id="minFilteringCount"
+					min="0" step="1" class="comment"
+					title="Must be an integer >= 0"
+					value="<c:out value='${requestScope[actionFormName].minFilteringCount}'/>"
+					oninput="validatePatternInput(this, 'minFilterFeedback')">
+				<span id="minFilterFeedback"></span>
+			</div>
+		</td>
 	</tr>
 	<tr>
 		<th>Backup</th>
@@ -106,8 +129,17 @@
 		<td><html:text property="clusterName" styleClass="comment" /></td>
 	</tr>
 	<tr>
-		<th>Cluster Weight</th>
-		<td><html:text property="clusterWeight" styleClass="comment" /></td>
+		<th>Cluster Weight <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Integer >= 0; higher values give this group proportionally more traffic when load-balancing across clusters" tabindex="0"></i></th>
+		<td>
+			<div class="d-flex align-items-center gap-2">
+				<input type="number" name="clusterWeight" id="clusterWeight"
+					min="0" step="1" class="comment"
+					title="Must be an integer >= 0"
+					value="<c:out value='${requestScope[actionFormName].clusterWeight}'/>"
+					oninput="validatePatternInput(this, 'clusterWeightFeedback')">
+				<span id="clusterWeightFeedback"></span>
+			</div>
+		</td>
 	</tr>
 
 </table>
@@ -156,4 +188,11 @@ $(document).ready(function() {
 </c:if>
 
 <script>
+$(document).ready(function() {
+	['minReplicationCount','volumeCount','minFilteringCount','clusterWeight'].forEach(function(id) {
+		var feedbacks = {minReplicationCount:'minRepFeedback', volumeCount:'volCountFeedback', minFilteringCount:'minFilterFeedback', clusterWeight:'clusterWeightFeedback'};
+		var el = document.getElementById(id);
+		if (el && el.value !== '') validatePatternInput(el, feedbacks[id]);
+	});
+});
 </script>

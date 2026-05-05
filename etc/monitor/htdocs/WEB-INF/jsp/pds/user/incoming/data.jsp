@@ -25,13 +25,7 @@
 	margin-top: 8px;
 	margin-bottom: 4px;
 }
-.scrollable-tab {
-	height: 300px;
-	overflow-y: auto;
-	border: solid 1px lightgray;
-	border-radius: 4px;
-	padding: 8px;
-}
+
 table.fields {
 	width: 100%;
 	min-width: 400px;
@@ -42,11 +36,25 @@ table.fields > tbody > tr > th {
 }
 .assoc-card .card-header { display:flex; align-items:center; gap:.4rem; padding:.5rem .75rem; background:#f8f9fa; font-size:.85rem; }
 .assoc-chip { display:inline-flex; align-items:center; gap:.25rem; background:#e9ecef; border-radius:1rem; padding:.2rem .6rem; font-size:.8rem; margin:.15rem; }
+.acc-help-btn {
+    position: absolute; top: 50%; right: 3rem;
+    transform: translateY(-50%);
+    color: var(--bs-secondary-color); font-size: 0.9rem; line-height: 1;
+    cursor: pointer; z-index: 10;
+    transition: color 0.15s;
+}
+.acc-help-btn:hover { color: var(--bs-primary); }
+.acc-help-btn.acc-help-active { color: var(--bs-primary); }
 </style>
+
+	<div class="form-info-banner" style="margin-left:0">
+		<i class="bi bi-person-fill-gear text-primary flex-shrink-0"></i>
+		Data User: <strong><c:out value="${incoming.id}"/></strong>
+	</div>
 
 	<table border="0">
 		<tr>
-			<td valign="top"><br>
+			<td valign="top">
 				<table class="fields">
 					<tr>
 						<th>Data Login</th>
@@ -81,7 +89,7 @@ table.fields > tbody > tr > th {
 				</table></td>
 			<td width="25"></td>
 			<td valign="top">
-				<div class="row g-2 mt-1" style="max-width:480px">
+				<div class="row g-2" style="max-width:480px">
 
 				  <div class="col-12">
 				    <div class="card assoc-card">
@@ -194,10 +202,14 @@ table.fields > tbody > tr > th {
 						<td colspan="2">
 							<div class="accordion" id="incomingViewOptionsAccordion" style="min-width:860px;max-width:860px">
 								<div class="accordion-item">
-									<h2 class="accordion-header" id="incomingViewAccHeadProperties">
+									<h2 class="accordion-header" id="incomingViewAccHeadProperties" style="position:relative;">
 										<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#incomingViewAccProperties" aria-expanded="false" aria-controls="incomingViewAccProperties">
 											Properties
 										</button>
+										<span role="button" tabindex="0" class="acc-help-btn" id="incomingViewPropsHelpBtn"
+											onclick="openIncomingViewHelp();" onkeydown="if(event.key==='Enter'||event.key===' ')openIncomingViewHelp();" title="Open properties reference">
+											<i class="bi bi-question-circle"></i>
+										</span>
 									</h2>
 									<div id="incomingViewAccProperties" class="accordion-collapse collapse" aria-labelledby="incomingViewAccHeadProperties" data-bs-parent="#incomingViewOptionsAccordion">
 										<div class="accordion-body p-2">
@@ -223,18 +235,6 @@ table.fields > tbody > tr > th {
 										</div>
 									</div>
 								</div>
-								<div class="accordion-item">
-									<h2 class="accordion-header" id="incomingViewAccHeadHelp">
-										<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#incomingViewAccHelp" aria-expanded="false" aria-controls="incomingViewAccHelp">
-											Help
-										</button>
-									</h2>
-									<div id="incomingViewAccHelp" class="accordion-collapse collapse" aria-labelledby="incomingViewAccHeadHelp" data-bs-parent="#incomingViewOptionsAccordion">
-										<div class="accordion-body p-2">
-											<div id="incomingViewHelpContent" class="scrollable-tab"></div>
-										</div>
-									</div>
-								</div>
 							</div>
 						</td>
 					</tr>
@@ -242,6 +242,21 @@ table.fields > tbody > tr > th {
 			</td>
 		</tr>
 	</table>
+
+<%-- Help offcanvas panel --%>
+<div class="offcanvas offcanvas-end" tabindex="-1" id="incomingViewHelpOffcanvas"
+     aria-labelledby="incomingViewHelpOffcanvasLabel" style="width:min(480px,42vw);">
+	<div class="offcanvas-header border-bottom py-2 px-3">
+		<h6 class="offcanvas-title mb-0 fw-semibold" id="incomingViewHelpOffcanvasLabel">
+			<i class="bi bi-book me-2 text-primary"></i>Properties Reference
+		</h6>
+		<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+	</div>
+	<div class="offcanvas-body p-0" style="display:flex; flex-direction:column; overflow:hidden;">
+		<div id="incomingViewHelpNav" style="flex:0 0 auto; padding:0 1rem;"></div>
+		<div id="incomingViewHelpContent" style="padding:0.75rem 1rem; overflow-y:auto; flex:1; min-height:0;"></div>
+	</div>
+</div>
 
 	<script>
 		var editorProperties = getEditorProperties(true, false, "userData", "crystal");
@@ -252,18 +267,31 @@ table.fields > tbody > tr > th {
     		${incoming.completions}
     	];
 		
-    	// Lets' populate the help tab!
     	$(document).ready(function() {
     		$('#incomingViewHelpContent').html(getHelpHtmlContent(completions, 'Available Options for this Data User'));
+    		var navEl = document.querySelector('#incomingViewHelpContent .help-nav');
+    		if (navEl) document.getElementById('incomingViewHelpNav').appendChild(navEl);
     	});
 
     	// Call the function to process each line
     	checkEachLine(editorProperties);
         
-		// Add a click event listener to the properties editor
+		function _scrollIncomingViewHelpToCursor() {
+			var row = editorProperties.selection.getCursor().row;
+			var line = editorProperties.session.getLine(row) || '';
+			line = line.trim();
+			if (line && !line.startsWith('#') && !line.startsWith('//')) {
+				var eqIdx = line.indexOf('=');
+				var paramName = (eqIdx > 0 ? line.substring(0, eqIdx) : line).trim();
+				if (paramName) scrollHelpToParam('incomingViewHelpContent', paramName);
+			}
+		}
+
     	editorProperties.addEventListener("changeSelection", function (event) {
     		editorProperties.session.setAnnotations(
     			getAnnotations(editorProperties, editorProperties.selection.getCursor().row));
+			var _oc = document.getElementById('incomingViewHelpOffcanvas');
+			if (_oc && _oc.classList.contains('show')) _scrollIncomingViewHelpToCursor();
     	});
 
     	var editorAuthorizedSSHKeys = getEditorProperties(true, false, "authorizedSSHKeys", "text");
@@ -275,19 +303,22 @@ table.fields > tbody > tr > th {
 		document.getElementById('incomingViewAccSSHKeys').addEventListener('shown.bs.collapse', function() {
 			editorAuthorizedSSHKeys.resize(true);
 		});
-		var incomingViewHelpBtn = document.querySelector('button[data-bs-target="#incomingViewAccHelp"]');
-		if (incomingViewHelpBtn) {
-			incomingViewHelpBtn.addEventListener('click', function() {
-				setTimeout(function() {
-					if (!document.getElementById('incomingViewAccHelp').classList.contains('show')) return;
-					var line = editorProperties.session.getLine(editorProperties.selection.getCursor().row) || '';
-					line = line.trim();
-					if (line && !line.startsWith('#') && !line.startsWith('//')) {
-						var eqIdx = line.indexOf('=');
-						var paramName = (eqIdx > 0 ? line.substring(0, eqIdx) : line).trim();
-						if (paramName) scrollHelpToParam('incomingViewHelpContent', paramName);
-					}
-				}, 400);
+		window.openIncomingViewHelp = function() {
+			var el = document.getElementById('incomingViewHelpOffcanvas');
+			if (el) bootstrap.Offcanvas.getOrCreateInstance(el).show();
+		};
+		var _incomingViewOffcanvasEl = document.getElementById('incomingViewHelpOffcanvas');
+		if (_incomingViewOffcanvasEl) {
+			_incomingViewOffcanvasEl.addEventListener('show.bs.offcanvas', function() {
+				var btn = document.getElementById('incomingViewPropsHelpBtn');
+				if (btn) btn.classList.add('acc-help-active');
+			});
+			_incomingViewOffcanvasEl.addEventListener('shown.bs.offcanvas', function() {
+				_scrollIncomingViewHelpToCursor();
+			});
+			_incomingViewOffcanvasEl.addEventListener('hide.bs.offcanvas', function() {
+				var btn = document.getElementById('incomingViewPropsHelpBtn');
+				if (btn) btn.classList.remove('acc-help-active');
 			});
 		}
 

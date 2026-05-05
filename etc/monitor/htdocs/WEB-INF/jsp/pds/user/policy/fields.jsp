@@ -19,19 +19,40 @@
 	margin-top: 8px;
 	margin-bottom: 4px;
 }
-.scrollable-tab {
-	height: 300px;
-	overflow-y: auto;
-	border: solid 1px lightgray;
-	border-radius: 4px;
-	padding: 8px;
-	position: relative;
-}
+table.fields {
 	min-width: 600px;
 }
+.acc-help-btn {
+    position: absolute; top: 50%; right: 3rem;
+    transform: translateY(-50%);
+    color: var(--bs-secondary-color); font-size: 0.9rem; line-height: 1;
+    cursor: pointer; z-index: 10;
+    transition: color 0.15s;
+}
+.acc-help-btn:hover { color: var(--bs-primary); }
+.acc-help-btn.acc-help-active { color: var(--bs-primary); }
 table.fields > tbody > tr > th {
 	width: 1%;
 	white-space: nowrap;
+}
+#options-label {
+    background: #f8f9fa;
+    border-right: 2px solid #dee2e6;
+    padding: 0.4rem 0.6rem;
+    font-weight: 600;
+    font-size: 10pt;
+    text-align: right;
+    white-space: nowrap;
+    flex: 0 0 auto;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+[data-bs-theme=dark] #options-label {
+    background: var(--bs-secondary-bg);
+    color: var(--bs-body-color);
+    border-right-color: var(--bs-border-color);
 }
 </style>
 
@@ -46,28 +67,24 @@ function validate(path, message) {
 }
 </script>
 
-<table border=0>
-<tr>
-<td style="width:1%;white-space:nowrap;vertical-align:top">
-<table class="fields">
 <c:choose>
     <c:when test="${isInsert == 'true'}">
-        <tr><td colspan="2">
-        <div class="form-info-banner">
-            <i class="bi bi-shield-check text-primary flex-shrink-0"></i>
-            Create a new Access Policy.
-        </div>
-        </td></tr>
+    <div class="form-info-banner" style="margin-left:0; margin-bottom:0.5rem">
+        <i class="bi bi-shield-check text-primary flex-shrink-0"></i>
+        Create a new Access Policy.
+    </div>
     </c:when>
     <c:otherwise>
-        <tr><td colspan="2">
-        <div class="form-info-banner">
-            <i class="bi bi-shield-check text-primary flex-shrink-0"></i>
-            Edit the Access Policy configuration.
-        </div>
-        </td></tr>
+    <div class="form-info-banner" style="margin-left:0; margin-bottom:0.5rem">
+        <i class="bi bi-shield-check text-primary flex-shrink-0"></i>
+        Edit the Access Policy configuration.
+    </div>
     </c:otherwise>
 </c:choose>
+<table border=0 style="margin-bottom:1.25rem">
+<tr>
+<td style="width:1%;white-space:nowrap;vertical-align:top">
+<table class="fields" style="margin-left:1.5rem">
 <c:if test="${isInsert != 'true'}">
 <tr>
 <th>Name</th>
@@ -110,7 +127,7 @@ function validate(path, message) {
 .assoc-chooser-item:hover { background:#e9ecef; }
 .assoc-empty { display:flex; align-items:center; gap:.35rem; color:#856404; background:#fff3cd; border:1px solid #ffc107; border-radius:.25rem; font-size:.8rem; padding:.3rem .5rem; margin:0; }
 </style>
-<div class="row g-3 mt-0" style="max-width:480px">
+<div class="row g-3" style="max-width:480px">
 
   <%-- Destinations --%>
   <div class="col-12">
@@ -170,16 +187,20 @@ function validate(path, message) {
 </tr>
 
 <tr>
-<td colspan="3" style="padding:0">
+<td colspan="3" style="padding:0 0 0 1.5rem">
 <div class="d-flex align-items-stretch" id="options-row">
-<div id="options-label" style="flex:0 0 auto;background:var(--bs-tertiary-bg);border-right:2px solid var(--bs-border-color);font-weight:600;white-space:nowrap;padding:0.4rem 0.6rem">Options</div>
+<div id="options-label">Options</div>
 <div style="flex:1;min-width:0;padding:0.4rem 0.6rem">
 <div class="accordion" id="policyOptionsAccordion" style="min-width:860px;max-width:860px">
 <div class="accordion-item">
-<h2 class="accordion-header" id="policyAccHeadProperties">
+<h2 class="accordion-header" id="policyAccHeadProperties" style="position:relative;">
 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#policyAccProperties" aria-expanded="false" aria-controls="policyAccProperties">
 Properties
 </button>
+<span role="button" tabindex="0" class="acc-help-btn" id="policyPropsHelpBtn"
+	onclick="openPolicyHelp();" onkeydown="if(event.key==='Enter'||event.key===' ')openPolicyHelp();" title="Open properties reference">
+	<i class="bi bi-question-circle"></i>
+</span>
 </h2>
 <div id="policyAccProperties" class="accordion-collapse collapse" aria-labelledby="policyAccHeadProperties" data-bs-parent="#policyOptionsAccordion">
 <div class="accordion-body p-2">
@@ -193,24 +214,27 @@ Properties
 </div>
 </div>
 </div>
-<div class="accordion-item">
-<h2 class="accordion-header" id="policyAccHeadHelp">
-<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#policyAccHelp" aria-expanded="false" aria-controls="policyAccHelp">
-Help
-</button>
-</h2>
-<div id="policyAccHelp" class="accordion-collapse collapse" aria-labelledby="policyAccHeadHelp" data-bs-parent="#policyOptionsAccordion">
-<div class="accordion-body p-2">
-<div id="policyHelpContent" class="scrollable-tab"></div>
-</div>
-</div>
-</div>
 </div>
 </div>
 </div>
 </td>
 </tr>
 </table>
+
+<%-- Help offcanvas panel --%>
+<div class="offcanvas offcanvas-end" tabindex="-1" id="policyHelpOffcanvas"
+     aria-labelledby="policyHelpOffcanvasLabel" style="width:min(480px,42vw);">
+	<div class="offcanvas-header border-bottom py-2 px-3">
+		<h6 class="offcanvas-title mb-0 fw-semibold" id="policyHelpOffcanvasLabel">
+			<i class="bi bi-book me-2 text-primary"></i>Properties Reference
+		</h6>
+		<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+	</div>
+	<div class="offcanvas-body p-0" style="display:flex; flex-direction:column; overflow:hidden;">
+		<div id="policyHelpNav" style="flex:0 0 auto; padding:0 1rem;"></div>
+		<div id="policyHelpContent" style="padding:0.75rem 1rem; overflow-y:auto; flex:1; min-height:0;"></div>
+	</div>
+</div>
 
 <script>
 var editorProperties = getEditorProperties(false, true, "data", "crystal");
@@ -222,6 +246,8 @@ var completions = [
 
 $(document).ready(function() {
 $('#policyHelpContent').html(getHelpHtmlContent(completions, 'Available Options for this Data Policy'));
+var navEl = document.querySelector('#policyHelpContent .help-nav');
+if (navEl) document.getElementById('policyHelpNav').appendChild(navEl);
 });
 
 var customCompleter = {
@@ -246,10 +272,23 @@ var customCompleter = {
 
 editorProperties.completers = [customCompleter];
 
+function _scrollPolicyHelpToCursor() {
+	var row = editorProperties.selection.getCursor().row;
+	var line = editorProperties.session.getLine(row) || '';
+	line = line.trim();
+	if (line && !line.startsWith('#') && !line.startsWith('//')) {
+		var eqIdx = line.indexOf('=');
+		var paramName = (eqIdx > 0 ? line.substring(0, eqIdx) : line).trim();
+		if (paramName) scrollHelpToParam('policyHelpContent', paramName);
+	}
+}
+
 editorProperties.addEventListener("changeSelection", function (event) {
     editorProperties.session.setAnnotations(
     getAnnotations(editorProperties, editorProperties.selection.getCursor().row));
     checkEachLine(editorProperties);
+	var _oc = document.getElementById('policyHelpOffcanvas');
+	if (_oc && _oc.classList.contains('show')) _scrollPolicyHelpToCursor();
     });
 
 editorProperties.getSession().on("change", function(e) {
@@ -272,20 +311,22 @@ document.getElementById('policyAccProperties').addEventListener('shown.bs.collap
 	editorProperties.resize(true);
 });
 
-// When Help panel opens, scroll to the parameter at the current cursor position
-var policyHelpBtn = document.querySelector('button[data-bs-target="#policyAccHelp"]');
-if (policyHelpBtn) {
-	policyHelpBtn.addEventListener('click', function() {
-		setTimeout(function() {
-			if (!document.getElementById('policyAccHelp').classList.contains('show')) return;
-			var line = editorProperties.session.getLine(editorProperties.selection.getCursor().row) || '';
-			line = line.trim();
-			if (line && !line.startsWith('#') && !line.startsWith('//')) {
-				var eqIdx = line.indexOf('=');
-				var paramName = (eqIdx > 0 ? line.substring(0, eqIdx) : line).trim();
-				if (paramName) scrollHelpToParam('policyHelpContent', paramName);
-			}
-		}, 400);
+window.openPolicyHelp = function() {
+	var el = document.getElementById('policyHelpOffcanvas');
+	if (el) bootstrap.Offcanvas.getOrCreateInstance(el).show();
+};
+var _policyOffcanvasEl = document.getElementById('policyHelpOffcanvas');
+if (_policyOffcanvasEl) {
+	_policyOffcanvasEl.addEventListener('show.bs.offcanvas', function() {
+		var btn = document.getElementById('policyPropsHelpBtn');
+		if (btn) btn.classList.add('acc-help-active');
+	});
+	_policyOffcanvasEl.addEventListener('shown.bs.offcanvas', function() {
+		_scrollPolicyHelpToCursor();
+	});
+	_policyOffcanvasEl.addEventListener('hide.bs.offcanvas', function() {
+		var btn = document.getElementById('policyPropsHelpBtn');
+		if (btn) btn.classList.remove('acc-help-active');
 	});
 }
 

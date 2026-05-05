@@ -8,7 +8,7 @@
 
 <p/>
 
-<table class="form">
+<table class="form" style="width:100%">
 
 <tr>
 <td colspan="2">

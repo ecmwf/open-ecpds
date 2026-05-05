@@ -84,6 +84,16 @@ table.fields > tbody > tr > th {
 .assoc-chip { display:inline-flex; align-items:center; gap:.25rem; background:#e9ecef; border-radius:1rem; padding:.2rem .6rem; font-size:.8rem; margin:.15rem; }
 [data-bs-theme=dark] .assoc-card .card-header { background: var(--bs-tertiary-bg); }
 [data-bs-theme=dark] .assoc-chip { background: var(--bs-secondary-bg); }
+/* Accordion header with inline help trigger */
+.acc-help-btn {
+    position: absolute; top: 50%; right: 3rem;
+    transform: translateY(-50%);
+    color: var(--bs-secondary-color); font-size: 0.9rem; line-height: 1;
+    cursor: pointer; z-index: 10;
+    transition: color 0.15s;
+}
+.acc-help-btn:hover { color: var(--bs-primary); }
+.acc-help-btn.acc-help-active { color: var(--bs-primary); }
 </style>
 
 	<c:set var="authorized" value="false" />
@@ -213,10 +223,14 @@ table.fields > tbody > tr > th {
 							<td colspan="3">
 								<div class="accordion" id="hostViewOptionsAccordion" style="min-width:860px;max-width:860px">
 								<div class="accordion-item">
-									<h2 class="accordion-header" id="hostViewAccHeadProperties">
+									<h2 class="accordion-header" id="hostViewAccHeadProperties" style="position:relative;">
 										<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#hostViewAccProperties" aria-expanded="false" aria-controls="hostViewAccProperties">
 											Properties
 										</button>
+										<span role="button" tabindex="0" class="acc-help-btn" id="hostPropsHelpBtn"
+												onclick="openHostHelp();" onkeydown="if(event.key==='Enter'||event.key===' ')openHostHelp();" title="Open properties reference">
+											<i class="bi bi-question-circle"></i>
+										</span>
 									</h2>
 									<div id="hostViewAccProperties" class="accordion-collapse collapse" aria-labelledby="hostViewAccHeadProperties" data-bs-parent="#hostViewOptionsAccordion">
 										<div class="accordion-body p-2">
@@ -239,18 +253,6 @@ table.fields > tbody > tr > th {
 												<pre id="javascript"><c:out value="${host.javascript}" /></pre>
 												<textarea id="javascript" name="javascript" style="display: none;"></textarea>
 											</div>
-										</div>
-									</div>
-								</div>
-								<div class="accordion-item">
-									<h2 class="accordion-header" id="hostViewAccHeadHelp">
-										<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#hostViewAccHelp" aria-expanded="false" aria-controls="hostViewAccHelp">
-											Help
-										</button>
-									</h2>
-									<div id="hostViewAccHelp" class="accordion-collapse collapse" aria-labelledby="hostViewAccHeadHelp" data-bs-parent="#hostViewOptionsAccordion">
-										<div class="accordion-body p-2">
-											<div id="hostViewHelpContent" class="scrollable-tab"></div>
 										</div>
 									</div>
 								</div>
@@ -444,6 +446,21 @@ table.fields > tbody > tr > th {
 		</c:if>
 	</c:if>
 
+	<%-- Help offcanvas panel --%>
+	<div class="offcanvas offcanvas-end" tabindex="-1" id="hostHelpOffcanvas"
+	     aria-labelledby="hostHelpOffcanvasLabel" style="width:min(480px,42vw);">
+		<div class="offcanvas-header border-bottom py-2 px-3">
+			<h6 class="offcanvas-title mb-0 fw-semibold" id="hostHelpOffcanvasLabel">
+				<i class="bi bi-book me-2 text-primary"></i>Properties Reference
+			</h6>
+			<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+		</div>
+		<div class="offcanvas-body p-0" style="display:flex; flex-direction:column; overflow:hidden;">
+			<div id="hostViewHelpNav" style="flex:0 0 auto; padding:0 1rem;"></div>
+			<div id="hostViewHelpContent" style="padding:0.75rem 1rem; overflow-y:auto; flex:1; min-height:0;"></div>
+		</div>
+	</div>
+
 	<script>		
 		var editorDir = getEditorProperties(true, false, "dir", "toml");
 		makeResizable(editorDir);
@@ -478,6 +495,9 @@ table.fields > tbody > tr > th {
     	          			}
     	       	    	}
     	    	    }), 'Available Options for Host of Type ' + hostType + ' with Transfer Method ' + transferMethodName))
+    		/* Move the group nav pills to the fixed slot above the scrollable area */
+    		var navEl = document.querySelector('#hostViewHelpContent .help-nav');
+    		if (navEl) document.getElementById('hostViewHelpNav').appendChild(navEl);
     	});
     	
     	// Overwrite the original method to deal with the specificities of the host
@@ -540,6 +560,11 @@ table.fields > tbody > tr > th {
     	editorProperties.addEventListener("changeSelection", function (event) {
     		editorProperties.session.setAnnotations(
     			getAnnotations(editorProperties, editorProperties.selection.getCursor().row));
+    		/* Live-track help panel when offcanvas is open */
+    		var _oc = document.getElementById('hostHelpOffcanvas');
+    		if (_oc && _oc.classList.contains('show')) {
+    			_scrollHelpToCursor();
+    		}
     	});
 
 		var editorJavascript = getEditorProperties(true, false, "javascript", "javascript");
@@ -551,19 +576,34 @@ table.fields > tbody > tr > th {
 		document.getElementById('hostViewAccJavascript').addEventListener('shown.bs.collapse', function() {
 			editorJavascript.resize(true);
 		});
-		var hostViewHelpBtn = document.querySelector('button[data-bs-target="#hostViewAccHelp"]');
-		if (hostViewHelpBtn) {
-			hostViewHelpBtn.addEventListener('click', function() {
-				setTimeout(function() {
-					if (!document.getElementById('hostViewAccHelp').classList.contains('show')) return;
-					var line = editorProperties.session.getLine(editorProperties.selection.getCursor().row) || '';
-					line = line.trim();
-					if (line && !line.startsWith('#') && !line.startsWith('//')) {
-						var eqIdx = line.indexOf('=');
-						var paramName = (eqIdx > 0 ? line.substring(0, eqIdx) : line).trim();
-						if (paramName) scrollHelpToParam('hostViewHelpContent', paramName);
-					}
-				}, 400);
+
+		/* Help offcanvas */
+		function _scrollHelpToCursor() {
+			var row = editorProperties.selection.getCursor().row;
+			var line = editorProperties.session.getLine(row) || '';
+			line = line.trim();
+			if (line && !line.startsWith('#') && !line.startsWith('//')) {
+				var eqIdx = line.indexOf('=');
+				var paramName = (eqIdx > 0 ? line.substring(0, eqIdx) : line).trim();
+				if (paramName) scrollHelpToParam('hostViewHelpContent', paramName);
+			}
+		}
+		window.openHostHelp = function() {
+			var el = document.getElementById('hostHelpOffcanvas');
+			if (el) bootstrap.Offcanvas.getOrCreateInstance(el).show();
+		};
+		var _helpOffcanvasEl = document.getElementById('hostHelpOffcanvas');
+		if (_helpOffcanvasEl) {
+			_helpOffcanvasEl.addEventListener('show.bs.offcanvas', function() {
+				var btn = document.getElementById('hostPropsHelpBtn');
+				if (btn) btn.classList.add('acc-help-active');
+			});
+			_helpOffcanvasEl.addEventListener('shown.bs.offcanvas', function() {
+				_scrollHelpToCursor();
+			});
+			_helpOffcanvasEl.addEventListener('hide.bs.offcanvas', function() {
+				var btn = document.getElementById('hostPropsHelpBtn');
+				if (btn) btn.classList.remove('acc-help-active');
 			});
 		}
 

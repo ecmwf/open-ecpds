@@ -6,29 +6,25 @@
 <%@ taglib uri="/WEB-INF/tld/struts-tiles.tld" prefix="tiles"%>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 
-<table class="fields">
-
-	<html:hidden property="id" />
-
-	<tiles:useAttribute name="isInsert" classname="java.lang.String" />
+<tiles:useAttribute name="isInsert" classname="java.lang.String" />
 <c:choose>
     <c:when test="${isInsert == 'true'}">
-        <tr><td colspan="2">
-        <div class="form-info-banner">
+        <div class="form-info-banner" style="margin-left:0;margin-bottom:0.5rem">
             <i class="bi bi-server text-primary flex-shrink-0"></i>
             Register a new Transfer Server for data file processing.
         </div>
-        </td></tr>
     </c:when>
     <c:otherwise>
-        <tr><td colspan="2">
-        <div class="form-info-banner">
+        <div class="form-info-banner" style="margin-left:0;margin-bottom:0.5rem">
             <i class="bi bi-server text-primary flex-shrink-0"></i>
             Edit the Transfer Server configuration.
         </div>
-        </td></tr>
     </c:otherwise>
 </c:choose>
+
+<table class="fields">
+
+	<html:hidden property="id" />
 
 
 	<tiles:useAttribute id="actionFormName" name="action.form.name"

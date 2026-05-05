@@ -12,6 +12,11 @@
 </c:if>
 <c:if test="${empty isDelete}">
 
+	<div class="form-info-banner" style="margin-left:0">
+		<i class="bi bi-collection text-primary flex-shrink-0"></i>
+		Transfer Group: <strong><c:out value="${transfergroup.name}"/></strong>
+	</div>
+
 	<table class="fields">
 		<tr>
 			<th>Name</th>

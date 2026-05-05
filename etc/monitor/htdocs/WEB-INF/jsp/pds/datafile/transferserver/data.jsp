@@ -13,6 +13,11 @@
 </c:if>
 <c:if test="${empty isDelete}">
 
+	<div class="form-info-banner" style="margin-left:0">
+		<i class="bi bi-server text-primary flex-shrink-0"></i>
+		Transfer Server: <strong><c:out value="${transferserver.name}"/></strong>
+	</div>
+
 	<table class="fields">
 		<tr>
 			<th>Name</th>

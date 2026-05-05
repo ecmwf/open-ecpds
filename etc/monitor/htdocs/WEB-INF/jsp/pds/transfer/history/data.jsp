@@ -3,6 +3,11 @@
 <%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean" %>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
 
+<div class="form-info-banner" style="margin-left:0">
+	<i class="bi bi-clock-history text-primary flex-shrink-0"></i>
+	Transfer History Entry
+</div>
+
 <table class="fields">
 <!--<tr><th>Id</th><td>${item.id}</td></tr>-->
 <tr><th>Date</th><td>${item.date}</td></tr>

@@ -14,6 +14,11 @@
 </c:if>
 <c:if test="${empty isDelete}">
 
+	<div class="form-info-banner" style="margin-left:0">
+		<i class="bi bi-folder text-primary flex-shrink-0"></i>
+		Web Category: <strong><c:out value="${category.name}"/></strong>
+	</div>
+
 	<table class="fields">
 
 		<tr>

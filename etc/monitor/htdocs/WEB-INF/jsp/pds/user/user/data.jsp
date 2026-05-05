@@ -27,6 +27,11 @@
 .assoc-chip { display:inline-flex; align-items:center; gap:.25rem; background:#e9ecef; border-radius:1rem; padding:.2rem .6rem; font-size:.8rem; margin:.15rem; }
 </style>
 
+	<div class="form-info-banner" style="margin-left:0">
+		<i class="bi bi-person text-primary flex-shrink-0"></i>
+		Web User: <strong><c:out value="${user.uid}"/></strong>
+	</div>
+
 	<table>
 		<tr>
 			<td valign="top"><br>

@@ -8,7 +8,7 @@
 
 <p/>
 
-<table>
+<table style="width:100%">
 <tr>
 <td colspan="2">
 <tiles:insert page="/WEB-INF/jsp/pds/user/category/data.jsp"/>

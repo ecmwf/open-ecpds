@@ -23,29 +23,25 @@
 
 <html:hidden property="id" />
 
+<c:choose>
+    <c:when test="${isInsert == 'true'}">
+    <div class="form-info-banner" style="margin-left:0; margin-bottom:0.5rem">
+        <i class="bi bi-folder2 text-primary flex-shrink-0"></i>
+        Create a new Category to group access control resources.
+    </div>
+    </c:when>
+    <c:otherwise>
+    <div class="form-info-banner" style="margin-left:0; margin-bottom:0.5rem">
+        <i class="bi bi-folder2 text-primary flex-shrink-0"></i>
+        Edit the Category details.
+    </div>
+    </c:otherwise>
+</c:choose>
 <table>
 	<tr>
 		<td style="width:1%;white-space:nowrap;vertical-align:top">
 
 			<table class="fields">
-<c:choose>
-    <c:when test="${isInsert == 'true'}">
-        <tr><td colspan="2">
-        <div class="form-info-banner">
-            <i class="bi bi-folder2 text-primary flex-shrink-0"></i>
-            Create a new Category to group access control resources.
-        </div>
-        </td></tr>
-    </c:when>
-    <c:otherwise>
-        <tr><td colspan="2">
-        <div class="form-info-banner">
-            <i class="bi bi-folder2 text-primary flex-shrink-0"></i>
-            Edit the Category details.
-        </div>
-        </td></tr>
-    </c:otherwise>
-</c:choose>
 
 				<c:if test="${isInsert != 'true'}">
 					<tr>
@@ -87,7 +83,7 @@
 .assoc-chooser-item:hover { background:#e9ecef; }
 .assoc-empty { display:flex; align-items:center; gap:.35rem; color:#856404; background:#fff3cd; border:1px solid #ffc107; border-radius:.25rem; font-size:.8rem; padding:.3rem .5rem; margin:0; }
 </style>
-<div class="row g-3 mt-0" style="max-width:480px">
+<div class="row g-3" style="max-width:480px">
 
   <%-- Web Resources --%>
   <div class="col-12">

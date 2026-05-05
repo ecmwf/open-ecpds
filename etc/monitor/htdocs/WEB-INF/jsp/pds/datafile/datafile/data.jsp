@@ -11,6 +11,11 @@
 </c:if>
 <c:if test="${empty isDelete}">
 
+	<div class="form-info-banner" style="margin-left:0">
+		<i class="bi bi-file-earmark-text text-primary flex-shrink-0"></i>
+		Data File: <strong><c:out value="${datafile.id}"/></strong>
+	</div>
+
 	<table class="fields" border=0>
 
 	<tr><th>Data File Id</th><td colspan="3">${datafile.id}</td></tr>

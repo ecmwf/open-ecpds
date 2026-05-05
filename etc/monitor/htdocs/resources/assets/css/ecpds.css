@@ -1498,8 +1498,14 @@ img[src*="/assets/icons/"] {
 }
 .help-row {
     display: flex; gap: 0.5rem; align-items: baseline;
-    padding: 0.18rem 0; border-bottom: 1px solid #f0f0f0;
+    padding: 0.18rem 0 0.18rem 0.4rem; border-bottom: 1px solid #f0f0f0;
     flex-wrap: wrap;
+    border-left: 3px solid transparent;
+    transition: background 0.15s, border-color 0.15s;
+}
+.help-row--active {
+    background: rgba(13,110,253,0.07);
+    border-left-color: #0d6efd;
 }
 .help-row:last-child { border-bottom: none; }
 .help-row code { font-size: 0.71rem; color: #0d6efd; white-space: nowrap; min-width: 220px; }
@@ -1795,6 +1801,7 @@ img[src*="/assets/icons/"] {
 }
 [data-bs-theme=dark] .help-nav-pill { background: var(--bs-secondary-bg); color: var(--bs-body-color); border-color: transparent; }
 [data-bs-theme=dark] .help-row { border-bottom-color: var(--bs-border-color); }
+[data-bs-theme=dark] .help-row--active { background: rgba(99,179,254,0.12); border-left-color: #6cb8fe; }
 [data-bs-theme=dark] .help-tip { color: var(--bs-secondary-color); }
 
 /* Sidebar nav — dark mode */
@@ -1896,3 +1903,12 @@ html[data-bs-theme=dark] .ui-widget-content .ui-state-focus {
     color: #fff !important;
 }
 html[data-bs-theme=dark] .ui-slider-handle { outline: none; }
+
+/* Ace editor autocomplete popup — widen so suggestions are fully readable */
+.ace_autocomplete {
+    min-width: 500px !important;
+    width: 500px !important;
+}
+.ace_autocomplete .ace_completion-meta {
+    max-width: 200px;
+}
