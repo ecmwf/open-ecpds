@@ -102,12 +102,10 @@ public class GetTransferDisplayAction extends PDSAction {
             Collections.sort(datatransfers, new DataTransferComparator("scheduledDate", true));
             request.setAttribute("datatransfers", datatransfers);
             final var mode = request.getParameter("mode");
-            if ("chart".equals(mode)) {
-                return mapping.findForward("chart");
-            } else if ("image".equals(mode)) {
+            if ("image".equals(mode)) {
                 return mapping.findForward("image");
             } else {
-                return mapping.findForward("table");
+                return mapping.findForward("chart");
             }
         } else {
             // Generic arrival screen for destination. We'll redirect to the

@@ -28,22 +28,6 @@
 
     <tiles:importAttribute name="show_chart_button" ignore="true" />
 
-    <c:if test="${not empty show_chart_button}">
-        <div class="date-strip-chart-toggle">
-            <c:choose>
-                <c:when test="${param['mode'] == 'chart'}">
-                    <a href="?mode=table&date=${selectedDate}${_fdParam}${_dnParam}" class="btn btn-sm btn-outline-secondary" title="Show as table">
-                        <i class="bi bi-table"></i>
-                    </a>
-                </c:when>
-                <c:otherwise>
-                    <a href="?mode=chart&date=${selectedDate}${_fdParam}${_dnParam}" class="btn btn-sm btn-outline-secondary" title="Show as chart">
-                        <i class="bi bi-bar-chart-line"></i>
-                    </a>
-                </c:otherwise>
-            </c:choose>
-        </div>
-    </c:if>
 </div>
 <script>
 (function () {

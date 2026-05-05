@@ -168,13 +168,12 @@ function createAndSubmitDynamicForm(action,bcc,subject,body) {
             case 5: /* Last Er ? same */
                 var a = cell.querySelector('a');
                 return a ? (a.title || 'ZZZ') : 'ZZZ';
-            case 6: /* OV ? extract numeric level from mon-dot class */
+            case 6: /* OV - sort by severity: green(bs0) < yellow(bs1) < red(bs2) < unknown(bs3) < disabled */
                 var dot = cell.querySelector('.mon-dot');
                 if (!dot) return 99;
-                var mn = dot.className.match(/mon-dot-n(\d+)/);
-                if (mn) return -parseInt(mn[1], 10);
-                var mp = dot.className.match(/mon-dot-(\d+)/);
-                return mp ? parseInt(mp[1], 10) : 99;
+                var mbs = dot.className.match(/mon-dot-bs(\d+)/);
+                if (mbs) return parseInt(mbs[1], 10);
+                return 99; /* mon-dot-0 = OV disabled, sort last */
             default:
                 return cell.innerText.trim().toLowerCase();
         }
@@ -246,7 +245,7 @@ function createAndSubmitDynamicForm(action,bcc,subject,body) {
         document.querySelectorAll('table.pagelevel tr.titles').forEach(function(titleRow) {
             Array.from(titleRow.cells).slice(0, DEST_COLS).forEach(function(td, i) {
                 td.style.cursor = 'pointer';
-                td.title = (td.getAttribute('title') || '') + (td.getAttribute('title') ? ' ? ' : '') + 'Click to sort';
+                td.title = (td.getAttribute('title') || '') + (td.getAttribute('title') ? ' - ' : '') + 'Click to sort';
                 td.onclick = function() { sortTable(i); };
             });
         });

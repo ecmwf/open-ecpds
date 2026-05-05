@@ -1174,7 +1174,6 @@
 		<action path="/monitoring/arrival/*/*/*"
 			parameter="{1}|{2}|{3}"
 			type="ecmwf.ecpds.master.plugin.http.controller.monitoring.arrival.GetArrivalDisplayAction">
-			<forward name="table" path=".pds.monitoring.arrival.table" />
 			<forward name="chart" path=".pds.monitoring.arrival.chart" />
 			<forward name="image" path="/do/monitoring/arrival/getimage" />
 		</action>
@@ -1183,7 +1182,6 @@
 		<action path="/monitoring/transfer/*/*/*"
 			parameter="{1}|{2}|{3}"
 			type="ecmwf.ecpds.master.plugin.http.controller.monitoring.transfer.GetTransferDisplayAction">
-			<forward name="table" path=".pds.monitoring.transfer.table" />
 			<forward name="chart" path=".pds.monitoring.transfer.chart" />
 			<forward name="image" path="/do/monitoring/transfer/getimage" />
 		</action>

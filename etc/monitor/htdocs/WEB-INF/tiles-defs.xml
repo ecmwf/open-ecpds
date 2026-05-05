@@ -1228,17 +1228,6 @@
 
 	<!-- Arrival -->
 
-	<definition name=".pds.monitoring.arrival.table"
-		extends=".pds.monitoring">
-		<put name="title.expression"
-			value="Arrival Table for %{destination.name}: %{time}-%{product}" />
-		<put name="location"
-			value="/WEB-INF/jsp/pds/monitoring/arrival/location.jsp" />
-		<put name="content"
-			value="/WEB-INF/jsp/pds/monitoring/arrival/arrival_table.jsp" />
-		<put name="spare" value=".pds.spare.monitoring" />
-	</definition>
-
 	<definition name=".pds.monitoring.arrival.chart"
 		extends=".pds.monitoring">
 		<put name="title.expression"
@@ -1251,17 +1240,6 @@
 	</definition>
 
 	<!-- Transfer -->
-
-	<definition name=".pds.monitoring.transfer.table"
-		extends=".pds.monitoring">
-		<put name="title.expression"
-			value="Transfer Table for %{destination.name}: %{time}-%{product}" />
-		<put name="location"
-			value="/WEB-INF/jsp/pds/monitoring/transfer/location.jsp" />
-		<put name="content"
-			value="/WEB-INF/jsp/pds/monitoring/transfer/transfer_table.jsp" />
-		<put name="spare" value=".pds.spare.monitoring" />
-	</definition>
 
 	<definition name=".pds.monitoring.transfer.chart"
 		extends=".pds.monitoring">

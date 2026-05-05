@@ -77,8 +77,9 @@
 
 .location_simple {
     padding: 4px 14px;
-    background: rgba(0,0,0,0.22);
-    border-top: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.12);
+    border-top: 1px solid rgba(255,255,255,0.18);
+    border-bottom: 1px solid rgba(255,255,255,0.15);
 }
 .location_simple .breadcrumb {
     margin: 0;
