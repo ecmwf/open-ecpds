@@ -1191,4 +1191,47 @@ public interface ManagementInterface extends Remote {
     String computeFilterEfficiency(final ECpdsSession session, final String destinationName, final String email,
             final String filter, final long date, boolean includeStdby, String pattern)
             throws DataBaseException, MasterException, RemoteException;
+
+    /**
+     * Gets a snapshot of volume disk usage for one or all transfer groups.
+     *
+     * <p>
+     * Returns the most recently polled used and total bytes per volume index, as maintained by the background usage
+     * updater in {@code TransferServerProvider.WeightedAllocator}. No DataMover RMI calls are made; the result comes
+     * from the in-memory cache only.
+     * </p>
+     *
+     * @param groupName
+     *            the transfer group name to query, or {@code null} for all registered groups
+     *
+     * @return a map of group name to {@code long[volumeIndex][2]} where {@code [i][0]} is used bytes and {@code [i][1]}
+     *         is total bytes; never {@code null}; empty if no data has been collected yet
+     *
+     * @throws ecmwf.ecpds.master.MasterException
+     *             the master exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    Map<String, long[][]> getVolumeUsage(String groupName) throws MasterException, RemoteException;
+
+    /**
+     * Gets a snapshot of per-volume disk usage for one or all DataMovers.
+     *
+     * <p>
+     * Returns the most recently polled used and total bytes per volume index for each DataMover, as cached by the
+     * background usage updater. No DataMover RMI calls are made at query time.
+     * </p>
+     *
+     * @param moverName
+     *            the DataMover name to query, or {@code null} for all DataMovers
+     *
+     * @return a map of mover name to {@code long[2][volumeCount]} where {@code [0][i]} is used bytes and {@code [1][i]}
+     *         is total bytes for volume {@code i}; never {@code null}
+     *
+     * @throws ecmwf.ecpds.master.MasterException
+     *             the master exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    Map<String, long[][]> getMoverVolumeUsage(String moverName) throws MasterException, RemoteException;
 }

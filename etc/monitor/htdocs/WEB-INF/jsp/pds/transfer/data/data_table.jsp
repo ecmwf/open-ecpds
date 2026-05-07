@@ -36,7 +36,7 @@
 </tr>
 
 <tr>
-<th>Transfer Server</th>
+<th>Data Mover</th>
 <td>
 	<auth:if basePathKey="transferserver.basepath" paths="/${datatransfer.transferServerName}">
 	<auth:then><a href="/do/datafile/transferserver/${datatransfer.transferServerName}">${datatransfer.transferServerName}</a></auth:then>

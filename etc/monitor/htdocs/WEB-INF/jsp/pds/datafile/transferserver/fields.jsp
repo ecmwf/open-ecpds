@@ -11,13 +11,13 @@
     <c:when test="${isInsert == 'true'}">
         <div class="form-info-banner" style="margin-left:0;margin-bottom:0.5rem">
             <i class="bi bi-server text-primary flex-shrink-0"></i>
-            Register a new Transfer Server for data file processing.
+            Register a new Data Mover for data file processing.
         </div>
     </c:when>
     <c:otherwise>
         <div class="form-info-banner" style="margin-left:0;margin-bottom:0.5rem">
             <i class="bi bi-server text-primary flex-shrink-0"></i>
-            Edit the Transfer Server configuration.
+            Edit the Data Mover configuration.
         </div>
     </c:otherwise>
 </c:choose>

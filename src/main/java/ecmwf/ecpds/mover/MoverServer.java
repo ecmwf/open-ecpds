@@ -301,12 +301,38 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     }
 
     /**
-     * Compute the used and total capacity for each file system in the data repository.
+     * Compute the used and total capacity for each volume in the data repository.
+     *
+     * <p>
+     * Returns two parallel arrays of length {@code volumeIndexMax + 1}:
+     * <ul>
+     * <li>{@code result[0][i]} — bytes used in volume {@code i}</li>
+     * <li>{@code result[1][i]} — total bytes available for volume {@code i}</li>
+     * </ul>
+     * </p>
+     *
+     * <p>
+     * <b>Dedicated-disk volumes</b> (the volume directory resides on a filesystem shared with no other volume): raw
+     * {@code statvfs} stats are used — O(1) per volume.
+     * </p>
+     *
+     * <p>
+     * <b>Shared-disk volumes</b> (two or more volume directories reside on the same physical filesystem, e.g. a
+     * single-machine test setup or a small production environment where all volumes live on one disk): a virtual
+     * per-volume quota is applied to give the load balancer meaningful differentiation:
+     * <ul>
+     * <li>virtual total per volume = {@code diskTotal / numberOfVolumesOnThisDisk}</li>
+     * <li>virtual used per volume = recursive byte sum of the volume directory ({@code listSize()})</li>
+     * </ul>
+     * This makes the WeightedAllocator aware of which volumes actually hold more data even though the underlying
+     * filesystem reports identical free space for all of them.
+     * </p>
      *
      * @param volumeIndexMax
-     *            the volume index max
+     *            highest volume index to include (inclusive); volumes 0..volumeIndexMax are reported
      *
-     * @return a 2-element array: [usedPerVolume[], maxCapacityPerVolume[]]
+     * @return a 2-element array: {@code [usedPerVolume[], maxCapacityPerVolume[]]} each of length
+     *         {@code volumeIndexMax + 1}
      *
      * @throws RemoteException
      *             the remote exception
@@ -314,43 +340,63 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     @Override
     public long[][] computeVolumeUsage(final int volumeIndexMax) throws RemoteException {
         try {
+            final var n = volumeIndexMax + 1;
+            final var usedPerVolume = new long[n];
+            final var maxCapacityPerVolume = new long[n];
+
             final var repository = GenericFile.getGenericFile(getRepository());
             final var volumes = repository.listFiles(new VolumeFilter(volumeIndexMax));
             if (volumes == null) {
                 _log.warn("Repository {} not a directory?", repository.getAbsolutePath());
-                return new long[][] { new long[] {}, new long[] {} };
+                return new long[][] { usedPerVolume, maxCapacityPerVolume };
             }
-            // Map from file system ID -> volume with lowest numeric index
-            final var fsIdToVolume = new HashMap<String, GenericFile>();
-            for (final GenericFile dataVolume : volumes) {
-                if (!dataVolume.isDirectory())
+
+            // Build map: volume index → directory
+            final var indexToVolume = new HashMap<Integer, GenericFile>();
+            for (final var vol : volumes) {
+                if (!vol.isDirectory())
                     continue;
-                final var fsId = dataVolume.getFileSystemId();
-                final var index = Integer.parseInt(dataVolume.getName().substring("volume".length()));
-                if (!fsIdToVolume.containsKey(fsId)) {
-                    fsIdToVolume.put(fsId, dataVolume);
-                } else {
-                    final var existing = fsIdToVolume.get(fsId);
-                    final var existingIndex = Integer.parseInt(existing.getName().substring("volume".length()));
-                    if (index < existingIndex) {
-                        fsIdToVolume.put(fsId, dataVolume);
-                    }
+                indexToVolume.put(Integer.parseInt(vol.getName().substring("volume".length())), vol);
+            }
+
+            // Group volume indices by filesystem ID to detect shared physical disks
+            final var fsIdToIndices = new HashMap<String, List<Integer>>();
+            for (final var entry : indexToVolume.entrySet()) {
+                try {
+                    fsIdToIndices.computeIfAbsent(entry.getValue().getFileSystemId(), _ -> new ArrayList<>())
+                            .add(entry.getKey());
+                } catch (final IOException e) {
+                    _log.warn("Cannot determine filesystem ID for {}: {}", entry.getValue().getAbsolutePath(),
+                            e.getMessage());
                 }
             }
-            // Sort by volume numeric index
-            final var realPathList = new ArrayList<>(fsIdToVolume.values());
-            realPathList.sort((a, b) -> {
-                final var i1 = Integer.parseInt(a.getName().substring("volume".length()));
-                final var i2 = Integer.parseInt(b.getName().substring("volume".length()));
-                return Integer.compare(i1, i2);
-            });
-            final var n = realPathList.size();
-            final var usedPerVolume = new long[n];
-            final var maxCapacityPerVolume = new long[n];
-            for (var i = 0; i < n; i++) {
-                final var volume = realPathList.get(i);
-                maxCapacityPerVolume[i] = volume.getTotalSpace();
-                usedPerVolume[i] = maxCapacityPerVolume[i] - volume.getFreeSpace();
+
+            // Populate per-volume stats based on disk topology
+            for (final var fsEntry : fsIdToIndices.entrySet()) {
+                final var indices = fsEntry.getValue();
+                final var rep = indexToVolume.get(indices.get(0));
+                final var diskTotal = rep.getTotalSpace();
+                if (indices.size() == 1) {
+                    // Dedicated disk: use raw statvfs stats (O(1), always fast)
+                    final var idx = indices.get(0);
+                    maxCapacityPerVolume[idx] = diskTotal;
+                    usedPerVolume[idx] = diskTotal - rep.getFreeSpace();
+                } else {
+                    // Shared disk: use virtual per-volume quota so the load balancer can
+                    // differentiate volumes that hold different amounts of data.
+                    // virtualTotal = diskTotal / numberOfVolumesOnThisDisk
+                    // virtualUsed = actual bytes stored in this volume directory (recursive scan)
+                    final var virtualTotal = diskTotal / indices.size();
+                    for (final var idx : indices) {
+                        final var vol = indexToVolume.get(idx);
+                        maxCapacityPerVolume[idx] = virtualTotal;
+                        try {
+                            usedPerVolume[idx] = vol.listSize();
+                        } catch (final IOException e) {
+                            _log.warn("Cannot compute content size for {}: {}", vol.getAbsolutePath(), e.getMessage());
+                        }
+                    }
+                }
             }
             return new long[][] { usedPerVolume, maxCapacityPerVolume };
         } catch (final Throwable t) {

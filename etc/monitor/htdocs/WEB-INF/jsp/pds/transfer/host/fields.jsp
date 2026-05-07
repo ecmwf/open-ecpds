@@ -390,7 +390,7 @@ table.fields > tbody > tr > th {
 					<option>$transferMethod[name]</option>
 					<option>$transferMethod[comment]</option>
 				</optgroup>
-				<optgroup label="Transfer Server">
+				<optgroup label="Data Mover">
 					<option>$transferServer[name]</option>
 					<option>$transferServer[host]</option>
 					<option>$transferServer[port]</option>

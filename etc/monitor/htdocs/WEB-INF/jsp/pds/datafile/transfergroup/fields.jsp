@@ -13,7 +13,7 @@
     <c:when test="${isInsert == 'true'}">
         <div class="form-info-banner" style="margin-left:0;margin-bottom:0.5rem">
             <i class="bi bi-collection text-primary flex-shrink-0"></i>
-            Create a new Transfer Group to organise transfer servers.
+            Create a new Transfer Group to organise data movers.
         </div>
     </c:when>
     <c:otherwise>
@@ -67,7 +67,7 @@
 		<td><html:checkbox property="replicate" /></td>
 	</tr>
 	<tr>
-		<th>Min. Replication Count <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Integer >= 0; must not exceed the number of active Transfer Servers in this group" tabindex="0"></i></th>
+		<th>Min. Replication Count <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Integer >= 0; must not exceed the number of active Data Movers in this group" tabindex="0"></i></th>
 		<td>
 			<div class="d-flex align-items-center gap-2">
 				<input type="number" name="minReplicationCount" id="minReplicationCount"
@@ -97,7 +97,7 @@
 		<td><html:checkbox property="filter" /></td>
 	</tr>
 	<tr>
-		<th>Min. Filtering Count <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Integer >= 0; must not exceed the number of active Transfer Servers in this group" tabindex="0"></i></th>
+		<th>Min. Filtering Count <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Integer >= 0; must not exceed the number of active Data Movers in this group" tabindex="0"></i></th>
 		<td>
 			<div class="d-flex align-items-center gap-2">
 				<input type="number" name="minFilteringCount" id="minFilteringCount"
@@ -145,7 +145,7 @@
 </table>
 
 <c:if test="${isInsert != 'true'}">
-<p class="fw-bold mb-1 mt-2">Transfer Servers <a
+<p class="fw-bold mb-1 mt-2">Data Movers <a
 		href="/do/datafile/transferserver/edit/insert_form?transferGroupName=${transferGroupActionForm.id}"><content:icon
 			key="icon.small.insert" titleKey="button.insert"
 			altKey="button.insert" writeFullTag="true" /></a></p>

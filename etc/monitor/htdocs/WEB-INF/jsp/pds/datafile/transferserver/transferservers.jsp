@@ -5,13 +5,13 @@
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 
 <div class="d-flex align-items-center mb-2 gap-2">
-    <span class="text-muted small"><i class="bi bi-list-ul"></i> <strong>${fn:length(transferservers)}</strong> transfer server(s)</span>
+    <span class="text-muted small"><i class="bi bi-list-ul"></i> <strong>${fn:length(transferservers)}</strong> data mover(s)</span>
     <auth:link basePathKey="transferserver.basepath" href="/edit/insert_form"
                styleClass="btn btn-sm btn-outline-success ms-auto"><i class="bi bi-plus-circle"></i> Create</auth:link>
 </div>
 
 <c:if test="${empty transferservers}">
-    <div class="alert">No Transfer Servers found.</div>
+    <div class="alert">No Data Movers found.</div>
 </c:if>
 
 <c:if test="${not empty transferservers}">
@@ -26,6 +26,7 @@
                 <th class="text-center">Check</th>
                 <th>Max Transfers</th>
                 <th>Last Update</th>
+                <th class="text-center">Disk Usage</th>
                 <th class="text-end">Actions</th>
             </tr>
         </thead>
@@ -68,6 +69,9 @@
                             <span title="${server.lastUpdateDate}">${server.lastUpdateDuration}</span>
                         </c:if>
                     </td>
+                    <td class="text-center" style="min-width:110px">
+                        <div class="ts-disk-usage-cell" data-mover="${server.name}" style="font-size:0.7rem;color:#6c757d;">-</div>
+                    </td>
                     <td class="text-end" style="white-space:nowrap">
                         <auth:link href="/do/datafile/transferserver/edit/update_form/${server.id}"
                                    imageKey="icon.small.update" styleClass="menuitem"/>
@@ -84,8 +88,56 @@
             paging:    false,
             searching: false,
             order:     [[0, 'asc']],
-            language: { info: 'Showing _START_-_END_ of _TOTAL_' }
+            language: { info: 'Showing _START_-_END_ of _TOTAL_' },
+            columnDefs: [{ orderable: false, targets: -2 }]
         });
     });
+
+    // Disk usage mini-bars
+    (function() {
+        function fmtBytes(b) {
+            var units = ['B','KB','MB','GB','TB','PB'];
+            var i = 0;
+            while (b >= 1024 && i < units.length - 1) { b /= 1024; i++; }
+            return b.toFixed(i > 0 ? 1 : 0) + ' ' + units[i];
+        }
+        function pctColor(pct) {
+            if (pct >= 90) return '#dc3545';
+            if (pct >= 75) return '#fd7e14';
+            if (pct >= 50) return '#ffc107';
+            return '#198754';
+        }
+
+        function refreshDiskUsage() {
+            $.getJSON('/do/datafile/moverdiskusage').done(function(data) {
+                $('.ts-disk-usage-cell').each(function() {
+                    var cell = $(this);
+                    var mName = cell.data('mover');
+                    var vols = data.movers && data.movers[mName];
+                    if (!vols || vols.length === 0) {
+                        cell.html('<span class="text-muted">no data</span>');
+                        return;
+                    }
+                    var totalUsed = 0, totalCap = 0;
+                    vols.forEach(function(v) { totalUsed += v.used; totalCap += v.total; });
+                    var pct = totalCap > 0 ? Math.round(100 * totalUsed / totalCap) : 0;
+                    var color = pctColor(pct);
+                    var maxPct = 0;
+                    vols.forEach(function(v) { if (v.pct > maxPct) maxPct = v.pct; });
+                    var barPct = Math.max(1, pct);
+                    cell.html(
+                        '<div class="d-flex align-items-center gap-1" title="' + fmtBytes(totalUsed) + ' used of ' + fmtBytes(totalCap) +
+                        ' (' + vols.length + ' vols, max vol: ' + maxPct + '%)" style="cursor:default">' +
+                        '<div style="background:#e9ecef;border-radius:3px;height:8px;width:100px;flex-shrink:0">' +
+                        '<div style="background:' + color + ';border-radius:3px;height:8px;width:' + barPct + 'px"></div></div>' +
+                        '<span style="color:' + color + ';font-weight:600;white-space:nowrap">' + pct + '%</span></div>'
+                    );
+                });
+            });
+        }
+
+        refreshDiskUsage();
+        setInterval(refreshDiskUsage, 5000);
+    })();
     </script>
 </c:if>

@@ -369,6 +369,14 @@ public final class MasterServer extends ECaccessProvider
     /** The incoming connection ids. */
     private final transient Map<String, List<IncomingConnection>> incomingConnectionIds = new ConcurrentHashMap<>();
 
+    /**
+     * Per-DataMover volume usage cache, populated on every background polling cycle. Key: mover name; value:
+     * {@code long[2][volumeCount]} where {@code [0][i]} is used bytes and {@code [1][i]} is total bytes for volume
+     * {@code i}. Entries are overwritten on every poll and survive until the next poll even if the mover disconnects,
+     * so the last known state is always available for display.
+     */
+    private final transient Map<String, long[][]> moverUsageCache = new ConcurrentHashMap<>();
+
     /** The management. */
     private final transient ManagementImpl management;
 
@@ -2040,7 +2048,7 @@ public final class MasterServer extends ECaccessProvider
                 final var mover = getDataMoverInterface(server.getName());
                 if (mover == null)
                     continue;
-                final var usage = mover.computeVolumeUsage(volumeCount);
+                final var usage = mover.computeVolumeUsage(volumeCount - 1);
                 if (usage == null || usage.length != 2 || usage[0].length != volumeCount
                         || usage[1].length != volumeCount) {
                     _log.warn("Invalid volume usage returned by mover {}", server.getName());
@@ -2157,45 +2165,46 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * Computes aggregated volume usage information for the given transfer group and returns the list of data movers
-     * sorted by volume usage for a specific volume.
+     * Computes aggregated volume usage for the given transfer group in a <em>single</em> pass over all data movers,
+     * returning one {@link VolumeUsageResult} per volume index.
+     *
      * <p>
-     * The method queries each available data mover in the group exactly once and:
-     * <ul>
-     * <li>Aggregates volume usage across movers by taking, for each volume, the maximum used space and the minimum
-     * total capacity reported.</li>
-     * <li>Sorts the movers by ascending used space for the volume identified by {@code volumeIndex} (least used
-     * first).</li>
-     * </ul>
-     * Movers returning invalid or incomplete usage information are ignored.
+     * Contacts each data mover in the group exactly once and builds all per-volume sorted-mover lists in a single
+     * in-memory pass. The result is a {@code VolumeUsageResult[]} where index {@code i} contains the aggregated usage
+     * and the list of movers sorted by ascending used space on volume {@code i}.
+     * </p>
+     *
+     * <p>
+     * All returned {@link VolumeUsageResult} entries share the same {@code aggregatedUsage} array reference — it is
+     * safe to read but must not be mutated by callers.
+     * </p>
      *
      * @param group
      *            the transfer group whose data movers are queried
-     * @param volumeIndex
-     *            the index of the volume to use when sorting movers by usage
      *
-     * @return a {@link VolumeUsageResult} containing the aggregated volume usage and the list of mover names sorted by
-     *         increasing usage for the specified volume
+     * @return an array of {@link VolumeUsageResult} with one entry per volume index; may be empty if no movers
+     *         responded with valid data
      *
-     * @throws IllegalArgumentException
-     *             if {@code volumeIndex} is out of range for the group's volume count
      * @throws RemoteException
      *             if a remote communication error occurs while querying a data mover
      */
-    public VolumeUsageResult computeVolumeUsageAndSortedMovers(final TransferGroup group, final int volumeIndex)
-            throws RemoteException {
+    public VolumeUsageResult[] computeAllVolumeUsageAndMovers(final TransferGroup group) throws RemoteException {
         final var volumeCount = group.getVolumeCount();
-        if (volumeIndex < 0 || volumeIndex >= volumeCount) {
-            throw new IllegalArgumentException("Invalid volumeIndex: " + volumeIndex);
-        }
         final var volumeUsage = new long[2][volumeCount];
         var initialised = false;
-        final var moversUsage = new ArrayList<Map.Entry<String, Long>>();
+
+        // Collect per-mover usage for every volume in a single fan-out pass.
+        // moversRaw[v] holds (moverName, usedOnVolume[v]) entries for sorting.
+        @SuppressWarnings("unchecked")
+        final var moversRaw = (ArrayList<Map.Entry<String, Long>>[]) new ArrayList[volumeCount];
+        for (var v = 0; v < volumeCount; v++)
+            moversRaw[v] = new ArrayList<>();
+
         for (final TransferServer server : getECpdsBase().getTransferServers(group.getName())) {
             final var mover = getDataMoverInterface(server.getName());
             if (mover == null)
                 continue;
-            final var usage = mover.computeVolumeUsage(volumeCount);
+            final var usage = mover.computeVolumeUsage(volumeCount - 1);
             if (usage == null || usage.length != 2 || usage[0] == null || usage[1] == null
                     || usage[0].length != volumeCount || usage[1].length != volumeCount) {
                 _log.warn("Invalid volume usage returned by mover {}", server.getName());
@@ -2203,7 +2212,8 @@ public final class MasterServer extends ECaccessProvider
             }
             final var used = usage[0];
             final var total = usage[1];
-            // aggregate usage (same logic as your original method)
+            // Cache per-mover raw data for the dashboard
+            moverUsageCache.put(server.getName(), new long[][] { used.clone(), total.clone() });
             if (!initialised) {
                 System.arraycopy(used, 0, volumeUsage[0], 0, volumeCount);
                 System.arraycopy(total, 0, volumeUsage[1], 0, volumeCount);
@@ -2214,13 +2224,41 @@ public final class MasterServer extends ECaccessProvider
                     volumeUsage[1][v] = Math.min(volumeUsage[1][v], total[v]);
                 }
             }
-            // collect usage for sorting
-            moversUsage.add(Map.entry(server.getName(), used[volumeIndex]));
+            for (var v = 0; v < volumeCount; v++)
+                moversRaw[v].add(Map.entry(server.getName(), used[v]));
         }
-        // least used first
-        final var sortedMovers = moversUsage.stream().sorted(Comparator.comparingLong(Map.Entry::getValue))
-                .map(Map.Entry::getKey).toArray(String[]::new);
-        return new VolumeUsageResult(volumeUsage, sortedMovers);
+
+        // Build one VolumeUsageResult per volume, sorting movers by that volume's usage.
+        // All results share the same aggregatedUsage array (read-only for callers).
+        final var results = new VolumeUsageResult[volumeCount];
+        for (var v = 0; v < volumeCount; v++) {
+            final var sortedMovers = moversRaw[v].stream().sorted(Comparator.comparingLong(Map.Entry::getValue))
+                    .map(Map.Entry::getKey).toArray(String[]::new);
+            results[v] = new VolumeUsageResult(volumeUsage, sortedMovers);
+        }
+        return results;
+    }
+
+    /**
+     * Returns a snapshot of the per-volume disk usage for one or all DataMovers, sourced from the in-memory cache
+     * populated by the background polling cycle.
+     *
+     * <p>
+     * Each entry maps a DataMover name to the {@code long[2][volumeCount]} array last received from that mover:
+     * {@code [0][i]} = used bytes on volume {@code i}, {@code [1][i]} = total bytes.
+     * </p>
+     *
+     * @param moverName
+     *            the DataMover name to query, or {@code null} for all movers
+     *
+     * @return a map of mover name to {@code long[2][volumeCount]}; never {@code null}
+     */
+    public Map<String, long[][]> getMoverVolumeSnapshot(final String moverName) {
+        if (moverName != null) {
+            final var entry = moverUsageCache.get(moverName);
+            return entry != null ? Map.of(moverName, entry) : Map.of();
+        }
+        return new HashMap<>(moverUsageCache);
     }
 
     /**

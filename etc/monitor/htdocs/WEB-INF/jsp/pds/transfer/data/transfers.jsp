@@ -347,8 +347,36 @@
     </auth:then>
 </auth:if>
 
-<%-- Error banner (populated by DataTables drawCallback on query errors) --%>
-<div id="transferQueryError" class="alert alert-danger d-none mb-2" role="alert"></div>
+<%-- Search error/empty-state banner - content managed dynamically by drawCallback --%>
+<div id="transferSearchError" class="alert mb-2" style="display:none"></div>
+<script>
+var _transferSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search using the following rules:<\/p>' +
+    '<ul class="mb-0">' +
+    '<li><code>target=<\/code>, <code>source=<\/code>, <code>ts=<\/code>, <code>priority=<\/code>, ' +
+    '<code>groupby=<\/code>, <code>identity=<\/code>, <code>checksum=<\/code>, <code>size=<\/code>, ' +
+    '<code>replicated=<\/code>, <code>asap=<\/code>, <code>deleted=<\/code>, <code>expired=<\/code>, ' +
+    '<code>proxy=<\/code>, <code>mover=<\/code>, <code>event=<\/code><\/li>' +
+    '<li>Example: <code>asap=yes target=*.dat source=\/tmp\/* ts&gt;10 ts&lt;=99 size&gt;=700kb case=i<\/code><\/li>' +
+    '<li><code>case=i<\/code> for case-insensitive, <code>case=s<\/code> for case-sensitive (default)<\/li>' +
+    '<li>Enclose values with spaces or equals signs in double quotes, e.g. <code>&quot;United States&quot;<\/code><\/li>' +
+    '<li>Wildcards: <code>*<\/code> (zero or more chars), <code>?<\/code> (exactly one char)<\/li>' +
+    '<\/ul>' +
+    '<div class="mt-2 text-muted small"><i class="bi bi-lightbulb"><\/i> Tip: Not sure about the syntax? Use the <a href="#" onclick="event.stopPropagation(); toggleQBPanel(\'queryBuilder\',\'btnTransferQB\'); document.getElementById(\'btnTransferQB\').scrollIntoView({behavior:\'smooth\',block:\'center\'}); return false;" class="link-secondary"><i class="bi bi-sliders2"><\/i> query builder<\/a> above to build a valid search expression.<\/div>';
+function _updateTransferSearchBanner(queryError, total, hasSearch) {
+    var div = document.getElementById('transferSearchError');
+    if (!div) return;
+    function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    if (queryError) {
+        div.innerHTML = '<strong>Error in your query:<\/strong> ' + esc(queryError) + _transferSearchHelp;
+        div.style.display = '';
+    } else if (total === 0 && hasSearch) {
+        div.innerHTML = 'No Data Transfers found. Default search is by target.' + _transferSearchHelp;
+        div.style.display = '';
+    } else {
+        div.style.display = 'none';
+    }
+}
+</script>
 
 <%-- Filter params for DataTables AJAX --%>
 <input type="hidden" id="dt-date"   value="<c:out value="${selectedDate}"/>">
@@ -376,7 +404,6 @@
     var status = document.getElementById('dt-status').value;
     var search = document.getElementById('dt-search').value;
     var type   = document.getElementById('dt-type').value;
-    var errorDiv = document.getElementById('transferQueryError');
 
     $.fn.dataTable.ext.errMode = 'none';
 
@@ -392,8 +419,7 @@
                 d.transferType   = type;
             },
             error: function () {
-                errorDiv.textContent = 'Error loading transfers. Please try again.';
-                errorDiv.classList.remove('d-none');
+                _updateTransferSearchBanner('Error loading transfers. Please try again.', 0, true);
             }
         },
         order: [[2, 'desc']],
@@ -416,25 +442,8 @@
         dom: "t<'d-flex align-items-center mt-2'i<'ms-auto'p>>",
         drawCallback: function (settings) {
             var json = settings.json;
-            if (json && json.error) {
-                errorDiv.innerHTML =
-                    '<strong>Error in your query:</strong> ' + $('<span>').text(json.error).html() +
-                    '<p class="mb-1 mt-2">You can conduct an extended search using the following rules:</p>' +
-                    '<ul class="mb-0">' +
-                    '<li><code>target=</code>, <code>source=</code>, <code>ts=</code>, <code>priority=</code>, ' +
-                    '<code>groupby=</code>, <code>identity=</code>, <code>checksum=</code>, <code>size=</code>, ' +
-                    '<code>replicated=</code>, <code>asap=</code>, <code>deleted=</code>, <code>expired=</code>, ' +
-                    '<code>proxy=</code>, <code>mover=</code>, <code>event=</code></li>' +
-                    '<li>Example: <code>asap=yes target=*.dat source=/tmp/* ts&gt;10 ts&lt;=99 size&gt;=700kb case=i</code></li>' +
-                    '<li><code>case=i</code> for case-insensitive, <code>case=s</code> for case-sensitive (default)</li>' +
-                    '<li>Enclose values with spaces or equals signs in double quotes, e.g. <code>&quot;United States&quot;</code></li>' +
-                    '<li>Wildcards: <code>*</code> (zero or more chars), <code>?</code> (exactly one char)</li>' +
-                    '</ul>';
-                errorDiv.classList.remove('d-none');
-            } else {
-                errorDiv.classList.add('d-none');
-                errorDiv.innerHTML = '';
-            }
+            var total = json ? (json.recordsTotal || 0) : 0;
+            _updateTransferSearchBanner(json && json.error ? json.error : '', total, search.length > 0);
         }
     });
 

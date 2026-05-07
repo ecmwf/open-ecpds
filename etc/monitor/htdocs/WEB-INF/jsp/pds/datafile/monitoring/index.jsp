@@ -91,9 +91,9 @@
 		</tr>
 
 		<tr>
-			<th>Per Transfer Server</th>
+			<th>Per Data Mover</th>
 			<td><html:checkbox
-					title="Allow giving the transfer rates per Transfer Server rather than accumulating per Transfer Group"
+					title="Allow giving the transfer rates per Data Mover rather than accumulating per Transfer Group"
 					property="perTransferServer" /></td>
 		</tr>
 
@@ -101,7 +101,7 @@
 			<th>For</th>
 			<td><bean:define id="servers" name="ratesActionForm"
 					property="transferServers" type="java.util.Collection" /> <html:select
-					title="If the search if per Transfer Server then allow selecting a specific one to get the transfer rates per data disk"
+					title="If the search is per Data Mover then allow selecting a specific one to get the transfer rates per data disk"
 					property="transferServerName">
 					<html:options collection="servers" property="name"
 						labelProperty="value" />

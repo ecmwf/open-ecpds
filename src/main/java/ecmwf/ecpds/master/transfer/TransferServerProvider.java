@@ -36,8 +36,9 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.SplittableRandom;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -136,7 +137,7 @@ public final class TransferServerProvider {
      * stable-but-not-globally-repeatable offsets.
      * </p>
      */
-    private static final long RUNTIME_SALT = new SplittableRandom().nextLong();
+    private static final long RUNTIME_SALT = new java.util.SplittableRandom().nextLong();
 
     /**
      * Cluster-level WRR state:
@@ -235,7 +236,25 @@ public final class TransferServerProvider {
     }
 
     /**
-     * Returns the storage volume (file system) index selected for this provider instance.
+     * Returns a snapshot of the current volume disk usage for all registered transfer groups, or for a single group if
+     * {@code groupName} is non-null.
+     *
+     * <p>
+     * Delegates to {@link WeightedAllocator#getVolumeSnapshot(String)}. The data comes from the in-memory cache
+     * maintained by the background usage updater — no DataMover RMI calls are made at query time.
+     * </p>
+     *
+     * @param groupName
+     *            the transfer group to query, or {@code null} for all groups
+     *
+     * @return a map of group name to {@code long[volumeIndex][2]} where {@code [i][0]} is used bytes and {@code [i][1]}
+     *         is total bytes; never {@code null}; empty if no data has been collected yet
+     */
+    public static Map<String, long[][]> getVolumeSnapshot(final String groupName) {
+        return WeightedAllocator.getVolumeSnapshot(groupName);
+    }
+
+    /**
      *
      * <p>
      * How the index is obtained:
@@ -478,9 +497,8 @@ public final class TransferServerProvider {
      * </p>
      * <ul>
      * <li>If a {@code VolumeUsageResult} is present in the internal cache for {@code groupName + ":" + fileSystem}, the
-     * method uses the mover ordering computed by
-     * {@link MasterServer#computeVolumeUsageAndSortedMovers(TransferGroup, int)} (descending free space), intersected
-     * with the provider's active set.</li>
+     * method uses the mover ordering computed by {@link MasterServer#computeAllVolumeUsageAndMovers(TransferGroup)}
+     * (descending free space), intersected with the provider's active set.</li>
      * <li>If no cache entry exists, the method returns a shuffled copy of the provider's least-activity list as a
      * best-effort fallback to avoid persistent hot-spotting.</li>
      * </ul>
@@ -1353,7 +1371,7 @@ public final class TransferServerProvider {
      * <li>fallback to uniform random allocation when no statistics are available or when volumes are nearly
      * balanced,</li>
      * <li>run a background updater that periodically refreshes free‑space usage via
-     * {@link MasterServer#computeVolumeUsageAndSortedMovers(TransferGroup, int)},</li>
+     * {@link MasterServer#computeAllVolumeUsageAndMovers(TransferGroup)},</li>
      * <li>populate the {@code VOLUME_USAGE_CACHE} used by
      * {@link TransferServerProvider#getTransferServersByMostFreeSpace()}.</li>
      * </ul>
@@ -1379,12 +1397,9 @@ public final class TransferServerProvider {
      * This class is internal to the provider and not exposed publicly.
      * </p>
      */
-    private static class WeightedAllocator {
-        /** Per-group random-number generators used for volume selection. */
-        private static final ConcurrentHashMap<String, SplittableRandom> RNGS = new ConcurrentHashMap<>();
-
-        /** Map of groupName → per-group statistics (volumes, weights, prefix sums). */
-        private static final ConcurrentHashMap<String, GroupStats> GROUPS = new ConcurrentHashMap<>();
+    static class WeightedAllocator {
+        /** Map of groupName -> per-group statistics (volumes, weights, prefix sums). */
+        static final ConcurrentHashMap<String, GroupStats> GROUPS = new ConcurrentHashMap<>();
 
         /**
          * Minimum allowable weight to ensure no volume has zero selection probability.
@@ -1395,12 +1410,7 @@ public final class TransferServerProvider {
          * Coefficient-of-variation threshold below which all volumes are considered to have “roughly equal” free space,
          * causing a switch to uniform random selection.
          */
-        private static final double CV_THRESHOLD = Cnf.at("TransferServerProvider", "cvThreshold", 0.10d);
-
-        /**
-         * Enables deterministic seeding for repeatable results across restarts when true.
-         */
-        private static final boolean DETERMINISTIC_RNG = Cnf.at("TransferServerProvider", "deterministicRng", false);
+        private static final double CV_THRESHOLD = Cnf.at("TransferServerProvider", "cvThreshold", 0.03d);
 
         /**
          * Scaling factor α controlling how much a file of size S penalises volume free space during size-aware
@@ -1410,11 +1420,23 @@ public final class TransferServerProvider {
                 1.0d);
 
         /**
-         * Background daemon thread periodically refreshing volume usage and mover ordering from MasterServer.
+         * Background daemon thread that fires the scheduler tick. Kept single-threaded because the tick itself fans out
+         * group updates to GROUP_UPDATE_POOL.
          */
         private static final ScheduledExecutorService GROUP_USAGE_UPDATER = Executors
                 .newSingleThreadScheduledExecutor(r -> {
                     final var t = new Thread(r, "GroupUsageUpdater");
+                    t.setDaemon(true);
+                    return t;
+                });
+
+        /**
+         * Thread pool used to update each transfer group concurrently within a single scheduler tick. Size defaults to
+         * the number of available processors but is capped at 16 to avoid overwhelming the DataMover RMI layer.
+         */
+        private static final ExecutorService GROUP_UPDATE_POOL = Executors
+                .newFixedThreadPool(Math.min(16, Runtime.getRuntime().availableProcessors()), r -> {
+                    final var t = new Thread(r, "GroupUsageWorker");
                     t.setDaemon(true);
                     return t;
                 });
@@ -1613,8 +1635,8 @@ public final class TransferServerProvider {
          * <ul>
          * <li>iterates over all transfer groups in the system,</li>
          * <li>checks group availability (via {@link TransferServerProvider#groupIsAvailable}),</li>
-         * <li>for each volume of an available group, invokes
-         * {@link MasterServer#computeVolumeUsageAndSortedMovers(TransferGroup, int)},</li>
+         * <li>for each available group, invokes
+         * {@link MasterServer#computeAllVolumeUsageAndMovers(TransferGroup)},</li>
          * <li>updates {@link WeightedAllocator#GROUPS} and {@link TransferServerProvider#VOLUME_USAGE_CACHE}
          * accordingly.</li>
          * </ul>
@@ -1635,64 +1657,97 @@ public final class TransferServerProvider {
          * </p>
          */
         public static void startUsageUpdater() {
-            final var frequency = Cnf.at("TransferServerProvider", "usageUpdaterFreqInSec", 10);
+            final var frequency = Cnf.at("TransferServerProvider", "usageUpdaterFreqInSec", 2);
             GROUP_USAGE_UPDATER.scheduleAtFixedRate(() -> {
                 try {
                     final var groups = MASTER.getECpdsBase().getTransferGroupArray();
+
+                    // Submit one task per group so all groups are refreshed concurrently.
+                    // Within each task the per-volume calls remain sequential (each contacts
+                    // all DataMovers; parallelising them would create N_volumes × N_movers
+                    // simultaneous connections, which is not safe).
+                    final var futures = new java.util.ArrayList<java.util.concurrent.Future<?>>(groups.length);
                     for (final var group : groups) {
-                        if (!groupIsAvailable(group))
-                            continue;
+                        futures.add(GROUP_UPDATE_POOL.submit(() -> updateGroupFromMovers(group)));
+                    }
 
-                        final var groupName = group.getName();
-                        final var volumeCount = group.getVolumeCount();
-                        final var used = new long[volumeCount];
-                        final var capacity = new long[volumeCount];
-
-                        var allOk = true;
-                        for (var volumeIndex = 0; volumeIndex < volumeCount; volumeIndex++) {
-                            try {
-                                final var result = MASTER.computeVolumeUsageAndSortedMovers(group, volumeIndex);
-                                if (result == null || result.aggregatedUsage == null
-                                        || result.aggregatedUsage.length != 2) {
-                                    _log.warn("Invalid volume usage result for group {}", groupName);
-                                    allOk = false;
-                                    break;
-                                }
-                                final var usedArr = result.aggregatedUsage[0];
-                                final var capArr = result.aggregatedUsage[1];
-                                if (usedArr.length != volumeCount || capArr.length != volumeCount) {
-                                    _log.warn("Volume usage size mismatch for group {}", groupName);
-                                    allOk = false;
-                                    break;
-                                }
-                                VOLUME_USAGE_CACHE.put(groupName + ":" + volumeIndex, result);
-                                used[volumeIndex] = usedArr[volumeIndex];
-                                capacity[volumeIndex] = capArr[volumeIndex];
-                            } catch (final Throwable e) {
-                                _log.warn("Error computing usage for {} volume {}", groupName, volumeIndex, e);
-                                allOk = false;
-                                break;
-                            }
-                        }
-
-                        if (allOk) {
-                            updateGroupUsage(group, used, capacity);
-                            if (isDebugEnabled()) {
-                                final var usedSum = Arrays.stream(used).sum();
-                                final var totalSum = Arrays.stream(capacity).sum();
-                                final var percentUsed = totalSum > 0 ? (usedSum * 100.0 / totalSum) : 0.0;
-                                _log.debug("Group {} usage updated: used={}, total={}, {}%", groupName,
-                                        Arrays.toString(used), Arrays.toString(capacity),
-                                        String.format("%.2f", percentUsed));
-                            }
-                        } else {
-                            _log.warn("Skipping usage update for group {} due to partial/invalid data", groupName);
+                    // Wait for all groups to finish before scheduling the next tick
+                    for (final var f : futures) {
+                        try {
+                            f.get();
+                        } catch (final Exception e) {
+                            _log.warn("Group update task failed", e);
                         }
                     }
                 } catch (final Throwable t) {
                     _log.error("Global usage update failed", t);
                 }
             }, frequency, frequency, TimeUnit.SECONDS);
+        }
+
+        /**
+         * Contacts all DataMovers for {@code group}, updates {@link WeightedAllocator#GROUPS} with a single consistent
+         * usage snapshot, and refreshes {@link TransferServerProvider#VOLUME_USAGE_CACHE} with per-volume mover
+         * ordering.
+         *
+         * <p>
+         * The aggregated usage snapshot is taken from the <em>first</em> per-volume call. All subsequent calls reuse
+         * the same DataMover fan-out but are needed only to compute per-volume {@code sortedMovers} for
+         * {@link TransferServerProvider#getTransferServersByMostFreeSpace()}. This avoids the previous design where a
+         * different mover snapshot was sampled for every volume, producing weights derived from different instants in
+         * time.
+         * </p>
+         *
+         * @param group
+         *            the group to refresh
+         */
+        private static void updateGroupFromMovers(final TransferGroup group) {
+            if (!groupIsAvailable(group))
+                return;
+
+            final var groupName = group.getName();
+            final var volumeCount = group.getVolumeCount();
+
+            try {
+                // Single fan-out pass: contacts each DataMover once and returns one
+                // VolumeUsageResult per volume. Previously this required N_volumes separate
+                // calls, each fanning out to all movers — O(N_volumes × N_movers) RMI calls
+                // reduced to O(N_movers).
+                final var results = MASTER.computeAllVolumeUsageAndMovers(group);
+                if (results == null || results.length != volumeCount) {
+                    _log.warn("Unexpected result count from computeAllVolumeUsageAndMovers for group {}", groupName);
+                    return;
+                }
+
+                // Populate per-volume cache (used by getTransferServersByMostFreeSpace)
+                for (var volumeIndex = 0; volumeIndex < volumeCount; volumeIndex++) {
+                    final var result = results[volumeIndex];
+                    if (result == null || result.aggregatedUsage == null || result.aggregatedUsage.length != 2
+                            || result.aggregatedUsage[0].length != volumeCount
+                            || result.aggregatedUsage[1].length != volumeCount) {
+                        _log.warn("Invalid result for group {} volume {}", groupName, volumeIndex);
+                        return;
+                    }
+                    VOLUME_USAGE_CACHE.put(groupName + ":" + volumeIndex, result);
+                }
+
+                // All results share the same aggregatedUsage snapshot (consistent
+                // point-in-time)
+                final var usedSnapshot = results[0].aggregatedUsage[0];
+                final var capSnapshot = results[0].aggregatedUsage[1];
+                updateGroupUsage(group, usedSnapshot, capSnapshot);
+
+                if (isDebugEnabled()) {
+                    final var usedSum = Arrays.stream(usedSnapshot).sum();
+                    final var totalSum = Arrays.stream(capSnapshot).sum();
+                    final var percentUsed = totalSum > 0 ? (usedSum * 100.0 / totalSum) : 0.0;
+                    _log.debug("Group {} usage updated: used={}, total={}, {}%", groupName,
+                            Arrays.toString(usedSnapshot), Arrays.toString(capSnapshot),
+                            String.format("%.2f", percentUsed));
+                }
+            } catch (final Throwable e) {
+                _log.warn("Error updating usage for group {}", groupName, e);
+            }
         }
 
         /**
@@ -1717,8 +1772,7 @@ public final class TransferServerProvider {
          *
          * <h3>RNG Source</h3>
          * <p>
-         * Each group has a dedicated {@link SplittableRandom}, seeded either deterministically (if enabled in config)
-         * or via a hash of bytecode identity, system nanotime, and runtime salt.
+         * Uses {@link ThreadLocalRandom#current()} — thread-safe, no contention, no shared state.
          * </p>
          *
          * @param group
@@ -1728,13 +1782,7 @@ public final class TransferServerProvider {
          */
         public static int allocate(final TransferGroup group) {
             final var groupName = group.getName();
-            final var random = RNGS.computeIfAbsent(groupName, g -> {
-                if (DETERMINISTIC_RNG) {
-                    return new SplittableRandom(g.hashCode());
-                } else {
-                    return new SplittableRandom(((long) g.hashCode()) ^ System.nanoTime() ^ RUNTIME_SALT);
-                }
-            });
+            final var random = ThreadLocalRandom.current();
             final var vc = group.getVolumeCount();
             if (vc <= 0) {
                 if (isDebugEnabled())
@@ -1850,19 +1898,11 @@ public final class TransferServerProvider {
          */
         public static int allocate(final TransferGroup group, final long fileSize) {
             if (fileSize <= 0) {
-                // Fallback to standard allocator for unknown file sizes
                 return allocate(group);
             }
 
             final var groupName = group.getName();
-            final var random = RNGS.computeIfAbsent(groupName, g -> {
-                if (DETERMINISTIC_RNG) {
-                    return new SplittableRandom(g.hashCode());
-                } else {
-                    return new SplittableRandom(((long) g.hashCode()) ^ System.nanoTime() ^ RUNTIME_SALT);
-                }
-            });
-
+            final var random = ThreadLocalRandom.current();
             final var vc = group.getVolumeCount();
             if (vc <= 0) {
                 if (isDebugEnabled())
@@ -1969,14 +2009,55 @@ public final class TransferServerProvider {
          */
         public static void stopUsageUpdater() {
             GROUP_USAGE_UPDATER.shutdown();
+            GROUP_UPDATE_POOL.shutdown();
             try {
                 if (!GROUP_USAGE_UPDATER.awaitTermination(5, TimeUnit.SECONDS)) {
                     GROUP_USAGE_UPDATER.shutdownNow();
                 }
+                if (!GROUP_UPDATE_POOL.awaitTermination(5, TimeUnit.SECONDS)) {
+                    GROUP_UPDATE_POOL.shutdownNow();
+                }
             } catch (final InterruptedException ie) {
                 Thread.currentThread().interrupt();
                 GROUP_USAGE_UPDATER.shutdownNow();
+                GROUP_UPDATE_POOL.shutdownNow();
             }
+        }
+
+        /**
+         * Returns a snapshot of the current volume usage for the named group, or all groups if {@code groupName} is
+         * {@code null}.
+         *
+         * <p>
+         * Each entry maps a group name to a 2-D array where {@code data[i][0]} is used bytes and {@code data[i][1]} is
+         * total capacity bytes for volume index {@code i}. The snapshot is taken under the per-group lock to ensure
+         * internal consistency.
+         * </p>
+         *
+         * @param groupName
+         *            the group to query, or {@code null} for all groups
+         *
+         * @return a snapshot map; never {@code null}; empty if the group is unknown or no groups have been registered
+         *         yet
+         */
+        public static Map<String, long[][]> getVolumeSnapshot(final String groupName) {
+            final Map<String, long[][]> result = new HashMap<>();
+            for (final var entry : GROUPS.entrySet()) {
+                if (groupName != null && !groupName.equals(entry.getKey())) {
+                    continue;
+                }
+                final var gs = entry.getValue();
+                final long[][] data;
+                synchronized (gs.lock) {
+                    data = new long[gs.volumes.length][2];
+                    for (var i = 0; i < gs.volumes.length; i++) {
+                        data[i][0] = gs.volumes[i].currentLoad.sum(); // used bytes
+                        data[i][1] = gs.volumes[i].maxCapacity; // total bytes
+                    }
+                }
+                result.put(entry.getKey(), data);
+            }
+            return result;
         }
 
         /**

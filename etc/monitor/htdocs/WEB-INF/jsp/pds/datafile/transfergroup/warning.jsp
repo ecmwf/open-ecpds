@@ -13,7 +13,7 @@
 	<ul>
 		<li>The Transfer Group ${transfergroup.name}</li>
 		<c:if test="${fn:length(transfergroup.transferServers) > 0}">
-			<li>Affected Transfer Servers: <c:forEach var="server"
+			<li>Affected Data Movers: <c:forEach var="server"
 					items="${transfergroup.transferServers}">
 					<b>${server.name}</b>&nbsp;
 				</c:forEach>

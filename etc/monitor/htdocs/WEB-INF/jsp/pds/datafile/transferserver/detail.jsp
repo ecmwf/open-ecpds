@@ -18,7 +18,7 @@
 <tr>
 <td colspan="2" class="pt-2">
 <a href="/do/datafile/transferserver" class="btn btn-sm btn-outline-secondary">
-    <i class="bi bi-arrow-left"></i> All Transfer Servers
+    <i class="bi bi-arrow-left"></i> All Data Movers
 </a>
 </td>
 </tr>

@@ -46,7 +46,7 @@
                     </div>
                     <%-- Row 2: secondary filters --%>
                     <div class="row g-2">
-                        <div class="col-3">
+                        <div class="col-4">
                             <div class="input-group input-group-sm">
                                 <span class="input-group-text text-muted"><i class="bi bi-activity"></i></span>
                                 <select class="form-select form-select-sm" name="destinationStatus" onchange="destsTableReload()" title="Filter by Status">
@@ -56,7 +56,7 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="col-3">
+                        <div class="col-4">
                             <div class="input-group input-group-sm">
                                 <span class="input-group-text text-muted"><i class="bi bi-file-zip"></i></span>
                                 <select class="form-select form-select-sm" name="destinationFilter" onchange="destsTableReload()" title="Filter by Compression">
@@ -66,22 +66,13 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="col-3">
+                        <div class="col-4">
                             <div class="input-group input-group-sm">
                                 <span class="input-group-text text-muted"><i class="bi bi-diagram-2"></i></span>
                                 <select class="form-select form-select-sm" name="aliases" onchange="destsTableReload()" title="Aliased From/To">
                                     <option value="all" <c:if test="${aliases == 'all'}">selected</c:if>>All Destinations</option>
                                     <option value="to"  <c:if test="${aliases == 'to'}">selected</c:if>>Aliased From ...</option>
                                     <option value="from" <c:if test="${aliases == 'from'}">selected</c:if>>Aliases To ...</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-3">
-                            <div class="input-group input-group-sm">
-                                <span class="input-group-text text-muted"><i class="bi bi-sort-alpha-down"></i></span>
-                                <select class="form-select form-select-sm" name="sortDirection" onchange="destsTableReload()" title="Sort Direction">
-                                    <option value="asc"  <c:if test="${sortDirection == 'asc'}">selected</c:if>>Ascending</option>
-                                    <option value="desc" <c:if test="${sortDirection == 'desc'}">selected</c:if>>Descending</option>
                                 </select>
                             </div>
                         </div>
@@ -290,30 +281,37 @@
     </auth:then>
 </auth:if>
 
-<%-- No results --%>
-<c:if test="${empty columns}">
-    <div class="alert">
-        <c:if test="${!hasDestinationSearch}">
-            No Destinations found matching these criteria.
-        </c:if>
-        <c:if test="${hasDestinationSearch}">
-            <c:if test="${!empty getDestinationsError}">
-                <strong>Error in your query:</strong> ${getDestinationsError}
-            </c:if>
-            <c:if test="${empty getDestinationsError}">
-                No Destinations found. The default search is by name or email address.
-            </c:if>
-            <p class="mb-1 mt-2">You can conduct an extended search using the following rules:</p>
-            <ul class="mb-0">
-                <li><code>name=</code>, <code>comment=</code>, <code>country=</code>, <code>email=</code>, <code>enabled=yes/no</code>, <code>monitor=</code>, <code>backup=</code>, <code>forceproxy=</code>, <code>options=</code></li>
-                <li>Example: <code>enabled=yes name=des0?_a* email=*@meteo.ms comment=*test* country=fr options=*mqtt* case=i</code></li>
-                <li><code>case=i</code> for case-insensitive, <code>case=s</code> for case-sensitive (default)</li>
-                <li>Enclose values with spaces or equals signs in double quotes, e.g. <code>"United States"</code></li>
-                <li>Wildcards: <code>*</code> (zero or more chars), <code>?</code> (exactly one char)</li>
-            </ul>
-        </c:if>
-    </div>
-</c:if>
+<%-- Search error/empty-state banner - content managed dynamically by drawCallback --%>
+<div id="destSearchError" class="alert" style="display:none"></div>
+<script>
+var _destSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search using the following rules:<\/p>' +
+    '<ul class="mb-0">' +
+    '<li><code>name=<\/code>, <code>comment=<\/code>, <code>country=<\/code>, <code>email=<\/code>, <code>enabled=yes\/no<\/code>, <code>monitor=<\/code>, <code>backup=<\/code>, <code>forceproxy=<\/code>, <code>options=<\/code><\/li>' +
+    '<li>Example: <code>enabled=yes name=des0?_a* email=*@meteo.ms comment=*test* country=fr options=*mqtt* case=i<\/code><\/li>' +
+    '<li><code>case=i<\/code> for case-insensitive, <code>case=s<\/code> for case-sensitive (default)<\/li>' +
+    '<li>Enclose values with spaces or equals signs in double quotes, e.g. <code>&quot;United States&quot;<\/code><\/li>' +
+    '<li>Wildcards: <code>*<\/code> (zero or more chars), <code>?<\/code> (exactly one char)<\/li>' +
+    '<\/ul>' +
+    '<div class="mt-2 text-muted small"><i class="bi bi-lightbulb"><\/i> Tip: Not sure about the syntax? Use the <a href="#" onclick="event.stopPropagation(); toggleQBPanel(\'destQueryBuilder\',\'btnDestQB\'); document.getElementById(\'btnDestQB\').scrollIntoView({behavior:\'smooth\',block:\'center\'}); return false;" class="link-secondary"><i class="bi bi-sliders2"><\/i> query builder<\/a> above to build a valid search expression.<\/div>';
+function _updateDestSearchBanner(queryError, total, hasSearch) {
+    var div = document.getElementById('destSearchError');
+    if (!div) return;
+    function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    if (queryError) {
+        div.innerHTML = '<strong>Error in your query:<\/strong> ' + esc(queryError) + _destSearchHelp;
+        div.style.display = '';
+    } else if (total === 0 && hasSearch) {
+        div.innerHTML = 'No Destinations found. The default search is by name or email address.' + _destSearchHelp;
+        div.style.display = '';
+    } else if (total === 0) {
+        div.textContent = 'No Destinations found matching these criteria.';
+        div.style.display = '';
+    } else {
+        div.style.display = 'none';
+    }
+}
+<c:if test="${empty columns}">_updateDestSearchBanner('<c:out value="${getDestinationsError}"/>', 0, ${hasDestinationSearch});</c:if>
+</script>
 
 
 <%-- Results table --%>
@@ -356,7 +354,6 @@
             type: 'GET',
             data: function(d) {
                 d.destinationSearch  = $('#destinationSearch').val() || '';
-                d.sortDirection      = $('#destinationSearchForm [name="sortDirection"]').val() || 'asc';
                 d.aliases            = $('#destinationSearchForm [name="aliases"]').val() || 'All';
                 d.destinationStatus  = $('#destinationSearchForm [name="destinationStatus"]').val() || 'All Status';
                 d.destinationType    = $('#destinationSearchForm [name="destinationType"]').val() || '-1';
@@ -375,7 +372,10 @@
             $('td', row).each(function(i) { $(this).html(data[i]); });
         },
         drawCallback: function(settings) {
-            var total = settings.json ? settings.json.recordsTotal : 0;
+            var json = settings.json || {};
+            var total = json.recordsTotal || 0;
+            var srch = ($('#destinationSearch').val() || '').trim();
+            _updateDestSearchBanner(json.queryError || '', total, srch.length > 0);
             $('#destsFoundLabel').html('<i class="bi bi-list-ul"></i> <strong>' + total + '</strong> destination(s) found');
         },
         language: { lengthMenu: 'Show _MENU_ per page', info: 'Showing _START_-_END_ of _TOTAL_', processing: 'Loading...' }
@@ -399,7 +399,6 @@
     function _currentFilters() {
         return {
             destinationSearch:  $('#destinationSearch').val() || '',
-            sortDirection:      $('#destinationSearchForm [name="sortDirection"]').val() || 'asc',
             aliases:            $('#destinationSearchForm [name="aliases"]').val() || 'All',
             destinationStatus:  $('#destinationSearchForm [name="destinationStatus"]').val() || 'All Status',
             destinationType:    $('#destinationSearchForm [name="destinationType"]').val() || '-1',
@@ -523,6 +522,8 @@
     function _loadSplitRows() {
         var params = $.extend(_currentFilters(), { draw: 1, start: 0, length: -1 });
         $.getJSON('/do/transfer/destination?json=list', params, function(json) {
+            var srch = ($('#destinationSearch').val() || '').trim();
+            _updateDestSearchBanner(json.queryError || '', (json.data || []).length, srch.length > 0);
             _allRows = _rowsFromData(json.data || []);
             $('#destsFoundLabel').html('<i class="bi bi-list-ul"></i> <strong>' + _allRows.length + '</strong> destination(s) found');
             _curPage = 0;

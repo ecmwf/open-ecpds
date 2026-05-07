@@ -1122,4 +1122,26 @@ final class ManagementProxy implements ManagementInterface {
         return monitor.done(managementInterface.computeFilterEfficiency(session, destinationName, email, filter, date,
                 includeStdby, pattern));
     }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Gets the volume usage.
+     */
+    @Override
+    public Map<String, long[][]> getVolumeUsage(final String groupName) throws MasterException, RemoteException {
+        final var monitor = new MonitorCall("getVolumeUsage(" + groupName + ")");
+        return monitor.done(managementInterface.getVolumeUsage(groupName));
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Gets the mover volume usage.
+     */
+    @Override
+    public Map<String, long[][]> getMoverVolumeUsage(final String moverName) throws MasterException, RemoteException {
+        final var monitor = new MonitorCall("getMoverVolumeUsage(" + moverName + ")");
+        return monitor.done(managementInterface.getMoverVolumeUsage(moverName));
+    }
 }

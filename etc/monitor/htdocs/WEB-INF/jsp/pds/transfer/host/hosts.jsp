@@ -269,30 +269,37 @@
     </auth:then>
 </auth:if>
 
-<%-- No results --%>
-<c:if test="${empty hosts}">
-    <div class="alert">
-        <c:if test="${!hasHostSearch}">
-            No Hosts found based on these criteria.
-        </c:if>
-        <c:if test="${hasHostSearch}">
-            <c:if test="${!empty getHostsError}">
-                <strong>Error in your query:</strong> ${getHostsError}
-            </c:if>
-            <c:if test="${empty getHostsError}">
-                No Hosts found. Default search is by nickname.
-            </c:if>
-            <p class="mb-1 mt-2">You can conduct an extended search using the following rules:</p>
-            <ul class="mb-0">
-                <li><code>id</code>, <code>hostname=</code>, <code>login=</code>, <code>password=</code>, <code>nickname=</code>, <code>comment=</code>, <code>dir=</code>, <code>enabled=yes/no</code>, <code>method=</code>, <code>email=</code>, <code>options=</code></li>
-                <li>Example: <code>enabled=yes method=*Http hostname=*.test.fr id&gt;=100 options=*mqtt* nickname=Test_0? case=i</code></li>
-                <li><code>case=i</code> for case-insensitive, <code>case=s</code> for case-sensitive (default)</li>
-                <li>Enclose values with spaces or equals signs in double quotes, e.g. <code>"United States"</code> or <code>"a=b"</code></li>
-                <li>Wildcards: <code>*</code> (zero or more chars), <code>?</code> (exactly one char)</li>
-            </ul>
-        </c:if>
-    </div>
-</c:if>
+<%-- Search error/empty-state banner - content managed dynamically by drawCallback --%>
+<div id="hostSearchError" class="alert" style="display:none"></div>
+<script>
+var _hostSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search using the following rules:<\/p>' +
+    '<ul class="mb-0">' +
+    '<li><code>id<\/code>, <code>hostname=<\/code>, <code>login=<\/code>, <code>password=<\/code>, <code>nickname=<\/code>, <code>comment=<\/code>, <code>dir=<\/code>, <code>enabled=yes\/no<\/code>, <code>method=<\/code>, <code>email=<\/code>, <code>options=<\/code><\/li>' +
+    '<li>Example: <code>enabled=yes method=*Http hostname=*.test.fr id&gt;=100 options=*mqtt* nickname=Test_0? case=i<\/code><\/li>' +
+    '<li><code>case=i<\/code> for case-insensitive, <code>case=s<\/code> for case-sensitive (default)<\/li>' +
+    '<li>Enclose values with spaces or equals signs in double quotes, e.g. <code>&quot;United States&quot;<\/code> or <code>&quot;a=b&quot;<\/code><\/li>' +
+    '<li>Wildcards: <code>*<\/code> (zero or more chars), <code>?<\/code> (exactly one char)<\/li>' +
+    '<\/ul>' +
+    '<div class="mt-2 text-muted small"><i class="bi bi-lightbulb"><\/i> Tip: Not sure about the syntax? Use the <a href="#" onclick="event.stopPropagation(); toggleQBPanel(\'hostQueryBuilder\',\'btnHostQB\'); document.getElementById(\'btnHostQB\').scrollIntoView({behavior:\'smooth\',block:\'center\'}); return false;" class="link-secondary"><i class="bi bi-sliders2"><\/i> query builder<\/a> above to build a valid search expression.<\/div>';
+function _updateHostSearchBanner(queryError, total, hasSearch) {
+    var div = document.getElementById('hostSearchError');
+    if (!div) return;
+    function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    if (queryError) {
+        div.innerHTML = '<strong>Error in your query:<\/strong> ' + esc(queryError) + _hostSearchHelp;
+        div.style.display = '';
+    } else if (total === 0 && hasSearch) {
+        div.innerHTML = 'No Hosts found. Default search is by nickname.' + _hostSearchHelp;
+        div.style.display = '';
+    } else if (total === 0) {
+        div.textContent = 'No Hosts found based on these criteria.';
+        div.style.display = '';
+    } else {
+        div.style.display = 'none';
+    }
+}
+<c:if test="${empty hosts}">_updateHostSearchBanner('<c:out value="${getHostsError}"/>', 0, ${hasHostSearch});</c:if>
+</script>
 
 <%-- Results table --%>
 <div class="d-flex align-items-center mb-2 gap-2">
@@ -371,7 +378,10 @@
                 $('td', row).each(function(i) { $(this).html(data[i]); });
             },
             drawCallback: function(settings) {
-                var total = settings.json ? settings.json.recordsTotal : 0;
+                var json = settings.json || {};
+                var total = json.recordsTotal || 0;
+                var srch = ($('#hostSearch').val() || '').trim();
+                _updateHostSearchBanner(json.queryError || '', total, srch.length > 0);
                 $('#hostsFoundLabel').html('<i class="bi bi-list-ul"></i> <strong>' + total + '</strong> host(s) found');
             },
             language: { lengthMenu: 'Show _MENU_ per page', info: 'Showing _START_-_END_ of _TOTAL_', processing: 'Loading...' }

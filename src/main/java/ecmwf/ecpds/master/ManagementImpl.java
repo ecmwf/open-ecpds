@@ -2751,4 +2751,26 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
                     exception);
         }
     }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Gets the volume usage snapshot from the in-memory WeightedAllocator cache.
+     */
+    @Override
+    public Map<String, long[][]> getVolumeUsage(final String groupName) {
+        final var monitor = new MonitorCall("getVolumeUsage(" + groupName + ")");
+        return monitor.done(TransferServerProvider.getVolumeSnapshot(groupName));
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Gets the mover volume usage snapshot from the in-memory per-mover cache.
+     */
+    @Override
+    public Map<String, long[][]> getMoverVolumeUsage(final String moverName) {
+        final var monitor = new MonitorCall("getMoverVolumeUsage(" + moverName + ")");
+        return monitor.done(master.getMoverVolumeSnapshot(moverName));
+    }
 }

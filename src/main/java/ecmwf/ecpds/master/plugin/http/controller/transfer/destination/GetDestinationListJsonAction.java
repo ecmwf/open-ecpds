@@ -97,6 +97,7 @@ public class GetDestinationListJsonAction extends PDSAction {
         final boolean ascending = orderDirParam != null ? "asc".equals(orderDirParam) : "asc".equals(sortDirection);
 
         Collection<Destination> allDestinations;
+        String queryError = null;
         try {
             // DB-level sort only applies to the name column (1); other columns sort in-memory
             allDestinations = DestinationHome.findByUser(user, search, aliases, orderCol != 1 || ascending,
@@ -104,6 +105,7 @@ public class GetDestinationListJsonAction extends PDSAction {
                     filter);
         } catch (final TransferException e) {
             allDestinations = new ArrayList<>(0);
+            queryError = e.getMessage();
         }
 
         // In-memory sort for Status (col 2) and Aliases (col 3)
@@ -143,6 +145,9 @@ public class GetDestinationListJsonAction extends PDSAction {
         root.put("draw", draw);
         root.put("recordsTotal", recordsTotal);
         root.put("recordsFiltered", recordsTotal);
+        if (queryError != null) {
+            root.put("queryError", queryError);
+        }
         final var data = root.putArray("data");
         for (final Destination d : page) {
             final var row = data.addArray();

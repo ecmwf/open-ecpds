@@ -84,10 +84,12 @@ public class GetHostListJsonAction extends PDSAction {
         final var hostSearch = Util.getValue(request, "hostSearch", "");
         final var cursor = Util.getDataBaseCursorForDataTables(0, true, request);
         Collection<Host> hosts;
+        String queryError = null;
         try {
             hosts = HostHome.findByCriteria(label, filter, network, hostType, hostSearch, cursor);
         } catch (final TransferException e) {
             hosts = new ArrayList<>(0);
+            queryError = e.getMessage();
         }
         // Pre-load destination counts in ONE query to avoid N+1 per host row
         Map<String, Integer> destCounts;
@@ -101,6 +103,9 @@ public class GetHostListJsonAction extends PDSAction {
         root.put("draw", draw);
         root.put("recordsTotal", recordsTotal);
         root.put("recordsFiltered", recordsTotal);
+        if (queryError != null) {
+            root.put("queryError", queryError);
+        }
         final var data = root.putArray("data");
         for (final Host host : hosts) {
             final var row = data.addArray();

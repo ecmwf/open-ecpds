@@ -326,7 +326,7 @@
 
 	<definition name=".pds.datafile.transferserver"
 		extends=".pds.datafile.base">
-		<put name="title" value="Transfer Servers" />
+		<put name="title" value="Data Movers" />
 		<put name="spare" value=".pds.datafile.transferserver.spare.edit" />
 		<put name="content"
 			value="/WEB-INF/jsp/pds/datafile/transferserver/transferservers.jsp" />
@@ -339,7 +339,7 @@
 
 	<definition name=".pds.datafile.transferserver.detail"
 		extends=".pds.datafile.base">
-		<put name="title" value="Show Transfer Server" />
+		<put name="title" value="Show Data Mover" />
 		<put name="content"
 			value="/WEB-INF/jsp/pds/datafile/transferserver/detail.jsp" />
 		<put name="spare" value=".pds.datafile.transferserver.spare.edit" />
@@ -355,7 +355,7 @@
 	</definition>
 	<definition name=".pds.datafile.transferserver.insert"
 		extends=".pds.datafile.base">
-		<put name="title" value="Create Transfer Server" />
+		<put name="title" value="Create Data Mover" />
 		<put name="content"
 			value=".pds.datafile.transferserver.insert.content" />
 	</definition>
@@ -370,7 +370,7 @@
 	</definition>
 	<definition name=".pds.datafile.transferserver.update"
 		extends=".pds.datafile.base">
-		<put name="title" value="Edit Transfer Server" />
+		<put name="title" value="Edit Data Mover" />
 		<put name="content"
 			value=".pds.datafile.transferserver.update.content" />
 	</definition>
@@ -385,7 +385,7 @@
 	</definition>
 	<definition name=".pds.datafile.transferserver.delete"
 		extends=".pds.datafile.base">
-		<put name="title" value="Delete Transfer Server" />
+		<put name="title" value="Delete Data Mover" />
 		<put name="content"
 			value=".pds.datafile.transferserver.delete.content" />
 	</definition>

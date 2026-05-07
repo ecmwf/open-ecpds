@@ -74,7 +74,7 @@
                 <auth:link basePathKey="datafile.basepath" href="" wrappingTags="li"><i class="bi bi-file-earmark-text"></i>Data Files</auth:link>
                 <auth:link basePathKey="metadata.basepath" href="" wrappingTags="li"><i class="bi bi-tags"></i>Meta Data</auth:link>
                 <auth:link basePathKey="transfergroup.basepath" href="" wrappingTags="li"><i class="bi bi-collection"></i>Transfer Groups</auth:link>
-                <auth:link basePathKey="transferserver.basepath" href="" wrappingTags="li"><i class="bi bi-server"></i>Transfer Servers</auth:link>
+                <auth:link basePathKey="transferserver.basepath" href="" wrappingTags="li"><i class="bi bi-server"></i>Data Movers</auth:link>
                 <auth:link basePathKey="retrievalmonitoring.basepath" href="" wrappingTags="li"><i class="bi bi-speedometer2"></i>Retrieval Rates</auth:link>
             </ul>
         </div>

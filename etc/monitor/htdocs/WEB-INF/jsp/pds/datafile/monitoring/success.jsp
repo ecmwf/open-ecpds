@@ -23,7 +23,7 @@
 </display:table>
 </c:if>
 <c:if test="${option == 'ratesPerTransferServer'}">
-<p class="fw-bold mb-1 mt-2">Rates per Transfer Server (selection: ${caller}/${sourceHost})</p>
+<p class="fw-bold mb-1 mt-2">Rates per Data Mover (selection: ${caller}/${sourceHost})</p>
 <display:table name="${ratesList}" id="rates" requestURI="" sort="list" pagesize="25" class="listing">
 	<display:column title="Date" sortable="true">${rates.date}</display:column>
 	<display:column title="Transfer Group" sortable="true">${rates.transferGroupName}</display:column>

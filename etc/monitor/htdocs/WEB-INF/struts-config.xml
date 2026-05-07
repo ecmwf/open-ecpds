@@ -176,6 +176,13 @@
 				redirect="true" />
 		</action>
 
+		<action path="/datafile/diskusage"
+			type="ecmwf.ecpds.master.plugin.http.controller.datafile.transfergroup.GetDiskUsageJsonAction">
+		</action>
+		<action path="/datafile/diskusage/*" parameter="{1}"
+			type="ecmwf.ecpds.master.plugin.http.controller.datafile.transfergroup.GetDiskUsageJsonAction">
+		</action>
+
 		<!-- Transfer Group -->
 
 		<action path="/datafile/transfergroup"
@@ -250,6 +257,13 @@
 		</action>
 
 		<!-- Transfer Server -->
+
+		<action path="/datafile/moverdiskusage"
+			type="ecmwf.ecpds.master.plugin.http.controller.datafile.transferserver.GetMoverDiskUsageJsonAction">
+		</action>
+		<action path="/datafile/moverdiskusage/*" parameter="{1}"
+			type="ecmwf.ecpds.master.plugin.http.controller.datafile.transferserver.GetMoverDiskUsageJsonAction">
+		</action>
 
 		<action path="/datafile/transferserver"
 			type="ecmwf.ecpds.master.plugin.http.controller.datafile.transferserver.GetTransferServerAction">
