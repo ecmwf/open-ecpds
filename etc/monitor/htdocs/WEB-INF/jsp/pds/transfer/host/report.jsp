@@ -30,7 +30,7 @@
 [data-bs-theme=light] .report-pre font[color="green"] { color: #1a7f37; }
 [data-bs-theme=light] .report-pre a { color: #0969da; }
 
-/* ── MTR chart ─────────────────────────────────────────── */
+/* -- MTR chart ------------------------------------------- */
 .mc-panel {
     padding: 0.75rem 1rem 1rem; background: #1e1e1e;
     border-radius: 0 0 4px 4px; overflow-x: auto;
@@ -170,7 +170,7 @@
 </div>
 
 <script>
-/* ── MTR / Nmap chart renderer ────────────────────────────── */
+/* -- MTR / Nmap chart renderer ------------------------------ */
 (function() {
     var _ready = false, _showing = false;
 
@@ -348,7 +348,7 @@
     };
 })();
 
-/* ── Report fetch / display ───────────────────────────────── */
+/* -- Report fetch / display --------------------------------- */
 (function() {
     var dataUrl  = '<c:out value="${reportDataUrl}"/>';
     var cacheKey = 'hostReport_<c:out value="${host.name}"/>_<c:choose><c:when test="${not empty proxy}"><c:out value="${proxy.nickName}"/></c:when><c:otherwise>__direct__</c:otherwise></c:choose>';

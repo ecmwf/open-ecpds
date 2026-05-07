@@ -333,6 +333,15 @@
 				path=".pds.datafile.monitoring.success" />
 		</action>
 
+		<!-- Download Activity matrix -->
+		<action path="/datafile/moverdownloads"
+			type="ecmwf.ecpds.master.plugin.http.controller.datafile.transferserver.GetMoverDownloadsAction">
+			<forward name="success" path=".pds.datafile.moverdownloads" />
+		</action>
+		<action path="/datafile/moverdownloads/data"
+			type="ecmwf.ecpds.master.plugin.http.controller.datafile.transferserver.GetMoverDownloadsJsonAction">
+		</action>
+
 		<!-- *** Transfer ******************************************************************************************************* -->
 
 		<action path="/transfer"

@@ -1234,4 +1234,22 @@ public interface ManagementInterface extends Remote {
      *             the remote exception
      */
     Map<String, long[][]> getMoverVolumeUsage(String moverName) throws MasterException, RemoteException;
+
+    /**
+     * Returns a snapshot of the current in-flight download counts for all data movers and all volumes.
+     *
+     * <p>
+     * The map key is {@code "groupName.moverName"} (e.g. {@code "group-04.bodh1ecpdmv-04"}). The value is an
+     * {@code int[]} where index {@code i} holds the current download count on volume {@code i}. Only movers with at
+     * least one recorded download event appear in the map.
+     * </p>
+     *
+     * @return a sorted snapshot of download counts per mover and volume; never {@code null}
+     *
+     * @throws ecmwf.ecpds.master.MasterException
+     *             the master exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    Map<String, int[]> getDownloadMetrics() throws MasterException, RemoteException;
 }

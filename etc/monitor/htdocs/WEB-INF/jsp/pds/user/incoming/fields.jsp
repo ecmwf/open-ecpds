@@ -312,7 +312,7 @@ table.fields > tbody > tr > th {
             <div class="d-flex flex-wrap">
               <c:forEach var="mySession" items="${incomingUserActionForm.incomingUser.incomingConnections}">
                 <span class="assoc-chip">
-                  <span title="Mover: ${mySession.dataMoverName} | Duration: ${mySession.formatedDuration}">${mySession.protocol} · ${mySession.remoteIpAddress}</span>
+                  <span title="Mover: ${mySession.dataMoverName} | Duration: ${mySession.formatedDuration}">${mySession.protocol} &middot; ${mySession.remoteIpAddress}</span>
                   <a href="javascript:validate('<bean:message key="incoming.basepath"/>/edit/update/<c:out value="${incomingUserActionForm.id}"/>/closeSession/<c:out value="${mySession.id}"/>','<bean:message key="ecpds.incoming.disconnectOperation.warning" arg0="${mySession.login}" arg1="${mySession.dataMoverName}"/>')" title="Disconnect"><i class="bi bi-x-lg"></i></a>
                 </span>
               </c:forEach>

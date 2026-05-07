@@ -3,7 +3,7 @@
 
 <script>
 	var OLD_STYLE = new Array();
-	// Tracks which transfer IDs are selected (id → boolean)
+	// Tracks which transfer IDs are selected (id -> boolean)
 	var selectedTransfers = {};
 
 	function checkAll(all, reverse) {
@@ -65,7 +65,7 @@
 	        });
 	        return;
 	    }
-	    // No confirmation needed → original logic
+	    // No confirmation needed -> original logic
 	    var form = document.destinationDetailActionForm;
 	    if (subOp) {
 	        if (operation === "download") {

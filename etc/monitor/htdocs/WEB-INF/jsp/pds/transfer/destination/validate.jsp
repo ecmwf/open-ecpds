@@ -268,7 +268,7 @@
     window._validateTable = table;
 
     // Form submit hook: inject actionTransfer AND selectedTransfer fields.
-    // selectedTransfer is session-scoped — Struts auto-populates it before any action runs,
+    // selectedTransfer is session-scoped -- Struts auto-populates it before any action runs,
     // so deselecting a transfer here (star off) persists to the session even on cancel/back.
     var frm = document.validateActionForm;
     if (frm) {

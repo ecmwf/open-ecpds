@@ -1144,4 +1144,15 @@ final class ManagementProxy implements ManagementInterface {
         final var monitor = new MonitorCall("getMoverVolumeUsage(" + moverName + ")");
         return monitor.done(managementInterface.getMoverVolumeUsage(moverName));
     }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Gets the download metrics snapshot.
+     */
+    @Override
+    public Map<String, int[]> getDownloadMetrics() throws MasterException, RemoteException {
+        final var monitor = new MonitorCall("getDownloadMetrics()");
+        return monitor.done(managementInterface.getDownloadMetrics());
+    }
 }

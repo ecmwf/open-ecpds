@@ -374,7 +374,7 @@ function _updateHostSearchBanner(queryError, total, hasSearch) {
             ],
             columnDefs: [{ targets: '_all', render: $.fn.dataTable.render.text() }],
             createdRow: function(row, data) {
-                // Columns contain pre-built HTML — render as HTML not escaped text
+                // Columns contain pre-built HTML -- render as HTML not escaped text
                 $('td', row).each(function(i) { $(this).html(data[i]); });
             },
             drawCallback: function(settings) {
@@ -486,7 +486,7 @@ function _updateHostSearchBanner(queryError, total, hasSearch) {
             if (f && f !== hovered) { f.setStyle(styleFor(f, true)); hovered = f; }
         });
 
-        // Click → offcanvas
+        // Click -> offcanvas
         olMap.on('click', function(evt) {
             var f = olMap.forEachFeatureAtPixel(evt.pixel, function(f) { return f; });
             if (!f) return;
@@ -556,10 +556,10 @@ function _updateHostSearchBanner(queryError, total, hasSearch) {
             + '<table class="table table-sm table-borderless mb-0">'
             + row('Nickname', '<a href="' + p.url + '" class="fw-semibold">' + esc(p.nickname) + '</a>')
             + row('Host ID', '<code>' + esc(p.id) + '</code>')
-            + row('Hostname', esc(p.hostname) || '<span class="text-muted">—</span>')
-            + row('Network',  esc(p.network)  || '<span class="text-muted">—</span>')
-            + row('Method',   esc(p.method)   || '<span class="text-muted">—</span>')
-            + row('Location', esc(p.geo)      || '<span class="text-muted">—</span>')
+            + row('Hostname', esc(p.hostname) || '<span class="text-muted">&mdash;</span>')
+            + row('Network',  esc(p.network)  || '<span class="text-muted">&mdash;</span>')
+            + row('Method',   esc(p.method)   || '<span class="text-muted">&mdash;</span>')
+            + row('Location', esc(p.geo)      || '<span class="text-muted">&mdash;</span>')
             + (p.comment ? row('Comment', '<span class="text-muted small">' + esc(p.comment) + '</span>') : '')
             + '</table>'
             + '<div class="mt-3"><a href="' + p.url + '" class="btn btn-sm btn-outline-primary w-100">'
@@ -596,7 +596,7 @@ function _updateHostSearchBanner(queryError, total, hasSearch) {
         if (searchEl) searchEl.addEventListener('input', function() {
             if (viewMode === 'map') scheduleMapReload();
         });
-        // Search form submit in map mode → immediate reload
+        // Search form submit in map mode -> immediate reload
         document.getElementById('hostSearchForm').addEventListener('submit', function(e) {
             if (viewMode === 'map') { e.preventDefault(); loadMapFeatures(); }
         });

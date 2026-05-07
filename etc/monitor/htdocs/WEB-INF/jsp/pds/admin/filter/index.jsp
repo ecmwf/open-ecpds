@@ -148,7 +148,9 @@
 		</tr>
 	</table>
 	</br>
-	<button type="submit" id="filterSubmitBtn">Launch Compression Simulation</button>
+	<button type="submit" id="filterSubmitBtn" class="btn btn-primary">
+		<i class="bi bi-play-fill me-1"></i>Launch Compression Simulation
+	</button>
 	</html:form>
 
 <script>

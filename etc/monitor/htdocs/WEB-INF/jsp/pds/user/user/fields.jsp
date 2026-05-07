@@ -31,7 +31,7 @@
 	            window.location = path;
 	        },
 	        onCancel: function () {
-	            // Nothing needed — simply don't navigate
+	            // Nothing needed -- simply don't navigate
 	        }
 	    });
 	}

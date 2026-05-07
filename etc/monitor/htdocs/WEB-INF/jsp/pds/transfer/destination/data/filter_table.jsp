@@ -114,7 +114,7 @@
 <td colspan="18">
     <div id="dftQueryBuilder" class="border rounded p-2"
          style="display:none; position:absolute; z-index:9999; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd) !important; box-shadow:0 8px 28px rgba(0,0,0,0.18),0 2px 6px rgba(0,0,0,0.10); font-size:0.85rem">
-            <%-- Row 1: text fields — align-items-end so inputs line up despite different label heights --%>
+            <%-- Row 1: text fields -- align-items-end so inputs line up despite different label heights --%>
             <div class="row g-1 mb-1 align-items-end">
                 <div class="col-3">
                     <label class="form-label mb-0 fw-semibold"><code>target=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>

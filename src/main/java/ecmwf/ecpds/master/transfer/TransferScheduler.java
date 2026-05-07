@@ -2041,6 +2041,39 @@ public final class TransferScheduler extends MBeanScheduler {
     }
 
     /**
+     * Returns a snapshot of the current in-flight download counts for all data movers and volumes.
+     *
+     * <p>
+     * The returned map is keyed by {@code "groupName.moverName"} (e.g. {@code "group-04.bodh1ecpdmv-04"}). The value is
+     * an {@code int[]} where index {@code i} is the current download count on volume {@code i}. The array is sized to
+     * {@code maxVolumeIndex + 1} for that mover; missing volume indices default to {@code 0}.
+     * </p>
+     *
+     * <p>
+     * The snapshot is safe for RMI serialisation — it is a deep copy of the live concurrent map.
+     * </p>
+     *
+     * @return a sorted snapshot of download counts; never {@code null}; may be empty if no transfers have started yet
+     */
+    public static Map<String, int[]> getDownloadMetricsSnapshot() {
+        final var snapshot = new java.util.TreeMap<String, int[]>();
+        for (final var entry : _metricsPerDataMovers.entrySet()) {
+            final var inner = entry.getValue();
+            if (inner.isEmpty())
+                continue;
+            final int maxVol = inner.keySet().stream().mapToInt(Integer::intValue).max().orElse(0);
+            final int[] counts = new int[maxVol + 1];
+            for (final var v : inner.entrySet()) {
+                final int idx = v.getKey();
+                if (idx < counts.length)
+                    counts[idx] = v.getValue();
+            }
+            snapshot.put(entry.getKey(), counts);
+        }
+        return snapshot;
+    }
+
+    /**
      * Download.
      *
      * @param transfer

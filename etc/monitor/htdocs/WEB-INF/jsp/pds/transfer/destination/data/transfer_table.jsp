@@ -14,7 +14,7 @@
 <%-- Inline error message shown by drawCallback --%>
 <div id="destTableError" class="alert alert-warning mt-2 mb-0" style="display:none"></div>
 
-<%-- Entries-per-page row — also shows current filter selection and last-refresh time --%>
+<%-- Entries-per-page row -- also shows current filter selection and last-refresh time --%>
 <div class="d-flex align-items-center gap-2 my-2 flex-wrap">
   <span class="d-flex align-items-center gap-2 small bg-body-tertiary border rounded px-2 py-1" id="destSelectionInfo"></span>
   <span class="ms-auto text-muted small">Show</span>
@@ -195,7 +195,7 @@
         }
     });
 
-    // Wire entries-per-page selector — persist choice in localStorage
+    // Wire entries-per-page selector -- persist choice in localStorage
     document.getElementById('destPageLen').addEventListener('change', function () {
         var len = parseInt(this.value, 10);
         localStorage.setItem(STORAGE_KEY, len);

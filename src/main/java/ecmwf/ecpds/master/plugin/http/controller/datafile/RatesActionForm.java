@@ -65,7 +65,7 @@ public class RatesActionForm extends ECMWFActionForm {
     private String fromTime = "00:00:00";
 
     /** The caller. */
-    private String caller = "*q2diss*";
+    private String caller = "*";
 
     /** The source host. */
     private String sourceHost = "*";

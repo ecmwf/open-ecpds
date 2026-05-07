@@ -8,4 +8,5 @@
    <auth:link basePathKey="transfergroup.basepath" href="" wrappingTags="tr,td"><i class="bi bi-collection"></i> Transfer Groups</auth:link>
    <auth:link basePathKey="transferserver.basepath" href="" wrappingTags="tr,td"><i class="bi bi-server"></i> Data Movers</auth:link>
    <auth:link basePathKey="retrievalmonitoring.basepath" href="" wrappingTags="tr,td"><i class="bi bi-speedometer2"></i> Retrieval Rates</auth:link>
+   <auth:link basePathKey="moverdownloads.basepath" href="" wrappingTags="tr,td"><i class="bi bi-grid-3x3"></i> Download Activity</auth:link>
 </table>

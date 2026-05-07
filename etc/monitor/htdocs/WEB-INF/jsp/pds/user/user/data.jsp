@@ -23,7 +23,7 @@
 	margin-top: 8px;
 	margin-bottom: 8px;
 }
-.assoc-card .card-header { display:flex; align-items:center; gap:.4rem; padding:.5rem .75rem; background:#f8f9fa; font-size:.85rem; }
+.assoc-card .card-header { display:flex; align-items:center; gap:.4rem; padding:.4rem .75rem; background:#f8f9fa; font-size:.85rem; }
 .assoc-chip { display:inline-flex; align-items:center; gap:.25rem; background:#e9ecef; border-radius:1rem; padding:.2rem .6rem; font-size:.8rem; margin:.15rem; }
 </style>
 
@@ -34,7 +34,7 @@
 
 	<table>
 		<tr>
-			<td valign="top"><br>
+			<td valign="top">
 				<table class="fields">
 					<tr>
 						<th>Web Login</th>
@@ -64,7 +64,7 @@
 				</table></td>
 			<td width="25"></td>
 			<td valign="top">
-				<div class="card assoc-card mt-2">
+				<div class="card assoc-card">
 				  <div class="card-header">
 				    <i class="bi bi-folder text-secondary"></i>
 				    <strong>Associated Web Categories</strong>

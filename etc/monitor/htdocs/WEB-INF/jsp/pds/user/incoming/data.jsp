@@ -181,7 +181,7 @@ table.fields > tbody > tr > th {
 				            <div class="d-flex flex-wrap">
 				              <c:forEach var="incomingSession" items="${incoming.incomingConnections}">
 				                <span class="assoc-chip">
-				                  <span title="Mover: ${incomingSession.dataMoverName} | Duration: ${incomingSession.formatedDuration}">${incomingSession.protocol} · ${incomingSession.remoteIpAddress}</span>
+				                  <span title="Mover: ${incomingSession.dataMoverName} | Duration: ${incomingSession.formatedDuration}">${incomingSession.protocol} &middot; ${incomingSession.remoteIpAddress}</span>
 				                </span>
 				              </c:forEach>
 				            </div>

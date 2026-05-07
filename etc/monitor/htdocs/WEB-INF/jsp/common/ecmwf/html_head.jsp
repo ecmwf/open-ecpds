@@ -28,9 +28,9 @@ request.setAttribute("jsp_date_before", new java.util.Date());
 /* Subtle column separators for all DataTables */
 table.dataTable td + td, table.dataTable th + th { border-left: 1px solid rgba(0,0,0,0.08); }
 /* Hide pagination controls when all data fits on a single page.
-   DT2/BS5: li buttons are dt-paging-button page-item [active|disabled] — no previous/next class.
-   When ≤1 page every button is either active (current page) or disabled (prev/next arrows),
-   so there is no li that is neither active nor disabled → hide the whole dt-paging block. */
+   DT2/BS5: li buttons are dt-paging-button page-item [active|disabled] -- no previous/next class.
+   When <=1 page every button is either active (current page) or disabled (prev/next arrows),
+   so there is no li that is neither active nor disabled -> hide the whole dt-paging block. */
 .dt-paging:not(:has(li.dt-paging-button:not(.active):not(.disabled))) { display: none !important; }
 </style>
 <!-- jQuery UI (kept for sliders and date pickers) -->

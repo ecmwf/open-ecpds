@@ -94,6 +94,7 @@ import ecmwf.common.text.Format;
 import ecmwf.ecpds.master.transfer.DestinationOption;
 import ecmwf.ecpds.master.transfer.HostOption;
 import ecmwf.ecpds.master.transfer.StatusFactory;
+import ecmwf.ecpds.master.transfer.TransferScheduler;
 import ecmwf.ecpds.master.transfer.TransferServerProvider;
 
 /**
@@ -2772,5 +2773,16 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     public Map<String, long[][]> getMoverVolumeUsage(final String moverName) {
         final var monitor = new MonitorCall("getMoverVolumeUsage(" + moverName + ")");
         return monitor.done(master.getMoverVolumeSnapshot(moverName));
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Returns a snapshot of in-flight download counts for all data movers and volumes.
+     */
+    @Override
+    public Map<String, int[]> getDownloadMetrics() {
+        final var monitor = new MonitorCall("getDownloadMetrics()");
+        return monitor.done(TransferScheduler.getDownloadMetricsSnapshot());
     }
 }

@@ -125,7 +125,9 @@
 		</tr>
 	</table>
 	</br>
-	<button type="submit">Launch Upload</button>
+	<button type="submit" class="btn btn-primary">
+		<i class="bi bi-cloud-upload-fill me-1"></i>Launch Upload
+	</button>
 	</html:form>
 
 <script>

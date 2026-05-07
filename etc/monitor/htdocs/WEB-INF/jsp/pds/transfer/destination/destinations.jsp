@@ -437,7 +437,7 @@ function _updateDestSearchBanner(queryError, total, hasSearch) {
         }
         $ul.append(mkNavLi('&laquo;', 0, _curPage === 0));
         $ul.append(mkNavLi('&lsaquo;', _curPage - 1, _curPage === 0));
-        // DataTables-style windowed pagination: first, ...gap, cur±2, ...gap, last
+        // DataTables-style windowed pagination: first, ...gap, cur+/-2, ...gap, last
         var pages = [];
         for (var p = 0; p < tp; p++) {
             if (p === 0 || p === tp - 1 || (p >= _curPage - 2 && p <= _curPage + 2)) {

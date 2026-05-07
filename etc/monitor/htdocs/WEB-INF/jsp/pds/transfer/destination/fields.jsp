@@ -143,7 +143,7 @@
 									</button>
 								</c:if>
 							</div>
-							<%-- Single hidden field for form submission — value set by JSP default and updated by selectDestMode() --%>
+							<%-- Single hidden field for form submission -- value set by JSP default and updated by selectDestMode() --%>
 							<input type="hidden" id="actionRequested" name="actionRequested"
 								value="<c:choose><c:when test="${not empty destinationActionForm.fromDestinationOptions}">copy</c:when><c:otherwise>create</c:otherwise></c:choose>">
 						</td>
@@ -1459,7 +1459,7 @@
 	            window.location = path;
 	        },
 	        onCancel: function () {
-	            // Nothing needed — simply don't navigate
+	            // Nothing needed -- simply don't navigate
 	        }
 	    });
 	}
@@ -1543,7 +1543,7 @@
 					case 'u': return String(d.getDay() === 0 ? 7 : d.getDay());
 					case 'z': case 'Z': case 'X': return '';
 					default:
-						// Only flag unrecognised letters — non-letter chars are always valid literals
+						// Only flag unrecognised letters -- non-letter chars are always valid literals
 						if (/^[a-zA-Z]/.test(tok) && !KNOWN.test(tok)) unknowns.push(tok);
 						return tok;
 				}

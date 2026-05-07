@@ -5,7 +5,7 @@
 <jsp:include page="/WEB-INF/jsp/pds/transfer/host/host_header.jsp"/>
 
 <style>
-/* ── Global date bar ── */
+/* -- Global date bar -- */
 .go-hdr {
     background: #1a1a1a; border-bottom: 2px solid #333;
     padding: 0.4rem 1rem; position: sticky; top: 0; z-index: 2;
@@ -27,7 +27,7 @@
 .go-ago { color: #555; }
 .go-cnt { color: #6c757d; border-left: 1px solid #333; padding-left: 0.6rem; margin-left: 0.2rem; }
 
-/* ── Per-path listing blocks ── */
+/* -- Per-path listing blocks -- */
 .listing-block { border-left: 3px solid #444; border-bottom: 1px solid #181818; }
 .listing-block:last-child { border-bottom: none; }
 .listing-block.lb-ok    { border-left-color: #28a745; }
@@ -164,7 +164,7 @@
 </div>
 
 <script>
-/* ── Helpers ── */
+/* -- Helpers -- */
 function _esc(s) { return $('<span>').text(s || '').html(); }
 
 /* Left-truncate: shows end of string (preserves filename in long paths) */
@@ -233,9 +233,9 @@ function _parseEntry($f) {
              target: target, status: status, statusHtml: statusHtml, sBadge: sBadge, color: color };
 }
 
-/* ── Two-pass structured parser ─────────────────────────────────────────── */
+/* -- Two-pass structured parser ------------------------------------------- */
 
-/*  Pass 1 – extract block headers from the plain text of the HTML.
+/*  Pass 1 - extract block headers from the plain text of the HTML.
     jQuery .text() strips all tags and concatenates child text, so
     even values wrapped in <a> links (e.g. DataMover names) are included. */
 function _parseBlockHeaders(html) {
@@ -252,7 +252,7 @@ function _parseBlockHeaders(html) {
     return { globalDate: globalDate, headers: headers };
 }
 
-/*  Pass 2 – walk the original DOM in order, assigning <font> file entries
+/*  Pass 2 - walk the original DOM in order, assigning <font> file entries
     to blocks.  A new block begins each time we encounter a "Path:" line in
     a text node, matching the pre-built headers array in sequence. */
 function _buildBlocks(html, headers) {
@@ -293,7 +293,7 @@ function _buildBlocks(html, headers) {
     return blocks;
 }
 
-/* ── Rendering ──────────────────────────────────────────────────────────── */
+/* -- Rendering ------------------------------------------------------------ */
 
 function _renderGlobalDate(dateStr, totalBlocks) {
     var dateVal = dateStr, ago = '';
@@ -389,7 +389,7 @@ function _renderListingBlock(hdr, entries) {
     return '<div class="listing-block ' + sc + '">' + hHtml + tHtml + '</div>';
 }
 
-/* ── Main entry point ───────────────────────────────────────────────────── */
+/* -- Main entry point ----------------------------------------------------- */
 
 function _parseAndRender(rawHtml) {
     if (!/Date:\s/.test(rawHtml)) return null;
@@ -406,7 +406,7 @@ function _parseAndRender(rawHtml) {
     return html + '</div>';
 }
 
-/* ── Load / refresh / copy ─────────────────────────────────────────────── */
+/* -- Load / refresh / copy ----------------------------------------------- */
 var _rawOutput = '';
 
 function loadOutput() {
