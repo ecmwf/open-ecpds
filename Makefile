@@ -92,6 +92,7 @@ dev: .dev-cntnr .run login ## Build, run and login into the development containe
 		-e DOCKER_HOST_WORKSPACE=$(DOCKER_HOST_WORKSPACE) \
 		-e DOCKER_HOST_OS=$(DOCKER_HOST_OS) \
 		--name $(CONTAINER_NAME) \
+		--add-host=ecpds-mover:host-gateway \
 		$(IMAGE_NAME) \
 		sleep infinity
 
