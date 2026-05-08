@@ -20,6 +20,7 @@
 -Dmonitor.nickName='OpenECPDS'
 -Dmonitor.title='Personal Data Store'
 -Dmonitor.color='#0079d3'
+-Dmaster.urlList='127.0.0.1:2600=Loopback export for testing'
 -Drequirements.url=''
 -Dport.callback='3600'
 -Dport.https='3443'

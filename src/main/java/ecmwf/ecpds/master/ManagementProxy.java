@@ -389,13 +389,15 @@ final class ManagementProxy implements ManagementInterface {
      */
     @Override
     public void exportDestination(final ECpdsSession session, final String targetMaster, final String fromDestination,
-            final boolean copySharedHost) throws MasterException, DataBaseException, RemoteException {
+            final String toDestinationName, final boolean copySharedHost)
+            throws MasterException, DataBaseException, RemoteException {
         if (session == null || isEmpty(targetMaster) || isEmpty(fromDestination)) {
             throw new MasterException("Invalid parameter(s) for exportDestination");
         }
         final var monitor = new MonitorCall("exportDestination(" + session.getWebUser().getName() + "," + targetMaster
                 + "," + fromDestination + "," + copySharedHost + ")");
-        managementInterface.exportDestination(session, targetMaster, fromDestination, copySharedHost);
+        managementInterface.exportDestination(session, targetMaster, fromDestination, toDestinationName,
+                copySharedHost);
         monitor.done();
     }
 

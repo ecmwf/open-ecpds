@@ -122,6 +122,11 @@
 			<div class="card-body pb-2">
 				<c:if test="${isInsert == 'true'}">
 					<div class="d-flex gap-2 mb-3" role="group">
+						<button type="button" id="btn-create"
+							class="btn btn-sm dest-mode-btn <c:choose><c:when test="${not empty destinationActionForm.fromDestinationOptions}">btn-outline-secondary</c:when><c:otherwise>btn-primary</c:otherwise></c:choose>"
+							onclick="selectDestMode('create',this)">
+							<i class="bi bi-plus-circle me-1"></i>Create from Scratch
+						</button>
 						<c:if test="${not empty destinationActionForm.fromDestinationOptions}">
 							<button type="button" id="btn-copy"
 								class="btn btn-sm btn-primary dest-mode-btn"
@@ -129,11 +134,6 @@
 								<i class="bi bi-copy me-1"></i>Copy from Existing
 							</button>
 						</c:if>
-						<button type="button" id="btn-create"
-							class="btn btn-sm dest-mode-btn <c:choose><c:when test="${not empty destinationActionForm.fromDestinationOptions}">btn-outline-secondary</c:when><c:otherwise>btn-primary</c:otherwise></c:choose>"
-							onclick="selectDestMode('create',this)">
-							<i class="bi bi-plus-circle me-1"></i>Create from Scratch
-						</button>
 						<c:if test="${not empty destinationActionForm.masterOptions}">
 							<button type="button" id="btn-export"
 								class="btn btn-sm btn-outline-secondary dest-mode-btn"
@@ -203,14 +203,31 @@
 					<div class="row g-2 mb-2">
 						<div class="col-12">
 							<label for="sourceDestination" class="form-label mb-1">Source Destination</label>
-							<input type="text" class="form-control form-control-sm mb-1"
-								placeholder="Search destinations..."
-								oninput="filterSelect(this, 'sourceDestination')"
-								autocomplete="off">
+							<div class="input-group input-group-sm mb-1">
+								<span class="input-group-text"><i class="bi bi-search"></i></span>
+								<input type="text" class="form-control form-control-sm"
+									placeholder="Filter destinations..."
+									oninput="filterSelect(this, 'sourceDestination')"
+									autocomplete="off">
+							</div>
+							<div class="form-text mt-0 mb-1"><i class="bi bi-hand-index me-1"></i>Type to filter the list, then <strong>click</strong> a destination below to select it.</div>
 							<html:select property="sourceDestination" styleId="sourceDestination" styleClass="form-select form-select-sm"
 								size="20" style="min-width:280px;width:100%;height:220px;overflow-y:auto">
 								<html:options collection="destinations" property="name" labelProperty="name" />
 							</html:select>
+						</div>
+						<div class="col-sm-6">
+							<label for="exportToName" class="form-label mb-1">Alternative Name <span class="text-muted fw-normal">(optional)</span></label>
+							<div class="d-flex align-items-center gap-2">
+								<input id="exportToName" name="exportToName" type="text"
+									class="form-control form-control-sm"
+									maxlength="32"
+									pattern="[a-zA-Z0-9]+([_-][a-zA-Z0-9]+)*"
+									title="Must start and end with a letter or digit; '_' or '-' allowed as single separators (e.g. my-destination). Maximum 32 characters."
+									oninput="validatePatternInput(this, 'exportToName-feedback')">
+								<span id="exportToName-feedback"></span>
+							</div>
+							<div class="form-text mt-1">Leave blank to keep the source name.</div>
 						</div>
 						<div class="col-sm-6">
 							<label for="master" class="form-label mb-1">Master</label>

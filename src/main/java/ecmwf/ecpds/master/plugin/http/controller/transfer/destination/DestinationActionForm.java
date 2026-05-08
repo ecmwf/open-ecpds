@@ -221,6 +221,9 @@ public class DestinationActionForm extends ECMWFActionForm {
     /** The copy source shared host. */
     private String copySourceSharedHost = "off";
 
+    /** The export to name. */
+    private String exportToName = "";
+
     /** The copy shared host. */
     private String copySharedHost = "off";
 
@@ -286,6 +289,15 @@ public class DestinationActionForm extends ECMWFActionForm {
     }
 
     /**
+     * Gets the export to name.
+     *
+     * @return the export to name
+     */
+    public String getExportToName() {
+        return exportToName;
+    }
+
+    /**
      * Gets the label.
      *
      * @return the label
@@ -332,6 +344,16 @@ public class DestinationActionForm extends ECMWFActionForm {
      */
     public void setToDestination(final String param) {
         toDestination = param;
+    }
+
+    /**
+     * Sets the export to name.
+     *
+     * @param param
+     *            the new export to name
+     */
+    public void setExportToName(final String param) {
+        exportToName = param;
     }
 
     /**

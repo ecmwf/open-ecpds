@@ -124,7 +124,7 @@ services:
       MONITOR_COLOR: "#0079d3"
       # Miscellaneous parameters
       USE_CACHE: "no"
-      MASTER_URL_LIST:
+      MASTER_URL_LIST: "localhost:2600=Loopback export for testing"
       DEFAULT_SOURCE_HOST_ID:
       # Java Virtual Machine options
       JAVA_OPTS: -XX:+UseG1GC # The Garbage Collector

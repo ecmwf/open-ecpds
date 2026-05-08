@@ -648,13 +648,14 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
      */
     @Override
     public void exportDestination(final ECpdsSession session, final String targetMaster, final String fromDestination,
-            final boolean copySharedHost) throws MasterException, DataBaseException, RemoteException {
+            final String toDestinationName, final boolean copySharedHost)
+            throws MasterException, DataBaseException, RemoteException {
         final var monitor = new MonitorCall("exportDestination(" + session.getWebUser().getName() + "," + targetMaster
                 + "," + fromDestination + "," + copySharedHost + ")");
         final var action = master.startECpdsAction(session, "export", base.getDestination(fromDestination));
         Exception exception = null;
         try {
-            master.exportDestination(targetMaster, fromDestination, copySharedHost);
+            master.exportDestination(targetMaster, fromDestination, toDestinationName, copySharedHost);
             monitor.done();
         } catch (final RemoteException e) {
             exception = e;

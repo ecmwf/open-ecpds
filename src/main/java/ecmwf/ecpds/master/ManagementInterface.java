@@ -368,8 +368,8 @@ public interface ManagementInterface extends Remote {
      * @throws java.rmi.RemoteException
      *             the remote exception
      */
-    void exportDestination(ECpdsSession session, String targetMaster, String fromDestination, boolean copySharedHost)
-            throws MasterException, DataBaseException, RemoteException;
+    void exportDestination(ECpdsSession session, String targetMaster, String fromDestination, String toDestinationName,
+            boolean copySharedHost) throws MasterException, DataBaseException, RemoteException;
 
     /**
      * Close ecpds session.

@@ -86,7 +86,7 @@ public class InsertAction extends PDSAction {
                 // Export from an existing Destination/Host
                 final var mi = MasterManager.getMI();
                 final var session = Util.getECpdsSessionFromObject(user);
-                mi.exportDestination(session, daf.getMaster(), daf.getSourceDestination(),
+                mi.exportDestination(session, daf.getMaster(), daf.getSourceDestination(), daf.getExportToName(),
                         "on".equalsIgnoreCase(daf.getCopySourceSharedHost())
                                 || "true".equalsIgnoreCase(daf.getCopySourceSharedHost()));
             } else {

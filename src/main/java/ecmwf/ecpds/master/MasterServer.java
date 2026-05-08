@@ -4617,6 +4617,9 @@ public final class MasterServer extends ECaccessProvider
      *            the target master in the form host:<port>
      * @param fromDestination
      *            the from destination
+     * @param toDestinationName
+     *            the optional alternative name for the destination on the target master (empty or null to keep the
+     *            source name)
      * @param copySharedHost
      *            the copy shared host
      *
@@ -4629,10 +4632,15 @@ public final class MasterServer extends ECaccessProvider
      * @throws NotBoundException
      *             the not bound exception
      */
-    public void exportDestination(final String targetMaster, final String fromDestination, final boolean copySharedHost)
+    public void exportDestination(final String targetMaster, final String fromDestination,
+            final String toDestinationName, final boolean copySharedHost)
             throws RemoteException, DataBaseException, MalformedURLException, NotBoundException {
         final var base = getDataBase(ECpdsBase.class);
         final var destination = base.getDestination(fromDestination);
+        // Apply optional alternative name before exporting
+        if (toDestinationName != null && !toDestinationName.isBlank()) {
+            destination.setName(toDestinationName);
+        }
         // We only select the associations which are linked with the source
         // Destination!
         final List<Association> associations = new ArrayList<>();
