@@ -170,7 +170,8 @@
 				return;
 			}
 
-			wrap.innerHTML = '<canvas id="moverDiskUsageChart" style="max-height:260px"></canvas>';
+			var chartHeight = Math.max(260, vols.length * 32);
+		wrap.innerHTML = '<canvas id="moverDiskUsageChart" style="height:' + chartHeight + 'px"></canvas>';
 			var ctx = document.getElementById('moverDiskUsageChart').getContext('2d');
 			var pctLabelPlugin = {
 				id: 'pctLabels',
@@ -213,6 +214,7 @@
 				options: {
 					indexAxis: 'y',
 					responsive: true,
+					maintainAspectRatio: false,
 					animation: false,
 					plugins: {
 						legend: { display: false },

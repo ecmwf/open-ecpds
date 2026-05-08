@@ -304,7 +304,8 @@
 				return;
 			}
 
-			wrap.innerHTML = '<canvas id="tgDiskUsageChart" style="max-height:260px"></canvas>';
+			var chartHeight = Math.max(260, vols.length * 32);
+			wrap.innerHTML = '<canvas id="tgDiskUsageChart" style="height:' + chartHeight + 'px"></canvas>';
 			var ctx = document.getElementById('tgDiskUsageChart').getContext('2d');
 			chartInst = new Chart(ctx, {
 				type: 'bar',
@@ -318,6 +319,7 @@
 				options: {
 					indexAxis: 'y',
 					responsive: true,
+					maintainAspectRatio: false,
 					animation: false,
 					plugins: {
 						legend: { display: false },
