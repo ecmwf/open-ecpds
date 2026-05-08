@@ -153,7 +153,6 @@
 	<definition name=".pds.datafile"
 		extends=".pds.datafile.base">
 		<put name="title" value="Data Storage Home" />
-		<put name="submenu" value="/WEB-INF/jsp/pds/submenu.jsp" />
 		<put name="content" value="/WEB-INF/jsp/pds/datafile/index.jsp" />
 	</definition>
 
@@ -421,8 +420,7 @@
 	</definition>
 
 	<definition name=".pds.transfer.host.spare.edit"
-		extends=".pds.spare.edit">
-		<put name="bean.name" value="host" />
+		path="/WEB-INF/jsp/pds/transfer/host/spare_edit.jsp">
 	</definition>
 
 	<definition name=".pds.transfer.host.detail"
@@ -572,8 +570,7 @@
 	</definition>
 
 	<definition name=".pds.transfer.destination.spare.edit"
-		extends=".pds.spare.edit">
-		<put name="bean.name" value="destination" />
+		path="/WEB-INF/jsp/pds/transfer/destination/spare_edit.jsp">
 	</definition>
 
 	<definition name=".pds.transfer.destination.detail"
@@ -584,8 +581,8 @@
 			value="/WEB-INF/jsp/pds/transfer/destination/location.jsp" />
 		<put name="content"
 			value="/WEB-INF/jsp/pds/transfer/destination/detail.jsp" />
-		<put name="spare" value=".pds.spare.monitoring" />
-		<put name="spare2" value=".pds.transfer.destination.spare.edit" />
+		<put name="spare" value=".pds.transfer.destination.spare.edit" />
+		<put name="spare2" value=".pds.spare.monitoring" />
 		<put name="helpKey" value="help.destination" />
 	</definition>
 

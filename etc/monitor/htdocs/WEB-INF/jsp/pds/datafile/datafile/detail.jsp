@@ -6,19 +6,4 @@
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth" %>
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content" %>
 
-<p/>
-
-<table class="form" style="width:100%">
-
-<tr>
-<td colspan="2">
 <tiles:insert page="/WEB-INF/jsp/pds/datafile/datafile/data.jsp"/>
-</td>
-</tr>
-
-<tr >
-<td height="15">
-</td>
-</tr>
-
-</table>

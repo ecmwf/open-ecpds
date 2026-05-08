@@ -53,7 +53,7 @@ $(document).ready(function() {
         ordering:   true,
         info:       true,
         columnDefs: [{ orderable: false, targets: -1 }],
-        dom: "<'d-flex align-items-center gap-2 mb-3'<'count-slot'>l<'ms-auto d-flex align-items-center gap-2'f<'categories-create-slot'>>>t<'d-flex align-items-center mt-2'i<'ms-auto'p>>"
+        dom: "<'d-flex align-items-center gap-2 mb-3'<'count-slot'>l<'ms-auto d-flex align-items-center gap-2'f<'categories-create-slot'>>>t<'d-flex align-items-start mt-2'i<'ms-auto'p>>"
     });
     $('.count-slot').html('<span class="text-muted small"><i class="bi bi-list-ul"></i> <strong>' + table.rows().count() + '</strong> category(ies)</span>');
     $('.categories-create-slot').html(

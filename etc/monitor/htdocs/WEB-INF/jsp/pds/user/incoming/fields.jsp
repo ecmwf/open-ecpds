@@ -4,7 +4,6 @@
 <%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 <%@ taglib uri="/WEB-INF/tld/struts-tiles.tld" prefix="tiles"%>
-<%@ taglib uri="/WEB-INF/tld/displaytag.tld" prefix="display"%>
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content"%>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
@@ -22,14 +21,6 @@
 	margin-bottom: 4px;
 }
 
-table.fields {
-	width: 100%;
-	min-width: 600px;
-}
-table.fields > tbody > tr > th {
-	width: 1%;
-	white-space: nowrap;
-}
 .acc-help-btn {
     position: absolute; top: 50%; right: 3rem;
     transform: translateY(-50%);
@@ -52,80 +43,76 @@ table.fields > tbody > tr > th {
 	}
 </script>
 
-<c:choose>
-    <c:when test="${isInsert == 'true'}">
-    <div class="form-info-banner" style="margin-left:0; margin-bottom:0.5rem">
-        <i class="bi bi-person-plus text-primary flex-shrink-0"></i>
-        Create a new Data User account.
-    </div>
-    </c:when>
-    <c:otherwise>
-    <div class="form-info-banner" style="margin-left:0; margin-bottom:0.5rem">
-        <i class="bi bi-person-plus text-primary flex-shrink-0"></i>
-        Edit the Data User account.
-    </div>
-    </c:otherwise>
-</c:choose>
-<table border=0 style="width:100%; margin-bottom:1.25rem">
-	<tr>
-		<td style="width:1%;white-space:nowrap;vertical-align:top">
-			<table class="fields" style="margin-left:1.5rem">
-				<c:if test="${isInsert != 'true'}">
-					<tr>
-						<th>Data Login</th>
-						<td>${incomingUserActionForm.id}<html:hidden property="id" /></td>
-					</tr>
-				</c:if>
-				<c:if test="${isInsert == 'true'}">
-					<tr>
-						<th>Data Login <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Login name for this Data User. Use letters, digits, '_' and '.' only (e.g. john.doe_1)" tabindex="0"></i></th>
-						<td>
-							<div class="d-flex align-items-center gap-2">
-								<input id="id" name="id" type="text" required
-									pattern="[a-zA-Z0-9._]+"
-									oninput="validatePatternInput(this, 'id-feedback')">
-								<span id="id-feedback"></span>
-							</div>
-						</td>
-					</tr>
-				</c:if>
-				<tr>
-					<th>Comment <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="A short description or note for this user." tabindex="0"></i></th>
-					<td><html:text property="comment" /></td>
-				</tr>
-				<tr>
-					<th>Country <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Country associated with this user (used to display the corresponding flag)." tabindex="0"></i></th>
-					<td><c:set var="countries" value="${incomingUserActionForm.countryOptions}" />
-						<html:select property="countryIso" styleId="incomingCountryIso">
-							<html:options collection="countries" property="iso" labelProperty="name" />
-						</html:select></td>
-				</tr>
-				<tr>
-					<th>Enabled <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="When disabled, this user cannot connect." tabindex="0"></i></th>
-					<td><html:checkbox property="active" /></td>
-				</tr>
-				<tr>
-					<td colspan="2">&nbsp;</td>
-				</tr>
-				<tr>
-					<th>TOTP authentication <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Enable Time-based One-Time Password (TOTP) authentication. When enabled, the password field is not used." tabindex="0"></i></th>
-					<td><html:checkbox property="isSynchronized" styleId="isSynchronized" onclick="handleTOTPClick(this)" /></td>
-				</tr>
-				<tr id="passwordRow">
-					<th>Or password <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Password for authentication when TOTP is disabled. Use 'Generate' to create a secure random password." tabindex="0"></i></th>
-					<td>
-						<div class="d-flex align-items-center gap-2">
-							<input type="password" id="password" name="password"
-								value="${incomingUserActionForm.password}" />
-							<button type="button" id="buttonPassword" name="buttonPassword"
-								onclick="generatePassword(); return false">Generate</button>
+<div class="row g-3">
+	<div class="col-lg-6">
+		<div class="card">
+			<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+				<i class="bi bi-person-plus text-primary"></i>
+				<span class="fw-semibold">
+					<c:choose>
+						<c:when test="${isInsert == 'true'}">Create Data User</c:when>
+						<c:otherwise>Edit Data User</c:otherwise>
+					</c:choose>
+				</span>
+			</div>
+			<div class="card-body">
+				<div class="d-flex flex-column gap-2">
+					<c:if test="${isInsert != 'true'}">
+						<div class="row g-2 align-items-center">
+							<div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">Data Login</label></div>
+							<div class="col-sm-8">${incomingUserActionForm.id}<html:hidden property="id" /></div>
 						</div>
-					</td>
-				</tr>
-			</table>
-		</td>
+					</c:if>
+					<c:if test="${isInsert == 'true'}">
+						<div class="row g-2 align-items-center">
+							<div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">Data Login <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Login name for this Data User. Use letters, digits, '_' and '.' only (e.g. john.doe_1)" tabindex="0"></i></label></div>
+							<div class="col-sm-8">
+								<div class="d-flex align-items-center gap-2">
+									<input id="id" name="id" type="text" required class="form-control form-control-sm"
+										pattern="[a-zA-Z0-9._]+"
+										oninput="validatePatternInput(this, 'id-feedback')">
+									<span id="id-feedback"></span>
+								</div>
+							</div>
+						</div>
+					</c:if>
+					<div class="row g-2 align-items-center">
+						<div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">Comment <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="A short description or note for this user." tabindex="0"></i></label></div>
+						<div class="col-sm-8"><html:text property="comment" styleClass="form-control form-control-sm" /></div>
+					</div>
+					<div class="row g-2 align-items-center">
+						<div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">Country <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Country associated with this user (used to display the corresponding flag)." tabindex="0"></i></label></div>
+						<div class="col-sm-8"><c:set var="countries" value="${incomingUserActionForm.countryOptions}" />
+							<div class="d-flex align-items-center gap-2"><html:select property="countryIso" styleId="incomingCountryIso" styleClass="form-select form-select-sm flex-grow-1">
+								<html:options collection="countries" property="iso" labelProperty="name" />
+							</html:select></div></div>
+					</div>
+					<div class="row g-2 align-items-center">
+						<div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">Enabled <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="When disabled, this user cannot connect." tabindex="0"></i></label></div>
+						<div class="col-sm-8"><div class="form-check form-switch mb-0"><html:checkbox property="active" styleClass="form-check-input" /></div></div>
+					</div>
+					<div class="row g-2 align-items-center">
+						<div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">TOTP authentication <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Enable Time-based One-Time Password (TOTP) authentication. When enabled, the password field is not used." tabindex="0"></i></label></div>
+						<div class="col-sm-8"><div class="form-check form-switch mb-0"><html:checkbox property="isSynchronized" styleId="isSynchronized" onclick="handleTOTPClick(this)" styleClass="form-check-input" /></div></div>
+					</div>
+					<div class="row g-2 align-items-center" id="passwordRow">
+						<div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">Or password <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Password for authentication when TOTP is disabled. Use 'Generate' to create a secure random password." tabindex="0"></i></label></div>
+						<div class="col-sm-8">
+							<div class="d-flex align-items-center gap-2">
+								<input type="password" id="password" name="password" class="form-control form-control-sm"
+									value="${incomingUserActionForm.password}" />
+								<button type="button" id="buttonPassword" name="buttonPassword"
+									class="btn btn-sm btn-outline-secondary" onclick="generatePassword(); return false">Generate</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
 
-		<td colspan="2" style="vertical-align:top;padding-left:1rem"><c:if test="${isInsert != 'true'}">
+	<c:if test="${isInsert != 'true'}">
+	<div class="col-lg-6">
 <style>
 .assoc-card .card-header { display:flex; align-items:center; gap:.4rem; padding:.5rem .75rem; background:#f8f9fa; font-size:.85rem; }
 .assoc-card .card-header .ms-auto { margin-left:auto !important; }
@@ -324,61 +311,60 @@ table.fields > tbody > tr > th {
   </div>
 
 </div>
+	</div>
+	</c:if>
+</div>
 
-</c:if></td>
-	</tr>
-
-	<tr>
-		<td colspan="3" style="padding:0 0 0 1.5rem">
-			<div class="d-flex align-items-stretch" id="options-row">
-				<div id="options-label" style="flex:0 0 auto;background:var(--bs-tertiary-bg);border-right:2px solid var(--bs-border-color);font-weight:600;white-space:nowrap;padding:0.4rem 0.6rem;text-align:right;font-size:10pt">Options</div>
-				<div style="flex:1;min-width:0;padding:0.4rem 0.6rem">
-					<div class="accordion" id="incomingOptionsAccordion" style="min-width:860px;max-width:860px">
-					<div class="accordion-item">
-						<h2 class="accordion-header" id="incomingAccHeadProperties" style="position:relative;">
-							<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#incomingAccProperties" aria-expanded="false" aria-controls="incomingAccProperties">
-								Properties
-							</button>
-							<span role="button" tabindex="0" class="acc-help-btn" id="incomingPropsHelpBtn"
-								onclick="openIncomingHelp();" onkeydown="if(event.key==='Enter'||event.key===' ')openIncomingHelp();" title="Open properties reference">
-								<i class="bi bi-question-circle"></i>
-							</span>
-						</h2>
-						<div id="incomingAccProperties" class="accordion-collapse collapse" aria-labelledby="incomingAccHeadProperties" data-bs-parent="#incomingOptionsAccordion">
-						<div class="accordion-body p-2">
-							<pre id="userData" class="ace-panel"><c:out value="${requestScope[actionFormName].userData}" /></pre>
-							<textarea id="userData" name="userData" style="display: none;"></textarea>
-							<div class="d-flex align-items-center gap-2 mt-2">
-								<button type="button" class="btn btn-sm btn-outline-secondary" onclick="formatSource(editorProperties); return false">Format</button>
-								<button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearSource(editorProperties); return false">Clear</button>
-								<small class="text-muted ms-auto"><i class="bi bi-keyboard"></i> Ctrl+Space for completions</small>
-							</div>
-						</div>
-						</div>
-					</div>
-					<div class="accordion-item">
-						<h2 class="accordion-header" id="incomingAccHeadSSHKeys">
-							<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#incomingAccSSHKeys" aria-expanded="false" aria-controls="incomingAccSSHKeys">
-								Authorized SSH Keys
-							</button>
-						</h2>
-						<div id="incomingAccSSHKeys" class="accordion-collapse collapse" aria-labelledby="incomingAccHeadSSHKeys" data-bs-parent="#incomingOptionsAccordion">
-						<div class="accordion-body p-2">
-							<pre id="authorizedSSHKeys" class="ace-panel"><c:out value="${requestScope[actionFormName].authorizedSSHKeys}" /></pre>
-							<textarea id="authorizedSSHKeys" name="authorizedSSHKeys" style="display: none;"></textarea>
-							<div class="mt-2">
-								<button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearSource(editorAuthorizedSSHKeys); return false">Clear</button>
-							</div>
-						</div>
-						</div>
+<div class="mt-3">
+	<div class="card">
+		<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+			<i class="bi bi-sliders text-primary"></i>
+			<span class="fw-semibold">Options</span>
+		</div>
+		<div class="card-body p-2">
+			<div class="accordion" id="incomingOptionsAccordion">
+			<div class="accordion-item">
+				<h2 class="accordion-header" id="incomingAccHeadProperties" style="position:relative;">
+					<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#incomingAccProperties" aria-expanded="false" aria-controls="incomingAccProperties">
+						Properties
+					</button>
+					<span role="button" tabindex="0" class="acc-help-btn" id="incomingPropsHelpBtn"
+						onclick="openIncomingHelp();" onkeydown="if(event.key==='Enter'||event.key===' ')openIncomingHelp();" title="Open properties reference">
+						<i class="bi bi-question-circle"></i>
+					</span>
+				</h2>
+				<div id="incomingAccProperties" class="accordion-collapse collapse" aria-labelledby="incomingAccHeadProperties" data-bs-parent="#incomingOptionsAccordion">
+				<div class="accordion-body p-2">
+					<pre id="userData" class="ace-panel"><c:out value="${requestScope[actionFormName].userData}" /></pre>
+					<textarea id="userData" name="userData" style="display: none;"></textarea>
+					<div class="d-flex align-items-center gap-2 mt-2">
+						<button type="button" class="btn btn-sm btn-outline-secondary" onclick="formatSource(editorProperties); return false">Format</button>
+						<button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearSource(editorProperties); return false">Clear</button>
+						<small class="text-muted ms-auto"><i class="bi bi-keyboard"></i> Ctrl+Space for completions</small>
 					</div>
 				</div>
 				</div>
 			</div>
-		</td>
-	</tr>
-
-</table>
+			<div class="accordion-item">
+				<h2 class="accordion-header" id="incomingAccHeadSSHKeys">
+					<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#incomingAccSSHKeys" aria-expanded="false" aria-controls="incomingAccSSHKeys">
+						Authorized SSH Keys
+					</button>
+				</h2>
+				<div id="incomingAccSSHKeys" class="accordion-collapse collapse" aria-labelledby="incomingAccHeadSSHKeys" data-bs-parent="#incomingOptionsAccordion">
+				<div class="accordion-body p-2">
+					<pre id="authorizedSSHKeys" class="ace-panel"><c:out value="${requestScope[actionFormName].authorizedSSHKeys}" /></pre>
+					<textarea id="authorizedSSHKeys" name="authorizedSSHKeys" style="display: none;"></textarea>
+					<div class="mt-2">
+						<button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearSource(editorAuthorizedSSHKeys); return false">Clear</button>
+					</div>
+				</div>
+				</div>
+			</div>
+			</div>
+		</div>
+	</div>
+</div>
 
 <%-- Help offcanvas panel --%>
 <div class="offcanvas offcanvas-end" tabindex="-1" id="incomingHelpOffcanvas"
@@ -429,21 +415,21 @@ table.fields > tbody > tr > th {
 
 	var customCompleter = {
   		getCompletions: function(editor, session, pos, prefix, callback) {
-      		var line = session.getLine(editor.getCursorPosition().row);
-   			completions.forEach(function(completion) {
-      			completion.value = completion.caption + ' = ""';
+      			var line = session.getLine(editor.getCursorPosition().row);
+				completions.forEach(function(completion) {
+      				completion.value = completion.caption + ' = ""';
     		});
-      		var matchingCompletions = completions.filter(function(completion) {
-      			return !checkIfExist(editor, completion.value) && (line.length === 0 || completion.value.startsWith(line));
+      			var matchingCompletions = completions.filter(function(completion) {
+      				return !checkIfExist(editor, completion.value) && (line.length === 0 || completion.value.startsWith(line));
     		}).map(function(completion) {
-      			completion.value = prefix + completion.value.substring(line.length);
-      			return completion;
+      				completion.value = prefix + completion.value.substring(line.length);
+      				return completion;
     		});
-      		if (matchingCompletions.length > 0) {
-        		callback(null, matchingCompletions);
-      		} else {
-        		callback(null, []);
-      		}
+      			if (matchingCompletions.length > 0) {
+        				callback(null, matchingCompletions);
+      			} else {
+        				callback(null, []);
+      			}
     	}
 	};
 
@@ -470,10 +456,10 @@ table.fields > tbody > tr > th {
 
 	editorProperties.getSession().on("change", function(e) {
   		if (e.action === "insert" && e.lines.length == 1 && e.lines[0] !== '"' && e.lines[0].endsWith('"')) {
-    		setTimeout(function() {
+    			setTimeout(function() {
 				editorProperties.moveCursorTo(e.end.row, e.end.column - 1);
-    			editorProperties.selection.clearSelection();
-    		}, 0);
+    				editorProperties.selection.clearSelection();
+    			}, 0);
   		}
 	});
 
@@ -540,7 +526,7 @@ table.fields > tbody > tr > th {
     	$("#password").val(pass);
     	confirmationDialog({
     	    title: 'Password Generated',
-    	    message: '<p class="mb-2 small">Please save this password \u2014 it will not be shown again:</p>' +
+    	    message: '<p class="mb-2 small">Please save this password &mdash; it will not be shown again:</p>' +
     	             '<div class="input-group input-group-sm">' +
     	             '<input type="text" class="form-control font-monospace" id="_genPass" value="' + pass + '" readonly>' +
     	             '<button class="btn btn-outline-secondary" type="button" onclick="copyGenPass(this)">' +
@@ -564,5 +550,3 @@ table.fields > tbody > tr > th {
         }
     });
 </script>
-
-

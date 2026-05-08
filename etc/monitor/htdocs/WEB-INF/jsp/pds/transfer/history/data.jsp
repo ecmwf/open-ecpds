@@ -14,7 +14,16 @@
 <tr><th>Transfer Host</th><td><a href="<bean:message key="host.basepath"/>/${item.hostName}">${item.hostNickName}</a></td></tr>
 <tr><th>Data File</th><td><a href="<bean:message key="datafile.basepath"/>/${item.dataTransfer.dataFile.id}">${item.dataTransfer.dataFile.original}</a></td></tr>
 <tr><th>Data Transfer</th><td><a href="<bean:message key="datatransfer.basepath"/>/${item.dataTransfer.id}">${item.dataTransfer.target}</a></td></tr>
-<tr><th>Status</th><td>${item.formattedStatus}</td></tr>
+<tr><th>Status</th><td>
+<c:choose>
+  <c:when test="${item.status == 'DONE'}"><span class="badge bg-success">${item.formattedStatus}</span></c:when>
+  <c:when test="${item.status == 'EXEC' or item.status == 'FETC'}"><span class="badge bg-primary">${item.formattedStatus}</span></c:when>
+  <c:when test="${item.status == 'INIT'}"><span class="badge bg-info text-dark">${item.formattedStatus}</span></c:when>
+  <c:when test="${item.status == 'RETR' or item.status == 'STOP' or item.status == 'INTR'}"><span class="badge bg-warning text-dark">${item.formattedStatus}</span></c:when>
+  <c:when test="${item.status == 'FAIL'}"><span class="badge bg-danger">${item.formattedStatus}</span></c:when>
+  <c:otherwise><span class="badge bg-secondary">${item.formattedStatus}</span></c:otherwise>
+</c:choose>
+</td></tr>
 <tr><th>Sent</th><td>${item.formattedSent}</td></tr>
 <tr><th>Comment</th><td>${item.formattedComment}</td></tr>
 <tr><th>Error</th><td><c:if test="${item.error}"><i class="bi bi-x-circle-fill text-danger" title="Yes"></i></c:if><c:if test="${!item.error}"><i class="bi bi-check-circle-fill text-success" title="No"></i></c:if></td></tr>

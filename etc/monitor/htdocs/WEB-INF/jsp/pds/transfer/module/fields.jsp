@@ -9,74 +9,69 @@
 <tiles:useAttribute id="actionFormName" name="action.form.name"
 	classname="java.lang.String" />
 <tiles:useAttribute name="isInsert" classname="java.lang.String" />
-<c:choose>
-    <c:when test="${isInsert == 'true'}">
-        <div class="form-info-banner" style="margin-left:0;margin-bottom:0.5rem">
-            <i class="bi bi-puzzle text-primary flex-shrink-0"></i>
-            Create a new Transfer Module plugin.
+<div class="card border-0 shadow-sm mb-3">
+  <div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+    <i class="bi bi-puzzle text-primary"></i>
+    <span class="fw-semibold">
+      <c:choose>
+        <c:when test="${isInsert == 'true'}">New Transfer Module</c:when>
+        <c:otherwise>Edit Transfer Module</c:otherwise>
+      </c:choose>
+    </span>
+  </div>
+  <div class="card-body pb-2">
+    <div class="row g-2">
+
+      <%-- Name --%>
+      <div class="col-sm-4">
+        <label class="form-label mb-1">Name</label>
+        <logic:match name="isInsert" value="true">
+          <div class="d-flex align-items-center gap-2">
+            <input id="name" name="name" type="text"
+              class="form-control form-control-sm"
+              pattern="[a-zA-Z0-9]+"
+              title="Letters and digits only (e.g. FtpModule)"
+              oninput="validatePatternInput(this, 'name-feedback')">
+            <span id="name-feedback"></span>
+          </div>
+        </logic:match>
+        <logic:notMatch name="isInsert" value="true">
+          <div class="form-control-plaintext form-control-sm fw-medium">
+            <c:out value="${requestScope[actionFormName].name}" />
+            <html:hidden property="name" />
+          </div>
+        </logic:notMatch>
+      </div>
+
+      <%-- Class Name --%>
+      <div class="col-sm-8">
+        <label class="form-label mb-1">Class Name</label>
+        <div class="d-flex align-items-center gap-2">
+          <input id="classe" name="classe" type="text"
+            class="form-control form-control-sm"
+            pattern="[a-zA-Z0-9]+(\.[a-zA-Z0-9]+)*"
+            title="Fully qualified class name (e.g. com.example.FtpModule)"
+            value="<c:out value='${requestScope[actionFormName].classe}' />"
+            oninput="validatePatternInput(this, 'classe-feedback')">
+          <span id="classe-feedback"></span>
         </div>
-    </c:when>
-    <c:otherwise>
-        <div class="form-info-banner" style="margin-left:0;margin-bottom:0.5rem">
-            <i class="bi bi-puzzle text-primary flex-shrink-0"></i>
-            Edit the Transfer Module configuration.
+      </div>
+
+      <%-- Class Path --%>
+      <div class="col-sm-8">
+        <label class="form-label mb-1">Class Path</label>
+        <html:text property="archive" styleClass="form-control form-control-sm" />
+      </div>
+
+      <%-- Enabled --%>
+      <div class="col-sm-4">
+        <label class="form-label mb-1 d-block">&nbsp;</label>
+        <div class="form-check form-switch pt-1">
+          <html:checkbox property="active" styleClass="form-check-input" styleId="active" />
+          <label class="form-check-label small" for="active">Enabled</label>
         </div>
-    </c:otherwise>
-</c:choose>
+      </div>
 
-<table class="fields">
-	<tiles:useAttribute id="actionFormName" name="action.form.name"
-		classname="java.lang.String" />
-	<tiles:useAttribute name="isInsert" classname="java.lang.String" />
-
-	<logic:match name="isInsert" value="true">
-		<tr>
-			<th>Name</th>
-			<td>
-				<div class="d-flex align-items-center gap-2">
-					<input id="name" name="name" type="text"
-						pattern="[a-zA-Z0-9]+"
-						title="Letters and digits only (e.g. FtpModule)"
-						oninput="validatePatternInput(this, 'name-feedback')">
-					<span id="name-feedback"></span>
-				</div>
-				<div id="name-feedback-msg" class="invalid-feedback" style="display:none">
-					Letters and digits only (e.g. <code>FtpModule</code>).
-				</div>
-			</td>
-		</tr>
-	</logic:match>
-
-	<logic:notMatch name="isInsert" value="true">
-		<tr>
-			<th>Name</th>
-			<td><c:out value="${requestScope[actionFormName].name}" /> <html:hidden
-					property="name" /></td>
-		</tr>
-	</logic:notMatch>
-
-	<tr>
-		<th>Class Name</th>
-		<td>
-			<div class="d-flex align-items-center gap-2">
-				<input id="classe" name="classe" type="text"
-					pattern="[a-zA-Z0-9]+(\.[a-zA-Z0-9]+)*"
-					title="Fully qualified class name (e.g. com.example.FtpModule)"
-					value="<c:out value='${requestScope[actionFormName].classe}' />"
-					oninput="validatePatternInput(this, 'classe-feedback')">
-				<span id="classe-feedback"></span>
-			</div>
-			<div id="classe-feedback-msg" class="invalid-feedback" style="display:none">
-				Fully qualified class name using letters, digits and <code>.</code> separators (e.g. <code>com.example.FtpModule</code>).
-			</div>
-		</td>
-	</tr>
-	<tr>
-		<th>Class Path</th>
-		<td><html:text property="archive" /></td>
-	</tr>
-	<tr>
-		<th>Enabled</th>
-		<td><html:checkbox property="active" /></td>
-	</tr>
-</table>
+    </div>
+  </div>
+</div>

@@ -3,11 +3,11 @@
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content"%>
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
 
-<table class="select info-panel" style="width: 700px">
+<div class="row g-2 mb-3">
 
-	<tr>
-		<th>Last Transfer</th>
-		<td><c:set var="transL" value="${destination.lastTransfer}" /> <c:if
+	<div class="col-6 col-sm-4 col-md-2">
+		<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Last Transfer</div>
+		<div><c:set var="transL" value="${destination.lastTransfer}" /> <c:if
 				test="${not empty transL}">
 				<c:catch>
 					<a
@@ -18,10 +18,12 @@
 				</c:catch>
 			</c:if> <c:if test="${empty transL}">
 				<i>None</i>
-			</c:if></td>
+			</c:if></div>
+	</div>
 
-		<th>Last Error</th>
-		<td><c:set var="transE" value="${destination.lastError}" /> <c:if
+	<div class="col-6 col-sm-4 col-md-2">
+		<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Last Error</div>
+		<div><c:set var="transE" value="${destination.lastError}" /> <c:if
 				test="${not empty transE}">
 				<c:catch>
 					<a class="topnav1"
@@ -32,10 +34,12 @@
 				</c:catch>
 			</c:if> <c:if test="${empty transE}">
 				<i>None</i>
-			</c:if></td>
+			</c:if></div>
+	</div>
 
-		<th>Started</th>
-		<td><c:catch var="ex">
+	<div class="col-6 col-sm-4 col-md-2">
+		<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Started</div>
+		<div><c:catch var="ex">
 				<c:set var="startT" value="${destination.startTime}" />
 				<c:if test="${not empty startT}">
 					<div
@@ -50,32 +54,34 @@
 				</c:if>
 			</c:catch> <c:if test="${not empty ex}">
 				<i>None</i>
-			</c:if></td>
-			
+			</c:if></div>
+	</div>
 
-		<th>Filter</th>
+	<div class="col-6 col-sm-4 col-md-2">
+		<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Filter</div>
 		<c:set var="filter" value="${destination.filterName}" />
-		<td><jsp:include page="/WEB-INF/jsp/pds/transfer/compression_icon.jsp"><jsp:param name="name" value="${destination.filterName}"/><jsp:param name="showName" value="true"/></jsp:include></td>
+		<div><jsp:include page="/WEB-INF/jsp/pds/transfer/compression_icon.jsp"><jsp:param name="name" value="${destination.filterName}"/><jsp:param name="showName" value="true"/></jsp:include></div>
+	</div>
 
-		<th>Parallel</th>
-
+	<div class="col-6 col-sm-4 col-md-2">
+		<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Parallel</div>
 		<c:set var="parallel" value="${destination.maxConnections}" />
 		<c:if test="${parallel > 1}">
-			<td>${destination.maxConnections}</td>
+			<div>${destination.maxConnections}</div>
 		</c:if>
 		<c:if test="${parallel <= 1}">
-			<td><i>None</i></td>
+			<div><i>None</i></div>
 		</c:if>
+	</div>
 
+	<auth:if basePathKey="transferhistory.basepath" paths="/">
+		<auth:then>
+			<div class="col-6 col-sm-4 col-md-2">
+				<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Acquisition</div>
+				<div><c:if test="${destination.acquisition}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
+						test="${!destination.acquisition}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></div>
+			</div>
+		</auth:then>
+	</auth:if>
 
-		<auth:if basePathKey="transferhistory.basepath" paths="/">
-			<auth:then>
-				<th>Acquisition</th>
-				<td><c:if test="${destination.acquisition}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
-						test="${!destination.acquisition}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></td>
-			</auth:then>
-		</auth:if>
-
-	</tr>
-
-</table>
+</div>

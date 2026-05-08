@@ -6,22 +6,10 @@
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth" %>
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content" %>
 
-<p/>
-
-<table style="width:100%">
-
-<tr>
-<td colspan="2">
 <tiles:insert page="/WEB-INF/jsp/pds/datafile/transferserver/data.jsp"/>
-</td>
-</tr>
-<tr>
-<td colspan="2" class="pt-2">
+<div class="mt-2">
 <a href="/do/datafile/transferserver" class="btn btn-sm btn-outline-secondary">
     <i class="bi bi-arrow-left"></i> All Data Movers
 </a>
-</td>
-</tr>
-
-</table>
+</div>
 

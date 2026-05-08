@@ -455,13 +455,33 @@ function _updateHostSearchBanner(queryError, total, hasSearch) {
         return hover ? s.hover : s.normal;
     }
 
+    function clusterStyle(size, hover) {
+        return new ol.style.Style({
+            image: new ol.style.Circle({
+                radius: hover ? 16 : 14,
+                fill: new ol.style.Fill({ color: hover ? 'rgba(13,110,253,1)' : 'rgba(13,110,253,0.85)' }),
+                stroke: new ol.style.Stroke({ color: '#fff', width: 2 })
+            }),
+            text: new ol.style.Text({
+                text: String(size),
+                fill: new ol.style.Fill({ color: '#fff' }),
+                font: 'bold 11px sans-serif'
+            })
+        });
+    }
+
     // ---- Map init ----
     function initMap() {
         olSource = new ol.source.Vector();
 
+        var clusterSource = new ol.source.Cluster({ distance: 25, source: olSource });
+
         var layer = new ol.layer.Vector({
-            source: olSource,
-            style: function(f) { return styleFor(f, false); }
+            source: clusterSource,
+            style: function(f) {
+                var sub = f.get('features');
+                return sub.length === 1 ? styleFor(sub[0], false) : clusterStyle(sub.length, false);
+            }
         });
 
         olMap = new ol.Map({
@@ -483,14 +503,23 @@ function _updateHostSearchBanner(queryError, total, hasSearch) {
             var f = olMap.forEachFeatureAtPixel(evt.pixel, function(f) { return f; });
             olMap.getTargetElement().style.cursor = f ? 'pointer' : '';
             if (hovered && hovered !== f) { hovered.setStyle(null); hovered = null; }
-            if (f && f !== hovered) { f.setStyle(styleFor(f, true)); hovered = f; }
+            if (f && f !== hovered) {
+                var sub = f.get('features');
+                f.setStyle(sub.length === 1 ? styleFor(sub[0], true) : clusterStyle(sub.length, true));
+                hovered = f;
+            }
         });
 
         // Click -> offcanvas
         olMap.on('click', function(evt) {
             var f = olMap.forEachFeatureAtPixel(evt.pixel, function(f) { return f; });
             if (!f) return;
-            showHostPanel(f.getProperties());
+            var sub = f.get('features');
+            if (sub.length === 1) {
+                showHostPanel(sub[0].getProperties());
+            } else {
+                showHostListPanel(sub.map(function(feat) { return feat.getProperties(); }));
+            }
         });
     }
 
@@ -544,6 +573,40 @@ function _updateHostSearchBanner(queryError, total, hasSearch) {
 
     // ---- Host detail panel ----
     var _offcanvas = null;
+
+    function _showOffcanvas(title, body) {
+        document.getElementById('hostDetailTitle').innerHTML = title;
+        document.getElementById('hostDetailBody').innerHTML = body;
+        if (!_offcanvas) {
+            _offcanvas = new bootstrap.Offcanvas(document.getElementById('hostDetailPanel'));
+        }
+        _offcanvas.show();
+    }
+
+    function showHostListPanel(hosts) {
+        var typeColors = { Dissemination:'primary', Acquisition:'success', Source:'warning' };
+        var html = '<div class="list-group list-group-flush">';
+        hosts.forEach(function(p) {
+            var activeBadge = p.active
+                ? '<span class="badge bg-success">Active</span>'
+                : '<span class="badge bg-secondary">Inactive</span>';
+            var tc = typeColors[p.type] || 'secondary';
+            html += '<a href="' + p.url + '" class="list-group-item list-group-item-action px-3 py-2">'
+                + '<div class="d-flex justify-content-between align-items-start gap-2">'
+                + '<span class="fw-semibold">' + esc(p.nickname) + '</span>'
+                + '<span class="text-nowrap">' + activeBadge
+                + '<span class="badge bg-' + tc + ' ms-1">' + esc(p.type) + '</span></span>'
+                + '</div>'
+                + (p.hostname ? '<div class="small text-muted">' + esc(p.hostname) + '</div>' : '')
+                + '</a>';
+        });
+        html += '</div>';
+        _showOffcanvas(
+            '<i class="bi bi-hdd-network me-1"></i>' + hosts.length + ' hosts at this location',
+            html
+        );
+    }
+
     function showHostPanel(p) {
         var badge = p.active
             ? '<span class="badge bg-success">Active</span>'
@@ -565,14 +628,10 @@ function _updateHostSearchBanner(queryError, total, hasSearch) {
             + '<div class="mt-3"><a href="' + p.url + '" class="btn btn-sm btn-outline-primary w-100">'
             + '<i class="bi bi-arrow-right-circle me-1"></i>Open host page</a></div>';
 
-        document.getElementById('hostDetailTitle').innerHTML =
-            '<i class="bi bi-hdd-network me-1"></i>' + esc(p.nickname || p.id);
-        document.getElementById('hostDetailBody').innerHTML = html;
-
-        if (!_offcanvas) {
-            _offcanvas = new bootstrap.Offcanvas(document.getElementById('hostDetailPanel'));
-        }
-        _offcanvas.show();
+        _showOffcanvas(
+            '<i class="bi bi-hdd-network me-1"></i>' + esc(p.nickname || p.id),
+            html
+        );
     }
 
     function row(label, val) {

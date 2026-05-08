@@ -1,7 +1,6 @@
 <%@ page session="true" %>
 
 <%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean" %>
-<%@ taglib uri="/WEB-INF/tld/displaytag.tld" prefix="display" %>
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content" %>
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth" %>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
@@ -13,168 +12,206 @@
 <c:set var="authorized" value="true" />
 </auth:then>
 <auth:else>
-
 <auth:if basePathKey="destination.basepath" paths="/${datatransfer.destination.name}">
 <auth:then>
   <c:set var="authorized" value="true" />
 </auth:then>
 </auth:if>
-
 </auth:else>
 </auth:if>
 
 <c:if test="${authorized == 'false'}">
-<p><font color=red><font size=-1>
-
-Error retrieving object by key <- DataBase problem searching by key '${datatransfer.id}' <- DataTransfer not found: {${datatransfer.id}}
-
-</font></font></p>
-
+<div class="alert alert-danger mt-2">
+<i class="bi bi-exclamation-triangle-fill me-2"></i>
+Error retrieving object by key &mdash; DataTransfer not found: <code>${datatransfer.id}</code>
+</div>
 </c:if>
 
 <c:if test="${authorized == 'true'}">
 
-<table border=0>
-<tr>
-<td valign="top">
 <jsp:include page="./pds/transfer/data/data_table.jsp"/>
-</td>
-</tr>
 
-<tr>
-<td>
-
+<%-- Transfer History --%>
 <auth:if basePathKey="transferhistory.basepath" paths="/">
-	<auth:then>
-		<c:set var="transferHistory" value="${datatransfer.transferHistory}"/>
-		<c:set var="canSeeHistoryDetail" value="true"/>
-	</auth:then>
-	<auth:else><c:set var="transferHistory" value="${datatransfer.transferHistoryAfterScheduledTime}"/></auth:else>
+<auth:then>
+<c:set var="transferHistory" value="${datatransfer.transferHistory}"/>
+<c:set var="canSeeHistoryDetail" value="true"/>
+</auth:then>
+<auth:else>
+<c:set var="transferHistory" value="${datatransfer.transferHistoryAfterScheduledTime}"/>
+</auth:else>
 </auth:if>
 
+<p class="fw-bold mb-1 mt-3">Transfer History</p>
 <c:if test="${historyItemsSize == '0'}">
-	<div class="alert">
-		No Transfer History available for this Data Transfer
-	</div>
+<div class="alert alert-info mt-1">No Transfer History available for this Data Transfer</div>
 </c:if>
-
 <c:if test="${historyItemsSize != '0'}">
-<p class="fw-bold mb-1 mt-2">Transfer History</p>
-<display:table id="history" name="${historyItems}" requestURI="" sort="external" defaultsort="2"
-        partialList="true" size="${historyItemsSize}" pagesize="${recordsPerPage}" class="listing">
-
-<display:column sortable="true" title="Err" style="padding-right:30px;"> 
-    <c:if test="${history.error}"><content:icon key="icon.micro.cancel" writeFullTag="true"/></c:if>
-    <c:if test="${not history.error}"><content:icon key="icon.micro.submit" writeFullTag="true"/></c:if>  
-  </display:column>   		
-	
-    <display:column title="Event Time" sortable="true">
-   		<!-- ${history.date} -->
-   		<c:if test="${not empty canSeeHistoryDetail}">
-   			<a href="<bean:message key="transferhistory.basepath"/>/${history.id}"> <content:content name="history.date" dateFormatKey="date.format.transfer" ignoreNull="true"/></a>
-   		</c:if>
-   		<c:if test="${empty canSeeHistoryDetail}">
-			 <content:content name="history.date" dateFormatKey="date.format.transfer" ignoreNull="true"/>
-   		</c:if>
-    </display:column>   		    		
-    <display:column property="formattedStatus" title="Status" sortable="true"/>    		    				
-    <display:column title="Transfer Host" sortable="true">
-       <c:if test="${history.hostName != null}">
-		<a href="<bean:message key="host.basepath"/>/${history.hostName}">${history.hostNickName}</a>
-       </c:if>
-       <c:if test="${history.hostName == null}">
-                <font color="grey"><span title="Data not transferred to remote host"><i class="bi bi-dash text-muted" title="Not applicable"></i></span></font>
-       </c:if>
-    </display:column>    
-    <display:column title="Comment" property="formattedComment" />
-
-</display:table>
+<table id="transferHistoryTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
+<thead class="table-light">
+<tr>
+<th>Err</th>
+<th>Event Time</th>
+<th>Status</th>
+<th>Transfer Host</th>
+<th>Comment</th>
+</tr>
+</thead>
+<tbody>
+<c:forEach var="history" items="${historyItems}">
+<tr>
+<td>
+<c:if test="${history.error}"><i class="bi bi-x-circle-fill text-danger" title="Error"></i></c:if>
+<c:if test="${not history.error}"><i class="bi bi-check-circle-fill text-success" title="OK"></i></c:if>
+</td>
+<td>
+<c:if test="${not empty canSeeHistoryDetail}">
+<a href="<bean:message key="transferhistory.basepath"/>/${history.id}"><content:content name="history.date" dateFormatKey="date.format.transfer" ignoreNull="true"/></a>
+</c:if>
+<c:if test="${empty canSeeHistoryDetail}">
+<content:content name="history.date" dateFormatKey="date.format.transfer" ignoreNull="true"/>
+</c:if>
+</td>
+<td>
+<c:choose>
+  <c:when test="${history.status == 'DONE'}"><span class="badge bg-success">${history.formattedStatus}</span></c:when>
+  <c:when test="${history.status == 'EXEC' or history.status == 'FETC'}"><span class="badge bg-primary">${history.formattedStatus}</span></c:when>
+  <c:when test="${history.status == 'INIT'}"><span class="badge bg-info text-dark">${history.formattedStatus}</span></c:when>
+  <c:when test="${history.status == 'RETR' or history.status == 'STOP' or history.status == 'INTR'}"><span class="badge bg-warning text-dark">${history.formattedStatus}</span></c:when>
+  <c:when test="${history.status == 'FAIL'}"><span class="badge bg-danger">${history.formattedStatus}</span></c:when>
+  <c:otherwise><span class="badge bg-secondary">${history.formattedStatus}</span></c:otherwise>
+</c:choose>
+</td>
+<td>
+<c:if test="${history.hostName != null}">
+<a href="<bean:message key="host.basepath"/>/${history.hostName}">${history.hostNickName}</a>
+</c:if>
+<c:if test="${history.hostName == null}">
+<i class="bi bi-dash text-muted" title="Not applicable"></i>
+</c:if>
+</td>
+<td>${history.formattedComment}</td>
+</tr>
+</c:forEach>
+</tbody>
+</table>
+<script>
+$(document).ready(function() {
+$('#transferHistoryTable').DataTable({
+paging:    true,
+pageLength: 25,
+searching: false,
+ordering:  true,
+info:      true,
+order:     [[1, 'asc']]
+});
+});
+</script>
 </c:if>
 
-<br/>
-
-<p class="fw-bold mb-1 mt-3">All Data Transfers with the same identity. &nbsp;&nbsp;&nbsp;<i>(${datatransfer.identity})</i></p>
-<display:table name="${datatransfer.olderTransfersForSameDataFile}" id="transfer" sort="list" pagesize="25" requestURI=""
-	class="listing" defaultsort="3" defaultorder="descending">
-
-    <display:column title="Destination" sortable="true">
-    		<a href="<bean:message key="destination.basepath"/>/${transfer.destinationName}">${transfer.destinationName}</a>
-    </display:column>
-
-	<display:column title="Transfer Host" sortable="true">
-		<c:set var="nickName" value="${transfer.hostNickName}" />
-		<jsp:useBean id="nickName" type="java.lang.String" />
-		<c:if test='<%="".equals(nickName)%>'>
-			<font color="grey"><span title="Data not transferred to remote host"><i class="bi bi-x-circle text-warning" title="Not transferred to remote host"></i></span></font>
-		</c:if>
-		<c:if test="<%=nickName.length()>0%>">
-			<c:if test="${transfer.transferServerName == null}">
-				<a href="/do/transfer/host/${transfer.hostName}">${transfer.hostNickName}</a>
-			</c:if>
-                	<c:if test="${transfer.transferServerName != null}">
-				<a title="Transmitted through ${transfer.transferServerName}" href="/do/transfer/host/${transfer.hostName}">${transfer.hostNickName}</a>
-			</c:if>
-		</c:if>
-	</display:column>
-	<display:column title="Sched. Time" sortable="true" sortProperty="scheduledTime">
-		<content:content name="transfer.scheduledTime"
-			dateFormatKey="date.format.transfer" ignoreNull="true" />
-	</display:column>
-
-	<display:column title="Start Time" sortable="true" sortProperty="startTime">
-		<c:if test="${transfer.startTime != null}">
-			<content:content name="transfer.startTime" dateFormatKey="date.format.transfer" ignoreNull="true" />
-		</c:if>
-		<c:if test="${transfer.startTime == null}">
-        		<font color="grey"><span title="Data not transferred to remote host"><i class="bi bi-dash text-muted" title="Not applicable"></i></span></font>
-		</c:if>
-	</display:column>
-	<display:column title="Finish Time" sortable="true" sortProperty="realFinishTime">
-		<c:if test="${transfer.realFinishTime != null}">
-			<content:content name="transfer.realFinishTime" dateFormatKey="date.format.transfer" ignoreNull="true" />
-		</c:if>
-		<c:if test="${transfer.realFinishTime == null}">
-        		<font color="grey"><span title="Data not transferred to remote host"><i class="bi bi-dash text-muted" title="Not applicable"></i></span></font>
-		</c:if>
-	</display:column>
-
-	<display:column title="Target" sortable="true">
-		<c:if test="${transfer.id != datatransfer.id}">
-			<a title="Size: ${transfer.formattedSize}" href="/do/transfer/data/${transfer.id}"><c:if test="${transfer.deleted}"><font color="red"></c:if>${transfer.target}<c:if test="${transfer.deleted}"></font></c:if></a>
-		</c:if>
-		<c:if test="${transfer.id == datatransfer.id}">
-			<a STYLE="TEXT-DECORATION: NONE" title="Size: ${transfer.formattedSize}"><c:if test="${transfer.deleted}"><font color="red"></c:if>${transfer.target}<c:if test="${transfer.deleted}"></font></c:if></a>
-		</c:if>
-	</display:column>
-
-	<display:column property="dataFile.timeStep" title="TS" sortable="true" />
-	<display:column title="%" property="progress" sortable="true" />
-
-        <display:column title="Mbits/s" sortable="true" sortProperty="formattedTransferRateInMBitsPerSeconds">
-                <c:if test="${transfer.transferRate != 0}">
-        		<a STYLE="TEXT-DECORATION: NONE" title="Rate: ${transfer.formattedTransferRate}">${transfer.formattedTransferRateInMBitsPerSeconds}</a>
-		</c:if>
-                <c:if test="${transfer.transferRate == 0}">
-                        <c:if test="${transfer.size != 0}">
-                                <font color="grey"><span title="Data not transferred to remote host"><i class="bi bi-dash text-muted" title="Not applicable"></i></span></font>
-                        </c:if>
-                        <c:if test="${transfer.size == 0}">
-                                <font color="grey"><span title="Empty file"><i class="bi bi-dash text-muted" title="Not applicable"></i></span></font>
-                        </c:if>
-		</c:if>
-        </display:column>
-
-
-    <display:column property="formattedStatus" title="Status">
-        <c:if test="${transfer.deleted}"><font color="red"></c:if>${transfer.formattedStatus}<c:if test="${transfer.deleted}"></font></c:if>
-    </display:column> 
-
-    <display:column property="priority" title="Prior" sortable="true" />
-	
-</display:table>
-
-</td>
+<%-- Older Transfers with Same Identity --%>
+<p class="fw-bold mb-1 mt-3">All Data Transfers with the same identity. &nbsp;<em>(${datatransfer.identity})</em></p>
+<table id="olderTransfersTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
+<thead class="table-light">
+<tr>
+<th>Destination</th>
+<th>Transfer Host</th>
+<th>Sched. Time</th>
+<th>Start Time</th>
+<th>Finish Time</th>
+<th>Target</th>
+<th>TS</th>
+<th>%</th>
+<th>Mbits/s</th>
+<th>Status</th>
+<th>Prior</th>
 </tr>
+</thead>
+<tbody>
+<c:forEach var="transfer" items="${datatransfer.olderTransfersForSameDataFile}">
+<c:set var="nickName" value="${transfer.hostNickName}" />
+<jsp:useBean id="nickName" type="java.lang.String" />
+<tr>
+<td><a href="<bean:message key="destination.basepath"/>/${transfer.destinationName}">${transfer.destinationName}</a></td>
+<td>
+<c:if test='<%="".equals(nickName)%>'>
+<i class="bi bi-x-circle text-warning" title="Not transferred to remote host"></i>
+</c:if>
+<c:if test="<%=nickName.length()>0%>">
+<c:if test="${transfer.transferServerName == null}">
+<a href="/do/transfer/host/${transfer.hostName}">${transfer.hostNickName}</a>
+</c:if>
+<c:if test="${transfer.transferServerName != null}">
+<a title="Transmitted through ${transfer.transferServerName}" href="/do/transfer/host/${transfer.hostName}">${transfer.hostNickName}</a>
+</c:if>
+</c:if>
+</td>
+<td><content:content name="transfer.scheduledTime" dateFormatKey="date.format.transfer" ignoreNull="true"/></td>
+<td>
+<c:if test="${transfer.startTime != null}">
+<content:content name="transfer.startTime" dateFormatKey="date.format.transfer" ignoreNull="true"/>
+</c:if>
+<c:if test="${transfer.startTime == null}">
+<i class="bi bi-dash text-muted" title="Not applicable"></i>
+</c:if>
+</td>
+<td>
+<c:if test="${transfer.realFinishTime != null}">
+<content:content name="transfer.realFinishTime" dateFormatKey="date.format.transfer" ignoreNull="true"/>
+</c:if>
+<c:if test="${transfer.realFinishTime == null}">
+<i class="bi bi-dash text-muted" title="Not applicable"></i>
+</c:if>
+</td>
+<td>
+<c:if test="${transfer.id != datatransfer.id}">
+<a title="Size: ${transfer.formattedSize}" href="/do/transfer/data/${transfer.id}">
+<c:if test="${transfer.deleted}"><span class="text-danger"></c:if>${transfer.target}<c:if test="${transfer.deleted}"></span></c:if>
+</a>
+</c:if>
+<c:if test="${transfer.id == datatransfer.id}">
+<span title="Size: ${transfer.formattedSize}" class="fw-semibold">
+<c:if test="${transfer.deleted}"><span class="text-danger"></c:if>${transfer.target}<c:if test="${transfer.deleted}"></span></c:if>
+</span>
+</c:if>
+</td>
+<td>${transfer.dataFile.timeStep}</td>
+<td>${transfer.progress}</td>
+<td>
+<c:if test="${transfer.transferRate != 0}">
+<a style="text-decoration:none" title="Rate: ${transfer.formattedTransferRate}">${transfer.formattedTransferRateInMBitsPerSeconds}</a>
+</c:if>
+<c:if test="${transfer.transferRate == 0}">
+<i class="bi bi-dash text-muted" title="Not applicable"></i>
+</c:if>
+</td>
+<td>
+<c:choose>
+  <c:when test="${transfer.deleted}"><span class="badge bg-danger" title="Deleted">${transfer.formattedStatus}</span></c:when>
+  <c:when test="${transfer.statusCode == 'DONE'}"><span class="badge bg-success">${transfer.formattedStatus}</span></c:when>
+  <c:when test="${transfer.statusCode == 'EXEC' or transfer.statusCode == 'FETC'}"><span class="badge bg-primary">${transfer.formattedStatus}</span></c:when>
+  <c:when test="${transfer.statusCode == 'INIT'}"><span class="badge bg-info text-dark">${transfer.formattedStatus}</span></c:when>
+  <c:when test="${transfer.statusCode == 'RETR' or transfer.statusCode == 'STOP' or transfer.statusCode == 'INTR'}"><span class="badge bg-warning text-dark">${transfer.formattedStatus}</span></c:when>
+  <c:when test="${transfer.statusCode == 'FAIL'}"><span class="badge bg-danger">${transfer.formattedStatus}</span></c:when>
+  <c:otherwise><span class="badge bg-secondary">${transfer.formattedStatus}</span></c:otherwise>
+</c:choose>
+</td>
+<td>${transfer.priority}</td>
+</tr>
+</c:forEach>
+</tbody>
 </table>
+<script>
+$(document).ready(function() {
+$('#olderTransfersTable').DataTable({
+paging:    true,
+pageLength: 25,
+searching: true,
+ordering:  true,
+info:      true,
+order:     [[2, 'desc']]
+});
+});
+</script>
 
 </c:if>

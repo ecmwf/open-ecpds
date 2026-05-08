@@ -3,7 +3,6 @@
 <%@ taglib uri="/WEB-INF/tld/struts-html.tld" prefix="html"%>
 <%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean"%>
 <%@ taglib uri="/WEB-INF/tld/struts-tiles.tld" prefix="tiles"%>
-<%@ taglib uri="/WEB-INF/tld/displaytag.tld" prefix="display"%>
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content"%>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
@@ -21,58 +20,51 @@
 	}
 </script>
 
-<html:hidden property="id" />
-
-<c:choose>
-    <c:when test="${isInsert == 'true'}">
-    <div class="form-info-banner" style="margin-left:0; margin-bottom:0.5rem">
-        <i class="bi bi-folder2 text-primary flex-shrink-0"></i>
-        Create a new Category to group access control resources.
-    </div>
-    </c:when>
-    <c:otherwise>
-    <div class="form-info-banner" style="margin-left:0; margin-bottom:0.5rem">
-        <i class="bi bi-folder2 text-primary flex-shrink-0"></i>
-        Edit the Category details.
-    </div>
-    </c:otherwise>
-</c:choose>
-<table>
-	<tr>
-		<td style="width:1%;white-space:nowrap;vertical-align:top">
-
-			<table class="fields">
-
-				<c:if test="${isInsert != 'true'}">
-					<tr>
-						<th>Name</th>
-						<td><c:out value="${categoryActionForm.name}" /> <html:hidden property="name" /></td>
-					</tr>
-				</c:if>
-				<c:if test="${isInsert == 'true'}">
-					<tr>
-						<th>Name</th>
-						<td>
-							<div class="d-flex align-items-center gap-2">
-								<input id="name" name="name" type="text"
-									pattern="[a-zA-Z0-9]+([_-][a-zA-Z0-9]+)*"
-									title="Must start and end with a letter or digit; '_' or '-' allowed as single separators (e.g. admin-users)"
-									oninput="validatePatternInput(this, 'name-feedback')">
-								<span id="name-feedback"></span>
+<div class="row g-3">
+	<div class="col-lg-6">
+		<div class="card">
+			<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+				<i class="bi bi-folder2 text-primary"></i>
+				<span class="fw-semibold">
+					<c:choose>
+						<c:when test="${isInsert == 'true'}">Create Web Category</c:when>
+						<c:otherwise>Edit Web Category</c:otherwise>
+					</c:choose>
+				</span>
+			</div>
+			<div class="card-body">
+				<html:hidden property="id" />
+				<div class="d-flex flex-column gap-2">
+					<c:if test="${isInsert != 'true'}">
+						<div class="row g-2 align-items-center">
+							<div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">Name</label></div>
+							<div class="col-sm-8"><c:out value="${categoryActionForm.name}" /> <html:hidden property="name" /></div>
+						</div>
+					</c:if>
+					<c:if test="${isInsert == 'true'}">
+						<div class="row g-2 align-items-center">
+							<div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">Name</label></div>
+							<div class="col-sm-8">
+								<div class="d-flex align-items-center gap-2">
+									<input id="name" name="name" type="text" class="form-control form-control-sm"
+										pattern="[a-zA-Z0-9]+([_-][a-zA-Z0-9]+)*"
+										title="Must start and end with a letter or digit; '_' or '-' allowed as single separators (e.g. admin-users)"
+										oninput="validatePatternInput(this, 'name-feedback')">
+									<span id="name-feedback"></span>
+								</div>
 							</div>
-						</td>
-					</tr>
-				</c:if>
-
-				<tr>
-					<th>Description</th>
-					<td><html:text property="description" /></td>
-				</tr>
-			</table>
-
-		</td>
-
-		<td colspan="2" style="vertical-align:top;padding-left:1rem"><c:if test="${isInsert != 'true'}">
+						</div>
+					</c:if>
+					<div class="row g-2 align-items-center">
+						<div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">Description</label></div>
+						<div class="col-sm-8"><html:text property="description" styleClass="form-control form-control-sm" /></div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<c:if test="${isInsert != 'true'}">
+	<div class="col-lg-6">
 <style>
 .assoc-card .card-header { display:flex; align-items:center; gap:.4rem; padding:.5rem .75rem; background:#f8f9fa; font-size:.85rem; }
 .assoc-card .card-header .ms-auto { margin-left:auto !important; }
@@ -136,6 +128,6 @@
   </div>
 
 </div>
-</c:if></td>
-	</tr>
-</table>
+	</div>
+	</c:if>
+</div>

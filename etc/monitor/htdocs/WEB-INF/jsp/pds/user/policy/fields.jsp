@@ -3,7 +3,6 @@
 <%@ taglib uri="/WEB-INF/tld/struts-html.tld" prefix="html"%>
 <%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean"%>
 <%@ taglib uri="/WEB-INF/tld/struts-tiles.tld" prefix="tiles"%>
-<%@ taglib uri="/WEB-INF/tld/displaytag.tld" prefix="display"%>
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content"%>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
@@ -19,9 +18,6 @@
 	margin-top: 8px;
 	margin-bottom: 4px;
 }
-table.fields {
-	min-width: 600px;
-}
 .acc-help-btn {
     position: absolute; top: 50%; right: 3rem;
     transform: translateY(-50%);
@@ -31,29 +27,6 @@ table.fields {
 }
 .acc-help-btn:hover { color: var(--bs-primary); }
 .acc-help-btn.acc-help-active { color: var(--bs-primary); }
-table.fields > tbody > tr > th {
-	width: 1%;
-	white-space: nowrap;
-}
-#options-label {
-    background: #f8f9fa;
-    border-right: 2px solid #dee2e6;
-    padding: 0.4rem 0.6rem;
-    font-weight: 600;
-    font-size: 10pt;
-    text-align: right;
-    white-space: nowrap;
-    flex: 0 0 auto;
-    align-self: stretch;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-}
-[data-bs-theme=dark] #options-label {
-    background: var(--bs-secondary-bg);
-    color: var(--bs-body-color);
-    border-right-color: var(--bs-border-color);
-}
 </style>
 
 <script>
@@ -67,56 +40,48 @@ function validate(path, message) {
 }
 </script>
 
+<div class="row g-3">
+<div class="col-lg-6">
+<div class="card">
+<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+<i class="bi bi-shield-check text-primary"></i>
+<span class="fw-semibold">
 <c:choose>
-    <c:when test="${isInsert == 'true'}">
-    <div class="form-info-banner" style="margin-left:0; margin-bottom:0.5rem">
-        <i class="bi bi-shield-check text-primary flex-shrink-0"></i>
-        Create a new Access Policy.
-    </div>
-    </c:when>
-    <c:otherwise>
-    <div class="form-info-banner" style="margin-left:0; margin-bottom:0.5rem">
-        <i class="bi bi-shield-check text-primary flex-shrink-0"></i>
-        Edit the Access Policy configuration.
-    </div>
-    </c:otherwise>
+  <c:when test="${isInsert == 'true'}">Create Data Policy</c:when>
+  <c:otherwise>Edit Data Policy</c:otherwise>
 </c:choose>
-<table border=0 style="margin-bottom:1.25rem">
-<tr>
-<td style="width:1%;white-space:nowrap;vertical-align:top">
-<table class="fields" style="margin-left:1.5rem">
-<c:if test="${isInsert != 'true'}">
-<tr>
-<th>Name</th>
-<td>${incomingPolicyActionForm.id}<html:hidden property="id" /></td>
-</tr>
-</c:if>
+</span>
+</div>
+<div class="card-body">
+<div class="row g-2 align-items-center">
+<div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted">Name</label></div>
+<div class="col-sm-8">
+<c:if test="${isInsert != 'true'}">${incomingPolicyActionForm.id}<html:hidden property="id" /></c:if>
 <c:if test="${isInsert == 'true'}">
-<tr>
-<th>Name</th>
-<td>
-	<div class="d-flex align-items-center gap-2">
-		<input id="id" name="id" type="text"
-			pattern="[a-zA-Z0-9]+([_.][a-zA-Z0-9]+)*"
-			title="Must start and end with a letter or digit; '_' or '.' allowed as single separators (e.g. policy.read)"
-			oninput="validatePatternInput(this, 'id-feedback')">
-		<span id="id-feedback"></span>
-	</div>
-</td>
-</tr>
+<div class="d-flex align-items-center gap-2">
+<input id="id" name="id" type="text" class="form-control form-control-sm"
+    pattern="[a-zA-Z0-9]+([_.][a-zA-Z0-9]+)*"
+    title="Must start and end with a letter or digit; '_' or '.' allowed as single separators (e.g. policy.read)"
+    oninput="validatePatternInput(this, 'id-feedback')">
+<span id="id-feedback"></span>
+</div>
 </c:if>
-<tr>
-<th>Comment</th>
-<td><html:text property="comment" /></td>
-</tr>
-<tr>
-<th>Enabled</th>
-<td><html:checkbox property="active" /></td>
-</tr>
-</table>
-</td>
+</div>
+</div>
+<div class="row g-2 align-items-center mt-1">
+<div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted">Comment</label></div>
+<div class="col-sm-8"><html:text property="comment" styleClass="form-control form-control-sm" /></div>
+</div>
+<div class="row g-2 align-items-center mt-1">
+<div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted">Enabled</label></div>
+<div class="col-sm-8"><div class="form-check form-switch mb-0"><html:checkbox property="active" styleClass="form-check-input" /></div></div>
+</div>
+</div>
+</div>
+</div>
 
-<td colspan="2" style="vertical-align:top;padding-left:1rem"><c:if test="${isInsert != 'true'}">
+<c:if test="${isInsert != 'true'}">
+<div class="col-lg-6">
 <style>
 .assoc-card .card-header { display:flex; align-items:center; gap:.4rem; padding:.5rem .75rem; background:#f8f9fa; font-size:.85rem; }
 .assoc-card .card-header .ms-auto { margin-left:auto !important; }
@@ -127,71 +92,67 @@ function validate(path, message) {
 .assoc-chooser-item:hover { background:#e9ecef; }
 .assoc-empty { display:flex; align-items:center; gap:.35rem; color:#856404; background:#fff3cd; border:1px solid #ffc107; border-radius:.25rem; font-size:.8rem; padding:.3rem .5rem; margin:0; }
 </style>
-<div class="row g-3" style="max-width:480px">
-
-  <%-- Destinations --%>
-  <div class="col-12">
-    <div class="card assoc-card">
-      <div class="card-header">
-        <i class="bi bi-geo-alt text-secondary"></i>
-        <strong>Destinations</strong>
-        <button type="button" class="btn btn-sm btn-outline-primary ms-auto"
-                data-bs-toggle="collapse" data-bs-target="#destChooser">
-          <i class="bi bi-plus-lg"></i> Add
-        </button>
-      </div>
-      <div class="card-body p-2">
-        <c:choose>
-          <c:when test="${empty incomingPolicyActionForm.destinations}">
-            <p class="text-muted small mb-2"><em>No destinations assigned.</em></p>
-          </c:when>
-          <c:otherwise>
-            <div class="d-flex flex-wrap mb-2">
-              <c:forEach var="destination" items="${incomingPolicyActionForm.destinations}">
-                <span class="assoc-chip">
-                  <c:choose>
-                    <c:when test="${not empty destination.comment}"><span title="${destination.comment}">${destination.id}</span></c:when>
-                    <c:otherwise>${destination.id}</c:otherwise>
-                  </c:choose>
-                  <a href="javascript:validate('<bean:message key="policy.basepath"/>/edit/update/<c:out value="${incomingPolicyActionForm.id}"/>/deleteDestination/<c:out value="${destination.name}"/>','<bean:message key="ecpds.policy.deleteDestination.warning" arg0="${destination.name}" arg1="${incomingPolicyActionForm.id}"/>')" title="Remove"><i class="bi bi-x-lg"></i></a>
-                </span>
-              </c:forEach>
-            </div>
-          </c:otherwise>
-        </c:choose>
-        <div class="collapse" id="destChooser">
-          <c:choose>
-            <c:when test="${empty incomingPolicyActionForm.destinationOptions}">
-              <p class="assoc-empty"><i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i> No destinations available to add.</p>
-            </c:when>
-            <c:otherwise>
-              <input type="text" class="form-control form-control-sm assoc-search mb-1" oninput="assocSearch(this)" placeholder="Search destinations...">
-              <div style="max-height:180px;overflow-y:auto">
-                <c:forEach var="column" items="${incomingPolicyActionForm.destinationOptions}">
-                  <a href="/do/user/policy/edit/update/${incomingPolicyActionForm.id}/addDestination/${column.name}"
-                     class="assoc-chooser-item d-flex align-items-center gap-1 px-2 py-1 rounded text-decoration-none">
-                    <i class="bi bi-plus-circle text-success small flex-shrink-0"></i>
-                    <span title="${column.value}">${column.name}</span>
-                  </a>
-                </c:forEach>
-              </div>
-            </c:otherwise>
-          </c:choose>
+<div class="card assoc-card">
+  <div class="card-header">
+    <i class="bi bi-geo-alt text-secondary"></i>
+    <strong>Destinations</strong>
+    <button type="button" class="btn btn-sm btn-outline-primary ms-auto"
+            data-bs-toggle="collapse" data-bs-target="#destChooser">
+      <i class="bi bi-plus-lg"></i> Add
+    </button>
+  </div>
+  <div class="card-body p-2">
+    <c:choose>
+      <c:when test="${empty incomingPolicyActionForm.destinations}">
+        <p class="text-muted small mb-2"><em>No destinations assigned.</em></p>
+      </c:when>
+      <c:otherwise>
+        <div class="d-flex flex-wrap mb-2">
+          <c:forEach var="destination" items="${incomingPolicyActionForm.destinations}">
+            <span class="assoc-chip">
+              <c:choose>
+                <c:when test="${not empty destination.comment}"><span title="${destination.comment}">${destination.id}</span></c:when>
+                <c:otherwise>${destination.id}</c:otherwise>
+              </c:choose>
+              <a href="javascript:validate('<bean:message key="policy.basepath"/>/edit/update/<c:out value="${incomingPolicyActionForm.id}"/>/deleteDestination/<c:out value="${destination.name}"/>','<bean:message key="ecpds.policy.deleteDestination.warning" arg0="${destination.name}" arg1="${incomingPolicyActionForm.id}"/>')" title="Remove"><i class="bi bi-x-lg"></i></a>
+            </span>
+          </c:forEach>
         </div>
-      </div>
+      </c:otherwise>
+    </c:choose>
+    <div class="collapse" id="destChooser">
+      <c:choose>
+        <c:when test="${empty incomingPolicyActionForm.destinationOptions}">
+          <p class="assoc-empty"><i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i> No destinations available to add.</p>
+        </c:when>
+        <c:otherwise>
+          <input type="text" class="form-control form-control-sm assoc-search mb-1" oninput="assocSearch(this)" placeholder="Search destinations...">
+          <div style="max-height:180px;overflow-y:auto">
+            <c:forEach var="column" items="${incomingPolicyActionForm.destinationOptions}">
+              <a href="/do/user/policy/edit/update/${incomingPolicyActionForm.id}/addDestination/${column.name}"
+                 class="assoc-chooser-item d-flex align-items-center gap-1 px-2 py-1 rounded text-decoration-none">
+                <i class="bi bi-plus-circle text-success small flex-shrink-0"></i>
+                <span title="${column.value}">${column.name}</span>
+              </a>
+            </c:forEach>
+          </div>
+        </c:otherwise>
+      </c:choose>
     </div>
   </div>
-
 </div>
-</c:if></td>
-</tr>
+</div>
+</c:if>
+</div>
 
-<tr>
-<td colspan="3" style="padding:0 0 0 1.5rem">
-<div class="d-flex align-items-stretch" id="options-row">
-<div id="options-label">Options</div>
-<div style="flex:1;min-width:0;padding:0.4rem 0.6rem">
-<div class="accordion" id="policyOptionsAccordion" style="min-width:860px;max-width:860px">
+<div class="mt-3">
+<div class="card">
+<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+<i class="bi bi-sliders text-primary"></i>
+<span class="fw-semibold">Options</span>
+</div>
+<div class="card-body p-2">
+<div class="accordion" id="policyOptionsAccordion">
 <div class="accordion-item">
 <h2 class="accordion-header" id="policyAccHeadProperties" style="position:relative;">
 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#policyAccProperties" aria-expanded="false" aria-controls="policyAccProperties">
@@ -217,9 +178,7 @@ Properties
 </div>
 </div>
 </div>
-</td>
-</tr>
-</table>
+</div>
 
 <%-- Help offcanvas panel --%>
 <div class="offcanvas offcanvas-end" tabindex="-1" id="policyHelpOffcanvas"

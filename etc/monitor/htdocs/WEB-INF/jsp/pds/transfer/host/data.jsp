@@ -2,7 +2,6 @@
 
 <%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean"%>
 <%@ taglib uri="/WEB-INF/tld/struts-tiles.tld" prefix="tiles"%>
-<%@ taglib uri="/WEB-INF/tld/displaytag.tld" prefix="display"%>
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content"%>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
@@ -44,9 +43,6 @@ table.fields > tbody > tr > th {
 	height: 375px;
 	resize: vertical;
 	overflow: hidden;
-	border: solid 1px lightgray;
-	margin-top: 8px;
-	margin-bottom: 8px;
 }
 .progress-terminal { border-radius: 4px; overflow: hidden; margin-top: 2px; }
 .progress-terminal-hdr {
@@ -137,287 +133,334 @@ table.fields > tbody > tr > th {
 		</c:if>
 		<c:if test="${empty isDelete}">
 			<jsp:include page="/WEB-INF/jsp/pds/transfer/host/host_header.jsp"/>
-			<table class="fields">
+			<div class="card border-0 shadow-sm mb-3">
+<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+<i class="bi bi-tag text-primary"></i>
+<span class="fw-semibold">Identity</span>
+</div>
+<div class="card-body">
+<div class="row g-3">
+<div class="col-sm-6">
+<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Hostname/IP</div>
+<div>${host.host}</div>
+</div>
+<div class="col-sm-6">
+<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Label</div>
+<div>${host.networkCode}:${host.networkName}</div>
+</div>
+<div class="col-sm-6">
+<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Login</div>
+<div>${host.login}</div>
+</div>
+<div class="col-sm-6">
+<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Transfer Group</div>
+<div><auth:link basePathKey="transfergroup.basepath"
+href="/${host.transferGroupName}"
+alternativeText="${host.transferGroupName}">${host.transferGroupName}</auth:link></div>
+</div>
+<div class="col-sm-6">
+<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Passwd</div>
+<div>****</div>
+</div>
+<div class="col-sm-6">
+<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Max Connections</div>
+<div>${host.maxConnections}</div>
+</div>
+<div class="col-sm-12">
+<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Filter Name</div>
+<div><jsp:include page="/WEB-INF/jsp/pds/transfer/compression_icon.jsp"><jsp:param name="name" value="${host.filterName}"/><jsp:param name="showName" value="true"/></jsp:include></div>
+</div>
+</div>
+</div>
+</div>
 
-				<tr>
-					<th>Hostname/IP</th>
-					<td>${host.host}</td>
-					<th>Label</th>
-					<td>${host.networkCode}:${host.networkName}</td>
-				</tr>
-				<tr>
-					<th>Login</th>
-					<td>${host.login}</td>
-					<th>Transfer Group</th>
-					<td><auth:link basePathKey="transfergroup.basepath"
-							href="/${host.transferGroupName}"
-							alternativeText="${host.transferGroupName}">${host.transferGroupName}</auth:link></td>
-				</tr>
-				<tr>
-					<th>Passwd</th>
-					<td>*********</td>
-					<th>Max Connections</th>
-					<td>${host.maxConnections}</td>
-				</tr>
-				<tr>
-					<th>Filter Name</th>
-					<td colspan="3"><jsp:include page="/WEB-INF/jsp/pds/transfer/compression_icon.jsp"><jsp:param name="name" value="${host.filterName}"/><jsp:param name="showName" value="true"/></jsp:include></td>
-				</tr>
+<div class="card border-0 shadow-sm mb-3">
+<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+<i class="bi bi-geo-alt text-primary"></i>
+<span class="fw-semibold">Location</span>
+</div>
+<div class="card-body">
+<div class="row g-3">
+<div class="col-sm-6">
+<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Location Source</div>
+<div><c:if test="${host.automaticLocation}">automatic</c:if><c:if test="${!host.automaticLocation}">manual</c:if></div>
+</div>
+<div class="col-sm-6">
+<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Estimated Location</div>
+<div>
+<c:choose>
+<c:when test="${not empty host.geoIpLocation}">
+<c:set var="_geoParts" value="${fn:split(host.geoIpLocation, '/')}"/>
+<c:set var="_geoPart0" value="${fn:trim(_geoParts[0])}"/>
+<c:set var="_geoPart1" value="${fn:trim(_geoParts[1])}"/>
+<c:set var="_geoIso" value="${fn:toLowerCase(fn:length(_geoPart0) == 2 ? _geoPart0 : _geoPart1)}"/>
+<span class="fi fi-${_geoIso}" title="${host.geoIpLocation}" style="font-size:1.1em;vertical-align:middle;border-radius:2px;"></span>
+<span class="ms-1">${host.geoIpLocation}</span>
+</c:when>
+<c:otherwise><span class="text-muted fst-italic">unknown</span></c:otherwise>
+</c:choose>
+</div>
+</div>
+<div class="col-sm-6">
+<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Latitude (&deg;)</div>
+<div>${host.latitude}</div>
+</div>
+<div class="col-sm-6">
+<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Longitude (&deg;)</div>
+<div>${host.longitude}</div>
+</div>
+</div>
+</div>
+</div>
 
-				<tr>
-					<td colspan="4">&nbsp;</td>
-				</tr>
+<div class="card border-0 shadow-sm mb-3">
+<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+<i class="bi bi-folder2-open text-primary"></i>
+<span class="fw-semibold">Directory</span>
+</div>
+<div class="card-body">
+<div id='dirType'>
+<input type='radio' id='istext' name='dirType' />Plain Text <input
+type='radio' id='isjs' name='dirType' />JavaScript <input
+type='radio' id='ispython' name='dirType' />Python
+</div>
+<div class="ace-panel">
+<pre id="dir">
+<c:out value="${host.dir}" />
+</pre> <textarea id="dir" name="dir" style="display: none;"></textarea>
+</div>
+</div>
+</div>
 
-				<tr>
-					<th>Location Source</th>
-					<td><c:if test="${host.automaticLocation}">automatic</c:if><c:if test="${!host.automaticLocation}">manual</c:if></td>
-					<th>Estimated Location</th>
-					<td>
-						<c:choose>
-							<c:when test="${not empty host.geoIpLocation}">
-								<c:set var="_geoParts" value="${fn:split(host.geoIpLocation, '/')}"/>
-								<c:set var="_geoPart0" value="${fn:trim(_geoParts[0])}"/>
-								<c:set var="_geoPart1" value="${fn:trim(_geoParts[1])}"/>
-								<c:set var="_geoIso" value="${fn:toLowerCase(fn:length(_geoPart0) == 2 ? _geoPart0 : _geoPart1)}"/>
-								<span class="fi fi-${_geoIso}" title="${host.geoIpLocation}" style="font-size:1.1em;vertical-align:middle;border-radius:2px;"></span>
-								<span class="ms-1">${host.geoIpLocation}</span>
-							</c:when>
-							<c:otherwise><span class="text-muted fst-italic">unknown</span></c:otherwise>
-						</c:choose>
-					</td>
-				</tr>
+<div class="card border-0 shadow-sm mb-3">
+<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+<i class="bi bi-sliders text-primary"></i>
+<span class="fw-semibold">Options</span>
+</div>
+<div class="card-body">
+<div class="accordion" id="hostViewOptionsAccordion">
+<div class="accordion-item">
+<h2 class="accordion-header" id="hostViewAccHeadProperties" style="position:relative;">
+<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#hostViewAccProperties" aria-expanded="false" aria-controls="hostViewAccProperties">
+Properties
+</button>
+<span role="button" tabindex="0" class="acc-help-btn" id="hostPropsHelpBtn"
+onclick="openHostHelp();" onkeydown="if(event.key==='Enter'||event.key===' ')openHostHelp();" title="Open properties reference">
+<i class="bi bi-question-circle"></i>
+</span>
+</h2>
+<div id="hostViewAccProperties" class="accordion-collapse collapse" aria-labelledby="hostViewAccHeadProperties" data-bs-parent="#hostViewOptionsAccordion">
+<div class="accordion-body p-2">
+<div class="ace-panel">
+<pre id="properties"><c:out value="${host.properties}" /></pre>
+<textarea id="properties" name="properties" style="display: none;"></textarea>
+</div>
+</div>
+</div>
+</div>
+<div class="accordion-item">
+<h2 class="accordion-header" id="hostViewAccHeadJavascript">
+<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#hostViewAccJavascript" aria-expanded="false" aria-controls="hostViewAccJavascript">
+JavaScript
+</button>
+</h2>
+<div id="hostViewAccJavascript" class="accordion-collapse collapse" aria-labelledby="hostViewAccHeadJavascript" data-bs-parent="#hostViewOptionsAccordion">
+<div class="accordion-body p-2">
+<div class="ace-panel">
+<pre id="javascript"><c:out value="${host.javascript}" /></pre>
+<textarea id="javascript" name="javascript" style="display: none;"></textarea>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
 
-				<tr>
-					<th>Latitude (&deg;)</th>
-					<td>${host.latitude}</td>
-					<th>Longitude (&deg;)</th>
-					<td>${host.longitude}</td>
-				</tr>
-								
-				<tr>
-					<td colspan="4">&nbsp;</td>
-				</tr>
+<auth:if basePathKey="transferhistory.basepath" paths="/">
+<auth:then>
 
-				<tr>
-					<th>Directory</th>
-					<td colspan="3">
-						<div style="max-width:860px">
-						<div id='dirType'>
-							<input type='radio' id='istext' name='dirType' />Plain Text <input
-								type='radio' id='isjs' name='dirType' />JavaScript <input
-								type='radio' id='ispython' name='dirType' />Python
-						</div> <pre id="dir">
-				<c:out value="${host.dir}" />
-			</pre> <textarea id="dir" name="dir" style="display: none;"></textarea>
-						</div>
-					</td>
-				</tr>
+<c:if test="${host.type == 'Acquisition'}">
+<div class="card border-0 shadow-sm mb-3">
+<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+<i class="bi bi-activity text-primary"></i>
+<span class="fw-semibold">Progress</span>
+</div>
+<div class="card-body">
+<div class="progress-terminal" style="min-width:860px;max-width:860px">
+<div class="progress-terminal-hdr">
+<i class="bi bi-activity text-success"></i> Activity Log
+<button id="refreshLogBtn"
+class="btn btn-sm btn-outline-secondary progress-terminal-btn py-0 px-2 ms-auto"
+style="font-size:0.7rem;"
+onclick="(function(btn){
+btn.disabled=true;
+var orig=btn.innerHTML;
+btn.innerHTML='<span class=\'spinner-border spinner-border-sm\' role=\'status\'></span> Refreshing...';
+fetch(window.location.href)
+.then(function(r){return r.text();})
+.then(function(html){
+var doc=new DOMParser().parseFromString(html,'text/html');
+var el=doc.getElementById('progressBody');
+if(el) document.getElementById('progressBody').innerHTML=el.innerHTML;
+btn.disabled=false; btn.innerHTML=orig;
+})
+.catch(function(){ btn.disabled=false; btn.innerHTML=orig; });
+})(this)">
+<i class="bi bi-arrow-clockwise"></i> Refresh
+</button>
+<button class="btn btn-sm btn-outline-secondary progress-terminal-btn py-0 px-2"
+style="font-size:0.7rem;"
+onclick="(function(btn){
+var text = document.getElementById('progressBody').innerText;
+navigator.clipboard.writeText(text).then(function(){
+btn.innerHTML='<i class=\'bi bi-check-lg\'></i> Copied';
+setTimeout(function(){ btn.innerHTML='<i class=\'bi bi-clipboard\'></i> Copy'; }, 1500);
+});
+})(this)">
+<i class="bi bi-clipboard"></i> Copy
+</button>
+</div>
+<div class="progress-terminal-body" id="progressBody">${host.formattedLastOutput}</div>
+</div>
+</div>
+</div>
+</c:if>
 
+<div class="card border-0 shadow-sm mb-3">
+<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+<i class="bi bi-bar-chart text-primary"></i>
+<span class="fw-semibold">Statistics</span>
+</div>
+<div class="card-body">
+<div class="row g-3">
+<div class="col-sm-6">
+<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Retry Frequency</div>
+<div>${host.formattedRetryFrequency}</div>
+</div>
+<div class="col-sm-6">
+<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Total Data Sent</div>
+<div><a style="text-decoration:none"
+title="Sent: ${host.formattedSent}">${host.sent} bytes</a></div>
+</div>
+<div class="col-sm-6">
+<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Connections</div>
+<div>${host.connections}</div>
+</div>
+<div class="col-sm-6">
+<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Total Time Taken</div>
+<div>${host.formattedDuration}</div>
+</div>
+<div class="col-sm-6">
+<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Retry Count</div>
+<div>${host.retryCount}</div>
+</div>
+<div class="col-sm-6">
+<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Bandwidth</div>
+<div><a style="text-decoration:none"
+title="Bandwidth: ${host.formattedBandWidth}">${host.formattedBandWidthInMBitsPerSeconds}
+Mbits/s</a></div>
+</div>
+</div>
+</div>
+</div>
 
-				<tr>
-					<td colspan="4">&nbsp;</td>
-				</tr>
+<div class="card border-0 shadow-sm mb-3">
+<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+<i class="bi bi-bell text-primary"></i>
+<span class="fw-semibold">Monitoring</span>
+</div>
+<div class="card-body">
+<div class="row g-3">
+<div class="col-sm-6">
+<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Check</div>
+<div><c:if test="${host.check}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
+test="${!host.check}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></div>
+</div>
+<c:choose>
+<c:when test="${not empty host.userMail}">
+<div class="col-sm-6">
+<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Mail On Success</div>
+<div><c:if test="${host.mailOnSuccess}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
+test="${!host.mailOnSuccess}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></div>
+</div>
+</c:when>
+<c:otherwise><div class="col-sm-6"></div></c:otherwise>
+</c:choose>
+<c:if test="${host.check || not empty host.userMail}">
+<c:choose>
+<c:when test="${host.check}">
+<div class="col-sm-6">
+<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Check Time</div>
+<div class="date">${host.checkTime}</div>
+</div>
+</c:when>
+<c:otherwise><div class="col-sm-6"></div></c:otherwise>
+</c:choose>
+<c:choose>
+<c:when test="${not empty host.userMail}">
+<div class="col-sm-6">
+<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Mail On Error</div>
+<div><c:if test="${host.mailOnError}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
+test="${!host.mailOnError}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></div>
+</div>
+</c:when>
+<c:otherwise><div class="col-sm-6"></div></c:otherwise>
+</c:choose>
+</c:if>
+<c:if test="${host.check}">
+<div class="col-sm-6">
+<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Check Frequency</div>
+<div>${host.formattedCheckFrequency}</div>
+</div>
+<div class="col-sm-6">
+<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Notify Once</div>
+<div><c:if test="${host.notifyOnce}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
+test="${!host.notifyOnce}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></div>
+</div>
+</c:if>
+<c:if test="${host.type == 'Acquisition' || not empty host.userMail}">
+<c:choose>
+<c:when test="${host.type == 'Acquisition'}">
+<div class="col-sm-6">
+<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Acquisition Time</div>
+<div class="date">${host.acquisitionTime}</div>
+</div>
+</c:when>
+<c:otherwise><div class="col-sm-6"></div></c:otherwise>
+</c:choose>
+<c:choose>
+<c:when test="${not empty host.userMail}">
+<div class="col-sm-6">
+<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Owner Mail</div>
+<div>${host.userMail}</div>
+</div>
+</c:when>
+<c:otherwise><div class="col-sm-6"></div></c:otherwise>
+</c:choose>
+</c:if>
+<c:if test="${host.type == 'Acquisition'}">
+<div class="col-sm-6">
+<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Acquisition Frequency</div>
+<div>${host.formattedAcquisitionFrequency}</div>
+</div>
+<auth:if basePathKey="transferhistory.basepath" paths="/">
+<auth:then>
+<div class="col-sm-6">
+<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Valid</div>
+<div><c:if test="${host.valid}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
+test="${!host.valid}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></div>
+</div>
+</auth:then>
+</auth:if>
+</c:if>
+</div>
+</div>
+</div>
 
-						<tr>
-							<th>Options</th>
-							<td colspan="3">
-								<div class="accordion" id="hostViewOptionsAccordion" style="min-width:860px;max-width:860px">
-								<div class="accordion-item">
-									<h2 class="accordion-header" id="hostViewAccHeadProperties" style="position:relative;">
-										<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#hostViewAccProperties" aria-expanded="false" aria-controls="hostViewAccProperties">
-											Properties
-										</button>
-										<span role="button" tabindex="0" class="acc-help-btn" id="hostPropsHelpBtn"
-												onclick="openHostHelp();" onkeydown="if(event.key==='Enter'||event.key===' ')openHostHelp();" title="Open properties reference">
-											<i class="bi bi-question-circle"></i>
-										</span>
-									</h2>
-									<div id="hostViewAccProperties" class="accordion-collapse collapse" aria-labelledby="hostViewAccHeadProperties" data-bs-parent="#hostViewOptionsAccordion">
-										<div class="accordion-body p-2">
-											<div class="ace-panel">
-												<pre id="properties"><c:out value="${host.properties}" /></pre>
-												<textarea id="properties" name="properties" style="display: none;"></textarea>
-											</div>
-										</div>
-									</div>
-								</div>
-								<div class="accordion-item">
-									<h2 class="accordion-header" id="hostViewAccHeadJavascript">
-										<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#hostViewAccJavascript" aria-expanded="false" aria-controls="hostViewAccJavascript">
-											JavaScript
-										</button>
-									</h2>
-									<div id="hostViewAccJavascript" class="accordion-collapse collapse" aria-labelledby="hostViewAccHeadJavascript" data-bs-parent="#hostViewOptionsAccordion">
-										<div class="accordion-body p-2">
-											<div class="ace-panel">
-												<pre id="javascript"><c:out value="${host.javascript}" /></pre>
-												<textarea id="javascript" name="javascript" style="display: none;"></textarea>
-											</div>
-										</div>
-									</div>
-								</div>
-							</div>
-							</td>
-						</tr>
+</auth:then>
+</auth:if>
 
-						<auth:if basePathKey="transferhistory.basepath" paths="/">
-							<auth:then>
-
-						<c:if test="${host.type == 'Acquisition'}">
-						<tr>
-							<td colspan="3">&nbsp;</td>
-						</tr>
-
-						<tr>
-							<th>Progress</th>
-							<td colspan="3">
-								<div class="progress-terminal" style="min-width:860px;max-width:860px">
-									<div class="progress-terminal-hdr">
-										<i class="bi bi-activity text-success"></i> Activity Log
-										<button id="refreshLogBtn"
-												class="btn btn-sm btn-outline-secondary progress-terminal-btn py-0 px-2 ms-auto"
-												style="font-size:0.7rem;"
-												onclick="(function(btn){
-													btn.disabled=true;
-													var orig=btn.innerHTML;
-													btn.innerHTML='<span class=\'spinner-border spinner-border-sm\' role=\'status\'></span> Refreshing...';
-													fetch(window.location.href)
-														.then(function(r){return r.text();})
-														.then(function(html){
-															var doc=new DOMParser().parseFromString(html,'text/html');
-															var el=doc.getElementById('progressBody');
-															if(el) document.getElementById('progressBody').innerHTML=el.innerHTML;
-															btn.disabled=false; btn.innerHTML=orig;
-														})
-														.catch(function(){ btn.disabled=false; btn.innerHTML=orig; });
-												})(this)">
-											<i class="bi bi-arrow-clockwise"></i> Refresh
-										</button>
-										<button class="btn btn-sm btn-outline-secondary progress-terminal-btn py-0 px-2"
-												style="font-size:0.7rem;"
-												onclick="(function(btn){
-													var text = document.getElementById('progressBody').innerText;
-													navigator.clipboard.writeText(text).then(function(){
-														btn.innerHTML='<i class=\'bi bi-check-lg\'></i> Copied';
-														setTimeout(function(){ btn.innerHTML='<i class=\'bi bi-clipboard\'></i> Copy'; }, 1500);
-													});
-												})(this)">
-											<i class="bi bi-clipboard"></i> Copy
-										</button>
-									</div>
-									<div class="progress-terminal-body" id="progressBody">${host.formattedLastOutput}</div>
-								</div>
-							</td>
-						</tr>
-						</c:if>
-
-						<tr>
-							<td colspan="3">&nbsp;</td>
-						</tr>
-
-						<tr>
-							<th>Retry Frequency</th>
-							<td>${host.formattedRetryFrequency}</td>
-							<th>Total Data Sent</th>
-							<td><a STYLE="TEXT-DECORATION: NONE"
-								title="Sent: ${host.formattedSent}">${host.sent} bytes</a></td>
-						</tr>
-						<tr>
-							<th>Connections</th>
-							<td>${host.connections}</td>
-							<th>Total Time Taken</th>
-							<td>${host.formattedDuration}</td>
-						</tr>
-						<tr>
-							<th>Retry Count</th>
-							<td>${host.retryCount}</td>
-							<th>Bandwidth</th>
-							<td><a STYLE="TEXT-DECORATION: NONE"
-								title="Bandwidth: ${host.formattedBandWidth}">${host.formattedBandWidthInMBitsPerSeconds}
-									Mbits/s</a></td>
-						</tr>
-
-						<tr>
-							<td colspan="4"></td>
-						</tr>
-
-						<tr>
-							<th>Check</th>
-							<td><c:if test="${host.check}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
-									test="${!host.check}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></td>
-							<c:choose>
-								<c:when test="${not empty host.userMail}">
-									<th>Mail On Success</th>
-									<td><c:if test="${host.mailOnSuccess}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
-											test="${!host.mailOnSuccess}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></td>
-								</c:when>
-								<c:otherwise><td colspan="2"></td></c:otherwise>
-							</c:choose>
-						</tr>
-						<c:if test="${host.check || not empty host.userMail}">
-						<tr>
-							<c:choose>
-								<c:when test="${host.check}">
-									<th>Check Time</th>
-									<td class="date">${host.checkTime}</td>
-								</c:when>
-								<c:otherwise><td colspan="2"></td></c:otherwise>
-							</c:choose>
-							<c:choose>
-								<c:when test="${not empty host.userMail}">
-									<th>Mail On Error</th>
-									<td><c:if test="${host.mailOnError}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
-											test="${!host.mailOnError}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></td>
-								</c:when>
-								<c:otherwise><td colspan="2"></td></c:otherwise>
-							</c:choose>
-						</tr>
-						</c:if>
-						<c:if test="${host.check}">
-						<tr>
-							<th>Check Frequency</th>
-							<td>${host.formattedCheckFrequency}</td>
-							<th>Notify Once</th>
-							<td><c:if test="${host.notifyOnce}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
-									test="${!host.notifyOnce}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></td>
-						</tr>
-						</c:if>
-						<c:if test="${host.type == 'Acquisition' || not empty host.userMail}">
-						<tr>
-							<c:choose>
-								<c:when test="${host.type == 'Acquisition'}">
-									<th>Acquisition Time</th>
-									<td class="date">${host.acquisitionTime}</td>
-								</c:when>
-								<c:otherwise><td colspan="2"></td></c:otherwise>
-							</c:choose>
-							<c:choose>
-								<c:when test="${not empty host.userMail}">
-									<th>Owner Mail</th>
-									<td>${host.userMail}</td>
-								</c:when>
-								<c:otherwise><td colspan="2"></td></c:otherwise>
-							</c:choose>
-						</tr>
-						</c:if>
-						<c:if test="${host.type == 'Acquisition'}">
-						<tr>
-							<th>Acquisition Frequency</th>
-							<td>${host.formattedAcquisitionFrequency}</td>
-							<auth:if basePathKey="transferhistory.basepath" paths="/">
-								<auth:then>
-									<th>Valid</th>
-									<td><c:if test="${host.valid}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
-											test="${!host.valid}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></td>
-								</auth:then>
-							</auth:if>
-						</tr>
-						</c:if>
-
-					</auth:then>
-				</auth:if>
-
-			</table>
 
 			<c:if test="${host.type != 'Replication' && host.type != 'Source' && host.type != 'Backup'}">
 				<div class="card assoc-card mt-3" style="max-width:480px">

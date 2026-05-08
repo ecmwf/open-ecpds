@@ -116,7 +116,7 @@
             { targets: 12, orderable: false }
         ],
         order: [[2, 'desc']],
-        dom: "t<'d-flex align-items-center mt-2'i<'ms-auto'p>>",
+        dom: "t<'d-flex align-items-start mt-2'i<'ms-auto'p>>",
         language: {
             processing: '<span class="spinner-border spinner-border-sm me-1"></span> Loading&hellip;',
             emptyTable: 'No Data Transfers found based on these criteria.'

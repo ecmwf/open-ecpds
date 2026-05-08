@@ -16,11 +16,35 @@
     </tr>
     <tr><td></td></tr>
 
+
     <tr><td><a href='<bean:message key="host.basepath"/>/${host.id}?mode=changelog'><i class="bi bi-clock-history sidebar-icon"></i> Changes Log</a></td></tr>
 
     <auth:if basePathKey="transferhistory.basepath" paths="/">
         <auth:then>
             <tr><td><a href='<bean:message key="host.basepath"/>/edit/getOutput/view/${host.id}'><i class="bi bi-terminal sidebar-icon"></i> View Output</a></td></tr>
+        </auth:then>
+    </auth:if>
+
+    <tr><td><a href='<bean:message key="host.basepath"/>/edit/getReport/${host.id}'><i class="bi bi-wifi sidebar-icon"></i> Network Info</a></td></tr>
+    <c:if test="${host.type == 'Dissemination'}">
+        <tr>
+            <td style="border-top:none; padding-bottom:6px;">
+                <div class="d-flex flex-wrap gap-1 justify-content-center">
+                <c:forEach var="destination" items="${host.destinations}">
+                    <c:forEach var="proxy" items="${destination.proxyHostsAndPriorities}">
+                        <a class="badge bg-secondary text-white text-decoration-none"
+                           href='<bean:message key="host.basepath"/>/edit/getReport/${host.id}/${proxy.name.id}'
+                           title="via ${proxy.name.nickName}">${proxy.name.nickName}</a>
+                    </c:forEach>
+                </c:forEach>
+                </div>
+            </td>
+        </tr>
+    </c:if>
+
+    <auth:if basePathKey="transferhistory.basepath" paths="/">
+        <auth:then>
+            <tr><td style="border-top:1px solid var(--bs-border-color);"></td></tr>
             <tr>
                 <td><a href="#" onclick="confirmationDialog({
                     title: 'Clean Options',
@@ -42,22 +66,6 @@
         </auth:then>
     </auth:if>
 
-    <tr><td><a href='<bean:message key="host.basepath"/>/edit/getReport/${host.id}'><i class="bi bi-wifi sidebar-icon"></i> Network Info</a></td></tr>
-    <c:if test="${host.type == 'Dissemination'}">
-        <tr>
-            <td style="border-top:none; padding-bottom:6px;">
-                <div class="d-flex flex-wrap gap-1 justify-content-center">
-                <c:forEach var="destination" items="${host.destinations}">
-                    <c:forEach var="proxy" items="${destination.proxyHostsAndPriorities}">
-                        <a class="badge bg-secondary text-white text-decoration-none"
-                           href='<bean:message key="host.basepath"/>/edit/getReport/${host.id}/${proxy.name.id}'
-                           title="via ${proxy.name.nickName}">${proxy.name.nickName}</a>
-                    </c:forEach>
-                </c:forEach>
-                </div>
-            </td>
-        </tr>
-    </c:if>
 </table>
 
     </auth:then>

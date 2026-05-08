@@ -40,9 +40,6 @@ import java.util.Locale;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.displaytag.tags.TableTagParameters;
-import org.displaytag.util.ParamEncoder;
-
 import ecmwf.common.database.DataBaseCursor;
 import ecmwf.common.database.DataBaseObject;
 import ecmwf.common.text.Format;
@@ -397,30 +394,8 @@ public final class Util {
     public static DataBaseCursor getDataBaseCursor(final String displayId, final int recordsPerPage,
             final int defaultSort, final boolean descending, final HttpServletRequest request) {
         request.setAttribute("recordsPerPage", recordsPerPage);
-        final var encoder = new ParamEncoder(displayId);
-        // Get the start and end indexes!
-        final var paramPageNumber = encoder.encodeParameterName(TableTagParameters.PARAMETER_PAGE);
-        var start = 0;
-        try {
-            start = Integer.parseInt(request.getParameter(paramPageNumber));
-        } catch (final Throwable _) {
-            // Ignored
-        }
-        if (start > 0) {
-            start = (start - 1) * recordsPerPage;
-        }
-        final var end = start + recordsPerPage;
-        // Find the sort parameter!
-        var sort = request.getParameter(encoder.encodeParameterName(TableTagParameters.PARAMETER_SORT));
-        if (sort == null) {
-            sort = String.valueOf(defaultSort);
-        }
-        // Find the order parameter!
-        var order = request.getParameter(encoder.encodeParameterName(TableTagParameters.PARAMETER_ORDER));
-        if (order == null) {
-            order = descending ? "2" : "1"; // Descending is 2, Ascending is 1!
-        }
-        return new DataBaseCursor(sort, order, start, end);
+        // DisplayTag is no longer used; always return first page with default sort.
+        return new DataBaseCursor(String.valueOf(defaultSort), descending ? "2" : "1", 0, recordsPerPage);
     }
 
     /**

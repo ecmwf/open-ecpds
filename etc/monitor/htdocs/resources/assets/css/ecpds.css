@@ -1101,7 +1101,7 @@ A.menusubitem:visited {
 
 /* Let Bootstrap handle base <button> styling.
    Plain <button> elements without .btn get a neutral look. */
-button:not(.btn):not(.btn-close):not(.date-pill) {
+button:not(.btn):not(.btn-close):not(.date-pill):not(.accordion-button) {
  display: inline-block;
  border: 1px solid #bfbfbf;
  color: #555;
@@ -1112,7 +1112,7 @@ button:not(.btn):not(.btn-close):not(.date-pill) {
  background: #f8f9fa;
  cursor: pointer;
 }
-button:not(.btn):not(.btn-close):not(.date-pill):hover {
+button:not(.btn):not(.btn-close):not(.date-pill):not(.accordion-button):hover {
  border-color: #8c8c8c;
  background: #e9ecef;
 }
@@ -1191,6 +1191,17 @@ table.listing th.sorted {
     font-size: 0.875rem;
 }
 
+/* Top-align the "Showing X to Y of Z entries" info text with the pagination buttons.
+   DT Bootstrap5 applies padding-top:.85em to div.dt-info — remove it.
+   Also force align-items:flex-start on the info+paging flex row (the JSP uses mt-2
+   as the marker class) so both children start at the same top edge. */
+div.dt-container .dt-info {
+    padding-top: 0 !important;
+}
+div.dt-container .d-flex.mt-2 {
+    align-items: flex-start !important;
+}
+
 /* DataTables headers — restore default table-light background, add bottom border for separation */
 table.dataTable thead > tr > th {
     white-space: nowrap;
@@ -1204,7 +1215,18 @@ table.dataTable thead > tr > th {
 #destTableR th:first-child,        #destTableR td:first-child {
     padding-left: 0 !important;
     padding-right: 0 !important;
+    text-align: center !important;
+    vertical-align: middle !important;
 }
+/* Flag spans in the first column are display:block from the server — override to inline-block
+   so text-align:center on the parent td can horizontally centre them */
+#hostsTable td:first-child span.fi,
+#destinationsTable td:first-child span.fi,
+#destTableL td:first-child span.fi,
+#destTableR td:first-child span.fi {
+    display: inline-block !important;
+}
+
 
 /* DataTables sort arrows: default opacity 0.125 becomes invisible when th color is forced
    white (#fff !important on table.listing th). Raise to a visible level globally. */
@@ -1870,6 +1892,12 @@ img[src*="/assets/icons/"] {
     border-color: var(--bs-border-color);
 }
 [data-bs-theme=dark] .home-menu li a i { color: var(--bs-secondary-color); }
+
+/* In dark mode, borderless cards are nearly invisible — restore a subtle border */
+[data-bs-theme=dark] .card.border-0 {
+    border: 1px solid var(--bs-border-color) !important;
+    box-shadow: none !important;
+}
 
 /* assoc-chip / assoc-card dark mode (user, category, resource, policy, incoming pages) */
 [data-bs-theme=dark] .assoc-card .card-header { background: var(--bs-tertiary-bg); }

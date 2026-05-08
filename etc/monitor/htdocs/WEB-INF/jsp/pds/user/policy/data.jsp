@@ -2,7 +2,6 @@
 
 <%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean"%>
 <%@ taglib uri="/WEB-INF/tld/struts-tiles.tld" prefix="tiles"%>
-<%@ taglib uri="/WEB-INF/tld/displaytag.tld" prefix="display"%>
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content"%>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
@@ -32,101 +31,107 @@
 }
 .acc-help-btn:hover { color: var(--bs-primary); }
 .acc-help-btn.acc-help-active { color: var(--bs-primary); }
-table.fields {
-	width: 100%;
-	min-width: 400px;
-}
-table.fields > tbody > tr > th {
-	width: 1%;
-	white-space: nowrap;
-}
 .assoc-card .card-header { display:flex; align-items:center; gap:.4rem; padding:.5rem .75rem; background:#f8f9fa; font-size:.85rem; }
 .assoc-chip { display:inline-flex; align-items:center; gap:.25rem; background:#e9ecef; border-radius:1rem; padding:.2rem .6rem; font-size:.8rem; margin:.15rem; }
 </style>
 
-	<div class="form-info-banner" style="margin-left:0">
-		<i class="bi bi-shield-check text-primary flex-shrink-0"></i>
-		Data Policy: <strong><c:out value="${policy.id}"/></strong>
-	</div>
+<div class="row g-3">
+<div class="col-lg-6">
+<div class="card">
+<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+<i class="bi bi-shield-check text-primary"></i>
+<span class="fw-semibold">Data Policy: <c:out value="${policy.id}"/></span>
+<auth:if basePathKey="policy.basepath" paths="/edit/insert_form">
+<auth:then>
+<div class="d-flex gap-1 ms-auto flex-shrink-0">
+	<a href='<bean:message key="policy.basepath"/>/edit/insert_form'
+	   class="btn btn-sm btn-outline-success" title="Create new data policy"><i class="bi bi-plus-circle"></i></a>
+	<c:if test="${not empty policy.id}">
+	<a href='<bean:message key="policy.basepath"/>/edit/update_form/${policy.id}'
+	   class="btn btn-sm btn-outline-primary" title="Edit this data policy"><i class="bi bi-pencil"></i></a>
+	<a href='<bean:message key="policy.basepath"/>/edit/delete_form/${policy.id}'
+	   class="btn btn-sm btn-outline-danger" title="Delete this data policy"><i class="bi bi-trash"></i></a>
+	</c:if>
+</div>
+</auth:then>
+</auth:if>
+</div>
+<div class="card-body">
+<div class="row g-2 align-items-center">
+<div class="col-sm-4"><span class="text-muted small fw-semibold text-uppercase">Name</span></div>
+<div class="col-sm-8">${policy.id}</div>
+</div>
+<div class="row g-2 align-items-center mt-1">
+<div class="col-sm-4"><span class="text-muted small fw-semibold text-uppercase">Comment</span></div>
+<div class="col-sm-8">${policy.comment}</div>
+</div>
+<div class="row g-2 align-items-center mt-1">
+<div class="col-sm-4"><span class="text-muted small fw-semibold text-uppercase">Enabled</span></div>
+<div class="col-sm-8">
+<c:if test="${policy.active}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if>
+<c:if test="${!policy.active}"><i class="bi bi-x-circle-fill text-secondary" title="No"></i></c:if>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="col-lg-6">
+<div class="card assoc-card">
+  <div class="card-header">
+    <i class="bi bi-geo-alt text-secondary"></i>
+    <strong>Associated Destinations</strong>
+  </div>
+  <div class="card-body p-2">
+    <c:choose>
+      <c:when test="${empty policy.associatedDestinations}">
+        <p class="text-muted small mb-0"><em>No destinations assigned.</em></p>
+      </c:when>
+      <c:otherwise>
+        <div class="d-flex flex-wrap">
+          <c:forEach var="destination" items="${policy.associatedDestinations}">
+            <span class="assoc-chip">
+              <a href="<bean:message key="destination.basepath"/>/${destination.name}" title="${destination.comment}" class="text-decoration-none text-body">${destination.name}</a>
+            </span>
+          </c:forEach>
+        </div>
+      </c:otherwise>
+    </c:choose>
+  </div>
+</div>
+</div>
+</div>
 
-	<table border="0">
-		<tr>
-			<td valign="top">
-				<table class="fields">
-					<tr>
-						<th>Name</th>
-						<td>${policy.id}</td>
-					</tr>
-					<tr>
-						<th>Comment</th>
-						<td>${policy.comment}</td>
-					</tr>
-					<tr>
-						<th>Enabled</th>
-						<td><c:if test="${policy.active}">yes</c:if> <c:if
-								test="${!policy.active}">
-								<font color="red">no</font>
-							</c:if></td>
-					</tr>
-				</table></td>
-			<td width="25"></td>
-			<td valign="top">
-				<div class="card assoc-card">
-				  <div class="card-header">
-				    <i class="bi bi-geo-alt text-secondary"></i>
-				    <strong>Associated Destinations</strong>
-				  </div>
-				  <div class="card-body p-2">
-				    <c:choose>
-				      <c:when test="${empty policy.associatedDestinations}">
-				        <p class="text-muted small mb-0"><em>No destinations assigned.</em></p>
-				      </c:when>
-				      <c:otherwise>
-				        <div class="d-flex flex-wrap">
-				          <c:forEach var="destination" items="${policy.associatedDestinations}">
-				            <span class="assoc-chip">
-				              <a href="<bean:message key="destination.basepath"/>/${destination.name}" title="${destination.comment}" class="text-decoration-none text-body">${destination.name}</a>
-				            </span>
-				          </c:forEach>
-				        </div>
-				      </c:otherwise>
-				    </c:choose>
-				  </div>
-				</div></td>
-		</tr>
-		<tr>
-			<td colspan="3">
-				<table class="fields">
-					<tr>
-						<th>Options</th>
-						<td colspan="2">
-							<div class="accordion" id="policyViewOptionsAccordion" style="min-width:860px;max-width:860px">
-								<div class="accordion-item">
-									<h2 class="accordion-header" id="policyViewAccHeadProperties" style="position:relative;">
-										<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#policyViewAccProperties" aria-expanded="false" aria-controls="policyViewAccProperties">
-											Properties
-										</button>
-										<span role="button" tabindex="0" class="acc-help-btn" id="policyViewPropsHelpBtn"
-											onclick="openPolicyViewHelp();" onkeydown="if(event.key==='Enter'||event.key===' ')openPolicyViewHelp();" title="Open properties reference">
-											<i class="bi bi-question-circle"></i>
-										</span>
-									</h2>
-									<div id="policyViewAccProperties" class="accordion-collapse collapse" aria-labelledby="policyViewAccHeadProperties" data-bs-parent="#policyViewOptionsAccordion">
-										<div class="accordion-body p-2">
-											<div class="ace-panel">
-												<pre id="properties"><c:out value="${policy.properties}" /></pre>
-												<textarea id="properties" name="properties" style="display: none;"></textarea>
-											</div>
-										</div>
-									</div>
-								</div>
-							</div>
-						</td>
-					</tr>
-				</table>
-			</td>
-		</tr>
-	</table>
+<div class="mt-3">
+<div class="card">
+<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+<i class="bi bi-sliders text-primary"></i>
+<span class="fw-semibold">Options</span>
+</div>
+<div class="card-body p-2">
+<div class="accordion" id="policyViewOptionsAccordion">
+<div class="accordion-item">
+<h2 class="accordion-header" id="policyViewAccHeadProperties" style="position:relative;">
+<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#policyViewAccProperties" aria-expanded="false" aria-controls="policyViewAccProperties">
+Properties
+</button>
+<span role="button" tabindex="0" class="acc-help-btn" id="policyViewPropsHelpBtn"
+    onclick="openPolicyViewHelp();" onkeydown="if(event.key==='Enter'||event.key===' ')openPolicyViewHelp();" title="Open properties reference">
+    <i class="bi bi-question-circle"></i>
+</span>
+</h2>
+<div id="policyViewAccProperties" class="accordion-collapse collapse" aria-labelledby="policyViewAccHeadProperties" data-bs-parent="#policyViewOptionsAccordion">
+<div class="accordion-body p-2">
+<div class="ace-panel">
+<pre id="properties"><c:out value="${policy.properties}" /></pre>
+<textarea id="properties" name="properties" style="display: none;"></textarea>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
 
 <%-- Help offcanvas panel --%>
 <div class="offcanvas offcanvas-end" tabindex="-1" id="policyViewHelpOffcanvas"

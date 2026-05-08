@@ -9,13 +9,8 @@
 
 <tiles:insert page="/WEB-INF/jsp/pds/user/policy/data.jsp"/>
 
-<table style="width:100%">
-<tr>
-<td colspan="2" class="pt-2">
+<div class="mt-3">
 <a href="/do/user/policy" class="btn btn-sm btn-outline-secondary">
     <i class="bi bi-arrow-left"></i> All Data Policies
 </a>
-</td>
-</tr>
-
-</table>
+</div>

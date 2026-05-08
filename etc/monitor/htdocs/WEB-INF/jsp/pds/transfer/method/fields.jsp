@@ -9,85 +9,81 @@
 <tiles:useAttribute id="actionFormName" name="action.form.name"
 	classname="java.lang.String" />
 <tiles:useAttribute name="isInsert" classname="java.lang.String" />
-<c:choose>
-    <c:when test="${isInsert == 'true'}">
-        <div class="form-info-banner" style="margin-left:0;margin-bottom:0.5rem">
-            <i class="bi bi-plug text-primary flex-shrink-0"></i>
-            Create a new Transfer Method to define how data is sent.
+<div class="card border-0 shadow-sm mb-3">
+  <div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+    <i class="bi bi-plug text-primary"></i>
+    <span class="fw-semibold">
+      <c:choose>
+        <c:when test="${isInsert == 'true'}">New Transfer Method</c:when>
+        <c:otherwise>Edit Transfer Method</c:otherwise>
+      </c:choose>
+    </span>
+  </div>
+  <div class="card-body pb-2">
+    <div class="row g-2">
+
+      <%-- Name --%>
+      <div class="col-sm-4">
+        <label class="form-label mb-1">Name</label>
+        <logic:match name="isInsert" value="true">
+          <div class="d-flex align-items-center gap-2">
+            <input id="name" name="name" type="text"
+              class="form-control form-control-sm"
+              pattern="[a-zA-Z0-9]+"
+              title="Letters and digits only (e.g. Ftp)"
+              oninput="validatePatternInput(this, 'name-feedback')">
+            <span id="name-feedback"></span>
+          </div>
+        </logic:match>
+        <logic:notMatch name="isInsert" value="true">
+          <div class="form-control-plaintext form-control-sm fw-medium">
+            <c:out value="${requestScope[actionFormName].name}" />
+            <html:hidden property="name" />
+          </div>
+        </logic:notMatch>
+      </div>
+
+      <%-- Value --%>
+      <div class="col-sm-4">
+        <label class="form-label mb-1">Value</label>
+        <html:text property="value" styleClass="form-control form-control-sm" />
+      </div>
+
+      <%-- Transfer Module --%>
+      <div class="col-sm-4">
+        <label class="form-label mb-1">Transfer Module</label>
+        <bean:define id="methods" name="transferMethodActionForm"
+          property="ecTransModuleOptions" type="java.util.Collection" />
+        <html:select property="ecTransModuleName" styleClass="form-select form-select-sm">
+          <html:options collection="methods" property="name" labelProperty="name" />
+        </html:select>
+      </div>
+
+      <%-- Comment --%>
+      <div class="col-sm-8">
+        <label class="form-label mb-1">Comment</label>
+        <html:text property="comment" styleClass="form-control form-control-sm" />
+      </div>
+
+      <%-- Flags --%>
+      <div class="col-sm-4">
+        <label class="form-label mb-1 d-block">&nbsp;</label>
+        <div class="d-flex flex-column gap-1 pt-1">
+          <div class="form-check form-switch mb-0">
+            <html:checkbox property="restrict" styleClass="form-check-input" styleId="restrict" />
+            <label class="form-check-label small" for="restrict">Restrict</label>
+          </div>
+          <div class="form-check form-switch mb-0">
+            <html:checkbox property="resolve" styleClass="form-check-input" styleId="resolve" />
+            <label class="form-check-label small" for="resolve">Resolve</label>
+          </div>
+          <div class="form-check form-switch mb-0">
+            <html:checkbox property="active" styleClass="form-check-input" styleId="active" />
+            <label class="form-check-label small" for="active">Enabled</label>
+          </div>
         </div>
-    </c:when>
-    <c:otherwise>
-        <div class="form-info-banner" style="margin-left:0;margin-bottom:0.5rem">
-            <i class="bi bi-plug text-primary flex-shrink-0"></i>
-            Edit the Transfer Method configuration.
-        </div>
-    </c:otherwise>
-</c:choose>
+      </div>
 
-<table class="fields">
-
-	<tiles:useAttribute id="actionFormName" name="action.form.name"
-		classname="java.lang.String" />
-	<tiles:useAttribute name="isInsert" classname="java.lang.String" />
-
-
-
-	<logic:match name="isInsert" value="true">
-		<tr>
-			<th>Name</th>
-			<td>
-				<div class="d-flex align-items-center gap-2">
-					<input id="name" name="name" type="text"
-						pattern="[a-zA-Z0-9]+"
-						title="Letters and digits only (e.g. Ftp)"
-						oninput="validatePatternInput(this, 'name-feedback')">
-					<span id="name-feedback"></span>
-				</div>
-			</td>
-		</tr>
-	</logic:match>
-
-	<logic:notMatch name="isInsert" value="true">
-		<tr>
-			<th>Name</th>
-			<td><c:out value="${requestScope[actionFormName].name}" /> <html:hidden
-					property="name" /></td>
-		</tr>
-	</logic:notMatch>
-
-	<tr>
-		<th>Value</th>
-		<td><html:text property="value" /></td>
-	</tr>
-
-	<tr>
-		<th>Transfer Module</th>
-		<td><bean:define id="methods" name="transferMethodActionForm"
-				property="ecTransModuleOptions" type="java.util.Collection	" /> <html:select
-				property="ecTransModuleName">
-				<html:options collection="methods" property="name"
-					labelProperty="name" />
-			</html:select></td>
-	</tr>
-
-	<tr>
-		<th>Restrict</th>
-		<td><html:checkbox property="restrict" /></td>
-	</tr>
-	<tr>
-		<th>Resolve</th>
-		<td><html:checkbox property="resolve" /></td>
-	</tr>
-	<tr>
-		<th>Comment</th>
-		<td><html:text property="comment" /></td>
-	</tr>
-	<tr>
-		<th>Enabled</th>
-		<td><html:checkbox property="active" /></td>
-	</tr>
-
-</table>
-
-<script>
-</script>
+    </div>
+  </div>
+</div>

@@ -2,7 +2,6 @@
 
 <%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean"%>
 <%@ taglib uri="/WEB-INF/tld/struts-tiles.tld" prefix="tiles"%>
-<%@ taglib uri="/WEB-INF/tld/displaytag.tld" prefix="display"%>
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content"%>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
@@ -25,15 +24,6 @@
 	margin-top: 8px;
 	margin-bottom: 4px;
 }
-
-table.fields {
-	width: 100%;
-	min-width: 400px;
-}
-table.fields > tbody > tr > th {
-	width: 1%;
-	white-space: nowrap;
-}
 .assoc-card .card-header { display:flex; align-items:center; gap:.4rem; padding:.5rem .75rem; background:#f8f9fa; font-size:.85rem; }
 .assoc-chip { display:inline-flex; align-items:center; gap:.25rem; background:#e9ecef; border-radius:1rem; padding:.2rem .6rem; font-size:.8rem; margin:.15rem; }
 .acc-help-btn {
@@ -47,201 +37,206 @@ table.fields > tbody > tr > th {
 .acc-help-btn.acc-help-active { color: var(--bs-primary); }
 </style>
 
-	<div class="form-info-banner" style="margin-left:0">
-		<i class="bi bi-person-fill-gear text-primary flex-shrink-0"></i>
-		Data User: <strong><c:out value="${incoming.id}"/></strong>
+	<div class="row g-3">
+		<div class="col-lg-6">
+			<div class="card">
+				<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+					<i class="bi bi-person-fill-gear text-primary"></i>
+					<span class="fw-semibold">Data User: <c:out value="${incoming.id}" /></span>
+					<auth:if basePathKey="incoming.basepath" paths="/edit/insert_form">
+					<auth:then>
+					<div class="d-flex gap-1 ms-auto flex-shrink-0">
+						<a href='<bean:message key="incoming.basepath"/>/edit/insert_form'
+						   class="btn btn-sm btn-outline-success" title="Create new data user"><i class="bi bi-plus-circle"></i></a>
+						<c:if test="${not empty incoming.id}">
+						<a href='<bean:message key="incoming.basepath"/>/edit/update_form/${incoming.id}'
+						   class="btn btn-sm btn-outline-primary" title="Edit this data user"><i class="bi bi-pencil"></i></a>
+						<a href='<bean:message key="incoming.basepath"/>/edit/delete_form/${incoming.id}'
+						   class="btn btn-sm btn-outline-danger" title="Delete this data user"><i class="bi bi-trash"></i></a>
+						</c:if>
+					</div>
+					</auth:then>
+					</auth:if>
+				</div>
+				<div class="card-body">
+					<div class="d-flex flex-column gap-2">
+						<div class="row g-2 align-items-center">
+							<div class="col-sm-4"><span class="text-muted small fw-semibold text-uppercase">Data Login</span></div>
+							<div class="col-sm-8">${incoming.id}</div>
+						</div>
+						<div class="row g-2 align-items-center">
+							<div class="col-sm-4"><span class="text-muted small fw-semibold text-uppercase">Comment</span></div>
+							<div class="col-sm-8">${incoming.comment}</div>
+						</div>
+						<div class="row g-2 align-items-center">
+							<div class="col-sm-4"><span class="text-muted small fw-semibold text-uppercase">Country</span></div>
+							<div class="col-sm-8"><span class="fi fi-${fn:toLowerCase(incoming.country.iso)} me-1" title="${incoming.country.name}" style="font-size:1.1em;vertical-align:middle"></span>${incoming.country.name}</div>
+						</div>
+						<div class="row g-2 align-items-center">
+							<div class="col-sm-4"><span class="text-muted small fw-semibold text-uppercase">Enabled</span></div>
+							<div class="col-sm-8"><c:if test="${incoming.active}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if><c:if test="${!incoming.active}"><i class="bi bi-x-circle-fill text-secondary" title="No"></i></c:if></div>
+						</div>
+						<div class="row g-2 align-items-center">
+							<div class="col-sm-4"><span class="text-muted small fw-semibold text-uppercase">TOTP authentication</span></div>
+							<div class="col-sm-8"><c:if test="${incoming.isSynchronized}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if><c:if test="${!incoming.isSynchronized}"><i class="bi bi-x-circle-fill text-secondary" title="No"></i></c:if></div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="col-lg-6">
+			<div class="row g-2" style="max-width:480px">
+
+			  <div class="col-12">
+			    <div class="card assoc-card">
+			      <div class="card-header">
+			        <i class="bi bi-shield-check text-secondary"></i>
+			        <strong>Data Policies</strong>
+			      </div>
+			      <div class="card-body p-2">
+			        <c:choose>
+			          <c:when test="${empty incoming.associatedIncomingPolicies}">
+			            <p class="text-muted small mb-0"><em>No data policies assigned.</em></p>
+			          </c:when>
+			          <c:otherwise>
+			            <div class="d-flex flex-wrap">
+			              <c:forEach var="policy" items="${incoming.associatedIncomingPolicies}">
+			                <span class="assoc-chip">
+			                  <a href="<bean:message key="policy.basepath"/>/${policy.id}" title="${policy.comment}" class="text-decoration-none text-body">${policy.id}</a>
+			                </span>
+			              </c:forEach>
+			            </div>
+			          </c:otherwise>
+			        </c:choose>
+			      </div>
+			    </div>
+			  </div>
+
+			  <div class="col-12">
+			    <div class="card assoc-card">
+			      <div class="card-header">
+			        <i class="bi bi-geo-alt text-secondary"></i>
+			        <strong>Destinations</strong>
+			      </div>
+			      <div class="card-body p-2">
+			        <c:choose>
+			          <c:when test="${empty incoming.associatedDestinations}">
+			            <p class="text-muted small mb-0"><em>No destinations assigned.</em></p>
+			          </c:when>
+			          <c:otherwise>
+			            <div class="d-flex flex-wrap">
+			              <c:forEach var="destination" items="${incoming.associatedDestinations}">
+			                <span class="assoc-chip">
+			                  <a href="<bean:message key="destination.basepath"/>/${destination.name}" title="${destination.comment}" class="text-decoration-none text-body">${destination.name}</a>
+			                </span>
+			              </c:forEach>
+			            </div>
+			          </c:otherwise>
+			        </c:choose>
+			      </div>
+			    </div>
+			  </div>
+
+			  <div class="col-12">
+			    <div class="card assoc-card">
+			      <div class="card-header">
+			        <i class="bi bi-gear text-secondary"></i>
+			        <strong>Permissions</strong>
+			      </div>
+			      <div class="card-body p-2">
+			        <c:choose>
+			          <c:when test="${empty incoming.associatedOperations}">
+			            <p class="text-muted small mb-0"><em>No permissions assigned.</em></p>
+			          </c:when>
+			          <c:otherwise>
+			            <div class="d-flex flex-wrap">
+			              <c:forEach var="operation" items="${incoming.associatedOperations}">
+			                <span class="assoc-chip">
+			                  <span title="${operation.comment}">${operation.name}</span>
+			                </span>
+			              </c:forEach>
+			            </div>
+			          </c:otherwise>
+			        </c:choose>
+			      </div>
+			    </div>
+			  </div>
+
+			  <div class="col-12">
+			    <div class="card assoc-card">
+			      <div class="card-header">
+			        <i class="bi bi-plug text-secondary"></i>
+			        <strong>Current Sessions</strong>
+			      </div>
+			      <div class="card-body p-2">
+			        <c:choose>
+			          <c:when test="${empty incoming.incomingConnections}">
+			            <p class="text-muted small mb-0"><em>No active sessions.</em></p>
+			          </c:when>
+			          <c:otherwise>
+			            <div class="d-flex flex-wrap">
+			              <c:forEach var="incomingSession" items="${incoming.incomingConnections}">
+			                <span class="assoc-chip">
+			                  <span title="Mover: ${incomingSession.dataMoverName} | Duration: ${incomingSession.formatedDuration}">${incomingSession.protocol} &middot; ${incomingSession.remoteIpAddress}</span>
+			                </span>
+			              </c:forEach>
+			            </div>
+			          </c:otherwise>
+			        </c:choose>
+			      </div>
+			    </div>
+			  </div>
+
+			</div>
+		</div>
 	</div>
 
-	<table border="0">
-		<tr>
-			<td valign="top">
-				<table class="fields">
-					<tr>
-						<th>Data Login</th>
-						<td>${incoming.id}</td>
-					</tr>
-					<tr>
-						<th>Comment</th>
-						<td>${incoming.comment}</td>
-					</tr>
-					<tr>
-						<th>Country</th>
-						<td><span class="fi fi-${fn:toLowerCase(incoming.country.iso)} me-1" title="${incoming.country.name}" style="font-size:1.1em;vertical-align:middle"></span>${incoming.country.name}</td>
-					</tr>
-					<tr>
-						<th>Enabled</th>
-						<td><c:if test="${incoming.active}">yes</c:if> <c:if
-								test="${!incoming.active}">
-								<font color="red">no</font>
-							</c:if></td>
-					</tr>
-					
-					<tr>
-						<td>&nbsp;</td>
-					</tr>
-
-					<tr>
-						<th>TOTP authentication</th>
-						<td><c:if test="${incoming.isSynchronized}">yes</c:if> <c:if
-								test="${!incoming.isSynchronized}">no</c:if></td>
-					</tr>
-
-				</table></td>
-			<td width="25"></td>
-			<td valign="top">
-				<div class="row g-2" style="max-width:480px">
-
-				  <div class="col-12">
-				    <div class="card assoc-card">
-				      <div class="card-header">
-				        <i class="bi bi-shield-check text-secondary"></i>
-				        <strong>Data Policies</strong>
-				      </div>
-				      <div class="card-body p-2">
-				        <c:choose>
-				          <c:when test="${empty incoming.associatedIncomingPolicies}">
-				            <p class="text-muted small mb-0"><em>No data policies assigned.</em></p>
-				          </c:when>
-				          <c:otherwise>
-				            <div class="d-flex flex-wrap">
-				              <c:forEach var="policy" items="${incoming.associatedIncomingPolicies}">
-				                <span class="assoc-chip">
-				                  <a href="<bean:message key="policy.basepath"/>/${policy.id}" title="${policy.comment}" class="text-decoration-none text-body">${policy.id}</a>
-				                </span>
-				              </c:forEach>
-				            </div>
-				          </c:otherwise>
-				        </c:choose>
-				      </div>
-				    </div>
-				  </div>
-
-				  <div class="col-12">
-				    <div class="card assoc-card">
-				      <div class="card-header">
-				        <i class="bi bi-geo-alt text-secondary"></i>
-				        <strong>Destinations</strong>
-				      </div>
-				      <div class="card-body p-2">
-				        <c:choose>
-				          <c:when test="${empty incoming.associatedDestinations}">
-				            <p class="text-muted small mb-0"><em>No destinations assigned.</em></p>
-				          </c:when>
-				          <c:otherwise>
-				            <div class="d-flex flex-wrap">
-				              <c:forEach var="destination" items="${incoming.associatedDestinations}">
-				                <span class="assoc-chip">
-				                  <a href="<bean:message key="destination.basepath"/>/${destination.name}" title="${destination.comment}" class="text-decoration-none text-body">${destination.name}</a>
-				                </span>
-				              </c:forEach>
-				            </div>
-				          </c:otherwise>
-				        </c:choose>
-				      </div>
-				    </div>
-				  </div>
-
-				  <div class="col-12">
-				    <div class="card assoc-card">
-				      <div class="card-header">
-				        <i class="bi bi-gear text-secondary"></i>
-				        <strong>Permissions</strong>
-				      </div>
-				      <div class="card-body p-2">
-				        <c:choose>
-				          <c:when test="${empty incoming.associatedOperations}">
-				            <p class="text-muted small mb-0"><em>No permissions assigned.</em></p>
-				          </c:when>
-				          <c:otherwise>
-				            <div class="d-flex flex-wrap">
-				              <c:forEach var="operation" items="${incoming.associatedOperations}">
-				                <span class="assoc-chip">
-				                  <span title="${operation.comment}">${operation.name}</span>
-				                </span>
-				              </c:forEach>
-				            </div>
-				          </c:otherwise>
-				        </c:choose>
-				      </div>
-				    </div>
-				  </div>
-
-				  <div class="col-12">
-				    <div class="card assoc-card">
-				      <div class="card-header">
-				        <i class="bi bi-plug text-secondary"></i>
-				        <strong>Current Sessions</strong>
-				      </div>
-				      <div class="card-body p-2">
-				        <c:choose>
-				          <c:when test="${empty incoming.incomingConnections}">
-				            <p class="text-muted small mb-0"><em>No active sessions.</em></p>
-				          </c:when>
-				          <c:otherwise>
-				            <div class="d-flex flex-wrap">
-				              <c:forEach var="incomingSession" items="${incoming.incomingConnections}">
-				                <span class="assoc-chip">
-				                  <span title="Mover: ${incomingSession.dataMoverName} | Duration: ${incomingSession.formatedDuration}">${incomingSession.protocol} &middot; ${incomingSession.remoteIpAddress}</span>
-				                </span>
-				              </c:forEach>
-				            </div>
-				          </c:otherwise>
-				        </c:choose>
-				      </div>
-				    </div>
-				  </div>
-
-				</div>
-			</td>
-		</tr>
-		<tr>
-			<td colspan="3">
-				<table class="fields">
-					<tr>
-						<th>Options</th>
-						<td colspan="2">
-							<div class="accordion" id="incomingViewOptionsAccordion" style="min-width:860px;max-width:860px">
-								<div class="accordion-item">
-									<h2 class="accordion-header" id="incomingViewAccHeadProperties" style="position:relative;">
-										<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#incomingViewAccProperties" aria-expanded="false" aria-controls="incomingViewAccProperties">
-											Properties
-										</button>
-										<span role="button" tabindex="0" class="acc-help-btn" id="incomingViewPropsHelpBtn"
-											onclick="openIncomingViewHelp();" onkeydown="if(event.key==='Enter'||event.key===' ')openIncomingViewHelp();" title="Open properties reference">
-											<i class="bi bi-question-circle"></i>
-										</span>
-									</h2>
-									<div id="incomingViewAccProperties" class="accordion-collapse collapse" aria-labelledby="incomingViewAccHeadProperties" data-bs-parent="#incomingViewOptionsAccordion">
-										<div class="accordion-body p-2">
-											<div class="ace-panel">
-												<pre id="userData"><c:out value="${incoming.properties}" /></pre>
-												<textarea id="userData" name="userData" style="display: none;"></textarea>
-											</div>
-										</div>
-									</div>
-								</div>
-								<div class="accordion-item">
-									<h2 class="accordion-header" id="incomingViewAccHeadSSHKeys">
-										<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#incomingViewAccSSHKeys" aria-expanded="false" aria-controls="incomingViewAccSSHKeys">
-											Authorized SSH Keys
-										</button>
-									</h2>
-									<div id="incomingViewAccSSHKeys" class="accordion-collapse collapse" aria-labelledby="incomingViewAccHeadSSHKeys" data-bs-parent="#incomingViewOptionsAccordion">
-										<div class="accordion-body p-2">
-											<div class="ace-panel">
-												<pre id="authorizedSSHKeys"><c:out value="${incoming.authorizedSSHKeys}" /></pre>
-												<textarea id="authorizedSSHKeys" name="authorizedSSHKeys" style="display: none;"></textarea>
-											</div>
-										</div>
-									</div>
-								</div>
+<div class="mt-3">
+	<div class="card">
+		<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+			<i class="bi bi-sliders text-primary"></i>
+			<span class="fw-semibold">Options</span>
+		</div>
+		<div class="card-body p-2">
+			<div class="accordion" id="incomingViewOptionsAccordion">
+				<div class="accordion-item">
+					<h2 class="accordion-header" id="incomingViewAccHeadProperties" style="position:relative;">
+						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#incomingViewAccProperties" aria-expanded="false" aria-controls="incomingViewAccProperties">
+							Properties
+						</button>
+						<span role="button" tabindex="0" class="acc-help-btn" id="incomingViewPropsHelpBtn"
+							onclick="openIncomingViewHelp();" onkeydown="if(event.key==='Enter'||event.key===' ')openIncomingViewHelp();" title="Open properties reference">
+							<i class="bi bi-question-circle"></i>
+						</span>
+					</h2>
+					<div id="incomingViewAccProperties" class="accordion-collapse collapse" aria-labelledby="incomingViewAccHeadProperties" data-bs-parent="#incomingViewOptionsAccordion">
+						<div class="accordion-body p-2">
+							<div class="ace-panel">
+								<pre id="userData"><c:out value="${incoming.properties}" /></pre>
+								<textarea id="userData" name="userData" style="display: none;"></textarea>
 							</div>
-						</td>
-					</tr>
-				</table>
-			</td>
-		</tr>
-	</table>
+						</div>
+					</div>
+				</div>
+				<div class="accordion-item">
+					<h2 class="accordion-header" id="incomingViewAccHeadSSHKeys">
+						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#incomingViewAccSSHKeys" aria-expanded="false" aria-controls="incomingViewAccSSHKeys">
+							Authorized SSH Keys
+						</button>
+					</h2>
+					<div id="incomingViewAccSSHKeys" class="accordion-collapse collapse" aria-labelledby="incomingViewAccHeadSSHKeys" data-bs-parent="#incomingViewOptionsAccordion">
+						<div class="accordion-body p-2">
+							<div class="ace-panel">
+								<pre id="authorizedSSHKeys"><c:out value="${incoming.authorizedSSHKeys}" /></pre>
+								<textarea id="authorizedSSHKeys" name="authorizedSSHKeys" style="display: none;"></textarea>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
 
 <%-- Help offcanvas panel --%>
 <div class="offcanvas offcanvas-end" tabindex="-1" id="incomingViewHelpOffcanvas"
@@ -261,12 +256,12 @@ table.fields > tbody > tr > th {
 	<script>
 		var editorProperties = getEditorProperties(true, false, "userData", "crystal");
 		editorProperties.setOptions({minLines: 10, maxLines: 20});
-		
+
 		// Get the completions from the bean!      		
     	var completions = [
     		${incoming.completions}
     	];
-		
+
     	$(document).ready(function() {
     		$('#incomingViewHelpContent').html(getHelpHtmlContent(completions, 'Available Options for this Data User'));
     		var navEl = document.querySelector('#incomingViewHelpContent .help-nav');
@@ -275,7 +270,7 @@ table.fields > tbody > tr > th {
 
     	// Call the function to process each line
     	checkEachLine(editorProperties);
-        
+
 		function _scrollIncomingViewHelpToCursor() {
 			var row = editorProperties.selection.getCursor().row;
 			var line = editorProperties.session.getLine(row) || '';
@@ -331,4 +326,3 @@ table.fields > tbody > tr > th {
 		});
 	</script>
 </c:if>
-

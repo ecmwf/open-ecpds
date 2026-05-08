@@ -800,6 +800,9 @@
 			type="ecmwf.ecpds.master.plugin.http.controller.transfer.history.GetTransferHistoryAction">
 			<forward name="success" path=".pds.transfer.history" />
 		</action>
+		<action path="/transfer/history/list"
+			type="ecmwf.ecpds.master.plugin.http.controller.transfer.history.GetTransferHistoryListJsonAction">
+		</action>
 		<action path="/transfer/history/*" parameter="{1}"
 			type="ecmwf.ecpds.master.plugin.http.controller.transfer.history.GetTransferHistoryAction">
 			<forward name="success" path=".pds.transfer.history.detail" />
@@ -825,6 +828,9 @@
 		<action path="/user/event"
 			type="ecmwf.ecpds.master.plugin.http.controller.user.user.GetUserEventsAction">
 			<forward name="success" path=".pds.user.event" />
+		</action>
+		<action path="/user/event/list"
+			type="ecmwf.ecpds.master.plugin.http.controller.user.user.GetUserEventListJsonAction">
 		</action>
 		<action path="/user/user/*" parameter="{1}"
 			type="ecmwf.ecpds.master.plugin.http.controller.user.user.GetUserAction">
@@ -890,6 +896,9 @@
 		<action path="/user/history"
 			type="ecmwf.ecpds.master.plugin.http.controller.user.incoming.GetIncomingHistoryAction">
 			<forward name="success" path=".pds.user.history" />
+		</action>
+		<action path="/user/history/list"
+			type="ecmwf.ecpds.master.plugin.http.controller.user.incoming.GetIncomingHistoryListJsonAction">
 		</action>
 		<action path="/user/incoming"
 			type="ecmwf.ecpds.master.plugin.http.controller.user.incoming.GetIncomingUserAction">

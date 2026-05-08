@@ -7,15 +7,9 @@
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
 
 <tiles:insert page="/WEB-INF/jsp/pds/user/user/data.jsp"/>
-
-<table>
-<tr>
-<td colspan="2" class="pt-2 d-flex gap-2 flex-wrap">
+<div class="mt-3 d-flex gap-2 flex-wrap">
 <a href="/do/user/user" class="btn btn-sm btn-outline-secondary">
     <i class="bi bi-arrow-left"></i> All Web Users
 </a>
 <auth:link basePathKey="event.basepath" href="/${user.id}" styleClass="btn btn-sm btn-outline-secondary">Web Event Logs for ${user.id}</auth:link>
-</td>
-</tr>
-
-</table>
+</div>

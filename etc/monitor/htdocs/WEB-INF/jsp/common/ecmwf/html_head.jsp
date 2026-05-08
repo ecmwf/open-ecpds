@@ -21,7 +21,7 @@ request.setAttribute("jsp_date_before", new java.util.Date());
 <!-- Bootstrap Icons -->
 <link rel="stylesheet" href="/bootstrap-icons/bootstrap-icons.min.css">
 <!-- Flag Icons (local SVG, best quality) -->
-<link rel="stylesheet" href="/flag-icons/css/flag-icons.min.css?v=20260417b">
+<link rel="stylesheet" href="/flag-icons/css/flag-icons.min.css?v=20260507e">
 <!-- DataTables with Bootstrap 5 styling -->
 <link rel="stylesheet" href="/datatables/css/dataTables.bootstrap5.min.css">
 <style>
@@ -32,11 +32,18 @@ table.dataTable td + td, table.dataTable th + th { border-left: 1px solid rgba(0
    When <=1 page every button is either active (current page) or disabled (prev/next arrows),
    so there is no li that is neither active nor disabled -> hide the whole dt-paging block. */
 .dt-paging:not(:has(li.dt-paging-button:not(.active):not(.disabled))) { display: none !important; }
+/* Bootstrap sets margin-bottom:1rem on <pre>; the .ace-panel BFC contains this as blank space. Reset it. */
+.ace_editor { margin-bottom: 0 !important; }
+/* Ace editor: thin overlay h-scrollbar so it doesn't create a blank strip at the bottom */
+.ace_scrollbar-h::-webkit-scrollbar { height: 4px; }
+.ace_scrollbar-h::-webkit-scrollbar-track { background: transparent; }
+.ace_scrollbar-h::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.4); border-radius: 2px; }
+.ace_scrollbar-h { scrollbar-width: thin; scrollbar-color: rgba(128,128,128,0.4) transparent; }
 </style>
 <!-- jQuery UI (kept for sliders and date pickers) -->
 <link rel="stylesheet" href="/jquery/jquery-ui.min.css">
 <!-- Application styles (loaded last to override where needed) -->
-<link rel="stylesheet" href="/assets/css/ecpds.css?v=20260420c" type="text/css">
+<link rel="stylesheet" href="/assets/css/ecpds.css?v=20260508a" type="text/css">
 
 <script src="/ace-editor/ace.js" charset="utf-8"></script>
 <script src="/ace-editor/ext-language_tools.js" charset="utf-8"></script>
@@ -167,7 +174,7 @@ function filterSelect(inp, selId) {
 }
 
 $(document).ready(function() {
-    // Restore scroll position after a DisplayTag sort-link page reload
+    // Restore scroll position after assoc-card add/remove navigation
     var savedScroll = sessionStorage.getItem('scrollY');
     if (savedScroll !== null) {
         sessionStorage.removeItem('scrollY');
@@ -178,14 +185,19 @@ $(document).ready(function() {
     } else {
         document.documentElement.style.visibility = '';
     }
-    $(document).on('click', 'th.sortable a, th.order1 a, th.order2 a', function() {
-        sessionStorage.setItem('scrollY', window.scrollY);
-    });
 
     // Receive messages from the testSource() sandbox iframe (ecpds.js)
     window.addEventListener('message', function(e) {
         if (e.data && e.data.type === 'ecpds-sandbox-result') {
-            showToast(e.data.message, e.data.level || 'info');
+            var el = document.getElementById('testResultContent');
+            var modal = document.getElementById('testResultModal');
+            if (el && modal) {
+                el.textContent = e.data.message;
+                el.style.color = e.data.level === 'danger' ? 'var(--bs-danger)' : 'var(--bs-body-color)';
+                bootstrap.Modal.getOrCreateInstance(modal).show();
+            } else {
+                showToast(e.data.message, e.data.level || 'info');
+            }
         }
     });
 
@@ -203,33 +215,19 @@ $(document).ready(function() {
 
     // Apply Bootstrap table classes to all listing tables
     $('table.listing').addClass('table table-sm table-hover table-bordered');
-    // Apply DataTables only to tables NOT already managed by DisplayTag.
-    // DisplayTag signals its presence via:
-    //   .pagebanner   - server-side paging wrapper
-    //   th.sortable / th.sorted - sortable column headers
-    //   tr.empty      - "Nothing found" colspan row (empty list)
-    //   <caption>     - explicit caption element (belt-and-suspenders)
-    // Tables that should never use DataTables can add class="no-dt".
+    // Apply DataTables to listing tables (add class="no-dt" to opt out).
     $('table.listing').each(function() {
         var $t = $(this);
         if ($t.hasClass('no-dt')) return;
-        var hasDisplayTagPaging   = $t.closest('div, section, td').find('.pagebanner').length > 0;
-        var hasDisplayTagSorting  = $t.find('th.sortable, th.sorted').length > 0;
-        var hasDisplayTagCaption  = $t.children('caption').length > 0;
-        var hasDisplayTagEmpty    = $t.find('tr.empty').length > 0;
-        if (!hasDisplayTagPaging && !hasDisplayTagSorting && !hasDisplayTagCaption && !hasDisplayTagEmpty) {
-            try {
-                $t.DataTable({
-                    paging:    false,
-                    searching: false,
-                    ordering:  true,
-                    info:      false
-                });
-            } catch(e) {
-                console.warn('DataTables init failed for table:', $t.attr('id'), e);
-            }
-        } else {
-            $t.addClass('table-striped');
+        try {
+            $t.DataTable({
+                paging:    false,
+                searching: false,
+                ordering:  true,
+                info:      false
+            });
+        } catch(e) {
+            console.warn('DataTables init failed for table:', $t.attr('id'), e);
         }
     });
     // Bootstrap tooltip initialisation for elements using data-bs-toggle="tooltip"

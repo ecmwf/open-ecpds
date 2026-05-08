@@ -3,7 +3,6 @@
 <%@ taglib uri="/WEB-INF/tld/struts-html.tld" prefix="html" %>
 <%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean" %>
 <%@ taglib uri="/WEB-INF/tld/struts-tiles.tld" prefix="tiles" %>
-<%@ taglib uri="/WEB-INF/tld/displaytag.tld" prefix="display" %> 
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth" %>
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content" %>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
@@ -21,47 +20,46 @@
 	}
 </script>
 
+<div class="row g-3">
+<div class="col-lg-6">
+<div class="card">
+<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+<i class="bi bi-link-45deg text-primary"></i>
+<span class="fw-semibold">
 <c:choose>
-    <c:when test="${isInsert == 'true'}">
-    <div class="form-info-banner" style="margin-left:0; margin-bottom:0.5rem">
-        <i class="bi bi-link-45deg text-primary flex-shrink-0"></i>
-        Create a new Resource URL mapping for access control.
-    </div>
-    </c:when>
-    <c:otherwise>
-    <div class="form-info-banner" style="margin-left:0; margin-bottom:0.5rem">
-        <i class="bi bi-link-45deg text-primary flex-shrink-0"></i>
-        Edit the Resource URL mapping.
-    </div>
-    </c:otherwise>
+<c:when test="${isInsert == 'true'}">Create Web Resource</c:when>
+<c:otherwise>Edit Web Resource</c:otherwise>
 </c:choose>
-<table>
-
-<tr>
-<td style="width:1%;white-space:nowrap;vertical-align:top">
-
-<table class="fields">
-
+</span>
+</div>
+<div class="card-body">
+<div class="d-flex flex-column gap-2">
 <c:if test="${isInsert != 'true'}">
-<tr><th>Path</th><td>${resourceActionForm.path}<html:hidden property="path"/></td></tr>
+<div class="row g-2 align-items-center">
+<div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">Path</label></div>
+<div class="col-sm-8">${resourceActionForm.path}<html:hidden property="path"/></div>
+</div>
 </c:if>
 <c:if test="${isInsert == 'true'}">
-<tr><th>Path</th><td>
+<div class="row g-2 align-items-center">
+<div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">Path</label></div>
+<div class="col-sm-8">
 	<div class="d-flex align-items-center gap-2">
-		<input id="path" name="path" type="text"
+		<input id="path" name="path" type="text" class="form-control form-control-sm"
 			pattern="/[a-zA-Z0-9_./-]*"
 			title="Path must start with '/' and contain only letters, digits, '_', '-', '.' and '/' (e.g. /do/transfer/destination/edit/)"
 			oninput="validatePatternInput(this, 'path-feedback')">
 		<span id="path-feedback"></span>
 	</div>
-</td></tr>
+</div>
+</div>
 </c:if>
-
-</table>
-
-</td>
-
-<td colspan="2" style="vertical-align:top;padding-left:1rem"><c:if test="${isInsert != 'true'}">
+</div>
+</div>
+</div>
+</div>
+<c:if test="${isInsert != 'true'}">
+<div class="col-lg-6">
 <style>
 .assoc-card .card-header { display:flex; align-items:center; gap:.4rem; padding:.5rem .75rem; background:#f8f9fa; font-size:.85rem; }
 .assoc-card .card-header .ms-auto { margin-left:auto !important; }
@@ -128,7 +126,6 @@
   </div>
 
 </div>
-</c:if></td>
-</tr>
-</table>
-<div style="margin-bottom:1rem"></div>
+</div>
+</c:if>
+</div>

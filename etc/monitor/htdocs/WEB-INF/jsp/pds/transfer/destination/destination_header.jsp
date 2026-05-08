@@ -4,6 +4,12 @@
 <%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean"%>
 <c:set var="_ds" value="${destination.formattedStatus}"/>
 <c:set var="_dsb" value="${fn:contains(_ds, '-') ? fn:substringBefore(_ds, '-') : _ds}"/>
+<c:if test="${not empty destinationDetailActionForm}">
+    <c:set var="_destDate" value="${destinationDetailActionForm.date}" />
+</c:if>
+<c:if test="${empty destinationDetailActionForm}">
+    <c:set var="_destDate" value="${param['date']}" />
+</c:if>
 <div class="dest-page-header mb-3">
     <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
         <c:if test="${not destination.active}"><i class="bi bi-slash-circle-fill text-danger" title="Destination is disabled" style="font-size:0.9rem;align-self:center;"></i></c:if>
@@ -39,9 +45,10 @@
         <c:if test="${not empty destination.filterName and destination.filterName ne 'none'}">
             <jsp:include page="/WEB-INF/jsp/pds/transfer/compression_icon.jsp"><jsp:param name="name" value="${destination.filterName}"/></jsp:include>
         </c:if>
+        <div class="d-flex gap-2 ms-auto align-items-center">
         <auth:if basePathKey="destination.basepath" paths="/edit/insert_form">
         <auth:then>
-        <div class="d-flex gap-1 ms-auto align-items-center">
+        <div class="d-flex gap-1 align-items-center">
             <a href='<bean:message key="destination.basepath"/>/edit/insert_form'
                class="btn btn-sm btn-outline-success" title="Create new destination"><i class="bi bi-plus-circle"></i></a>
             <c:if test="${not empty destination.id}">
@@ -49,10 +56,43 @@
                class="btn btn-sm btn-outline-primary" title="Edit this destination"><i class="bi bi-pencil"></i></a>
             <a href='<bean:message key="destination.basepath"/>/edit/delete_form/${destination.id}'
                class="btn btn-sm btn-outline-danger" title="Delete this destination"><i class="bi bi-trash"></i></a>
+            <a href='<bean:message key="destination.basepath"/>/edit/insert_form?fromDestination=${destination.name}'
+               class="btn btn-sm btn-outline-warning" title="Duplicate this destination"><i class="bi bi-copy"></i></a>
             </c:if>
         </div>
         </auth:then>
         </auth:if>
+        <c:if test="${not empty destination.id}">
+        <div class="d-flex gap-1 align-items-center" style="border-left:1px solid var(--bs-border-color);padding-left:0.5rem;">
+            <a href='<bean:message key="destination.basepath"/>/${destination.id}'
+               class="btn btn-sm btn-outline-secondary" title="Files"><i class="bi bi-files"></i></a>
+            <auth:if basePathKey="transferhistory.basepath" paths="/">
+            <auth:then>
+            <a href='<bean:message key="destination.basepath"/>/${destination.id}?mode=parameters'
+               class="btn btn-sm btn-outline-secondary" title="Parameters"><i class="bi bi-sliders"></i></a>
+            </auth:then>
+            </auth:if>
+            <a href='<bean:message key="destination.basepath"/>/${destination.id}?mode=traffic'
+               class="btn btn-sm btn-outline-secondary" title="Data Rates"><i class="bi bi-graph-up"></i></a>
+            <a href='<bean:message key="destination.basepath"/>/${destination.id}?mode=changelog'
+               class="btn btn-sm btn-outline-secondary" title="Changes Log"><i class="bi bi-clock-history"></i></a>
+            <a href='<bean:message key="monitoring.timeline.basepath"/>/${destination.id}<c:if test="${not empty _destDate}">?date=${_destDate}</c:if>'
+               class="btn btn-sm btn-outline-secondary" title="Transfer Timeline"><i class="bi bi-calendar3"></i></a>
+            <auth:if basePathKey="transferhistory.basepath" paths="/">
+            <auth:then>
+            <a href='<bean:message key="transferhistory.basepath"/>?destinationName=${destination.id}<c:if test="${not empty _destDate}">&amp;date=${_destDate}</c:if>&amp;fromDestination=true'
+               class="btn btn-sm btn-outline-secondary" title="Transfer History"><i class="bi bi-archive"></i></a>
+            </auth:then>
+            </auth:if>
+            <auth:if basePathKey="destination.basepath" paths="/metadata/${destination.id}">
+            <auth:then>
+            <a href='<bean:message key="destination.basepath"/>/metadata/${destination.id}'
+               class="btn btn-sm btn-outline-secondary" title="Metadata"><i class="bi bi-paperclip"></i></a>
+            </auth:then>
+            </auth:if>
+        </div>
+        </c:if>
+        </div>
     </div>
     <c:if test="${not empty destination.comment}">
         <p class="dest-page-comment">${destination.comment}</p>

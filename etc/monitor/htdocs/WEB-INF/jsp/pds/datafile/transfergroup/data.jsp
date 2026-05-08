@@ -12,83 +12,159 @@
 </c:if>
 <c:if test="${empty isDelete}">
 
-	<div class="form-info-banner" style="margin-left:0">
+	<div class="d-flex align-items-center gap-2 mb-3 px-3 py-2 rounded"
+		style="background:rgba(13,110,253,0.06); font-size:0.9rem; color:var(--bs-body-color); border-left:4px solid #0d6efd;">
 		<i class="bi bi-collection text-primary flex-shrink-0"></i>
-		Transfer Group: <strong><c:out value="${transfergroup.name}"/></strong>
+		<span>Transfer Group: <strong><c:out value="${transfergroup.name}"/></strong></span>
+		<auth:if basePathKey="transfergroup.basepath" paths="/edit/insert_form">
+		<auth:then>
+		<div class="d-flex gap-1 ms-auto flex-shrink-0">
+			<a href='<bean:message key="transfergroup.basepath"/>/edit/insert_form'
+			   class="btn btn-sm btn-outline-success" title="Create new transfer group"><i class="bi bi-plus-circle"></i></a>
+			<c:if test="${not empty transfergroup.id}">
+			<a href='<bean:message key="transfergroup.basepath"/>/edit/update_form/${transfergroup.id}'
+			   class="btn btn-sm btn-outline-primary" title="Edit this transfer group"><i class="bi bi-pencil"></i></a>
+			<a href='<bean:message key="transfergroup.basepath"/>/edit/delete_form/${transfergroup.id}'
+			   class="btn btn-sm btn-outline-danger" title="Delete this transfer group"><i class="bi bi-trash"></i></a>
+			</c:if>
+		</div>
+		</auth:then>
+		</auth:if>
 	</div>
 
-	<table class="fields">
-		<tr>
-			<th>Name</th>
-			<td><c:out value="${transfergroup.name}" /></td>
-		</tr>
-		<tr>
-			<th>Comment</th>
-			<td><c:out value="${transfergroup.comment}" /></td>
-		</tr>
-		<tr>
-			<th>Enabled</th>
-			<td><c:if test="${transfergroup.active}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
-					test="${!transfergroup.active}">
-					<i class="bi bi-x-circle-fill text-danger" title="No"></i>
-				</c:if></td>
-		</tr>
-		<tr>
-			<th>Replicate</th>
-			<td><c:if test="${transfergroup.replicate}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
-					test="${!transfergroup.replicate}">
-					<i class="bi bi-x-circle-fill text-danger" title="No"></i>
-				</c:if></td>
-		</tr>
-		<tr>
-			<th>Min. Replication Count</th>
-			<td>${transfergroup.minReplicationCount}</td>
-		</tr>
-		<tr>
-			<th>Volume Count</th>
-			<td>${transfergroup.volumeCount}</td>
-		</tr>
-		<tr>
-			<th>Filter</th>
-			<td><c:if test="${transfergroup.filter}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
-					test="${!transfergroup.filter}">
-					<i class="bi bi-x-circle-fill text-danger" title="No"></i>
-				</c:if></td>
-		</tr>
-		<tr>
-			<th>Min. Filtering Count</th>
-			<td>${transfergroup.minFilteringCount}</td>
-		</tr>
-		<tr>
-			<th>Backup</th>
-			<td><c:if test="${transfergroup.backup}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
-					test="${!transfergroup.backup}">
-					<i class="bi bi-x-circle-fill text-danger" title="No"></i>
-				</c:if></td>
-		</tr>
-		<c:set var="hostForBackup" value="${transfergroup.hostForBackup}" />
-		<c:if test="${transfergroup.backup}">
-			<c:if test="${not empty hostForBackup}">
-				<tr>
-					<th>Host For Backup</th>
-					<td><a href="/do/transfer/host/${hostForBackup.name}">${hostForBackup.nickName}</a></td>
-				</tr>
-			</c:if>
-		</c:if>
+	<%-- Card: Identity --%>
+	<div class="card border-0 shadow-sm mb-3">
+		<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+			<i class="bi bi-tag text-primary"></i>
+			<span class="fw-semibold">Identity</span>
+		</div>
+		<div class="card-body">
+			<div class="row g-3">
+				<div class="col-sm-4">
+					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Name</div>
+					<div class="fw-semibold"><c:out value="${transfergroup.name}" /></div>
+				</div>
+				<div class="col-sm-4">
+					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Comment</div>
+					<div><c:out value="${transfergroup.comment}" /></div>
+				</div>
+				<div class="col-sm-4">
+					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Enabled</div>
+					<div>
+						<c:choose>
+							<c:when test="${transfergroup.active}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i> Yes</c:when>
+							<c:otherwise><i class="bi bi-x-circle-fill text-danger" title="No"></i> No</c:otherwise>
+						</c:choose>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
 
-		<c:set var="clusterName" value="${transfergroup.clusterName}" />
-		<c:if test="${not empty clusterName}">
-			<tr>
-				<th>Cluster Name</th>
-				<td><c:out value="${clusterName}" /></td>
-			</tr>
-			<tr>
-				<th>Cluster Weight</th>
-				<td><c:out value="${transfergroup.clusterWeight}" /></td>
-			</tr>
-		</c:if>
+	<%-- Card: Replication --%>
+	<div class="card border-0 shadow-sm mb-3">
+		<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+			<i class="bi bi-copy text-primary"></i>
+			<span class="fw-semibold">Replication</span>
+		</div>
+		<div class="card-body">
+			<div class="row g-3">
+				<div class="col-sm-4">
+					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Replicate</div>
+					<div>
+						<c:choose>
+							<c:when test="${transfergroup.replicate}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i> Yes</c:when>
+							<c:otherwise><i class="bi bi-x-circle-fill text-danger" title="No"></i> No</c:otherwise>
+						</c:choose>
+					</div>
+				</div>
+				<div class="col-sm-4">
+					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Min. Replication Count</div>
+					<div>${transfergroup.minReplicationCount}</div>
+				</div>
+				<div class="col-sm-4">
+					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Volume Count</div>
+					<div>${transfergroup.volumeCount}</div>
+				</div>
+			</div>
+		</div>
+	</div>
 
-	</table>
+	<%-- Card: Filtering --%>
+	<div class="card border-0 shadow-sm mb-3">
+		<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+			<i class="bi bi-funnel text-primary"></i>
+			<span class="fw-semibold">Filtering</span>
+		</div>
+		<div class="card-body">
+			<div class="row g-3">
+				<div class="col-sm-4">
+					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Filter</div>
+					<div>
+						<c:choose>
+							<c:when test="${transfergroup.filter}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i> Yes</c:when>
+							<c:otherwise><i class="bi bi-x-circle-fill text-danger" title="No"></i> No</c:otherwise>
+						</c:choose>
+					</div>
+				</div>
+				<div class="col-sm-4">
+					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Min. Filtering Count</div>
+					<div>${transfergroup.minFilteringCount}</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<%-- Card: Backup --%>
+	<div class="card border-0 shadow-sm mb-3">
+		<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+			<i class="bi bi-cloud-arrow-up text-primary"></i>
+			<span class="fw-semibold">Backup</span>
+		</div>
+		<div class="card-body">
+			<div class="row g-3">
+				<div class="col-sm-4">
+					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Backup</div>
+					<div>
+						<c:choose>
+							<c:when test="${transfergroup.backup}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i> Yes</c:when>
+							<c:otherwise><i class="bi bi-x-circle-fill text-danger" title="No"></i> No</c:otherwise>
+						</c:choose>
+					</div>
+				</div>
+				<c:set var="hostForBackup" value="${transfergroup.hostForBackup}" />
+				<c:if test="${transfergroup.backup and not empty hostForBackup}">
+					<div class="col-sm-4">
+						<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Host For Backup</div>
+						<div><a href="/do/transfer/host/${hostForBackup.name}">${hostForBackup.nickName}</a></div>
+					</div>
+				</c:if>
+			</div>
+		</div>
+	</div>
+
+	<%-- Card: Cluster (only when cluster name is set) --%>
+	<c:set var="clusterName" value="${transfergroup.clusterName}" />
+	<c:if test="${not empty clusterName}">
+	<div class="card border-0 shadow-sm mb-3">
+		<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+			<i class="bi bi-diagram-3 text-primary"></i>
+			<span class="fw-semibold">Cluster</span>
+		</div>
+		<div class="card-body">
+			<div class="row g-3">
+				<div class="col-sm-4">
+					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Cluster Name</div>
+					<div><c:out value="${clusterName}" /></div>
+				</div>
+				<div class="col-sm-4">
+					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Cluster Weight</div>
+					<div><c:out value="${transfergroup.clusterWeight}" /></div>
+				</div>
+			</div>
+		</div>
+	</div>
+	</c:if>
 
 	<p class="fw-bold mb-1 mt-2">Data Movers</p>
 	<table id="tgServersTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">

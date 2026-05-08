@@ -4,6 +4,7 @@
 <%@ taglib uri="/WEB-INF/tld/struts-tiles.tld" prefix="tiles" %>
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth" %>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
 <jsp:include page="/WEB-INF/jsp/pds/transfer/destination/destination_header.jsp"/>
 
@@ -34,7 +35,16 @@
         <tr>
             <td><a href="/do/transfer/destination/${alias.name}">${alias.name}</a></td>
             <td>${alias.typeText}</td>
-            <td>${alias.formattedStatus}</td>
+            <td>
+<c:set var="_sb" value="${fn:contains(alias.formattedStatus, '-') ? fn:substringBefore(alias.formattedStatus, '-') : alias.formattedStatus}"/>
+<c:choose>
+  <c:when test="${_sb == 'Running'}"><span class="badge bg-success">${alias.formattedStatus}</span></c:when>
+  <c:when test="${_sb == 'Restarting' or _sb == 'Resending'}"><span class="badge bg-info text-dark">${alias.formattedStatus}</span></c:when>
+  <c:when test="${_sb == 'Waiting' or _sb == 'Retrying' or _sb == 'Interrupted'}"><span class="badge bg-warning text-dark">${alias.formattedStatus}</span></c:when>
+  <c:when test="${_sb == 'Initialized' or _sb == 'Stopped' or _sb == 'NoHosts' or _sb == 'Failed'}"><span class="badge bg-danger">${alias.formattedStatus}</span></c:when>
+  <c:otherwise><span class="badge bg-secondary">${alias.formattedStatus}</span></c:otherwise>
+</c:choose>
+</td>
             <td>${alias.dataAlias}</td>
             <td>${alias.comment}</td>
         </tr>

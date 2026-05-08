@@ -40,7 +40,7 @@
 </tiles:insert>
 </td>
 <tr>
-<td align="left">
+<td class="pt-3">
 <tiles:insert name="buttons">
 	<tiles:put name="operation" value="<%=operation%>" />
 </tiles:insert>

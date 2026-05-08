@@ -1,9 +1,6 @@
 <%@ page session="true"%>
 
-<%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean"%>
 <%@ taglib uri="/WEB-INF/tld/struts-tiles.tld" prefix="tiles"%>
-<%@ taglib uri="/WEB-INF/tld/displaytag.tld" prefix="display"%>
-<%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content"%>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 
 <c:if test="${not empty destination}">
@@ -16,7 +13,7 @@
 </c:if>
 <script>
 (function() {
-    var destName = new URLSearchParams(window.location.search).get('destinationName');
+    var destName = '<c:out value="${selectedDestination.name}" />';
     if (!destName) return;
     document.querySelectorAll('.date-pill').forEach(function(pill) {
         var href = pill.getAttribute('href') || '';
@@ -34,41 +31,59 @@
     </div>
 </c:if>
 
-<c:if test="${historyItemsSize != '0'}">
 <div class="mt-3">
-<display:table id="history" name="${historyItems}" requestURI=""
-        sort="external" defaultsort="2" partialList="true"
-        size="${historyItemsSize}" pagesize="${recordsPerPage}"
-        class="listing">
-
-    <display:column title="Error" sortable="true" class="text-center" headerClass="text-center" style="width:5em">
-        <c:if test="${history.error}">
-            <i class="bi bi-x-circle-fill text-danger" title="Error"></i>
-        </c:if>
-        <c:if test="${not history.error}">
-            <i class="bi bi-check-circle-fill text-success" title="OK"></i>
-        </c:if>
-    </display:column>
-
-    <display:column title="Event Time" sortable="true" sortProperty="id">
-        <a href="<bean:message key="transferhistory.basepath"/>/${history.id}">
-            <content:content name="history.date" dateFormatKey="date.format.transfer" ignoreNull="true" />
-        </a>
-    </display:column>
-
-    <display:column property="formattedStatus" title="Status" sortable="true" />
-
-    <display:column title="Transfer Host" sortable="true">
-        <c:if test="${history.hostName != null}">
-            <a href="<bean:message key="host.basepath"/>/${history.hostName}">${history.hostNickName}</a>
-        </c:if>
-        <c:if test="${history.hostName == null}">
-            <i class="bi bi-dash text-muted" title="Not transferred to remote host"></i>
-        </c:if>
-    </display:column>
-
-    <display:column title="Comment" property="formattedComment" />
-
-</display:table>
+<table id="transferHistoryTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
+    <thead class="table-light">
+        <tr>
+            <th>Error</th>
+            <th>Event Time</th>
+            <th>Status</th>
+            <th>Transfer Host</th>
+            <th>Comment</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
 </div>
-</c:if>
+
+<script>
+$(function() {
+    var selectedDestinationName = '<c:out value="${selectedDestination.name}" />';
+    var selectedDate = '${selectedDate}';
+    var selectedMode = '${param['mode']}';
+    $('#transferHistoryTable').DataTable({
+        serverSide: true,
+        processing: true,
+        ajax: {
+            url: '/do/transfer/history/list',
+            type: 'GET',
+            data: function(d) {
+                d.destinationName = selectedDestinationName;
+                d.date = selectedDate;
+                d.mode = selectedMode;
+            }
+        },
+        pageLength: 25,
+        searching: false,
+        autoWidth: false,
+        order: [[1, 'desc']],
+        columns: [
+            { orderable: true,  data: 0, width: '5em' },
+            { orderable: true,  data: 1 },
+            { orderable: true,  data: 2 },
+            { orderable: true,  data: 3 },
+            { orderable: false, data: 4 }
+        ],
+        columnDefs: [{ targets: '_all', render: $.fn.dataTable.render.text() }],
+        createdRow: function(row, data) {
+            $('td', row).each(function(i) { $(this).html(data[i]); });
+        },
+        dom: '<"d-flex align-items-start justify-content-between mt-2"i p>t<"d-flex align-items-start justify-content-between mt-2"i p>',
+        language: {
+            info: 'Showing _START_-_END_ of _TOTAL_',
+            processing: 'Loading...',
+            emptyTable: 'No transfer history available for the selected criteria.'
+        }
+    });
+});
+</script>

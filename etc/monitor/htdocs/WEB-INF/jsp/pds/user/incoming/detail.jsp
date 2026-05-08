@@ -7,14 +7,8 @@
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
 
 <tiles:insert page="/WEB-INF/jsp/pds/user/incoming/data.jsp"/>
-
-<table>
-<tr>
-<td colspan="2" class="pt-2">
+<div class="mt-3">
 <a href="/do/user/incoming" class="btn btn-sm btn-outline-secondary">
     <i class="bi bi-arrow-left"></i> All Data Users
 </a>
-</td>
-</tr>
-
-</table>
+</div>

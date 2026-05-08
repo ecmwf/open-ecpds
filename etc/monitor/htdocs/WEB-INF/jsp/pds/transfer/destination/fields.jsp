@@ -3,7 +3,6 @@
 <%@ taglib uri="/WEB-INF/tld/struts-html.tld" prefix="html"%>
 <%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean"%>
 <%@ taglib uri="/WEB-INF/tld/struts-tiles.tld" prefix="tiles"%>
-<%@ taglib uri="/WEB-INF/tld/displaytag.tld" prefix="display"%>
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content"%>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
@@ -93,89 +92,91 @@
 	border: solid 1px var(--bs-border-color);
 	border-radius: 4px;
 }
+
+#dest-common-fields {
+	display: none !important;
+}
+
+#dest-common-fields.d-none ~ .dest-identity-card .dest-common-section,
+#dest-common-fields.d-none ~ .dest-common-card {
+	display: none;
+}
+
+#dest-common-fields.d-none ~ .dest-identity-card {
+	margin-bottom: 0;
+}
 </style>
 
 <tiles:useAttribute id="actionFormName" name="action.form.name"
 	classname="java.lang.String" />
 <tiles:useAttribute name="isInsert" classname="java.lang.String" />
-<c:choose>
-    <c:when test="${isInsert == 'true'}">
-    <div class="form-info-banner" style="margin-left:0; margin-bottom:0.5rem">
-        <i class="bi bi-geo-alt text-primary flex-shrink-0"></i>
-        Create a new Destination to define a data delivery target.
-    </div>
-    </c:when>
-    <c:otherwise>
-    <div class="form-info-banner" style="margin-left:0; margin-bottom:0.5rem">
-        <i class="bi bi-geo-alt text-primary flex-shrink-0"></i>
-        Edit the Destination configuration.
-    </div>
-    </c:otherwise>
-</c:choose>
-<table style="width:100%; margin-bottom:1.25rem">
-	<tr>
-		<td style="width:1%;white-space:nowrap;vertical-align:top">
-			<table class="fields">
-
-
+<c:set var="_copyMode" value="${isInsert == 'true' and not empty destinationActionForm.fromDestinationOptions}"/>
+<div class="row g-3 ${_copyMode ? 'mb-0' : 'mb-3'}">
+	<div class="col-lg-7">
+		<div id="dest-common-fields"<c:if test="${isInsert == 'true' and not empty destinationActionForm.fromDestinationOptions}"> class="d-none"</c:if>></div>
+		<div class="card border-0 shadow-sm mb-3 dest-identity-card">
+			<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+				<i class="bi bi-geo-alt text-primary"></i>
+				<span class="fw-semibold">Identity</span>
+			</div>
+			<div class="card-body pb-2">
 				<c:if test="${isInsert == 'true'}">
-					<%-- Mode selector pill buttons --%>
-					<tr>
-						<td colspan="2" style="padding-top:0.5rem;padding-bottom:0.75rem">
-							<div class="d-flex gap-2 flex-wrap" role="group">
-								<c:if test="${not empty destinationActionForm.fromDestinationOptions}">
-									<button type="button" id="btn-copy"
-										class="btn btn-sm btn-primary dest-mode-btn"
-										onclick="selectDestMode('copy',this)">
-										<i class="bi bi-copy me-1"></i>Copy from Existing
-									</button>
-								</c:if>
-								<button type="button" id="btn-create"
-									class="btn btn-sm dest-mode-btn <c:choose><c:when test="${not empty destinationActionForm.fromDestinationOptions}">btn-outline-secondary</c:when><c:otherwise>btn-primary</c:otherwise></c:choose>"
-									onclick="selectDestMode('create',this)">
-									<i class="bi bi-plus-circle me-1"></i>Create from Scratch
-								</button>
-								<c:if test="${not empty destinationActionForm.masterOptions}">
-									<button type="button" id="btn-export"
-										class="btn btn-sm btn-outline-secondary dest-mode-btn"
-										onclick="selectDestMode('export',this)">
-										<i class="bi bi-box-arrow-up-right me-1"></i>Export to Master
-									</button>
-								</c:if>
-							</div>
-							<%-- Single hidden field for form submission -- value set by JSP default and updated by selectDestMode() --%>
-							<input type="hidden" id="actionRequested" name="actionRequested"
-								value="<c:choose><c:when test="${not empty destinationActionForm.fromDestinationOptions}">copy</c:when><c:otherwise>create</c:otherwise></c:choose>">
-						</td>
-					</tr>
+					<div class="d-flex gap-2 mb-3" role="group">
+						<c:if test="${not empty destinationActionForm.fromDestinationOptions}">
+							<button type="button" id="btn-copy"
+								class="btn btn-sm btn-primary dest-mode-btn"
+								onclick="selectDestMode('copy',this)">
+								<i class="bi bi-copy me-1"></i>Copy from Existing
+							</button>
+						</c:if>
+						<button type="button" id="btn-create"
+							class="btn btn-sm dest-mode-btn <c:choose><c:when test="${not empty destinationActionForm.fromDestinationOptions}">btn-outline-secondary</c:when><c:otherwise>btn-primary</c:otherwise></c:choose>"
+							onclick="selectDestMode('create',this)">
+							<i class="bi bi-plus-circle me-1"></i>Create from Scratch
+						</button>
+						<c:if test="${not empty destinationActionForm.masterOptions}">
+							<button type="button" id="btn-export"
+								class="btn btn-sm btn-outline-secondary dest-mode-btn"
+								onclick="selectDestMode('export',this)">
+								<i class="bi bi-box-arrow-up-right me-1"></i>Export to Master
+							</button>
+						</c:if>
+					</div>
+					<input type="hidden" id="actionRequested" name="actionRequested"
+						value="<c:choose><c:when test="${not empty destinationActionForm.fromDestinationOptions}">copy</c:when><c:otherwise>create</c:otherwise></c:choose>">
 				</c:if>
 
-				<%-- Copy panel --%>
 				<c:if test="${isInsert == 'true' and not empty destinationActionForm.fromDestinationOptions}">
-				<tbody id="panel-copy">
-					<tr>
-						<td colspan="2"><small class="text-muted">Select a source destination and provide a name for the new copy.</small></td>
-					</tr>
-					<script>document.addEventListener('DOMContentLoaded',function(){var s=document.getElementById('fromDestination');if(s)s.required=true;});</script>
-					<tr>
-						<th>Source Destination</th>
-						<td>
+				<div id="panel-copy">
+					<div class="row g-2 mb-2">
+						<div class="col-12"><small class="text-muted">Select a source destination and provide a name for the new copy.</small></div>
+					</div>
+					<script>document.addEventListener('DOMContentLoaded',function(){
+					var s=document.getElementById('fromDestination');if(s)s.required=true;
+					if(new URLSearchParams(window.location.search).get('fromDestination')){var t=document.getElementById('toDestination');if(t)t.focus();}
+				});</script>
+					<div class="row g-2 mb-2">
+						<div class="col-12">
+							<label for="fromDestination" class="form-label mb-1">Source Destination</label>
 							<c:set var="destinations" value="${destinationActionForm.fromDestinationOptions}" />
-							<input type="text" class="form-control form-control-sm mb-1"
-								placeholder="Search destinations..."
-								oninput="filterSelect(this, 'fromDestination')"
-								autocomplete="off">
-							<html:select property="fromDestination" styleId="fromDestination"
+							<div class="input-group input-group-sm mb-1">
+								<span class="input-group-text"><i class="bi bi-search"></i></span>
+								<input type="text" class="form-control form-control-sm"
+									placeholder="Filter destinations..."
+									oninput="filterSelect(this, 'fromDestination')"
+									autocomplete="off">
+							</div>
+							<div class="form-text mt-0 mb-1"><i class="bi bi-hand-index me-1"></i>Type to filter the list, then <strong>click</strong> a destination below to select it.</div>
+							<html:select property="fromDestination" styleId="fromDestination" styleClass="form-select form-select-sm"
 								size="20" style="min-width:280px;width:100%;height:220px;overflow-y:auto">
 								<html:options collection="destinations" property="name" labelProperty="name" />
 							</html:select>
-						</td>
-					</tr>
-					<tr>
-						<th>New Name</th>
-						<td>
+						</div>
+						<div class="col-sm-6">
+							<label for="toDestination" class="form-label mb-1">New Name</label>
 							<div class="d-flex align-items-center gap-2">
 								<input id="toDestination" name="toDestination" type="text"
+									class="form-control form-control-sm"
 									maxlength="32"
 									pattern="[a-zA-Z0-9]+([_-][a-zA-Z0-9]+)*"
 									title="Must start and end with a letter or digit; '_' or '-' allowed as single separators (e.g. my-destination). Maximum 32 characters."
@@ -183,72 +184,62 @@
 									<c:if test="${not empty destinationActionForm.fromDestinationOptions}">required</c:if>>
 								<span id="toDestination-feedback"></span>
 							</div>
-						</td>
-					</tr>
-					<tr>
-						<th>Comment</th>
-						<td><html:text property="label" /></td>
-					</tr>
-					<tr>
-						<th>Clone Shared Hosts <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If ticked then every Host of the existing Destination which is shared with another Destination will be cloned/renamed and allocated to the new Destination (the new Destination will therefore not use shared Hosts)" tabindex="0"></i></th>
-						<td><html:checkbox
-								property="copySharedHost" /></td>
-					</tr>
-				</tbody>
+						</div>
+						<div class="col-sm-6">
+							<label for="label" class="form-label mb-1">Comment</label>
+							<html:text property="label" styleId="label" styleClass="form-control form-control-sm" />
+						</div>
+						<div class="col-sm-6">
+							<label class="form-label mb-1">Clone Shared Hosts <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If ticked then every Host of the existing Destination which is shared with another Destination will be cloned/renamed and allocated to the new Destination (the new Destination will therefore not use shared Hosts)" tabindex="0"></i></label>
+							<div class="form-check mt-1"><html:checkbox property="copySharedHost" styleClass="form-check-input" /></div>
+						</div>
+					</div>
+				</div>
 
-				<%-- Export panel --%>
-				<c:if test="${not empty destinationActionForm.masterOptions}">
-				<tbody id="panel-export" class="d-none">
-					<tr>
-						<td colspan="2"><small class="text-muted">Select a source destination and a target master to export to.</small></td>
-					</tr>
-					<tr>
-						<th>Source Destination</th>
-						<td>
+				<div id="panel-export" class="d-none">
+					<div class="row g-2 mb-2">
+						<div class="col-12"><small class="text-muted">Select a source destination and a target master to export to.</small></div>
+					</div>
+					<div class="row g-2 mb-2">
+						<div class="col-12">
+							<label for="sourceDestination" class="form-label mb-1">Source Destination</label>
 							<input type="text" class="form-control form-control-sm mb-1"
 								placeholder="Search destinations..."
 								oninput="filterSelect(this, 'sourceDestination')"
 								autocomplete="off">
-							<html:select property="sourceDestination" styleId="sourceDestination"
+							<html:select property="sourceDestination" styleId="sourceDestination" styleClass="form-select form-select-sm"
 								size="20" style="min-width:280px;width:100%;height:220px;overflow-y:auto">
 								<html:options collection="destinations" property="name" labelProperty="name" />
 							</html:select>
-						</td>
-					</tr>
-					<tr>
-						<th>Master</th>
-						<td>
+						</div>
+						<div class="col-sm-6">
+							<label for="master" class="form-label mb-1">Master</label>
 							<c:set var="masters" value="${destinationActionForm.masterOptions}" />
-							<html:select property="master">
+							<html:select property="master" styleId="master" styleClass="form-select form-select-sm">
 								<html:options collection="masters" property="name" labelProperty="value" />
 							</html:select>
-						</td>
-					</tr>
-					<tr>
-						<th>Clone Shared Hosts <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If ticked then every Host associated with the source Destination will be cloned/renamed on the target data store, otherwise a search will be done against the Host nick-name and if it already exists on the target data store then it will be used instead" tabindex="0"></i></th>
-						<td><html:checkbox
-								property="copySourceSharedHost" /></td>
-					</tr>
-				</tbody>
-				</c:if>
+						</div>
+						<div class="col-sm-6">
+							<label class="form-label mb-1">Clone Shared Hosts <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If ticked then every Host associated with the source Destination will be cloned/renamed on the target data store, otherwise a search will be done against the Host nick-name and if it already exists on the target data store then it will be used instead" tabindex="0"></i></label>
+							<div class="form-check mt-1"><html:checkbox property="copySourceSharedHost" styleClass="form-check-input" /></div>
+						</div>
+					</div>
+				</div>
 				</c:if>
 
-				<%-- Create panel --%>
-				<tbody id="panel-create" <c:if test="${not empty destinationActionForm.fromDestinationOptions}">class="d-none"</c:if>>
-					<tr>
-						<td colspan="2"><small class="text-muted">Provide a name below to create a brand-new destination from scratch.</small></td>
-					</tr>
-				</tbody>
-				<%-- Name field: always in DOM for insert so backend validation passes.
-				     Shown (editable) only in create mode; auto-populated from toDestination in copy mode. --%>
 				<c:if test="${isInsert == 'true'}">
-				<tbody id="row-name-create"
-					<c:if test="${not empty destinationActionForm.fromDestinationOptions}">class="d-none"</c:if>>
-					<tr>
-						<th>Name</th>
-						<td>
+				<div id="panel-create" <c:if test="${not empty destinationActionForm.fromDestinationOptions}">class="d-none"</c:if>>
+					<div class="row g-2 mb-2">
+						<div class="col-12"><small class="text-muted">Provide a name below to create a brand-new destination from scratch.</small></div>
+					</div>
+				</div>
+				<div id="row-name-create" <c:if test="${not empty destinationActionForm.fromDestinationOptions}">class="d-none"</c:if>>
+					<div class="row g-2 mb-2">
+						<div class="col-sm-6">
+							<label for="name" class="form-label mb-1">Name</label>
 							<div class="d-flex align-items-center gap-2">
 								<input id="name" name="name" type="text"
+									class="form-control form-control-sm"
 									maxlength="32"
 									pattern="[a-zA-Z0-9]+([_-][a-zA-Z0-9]+)*"
 									title="Must start and end with a letter or digit; '_' or '-' allowed as single separators (e.g. my-destination). Maximum 32 characters."
@@ -256,106 +247,129 @@
 									<c:if test="${empty destinationActionForm.fromDestinationOptions}">required</c:if>>
 								<span id="name-feedback"></span>
 							</div>
-						</td>
-					</tr>
-				</tbody>
+						</div>
+					</div>
+				</div>
 				</c:if>
-				<tbody id="dest-common-fields"
-					<c:if test="${isInsert == 'true' and not empty destinationActionForm.fromDestinationOptions}">class="d-none"</c:if>>
-				<c:if test="${isInsert != 'true'}">
-					<tr>
-						<th>Name</th>
-						<td>${requestScope[actionFormName].name}<html:hidden
-								property="name" /></td>
-					</tr>
-				</c:if>
-				<tr>
-					<th>Type</th>
-					<td><div style="display:inline-flex;align-items:center;gap:0.5rem;"><c:set var="types"
-							value="${destinationActionForm.typeOptions}" /> <html:select
-							property="type" styleId="destType">
-							<html:options collection="types" property="name"
-								labelProperty="value" />
-						</html:select></div></td>
-				</tr>
-				<tr>
-					<th>Comment</th>
-					<td><html:text property="comment" /></td>
-				</tr>
-				<tr>
-					<th>On Host Failure <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="In case of error on a data transmission then try the next host in the list and stick to it if it works or restart with the first host in the list?" tabindex="0"></i></th>
-					<td><c:set var="onHosts"
-							value="${destinationActionForm.onHostFailureOptions}" /> <html:select
-							property="onHostFailure">
-							<html:options collection="onHosts" property="value"
-								labelProperty="name" />
-						</html:select></td>
-				</tr>
-				<tr>
-					<th>If Target Exists</th>
-					<td><c:set var="ifTargets"
-							value="${destinationActionForm.ifTargetExistOptions}" /> <html:select
-							property="ifTargetExist">
-							<html:options collection="ifTargets" property="value"
-								labelProperty="name" />
-						</html:select></td>
-				</tr>
-				<tr>
-					<th>Delete From Spool</th>
-					<td><c:set var="keepInSpools"
-							value="${destinationActionForm.keepInSpoolOptions}" /> <html:select
-							property="keepInSpool">
-							<html:options collection="keepInSpools" property="value"
-								labelProperty="name" />
-						</html:select></td>
-				</tr>
-				<tr>
-					<th>Country</th>
-					<td><c:set var="countries"
-							value="${destinationActionForm.countryOptions}" /> <html:select
-							property="countryIso" styleId="countryIso">
-							<html:options collection="countries" property="iso"
-								labelProperty="name" />
-						</html:select></td>
-				</tr>
-				<tr>
-					<th>Transfer Group <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If no Dissemination Host is active then this field specify in which Transfer Group the queued files should be stored" tabindex="0"></i></th>
-					<td><bean:define id="groups" name="destinationActionForm"
-							property="transferGroupOptions" type="java.util.Collection	" />
-						<html:select
-							property="transferGroup">
-							<html:options collection="groups" property="name"
-								labelProperty="name" />
+
+				<div class="dest-common-section">
+					<div class="row g-2">
+						<c:if test="${isInsert != 'true'}">
+							<div class="col-sm-6">
+								<label class="form-label mb-1">Name</label>
+								<div class="form-control form-control-sm bg-body-secondary">${requestScope[actionFormName].name}</div>
+								<html:hidden property="name" />
+							</div>
+						</c:if>
+						<div class="col-sm-6">
+							<label for="destType" class="form-label mb-1">Type</label>
+							<div class="d-flex align-items-center gap-2">
+								<c:set var="types" value="${destinationActionForm.typeOptions}" />
+								<html:select property="type" styleId="destType" styleClass="form-select form-select-sm">
+									<html:options collection="types" property="name" labelProperty="value" />
+								</html:select>
+							</div>
+						</div>
+						<div class="col-sm-6">
+							<label for="comment" class="form-label mb-1">Comment</label>
+							<html:text property="comment" styleId="comment" styleClass="form-control form-control-sm" />
+						</div>
+						<div class="col-sm-6">
+							<label for="transferGroup" class="form-label mb-1">Transfer Group <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If no Dissemination Host is active then this field specify in which Transfer Group the queued files should be stored" tabindex="0"></i></label>
+							<bean:define id="groups" name="destinationActionForm" property="transferGroupOptions" type="java.util.Collection	" />
+							<html:select property="transferGroup" styleId="transferGroup" styleClass="form-select form-select-sm">
+								<html:options collection="groups" property="name" labelProperty="name" />
+							</html:select>
+						</div>
+						<div class="col-sm-6">
+							<label for="countryIso" class="form-label mb-1">Country</label>
+							<c:set var="countries" value="${destinationActionForm.countryOptions}" />
+							<div class="d-flex align-items-center gap-2"><html:select property="countryIso" styleId="countryIso" styleClass="form-select form-select-sm flex-grow-1">
+								<html:options collection="countries" property="iso" labelProperty="name" />
+							</html:select></div>
+						</div>
+						<div class="col-sm-6">
+							<label for="ecUserName" class="form-label mb-1">Owner <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Only for the record" tabindex="0"></i></label>
+							<c:set var="ecUsers" value="${destinationActionForm.ecUserOptions}" />
+							<html:select property="ecUserName" styleId="ecUserName" styleClass="form-select form-select-sm">
+								<html:options collection="ecUsers" property="name" labelProperty="comment" />
+							</html:select>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="card border-0 shadow-sm mb-3 dest-common-card">
+			<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+				<i class="bi bi-send text-primary"></i>
+				<span class="fw-semibold">Delivery</span>
+			</div>
+			<div class="card-body pb-2">
+				<div class="row g-2">
+					<div class="col-sm-6">
+						<label for="onHostFailure" class="form-label mb-1">On Host Failure <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="In case of error on a data transmission then try the next host in the list and stick to it if it works or restart with the first host in the list?" tabindex="0"></i></label>
+						<c:set var="onHosts" value="${destinationActionForm.onHostFailureOptions}" />
+						<html:select property="onHostFailure" styleId="onHostFailure" styleClass="form-select form-select-sm">
+							<html:options collection="onHosts" property="value" labelProperty="name" />
 						</html:select>
-				</tr>
-				<tr>
-					<td colspan="2">&nbsp;</td>
-				</tr>
-				<tr>
-					<th>Max Connections <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Maximum number of parallel connections authorized at a time on all the hosts of the Destination" tabindex="0"></i></th>
-					<td>
+					</div>
+					<div class="col-sm-6">
+						<label for="ifTargetExist" class="form-label mb-1">If Target Exists</label>
+						<c:set var="ifTargets" value="${destinationActionForm.ifTargetExistOptions}" />
+						<html:select property="ifTargetExist" styleId="ifTargetExist" styleClass="form-select form-select-sm">
+							<html:options collection="ifTargets" property="value" labelProperty="name" />
+						</html:select>
+					</div>
+					<div class="col-sm-6">
+						<label for="keepInSpool" class="form-label mb-1">Delete From Spool</label>
+						<c:set var="keepInSpools" value="${destinationActionForm.keepInSpoolOptions}" />
+						<html:select property="keepInSpool" styleId="keepInSpool" styleClass="form-select form-select-sm">
+							<html:options collection="keepInSpools" property="value" labelProperty="name" />
+						</html:select>
+					</div>
+					<div class="col-sm-6">
+						<label for="filterName" class="form-label mb-1">Data Compression <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If requested data files are compressed in the queue if there is enough time before transmission (otherwise files are compressed on the fly)" tabindex="0"></i></label>
+						<bean:define id="filters" name="destinationActionForm" property="filterNameOptions" type="java.util.Collection	" />
+						<html:select property="filterName" styleId="filterName" styleClass="form-select form-select-sm">
+							<html:options collection="filters" property="name" labelProperty="name" />
+						</html:select>
+					</div>
+					<div class="col-sm-6">
+						<label for="hostForSourceName" class="form-label mb-1">Host For Sources <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If the data file is not found on the data mover then specify which host to use in order to retrieve the file from the source" tabindex="0"></i></label>
+						<c:set var="sources" value="${destinationActionForm.hostForSourceOptions}" />
+						<html:select property="hostForSourceName" styleId="hostForSourceName" styleClass="form-select form-select-sm">
+							<html:options collection="sources" property="name" labelProperty="nickName" />
+						</html:select>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="card border-0 shadow-sm mb-3 dest-common-card">
+			<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+				<i class="bi bi-sliders text-primary"></i>
+				<span class="fw-semibold">Limits</span>
+			</div>
+			<div class="card-body pb-2">
+				<div class="row g-2">
+					<div class="col-sm-6">
+						<label class="form-label mb-1">Max Connections <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Maximum number of parallel connections authorized at a time on all the hosts of the Destination" tabindex="0"></i></label>
 						<div id="maxConnectionsSlider" style="width: 210px; margin: 6px;">
 							<input type="hidden" name="maxConnections" id="maxConnections">
-							<div
-								id="maxConnectionsHandle" class="ui-slider-handle"></div>
+							<div id="maxConnectionsHandle" class="ui-slider-handle"></div>
 						</div>
-					</td>
-				</tr>
-				<tr>
-					<th>Retry Count <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If set the Destination is hold after a consecutive number of unsuccessful transfers (a manual restart will be necessary)" tabindex="0"></i></th>
-					<td>
+					</div>
+					<div class="col-sm-6">
+						<label class="form-label mb-1">Retry Count <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If set the Destination is hold after a consecutive number of unsuccessful transfers (a manual restart will be necessary)" tabindex="0"></i></label>
 						<div id="retryCountSlider" style="width: 210px; margin: 6px;">
 							<input type="hidden" name="retryCount" id="retryCount">
-							<div
-								id="retryCountHandle" class="ui-slider-handle"></div>
+							<div id="retryCountHandle" class="ui-slider-handle"></div>
 						</div>
-					</td>
-				</tr>
-				<tr>
-					<th>Retry Frequency <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Time to wait before to retry with the Primary Host if the transmission is failing on all the Backup Hosts" tabindex="0"></i></th>
-					<td>
-						<input type="hidden" name="retryFrequency" id="retryFrequency"
-							value='<c:out value="${requestScope[actionFormName].retryFrequency}"/>'>
+					</div>
+					<div class="col-sm-6">
+						<label for="retryFrequency" class="form-label mb-1">Retry Frequency <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Time to wait before to retry with the Primary Host if the transmission is failing on all the Backup Hosts" tabindex="0"></i></label>
+						<input type="hidden" name="retryFrequency" id="retryFrequency" value='<c:out value="${requestScope[actionFormName].retryFrequency}"/>'>
 						<div class="dur-picker d-flex align-items-center gap-1 flex-wrap" data-target="retryFrequency">
 							<input type="number" class="form-control form-control-sm dur-h" min="0" style="width:65px" placeholder="0">
 							<span class="text-muted small">h</span>
@@ -363,23 +377,17 @@
 							<span class="text-muted small">m</span>
 							<span class="text-muted small ms-1 dur-display"></span>
 						</div>
-					</td>
-				</tr>
-				<tr>
-					<th>Max Start <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If set the transfer is delayed after a consecutive number of unsuccessful attempts" tabindex="0"></i></th>
-					<td>
+					</div>
+					<div class="col-sm-6">
+						<label class="form-label mb-1">Max Start <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If set the transfer is delayed after a consecutive number of unsuccessful attempts" tabindex="0"></i></label>
 						<div id="maxStartSlider" style="width: 210px; margin: 6px;">
 							<input type="hidden" name="maxStart" id="maxStart">
-							<div
-								id="maxStartHandle" class="ui-slider-handle"></div>
+							<div id="maxStartHandle" class="ui-slider-handle"></div>
 						</div>
-					</td>
-				</tr>
-				<tr id="startFrequencyRow" style="display:none">
-					<th>Start Frequency <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Define the delay mentioned in the previous parameter (Max Start)." tabindex="0"></i></th>
-					<td>
-						<input type="hidden" name="startFrequency" id="startFrequency"
-							value="<c:out value="${requestScope[actionFormName].startFrequency}"/>">
+					</div>
+					<div id="startFrequencyRow" class="col-sm-6" style="display:none">
+						<label for="startFrequency" class="form-label mb-1">Start Frequency <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Define the delay mentioned in the previous parameter (Max Start)." tabindex="0"></i></label>
+						<input type="hidden" name="startFrequency" id="startFrequency" value="<c:out value="${requestScope[actionFormName].startFrequency}"/>">
 						<div class="dur-picker d-flex align-items-center gap-1 flex-wrap" data-target="startFrequency">
 							<input type="number" class="form-control form-control-sm dur-h" min="0" style="width:65px" placeholder="0">
 							<span class="text-muted small">h</span>
@@ -387,31 +395,23 @@
 							<span class="text-muted small">m</span>
 							<span class="text-muted small ms-1 dur-display"></span>
 						</div>
-						</td>
-				</tr>
-				<tr>
-					<th>Max Requeue <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If set the transfer is tagged as failed after a consecutive number of unsuccessful transmissions (a manual requeue will be necessary)" tabindex="0"></i></th>
-					<td>
+					</div>
+					<div class="col-sm-6">
+						<label class="form-label mb-1">Max Requeue <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If set the transfer is tagged as failed after a consecutive number of unsuccessful transmissions (a manual requeue will be necessary)" tabindex="0"></i></label>
 						<div id="maxRequeueSlider" style="width: 210px; margin: 6px;">
 							<input type="hidden" name="maxRequeue" id="maxRequeue">
-							<div
-								id="maxRequeueHandle" class="ui-slider-handle"></div>
+							<div id="maxRequeueHandle" class="ui-slider-handle"></div>
 						</div>
-					</td>
-				</tr>
-				<tr>
-					<th>Max Pending <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Define the maximum number of queued files which can exists at a single time in the Destination (new attempt of queueing files are rejected)" tabindex="0"></i></th>
-					<td>
+					</div>
+					<div class="col-sm-6">
+						<label class="form-label mb-1">Max Pending <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Define the maximum number of queued files which can exists at a single time in the Destination (new attempt of queueing files are rejected)" tabindex="0"></i></label>
 						<div id="maxPendingSlider" style="width: 210px; margin: 6px;">
 							<input type="hidden" name="maxPending" id="maxPending">
-							<div
-								id="maxPendingHandle" class="ui-slider-handle"></div>
+							<div id="maxPendingHandle" class="ui-slider-handle"></div>
 						</div>
-					</td>
-				</tr>
-				<tr>
-					<th>Max File Size <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Define the maximum size for a file in the queue (attempt of queueing bigger files are rejected)" tabindex="0"></i></th>
-					<td>
+					</div>
+					<div class="col-sm-6">
+						<label for="maxFileSize" class="form-label mb-1">Max File Size <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Define the maximum size for a file in the queue (attempt of queueing bigger files are rejected)" tabindex="0"></i></label>
 						<html:hidden property="maxFileSize" styleId="maxFileSize" />
 						<div class="d-flex align-items-center gap-2 flex-wrap" id="maxFileSizePicker">
 							<div class="form-check form-switch mb-0 d-flex align-items-center gap-2">
@@ -428,13 +428,10 @@
 								</select>
 							</div>
 						</div>
-					</td>
-				</tr>
-				<tr>
-					<th>Reset Frequency <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If set and the Destination is successfully using a backup host for more than this duration, it will restart." tabindex="0"></i></th>
-					<td>
-						<input type="hidden" name="resetFrequency" id="resetFrequency"
-							value="<c:out value="${requestScope[actionFormName].resetFrequency}"/>">
+					</div>
+					<div class="col-sm-6">
+						<label for="resetFrequency" class="form-label mb-1">Reset Frequency <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If set and the Destination is successfully using a backup host for more than this duration, it will restart." tabindex="0"></i></label>
+						<input type="hidden" name="resetFrequency" id="resetFrequency" value="<c:out value="${requestScope[actionFormName].resetFrequency}"/>">
 						<div class="dur-picker d-flex align-items-center gap-1 flex-wrap" data-target="resetFrequency">
 							<input type="number" class="form-control form-control-sm dur-h" min="0" style="width:65px" placeholder="0">
 							<span class="text-muted small">h</span>
@@ -442,13 +439,10 @@
 							<span class="text-muted small">m</span>
 							<span class="text-muted small ms-1 dur-display"></span>
 						</div>
-						</td>
-				</tr>
-				<tr>
-					<th>Max Inactivity <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If set and the Destination has no dissemination activity for more than this duration, a problem will be shown on the monitoring." tabindex="0"></i></th>
-					<td>
-						<input type="hidden" name="maxInactivity" id="maxInactivity"
-							value="<c:out value="${requestScope[actionFormName].maxInactivity}"/>">
+					</div>
+					<div class="col-sm-6">
+						<label for="maxInactivity" class="form-label mb-1">Max Inactivity <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If set and the Destination has no dissemination activity for more than this duration, a problem will be shown on the monitoring." tabindex="0"></i></label>
+						<input type="hidden" name="maxInactivity" id="maxInactivity" value="<c:out value="${requestScope[actionFormName].maxInactivity}"/>">
 						<div class="dur-picker d-flex align-items-center gap-1 flex-wrap" data-target="maxInactivity">
 							<input type="number" class="form-control form-control-sm dur-h" min="0" style="width:65px" placeholder="0">
 							<span class="text-muted small">h</span>
@@ -456,21 +450,25 @@
 							<span class="text-muted small">m</span>
 							<span class="text-muted small ms-1 dur-display"></span>
 						</div>
-						</td>
-				</tr>
-				<tr>
-					<td colspan="2">&nbsp;</td>
-				</tr>
-				<tr>
-					<th>Group By Date <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If set then incoming ftp/sftp users will see the files grouped into date directories" tabindex="0"></i></th>
-					<td><html:checkbox property="groupByDate" styleId="groupByDate"
-							onclick="document.getElementById('dateFormatRow').style.display = this.checked ? '' : 'none'" /></td>
-				</tr>
-				<tr id="dateFormatRow">
-					<th>Date Format <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Define the format of the date to display for each directory (Java SimpleDateFormat pattern)" tabindex="0"></i></th>
-					<td>
-						<input type="text" id="dateFormatInput" name="dateFormat" list="dateFormatPresets"
-							value='<c:out value="${requestScope[actionFormName].dateFormat}"/>' />
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="card border-0 shadow-sm mb-3 dest-common-card">
+			<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+				<i class="bi bi-folder text-primary"></i>
+				<span class="fw-semibold">Directory</span>
+			</div>
+			<div class="card-body pb-2">
+				<div class="row g-2">
+					<div class="col-sm-6">
+						<label class="form-label mb-1">Group By Date <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If set then incoming ftp/sftp users will see the files grouped into date directories" tabindex="0"></i></label>
+						<div class="form-check mt-1"><html:checkbox property="groupByDate" styleId="groupByDate" styleClass="form-check-input" onclick="document.getElementById('dateFormatRow').style.display = this.checked ? '' : 'none'" /></div>
+					</div>
+					<div id="dateFormatRow" class="col-sm-6">
+						<label for="dateFormatInput" class="form-label mb-1">Date Format <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Define the format of the date to display for each directory (Java SimpleDateFormat pattern)" tabindex="0"></i></label>
+						<input type="text" id="dateFormatInput" name="dateFormat" list="dateFormatPresets" class="form-control form-control-sm" value='<c:out value="${requestScope[actionFormName].dateFormat}"/>' />
 						<datalist id="dateFormatPresets">
 							<option value="yyyyMMdd" />
 							<option value="yyyy-MM-dd" />
@@ -486,116 +484,82 @@
 							<option value="yyyyMMddHH" />
 						</datalist>
 						<div id="dateFormatPreview" class="mt-1 small"></div>
-					</td>
-				</tr>
-				<tr>
-					<td colspan="2">&nbsp;</td>
-				</tr>
-				<tr>
-					<th>Data Compression <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If requested data files are compressed in the queue if there is enough time before transmission (otherwise files are compressed on the fly)" tabindex="0"></i></th>
-					<td><bean:define id="filters" name="destinationActionForm"
-							property="filterNameOptions" type="java.util.Collection	" /> <html:select
-							property="filterName" styleId="filterName">
-							<html:options collection="filters" property="name"
-								labelProperty="name" />
-						</html:select>
-				</tr>
-				<tr>
-					<td colspan="2">&nbsp;</td>
-				</tr>
-				<tr>
-					<th>Host For Sources <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If the data file is not found on the data mover then specify which host to use in order to retrieve the file from the source" tabindex="0"></i></th>
-					<td><c:set var="sources"
-							value="${destinationActionForm.hostForSourceOptions}" /> <html:select
-							property="hostForSourceName">
-							<html:options collection="sources" property="name"
-								labelProperty="nickName" />
-						</html:select>
-				</tr>
-				<tr>
-					<td colspan="2">&nbsp;</td>
-				</tr>
-				<tr>
-					<th>Owner <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Only for the record" tabindex="0"></i></th>
-					<td><c:set var="ecUsers"
-							value="${destinationActionForm.ecUserOptions}" /> <html:select
-							property="ecUserName">
-							<html:options collection="ecUsers" property="name"
-								labelProperty="comment" />
-						</html:select></td>
-				</tr>
-				<tr>
-					<th>Mail Address <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="One or more email addresses used when sending notifications. Separate multiple addresses with ';' (e.g. 'a@example.com;b@example.com')." tabindex="0"></i></th>
-					<td>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="card border-0 shadow-sm mb-3 dest-common-card">
+			<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+				<i class="bi bi-envelope text-primary"></i>
+				<span class="fw-semibold">Notifications</span>
+			</div>
+			<div class="card-body pb-2">
+				<div class="row g-2">
+					<div class="col-12">
+						<label for="userMailInput" class="form-label mb-1">Mail Address <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="One or more email addresses used when sending notifications. Separate multiple addresses with ';' (e.g. 'a@example.com;b@example.com')." tabindex="0"></i></label>
 						<div class="d-flex align-items-center gap-2">
-							<input type="text" name="userMail" id="userMailInput"
-								value='<c:out value="${requestScope[actionFormName].userMail}"/>'
-								title="Enter one or more email addresses separated by ';'"
-								oninput="validateMailInput(this); toggleMailRows()" />
+							<input type="text" name="userMail" id="userMailInput" class="form-control form-control-sm" value='<c:out value="${requestScope[actionFormName].userMail}"/>' title="Enter one or more email addresses separated by ';'" oninput="validateMailInput(this); toggleMailRows()" />
 							<span id="userMailFeedback"></span>
 						</div>
-					</td>
-				</tr>
-				<tr id="mailOnUpdateRow">
-					<th>Mail on Update <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="When enabled, an email is sent when a change is made to the Destination or its related Hosts." tabindex="0"></i></th>
-					<td><html:checkbox
-						property="mailOnUpdate" /></td>
-				</tr>
-				<tr id="mailOnStartRow">
-					<th>Mail on Start <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="When enabled, an email is sent when a data transfer starts for this Destination." tabindex="0"></i></th>
-					<td><html:checkbox
-						property="mailOnStart" /></td>
-				</tr>
-				<tr id="mailOnEndRow">
-					<th>Mail on End <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="When enabled, an email is sent when a data transfer has completed successfully for this Destination." tabindex="0"></i></th>
-					<td><html:checkbox
-						property="mailOnEnd" /></td>
-				</tr>
-				<tr id="mailOnErrorRow">
-					<th>Mail on Error <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="When enabled, an email is sent when a data transfer has failed for this Destination." tabindex="0"></i></th>
-					<td><html:checkbox
-						property="mailOnError" /></td>
-				</tr>
-				<tr>
-					<td colspan="2">&nbsp;</td>
-				</tr>
-				<tr>
-					<th>Restart on Update <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Automatically restart the Destination if a change is detected on one of the host configuration" tabindex="0"></i></th>
-					<td><html:checkbox
-							property="stopIfDirty" /></td>
-				</tr>
-				<tr>
-					<th>Acquisition <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Request the Acquisition Scheduler to use this Destination for Data Discovery and Retrieval (at least one Acquisition host must be defined)" tabindex="0"></i></th>
-					<td><html:checkbox
-							property="acquisition" /></td>
-				</tr>
-				<tr>
-					<th>Enabled <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="When enabled, this Destination is considered by the transfer scheduler; otherwise, no data transfers will be scheduled, even if there are pending requests in the queue. Similarly, any acquisition host will be disregarded." tabindex="0"></i></th>
-					<td><html:checkbox
-						property="active" /></td>
-				</tr>
-				<tr>
-					<th>Show In Monitors <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="When enabled, this Destination is monitored in the monitoring display." tabindex="0"></i></th>
-					<td>
-					<div class="d-flex align-items-center gap-1">
-					<html:checkbox property="showInMonitors" styleId="chk_showInMonitors" onchange="(function(c){document.getElementById('icon_showInMonitors').style.display=c.checked?'none':'';})(this)" />
-					<i id="icon_showInMonitors" class="bi bi-eye-slash text-muted" title="Not shown in Monitor Display" style="font-size:0.78rem;"></i>
 					</div>
-					<script>(function(){var c=document.getElementById('chk_showInMonitors');if(c)document.getElementById('icon_showInMonitors').style.display=c.checked?'none':'';})()</script>
-				</td>
-				</tr>
-				<tr>
-					<th>Backup <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Request the storage of the data files on the backup system (if available for the Transfer Group where the files are stored)" tabindex="0"></i></th>
-					<td><html:checkbox
-							property="backup" /></td>
-				</tr>
-				<tr>
-					<td colspan="2">&nbsp;</td>
-				</tr>
-				</tbody>
-		</table>
-		</td>
-		<td colspan="2" style="vertical-align:top"><c:if test="${isInsert != 'true'}">
+					<div id="mailOnUpdateRow" class="col-sm-6">
+						<label class="form-label mb-1">Mail on Update <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="When enabled, an email is sent when a change is made to the Destination or its related Hosts." tabindex="0"></i></label>
+						<div class="form-check mt-1"><html:checkbox property="mailOnUpdate" styleClass="form-check-input" /></div>
+					</div>
+					<div id="mailOnStartRow" class="col-sm-6">
+						<label class="form-label mb-1">Mail on Start <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="When enabled, an email is sent when a data transfer starts for this Destination." tabindex="0"></i></label>
+						<div class="form-check mt-1"><html:checkbox property="mailOnStart" styleClass="form-check-input" /></div>
+					</div>
+					<div id="mailOnEndRow" class="col-sm-6">
+						<label class="form-label mb-1">Mail on End <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="When enabled, an email is sent when a data transfer has completed successfully for this Destination." tabindex="0"></i></label>
+						<div class="form-check mt-1"><html:checkbox property="mailOnEnd" styleClass="form-check-input" /></div>
+					</div>
+					<div id="mailOnErrorRow" class="col-sm-6">
+						<label class="form-label mb-1">Mail on Error <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="When enabled, an email is sent when a data transfer has failed for this Destination." tabindex="0"></i></label>
+						<div class="form-check mt-1"><html:checkbox property="mailOnError" styleClass="form-check-input" /></div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="card border-0 shadow-sm mb-3 dest-common-card">
+			<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+				<i class="bi bi-toggles text-primary"></i>
+				<span class="fw-semibold">Flags</span>
+			</div>
+			<div class="card-body pb-2">
+				<div class="row g-2">
+					<div class="col-sm-6 col-lg-4">
+						<label class="form-label mb-1">Restart on Update <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Automatically restart the Destination if a change is detected on one of the host configuration" tabindex="0"></i></label>
+						<div class="form-check mt-1"><html:checkbox property="stopIfDirty" styleClass="form-check-input" /></div>
+					</div>
+					<div class="col-sm-6 col-lg-4">
+						<label class="form-label mb-1">Acquisition <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Request the Acquisition Scheduler to use this Destination for Data Discovery and Retrieval (at least one Acquisition host must be defined)" tabindex="0"></i></label>
+						<div class="form-check mt-1"><html:checkbox property="acquisition" styleClass="form-check-input" /></div>
+					</div>
+					<div class="col-sm-6 col-lg-4">
+						<label class="form-label mb-1">Enabled <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="When enabled, this Destination is considered by the transfer scheduler; otherwise, no data transfers will be scheduled, even if there are pending requests in the queue. Similarly, any acquisition host will be disregarded." tabindex="0"></i></label>
+						<div class="form-check mt-1"><html:checkbox property="active" styleClass="form-check-input" /></div>
+					</div>
+					<div class="col-sm-6 col-lg-4">
+						<label class="form-label mb-1">Show In Monitors <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="When enabled, this Destination is monitored in the monitoring display." tabindex="0"></i></label>
+						<div class="d-flex align-items-center gap-1 mt-1">
+							<html:checkbox property="showInMonitors" styleId="chk_showInMonitors" styleClass="form-check-input" style="margin-top:0" onchange="(function(c){document.getElementById('icon_showInMonitors').style.display=c.checked?'none':'';})(this)" />
+							<i id="icon_showInMonitors" class="bi bi-eye-slash text-muted" title="Not shown in Monitor Display" style="font-size:1em;"></i>
+						</div>
+						<script>(function(){var c=document.getElementById('chk_showInMonitors');if(c)document.getElementById('icon_showInMonitors').style.display=c.checked?'none':'';})()</script>
+					</div>
+					<div class="col-sm-6 col-lg-4">
+						<label class="form-label mb-1">Backup <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Request the storage of the data files on the backup system (if available for the Transfer Group where the files are stored)" tabindex="0"></i></label>
+						<div class="form-check mt-1"><html:checkbox property="backup" styleClass="form-check-input" /></div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="col-lg-5" id="dest-assoc-col">
+<c:if test="${isInsert != 'true'}">
 <style>
 .assoc-card .card-header { display:flex; align-items:center; gap:.4rem; padding:.5rem .75rem; background:var(--bs-secondary-bg); font-size:.85rem; }
 .assoc-card .card-header .ms-auto { margin-left:auto !important; }
@@ -987,16 +951,17 @@
   </div>
 
 </div>
-</c:if></td>
-	</tr>
-	<tbody id="dest-editor-tbody"
-		<c:if test="${isInsert == 'true' and not empty destinationActionForm.fromDestinationOptions}">class="d-none"</c:if>>
-	<tr>
-		<td colspan="3" style="padding:0 0 0 10pt">
-			<div class="d-flex align-items-stretch" id="options-row">
-				<div id="options-label" style="background:var(--bs-secondary-bg);border-right:2px solid var(--bs-border-color);font-weight:600;white-space:nowrap;padding:0.4rem 0.6rem;flex-shrink:0;text-align:right;font-size:10pt">Options</div>
-				<div style="flex:1;min-width:0;padding:0.4rem 0.6rem">
-					<div class="accordion" id="optionsAccordion" style="min-width:860px;max-width:860px">
+</c:if>
+	</div>
+</div>
+<div id="dest-editor-tbody"<c:if test="${isInsert == 'true' and not empty destinationActionForm.fromDestinationOptions}"> class="d-none"</c:if>>
+	<div class="card border-0 shadow-sm mb-3">
+		<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+			<i class="bi bi-code-square text-primary"></i>
+			<span class="fw-semibold">Options</span>
+		</div>
+		<div class="card-body p-2">
+			<div class="accordion" id="optionsAccordion">
 					<div class="accordion-item">
 						<h2 class="accordion-header" id="acc-properties-heading" style="position:relative;">
 							<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
@@ -1033,19 +998,20 @@
 								<textarea id="javascript" name="javascript" style="display:none;"></textarea>
 								<div class="d-flex align-items-center gap-2 mt-1">
 								<button type="button" class="btn btn-sm btn-outline-secondary" onclick="formatSource(editorJavascript); return false">Format</button>
-								<button type="button" class="btn btn-sm btn-outline-secondary" onclick="testSource(editorJavascript); return false">Test</button>
+								<span style="position:relative;display:inline-block">
+								<button type="button" id="testJs" class="btn btn-sm btn-outline-secondary" onclick="testSource(editorJavascript); return false">Test</button>
+								<span id="testJsOverlay" style="display:none;position:absolute;inset:0;cursor:not-allowed"
+								  data-bs-toggle="tooltip" data-bs-title="Fix the errors in the editor before testing"></span>
+								</span>
 								<button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearSource(editorJavascript); return false">Clear</button>
 								</div>
 							</div>
 						</div>
 					</div>
 					</div>
-				</div>
-			</div>
-		</td>
-	</tr>
-	</tbody>
-</table>
+		</div>
+	</div>
+</div>
 
 <%-- Help offcanvas panel --%>
 <div class="offcanvas offcanvas-end" tabindex="-1" id="destHelpOffcanvas"
@@ -1215,13 +1181,6 @@
 				if (btn) btn.classList.remove('acc-help-active');
 			});
 		}
-		// Align "Options" label width with the <th> column in table.fields
-		var $th = $('table.fields').first().find('th').first();
-		if ($th.length) {
-			var thRightEdge = $th.offset().left + $th.outerWidth();
-			var rowLeft = $('#options-row').offset().left;
-			$('#options-label').css('width', (thRightEdge - rowLeft) + 'px');
-		}
 	});
     
 	// Create a custom completer
@@ -1297,6 +1256,13 @@
 
 	makeResizable(editorProperties);
 	makeResizable(editorJavascript);
+
+	function updateTestJsBtn() {
+		var hasError = editorJavascript.getSession().getAnnotations().some(function(a) { return a.type === 'error'; });
+		$('#testJs').prop('disabled', hasError).toggleClass('disabled', hasError);
+		$('#testJsOverlay').toggle(hasError);
+	}
+	editorJavascript.getSession().on('changeAnnotation', updateTestJsBtn);
 
 	// Duration picker: h + m only. Rounds existing ms value to nearest minute (min 1m unless 0).
 	(function() {

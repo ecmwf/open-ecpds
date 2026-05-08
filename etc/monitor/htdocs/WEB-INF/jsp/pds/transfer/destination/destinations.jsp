@@ -532,7 +532,7 @@ function _updateDestSearchBanner(queryError, total, hasSearch) {
         });
     }
 
-    window.toggleDestLayout = function() {
+    window.toggleDestLayout = function(noSave) {
         var btn = document.getElementById('btnDestLayout');
         _isSplit = !_isSplit;
 
@@ -571,9 +571,9 @@ function _updateDestSearchBanner(queryError, total, hasSearch) {
                 .append(makeCol('destTableL'))
                 .append(makeCol('destTableR'));
 
-            var $footer = $('<div class="row mt-2">').append(
+            var $footer = $('<div class="row mt-2 align-items-start">').append(
                 $('<div class="col-sm-12 col-md-5">').append(
-                    $('<div id="destSplitInfo" class="dataTables_info" style="padding-top:.85em">')
+                    $('<div id="destSplitInfo" class="dataTables_info">')
                 )
             ).append(
                 $('<div class="col-sm-12 col-md-7">').append(
@@ -598,8 +598,21 @@ function _updateDestSearchBanner(queryError, total, hasSearch) {
             _destsTable = $('#destinationsTable').DataTable($.extend({}, _opts, { pageLength: _pageLen }));
             btn.innerHTML = '<i class="bi bi-layout-three-columns"></i> Split';
         }
-        localStorage.setItem('destLayout', _isSplit ? 'split' : 'single');
+        if (!noSave) {
+            localStorage.setItem('destLayout', _isSplit ? 'split' : 'single');
+        }
     };
+
+    var _splitResizeTimer;
+    function _enforceSingleIfNarrow() {
+        if (_isSplit && window.innerWidth < 992) {
+            window.toggleDestLayout(true); // switch to single without overwriting user preference
+        }
+    }
+    $(window).on('resize.destLayout', function() {
+        clearTimeout(_splitResizeTimer);
+        _splitResizeTimer = setTimeout(_enforceSingleIfNarrow, 200);
+    });
 
     $(function() {
         _destsTable = $('#destinationsTable').DataTable(_opts);
@@ -612,6 +625,7 @@ function _updateDestSearchBanner(queryError, total, hasSearch) {
         if (localStorage.getItem('destLayout') === 'split') {
             window.toggleDestLayout();
         }
+        _enforceSingleIfNarrow(); // force single if window already too narrow on load
     });
 })();
 </script>

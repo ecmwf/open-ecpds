@@ -1,73 +1,91 @@
 <%@ page session="true"%>
 
-<%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean"%>
 <%@ taglib uri="/WEB-INF/tld/struts-tiles.tld" prefix="tiles"%>
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
-<%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content"%>
-<%@ taglib uri="/WEB-INF/tld/displaytag.tld" prefix="display"%>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 
 <tiles:insert name="date.select" />
 
-<form>
-<div class="input-group input-group-sm mb-2" style="max-width:400px">
+<form id="incomingHistorySearchForm">
+<div class="input-group input-group-sm mb-2" style="max-width:520px">
 <span class="input-group-text"><i class="bi bi-search"></i></span>
-<input class="form-control" name="search" type="text" placeholder="Search.." title="Search is performed against the File Name in case-sensitive" value="${param['search']}">
+<input id="incomingHistorySearch" class="form-control" name="search" type="text" placeholder="Search.." title="Search is performed against the File Name in case-sensitive" value="${param['search']}">
+<button class="btn btn-outline-secondary" type="submit">Search</button>
 </div>
 </form>
 
-<c:if test="${empty events}">
-	<div class="alert">
-		No Data Events found based on these criteria!
-	</div>
-</c:if>
+<p class="fw-bold mb-1 mt-2">Events for <auth:link basePathKey="incoming.basepath" href="">All Data Users</auth:link></p>
+<table id="incomingHistoryTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
+    <thead class="table-light">
+        <tr>
+            <th>Data User</th>
+            <th>Destination</th>
+            <th>Transfer Server</th>
+            <th>Protocol</th>
+            <th>File Name</th>
+            <th>Start Time</th>
+            <th>Finish Time</th>
+            <th>Mbits/s</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
 
-<c:if test="${!empty events}">
-	<p class="fw-bold mb-1 mt-2">Events for <auth:link basePathKey="incoming.basepath" href="">All Data Users</auth:link></p>
-	<display:table name="${events}" id="event" requestURI=""
-		sort="external" defaultsort="6" partialList="true"
-		size="${eventsSize}" pagesize="${recordsPerPage}" class="listing">
-		<display:column title="Data User" sortable="true">
-			<a href="<bean:message key="incoming.basepath"/>/${event.userName}">${event.userName}</a>
-		</display:column>
-		<display:column title="Destination" sortable="true">
-			<a
-				href="<bean:message key="destination.basepath"/>/${event.destinationName}">${event.destinationName}</a>
-		</display:column>
-		<display:column property="transferServerName" title="Transfer Server"
-			sortable="true" />
-
-		<display:column property="protocol" title="Protocol" sortable="true" />
-		<display:column title="File Name" sortable="true">
-			<c:if test="${event.dataTransferId > 0}">
-				<a title="Size: ${event.formattedBytes}"
-					href="/do/transfer/data/${event.dataTransferId}">${event.fileName}</a>
-			</c:if>
-			<c:if test="${event.dataTransferId <= 0}">
-				<a STYLE="TEXT-DECORATION: NONE"
-					title="Size: ${event.formattedBytes}"><font color="red">${event.fileName}</font></a>
-			</c:if>
-		</display:column>
-		<display:column title="Start Time" sortable="true">
-			<content:content name="event.startTime"
-				dateFormatKey="date.format.transfer" ignoreNull="true" />
-		</display:column>
-		<display:column title="Finish Time" sortable="false">
-			<content:content name="event.finishTime"
-				dateFormatKey="date.format.transfer" ignoreNull="true" />
-		</display:column>
-		<display:column title="Mbits/s" sortable="false" sortProperty="rate">
-			<c:if test="${event.rate != 0}">
-				<a STYLE="TEXT-DECORATION: NONE"
-					title="Rate: ${event.formattedRate}">${event.rate}</a>
-			</c:if>
-			<c:if test="${event.rate == 0}">
-				<font color="grey">[n/a]</font>
-			</c:if>
-		</display:column>
-		<display:column title="Action" sortable="true">
-			<c:if test="${event.upload}">upload</c:if>
-			<c:if test="${!event.upload}">download</c:if>
-		</display:column>
-	</display:table>
-</c:if>
+<script>
+var _incomingHistoryTable;
+function incomingHistoryTableReload() {
+    if (_incomingHistoryTable) {
+        _incomingHistoryTable.ajax.reload();
+    }
+}
+$(function() {
+    _incomingHistoryTable = $('#incomingHistoryTable').DataTable({
+        serverSide: true,
+        processing: true,
+        ajax: {
+            url: '/do/user/history/list',
+            type: 'GET',
+            data: function(d) {
+                d.date = '${selectedDate}';
+                d.search = $('#incomingHistorySearch').val() || '';
+            }
+        },
+        pageLength: 25,
+        searching: false,
+        autoWidth: false,
+        order: [[5, 'desc']],
+        columns: [
+            { orderable: true,  data: 0 },
+            { orderable: true,  data: 1 },
+            { orderable: true,  data: 2 },
+            { orderable: true,  data: 3 },
+            { orderable: true,  data: 4 },
+            { orderable: true,  data: 5 },
+            { orderable: false, data: 6 },
+            { orderable: false, data: 7 },
+            { orderable: true,  data: 8 }
+        ],
+        columnDefs: [{ targets: '_all', render: $.fn.dataTable.render.text() }],
+        createdRow: function(row, data) {
+            $('td', row).each(function(i) { $(this).html(data[i]); });
+        },
+        dom: '<"d-flex align-items-start justify-content-between mt-2"i p>t<"d-flex align-items-start justify-content-between mt-2"i p>',
+        language: {
+            info: 'Showing _START_-_END_ of _TOTAL_',
+            processing: 'Loading...',
+            emptyTable: 'No Data Events found based on these criteria!'
+        }
+    });
+    $('#incomingHistorySearchForm').on('submit', function(e) {
+        e.preventDefault();
+        incomingHistoryTableReload();
+    });
+    $('#incomingHistorySearch').on('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            incomingHistoryTableReload();
+        }
+    });
+});
+</script>

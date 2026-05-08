@@ -1,4 +1,4 @@
-<div class="info">
-    <span class="infobtn" onclick="parent.history.back();">&times;</span>
-    ${message}
+<div class="alert alert-success d-flex align-items-center gap-2 mt-2">
+	<i class="bi bi-check-circle-fill flex-shrink-0"></i>
+	<div>${message}</div>
 </div>

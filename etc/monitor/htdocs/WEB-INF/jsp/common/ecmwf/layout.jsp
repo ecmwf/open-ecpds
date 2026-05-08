@@ -357,6 +357,25 @@ $(document).ready(function() {
 <div id="loadingBackdrop"></div>
 <div id="loadingDiv"><div class="loader"></div></div>
 
+<div class="modal fade" id="testResultModal" tabindex="-1"
+     aria-labelledby="testResultModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header py-2">
+        <h5 class="modal-title fw-semibold" id="testResultModalLabel"><i class="bi bi-terminal me-2"></i>Test Result</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-0">
+        <pre id="testResultContent" class="m-0 p-3"
+             style="max-height:60vh;overflow:auto;white-space:pre-wrap;word-break:break-word;font-size:0.85rem;border-radius:0;"></pre>
+      </div>
+      <div class="modal-footer py-2">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal fade" id="confirmationModal" tabindex="-1"
      aria-labelledby="confirmationModalLabel" aria-hidden="true">
   <div class="modal-dialog">

@@ -86,7 +86,7 @@
                 loadingRecords: 'Loading&hellip;',
                 processing:     '<i class="bi bi-hourglass-split"></i> Loading&hellip;'
             },
-            dom: "t<'d-flex align-items-center mt-2'i<'ms-auto'p>>",
+            dom: "t<'d-flex align-items-start mt-2'i<'ms-auto'p>>",
             buttons: []
         });
 

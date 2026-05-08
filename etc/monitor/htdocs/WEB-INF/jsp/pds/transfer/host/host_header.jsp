@@ -35,9 +35,10 @@
         <c:if test="${not empty host.filterName and host.filterName ne 'none'}">
             <jsp:include page="/WEB-INF/jsp/pds/transfer/compression_icon.jsp"><jsp:param name="name" value="${host.filterName}"/></jsp:include>
         </c:if>
+        <div class="d-flex gap-2 ms-auto align-items-center">
         <auth:if basePathKey="host.basepath" paths="/edit/insert_form">
         <auth:then>
-        <div class="d-flex gap-1 ms-auto align-items-center">
+        <div class="d-flex gap-1 align-items-center">
             <a href='<bean:message key="host.basepath"/>/edit/insert_form'
                class="btn btn-sm btn-outline-success" title="Create new host"><i class="bi bi-plus-circle"></i></a>
             <c:if test="${not empty host.id}">
@@ -45,11 +46,64 @@
                class="btn btn-sm btn-outline-primary" title="Edit this host"><i class="bi bi-pencil"></i></a>
             <a href='<bean:message key="host.basepath"/>/edit/delete_form/${host.id}'
                class="btn btn-sm btn-outline-danger" title="Delete this host"><i class="bi bi-trash"></i></a>
+            <c:if test="${not empty host.destinations}">
+            <auth:if basePathKey="transferhistory.basepath" paths="/">
+            <auth:then>
+            <a href="#" class="btn btn-sm btn-outline-warning" title="Duplicate this host"
+               onclick="ecpdsHostDuplicate('${host.id}','${host.nickName}');return false;"><i class="bi bi-copy"></i></a>
+            </auth:then>
+            </auth:if>
+            </c:if>
             </c:if>
         </div>
         </auth:then>
         </auth:if>
+        <auth:if basePathKey="host.basepath" paths="/edit/resetStats/">
+        <auth:then>
+        <c:if test="${not empty host.id}">
+        <div class="d-flex gap-1 align-items-center" style="border-left:1px solid var(--bs-border-color);padding-left:0.5rem;">
+            <a href='<bean:message key="host.basepath"/>/${host.id}?mode=changelog'
+               class="btn btn-sm btn-outline-secondary" title="Changes Log"><i class="bi bi-clock-history"></i></a>
+            <auth:if basePathKey="transferhistory.basepath" paths="/">
+            <auth:then>
+            <a href='<bean:message key="host.basepath"/>/edit/getOutput/view/${host.id}'
+               class="btn btn-sm btn-outline-secondary" title="View Output"><i class="bi bi-terminal"></i></a>
+            <a href='<bean:message key="host.basepath"/>/edit/getReport/${host.id}'
+               class="btn btn-sm btn-outline-secondary" title="Network Info"><i class="bi bi-wifi"></i></a>
+            <div style="border-left:1px solid var(--bs-border-color);height:1.5rem;"></div>
+            <a href="#" class="btn btn-sm btn-outline-warning" title="Clean Options"
+               onclick="confirmationDialog({title:'Clean Options',message:'Clean the data window options for host <b>${host.nickName}</b>?<br/><br/>This will remove all options with default values from the option properties editor, simplifying the configuration. This action cannot be undone.',confirmText:'Clean',showLoading:true,onConfirm:function(){window.location.href='<bean:message key="host.basepath"/>/edit/cleanDataWindow/${host.id}'}}); return false;"><i class="bi bi-sliders"></i></a>
+            <a href="#" class="btn btn-sm btn-outline-warning" title="Reset Stats"
+               onclick="confirmationDialog({title:'Reset Stats',message:'Reset transfer statistics for host <b>${host.nickName}</b>?<br/><br/>This will permanently clear all accumulated transfer counters (bytes sent, transfer counts, error counts, etc.). This action cannot be undone.',confirmText:'Reset',showLoading:true,onConfirm:function(){window.location.href='<bean:message key="host.basepath"/>/edit/resetStats/${host.id}'}}); return false;"><i class="bi bi-arrow-counterclockwise"></i></a>
+            </auth:then>
+            </auth:if>
+        </div>
+        </c:if>
+        </auth:then>
+        </auth:if>
+        </div>
     </div>
+<script>
+function ecpdsHostDuplicate(hostId, nickName) {
+    var destinations = [<c:forEach var="_d" items="${host.destinations}" varStatus="_s">'<c:out value="${_d.name}"/>'<c:if test="${!_s.last}">,</c:if></c:forEach>];
+    var extra = '';
+    if (destinations.length > 1) {
+        var opts = destinations.map(function(n){return '<option value="'+n+'">'+n+'</option>';}).join('');
+        extra = '<br><br>Select destination:<br><select id="ecpds-dup-dest" class="form-select form-select-sm mt-1">'+opts+'</select>';
+    }
+    confirmationDialog({
+        title: 'Confirm Host Duplication',
+        message: destinations.length === 1
+            ? 'Are you sure you want to duplicate host <strong>'+nickName+'</strong> in destination <strong>'+destinations[0]+'</strong>?'
+            : 'Are you sure you want to duplicate host <strong>'+nickName+'</strong>?'+extra,
+        showLoading: true,
+        onConfirm: function() {
+            var dest = destinations.length === 1 ? destinations[0] : document.getElementById('ecpds-dup-dest').value;
+            window.location.href = '/do/transfer/destination/operations/'+dest+'/duplicateHost/'+hostId;
+        }
+    });
+}
+</script>
     <c:if test="${not empty host.comment}">
         <p class="dest-page-comment">${host.comment}</p>
     </c:if>

@@ -2,7 +2,6 @@
 
 <%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean"%>
 <%@ taglib uri="/WEB-INF/tld/struts-tiles.tld" prefix="tiles"%>
-<%@ taglib uri="/WEB-INF/tld/displaytag.tld" prefix="display"%>
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content"%>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
@@ -13,65 +12,115 @@
 </c:if>
 <c:if test="${empty isDelete}">
 
-	<div class="form-info-banner" style="margin-left:0">
+	<div class="d-flex align-items-center gap-2 mb-3 px-3 py-2 rounded"
+		style="background:rgba(13,110,253,0.06); font-size:0.9rem; color:var(--bs-body-color); border-left:4px solid #0d6efd;">
 		<i class="bi bi-server text-primary flex-shrink-0"></i>
-		Data Mover: <strong><c:out value="${transferserver.name}"/></strong>
+		<span>Data Mover: <strong><c:out value="${transferserver.name}"/></strong></span>
+		<auth:if basePathKey="transferserver.basepath" paths="/edit/insert_form">
+		<auth:then>
+		<div class="d-flex gap-1 ms-auto flex-shrink-0">
+			<a href='<bean:message key="transferserver.basepath"/>/edit/insert_form'
+			   class="btn btn-sm btn-outline-success" title="Create new data mover"><i class="bi bi-plus-circle"></i></a>
+			<c:if test="${not empty transferserver.id}">
+			<a href='<bean:message key="transferserver.basepath"/>/edit/update_form/${transferserver.id}'
+			   class="btn btn-sm btn-outline-primary" title="Edit this data mover"><i class="bi bi-pencil"></i></a>
+			<a href='<bean:message key="transferserver.basepath"/>/edit/delete_form/${transferserver.id}'
+			   class="btn btn-sm btn-outline-danger" title="Delete this data mover"><i class="bi bi-trash"></i></a>
+			</c:if>
+		</div>
+		</auth:then>
+		</auth:if>
 	</div>
 
-	<table class="fields">
-		<tr>
-			<th>Name</th>
-			<td><c:out value="${transferserver.name}" /></td>
-		</tr>
-		<tr>
-			<th>Hostname</th>
-			<td><c:out value="${transferserver.host}" /></td>
-		</tr>
-		<tr>
-			<th>Port</th>
-			<td><c:out value="${transferserver.port}" /></td>
-		</tr>
-		<tr>
-			<th>Group</th>
-			<td><a
-				href="/do/datafile/transfergroup/${transferserver.transferGroupName}">${transferserver.transferGroupName}</a></td>
-		</tr>
+	<%-- Card: Identity --%>
+	<div class="card border-0 shadow-sm mb-3">
+		<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+			<i class="bi bi-tag text-primary"></i>
+			<span class="fw-semibold">Identity</span>
+		</div>
+		<div class="card-body">
+			<div class="row g-3">
+				<div class="col-sm-4">
+					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Name</div>
+					<div class="fw-semibold"><c:out value="${transferserver.name}" /></div>
+				</div>
+				<div class="col-sm-4">
+					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Transfer Group</div>
+					<div><a href="/do/datafile/transfergroup/${transferserver.transferGroupName}">${transferserver.transferGroupName}</a></div>
+				</div>
+				<div class="col-sm-4">
+					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Last Update</div>
+					<div><content:content name="transferserver.lastUpdateDate" dateFormatKey="date.format.transfer" ignoreNull="true"/></div>
+				</div>
+			</div>
+		</div>
+	</div>
 
-		<c:set var="hostForReplication"
-			value="${transferserver.hostForReplication}" />
-		<c:if test="${transferserver.replicate}">
-			<c:if test="${not empty hostForReplication}">
-				<tr>
-					<th>Host For Replication</th>
-					<td><a href="/do/transfer/host/${hostForReplication.name}">${hostForReplication.nickName}</a></td>
-				</tr>
-			</c:if>
-		</c:if>
+	<%-- Card: Connection --%>
+	<div class="card border-0 shadow-sm mb-3">
+		<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+			<i class="bi bi-ethernet text-primary"></i>
+			<span class="fw-semibold">Connection</span>
+		</div>
+		<div class="card-body">
+			<div class="row g-3">
+				<div class="col-sm-5">
+					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Hostname</div>
+					<div><c:out value="${transferserver.host}" /></div>
+				</div>
+				<div class="col-sm-3">
+					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Port</div>
+					<div><c:out value="${transferserver.port}" /></div>
+				</div>
+				<c:set var="hostForReplication" value="${transferserver.hostForReplication}" />
+				<c:if test="${transferserver.replicate and not empty hostForReplication}">
+					<div class="col-sm-4">
+						<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Host For Replication</div>
+						<div><a href="/do/transfer/host/${hostForReplication.name}">${hostForReplication.nickName}</a></div>
+					</div>
+				</c:if>
+			</div>
+		</div>
+	</div>
 
-		<tr>
-			<th>Check</th>
-			<td><c:if test="${transferserver.check}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
-					test="${!transferserver.check}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></td>
-		</tr>
-		<tr>
-			<th>Enabled</th>
-			<td><c:if test="${transferserver.active}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
-					test="${!transferserver.active}">
-					<i class="bi bi-x-circle-fill text-danger" title="No"></i>
-				</c:if></td>
-		</tr>
-		<tr>
-			<th>Replicate</th>
-			<td><c:if test="${transferserver.replicate}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
-					test="${!transferserver.replicate}">
-					<i class="bi bi-x-circle-fill text-danger" title="No"></i>
-				</c:if></td>
-		</tr>
-		<tr>
-			<th>Last Update</th>
-			<td><content:content name="transferserver.lastUpdateDate" dateFormatKey="date.format.transfer" ignoreNull="true"/></td>
-		</tr>
-	</table>
+	<%-- Card: Options --%>
+	<div class="card border-0 shadow-sm mb-3">
+		<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+			<i class="bi bi-toggles text-primary"></i>
+			<span class="fw-semibold">Options</span>
+		</div>
+		<div class="card-body">
+			<div class="row g-3">
+				<div class="col-sm-4">
+					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Check</div>
+					<div>
+						<c:choose>
+							<c:when test="${transferserver.check}"><i class="bi bi-check-circle-fill text-success"></i> Yes</c:when>
+							<c:otherwise><i class="bi bi-x-circle-fill text-danger"></i> No</c:otherwise>
+						</c:choose>
+					</div>
+				</div>
+				<div class="col-sm-4">
+					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Enabled</div>
+					<div>
+						<c:choose>
+							<c:when test="${transferserver.active}"><i class="bi bi-check-circle-fill text-success"></i> Yes</c:when>
+							<c:otherwise><i class="bi bi-x-circle-fill text-danger"></i> No</c:otherwise>
+						</c:choose>
+					</div>
+				</div>
+				<div class="col-sm-4">
+					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Replicate</div>
+					<div>
+						<c:choose>
+							<c:when test="${transferserver.replicate}"><i class="bi bi-check-circle-fill text-success"></i> Yes</c:when>
+							<c:otherwise><i class="bi bi-x-circle-fill text-danger"></i> No</c:otherwise>
+						</c:choose>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
 
 	<p class="fw-bold mb-1 mt-3">Disk Usage <span id="moverDiskUsageAge" class="text-muted fw-normal small ms-2"></span></p>
 	<div id="moverDiskUsageWrap">

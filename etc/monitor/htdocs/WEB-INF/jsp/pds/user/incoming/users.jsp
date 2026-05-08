@@ -91,7 +91,7 @@ $(document).ready(function() {
         ordering:   true,
         info:       true,
         columnDefs: [{ orderable: false, targets: 'no-sort' }],
-        dom: "t<'d-flex align-items-center mt-2'i<'ms-auto'p>>"
+        dom: "t<'d-flex align-items-start mt-2'i<'ms-auto'p>>"
     });
     $('#incomingCount').html('<i class="bi bi-list-ul"></i> <strong>' + table.rows().count() + '</strong> user(s)');
     $('#incomingPageLen').on('change', function() {

@@ -3,7 +3,6 @@
 <%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean"%>
 <%@ taglib uri="/WEB-INF/tld/struts-tiles.tld" prefix="tiles"%>
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
-<%@ taglib uri="/WEB-INF/tld/displaytag.tld" prefix="display"%>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content"%>
 
@@ -439,7 +438,7 @@ function _updateTransferSearchBanner(queryError, total, hasSearch) {
             loadingRecords: 'Loading&hellip;',
             processing:     '<i class="bi bi-hourglass-split"></i> Loading&hellip;'
         },
-        dom: "t<'d-flex align-items-center mt-2'i<'ms-auto'p>>",
+        dom: "t<'d-flex align-items-start mt-2'i<'ms-auto'p>>",
         drawCallback: function (settings) {
             var json = settings.json;
             var total = json ? (json.recordsTotal || 0) : 0;

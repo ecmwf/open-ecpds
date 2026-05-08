@@ -3,10 +3,10 @@
 <%@ taglib uri="/WEB-INF/tld/struts-html.tld" prefix="html"%>
 <%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean"%>
 <%@ taglib uri="/WEB-INF/tld/struts-tiles.tld" prefix="tiles"%>
-<%@ taglib uri="/WEB-INF/tld/displaytag.tld" prefix="display"%>
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content"%>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 
 <tiles:useAttribute name="isInsert" classname="java.lang.String" />
 
@@ -37,74 +37,72 @@
 	}
 </script>
 
-<c:choose>
-    <c:when test="${isInsert == 'true'}">
-    <div class="form-info-banner" style="margin-left:0; margin-bottom:0.5rem">
-        <i class="bi bi-person-badge text-primary flex-shrink-0"></i>
-        Create a new User account.
-    </div>
-    </c:when>
-    <c:otherwise>
-    <div class="form-info-banner" style="margin-left:0; margin-bottom:0.5rem">
-        <i class="bi bi-person-badge text-primary flex-shrink-0"></i>
-        Edit the User account details.
-    </div>
-    </c:otherwise>
-</c:choose>
-<table>
-
-	<tr>
-		<td style="width:1%;white-space:nowrap;vertical-align:top">
-
-			<table class="fields">
-				<c:if test="${isInsert != 'true'}">
-					<tr>
-						<th>Web Login</th>
-						<td><c:out value="${userActionForm.uid}" /> <html:hidden
-								property="uid" /></td>
-					</tr>
-				</c:if>
-				<c:if test="${isInsert == 'true'}">
-					<tr>
-						<th>Web Login</th>
-						<td>
-							<div class="d-flex align-items-center gap-2">
-								<input id="uid" name="uid" type="text"
-									pattern="[A-Za-z0-9]+(\.[A-Za-z0-9]+)*"
-									title="Only letters and digits, optionally separated by a single '.'"
-									oninput="validatePatternInput(this, 'uid-feedback')">
-								<span id="uid-feedback"></span>
-							</div>
-							<div id="uid-feedback-msg" class="invalid-feedback" style="display:none">
-								Must start and end with a letter or digit; single <code>.</code> separators only (e.g. <code>john.doe</code>).
-							</div>
-						</td>
-					</tr>
-				</c:if>
-				<tr>
-					<th>Password</th>
-					<td>
-						<div class="d-flex align-items-center gap-2">
-							<input id="password" name="password" type="password"
-								value="${userActionForm.password}">
-							<button type="button" id="buttonPassword" name="buttonPassword"
-								onclick="generatePassword(); return false">Generate</button>
+<div class="row g-3">
+	<div class="col-lg-6">
+		<div class="card">
+			<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+				<i class="bi bi-person-badge text-primary"></i>
+				<span class="fw-semibold">
+					<c:choose>
+						<c:when test="${isInsert == 'true'}">Create Web User</c:when>
+						<c:otherwise>Edit Web User</c:otherwise>
+					</c:choose>
+				</span>
+			</div>
+			<div class="card-body">
+				<div class="d-flex flex-column gap-2">
+					<c:if test="${isInsert != 'true'}">
+						<div class="row g-2 align-items-center">
+							<div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">Web Login</label></div>
+							<div class="col-sm-8"><c:out value="${userActionForm.uid}" /> <html:hidden property="uid" /></div>
 						</div>
-					</td>
-				</tr>
-				<tr>
-					<th>Comment</th>
-					<td><html:text property="name" /></td>
-				</tr>
-				<tr>
-					<th>Enabled</th>
-					<td><html:checkbox property="active" /></td>
-				</tr>
-			</table>
-
-		</td>
-
-		<td colspan="2" style="vertical-align:top;padding-left:1rem"><c:if test="${isInsert != 'true'}">
+					</c:if>
+					<c:if test="${isInsert == 'true'}">
+						<div class="row g-2 align-items-center">
+							<div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">Web Login</label></div>
+							<div class="col-sm-8">
+								<div class="d-flex align-items-center gap-2">
+									<input id="uid" name="uid" type="text" class="form-control form-control-sm"
+										pattern="[A-Za-z0-9]+(\.[A-Za-z0-9]+)*"
+										title="Only letters and digits, optionally separated by a single '.'"
+										oninput="validatePatternInput(this, 'uid-feedback')">
+									<span id="uid-feedback"></span>
+								</div>
+								<div id="uid-feedback-msg" class="invalid-feedback" style="display:none">
+									Must start and end with a letter or digit; single <code>.</code> separators only (e.g. <code>john.doe</code>).
+								</div>
+							</div>
+						</div>
+					</c:if>
+					<div class="row g-2 align-items-center">
+						<div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">Password</label></div>
+						<div class="col-sm-8">
+							<div class="d-flex align-items-center gap-2">
+								<input id="password" name="password" type="password" class="form-control form-control-sm"
+									value="${userActionForm.password}">
+								<button type="button" id="buttonPassword" name="buttonPassword"
+									class="btn btn-sm btn-outline-secondary" onclick="generatePassword(); return false">Generate</button>
+							</div>
+						</div>
+					</div>
+					<div class="row g-2 align-items-center">
+						<div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">Comment</label></div>
+						<div class="col-sm-8"><html:text property="name" styleClass="form-control form-control-sm" /></div>
+					</div>
+					<div class="row g-2 align-items-center">
+						<div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">Enabled</label></div>
+						<div class="col-sm-8">
+							<div class="form-check form-switch mb-0">
+								<html:checkbox property="active" styleClass="form-check-input" />
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<c:if test="${isInsert != 'true'}">
+	<div class="col-lg-6">
 <style>
 .assoc-card .card-header { display:flex; align-items:center; gap:.4rem; padding:.5rem .75rem; background:#f8f9fa; font-size:.85rem; }
 .assoc-card .card-header .ms-auto { margin-left:auto !important; }
@@ -171,28 +169,16 @@
   </div>
 
 </div>
-</c:if></td>
-	</tr>
+	</div>
+	</c:if>
+</div>
 
-	<tr>
-		<td colspan="3">
-			<table class="fields">
-			</table>
-				<tr style="display:none">
-					<th>Properties</th>
-					<td colspan="2"><pre id="userData">
-							<c:out value="${userActionForm.userData}" />
-						</pre> <textarea id="userData" name="userData" style="display: none;"></textarea>
-						<button type="button"
-							onclick="formatSource(editorProperties); return false">Format</button>
-						<button type="button"
-							onclick="clearSource(editorProperties); return false">Clear</button>
-					</td>
-				</tr>
-			</table>
-		</td>
-	</tr>
-</table>
+<div style="display:none">
+	<pre id="userData"><c:out value="${userActionForm.userData}" /></pre>
+	<textarea id="userData" name="userData" style="display: none;"></textarea>
+	<button type="button" onclick="formatSource(editorProperties); return false">Format</button>
+	<button type="button" onclick="clearSource(editorProperties); return false">Clear</button>
+</div>
 
 <script>
 	var editorProperties = getEditorProperties(false, false, "userData", "crystal");
@@ -215,7 +201,7 @@
     	$("#password").val(pass);
     	confirmationDialog({
     	    title: 'Password Generated',
-    	    message: '<p class="mb-2 small">Please save this password \u2014 it will not be shown again:</p>' +
+    	    message: '<p class="mb-2 small">Please save this password &mdash; it will not be shown again:</p>' +
     	             '<div class="input-group input-group-sm">' +
     	             '<input type="text" class="form-control font-monospace" id="_genPass" value="' + pass + '" readonly>' +
     	             '<button class="btn btn-outline-secondary" type="button" onclick="copyGenPass(this)">' +
@@ -229,7 +215,7 @@
     	    onCancel: function() {}
     	});
     }
-    
+
     $('#uid').on('input', function () {
         const msg = document.getElementById('uid-feedback-msg');
         if (msg) msg.style.display = this.validity.valid || !this.value ? 'none' : 'block';

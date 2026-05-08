@@ -83,7 +83,20 @@ $(document).ready(function () {
 </script>
 </c:if>
 
-<button type="submit"><c:out value="${safeButtonLabel}" /></button>
-<button type="button" onclick="history.back()">Cancel</button>
+<c:choose>
+  <c:when test="${operation == 'insert'}"><c:set var="submitIcon" value="bi-plus-lg"/></c:when>
+  <c:when test="${operation == 'delete'}"><c:set var="submitIcon" value="bi-trash"/></c:when>
+  <c:otherwise><c:set var="submitIcon" value="bi-check-lg"/></c:otherwise>
+</c:choose>
+
+<c:choose>
+  <c:when test="${operation == 'delete'}">
+    <button type="submit" class="btn btn-danger"><i class="bi ${submitIcon} me-1"></i><c:out value="${safeButtonLabel}" /></button>
+  </c:when>
+  <c:otherwise>
+    <button type="submit" class="btn btn-primary"><i class="bi ${submitIcon} me-1"></i><c:out value="${safeButtonLabel}" /></button>
+  </c:otherwise>
+</c:choose>
+<button type="button" class="btn btn-outline-secondary ms-2" onclick="history.back()"><i class="bi bi-x me-1"></i>Cancel</button>
 
 <!-- buttons.jsp -->
