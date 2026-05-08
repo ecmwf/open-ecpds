@@ -75,8 +75,21 @@ public class ResourceDAOHandler extends PDSDAOBase implements DAOHandler {
      */
     @Override
     public WebResource findByPrimaryKey(final String key) throws DAOException {
-        return findAuthoritative(
-                (key.startsWith("ecpds:") ? key.substring(6) : key).replace(ResourceBean.USE_INSTEAD_OF_SLASHES, '/'));
+        final var path = (key.startsWith("ecpds:") ? key.substring(6) : key)
+                .replace(ResourceBean.USE_INSTEAD_OF_SLASHES, '/');
+        try {
+            // Direct lookup first: returns the exact URL from the Url table regardless of
+            // whether it has been assigned to any category yet. This is required for CRUD
+            // operations (add/remove resource from category) where we must not silently
+            // resolve to a parent path.
+            return new ResourceBean(MasterManager.getDB().getUrl(path));
+        } catch (DataBaseException | RemoteException e) {
+            // URL not found by exact path — fall back to authoritative prefix matching.
+            // This preserves the access-control behaviour in UserBean.hasAccess() where a
+            // request to e.g. /do/datafile/moverdownloads/data should match the registered
+            // /do/datafile/ entry if no more-specific URL exists.
+            return findAuthoritative(path);
+        }
     }
 
     /**

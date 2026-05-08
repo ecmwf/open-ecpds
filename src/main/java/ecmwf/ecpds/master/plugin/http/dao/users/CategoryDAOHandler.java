@@ -145,7 +145,7 @@ public class CategoryDAOHandler extends PDSDAOBase implements DAOHandler {
             for (final Resource resource : cat.getAddedResources()) {
                 db.insert(session, new CatUrl(Long.parseLong(cat.getId()), resource.getPath()), true);
             }
-            for (final Resource resource : cat.getAddedResources()) {
+            for (final Resource resource : cat.getDeletedResources()) {
                 db.remove(session, db.getCatUrl(cat.getIntId(), resource.getPath()));
             }
         } catch (final Exception e) {

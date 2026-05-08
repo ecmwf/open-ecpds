@@ -2041,6 +2041,30 @@ public final class TransferScheduler extends MBeanScheduler {
     }
 
     /**
+     * Pre-registers a data mover in the metrics map so it appears in the download activity view immediately on connect,
+     * even before its first download. If an entry for this mover already exists, it is left untouched.
+     *
+     * @param groupName
+     *            the transfer group name
+     * @param serverName
+     *            the transfer server (data mover) name
+     * @param volumeCount
+     *            the number of volumes (filesystems) on this mover
+     */
+    public static void registerMoverMetrics(final String groupName, final String serverName, final int volumeCount) {
+        final var key = groupName + "." + serverName;
+        synchronized (_metricsPerDataMovers) {
+            if (!_metricsPerDataMovers.containsKey(key)) {
+                final var metrics = new ConcurrentHashMap<Integer, Integer>();
+                for (var i = 0; i < volumeCount; i++) {
+                    metrics.put(i, 0);
+                }
+                _metricsPerDataMovers.put(key, metrics);
+            }
+        }
+    }
+
+    /**
      * Returns a snapshot of the current in-flight download counts for all data movers and volumes.
      *
      * <p>

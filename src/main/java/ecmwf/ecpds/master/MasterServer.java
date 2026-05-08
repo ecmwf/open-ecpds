@@ -2875,6 +2875,14 @@ public final class MasterServer extends ECaccessProvider
             return;
         }
         try {
+            final var group = base.getTransferGroupObject(server.getTransferGroupName());
+            if (group != null) {
+                TransferScheduler.registerMoverMetrics(server.getTransferGroupName(), root, group.getVolumeCount());
+            }
+        } catch (final Throwable t) {
+            _log.debug("Could not pre-register download metrics for DataMover {}", root, t);
+        }
+        try {
             final var mover = MoverInterface.class.cast(access);
             final var address = mover.getECproxyAddressAndPort();
             _log.debug("Checking ECproxy for TransferServer {}: {} (host={})", root, address, host);
