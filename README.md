@@ -879,8 +879,8 @@ UPH;Monitored=false;TimeStamp=2025-02-12 11:00:00.0;DataTransferId=123456789;Des
 - **NetworkCode**: The network code as configured in the host entity (e.g., Internet, RMDCN).
 - **HostAddress**: The address or hostname of the target host.
 - **PreSchedule**: If set to true, the scheduled time is ignored, and the file is sent as soon as possible.
-- **ProxyHost**: If the transfer request was handled by a Continental Data Mover, this field contains the identifier of the proxy host used.
-- **Proxied**: Indicates whether the transfer request was processed through a Continental Data Mover.
+- **ProxyHost**: If the transfer request was handled by a Continental Data Mover, this field contains the identifier of the proxy host used. On its own, this does not imply that the Continental Data Mover delivered the file; it only means that the file was staged there for backup/redundancy purposes.
+- **Proxied**: Reliably indicates whether the data file was disseminated through a Continental Data Mover.
 - **SocketStatistics**: If the target host was configured to collect socket statistics before closing the data connection, this field contains the output of the SS command.
 - **Compressed**: Specifies whether the file was sent in a compressed format.
 - **CompressedOnTheFly**: Indicates whether the file was pre-compressed before transmission or compressed on the fly during the transfer.
