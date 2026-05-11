@@ -551,6 +551,20 @@ final class DataBaseProxy implements DataBaseInterface {
     /**
      * {@inheritDoc}
      *
+     * Gets the authorised hosts for a web user.
+     */
+    @Override
+    public List<String> getAuthorisedHosts(final String uid) throws DataBaseException, IOException {
+        if (isEmpty(uid)) {
+            return new ArrayList<>(0);
+        }
+        final var monitor = new MonitorCall("getAuthorisedHosts(" + uid + ")");
+        return monitor.done(dataBaseInterface.getAuthorisedHosts(uid));
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * Gets the destinations by host name.
      */
     @Override

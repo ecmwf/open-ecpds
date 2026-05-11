@@ -578,6 +578,21 @@ public interface DataBaseInterface extends Remote {
             String type, String filter) throws IOException;
 
     /**
+     * Gets the authorised hosts for a web user.
+     *
+     * @param uid
+     *            the web user id
+     *
+     * @return the list of authorised host names
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.io.IOException
+     *             Signals that an I/O exception has occurred.
+     */
+    List<String> getAuthorisedHosts(String uid) throws DataBaseException, IOException;
+
+    /**
      * Gets the destinations by host name.
      *
      * @param hostName

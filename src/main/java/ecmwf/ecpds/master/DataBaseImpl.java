@@ -928,6 +928,17 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
+     * Gets the authorised hosts for a web user.
+     */
+    @Override
+    public List<String> getAuthorisedHosts(final String uid) throws DataBaseException, IOException {
+        final var monitor = new MonitorCall("getAuthorisedHosts(" + uid + ")");
+        return monitor.done(ecpds.getAuthorisedHosts(uid));
+    }
+
+    /**
      * Gets the destinations by host name.
      *
      * @param hostName
