@@ -257,12 +257,14 @@ value='<c:out value="${requestScope[actionFormName].retryFrequency}"/>'>
 </div>
 <div class="col-sm-6">
 <label for="filterName" class="form-label mb-1">Data Compression</label>
+<div class="d-flex align-items-center gap-2">
 <bean:define id="filters" name="hostActionForm"
 property="filterNameOptions" type="java.util.Collection" />
-<html:select property="filterName" styleId="filterName" styleClass="form-select form-select-sm">
+<html:select property="filterName" styleId="filterName" styleClass="form-select form-select-sm w-auto">
 <html:options collection="filters" property="name"
 labelProperty="name" />
 </html:select>
+</div>
 </div>
 </div>
 </div>
@@ -456,20 +458,62 @@ JavaScript
 <span class="fw-semibold">Location</span>
 </div>
 <div class="card-body">
-<div class="row g-3">
+<div class="row g-3 align-items-end">
 <div class="col-sm-4">
-<div class="form-check form-switch">
+<div class="d-flex align-items-center gap-2 flex-wrap">
+<div class="form-check form-switch mb-0">
 <html:checkbox styleId="automaticLocation" property="automaticLocation" styleClass="form-check-input" />
-<label class="form-check-label" for="automaticLocation">Automatic Location <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Try to get the latitude/longitude from the IP address" tabindex="0"></i></label>
+<label class="form-check-label" for="automaticLocation">Automatic Location</label>
+</div>
+<i class="bi bi-question-circle text-muted" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Try to get the latitude/longitude from the IP address" tabindex="0"></i>
 </div>
 </div>
-<div class="col-sm-4">
+<div class="col-sm-3">
 <label for="latitudeField" class="form-label mb-1">Latitude (&deg;)</label>
 <html:text property="latitude" styleId="latitudeField" styleClass="form-control form-control-sm" />
 </div>
-<div class="col-sm-4">
+<div class="col-sm-3">
 <label for="longitudeField" class="form-label mb-1">Longitude (&deg;)</label>
 <html:text property="longitude" styleId="longitudeField" styleClass="form-control form-control-sm" />
+</div>
+<div class="col-sm-2">
+<label class="form-label mb-1">&nbsp;</label>
+<button type="button" id="pickOnMapBtn" class="btn btn-sm btn-outline-secondary w-100"
+        onclick="openMapPicker()"
+        title="Click a point on the map to set coordinates">
+    <i class="bi bi-map me-1"></i>Pick on map
+</button>
+</div>
+</div>
+</div>
+</div>
+
+<%-- Map coordinate picker modal --%>
+<div class="modal fade" id="mapPickerModal" tabindex="-1" aria-labelledby="mapPickerModalLabel" aria-hidden="true">
+<div class="modal-dialog modal-lg modal-dialog-centered">
+<div class="modal-content">
+<div class="modal-header py-2">
+    <h6 class="modal-title" id="mapPickerModalLabel"><i class="bi bi-geo-alt-fill me-2 text-primary"></i>Pick Location on Map</h6>
+    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+<div class="modal-body p-0" style="position:relative;">
+    <div id="mapPickerMap" style="height:420px; width:100%;"></div>
+    <div id="mapPickerCoords" style="
+        position:absolute; bottom:10px; left:50%; transform:translateX(-50%);
+        background:rgba(20,20,20,0.82); color:#e8e8e8; border-radius:6px;
+        padding:0.3rem 0.75rem; font-size:0.78rem; font-family:monospace;
+        pointer-events:none; backdrop-filter:blur(4px);
+        border:1px solid rgba(255,255,255,0.1);
+        white-space:nowrap;">
+        Click anywhere to set location
+    </div>
+</div>
+<div class="modal-footer py-2">
+    <span class="text-muted small me-auto"><i class="bi bi-info-circle me-1"></i>Click anywhere on the map to place the pin</span>
+    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+    <button type="button" class="btn btn-sm btn-primary" id="mapPickerConfirm" onclick="_confirmMapPicker()" disabled>
+        <i class="bi bi-check-lg me-1"></i>Confirm
+    </button>
 </div>
 </div>
 </div>
@@ -603,8 +647,10 @@ oninput="validateMailInput(this); toggleMailRows()" />
     </div>
 </div>
 
+<link rel="stylesheet" href="/openlayer/ol.css"/>
+<script src="/openlayer/ol.js"></script>
 <script>
-	var editorDir = getEditorProperties(false, false, "dir", "toml");
+	var editorDir = getEditorProperties(false, true, "dir", "toml");
 	var editorProperties = getEditorProperties(false, true, "properties", "crystal");
 	editorProperties.setOptions({minLines: 10, maxLines: 20});
 	
@@ -946,10 +992,8 @@ oninput="validateMailInput(this); toggleMailRows()" />
 			'change',
 			function() {
 				var str = $(this).find(":selected").val();
-				$('#dirParametersDiss').prop("style",
-						str != "Dissemination" ? "display: none;" : "");
-				$('#dirParametersAcq').prop("style",
-						str != "Acquisition" ? "display: none;" : "");
+				$('#dirParametersDiss').toggle(str === "" || str === "Dissemination");
+				$('#dirParametersAcq').toggle(str === "Acquisition");
 			});
 
 	$('#is' + getEditorType(editorDir)).prop('checked', true);
@@ -978,10 +1022,8 @@ oninput="validateMailInput(this); toggleMailRows()" />
 	}).triggerHandler('change');
 
 	var type = "${requestScope[actionFormName].type}";
-	$('#dirParametersDiss').prop("style",
-			type == "" || type == "Dissemination" ? "" : "display: none;");
-	$('#dirParametersAcq').prop("style",
-			type == "Acquisition" ? "" : "display: none;");
+	$('#dirParametersDiss').toggle(type === "" || type === "Dissemination");
+	$('#dirParametersAcq').toggle(type === "Acquisition");
 	$('#dirParametersDiss').on('change', function() {
 		var str = $(this).find(":selected").val();
 		$(this).prop("selectedIndex", 0);
@@ -1086,13 +1128,88 @@ oninput="validateMailInput(this); toggleMailRows()" />
 		var checkbox = document.getElementById("automaticLocation");
     	var latitude = document.getElementById("latitudeField");
     	var longitude = document.getElementById("longitudeField");
+    	var pickBtn  = document.getElementById("pickOnMapBtn");
     	var disabled = checkbox.checked;
     	latitude.disabled = disabled;
     	longitude.disabled = disabled;
+    	if (pickBtn) pickBtn.disabled = disabled;
     }
+    /* ---- Map coordinate picker -------------------------------- */
+    var _pickerMap = null, _pickerPin = null, _pickerSrc = null, _pickedLat = null, _pickedLon = null;
+
+    function _pickerUpdateDisplay(lat, lon) {
+        var el = document.getElementById('mapPickerCoords');
+        if (el) el.textContent = '\uD83D\uDCCD  ' + lat.toFixed(6) + '\u00b0,  ' + lon.toFixed(6) + '\u00b0';
+    }
+
+    function openMapPicker() {
+        var autoChk = document.getElementById('automaticLocation');
+        if (autoChk && autoChk.checked) return;
+
+        var modalEl = document.getElementById('mapPickerModal');
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+
+        /* Init map after Bootstrap's fade animation (350ms) */
+        setTimeout(function() {
+            if (!window.ol) return;
+            if (_pickerMap) { _pickerMap.updateSize(); return; }
+
+            _pickerSrc = new ol.source.Vector();
+            _pickerPin = new ol.Feature();
+            _pickerPin.setStyle(new ol.style.Style({
+                image: new ol.style.Circle({
+                    radius: 8,
+                    fill: new ol.style.Fill({ color: '#0d6efd' }),
+                    stroke: new ol.style.Stroke({ color: '#fff', width: 2.5 })
+                })
+            }));
+
+            var initLat = parseFloat(document.getElementById('latitudeField').value);
+            var initLon = parseFloat(document.getElementById('longitudeField').value);
+            var hasInit = isFinite(initLat) && isFinite(initLon) && (initLat !== 0 || initLon !== 0);
+            if (hasInit) {
+                _pickerPin.setGeometry(new ol.geom.Point(ol.proj.fromLonLat([initLon, initLat])));
+                _pickerSrc.addFeature(_pickerPin);
+                _pickedLat = initLat; _pickedLon = initLon;
+                _pickerUpdateDisplay(initLat, initLon);
+                document.getElementById('mapPickerConfirm').disabled = false;
+            }
+
+            _pickerMap = new ol.Map({
+                target: 'mapPickerMap',
+                controls: ol.control.defaults.defaults({ rotate: false }),
+                layers: [
+                    new ol.layer.Tile({ source: new ol.source.OSM({ attributions: [] }) }),
+                    new ol.layer.Vector({ source: _pickerSrc, zIndex: 10 })
+                ],
+                view: new ol.View({
+                    center: hasInit ? ol.proj.fromLonLat([initLon, initLat]) : ol.proj.fromLonLat([10, 48]),
+                    zoom: hasInit ? 8 : 3
+                })
+            });
+            _pickerMap.getTargetElement().style.cursor = 'crosshair';
+            _pickerMap.on('click', function(evt) {
+                var lonLat = ol.proj.toLonLat(evt.coordinate);
+                _pickedLon = Math.round(lonLat[0] * 1e6) / 1e6;
+                _pickedLat = Math.round(lonLat[1] * 1e6) / 1e6;
+                _pickerPin.setGeometry(new ol.geom.Point(evt.coordinate));
+                if (_pickerSrc.getFeatures().length === 0) _pickerSrc.addFeature(_pickerPin);
+                _pickerUpdateDisplay(_pickedLat, _pickedLon);
+                document.getElementById('mapPickerConfirm').disabled = false;
+            });
+        }, 350);
+    }
+
+    function _confirmMapPicker() {
+        if (_pickedLat === null) return;
+        document.getElementById('latitudeField').value  = _pickedLat.toFixed(6);
+        document.getElementById('longitudeField').value = _pickedLon.toFixed(6);
+        bootstrap.Modal.getInstance(document.getElementById('mapPickerModal')).hide();
+    }
+
+    toggleLocationFields();
+    document.getElementById('automaticLocation').addEventListener('change', toggleLocationFields);
     window.onload = function() {
-    	toggleLocationFields(); // initialize on page load
-    	document.getElementById("automaticLocation").addEventListener("change", toggleLocationFields);
     	var mailInput = document.getElementById('userMailInput');
     	if (mailInput) validateMailInput(mailInput);
     	var hostInput = document.getElementById('host');

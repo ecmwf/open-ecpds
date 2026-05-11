@@ -4,6 +4,9 @@
 
 <jsp:include page="/WEB-INF/jsp/pds/transfer/host/host_header.jsp"/>
 
+<link rel="stylesheet" href="/openlayer/ol.css"/>
+<script src="/openlayer/ol.js"></script>
+
 <style>
 .report-card-hdr { background: #2d2d2d; border-bottom: 1px solid #444; color: #fff; }
 .report-card-hdr-sub { color: rgba(255,255,255,0.5); }
@@ -36,6 +39,34 @@
     border-radius: 0 0 4px 4px; overflow-x: auto;
 }
 .mc-wrap { min-width: 500px; }
+
+/* -- MTR map -------------------------------------------- */
+.mm-panel {
+    background: #1e1e1e; border-radius: 0 0 4px 4px; overflow: hidden;
+    position: relative;
+}
+.mm-map { height: 480px; width: 100%; }
+.mm-legend {
+    position: absolute; bottom: 14px; left: 14px; z-index: 1000;
+    background: rgba(20,20,20,0.85); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px; padding: 0.5rem 0.75rem; font-size: 0.72rem; color: #ccc;
+    backdrop-filter: blur(4px);
+}
+.mm-legend-row { display: flex; align-items: center; gap: 0.4rem; margin: 0.2rem 0; }
+.mm-dot {
+    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+    border: 1.5px solid rgba(255,255,255,0.35);
+}
+.mm-loading {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: rgba(20,20,20,0.75); z-index: 2000; font-size: 0.85rem; color: #adb5bd;
+    border-radius: 0 0 4px 4px;
+}
+[data-bs-theme=light] .mm-panel { background: #f6f8fa; }
+[data-bs-theme=light] .mm-legend {
+    background: rgba(250,250,252,0.9); border-color: rgba(0,0,0,0.1); color: #444;
+}
+[data-bs-theme=light] .mm-loading { background: rgba(246,248,250,0.8); color: #57606a; }
 .mc-infobar {
     display: flex; align-items: center; flex-wrap: wrap; gap: 0.4rem;
     padding: 0.4rem 0.5rem; margin-bottom: 0.5rem;
@@ -142,6 +173,11 @@
             </c:choose>
         </span>
         <div class="d-flex gap-2">
+            <button id="reportMapBtn"
+                    class="btn btn-sm btn-outline-secondary py-0 px-2 report-card-hdr-btn"
+                    onclick="_setView('map')" title="Show traceroute on map" style="font-size:0.75rem; display:none;">
+                <i class="bi bi-geo-alt"></i> Map
+            </button>
             <button id="reportChartBtn"
                     class="btn btn-sm btn-outline-secondary py-0 px-2 report-card-hdr-btn"
                     onclick="_setMtrView(false)" title="Show raw text" style="font-size:0.75rem; display:none;">
@@ -166,6 +202,18 @@
             </span>
         </pre>
         <div id="mtrChartPanel" class="mc-panel" style="display:none;"></div>
+        <div id="mtrMapPanel" class="mm-panel" style="display:none;">
+            <div id="mtrMap" class="mm-map"></div>
+            <div class="mm-legend" id="mmLegend">
+                <div class="mm-legend-row"><div class="mm-dot" style="background:#3fb950;"></div> &lt;50 ms</div>
+                <div class="mm-legend-row"><div class="mm-dot" style="background:#d29922;"></div> 50&ndash;150 ms</div>
+                <div class="mm-legend-row"><div class="mm-dot" style="background:#f85149;"></div> &gt;150 ms</div>
+                <div class="mm-legend-row"><div class="mm-dot" style="background:#6c757d; border-style:dashed;"></div> No response</div>
+            </div>
+            <div class="mm-loading" id="mmLoading" style="display:none;">
+                <i class="bi bi-hourglass-split me-2"></i> Resolving coordinates&hellip;
+            </div>
+        </div>
     </div>
 </div>
 
@@ -173,6 +221,8 @@
 /* -- MTR / Nmap chart renderer ------------------------------ */
 (function() {
     var _ready = false, _showing = false;
+    var _view = 'raw', _chartReady = false, _mapReady = false;
+    var _olMap = null, _olInited = false, _routeExtent = null, _mapFitted = false;
 
     function _esc(s) {
         return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -307,6 +357,75 @@
         return o + '</div>';
     }
 
+    /* ---- View state machine --------------------------------- */
+    window._setView = function(v) {
+        _view = v;
+        var pre    = document.getElementById('reportPre');
+        var chart  = document.getElementById('mtrChartPanel');
+        var mapP   = document.getElementById('mtrMapPanel');
+        var btnChart = document.getElementById('reportChartBtn');
+        var btnMap   = document.getElementById('reportMapBtn');
+
+        if (pre)   pre.style.display   = (v === 'raw')   ? '' : 'none';
+        if (chart) chart.style.display = (v === 'chart') ? '' : 'none';
+        if (mapP)  mapP.style.display  = (v === 'map')   ? '' : 'none';
+
+        if (btnChart) {
+            if (v === 'chart') {
+                btnChart.innerHTML = '<i class="bi bi-code-slash"></i> Raw';
+                btnChart.onclick = function() { window._setView('raw'); };
+            } else {
+                btnChart.innerHTML = '<i class="bi bi-bar-chart-line"></i> Chart';
+                btnChart.onclick = function() { window._setView('chart'); };
+            }
+        }
+        if (btnMap) {
+            if (v === 'map') {
+                btnMap.innerHTML = '<i class="bi bi-code-slash"></i> Raw';
+                btnMap.onclick = function() { window._setView('raw'); };
+            } else {
+                btnMap.innerHTML = '<i class="bi bi-geo-alt"></i> Map';
+                btnMap.onclick = function() { window._setView('map'); };
+            }
+        }
+
+        if (v === 'map') {
+            setTimeout(function() {
+                if (_olMap) {
+                    _olMap.updateSize();
+                    if (!_mapFitted && _routeExtent && isFinite(_routeExtent[0])) {
+                        _olMap.getView().fit(_routeExtent, { padding: [60, 60, 60, 60], maxZoom: 8, duration: 400 });
+                        _mapFitted = true;
+                    }
+                }
+            }, 50);
+        }
+    };
+
+    /* kept for backward compat */
+    window._setMtrView = function(showChart) {
+        window._setView(showChart ? 'chart' : 'raw');
+    };
+    window._mtrWasShowing = function() { return _view === 'chart'; };
+
+    window._mtrReset = function() {
+        _chartReady = false; _mapReady = false; _view = 'raw';
+        var btnChart = document.getElementById('reportChartBtn');
+        var btnMap   = document.getElementById('reportMapBtn');
+        if (btnChart) { btnChart.style.display = 'none'; }
+        if (btnMap)   { btnMap.style.display   = 'none'; }
+        var chart = document.getElementById('mtrChartPanel');
+        if (chart) { chart.innerHTML = ''; chart.style.display = 'none'; }
+        var mapP = document.getElementById('mtrMapPanel');
+        if (mapP) { mapP.style.display = 'none'; }
+        var pre = document.getElementById('reportPre');
+        if (pre) pre.style.display = '';
+        /* Destroy and recreate map on next load */
+        if (_olMap) { try { _olMap.setTarget(null); } catch(e) {} _olMap = null; }
+        _olInited = false; _routeExtent = null; _mapFitted = false;
+    };
+
+    /* ---- Chart entry point ---------------------------------- */
     window._tryMtrChart = function(html) {
         var plain;
         try { plain = _strip(html); } catch(e) { return; }
@@ -314,38 +433,186 @@
         try { mtr  = _parseMtr(plain);  } catch(e) {}
         try { nmap = _parseNmap(plain); } catch(e) {}
         if (!mtr) return;
-        var panel = document.getElementById('mtrChartPanel');
-        if (!panel) return;
-        try { panel.innerHTML = _build(mtr, nmap); } catch(e) { return; }
-        _ready = true;
-        var btn = document.getElementById('reportChartBtn');
-        if (btn) { btn.style.display = ''; btn.onclick = function() { _setMtrView(!_showing); }; }
-        _setMtrView(true);
+        var chart = document.getElementById('mtrChartPanel');
+        if (!chart) return;
+        try { chart.innerHTML = _build(mtr, nmap); } catch(e) { return; }
+        _chartReady = true;
+        var btnChart = document.getElementById('reportChartBtn');
+        if (btnChart) btnChart.style.display = '';
+        window._setView('chart');
+        /* kick off map geo-resolution in background */
+        _fetchHopCoords(mtr);
     };
 
-    window._setMtrView = function(showChart) {
-        if (showChart && !_ready) return;
-        _showing = showChart;
-        var pre   = document.getElementById('reportPre');
-        var panel = document.getElementById('mtrChartPanel');
-        var btn   = document.getElementById('reportChartBtn');
-        if (pre)   pre.style.display   = showChart ? 'none' : '';
-        if (panel) panel.style.display = showChart ? '' : 'none';
-        if (btn) btn.innerHTML = showChart
-            ? '<i class="bi bi-code-slash"></i> Raw'
-            : '<i class="bi bi-bar-chart-line"></i> Chart';
-    };
+    /* ---- Map ------------------------------------------------ */
+    function _latColor(avg) {
+        if (avg < 50)  return '#3fb950';
+        if (avg < 150) return '#d29922';
+        return '#f85149';
+    }
 
-    window._mtrWasShowing = function() { return _showing; };
-    window._mtrReset = function() {
-        _ready = false; _showing = false;
-        var btn = document.getElementById('reportChartBtn');
-        if (btn) { btn.style.display = 'none'; }
-        var panel = document.getElementById('mtrChartPanel');
-        if (panel) { panel.innerHTML = ''; panel.style.display = 'none'; }
-        var pre = document.getElementById('reportPre');
-        if (pre) pre.style.display = '';
-    };
+    function _fetchHopCoords(mtr) {
+        var ips = mtr.hops.filter(function(h) { return !h.noData; }).map(function(h) { return h.host; });
+        if (!ips.length) return;
+        var url = '/do/transfer/host/edit/geoIp?ips=' + encodeURIComponent(ips.join(','));
+        fetch(url)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                var geoMap = {};
+                data.forEach(function(d) { if (d.lat != null && d.lon != null) geoMap[d.ip] = d; });
+                var resolved = mtr.hops.filter(function(h) { return !h.noData && geoMap[h.host]; });
+                if (resolved.length >= 2) {
+                    _buildMap(mtr, geoMap);
+                    _mapReady = true;
+                    var btnMap = document.getElementById('reportMapBtn');
+                    if (btnMap) btnMap.style.display = '';
+                }
+            })
+            .catch(function() { /* silently skip map */ });
+    }
+
+    function _isDark() {
+        return (document.documentElement.getAttribute('data-bs-theme') || 'dark') !== 'light';
+    }
+
+    function _buildMap(mtr, geoMap) {
+        if (!window.ol) return;
+        var mapEl = document.getElementById('mtrMap');
+        if (!mapEl) return;
+
+        var dark = _isDark();
+        var tileUrl = dark
+            ? 'https://{a-d}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+            : 'https://{a-d}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+        var tileAttr = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>';
+
+        var tileSource = new ol.source.XYZ({ url: tileUrl, attributions: tileAttr });
+        var vectorSource = new ol.source.Vector();
+
+        /* Build ordered list of resolved hops */
+        var hopPoints = [];
+        mtr.hops.forEach(function(h) {
+            if (!h.noData && geoMap[h.host]) {
+                var g = geoMap[h.host];
+                hopPoints.push({ hop: h, geo: g, coord: ol.proj.fromLonLat([g.lon, g.lat]) });
+            }
+        });
+
+        /* Route polyline */
+        if (hopPoints.length >= 2) {
+            var routeCoords = hopPoints.map(function(p) { return p.coord; });
+            var routeFeature = new ol.Feature({
+                geometry: new ol.geom.LineString(routeCoords)
+            });
+            routeFeature.setStyle(new ol.style.Style({
+                stroke: new ol.style.Stroke({
+                    color: dark ? 'rgba(121,184,255,0.55)' : 'rgba(9,105,218,0.45)',
+                    width: 2.5,
+                    lineDash: [6, 4]
+                })
+            }));
+            vectorSource.addFeature(routeFeature);
+        }
+
+        /* Markers */
+        var isFirst = true, isLast = false;
+        hopPoints.forEach(function(p, idx) {
+            isLast = (idx === hopPoints.length - 1);
+            var h = p.hop;
+            var color = _latColor(h.avg);
+            var radius = isFirst || isLast ? 9 : (h.loss > 50 ? 8 : 6);
+            var strokeW = isFirst || isLast ? 2.5 : 1.5;
+
+            var feat = new ol.Feature({ geometry: new ol.geom.Point(p.coord) });
+            feat.set('hopData', h);
+            feat.set('geoData', p.geo);
+            feat.set('isFirst', isFirst);
+            feat.set('isLast', isLast);
+
+            feat.setStyle(new ol.style.Style({
+                image: new ol.style.Circle({
+                    radius: radius,
+                    fill: new ol.style.Fill({ color: color }),
+                    stroke: new ol.style.Stroke({ color: '#fff', width: strokeW })
+                }),
+                text: (isFirst || isLast) ? new ol.style.Text({
+                    text: isFirst ? 'SRC' : 'DST',
+                    font: 'bold 9px sans-serif',
+                    offsetY: -14,
+                    fill: new ol.style.Fill({ color: dark ? '#e8e8e8' : '#24292f' }),
+                    backgroundFill: new ol.style.Fill({ color: dark ? 'rgba(30,30,30,0.75)' : 'rgba(250,250,252,0.8)' }),
+                    padding: [1, 3, 1, 3]
+                }) : null
+            }));
+            vectorSource.addFeature(feat);
+            isFirst = false;
+        });
+
+        var vectorLayer = new ol.layer.Vector({
+            source: vectorSource,
+            zIndex: 10
+        });
+
+        _olMap = new ol.Map({
+            target: 'mtrMap',
+            controls: ol.control.defaults.defaults({ rotate: false }),
+            layers: [
+                new ol.layer.Tile({ source: tileSource }),
+                vectorLayer
+            ],
+            view: new ol.View({ center: ol.proj.fromLonLat([0, 30]), zoom: 3 })
+        });
+        _olInited = true;
+
+        /* Save extent — fit is deferred until the panel is actually visible */
+        var ext = vectorSource.getExtent();
+        if (ext && isFinite(ext[0])) { _routeExtent = ext; }
+
+        /* Hover cursor */
+        _olMap.on('pointermove', function(evt) {
+            var hit = _olMap.forEachFeatureAtPixel(evt.pixel, function(f) { return !!f.get('hopData'); });
+            _olMap.getTargetElement().style.cursor = hit ? 'pointer' : '';
+        });
+
+        /* Click popup (Bootstrap tooltip approach via temporary overlay) */
+        var overlay = new ol.Overlay({
+            element: document.createElement('div'),
+            positioning: 'bottom-center',
+            stopEvent: false,
+            offset: [0, -12]
+        });
+        overlay.getElement().style.cssText = [
+            'background:' + (dark ? 'rgba(20,20,20,0.92)' : 'rgba(250,250,252,0.95)'),
+            'border:1px solid ' + (dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'),
+            'border-radius:8px', 'padding:0.45rem 0.65rem',
+            'font-size:0.75rem', 'color:' + (dark ? '#ccc' : '#333'),
+            'max-width:240px', 'pointer-events:none',
+            'box-shadow:0 4px 16px rgba(0,0,0,0.4)',
+            'backdrop-filter:blur(6px)', 'z-index:9999'
+        ].join(';');
+        _olMap.addOverlay(overlay);
+
+        _olMap.on('click', function(evt) {
+            var feat = _olMap.forEachFeatureAtPixel(evt.pixel, function(f) { return f.get('hopData') ? f : null; });
+            if (!feat) { overlay.setPosition(undefined); return; }
+            var h = feat.get('hopData');
+            var g = feat.get('geoData');
+            var lc = _latColor(h.avg);
+            var rows = [
+                '<strong style="color:' + lc + '">Hop ' + h.hop + '</strong>',
+                '<span style="font-family:monospace">' + h.host + '</span>',
+                h.as && h.as !== 'AS???' ? '<span style="opacity:0.7">' + h.as + '</span>' : '',
+                g && g.geo ? '<span style="opacity:0.65">\uD83D\uDCCD ' + g.geo + '</span>' : '',
+                'Avg: <strong style="color:' + lc + '">' + h.avg.toFixed(1) + ' ms</strong>'
+                    + '  Best: ' + h.best.toFixed(1) + '  Worst: ' + h.wrst.toFixed(1),
+                'Loss: <strong>' + (h.loss === 0 ? '0%' : h.loss.toFixed(1) + '%') + '</strong>'
+                    + '  &plusmn;StDev: ' + h.stdev.toFixed(1) + ' ms'
+            ].filter(Boolean).join('<br>');
+            overlay.getElement().innerHTML = rows;
+            overlay.setPosition(evt.coordinate);
+        });
+    }
+
 })();
 
 /* -- Report fetch / display --------------------------------- */
@@ -395,7 +662,7 @@
     window.fetchReport = fetchReport;
 
     window.copyReport = function(btn) {
-        /* Always copy raw text (pre may be hidden when chart is shown) */
+        /* Always copy raw text (pre may be hidden when chart or map is shown) */
         var text = document.getElementById('reportPre').textContent;
         navigator.clipboard.writeText(text).then(function() {
             btn.innerHTML = '<i class="bi bi-check-lg"></i> Copied';

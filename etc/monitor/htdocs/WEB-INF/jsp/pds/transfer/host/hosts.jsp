@@ -424,7 +424,7 @@ function _updateHostSearchBanner(queryError, total, hasSearch) {
                 { orderable: true,  data: 2 },
                 { orderable: true,  data: 3 },
                 { orderable: true,  data: 4 },
-                { orderable: false, data: 5 }
+                { orderable: true,  data: 5 }
             ],
             columnDefs: [{ targets: '_all', render: function(data, type) { return data; } }],
             drawCallback: function(settings) {

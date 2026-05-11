@@ -351,6 +351,34 @@ function _updateDestSearchBanner(queryError, total, hasSearch) {
             </a>
         </auth:then>
         </auth:if>
+        <div class="dropdown me-2">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="dColModeBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" data-bs-boundary="viewport" aria-expanded="false">
+                Auto
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dColModeBtn">
+                <li><a class="dropdown-item active" href="#" data-dcol-mode="auto"><i class="bi bi-check me-1"></i><strong>Auto</strong><br><small class="text-muted">Hides columns based on screen width</small></a></li>
+                <li><a class="dropdown-item" href="#" data-dcol-mode="all"><strong>All</strong><br><small class="text-muted">Shows all columns</small></a></li>
+                <li><a class="dropdown-item" href="#" data-dcol-mode="compact"><strong>Compact</strong><br><small class="text-muted">Hides detail columns</small></a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="#" data-dcol-mode="custom">
+                  <strong>Custom</strong><br><small class="text-muted">Choose individual columns</small>
+                </a></li>
+                <li id="dCustomColChkPanel" style="display:none;">
+                  <div class="px-3 py-2 d-flex flex-column gap-1" style="min-width:180px;">
+                    <div class="form-check mb-0"><input class="form-check-input d-custom-col-chk" type="checkbox" id="dchk-col-0" data-col="0" checked><label class="form-check-label" for="dchk-col-0">Icon</label></div>
+                    <div class="form-check mb-0"><input class="form-check-input d-custom-col-chk" type="checkbox" id="dchk-col-1" data-col="1" checked disabled><label class="form-check-label text-muted" for="dchk-col-1">Destination <small>(required)</small></label></div>
+                    <div class="form-check mb-0"><input class="form-check-input d-custom-col-chk" type="checkbox" id="dchk-col-2" data-col="2"><label class="form-check-label" for="dchk-col-2">Name</label></div>
+                    <div class="form-check mb-0"><input class="form-check-input d-custom-col-chk" type="checkbox" id="dchk-col-3" data-col="3" checked><label class="form-check-label" for="dchk-col-3">Status</label></div>
+                    <div class="form-check mb-0"><input class="form-check-input d-custom-col-chk" type="checkbox" id="dchk-col-4" data-col="4" checked><label class="form-check-label" for="dchk-col-4">Aliases</label></div>
+                    <div class="form-check mb-0"><input class="form-check-input d-custom-col-chk" type="checkbox" id="dchk-col-5" data-col="5" checked><label class="form-check-label" for="dchk-col-5">Category</label></div>
+                    <div class="form-check mb-0"><input class="form-check-input d-custom-col-chk" type="checkbox" id="dchk-col-6" data-col="6" checked><label class="form-check-label" for="dchk-col-6">Compression</label></div>
+                    <div class="form-check mb-0"><input class="form-check-input d-custom-col-chk" type="checkbox" id="dchk-col-7" data-col="7" checked><label class="form-check-label" for="dchk-col-7">Enabled</label></div>
+                    <div class="form-check mb-0"><input class="form-check-input d-custom-col-chk" type="checkbox" id="dchk-col-8" data-col="8" checked><label class="form-check-label" for="dchk-col-8">Acquisition</label></div>
+                    <div class="form-check mb-0"><input class="form-check-input d-custom-col-chk" type="checkbox" id="dchk-col-9" data-col="9" checked><label class="form-check-label" for="dchk-col-9">Monitor</label></div>
+                  </div>
+                </li>
+            </ul>
+        </div>
         <button id="btnDestLayout" type="button" class="btn btn-sm btn-outline-secondary"
             onclick="toggleDestLayout()"
             title="Toggle between single-column and two-column split view">
@@ -363,8 +391,14 @@ function _updateDestSearchBanner(queryError, total, hasSearch) {
         <tr>
             <th style="width:36px;"></th>
             <th>Destination</th>
+            <th>Name</th>
             <th style="width:110px;">Status</th>
             <th>Aliases</th>
+            <th>Category</th>
+            <th>Compression</th>
+            <th style="width:80px;">Enabled</th>
+            <th style="width:90px;">Acquisition</th>
+            <th style="width:80px;">Monitor</th>
         </tr>
     </thead>
     <tbody></tbody>
@@ -391,14 +425,25 @@ function _updateDestSearchBanner(queryError, total, hasSearch) {
         paging: true, pageLength: 25, searching: false, autoWidth: false, order: [],
         columns: [
             { orderable: false, data: 0, width: '36px' },
-            { orderable: true,  data: 1 },
+            { orderable: true,  data: 1, render: function(data, type) {
+                if (type === 'sort' || type === 'type') {
+                    var tmp = document.createElement('div');
+                    tmp.innerHTML = data;
+                    var a = tmp.querySelector('a.dest-list-link');
+                    return a ? a.textContent.trim() : tmp.textContent.trim();
+                }
+                return data;
+            }},
             { orderable: true,  data: 2 },
-            { orderable: true,  data: 3 }
+            { orderable: true,  data: 3 },
+            { orderable: true,  data: 4 },
+            { orderable: true,  data: 5 },
+            { orderable: false, data: 6 },
+            { orderable: false, data: 7, className: 'text-center' },
+            { orderable: false, data: 8, className: 'text-center' },
+            { orderable: false, data: 9, className: 'text-center' }
         ],
-        columnDefs: [{ targets: '_all', render: $.fn.dataTable.render.text() }],
-        createdRow: function(row, data) {
-            $('td', row).each(function(i) { $(this).html(data[i]); });
-        },
+        columnDefs: [{ targets: '_all', render: function(data) { return data; } }],
         drawCallback: function(settings) {
             var json = settings.json || {};
             var total = json.recordsTotal || 0;
@@ -420,6 +465,8 @@ function _updateDestSearchBanner(queryError, total, hasSearch) {
     var _curPage = 0;
     var _destsTable;
     var _lastTotal = 0;
+    var _dApplyMode = function() {};
+    var _dColMode = 'auto';
 
     window.destsTableReload = function() {
         if (_isSplit) {
@@ -515,6 +562,8 @@ function _updateDestSearchBanner(queryError, total, hasSearch) {
                 $r.css('height', h + 'px');
             }
         });
+        // Re-apply column visibility after rows are refreshed
+        _dApplyMode(_dColMode);
     }
 
     function _attachSplitSort() {
@@ -577,10 +626,11 @@ function _updateDestSearchBanner(queryError, total, hasSearch) {
             }
             $('#destinationsTable tbody').empty();
             var $head = $('#destinationsTable thead').clone();
+            $head.find('th').css('display', '');
             _curPage = 0; _sortCol = -1; _sortAsc = true;
 
             function makeCol(id) {
-                return $('<div style="flex:1;min-width:0">').append(
+                return $('<div style="flex:1;min-width:0;overflow-x:auto">').append(
                     $('<table>', { id: id, 'class': 'table table-sm table-hover table-striped align-middle dataTable', style: 'width:100%' })
                     .append($head.clone()).append($('<tbody>'))
                 );
@@ -621,6 +671,9 @@ function _updateDestSearchBanner(queryError, total, hasSearch) {
             btn.innerHTML = '<i class="bi bi-layout-sidebar-inset"></i> Single';
         } else {
             var $head = $('#destTableL thead').clone();
+            // Clear any inline display:none set by _dShowCols in split mode so
+            // DataTables initialises with all columns visible before _dApplyMode runs.
+            $head.find('th').css('display', '');
             $head.find('th').removeClass('dt-orderable-asc dt-orderable-desc dt-ordering-asc dt-ordering-desc');
             $head.find('span.dt-column-order').remove();
             $('#destSplitWrap').replaceWith(
@@ -629,6 +682,7 @@ function _updateDestSearchBanner(queryError, total, hasSearch) {
             );
             _sortCol = -1; _sortAsc = true; _allRows = [];
             _destsTable = $('#destinationsTable').DataTable($.extend({}, _opts, { pageLength: _pageLen }));
+            _dApplyMode(_dColMode);
             btn.innerHTML = '<i class="bi bi-layout-three-columns"></i> Split';
         }
         if (!noSave) {
@@ -650,6 +704,129 @@ function _updateDestSearchBanner(queryError, total, hasSearch) {
 
     $(function() {
         _destsTable = $('#destinationsTable').DataTable(_opts);
+
+        var _D_CUSTOM_COL_KEY = 'destsCustomCols';
+        var _D_COL_MODE_KEY = 'destsColMode';
+        var _dCustomCols = (function() {
+            try { var s = localStorage.getItem(_D_CUSTOM_COL_KEY); if (s) return JSON.parse(s); } catch(e) {}
+            return [0,1,3,4,5,6,7,8,9];
+        })();
+        _dColMode = (function() {
+            try { return localStorage.getItem(_D_COL_MODE_KEY) || 'auto'; } catch(e) { return 'auto'; }
+        })();
+        var _dCOMPACT_HIDE = [2, 5, 6, 7, 8, 9];
+        var _dSMALL_HIDE = [2, 3, 4, 5, 6, 7, 8, 9];
+
+        function _dShowCols(hideCols) {
+            if (_destsTable) {
+                var total = _destsTable.columns().count();
+                for (var i = 0; i < total; i++) {
+                    _destsTable.column(i).visible(hideCols.indexOf(i) === -1, false);
+                }
+                _destsTable.columns.adjust();
+            }
+            if (_isSplit) {
+                for (var i = 0; i < 10; i++) {
+                    var disp = hideCols.indexOf(i) === -1 ? '' : 'none';
+                    ['#destTableL', '#destTableR'].forEach(function(sel) {
+                        $(sel + ' thead tr th:nth-child(' + (i + 1) + ')').css('display', disp);
+                        $(sel + ' tbody tr td:nth-child(' + (i + 1) + ')').css('display', disp);
+                    });
+                }
+            }
+        }
+
+        function _dApplyCustomCols() {
+            if (_destsTable) {
+                var total = _destsTable.columns().count();
+                for (var i = 0; i < total; i++) {
+                    var visible = _dCustomCols.indexOf(i) !== -1;
+                    if (i === 1) visible = true;
+                    _destsTable.column(i).visible(visible, false);
+                }
+                _destsTable.columns.adjust();
+            }
+            if (_isSplit) {
+                for (var i = 0; i < 10; i++) {
+                    var visible = _dCustomCols.indexOf(i) !== -1;
+                    if (i === 1) visible = true;
+                    var disp = visible ? '' : 'none';
+                    ['#destTableL', '#destTableR'].forEach(function(sel) {
+                        $(sel + ' thead tr th:nth-child(' + (i + 1) + ')').css('display', disp);
+                        $(sel + ' tbody tr td:nth-child(' + (i + 1) + ')').css('display', disp);
+                    });
+                }
+            }
+        }
+
+        function _dSyncCustomChkBoxes() {
+            document.querySelectorAll('.d-custom-col-chk').forEach(function(chk) {
+                chk.checked = _dCustomCols.indexOf(+chk.dataset.col) !== -1;
+            });
+        }
+
+        document.querySelectorAll('.d-custom-col-chk').forEach(function(chk) {
+            chk.addEventListener('change', function() {
+                var col = +this.dataset.col;
+                var idx = _dCustomCols.indexOf(col);
+                if (this.checked && idx === -1) _dCustomCols.push(col);
+                else if (!this.checked && idx !== -1) _dCustomCols.splice(idx, 1);
+                try { localStorage.setItem(_D_CUSTOM_COL_KEY, JSON.stringify(_dCustomCols)); } catch(e) {}
+                if (_dColMode === 'custom') _dApplyCustomCols();
+            });
+        });
+
+        function _dApplyResponsiveCols() {
+            if (_dColMode !== 'auto') return;
+            if (!_destsTable && !_isSplit) return;
+            // In split mode each table occupies roughly half the viewport width
+            var w = _isSplit ? Math.floor(window.innerWidth / 2) : window.innerWidth;
+            if (w < 768) {
+                _dShowCols(_dSMALL_HIDE);
+            } else if (w < 992) {
+                _dShowCols(_dCOMPACT_HIDE);
+            } else {
+                _dShowCols([]);
+            }
+        }
+
+        _dApplyMode = function(mode) {
+            var label = mode.charAt(0).toUpperCase() + mode.slice(1);
+            $('#dColModeBtn').html('<i class="bi bi-layout-three-columns me-1"></i>' + label);
+            if (mode === 'auto') {
+                $('#dColModeBtn').removeClass('btn-primary').addClass('btn-outline-secondary');
+            } else {
+                $('#dColModeBtn').removeClass('btn-outline-secondary').addClass('btn-primary');
+            }
+            document.getElementById('dCustomColChkPanel').style.display = (mode === 'custom') ? '' : 'none';
+            $('#dColModeBtn').closest('.dropdown').find('.dropdown-item').each(function(){
+                $(this).find('i.bi-check').remove();
+                if ($(this).data('dcol-mode') === mode) $(this).prepend('<i class="bi bi-check me-1"></i>');
+            });
+            if (mode === 'auto') {
+                _dApplyResponsiveCols();
+            } else if (mode === 'all') {
+                _dShowCols([]);
+            } else if (mode === 'compact') {
+                _dShowCols(_dCOMPACT_HIDE);
+            } else if (mode === 'custom') {
+                _dSyncCustomChkBoxes();
+                _dApplyCustomCols();
+            }
+        };
+
+        $(window).on('resize', function(){ _dApplyResponsiveCols(); });
+        _dApplyMode(_dColMode);
+
+        $('#dColModeBtn').closest('.dropdown').find('.dropdown-item').on('click', function(e){
+            e.preventDefault();
+            var mode = $(this).data('dcol-mode');
+            if (!mode) return;
+            _dColMode = mode;
+            try { localStorage.setItem(_D_COL_MODE_KEY, mode); } catch(e) {}
+            _dApplyMode(mode);
+        });
+
         $('#destinationSearch').on('keydown', function(e) {
             if (e.key === 'Enter') { e.preventDefault(); destsTableReload(); }
         });

@@ -350,9 +350,11 @@
 					<div class="col-sm-6">
 						<label for="filterName" class="form-label mb-1">Data Compression <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If requested data files are compressed in the queue if there is enough time before transmission (otherwise files are compressed on the fly)" tabindex="0"></i></label>
 						<bean:define id="filters" name="destinationActionForm" property="filterNameOptions" type="java.util.Collection	" />
-						<html:select property="filterName" styleId="filterName" styleClass="form-select form-select-sm">
-							<html:options collection="filters" property="name" labelProperty="name" />
-						</html:select>
+						<div class="d-flex align-items-center gap-2">
+							<html:select property="filterName" styleId="filterName" styleClass="form-select form-select-sm" style="width:auto">
+								<html:options collection="filters" property="name" labelProperty="name" />
+							</html:select>
+						</div>
 					</div>
 					<div class="col-sm-6">
 						<label for="hostForSourceName" class="form-label mb-1">Host For Sources <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If the data file is not found on the data mover then specify which host to use in order to retrieve the file from the source" tabindex="0"></i></label>
@@ -562,7 +564,7 @@
 						<div class="form-check mt-1"><html:checkbox property="active" styleClass="form-check-input" /></div>
 					</div>
 					<div class="col-sm-6 col-lg-4">
-						<label class="form-label mb-1">Show In Monitors <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="When enabled, this Destination is monitored in the monitoring display." tabindex="0"></i></label>
+						<label class="form-label mb-1">Show In Monitor <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="When enabled, this Destination is monitored in the monitoring display." tabindex="0"></i></label>
 						<div class="d-flex align-items-center gap-1 mt-1">
 							<html:checkbox property="showInMonitors" styleId="chk_showInMonitors" styleClass="form-check-input" style="margin-top:0" onchange="(function(c){document.getElementById('icon_showInMonitors').style.display=c.checked?'none':'';})(this)" />
 							<i id="icon_showInMonitors" class="bi bi-eye-slash text-muted" title="Not shown in Monitor Display" style="font-size:1em;"></i>
