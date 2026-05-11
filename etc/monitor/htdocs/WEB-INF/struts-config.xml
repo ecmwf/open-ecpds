@@ -437,6 +437,9 @@
 			type="ecmwf.ecpds.master.plugin.http.controller.transfer.host.GetReportAction">
 			<forward name="success" path=".pds.transfer.host.report" />
 		</action>
+		<action path="/transfer/host/edit/geoIp"
+			type="ecmwf.ecpds.master.plugin.http.controller.transfer.host.GetGeoIpJsonAction">
+		</action>
 		<action path="/transfer/host/edit/insert_form"
 			type="ecmwf.ecpds.master.plugin.http.controller.transfer.host.InsertFormAction"
 			name="hostActionForm" scope="request">
