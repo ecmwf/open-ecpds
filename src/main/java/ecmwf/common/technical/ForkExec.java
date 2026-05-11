@@ -94,10 +94,9 @@ public final class ForkExec extends ForkAbstract {
     @Override
     public void start() throws IOException {
         _command = toString(_args);
-        final var request = _command;
         var successful = false;
         try {
-            _process = Runtime.getRuntime().exec(request);
+            _process = Runtime.getRuntime().exec(_args);
             successful = true;
         } finally {
             _log.debug("Exec " + (successful ? "" : "NOT ") + "successful \"" + _command + "\"");

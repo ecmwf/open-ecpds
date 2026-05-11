@@ -32,7 +32,9 @@ package ecmwf.ecpds.master.plugin.http.controller.transfer.host;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
@@ -47,6 +49,7 @@ import org.apache.struts.action.ActionMapping;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import ecmwf.common.database.DataBaseCursor;
 import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.ecpds.master.plugin.http.dao.Util;
@@ -71,6 +74,9 @@ public class GetHostListJsonAction extends PDSAction {
     /** Base path for host detail pages. */
     private static final String HOST_BASE_PATH = "/do/transfer/host";
 
+    /** Base path for destination detail pages. */
+    private static final String DEST_BASE_PATH = "/do/transfer/destination";
+
     /** Shared Jackson mapper. */
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -89,7 +95,14 @@ public class GetHostListJsonAction extends PDSAction {
         final var network = Util.getValue(request, "network", "All");
         final var hostType = Util.getValue(request, "hostType", "All");
         final var hostSearch = Util.getValue(request, "hostSearch", "");
-        final var cursor = Util.getDataBaseCursorForDataTables(0, true, request);
+        final var orderCol = parseSafeInt(request.getParameter("order[0][column]"), 1);
+        final var orderDir = request.getParameter("order[0][dir]");
+        final var sortAsc = "asc".equalsIgnoreCase(orderDir);
+        final var sortByDest = (orderCol == 5);
+        // For destination-count sort, load all rows and paginate in Java.
+        // For other columns, delegate pagination to the DB cursor as before.
+        final var cursor = sortByDest ? new DataBaseCursor("0", "1", 0, Integer.MAX_VALUE)
+                : Util.getDataBaseCursorForDataTables(0, true, request);
         Collection<Host> hosts;
         String queryError = null;
         boolean fullAccess;
@@ -122,14 +135,33 @@ public class GetHostListJsonAction extends PDSAction {
             }
             hosts = hostSet;
         }
-        // Pre-load destination counts in ONE query to avoid N+1 per host row
-        Map<String, Integer> destCounts;
+        // Pre-load destination names; for restricted users a single combined permission
+        // query returns only the (host, destination) pairs the user is authorised to see,
+        // avoiding two separate round trips against the same permission tables.
+        Map<String, List<String>> destNames;
         try {
-            destCounts = DestinationHome.getCountsByHost();
+            if (fullAccess) {
+                destNames = DestinationHome.getNamesByHost();
+            } else {
+                destNames = MasterManager.getDB().getAuthorisedHostsAndDestinations(user.getId());
+            }
         } catch (final Exception e) {
-            destCounts = Collections.emptyMap();
+            destNames = Collections.emptyMap();
         }
         final var recordsTotal = Util.getCollectionSizeFrom(hosts);
+        // When sorting by destination count: sort in-memory and paginate here
+        final var destNamesRef = destNames;
+        List<Host> hostList = new ArrayList<>(hosts);
+        if (sortByDest) {
+            final Comparator<Host> byDestCount = Comparator
+                    .comparingInt(h -> destNamesRef.getOrDefault(h.getName(), Collections.emptyList()).size());
+            hostList.sort(sortAsc ? byDestCount : byDestCount.reversed());
+            final int pageStart = parseSafeInt(request.getParameter("start"), 0);
+            final int pageLen = Math.max(parseSafeInt(request.getParameter("length"), 25), 1);
+            final int from = Math.min(pageStart, hostList.size());
+            final int to = Math.min(from + pageLen, hostList.size());
+            hostList = hostList.subList(from, to);
+        }
         final var root = MAPPER.createObjectNode();
         root.put("draw", draw);
         root.put("recordsTotal", recordsTotal);
@@ -138,14 +170,14 @@ public class GetHostListJsonAction extends PDSAction {
             root.put("queryError", queryError);
         }
         final var data = root.putArray("data");
-        for (final Host host : hosts) {
+        for (final Host host : hostList) {
             final var row = data.addArray();
             row.add(buildFlagHtml(host));
             row.add(buildNameHtml(host));
             row.add(escapeHtml(host.getHost()));
             row.add(escapeHtml(host.getTransferGroupName()));
             row.add(escapeHtml(host.getNetworkName()));
-            row.add(buildDestinationsHtml(host, destCounts));
+            row.add(buildDestinationsHtml(host, destNames));
         }
         try {
             response.setContentType("application/json; charset=UTF-8");
@@ -238,14 +270,31 @@ public class GetHostListJsonAction extends PDSAction {
         return sb.toString();
     }
 
-    private static String buildDestinationsHtml(final Host host, final Map<String, Integer> destCounts) {
-        final var count = destCounts.getOrDefault(host.getName(), 0);
-        if (count == 0) {
+    private static String buildDestinationsHtml(final Host host, final Map<String, List<String>> destNames) {
+        final var names = destNames.getOrDefault(host.getName(), Collections.emptyList());
+        if (names.isEmpty()) {
             return "<span class=\"badge bg-body-tertiary text-muted border fst-italic\">none</span>";
         }
-        final var href = HOST_BASE_PATH + "/" + escapeHtml(host.getName());
-        return "<a href=\"" + href + "\" class=\"badge bg-body-tertiary text-secondary border text-decoration-none\">"
-                + count + " destination" + (count == 1 ? "" : "s") + "</a>";
+        if (names.size() == 1) {
+            final var name = escapeHtml(names.get(0));
+            return "<a href=\"" + DEST_BASE_PATH + "/" + name
+                    + "\" class=\"badge bg-body-tertiary text-secondary border text-decoration-none\">" + name + "</a>";
+        }
+        // Multiple destinations — Bootstrap dropdown
+        final var sb = new StringBuilder();
+        sb.append("<div class=\"dropdown\">").append(
+                "<button class=\"badge bg-body-tertiary text-secondary border text-decoration-none dropdown-toggle\" ")
+                .append("style=\"cursor:pointer;\" ")
+                .append("data-bs-toggle=\"dropdown\" data-bs-auto-close=\"true\" data-bs-boundary=\"viewport\">")
+                .append(names.size()).append(" destinations").append("</button>")
+                .append("<ul class=\"dropdown-menu\" style=\"max-height:300px;overflow-y:auto;\">");
+        for (final var name : names) {
+            final var eName = escapeHtml(name);
+            sb.append("<li><a class=\"dropdown-item\" href=\"").append(DEST_BASE_PATH).append("/").append(eName)
+                    .append("\">").append(eName).append("</a></li>");
+        }
+        sb.append("</ul></div>");
+        return sb.toString();
     }
 
     // -------------------------------------------------------------------------

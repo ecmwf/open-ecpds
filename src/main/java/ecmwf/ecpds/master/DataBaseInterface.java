@@ -54,6 +54,8 @@ import ecmwf.common.database.ECtransModule;
 import ecmwf.common.database.Event;
 import ecmwf.common.database.Host;
 import ecmwf.common.database.HostECUser;
+import ecmwf.common.database.GeoIpData;
+import ecmwf.common.database.HostMapData;
 import ecmwf.common.database.IncomingHistory;
 import ecmwf.common.database.IncomingPolicy;
 import ecmwf.common.database.IncomingUser;
@@ -591,6 +593,36 @@ public interface DataBaseInterface extends Remote {
      *             Signals that an I/O exception has occurred.
      */
     List<String> getAuthorisedHosts(String uid) throws DataBaseException, IOException;
+
+    /**
+     * Gets the authorised destinations for a web user.
+     *
+     * @param uid
+     *            the web user id
+     *
+     * @return the list of authorised destination names
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.io.IOException
+     *             Signals that an I/O exception has occurred.
+     */
+    List<String> getAuthorisedDestinations(String uid) throws DataBaseException, IOException;
+
+    /**
+     * Gets all (host, destination) pairs a web user is authorised to access, using a single combined permission query.
+     *
+     * @param uid
+     *            the web user id
+     *
+     * @return map of host name → sorted list of authorised destination names
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.io.IOException
+     *             Signals that an I/O exception has occurred.
+     */
+    Map<String, List<String>> getAuthorisedHostsAndDestinations(String uid) throws DataBaseException, IOException;
 
     /**
      * Gets the destinations by host name.
@@ -1148,6 +1180,18 @@ public interface DataBaseInterface extends Remote {
     Map<String, Integer> getDestinationCountsByHost() throws DataBaseException, RemoteException;
 
     /**
+     * Gets a map of host name to sorted list of destination names using a single ASSOCIATION table query.
+     *
+     * @return map of host name → sorted list of destination names
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    Map<String, List<String>> getDestinationNamesByHost() throws DataBaseException, RemoteException;
+
+    /**
      * Gets the change log by key.
      *
      * @param keyName
@@ -1604,6 +1648,11 @@ public interface DataBaseInterface extends Remote {
      *             the remote exception
      */
     Host[] getHostArray() throws RemoteException;
+
+    List<HostMapData> getHostsForMap(String label, String filter, String network, String hostType, String hostSearch)
+            throws DataBaseException, RemoteException;
+
+    List<GeoIpData> geoLocateIps(List<String> ips) throws DataBaseException, RemoteException;
 
     /**
      * Gets the transfer method.

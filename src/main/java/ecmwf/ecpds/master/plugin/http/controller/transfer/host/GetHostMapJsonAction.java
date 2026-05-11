@@ -29,13 +29,13 @@ package ecmwf.ecpds.master.plugin.http.controller.transfer.host;
  * @since 2024-07-01
  */
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedHashSet;
+import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
@@ -43,12 +43,9 @@ import org.apache.struts.action.ActionMapping;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import ecmwf.common.database.DataBaseCursor;
+import ecmwf.common.database.HostMapData;
 import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
-import ecmwf.ecpds.master.plugin.http.home.transfer.HostHome;
-import ecmwf.ecpds.master.plugin.http.model.transfer.Host;
-import ecmwf.ecpds.master.plugin.http.model.transfer.TransferException;
 import ecmwf.web.ECMWFException;
 import ecmwf.web.model.users.User;
 
@@ -60,8 +57,14 @@ import ecmwf.web.model.users.User;
  */
 public class GetHostMapJsonAction extends PDSAction {
 
+    private static final Logger _log = LogManager.getLogger(GetHostMapJsonAction.class);
+
     /** Shared Jackson mapper. */
     private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    /** GeoJSON cache: filter-key → full JSON string. Expires after 5 minutes. */
+    private static final com.google.common.cache.Cache<String, String> GEOJSON_CACHE = com.google.common.cache.CacheBuilder
+            .newBuilder().maximumSize(200).expireAfterWrite(5, java.util.concurrent.TimeUnit.MINUTES).build();
 
     /** Base path for host detail pages. */
     private static final String HOST_BASE_PATH = "/do/transfer/host";
@@ -75,104 +78,76 @@ public class GetHostMapJsonAction extends PDSAction {
     public ActionForward safeAuthorizedPerform(final ActionMapping mapping, final ActionForm form,
             final HttpServletRequest request, final HttpServletResponse response, final User user)
             throws ECMWFException, ClassCastException {
-        // Accept the same filter params as the host list endpoint so the map
-        // respects the full server-side query (wildcards, field tokens, etc.).
         final var label = param(request, "label", "All");
         final var filter = param(request, "hostFilter", "All");
         final var network = param(request, "network", "All");
         final var hostType = param(request, "hostType", "All");
         final var hostSearch = param(request, "hostSearch", "");
+        final var isFullAccess = user.hasAccess(getResource(request, "transferhistory.basepath"));
 
-        // Use an unlimited cursor: sort by name asc, return everything.
-        final var cursor = new DataBaseCursor("0", "asc", 0, Integer.MAX_VALUE);
-
-        Collection<Host> hosts;
-        if (user.hasAccess(getResource(request, "transferhistory.basepath"))) {
-            try {
-                hosts = HostHome.findByCriteria(label, filter, network, hostType, hostSearch, cursor);
-            } catch (final TransferException e) {
-                hosts = new ArrayList<>(0);
-            }
-        } else {
-            // Restricted user: only show authorised hosts
-            final var hostSet = new LinkedHashSet<Host>();
-            try {
-                for (final String hostName : MasterManager.getDB().getAuthorisedHosts(user.getId())) {
-                    try {
-                        hostSet.add(HostHome.findByPrimaryKey(hostName));
-                    } catch (final Exception e) {
-                        // skip unavailable hosts
-                    }
-                }
-            } catch (final Exception e) {
-                // skip on error
-            }
-            hosts = hostSet;
+        final var cacheKey = label + "|" + filter + "|" + network + "|" + hostType + "|" + hostSearch + "|"
+                + (isFullAccess ? "full" : user.getId());
+        var cached = GEOJSON_CACHE.getIfPresent(cacheKey);
+        if (cached == null) {
+            cached = buildGeoJson(label, filter, network, hostType, hostSearch, isFullAccess, user);
+            GEOJSON_CACHE.put(cacheKey, cached);
         }
-
-        final var root = MAPPER.createObjectNode();
-        root.put("type", "FeatureCollection");
-        final var features = root.putArray("features");
-
-        for (final Host host : hosts) {
-            try {
-                // The HostBean from findByCriteria() does not have HostLocation populated,
-                // so we must call getHost() on the master to get fully-resolved coordinates.
-                // For automatic-location hosts the GeoIP result is served from an in-memory
-                // cache after the first lookup, making this one RMI call (vs. the original
-                // two per host) the remaining bottleneck.
-                final var dbHost = MasterManager.getDB().getHost(host.getName());
-                final var loc = dbHost.getHostLocation();
-                if (loc == null) {
-                    continue;
-                }
-                final var lat = loc.getLatitude();
-                final var lon = loc.getLongitude();
-                if (lat == null || lon == null || (lat == 0.0 && lon == 0.0)) {
-                    continue;
-                }
-
-                final var feature = MAPPER.createObjectNode();
-                feature.put("type", "Feature");
-
-                final var geometry = feature.putObject("geometry");
-                geometry.put("type", "Point");
-                final var coords = geometry.putArray("coordinates");
-                coords.add(lon);
-                coords.add(lat);
-
-                final var props = feature.putObject("properties");
-                props.put("id", safeStr(host.getName()));
-                props.put("nickname", safeStr(host.getNickName()));
-                props.put("hostname", safeStr(host.getHost()));
-                props.put("type", safeStr(host.getType()));
-                props.put("active", host.getActive());
-                // Use dbHost.getGeoIpLocation() directly — avoids a second RMI call that
-                // HostBean.getGeoIpLocation() would otherwise trigger.
-                props.put("geo", safeStr(dbHost.getGeoIpLocation()));
-                props.put("network", safeStr(host.getNetworkName()));
-                props.put("method", safeStr(host.getTransferMethodName()));
-                props.put("comment", safeStr(host.getComment()));
-                props.put("url", HOST_BASE_PATH + "/" + escapeHtml(host.getName()));
-
-                features.add(feature);
-            } catch (final Exception e) {
-                continue;
-            }
-        }
-
         try {
             response.setContentType("application/json; charset=UTF-8");
             response.setCharacterEncoding("UTF-8");
-            MAPPER.writeValue(response.getWriter(), root);
+            response.getWriter().write(cached);
         } catch (final Exception e) {
-            writeError(response, "Error building host map GeoJSON: " + e.getMessage());
+            writeError(response, "Error writing host map GeoJSON: " + e.getMessage());
         }
         return null;
     }
 
-    private static String safeStr(final String s) {
-        return s != null ? s : "";
+    private String buildGeoJson(final String label, final String filter, final String network, final String hostType,
+            final String hostSearch, final boolean isFullAccess, final User user) {
+        final var root = MAPPER.createObjectNode();
+        root.put("type", "FeatureCollection");
+        final var features = root.putArray("features");
+
+        try {
+            final List<HostMapData> hosts;
+            if (isFullAccess) {
+                hosts = MasterManager.getDB().getHostsForMap(label, filter, network, hostType, hostSearch);
+            } else {
+                final var authorisedNames = new java.util.HashSet<>(
+                        MasterManager.getDB().getAuthorisedHosts(user.getId()));
+                hosts = MasterManager.getDB().getHostsForMap("All", "All", "All", "All", "").stream()
+                        .filter(h -> authorisedNames.contains(h.id())).collect(java.util.stream.Collectors.toList());
+            }
+            for (final var h : hosts) {
+                final var feature = MAPPER.createObjectNode();
+                feature.put("type", "Feature");
+                final var geometry = feature.putObject("geometry");
+                geometry.put("type", "Point");
+                final var coords = geometry.putArray("coordinates");
+                coords.add(h.lon());
+                coords.add(h.lat());
+                final var props = feature.putObject("properties");
+                props.put("id", h.id());
+                props.put("nickname", h.nickname());
+                props.put("hostname", h.hostname());
+                props.put("type", h.type());
+                props.put("active", h.active());
+                props.put("geo", h.geo());
+                props.put("network", h.network());
+                props.put("method", h.method());
+                props.put("comment", h.comment());
+                props.put("url", HOST_BASE_PATH + "/" + escapeHtml(h.id()));
+                features.add(feature);
+            }
+        } catch (final Exception e) {
+            _log.warn("Error building host map GeoJSON", e);
+        }
+
+        try {
+            return MAPPER.writeValueAsString(root);
+        } catch (final Exception e) {
+            return "{\"type\":\"FeatureCollection\",\"features\":[]}";
+        }
     }
 
     private static String param(final HttpServletRequest request, final String name, final String defaultValue) {

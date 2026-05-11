@@ -36,6 +36,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -162,7 +164,14 @@ public final class ExecModule extends TransferModule {
                 if (getDebug()) {
                     _log.debug("Exec: " + _script + " (using pipe)");
                 }
-                process = Runtime.getRuntime().exec(_script);
+                // Build command as a list to avoid shell interpretation
+                final List<String> pipeCmd = new ArrayList<>();
+                for (final var token : _script.trim().split("\\s+")) {
+                    if (!token.isEmpty()) {
+                        pipeCmd.add(token);
+                    }
+                }
+                process = new ProcessBuilder(pipeCmd).start();
                 final var out = process.getOutputStream();
                 final var dis = new BufferedReader(new StringReader(_args));
                 String line;
@@ -174,11 +183,21 @@ public final class ExecModule extends TransferModule {
                     out.close();
                 }
             } else {
-                final var command = _script + (args.length() > 0 ? " " + args : "");
-                if (getDebug()) {
-                    _log.debug("Exec: " + command);
+                // Build command as a list: script tokens + args tokens (no shell interpretation)
+                final List<String> cmd = new ArrayList<>();
+                for (final var token : _script.trim().split("\\s+")) {
+                    if (!token.isEmpty()) {
+                        cmd.add(token);
+                    }
                 }
-                process = Runtime.getRuntime().exec(command);
+                if (args.length() > 0) {
+                    // Each arg is a separate token — file paths with spaces are passed correctly
+                    cmd.add(args);
+                }
+                if (getDebug()) {
+                    _log.debug("Exec: " + cmd);
+                }
+                process = new ProcessBuilder(cmd).start();
             }
             final int returnCode;
             if (_synchronous) {

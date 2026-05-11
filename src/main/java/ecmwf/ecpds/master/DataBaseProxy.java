@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -65,6 +66,8 @@ import ecmwf.common.database.ECtransModule;
 import ecmwf.common.database.Event;
 import ecmwf.common.database.Host;
 import ecmwf.common.database.HostECUser;
+import ecmwf.common.database.GeoIpData;
+import ecmwf.common.database.HostMapData;
 import ecmwf.common.database.IncomingHistory;
 import ecmwf.common.database.IncomingPolicy;
 import ecmwf.common.database.IncomingUser;
@@ -560,6 +563,49 @@ final class DataBaseProxy implements DataBaseInterface {
         }
         final var monitor = new MonitorCall("getAuthorisedHosts(" + uid + ")");
         return monitor.done(dataBaseInterface.getAuthorisedHosts(uid));
+    }
+
+    @Override
+    public List<HostMapData> getHostsForMap(final String label, final String filter, final String network,
+            final String hostType, final String hostSearch) throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall(
+                "getHostsForMap(" + label + "," + filter + "," + network + "," + hostType + ")");
+        return monitor.done(dataBaseInterface.getHostsForMap(label, filter, network, hostType, hostSearch));
+    }
+
+    @Override
+    public List<GeoIpData> geoLocateIps(final List<String> ips) throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("geoLocateIps(" + ips.size() + " IPs)");
+        return monitor.done(dataBaseInterface.geoLocateIps(ips));
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Gets the authorised destinations for a web user.
+     */
+    @Override
+    public List<String> getAuthorisedDestinations(final String uid) throws DataBaseException, IOException {
+        if (isEmpty(uid)) {
+            return new ArrayList<>(0);
+        }
+        final var monitor = new MonitorCall("getAuthorisedDestinations(" + uid + ")");
+        return monitor.done(dataBaseInterface.getAuthorisedDestinations(uid));
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Gets the authorised hosts and destinations for a web user.
+     */
+    @Override
+    public Map<String, List<String>> getAuthorisedHostsAndDestinations(final String uid)
+            throws DataBaseException, IOException {
+        if (isEmpty(uid)) {
+            return new HashMap<>(0);
+        }
+        final var monitor = new MonitorCall("getAuthorisedHostsAndDestinations(" + uid + ")");
+        return monitor.done(dataBaseInterface.getAuthorisedHostsAndDestinations(uid));
     }
 
     /**
@@ -1067,6 +1113,17 @@ final class DataBaseProxy implements DataBaseInterface {
     public Map<String, Integer> getDestinationCountsByHost() throws DataBaseException, RemoteException {
         final var monitor = new MonitorCall("getDestinationCountsByHost()");
         return monitor.done(dataBaseInterface.getDestinationCountsByHost());
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Gets the destination names by host.
+     */
+    @Override
+    public Map<String, List<String>> getDestinationNamesByHost() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getDestinationNamesByHost()");
+        return monitor.done(dataBaseInterface.getDestinationNamesByHost());
     }
 
     /**

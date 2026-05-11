@@ -224,6 +224,20 @@ final class ECpdsGet {
     }
 
     /**
+     * Gets all (host, destination) name pairs from the ASSOCIATION table ordered by host name and destination name.
+     *
+     * @return result set with columns HOS_NAME and DES_NAME
+     *
+     * @throws SQLException
+     *             the SQL exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     */
+    DBResultSet getDestinationNamesByHost() throws SQLException, IOException {
+        return _database.executeSelect("ECpdsBase", "getDestinationNamesByHost", new String[0]);
+    }
+
+    /**
      * Gets the change log by key.
      *
      * @param <T>
@@ -825,6 +839,14 @@ final class ECpdsGet {
                         "hostname-=" + paramHostname, "enabled-=" + paramEnabled, "method-=" + paramMethod,
                         "email-=" + paramEmail, "password-=" + paramPassword, "sort=" + paramSort,
                         "order=" + paramOrder, "start=" + paramStart, "length=" + paramLength });
+    }
+
+    DBResultSet getHostsForMap(final String label, final String filter, final String network, final String type,
+            final String id, final String nickname, final String hostname, final String comment)
+            throws SQLException, IOException {
+        return _database.executeSelect("ECpdsBase", "getHostsForMap",
+                new String[] { "label=" + label, "filter=" + filter, "network=" + network, "type=" + type, "id-=" + id,
+                        "nickname-=" + nickname, "hostname-=" + hostname, "comment-=" + comment });
     }
 
     /**
@@ -1630,6 +1652,24 @@ final class ECpdsGet {
      */
     DBResultSet getAuthorizedHosts(final String user) throws SQLException, IOException {
         return _database.executeSelect("ECpdsBase", "getAuthorisedHosts", new String[] { "user=" + user });
+    }
+
+    /**
+     * Gets all (host, destination) pairs the user is authorised to access, in a single combined query.
+     *
+     * @param user
+     *            the web user id
+     *
+     * @return result set with columns HOS_NAME and DES_NAME
+     *
+     * @throws SQLException
+     *             the SQL exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     */
+    DBResultSet getAuthorizedHostsAndDestinations(final String user) throws SQLException, IOException {
+        return _database.executeSelect("ECpdsBase", "getAuthorisedHostsAndDestinations",
+                new String[] { "user=" + user });
     }
 
     /**

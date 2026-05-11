@@ -189,6 +189,32 @@ public final class ECpdsBase extends DataBase {
     }
 
     /**
+     * Gets all (host, destination) pairs the user is authorised to access in a single combined query, avoiding two
+     * separate round trips against the same permission tables.
+     *
+     * @param user
+     *            the web user id
+     *
+     * @return map of host name → sorted list of authorised destination names
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public Map<String, List<String>> getAuthorisedHostsAndDestinations(final String user) throws DataBaseException {
+        try (var rs = ecpds.getAuthorizedHostsAndDestinations(user)) {
+            final Map<String, List<String>> result = new HashMap<>();
+            while (rs.next()) {
+                result.computeIfAbsent(rs.getString("HOS_NAME"), k -> new ArrayList<>()).add(rs.getString("DES_NAME"));
+            }
+            logSqlRequest("getAuthorisedHostsAndDestinations", result.size());
+            return result;
+        } catch (SQLException | IOException e) {
+            _log.warn("getAuthorisedHostsAndDestinations", e);
+            throw new DataBaseException("getAuthorisedHostsAndDestinations", e);
+        }
+    }
+
+    /**
      * Gets the rates.
      *
      * @param fromDate
@@ -2833,6 +2859,43 @@ public final class ECpdsBase extends DataBase {
         }
     }
 
+    public List<Host> getHostsForMap(final String label, final String filter, final String network, final String type,
+            final String search) throws DataBaseException {
+        try {
+            final var options = new SQLParameterParser(search, "nickname", "id=d", "comment", "hostname");
+            try (var rs = ecpds.getHostsForMap(label, filter, network, type, options.get(1, "HOS_NAME"),
+                    options.get(0, "HOS_NICKNAME"), options.get(3, "HOS_HOST"), options.get(2, "HOS_COMMENT"))) {
+                final List<Host> list = new ArrayList<>();
+                while (rs.next()) {
+                    final var host = new Host();
+                    host.setName(rs.getString("HOS_NAME"));
+                    host.setNickname(rs.getString("HOS_NICKNAME"));
+                    host.setHost(rs.getString("HOS_HOST"));
+                    host.setType(rs.getString("HOS_TYPE"));
+                    host.setActive(rs.getBoolean("HOS_ACTIVE"));
+                    host.setAutomaticLocation(rs.getBoolean("HOS_AUTOMATIC_LOCATION"));
+                    host.setNetworkName(rs.getString("HOS_NETWORK_NAME"));
+                    host.setTransferMethodName(rs.getString("TME_NAME"));
+                    host.setComment(rs.getString("HOS_COMMENT"));
+                    final var latObj = rs.getObject("HLO_LATITUDE");
+                    final var lonObj = rs.getObject("HLO_LONGITUDE");
+                    if (latObj != null && lonObj != null) {
+                        final var loc = new HostLocation();
+                        loc.setLatitude(((Number) latObj).doubleValue());
+                        loc.setLongitude(((Number) lonObj).doubleValue());
+                        host.setHostLocation(loc);
+                    }
+                    list.add(host);
+                }
+                logSqlRequest("getHostsForMap", list.size());
+                return list;
+            }
+        } catch (IOException | SQLException e) {
+            _log.warn("getHostsForMap", e);
+            throw new DataBaseException("getHostsForMap", e);
+        }
+    }
+
     /**
      * Gets the hosts by destination id.
      *
@@ -3883,6 +3946,28 @@ public final class ECpdsBase extends DataBase {
         } catch (SQLException | IOException e) {
             _log.warn("getDestinationCountsByHost", e);
             throw new DataBaseException("getDestinationCountsByHost", e);
+        }
+    }
+
+    /**
+     * Gets a map of host name to sorted list of destination names using a single ASSOCIATION table query.
+     *
+     * @return map of host name → sorted list of destination names
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public Map<String, List<String>> getDestinationNamesByHost() throws DataBaseException {
+        try (var rs = ecpds.getDestinationNamesByHost()) {
+            final Map<String, List<String>> names = new HashMap<>();
+            while (rs.next()) {
+                names.computeIfAbsent(rs.getString("HOS_NAME"), k -> new ArrayList<>()).add(rs.getString("DES_NAME"));
+            }
+            logSqlRequest("getDestinationNamesByHost", names.size());
+            return names;
+        } catch (SQLException | IOException e) {
+            _log.warn("getDestinationNamesByHost", e);
+            throw new DataBaseException("getDestinationNamesByHost", e);
         }
     }
 

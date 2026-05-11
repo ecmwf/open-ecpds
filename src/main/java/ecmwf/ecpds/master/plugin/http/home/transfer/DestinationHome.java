@@ -27,6 +27,7 @@ package ecmwf.ecpds.master.plugin.http.home.transfer;
  */
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
@@ -356,6 +357,22 @@ public class DestinationHome extends ModelHomeBase {
             return MasterManager.getDB().getDestinationCountsByHost();
         } catch (final Exception e) {
             throw new TransferException("Could not get destination counts by host", e);
+        }
+    }
+
+    /**
+     * Gets a map of host name to sorted list of destination names in a single query.
+     *
+     * @return map of host name → sorted list of destination names
+     *
+     * @throws TransferException
+     *             the transfer exception
+     */
+    public static final Map<String, List<String>> getNamesByHost() throws TransferException {
+        try {
+            return MasterManager.getDB().getDestinationNamesByHost();
+        } catch (final Exception e) {
+            throw new TransferException("Could not get destination names by host", e);
         }
     }
 }

@@ -1917,14 +1917,22 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             Format.replaceAll(sb, "$host", host.getHost());
             Format.replaceAll(sb, "$port", port);
             Format.replaceAll(sb, "$login", host.getLogin());
-            Format.replaceAll(sb, "$passwd", host.getPasswd());
             Format.replaceAll(sb, "$mail", host.getUserMail());
             Format.replaceAll(sb, "$networkCode", host.getNetworkCode());
             Format.replaceAll(sb, "$networkName", host.getNetworkName());
             Format.replaceAll(sb, "$nickname", host.getNickname());
             Format.replaceAll(sb, "$listenAddress", listenAddress == null ? "" : listenAddress);
+            // Remove $passwd placeholder from command — password is passed via env var
+            // ECPDS_PASSWD to avoid exposure in the process list.
+            Format.replaceAll(sb, "$passwd", "");
+            // Build token list for safe execution (no shell interpretation)
+            final var cmd = Arrays.stream(sb.toString().trim().split("\\s+")).filter(t -> !t.isEmpty())
+                    .collect(java.util.stream.Collectors.toList());
+            final var passwd = host.getPasswd();
+            final var env = passwd != null && !passwd.isEmpty() ? java.util.Map.of("ECPDS_PASSWD", passwd)
+                    : java.util.Collections.<String, String> emptyMap();
             // Run the report!
-            return _exec(sb.toString());
+            return _exec(cmd, env);
         } catch (final Throwable t) {
             throw Format.getRemoteException("DataMover=" + getRoot(), t);
         }
@@ -1942,19 +1950,32 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      *             Signals that an I/O exception has occurred.
      */
     private static String _exec(final String c) throws IOException {
+        // Split config command string into tokens for safe execution (no shell)
+        if (c == null || c.isBlank()) {
+            throw new IOException("Command is empty");
+        }
+        final var tokens = Arrays.stream(c.trim().split("\\s+")).filter(t -> !t.isEmpty())
+                .collect(java.util.stream.Collectors.toList());
+        return _exec(tokens, java.util.Collections.emptyMap());
+    }
+
+    private static String _exec(final List<String> cmd, final java.util.Map<String, String> extraEnv)
+            throws IOException {
         // Find the command to process the report!
-        if (c == null || !new File(c.split(" ")[0]).canExecute()) {
-            throw new IOException("Command " + c + " not available");
+        if (cmd.isEmpty() || !new File(cmd.get(0)).canExecute()) {
+            throw new IOException("Command " + (cmd.isEmpty() ? "(empty)" : cmd.get(0)) + " not available");
         }
         final var result = new StringBuilder();
-        _log.debug("Starting command: {}", c);
+        _log.debug("Starting command: {}", cmd.get(0));
         // The process which starts the command!
         Process process = null;
         BufferedReader stdIn = null;
         BufferedReader stdErr = null;
         final int returnCode;
         try {
-            process = Runtime.getRuntime().exec(c);
+            final var pb = new ProcessBuilder(cmd);
+            pb.environment().putAll(extraEnv);
+            process = pb.start();
             stdIn = new BufferedReader(new InputStreamReader(process.getInputStream()));
             stdErr = new BufferedReader(new InputStreamReader(process.getErrorStream()));
             // Use arrays to hold references to stdIn and stdErr

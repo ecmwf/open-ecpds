@@ -108,21 +108,33 @@ public class GetDestinationListJsonAction extends PDSAction {
             queryError = e.getMessage();
         }
 
-        // In-memory sort for Status (col 2) and Aliases (col 3)
-        if (orderCol == 2 || orderCol == 3) {
+        // In-memory sort for Name (col 2), Status (col 3), Aliases (col 4) and Category (col 5)
+        if (orderCol == 2 || orderCol == 3 || orderCol == 4 || orderCol == 5) {
             final var list = allDestinations instanceof List ? (List<Destination>) allDestinations
                     : new ArrayList<>(allDestinations);
             if (orderCol == 2) {
+                list.sort((a, b) -> {
+                    final var va = a.getId() != null ? a.getId() : "";
+                    final var vb = b.getId() != null ? b.getId() : "";
+                    return ascending ? va.compareToIgnoreCase(vb) : vb.compareToIgnoreCase(va);
+                });
+            } else if (orderCol == 3) {
                 list.sort((a, b) -> {
                     final var va = a.getFormattedStatus() != null ? a.getFormattedStatus() : "";
                     final var vb = b.getFormattedStatus() != null ? b.getFormattedStatus() : "";
                     return ascending ? va.compareTo(vb) : vb.compareTo(va);
                 });
-            } else {
+            } else if (orderCol == 4) {
                 list.sort((a, b) -> {
                     final int ca = safeAliasCount(a);
                     final int cb = safeAliasCount(b);
                     return ascending ? Integer.compare(ca, cb) : Integer.compare(cb, ca);
+                });
+            } else {
+                list.sort((a, b) -> {
+                    final var va = a.getTypeText() != null ? a.getTypeText() : "";
+                    final var vb = b.getTypeText() != null ? b.getTypeText() : "";
+                    return ascending ? va.compareTo(vb) : vb.compareTo(va);
                 });
             }
             allDestinations = list;
@@ -153,8 +165,14 @@ public class GetDestinationListJsonAction extends PDSAction {
             final var row = data.addArray();
             row.add(buildFlagHtml(d));
             row.add(buildNameHtml(d));
+            row.add(escapeHtml(d.getId()));
             row.add(buildStatusHtml(d));
             row.add(buildAliasesHtml(d));
+            row.add(buildCategoryHtml(d));
+            row.add(buildCompressionHtml(d));
+            row.add(buildEnabledHtml(d));
+            row.add(buildAcquisitionHtml(d));
+            row.add(buildShowInMonitorsHtml(d));
         }
 
         try {
@@ -291,19 +309,68 @@ public class GetDestinationListJsonAction extends PDSAction {
         if (aliases == null || aliases.isEmpty()) {
             return "<span class=\"badge bg-body-tertiary text-muted border fst-italic\">none</span>";
         }
-        final var count = aliases.size();
-        if (count >= 3) {
-            return "<span class=\"badge bg-body-tertiary text-secondary border\">" + count + " aliases</span>";
+        if (aliases.size() == 1) {
+            final var aid = escapeHtml(aliases.iterator().next().getId());
+            return "<a href=\"" + DEST_BASE_PATH + "/" + aid
+                    + "\" class=\"badge bg-body-tertiary text-secondary border text-decoration-none\" title=\"" + aid
+                    + " is an alias for " + escapeHtml(d.getId()) + "\">" + aid + "</a>";
         }
+        // Multiple aliases — Bootstrap dropdown
         final var sb = new StringBuilder();
+        sb.append("<div class=\"dropdown\">").append(
+                "<button class=\"badge bg-body-tertiary text-secondary border text-decoration-none dropdown-toggle\" ")
+                .append("style=\"cursor:pointer;\" ")
+                .append("data-bs-toggle=\"dropdown\" data-bs-auto-close=\"true\" data-bs-boundary=\"viewport\">")
+                .append(aliases.size()).append(" aliases").append("</button>")
+                .append("<ul class=\"dropdown-menu\" style=\"max-height:300px;overflow-y:auto;\">");
         for (final Destination alias : aliases) {
             final var aid = escapeHtml(alias.getId());
-            sb.append("<a href=\"").append(DEST_BASE_PATH).append("/").append(aid).append(
-                    "\" class=\"badge bg-body-tertiary text-secondary border text-decoration-none me-1\" title=\"")
-                    .append(aid).append(" is an alias for ").append(escapeHtml(d.getId())).append("\">").append(aid)
-                    .append("</a>");
+            sb.append("<li><a class=\"dropdown-item\" href=\"").append(DEST_BASE_PATH).append("/").append(aid)
+                    .append("\" title=\"").append(aid).append(" is an alias for ").append(escapeHtml(d.getId()))
+                    .append("\">").append(aid).append("</a></li>");
         }
+        sb.append("</ul></div>");
         return sb.toString();
+    }
+
+    private static String buildCategoryHtml(final Destination d) {
+        final var typeText = d.getTypeText();
+        if (typeText == null || typeText.isBlank()) {
+            return "";
+        }
+        return switch (typeText) {
+        case "Gold" -> "<span class=\"dest-page-type dest-type-gold\"><i class=\"bi bi-trophy-fill\"></i> Gold</span>";
+        case "Silver" -> "<span class=\"dest-page-type dest-type-silver\"><i class=\"bi bi-award-fill\"></i> Silver</span>";
+        case "Bronze" -> "<span class=\"dest-page-type dest-type-bronze\"><i class=\"bi bi-award\"></i> Bronze</span>";
+        case "Basic" -> "<span class=\"dest-page-type dest-type-basic\"><i class=\"bi bi-patch-check\"></i> Basic</span>";
+        default -> "<span class=\"dest-page-type\">" + escapeHtml(typeText) + "</span>";
+        };
+    }
+
+    private static String buildCompressionHtml(final Destination d) {
+        final var f = d.getFilterName();
+        if (f == null || f.isBlank() || "none".equals(f)) {
+            return "";
+        }
+        return buildCompressionIcon(f) + " <small class=\"text-muted\">" + escapeHtml(f) + "</small>";
+    }
+
+    private static String buildEnabledHtml(final Destination d) {
+        return d.getActive()
+                ? "<i class=\"bi bi-check-circle-fill text-success\" title=\"Enabled\" style=\"font-size:0.9rem;\"></i>"
+                : "<i class=\"bi bi-x-circle-fill text-danger\" title=\"Disabled\" style=\"font-size:0.9rem;\"></i>";
+    }
+
+    private static String buildAcquisitionHtml(final Destination d) {
+        return d.getAcquisition()
+                ? "<i class=\"bi bi-check-circle-fill text-success\" title=\"Acquisition\" style=\"font-size:0.9rem;\"></i>"
+                : "<i class=\"bi bi-dash text-muted\" style=\"font-size:0.9rem;\"></i>";
+    }
+
+    private static String buildShowInMonitorsHtml(final Destination d) {
+        return d.getShowInMonitors()
+                ? "<i class=\"bi bi-check-circle-fill text-success\" title=\"Shown in monitors\" style=\"font-size:0.9rem;\"></i>"
+                : "<i class=\"bi bi-dash text-muted\" style=\"font-size:0.9rem;\"></i>";
     }
 
     private static String buildCompressionIcon(final String name) {

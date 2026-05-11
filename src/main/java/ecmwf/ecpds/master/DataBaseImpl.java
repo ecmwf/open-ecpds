@@ -36,9 +36,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
@@ -75,6 +79,8 @@ import ecmwf.common.database.Event;
 import ecmwf.common.database.Host;
 import ecmwf.common.database.HostECUser;
 import ecmwf.common.database.HostLocation;
+import ecmwf.common.database.GeoIpData;
+import ecmwf.common.database.HostMapData;
 import ecmwf.common.database.HostOutput;
 import ecmwf.common.database.HostStats;
 import ecmwf.common.database.IncomingAssociation;
@@ -134,6 +140,14 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
     private static final Cache<String, GeoIpResult> GEOIP_CACHE = CacheBuilder.newBuilder().maximumSize(5_000)
             .expireAfterWrite(24, TimeUnit.HOURS).build();
 
+    /** Thread pool for parallel GeoIP lookups (shared by getHostsForMap and pre-warm). */
+    private static final ExecutorService GEOIP_EXECUTOR = Executors
+            .newFixedThreadPool(Math.min(32, Runtime.getRuntime().availableProcessors() * 4), r -> {
+                final var t = new Thread(r, "GeoIP-lookup");
+                t.setDaemon(true);
+                return t;
+            });
+
     /** The _ecpds. */
     private final transient ECpdsBase ecpds;
 
@@ -154,6 +168,36 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
     DataBaseImpl(final MasterServer master, final ECpdsBase ecpds) throws RemoteException {
         this.master = master;
         this.ecpds = ecpds;
+        final var t = new Thread(() -> {
+            try {
+                Thread.sleep(30_000);
+                _log.info("GeoIP pre-warm: starting");
+                final var hosts = ecpds.getHostsForMap("All", "All", "All", "All", "");
+                final var futures = new java.util.HashMap<String, CompletableFuture<GeoIpResult>>();
+                for (final var host : hosts) {
+                    if (Boolean.TRUE.equals(host.getAutomaticLocation())) {
+                        final var hostName = host.getHost();
+                        if (hostName != null && !hostName.isBlank() && GEOIP_CACHE.getIfPresent(hostName) == null
+                                && !futures.containsKey(hostName)) {
+                            futures.put(hostName,
+                                    CompletableFuture.supplyAsync(() -> resolveGeoIp(hostName), GEOIP_EXECUTOR));
+                        }
+                    }
+                }
+                CompletableFuture.allOf(futures.values().toArray(new CompletableFuture[0])).join();
+                futures.forEach((hn, f) -> {
+                    try {
+                        GEOIP_CACHE.put(hn, f.get());
+                    } catch (final Exception ignored) {
+                    }
+                });
+                _log.info("GeoIP pre-warm: complete ({} entries)", GEOIP_CACHE.size());
+            } catch (final Exception e) {
+                _log.warn("GeoIP pre-warm failed: {}", e.getMessage());
+            }
+        }, "GeoIP-prewarm");
+        t.setDaemon(true);
+        t.start();
     }
 
     /**
@@ -939,6 +983,29 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
+     * Gets the authorised destinations for a web user.
+     */
+    @Override
+    public List<String> getAuthorisedDestinations(final String uid) throws DataBaseException, IOException {
+        final var monitor = new MonitorCall("getAuthorisedDestinations(" + uid + ")");
+        return monitor.done(ecpds.getAuthorisedDestinations(uid));
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Gets the authorised hosts and destinations for a web user.
+     */
+    @Override
+    public Map<String, List<String>> getAuthorisedHostsAndDestinations(final String uid)
+            throws DataBaseException, IOException {
+        final var monitor = new MonitorCall("getAuthorisedHostsAndDestinations(" + uid + ")");
+        return monitor.done(ecpds.getAuthorisedHostsAndDestinations(uid));
+    }
+
+    /**
      * Gets the destinations by host name.
      *
      * @param hostName
@@ -1661,6 +1728,17 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
+     * Gets the destination names by host.
+     */
+    @Override
+    public Map<String, List<String>> getDestinationNamesByHost() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getDestinationNamesByHost()");
+        return monitor.done(ecpds.getDestinationNamesByHost());
+    }
+
+    /**
      * Gets the change log by key.
      *
      * @param keyName
@@ -2371,34 +2449,8 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
                 // repeated network lookups for the same hostname across map refreshes.
                 var cached = GEOIP_CACHE.getIfPresent(hostName);
                 if (cached == null) {
-                    try {
-                        final var response = GeoIP2Helper.getCityResponse(hostName);
-                        final var continentObj = response.getContinent();
-                        final var countryObj = response.getCountry();
-                        final var cityObj = response.getCity();
-                        final var continent = continentObj != null ? continentObj.getName() : null;
-                        final var country = countryObj != null ? countryObj.getIsoCode() : null;
-                        final var city = cityObj != null ? cityObj.getName() : null;
-                        final var textualLocation = Stream.of(city, country, continent).filter(Objects::nonNull)
-                                .filter(s -> !s.isBlank()).collect(Collectors.joining(" / "));
-                        final var locationData = response.getLocation();
-                        final var latitude = locationData != null ? locationData.getLatitude() : null;
-                        final var longitude = locationData != null ? locationData.getLongitude() : null;
-                        final String description;
-                        if (!textualLocation.isEmpty()) {
-                            description = textualLocation;
-                        } else if (latitude != null && longitude != null) {
-                            description = String.format("Coordinates: %.4f / %.4f", latitude, longitude);
-                        } else {
-                            description = "No geolocation available";
-                        }
-                        cached = new GeoIpResult(latitude, longitude, description);
-                        GEOIP_CACHE.put(hostName, cached);
-                    } catch (final Exception e) {
-                        _log.warn("Unable to determine geolocation for host: {}", hostName, e);
-                        cached = new GeoIpResult(null, null, "No geolocation available");
-                        GEOIP_CACHE.put(hostName, cached);
-                    }
+                    cached = resolveGeoIp(hostName);
+                    GEOIP_CACHE.put(hostName, cached);
                 }
                 hostLocation.setLatitude(cached.latitude());
                 hostLocation.setLongitude(cached.longitude());
@@ -2408,7 +2460,7 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
                 final var latitude = hostLocation.getLatitude();
                 final var longitude = hostLocation.getLongitude();
                 if (latitude != null && longitude != null) {
-                    host.setGeoIpLocation(String.format("Coordinates: %.4f / %.4f", latitude, longitude));
+                    host.setGeoIpLocation(String.format(Locale.ROOT, "Coordinates: %.4f / %.4f", latitude, longitude));
                 } else {
                     host.setGeoIpLocation("No geolocation available");
                 }
@@ -2434,6 +2486,131 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
     public Host[] getHostArray() throws RemoteException {
         final var monitor = new MonitorCall("getHostArray()");
         return monitor.done(ecpds.getHostArray(new HostComparator()));
+    }
+
+    @Override
+    public List<HostMapData> getHostsForMap(final String label, final String filter, final String network,
+            final String hostType, final String hostSearch) throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall(
+                "getHostsForMap(" + label + "," + filter + "," + network + "," + hostType + ")");
+        final List<Host> rawHosts = ecpds.getHostsForMap(label, filter, network, hostType, hostSearch);
+
+        final var futures = new java.util.HashMap<String, CompletableFuture<GeoIpResult>>();
+        for (final var host : rawHosts) {
+            if (Boolean.TRUE.equals(host.getAutomaticLocation())) {
+                final var hostName = host.getHost();
+                if (hostName != null && !hostName.isBlank() && GEOIP_CACHE.getIfPresent(hostName) == null
+                        && !futures.containsKey(hostName)) {
+                    futures.put(hostName, CompletableFuture.supplyAsync(() -> resolveGeoIp(hostName), GEOIP_EXECUTOR));
+                }
+            }
+        }
+        if (!futures.isEmpty()) {
+            CompletableFuture.allOf(futures.values().toArray(new CompletableFuture[0])).join();
+            futures.forEach((hostName, f) -> {
+                try {
+                    GEOIP_CACHE.put(hostName, f.get());
+                } catch (final Exception ignored) {
+                }
+            });
+        }
+
+        final List<HostMapData> result = new ArrayList<>();
+        for (final var host : rawHosts) {
+            try {
+                double lat;
+                double lon;
+                String geo;
+                if (Boolean.TRUE.equals(host.getAutomaticLocation())) {
+                    final var cached = GEOIP_CACHE.getIfPresent(host.getHost());
+                    if (cached == null || cached.latitude() == null || cached.longitude() == null) {
+                        continue;
+                    }
+                    lat = cached.latitude();
+                    lon = cached.longitude();
+                    geo = cached.description();
+                } else {
+                    final var loc = host.getHostLocation();
+                    if (loc == null || loc.getLatitude() == null || loc.getLongitude() == null) {
+                        continue;
+                    }
+                    lat = loc.getLatitude();
+                    lon = loc.getLongitude();
+                    geo = String.format(Locale.ROOT, "Coordinates: %.4f / %.4f", lat, lon);
+                }
+                if (lat == 0.0 && lon == 0.0) {
+                    continue;
+                }
+                result.add(new HostMapData(_safeStr(host.getName()), _safeStr(host.getNickname()),
+                        _safeStr(host.getHost()), _safeStr(host.getType()), host.getActive(), lat, lon, _safeStr(geo),
+                        _safeStr(host.getNetworkName()), _safeStr(host.getTransferMethodName()),
+                        _safeStr(host.getComment())));
+            } catch (final Exception e) {
+                _log.debug("Skipping host {} in map: {}", host.getName(), e.getMessage());
+            }
+        }
+        return monitor.done(result);
+    }
+
+    @Override
+    public List<GeoIpData> geoLocateIps(final List<String> ips) throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("geoLocateIps(" + ips.size() + " IPs)");
+        final var unique = ips.stream().filter(ip -> ip != null && !ip.isBlank()).distinct()
+                .collect(Collectors.toList());
+        final var futures = new java.util.HashMap<String, CompletableFuture<GeoIpResult>>();
+        for (final var ip : unique) {
+            if (GEOIP_CACHE.getIfPresent(ip) == null) {
+                futures.put(ip, CompletableFuture.supplyAsync(() -> resolveGeoIp(ip), GEOIP_EXECUTOR));
+            }
+        }
+        if (!futures.isEmpty()) {
+            CompletableFuture.allOf(futures.values().toArray(new CompletableFuture[0])).join();
+            futures.forEach((ip, f) -> {
+                try {
+                    GEOIP_CACHE.put(ip, f.get());
+                } catch (final Exception ignored) {
+                }
+            });
+        }
+        final List<GeoIpData> result = new ArrayList<>();
+        for (final var ip : ips) {
+            if (ip == null || ip.isBlank()) {
+                continue;
+            }
+            final var cached = GEOIP_CACHE.getIfPresent(ip);
+            if (cached != null) {
+                result.add(new GeoIpData(ip, cached.latitude(), cached.longitude(), cached.description()));
+            } else {
+                result.add(new GeoIpData(ip, null, null, "No geolocation available"));
+            }
+        }
+        return monitor.done(result);
+    }
+
+    private static GeoIpResult resolveGeoIp(final String hostName) {
+        try {
+            final var response = GeoIP2Helper.getCityResponse(hostName);
+            final var continent = response.getContinent() != null ? response.getContinent().getName() : null;
+            final var country = response.getCountry() != null ? response.getCountry().getIsoCode() : null;
+            final var city = response.getCity() != null ? response.getCity().getName() : null;
+            final var textualLocation = Stream.of(city, country, continent).filter(Objects::nonNull)
+                    .filter(s -> !s.isBlank()).collect(Collectors.joining(" / "));
+            final var locationData = response.getLocation();
+            final var latitude = locationData != null ? locationData.getLatitude() : null;
+            final var longitude = locationData != null ? locationData.getLongitude() : null;
+            final String description = !textualLocation.isEmpty() ? textualLocation
+                    : (latitude != null && longitude != null)
+                            ? String.format(Locale.ROOT, "Coordinates: %.4f / %.4f", latitude, longitude)
+                            : "No geolocation available";
+            return new GeoIpResult(latitude, longitude, description);
+        } catch (final Exception e) {
+            _log.warn("GeoIP lookup failed for {}: {}", hostName, e.getMessage());
+            return new GeoIpResult(null, null, "No geolocation available");
+        }
+    }
+
+    private static String _safeStr(final String value) {
+        return value != null ? value : "";
     }
 
     /**

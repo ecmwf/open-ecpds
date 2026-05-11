@@ -42,8 +42,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
 
 import javax.script.ScriptException;
 
@@ -64,6 +62,20 @@ public abstract class ScriptFile {
 
     /** The allFiles. */
     private final ConcurrentHashMap<String, File> allFiles = new ConcurrentHashMap<>();
+
+    /**
+     * Escapes a value for safe embedding inside a JavaScript double-quoted string literal. Prevents injection when
+     * user-supplied parameter values are substituted into {@code #if $()} conditions before the JS engine evaluates
+     * them.
+     *
+     * @param value
+     *            the raw value
+     *
+     * @return the value with {@code \} and {@code "} escaped
+     */
+    private static String escapeForJs(final String value) {
+        return value.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
 
     /**
      * _eval string.
@@ -129,18 +141,20 @@ public abstract class ScriptFile {
                         }
                     } else if (condition.indexOf("==") != -1) {
                         final var tokEql = new StringTokenizer(condition, "==");
-                        final var regex = tokEql.nextToken().trim();
-                        final var input = tokEql.nextToken().trim();
-                        if (Pattern.compile(regex).matcher(input).find()) {
+                        final var left = tokEql.nextToken().trim();
+                        final var right = tokEql.nextToken().trim();
+                        // Use literal equality — not Pattern.compile — to prevent user-supplied
+                        // values from being interpreted as regex patterns (ReDoS / PatternSyntaxException).
+                        if (left.equals(right)) {
                             result.append(thenStr);
                         } else if (elseStr != null) {
                             result.append(elseStr);
                         }
                     } else if (condition.indexOf("!=") != -1) {
                         final var tokDif = new StringTokenizer(condition, "!=");
-                        final var regex = tokDif.nextToken().trim();
-                        final var input = tokDif.nextToken().trim();
-                        if (!Pattern.compile(regex).matcher(input).find()) {
+                        final var left = tokDif.nextToken().trim();
+                        final var right = tokDif.nextToken().trim();
+                        if (!left.equals(right)) {
                             result.append(thenStr);
                         } else if (elseStr != null) {
                             result.append(elseStr);
@@ -172,7 +186,7 @@ public abstract class ScriptFile {
                     line = dis.readLine();
                 }
             }
-        } catch (ScriptException | PatternSyntaxException e) {
+        } catch (final ScriptException e) {
             _log.warn("Evaluating: {}", sql, e);
             throw new IOException(e.getMessage());
         }
@@ -401,7 +415,27 @@ public abstract class ScriptFile {
                     return null;
                 }
                 resolved.put(parameter, value.toString());
-                final var eval = evalString(sql.toString(), "$" + parameter, value.toString());
+                // Substitute the parameter value into the SQL template.
+                // For #if $() lines the value is embedded inside a JS double-quoted string
+                // literal, so it must be JS-escaped to prevent logic injection.
+                final var paramToken = "$" + parameter;
+                final var rawValue = value.toString();
+                final String eval;
+                if (sql.indexOf("#if $(") != -1) {
+                    // Apply JS-safe escaping on #if $() lines, plain value everywhere else.
+                    final var sb = new StringBuilder(sql.length() + 16);
+                    for (final String sqlLine : sql.toString().split("\n", -1)) {
+                        if (sqlLine.startsWith("#if $(") || sqlLine.startsWith("#else")) {
+                            sb.append(evalString(sqlLine, paramToken, escapeForJs(rawValue)));
+                        } else {
+                            sb.append(evalString(sqlLine, paramToken, rawValue));
+                        }
+                        sb.append("\n");
+                    }
+                    eval = sb.toString();
+                } else {
+                    eval = evalString(sql.toString(), paramToken, rawValue);
+                }
                 sql.setLength(0);
                 sql.append(eval);
             }
