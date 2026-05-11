@@ -28,7 +28,6 @@
 #include <netinet/tcp.h>
 #include <netinet/in.h>
 #include <unistd.h>
-#include <iconv.h>
 
 /*
  * ECMWF Product Data Store (OpenECPDS) Project
@@ -99,7 +98,19 @@ int setSocketOption(JNIEnv *env, jobject socket, int optionLevel, int optionName
 
 // Method to set TCP_CONGESTION option
 JNIEXPORT jint JNICALL Java_ecmwf_common_rmi_SocketOptions_setTCPCongestion(JNIEnv *env, jobject obj, jobject socket, jstring algorithm) {
+    if (algorithm == NULL) {
+        return -9; // Null jstring — caller should never pass null
+    }
     const char *algo = (*env)->GetStringUTFChars(env, algorithm, 0);
+    if (algo == NULL) {
+        return -10; // GetStringUTFChars failed (OOM — exception pending in JVM)
+    }
+    // Linux TCP_CA_NAME_MAX is 16; kernel will reject longer names, but cap here to avoid
+    // pointlessly large setsockopt calls.
+    if (strlen(algo) > 15) {
+        (*env)->ReleaseStringUTFChars(env, algorithm, algo);
+        return -11; // Algorithm name exceeds TCP_CA_NAME_MAX
+    }
     int result = setSocketOption(env, socket, IPPROTO_TCP, TCP_CONGESTION, algo, strlen(algo) + 1);
     (*env)->ReleaseStringUTFChars(env, algorithm, algo);
 
