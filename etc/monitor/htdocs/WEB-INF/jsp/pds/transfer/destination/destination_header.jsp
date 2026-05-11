@@ -46,8 +46,16 @@
             <jsp:include page="/WEB-INF/jsp/pds/transfer/compression_icon.jsp"><jsp:param name="name" value="${destination.filterName}"/></jsp:include>
         </c:if>
         <div class="d-flex gap-2 ms-auto align-items-center">
+        <auth:if basePathKey="destination.basepath" paths="">
+        <auth:then>
+        <a href='<bean:message key="destination.basepath"/>' class="btn btn-sm btn-outline-secondary" title="All Destinations"><i class="bi bi-arrow-left"></i></a>
+        <div style="border-left:1px solid var(--bs-border-color);height:1.5rem;"></div>
+        </auth:then>
+        </auth:if>
+        <c:set var="_destHasEditGroup" value="false"/>
         <auth:if basePathKey="destination.basepath" paths="/edit/insert_form">
         <auth:then>
+        <c:set var="_destHasEditGroup" value="true"/>
         <div class="d-flex gap-1 align-items-center">
             <a href='<bean:message key="destination.basepath"/>/edit/insert_form'
                class="btn btn-sm btn-outline-success" title="Create new destination"><i class="bi bi-plus-circle"></i></a>
@@ -63,7 +71,7 @@
         </auth:then>
         </auth:if>
         <c:if test="${not empty destination.id}">
-        <div class="d-flex gap-1 align-items-center" style="border-left:1px solid var(--bs-border-color);padding-left:0.5rem;">
+        <div class="d-flex gap-1 align-items-center"<c:if test="${_destHasEditGroup}"> style="border-left:1px solid var(--bs-border-color);padding-left:0.5rem;"</c:if>>
             <a href='<bean:message key="destination.basepath"/>/${destination.id}'
                class="btn btn-sm btn-outline-secondary" title="Files"><i class="bi bi-files"></i></a>
             <auth:if basePathKey="transferhistory.basepath" paths="/">
@@ -78,6 +86,8 @@
                class="btn btn-sm btn-outline-secondary" title="Changes Log"><i class="bi bi-clock-history"></i></a>
             <a href='<bean:message key="monitoring.timeline.basepath"/>/${destination.id}<c:if test="${not empty _destDate}">?date=${_destDate}</c:if>'
                class="btn btn-sm btn-outline-secondary" title="Transfer Timeline"><i class="bi bi-calendar3"></i></a>
+            <a href='/do/monitoring/unsuccessful/${destination.id}'
+               class="btn btn-sm btn-outline-secondary" title="Outstanding"><i class="bi bi-hourglass-split"></i></a>
             <auth:if basePathKey="transferhistory.basepath" paths="/">
             <auth:then>
             <a href='<bean:message key="transferhistory.basepath"/>?destinationName=${destination.id}<c:if test="${not empty _destDate}">&amp;date=${_destDate}</c:if>&amp;fromDestination=true'

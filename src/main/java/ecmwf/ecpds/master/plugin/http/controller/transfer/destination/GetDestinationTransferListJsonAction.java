@@ -118,12 +118,8 @@ public class GetDestinationTransferListJsonAction extends PDSAction {
             memberState = !user.hasAccess(getResource(request, "nonmemberstate.basepath"));
         } catch (final Exception _) {
         }
-        boolean canHandleQueue = false;
-        try {
-            canHandleQueue = user.hasAccess(
-                    getResource(request, "destination.basepath") + "/operations/" + destinationName + "/requeue/");
-        } catch (final Exception _) {
-        }
+        // Column visibility is already gated by the JSP auth tag (ecpdsCanHandleQueue).
+        // Action security is enforced by the individual action handlers on submit.
 
         // Build DataBaseCursor from DataTables params
         var start = 0;
@@ -177,6 +173,7 @@ public class GetDestinationTransferListJsonAction extends PDSAction {
             }
         } catch (final Exception _) {
         }
+        root.put("totalSelected", daf != null ? daf.getSelectedTransfersCount() : 0);
         final var data = root.putArray("data");
         for (final DataTransfer dt : transfers) {
             final var id = dt.getId();
@@ -195,7 +192,7 @@ public class GetDestinationTransferListJsonAction extends PDSAction {
             row.add(buildRateHtml(dt));
             row.add(buildStatusHtml(dt, memberState));
             row.add(String.valueOf(dt.getPriority()));
-            row.add(canHandleQueue ? buildActionsHtml(dt) : "");
+            row.add(buildActionsHtml(dt));
             row.add(buildSelectHtml(dt));
         }
         try {
@@ -299,17 +296,45 @@ public class GetDestinationTransferListJsonAction extends PDSAction {
             statusText = "";
         }
         final var escaped = escapeHtml(statusText);
+        // Extract base status (before any "-username" suffix) for colour selection
+        final var base = statusText.contains("-") ? statusText.substring(0, statusText.indexOf('-')).trim()
+                : statusText.trim();
         if (dt.getExpired() && dt.getDeleted()) {
             final var expiry = dt.getExpiryDate();
             final var expStr = expiry != null ? new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(expiry)
                     : "";
-            return "<span class=\"text-danger\" title=\"Data Transfer expired on " + escapeHtml(expStr) + "\">"
+            return "<span class=\"badge bg-danger\" title=\"Data Transfer expired on " + escapeHtml(expStr) + "\">"
                     + escaped + "</span>";
         }
         if (dt.getDeleted()) {
-            return "<span class=\"text-danger\" title=\"Data Transfer deleted\">" + escaped + "</span>";
+            return "<span class=\"badge bg-danger\" title=\"Data Transfer deleted\">" + escaped + "</span>";
         }
-        return escaped;
+        final String cls;
+        switch (base) {
+        case "Done":
+            cls = "badge bg-success";
+            break;
+        case "Transferring":
+        case "Fetching":
+        case "Arriving":
+            cls = "badge bg-primary";
+            break;
+        case "Queued":
+        case "Preset":
+        case "StandBy":
+        case "ReQueued":
+            cls = "badge bg-warning text-dark";
+            break;
+        case "Failed":
+            cls = "badge bg-danger";
+            break;
+        case "Stopped":
+        case "Interrupted":
+        default:
+            cls = "badge bg-secondary";
+            break;
+        }
+        return "<span class=\"" + cls + "\" title=\"" + escaped + "\">" + escaped + "</span>";
     }
 
     private static String buildActionsHtml(final DataTransfer dt) {

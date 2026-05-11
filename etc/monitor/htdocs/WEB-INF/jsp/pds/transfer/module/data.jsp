@@ -32,32 +32,12 @@
 			</auth:then>
 			</auth:if>
 		</div>
-		<div class="card-body pb-2">
-			<div class="row g-3">
-				<div class="col-sm-4">
-					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Name</div>
-					<div class="fw-medium"><c:out value="${module.name}" /></div>
-				</div>
-				<div class="col-sm-8">
-					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Class Name</div>
-					<div class="fw-medium font-monospace"><c:out value="${module.classe}" /></div>
-				</div>
-				<div class="col-sm-8">
-					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Class Path</div>
-					<div class="fw-medium">
-						<c:choose>
-							<c:when test="${fn:length(module.archive) gt 0}"><c:out value="${module.archive}" /></c:when>
-							<c:otherwise><span class="text-danger fst-italic">default</span></c:otherwise>
-						</c:choose>
-					</div>
-				</div>
-				<div class="col-sm-4">
-					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Enabled</div>
-					<div>
-						<c:if test="${module.active}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if>
-						<c:if test="${!module.active}"><i class="bi bi-x-circle-fill text-secondary" title="No"></i></c:if>
-					</div>
-				</div>
+		<div class="card-body py-0">
+			<div class="field-grid">
+				<div class="field-row"><div class="field-label">Name</div><div class="field-value"><span class="val-code"><c:out value="${module.name}" /></span></div></div>
+				<div class="field-row"><div class="field-label">Class Name</div><div class="field-value"><span class="val-code"><c:out value="${module.classe}" /></span></div></div>
+				<div class="field-row"><div class="field-label">Class Path</div><div class="field-value"><c:choose><c:when test="${fn:length(module.archive) gt 0}"><span class="val-code"><c:out value="${module.archive}" /></span></c:when><c:otherwise><span class="text-danger fst-italic">default</span></c:otherwise></c:choose></div></div>
+				<div class="field-row"><div class="field-label">Enabled</div><div class="field-value"><c:choose><c:when test="${module.active}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise></c:choose></div></div>
 			</div>
 		</div>
 	</div>

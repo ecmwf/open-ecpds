@@ -11,8 +11,8 @@
 .report-pre-spinner { color: rgba(255,255,255,0.5); }
 .report-pre {
     background: #1e1e1e; color: #d4d4d4; margin: 0; padding: 1rem 1.25rem;
-    font-size: 0.78rem; line-height: 1.6; max-height: 75vh;
-    overflow-y: auto; border-radius: 0 0 4px 4px;
+    font-size: 0.78rem; line-height: 1.6;
+    border-radius: 0 0 4px 4px;
     white-space: pre-wrap; word-break: break-all;
 }
 .report-pre font[color="red"]   { color: #f88; }
@@ -127,7 +127,7 @@
 [data-bs-theme=light] .mc-lnums { color: #8c959f; }
 </style>
 
-<div class="card shadow-sm mt-2" style="max-width:900px;">
+<div class="card shadow-sm mt-2">
     <div class="card-header d-flex align-items-center justify-content-between py-2 px-3 report-card-hdr">
         <span class="fw-semibold" style="font-size:0.875rem;">
             <i class="bi bi-terminal-fill me-2 text-success"></i>

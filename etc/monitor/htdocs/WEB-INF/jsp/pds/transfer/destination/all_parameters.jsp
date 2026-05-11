@@ -36,31 +36,16 @@
 		<i class="bi bi-send text-primary"></i>
 		<span class="fw-semibold">Delivery</span>
 	</div>
-	<div class="card-body">
-		<div class="row g-3">
-			<div class="col-sm-6 col-lg-4">
-				<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">On Host Failure <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="In case of error on a data transmission then try the next host in the list and stick to it if it works or restart with the first host in the list?" tabindex="0"></i></div>
-				<div class="fw-medium">${destination.onHostFailureText}</div>
-			</div>
-			<div class="col-sm-6 col-lg-4">
-				<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">If Target Exists</div>
-				<div class="fw-medium">${destination.ifTargetExistText}</div>
-			</div>
-			<div class="col-sm-6 col-lg-4">
-				<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Delete From Spool</div>
-				<div class="fw-medium">${destination.keepInSpoolText}</div>
-			</div>
+	<div class="card-body py-0">
+		<div class="field-grid">
+			<div class="field-row"><div class="field-label">On Host Failure <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="In case of error on a data transmission then try the next host in the list and stick to it if it works or restart with the first host in the list?" tabindex="0"></i></div><div class="field-value">${destination.onHostFailureText}</div></div>
+			<div class="field-row"><div class="field-label">If Target Exists</div><div class="field-value">${destination.ifTargetExistText}</div></div>
+			<div class="field-row"><div class="field-label">Delete From Spool</div><div class="field-value">${destination.keepInSpoolText}</div></div>
 			<c:if test="${not empty destination.filterName}">
-			<div class="col-sm-6 col-lg-4">
-				<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Data Compression <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If requested data files are compressed in the queue if there is enough time before transmission (otherwise files are compressed on the fly)" tabindex="0"></i></div>
-				<div class="fw-medium"><jsp:include page="/WEB-INF/jsp/pds/transfer/compression_icon.jsp"><jsp:param name="name" value="${destination.filterName}"/><jsp:param name="showName" value="true"/></jsp:include></div>
-			</div>
+			<div class="field-row"><div class="field-label">Data Compression <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If requested data files are compressed in the queue if there is enough time before transmission (otherwise files are compressed on the fly)" tabindex="0"></i></div><div class="field-value"><jsp:include page="/WEB-INF/jsp/pds/transfer/compression_icon.jsp"><jsp:param name="name" value="${destination.filterName}"/><jsp:param name="showName" value="true"/></jsp:include></div></div>
 			</c:if>
 			<c:if test="${not empty destination.hostForSource.nickName}">
-			<div class="col-sm-6 col-lg-4">
-				<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Host For Sources <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If the data file is not found on the data mover then specify which host to use in order to retrieve the file from the source" tabindex="0"></i></div>
-				<div class="fw-medium">${destination.hostForSource.nickName}</div>
-			</div>
+			<div class="field-row"><div class="field-label">Host For Sources <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If the data file is not found on the data mover then specify which host to use in order to retrieve the file from the source" tabindex="0"></i></div><div class="field-value"><span class="val-code">${destination.hostForSource.nickName}</span></div></div>
 			</c:if>
 		</div>
 	</div>
@@ -71,50 +56,20 @@
 		<i class="bi bi-sliders text-primary"></i>
 		<span class="fw-semibold">Limits</span>
 	</div>
-	<div class="card-body">
-		<div class="row g-3">
-			<div class="col-sm-6 col-lg-4">
-				<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Max Connections <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Maximum number of parallel connections authorized at a time on all the hosts of the Destination" tabindex="0"></i></div>
-				<div class="fw-medium">${destination.maxConnections}</div>
-			</div>
-			<div class="col-sm-6 col-lg-4">
-				<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Retry Count <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If set the Destination is hold after a consecutive number of unsuccessful transfers (a manual restart will be necessary)" tabindex="0"></i></div>
-				<div class="fw-medium"><c:choose><c:when test="${destination.retryCount <= 0}"><span class="text-muted">Disabled</span></c:when><c:otherwise>${destination.retryCount}</c:otherwise></c:choose></div>
-			</div>
-			<div class="col-sm-6 col-lg-4">
-				<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Retry Frequency <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Time to wait before to retry with the Primary Host if the transmission is failing on all the Backup Hosts" tabindex="0"></i></div>
-				<div class="fw-medium"><c:choose><c:when test="${empty destination.formattedRetryFrequency}">Immediate</c:when><c:otherwise>${destination.formattedRetryFrequency}</c:otherwise></c:choose></div>
-			</div>
-			<div class="col-sm-6 col-lg-4">
-				<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Max Start <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If set the transfer is delayed after a consecutive number of unsuccessful attempts" tabindex="0"></i></div>
-				<div class="fw-medium"><c:choose><c:when test="${destination.maxStart == 0}"><span class="text-muted">Disabled</span></c:when><c:otherwise>${destination.maxStart}</c:otherwise></c:choose></div>
-			</div>
+	<div class="card-body py-0">
+		<div class="field-grid">
+			<div class="field-row"><div class="field-label">Max Connections <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Maximum number of parallel connections authorized at a time on all the hosts of the Destination" tabindex="0"></i></div><div class="field-value"><span class="val-num">${destination.maxConnections}</span></div></div>
+			<div class="field-row"><div class="field-label">Retry Count <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If set the Destination is hold after a consecutive number of unsuccessful transfers (a manual restart will be necessary)" tabindex="0"></i></div><div class="field-value"><c:choose><c:when test="${destination.retryCount <= 0}"><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-infinity me-1"></i>No limit</span></c:when><c:otherwise><span class="val-num">${destination.retryCount}</span></c:otherwise></c:choose></div></div>
+			<div class="field-row"><div class="field-label">Retry Frequency <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Time to wait before to retry with the Primary Host if the transmission is failing on all the Backup Hosts" tabindex="0"></i></div><div class="field-value"><c:choose><c:when test="${empty destination.formattedRetryFrequency}">Immediate</c:when><c:otherwise><span class="val-num">${destination.formattedRetryFrequency}</span></c:otherwise></c:choose></div></div>
+			<div class="field-row"><div class="field-label">Max Start <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If set the transfer is delayed after a consecutive number of unsuccessful attempts" tabindex="0"></i></div><div class="field-value"><c:choose><c:when test="${destination.maxStart == 0}"><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-infinity me-1"></i>No limit</span></c:when><c:otherwise><span class="val-num">${destination.maxStart}</span></c:otherwise></c:choose></div></div>
 			<c:if test="${destination.maxStart != 0}">
-			<div class="col-sm-6 col-lg-4">
-				<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Start Frequency <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Define the delay mentioned in the previous parameter (Max Start)." tabindex="0"></i></div>
-				<div class="fw-medium">${destination.formattedStartFrequency}</div>
-			</div>
+			<div class="field-row"><div class="field-label">Start Frequency <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Define the delay mentioned in the previous parameter (Max Start)." tabindex="0"></i></div><div class="field-value"><span class="val-num">${destination.formattedStartFrequency}</span></div></div>
 			</c:if>
-			<div class="col-sm-6 col-lg-4">
-				<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Max Requeue <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If set the transfer is tagged as failed after a consecutive number of unsuccessful transmissions (a manual requeue will be necessary)" tabindex="0"></i></div>
-				<div class="fw-medium"><c:choose><c:when test="${destination.maxRequeue == 0}"><span class="text-muted">Disabled</span></c:when><c:otherwise>${destination.maxRequeue}</c:otherwise></c:choose></div>
-			</div>
-			<div class="col-sm-6 col-lg-4">
-				<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Max Pending <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Define the maximum number of queued files which can exists at a single time in the Destination (new attempt of queueing files are rejected)" tabindex="0"></i></div>
-				<div class="fw-medium"><c:choose><c:when test="${destination.maxPending == 0}"><span class="text-muted">Disabled</span></c:when><c:otherwise>${destination.maxPending}</c:otherwise></c:choose></div>
-			</div>
-			<div class="col-sm-6 col-lg-4">
-				<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Max File Size <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Define the maximum size for a file in the queue (attempt of queueing bigger files are rejected)" tabindex="0"></i></div>
-				<div class="fw-medium"><c:choose><c:when test="${destination.maxFileSize <= 0}"><span class="text-muted">Disabled</span></c:when><c:when test="${destination.maxFileSize % 1073741824 == 0}">${destination.maxFileSize / 1073741824} GB</c:when><c:when test="${destination.maxFileSize % 1048576 == 0}">${destination.maxFileSize / 1048576} MB</c:when><c:when test="${destination.maxFileSize % 1024 == 0}">${destination.maxFileSize / 1024} KB</c:when><c:otherwise>${destination.maxFileSize} B</c:otherwise></c:choose></div>
-			</div>
-			<div class="col-sm-6 col-lg-4">
-				<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Reset Frequency <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If set and the Destination is successfully using a backup host for more than this duration, it will restart." tabindex="0"></i></div>
-				<div class="fw-medium"><c:choose><c:when test="${empty destination.formattedResetFrequency}"><span class="text-muted">Disabled</span></c:when><c:otherwise>${destination.formattedResetFrequency}</c:otherwise></c:choose></div>
-			</div>
-			<div class="col-sm-6 col-lg-4">
-				<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Max Inactivity <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If set and the Destination has no dissemination activity for more than this duration, a problem will be shown on the monitoring." tabindex="0"></i></div>
-				<div class="fw-medium"><c:choose><c:when test="${empty destination.formattedMaxInactivity}"><span class="text-muted">Disabled</span></c:when><c:otherwise>${destination.formattedMaxInactivity}</c:otherwise></c:choose></div>
-			</div>
+			<div class="field-row"><div class="field-label">Max Requeue <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If set the transfer is tagged as failed after a consecutive number of unsuccessful transmissions (a manual requeue will be necessary)" tabindex="0"></i></div><div class="field-value"><c:choose><c:when test="${destination.maxRequeue == 0}"><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-infinity me-1"></i>No limit</span></c:when><c:otherwise><span class="val-num">${destination.maxRequeue}</span></c:otherwise></c:choose></div></div>
+			<div class="field-row"><div class="field-label">Max Pending <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Define the maximum number of queued files which can exists at a single time in the Destination (new attempt of queueing files are rejected)" tabindex="0"></i></div><div class="field-value"><c:choose><c:when test="${destination.maxPending == 0}"><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-infinity me-1"></i>No limit</span></c:when><c:otherwise><span class="val-num">${destination.maxPending}</span></c:otherwise></c:choose></div></div>
+			<div class="field-row"><div class="field-label">Max File Size <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Define the maximum size for a file in the queue (attempt of queueing bigger files are rejected)" tabindex="0"></i></div><div class="field-value"><c:choose><c:when test="${destination.maxFileSize <= 0}"><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-infinity me-1"></i>No limit</span></c:when><c:when test="${destination.maxFileSize % 1073741824 == 0}"><span class="val-num">${destination.maxFileSize / 1073741824} GB</span></c:when><c:when test="${destination.maxFileSize % 1048576 == 0}"><span class="val-num">${destination.maxFileSize / 1048576} MB</span></c:when><c:when test="${destination.maxFileSize % 1024 == 0}"><span class="val-num">${destination.maxFileSize / 1024} KB</span></c:when><c:otherwise><span class="val-num">${destination.maxFileSize} B</span></c:otherwise></c:choose></div></div>
+			<div class="field-row"><div class="field-label">Reset Frequency <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If set and the Destination is successfully using a backup host for more than this duration, it will restart." tabindex="0"></i></div><div class="field-value"><c:choose><c:when test="${empty destination.formattedResetFrequency}"><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-slash-circle me-1"></i>Disabled</span></c:when><c:otherwise><span class="val-num">${destination.formattedResetFrequency}</span></c:otherwise></c:choose></div></div>
+			<div class="field-row"><div class="field-label">Max Inactivity <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If set and the Destination has no dissemination activity for more than this duration, a problem will be shown on the monitoring." tabindex="0"></i></div><div class="field-value"><c:choose><c:when test="${empty destination.formattedMaxInactivity}"><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-slash-circle me-1"></i>Disabled</span></c:when><c:otherwise><span class="val-num">${destination.formattedMaxInactivity}</span></c:otherwise></c:choose></div></div>
 		</div>
 	</div>
 </div>
@@ -124,39 +79,18 @@
 		<i class="bi bi-envelope text-primary"></i>
 		<span class="fw-semibold">Directory &amp; Notifications</span>
 	</div>
-	<div class="card-body">
-		<div class="row g-3">
-			<div class="col-sm-6 col-lg-4">
-				<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Group By Date <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If set then incoming ftp/sftp users will see the files grouped into date directories" tabindex="0"></i></div>
-				<div class="fw-medium"><c:if test="${destination.groupByDate}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if><c:if test="${!destination.groupByDate}"><i class="bi bi-x-circle-fill text-secondary" title="No"></i></c:if></div>
-			</div>
+	<div class="card-body py-0">
+		<div class="field-grid">
+			<div class="field-row"><div class="field-label">Group By Date <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If set then incoming ftp/sftp users will see the files grouped into date directories" tabindex="0"></i></div><div class="field-value"><c:choose><c:when test="${destination.groupByDate}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise></c:choose></div></div>
 			<c:if test="${destination.groupByDate}">
-			<div class="col-sm-6 col-lg-4">
-				<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Date Format <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Define the format of the date to display for each directory (Java SimpleDateFormat pattern)" tabindex="0"></i></div>
-				<div class="fw-medium">${destination.dateFormat}</div>
-			</div>
+			<div class="field-row"><div class="field-label">Date Format <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Define the format of the date to display for each directory (Java SimpleDateFormat pattern)" tabindex="0"></i></div><div class="field-value"><span class="val-code">${destination.dateFormat}</span></div></div>
 			</c:if>
-			<div class="col-sm-6 col-lg-4">
-				<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Mail Address <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Email address used when sending notifications" tabindex="0"></i></div>
-				<div class="fw-medium"><c:choose><c:when test="${empty destination.userMail}"><span class="text-muted fst-italic">none</span></c:when><c:otherwise>${destination.userMail}</c:otherwise></c:choose></div>
-			</div>
+			<div class="field-row"><div class="field-label">Mail Address <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Email address used when sending notifications" tabindex="0"></i></div><div class="field-value"><c:choose><c:when test="${empty destination.userMail}"><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:when><c:otherwise><span class="val-code">${destination.userMail}</span></c:otherwise></c:choose></div></div>
 			<c:if test="${not empty destination.userMail}">
-			<div class="col-sm-6 col-lg-4">
-				<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Mail on Update <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="When enabled, an email is sent when a change is made to the Destination or its related Hosts." tabindex="0"></i></div>
-				<div class="fw-medium"><c:if test="${destination.mailOnUpdate}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if><c:if test="${!destination.mailOnUpdate}"><i class="bi bi-x-circle-fill text-secondary" title="No"></i></c:if></div>
-			</div>
-			<div class="col-sm-6 col-lg-4">
-				<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Mail on Start <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="When enabled, an email is sent when a data transfer starts for this Destination." tabindex="0"></i></div>
-				<div class="fw-medium"><c:if test="${destination.mailOnStart}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if><c:if test="${!destination.mailOnStart}"><i class="bi bi-x-circle-fill text-secondary" title="No"></i></c:if></div>
-			</div>
-			<div class="col-sm-6 col-lg-4">
-				<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Mail on End <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="When enabled, an email is sent when a data transfer has completed successfully for this Destination." tabindex="0"></i></div>
-				<div class="fw-medium"><c:if test="${destination.mailOnEnd}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if><c:if test="${!destination.mailOnEnd}"><i class="bi bi-x-circle-fill text-secondary" title="No"></i></c:if></div>
-			</div>
-			<div class="col-sm-6 col-lg-4">
-				<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Mail on Error <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="When enabled, an email is sent when a data transfer has failed for this Destination." tabindex="0"></i></div>
-				<div class="fw-medium"><c:if test="${destination.mailOnError}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if><c:if test="${!destination.mailOnError}"><i class="bi bi-x-circle-fill text-secondary" title="No"></i></c:if></div>
-			</div>
+			<div class="field-row"><div class="field-label">Mail on Update <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="When enabled, an email is sent when a change is made to the Destination or its related Hosts." tabindex="0"></i></div><div class="field-value"><c:choose><c:when test="${destination.mailOnUpdate}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise></c:choose></div></div>
+			<div class="field-row"><div class="field-label">Mail on Start <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="When enabled, an email is sent when a data transfer starts for this Destination." tabindex="0"></i></div><div class="field-value"><c:choose><c:when test="${destination.mailOnStart}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise></c:choose></div></div>
+			<div class="field-row"><div class="field-label">Mail on End <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="When enabled, an email is sent when a data transfer has completed successfully for this Destination." tabindex="0"></i></div><div class="field-value"><c:choose><c:when test="${destination.mailOnEnd}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise></c:choose></div></div>
+			<div class="field-row"><div class="field-label">Mail on Error <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="When enabled, an email is sent when a data transfer has failed for this Destination." tabindex="0"></i></div><div class="field-value"><c:choose><c:when test="${destination.mailOnError}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise></c:choose></div></div>
 			</c:if>
 		</div>
 	</div>
@@ -167,24 +101,12 @@
 		<i class="bi bi-toggles text-primary"></i>
 		<span class="fw-semibold">Flags</span>
 	</div>
-	<div class="card-body">
-		<div class="row g-3">
-			<div class="col-sm-6 col-lg-3">
-				<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Restart on Update <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Automatically restart the Destination if a change is detected on one of the host configuration" tabindex="0"></i></div>
-				<div class="fw-medium"><c:if test="${destination.stopIfDirty}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if><c:if test="${!destination.stopIfDirty}"><i class="bi bi-x-circle-fill text-secondary" title="No"></i></c:if></div>
-			</div>
-			<div class="col-sm-6 col-lg-3">
-				<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Acquisition <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Request the Acquisition Scheduler to use this Destination for Data Discovery and Retrieval (at least one Acquisition host must be defined)" tabindex="0"></i></div>
-				<div class="fw-medium"><c:if test="${destination.acquisition}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if><c:if test="${!destination.acquisition}"><i class="bi bi-x-circle-fill text-secondary" title="No"></i></c:if></div>
-			</div>
-			<div class="col-sm-6 col-lg-3">
-				<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Enabled <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="When enabled, this Destination is considered by the transfer scheduler; otherwise, no data transfers will be scheduled, even if there are pending requests in the queue. Similarly, any acquisition host will be disregarded." tabindex="0"></i></div>
-				<div class="fw-medium"><c:if test="${destination.active}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if><c:if test="${!destination.active}"><i class="bi bi-x-circle-fill text-secondary" title="No"></i></c:if></div>
-			</div>
-			<div class="col-sm-6 col-lg-3">
-				<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Show In Monitors <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="When enabled, this Destination is monitored in the monitoring display." tabindex="0"></i></div>
-				<div class="fw-medium"><c:if test="${destination.showInMonitors}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if><c:if test="${!destination.showInMonitors}"><i class="bi bi-x-circle-fill text-secondary" title="No"></i> <i class="bi bi-eye-slash text-muted ms-1" title="Not shown in Monitor Display" style="font-size:0.78rem;"></i></c:if></div>
-			</div>
+	<div class="card-body py-0">
+		<div class="field-grid">
+			<div class="field-row"><div class="field-label">Restart on Update <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Automatically restart the Destination if a change is detected on one of the host configuration" tabindex="0"></i></div><div class="field-value"><c:choose><c:when test="${destination.stopIfDirty}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise></c:choose></div></div>
+			<div class="field-row"><div class="field-label">Acquisition <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Request the Acquisition Scheduler to use this Destination for Data Discovery and Retrieval (at least one Acquisition host must be defined)" tabindex="0"></i></div><div class="field-value"><c:choose><c:when test="${destination.acquisition}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise></c:choose></div></div>
+			<div class="field-row"><div class="field-label">Enabled <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="When enabled, this Destination is considered by the transfer scheduler; otherwise, no data transfers will be scheduled, even if there are pending requests in the queue. Similarly, any acquisition host will be disregarded." tabindex="0"></i></div><div class="field-value"><c:if test="${destination.active}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:if><c:if test="${!destination.active}"><span class="badge rounded-pill border fw-normal bg-danger-subtle text-danger-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:if></div></div>
+			<div class="field-row"><div class="field-label">Show In Monitors <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="When enabled, this Destination is monitored in the monitoring display." tabindex="0"></i></div><div class="field-value"><c:if test="${destination.showInMonitors}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:if><c:if test="${!destination.showInMonitors}"><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No <i class="bi bi-eye-slash ms-1" title="Not shown in Monitor Display" style="font-size:0.78rem;"></i></span></c:if></div></div>
 		</div>
 	</div>
 </div>
@@ -309,4 +231,9 @@
 
 	makeResizable(editorProperties);
 	makeResizable(editorJavascript);
+
+	window.addEventListener('resize', function() {
+		editorProperties.resize(true);
+		editorJavascript.resize(true);
+	});
 </script>

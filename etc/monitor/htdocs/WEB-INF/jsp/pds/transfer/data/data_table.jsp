@@ -38,7 +38,7 @@ Data Transfer: <strong><c:out value="${datatransfer.id}"/></strong>
 <div class="col-6 col-sm-3">
 <div class="card border-0 shadow-sm text-center py-2 h-100">
 <div class="text-muted small fw-semibold text-uppercase" style="font-size:0.7rem;letter-spacing:0.04em">Duration</div>
-<div class="fw-bold fs-6">${datatransfer.formattedDuration}</div>
+<div class="fw-bold fs-6"><c:choose><c:when test="${not empty datatransfer.formattedDuration}">${datatransfer.formattedDuration}</c:when><c:otherwise><span class="text-muted">&mdash;</span></c:otherwise></c:choose></div>
 </div>
 </div>
 <div class="col-6 col-sm-3">
@@ -66,37 +66,16 @@ Data Transfer: <strong><c:out value="${datatransfer.id}"/></strong>
 <i class="bi bi-info-circle text-primary"></i>
 <span class="fw-semibold">Transfer Details</span>
 </div>
-<div class="card-body">
-<div class="row g-3">
-<div class="col-sm-2">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Transfer ID</div>
-<div>${datatransfer.id}</div>
-</div>
-<div class="col-sm-2">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Data File ID</div>
-<div>
-<auth:if basePathKey="datafile.basepath" paths="/${datatransfer.dataFileId}">
-<auth:then><a href="<bean:message key="datafile.basepath"/>/${datatransfer.dataFileId}">${datatransfer.dataFileId}</a></auth:then>
-<auth:else>${datatransfer.dataFileId}</auth:else>
-</auth:if>
-</div>
-</div>
-<div class="col-sm-5">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em"><c:out value="${datatransfer.destination.typeText}"/> Destination</div>
-<div>
-<a href="<bean:message key="destination.basepath"/>/<c:out value="${datatransfer.destination.name}"/>"><c:out value="${datatransfer.destination.name}"/></a>
-<span class="text-muted small ms-1">(<c:out value="${datatransfer.destination.formattedStatus}"/>)</span>
-</div>
-</div>
-<div class="col-sm-3">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Status</div>
-<div>
-<%-- Resolve display text for member-state vs full user --%>
+<div class="card-body py-0">
+<div class="field-grid">
+<div class="field-row"><div class="field-label">Transfer ID</div><div class="field-value"><span class="val-code">${datatransfer.id}</span></div></div>
+<div class="field-row"><div class="field-label">Data File ID</div><div class="field-value"><auth:if basePathKey="datafile.basepath" paths="/${datatransfer.dataFileId}"><auth:then><a href="<bean:message key="datafile.basepath"/>/${datatransfer.dataFileId}"><span class="val-code">${datatransfer.dataFileId}</span></a></auth:then><auth:else><span class="val-code">${datatransfer.dataFileId}</span></auth:else></auth:if></div></div>
+<div class="field-row"><div class="field-label"><c:out value="${datatransfer.destination.typeText}"/> Destination</div><div class="field-value"><a href="<bean:message key="destination.basepath"/>/<c:out value="${datatransfer.destination.name}"/>"><c:out value="${datatransfer.destination.name}"/></a><span class="text-muted small ms-1">(<c:out value="${datatransfer.destination.formattedStatus}"/>)</span></div></div>
+<div class="field-row"><div class="field-label">Status</div><div class="field-value">
 <auth:if basePathKey="nonmemberstate.basepath" paths="">
 <auth:then><c:set var="_dtStatus" value="${datatransfer.detailedStatus}"/></auth:then>
 <auth:else><c:set var="_dtStatus" value="${datatransfer.memberStateDetailedStatus}"/></auth:else>
 </auth:if>
-<%-- Colour-coded badge by status code --%>
 <c:choose>
 <c:when test="${datatransfer.deleted}">
   <span class="badge bg-danger" title="Deleted">${_dtStatus}</span>
@@ -117,52 +96,17 @@ Data Transfer: <strong><c:out value="${datatransfer.id}"/></strong>
   <span class="badge bg-danger">${_dtStatus}</span>
 </c:when>
 <c:otherwise>
-  <%-- SCHE (Preset), HOLD (StandBy), WAIT (Queued) --%>
   <span class="badge bg-secondary">${_dtStatus}</span>
 </c:otherwise>
 </c:choose>
-</div>
-</div>
-<div class="col-sm-4">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Dissemination Host</div>
-<div><a href="/do/transfer/host/${datatransfer.hostName}">${datatransfer.hostNickName}</a></div>
-</div>
-<div class="col-sm-4">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Data Mover</div>
-<div>
-<auth:if basePathKey="transferserver.basepath" paths="/${datatransfer.transferServerName}">
-<auth:then><a href="/do/datafile/transferserver/${datatransfer.transferServerName}">${datatransfer.transferServerName}</a></auth:then>
-<auth:else>${datatransfer.transferServerName}</auth:else>
-</auth:if>
-</div>
-</div>
-<div class="col-sm-4">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">On Proxy</div>
-<div>
-<c:choose>
-<c:when test="${datatransfer.proxy}"><i class="bi bi-check-circle-fill text-success"></i> Yes</c:when>
-<c:otherwise><i class="bi bi-x-circle-fill text-secondary"></i> No</c:otherwise>
-</c:choose>
-</div>
-</div>
-<div class="col-12">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Target</div>
-<div class="text-break font-monospace" style="font-size:0.85rem">
-<c:choose>
-<c:when test="${datatransfer.deleted}"><span class="text-danger">${datatransfer.target}</span></c:when>
-<c:otherwise>${datatransfer.target}</c:otherwise>
-</c:choose>
-</div>
-</div>
-<div class="col-sm-4">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Sent</div>
-<div title="Sent: ${datatransfer.formattedSent}">${datatransfer.sent} bytes</div>
-</div>
+</div></div>
+<div class="field-row"><div class="field-label">Dissemination Host</div><div class="field-value"><c:choose><c:when test="${not empty datatransfer.hostName}"><a href="/do/transfer/host/${datatransfer.hostName}"><c:choose><c:when test="${not empty datatransfer.hostNickName}">${datatransfer.hostNickName}</c:when><c:otherwise>${datatransfer.hostName}</c:otherwise></c:choose></a></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
+<div class="field-row"><div class="field-label">Data Mover</div><div class="field-value"><c:choose><c:when test="${not empty datatransfer.transferServerName}"><auth:if basePathKey="transferserver.basepath" paths="/${datatransfer.transferServerName}"><auth:then><a href="/do/datafile/transferserver/${datatransfer.transferServerName}">${datatransfer.transferServerName}</a></auth:then><auth:else><span class="val-code">${datatransfer.transferServerName}</span></auth:else></auth:if></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
+<div class="field-row"><div class="field-label">On Proxy</div><div class="field-value"><c:choose><c:when test="${datatransfer.proxy}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise></c:choose></div></div>
+<div class="field-row"><div class="field-label">Target</div><div class="field-value"><c:choose><c:when test="${datatransfer.deleted}"><span class="val-code text-danger text-break d-inline-block">${datatransfer.target}</span></c:when><c:otherwise><span class="val-code text-break d-inline-block">${datatransfer.target}</span></c:otherwise></c:choose></div></div>
+<div class="field-row"><div class="field-label">Sent</div><div class="field-value"><span class="val-num" title="Sent: ${datatransfer.formattedSent}">${datatransfer.sent} bytes</span></div></div>
 <c:if test="${not empty showFileSize}">
-<div class="col-sm-4">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Size</div>
-<div title="Size: ${datatransfer.formattedSize}">${datatransfer.size} bytes</div>
-</div>
+<div class="field-row"><div class="field-label">Size</div><div class="field-value"><span class="val-num" title="Size: ${datatransfer.formattedSize}">${datatransfer.size} bytes</span></div></div>
 </c:if>
 </div>
 </div>
@@ -176,60 +120,16 @@ Data Transfer: <strong><c:out value="${datatransfer.id}"/></strong>
 <i class="bi bi-file-earmark-code text-primary"></i>
 <span class="fw-semibold">File Info</span>
 </div>
-<div class="card-body">
-<div class="row g-3">
-<div class="col-sm-3">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Product</div>
-<div>${datafile.metaTime}-${datafile.metaStream} ${datafile.metaType} (${datafile.metaTarget})</div>
-</div>
-<div class="col-sm-3">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Prod Time</div>
-<div><content:content name="datafile.productTime" dateFormatKey="date.format.long.iso" ignoreNull="true"/></div>
-</div>
-<div class="col-sm-2">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Expired</div>
-<div>
-<c:choose>
-<c:when test="${datatransfer.expired}"><i class="bi bi-x-circle-fill text-danger"></i> Yes</c:when>
-<c:otherwise><i class="bi bi-check-circle-fill text-success"></i> No</c:otherwise>
-</c:choose>
-</div>
-</div>
-<div class="col-sm-2">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Deleted</div>
-<div>
-<c:choose>
-<c:when test="${datatransfer.deleted}"><i class="bi bi-x-circle-fill text-danger"></i> Yes</c:when>
-<c:otherwise><i class="bi bi-check-circle-fill text-success"></i> No</c:otherwise>
-</c:choose>
-</div>
-</div>
-<div class="col-sm-2">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Replicated</div>
-<div>
-<c:choose>
-<c:when test="${datatransfer.replicated}"><i class="bi bi-check-circle-fill text-success"></i> Yes</c:when>
-<c:otherwise><i class="bi bi-x-circle-fill text-secondary"></i> No</c:otherwise>
-</c:choose>
-</div>
-</div>
-<div class="col-sm-2">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Backup</div>
-<div>
-<c:choose>
-<c:when test="${datatransfer.backup}"><i class="bi bi-check-circle-fill text-success"></i> Yes</c:when>
-<c:otherwise><i class="bi bi-x-circle-fill text-secondary"></i> No</c:otherwise>
-</c:choose>
-</div>
-</div>
-<div class="col-12">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Comment</div>
-<div>${datatransfer.formattedComment}</div>
-</div>
-<div class="col-12">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Original</div>
-<div class="text-break font-monospace" style="font-size:0.85rem">${datafile.formattedOriginal}</div>
-</div>
+<div class="card-body py-0">
+<div class="field-grid">
+<div class="field-row"><div class="field-label">Product</div><div class="field-value"><c:choose><c:when test="${not empty datafile.metaTime or not empty datafile.metaStream or not empty datafile.metaType or not empty datafile.metaTarget}"><span class="val-code">${datafile.metaTime}-${datafile.metaStream} ${datafile.metaType} (${datafile.metaTarget})</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
+<div class="field-row"><div class="field-label">Prod Time</div><div class="field-value"><c:choose><c:when test="${not empty datafile.productTime}"><content:content name="datafile.productTime" dateFormatKey="date.format.long.iso" ignoreNull="true"/></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
+<div class="field-row"><div class="field-label">Expired</div><div class="field-value"><c:choose><c:when test="${datatransfer.expired}"><span class="badge rounded-pill border fw-normal bg-danger-subtle text-danger-emphasis"><i class="bi bi-x-circle-fill me-1"></i>Yes</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>No</span></c:otherwise></c:choose></div></div>
+<div class="field-row"><div class="field-label">Deleted</div><div class="field-value"><c:choose><c:when test="${datatransfer.deleted}"><span class="badge rounded-pill border fw-normal bg-danger-subtle text-danger-emphasis"><i class="bi bi-x-circle-fill me-1"></i>Yes</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>No</span></c:otherwise></c:choose></div></div>
+<div class="field-row"><div class="field-label">Replicated</div><div class="field-value"><c:choose><c:when test="${datatransfer.replicated}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise></c:choose></div></div>
+<div class="field-row"><div class="field-label">Backup</div><div class="field-value"><c:choose><c:when test="${datatransfer.backup}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise></c:choose></div></div>
+<div class="field-row"><div class="field-label">Comment</div><div class="field-value"><c:choose><c:when test="${not empty datatransfer.formattedComment}">${datatransfer.formattedComment}</c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
+<div class="field-row"><div class="field-label">Original</div><div class="field-value"><span class="val-code text-break d-inline-block">${datafile.formattedOriginal}</span></div></div>
 </div>
 </div>
 </div>
@@ -254,88 +154,19 @@ Data Transfer: <strong><c:out value="${datatransfer.id}"/></strong>
 <i class="bi bi-clock text-primary"></i>
 <span class="fw-semibold">Timing</span>
 </div>
-<div class="card-body">
-<div class="row g-3">
-<div class="col-sm-4">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em"><c:out value="${schedTimeTitle}"/></div>
-<div><content:content name="datatransfer.scheduledTime" dateFormatKey="date.format.long.iso" ignoreNull="true"/></div>
-</div>
-<div class="col-sm-4">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">ASAP</div>
-<div>
-<c:choose>
-<c:when test="${datatransfer.asap}"><i class="bi bi-check-circle-fill text-success"></i> Yes</c:when>
-<c:otherwise><i class="bi bi-x-circle-fill text-secondary"></i> No</c:otherwise>
-</c:choose>
-</div>
-</div>
-<auth:if basePathKey="datafile.basepath" paths="/${datatransfer.dataFileId}">
-<auth:then>
-<div class="col-sm-4">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Earliest</div>
-<div><content:content name="datatransfer.earliestTime" dateFormatKey="date.format.long.iso" ignoreNull="true"/></div>
-</div>
-</auth:then>
-</auth:if>
-
-<div class="col-sm-4">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Start Time</div>
-<div><content:content name="datatransfer.startTime" dateFormatKey="date.format.long.iso" ignoreNull="true"/></div>
-</div>
-<div class="col-sm-4">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Retry Time</div>
-<div>
-<c:choose>
-<c:when test="${not empty datatransfer.retryTime && datatransfer.startTime != datatransfer.retryTime}">
-<content:content name="datatransfer.retryTime" dateFormatKey="date.format.long.iso" ignoreNull="true"/>
-<span class="text-muted small ms-1 fw-semibold">(S:${datatransfer.startCount}, R:${datatransfer.requeueCount})</span>
-</c:when>
-<c:otherwise><span class="text-muted">No retries</span></c:otherwise>
-</c:choose>
-</div>
-</div>
-<auth:if basePathKey="datafile.basepath" paths="/${datatransfer.dataFileId}">
-<auth:then>
-<div class="col-sm-4">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Latest</div>
-<div><content:content name="datatransfer.latestTime" dateFormatKey="date.format.long.iso" ignoreNull="true"/></div>
-</div>
-</auth:then>
-</auth:if>
-
-<div class="col-sm-4">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em"><c:out value="${finishTimeTitle}"/></div>
-<div><content:content name="datatransfer.realFinishTime" dateFormatKey="date.format.long.iso" ignoreNull="true"/></div>
-</div>
-<div class="col-sm-4">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Expiry Date</div>
-<div><content:content name="datatransfer.expiryDate" dateFormatKey="date.format.long.iso" ignoreNull="true"/></div>
-</div>
-<auth:if basePathKey="datafile.basepath" paths="/${datatransfer.dataFileId}">
-<auth:then>
-<div class="col-sm-4">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Predicted</div>
-<div><content:content name="datatransfer.predictedTime" dateFormatKey="date.format.long.iso" ignoreNull="true"/></div>
-</div>
-<div class="col-sm-4">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Target Time</div>
-<div><content:content name="datatransfer.targetTime" dateFormatKey="date.format.long.iso" ignoreNull="true"/></div>
-</div>
-</auth:then>
-</auth:if>
-
-<c:if test="${not empty refinished}">
-<div class="col-sm-4">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Last Finish Time</div>
-<div><content:content name="datatransfer.finishTime" dateFormatKey="date.format.long.iso" ignoreNull="true"/></div>
-</div>
-</c:if>
-<c:if test="${not empty requeued}">
-<div class="col-sm-4">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Real Sch. Time</div>
-<div><content:content name="datatransfer.queueTime" dateFormatKey="date.format.long.iso" ignoreNull="true"/></div>
-</div>
-</c:if>
+<div class="card-body py-0">
+<div class="field-grid">
+<div class="field-row"><div class="field-label"><c:out value="${schedTimeTitle}"/></div><div class="field-value"><c:choose><c:when test="${not empty datatransfer.scheduledTime}"><content:content name="datatransfer.scheduledTime" dateFormatKey="date.format.long.iso" ignoreNull="true"/></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
+<div class="field-row"><div class="field-label">ASAP</div><div class="field-value"><c:choose><c:when test="${datatransfer.asap}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise></c:choose></div></div>
+<auth:if basePathKey="datafile.basepath" paths="/${datatransfer.dataFileId}"><auth:then><div class="field-row"><div class="field-label">Earliest</div><div class="field-value"><c:choose><c:when test="${not empty datatransfer.earliestTime}"><content:content name="datatransfer.earliestTime" dateFormatKey="date.format.long.iso" ignoreNull="true"/></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div></auth:then></auth:if>
+<div class="field-row"><div class="field-label">Start Time</div><div class="field-value"><c:choose><c:when test="${not empty datatransfer.startTime}"><content:content name="datatransfer.startTime" dateFormatKey="date.format.long.iso" ignoreNull="true"/></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
+<div class="field-row"><div class="field-label">Retry Time</div><div class="field-value"><c:choose><c:when test="${not empty datatransfer.retryTime && datatransfer.startTime != datatransfer.retryTime}"><content:content name="datatransfer.retryTime" dateFormatKey="date.format.long.iso" ignoreNull="true"/><span class="text-muted small ms-1 fw-semibold">(S:<span class="val-num">${datatransfer.startCount}</span>, R:<span class="val-num">${datatransfer.requeueCount}</span>)</span></c:when><c:otherwise><span class="text-muted">No retries</span></c:otherwise></c:choose></div></div>
+<auth:if basePathKey="datafile.basepath" paths="/${datatransfer.dataFileId}"><auth:then><div class="field-row"><div class="field-label">Latest</div><div class="field-value"><c:choose><c:when test="${not empty datatransfer.latestTime}"><content:content name="datatransfer.latestTime" dateFormatKey="date.format.long.iso" ignoreNull="true"/></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div></auth:then></auth:if>
+<div class="field-row"><div class="field-label"><c:out value="${finishTimeTitle}"/></div><div class="field-value"><c:choose><c:when test="${not empty datatransfer.realFinishTime}"><content:content name="datatransfer.realFinishTime" dateFormatKey="date.format.long.iso" ignoreNull="true"/></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
+<div class="field-row"><div class="field-label">Expiry Date</div><div class="field-value"><c:choose><c:when test="${not empty datatransfer.expiryDate}"><content:content name="datatransfer.expiryDate" dateFormatKey="date.format.long.iso" ignoreNull="true"/></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
+<auth:if basePathKey="datafile.basepath" paths="/${datatransfer.dataFileId}"><auth:then><div class="field-row"><div class="field-label">Predicted</div><div class="field-value"><c:choose><c:when test="${not empty datatransfer.predictedTime}"><content:content name="datatransfer.predictedTime" dateFormatKey="date.format.long.iso" ignoreNull="true"/></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div><div class="field-row"><div class="field-label">Target Time</div><div class="field-value"><c:choose><c:when test="${not empty datatransfer.targetTime}"><content:content name="datatransfer.targetTime" dateFormatKey="date.format.long.iso" ignoreNull="true"/></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div></auth:then></auth:if>
+<c:if test="${not empty refinished}"><div class="field-row"><div class="field-label">Last Finish Time</div><div class="field-value"><c:choose><c:when test="${not empty datatransfer.finishTime}"><content:content name="datatransfer.finishTime" dateFormatKey="date.format.long.iso" ignoreNull="true"/></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div></c:if>
+<c:if test="${not empty requeued}"><div class="field-row"><div class="field-label">Real Sch. Time</div><div class="field-value"><c:choose><c:when test="${not empty datatransfer.queueTime}"><content:content name="datatransfer.queueTime" dateFormatKey="date.format.long.iso" ignoreNull="true"/></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div></c:if>
 </div>
 </div>
 </div>

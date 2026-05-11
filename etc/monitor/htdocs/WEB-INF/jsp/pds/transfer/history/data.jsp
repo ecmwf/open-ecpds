@@ -26,5 +26,5 @@
 </td></tr>
 <tr><th>Sent</th><td>${item.formattedSent}</td></tr>
 <tr><th>Comment</th><td>${item.formattedComment}</td></tr>
-<tr><th>Error</th><td><c:if test="${item.error}"><i class="bi bi-x-circle-fill text-danger" title="Yes"></i></c:if><c:if test="${!item.error}"><i class="bi bi-check-circle-fill text-success" title="No"></i></c:if></td></tr>
+<tr><th>Error</th><td><c:choose><c:when test="${item.error}"><span class="badge rounded-pill border fw-normal bg-danger-subtle text-danger-emphasis"><i class="bi bi-x-circle-fill me-1"></i>Yes</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>No</span></c:otherwise></c:choose></td></tr>
 </table>

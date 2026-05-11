@@ -145,6 +145,8 @@
 			tr.removeClass('selected');
 			icon.removeClass('bi-star-fill text-warning').addClass('bi-star');
 		}
+		window._selectedDelta = (window._selectedDelta || 0) + (isOn ? 1 : -1);
+		if (typeof window._refreshSelectedCount === 'function') window._refreshSelectedCount();
 	}
 
 	function clickField(field) {

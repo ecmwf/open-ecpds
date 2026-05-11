@@ -31,44 +31,15 @@
 			</auth:then>
 			</auth:if>
 		</div>
-		<div class="card-body pb-2">
-			<div class="row g-3">
-				<div class="col-sm-4">
-					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Name</div>
-					<div class="fw-medium"><c:out value="${method.name}" /></div>
-				</div>
-				<div class="col-sm-4">
-					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Value</div>
-					<div class="fw-medium"><c:out value="${method.value}" /></div>
-				</div>
-				<div class="col-sm-4">
-					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Transfer Module</div>
-					<div class="fw-medium"><a href="<bean:message key="module.basepath"/>/${method.ecTransModule.id}">${method.ecTransModule.name}</a></div>
-				</div>
-				<div class="col-sm-6">
-					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Comment</div>
-					<div class="fw-medium"><c:out value="${method.comment}" /></div>
-				</div>
-				<div class="col-sm-6">
-					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Flags</div>
-					<div class="d-flex flex-wrap gap-3">
-						<div>
-							<span class="text-muted small me-1">Restrict</span>
-							<c:if test="${method.restrict}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if>
-							<c:if test="${!method.restrict}"><i class="bi bi-x-circle-fill text-secondary" title="No"></i></c:if>
-						</div>
-						<div>
-							<span class="text-muted small me-1">Resolve</span>
-							<c:if test="${method.resolve}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if>
-							<c:if test="${!method.resolve}"><i class="bi bi-x-circle-fill text-secondary" title="No"></i></c:if>
-						</div>
-						<div>
-							<span class="text-muted small me-1">Enabled</span>
-							<c:if test="${method.active}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if>
-							<c:if test="${!method.active}"><i class="bi bi-x-circle-fill text-secondary" title="No"></i></c:if>
-						</div>
-					</div>
-				</div>
+		<div class="card-body py-0">
+			<div class="field-grid">
+				<div class="field-row"><div class="field-label">Name</div><div class="field-value"><span class="val-code"><c:out value="${method.name}" /></span></div></div>
+				<div class="field-row"><div class="field-label">Value</div><div class="field-value"><span class="val-code"><c:out value="${method.value}" /></span></div></div>
+				<div class="field-row"><div class="field-label">Transfer Module</div><div class="field-value"><c:choose><c:when test="${not empty method.ecTransModule and not empty method.ecTransModule.id}"><a href="<bean:message key="module.basepath"/>/${method.ecTransModule.id}">${method.ecTransModule.name}</a></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
+				<div class="field-row"><div class="field-label">Comment</div><div class="field-value"><c:choose><c:when test="${not empty method.comment}"><c:out value="${method.comment}" /></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
+				<div class="field-row"><div class="field-label">Restrict</div><div class="field-value"><c:choose><c:when test="${method.restrict}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise></c:choose></div></div>
+				<div class="field-row"><div class="field-label">Resolve</div><div class="field-value"><c:choose><c:when test="${method.resolve}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise></c:choose></div></div>
+				<div class="field-row"><div class="field-label">Enabled</div><div class="field-value"><c:choose><c:when test="${method.active}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise></c:choose></div></div>
 			</div>
 		</div>
 	</div>

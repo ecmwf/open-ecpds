@@ -147,13 +147,24 @@
     margin: 0;
 }
 
+/* Force the inner navbar row to never wrap, and let the title shrink/truncate */
+#topheader .container-fluid {
+    flex-wrap: nowrap !important;
+}
+
 .header_simple_title {
     font-size: 0.9rem;
     font-weight: 500;
     color: rgba(255,255,255,0.9);
     padding-top: 0;
     font-family: "Open Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
-    padding-left: 0.75rem;
+    padding-left: 0.4rem;     /* tighter gap after the divider */
+    padding-right: 0.75rem;   /* breathing room before the toggle icon */
+    flex: 1 1 0% !important; /* grow to fill space, shrink from 0 basis */
+    min-width: 0;             /* flex items need this to shrink below content size */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* Thin vertical divider between logo and page title */
@@ -162,7 +173,7 @@
     width: 1px;
     height: 22px;
     background: rgba(255,255,255,0.3);
-    margin: 0 0.5rem;
+    margin: 0 0.3rem;         /* reduced side margins for a tighter look */
     flex-shrink: 0;
     vertical-align: middle;
 }
@@ -1940,4 +1951,128 @@ html[data-bs-theme=dark] .ui-slider-handle { outline: none; }
 }
 .ace_autocomplete .ace_completion-meta {
     max-width: 200px;
+}
+
+/* DataTables narrow-screen alignment — length/info left, search right, remove extra gutter */
+@media screen and (max-width: 767px) {
+    div.dt-container div.dt-length,
+    div.dt-container div.dt-info {
+        text-align: left !important;
+    }
+    div.dt-container div.dt-search {
+        text-align: right !important;
+    }
+    div.dt-container .row {
+        --bs-gutter-y: 0 !important;
+    }
+}
+
+/* destTransferTable — Target column: wrap long filenames (no spaces) when page is narrow */
+#destTransferTable td.col-target {
+    word-break: break-all;
+    overflow-wrap: anywhere;
+}
+
+/* Cards: restore a visible border in light mode (border-0 relies on shadow which
+   is nearly invisible on white/light backgrounds) */
+html:not([data-bs-theme=dark]) .card.shadow-sm {
+    border: 1px solid var(--bs-border-color) !important;
+}
+
+/* Flag icons: ensure vertical middle-alignment when used inline next to text */
+.fi { vertical-align: middle; }
+
+/* Card field value styles */
+.val-code {
+    font-family: var(--bs-font-monospace);
+    font-size: 0.85em;
+    background-color: var(--bs-tertiary-bg);
+    color: var(--bs-body-color);
+    padding: 0.15em 0.5em;
+    border-radius: 0.3rem;
+    border: 1px solid var(--bs-border-color-translucent);
+    word-break: break-all;
+    display: inline-block;
+}
+.val-num {
+    font-family: var(--bs-font-monospace);
+    font-size: 0.9em;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Compact horizontal meta-bar for quick-status cards */
+.meta-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 0.15rem 0;
+    row-gap: 0.3rem;
+}
+.meta-item {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0 1rem;
+}
+.meta-item:first-child { padding-left: 0; }
+.meta-item + .meta-item {
+    border-left: 1px solid var(--bs-border-color-translucent);
+}
+.meta-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--bs-secondary-color);
+    white-space: nowrap;
+}
+
+.filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.3rem;
+}
+.filter-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--bs-secondary-color);
+    white-space: nowrap;
+    min-width: 7rem;
+}
+
+/* Horizontal label|value rows inside detail cards */
+.field-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    column-gap: 1.5rem;
+}
+@media (max-width: 575px) {
+    .field-grid { grid-template-columns: 1fr; }
+}
+.field-row {
+    display: flex;
+    align-items: baseline;
+    padding: 0.45rem 0;
+    border-bottom: 1px solid var(--bs-border-color-translucent);
+    gap: 1rem;
+}
+.field-row:last-child { border-bottom: none; }
+@media (min-width: 576px) {
+    .field-grid .field-row:nth-last-child(2) { border-bottom: none; }
+}
+.field-label {
+    flex: 0 0 38%;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--bs-secondary-color);
+}
+.field-value {
+    flex: 1 1 auto;
+    min-width: 0;
 }

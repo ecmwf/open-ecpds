@@ -289,17 +289,17 @@ public class GetDestinationListJsonAction extends PDSAction {
             return "";
         }
         if (aliases == null || aliases.isEmpty()) {
-            return "<span class=\"text-muted fst-italic\" style=\"font-size:0.8rem;\">none</span>";
+            return "<span class=\"badge bg-body-tertiary text-muted border fst-italic\">none</span>";
         }
         final var count = aliases.size();
         if (count >= 3) {
-            return "<span class=\"badge bg-light text-secondary border\">" + count + " aliases</span>";
+            return "<span class=\"badge bg-body-tertiary text-secondary border\">" + count + " aliases</span>";
         }
         final var sb = new StringBuilder();
         for (final Destination alias : aliases) {
             final var aid = escapeHtml(alias.getId());
-            sb.append("<a href=\"").append(DEST_BASE_PATH).append("/").append(aid)
-                    .append("\" class=\"badge bg-light text-secondary border text-decoration-none me-1\" title=\"")
+            sb.append("<a href=\"").append(DEST_BASE_PATH).append("/").append(aid).append(
+                    "\" class=\"badge bg-body-tertiary text-secondary border text-decoration-none me-1\" title=\"")
                     .append(aid).append(" is an alias for ").append(escapeHtml(d.getId())).append("\">").append(aid)
                     .append("</a>");
         }

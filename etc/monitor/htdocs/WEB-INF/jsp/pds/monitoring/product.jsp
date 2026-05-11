@@ -192,7 +192,7 @@ th {
 			<span class="mon-value">
 				<c:choose>
 					<c:when test="${not empty productStatus.lastUpdate}">${productStatus.lastUpdate}</c:when>
-					<c:otherwise><span class="text-muted fst-italic">none</span></c:otherwise>
+					<c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise>
 				</c:choose>
 			</span>
 		</div>
@@ -201,7 +201,7 @@ th {
 			<span class="mon-value">
 				<c:choose>
 					<c:when test="${not empty productStatus.arrivalTime}">${productStatus.arrivalTime}</c:when>
-					<c:otherwise><span class="text-muted fst-italic">none</span></c:otherwise>
+					<c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise>
 				</c:choose>
 			</span>
 		</div>

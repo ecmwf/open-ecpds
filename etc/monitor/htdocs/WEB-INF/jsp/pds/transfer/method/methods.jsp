@@ -36,16 +36,22 @@
             <td><a href="<bean:message key="method.basepath"/>/${row.id}">${row.name}</a></td>
             <td>${row.comment}</td>
             <td class="text-center" data-order="${row.restrict ? 1 : 0}">
-                <c:if test="${row.restrict}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if>
-                <c:if test="${!row.restrict}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if>
+                <c:choose>
+                    <c:when test="${row.restrict}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when>
+                    <c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise>
+                </c:choose>
             </td>
             <td class="text-center" data-order="${row.resolve ? 1 : 0}">
-                <c:if test="${row.resolve}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if>
-                <c:if test="${!row.resolve}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if>
+                <c:choose>
+                    <c:when test="${row.resolve}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when>
+                    <c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise>
+                </c:choose>
             </td>
             <td class="text-center" data-order="${row.active ? 1 : 0}">
-                <c:if test="${row.active}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if>
-                <c:if test="${!row.active}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if>
+                <c:choose>
+                    <c:when test="${row.active}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when>
+                    <c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise>
+                </c:choose>
             </td>
             <td class="buttons text-center">
                 <auth:link styleClass="menuitem" href="/do/transfer/method/edit/update_form/${row.id}" imageKey="icon.small.update"/>

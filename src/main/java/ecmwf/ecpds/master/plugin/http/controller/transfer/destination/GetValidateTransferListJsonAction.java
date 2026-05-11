@@ -86,12 +86,8 @@ public class GetValidateTransferListJsonAction extends PDSAction {
             memberState = !user.hasAccess(getResource(request, "nonmemberstate.basepath"));
         } catch (final Exception _) {
         }
-        boolean canHandleQueue = false;
-        try {
-            canHandleQueue = user.hasAccess(
-                    getResource(request, "destination.basepath") + "/operations/" + destinationName + "/requeue/");
-        } catch (final Exception _) {
-        }
+        // Column visibility is already gated by the JSP auth tag (ecpdsCanHandleQueue).
+        // Action security is enforced by the individual action handlers on submit.
 
         DetailActionForm daf = null;
         Collection<DataTransfer> transfers = new ArrayList<>(0);
@@ -136,7 +132,7 @@ public class GetValidateTransferListJsonAction extends PDSAction {
             row.add(buildRateHtml(dt));
             row.add(buildStatusHtml(dt, memberState));
             row.add(String.valueOf(dt.getPriority()));
-            row.add(canHandleQueue ? buildActionsHtml(dt) : "");
+            row.add(buildActionsHtml(dt));
             row.add(buildValidateSelectHtml(dt, safeDest));
         }
         try {

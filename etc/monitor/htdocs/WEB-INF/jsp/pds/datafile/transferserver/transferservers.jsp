@@ -47,20 +47,20 @@
                     </td>
                     <td class="text-center">
                         <c:choose>
-                            <c:when test="${server.active}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:when>
-                            <c:otherwise><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:otherwise>
+                            <c:when test="${server.active}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when>
+                            <c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise>
                         </c:choose>
                     </td>
                     <td class="text-center">
                         <c:choose>
-                            <c:when test="${server.replicate}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:when>
-                            <c:otherwise><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:otherwise>
+                            <c:when test="${server.replicate}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when>
+                            <c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise>
                         </c:choose>
                     </td>
                     <td class="text-center">
                         <c:choose>
-                            <c:when test="${server.check}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:when>
-                            <c:otherwise><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:otherwise>
+                            <c:when test="${server.check}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when>
+                            <c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise>
                         </c:choose>
                     </td>
                     <td class="small text-center">${server.maxTransfers}</td>

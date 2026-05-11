@@ -138,38 +138,15 @@ table.fields > tbody > tr > th {
 <i class="bi bi-tag text-primary"></i>
 <span class="fw-semibold">Identity</span>
 </div>
-<div class="card-body">
-<div class="row g-3">
-<div class="col-sm-6">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Hostname/IP</div>
-<div>${host.host}</div>
-</div>
-<div class="col-sm-6">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Label</div>
-<div>${host.networkCode}:${host.networkName}</div>
-</div>
-<div class="col-sm-6">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Login</div>
-<div>${host.login}</div>
-</div>
-<div class="col-sm-6">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Transfer Group</div>
-<div><auth:link basePathKey="transfergroup.basepath"
-href="/${host.transferGroupName}"
-alternativeText="${host.transferGroupName}">${host.transferGroupName}</auth:link></div>
-</div>
-<div class="col-sm-6">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Passwd</div>
-<div>****</div>
-</div>
-<div class="col-sm-6">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Max Connections</div>
-<div>${host.maxConnections}</div>
-</div>
-<div class="col-sm-12">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Filter Name</div>
-<div><jsp:include page="/WEB-INF/jsp/pds/transfer/compression_icon.jsp"><jsp:param name="name" value="${host.filterName}"/><jsp:param name="showName" value="true"/></jsp:include></div>
-</div>
+<div class="card-body py-0">
+<div class="field-grid">
+<div class="field-row"><div class="field-label">Hostname/IP</div><div class="field-value"><span class="val-code">${host.host}</span></div></div>
+<div class="field-row"><div class="field-label">Label</div><div class="field-value"><c:choose><c:when test="${not empty host.networkCode or not empty host.networkName}"><span class="val-code">${host.networkCode}:${host.networkName}</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
+<div class="field-row"><div class="field-label">Login</div><div class="field-value"><c:choose><c:when test="${not empty host.login}"><span class="val-code">${host.login}</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
+<div class="field-row"><div class="field-label">Transfer Group</div><div class="field-value"><c:choose><c:when test="${not empty host.transferGroupName}"><auth:link basePathKey="transfergroup.basepath" href="/${host.transferGroupName}" alternativeText="${host.transferGroupName}">${host.transferGroupName}</auth:link></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
+<div class="field-row"><div class="field-label">Passwd</div><div class="field-value"><span class="val-code">****</span></div></div>
+<div class="field-row"><div class="field-label">Max Connections</div><div class="field-value"><span class="val-num">${host.maxConnections}</span></div></div>
+<div class="field-row"><div class="field-label">Filter Name</div><div class="field-value"><c:choose><c:when test="${not empty host.filterName}"><jsp:include page="/WEB-INF/jsp/pds/transfer/compression_icon.jsp"><jsp:param name="name" value="${host.filterName}"/><jsp:param name="showName" value="true"/></jsp:include></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
 </div>
 </div>
 </div>
@@ -179,36 +156,12 @@ alternativeText="${host.transferGroupName}">${host.transferGroupName}</auth:link
 <i class="bi bi-geo-alt text-primary"></i>
 <span class="fw-semibold">Location</span>
 </div>
-<div class="card-body">
-<div class="row g-3">
-<div class="col-sm-6">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Location Source</div>
-<div><c:if test="${host.automaticLocation}">automatic</c:if><c:if test="${!host.automaticLocation}">manual</c:if></div>
-</div>
-<div class="col-sm-6">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Estimated Location</div>
-<div>
-<c:choose>
-<c:when test="${not empty host.geoIpLocation}">
-<c:set var="_geoParts" value="${fn:split(host.geoIpLocation, '/')}"/>
-<c:set var="_geoPart0" value="${fn:trim(_geoParts[0])}"/>
-<c:set var="_geoPart1" value="${fn:trim(_geoParts[1])}"/>
-<c:set var="_geoIso" value="${fn:toLowerCase(fn:length(_geoPart0) == 2 ? _geoPart0 : _geoPart1)}"/>
-<span class="fi fi-${_geoIso}" title="${host.geoIpLocation}" style="font-size:1.1em;vertical-align:middle;border-radius:2px;"></span>
-<span class="ms-1">${host.geoIpLocation}</span>
-</c:when>
-<c:otherwise><span class="text-muted fst-italic">unknown</span></c:otherwise>
-</c:choose>
-</div>
-</div>
-<div class="col-sm-6">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Latitude (&deg;)</div>
-<div>${host.latitude}</div>
-</div>
-<div class="col-sm-6">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Longitude (&deg;)</div>
-<div>${host.longitude}</div>
-</div>
+<div class="card-body py-0">
+<div class="field-grid">
+<div class="field-row"><div class="field-label">Location Source</div><div class="field-value"><c:choose><c:when test="${host.automaticLocation}"><span class="badge rounded-pill border fw-normal bg-info-subtle text-info-emphasis"><i class="bi bi-robot me-1"></i>Automatic</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-body-secondary"><i class="bi bi-pencil me-1"></i>Manual</span></c:otherwise></c:choose></div></div>
+<div class="field-row"><div class="field-label">Estimated Location</div><div class="field-value"><c:choose><c:when test="${not empty host.geoIpLocation}"><c:set var="_geoParts" value="${fn:split(host.geoIpLocation, '/')}"/><c:set var="_geoPart0" value="${fn:trim(_geoParts[0])}"/><c:set var="_geoPart1" value="${fn:trim(_geoParts[1])}"/><c:set var="_geoIso" value="${fn:toLowerCase(fn:length(_geoPart0) == 2 ? _geoPart0 : _geoPart1)}"/><span class="d-inline-flex align-items-center gap-1"><span class="fi fi-${_geoIso}" title="${host.geoIpLocation}" style="font-size:1.1em;border-radius:2px;"></span><span>${host.geoIpLocation}</span></span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
+<div class="field-row"><div class="field-label">Latitude (&deg;)</div><div class="field-value"><span class="val-num">${host.latitude}</span></div></div>
+<div class="field-row"><div class="field-label">Longitude (&deg;)</div><div class="field-value"><span class="val-num">${host.longitude}</span></div></div>
 </div>
 </div>
 </div>
@@ -287,7 +240,7 @@ JavaScript
 <span class="fw-semibold">Progress</span>
 </div>
 <div class="card-body">
-<div class="progress-terminal" style="min-width:860px;max-width:860px">
+<div class="progress-terminal" style="width:100%">
 <div class="progress-terminal-hdr">
 <i class="bi bi-activity text-success"></i> Activity Log
 <button id="refreshLogBtn"
@@ -332,35 +285,14 @@ setTimeout(function(){ btn.innerHTML='<i class=\'bi bi-clipboard\'></i> Copy'; }
 <i class="bi bi-bar-chart text-primary"></i>
 <span class="fw-semibold">Statistics</span>
 </div>
-<div class="card-body">
-<div class="row g-3">
-<div class="col-sm-6">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Retry Frequency</div>
-<div>${host.formattedRetryFrequency}</div>
-</div>
-<div class="col-sm-6">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Total Data Sent</div>
-<div><a style="text-decoration:none"
-title="Sent: ${host.formattedSent}">${host.sent} bytes</a></div>
-</div>
-<div class="col-sm-6">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Connections</div>
-<div>${host.connections}</div>
-</div>
-<div class="col-sm-6">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Total Time Taken</div>
-<div>${host.formattedDuration}</div>
-</div>
-<div class="col-sm-6">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Retry Count</div>
-<div>${host.retryCount}</div>
-</div>
-<div class="col-sm-6">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Bandwidth</div>
-<div><a style="text-decoration:none"
-title="Bandwidth: ${host.formattedBandWidth}">${host.formattedBandWidthInMBitsPerSeconds}
-Mbits/s</a></div>
-</div>
+<div class="card-body py-0">
+<div class="field-grid">
+<div class="field-row"><div class="field-label">Retry Frequency</div><div class="field-value"><c:choose><c:when test="${not empty host.formattedRetryFrequency}"><span class="val-num">${host.formattedRetryFrequency}</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
+<div class="field-row"><div class="field-label">Total Data Sent</div><div class="field-value"><a style="text-decoration:none" title="Sent: ${host.formattedSent}"><span class="val-num">${host.sent} bytes</span></a></div></div>
+<div class="field-row"><div class="field-label">Connections</div><div class="field-value"><span class="val-num">${host.connections}</span></div></div>
+<div class="field-row"><div class="field-label">Total Time Taken</div><div class="field-value"><c:choose><c:when test="${not empty host.formattedDuration}"><span class="val-num">${host.formattedDuration}</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
+<div class="field-row"><div class="field-label">Retry Count</div><div class="field-value"><span class="val-num">${host.retryCount}</span></div></div>
+<div class="field-row"><div class="field-label">Bandwidth</div><div class="field-value"><a style="text-decoration:none" title="Bandwidth: ${host.formattedBandWidth}"><span class="val-num">${host.formattedBandWidthInMBitsPerSeconds} Mbits/s</span></a></div></div>
 </div>
 </div>
 </div>
@@ -370,89 +302,31 @@ Mbits/s</a></div>
 <i class="bi bi-bell text-primary"></i>
 <span class="fw-semibold">Monitoring</span>
 </div>
-<div class="card-body">
-<div class="row g-3">
-<div class="col-sm-6">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Check</div>
-<div><c:if test="${host.check}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
-test="${!host.check}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></div>
-</div>
-<c:choose>
-<c:when test="${not empty host.userMail}">
-<div class="col-sm-6">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Mail On Success</div>
-<div><c:if test="${host.mailOnSuccess}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
-test="${!host.mailOnSuccess}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></div>
-</div>
-</c:when>
-<c:otherwise><div class="col-sm-6"></div></c:otherwise>
-</c:choose>
-<c:if test="${host.check || not empty host.userMail}">
-<c:choose>
-<c:when test="${host.check}">
-<div class="col-sm-6">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Check Time</div>
-<div class="date">${host.checkTime}</div>
-</div>
-</c:when>
-<c:otherwise><div class="col-sm-6"></div></c:otherwise>
-</c:choose>
-<c:choose>
-<c:when test="${not empty host.userMail}">
-<div class="col-sm-6">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Mail On Error</div>
-<div><c:if test="${host.mailOnError}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
-test="${!host.mailOnError}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></div>
-</div>
-</c:when>
-<c:otherwise><div class="col-sm-6"></div></c:otherwise>
-</c:choose>
+<div class="card-body py-0">
+<div class="field-grid">
+<div class="field-row"><div class="field-label">Check</div><div class="field-value"><c:choose><c:when test="${host.check}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise></c:choose></div></div>
+<c:if test="${not empty host.userMail}">
+<div class="field-row"><div class="field-label">Mail On Success</div><div class="field-value"><c:choose><c:when test="${host.mailOnSuccess}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise></c:choose></div></div>
 </c:if>
 <c:if test="${host.check}">
-<div class="col-sm-6">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Check Frequency</div>
-<div>${host.formattedCheckFrequency}</div>
-</div>
-<div class="col-sm-6">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Notify Once</div>
-<div><c:if test="${host.notifyOnce}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
-test="${!host.notifyOnce}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></div>
-</div>
+<div class="field-row"><div class="field-label">Check Time</div><div class="field-value"><c:choose><c:when test="${not empty host.checkTime}"><span class="date">${host.checkTime}</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
 </c:if>
-<c:if test="${host.type == 'Acquisition' || not empty host.userMail}">
-<c:choose>
-<c:when test="${host.type == 'Acquisition'}">
-<div class="col-sm-6">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Acquisition Time</div>
-<div class="date">${host.acquisitionTime}</div>
-</div>
-</c:when>
-<c:otherwise><div class="col-sm-6"></div></c:otherwise>
-</c:choose>
-<c:choose>
-<c:when test="${not empty host.userMail}">
-<div class="col-sm-6">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Owner Mail</div>
-<div>${host.userMail}</div>
-</div>
-</c:when>
-<c:otherwise><div class="col-sm-6"></div></c:otherwise>
-</c:choose>
+<c:if test="${not empty host.userMail}">
+<div class="field-row"><div class="field-label">Mail On Error</div><div class="field-value"><c:choose><c:when test="${host.mailOnError}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise></c:choose></div></div>
+</c:if>
+<c:if test="${host.check}">
+<div class="field-row"><div class="field-label">Check Frequency</div><div class="field-value"><c:choose><c:when test="${not empty host.formattedCheckFrequency}"><span class="val-num">${host.formattedCheckFrequency}</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
+<div class="field-row"><div class="field-label">Notify Once</div><div class="field-value"><c:choose><c:when test="${host.notifyOnce}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise></c:choose></div></div>
 </c:if>
 <c:if test="${host.type == 'Acquisition'}">
-<div class="col-sm-6">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Acquisition Frequency</div>
-<div>${host.formattedAcquisitionFrequency}</div>
-</div>
-<auth:if basePathKey="transferhistory.basepath" paths="/">
-<auth:then>
-<div class="col-sm-6">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Valid</div>
-<div><c:if test="${host.valid}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if> <c:if
-test="${!host.valid}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if></div>
-</div>
-</auth:then>
-</auth:if>
+<div class="field-row"><div class="field-label">Acquisition Time</div><div class="field-value"><c:choose><c:when test="${not empty host.acquisitionTime}"><span class="date">${host.acquisitionTime}</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
+<div class="field-row"><div class="field-label">Acquisition Frequency</div><div class="field-value"><c:choose><c:when test="${not empty host.formattedAcquisitionFrequency}"><span class="val-num">${host.formattedAcquisitionFrequency}</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
+<auth:if basePathKey="transferhistory.basepath" paths="/"><auth:then>
+<div class="field-row"><div class="field-label">Valid</div><div class="field-value"><c:choose><c:when test="${host.valid}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise></c:choose></div></div>
+</auth:then></auth:if>
+</c:if>
+<c:if test="${not empty host.userMail}">
+<div class="field-row"><div class="field-label">Owner Mail</div><div class="field-value"><span class="val-code">${host.userMail}</span></div></div>
 </c:if>
 </div>
 </div>

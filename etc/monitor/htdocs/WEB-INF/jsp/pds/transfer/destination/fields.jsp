@@ -9,9 +9,10 @@
 
 <style>
 #properties {
-	width: 850px;
+	width: 100%;
+	min-width: 300px;
 	height: 375px;
-	resize: both;
+	resize: vertical;
 	overflow: hidden;
 	border: solid 1px var(--bs-border-color);
 	margin-top: 8px;
@@ -19,9 +20,10 @@
 }
 
 #javascript {
-	width: 850px;
+	width: 100%;
+	min-width: 300px;
 	height: 375px;
-	resize: both;
+	resize: vertical;
 	overflow: hidden;
 	border: solid 1px var(--bs-border-color);
 	margin-top: 8px;
@@ -1273,6 +1275,11 @@
 
 	makeResizable(editorProperties);
 	makeResizable(editorJavascript);
+
+	window.addEventListener('resize', function() {
+		editorProperties.resize(true);
+		editorJavascript.resize(true);
+	});
 
 	function updateTestJsBtn() {
 		var hasError = editorJavascript.getSession().getAnnotations().some(function(a) { return a.type === 'error'; });

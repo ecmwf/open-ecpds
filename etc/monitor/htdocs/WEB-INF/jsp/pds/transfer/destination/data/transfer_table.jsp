@@ -17,19 +17,71 @@
 <%-- Entries-per-page row -- also shows current filter selection and last-refresh time --%>
 <div class="d-flex align-items-center gap-2 my-2 flex-wrap">
   <span class="d-flex align-items-center gap-2 small bg-body-tertiary border rounded px-2 py-1" id="destSelectionInfo"></span>
-  <span class="ms-auto text-muted small">Show</span>
-  <select id="destPageLen" class="form-select form-select-sm" style="width:auto">
-    <option value="10">10</option>
-    <option value="25">25</option>
-    <option value="50">50</option>
-    <option value="100">100</option>
-    <option value="250">250</option>
-  </select>
-  <span class="text-muted small">entries per page</span>
+  <div class="ms-auto d-flex align-items-center gap-2">
+    <label class="d-flex align-items-center gap-1 mb-0 text-muted small">
+      Show
+      <select id="destPageLen" class="form-select form-select-sm" style="width:auto">
+        <option value="10">10</option>
+        <option value="25">25</option>
+        <option value="50">50</option>
+        <option value="100">100</option>
+        <option value="250">250</option>
+      </select>
+      entries per page
+    </label>
+    <div class="vr"></div>
+    <div class="dropdown">
+      <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="colModeBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" data-bs-boundary="viewport" aria-expanded="false">
+        <i class="bi bi-layout-three-columns me-1"></i>Auto
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="colModeBtn">
+        <li><a class="dropdown-item active" href="#" data-col-mode="auto">
+          <i class="bi bi-check me-1"></i><strong>Auto</strong>
+          <small class="d-block text-muted ms-4">Adapts to screen width</small>
+        </a></li>
+        <li><a class="dropdown-item" href="#" data-col-mode="all">
+          <strong>All</strong>
+          <small class="d-block text-muted ms-0">All columns visible</small>
+        </a></li>
+        <li><a class="dropdown-item" href="#" data-col-mode="compact">
+          <strong>Compact</strong>
+          <small class="d-block text-muted ms-0">Hides: Err, Host, Sched., TS, %, Mbits/s, Prior</small>
+        </a></li>
+        <li><a class="dropdown-item" href="#" data-col-mode="small">
+          <strong>Small</strong>
+          <small class="d-block text-muted ms-0">Shows only: Target, Status, Actions</small>
+        </a></li>
+        <li><hr class="dropdown-divider"></li>
+        <li><a class="dropdown-item" href="#" data-col-mode="custom">
+          <strong>Custom</strong>
+          <small class="d-block text-muted ms-0">Choose individual columns</small>
+        </a></li>
+        <li id="customColChkPanel" style="display:none;">
+          <div class="px-3 pb-1 pt-1" style="min-width:170px;font-size:0.82rem;">
+            <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-0"  data-col="0"  checked><label class="form-check-label" for="chk-col-0">Err</label></div>
+            <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-1"  data-col="1"  checked><label class="form-check-label" for="chk-col-1">Host</label></div>
+            <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-2"  data-col="2"  checked><label class="form-check-label" for="chk-col-2">Sched. Time</label></div>
+            <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-3"  data-col="3"  checked><label class="form-check-label" for="chk-col-3">Start Time</label></div>
+            <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-4"  data-col="4"  checked><label class="form-check-label" for="chk-col-4">Finish Time</label></div>
+            <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-5"  data-col="5"  checked disabled><label class="form-check-label text-muted" for="chk-col-5">Target <small>(required)</small></label></div>
+            <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-6"  data-col="6"  checked><label class="form-check-label" for="chk-col-6">TS</label></div>
+            <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-7"  data-col="7"  checked><label class="form-check-label" for="chk-col-7">%</label></div>
+            <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-8"  data-col="8"  checked><label class="form-check-label" for="chk-col-8">Mbits/s</label></div>
+            <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-9"  data-col="9"  checked><label class="form-check-label" for="chk-col-9">Status</label></div>
+            <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-10" data-col="10" checked><label class="form-check-label" for="chk-col-10">Prior</label></div>
+            <c:if test="${not empty ecpdsCanHandleQueue}">
+            <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-11" data-col="11" checked><label class="form-check-label" for="chk-col-11">Actions</label></div>
+            </c:if>
+            <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-12" data-col="12" checked><label class="form-check-label" for="chk-col-12">Select</label></div>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
 </div>
 
 <%-- DataTable: 13 columns (Actions hidden when user lacks queue access) --%>
-<table id="destTransferTable" class="table table-striped table-sm table-hover w-100">
+<table id="destTransferTable" class="table table-striped table-sm table-hover w-100" style="table-layout:fixed">
   <thead>
     <tr>
       <th>Err</th>
@@ -65,9 +117,38 @@
     </a>
     <span id="destTransferTotal" class="text-muted small"></span>
   </span>
+  <button class="btn btn-link btn-sm text-muted p-0" type="button"
+      data-bs-toggle="collapse" data-bs-target="#dtSelectionHelp"
+      aria-expanded="false" title="How to select and apply bulk actions">
+    <i class="bi bi-info-circle"></i>
+  </button>
+</div>
+
+<div class="collapse mt-1" id="dtSelectionHelp">
+  <div class="card card-body py-2 px-3" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd);">
+    <strong class="d-block mb-1">Selecting transfers and applying bulk actions</strong>
+    <p class="mb-1">Use the controls below the table to build a <em>selection basket</em>, then open the basket to act on all selected transfers at once.</p>
+    <ul class="mb-1 ps-3">
+      <li><strong>A / N / R</strong> &mdash; Select All / Unselect All / Reverse selection on the <em>current page</em>.</li>
+      <li><strong><i class="bi bi-star"></i> star icon</strong> on each row &mdash; toggle that individual transfer in or out of the basket.</li>
+      <li><strong><i class="bi bi-arrow-right-circle"></i></strong> &mdash; add <em>all currently filtered transfers</em> (across all pages) to the basket and open it immediately.</li>
+      <li><strong>&rarr; N in selection</strong> link in the toolbar &mdash; open the basket at any time to review and act on selected transfers.</li>
+    </ul>
+    <p class="mb-0">From the basket page you can <strong>Requeue</strong>, <strong>Stop</strong>, <strong>Delete</strong>, change <strong>priority</strong>, or <strong>extend</strong> the expiry of all selected transfers in one operation. The basket is preserved as you change filters or navigate pages.</p>
+  </div>
 </div>
 
 <script>
+var _dftSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search using the following rules:<\/p>' +
+    '<ul class="mb-0">' +
+    '<li><code>target=<\/code>, <code>source=<\/code>, <code>mover=<\/code>, <code>identity=<\/code>, <code>groupby=<\/code>, <code>checksum=<\/code>, <code>priority=<\/code><\/li>' +
+    '<li><code>ts&gt;<\/code> \/ <code>ts&lt;=<\/code> &mdash; transfer size range (numeric); <code>size&gt;=700kb<\/code> &mdash; file size (<code>b<\/code>, <code>kb<\/code>, <code>mb<\/code>, <code>gb<\/code>)<\/li>' +
+    '<li><code>asap=yes|no<\/code>, <code>deleted=yes|no<\/code>, <code>expired=yes|no<\/code>, <code>replicated=yes|no<\/code>, <code>proxy=yes|no<\/code>, <code>event=yes|no<\/code><\/li>' +
+    '<li>Example: <code>asap=yes target=*.dat source=\/tmp\/* ts&gt;10 ts&lt;=99 size&gt;=700kb case=i<\/code><\/li>' +
+    '<li><code>case=i<\/code> for case-insensitive, <code>case=s<\/code> for case-sensitive (default)<\/li>' +
+    '<li>Wildcards: <code>*<\/code> (zero or more chars), <code>?<\/code> (exactly one char)<\/li>' +
+    '<\/ul>' +
+    '<div class="mt-2 text-muted small"><i class="bi bi-lightbulb"><\/i> Tip: Not sure about the syntax? Use the <a href="#" onclick="event.stopPropagation(); toggleQBPanel(\'dftQueryBuilder\',\'btnDftQB\'); document.getElementById(\'btnDftQB\').scrollIntoView({behavior:\'smooth\',block:\'center\'}); return false;" class="link-secondary"><i class="bi bi-sliders2"><\/i> Filter<\/a> above to build a valid search expression.<\/div>';
 (function () {
     var STORAGE_KEY = 'destTransferPageLen';
     var savedLen = parseInt(localStorage.getItem(STORAGE_KEY), 10) || 25;
@@ -79,9 +160,14 @@
 
     var canQueue = document.getElementById('dt-can-queue').value === 'true';
 
+    // Replace DataTables' native alert() error popup with a no-op;
+    // query errors are already shown inline via #destTableError in drawCallback.
+    $.fn.dataTable.ext.errMode = function () {};
+
     var table = $('#destTransferTable').DataTable({
         serverSide: true,
         processing: true,
+        autoWidth: false,
         pageLength: savedLen,
         ajax: {
             url: '/do/transfer/destination?json=dataList',
@@ -97,21 +183,22 @@
             }
         },
         columns: [
-            { data: 0 },
-            { data: 1 },
-            { data: 2 },
-            { data: 3 },
-            { data: 4 },
+            { data: 0, width: '30px' },
+            { data: 1, width: '90px' },
+            { data: 2, width: '110px' },
+            { data: 3, width: '110px' },
+            { data: 4, width: '110px' },
             { data: 5 },
-            { data: 6 },
-            { data: 7 },
-            { data: 8 },
-            { data: 9 },
-            { data: 10 },
-            { data: 11 },
-            { data: 12 }
+            { data: 6, width: '70px' },
+            { data: 7, width: '70px' },
+            { data: 8, width: '70px' },
+            { data: 9, width: '90px' },
+            { data: 10, width: '50px' },
+            { data: 11, width: '110px' },
+            { data: 12, width: '70px' }
         ],
         columnDefs: [
+            { targets: 5, className: 'col-target' },
             { targets: 11, orderable: false, visible: canQueue },
             { targets: 12, orderable: false }
         ],
@@ -135,11 +222,9 @@
             // Show/hide query errors
             var err = document.getElementById('destTableError');
             if (json && json.error) {
+                function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+                err.innerHTML = '<strong>Error in your query:<\/strong> ' + esc(json.error) + _dftSearchHelp;
                 err.style.display = '';
-                var hint = 'You can conduct an extensive search using the target, source, ts, priority, '
-                    + 'groupby, identity, checksum, size, replicated, asap, deleted, expired, proxy, mover and event rules.<br>'
-                    + 'For instance: <code>asap=yes target=*.dat source=/tmp/* ts&gt;10 ts&lt;=99 size&gt;=700kb case=i</code>';
-                err.innerHTML = '<strong>Query error:</strong> ' + json.error + '<br><small class="text-muted">' + hint + '</small>';
             } else {
                 err.style.display = 'none';
                 err.innerHTML = '';
@@ -187,11 +272,167 @@
             if (hasStatus)parts.push(statusLabel);
             if (hasDate)  parts.push(document.getElementById('dt-date').value || '*');
             var selectionText = parts.join('/');
+            var fileCount = json && json.recordsFiltered != null ? json.recordsFiltered
+                          : (json && json.recordsTotal != null ? json.recordsTotal : null);
+            var selCount = json && json.totalSelected != null ? json.totalSelected
+                         : (window._countSelected ? window._countSelected() : 0);
+            // Anchor the delta-tracking base to the fresh server total
+            _baseTotal = selCount;
+            window._selectedDelta = 0;
             document.getElementById('destSelectionInfo').innerHTML =
                 '<span class="text-secondary">Selection:</span>'
                 + '&ensp;<strong>' + (selectionText || 'All') + '</strong>'
                 + '&ensp;<span class="vr"></span>&ensp;'
-                + '<i class="bi bi-arrow-clockwise text-secondary"></i>&thinsp;<strong>' + ts + '</strong>';
+                + '<i class="bi bi-arrow-clockwise text-secondary"></i>&thinsp;<strong>' + ts + '</strong>'
+                + (fileCount !== null
+                    ? '&ensp;<span class="vr"></span>&ensp;<span class="text-secondary">Files:</span>&ensp;<strong>' + Number(fileCount).toLocaleString() + '</strong>'
+                    : '')
+                + '&ensp;<span class="vr"></span>&ensp;<span class="text-secondary"><i class="bi bi-basket2-fill"></i>&thinsp;Basket:</span>&ensp;'
+                + '<a href="javascript:transferChange(\'selectFiltered\')" class="text-decoration-none fw-bold" title="Open basket to act on selected transfers"><span id="destSelectedSpan">' + selCount.toLocaleString() + '</span></a>';
+        }
+    });
+
+    var CUSTOM_COL_KEY  = 'destTransferCustomCols';
+    var COL_MODE_KEY    = 'destTransferColMode';
+    var _customCols = (function() {
+        try {
+            var s = localStorage.getItem(CUSTOM_COL_KEY);
+            if (s) return JSON.parse(s);
+        } catch(e) {}
+        return [0,1,2,3,4,5,6,7,8,9,10<c:if test="${not empty ecpdsCanHandleQueue}">,11</c:if>,12]; // all visible by default
+    })();
+
+    function _applyCustomCols() {
+        var total = _destTable.columns().count();
+        for (var i = 0; i < total; i++) {
+            var visible = _customCols.indexOf(i) !== -1;
+            if (i === 5) visible = true;  // Target is mandatory
+            if (i === 11 && !canQueue) visible = false;
+            _destTable.column(i).visible(visible, false);
+        }
+        _destTable.columns.adjust();
+    }
+
+    function _syncCustomChkBoxes() {
+        document.querySelectorAll('.custom-col-chk').forEach(function(chk) {
+            chk.checked = _customCols.indexOf(+chk.dataset.col) !== -1;
+        });
+    }
+
+    document.querySelectorAll('.custom-col-chk').forEach(function(chk) {
+        chk.addEventListener('change', function() {
+            var col = +this.dataset.col;
+            var idx = _customCols.indexOf(col);
+            if (this.checked && idx === -1) _customCols.push(col);
+            else if (!this.checked && idx !== -1) _customCols.splice(idx, 1);
+            try { localStorage.setItem(CUSTOM_COL_KEY, JSON.stringify(_customCols)); } catch(e) {}
+            if (_colMode === 'custom') _applyCustomCols();
+        });
+    });
+
+    var _colMode = (function() {
+        try { return localStorage.getItem(COL_MODE_KEY) || 'auto'; } catch(e) { return 'auto'; }
+    })();
+    // Columns hidden at medium width (<992px) in auto mode: Err(0), Host(1), Scheduled(2), TS(6), %(7), Mbits/s(8), Prior(10)
+    var _MED_COLS = [0, 1, 2, 6, 7, 8, 10];
+    // Additional columns hidden at small width (<768px): Start(3), Finish(4)
+    var _SM_COLS = [3, 4];
+    // Compact: hide Err + all MED cols
+    var _COMPACT_HIDE = [0].concat(_MED_COLS.filter(function(c){return c!==0;}));
+    // Small: hide everything in Compact + SM cols
+    var _SMALL_HIDE = _COMPACT_HIDE.concat(_SM_COLS);
+
+    var _destTable = table;
+
+    function _showCols(hideCols) {
+        var total = _destTable.columns().count();
+        for (var i = 0; i < total; i++) {
+            var visible = hideCols.indexOf(i) === -1;
+            if (i === 11 && !canQueue) {
+                visible = false;
+            }
+            _destTable.column(i).visible(visible, false);
+        }
+        _destTable.columns.adjust();
+    }
+
+    function _applyResponsiveCols() {
+        if (_colMode !== 'auto') return;
+        var w = window.innerWidth;
+        if (w < 768) {
+            _showCols(_MED_COLS.concat(_SM_COLS));
+        } else if (w < 992) {
+            _showCols(_MED_COLS);
+        } else {
+            _showCols([]);
+        }
+    }
+
+    $(window).on('resize', function(){ _applyResponsiveCols(); });
+
+    // Restore persisted mode on load
+    (function() {
+        var mode = _colMode;
+        var label = mode.charAt(0).toUpperCase() + mode.slice(1);
+        if (mode !== 'auto') {
+            $('#colModeBtn').html('<i class="bi bi-layout-three-columns me-1"></i>' + label)
+                .removeClass('btn-outline-secondary').addClass('btn-primary');
+        }
+        document.getElementById('customColChkPanel').style.display = (mode === 'custom') ? '' : 'none';
+        $('#colModeBtn').closest('.dropdown').find('.dropdown-item').each(function(){
+            $(this).toggleClass('active', $(this).data('col-mode') === mode);
+            $(this).find('i.bi-check').remove();
+            if ($(this).data('col-mode') === mode) $(this).prepend('<i class="bi bi-check me-1"></i>');
+        });
+        if (mode === 'all') {
+            _showCols([]);
+        } else if (mode === 'compact') {
+            _showCols(_COMPACT_HIDE);
+        } else if (mode === 'small') {
+            _showCols(_SMALL_HIDE);
+        } else if (mode === 'custom') {
+            _syncCustomChkBoxes();
+            _applyCustomCols();
+        } else {
+            _applyResponsiveCols();
+        }
+    })();
+
+    $('#colModeBtn').closest('.dropdown').find('.dropdown-item').on('click', function(e){
+        e.preventDefault();
+        var mode = $(this).data('col-mode');
+        _colMode = mode;
+        try { localStorage.setItem(COL_MODE_KEY, mode); } catch(e) {}
+        // Update button label and active item
+        var label = mode.charAt(0).toUpperCase() + mode.slice(1);
+        $('#colModeBtn').html('<i class="bi bi-layout-three-columns me-1"></i>' + label);
+        if (mode === 'auto') {
+            $('#colModeBtn').removeClass('btn-primary').addClass('btn-outline-secondary');
+        } else {
+            $('#colModeBtn').removeClass('btn-outline-secondary').addClass('btn-primary');
+        }
+        document.getElementById('customColChkPanel').style.display = (mode === 'custom') ? '' : 'none';
+        $(this).closest('.dropdown-menu').find('.dropdown-item').each(function(){
+            $(this).toggleClass('active', $(this).data('col-mode') === mode);
+            if (mode === 'auto') {
+                $(this).find('i.bi-check').remove();
+                if ($(this).data('col-mode') === 'auto') $(this).prepend('<i class="bi bi-check me-1"></i>');
+            } else {
+                $(this).find('i.bi-check').remove();
+                if ($(this).data('col-mode') === mode) $(this).prepend('<i class="bi bi-check me-1"></i>');
+            }
+        });
+        if (mode === 'auto') {
+            _applyResponsiveCols();
+        } else if (mode === 'all') {
+            _showCols([]);
+        } else if (mode === 'compact') {
+            _showCols(_COMPACT_HIDE);
+        } else if (mode === 'small') {
+            _showCols(_SMALL_HIDE);
+        } else if (mode === 'custom') {
+            _syncCustomChkBoxes();
+            _applyCustomCols();
         }
     });
 
@@ -204,5 +445,20 @@
 
     // Expose table globally so checkAll() in javascript.jsp can access it
     window._destTransferTable = table;
+
+    // Count and refresh the "Basket" segment in destSelectionInfo without a full redraw.
+    // _baseTotal = last server-confirmed total (json.totalSelected, covers all pages).
+    // window._selectedDelta = incremental changes made by star-clicks since last draw.
+    var _baseTotal = 0;
+    window._selectedDelta = 0;
+    window._countSelected = function () {
+        var n = 0;
+        for (var id in selectedTransfers) { if (selectedTransfers[id]) n++; }
+        return n;
+    };
+    window._refreshSelectedCount = function () {
+        var span = document.getElementById('destSelectedSpan');
+        if (span) span.textContent = Math.max(0, _baseTotal + (window._selectedDelta || 0)).toLocaleString();
+    };
 })();
 </script>

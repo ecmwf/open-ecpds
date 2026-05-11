@@ -30,8 +30,8 @@ Data File: <strong><c:out value="${datafile.id}"/></strong>
 <div class="text-muted small fw-semibold text-uppercase" style="font-size:0.7rem;letter-spacing:0.04em">Delete Original</div>
 <div class="fw-bold fs-6">
 <c:choose>
-<c:when test="${datafile.deleteOriginal}"><i class="bi bi-check-circle-fill text-success"></i></c:when>
-<c:otherwise><i class="bi bi-x-circle-fill text-secondary"></i></c:otherwise>
+<c:when test="${datafile.deleteOriginal}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when>
+<c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise>
 </c:choose>
 </div>
 </div>
@@ -41,8 +41,8 @@ Data File: <strong><c:out value="${datafile.id}"/></strong>
 <div class="text-muted small fw-semibold text-uppercase" style="font-size:0.7rem;letter-spacing:0.04em">Deleted</div>
 <div class="fw-bold fs-6">
 <c:choose>
-<c:when test="${datafile.deleted}"><i class="bi bi-check-circle-fill text-warning"></i></c:when>
-<c:otherwise><i class="bi bi-x-circle-fill text-secondary"></i></c:otherwise>
+<c:when test="${datafile.deleted}"><span class="badge rounded-pill border fw-normal bg-danger-subtle text-danger-emphasis"><i class="bi bi-x-circle-fill me-1"></i>Yes</span></c:when>
+<c:otherwise><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>No</span></c:otherwise>
 </c:choose>
 </div>
 </div>
@@ -52,8 +52,8 @@ Data File: <strong><c:out value="${datafile.id}"/></strong>
 <div class="text-muted small fw-semibold text-uppercase" style="font-size:0.7rem;letter-spacing:0.04em">Removed</div>
 <div class="fw-bold fs-6">
 <c:choose>
-<c:when test="${datafile.removed}"><i class="bi bi-check-circle-fill text-danger"></i></c:when>
-<c:otherwise><i class="bi bi-x-circle-fill text-secondary"></i></c:otherwise>
+<c:when test="${datafile.removed}"><span class="badge rounded-pill border fw-normal bg-danger-subtle text-danger-emphasis"><i class="bi bi-x-circle-fill me-1"></i>Yes</span></c:when>
+<c:otherwise><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>No</span></c:otherwise>
 </c:choose>
 </div>
 </div>
@@ -66,61 +66,15 @@ Data File: <strong><c:out value="${datafile.id}"/></strong>
 <i class="bi bi-file-earmark-code text-primary"></i>
 <span class="fw-semibold">File Info</span>
 </div>
-<div class="card-body">
-<div class="row g-3">
-<div class="col-sm-1">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">ID</div>
-<div>${datafile.id}</div>
-</div>
-<div class="col-sm-11">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Source</div>
-<div class="text-break font-monospace" style="font-size:0.85rem">${datafile.formattedOriginal}</div>
-</div>
-<div class="col-sm-4">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Checksum</div>
-<div class="font-monospace text-break" style="font-size:0.85rem">
-<c:choose>
-<c:when test="${datafile.checksum == null}"><span class="text-muted">[n/a]</span></c:when>
-<c:otherwise>${datafile.checksum}</c:otherwise>
-</c:choose>
-</div>
-</div>
-<div class="col-sm-8">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Storage Path</div>
-<div class="text-break font-monospace" style="font-size:0.85rem">
-<c:choose>
-<c:when test="${datafile.storagePath == null}"><span class="text-muted">[n/a]</span></c:when>
-<c:otherwise>${datafile.storagePath}</c:otherwise>
-</c:choose>
-</div>
-</div>
-<div class="col-sm-4">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Group By</div>
-<div>
-<c:choose>
-<c:when test="${datafile.groupBy == null}"><span class="text-muted">[n/a]</span></c:when>
-<c:otherwise>${datafile.groupBy}</c:otherwise>
-</c:choose>
-</div>
-</div>
-<div class="col-sm-4">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Additional Info</div>
-<div>
-<c:choose>
-<c:when test="${datafile.formattedCaller == null}"><span class="text-muted">[n/a]</span></c:when>
-<c:otherwise>${datafile.formattedCaller}</c:otherwise>
-</c:choose>
-</div>
-</div>
-<div class="col-sm-4">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Index</div>
-<div>
-<c:choose>
-<c:when test="${datafile.index == 0}"><span class="text-muted">[n/a]</span></c:when>
-<c:otherwise>${datafile.index} file(s)</c:otherwise>
-</c:choose>
-</div>
-</div>
+<div class="card-body py-0">
+<div class="field-grid">
+<div class="field-row"><div class="field-label">ID</div><div class="field-value"><span class="val-code">${datafile.id}</span></div></div>
+<div class="field-row"><div class="field-label">Source</div><div class="field-value"><span class="val-code text-break d-inline-block">${datafile.formattedOriginal}</span></div></div>
+<div class="field-row"><div class="field-label">Checksum</div><div class="field-value"><c:choose><c:when test="${not empty datafile.checksum}"><span class="val-code text-break d-inline-block">${datafile.checksum}</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
+<div class="field-row"><div class="field-label">Storage Path</div><div class="field-value"><c:choose><c:when test="${not empty datafile.storagePath}"><span class="val-code text-break d-inline-block">${datafile.storagePath}</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
+<div class="field-row"><div class="field-label">Group By</div><div class="field-value"><c:choose><c:when test="${not empty datafile.groupBy}"><span class="val-code">${datafile.groupBy}</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
+<div class="field-row"><div class="field-label">Additional Info</div><div class="field-value"><c:choose><c:when test="${not empty datafile.formattedCaller}"><span class="val-code">${datafile.formattedCaller}</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
+<div class="field-row"><div class="field-label">Index</div><div class="field-value"><c:choose><c:when test="${datafile.index != 0}"><span class="val-num">${datafile.index} file(s)</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
 </div>
 </div>
 </div>
@@ -131,36 +85,15 @@ Data File: <strong><c:out value="${datafile.id}"/></strong>
 <i class="bi bi-clock text-primary"></i>
 <span class="fw-semibold">Timing</span>
 </div>
-<div class="card-body">
-<div class="row g-3">
-<div class="col-sm-4">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Product Date</div>
-<div><content:content name="datafile.productTime" dateFormatKey="date.format.long.iso" ignoreNull="true"/>&nbsp;</div>
-</div>
-<div class="col-sm-4">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Earliest</div>
-<div><content:content name="datafile.earliestTime" dateFormatKey="date.format.long.iso" ignoreNull="true" defaultValue="-"/>&nbsp;</div>
-</div>
-<div class="col-sm-4">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Timestep</div>
-<div>${datafile.timeStep}</div>
-</div>
-<div class="col-sm-4">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Generation Date</div>
-<div><content:content name="datafile.productGenerationTime" dateFormatKey="date.format.long.iso" ignoreNull="true"/>&nbsp;</div>
-</div>
-<div class="col-sm-4">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Latest</div>
-<div><content:content name="datafile.latestTime" dateFormatKey="date.format.long.iso" ignoreNull="true" defaultValue="-"/>&nbsp;</div>
-</div>
-<div class="col-sm-4">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Arrival Date</div>
-<div><content:content name="datafile.arrivedTime" dateFormatKey="date.format.long.iso" ignoreNull="true"/>&nbsp;</div>
-</div>
-<div class="col-sm-4">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Predicted</div>
-<div><content:content name="datafile.predictedTime" dateFormatKey="date.format.long.iso" ignoreNull="true" defaultValue="-"/>&nbsp;</div>
-</div>
+<div class="card-body py-0">
+<div class="field-grid">
+<div class="field-row"><div class="field-label">Product Date</div><div class="field-value"><c:choose><c:when test="${not empty datafile.productTime}"><content:content name="datafile.productTime" dateFormatKey="date.format.long.iso" ignoreNull="true"/></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
+<div class="field-row"><div class="field-label">Earliest</div><div class="field-value"><c:choose><c:when test="${not empty datafile.earliestTime}"><content:content name="datafile.earliestTime" dateFormatKey="date.format.long.iso" ignoreNull="true" defaultValue="-"/></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
+<div class="field-row"><div class="field-label">Timestep</div><div class="field-value"><span class="val-num">${datafile.timeStep}</span></div></div>
+<div class="field-row"><div class="field-label">Generation Date</div><div class="field-value"><c:choose><c:when test="${not empty datafile.productGenerationTime}"><content:content name="datafile.productGenerationTime" dateFormatKey="date.format.long.iso" ignoreNull="true"/></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
+<div class="field-row"><div class="field-label">Latest</div><div class="field-value"><c:choose><c:when test="${not empty datafile.latestTime}"><content:content name="datafile.latestTime" dateFormatKey="date.format.long.iso" ignoreNull="true" defaultValue="-"/></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
+<div class="field-row"><div class="field-label">Arrival Date</div><div class="field-value"><c:choose><c:when test="${not empty datafile.arrivedTime}"><content:content name="datafile.arrivedTime" dateFormatKey="date.format.long.iso" ignoreNull="true"/></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
+<div class="field-row"><div class="field-label">Predicted</div><div class="field-value"><c:choose><c:when test="${not empty datafile.predictedTime}"><content:content name="datafile.predictedTime" dateFormatKey="date.format.long.iso" ignoreNull="true" defaultValue="-"/></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
 </div>
 </div>
 </div>
@@ -171,67 +104,15 @@ Data File: <strong><c:out value="${datafile.id}"/></strong>
 <i class="bi bi-cloud-download text-primary"></i>
 <span class="fw-semibold">Acquisition</span>
 </div>
-<div class="card-body">
-<div class="row g-3">
+<div class="card-body py-0">
+<div class="field-grid">
 <c:if test="${datafile.groupBy == null}">
-<div class="col-sm-6">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Pushed To</div>
-<div>
-<c:choose>
-<c:when test="${datafile.getHost == null}">
-<span class="text-danger"><i class="bi bi-x-circle me-1"></i>not-pushed</span>
-</c:when>
-<c:otherwise>
-${datafile.getHost}
-<span class="text-muted small">(in ${datafile.getDuration} + ${datafile.getProtocolOverhead} overhead)</span>
-</c:otherwise>
-</c:choose>
-</div>
-</div>
-<div class="col-sm-6">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Retrieved From</div>
-<div>
-<c:choose>
-<c:when test="${datafile.getHost == null}">
-<span class="text-danger"><i class="bi bi-x-circle me-1"></i>not-retrieved</span>
-</c:when>
-<c:otherwise>
-${datafile.getHost}
-<span class="text-muted small">(in ${datafile.getDuration} + ${datafile.getProtocolOverhead} overhead)</span>
-</c:otherwise>
-</c:choose>
-</div>
-</div>
+<div class="field-row"><div class="field-label">Pushed To</div><div class="field-value"><c:choose><c:when test="${datafile.getHost == null}"><span class="text-danger"><i class="bi bi-x-circle me-1"></i>not-pushed</span></c:when><c:otherwise><span class="val-code">${datafile.getHost}</span> <span class="text-muted small">(in <span class="val-num">${datafile.getDuration}</span> + <span class="val-num">${datafile.getProtocolOverhead}</span> overhead)</span></c:otherwise></c:choose></div></div>
+<div class="field-row"><div class="field-label">Retrieved From</div><div class="field-value"><c:choose><c:when test="${datafile.getHost == null}"><span class="text-danger"><i class="bi bi-x-circle me-1"></i>not-retrieved</span></c:when><c:otherwise><span class="val-code">${datafile.getHost}</span> <span class="text-muted small">(in <span class="val-num">${datafile.getDuration}</span> + <span class="val-num">${datafile.getProtocolOverhead}</span> overhead)</span></c:otherwise></c:choose></div></div>
 </c:if>
-<div class="col-sm-4">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Remote Host</div>
-<div>
-<c:choose>
-<c:when test="${datafile.remoteHost == null}">
-<span class="text-danger"><i class="bi bi-question-circle me-1"></i>unknown</span>
-</c:when>
-<c:otherwise>${datafile.remoteHost}</c:otherwise>
-</c:choose>
-</div>
-</div>
-<div class="col-sm-4">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Submitted From</div>
-<div>
-<c:choose>
-<c:when test="${datafile.ecauthHost == null}"><span class="text-muted">[n/a]</span></c:when>
-<c:otherwise>${datafile.ecauthHost}</c:otherwise>
-</c:choose>
-</div>
-</div>
-<div class="col-sm-4">
-<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Submitted By</div>
-<div>
-<c:choose>
-<c:when test="${datafile.ecauthUser == null}"><span class="text-muted">[n/a]</span></c:when>
-<c:otherwise>${datafile.ecauthUser}</c:otherwise>
-</c:choose>
-</div>
-</div>
+<div class="field-row"><div class="field-label">Remote Host</div><div class="field-value"><c:choose><c:when test="${not empty datafile.remoteHost}"><span class="val-code">${datafile.remoteHost}</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
+<div class="field-row"><div class="field-label">Submitted From</div><div class="field-value"><c:choose><c:when test="${not empty datafile.ecauthHost}"><span class="val-code">${datafile.ecauthHost}</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
+<div class="field-row"><div class="field-label">Submitted By</div><div class="field-value"><c:choose><c:when test="${not empty datafile.ecauthUser}"><span class="val-code">${datafile.ecauthUser}</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
 </div>
 </div>
 </div>

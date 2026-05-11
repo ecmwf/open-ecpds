@@ -56,21 +56,11 @@
 </auth:then>
 </auth:if>
 </div>
-<div class="card-body">
-<div class="row g-2 align-items-center">
-<div class="col-sm-4"><span class="text-muted small fw-semibold text-uppercase">Name</span></div>
-<div class="col-sm-8">${policy.id}</div>
-</div>
-<div class="row g-2 align-items-center mt-1">
-<div class="col-sm-4"><span class="text-muted small fw-semibold text-uppercase">Comment</span></div>
-<div class="col-sm-8">${policy.comment}</div>
-</div>
-<div class="row g-2 align-items-center mt-1">
-<div class="col-sm-4"><span class="text-muted small fw-semibold text-uppercase">Enabled</span></div>
-<div class="col-sm-8">
-<c:if test="${policy.active}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if>
-<c:if test="${!policy.active}"><i class="bi bi-x-circle-fill text-secondary" title="No"></i></c:if>
-</div>
+<div class="card-body py-0">
+<div class="field-grid">
+<div class="field-row"><div class="field-label">Name</div><div class="field-value"><span class="val-code">${policy.id}</span></div></div>
+<div class="field-row"><div class="field-label">Comment</div><div class="field-value"><c:choose><c:when test="${not empty policy.comment}">${policy.comment}</c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
+<div class="field-row"><div class="field-label">Enabled</div><div class="field-value"><c:choose><c:when test="${policy.active}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise></c:choose></div></div>
 </div>
 </div>
 </div>

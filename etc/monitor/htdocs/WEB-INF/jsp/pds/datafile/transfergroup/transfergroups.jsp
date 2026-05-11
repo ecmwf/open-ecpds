@@ -45,32 +45,32 @@
                     </td>
                     <td class="text-center">
                         <c:choose>
-                            <c:when test="${row.active}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:when>
-                            <c:otherwise><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:otherwise>
+                            <c:when test="${row.active}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when>
+                            <c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise>
                         </c:choose>
                     </td>
                     <td class="text-center">
                         <c:choose>
-                            <c:when test="${row.replicate}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:when>
-                            <c:otherwise><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:otherwise>
+                            <c:when test="${row.replicate}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when>
+                            <c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise>
                         </c:choose>
                     </td>
                     <td class="text-center">
                         <c:choose>
-                            <c:when test="${row.filter}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:when>
-                            <c:otherwise><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:otherwise>
+                            <c:when test="${row.filter}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when>
+                            <c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise>
                         </c:choose>
                     </td>
                     <td class="text-center">
                         <c:choose>
-                            <c:when test="${row.backup}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:when>
-                            <c:otherwise><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:otherwise>
+                            <c:when test="${row.backup}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when>
+                            <c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise>
                         </c:choose>
                     </td>
                     <td class="small">
                         <c:set var="_servers" value="${row.transferServers}"/>
                         <c:choose>
-                            <c:when test="${empty _servers}"><span class="text-muted">none</span></c:when>
+                            <c:when test="${empty _servers}"><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:when>
                             <c:otherwise>
                                 <c:forEach var="srv" items="${_servers}">
                                     <a href="/do/datafile/transferserver/${srv.name}"

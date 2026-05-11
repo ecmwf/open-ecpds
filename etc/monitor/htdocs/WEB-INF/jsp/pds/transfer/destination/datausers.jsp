@@ -30,8 +30,10 @@
             <td>${user.comment}</td>
             <td>${user.country.name}</td>
             <td class="text-center" data-order="${user.active ? 1 : 0}">
-                <c:if test="${user.active}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if>
-                <c:if test="${!user.active}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if>
+                <c:choose>
+                    <c:when test="${user.active}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when>
+                    <c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise>
+                </c:choose>
             </td>
         </tr>
         </c:forEach>

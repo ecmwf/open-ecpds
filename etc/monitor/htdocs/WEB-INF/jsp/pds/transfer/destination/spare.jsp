@@ -65,7 +65,7 @@
 
     <auth:if basePathKey="transferhistory.basepath" paths="/">
         <auth:then>
-            <tr><td><a href='<bean:message key="transferhistory.basepath"/>?destinationName=${destination.id}&date=${date}&fromDestination=true'><i class="bi bi-clock-history sidebar-icon"></i> Transfer History</a></td></tr>
+            <tr><td><a href='<bean:message key="transferhistory.basepath"/>?destinationName=${destination.id}&date=${date}&fromDestination=true'><i class="bi bi-archive sidebar-icon"></i> Transfer History</a></td></tr>
         </auth:then>
     </auth:if>
 

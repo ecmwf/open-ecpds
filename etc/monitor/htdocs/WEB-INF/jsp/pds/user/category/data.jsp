@@ -32,16 +32,10 @@
 			</auth:then>
 			</auth:if>
 		</div>
-		<div class="card-body">
-			<div class="d-flex flex-column gap-2">
-				<div class="row g-2 align-items-center">
-					<div class="col-sm-4"><span class="text-muted small fw-semibold text-uppercase">Name</span></div>
-					<div class="col-sm-8"><c:out value="${category.name}" /></div>
-				</div>
-				<div class="row g-2 align-items-center">
-					<div class="col-sm-4"><span class="text-muted small fw-semibold text-uppercase">Description</span></div>
-					<div class="col-sm-8"><c:out value="${category.description}" /></div>
-				</div>
+		<div class="card-body py-0">
+			<div class="field-grid">
+				<div class="field-row"><div class="field-label">Name</div><div class="field-value"><span class="val-code"><c:out value="${category.name}" /></span></div></div>
+				<div class="field-row"><div class="field-label">Description</div><div class="field-value"><c:out value="${category.description}" /></div></div>
 			</div>
 		</div>
 	</div>

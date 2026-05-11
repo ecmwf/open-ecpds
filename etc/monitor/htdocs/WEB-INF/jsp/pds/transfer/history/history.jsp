@@ -32,8 +32,20 @@
 </c:if>
 
 <div class="mt-3">
+<div class="d-flex justify-content-end mb-2">
+  <label class="d-flex align-items-center gap-1 mb-0 text-muted small">
+    Show
+    <select id="histPageLen" class="form-select form-select-sm" style="width:auto">
+      <option value="10">10</option>
+      <option value="25" selected>25</option>
+      <option value="50">50</option>
+      <option value="100">100</option>
+    </select>
+    entries per page
+  </label>
+</div>
 <table id="transferHistoryTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
-    <thead class="table-light">
+    <thead>
         <tr>
             <th>Error</th>
             <th>Event Time</th>
@@ -51,7 +63,7 @@ $(function() {
     var selectedDestinationName = '<c:out value="${selectedDestination.name}" />';
     var selectedDate = '${selectedDate}';
     var selectedMode = '${param['mode']}';
-    $('#transferHistoryTable').DataTable({
+    var dt = $('#transferHistoryTable').DataTable({
         serverSide: true,
         processing: true,
         ajax: {
@@ -78,12 +90,14 @@ $(function() {
         createdRow: function(row, data) {
             $('td', row).each(function(i) { $(this).html(data[i]); });
         },
-        dom: '<"d-flex align-items-start justify-content-between mt-2"i p>t<"d-flex align-items-start justify-content-between mt-2"i p>',
+        dom: 't<"d-flex align-items-start mt-2"i<"ms-auto"p>>',
         language: {
-            info: 'Showing _START_-_END_ of _TOTAL_',
-            processing: 'Loading...',
+            processing: '<span class="spinner-border spinner-border-sm me-1"></span> Loading&hellip;',
             emptyTable: 'No transfer history available for the selected criteria.'
         }
+    });
+    $('#histPageLen').on('change', function() {
+        dt.page.len(+this.value).draw();
     });
 });
 </script>

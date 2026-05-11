@@ -28,6 +28,7 @@ package ecmwf.ecpds.master.plugin.http.controller.transfer.host;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.TreeSet;
 
 import javax.servlet.http.HttpServletRequest;
@@ -40,6 +41,7 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
 import ecmwf.common.technical.StreamManager;
+import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.ecpds.master.plugin.http.dao.Util;
 import ecmwf.ecpds.master.plugin.http.home.datafile.TransferGroupHome;
@@ -74,47 +76,67 @@ public class GetHostAction extends PDSAction {
             throws ECMWFException, ClassCastException {
         final var parameters = ECMWFActionForm.getPathParameters(mapping, request);
         if (parameters.isEmpty()) {
-            final var label = Util.getValue(request, "label", "All");
-            final var filter = Util.getValue(request, "hostFilter", "All");
-            final var network = Util.getValue(request, "network", "All");
-            final var hostType = Util.getValue(request, "hostType", "All");
-            final var hostSearch = Util.getValue(request, "hostSearch", "");
-            // Initialize the cursor for the database search
-            final var cursor = Util.getDataBaseCursor("host", 25, 0, true, request);
+            // Check if the user has full access (operator/admin) or restricted access (monitor)
+            final var fullAccess = user.hasAccess(getResource(request, "transferhistory.basepath"));
+            request.setAttribute("hostFullAccess", fullAccess);
             Collection<Host> hosts;
-            try {
-                hosts = HostHome.findByCriteria(label, filter, network, hostType, hostSearch, cursor);
-                request.setAttribute("getHostsError", "");
-            } catch (final TransferException e) {
-                request.setAttribute("getHostsError", e.getMessage());
-                hosts = new ArrayList<>(0);
-            }
-            request.setAttribute("typeOptions", getTypeOptions());
-            request.setAttribute("networkOptions", getNetworkOptions());
-            request.setAttribute("labelOptions", getLabelOptions());
-            request.setAttribute("filterOptions", getFilterOptions());
-            request.setAttribute("hostsSize", Util.getCollectionSizeFrom(hosts));
-            request.setAttribute("hosts", hosts);
-            request.setAttribute("hasHostSearch", hostSearch != null && !hostSearch.isBlank());
-            try {
-                request.setAttribute("transferMethodOptions", TransferMethodHome.findAll());
-            } catch (final Exception e) {
-                log.warn("Could not load transfer methods for autocomplete", e);
-            }
-            try {
-                final var nickNames = new TreeSet<String>();
-                final var hostNames = new TreeSet<String>();
-                for (final Host h : HostHome.findAll()) {
-                    nickNames.add(h.getNickName());
-                    if (h.getHost() != null && !h.getHost().isBlank()) {
-                        hostNames.add(h.getHost());
-                    }
+            if (fullAccess) {
+                final var label = Util.getValue(request, "label", "All");
+                final var filter = Util.getValue(request, "hostFilter", "All");
+                final var network = Util.getValue(request, "network", "All");
+                final var hostType = Util.getValue(request, "hostType", "All");
+                final var hostSearch = Util.getValue(request, "hostSearch", "");
+                final var cursor = Util.getDataBaseCursor("host", 25, 0, true, request);
+                try {
+                    hosts = HostHome.findByCriteria(label, filter, network, hostType, hostSearch, cursor);
+                    request.setAttribute("getHostsError", "");
+                } catch (final TransferException e) {
+                    request.setAttribute("getHostsError", e.getMessage());
+                    hosts = new ArrayList<>(0);
                 }
-                request.setAttribute("hostNickNames", nickNames);
-                request.setAttribute("hostHostNames", hostNames);
-            } catch (final Exception e) {
-                log.warn("Could not load host names for autocomplete", e);
+                request.setAttribute("typeOptions", getTypeOptions());
+                request.setAttribute("networkOptions", getNetworkOptions());
+                request.setAttribute("labelOptions", getLabelOptions());
+                request.setAttribute("filterOptions", getFilterOptions());
+                request.setAttribute("hasHostSearch", hostSearch != null && !hostSearch.isBlank());
+                try {
+                    request.setAttribute("transferMethodOptions", TransferMethodHome.findAll());
+                } catch (final Exception e) {
+                    log.warn("Could not load transfer methods for autocomplete", e);
+                }
+                try {
+                    final var nickNames = new TreeSet<String>();
+                    final var hostNames = new TreeSet<String>();
+                    for (final Host h : HostHome.findAll()) {
+                        nickNames.add(h.getNickName());
+                        if (h.getHost() != null && !h.getHost().isBlank()) {
+                            hostNames.add(h.getHost());
+                        }
+                    }
+                    request.setAttribute("hostNickNames", nickNames);
+                    request.setAttribute("hostHostNames", hostNames);
+                } catch (final Exception e) {
+                    log.warn("Could not load host names for autocomplete", e);
+                }
+            } else {
+                // Restricted user: collect only authorised hosts from DB
+                final var hostSet = new LinkedHashSet<Host>();
+                try {
+                    for (final String hostName : MasterManager.getDB().getAuthorisedHosts(user.getId())) {
+                        try {
+                            hostSet.add(HostHome.findByPrimaryKey(hostName));
+                        } catch (final Exception e) {
+                            log.warn("Could not load host " + hostName, e);
+                        }
+                    }
+                    request.setAttribute("getHostsError", "");
+                } catch (final Exception e) {
+                    request.setAttribute("getHostsError", e.getMessage());
+                }
+                hosts = hostSet;
             }
+            request.setAttribute("hostsSize", hosts.size());
+            request.setAttribute("hosts", hosts);
             return mapping.findForward("success");
         }
         final var host = HostHome.findByPrimaryKey(parameters.get(0).toString());

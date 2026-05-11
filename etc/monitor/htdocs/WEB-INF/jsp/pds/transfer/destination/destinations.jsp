@@ -15,7 +15,7 @@
                 <div class="card-body py-2 px-3">
                     <%-- Row 1: main search + type + button --%>
                     <div class="row g-1 mb-1">
-                        <div class="col-7">
+                        <div class="col">
                             <div class="input-group">
                                 <span class="input-group-text text-muted"><i class="bi bi-search"></i></span>
                                 <input class="form-control" name="destinationSearch" id="destinationSearch" type="text"
@@ -34,14 +34,33 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="col-2 d-flex gap-1">
-                            <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-search"></i> Search</button>
-                            <button type="button" class="btn btn-outline-secondary px-2"
+                        <div class="col-auto d-flex gap-1">
+                            <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i><span class="d-none d-sm-inline ms-1">Search</span></button>
+                            <button type="button" class="btn btn-outline-primary"
                                     id="btnDestQB"
                                     onclick="toggleQBPanel('destQueryBuilder','btnDestQB')"
-                                    title="Build query">
-                                <i class="bi bi-sliders2"></i>
+                                    title="Filter">
+                                <i class="bi bi-sliders2"></i><span class="d-none d-sm-inline ms-1">Filter</span>
                             </button>
+                            <button class="btn btn-link btn-sm text-muted p-0" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#dstQBHelp"
+                                    aria-expanded="false" title="Search syntax help">
+                                <i class="bi bi-info-circle"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="collapse mt-1" id="dstQBHelp">
+                        <div class="card card-body py-2 px-3" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd);">
+                            <strong class="d-block mb-1">Search &amp; Filter syntax</strong>
+                            <p class="mb-1">Type directly in the search box or click <i class="bi bi-sliders2"></i> <strong>Filter</strong> to use the visual query builder. Terms can be combined freely.</p>
+                            <ul class="mb-1 ps-3">
+                                <li><strong>Default (no prefix)</strong> &mdash; matches the destination <code>name</code>. Wildcards <code>*</code> and <code>?</code> are supported.</li>
+                                <li><code>name=dest_*</code>, <code>comment=*test*</code>, <code>email=*@meteo.ms</code>, <code>options=*mqtt*</code> &mdash; text filters with wildcards.</li>
+                                <li><code>country=</code> &mdash; filter by ISO country code (e.g. <code>country=FR</code>).</li>
+                                <li><code>enabled=yes|no</code>, <code>monitor=yes|no</code>, <code>backup=yes|no</code>, <code>forceproxy=yes|no</code> &mdash; boolean flags.</li>
+                                <li><code>case=i</code> &mdash; make the search case-insensitive (default is case-sensitive).</li>
+                            </ul>
+                            <p class="mb-0 text-muted">Example: <code>name=efas_* enabled=yes monitor=yes case=i</code></p>
                         </div>
                     </div>
                     <%-- Row 2: secondary filters --%>
@@ -82,7 +101,7 @@
                     <div id="destQueryBuilder" class="border rounded p-2"
                          style="display:none; position:absolute; z-index:9999; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd) !important; box-shadow:0 8px 28px rgba(0,0,0,0.18),0 2px 6px rgba(0,0,0,0.10); font-size:0.85rem">
                         <div class="row g-1 mb-1">
-                                <div class="col-md-4">
+                                <div class="col-6 col-md-4">
                                     <label class="form-label mb-0 fw-semibold"><code>name=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
                                     <input type="text" class="form-control form-control-sm" id="dqb_name" placeholder="e.g. dest_*" oninput="dqbPreview()" list="dqb_name_list" autocomplete="off">
                                     <datalist id="dqb_name_list">
@@ -91,17 +110,17 @@
                                         </c:forEach>
                                     </datalist>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-6 col-md-4">
                                     <label class="form-label mb-0 fw-semibold"><code>comment=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
                                     <input type="text" class="form-control form-control-sm" id="dqb_comment" placeholder="e.g. *test*" oninput="dqbPreview()">
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-6 col-md-4">
                                     <label class="form-label mb-0 fw-semibold"><code>email=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
                                     <input type="text" class="form-control form-control-sm" id="dqb_email" placeholder="e.g. *@meteo.ms" oninput="dqbPreview()">
                                 </div>
                             </div>
                             <div class="row g-1 mb-1">
-                                <div class="col-md-8">
+                                <div class="col-12 col-md-8">
                                     <label class="form-label mb-0 fw-semibold"><code>country=</code></label>
                                     <div class="d-flex align-items-center gap-1">
                                         <select class="form-select form-select-sm" id="dqb_country" onchange="dqbPreview()">
@@ -113,31 +132,31 @@
                                         <span id="dqb_country_flag" class="fi" style="font-size:1.4em;display:none;flex-shrink:0"></span>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-12 col-md-4">
                                     <label class="form-label mb-0 fw-semibold"><code>options=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
                                     <input type="text" class="form-control form-control-sm" id="dqb_options" placeholder="e.g. *mqtt*" oninput="dqbPreview()">
                                 </div>
                             </div>
                             <div class="row g-1 mb-1">
-                                <div class="col-md-3">
+                                <div class="col-6 col-md-3">
                                     <label class="form-label mb-0 fw-semibold"><code>enabled</code></label>
                                     <select class="form-select form-select-sm" id="dqb_enabled" onchange="dqbPreview()">
                                         <option value="">Any</option><option value="yes">Yes</option><option value="no">No</option>
                                     </select>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-6 col-md-3">
                                     <label class="form-label mb-0 fw-semibold"><code>monitor</code></label>
                                     <select class="form-select form-select-sm" id="dqb_monitor" onchange="dqbPreview()">
                                         <option value="">Any</option><option value="yes">Yes</option><option value="no">No</option>
                                     </select>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-6 col-md-3">
                                     <label class="form-label mb-0 fw-semibold"><code>backup</code></label>
                                     <select class="form-select form-select-sm" id="dqb_backup" onchange="dqbPreview()">
                                         <option value="">Any</option><option value="yes">Yes</option><option value="no">No</option>
                                     </select>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-6 col-md-3">
                                     <label class="form-label mb-0 fw-semibold"><code>forceproxy</code></label>
                                     <select class="form-select form-select-sm" id="dqb_forceproxy" onchange="dqbPreview()">
                                         <option value="">Any</option><option value="yes">Yes</option><option value="no">No</option>
@@ -154,15 +173,17 @@
                                 </div>
                             </div>
                             <%-- Live preview + action buttons --%>
-                            <div class="d-flex align-items-start gap-1 pt-1 border-top mt-1">
+                            <div class="d-flex align-items-start gap-1 pt-1 border-top mt-1 flex-wrap">
                                 <i class="bi bi-terminal text-muted flex-shrink-0"></i>
-                                <code class="text-muted flex-grow-1" style="font-size:0.8rem;word-break:break-all" id="dqb_preview">-- fill in fields above --</code>
+                                <code class="text-muted flex-grow-1" style="font-size:0.8rem;word-break:break-all;min-width:0" id="dqb_preview">-- fill in fields above --</code>
+                                <div class="d-flex gap-1 flex-shrink-0">
                                 <button type="button" class="btn btn-sm btn-outline-secondary" onclick="dqbClear()">
                                     <i class="bi bi-x-circle me-1"></i>Clear
                                 </button>
                                 <button type="button" class="btn btn-sm btn-primary" onclick="dqbApply()">
                                     <i class="bi bi-check-lg me-1"></i>Apply &amp; Search
                                 </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -257,11 +278,15 @@
             var r = btn.getBoundingClientRect();
             var sy = window.pageYOffset || document.documentElement.scrollTop;
             var sx = window.pageXOffset || document.documentElement.scrollLeft;
-            var pw = 740;
+            var vw = window.innerWidth || document.documentElement.clientWidth;
+            var margin = 8;
+            var pw = Math.min(740, vw - 2 * margin);
+            var left = Math.max(sx + margin, Math.min(r.right + sx - pw, sx + vw - pw - margin));
             panel.style.top = (r.bottom + sy + 4) + 'px';
-            panel.style.left = Math.max(sx, r.right + sx - pw) + 'px';
+            panel.style.left = left + 'px';
             panel.style.width = pw + 'px';
             panel.style.right = 'auto';
+            panel.style.overflowX = 'auto';
             parseQBQuery(document.getElementById('destinationSearch').value, 'dqb_', [], []);
             updateFlag();
             dqbPreview();
@@ -284,6 +309,7 @@
 <%-- Search error/empty-state banner - content managed dynamically by drawCallback --%>
 <div id="destSearchError" class="alert" style="display:none"></div>
 <script>
+var _destQBTip = '<div class="mt-2 text-muted small"><i class="bi bi-lightbulb"><\/i> Tip: Not sure about the syntax? Use the <a href="#" onclick="event.stopPropagation(); toggleQBPanel(\'destQueryBuilder\',\'btnDestQB\'); document.getElementById(\'btnDestQB\').scrollIntoView({behavior:\'smooth\',block:\'center\'}); return false;" class="link-secondary"><i class="bi bi-sliders2"><\/i> query builder<\/a> above to build a valid search expression.<\/div>';
 var _destSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search using the following rules:<\/p>' +
     '<ul class="mb-0">' +
     '<li><code>name=<\/code>, <code>comment=<\/code>, <code>country=<\/code>, <code>email=<\/code>, <code>enabled=yes\/no<\/code>, <code>monitor=<\/code>, <code>backup=<\/code>, <code>forceproxy=<\/code>, <code>options=<\/code><\/li>' +
@@ -291,8 +317,7 @@ var _destSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search u
     '<li><code>case=i<\/code> for case-insensitive, <code>case=s<\/code> for case-sensitive (default)<\/li>' +
     '<li>Enclose values with spaces or equals signs in double quotes, e.g. <code>&quot;United States&quot;<\/code><\/li>' +
     '<li>Wildcards: <code>*<\/code> (zero or more chars), <code>?<\/code> (exactly one char)<\/li>' +
-    '<\/ul>' +
-    '<div class="mt-2 text-muted small"><i class="bi bi-lightbulb"><\/i> Tip: Not sure about the syntax? Use the <a href="#" onclick="event.stopPropagation(); toggleQBPanel(\'destQueryBuilder\',\'btnDestQB\'); document.getElementById(\'btnDestQB\').scrollIntoView({behavior:\'smooth\',block:\'center\'}); return false;" class="link-secondary"><i class="bi bi-sliders2"><\/i> query builder<\/a> above to build a valid search expression.<\/div>';
+    '<\/ul>' + _destQBTip;
 function _updateDestSearchBanner(queryError, total, hasSearch) {
     var div = document.getElementById('destSearchError');
     if (!div) return;
@@ -346,6 +371,9 @@ function _updateDestSearchBanner(queryError, total, hasSearch) {
 </table>
 <script>
 (function() {
+    // Suppress DataTables' native alert() for server errors; drawCallback shows them inline.
+    $.fn.dataTable.ext.errMode = function () {};
+
     var _opts = {
         serverSide: true,
         processing: true,
@@ -374,9 +402,13 @@ function _updateDestSearchBanner(queryError, total, hasSearch) {
         drawCallback: function(settings) {
             var json = settings.json || {};
             var total = json.recordsTotal || 0;
+            _lastTotal = total;
             var srch = ($('#destinationSearch').val() || '').trim();
             _updateDestSearchBanner(json.queryError || '', total, srch.length > 0);
             $('#destsFoundLabel').html('<i class="bi bi-list-ul"></i> <strong>' + total + '</strong> destination(s) found');
+            var canSplit = total >= 4 && window.innerWidth >= 992;
+            $('#btnDestLayout').toggle(canSplit);
+            if (!canSplit && _isSplit) { window.toggleDestLayout(true); }
         },
         language: { lengthMenu: 'Show _MENU_ per page', info: 'Showing _START_-_END_ of _TOTAL_', processing: 'Loading...' }
     };
@@ -387,6 +419,7 @@ function _updateDestSearchBanner(queryError, total, hasSearch) {
     var _pageLen = 25;
     var _curPage = 0;
     var _destsTable;
+    var _lastTotal = 0;
 
     window.destsTableReload = function() {
         if (_isSplit) {
@@ -605,9 +638,10 @@ function _updateDestSearchBanner(queryError, total, hasSearch) {
 
     var _splitResizeTimer;
     function _enforceSingleIfNarrow() {
-        if (_isSplit && window.innerWidth < 992) {
-            window.toggleDestLayout(true); // switch to single without overwriting user preference
-        }
+        var wide = window.innerWidth >= 992;
+        var canSplit = wide && _lastTotal >= 4;
+        $('#btnDestLayout').toggle(canSplit);
+        if (!canSplit && _isSplit) window.toggleDestLayout(true);
     }
     $(window).on('resize.destLayout', function() {
         clearTimeout(_splitResizeTimer);

@@ -38,20 +38,11 @@
 			<i class="bi bi-tag text-primary"></i>
 			<span class="fw-semibold">Identity</span>
 		</div>
-		<div class="card-body">
-			<div class="row g-3">
-				<div class="col-sm-4">
-					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Name</div>
-					<div class="fw-semibold"><c:out value="${transferserver.name}" /></div>
-				</div>
-				<div class="col-sm-4">
-					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Transfer Group</div>
-					<div><a href="/do/datafile/transfergroup/${transferserver.transferGroupName}">${transferserver.transferGroupName}</a></div>
-				</div>
-				<div class="col-sm-4">
-					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Last Update</div>
-					<div><content:content name="transferserver.lastUpdateDate" dateFormatKey="date.format.transfer" ignoreNull="true"/></div>
-				</div>
+		<div class="card-body py-0">
+			<div class="field-grid">
+				<div class="field-row"><div class="field-label">Name</div><div class="field-value"><span class="val-code"><c:out value="${transferserver.name}" /></span></div></div>
+				<div class="field-row"><div class="field-label">Transfer Group</div><div class="field-value"><c:choose><c:when test="${not empty transferserver.transferGroupName}"><a href="/do/datafile/transfergroup/${transferserver.transferGroupName}">${transferserver.transferGroupName}</a></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
+				<div class="field-row"><div class="field-label">Last Update</div><div class="field-value"><c:choose><c:when test="${not empty transferserver.lastUpdateDate}"><content:content name="transferserver.lastUpdateDate" dateFormatKey="date.format.transfer" ignoreNull="true"/></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
 			</div>
 		</div>
 	</div>
@@ -62,22 +53,13 @@
 			<i class="bi bi-ethernet text-primary"></i>
 			<span class="fw-semibold">Connection</span>
 		</div>
-		<div class="card-body">
-			<div class="row g-3">
-				<div class="col-sm-5">
-					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Hostname</div>
-					<div><c:out value="${transferserver.host}" /></div>
-				</div>
-				<div class="col-sm-3">
-					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Port</div>
-					<div><c:out value="${transferserver.port}" /></div>
-				</div>
+		<div class="card-body py-0">
+			<div class="field-grid">
+				<div class="field-row"><div class="field-label">Hostname</div><div class="field-value"><span class="val-code"><c:out value="${transferserver.host}" /></span></div></div>
+				<div class="field-row"><div class="field-label">Port</div><div class="field-value"><span class="val-num"><c:out value="${transferserver.port}" /></span></div></div>
 				<c:set var="hostForReplication" value="${transferserver.hostForReplication}" />
-				<c:if test="${transferserver.replicate and not empty hostForReplication}">
-					<div class="col-sm-4">
-						<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Host For Replication</div>
-						<div><a href="/do/transfer/host/${hostForReplication.name}">${hostForReplication.nickName}</a></div>
-					</div>
+				<c:if test="${transferserver.replicate}">
+					<div class="field-row"><div class="field-label">Host For Replication</div><div class="field-value"><c:choose><c:when test="${not empty hostForReplication}"><a href="/do/transfer/host/${hostForReplication.name}">${hostForReplication.nickName}</a></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
 				</c:if>
 			</div>
 		</div>
@@ -89,35 +71,11 @@
 			<i class="bi bi-toggles text-primary"></i>
 			<span class="fw-semibold">Options</span>
 		</div>
-		<div class="card-body">
-			<div class="row g-3">
-				<div class="col-sm-4">
-					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Check</div>
-					<div>
-						<c:choose>
-							<c:when test="${transferserver.check}"><i class="bi bi-check-circle-fill text-success"></i> Yes</c:when>
-							<c:otherwise><i class="bi bi-x-circle-fill text-danger"></i> No</c:otherwise>
-						</c:choose>
-					</div>
-				</div>
-				<div class="col-sm-4">
-					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Enabled</div>
-					<div>
-						<c:choose>
-							<c:when test="${transferserver.active}"><i class="bi bi-check-circle-fill text-success"></i> Yes</c:when>
-							<c:otherwise><i class="bi bi-x-circle-fill text-danger"></i> No</c:otherwise>
-						</c:choose>
-					</div>
-				</div>
-				<div class="col-sm-4">
-					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Replicate</div>
-					<div>
-						<c:choose>
-							<c:when test="${transferserver.replicate}"><i class="bi bi-check-circle-fill text-success"></i> Yes</c:when>
-							<c:otherwise><i class="bi bi-x-circle-fill text-danger"></i> No</c:otherwise>
-						</c:choose>
-					</div>
-				</div>
+		<div class="card-body py-0">
+			<div class="field-grid">
+				<div class="field-row"><div class="field-label">Check</div><div class="field-value"><c:choose><c:when test="${transferserver.check}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise></c:choose></div></div>
+				<div class="field-row"><div class="field-label">Enabled</div><div class="field-value"><c:choose><c:when test="${transferserver.active}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise></c:choose></div></div>
+				<div class="field-row"><div class="field-label">Replicate</div><div class="field-value"><c:choose><c:when test="${transferserver.replicate}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise></c:choose></div></div>
 			</div>
 		</div>
 	</div>

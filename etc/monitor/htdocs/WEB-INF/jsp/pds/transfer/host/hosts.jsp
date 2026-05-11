@@ -13,7 +13,7 @@
                 <div class="card-body py-2 px-3">
                     <%-- Row 1: search + type + button --%>
                     <div class="row g-1 mb-1">
-                        <div class="col-7">
+                        <div class="col">
                             <div class="input-group">
                                 <span class="input-group-text text-muted"><i class="bi bi-search"></i></span>
                                 <input class="form-control" name="hostSearch" id="hostSearch" type="text"
@@ -32,14 +32,35 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="col-2 d-flex gap-1">
-                            <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-search"></i> Search</button>
-                            <button type="button" class="btn btn-outline-secondary px-2"
+                        <div class="col-auto d-flex gap-1">
+                            <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i><span class="d-none d-sm-inline ms-1">Search</span></button>
+                            <button type="button" class="btn btn-outline-primary"
                                     id="btnHostQB"
                                     onclick="toggleQBPanel('hostQueryBuilder','btnHostQB')"
-                                    title="Build query">
-                                <i class="bi bi-sliders2"></i>
+                                    title="Filter">
+                                <i class="bi bi-sliders2"></i><span class="d-none d-sm-inline ms-1">Filter</span>
                             </button>
+                            <button class="btn btn-link btn-sm text-muted p-0" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#hstQBHelp"
+                                    aria-expanded="false" title="Search syntax help">
+                                <i class="bi bi-info-circle"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="collapse mt-1" id="hstQBHelp">
+                        <div class="card card-body py-2 px-3" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd);">
+                            <strong class="d-block mb-1">Search &amp; Filter syntax</strong>
+                            <p class="mb-1">Type directly in the search box or click <i class="bi bi-sliders2"></i> <strong>Filter</strong> to use the visual query builder. Terms can be combined freely.</p>
+                            <ul class="mb-1 ps-3">
+                                <li><strong>Default (no prefix)</strong> &mdash; matches the host <code>nickname</code>. Wildcards <code>*</code> and <code>?</code> are supported.</li>
+                                <li><code>nickname=Test_0?</code>, <code>hostname=*.test.fr</code>, <code>method=*Http</code> &mdash; text filters with wildcards.</li>
+                                <li><code>comment=</code>, <code>email=</code>, <code>options=</code> &mdash; other text filters with wildcards.</li>
+                                <li><code>login=</code>, <code>dir=</code> &mdash; login user and remote directory.</li>
+                                <li><code>id=100</code>, <code>id&gt;=50</code> &mdash; filter by host ID (supports <code>=</code> <code>&gt;</code> <code>&gt;=</code> <code>&lt;</code> <code>&lt;=</code>).</li>
+                                <li><code>enabled=yes|no</code> &mdash; filter by enabled state.</li>
+                                <li><code>case=i</code> &mdash; make the search case-insensitive (default is case-sensitive).</li>
+                            </ul>
+                            <p class="mb-0 text-muted">Example: <code>hostname=*.ecmwf.int method=*Ftp enabled=yes case=i</code></p>
                         </div>
                     </div>
                     <%-- Row 2: secondary filters --%>
@@ -80,7 +101,7 @@
                     <div id="hostQueryBuilder" class="border rounded p-2"
                          style="display:none; position:absolute; z-index:9999; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd) !important; box-shadow:0 8px 28px rgba(0,0,0,0.18),0 2px 6px rgba(0,0,0,0.10); font-size:0.85rem">
                         <div class="row g-1 mb-1">
-                                <div class="col-4">
+                                <div class="col-6 col-md-4">
                                     <label class="form-label mb-0 fw-semibold"><code>nickname=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
                                     <input type="text" class="form-control form-control-sm" id="hqb_nickname" placeholder="e.g. Test_0?" oninput="hqbPreview()" list="hqb_nickname_list" autocomplete="off">
                                     <datalist id="hqb_nickname_list">
@@ -89,7 +110,7 @@
                                         </c:forEach>
                                     </datalist>
                                 </div>
-                                <div class="col-4">
+                                <div class="col-6 col-md-4">
                                     <label class="form-label mb-0 fw-semibold"><code>hostname=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
                                     <input type="text" class="form-control form-control-sm" id="hqb_hostname" placeholder="e.g. *.test.fr" oninput="hqbPreview()" list="hqb_hostname_list" autocomplete="off">
                                     <datalist id="hqb_hostname_list">
@@ -98,7 +119,7 @@
                                         </c:forEach>
                                     </datalist>
                                 </div>
-                                <div class="col-4">
+                                <div class="col-6 col-md-4">
                                     <label class="form-label mb-0 fw-semibold"><code>method=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
                                     <input type="text" class="form-control form-control-sm" id="hqb_method" placeholder="e.g. *Http" oninput="hqbPreview()" list="hqb_method_list" autocomplete="off">
                                     <datalist id="hqb_method_list">
@@ -109,7 +130,7 @@
                                 </div>
                             </div>
                             <div class="row g-1 mb-1">
-                                <div class="col-4">
+                                <div class="col-6 col-md-4">
                                     <label class="form-label mb-0 fw-semibold"><code>id</code> <span class="text-muted fw-normal">numeric</span></label>
                                     <div class="input-group input-group-sm">
                                         <select class="form-select form-select-sm" id="hqb_id_op" style="max-width:65px" onchange="hqbPreview()">
@@ -118,25 +139,25 @@
                                         <input type="number" class="form-control form-control-sm" id="hqb_id_val" placeholder="e.g. 100" oninput="hqbPreview()">
                                     </div>
                                 </div>
-                                <div class="col-4">
+                                <div class="col-6 col-md-4">
                                     <label class="form-label mb-0 fw-semibold"><code>login=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
                                     <input type="text" class="form-control form-control-sm" id="hqb_login" oninput="hqbPreview()">
                                 </div>
-                                <div class="col-4">
+                                <div class="col-6 col-md-4">
                                     <label class="form-label mb-0 fw-semibold"><code>dir=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
                                     <input type="text" class="form-control form-control-sm" id="hqb_dir" oninput="hqbPreview()">
                                 </div>
                             </div>
                             <div class="row g-1 mb-1">
-                                <div class="col-4">
+                                <div class="col-6 col-md-4">
                                     <label class="form-label mb-0 fw-semibold"><code>comment=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
                                     <input type="text" class="form-control form-control-sm" id="hqb_comment" placeholder="e.g. *test*" oninput="hqbPreview()">
                                 </div>
-                                <div class="col-4">
+                                <div class="col-6 col-md-4">
                                     <label class="form-label mb-0 fw-semibold"><code>email=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
                                     <input type="text" class="form-control form-control-sm" id="hqb_email" placeholder="e.g. *@domain.com" oninput="hqbPreview()">
                                 </div>
-                                <div class="col-4">
+                                <div class="col-6 col-md-4">
                                     <label class="form-label mb-0 fw-semibold"><code>options=</code> <span class="text-muted fw-normal">Properties &amp; JS wildcards * ?</span></label>
                                     <input type="text" class="form-control form-control-sm" id="hqb_options" placeholder="e.g. *mqtt*" oninput="hqbPreview()">
                                 </div>
@@ -157,15 +178,17 @@
                                 </div>
                             </div>
                             <%-- Live preview + action buttons --%>
-                            <div class="d-flex align-items-start gap-1 pt-1 border-top mt-1">
+                            <div class="d-flex align-items-start gap-1 pt-1 border-top mt-1 flex-wrap">
                                 <i class="bi bi-terminal text-muted flex-shrink-0"></i>
-                                <code class="text-muted flex-grow-1" style="font-size:0.8rem;word-break:break-all" id="hqb_preview">-- fill in fields above --</code>
+                                <code class="text-muted flex-grow-1" style="font-size:0.8rem;word-break:break-all;min-width:0" id="hqb_preview">-- fill in fields above --</code>
+                                <div class="d-flex gap-1 flex-shrink-0">
                                 <button type="button" class="btn btn-sm btn-outline-secondary" onclick="hqbClear()">
                                     <i class="bi bi-x-circle me-1"></i>Clear
                                 </button>
                                 <button type="button" class="btn btn-sm btn-primary" onclick="hqbApply()">
                                     <i class="bi bi-check-lg me-1"></i>Apply &amp; Search
                                 </button>
+                                </div>
                             </div>
                         </div>
                 </div>
@@ -246,11 +269,15 @@
             var r = btn.getBoundingClientRect();
             var sy = window.pageYOffset || document.documentElement.scrollTop;
             var sx = window.pageXOffset || document.documentElement.scrollLeft;
-            var pw = 740;
+            var vw = window.innerWidth || document.documentElement.clientWidth;
+            var margin = 8;
+            var pw = Math.min(740, vw - 2 * margin);
+            var left = Math.max(sx + margin, Math.min(r.right + sx - pw, sx + vw - pw - margin));
             panel.style.top = (r.bottom + sy + 4) + 'px';
-            panel.style.left = Math.max(sx, r.right + sx - pw) + 'px';
+            panel.style.left = left + 'px';
             panel.style.width = pw + 'px';
             panel.style.right = 'auto';
+            panel.style.overflowX = 'auto';
             parseQBQuery(document.getElementById('hostSearch').value, 'hqb_', [], ['id']);
             hqbPreview();
             panel.style.display = 'block';
@@ -313,6 +340,31 @@ function _updateHostSearchBanner(queryError, total, hasSearch) {
             </a>
         </auth:then>
         </auth:if>
+        <div class="dropdown me-2">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="hColModeBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" data-bs-boundary="viewport" aria-expanded="false">
+                Auto
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="hColModeBtn">
+                <li><a class="dropdown-item active" href="#" data-hcol-mode="auto"><i class="bi bi-check me-1"></i><strong>Auto</strong><br><small class="text-muted">Hides columns based on screen width</small></a></li>
+                <li><a class="dropdown-item" href="#" data-hcol-mode="all"><strong>All</strong><br><small class="text-muted">Shows all columns</small></a></li>
+                <li><a class="dropdown-item" href="#" data-hcol-mode="compact"><strong>Compact</strong><br><small class="text-muted">Hides Transfer Group and Network</small></a></li>
+                <li><a class="dropdown-item" href="#" data-hcol-mode="small"><strong>Small</strong><br><small class="text-muted">Shows Host and Hostname/IP only</small></a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="#" data-hcol-mode="custom">
+                  <strong>Custom</strong><br><small class="text-muted">Choose individual columns</small>
+                </a></li>
+                <li id="hCustomColChkPanel" style="display:none;">
+                  <div class="px-3 py-2 d-flex flex-column gap-1" style="min-width:160px;">
+                    <div class="form-check mb-0"><input class="form-check-input h-custom-col-chk" type="checkbox" id="hchk-col-0" data-col="0" checked><label class="form-check-label" for="hchk-col-0">Icon</label></div>
+                    <div class="form-check mb-0"><input class="form-check-input h-custom-col-chk" type="checkbox" id="hchk-col-1" data-col="1" checked disabled><label class="form-check-label text-muted" for="hchk-col-1">Host <small>(required)</small></label></div>
+                    <div class="form-check mb-0"><input class="form-check-input h-custom-col-chk" type="checkbox" id="hchk-col-2" data-col="2" checked><label class="form-check-label" for="hchk-col-2">Hostname/IP</label></div>
+                    <div class="form-check mb-0"><input class="form-check-input h-custom-col-chk" type="checkbox" id="hchk-col-3" data-col="3" checked><label class="form-check-label" for="hchk-col-3">Transfer Group</label></div>
+                    <div class="form-check mb-0"><input class="form-check-input h-custom-col-chk" type="checkbox" id="hchk-col-4" data-col="4" checked><label class="form-check-label" for="hchk-col-4">Network</label></div>
+                    <div class="form-check mb-0"><input class="form-check-input h-custom-col-chk" type="checkbox" id="hchk-col-5" data-col="5" checked><label class="form-check-label" for="hchk-col-5">Destinations</label></div>
+                  </div>
+                </li>
+            </ul>
+        </div>
         <div class="btn-group btn-group-sm" role="group">
             <button type="button" class="btn btn-outline-secondary active" id="btnViewList"
                 onclick="switchHostView('list')" title="List view">
@@ -347,6 +399,8 @@ function _updateHostSearchBanner(queryError, total, hasSearch) {
         }
     }
     $(function() {
+        // Suppress DataTables' native alert() for server errors; drawCallback shows them inline.
+        $.fn.dataTable.ext.errMode = function () {};
         _hostsTable = $('#hostsTable').DataTable({
             serverSide: true,
             processing: true,
@@ -372,11 +426,7 @@ function _updateHostSearchBanner(queryError, total, hasSearch) {
                 { orderable: true,  data: 4 },
                 { orderable: false, data: 5 }
             ],
-            columnDefs: [{ targets: '_all', render: $.fn.dataTable.render.text() }],
-            createdRow: function(row, data) {
-                // Columns contain pre-built HTML -- render as HTML not escaped text
-                $('td', row).each(function(i) { $(this).html(data[i]); });
-            },
+            columnDefs: [{ targets: '_all', render: function(data, type) { return data; } }],
             drawCallback: function(settings) {
                 var json = settings.json || {};
                 var total = json.recordsTotal || 0;
@@ -385,6 +435,110 @@ function _updateHostSearchBanner(queryError, total, hasSearch) {
                 $('#hostsFoundLabel').html('<i class="bi bi-list-ul"></i> <strong>' + total + '</strong> host(s) found');
             },
             language: { lengthMenu: 'Show _MENU_ per page', info: 'Showing _START_-_END_ of _TOTAL_', processing: 'Loading...' }
+        });
+
+        var _H_CUSTOM_COL_KEY = 'hostsCustomCols';
+        var _H_COL_MODE_KEY   = 'hostsColMode';
+        var _hCustomCols = (function() {
+            try { var s = localStorage.getItem(_H_CUSTOM_COL_KEY); if (s) return JSON.parse(s); } catch(e) {}
+            return [0,1,2,3,4,5];
+        })();
+        var _hColMode = (function() {
+            try { return localStorage.getItem(_H_COL_MODE_KEY) || 'auto'; } catch(e) { return 'auto'; }
+        })();
+        // Compact: hide Transfer Group(3) + Network(4)
+        var _hCOMPACT_HIDE = [3, 4];
+        // Small: also hide Destinations(5)
+        var _hSMALL_HIDE = [3, 4, 5];
+        // Auto medium (<992px): hide Transfer Group(3) + Network(4)
+        var _hMED_COLS = [3, 4];
+        // Auto small (<768px): also hide Destinations(5)
+        var _hSM_COLS = [5];
+
+        function _hShowCols(hideCols) {
+            var total = _hostsTable.columns().count();
+            for (var i = 0; i < total; i++) {
+                _hostsTable.column(i).visible(hideCols.indexOf(i) === -1, false);
+            }
+            _hostsTable.columns.adjust();
+        }
+
+        function _hApplyCustomCols() {
+            var total = _hostsTable.columns().count();
+            for (var i = 0; i < total; i++) {
+                var visible = _hCustomCols.indexOf(i) !== -1;
+                if (i === 1) visible = true; // Host is mandatory
+                _hostsTable.column(i).visible(visible, false);
+            }
+            _hostsTable.columns.adjust();
+        }
+
+        function _hSyncCustomChkBoxes() {
+            document.querySelectorAll('.h-custom-col-chk').forEach(function(chk) {
+                chk.checked = _hCustomCols.indexOf(+chk.dataset.col) !== -1;
+            });
+        }
+
+        document.querySelectorAll('.h-custom-col-chk').forEach(function(chk) {
+            chk.addEventListener('change', function() {
+                var col = +this.dataset.col;
+                var idx = _hCustomCols.indexOf(col);
+                if (this.checked && idx === -1) _hCustomCols.push(col);
+                else if (!this.checked && idx !== -1) _hCustomCols.splice(idx, 1);
+                try { localStorage.setItem(_H_CUSTOM_COL_KEY, JSON.stringify(_hCustomCols)); } catch(e) {}
+                if (_hColMode === 'custom') _hApplyCustomCols();
+            });
+        });
+
+        function _hApplyResponsiveCols() {
+            if (_hColMode !== 'auto') return;
+            var w = window.innerWidth;
+            if (w < 768) {
+                _hShowCols(_hMED_COLS.concat(_hSM_COLS));
+            } else if (w < 992) {
+                _hShowCols(_hMED_COLS);
+            } else {
+                _hShowCols([]);
+            }
+        }
+
+        function _hApplyMode(mode) {
+            var label = mode.charAt(0).toUpperCase() + mode.slice(1);
+            $('#hColModeBtn').html('<i class="bi bi-layout-three-columns me-1"></i>' + label);
+            if (mode === 'auto') {
+                $('#hColModeBtn').removeClass('btn-primary').addClass('btn-outline-secondary');
+            } else {
+                $('#hColModeBtn').removeClass('btn-outline-secondary').addClass('btn-primary');
+            }
+            document.getElementById('hCustomColChkPanel').style.display = (mode === 'custom') ? '' : 'none';
+            $('#hColModeBtn').closest('.dropdown').find('.dropdown-item').each(function(){
+                $(this).find('i.bi-check').remove();
+                if ($(this).data('hcol-mode') === mode) $(this).prepend('<i class="bi bi-check me-1"></i>');
+            });
+            if (mode === 'auto') {
+                _hApplyResponsiveCols();
+            } else if (mode === 'all') {
+                _hShowCols([]);
+            } else if (mode === 'compact') {
+                _hShowCols(_hCOMPACT_HIDE);
+            } else if (mode === 'small') {
+                _hShowCols(_hSMALL_HIDE);
+            } else if (mode === 'custom') {
+                _hSyncCustomChkBoxes();
+                _hApplyCustomCols();
+            }
+        }
+
+        $(window).on('resize', function(){ _hApplyResponsiveCols(); });
+        _hApplyMode(_hColMode);
+
+        $('#hColModeBtn').closest('.dropdown').find('.dropdown-item').on('click', function(e){
+            e.preventDefault();
+            var mode = $(this).data('hcol-mode');
+            if (!mode) return;
+            _hColMode = mode;
+            try { localStorage.setItem(_H_COL_MODE_KEY, mode); } catch(e) {}
+            _hApplyMode(mode);
         });
         // Allow pressing Enter in the search box to reload
         $('#hostSearch').on('keydown', function(e) {
@@ -422,6 +576,7 @@ function _updateHostSearchBanner(queryError, total, hasSearch) {
         document.getElementById('hostMapContainer').style.display = isList ? 'none' : '';
         document.getElementById('btnViewList').classList.toggle('active', isList);
         document.getElementById('btnViewMap').classList.toggle('active', !isList);
+        $('#hColModeBtn').closest('.dropdown').toggle(isList);
         if (!isList) {
             if (!mapInitDone) { initMap(); mapInitDone = true; }
             else { loadMapFeatures(); }

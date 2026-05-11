@@ -88,14 +88,37 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="col-2 d-flex gap-1">
-                            <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-search"></i> Search</button>
-                            <button type="button" class="btn btn-outline-secondary px-2"
+                        <div class="col-auto d-flex gap-1">
+                            <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i><span class="d-none d-sm-inline ms-1">Search</span></button>
+                            <button type="button" class="btn btn-outline-primary"
                                     id="btnTransferQB"
                                     onclick="toggleQBPanel('queryBuilder','btnTransferQB')"
-                                    title="Build query">
-                                <i class="bi bi-sliders2"></i>
+                                    title="Filter">
+                                <i class="bi bi-sliders2"></i><span class="d-none d-sm-inline ms-1">Filter</span>
                             </button>
+                            <button class="btn btn-link btn-sm text-muted p-0" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#tfrQBHelp"
+                                    aria-expanded="false" title="Search syntax help">
+                                <i class="bi bi-info-circle"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="collapse mt-1" id="tfrQBHelp">
+                        <div class="card card-body py-2 px-3" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd);">
+                            <strong class="d-block mb-1">Search &amp; Filter syntax</strong>
+                            <p class="mb-1">Type directly in the search box or click <i class="bi bi-sliders2"></i> <strong>Filter</strong> to open the visual query builder. Terms can be combined freely in any order.</p>
+                            <ul class="mb-1 ps-3">
+                                <li><strong>Default (no prefix)</strong> &mdash; matches the <code>target</code> filename. Wildcards <code>*</code> and <code>?</code> are supported.</li>
+                                <li><code>target=*.dat</code>, <code>source=/tmp/*</code> &mdash; filter by target filename or source path.</li>
+                                <li><code>mover=</code> &mdash; filter by Data Mover name.</li>
+                                <li><code>ts&gt;10 ts&lt;=99</code> &mdash; filter by transfer size (numeric; supports <code>=</code> <code>&gt;</code> <code>&gt;=</code> <code>&lt;</code> <code>&lt;=</code>).</li>
+                                <li><code>size&gt;=700kb</code> &mdash; filter by file size; units: <code>b</code>, <code>kb</code>, <code>mb</code>, <code>gb</code>.</li>
+                                <li><code>priority=</code> &mdash; filter by transfer priority (0&ndash;99).</li>
+                                <li><code>identity=</code>, <code>groupby=</code>, <code>checksum=</code> &mdash; other metadata filters.</li>
+                                <li><code>asap=yes|no</code>, <code>deleted=yes|no</code>, <code>expired=yes|no</code>, <code>replicated=yes|no</code>, <code>proxy=yes|no</code>, <code>event=yes|no</code> &mdash; boolean flags.</li>
+                                <li><code>case=i</code> &mdash; make the search case-insensitive (default is case-sensitive).</li>
+                            </ul>
+                            <p class="mb-0 text-muted">Example: <code>target=*.bufr expired=no size&gt;=1mb case=i</code></p>
                         </div>
                     </div>
 
@@ -112,7 +135,7 @@
                                     <input type="text" class="form-control form-control-sm" id="qb_source" placeholder="e.g. /tmp/*" oninput="qbPreview()">
                                 </div>
                             </div>
-                            <div class="row g-1 mb-1">
+                            <div class="row g-1 mb-1 row-cols-3 row-cols-md-7">
                                 <div class="col">
                                     <label class="form-label mb-0 fw-semibold"><code>asap</code></label>
                                     <select class="form-select form-select-sm" id="qb_asap" onchange="qbPreview()">
@@ -160,38 +183,46 @@
                             <div class="row g-1 mb-1">
                                 <div class="col-12">
                                     <label class="form-label mb-0 fw-semibold"><code>ts</code> <span class="text-muted fw-normal">range (numeric)</span></label>
-                                    <div class="d-flex align-items-center gap-1">
-                                        <select class="form-select form-select-sm" id="qb_ts_op1" style="width:75px;flex:none" onchange="qbPreview()">
-                                            <option value="=">=</option><option value=">">&gt;</option><option value=">=">&gt;=</option><option value="<">&lt;</option><option value="<=">&lt;=</option>
-                                        </select>
-                                        <input type="number" class="form-control form-control-sm" id="qb_ts_val1" placeholder="from" oninput="qbPreview()">
-                                        <span class="text-muted small px-1">to</span>
-                                        <select class="form-select form-select-sm" id="qb_ts_op2" style="width:75px;flex:none" onchange="qbPreview()">
-                                            <option value="<=">&lt;=</option><option value="<">&lt;</option><option value=">=">&gt;=</option><option value=">">&gt;</option>
-                                        </select>
-                                        <input type="number" class="form-control form-control-sm" id="qb_ts_val2" placeholder="to" oninput="qbPreview()">
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <div class="d-flex align-items-center gap-1 flex-grow-1" style="min-width:160px">
+                                            <select class="form-select form-select-sm" id="qb_ts_op1" style="width:75px;flex:none" onchange="qbPreview()">
+                                                <option value="=">=</option><option value=">">&gt;</option><option value=">=">&gt;=</option><option value="<">&lt;</option><option value="<=">&lt;=</option>
+                                            </select>
+                                            <input type="number" class="form-control form-control-sm" id="qb_ts_val1" placeholder="from" oninput="qbPreview()">
+                                        </div>
+                                        <div class="d-flex align-items-center gap-1 flex-grow-1" style="min-width:160px">
+                                            <span class="text-muted small text-nowrap flex-shrink-0">to</span>
+                                            <select class="form-select form-select-sm" id="qb_ts_op2" style="width:75px;flex:none" onchange="qbPreview()">
+                                                <option value="<=">&lt;=</option><option value="<">&lt;</option><option value=">=">&gt;=</option><option value=">">&gt;</option>
+                                            </select>
+                                            <input type="number" class="form-control form-control-sm" id="qb_ts_val2" placeholder="to" oninput="qbPreview()">
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                             <div class="row g-1 mb-1">
                                 <div class="col-12">
                                     <label class="form-label mb-0 fw-semibold"><code>size</code> <span class="text-muted fw-normal">range</span></label>
-                                    <div class="d-flex align-items-center gap-1">
-                                        <select class="form-select form-select-sm" id="qb_size_op1" style="width:75px;flex:none" onchange="qbPreview()">
-                                            <option value=">=">&gt;=</option><option value=">">&gt;</option><option value="=">=</option><option value="<=">&lt;=</option><option value="<">&lt;</option>
-                                        </select>
-                                        <input type="number" class="form-control form-control-sm" id="qb_size_val1" placeholder="min" min="0" oninput="qbPreview()">
-                                        <select class="form-select form-select-sm" id="qb_size_unit1" style="width:70px;flex:none" onchange="qbPreview()">
-                                            <option value="">b</option><option value="kb" selected>kb</option><option value="mb">mb</option><option value="gb">gb</option>
-                                        </select>
-                                        <span class="text-muted small px-1">to</span>
-                                        <select class="form-select form-select-sm" id="qb_size_op2" style="width:75px;flex:none" onchange="qbPreview()">
-                                            <option value="<=">&lt;=</option><option value="<">&lt;</option><option value=">=">&gt;=</option><option value=">">&gt;</option>
-                                        </select>
-                                        <input type="number" class="form-control form-control-sm" id="qb_size_val2" placeholder="max" min="0" oninput="qbPreview()">
-                                        <select class="form-select form-select-sm" id="qb_size_unit2" style="width:70px;flex:none" onchange="qbPreview()">
-                                            <option value="">b</option><option value="kb" selected>kb</option><option value="mb">mb</option><option value="gb">gb</option>
-                                        </select>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <div class="d-flex align-items-center gap-1 flex-grow-1" style="min-width:220px">
+                                            <select class="form-select form-select-sm" id="qb_size_op1" style="width:75px;flex:none" onchange="qbPreview()">
+                                                <option value=">=">&gt;=</option><option value=">">&gt;</option><option value="=">=</option><option value="<=">&lt;=</option><option value="<">&lt;</option>
+                                            </select>
+                                            <input type="number" class="form-control form-control-sm" id="qb_size_val1" placeholder="min" min="0" oninput="qbPreview()">
+                                            <select class="form-select form-select-sm" id="qb_size_unit1" style="width:70px;flex:none" onchange="qbPreview()">
+                                                <option value="">b</option><option value="kb" selected>kb</option><option value="mb">mb</option><option value="gb">gb</option>
+                                            </select>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-1 flex-grow-1" style="min-width:220px">
+                                            <span class="text-muted small text-nowrap flex-shrink-0">to</span>
+                                            <select class="form-select form-select-sm" id="qb_size_op2" style="width:75px;flex:none" onchange="qbPreview()">
+                                                <option value="<=">&lt;=</option><option value="<">&lt;</option><option value=">=">&gt;=</option><option value=">">&gt;</option>
+                                            </select>
+                                            <input type="number" class="form-control form-control-sm" id="qb_size_val2" placeholder="max" min="0" oninput="qbPreview()">
+                                            <select class="form-select form-select-sm" id="qb_size_unit2" style="width:70px;flex:none" onchange="qbPreview()">
+                                                <option value="">b</option><option value="kb" selected>kb</option><option value="mb">mb</option><option value="gb">gb</option>
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -215,25 +246,27 @@
                                 </div>
                             </div>
                             <div class="row g-1 mb-1">
-                                <div class="col-4">
+                                <div class="col-6 col-md-4">
                                     <label class="form-label mb-0 fw-semibold"><code>groupby=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
                                     <input type="text" class="form-control form-control-sm" id="qb_groupby" oninput="qbPreview()">
                                 </div>
-                                <div class="col-4">
+                                <div class="col-6 col-md-4">
                                     <label class="form-label mb-0 fw-semibold"><code>checksum=</code></label>
                                     <input type="text" class="form-control form-control-sm" id="qb_checksum" oninput="qbPreview()">
                                 </div>
                             </div>
                             <%-- Live preview + action buttons --%>
-                            <div class="d-flex align-items-start gap-1 pt-1 border-top mt-1">
+                            <div class="d-flex align-items-start gap-1 pt-1 border-top mt-1 flex-wrap">
                                 <i class="bi bi-terminal text-muted flex-shrink-0"></i>
-                                <code class="text-muted flex-grow-1" style="font-size:0.8rem;word-break:break-all" id="qb_preview">-- fill in fields above --</code>
+                                <code class="text-muted flex-grow-1" style="font-size:0.8rem;word-break:break-all;min-width:0" id="qb_preview">-- fill in fields above --</code>
+                                <div class="d-flex gap-1 flex-shrink-0">
                                 <button type="button" class="btn btn-sm btn-outline-secondary" onclick="qbClear()">
                                     <i class="bi bi-x-circle me-1"></i>Clear
                                 </button>
                                 <button type="button" class="btn btn-sm btn-primary" onclick="qbApply()">
                                     <i class="bi bi-check-lg me-1"></i>Apply &amp; Search
                                 </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -323,11 +356,15 @@
             var r = btn.getBoundingClientRect();
             var sy = window.pageYOffset || document.documentElement.scrollTop;
             var sx = window.pageXOffset || document.documentElement.scrollLeft;
-            var pw = 740;
+            var vw = window.innerWidth || document.documentElement.clientWidth;
+            var margin = 8;
+            var pw = Math.min(740, vw - 2 * margin);
+            var left = Math.max(sx + margin, Math.min(r.right + sx - pw, sx + vw - pw - margin));
             panel.style.top = (r.bottom + sy + 4) + 'px';
-            panel.style.left = Math.max(sx, r.right + sx - pw) + 'px';
+            panel.style.left = left + 'px';
             panel.style.width = pw + 'px';
             panel.style.right = 'auto';
+            panel.style.overflowX = 'auto';
             parseQBQuery(document.getElementById('transferSearch').value, 'qb_', ['ts','size'], []);
             qbPreview();
             panel.style.display = 'block';

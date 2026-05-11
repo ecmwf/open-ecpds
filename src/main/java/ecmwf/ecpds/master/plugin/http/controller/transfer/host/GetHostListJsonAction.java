@@ -32,11 +32,14 @@ package ecmwf.ecpds.master.plugin.http.controller.transfer.host;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
@@ -44,6 +47,7 @@ import org.apache.struts.action.ActionMapping;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.ecpds.master.plugin.http.dao.Util;
 import ecmwf.ecpds.master.plugin.http.home.transfer.DestinationHome;
@@ -60,6 +64,9 @@ import ecmwf.web.model.users.User;
  * server-side protocol format.
  */
 public class GetHostListJsonAction extends PDSAction {
+
+    /** Logger. */
+    private static final Logger log = LogManager.getLogger(GetHostListJsonAction.class);
 
     /** Base path for host detail pages. */
     private static final String HOST_BASE_PATH = "/do/transfer/host";
@@ -85,11 +92,35 @@ public class GetHostListJsonAction extends PDSAction {
         final var cursor = Util.getDataBaseCursorForDataTables(0, true, request);
         Collection<Host> hosts;
         String queryError = null;
+        boolean fullAccess;
         try {
-            hosts = HostHome.findByCriteria(label, filter, network, hostType, hostSearch, cursor);
-        } catch (final TransferException e) {
-            hosts = new ArrayList<>(0);
-            queryError = e.getMessage();
+            fullAccess = user.hasAccess(getResource(request, "transferhistory.basepath"));
+        } catch (final Exception e) {
+            fullAccess = false;
+        }
+        if (fullAccess) {
+            // Full access: return all hosts matching the filter criteria
+            try {
+                hosts = HostHome.findByCriteria(label, filter, network, hostType, hostSearch, cursor);
+            } catch (final TransferException e) {
+                hosts = new ArrayList<>(0);
+                queryError = e.getMessage();
+            }
+        } else {
+            // Restricted user (monitor): only show authorised hosts
+            final var hostSet = new LinkedHashSet<Host>();
+            try {
+                for (final String hostName : MasterManager.getDB().getAuthorisedHosts(user.getId())) {
+                    try {
+                        hostSet.add(HostHome.findByPrimaryKey(hostName));
+                    } catch (final Exception e) {
+                        log.warn("Could not load host " + hostName, e);
+                    }
+                }
+            } catch (final Exception e) {
+                queryError = e.getMessage();
+            }
+            hosts = hostSet;
         }
         // Pre-load destination counts in ONE query to avoid N+1 per host row
         Map<String, Integer> destCounts;
@@ -210,11 +241,11 @@ public class GetHostListJsonAction extends PDSAction {
     private static String buildDestinationsHtml(final Host host, final Map<String, Integer> destCounts) {
         final var count = destCounts.getOrDefault(host.getName(), 0);
         if (count == 0) {
-            return "<span class=\"text-muted fst-italic\">none</span>";
+            return "<span class=\"badge bg-body-tertiary text-muted border fst-italic\">none</span>";
         }
         final var href = HOST_BASE_PATH + "/" + escapeHtml(host.getName());
-        return "<a href=\"" + href + "\" class=\"badge bg-light text-secondary border text-decoration-none\">" + count
-                + " destination" + (count == 1 ? "" : "s") + "</a>";
+        return "<a href=\"" + href + "\" class=\"badge bg-body-tertiary text-secondary border text-decoration-none\">"
+                + count + " destination" + (count == 1 ? "" : "s") + "</a>";
     }
 
     // -------------------------------------------------------------------------

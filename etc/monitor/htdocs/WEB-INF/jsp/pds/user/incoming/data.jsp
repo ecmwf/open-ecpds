@@ -58,28 +58,13 @@
 					</auth:then>
 					</auth:if>
 				</div>
-				<div class="card-body">
-					<div class="d-flex flex-column gap-2">
-						<div class="row g-2 align-items-center">
-							<div class="col-sm-4"><span class="text-muted small fw-semibold text-uppercase">Data Login</span></div>
-							<div class="col-sm-8">${incoming.id}</div>
-						</div>
-						<div class="row g-2 align-items-center">
-							<div class="col-sm-4"><span class="text-muted small fw-semibold text-uppercase">Comment</span></div>
-							<div class="col-sm-8">${incoming.comment}</div>
-						</div>
-						<div class="row g-2 align-items-center">
-							<div class="col-sm-4"><span class="text-muted small fw-semibold text-uppercase">Country</span></div>
-							<div class="col-sm-8"><span class="fi fi-${fn:toLowerCase(incoming.country.iso)} me-1" title="${incoming.country.name}" style="font-size:1.1em;vertical-align:middle"></span>${incoming.country.name}</div>
-						</div>
-						<div class="row g-2 align-items-center">
-							<div class="col-sm-4"><span class="text-muted small fw-semibold text-uppercase">Enabled</span></div>
-							<div class="col-sm-8"><c:if test="${incoming.active}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if><c:if test="${!incoming.active}"><i class="bi bi-x-circle-fill text-secondary" title="No"></i></c:if></div>
-						</div>
-						<div class="row g-2 align-items-center">
-							<div class="col-sm-4"><span class="text-muted small fw-semibold text-uppercase">TOTP authentication</span></div>
-							<div class="col-sm-8"><c:if test="${incoming.isSynchronized}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if><c:if test="${!incoming.isSynchronized}"><i class="bi bi-x-circle-fill text-secondary" title="No"></i></c:if></div>
-						</div>
+				<div class="card-body py-0">
+					<div class="field-grid">
+						<div class="field-row"><div class="field-label">Data Login</div><div class="field-value"><span class="val-code">${incoming.id}</span></div></div>
+						<div class="field-row"><div class="field-label">Comment</div><div class="field-value"><c:choose><c:when test="${not empty incoming.comment}">${incoming.comment}</c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
+						<div class="field-row"><div class="field-label">Country</div><div class="field-value"><c:choose><c:when test="${not empty incoming.country and not empty incoming.country.iso and not empty incoming.country.name}"><span class="d-inline-flex align-items-center gap-1"><span class="fi fi-${fn:toLowerCase(incoming.country.iso)}" title="${incoming.country.name}" style="font-size:1.1em;border-radius:2px;"></span><span>${incoming.country.name}</span></span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
+						<div class="field-row"><div class="field-label">Enabled</div><div class="field-value"><c:choose><c:when test="${incoming.active}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise></c:choose></div></div>
+						<div class="field-row"><div class="field-label">TOTP authentication</div><div class="field-value"><c:choose><c:when test="${incoming.isSynchronized}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise></c:choose></div></div>
 					</div>
 				</div>
 			</div>

@@ -36,8 +36,16 @@
             <jsp:include page="/WEB-INF/jsp/pds/transfer/compression_icon.jsp"><jsp:param name="name" value="${host.filterName}"/></jsp:include>
         </c:if>
         <div class="d-flex gap-2 ms-auto align-items-center">
+        <auth:if basePathKey="host.basepath" paths="">
+        <auth:then>
+        <a href='<bean:message key="host.basepath"/>' class="btn btn-sm btn-outline-secondary" title="All Transfer Hosts"><i class="bi bi-arrow-left"></i></a>
+        <div style="border-left:1px solid var(--bs-border-color);height:1.5rem;"></div>
+        </auth:then>
+        </auth:if>
+        <c:set var="_hostHasEditGroup" value="false"/>
         <auth:if basePathKey="host.basepath" paths="/edit/insert_form">
         <auth:then>
+        <c:set var="_hostHasEditGroup" value="true"/>
         <div class="d-flex gap-1 align-items-center">
             <a href='<bean:message key="host.basepath"/>/edit/insert_form'
                class="btn btn-sm btn-outline-success" title="Create new host"><i class="bi bi-plus-circle"></i></a>
@@ -61,15 +69,15 @@
         <auth:if basePathKey="host.basepath" paths="/edit/resetStats/">
         <auth:then>
         <c:if test="${not empty host.id}">
-        <div class="d-flex gap-1 align-items-center" style="border-left:1px solid var(--bs-border-color);padding-left:0.5rem;">
+        <div class="d-flex gap-1 align-items-center"<c:if test="${_hostHasEditGroup}"> style="border-left:1px solid var(--bs-border-color);padding-left:0.5rem;"</c:if>>
             <a href='<bean:message key="host.basepath"/>/${host.id}?mode=changelog'
                class="btn btn-sm btn-outline-secondary" title="Changes Log"><i class="bi bi-clock-history"></i></a>
+            <a href='<bean:message key="host.basepath"/>/edit/getReport/${host.id}'
+               class="btn btn-sm btn-outline-secondary" title="Network Info"><i class="bi bi-wifi"></i></a>
             <auth:if basePathKey="transferhistory.basepath" paths="/">
             <auth:then>
             <a href='<bean:message key="host.basepath"/>/edit/getOutput/view/${host.id}'
                class="btn btn-sm btn-outline-secondary" title="View Output"><i class="bi bi-terminal"></i></a>
-            <a href='<bean:message key="host.basepath"/>/edit/getReport/${host.id}'
-               class="btn btn-sm btn-outline-secondary" title="Network Info"><i class="bi bi-wifi"></i></a>
             <div style="border-left:1px solid var(--bs-border-color);height:1.5rem;"></div>
             <a href="#" class="btn btn-sm btn-outline-warning" title="Clean Options"
                onclick="confirmationDialog({title:'Clean Options',message:'Clean the data window options for host <b>${host.nickName}</b>?<br/><br/>This will remove all options with default values from the option properties editor, simplifying the configuration. This action cannot be undone.',confirmText:'Clean',showLoading:true,onConfirm:function(){window.location.href='<bean:message key="host.basepath"/>/edit/cleanDataWindow/${host.id}'}}); return false;"><i class="bi bi-sliders"></i></a>

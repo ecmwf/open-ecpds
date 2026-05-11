@@ -61,8 +61,10 @@ Error retrieving object by key &mdash; DataTransfer not found: <code>${datatrans
 <c:forEach var="history" items="${historyItems}">
 <tr>
 <td>
-<c:if test="${history.error}"><i class="bi bi-x-circle-fill text-danger" title="Error"></i></c:if>
-<c:if test="${not history.error}"><i class="bi bi-check-circle-fill text-success" title="OK"></i></c:if>
+<c:choose>
+<c:when test="${history.error}"><span class="badge rounded-pill border fw-normal bg-danger-subtle text-danger-emphasis"><i class="bi bi-x-circle-fill me-1"></i>Err</span></c:when>
+<c:otherwise><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>OK</span></c:otherwise>
+</c:choose>
 </td>
 <td>
 <c:if test="${not empty canSeeHistoryDetail}">

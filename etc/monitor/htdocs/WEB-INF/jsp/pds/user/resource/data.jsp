@@ -39,21 +39,15 @@
 					</auth:then>
 					</auth:if>
 				</div>
-				<div class="card-body">
-					<div class="d-flex flex-column gap-2">
-						<div class="row g-2 align-items-center">
-							<div class="col-sm-4"><span class="text-muted small fw-semibold text-uppercase">Path</span></div>
-							<div class="col-sm-8">${resource.path}</div>
-						</div>
+				<div class="card-body py-0">
+					<div class="field-grid">
+						<div class="field-row"><div class="field-label">Path</div><div class="field-value"><span class="val-code">${resource.path}</span></div></div>
 						<auth:if basePathKey="accesscontrol.basepath" paths="/detailer">
 							<auth:then>
-								<div class="row g-2 align-items-center">
-									<div class="col-sm-4"><span class="text-muted small fw-semibold text-uppercase">Access Detailer</span></div>
-									<div class="col-sm-8"><auth:link styleClass="menuitem"
-										basePathKey="accesscontrol.basepath"
-										href="/detailer?page=${resource.id}" imageKey="icon.small.text"
-										imageTitleKey="ecpds.user.detailer" ignoreAccessControl="true" /></div>
-								</div>
+								<div class="field-row"><div class="field-label">Access Detailer</div><div class="field-value"><auth:link styleClass="menuitem"
+									basePathKey="accesscontrol.basepath"
+									href="/detailer?page=${resource.id}" imageKey="icon.small.text"
+									imageTitleKey="ecpds.user.detailer" ignoreAccessControl="true" /></div></div>
 							</auth:then>
 						</auth:if>
 					</div>

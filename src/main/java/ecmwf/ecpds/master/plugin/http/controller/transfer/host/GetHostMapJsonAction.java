@@ -31,6 +31,7 @@ package ecmwf.ecpds.master.plugin.http.controller.transfer.host;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -86,10 +87,27 @@ public class GetHostMapJsonAction extends PDSAction {
         final var cursor = new DataBaseCursor("0", "asc", 0, Integer.MAX_VALUE);
 
         Collection<Host> hosts;
-        try {
-            hosts = HostHome.findByCriteria(label, filter, network, hostType, hostSearch, cursor);
-        } catch (final TransferException e) {
-            hosts = new ArrayList<>(0);
+        if (user.hasAccess(getResource(request, "transferhistory.basepath"))) {
+            try {
+                hosts = HostHome.findByCriteria(label, filter, network, hostType, hostSearch, cursor);
+            } catch (final TransferException e) {
+                hosts = new ArrayList<>(0);
+            }
+        } else {
+            // Restricted user: only show authorised hosts
+            final var hostSet = new LinkedHashSet<Host>();
+            try {
+                for (final String hostName : MasterManager.getDB().getAuthorisedHosts(user.getId())) {
+                    try {
+                        hostSet.add(HostHome.findByPrimaryKey(hostName));
+                    } catch (final Exception e) {
+                        // skip unavailable hosts
+                    }
+                }
+            } catch (final Exception e) {
+                // skip on error
+            }
+            hosts = hostSet;
         }
 
         final var root = MAPPER.createObjectNode();

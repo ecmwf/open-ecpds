@@ -38,25 +38,11 @@
 			<i class="bi bi-tag text-primary"></i>
 			<span class="fw-semibold">Identity</span>
 		</div>
-		<div class="card-body">
-			<div class="row g-3">
-				<div class="col-sm-4">
-					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Name</div>
-					<div class="fw-semibold"><c:out value="${transfergroup.name}" /></div>
-				</div>
-				<div class="col-sm-4">
-					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Comment</div>
-					<div><c:out value="${transfergroup.comment}" /></div>
-				</div>
-				<div class="col-sm-4">
-					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Enabled</div>
-					<div>
-						<c:choose>
-							<c:when test="${transfergroup.active}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i> Yes</c:when>
-							<c:otherwise><i class="bi bi-x-circle-fill text-danger" title="No"></i> No</c:otherwise>
-						</c:choose>
-					</div>
-				</div>
+		<div class="card-body py-0">
+			<div class="field-grid">
+				<div class="field-row"><div class="field-label">Name</div><div class="field-value"><span class="val-code"><c:out value="${transfergroup.name}" /></span></div></div>
+				<div class="field-row"><div class="field-label">Comment</div><div class="field-value"><c:choose><c:when test="${not empty transfergroup.comment}"><c:out value="${transfergroup.comment}" /></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
+				<div class="field-row"><div class="field-label">Enabled</div><div class="field-value"><c:choose><c:when test="${transfergroup.active}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise></c:choose></div></div>
 			</div>
 		</div>
 	</div>
@@ -67,25 +53,11 @@
 			<i class="bi bi-copy text-primary"></i>
 			<span class="fw-semibold">Replication</span>
 		</div>
-		<div class="card-body">
-			<div class="row g-3">
-				<div class="col-sm-4">
-					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Replicate</div>
-					<div>
-						<c:choose>
-							<c:when test="${transfergroup.replicate}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i> Yes</c:when>
-							<c:otherwise><i class="bi bi-x-circle-fill text-danger" title="No"></i> No</c:otherwise>
-						</c:choose>
-					</div>
-				</div>
-				<div class="col-sm-4">
-					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Min. Replication Count</div>
-					<div>${transfergroup.minReplicationCount}</div>
-				</div>
-				<div class="col-sm-4">
-					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Volume Count</div>
-					<div>${transfergroup.volumeCount}</div>
-				</div>
+		<div class="card-body py-0">
+			<div class="field-grid">
+				<div class="field-row"><div class="field-label">Replicate</div><div class="field-value"><c:choose><c:when test="${transfergroup.replicate}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise></c:choose></div></div>
+				<div class="field-row"><div class="field-label">Min. Replication Count</div><div class="field-value"><span class="val-num">${transfergroup.minReplicationCount}</span></div></div>
+				<div class="field-row"><div class="field-label">Volume Count</div><div class="field-value"><span class="val-num">${transfergroup.volumeCount}</span></div></div>
 			</div>
 		</div>
 	</div>
@@ -96,21 +68,10 @@
 			<i class="bi bi-funnel text-primary"></i>
 			<span class="fw-semibold">Filtering</span>
 		</div>
-		<div class="card-body">
-			<div class="row g-3">
-				<div class="col-sm-4">
-					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Filter</div>
-					<div>
-						<c:choose>
-							<c:when test="${transfergroup.filter}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i> Yes</c:when>
-							<c:otherwise><i class="bi bi-x-circle-fill text-danger" title="No"></i> No</c:otherwise>
-						</c:choose>
-					</div>
-				</div>
-				<div class="col-sm-4">
-					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Min. Filtering Count</div>
-					<div>${transfergroup.minFilteringCount}</div>
-				</div>
+		<div class="card-body py-0">
+			<div class="field-grid">
+				<div class="field-row"><div class="field-label">Filter</div><div class="field-value"><c:choose><c:when test="${transfergroup.filter}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise></c:choose></div></div>
+				<div class="field-row"><div class="field-label">Min. Filtering Count</div><div class="field-value"><span class="val-num">${transfergroup.minFilteringCount}</span></div></div>
 			</div>
 		</div>
 	</div>
@@ -121,23 +82,12 @@
 			<i class="bi bi-cloud-arrow-up text-primary"></i>
 			<span class="fw-semibold">Backup</span>
 		</div>
-		<div class="card-body">
-			<div class="row g-3">
-				<div class="col-sm-4">
-					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Backup</div>
-					<div>
-						<c:choose>
-							<c:when test="${transfergroup.backup}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i> Yes</c:when>
-							<c:otherwise><i class="bi bi-x-circle-fill text-danger" title="No"></i> No</c:otherwise>
-						</c:choose>
-					</div>
-				</div>
+		<div class="card-body py-0">
+			<div class="field-grid">
+				<div class="field-row"><div class="field-label">Backup</div><div class="field-value"><c:choose><c:when test="${transfergroup.backup}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise></c:choose></div></div>
 				<c:set var="hostForBackup" value="${transfergroup.hostForBackup}" />
-				<c:if test="${transfergroup.backup and not empty hostForBackup}">
-					<div class="col-sm-4">
-						<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Host For Backup</div>
-						<div><a href="/do/transfer/host/${hostForBackup.name}">${hostForBackup.nickName}</a></div>
-					</div>
+				<c:if test="${transfergroup.backup}">
+					<div class="field-row"><div class="field-label">Host For Backup</div><div class="field-value"><c:choose><c:when test="${not empty hostForBackup}"><a href="/do/transfer/host/${hostForBackup.name}">${hostForBackup.nickName}</a></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
 				</c:if>
 			</div>
 		</div>
@@ -151,16 +101,10 @@
 			<i class="bi bi-diagram-3 text-primary"></i>
 			<span class="fw-semibold">Cluster</span>
 		</div>
-		<div class="card-body">
-			<div class="row g-3">
-				<div class="col-sm-4">
-					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Cluster Name</div>
-					<div><c:out value="${clusterName}" /></div>
-				</div>
-				<div class="col-sm-4">
-					<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Cluster Weight</div>
-					<div><c:out value="${transfergroup.clusterWeight}" /></div>
-				</div>
+		<div class="card-body py-0">
+			<div class="field-grid">
+				<div class="field-row"><div class="field-label">Cluster Name</div><div class="field-value"><span class="val-code"><c:out value="${clusterName}" /></span></div></div>
+				<div class="field-row"><div class="field-label">Cluster Weight</div><div class="field-value"><span class="val-num"><c:out value="${transfergroup.clusterWeight}" /></span></div></div>
 			</div>
 		</div>
 	</div>
@@ -184,12 +128,16 @@
 				<td>${server.host}</td>
 				<td>${server.port}</td>
 				<td class="text-center" data-order="${server.active ? 1 : 0}">
-					<c:if test="${server.active}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if>
-					<c:if test="${!server.active}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if>
+					<c:choose>
+						<c:when test="${server.active}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when>
+						<c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise>
+					</c:choose>
 				</td>
 				<td class="text-center" data-order="${server.replicate ? 1 : 0}">
-					<c:if test="${server.replicate}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if>
-					<c:if test="${!server.replicate}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if>
+					<c:choose>
+						<c:when test="${server.replicate}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when>
+						<c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise>
+					</c:choose>
 				</td>
 			</tr>
 		</c:forEach>

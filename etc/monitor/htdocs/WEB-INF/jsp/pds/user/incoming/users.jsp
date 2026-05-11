@@ -57,17 +57,23 @@
             <td><a href="<bean:message key="incoming.basepath"/>/${user.id}">${user.id}</a></td>
             <td>${user.comment}</td>
             <td>
-                <span class="fi fi-${fn:toLowerCase(user.country.iso)} me-1"
-                      title="${user.country.name}" style="font-size:1.1em;vertical-align:middle"></span>
-                ${user.country.name}
+                <span class="d-inline-flex align-items-center gap-1">
+                    <span class="fi fi-${fn:toLowerCase(user.country.iso)}"
+                          title="${user.country.name}" style="font-size:1.1em;border-radius:2px;"></span>
+                    <span>${user.country.name}</span>
+                </span>
             </td>
             <td class="text-center" data-order="${user.active ? 1 : 0}">
-                <c:if test="${user.active}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if>
-                <c:if test="${!user.active}"><i class="bi bi-x-circle-fill text-danger" title="No"></i></c:if>
+                <c:choose>
+                    <c:when test="${user.active}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when>
+                    <c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise>
+                </c:choose>
             </td>
             <td class="text-center" data-order="${user.isSynchronized ? 1 : 0}">
-                <c:if test="${user.isSynchronized}"><i class="bi bi-check-circle-fill text-success" title="Yes"></i></c:if>
-                <c:if test="${!user.isSynchronized}"><i class="bi bi-dash text-muted" title="No"></i></c:if>
+                <c:choose>
+                    <c:when test="${user.isSynchronized}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when>
+                    <c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise>
+                </c:choose>
             </td>
             <td class="text-center" data-order="${user.anonymous ? 1 : 0}">
                 <c:if test="${user.anonymous}"><i class="bi bi-exclamation-circle-fill text-warning" title="Yes"></i></c:if>
