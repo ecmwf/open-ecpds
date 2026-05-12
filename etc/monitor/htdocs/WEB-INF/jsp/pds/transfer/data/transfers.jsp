@@ -78,7 +78,7 @@
                                     value='<c:out value="${transferSearch}"/>'>
                             </div>
                         </div>
-                        <div class="col-3">
+                        <div class="col-12 col-sm-3">
                             <div class="input-group">
                                 <span class="input-group-text text-muted"><i class="bi bi-tag"></i></span>
                                 <select class="form-select" name="transferType" onchange="form.submit()" title="Filter by Type">

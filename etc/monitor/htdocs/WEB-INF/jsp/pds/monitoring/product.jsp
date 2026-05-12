@@ -180,15 +180,15 @@ th {
 			</span>
 		</div>
 		<div class="mon-field">
-			<span class="mon-label">Product Time</span>
+			<span class="mon-label">Product Time (UTC)</span>
 			<span class="mon-value">${productStatus.productTime}</span>
 		</div>
 		<div class="mon-field">
-			<span class="mon-label">Scheduled</span>
+			<span class="mon-label">Scheduled (UTC)</span>
 			<span class="mon-value">${productStatus.scheduledTime}</span>
 		</div>
 		<div class="mon-field">
-			<span class="mon-label">Last Update</span>
+			<span class="mon-label">Last Update (UTC)</span>
 			<span class="mon-value">
 				<c:choose>
 					<c:when test="${not empty productStatus.lastUpdate}">${productStatus.lastUpdate}</c:when>
@@ -197,7 +197,7 @@ th {
 			</span>
 		</div>
 		<div class="mon-field">
-			<span class="mon-label">Arrival</span>
+			<span class="mon-label">Arrival (UTC)</span>
 			<span class="mon-value">
 				<c:choose>
 					<c:when test="${not empty productStatus.arrivalTime}">${productStatus.arrivalTime}</c:when>
@@ -224,12 +224,12 @@ th {
 	<table class="sortableTable table table-sm table-striped table-hover table-bordered align-middle" style="font-size:0.78rem; white-space:nowrap;">
 		<thead class="table-light">
 			<tr>
-				<th onclick="sortTable(0)" data-order="asc" style="cursor:pointer;" title="Sort by Time">T <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
+				<th onclick="sortTable(0)" data-order="asc" style="cursor:pointer;" title="Sort by Time (UTC)">T <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
 				<th onclick="sortTable(1)" data-order="asc" style="cursor:pointer;" title="Sort by Step">Step <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
 				<th onclick="sortTable(2)" data-order="asc" style="cursor:pointer;" title="Sort by Type">Type <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
 				<th onclick="sortTable(3)" data-order="asc" style="cursor:pointer;" title="Sort by Notification">Notif. <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
-				<th onclick="sortTable(4)" data-order="asc" style="cursor:pointer;" title="Sort by ${arrival} Time">${arrival} <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
-				<th onclick="sortTable(5)" data-order="asc" style="cursor:pointer;" title="Sort by Schedule">Sched. <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
+				<th onclick="sortTable(4)" data-order="asc" style="cursor:pointer;" title="Sort by ${arrival} Time (UTC)">${arrival} <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
+				<th onclick="sortTable(5)" data-order="asc" style="cursor:pointer;" title="Sort by Schedule (UTC)">Sched. <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
 				<th onclick="sortTable(6)" data-order="asc" style="cursor:pointer;" title="Sort by Before">Before <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
 				<th class="text-center" title="Status"></th>
 			</tr>
@@ -242,12 +242,12 @@ th {
 					<table class="sortableTable table table-sm table-striped table-hover table-bordered align-middle" style="font-size:0.78rem; white-space:nowrap;">
 						<thead class="table-light">
 							<tr>
-								<th onclick="sortTable(0)" data-order="asc" style="cursor:pointer;" title="Sort by Time">T <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
+								<th onclick="sortTable(0)" data-order="asc" style="cursor:pointer;" title="Sort by Time (UTC)">T <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
 								<th onclick="sortTable(1)" data-order="asc" style="cursor:pointer;" title="Sort by Step">Step <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
 								<th onclick="sortTable(2)" data-order="asc" style="cursor:pointer;" title="Sort by Type">Type <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
 								<th onclick="sortTable(3)" data-order="asc" style="cursor:pointer;" title="Sort by Notification">Notif. <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
-								<th onclick="sortTable(4)" data-order="asc" style="cursor:pointer;" title="Sort by ${arrival} Time">${arrival} <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
-								<th onclick="sortTable(5)" data-order="asc" style="cursor:pointer;" title="Sort by Schedule">Sched. <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
+								<th onclick="sortTable(4)" data-order="asc" style="cursor:pointer;" title="Sort by ${arrival} Time (UTC)">${arrival} <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
+								<th onclick="sortTable(5)" data-order="asc" style="cursor:pointer;" title="Sort by Schedule (UTC)">Sched. <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
 								<th onclick="sortTable(6)" data-order="asc" style="cursor:pointer;" title="Sort by Before">Before <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
 								<th class="text-center" title="Status"></th>
 							</tr>

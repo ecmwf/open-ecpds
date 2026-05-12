@@ -172,17 +172,27 @@
                 </c:otherwise>
             </c:choose>
         </span>
-        <div class="d-flex gap-2">
-            <button id="reportMapBtn"
-                    class="btn btn-sm btn-outline-secondary py-0 px-2 report-card-hdr-btn"
-                    onclick="_setView('map')" title="Show traceroute on map" style="font-size:0.75rem; display:none;">
-                <i class="bi bi-geo-alt"></i> Map
-            </button>
-            <button id="reportChartBtn"
-                    class="btn btn-sm btn-outline-secondary py-0 px-2 report-card-hdr-btn"
-                    onclick="_setMtrView(false)" title="Show raw text" style="font-size:0.75rem; display:none;">
-                <i class="bi bi-code-slash"></i> Raw
-            </button>
+        <div class="d-flex gap-2 align-items-center">
+            <div id="viewToggleGroup" class="btn-group btn-group-sm" role="group"
+                 aria-label="View mode" style="display:none!important; font-size:0.75rem;">
+                <button id="btnViewRaw" type="button"
+                        class="btn btn-outline-secondary py-0 px-2 active"
+                        onclick="_setView('raw')" title="Show raw text">
+                    <i class="bi bi-code-slash"></i> Raw
+                </button>
+                <button id="btnViewChart" type="button"
+                        class="btn btn-outline-secondary py-0 px-2"
+                        onclick="_setView('chart')" title="Show chart"
+                        style="display:none;">
+                    <i class="bi bi-bar-chart-line"></i> Chart
+                </button>
+                <button id="btnViewMap" type="button"
+                        class="btn btn-outline-secondary py-0 px-2"
+                        onclick="_setView('map')" title="Show on map"
+                        style="display:none;">
+                    <i class="bi bi-geo-alt"></i> Map
+                </button>
+            </div>
             <button id="reportRefreshBtn"
                     class="btn btn-sm btn-outline-secondary py-0 px-2 report-card-hdr-btn"
                     onclick="fetchReport()" title="Refresh report" style="font-size:0.75rem;">
@@ -363,31 +373,15 @@
         var pre    = document.getElementById('reportPre');
         var chart  = document.getElementById('mtrChartPanel');
         var mapP   = document.getElementById('mtrMapPanel');
-        var btnChart = document.getElementById('reportChartBtn');
-        var btnMap   = document.getElementById('reportMapBtn');
 
         if (pre)   pre.style.display   = (v === 'raw')   ? '' : 'none';
         if (chart) chart.style.display = (v === 'chart') ? '' : 'none';
         if (mapP)  mapP.style.display  = (v === 'map')   ? '' : 'none';
 
-        if (btnChart) {
-            if (v === 'chart') {
-                btnChart.innerHTML = '<i class="bi bi-code-slash"></i> Raw';
-                btnChart.onclick = function() { window._setView('raw'); };
-            } else {
-                btnChart.innerHTML = '<i class="bi bi-bar-chart-line"></i> Chart';
-                btnChart.onclick = function() { window._setView('chart'); };
-            }
-        }
-        if (btnMap) {
-            if (v === 'map') {
-                btnMap.innerHTML = '<i class="bi bi-code-slash"></i> Raw';
-                btnMap.onclick = function() { window._setView('raw'); };
-            } else {
-                btnMap.innerHTML = '<i class="bi bi-geo-alt"></i> Map';
-                btnMap.onclick = function() { window._setView('map'); };
-            }
-        }
+        ['Raw','Chart','Map'].forEach(function(name) {
+            var btn = document.getElementById('btnView' + name);
+            if (btn) btn.classList.toggle('active', v === name.toLowerCase());
+        });
 
         if (v === 'map') {
             setTimeout(function() {
@@ -408,12 +402,19 @@
     };
     window._mtrWasShowing = function() { return _view === 'chart'; };
 
+    function _showToggleGroup() {
+        var g = document.getElementById('viewToggleGroup');
+        if (g) g.style.cssText = 'font-size:0.75rem;';
+    }
+
     window._mtrReset = function() {
         _chartReady = false; _mapReady = false; _view = 'raw';
-        var btnChart = document.getElementById('reportChartBtn');
-        var btnMap   = document.getElementById('reportMapBtn');
-        if (btnChart) { btnChart.style.display = 'none'; }
-        if (btnMap)   { btnMap.style.display   = 'none'; }
+        var g = document.getElementById('viewToggleGroup');
+        if (g) g.style.cssText = 'display:none!important;';
+        var btnChart = document.getElementById('btnViewChart');
+        var btnMap   = document.getElementById('btnViewMap');
+        if (btnChart) btnChart.style.display = 'none';
+        if (btnMap)   btnMap.style.display   = 'none';
         var chart = document.getElementById('mtrChartPanel');
         if (chart) { chart.innerHTML = ''; chart.style.display = 'none'; }
         var mapP = document.getElementById('mtrMapPanel');
@@ -437,8 +438,9 @@
         if (!chart) return;
         try { chart.innerHTML = _build(mtr, nmap); } catch(e) { return; }
         _chartReady = true;
-        var btnChart = document.getElementById('reportChartBtn');
+        var btnChart = document.getElementById('btnViewChart');
         if (btnChart) btnChart.style.display = '';
+        _showToggleGroup();
         window._setView('chart');
         /* kick off map geo-resolution in background */
         _fetchHopCoords(mtr);
@@ -464,7 +466,7 @@
                 if (resolved.length >= 2) {
                     _buildMap(mtr, geoMap);
                     _mapReady = true;
-                    var btnMap = document.getElementById('reportMapBtn');
+                    var btnMap = document.getElementById('btnViewMap');
                     if (btnMap) btnMap.style.display = '';
                 }
             })

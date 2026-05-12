@@ -643,6 +643,10 @@ function createAndSubmitDynamicForm(action,bcc,subject,body) {
     </div>
   </div>
 
+  <span class="text-muted ms-auto" style="font-size:0.75rem; white-space:nowrap;" title="All times displayed on this page are in Coordinated Universal Time (UTC)">
+    <i class="bi bi-clock"></i> All times UTC
+  </span>
+
 </div>
 
 <table class="toplevel">

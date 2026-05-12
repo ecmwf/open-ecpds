@@ -26,7 +26,8 @@
 .filter-panel {
   position: fixed;
   z-index: 1050;
-  min-width: 500px;
+  min-width: min(500px, calc(100vw - 20px));
+  max-width: calc(100vw - 20px);
   background: var(--bs-tertiary-bg,#e9ecef);
   border: 1px solid var(--bs-border-color);
   border-top: 3px solid var(--bs-primary,#0d6efd) !important;
@@ -64,7 +65,7 @@
       Click to toggle visibility.
     </div>
 
-    <div class="d-flex gap-4 mb-3">
+    <div class="d-flex gap-4 mb-3 flex-wrap">
 
       <%-- Status column --%>
       <div>

@@ -24,7 +24,7 @@
                                     value='<c:out value="${destinationSearch}"/>'>
                             </div>
                         </div>
-                        <div class="col-3">
+                        <div class="col-12 col-sm-3">
                             <div class="input-group">
                                 <span class="input-group-text text-muted"><i class="bi bi-tag"></i></span>
                                 <select class="form-select" name="destinationType" id="destinationType" onchange="destsTableReload()" title="Filter by Type">
@@ -65,7 +65,7 @@
                     </div>
                     <%-- Row 2: secondary filters --%>
                     <div class="row g-2">
-                        <div class="col-4">
+                        <div class="col-12 col-sm-4">
                             <div class="input-group input-group-sm">
                                 <span class="input-group-text text-muted"><i class="bi bi-activity"></i></span>
                                 <select class="form-select form-select-sm" name="destinationStatus" onchange="destsTableReload()" title="Filter by Status">
@@ -75,7 +75,7 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="col-4">
+                        <div class="col-12 col-sm-4">
                             <div class="input-group input-group-sm">
                                 <span class="input-group-text text-muted"><i class="bi bi-file-zip"></i></span>
                                 <select class="form-select form-select-sm" name="destinationFilter" onchange="destsTableReload()" title="Filter by Compression">
@@ -85,7 +85,7 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="col-4">
+                        <div class="col-12 col-sm-4">
                             <div class="input-group input-group-sm">
                                 <span class="input-group-text text-muted"><i class="bi bi-diagram-2"></i></span>
                                 <select class="form-select form-select-sm" name="aliases" onchange="destsTableReload()" title="Aliased From/To">

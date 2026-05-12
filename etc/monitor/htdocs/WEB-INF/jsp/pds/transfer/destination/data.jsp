@@ -50,8 +50,8 @@
 <tiles:insert page="./pds/transfer/destination/data/filter_table.jsp" />
 <table border=0 width="100%">
 <tr><td valign="top" colspan="3"><tiles:insert page="./pds/transfer/destination/data/transfer_table.jsp" /></td></tr>
-<tiles:insert page="./pds/transfer/destination/data/hosts_and_users_tr.jsp" />
 </table>
+<tiles:insert page="./pds/transfer/destination/data/hosts_and_users_tr.jsp" />
 
 		<script>
 			setAll();

@@ -19,7 +19,7 @@
 
     <tr><td><a href='<bean:message key="host.basepath"/>/${host.id}?mode=changelog'><i class="bi bi-clock-history sidebar-icon"></i> Changes Log</a></td></tr>
 
-    <auth:if basePathKey="transferhistory.basepath" paths="/">
+    <auth:if basePathKey="host.basepath" paths="/edit/getOutput/">
         <auth:then>
             <tr><td><a href='<bean:message key="host.basepath"/>/edit/getOutput/view/${host.id}'><i class="bi bi-terminal sidebar-icon"></i> View Output</a></td></tr>
         </auth:then>

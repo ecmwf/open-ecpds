@@ -1145,9 +1145,11 @@ a:hover {
     color: #0d6efd;
     text-decoration: none;
 }
-/* Badges used as links keep white text on hover, except light badges which use dark text */
+/* Badges used as links keep white text on hover, except light badges which use dark text.
+   No !important here so Bootstrap utility text classes (text-body, text-danger-emphasis, etc.)
+   which carry their own !important can override for light-background badges. */
 a.badge:hover {
-    color: #fff !important;
+    color: #fff;
 }
 a.badge.bg-light:hover, a.badge.text-dark:hover, a.badge.text-secondary:hover {
     color: #343a40 !important;

@@ -30,22 +30,19 @@
 <!--<html:form action='<%=htmlFormAction%>'>-->
 <form name="<%=actionFormName%>" action="/do<%=realFormAction%>" method="post">
 
-<table width=100%>
-<tr>
-<td>
+<div>
+<div>
 <tiles:insert name="body">
 	<tiles:put name="isInsert" value='<%=Boolean.toString(action.endsWith("/insert"))%>'/>
 	<tiles:put name="isDelete" value='<%=Boolean.toString(action.indexOf("/delete/")>=0)%>' />
 	<tiles:put name="action.form.name" value="<%=actionFormName%>" />
 </tiles:insert>
-</td>
-<tr>
-<td class="pt-3">
+</div>
+<div class="pt-3">
 <tiles:insert name="buttons">
 	<tiles:put name="operation" value="<%=operation%>" />
 </tiles:insert>
-</td>
-</tr>
-</table>
+</div>
+</div>
 
 </html:form>
