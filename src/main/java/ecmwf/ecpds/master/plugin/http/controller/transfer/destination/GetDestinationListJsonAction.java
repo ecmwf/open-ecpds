@@ -34,7 +34,6 @@ package ecmwf.ecpds.master.plugin.http.controller.transfer.destination;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -80,8 +79,6 @@ public class GetDestinationListJsonAction extends PDSAction {
         final var draw = parseSafeInt(request.getParameter("draw"), 1);
         final var start = parseSafeInt(request.getParameter("start"), 0);
         final var lengthParam = parseSafeInt(request.getParameter("length"), 25);
-        final var allRows = lengthParam == -1;
-        final var length = allRows ? Integer.MAX_VALUE : Math.max(1, lengthParam);
 
         final var search = Util.getValue(request, "destinationSearch", "");
         final var sortDirection = Util.getValue(request, "sortDirection", "asc");
@@ -96,61 +93,19 @@ public class GetDestinationListJsonAction extends PDSAction {
         final int orderCol = orderColParam != null ? parseSafeInt(orderColParam, 1) : 1;
         final boolean ascending = orderDirParam != null ? "asc".equals(orderDirParam) : "asc".equals(sortDirection);
 
-        Collection<Destination> allDestinations;
+        Collection<Destination> page;
+        int recordsTotal = 0;
         String queryError = null;
         try {
-            // DB-level sort only applies to the name column (1); other columns sort in-memory
-            allDestinations = DestinationHome.findByUser(user, search, aliases, orderCol != 1 || ascending,
+            page = DestinationHome.findByUser(user, search, aliases, orderCol, ascending, start, lengthParam,
+                    StatusFactory.getDestinationStatusCode(status), GetDestinationAction.getDestinationTypeIds(type),
+                    filter);
+            recordsTotal = DestinationHome.countByUser(user, search, aliases,
                     StatusFactory.getDestinationStatusCode(status), GetDestinationAction.getDestinationTypeIds(type),
                     filter);
         } catch (final TransferException e) {
-            allDestinations = new ArrayList<>(0);
+            page = new ArrayList<>(0);
             queryError = e.getMessage();
-        }
-
-        // In-memory sort for Name (col 2), Status (col 3), Aliases (col 4) and Category (col 5)
-        if (orderCol == 2 || orderCol == 3 || orderCol == 4 || orderCol == 5) {
-            final var list = allDestinations instanceof List ? (List<Destination>) allDestinations
-                    : new ArrayList<>(allDestinations);
-            if (orderCol == 2) {
-                list.sort((a, b) -> {
-                    final var va = a.getId() != null ? a.getId() : "";
-                    final var vb = b.getId() != null ? b.getId() : "";
-                    return ascending ? va.compareToIgnoreCase(vb) : vb.compareToIgnoreCase(va);
-                });
-            } else if (orderCol == 3) {
-                list.sort((a, b) -> {
-                    final var va = a.getFormattedStatus() != null ? a.getFormattedStatus() : "";
-                    final var vb = b.getFormattedStatus() != null ? b.getFormattedStatus() : "";
-                    return ascending ? va.compareTo(vb) : vb.compareTo(va);
-                });
-            } else if (orderCol == 4) {
-                list.sort((a, b) -> {
-                    final int ca = safeAliasCount(a);
-                    final int cb = safeAliasCount(b);
-                    return ascending ? Integer.compare(ca, cb) : Integer.compare(cb, ca);
-                });
-            } else {
-                list.sort((a, b) -> {
-                    final var va = a.getTypeText() != null ? a.getTypeText() : "";
-                    final var vb = b.getTypeText() != null ? b.getTypeText() : "";
-                    return ascending ? va.compareTo(vb) : vb.compareTo(va);
-                });
-            }
-            allDestinations = list;
-        }
-
-        final var recordsTotal = allDestinations.size();
-        final List<Destination> page;
-        if (allRows) {
-            page = allDestinations instanceof List ? (List<Destination>) allDestinations
-                    : new ArrayList<>(allDestinations);
-        } else {
-            final var list = allDestinations instanceof List ? (List<Destination>) allDestinations
-                    : new ArrayList<>(allDestinations);
-            final var from = Math.min(start, list.size());
-            final var to = Math.min(start + length, list.size());
-            page = list.subList(from, to);
         }
 
         final var root = MAPPER.createObjectNode();
@@ -439,15 +394,6 @@ public class GetDestinationListJsonAction extends PDSAction {
             err.put("error", message);
             MAPPER.writeValue(response.getWriter(), err);
         } catch (final Exception ignored) {
-        }
-    }
-
-    private static int safeAliasCount(final Destination d) {
-        try {
-            final var a = d.getAliases();
-            return a != null ? a.size() : 0;
-        } catch (final Exception e) {
-            return 0;
         }
     }
 }

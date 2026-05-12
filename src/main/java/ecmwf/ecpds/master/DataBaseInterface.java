@@ -562,8 +562,14 @@ public interface DataBaseInterface extends Remote {
      *            the search
      * @param fromToAliases
      *            the from to aliases
-     * @param asc
-     *            the asc
+     * @param orderColumn
+     *            the DataTables column index to sort by
+     * @param ascending
+     *            true for ascending sort
+     * @param start
+     *            the zero-based row offset for pagination (pass -1 for no limit)
+     * @param length
+     *            the maximum number of rows to return (pass -1 for no limit)
      * @param status
      *            the status
      * @param type
@@ -576,8 +582,32 @@ public interface DataBaseInterface extends Remote {
      * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
-    Destination[] getDestinationsByUser(String uid, String search, String fromToAliases, boolean asc, String status,
-            String type, String filter) throws IOException;
+    Destination[] getDestinationsByUser(String uid, String search, String fromToAliases, int orderColumn,
+            boolean ascending, int start, int length, String status, String type, String filter) throws IOException;
+
+    /**
+     * Gets the total count of destinations accessible by a given user matching the supplied filters.
+     *
+     * @param uid
+     *            the uid
+     * @param search
+     *            the search
+     * @param fromToAliases
+     *            the from to aliases
+     * @param status
+     *            the status
+     * @param type
+     *            the type
+     * @param filter
+     *            the filter
+     *
+     * @return the total count of matching destinations
+     *
+     * @throws java.io.IOException
+     *             Signals that an I/O exception has occurred.
+     */
+    int getDestinationsByUserCount(String uid, String search, String fromToAliases, String status, String type,
+            String filter) throws IOException;
 
     /**
      * Gets the authorised hosts for a web user.

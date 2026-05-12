@@ -40,8 +40,17 @@ public class DestinationsByUser extends ModelSearchBase {
     /** The search. */
     private final String search;
 
-    /** The asc. */
-    private final boolean asc;
+    /** The DataTables column index to sort by. */
+    private final int orderColumn;
+
+    /** The ascending sort direction. */
+    private final boolean ascending;
+
+    /** The zero-based row offset for pagination (-1 means no limit). */
+    private final int start;
+
+    /** The maximum number of rows to return (-1 means no limit). */
+    private final int length;
 
     /** The status. */
     private final String status;
@@ -56,7 +65,7 @@ public class DestinationsByUser extends ModelSearchBase {
     private final String fromToAliases;
 
     /**
-     * Instantiates a new destinations by user.
+     * Instantiates a new destinations by user (legacy — loads all rows, sorts by name).
      *
      * @param user
      *            the user
@@ -65,7 +74,7 @@ public class DestinationsByUser extends ModelSearchBase {
      * @param fromToAliases
      *            the from to aliases
      * @param asc
-     *            the asc
+     *            the ascending sort direction for name column
      * @param status
      *            the status
      * @param type
@@ -75,10 +84,43 @@ public class DestinationsByUser extends ModelSearchBase {
      */
     public DestinationsByUser(final User user, final String search, final String fromToAliases, final boolean asc,
             final String status, final String type, final String filter) {
+        this(user, search, fromToAliases, 1, asc, 0, -1, status, type, filter);
+    }
+
+    /**
+     * Instantiates a new destinations by user with full pagination and sort control.
+     *
+     * @param user
+     *            the user
+     * @param search
+     *            the search
+     * @param fromToAliases
+     *            the from to aliases
+     * @param orderColumn
+     *            the DataTables column index to sort by
+     * @param ascending
+     *            true for ascending sort
+     * @param start
+     *            the zero-based row offset (-1 for no limit)
+     * @param length
+     *            the maximum number of rows (-1 for no limit)
+     * @param status
+     *            the status
+     * @param type
+     *            the type
+     * @param filter
+     *            the filter
+     */
+    public DestinationsByUser(final User user, final String search, final String fromToAliases, final int orderColumn,
+            final boolean ascending, final int start, final int length, final String status, final String type,
+            final String filter) {
         this.user = user;
         this.search = search;
         this.fromToAliases = fromToAliases;
-        this.asc = asc;
+        this.orderColumn = orderColumn;
+        this.ascending = ascending;
+        this.start = start;
+        this.length = length;
         this.status = status;
         this.type = type;
         this.filter = filter;
@@ -130,12 +172,39 @@ public class DestinationsByUser extends ModelSearchBase {
     }
 
     /**
-     * Gets the asc.
+     * Gets the order column index.
      *
-     * @return the asc
+     * @return the DataTables column index to sort by
      */
-    public boolean getAsc() {
-        return asc;
+    public int getOrderColumn() {
+        return orderColumn;
+    }
+
+    /**
+     * Gets the ascending sort flag.
+     *
+     * @return true for ascending sort
+     */
+    public boolean isAscending() {
+        return ascending;
+    }
+
+    /**
+     * Gets the start offset.
+     *
+     * @return the zero-based row offset (-1 means no limit)
+     */
+    public int getStart() {
+        return start;
+    }
+
+    /**
+     * Gets the length.
+     *
+     * @return the maximum number of rows (-1 means no limit)
+     */
+    public int getLength() {
+        return length;
     }
 
     /**

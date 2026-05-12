@@ -1741,13 +1741,14 @@ public final class ECpdsBase extends DataBase {
      * @return the destinations by user
      */
     public List<Destination> getDestinationsByUser(final String uid, final SQLParameterParser options,
-            final String fromToAliases, final boolean asc, final String status, final String type,
-            final String filter) {
+            final String fromToAliases, final int orderColumn, final boolean ascending, final int start,
+            final int length, final String status, final String type, final String filter) {
         final List<Destination> list = new ArrayList<>();
         try (var it = ecpds.getDestinationsByUser(uid, options.get(0, "DES_NAME"), options.get(1, "DES_COMMENT"),
                 options.get(2, "COUNTRY.COU_ISO", "COUNTRY.COU_NAME"), options.get(3, "DES_DATA"),
                 options.get(4, "DES_ACTIVE"), options.get(5, "DES_MONITOR"), options.get(6, "DES_BACKUP"),
-                options.get(7, "DES_FORCE_PROXY"), fromToAliases, asc, status, type, filter, Destination.class)) {
+                options.get(7, "DES_FORCE_PROXY"), fromToAliases, orderColumn, ascending, start, length, status, type,
+                filter, Destination.class)) {
             while (it.hasNext()) {
                 list.add(it.next());
             }
@@ -1756,6 +1757,37 @@ public final class ECpdsBase extends DataBase {
         }
         logSqlRequest("getDestinationsByUser", list.size());
         return list;
+    }
+
+    /**
+     * Gets the number of destinations accessible by a given user matching the supplied filters.
+     *
+     * @param uid
+     *            the web-user id
+     * @param options
+     *            the parsed SQL search options
+     * @param fromToAliases
+     *            the from/to aliases filter
+     * @param status
+     *            the status filter
+     * @param type
+     *            the type filter
+     * @param filter
+     *            the filter name filter
+     *
+     * @return the total count of matching destinations
+     */
+    public int getDestinationsByUserCount(final String uid, final SQLParameterParser options,
+            final String fromToAliases, final String status, final String type, final String filter) {
+        try {
+            return ecpds.getDestinationsByUserCount(uid, options.get(0, "DES_NAME"), options.get(1, "DES_COMMENT"),
+                    options.get(2, "COUNTRY.COU_ISO", "COUNTRY.COU_NAME"), options.get(3, "DES_DATA"),
+                    options.get(4, "DES_ACTIVE"), options.get(5, "DES_MONITOR"), options.get(6, "DES_BACKUP"),
+                    options.get(7, "DES_FORCE_PROXY"), fromToAliases, status, type, filter);
+        } catch (SQLException | IOException e) {
+            _log.warn("getDestinationsByUserCount", e);
+            return 0;
+        }
     }
 
     /**

@@ -931,8 +931,14 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
      *            the search
      * @param fromToAliases
      *            the from to aliases
-     * @param asc
-     *            the asc
+     * @param orderColumn
+     *            the DataTables column index to sort by
+     * @param ascending
+     *            true for ascending sort
+     * @param start
+     *            the zero-based row offset for pagination (pass -1 for no limit)
+     * @param length
+     *            the maximum number of rows to return (pass -1 for no limit)
      * @param status
      *            the status
      * @param type
@@ -947,28 +953,58 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
      */
     @Override
     public Destination[] getDestinationsByUser(final String uid, final String search, final String fromToAliases,
-            final boolean asc, final String status, final String type, final String filter) throws IOException {
-        final String searchString;
-        if (EMAIL_PATTERN.matcher(search).matches()) {
-            searchString = "email=" + search;
-        } else {
-            searchString = search;
-        }
-        final var monitor = new MonitorCall("getDestinationsByUser(" + uid + "," + searchString + "," + fromToAliases
-                + "," + asc + "," + status + "," + type + "," + filter + ")");
+            final int orderColumn, final boolean ascending, final int start, final int length, final String status,
+            final String type, final String filter) throws IOException {
+        final String searchString = EMAIL_PATTERN.matcher(search).matches() ? "email=" + search : search;
+        final var monitor = new MonitorCall(
+                "getDestinationsByUser(" + uid + "," + searchString + "," + fromToAliases + "," + orderColumn + ","
+                        + ascending + "," + start + "," + length + "," + status + "," + type + "," + filter + ")");
         final var options = new SQLParameterParser(searchString, "name", "comment", "country", "options", "enabled=?",
                 "monitor=?", "backup=?", "forceproxy=?", "email");
         final var email = options.remove("email");
-        final var foundDestinations = ecpds.getDestinationsByUser(uid, options, fromToAliases, asc, status, type,
-                filter);
-        if (email != null && !email.isEmpty()) {
-            // An email is provided, so remove all the destinations which are not associated
-            // with it!
+        final boolean hasEmail = email != null && !email.isEmpty();
+        // When email filter is active, load all rows then filter and paginate in Java
+        final int sqlStart = hasEmail ? 0 : start;
+        final int sqlLength = hasEmail ? -1 : length;
+        final var foundDestinations = ecpds.getDestinationsByUser(uid, options, fromToAliases, orderColumn, ascending,
+                sqlStart, sqlLength, status, type, filter);
+        if (hasEmail) {
             final var destinationNames = master.getManagementInterface().getDestinationNamesForContact(email,
                     options.isCaseSensitive());
             foundDestinations.removeIf(d -> !destinationNames.contains(d.getName()));
+            if (length != -1 && (start > 0 || foundDestinations.size() > length)) {
+                final int from = Math.min(start, foundDestinations.size());
+                final int to = Math.min(from + length, foundDestinations.size());
+                return monitor.done(foundDestinations.subList(from, to).toArray(new Destination[0]));
+            }
         }
         return monitor.done(foundDestinations.toArray(new Destination[0]));
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Gets the total count of destinations accessible by a given user.
+     */
+    @Override
+    public int getDestinationsByUserCount(final String uid, final String search, final String fromToAliases,
+            final String status, final String type, final String filter) throws IOException {
+        final String searchString = EMAIL_PATTERN.matcher(search).matches() ? "email=" + search : search;
+        final var monitor = new MonitorCall("getDestinationsByUserCount(" + uid + "," + searchString + "," + status
+                + "," + type + "," + filter + ")");
+        final var options = new SQLParameterParser(searchString, "name", "comment", "country", "options", "enabled=?",
+                "monitor=?", "backup=?", "forceproxy=?", "email");
+        final var email = options.remove("email");
+        if (email != null && !email.isEmpty()) {
+            // Email filter: load all, filter, count in Java
+            final var foundDestinations = ecpds.getDestinationsByUser(uid, options, fromToAliases, 1, true, 0, -1,
+                    status, type, filter);
+            final var destinationNames = master.getManagementInterface().getDestinationNamesForContact(email,
+                    options.isCaseSensitive());
+            foundDestinations.removeIf(d -> !destinationNames.contains(d.getName()));
+            return monitor.done(foundDestinations.size());
+        }
+        return monitor.done(ecpds.getDestinationsByUserCount(uid, options, fromToAliases, status, type, filter));
     }
 
     /**

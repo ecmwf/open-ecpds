@@ -1610,14 +1610,66 @@ final class ECpdsGet {
     <T extends DataBaseObject> DBIterator<T> getDestinationsByUser(final String paramUid, final String paramName,
             final String paramComment, final String paramCountry, final String paramOptions, final String paramEnabled,
             final String paramMonitor, final String paramBackup, final String paramForceProxy,
-            final String paramFromToAliases, final boolean paramAsc, final String paramStatus, final String paramType,
+            final String paramFromToAliases, final int paramOrderColumn, final boolean paramAscending,
+            final int paramStart, final int paramLength, final String paramStatus, final String paramType,
             final String paramFilter, final Class<T> resultClass) throws SQLException, IOException {
         return _database.executeQuery("ECpdsBase", "getDestinationsByUser", resultClass,
                 new String[] { "uid=" + paramUid, "name-=" + paramName, "comment-=" + paramComment,
                         "country-=" + paramCountry, "options-=" + paramOptions, "enabled-=" + paramEnabled,
                         "monitor-=" + paramMonitor, "backup-=" + paramBackup, "forceProxy-=" + paramForceProxy,
-                        "fromToAliases=" + paramFromToAliases, "asc=" + paramAsc, "status=" + paramStatus,
-                        "type=" + paramType, "filter=" + paramFilter });
+                        "fromToAliases=" + paramFromToAliases, "orderColumn=" + paramOrderColumn,
+                        "ascending=" + paramAscending, "start=" + paramStart, "length=" + paramLength,
+                        "status=" + paramStatus, "type=" + paramType, "filter=" + paramFilter });
+    }
+
+    /**
+     * Gets the destination count by user with filters.
+     *
+     * @param paramUid
+     *            the uid
+     * @param paramName
+     *            the name filter (fuzzy)
+     * @param paramComment
+     *            the comment filter (fuzzy)
+     * @param paramCountry
+     *            the country filter (fuzzy)
+     * @param paramOptions
+     *            the options filter (fuzzy)
+     * @param paramEnabled
+     *            the enabled filter
+     * @param paramMonitor
+     *            the monitor filter
+     * @param paramBackup
+     *            the backup filter
+     * @param paramForceProxy
+     *            the forceProxy filter
+     * @param paramFromToAliases
+     *            the from/to aliases filter
+     * @param paramStatus
+     *            the status filter
+     * @param paramType
+     *            the type filter
+     * @param paramFilter
+     *            the filter name filter
+     *
+     * @return the total number of matching destinations
+     *
+     * @throws SQLException
+     *             the SQL exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     */
+    int getDestinationsByUserCount(final String paramUid, final String paramName, final String paramComment,
+            final String paramCountry, final String paramOptions, final String paramEnabled, final String paramMonitor,
+            final String paramBackup, final String paramForceProxy, final String paramFromToAliases,
+            final String paramStatus, final String paramType, final String paramFilter)
+            throws SQLException, IOException {
+        return _database.executeCountAsInt("ECpdsBase", "getDestinationsByUserCount",
+                new String[] { "uid=" + paramUid, "name-=" + paramName, "comment-=" + paramComment,
+                        "country-=" + paramCountry, "options-=" + paramOptions, "enabled-=" + paramEnabled,
+                        "monitor-=" + paramMonitor, "backup-=" + paramBackup, "forceProxy-=" + paramForceProxy,
+                        "fromToAliases=" + paramFromToAliases, "status=" + paramStatus, "type=" + paramType,
+                        "filter=" + paramFilter });
     }
 
     /**

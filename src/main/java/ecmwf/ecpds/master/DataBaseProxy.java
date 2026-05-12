@@ -541,14 +541,32 @@ final class DataBaseProxy implements DataBaseInterface {
      */
     @Override
     public Destination[] getDestinationsByUser(final String uid, final String search, final String fromToAliases,
-            final boolean asc, final String status, final String type, final String filter) throws IOException {
+            final int orderColumn, final boolean ascending, final int start, final int length, final String status,
+            final String type, final String filter) throws IOException {
         if (isEmpty(uid)) {
             return new Destination[0];
         }
-        final var monitor = new MonitorCall("getDestinationsByUser(" + uid + "," + search + "," + asc + "," + status
-                + "," + type + "," + filter + ")");
+        final var monitor = new MonitorCall("getDestinationsByUser(" + uid + "," + search + "," + orderColumn + ","
+                + ascending + "," + start + "," + length + "," + status + "," + type + "," + filter + ")");
+        return monitor.done(dataBaseInterface.getDestinationsByUser(uid, search, fromToAliases, orderColumn, ascending,
+                start, length, status, type, filter));
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Gets the total count of destinations accessible by a given user.
+     */
+    @Override
+    public int getDestinationsByUserCount(final String uid, final String search, final String fromToAliases,
+            final String status, final String type, final String filter) throws IOException {
+        if (isEmpty(uid)) {
+            return 0;
+        }
+        final var monitor = new MonitorCall(
+                "getDestinationsByUserCount(" + uid + "," + search + "," + status + "," + type + "," + filter + ")");
         return monitor
-                .done(dataBaseInterface.getDestinationsByUser(uid, search, fromToAliases, asc, status, type, filter));
+                .done(dataBaseInterface.getDestinationsByUserCount(uid, search, fromToAliases, status, type, filter));
     }
 
     /**

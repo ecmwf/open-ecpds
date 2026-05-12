@@ -134,9 +134,9 @@ public class DestinationDAOHandler extends PDSDAOBase implements DAOHandler {
                 return convertArrayToModelBeanCollection(
                         MasterManager.getDB().getDestinationsByCountryISO(s.getCountry().getIso()));
             } else if (search instanceof final DestinationsByUser s) {
-                return convertArrayToModelBeanCollection(
-                        MasterManager.getDB().getDestinationsByUser(s.getUser().getId(), s.getSearch(),
-                                s.getFromToAliases(), s.getAsc(), s.getStatus(), s.getType(), s.getFilter()));
+                return convertArrayToModelBeanCollection(MasterManager.getDB().getDestinationsByUser(
+                        s.getUser().getId(), s.getSearch(), s.getFromToAliases(), s.getOrderColumn(), s.isAscending(),
+                        s.getStart(), s.getLength(), s.getStatus(), s.getType(), s.getFilter()));
             } else if (search instanceof final DestinationAliases s) {
                 if (s.isAliasList()) {
                     return convertArrayToModelBeanCollection(

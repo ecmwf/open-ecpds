@@ -2,13 +2,13 @@
 ## References
 ##
 #menu "ECpdsBase"
-#name "getDestinationsByUser"
-#group "query"
+#name "getDestinationsByUserCount"
+#group "count"
 
 ##
 ## Variable(s)
 ##
-#prompt "uid;Get Destinations for a given user;%"
+#prompt "uid;Get Destination count for a given user;%"
 #prompt "name;Destination;%"
 #prompt "comment;Destination comment;%"
 #prompt "country;Country name or iso;%"
@@ -18,10 +18,6 @@
 #prompt "backup;Backup;%"
 #prompt "forceProxy;Force Proxy;%"
 #prompt "fromToAliases;From To Aliases;%"
-#prompt "orderColumn;Order column index;1"
-#prompt "ascending;Sort direction ascending;true"
-#prompt "start;Start offset;0"
-#prompt "length;Page length;-1"
 #prompt "status;Select by status;%"
 #prompt "type;Select by type;%"
 #prompt "filter;Select by filter;%"
@@ -29,7 +25,7 @@
 ##
 ## Request(s)
 ##
-SELECT DESTINATION.*
+SELECT COUNT(*)
 FROM
   DESTINATION,COUNTRY
 WHERE
@@ -59,43 +55,4 @@ WHERE
 #fi
 #if ('$fromToAliases' == 'from')
   AND DESTINATION.DES_NAME IN (SELECT ALIAS.ALI_DES_NAME FROM ALIAS)
-#fi
-#if ('$orderColumn' == '0')
-  ORDER BY COU_ISO
-#fi
-#if ('$orderColumn' == '1')
-  ORDER BY DES_NAME
-#fi
-#if ('$orderColumn' == '2')
-  ORDER BY DES_NAME
-#fi
-#if ('$orderColumn' == '3')
-  ORDER BY STA_CODE
-#fi
-#if ('$orderColumn' == '4')
-  ORDER BY (SELECT COUNT(*) FROM ALIAS WHERE ALIAS.DES_NAME = DESTINATION.DES_NAME)
-#fi
-#if ('$orderColumn' == '5')
-  ORDER BY DES_TYPE
-#fi
-#if ('$orderColumn' == '6')
-  ORDER BY DES_FILTER_NAME
-#fi
-#if ('$orderColumn' == '7')
-  ORDER BY DES_ACTIVE
-#fi
-#if ('$orderColumn' == '8')
-  ORDER BY DES_ACQUISITION
-#fi
-#if ('$orderColumn' == '9')
-  ORDER BY DES_MONITOR
-#fi
-#if ('$ascending' == 'true')
-  ASC
-#fi
-#if ('$ascending' == 'false')
-  DESC
-#fi
-#if ('$length' != '-1')
-LIMIT $start,$length
 #fi

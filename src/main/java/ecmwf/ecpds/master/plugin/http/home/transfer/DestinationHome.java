@@ -200,6 +200,73 @@ public class DestinationHome extends ModelHomeBase {
     }
 
     /**
+     * Find by user with server-side pagination and sort.
+     *
+     * @param user
+     *            the user
+     * @param search
+     *            the search
+     * @param fromToAliases
+     *            the from to aliases
+     * @param orderColumn
+     *            the DataTables column index to sort by
+     * @param ascending
+     *            true for ascending sort
+     * @param start
+     *            the zero-based row offset (-1 for no limit)
+     * @param length
+     *            the maximum number of rows (-1 for no limit)
+     * @param status
+     *            the status
+     * @param type
+     *            the type
+     * @param filter
+     *            the filter
+     *
+     * @return the collection (just the requested page)
+     *
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
+     *             the transfer exception
+     */
+    public static final Collection<Destination> findByUser(final User user, final String search,
+            final String fromToAliases, final int orderColumn, final boolean ascending, final int start,
+            final int length, final String status, final String type, final String filter) throws TransferException {
+        return find(new DestinationsByUser(user, search, fromToAliases, orderColumn, ascending, start, length, status,
+                type, filter));
+    }
+
+    /**
+     * Count by user.
+     *
+     * @param user
+     *            the user
+     * @param search
+     *            the search
+     * @param fromToAliases
+     *            the from to aliases
+     * @param status
+     *            the status
+     * @param type
+     *            the type
+     * @param filter
+     *            the filter
+     *
+     * @return the total count of matching destinations
+     *
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
+     *             the transfer exception
+     */
+    public static final int countByUser(final User user, final String search, final String fromToAliases,
+            final String status, final String type, final String filter) throws TransferException {
+        try {
+            return MasterManager.getDB().getDestinationsByUserCount(user.getId(), search, fromToAliases, status, type,
+                    filter);
+        } catch (final Exception e) {
+            throw new TransferException("Error counting destinations for user '" + user.getId() + "'", e);
+        }
+    }
+
+    /**
      * Find alias list.
      *
      * @param d
