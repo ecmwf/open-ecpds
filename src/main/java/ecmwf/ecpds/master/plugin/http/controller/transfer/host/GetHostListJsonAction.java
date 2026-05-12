@@ -148,7 +148,7 @@ public class GetHostListJsonAction extends PDSAction {
         } catch (final Exception e) {
             destNames = Collections.emptyMap();
         }
-        final var recordsTotal = Util.getCollectionSizeFrom(hosts);
+        final var recordsTotal = fullAccess ? Util.getCollectionSizeFrom(hosts) : hosts.size();
         // When sorting by destination count: sort in-memory and paginate here
         final var destNamesRef = destNames;
         List<Host> hostList = new ArrayList<>(hosts);
