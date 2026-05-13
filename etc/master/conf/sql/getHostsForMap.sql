@@ -13,9 +13,16 @@
 #prompt "network;Network Code;%"
 #prompt "type;Type;%"
 #prompt "id;Id;%"
+#prompt "login;Login;%"
 #prompt "nickname;Nickname;%"
-#prompt "hostname;Hostname;%"
 #prompt "comment;Comment;%"
+#prompt "options;Options;%"
+#prompt "dir;Dir;%"
+#prompt "hostname;Hostname;%"
+#prompt "enabled;Enabled;%"
+#prompt "method;TransferMethod;%"
+#prompt "email;UserEmail;%"
+#prompt "password;Password;%"
 
 ##
 ## Request(s)
@@ -40,7 +47,14 @@ WHERE
 	AND HOS_TYPE = '$type'
 #fi
 	$id
+	$login
 	$nickname
-	$hostname
 	$comment
+	$options
+	$dir
+	$hostname
+	$enabled
+	$method
+	$email
+	$password
 ORDER BY HOS_NAME ASC

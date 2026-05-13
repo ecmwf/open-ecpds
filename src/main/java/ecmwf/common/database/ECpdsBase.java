@@ -2894,9 +2894,13 @@ public final class ECpdsBase extends DataBase {
     public List<Host> getHostsForMap(final String label, final String filter, final String network, final String type,
             final String search) throws DataBaseException {
         try {
-            final var options = new SQLParameterParser(search, "nickname", "id=d", "comment", "hostname");
+            final var options = new SQLParameterParser(search, "nickname", "id=d", "login", "comment", "options", "dir",
+                    "hostname", "enabled=?", "method", "email", "password");
             try (var rs = ecpds.getHostsForMap(label, filter, network, type, options.get(1, "HOS_NAME"),
-                    options.get(0, "HOS_NICKNAME"), options.get(3, "HOS_HOST"), options.get(2, "HOS_COMMENT"))) {
+                    options.get(2, "HOS_LOGIN"), options.get(0, "HOS_NICKNAME"), options.get(3, "HOS_COMMENT"),
+                    options.get(4, "HOS_DATA"), options.get(5, "HOS_DIR"), options.get(6, "HOS_HOST"),
+                    options.get(7, "HOS_ACTIVE"), options.get(8, "TME_NAME"), options.get(9, "HOS_USER_MAIL"),
+                    options.get(10, "HOS_PASSWD"))) {
                 final List<Host> list = new ArrayList<>();
                 while (rs.next()) {
                     final var host = new Host();

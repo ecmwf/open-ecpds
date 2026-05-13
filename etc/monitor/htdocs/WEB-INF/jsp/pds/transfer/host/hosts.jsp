@@ -717,6 +717,13 @@ function _updateHostSearchBanner(queryError, total, hasSearch) {
         fetch(buildMapUrl())
             .then(function(r) { return r.json(); })
             .then(function(geojson) {
+                if (geojson.queryError) {
+                    document.getElementById('mapFoundLabel').innerHTML =
+                        '<span class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i>'
+                        + '<strong>Error in your query:</strong> ' + esc(geojson.queryError) + '</span>';
+                    olSource.clear(true);
+                    return;
+                }
                 var fmt = new ol.format.GeoJSON();
                 var features = fmt.readFeatures(geojson, { featureProjection: 'EPSG:3857' });
                 olSource.clear(true);

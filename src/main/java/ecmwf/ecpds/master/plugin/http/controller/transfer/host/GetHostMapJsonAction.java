@@ -139,8 +139,12 @@ public class GetHostMapJsonAction extends PDSAction {
                 props.put("url", HOST_BASE_PATH + "/" + escapeHtml(h.id()));
                 features.add(feature);
             }
+        } catch (final java.io.IOException e) {
+            // SQLParameterParser rejected the query (unknown field or bad syntax)
+            root.put("queryError", e.getMessage());
         } catch (final Exception e) {
             _log.warn("Error building host map GeoJSON", e);
+            root.put("queryError", "Error loading hosts: " + e.getMessage());
         }
 
         try {

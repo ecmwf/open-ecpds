@@ -842,11 +842,14 @@ final class ECpdsGet {
     }
 
     DBResultSet getHostsForMap(final String label, final String filter, final String network, final String type,
-            final String id, final String nickname, final String hostname, final String comment)
-            throws SQLException, IOException {
+            final String id, final String login, final String nickname, final String comment, final String options,
+            final String dir, final String hostname, final String enabled, final String method, final String email,
+            final String password) throws SQLException, IOException {
         return _database.executeSelect("ECpdsBase", "getHostsForMap",
                 new String[] { "label=" + label, "filter=" + filter, "network=" + network, "type=" + type, "id-=" + id,
-                        "nickname-=" + nickname, "hostname-=" + hostname, "comment-=" + comment });
+                        "login-=" + login, "nickname-=" + nickname, "comment-=" + comment, "options-=" + options,
+                        "dir-=" + dir, "hostname-=" + hostname, "enabled-=" + enabled, "method-=" + method,
+                        "email-=" + email, "password-=" + password });
     }
 
     /**
