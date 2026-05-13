@@ -107,12 +107,12 @@ _ar.push({id:'${transfer.dataFileId}',target:'${acTarget}',status:${acStatus},ea
       <thead class="table-dark sticky-top">
         <tr>
           <th>#</th><th>File ID</th><th>Original</th><th>TS</th>
-          <th title="Scheduled">S</th>
-          <th title="Earliest">E</th>
-          <th title="Latest">L</th>
-          <th title="Target">T</th>
-          <th title="Predicted">P</th>
-          <th title="Actual arrival">A</th>
+          <th title="Scheduled (UTC)">S</th>
+          <th title="Earliest (UTC)">E</th>
+          <th title="Latest (UTC)">L</th>
+          <th title="Target (UTC)">T</th>
+          <th title="Predicted (UTC)">P</th>
+          <th title="Actual arrival (UTC)">A</th>
           <th>Status</th>
         </tr>
       </thead>

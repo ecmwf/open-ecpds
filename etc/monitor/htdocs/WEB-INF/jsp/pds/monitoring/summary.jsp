@@ -103,7 +103,7 @@
                 <td class="text-center">
                   <a href="/do/monitoring/summary/<c:out value="${tagStatus.name}"/>">
                     <span class="mon-dot mon-dot-${stepStatus.value.productStatus lt 0 ? 'n1' : stepStatus.value.productStatus}"
-                          title="<c:out value="${stepStatus.value.tag}:${stepStatus.value.step}"/> Arrival: ${stepStatus.value.productStatusCode} at <content:content name="stepStatus.value.lastUpdate" dateFormatKey="date.format.long.iso" ignoreNull="true"/>"></span>
+                          title="<c:out value="${stepStatus.value.tag}:${stepStatus.value.step}"/> Arrival: ${stepStatus.value.productStatusCode} at <content:content name="stepStatus.value.lastUpdate" dateFormatKey="date.format.long.iso" ignoreNull="true"/> (UTC)"></span>
                   </a>
                 </td>
               </c:forEach>
@@ -168,7 +168,7 @@
         <a href="<bean:message key="destination.basepath"/>/<c:out value="${destination.name}"/>"
            class="d-flex align-items-center gap-2 px-3 py-2 border rounded text-decoration-none text-body"
            style="background:var(--bs-tertiary-bg); font-size:0.82rem; white-space:nowrap;"
-           title="Status for '${destination.name}' last updated on '${destination.simplifiedMonitoringStatus.calculationDate}'">
+           title="Status for '${destination.name}' last updated on '${destination.simplifiedMonitoringStatus.calculationDate}' (UTC)">
           <span class="mon-dot mon-dot-s${destination.simplifiedMonitoringStatus.arrivalStatus lt 0 ? '0' : destination.simplifiedMonitoringStatus.arrivalStatus}"
                 title="Arrival Status: ${destination.simplifiedMonitoringStatus.arrivalStatus}"></span>
           <span class="mon-dot mon-dot-s${destination.simplifiedMonitoringStatus.transferStatus lt 0 ? '0' : destination.simplifiedMonitoringStatus.transferStatus}"

@@ -58,8 +58,11 @@
             <td>${user.comment}</td>
             <td>
                 <span class="d-inline-flex align-items-center gap-1">
-                    <span class="fi fi-${fn:toLowerCase(user.country.iso)}"
-                          title="${user.country.name}" style="font-size:1.1em;border-radius:2px;"></span>
+                    <c:choose>
+                        <c:when test="${user.country.iso == 'ex'}"><i class="bi bi-globe" title="${user.country.name}" style="font-size:1.1em;"></i></c:when>
+                        <c:when test="${fn:length(user.country.iso) == 2}"><span class="fi fi-${fn:toLowerCase(user.country.iso)}"
+                              title="${user.country.name}" style="font-size:1.1em;border-radius:2px;"></span></c:when>
+                    </c:choose>
                     <span>${user.country.name}</span>
                 </span>
             </td>

@@ -387,12 +387,9 @@ public class GetDestinationTransferListJsonAction extends PDSAction {
             return "";
         }
         final var id = escapeHtml(dt.getId());
-        return "<span class=\"d-flex gap-1 align-items-center\">" + "<span class=\"star-select\" data-transfer-id=\""
-                + id + "\"" + " onclick=\"select(this,'" + id
+        return "<span class=\"star-select\" data-transfer-id=\"" + id + "\"" + " onclick=\"select(this,'" + id
                 + "')\" style=\"cursor:pointer\" title=\"Select transfer\">"
-                + "<i class=\"bi bi-star fs-6\"></i></span>"
-                + "<a href=\"javascript:transferChange('validate','select')\" title=\"Go to selected transfers\">"
-                + "<i class=\"bi bi-arrow-right-circle\"></i></a>" + "</span>";
+                + "<i class=\"bi bi-star fs-6\"></i></span>";
     }
 
     // -------------------------------------------------------------------------

@@ -13,6 +13,17 @@
                 <div class="card-body py-2 px-3">
                     <%-- Row 1: search + type + button --%>
                     <div class="row g-1 mb-1">
+                        <div class="col-auto">
+                            <div class="input-group flex-nowrap" style="width:auto" title="Page size">
+                                <span class="input-group-text px-2"><i class="bi bi-list-ol"></i></span>
+                                <select id="hostPageLen" class="form-select" style="width:auto">
+                                    <option value="10">10</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                </select>
+                            </div>
+                        </div>
                         <div class="col">
                             <div class="input-group">
                                 <span class="input-group-text text-muted"><i class="bi bi-search"></i></span>
@@ -59,44 +70,11 @@
                                 <li><code>id=100</code>, <code>id&gt;=50</code> &mdash; filter by host ID (supports <code>=</code> <code>&gt;</code> <code>&gt;=</code> <code>&lt;</code> <code>&lt;=</code>).</li>
                                 <li><code>enabled=yes|no</code> &mdash; filter by enabled state.</li>
                                 <li><code>case=i</code> &mdash; make the search case-insensitive (default is case-sensitive).</li>
+                                <li><i class="bi bi-sliders2 me-1"></i><strong>Filter panel</strong> also provides <strong>Network</strong>, <strong>Label</strong> and <strong>Compression</strong> drop-downs that apply independently of the search text.</li>
                             </ul>
                             <p class="mb-0 text-muted">Example: <code>hostname=*.ecmwf.int method=*Ftp enabled=yes case=i</code></p>
                         </div>
                     </div>
-                    <%-- Row 2: secondary filters --%>
-                    <div class="row g-2">
-                        <div class="col-12 col-sm-4">
-                            <div class="input-group input-group-sm">
-                                <span class="input-group-text text-muted"><i class="bi bi-diagram-3"></i></span>
-                                <select class="form-select form-select-sm" name="network" onchange="hostsTableReload()" title="Filter by Network">
-                                    <c:forEach var="option" items="${networkOptions}">
-                                        <option value="${option.name}" <c:if test="${network == option.name}">selected</c:if>>${option.value}</option>
-                                    </c:forEach>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-12 col-sm-4">
-                            <div class="input-group input-group-sm">
-                                <span class="input-group-text text-muted"><i class="bi bi-bookmark"></i></span>
-                                <select class="form-select form-select-sm" name="label" onchange="hostsTableReload()" title="Filter by Label">
-                                    <c:forEach var="option" items="${labelOptions}">
-                                        <option value="${option.name}" <c:if test="${label == option.name}">selected</c:if>>${option.value}</option>
-                                    </c:forEach>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-12 col-sm-4">
-                            <div class="input-group input-group-sm">
-                                <span class="input-group-text text-muted"><i class="bi bi-file-zip"></i></span>
-                                <select class="form-select form-select-sm" name="hostFilter" onchange="hostsTableReload()" title="Filter by Compression">
-                                    <c:forEach var="option" items="${filterOptions}">
-                                        <option value="${option.name}" <c:if test="${hostFilter == option.name}">selected</c:if>>${option.value}</option>
-                                    </c:forEach>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
                     <%-- Query Builder panel --%>
                     <div id="hostQueryBuilder" class="border rounded p-2"
                          style="display:none; position:absolute; z-index:9999; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd) !important; box-shadow:0 8px 28px rgba(0,0,0,0.18),0 2px 6px rgba(0,0,0,0.10); font-size:0.85rem">
@@ -177,6 +155,35 @@
                                     </select>
                                 </div>
                             </div>
+                            <%-- Direct filters (not part of search string, applied immediately) --%>
+                            <div class="border-top mt-1 pt-1">
+                                <div class="row g-1 mb-1">
+                                    <div class="col-12 col-md-4">
+                                        <label class="form-label mb-0 fw-semibold"><i class="bi bi-diagram-3 me-1 text-muted"></i>Network</label>
+                                        <select class="form-select form-select-sm" name="network" id="network" onchange="hostsTableReload()" title="Filter by Network">
+                                            <c:forEach var="option" items="${networkOptions}">
+                                                <option value="${option.name}" <c:if test="${network == option.name}">selected</c:if>>${option.value}</option>
+                                            </c:forEach>
+                                        </select>
+                                    </div>
+                                    <div class="col-12 col-md-4">
+                                        <label class="form-label mb-0 fw-semibold"><i class="bi bi-bookmark me-1 text-muted"></i>Label</label>
+                                        <select class="form-select form-select-sm" name="label" id="label" onchange="hostsTableReload()" title="Filter by Label">
+                                            <c:forEach var="option" items="${labelOptions}">
+                                                <option value="${option.name}" <c:if test="${label == option.name}">selected</c:if>>${option.value}</option>
+                                            </c:forEach>
+                                        </select>
+                                    </div>
+                                    <div class="col-12 col-md-4">
+                                        <label class="form-label mb-0 fw-semibold"><i class="bi bi-file-zip me-1 text-muted"></i>Compression</label>
+                                        <select class="form-select form-select-sm" name="hostFilter" id="hostFilter" onchange="hostsTableReload()" title="Filter by Compression">
+                                            <c:forEach var="option" items="${filterOptions}">
+                                                <option value="${option.name}" <c:if test="${hostFilter == option.name}">selected</c:if>>${option.value}</option>
+                                            </c:forEach>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
                             <%-- Live preview + action buttons --%>
                             <div class="d-flex align-items-start gap-1 pt-1 border-top mt-1 flex-wrap">
                                 <i class="bi bi-terminal text-muted flex-shrink-0"></i>
@@ -224,7 +231,11 @@
             document.getElementById('hqb_enabled').value = '';
             document.getElementById('hqb_id_op').value = '=';
             document.getElementById('hqb_case').value = 's';
+            document.getElementById('network').selectedIndex = 0;
+            document.getElementById('label').selectedIndex = 0;
+            document.getElementById('hostFilter').selectedIndex = 0;
             hqbPreview();
+            hostsTableReload();
         }
         function parseQBQuery(q, prefix, pairFields, singleFields) {
             if (!q || !q.trim()) return;
@@ -329,7 +340,7 @@ function _updateHostSearchBanner(queryError, total, hasSearch) {
 </script>
 
 <%-- Results table --%>
-<div class="d-flex align-items-center mb-2 gap-2">
+<div class="d-flex align-items-end mb-2 gap-2">
     <span class="text-muted small" id="hostsFoundLabel"><i class="bi bi-list-ul"></i> Loading...</span>
     <div class="ms-auto d-flex gap-2 align-items-center">
         <auth:if basePathKey="host.basepath" paths="/edit/insert_form">
@@ -347,8 +358,8 @@ function _updateHostSearchBanner(queryError, total, hasSearch) {
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="hColModeBtn">
                 <li><a class="dropdown-item active" href="#" data-hcol-mode="auto"><i class="bi bi-check me-1"></i><strong>Auto</strong><br><small class="text-muted">Hides columns based on screen width</small></a></li>
                 <li><a class="dropdown-item" href="#" data-hcol-mode="all"><strong>All</strong><br><small class="text-muted">Shows all columns</small></a></li>
-                <li><a class="dropdown-item" href="#" data-hcol-mode="compact"><strong>Compact</strong><br><small class="text-muted">Hides Transfer Group and Network</small></a></li>
-                <li><a class="dropdown-item" href="#" data-hcol-mode="small"><strong>Small</strong><br><small class="text-muted">Shows Host and Hostname/IP only</small></a></li>
+                <li><a class="dropdown-item" href="#" data-hcol-mode="compact"><strong>Compact</strong><br><small class="text-muted">Hides: Transfer Group, Network</small></a></li>
+                <li><a class="dropdown-item" href="#" data-hcol-mode="small"><strong>Small</strong><br><small class="text-muted">Shows Icon and Host only</small></a></li>
                 <li><hr class="dropdown-divider"></li>
                 <li><a class="dropdown-item" href="#" data-hcol-mode="custom">
                   <strong>Custom</strong><br><small class="text-muted">Choose individual columns</small>
@@ -415,11 +426,12 @@ function _updateHostSearchBanner(queryError, total, hasSearch) {
                     d.hostSearch = $('#hostSearch').val() || '';
                 }
             },
-            pageLength: 25,
+            pageLength: (function() { try { var v = parseInt(localStorage.getItem('hostsPageLen'), 10); return [10,25,50,100].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })(),
+            lengthChange: false,
             searching: false, autoWidth: false,
             order: [],
             columns: [
-                { orderable: false, data: 0, width: '36px' },
+                { orderable: false, data: 0, width: '36px', className: 'icon-col' },
                 { orderable: true,  data: 1 },
                 { orderable: true,  data: 2 },
                 { orderable: true,  data: 3 },
@@ -436,7 +448,12 @@ function _updateHostSearchBanner(queryError, total, hasSearch) {
             },
             language: { lengthMenu: 'Show _MENU_ per page', info: 'Showing _START_-_END_ of _TOTAL_', processing: 'Loading...' }
         });
-
+        $('#hostPageLen').val(_hostsTable.page.len());
+        $('#hostPageLen').on('change', function() {
+            var len = parseInt(this.value, 10);
+            try { localStorage.setItem('hostsPageLen', len); } catch(e) {}
+            _hostsTable.page.len(len).draw();
+        });
         var _H_CUSTOM_COL_KEY = 'hostsCustomCols';
         var _H_COL_MODE_KEY   = 'hostsColMode';
         var _hCustomCols = (function() {
@@ -448,12 +465,12 @@ function _updateHostSearchBanner(queryError, total, hasSearch) {
         })();
         // Compact: hide Transfer Group(3) + Network(4)
         var _hCOMPACT_HIDE = [3, 4];
-        // Small: also hide Destinations(5)
-        var _hSMALL_HIDE = [3, 4, 5];
+        // Small: hide Hostname/IP(2) + Transfer Group(3) + Network(4) + Destinations(5)
+        var _hSMALL_HIDE = [2, 3, 4, 5];
         // Auto medium (<992px): hide Transfer Group(3) + Network(4)
         var _hMED_COLS = [3, 4];
-        // Auto small (<768px): also hide Destinations(5)
-        var _hSM_COLS = [5];
+        // Auto small (<768px): also hide Hostname/IP(2) + Destinations(5)
+        var _hSM_COLS = [2, 5];
 
         function _hShowCols(hideCols) {
             var total = _hostsTable.columns().count();

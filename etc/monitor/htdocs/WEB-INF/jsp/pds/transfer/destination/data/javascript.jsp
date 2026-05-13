@@ -169,31 +169,37 @@
 	}
 
 	function setStatus(status) {
+		sessionStorage.setItem('hostChangeScrollY', window.scrollY);
 		document.destinationDetailActionForm.status.value = status
 		document.destinationDetailActionForm.submit()
 	}
 
 	function setDataStream(stream) {
+		sessionStorage.setItem('hostChangeScrollY', window.scrollY);
 		document.destinationDetailActionForm.dataStream.value = stream
 		document.destinationDetailActionForm.submit()
 	}
 
 	function setDataTime(stream) {
+		sessionStorage.setItem('hostChangeScrollY', window.scrollY);
 		document.destinationDetailActionForm.dataTime.value = stream
 		document.destinationDetailActionForm.submit()
 	}
 
 	function setDisseminationStream(stream) {
+		sessionStorage.setItem('hostChangeScrollY', window.scrollY);
 		document.destinationDetailActionForm.disseminationStream.value = stream
 		document.destinationDetailActionForm.submit()
 	}
 
 	function setDate(date) {
+		sessionStorage.setItem('hostChangeScrollY', window.scrollY);
 		document.destinationDetailActionForm.date.value = date
 		document.destinationDetailActionForm.submit()
 	}
 
 	function changeSelect() {
+		sessionStorage.setItem('hostChangeScrollY', window.scrollY);
 		document.destinationDetailActionForm.submit()
 	}
 
@@ -309,11 +315,6 @@
 			return true;
 	}
 	$(document).ready(function () {
-	    var savedY = sessionStorage.getItem('hostChangeScrollY');
-	    if (savedY !== null) {
-	        sessionStorage.removeItem('hostChangeScrollY');
-	        window.scrollTo({ top: parseInt(savedY, 10), behavior: 'instant' });
-	    }
 	    // Intercept all form submits to inject selected-transfer hidden fields
 	    var frm = document.destinationDetailActionForm;
 	    if (frm) {

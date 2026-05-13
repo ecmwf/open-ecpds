@@ -303,7 +303,7 @@
 						<div class="col-sm-6">
 							<label for="countryIso" class="form-label mb-1">Country</label>
 							<c:set var="countries" value="${destinationActionForm.countryOptions}" />
-							<div class="d-flex align-items-center gap-2"><html:select property="countryIso" styleId="countryIso" styleClass="form-select form-select-sm flex-grow-1">
+							<div class="d-flex align-items-center gap-2"><html:select property="countryIso" styleId="countryIso" styleClass="form-select form-select-sm flex-grow-1" style="min-width:0">
 								<html:options collection="countries" property="iso" labelProperty="name" />
 							</html:select></div>
 						</div>
@@ -1097,12 +1097,14 @@
 		(function() {
 			var VALID_ISO = new Set(['AC','AD','AE','AF','AG','AI','AL','AM','AO','AQ','AR','AS','AT','AU','AW','AX','AZ','BA','BB','BD','BE','BF','BG','BH','BI','BJ','BL','BM','BN','BO','BQ','BR','BS','BT','BV','BW','BY','BZ','CA','CC','CD','CF','CG','CH','CI','CK','CL','CM','CN','CO','CP','CR','CU','CV','CW','CX','CY','CZ','DE','DG','DJ','DK','DM','DO','DZ','EA','EE','EG','EH','ER','ES','ET','EU','EW','FI','FJ','FK','FM','FO','FR','FX','GA','GB','GD','GE','GF','GG','GH','GI','GL','GM','GN','GP','GQ','GR','GS','GT','GU','GW','GY','HK','HM','HN','HR','HT','HU','IC','ID','IE','IL','IM','IN','IO','IQ','IR','IS','IT','JE','JM','JO','JP','KE','KG','KH','KI','KM','KN','KP','KR','KW','KY','KZ','LA','LB','LC','LI','LK','LR','LS','LT','LU','LV','LY','MA','MC','MD','ME','MF','MG','MH','MK','ML','MM','MN','MO','MP','MQ','MR','MS','MT','MU','MV','MW','MX','MY','MZ','NA','NC','NE','NF','NG','NI','NL','NO','NP','NR','NU','NZ','OM','PA','PE','PF','PG','PH','PK','PL','PM','PN','PR','PS','PT','PW','PY','QA','RE','RO','RS','RU','RW','SA','SB','SC','SD','SE','SG','SH','SI','SJ','SK','SL','SM','SN','SO','SR','SS','ST','SV','SX','SY','SZ','TA','TC','TD','TF','TG','TH','TJ','TK','TL','TM','TN','TO','TP','TR','TT','TV','TW','TZ','UA','UG','UK','UM','UN','US','UY','UZ','VA','VC','VE','VG','VI','VN','VU','WF','WS','XK','YE','YT','ZA','ZM','ZR','ZW']);
 			var $sel = $('#countryIso');
-			var $flag = $('<span class="fi ms-2" style="font-size:1.3em;vertical-align:middle"></span>');
+			var $flag = $('<span class="fi" style="font-size:1.3em;vertical-align:middle;flex-shrink:0;"></span>');
 			$sel.after($flag);
 			function updateFlag() {
 				var iso = ($sel.val() || '').toUpperCase();
 				if (VALID_ISO.has(iso)) {
-					$flag.attr('class', 'fi fi-' + iso.toLowerCase() + ' ms-2').css('display', 'inline-block');
+					$flag.attr('class', 'fi fi-' + iso.toLowerCase()).css('display', 'inline-block');
+				} else if (iso === 'EX') {
+					$flag.attr('class', 'bi bi-globe').css('display', 'inline-block');
 				} else {
 					$flag.hide();
 				}

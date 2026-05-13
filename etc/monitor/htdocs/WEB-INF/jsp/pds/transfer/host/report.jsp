@@ -233,6 +233,9 @@
     var _ready = false, _showing = false;
     var _view = 'raw', _chartReady = false, _mapReady = false;
     var _olMap = null, _olInited = false, _routeExtent = null, _mapFitted = false;
+    /* Host's manually-configured coordinates — used as fallback for the last MTR hop
+       when the GeoIP database has no entry for the destination IP. */
+    var _hostFallback = <c:choose><c:when test="${not empty host.latitude and not empty host.longitude}">{ hostname: '<c:out value="${host.host}"/>', lat: ${host.latitude}, lon: ${host.longitude}, geo: '<c:out value="${host.nickName}"/>' }</c:when><c:otherwise>null</c:otherwise></c:choose>;
 
     function _esc(s) {
         return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -462,6 +465,17 @@
             .then(function(data) {
                 var geoMap = {};
                 data.forEach(function(d) { if (d.lat != null && d.lon != null) geoMap[d.ip] = d; });
+                /* If the last reachable hop has no GeoIP coordinates, fall back to the
+                   host's manually-configured lat/lon (if set). */
+                if (_hostFallback) {
+                    var lastHop = null;
+                    for (var i = mtr.hops.length - 1; i >= 0; i--) {
+                        if (!mtr.hops[i].noData) { lastHop = mtr.hops[i]; break; }
+                    }
+                    if (lastHop && !geoMap[lastHop.host]) {
+                        geoMap[lastHop.host] = { ip: lastHop.host, lat: _hostFallback.lat, lon: _hostFallback.lon, geo: _hostFallback.geo };
+                    }
+                }
                 var resolved = mtr.hops.filter(function(h) { return !h.noData && geoMap[h.host]; });
                 if (resolved.length >= 2) {
                     _buildMap(mtr, geoMap);
@@ -474,7 +488,7 @@
     }
 
     function _isDark() {
-        return (document.documentElement.getAttribute('data-bs-theme') || 'dark') !== 'light';
+        return document.documentElement.getAttribute('data-bs-theme') === 'dark';
     }
 
     function _buildMap(mtr, geoMap) {

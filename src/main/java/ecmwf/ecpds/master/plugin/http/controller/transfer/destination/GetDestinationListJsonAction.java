@@ -146,7 +146,7 @@ public class GetDestinationListJsonAction extends PDSAction {
 
     private static String buildFlagHtml(final Destination d) {
         final var iso = d.getCountryIso();
-        if (iso == null || iso.isBlank()) {
+        if (iso == null || iso.isBlank() || iso.length() != 2) {
             return "";
         }
         final var liso = iso.toLowerCase();
@@ -157,6 +157,10 @@ public class GetDestinationListJsonAction extends PDSAction {
                 countryName = escapeHtml(c.getName());
             }
         } catch (final Exception ignored) {
+        }
+        if ("ex".equals(liso)) {
+            return "<i class=\"bi bi-globe\" title=\"" + countryName
+                    + "\" style=\"font-size:1.1em;display:block\"></i>";
         }
         return "<span class=\"fi fi-" + liso + "\" title=\"" + countryName + "\" data-iso=\"" + liso + "\" data-name=\""
                 + countryName + "\" style=\"font-size:1.1em;display:block\"></span>";
@@ -305,7 +309,7 @@ public class GetDestinationListJsonAction extends PDSAction {
     private static String buildCompressionHtml(final Destination d) {
         final var f = d.getFilterName();
         if (f == null || f.isBlank() || "none".equals(f)) {
-            return "";
+            return "<span class=\"badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic\">None</span>";
         }
         return buildCompressionIcon(f) + " <small class=\"text-muted\">" + escapeHtml(f) + "</small>";
     }

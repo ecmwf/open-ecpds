@@ -1,3 +1,1 @@
-<%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
-<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
-<c:if test="${not empty destination.countryIso}"><span class="fi fi-${fn:toLowerCase(destination.countryIso)}" title="${destination.country.name}" style="font-size:1.2em;border-radius:2px;"></span></c:if>
+<%@ page trimDirectiveWhitespaces="true" %><%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%><%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%><c:choose><c:when test="${not empty destination.countryIso and fn:length(destination.countryIso) == 2 and destination.countryIso != 'ex'}"><span class="fi fi-${fn:toLowerCase(destination.countryIso)}" title="${destination.country.name}" style="font-size:1.2em;border-radius:2px;"></span></c:when><c:when test="${destination.countryIso == 'ex'}"><i class="bi bi-globe" title="${destination.country.name}" style="font-size:1.2em;"></i></c:when></c:choose>

@@ -168,6 +168,9 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     /** The Constant productStatusMutexProvider. */
     private static final Synchronized productStatusMutexProvider = new Synchronized();
 
+    /** The mail subject tag. */
+    private final String mailSubjectTag = Cnf.at("Server", "mailSubjectTag", getRoot());
+
     /** The metaDataList. */
     private final Map<String, String> metaDataList = new HashMap<>();
 
@@ -2909,7 +2912,7 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
             }
             if (existing <= 0) {
                 // No we didn't find any match for this group!
-                stopAndError("Group " + group + " not found (" + existing + ")");
+                stopAndError("Group " + group + " not found on " + mailSubjectTag + " (" + existing + ")");
                 return;
             }
             // Yes there were some files retrieved for this group!

@@ -152,7 +152,7 @@ Data Transfer: <strong><c:out value="${datatransfer.id}"/></strong>
 <div class="card border-0 shadow-sm mb-3">
 <div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
 <i class="bi bi-clock text-primary"></i>
-<span class="fw-semibold">Timing</span>
+<span class="fw-semibold">Times (UTC)</span>
 </div>
 <div class="card-body py-0">
 <div class="field-grid">

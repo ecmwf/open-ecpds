@@ -100,6 +100,7 @@
 					</div>
 				</auth:then>
 			</auth:if>
+			<span class="text-muted ms-auto" style="font-size:0.72rem;" title="All times shown are in UTC"><i class="bi bi-clock"></i> UTC</span>
 			<%-- File count was moved to the Selection bar in transfer_table.jsp --%>
 		</div>
 	</div>

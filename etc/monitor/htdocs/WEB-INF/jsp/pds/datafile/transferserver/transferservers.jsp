@@ -25,7 +25,7 @@
                 <th class="text-center">Replicate</th>
                 <th class="text-center">Check</th>
                 <th>Max Transfers</th>
-                <th>Last Update</th>
+                <th title="Last Update (UTC)">Last Update</th>
                 <th class="text-center">Disk Usage</th>
                 <th class="text-end">Actions</th>
             </tr>

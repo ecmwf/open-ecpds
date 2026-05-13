@@ -83,7 +83,7 @@ Data File: <strong><c:out value="${datafile.id}"/></strong>
 <div class="card border-0 shadow-sm mb-3">
 <div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
 <i class="bi bi-clock text-primary"></i>
-<span class="fw-semibold">Timing</span>
+<span class="fw-semibold">Times (UTC)</span>
 </div>
 <div class="card-body py-0">
 <div class="field-grid">
@@ -153,7 +153,7 @@ $('#metadataTable').DataTable({ paging: false, searching: false, ordering: true,
 <tr>
 <th>Destination</th>
 <th>Transfer Host</th>
-<th>Sched. Time</th>
+<th title="Scheduled Time (UTC)">Sched. Time</th>
 <th>Target</th>
 <th>%</th>
 <th>Mbits/s</th>

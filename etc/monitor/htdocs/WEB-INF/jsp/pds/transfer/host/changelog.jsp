@@ -52,7 +52,7 @@
 <table id="changelogTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
     <thead class="table-light">
         <tr>
-            <th style="width:130px; white-space:nowrap">Date &amp; Time</th>
+            <th style="width:130px; white-space:nowrap" title="Date &amp; Time (UTC)">Date &amp; Time</th>
             <th style="width:100px; white-space:nowrap">Web User</th>
             <th>Differences</th>
         </tr>

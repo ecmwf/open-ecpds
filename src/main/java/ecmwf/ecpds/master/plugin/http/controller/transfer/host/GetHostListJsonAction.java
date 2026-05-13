@@ -193,10 +193,12 @@ public class GetHostListJsonAction extends PDSAction {
     // HTML column builders
     // -------------------------------------------------------------------------
 
+    private static final String NO_LOCATION_HTML = "<i class=\"bi bi-globe2 text-muted\" title=\"No location information\" style=\"font-size:1.1em;display:block\"></i>";
+
     private static String buildFlagHtml(final Host host) {
         final var geo = host.getGeoIpLocation();
         if (geo == null || geo.isBlank()) {
-            return "";
+            return NO_LOCATION_HTML;
         }
         final var parts = geo.split("/");
         var iso = "";
@@ -211,7 +213,7 @@ public class GetHostListJsonAction extends PDSAction {
             iso = parts[parts.length - 1].strip().toLowerCase();
         }
         if (iso.isEmpty()) {
-            return "";
+            return NO_LOCATION_HTML;
         }
         return "<span class=\"fi fi-" + escapeHtml(iso) + "\" title=\"" + escapeHtml(geo)
                 + "\" style=\"font-size:1.1em;display:block\"></span>";

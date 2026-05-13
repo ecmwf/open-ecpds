@@ -152,8 +152,8 @@ _dt.push({
           <th>Label</th>
           <th>Target</th>
           <th>Status</th>
-          <th>Start</th>
-          <th>End</th>
+          <th title="Start Time (UTC)">Start</th>
+          <th title="End Time (UTC)">End</th>
           <th>Duration</th>
           <th>Size</th>
           <th>Host</th>

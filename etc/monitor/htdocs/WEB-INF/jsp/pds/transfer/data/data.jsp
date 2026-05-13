@@ -51,7 +51,7 @@ Error retrieving object by key &mdash; DataTransfer not found: <code>${datatrans
 <thead class="table-light">
 <tr>
 <th>Err</th>
-<th>Event Time</th>
+<th title="Event Time (UTC)">Event Time</th>
 <th>Status</th>
 <th>Transfer Host</th>
 <th>Comment</th>
@@ -118,9 +118,9 @@ order:     [[1, 'asc']]
 <tr>
 <th>Destination</th>
 <th>Transfer Host</th>
-<th>Sched. Time</th>
-<th>Start Time</th>
-<th>Finish Time</th>
+<th title="Scheduled Time (UTC)">Sched. Time</th>
+<th title="Start Time (UTC)">Start Time</th>
+<th title="Finish Time (UTC)">Finish Time</th>
 <th>Target</th>
 <th>TS</th>
 <th>%</th>

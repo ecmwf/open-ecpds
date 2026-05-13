@@ -125,15 +125,16 @@
     <%-- Entries-per-page + column mode --%>
     <div class="d-flex align-items-center justify-content-between gap-2 my-2">
         <div class="d-flex align-items-center gap-2">
-            <span class="text-muted small">Show</span>
-            <select id="validatePageLen" class="form-select form-select-sm" style="width:auto">
-                <option value="10">10</option>
-                <option value="25">25</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
-                <option value="250">250</option>
-            </select>
-            <span class="text-muted small">entries per page</span>
+            <div class="input-group flex-nowrap" style="width:auto" title="Page size">
+                <span class="input-group-text px-2"><i class="bi bi-list-ol"></i></span>
+                <select id="validatePageLen" class="form-select" style="width:auto">
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                    <option value="250">250</option>
+                </select>
+            </div>
             <span id="validateTransferTotal" class="text-muted small ms-2"></span>
         </div>
         <div class="dropdown">
@@ -187,13 +188,13 @@
 
     <%-- DataTable --%>
     <table id="validateTable" class="table table-sm table-hover w-100">
-        <thead>
+        <thead class="table-light">
             <tr>
                 <th>Err</th>
                 <th>Host</th>
-                <th>Sched. Time</th>
-                <th>Start Time</th>
-                <th>Finish Time</th>
+                <th title="Scheduled Time (UTC)">Sched. Time</th>
+                <th title="Start Time (UTC)">Start Time</th>
+                <th title="Finish Time (UTC)">Finish Time</th>
                 <th>Target</th>
                 <th>TS</th>
                 <th>%</th>

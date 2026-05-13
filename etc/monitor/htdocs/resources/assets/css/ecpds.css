@@ -1222,8 +1222,8 @@ table.dataTable thead > tr > th {
 }
 
 /* Flag column — remove horizontal padding so the column stays tight around the icon */
-#hostsTable th:first-child,       #hostsTable td:first-child,
-#destinationsTable th:first-child, #destinationsTable td:first-child,
+#hostsTable th.icon-col,       #hostsTable td.icon-col,
+#destinationsTable th.icon-col, #destinationsTable td.icon-col,
 #destTableL th:first-child,        #destTableL td:first-child,
 #destTableR th:first-child,        #destTableR td:first-child {
     padding-left: 0 !important;
@@ -1233,8 +1233,8 @@ table.dataTable thead > tr > th {
 }
 /* Flag spans in the first column are display:block from the server — override to inline-block
    so text-align:center on the parent td can horizontally centre them */
-#hostsTable td:first-child span.fi,
-#destinationsTable td:first-child span.fi,
+#hostsTable td.icon-col span.fi,
+#destinationsTable td.icon-col span.fi,
 #destTableL td:first-child span.fi,
 #destTableR td:first-child span.fi {
     display: inline-block !important;
@@ -1250,6 +1250,24 @@ table.dataTable thead > tr > th span.dt-column-order::after {
 table.dataTable thead > tr > th.dt-ordering-asc span.dt-column-order::before,
 table.dataTable thead > tr > th.dt-ordering-desc span.dt-column-order::after {
     opacity: 0.9 !important;
+}
+/* Keep sort icon inline with the title — prevents it from sitting above short column names */
+table.dataTable thead > tr > th span.dt-column-order {
+    position: relative !important;
+    display: inline-block !important;
+    right: auto !important;
+    top: auto !important;
+    bottom: auto !important;
+    width: 12px !important;
+    height: 1em;
+    vertical-align: middle;
+    margin-left: 3px;
+}
+table.dataTable thead > tr > th.dt-orderable-asc,
+table.dataTable thead > tr > th.dt-orderable-desc,
+table.dataTable thead > tr > th.dt-ordering-asc,
+table.dataTable thead > tr > th.dt-ordering-desc {
+    padding-right: 0.5rem !important;
 }
 
 /* .fields form layout table — tighten up with Bootstrap spacing */
@@ -1614,6 +1632,14 @@ img[src*="/assets/icons/"] {
     color: #6c757d;
     line-height: 1.5;
 }
+/* On mobile, reorder destination/host header: ⋯ button stays on title row (top-right),
+   badge group moves to its own row below the title */
+@media (max-width: 575.98px) {
+    .dest-badge-group { order: 3; flex-basis: 100%; }
+    .dest-mobile-menu { order: 2; }
+    .host-badge-group { order: 3; flex-basis: 100%; }
+    .host-mobile-menu { order: 2; }
+}
 .fs-status { font-size: 0.72rem !important; vertical-align: middle; }
 
 /* ---- Section index / home page cards ---- */
@@ -1974,6 +2000,11 @@ html[data-bs-theme=dark] .ui-slider-handle { outline: none; }
     word-break: break-all;
     overflow-wrap: anywhere;
 }
+/* destTransferTable — keep header alignment stable; prevents DataTables' dt-type-numeric
+   detection from shifting TS / % headers to right-aligned after first draw */
+#destTransferTable thead th {
+    text-align: left !important;
+}
 
 /* Cards: restore a visible border in light mode (border-0 relies on shadow which
    is nearly invisible on white/light backgrounds) */
@@ -2077,4 +2108,9 @@ html:not([data-bs-theme=dark]) .card.shadow-sm {
 .field-value {
     flex: 1 1 auto;
     min-width: 0;
+}
+.dataTables_info,
+.dt-info {
+    font-size: 0.875rem;
+    color: var(--bs-secondary-color, #6c757d);
 }

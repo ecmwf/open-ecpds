@@ -13,8 +13,19 @@
         <form class="mb-3" id="destinationSearchForm">
             <div class="card border-0 shadow-sm">
                 <div class="card-body py-2 px-3">
-                    <%-- Row 1: main search + type + button --%>
-                    <div class="row g-1 mb-1">
+                    <%-- Main search row --%>
+                    <div class="row g-1">
+                        <div class="col-auto">
+                            <div class="input-group flex-nowrap" style="width:auto" title="Page size">
+                                <span class="input-group-text px-2"><i class="bi bi-list-ol"></i></span>
+                                <select id="destPageLen" class="form-select" style="width:auto">
+                                    <option value="10">10</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                </select>
+                            </div>
+                        </div>
                         <div class="col">
                             <div class="input-group">
                                 <span class="input-group-text text-muted"><i class="bi bi-search"></i></span>
@@ -59,41 +70,9 @@
                                 <li><code>country=</code> &mdash; filter by ISO country code (e.g. <code>country=FR</code>).</li>
                                 <li><code>enabled=yes|no</code>, <code>monitor=yes|no</code>, <code>backup=yes|no</code>, <code>forceproxy=yes|no</code> &mdash; boolean flags.</li>
                                 <li><code>case=i</code> &mdash; make the search case-insensitive (default is case-sensitive).</li>
+                                <li><i class="bi bi-sliders2 me-1"></i><strong>Filter panel</strong> also provides <strong>Status</strong>, <strong>Compression</strong> and <strong>Aliases</strong> drop-downs that apply independently of the search text.</li>
                             </ul>
                             <p class="mb-0 text-muted">Example: <code>name=efas_* enabled=yes monitor=yes case=i</code></p>
-                        </div>
-                    </div>
-                    <%-- Row 2: secondary filters --%>
-                    <div class="row g-2">
-                        <div class="col-12 col-sm-4">
-                            <div class="input-group input-group-sm">
-                                <span class="input-group-text text-muted"><i class="bi bi-activity"></i></span>
-                                <select class="form-select form-select-sm" name="destinationStatus" onchange="destsTableReload()" title="Filter by Status">
-                                    <c:forEach var="option" items="${statusOptions}">
-                                        <option value="${option}" <c:if test="${destinationStatus == option}">selected</c:if>>${option}</option>
-                                    </c:forEach>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-12 col-sm-4">
-                            <div class="input-group input-group-sm">
-                                <span class="input-group-text text-muted"><i class="bi bi-file-zip"></i></span>
-                                <select class="form-select form-select-sm" name="destinationFilter" onchange="destsTableReload()" title="Filter by Compression">
-                                    <c:forEach var="option" items="${filterOptions}">
-                                        <option value="${option.name}" <c:if test="${destinationFilter == option.name}">selected</c:if>>${option.value}</option>
-                                    </c:forEach>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-12 col-sm-4">
-                            <div class="input-group input-group-sm">
-                                <span class="input-group-text text-muted"><i class="bi bi-diagram-2"></i></span>
-                                <select class="form-select form-select-sm" name="aliases" onchange="destsTableReload()" title="Aliased From/To">
-                                    <option value="all" <c:if test="${aliases == 'all'}">selected</c:if>>All Destinations</option>
-                                    <option value="to"  <c:if test="${aliases == 'to'}">selected</c:if>>Aliased From ...</option>
-                                    <option value="from" <c:if test="${aliases == 'from'}">selected</c:if>>Aliases To ...</option>
-                                </select>
-                            </div>
                         </div>
                     </div>
 
@@ -172,6 +151,35 @@
                                     </select>
                                 </div>
                             </div>
+                            <%-- Direct filters (not part of search string, applied immediately) --%>
+                            <div class="border-top mt-1 pt-1">
+                                <div class="row g-1 mb-1">
+                                    <div class="col-12 col-md-4">
+                                        <label class="form-label mb-0 fw-semibold"><i class="bi bi-activity me-1 text-muted"></i>Status</label>
+                                        <select class="form-select form-select-sm" name="destinationStatus" id="destinationStatus" onchange="destsTableReload()" title="Filter by Status">
+                                            <c:forEach var="option" items="${statusOptions}">
+                                                <option value="${option}" <c:if test="${destinationStatus == option}">selected</c:if>>${option}</option>
+                                            </c:forEach>
+                                        </select>
+                                    </div>
+                                    <div class="col-12 col-md-4">
+                                        <label class="form-label mb-0 fw-semibold"><i class="bi bi-file-zip me-1 text-muted"></i>Compression</label>
+                                        <select class="form-select form-select-sm" name="destinationFilter" id="destinationFilter" onchange="destsTableReload()" title="Filter by Compression">
+                                            <c:forEach var="option" items="${filterOptions}">
+                                                <option value="${option.name}" <c:if test="${destinationFilter == option.name}">selected</c:if>>${option.value}</option>
+                                            </c:forEach>
+                                        </select>
+                                    </div>
+                                    <div class="col-12 col-md-4">
+                                        <label class="form-label mb-0 fw-semibold"><i class="bi bi-diagram-2 me-1 text-muted"></i>Aliases</label>
+                                        <select class="form-select form-select-sm" name="aliases" id="aliases" onchange="destsTableReload()" title="Aliased From/To">
+                                            <option value="all" <c:if test="${aliases == 'all'}">selected</c:if>>All Destinations</option>
+                                            <option value="to"  <c:if test="${aliases == 'to'}">selected</c:if>>Aliased From ...</option>
+                                            <option value="from" <c:if test="${aliases == 'from'}">selected</c:if>>Aliases To ...</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
                             <%-- Live preview + action buttons --%>
                             <div class="d-flex align-items-start gap-1 pt-1 border-top mt-1 flex-wrap">
                                 <i class="bi bi-terminal text-muted flex-shrink-0"></i>
@@ -220,7 +228,12 @@
                 document.getElementById('dqb_' + f).value = '';
             });
             document.getElementById('dqb_case').value = 's';
+            document.getElementById('destinationStatus').selectedIndex = 0;
+            document.getElementById('destinationFilter').selectedIndex = 0;
+            document.getElementById('aliases').selectedIndex = 0;
+            updateFlag();
             dqbPreview();
+            destsTableReload();
         }
         // Flag preview inline with country select
         function updateFlag() {
@@ -229,7 +242,11 @@
             if (!sel || !flag) return;
             var iso = sel.value;
             if (!iso) { flag.style.display = 'none'; return; }
-            flag.className = 'fi fi-' + iso.toLowerCase();
+            if (iso === 'ex') {
+                flag.className = 'bi bi-globe';
+            } else {
+                flag.className = 'fi fi-' + iso.toLowerCase();
+            }
             flag.style.display = 'inline-block';
         }
         document.addEventListener('DOMContentLoaded', function() {
@@ -340,7 +357,7 @@ function _updateDestSearchBanner(queryError, total, hasSearch) {
 
 
 <%-- Results table --%>
-<div class="d-flex align-items-center mb-2 gap-2">
+<div class="d-flex align-items-end mb-2 gap-2">
     <span class="text-muted small" id="destsFoundLabel"><i class="bi bi-list-ul"></i> Loading...</span>
     <div class="ms-auto d-flex gap-2 align-items-center">
         <auth:if basePathKey="destination.basepath" paths="/edit/insert_form">
@@ -422,9 +439,9 @@ function _updateDestSearchBanner(queryError, total, hasSearch) {
                 d.destinationFilter  = $('#destinationSearchForm [name="destinationFilter"]').val() || 'All';
             }
         },
-        paging: true, pageLength: 25, searching: false, autoWidth: false, order: [],
+        paging: true, pageLength: 25, lengthChange: false, searching: false, autoWidth: false, order: [],
         columns: [
-            { orderable: false, data: 0, width: '36px' },
+            { orderable: false, data: 0, width: '36px', className: 'icon-col' },
             { orderable: true,  data: 1, render: function(data, type) {
                 if (type === 'sort' || type === 'type') {
                     var tmp = document.createElement('div');
@@ -461,7 +478,7 @@ function _updateDestSearchBanner(queryError, total, hasSearch) {
     var _allRows = [];
     var _sortCol = -1;
     var _sortAsc = true;
-    var _pageLen = 25;
+    var _pageLen = (function() { try { var v = parseInt(localStorage.getItem('destsPageLen'), 10); return [10,25,50,100].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })();
     var _curPage = 0;
     var _destsTable;
     var _lastTotal = 0;
@@ -636,20 +653,6 @@ function _updateDestSearchBanner(queryError, total, hasSearch) {
                 );
             }
 
-            var $lenSel = $('<select id="destSplitLenSel" class="form-select form-select-sm" style="display:inline-block;width:auto;margin-right:0.5em">');
-            [10, 25, 50, 100].forEach(function(v) {
-                $('<option>', { value: v, selected: v === _pageLen }).text(v).appendTo($lenSel);
-            });
-            $lenSel.on('change', function() { _pageLen = +this.value; _curPage = 0; _redistribute(); });
-
-            var $toolbar = $('<div class="row mb-2">').append(
-                $('<div class="col-auto">').append(
-                    $('<div class="dataTables_length">').append(
-                        $('<label>').append('Show ').append($lenSel).append('per page')
-                    )
-                )
-            );
-
             var $tables = $('<div class="d-flex gap-3 align-items-start">')
                 .append(makeCol('destTableL'))
                 .append(makeCol('destTableR'));
@@ -665,7 +668,7 @@ function _updateDestSearchBanner(queryError, total, hasSearch) {
             );
 
             $('#destinationsTable').replaceWith(
-                $('<div id="destSplitWrap">').append($toolbar).append($tables).append($footer)
+                $('<div id="destSplitWrap">').append($tables).append($footer)
             );
             _loadSplitRows();
             btn.innerHTML = '<i class="bi bi-layout-sidebar-inset"></i> Single';
@@ -703,7 +706,14 @@ function _updateDestSearchBanner(queryError, total, hasSearch) {
     });
 
     $(function() {
-        _destsTable = $('#destinationsTable').DataTable(_opts);
+        _destsTable = $('#destinationsTable').DataTable($.extend({}, _opts, { pageLength: _pageLen }));
+        $('#destPageLen').val(_pageLen);
+        $('#destPageLen').on('change', function() {
+            _pageLen = parseInt(this.value, 10);
+            try { localStorage.setItem('destsPageLen', _pageLen); } catch(e) {}
+            if (_isSplit) { _curPage = 0; _redistribute(); }
+            else if (_destsTable) { _destsTable.page.len(_pageLen).draw(); }
+        });
 
         var _D_CUSTOM_COL_KEY = 'destsCustomCols';
         var _D_COL_MODE_KEY = 'destsColMode';

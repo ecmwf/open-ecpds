@@ -132,12 +132,12 @@ _tr.push({id:'${transfer.id}',target:'${tcTarget}',status:${tcStatus},fmtStatus:
       <thead class="table-dark sticky-top">
         <tr>
           <th>#</th><th>ID</th><th>Original</th><th>TS</th>
-          <th title="Scheduled">S</th>
+          <th title="Scheduled (UTC)">S</th>
           <th title="Earliest">E</th>
           <th title="Latest">L</th>
           <th title="Target">T</th>
           <th title="Predicted">P</th>
-          <th title="Actual (finish)">A</th>
+          <th title="Actual finish (UTC)">A</th>
           <th>Status</th>
         </tr>
       </thead>

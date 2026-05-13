@@ -14,22 +14,10 @@
 <%-- Inline error message shown by drawCallback --%>
 <div id="destTableError" class="alert alert-warning mt-2 mb-0" style="display:none"></div>
 
-<%-- Entries-per-page row -- also shows current filter selection and last-refresh time --%>
+<%-- Toolbar row -- shows current filter selection, last-refresh time, and column-mode picker --%>
 <div class="d-flex align-items-center gap-2 my-2 flex-wrap">
   <span class="d-flex align-items-center gap-2 small bg-body-tertiary border rounded px-2 py-1" id="destSelectionInfo"></span>
   <div class="ms-auto d-flex align-items-center gap-2">
-    <label class="d-flex align-items-center gap-1 mb-0 text-muted small">
-      Show
-      <select id="destPageLen" class="form-select form-select-sm" style="width:auto">
-        <option value="10">10</option>
-        <option value="25">25</option>
-        <option value="50">50</option>
-        <option value="100">100</option>
-        <option value="250">250</option>
-      </select>
-      entries per page
-    </label>
-    <div class="vr"></div>
     <div class="dropdown">
       <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="colModeBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" data-bs-boundary="viewport" aria-expanded="false">
         <i class="bi bi-layout-three-columns me-1"></i>Auto
@@ -77,18 +65,46 @@
         </li>
       </ul>
     </div>
+    <div id="destSelectionControls" class="d-none d-flex align-items-center gap-2">
+      <div style="border-left:1px solid var(--bs-border-color);height:1.2rem;"></div>
+      <span class="d-flex gap-1 align-items-center">
+        <a href="javascript:checkAll(true,false)"  title="Select All"        class="text-decoration-none text-body">A</a>
+        <span class="text-muted">/</span>
+        <a href="javascript:checkAll(false,false)" title="Unselect All"      class="text-decoration-none text-body">N</a>
+        <span class="text-muted">/</span>
+        <a href="javascript:checkAll(false,true)"  title="Reverse Selection" class="text-decoration-none text-body">R</a>
+      </span>
+      <button class="btn btn-link btn-sm text-muted p-0" type="button"
+          data-bs-toggle="collapse" data-bs-target="#dtSelectionHelp"
+          aria-expanded="false" title="How to select and apply bulk actions">
+        <i class="bi bi-info-circle"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="collapse mt-1 mb-2" id="dtSelectionHelp">
+  <div class="card card-body py-2 px-3" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd);">
+    <strong class="d-block mb-1">Selecting transfers and applying bulk actions</strong>
+    <p class="mb-1">Use the controls in the toolbar to build a <em>selection basket</em>, then open the basket to act on all selected transfers at once.</p>
+    <ul class="mb-1 ps-3">
+      <li><strong>A / N / R</strong> &mdash; Select All / Unselect All / Reverse selection on the <em>current page</em>.</li>
+      <li><strong><i class="bi bi-star"></i> star icon</strong> on each row &mdash; toggle that individual transfer in or out of the basket.</li>
+      <li><strong><i class="bi bi-basket2-fill"></i> Basket</strong> in the toolbar &mdash; click to open the basket and act on all selected transfers.</li>
+    </ul>
+    <p class="mb-0">From the basket page you can <strong>Requeue</strong>, <strong>Stop</strong>, <strong>Delete</strong>, change <strong>priority</strong>, or <strong>extend</strong> the expiry of all selected transfers in one operation. The basket is preserved as you change filters or navigate pages.</p>
   </div>
 </div>
 
 <%-- DataTable: 13 columns (Actions hidden when user lacks queue access) --%>
 <table id="destTransferTable" class="table table-striped table-sm table-hover w-100" style="table-layout:fixed">
-  <thead>
+  <thead class="table-light">
     <tr>
       <th>Err</th>
       <th>Host</th>
-      <th>Sched. Time</th>
-      <th>Start Time</th>
-      <th>Finish Time</th>
+      <th title="Scheduled Time (UTC)">Sched. Time</th>
+      <th title="Start Time (UTC)">Start Time</th>
+      <th title="Finish Time (UTC)">Finish Time</th>
       <th>Target</th>
       <th>TS</th>
       <th>%</th>
@@ -102,41 +118,6 @@
   <tbody></tbody>
 </table>
 
-<%-- Selection controls (A/N/R) and select-filtered button, below the table --%>
-<div class="d-flex align-items-center justify-content-end gap-3 mt-1">
-  <span class="d-flex gap-1 align-items-center">
-    <a href="javascript:checkAll(true,false)"  title="Select All"        class="text-decoration-none text-body">A</a>
-    <span class="text-muted">/</span>
-    <a href="javascript:checkAll(false,false)" title="Unselect All"      class="text-decoration-none text-body">N</a>
-    <span class="text-muted">/</span>
-    <a href="javascript:checkAll(false,true)"  title="Reverse Selection" class="text-decoration-none text-body">R</a>
-  </span>
-  <span class="d-flex gap-1 align-items-center">
-    <a href="javascript:transferChange('selectFiltered')" title="Select all filtered transfers">
-      <i class="bi bi-arrow-right-circle"></i>
-    </a>
-    <span id="destTransferTotal" class="text-muted small"></span>
-  </span>
-  <button class="btn btn-link btn-sm text-muted p-0" type="button"
-      data-bs-toggle="collapse" data-bs-target="#dtSelectionHelp"
-      aria-expanded="false" title="How to select and apply bulk actions">
-    <i class="bi bi-info-circle"></i>
-  </button>
-</div>
-
-<div class="collapse mt-1" id="dtSelectionHelp">
-  <div class="card card-body py-2 px-3" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd);">
-    <strong class="d-block mb-1">Selecting transfers and applying bulk actions</strong>
-    <p class="mb-1">Use the controls below the table to build a <em>selection basket</em>, then open the basket to act on all selected transfers at once.</p>
-    <ul class="mb-1 ps-3">
-      <li><strong>A / N / R</strong> &mdash; Select All / Unselect All / Reverse selection on the <em>current page</em>.</li>
-      <li><strong><i class="bi bi-star"></i> star icon</strong> on each row &mdash; toggle that individual transfer in or out of the basket.</li>
-      <li><strong><i class="bi bi-arrow-right-circle"></i></strong> &mdash; add <em>all currently filtered transfers</em> (across all pages) to the basket and open it immediately.</li>
-      <li><strong>&rarr; N in selection</strong> link in the toolbar &mdash; open the basket at any time to review and act on selected transfers.</li>
-    </ul>
-    <p class="mb-0">From the basket page you can <strong>Requeue</strong>, <strong>Stop</strong>, <strong>Delete</strong>, change <strong>priority</strong>, or <strong>extend</strong> the expiry of all selected transfers in one operation. The basket is preserved as you change filters or navigate pages.</p>
-  </div>
-</div>
 
 <script>
 var _dftSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search using the following rules:<\/p>' +
@@ -183,17 +164,17 @@ var _dftSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search us
             }
         },
         columns: [
-            { data: 0, width: '30px' },
+            { data: 0, width: '50px' },
             { data: 1, width: '90px' },
             { data: 2, width: '110px' },
             { data: 3, width: '110px' },
             { data: 4, width: '110px' },
-            { data: 5 },
+            { data: 5, width: '200px' },
             { data: 6, width: '70px' },
             { data: 7, width: '70px' },
-            { data: 8, width: '70px' },
+            { data: 8, width: '90px' },
             { data: 9, width: '90px' },
-            { data: 10, width: '50px' },
+            { data: 10, width: '65px' },
             { data: 11, width: '110px' },
             { data: 12, width: '70px' }
         ],
@@ -229,9 +210,7 @@ var _dftSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search us
                 err.style.display = 'none';
                 err.innerHTML = '';
             }
-            // Update total counter in tfoot
-            var total = json && json.recordsTotal != null ? json.recordsTotal : '';
-            document.getElementById('destTransferTotal').textContent = total;
+            // Update total counter (element removed; variable kept for future use)
             // Re-apply visual selection for rows loaded in this page
             $('#destTransferTable tbody tr').each(function () {
                 var span = $(this).find('span.star-select');
@@ -287,8 +266,24 @@ var _dftSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search us
                 + (fileCount !== null
                     ? '&ensp;<span class="vr"></span>&ensp;<span class="text-secondary">Files:</span>&ensp;<strong>' + Number(fileCount).toLocaleString() + '</strong>'
                     : '')
-                + '&ensp;<span class="vr"></span>&ensp;<span class="text-secondary"><i class="bi bi-basket2-fill"></i>&thinsp;Basket:</span>&ensp;'
-                + '<a href="javascript:transferChange(\'selectFiltered\')" class="text-decoration-none fw-bold" title="Open basket to act on selected transfers"><span id="destSelectedSpan">' + selCount.toLocaleString() + '</span></a>';
+                + '&ensp;<span class="vr"></span>&ensp;'
+                + '<a href="javascript:transferChange(\'validate\')" class="text-decoration-none fw-bold" title="Open basket to act on selected transfers">'
+                + '<span class="text-secondary"><i class="bi bi-basket2-fill"></i>&thinsp;Basket:</span>&ensp;<span id="destSelectedSpan">' + selCount.toLocaleString() + '</span>'
+                + '</a>';
+            // Show/hide A/N/R selection controls based on whether any rows are present
+            var hasRows = json && json.recordsFiltered > 0;
+            var selCtrl = document.getElementById('destSelectionControls');
+            if (selCtrl) selCtrl.classList.toggle('d-none', !hasRows);
+            if (!hasRows) {
+                var helpEl = document.getElementById('dtSelectionHelp');
+                if (helpEl) helpEl.classList.remove('show');
+            }
+            // Restore scroll position after pill-click page reload (table must be rendered first)
+            var _savedY = sessionStorage.getItem('hostChangeScrollY');
+            if (_savedY !== null) {
+                sessionStorage.removeItem('hostChangeScrollY');
+                window.scrollTo({ top: parseInt(_savedY, 10), behavior: 'instant' });
+            }
         }
     });
 

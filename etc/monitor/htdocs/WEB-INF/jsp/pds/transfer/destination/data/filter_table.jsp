@@ -76,21 +76,31 @@
 
         <%-- Search + Filter button --%>
         <div class="d-flex gap-1 align-items-center">
+            <div class="input-group flex-nowrap" style="width:auto" title="Page size">
+                <span class="input-group-text px-2"><i class="bi bi-list-ol"></i></span>
+                <select id="destPageLen" class="form-select" style="width:auto">
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                    <option value="250">250</option>
+                </select>
+            </div>
             <div class="input-group" style="flex:1">
                 <span class="input-group-text"><i class="bi bi-search"></i></span>
                 <input type="text" value="${destinationDetailActionForm.fileNameSearch}"
                        placeholder="e.g. expired=no target=*.dat source=/tmp/* ts&gt;10 ts&lt;=99 size&gt;=700kb case=i"
-                       class="form-control form-control-sm"
+                       class="form-control"
                        title="Default search is by target. Conduct extended searches using target, source, ts, priority, groupby, identity, checksum, size, replicated, asap, deleted, expired, proxy, mover and event rules. Wildcards: * (zero or more chars), ? (exactly one char)."
                        id="fileNameSearch" name="fileNameSearch" onkeypress="submitenter(this,event)">
             </div>
-            <button type="button" class="btn btn-sm btn-outline-primary"
+            <button type="button" class="btn btn-outline-primary"
                     id="btnDftQB"
                     onclick="toggleQBPanel('dftQueryBuilder','btnDftQB')"
                     title="Filter">
                 <i class="bi bi-sliders2"></i><span class="d-none d-sm-inline ms-1">Filter</span>
             </button>
-            <button class="btn btn-link btn-sm text-muted p-0" type="button"
+            <button class="btn btn-link text-muted p-0" type="button"
                     data-bs-toggle="collapse" data-bs-target="#dftQBHelp"
                     aria-expanded="false" title="Search syntax help">
                 <i class="bi bi-info-circle"></i>

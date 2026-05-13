@@ -12,10 +12,11 @@
         <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
 					<c:if test="${not host.active}"><i class="bi bi-slash-circle-fill text-danger" title="Host is disabled" style="font-size:0.9rem;"></i></c:if>
                     <a class="dest-page-name text-decoration-none" href="/do/transfer/host/${host.name}"<c:if test="${not host.active}"> style="text-decoration:line-through !important;color:var(--bs-secondary-color)"</c:if>>${host.nickName}</a>
+        <div class="d-flex gap-2 align-items-center host-badge-group">
         <c:if test="${host.name != host.nickName}">
             <code class="dest-page-id" title="Host identifier">${host.name}</code>
         </c:if>
-        <c:if test="${not empty host.geoIpLocation}">
+        <c:if test="${not empty host.geoIpLocation and fn:length(_hGeoIso) == 2}">
             <span class="fi fi-${_hGeoIso}" title="${host.geoIpLocation}" style="font-size:1.2em;border-radius:2px;"></span>
         </c:if>
         <c:choose>
@@ -35,10 +36,15 @@
         <c:if test="${not empty host.filterName and host.filterName ne 'none'}">
             <jsp:include page="/WEB-INF/jsp/pds/transfer/compression_icon.jsp"><jsp:param name="name" value="${host.filterName}"/></jsp:include>
         </c:if>
-        <div class="d-flex gap-2 ms-auto align-items-center">
+        </div>
+        <%-- Desktop: full icon bar, hidden on mobile --%>
+        <div id="_hostIconBar" class="d-none d-sm-flex gap-2 align-items-center ms-auto">
         <auth:if basePathKey="host.basepath" paths="">
         <auth:then>
         <a href='<bean:message key="host.basepath"/>' class="btn btn-sm btn-outline-secondary" title="All Transfer Hosts"><i class="bi bi-arrow-left"></i></a>
+        <c:if test="${not empty host.name}">
+        <a href='<bean:message key="host.basepath"/>/${host.name}' class="btn btn-sm btn-outline-secondary" title="Host Main Page"><i class="bi bi-house"></i></a>
+        </c:if>
         <div style="border-left:1px solid var(--bs-border-color);height:1.5rem;"></div>
         </auth:then>
         </auth:if>
@@ -93,7 +99,58 @@
         </c:if>
         </auth:then>
         </auth:if>
+        </div><%-- end #_hostIconBar --%>
+
+        <%-- Mobile: ⋯ dropdown, hidden on sm+ --%>
+        <div class="d-sm-none ms-auto host-mobile-menu">
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
+                        id="_hostActionsToggle" data-bs-toggle="dropdown" aria-expanded="false"
+                        title="Actions">
+                    <i class="bi bi-three-dots"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" id="_hostActionsMenu" aria-labelledby="_hostActionsToggle"></ul>
+            </div>
         </div>
+        <script>
+        (function() {
+            document.addEventListener('DOMContentLoaded', function() {
+                var bar  = document.getElementById('_hostIconBar');
+                var menu = document.getElementById('_hostActionsMenu');
+                if (!bar || !menu) return;
+                function addItem(a) {
+                    var li   = document.createElement('li');
+                    var item = document.createElement('a');
+                    item.className = 'dropdown-item';
+                    item.href = a.getAttribute('href');
+                    if (a.getAttribute('onclick')) item.setAttribute('onclick', a.getAttribute('onclick'));
+                    var ic = a.querySelector('i[class]');
+                    if (ic) {
+                        var icon = document.createElement('i');
+                        icon.className = ic.className + ' me-2';
+                        item.appendChild(icon);
+                    }
+                    item.appendChild(document.createTextNode(a.title || a.textContent.trim()));
+                    li.appendChild(item);
+                    menu.appendChild(li);
+                }
+                function addDivider() {
+                    if (menu.children.length === 0) return;
+                    var li = document.createElement('li');
+                    li.innerHTML = '<hr class="dropdown-divider m-1">';
+                    menu.appendChild(li);
+                }
+                Array.from(bar.children).forEach(function(child) {
+                    if (child.tagName === 'A') {
+                        addItem(child);
+                    } else if (child.tagName === 'DIV' && child.querySelector('a')) {
+                        addDivider();
+                        Array.from(child.querySelectorAll('a')).forEach(addItem);
+                    }
+                });
+            });
+        })();
+        </script>
     </div>
 <script>
 function ecpdsHostDuplicate(hostId, nickName) {

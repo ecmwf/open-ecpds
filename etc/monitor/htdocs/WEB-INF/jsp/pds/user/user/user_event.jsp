@@ -20,7 +20,7 @@
 <table id="userEventsTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
     <thead class="table-light">
         <tr>
-            <th>Time</th>
+            <th title="Time (UTC)">Time</th>
             <th>Host</th>
             <th>Action</th>
             <th>Comment</th>

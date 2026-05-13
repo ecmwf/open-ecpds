@@ -14,9 +14,7 @@
     <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
         <c:if test="${not destination.active}"><i class="bi bi-slash-circle-fill text-danger" title="Destination is disabled" style="font-size:0.9rem;align-self:center;"></i></c:if>
         <a class="dest-page-name text-decoration-none" href="/do/transfer/destination/${destination.name}"<c:if test="${not destination.active}"> style="text-decoration:line-through !important;color:var(--bs-secondary-color)"</c:if>>${destination.name}</a>
-        <c:if test="${destination.id != destination.name}">
-            <code class="dest-page-id">${destination.id}</code>
-        </c:if>
+        <div class="d-flex gap-2 align-items-center flex-wrap dest-badge-group">
         <jsp:include page="/WEB-INF/jsp/pds/transfer/destination/destination_flag.jsp"/>
         <jsp:include page="/WEB-INF/jsp/pds/transfer/destination/destination_type_badge.jsp"/>
         <c:choose>
@@ -45,10 +43,16 @@
         <c:if test="${not empty destination.filterName and destination.filterName ne 'none'}">
             <jsp:include page="/WEB-INF/jsp/pds/transfer/compression_icon.jsp"><jsp:param name="name" value="${destination.filterName}"/></jsp:include>
         </c:if>
-        <div class="d-flex gap-2 ms-auto align-items-center">
+        </div>
+        <%-- Desktop: full icon bar, hidden on mobile --%>
+        <div id="_destIconBar" class="d-none d-sm-flex gap-2 align-items-center ms-auto">
         <auth:if basePathKey="destination.basepath" paths="">
         <auth:then>
         <a href='<bean:message key="destination.basepath"/>' class="btn btn-sm btn-outline-secondary" title="All Destinations"><i class="bi bi-arrow-left"></i></a>
+        <c:if test="${not empty destination.id}">
+        <a href='<bean:message key="destination.basepath"/>/${destination.id}'
+           class="btn btn-sm btn-outline-secondary" title="Destination Main Page"><i class="bi bi-house"></i></a>
+        </c:if>
         <div style="border-left:1px solid var(--bs-border-color);height:1.5rem;"></div>
         </auth:then>
         </auth:if>
@@ -72,8 +76,6 @@
         </auth:if>
         <c:if test="${not empty destination.id}">
         <div class="d-flex gap-1 align-items-center"<c:if test="${_destHasEditGroup}"> style="border-left:1px solid var(--bs-border-color);padding-left:0.5rem;"</c:if>>
-            <a href='<bean:message key="destination.basepath"/>/${destination.id}'
-               class="btn btn-sm btn-outline-secondary" title="Files"><i class="bi bi-files"></i></a>
             <auth:if basePathKey="transferhistory.basepath" paths="/">
             <auth:then>
             <a href='<bean:message key="destination.basepath"/>/${destination.id}?mode=parameters'
@@ -102,7 +104,58 @@
             </auth:if>
         </div>
         </c:if>
+        </div><%-- end #_destIconBar --%>
+
+        <%-- Mobile: ⋯ dropdown, hidden on sm+ --%>
+        <div class="d-sm-none ms-auto dest-mobile-menu">
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
+                        id="_destActionsToggle" data-bs-toggle="dropdown" aria-expanded="false"
+                        title="Actions">
+                    <i class="bi bi-three-dots"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" id="_destActionsMenu" aria-labelledby="_destActionsToggle"></ul>
+            </div>
         </div>
+        <script>
+        (function() {
+            document.addEventListener('DOMContentLoaded', function() {
+                var bar  = document.getElementById('_destIconBar');
+                var menu = document.getElementById('_destActionsMenu');
+                if (!bar || !menu) return;
+                function addItem(a) {
+                    var li   = document.createElement('li');
+                    var item = document.createElement('a');
+                    item.className = 'dropdown-item';
+                    item.href = a.getAttribute('href');
+                    var ic = a.querySelector('i[class]');
+                    if (ic) {
+                        var icon = document.createElement('i');
+                        icon.className = ic.className + ' me-2';
+                        item.appendChild(icon);
+                    }
+                    item.appendChild(document.createTextNode(a.title || a.textContent.trim()));
+                    li.appendChild(item);
+                    menu.appendChild(li);
+                }
+                function addDivider() {
+                    if (menu.children.length === 0) return;
+                    var li = document.createElement('li');
+                    li.innerHTML = '<hr class="dropdown-divider m-1">';
+                    menu.appendChild(li);
+                }
+                Array.from(bar.children).forEach(function(child) {
+                    if (child.tagName === 'A') {
+                        addItem(child);
+                    } else if (child.tagName === 'DIV' && child.querySelector('a')) {
+                        addDivider();
+                        Array.from(child.querySelectorAll('a')).forEach(addItem);
+                    }
+                    /* <div style="border-left:..."> separators: skip, handled by addDivider() */
+                });
+            });
+        })();
+        </script>
     </div>
     <c:if test="${not empty destination.comment}">
         <p class="dest-page-comment">${destination.comment}</p>

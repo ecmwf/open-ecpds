@@ -33,22 +33,21 @@
 
 <div class="mt-3">
 <div class="d-flex justify-content-end mb-2">
-  <label class="d-flex align-items-center gap-1 mb-0 text-muted small">
-    Show
-    <select id="histPageLen" class="form-select form-select-sm" style="width:auto">
+  <div class="input-group flex-nowrap" style="width:auto" title="Page size">
+    <span class="input-group-text px-2"><i class="bi bi-list-ol"></i></span>
+    <select id="histPageLen" class="form-select" style="width:auto">
       <option value="10">10</option>
       <option value="25" selected>25</option>
       <option value="50">50</option>
       <option value="100">100</option>
     </select>
-    entries per page
-  </label>
+  </div>
 </div>
 <table id="transferHistoryTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
-    <thead>
+    <thead class="table-light">
         <tr>
             <th>Error</th>
-            <th>Event Time</th>
+            <th title="Event Time (UTC)">Event Time</th>
             <th>Status</th>
             <th>Transfer Host</th>
             <th>Comment</th>

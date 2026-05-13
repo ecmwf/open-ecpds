@@ -59,15 +59,16 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-body py-2 px-3">
                     <div class="row g-2">
-                        <div class="col-auto d-flex align-items-center gap-1">
-                            <span class="text-nowrap text-muted small">Show</span>
-                            <select id="transferPageLen" class="form-select form-select-sm" style="width:auto" title="Entries per page">
-                                <option value="10">10</option>
-                                <option value="25" selected>25</option>
-                                <option value="50">50</option>
-                                <option value="100">100</option>
-                            </select>
-                            <span class="text-nowrap text-muted small">entries</span>
+                        <div class="col-auto">
+                            <div class="input-group flex-nowrap" style="width:auto" title="Page size">
+                                <span class="input-group-text px-2"><i class="bi bi-list-ol"></i></span>
+                                <select id="transferPageLen" class="form-select" style="width:auto">
+                                    <option value="10">10</option>
+                                    <option value="25" selected>25</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="col">
                             <div class="input-group">
@@ -421,11 +422,11 @@ function _updateTransferSearchBanner(queryError, total, hasSearch) {
 <input type="hidden" id="dt-type"   value="<c:out value="${transferType}"/>">
 
 <table id="transferTable" class="table table-sm table-hover table-striped align-middle w-100">
-    <thead>
+    <thead class="table-light">
         <tr>
             <th>Destination</th>
             <th>Transfer Host</th>
-            <th>Sched. Time</th>
+            <th title="Scheduled Time (UTC)">Sched. Time</th>
             <th>Target</th>
             <th>%</th>
             <th>Mbits/s</th>

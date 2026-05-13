@@ -41,10 +41,10 @@
 </div>
 
 <table id="datafileTable" class="table table-sm table-hover table-striped align-middle w-100">
-    <thead>
+    <thead class="table-light">
         <tr>
             <th>Original</th>
-            <th>Product Time</th>
+            <th title="Product Time (UTC)">Product Time</th>
             <th>Size</th>
             <th>TS</th>
         </tr>

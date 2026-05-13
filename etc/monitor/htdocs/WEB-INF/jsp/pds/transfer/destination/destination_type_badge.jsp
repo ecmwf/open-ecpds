@@ -1,4 +1,4 @@
-<%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
+<%@ page trimDirectiveWhitespaces="true" %><%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 <c:if test="${not empty destination.typeText}"><c:choose
 ><c:when test="${destination.typeText == 'Gold'}"
 ><span class="dest-page-type dest-type-gold"><i class="bi bi-trophy-fill"></i> Gold</span
