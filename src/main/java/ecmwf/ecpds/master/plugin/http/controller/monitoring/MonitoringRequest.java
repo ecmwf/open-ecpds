@@ -683,8 +683,9 @@ public class MonitoringRequest {
             }
         }
         if (window.size() > productsToShowCount) {
-            log.debug("Product window (sublist): " + window);
-            return window.subList(window.size() - productsToShowCount, window.size());
+            final int realSize = window.size() - productsToShowCount;
+            log.debug("Product window (sublist {} -> {}): {}", window.size(), realSize, window);
+            return window.subList(realSize, window.size());
         }
         log.debug("Product window: " + window);
         return window;
