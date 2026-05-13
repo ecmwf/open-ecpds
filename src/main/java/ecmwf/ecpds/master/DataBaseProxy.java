@@ -555,6 +555,17 @@ final class DataBaseProxy implements DataBaseInterface {
     /**
      * {@inheritDoc}
      *
+     * Gets the destinations by user.
+     */
+    @Override
+    public Destination[] getDestinationsByUser(final String uid, final String search, final String fromToAliases,
+            final boolean asc, final String status, final String type, final String filter) throws IOException {
+        return getDestinationsByUser(uid, search, fromToAliases, 1, asc, 0, -1, status, type, filter);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * Gets the total count of destinations accessible by a given user.
      */
     @Override
@@ -764,6 +775,22 @@ final class DataBaseProxy implements DataBaseInterface {
         final var monitor = new MonitorCall(
                 "getDataFilesByMetaData(" + name + "," + value + "," + from + "," + to + ")");
         return monitor.done(dataBaseInterface.getDataFilesByMetaData(name, value, search, from, to, cursor));
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Gets the data files by meta data.
+     */
+    @Override
+    public Collection<DataFile> getDataFilesByMetaData(final String name, final String value, final Date from,
+            final Date to, final DataBaseCursor cursor) throws DataBaseException, RemoteException {
+        if (name == null || value == null || from == null || to == null) {
+            throw new DataBaseException("Invalid parameter(s) for getDataFilesByMetaData");
+        }
+        final var monitor = new MonitorCall(
+                "getDataFilesByMetaData(" + name + "," + value + "," + from + "," + to + ")");
+        return monitor.done(dataBaseInterface.getDataFilesByMetaData(name, value, from, to, cursor));
     }
 
     /**

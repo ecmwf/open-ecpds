@@ -984,6 +984,17 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
     /**
      * {@inheritDoc}
      *
+     * Gets the destinations by user.
+     */
+    @Override
+    public Destination[] getDestinationsByUser(String uid, String search, String fromToAliases, boolean asc,
+            String status, String type, String filter) throws IOException {
+        return getDestinationsByUser(uid, search, fromToAliases, 1, asc, 0, -1, status, type, filter);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * Gets the total count of destinations accessible by a given user.
      */
     @Override
@@ -1188,6 +1199,35 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
         final var monitor = new MonitorCall(
                 "getDataFilesByMetaData(" + name + "," + value + "," + from + "," + to + ")");
         return monitor.done(ecpds.getDataFilesByMetaData(name, value, search, from, to, cursor));
+    }
+
+    /**
+     * Gets the data files by meta data.
+     *
+     * @param name
+     *            the name
+     * @param value
+     *            the value
+     * @param from
+     *            the from
+     * @param to
+     *            the to
+     * @param cursor
+     *            the cursor
+     *
+     * @return the data files by meta data
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     * @throws RemoteException
+     *             the remote exception
+     */
+    @Override
+    public Collection<DataFile> getDataFilesByMetaData(final String name, final String value, final Date from,
+            final Date to, final DataBaseCursor cursor) throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall(
+                "getDataFilesByMetaData(" + name + "," + value + "," + from + "," + to + ")");
+        return monitor.done(ecpds.getDataFilesByMetaData(name, value, "", from, to, cursor));
     }
 
     /**

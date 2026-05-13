@@ -586,6 +586,32 @@ public interface DataBaseInterface extends Remote {
             boolean ascending, int start, int length, String status, String type, String filter) throws IOException;
 
     /**
+     * Gets the destinations by user.
+     *
+     * @param uid
+     *            the uid
+     * @param search
+     *            the search
+     * @param fromToAliases
+     *            the from to aliases
+     * @param asc
+     *            the asc
+     * @param status
+     *            the status
+     * @param type
+     *            the type
+     * @param filter
+     *            the filter
+     *
+     * @return the destinations by user
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     */
+    Destination[] getDestinationsByUser(String uid, String search, String fromToAliases, boolean asc, String status,
+            String type, String filter) throws IOException;
+
+    /**
      * Gets the total count of destinations accessible by a given user matching the supplied filters.
      *
      * @param uid
@@ -772,6 +798,30 @@ public interface DataBaseInterface extends Remote {
      */
     Collection<DataFile> getDataFilesByMetaData(String name, String value, String search, Date from, Date to,
             DataBaseCursor cursor) throws DataBaseException, RemoteException;
+
+    /**
+     * Gets the data files by meta data.
+     *
+     * @param name
+     *            the name
+     * @param value
+     *            the value
+     * @param from
+     *            the from
+     * @param to
+     *            the to
+     * @param cursor
+     *            the cursor
+     *
+     * @return the data files by meta data
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     * @throws RemoteException
+     *             the remote exception
+     */
+    Collection<DataFile> getDataFilesByMetaData(String name, String value, Date from, Date to, DataBaseCursor cursor)
+            throws DataBaseException, RemoteException;
 
     /**
      * Gets the transfer count and meta data by filter.
