@@ -419,10 +419,10 @@ function _updateHostSearchBanner(queryError, total, hasSearch) {
                 url: '/do/transfer/host/list',
                 type: 'GET',
                 data: function(d) {
-                    d.label      = $('#hostSearchForm [name="label"]').val() || 'All';
-                    d.hostFilter = $('#hostSearchForm [name="hostFilter"]').val() || 'All';
-                    d.network    = $('#hostSearchForm [name="network"]').val() || 'All';
-                    d.hostType   = $('#hostSearchForm [name="hostType"]').val() || 'All';
+                    d.label      = $('#label').val() || 'All';
+                    d.hostFilter = $('#hostFilter').val() || 'All';
+                    d.network    = $('#network').val() || 'All';
+                    d.hostType   = $('#hostType').val() || 'All';
                     d.hostSearch = $('#hostSearch').val() || '';
                 }
             },

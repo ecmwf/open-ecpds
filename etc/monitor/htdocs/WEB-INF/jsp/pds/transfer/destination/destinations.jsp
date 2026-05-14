@@ -433,10 +433,10 @@ function _updateDestSearchBanner(queryError, total, hasSearch) {
             type: 'GET',
             data: function(d) {
                 d.destinationSearch  = $('#destinationSearch').val() || '';
-                d.aliases            = $('#destinationSearchForm [name="aliases"]').val() || 'All';
-                d.destinationStatus  = $('#destinationSearchForm [name="destinationStatus"]').val() || 'All Status';
-                d.destinationType    = $('#destinationSearchForm [name="destinationType"]').val() || '-1';
-                d.destinationFilter  = $('#destinationSearchForm [name="destinationFilter"]').val() || 'All';
+                d.aliases            = $('#aliases').val() || 'All';
+                d.destinationStatus  = $('#destinationStatus').val() || 'All Status';
+                d.destinationType    = $('#destinationType').val() || '-1';
+                d.destinationFilter  = $('#destinationFilter').val() || 'All';
             }
         },
         paging: true, pageLength: 25, lengthChange: false, searching: false, autoWidth: false, order: [],
@@ -496,10 +496,10 @@ function _updateDestSearchBanner(queryError, total, hasSearch) {
     function _currentFilters() {
         return {
             destinationSearch:  $('#destinationSearch').val() || '',
-            aliases:            $('#destinationSearchForm [name="aliases"]').val() || 'All',
-            destinationStatus:  $('#destinationSearchForm [name="destinationStatus"]').val() || 'All Status',
-            destinationType:    $('#destinationSearchForm [name="destinationType"]').val() || '-1',
-            destinationFilter:  $('#destinationSearchForm [name="destinationFilter"]').val() || 'All'
+            aliases:            $('#aliases').val() || 'All',
+            destinationStatus:  $('#destinationStatus').val() || 'All Status',
+            destinationType:    $('#destinationType').val() || '-1',
+            destinationFilter:  $('#destinationFilter').val() || 'All'
         };
     }
 
