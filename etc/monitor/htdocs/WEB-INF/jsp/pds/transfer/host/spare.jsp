@@ -17,7 +17,16 @@
     <tr><td></td></tr>
 
 
-    <tr><td><a href='<bean:message key="host.basepath"/>/${host.id}?mode=changelog'><i class="bi bi-clock-history sidebar-icon"></i> Changes Log</a></td></tr>
+    <auth:if basePathKey="transferhistory.basepath" paths="/">
+        <auth:then>
+            <tr><td><a href='<bean:message key="host.basepath"/>/${host.id}?mode=changelog'><i class="bi bi-clock-history sidebar-icon"></i> Changes Log</a></td></tr>
+        </auth:then>
+        <auth:else>
+            <c:if test="${host.type != 'Proxy'}">
+            <tr><td><a href='<bean:message key="host.basepath"/>/${host.id}?mode=changelog'><i class="bi bi-clock-history sidebar-icon"></i> Changes Log</a></td></tr>
+            </c:if>
+        </auth:else>
+    </auth:if>
 
     <auth:if basePathKey="host.basepath" paths="/edit/getOutput/">
         <auth:then>

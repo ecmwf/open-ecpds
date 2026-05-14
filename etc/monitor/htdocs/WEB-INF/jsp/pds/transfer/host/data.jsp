@@ -133,6 +133,7 @@ table.fields > tbody > tr > th {
 		</c:if>
 		<c:if test="${empty isDelete}">
 			<jsp:include page="/WEB-INF/jsp/pds/transfer/host/host_header.jsp"/>
+			<c:if test="${!(isRestrictedUser == 'true' && host.type == 'Proxy')}">
 			<div class="card border-0 shadow-sm mb-3">
 <div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
 <i class="bi bi-tag text-primary"></i>
@@ -150,6 +151,7 @@ table.fields > tbody > tr > th {
 </div>
 </div>
 </div>
+</c:if>
 
 <div class="card border-0 shadow-sm mb-3">
 <div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
@@ -166,6 +168,7 @@ table.fields > tbody > tr > th {
 </div>
 </div>
 
+<c:if test="${!(isRestrictedUser == 'true' && host.type == 'Proxy')}">
 <div class="card border-0 shadow-sm mb-3">
 <div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
 <i class="bi bi-folder2-open text-primary"></i>
@@ -184,7 +187,9 @@ type='radio' id='ispython' name='dirType' />Python
 </div>
 </div>
 </div>
+</c:if>
 
+<c:if test="${!(isRestrictedUser == 'true' && host.type == 'Proxy')}">
 <div class="card border-0 shadow-sm mb-3">
 <div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
 <i class="bi bi-sliders text-primary"></i>
@@ -229,6 +234,7 @@ JavaScript
 </div>
 </div>
 </div>
+</c:if>
 
 <auth:if basePathKey="transferhistory.basepath" paths="/">
 <auth:then>
@@ -337,6 +343,15 @@ setTimeout(function(){ btn.innerHTML='<i class=\'bi bi-clipboard\'></i> Copy'; }
 
 
 			<c:if test="${host.type != 'Replication' && host.type != 'Source' && host.type != 'Backup'}">
+				<%-- Count how many destinations the current user is authorised to see --%>
+				<c:set var="visibleDestCount" value="0" />
+				<c:forEach var="destination" items="${host.destinations}">
+				  <auth:if basePathKey="destination.basepath" paths="/${destination.name}">
+				    <auth:then>
+				      <c:set var="visibleDestCount" value="${visibleDestCount + 1}" />
+				    </auth:then>
+				  </auth:if>
+				</c:forEach>
 				<div class="card assoc-card mt-3" style="max-width:480px">
 				  <div class="card-header">
 				    <i class="bi bi-geo-alt text-secondary"></i>
@@ -344,15 +359,19 @@ setTimeout(function(){ btn.innerHTML='<i class=\'bi bi-clipboard\'></i> Copy'; }
 				  </div>
 				  <div class="card-body p-2">
 				    <c:choose>
-				      <c:when test="${empty host.destinations}">
+				      <c:when test="${visibleDestCount == 0}">
 				        <p class="text-muted small mb-0"><em>No destinations assigned.</em></p>
 				      </c:when>
 				      <c:otherwise>
 				        <div class="d-flex flex-wrap">
 				          <c:forEach var="destination" items="${host.destinations}">
-				            <span class="assoc-chip">
-				              <a href="<bean:message key="destination.basepath"/>/${destination.id}" title="${destination.comment}" class="text-decoration-none text-body">${destination.name}</a>
-				            </span>
+				            <auth:if basePathKey="destination.basepath" paths="/${destination.name}">
+				              <auth:then>
+				                <span class="assoc-chip">
+				                  <a href="<bean:message key="destination.basepath"/>/${destination.id}" title="${destination.comment}" class="text-decoration-none text-body">${destination.name}</a>
+				                </span>
+				              </auth:then>
+				            </auth:if>
 				          </c:forEach>
 				        </div>
 				      </c:otherwise>

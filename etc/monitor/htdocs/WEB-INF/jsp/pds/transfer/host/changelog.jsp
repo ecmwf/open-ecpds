@@ -5,6 +5,15 @@
 
 <jsp:include page="/WEB-INF/jsp/pds/transfer/host/host_header.jsp"/>
 
+<c:choose>
+<c:when test="${isRestrictedUser == 'true' && host.type == 'Proxy'}">
+	<div class="alert alert-info d-flex align-items-center gap-2 mt-3">
+		<i class="bi bi-info-circle-fill"></i>
+		<span>No change log available for host <strong><c:out value="${host.name}" /></strong>.</span>
+	</div>
+</c:when>
+<c:otherwise>
+
 <c:if test="${empty host.changeLogList}">
 	<div class="alert alert-info d-flex align-items-center gap-2 mt-3">
 		<i class="bi bi-info-circle-fill"></i>
@@ -113,3 +122,5 @@ $(document).ready(function() {
 
 </c:if>
 
+</c:otherwise>
+</c:choose>

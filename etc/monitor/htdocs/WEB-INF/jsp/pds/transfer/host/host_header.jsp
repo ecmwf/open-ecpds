@@ -2,6 +2,11 @@
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
 <%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean"%>
+<%-- Detect restricted user once here; stored in request scope so callers (data.jsp etc.) can also use it --%>
+<c:set var="isRestrictedUser" value="true" scope="request" />
+<auth:if basePathKey="transferhistory.basepath" paths="/">
+  <auth:then><c:set var="isRestrictedUser" value="false" scope="request" /></auth:then>
+</auth:if>
 <c:if test="${not empty host.geoIpLocation}">
     <c:set var="_hGeoParts" value="${fn:split(host.geoIpLocation, '/')}"/>
     <c:set var="_hGeoPart0" value="${fn:trim(_hGeoParts[0])}"/>
@@ -76,8 +81,10 @@
         <auth:then>
         <c:if test="${not empty host.id}">
         <div class="d-flex gap-1 align-items-center"<c:if test="${_hostHasEditGroup}"> style="border-left:1px solid var(--bs-border-color);padding-left:0.5rem;"</c:if>>
+            <c:if test="${!(isRestrictedUser == 'true' && host.type == 'Proxy')}">
             <a href='<bean:message key="host.basepath"/>/${host.id}?mode=changelog'
                class="btn btn-sm btn-outline-secondary" title="Changes Log"><i class="bi bi-clock-history"></i></a>
+            </c:if>
             <auth:if basePathKey="host.basepath" paths="/edit/getOutput/">
             <auth:then>
             <a href='<bean:message key="host.basepath"/>/edit/getOutput/view/${host.id}'
