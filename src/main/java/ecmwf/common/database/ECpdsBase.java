@@ -204,7 +204,7 @@ public final class ECpdsBase extends DataBase {
         try (var rs = ecpds.getAuthorizedHostsAndDestinations(user)) {
             final Map<String, List<String>> result = new HashMap<>();
             while (rs.next()) {
-                result.computeIfAbsent(rs.getString("HOS_NAME"), k -> new ArrayList<>()).add(rs.getString("DES_NAME"));
+                result.computeIfAbsent(rs.getString("HOS_NAME"), _ -> new ArrayList<>()).add(rs.getString("DES_NAME"));
             }
             logSqlRequest("getAuthorisedHostsAndDestinations", result.size());
             return result;
@@ -3997,7 +3997,7 @@ public final class ECpdsBase extends DataBase {
         try (var rs = ecpds.getDestinationNamesByHost()) {
             final Map<String, List<String>> names = new HashMap<>();
             while (rs.next()) {
-                names.computeIfAbsent(rs.getString("HOS_NAME"), k -> new ArrayList<>()).add(rs.getString("DES_NAME"));
+                names.computeIfAbsent(rs.getString("HOS_NAME"), _ -> new ArrayList<>()).add(rs.getString("DES_NAME"));
             }
             logSqlRequest("getDestinationNamesByHost", names.size());
             return names;
