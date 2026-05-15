@@ -147,6 +147,11 @@
                     title="Refresh output" style="font-size:0.75rem;">
                 <i class="bi bi-arrow-clockwise"></i> Refresh
             </button>
+            <button id="rawBtn"
+                    class="btn btn-sm btn-outline-secondary py-0 px-2 report-card-hdr-btn"
+                    title="Toggle between parsed view and raw server response" style="font-size:0.75rem;" disabled>
+                <i class="bi bi-code-slash"></i> Raw
+            </button>
             <button id="copyBtn"
                     class="btn btn-sm btn-outline-secondary py-0 px-2 report-card-hdr-btn"
                     title="Copy to clipboard" style="font-size:0.75rem;">
@@ -229,7 +234,7 @@ function _parseEntry($f) {
     var target   = ai >= 0 ? rest.substring(ai + 4).trim() : '';
 
     return { perms: perms, size: size, date: date,
-             filename: filename, href: href || filename,
+             filename: filename, href: href,
              target: target, status: status, statusHtml: statusHtml, sBadge: sBadge, color: color };
 }
 
@@ -363,8 +368,10 @@ function _renderListingBlock(hdr, entries) {
                 tHtml += '<tr><td colspan="6" class="' + rc + '">' + _esc(e.text) + '</td></tr>';
                 return;
             }
-            var nameHtml = '<a href="' + _esc(e.href) + '" target="_blank" rel="noopener noreferrer" title="'
-                + _esc(e.filename) + '">' + _esc(_trunc(e.filename, 72)) + '</a>';
+            var nameHtml = e.href
+                ? '<a href="' + _esc(e.href) + '" target="_blank" rel="noopener noreferrer" title="'
+                    + _esc(e.filename) + '">' + _esc(_trunc(e.filename, 72)) + '</a>'
+                : '<span title="' + _esc(e.filename) + '">' + _esc(_trunc(e.filename, 72)) + '</span>';
             var targetHtml = e.target
                 ? '&#x2192;&nbsp;<span title="' + _esc(e.target) + '">' + _esc(_trunc(e.target, 48)) + '</span>'
                 : '';
@@ -408,8 +415,25 @@ function _parseAndRender(rawHtml) {
 
 /* -- Load / refresh / copy ----------------------------------------------- */
 var _rawOutput = '';
+var _rawHtml   = '';
+var _structuredHtml = '';
+var _showingRaw = false;
+
+function _setRawMode(raw) {
+    _showingRaw = raw;
+    if (raw) {
+        $('#outputContent').html('<pre>' + _rawHtml + '</pre>').show();
+        $('#rawBtn').html('<i class="bi bi-layout-text-sidebar-reverse"></i> Parsed');
+    } else {
+        var html = _structuredHtml || ('<pre>' + _rawHtml + '</pre>');
+        $('#outputContent').html(html).show();
+        $('#rawBtn').html('<i class="bi bi-code-slash"></i> Raw');
+    }
+}
 
 function loadOutput() {
+    var wasRaw = _showingRaw;
+    $('#rawBtn').prop('disabled', true);
     $('#outputContent').hide();
     $('#outputLoading').removeClass('d-none');
     $.ajax({
@@ -422,14 +446,22 @@ function loadOutput() {
             var isError = !trimmed || /^<!doctype|^<html/i.test(trimmed);
             if (isError) {
                 _rawOutput = '';
+                _rawHtml = '';
+                _structuredHtml = '';
+                _showingRaw = false;
+                $('#rawBtn').html('<i class="bi bi-code-slash"></i> Raw');
                 $('#outputContent').html('<pre>No output available for ${host.nickName}</pre>').show();
                 return;
             }
+            _rawHtml = trimmed;
             _rawOutput = $('<div>').html(trimmed).text();
-            var structured = _parseAndRender(trimmed);
-            if (structured) {
-                $('#outputContent').html(structured).show();
+            _structuredHtml = _parseAndRender(trimmed);
+            if (_structuredHtml) {
+                $('#rawBtn').prop('disabled', false);
+                _setRawMode(wasRaw);
             } else {
+                _showingRaw = false;
+                $('#rawBtn').html('<i class="bi bi-code-slash"></i> Raw');
                 $('#outputContent').html('<pre>' + trimmed + '</pre>').show();
             }
         },
@@ -444,6 +476,8 @@ $(document).ready(function() {
     loadOutput();
 
     $('#refreshBtn').on('click', function() { loadOutput(); });
+
+    $('#rawBtn').on('click', function() { _setRawMode(!_showingRaw); });
 
     $('#copyBtn').on('click', function() {
         var btn = $(this);
