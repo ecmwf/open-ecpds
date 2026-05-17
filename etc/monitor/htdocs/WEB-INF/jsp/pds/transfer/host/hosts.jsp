@@ -706,7 +706,10 @@ function _updateHostSearchBanner(queryError, total, hasSearch) {
 
     // ---- Server-side filtered fetch ----
     function getFormVal(name) {
-        var el = document.querySelector('#hostSearchForm [name="' + name + '"]');
+        // Use getElementById first — the filter panel may be detached from #hostSearchForm
+        // (moved to document.body by toggleQBPanel), so a form-scoped querySelector would miss it.
+        var el = document.getElementById(name)
+               || document.querySelector('#hostSearchForm [name="' + name + '"]');
         return el ? el.value : '';
     }
 
