@@ -14,7 +14,7 @@
                 <span class="text-nowrap text-muted small">Show</span>
                 <select id="datafilePageLen" class="form-select form-select-sm" style="width:auto" title="Entries per page">
                     <option value="10">10</option>
-                    <option value="25" selected>25</option>
+                    <option value="25">25</option>
                     <option value="50">50</option>
                     <option value="100">100</option>
                 </select>
@@ -79,7 +79,7 @@
                 { title: 'TS',           orderable: true,  className: 'text-end' }
             ],
             columnDefs: [],
-            pageLength: 25,
+            pageLength: (function() { try { var v = parseInt(localStorage.getItem('datafilePageLen'), 10); return [10,25,50,100].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })(),
             lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
             language: {
                 emptyTable:     'No Data Files found for the selected date and metadata.',
@@ -90,8 +90,11 @@
             buttons: []
         });
 
+        $('#datafilePageLen').val((function() { try { var v = parseInt(localStorage.getItem('datafilePageLen'), 10); return [10,25,50,100].indexOf(v) >= 0 ? String(v) : '25'; } catch(e) { return '25'; } })());
         $('#datafilePageLen').on('change', function () {
-            table.page.len(parseInt(this.value, 10)).draw();
+            var len = parseInt(this.value, 10);
+            try { localStorage.setItem('datafilePageLen', len); } catch(e) {}
+            table.page.len(len).draw();
         });
 
         function doSearch() {

@@ -37,7 +37,7 @@
     <span class="input-group-text px-2"><i class="bi bi-list-ol"></i></span>
     <select id="histPageLen" class="form-select" style="width:auto">
       <option value="10">10</option>
-      <option value="25" selected>25</option>
+      <option value="25">25</option>
       <option value="50">50</option>
       <option value="100">100</option>
     </select>
@@ -74,7 +74,7 @@ $(function() {
                 d.mode = selectedMode;
             }
         },
-        pageLength: 25,
+        pageLength: (function() { try { var v = parseInt(localStorage.getItem('histPageLen'), 10); return [10,25,50,100].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })(),
         searching: false,
         autoWidth: false,
         order: [[1, 'desc']],
@@ -95,8 +95,11 @@ $(function() {
             emptyTable: 'No transfer history available for the selected criteria.'
         }
     });
+    $('#histPageLen').val((function() { try { var v = parseInt(localStorage.getItem('histPageLen'), 10); return [10,25,50,100].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })());
     $('#histPageLen').on('change', function() {
-        dt.page.len(+this.value).draw();
+        var len = +this.value;
+        try { localStorage.setItem('histPageLen', len); } catch(e) {}
+        dt.page.len(len).draw();
     });
 });
 </script>

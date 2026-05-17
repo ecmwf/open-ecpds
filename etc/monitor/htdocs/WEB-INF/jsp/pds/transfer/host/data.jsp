@@ -76,9 +76,8 @@ table.fields > tbody > tr > th {
 [data-bs-theme=light] .progress-terminal-body a { color: #0969da; }
 [data-bs-theme=light] .progress-terminal-btn { color: #57606a; border-color: #d0d7de; }
 [data-bs-theme=light] .progress-terminal-btn:hover { color: #fff; }
-.assoc-card .card-header { display:flex; align-items:center; gap:.4rem; padding:.5rem .75rem; background:#f8f9fa; font-size:.85rem; }
-.assoc-chip { display:inline-flex; align-items:center; gap:.25rem; background:#e9ecef; border-radius:1rem; padding:.2rem .6rem; font-size:.8rem; margin:.15rem; }
-[data-bs-theme=dark] .assoc-card .card-header { background: var(--bs-tertiary-bg); }
+.assoc-card .card-header { display:flex; align-items:center; gap:.4rem; padding:.5rem .75rem; background:var(--bs-tertiary-bg); font-size:.85rem; }
+.assoc-chip { display:inline-flex; align-items:center; gap:.25rem; background:var(--bs-secondary-bg); border-radius:1rem; padding:.2rem .6rem; font-size:.8rem; margin:.15rem; }
 [data-bs-theme=dark] .assoc-chip { background: var(--bs-secondary-bg); }
 /* Accordion header with inline help trigger */
 .acc-help-btn {

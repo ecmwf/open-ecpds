@@ -67,6 +67,11 @@
     background: rgba(250,250,252,0.9); border-color: rgba(0,0,0,0.1); color: #444;
 }
 [data-bs-theme=light] .mm-loading { background: rgba(246,248,250,0.8); color: #57606a; }
+/* Dark mode map: darken and saturate the light tile canvas so sea stays blue,
+   land stays warm, and the overall map fits a dark UI without inverting colours. */
+[data-bs-theme=dark] #mtrMap .mtr-base-layer canvas {
+    filter: saturate(2) brightness(0.5) contrast(1.15);
+}
 .mc-infobar {
     display: flex; align-items: center; flex-wrap: wrap; gap: 0.4rem;
     padding: 0.4rem 0.5rem; margin-bottom: 0.5rem;
@@ -230,9 +235,9 @@
 <script>
 /* -- MTR / Nmap chart renderer ------------------------------ */
 (function() {
-    var _ready = false, _showing = false;
     var _view = 'raw', _chartReady = false, _mapReady = false;
     var _olMap = null, _olInited = false, _routeExtent = null, _mapFitted = false;
+    var _lastMtr = null, _lastGeoMap = null, _mtrGeneration = 0;
     /* Host's manually-configured coordinates — used as fallback for the last MTR hop
        when the GeoIP database has no entry for the destination IP. */
     var _hostFallback = <c:choose><c:when test="${not empty host.latitude and not empty host.longitude}">{ hostname: '<c:out value="${host.host}"/>', lat: ${host.latitude}, lon: ${host.longitude}, geo: '<c:out value="${host.nickName}"/>' }</c:when><c:otherwise>null</c:otherwise></c:choose>;
@@ -425,8 +430,9 @@
         var pre = document.getElementById('reportPre');
         if (pre) pre.style.display = '';
         /* Destroy and recreate map on next load */
-        if (_olMap) { try { _olMap.setTarget(null); } catch(e) {} _olMap = null; }
+        if (_olMap) { try { _olMap.setTarget(null); _olMap.dispose(); } catch(e) {} _olMap = null; }
         _olInited = false; _routeExtent = null; _mapFitted = false;
+        _lastMtr = null; _lastGeoMap = null; _mtrGeneration++;
     };
 
     /* ---- Chart entry point ---------------------------------- */
@@ -460,9 +466,11 @@
         var ips = mtr.hops.filter(function(h) { return !h.noData; }).map(function(h) { return h.host; });
         if (!ips.length) return;
         var url = '/do/transfer/host/edit/geoIp?ips=' + encodeURIComponent(ips.join(','));
+        var gen = _mtrGeneration;
         fetch(url)
             .then(function(r) { return r.json(); })
             .then(function(data) {
+                if (gen !== _mtrGeneration) return;
                 var geoMap = {};
                 data.forEach(function(d) { if (d.lat != null && d.lon != null) geoMap[d.ip] = d; });
                 /* If the last reachable hop has no GeoIP coordinates, fall back to the
@@ -478,6 +486,8 @@
                 }
                 var resolved = mtr.hops.filter(function(h) { return !h.noData && geoMap[h.host]; });
                 if (resolved.length >= 2) {
+                    _lastMtr = mtr;
+                    _lastGeoMap = geoMap;
                     _buildMap(mtr, geoMap);
                     _mapReady = true;
                     var btnMap = document.getElementById('btnViewMap');
@@ -497,12 +507,7 @@
         if (!mapEl) return;
 
         var dark = _isDark();
-        var tileUrl = dark
-            ? 'https://{a-d}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-            : 'https://{a-d}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
-        var tileAttr = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>';
-
-        var tileSource = new ol.source.XYZ({ url: tileUrl, attributions: tileAttr });
+        var tileSource = new ol.source.OSM();
         var vectorSource = new ol.source.Vector();
 
         /* Build ordered list of resolved hops */
@@ -573,7 +578,7 @@
             target: 'mtrMap',
             controls: ol.control.defaults.defaults({ rotate: false }),
             layers: [
-                new ol.layer.Tile({ source: tileSource }),
+                new ol.layer.Tile({ source: tileSource, className: 'mtr-base-layer' }),
                 vectorLayer
             ],
             view: new ol.View({ center: ol.proj.fromLonLat([0, 30]), zoom: 3 })
@@ -628,6 +633,37 @@
             overlay.setPosition(evt.coordinate);
         });
     }
+
+    /* Rebuild map on theme change to refresh vector colours and popup styles.
+       The tile canvas inversion is handled automatically by CSS (.mtr-base-layer canvas filter). */
+    var _obsTheme = document.documentElement.getAttribute('data-bs-theme');
+    new MutationObserver(function() {
+        var newTheme = document.documentElement.getAttribute('data-bs-theme');
+        if (newTheme === _obsTheme || !_olInited || !_lastMtr || !_lastGeoMap) {
+            _obsTheme = newTheme;
+            return;
+        }
+        _obsTheme = newTheme;
+        /* Preserve user's current view so theme toggle doesn't reset pan/zoom */
+        var savedCenter = _mapFitted ? _olMap.getView().getCenter() : null;
+        var savedZoom   = _mapFitted ? _olMap.getView().getZoom()   : null;
+        var savedExtent = _routeExtent;
+        var wasMap      = (_view === 'map');
+        if (_olMap) { try { _olMap.setTarget(null); _olMap.dispose(); } catch(e) {} _olMap = null; }
+        _olInited = false; _routeExtent = null; _mapFitted = false;
+        _buildMap(_lastMtr, _lastGeoMap);
+        if (wasMap && _olMap) {
+            setTimeout(function() {
+                _olMap.updateSize();
+                if (savedCenter && savedZoom !== null) {
+                    _olMap.getView().setCenter(savedCenter);
+                    _olMap.getView().setZoom(savedZoom);
+                    _routeExtent = savedExtent;
+                    _mapFitted = true;
+                }
+            }, 50);
+        }
+    }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] });
 
 })();
 

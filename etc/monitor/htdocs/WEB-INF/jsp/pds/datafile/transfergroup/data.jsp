@@ -19,6 +19,9 @@
 		<auth:if basePathKey="transfergroup.basepath" paths="/edit/insert_form">
 		<auth:then>
 		<div class="d-flex gap-1 ms-auto flex-shrink-0">
+			<a href='<bean:message key="transfergroup.basepath"/>'
+			   class="btn btn-sm btn-outline-secondary" title="View list of transfer groups"><i class="bi bi-arrow-left"></i></a>
+			<span class="vr align-self-center mx-1"></span>
 			<a href='<bean:message key="transfergroup.basepath"/>/edit/insert_form'
 			   class="btn btn-sm btn-outline-success" title="Create new transfer group"><i class="bi bi-plus-circle"></i></a>
 			<c:if test="${not empty transfergroup.id}">
@@ -194,6 +197,7 @@
 		var lastAvgVols = [];
 		var currentVols = [];
 		var currentView = 'worst';
+		var _obsTheme   = null;
 
 		function fmtBytes(b) {
 			if (b == null || isNaN(b)) return '?';
@@ -208,6 +212,16 @@
 			if (pct >= 75) return '#fd7e14';
 			if (pct >= 50) return '#ffc107';
 			return '#0d6efd';
+		}
+
+		function getThemeColors() {
+			var s = getComputedStyle(document.documentElement);
+			return {
+				bodyColor:   (s.getPropertyValue('--bs-body-color')      || '').trim() || '#212529',
+				borderColor: (s.getPropertyValue('--bs-border-color')    || '').trim() || '#dee2e6',
+				secondaryBg: (s.getPropertyValue('--bs-secondary-bg')    || '').trim() || '#e9ecef',
+				mutedColor:  (s.getPropertyValue('--bs-secondary-color') || '').trim() || '#6c757d'
+			};
 		}
 
 		var pctLabelPlugin = {
@@ -231,6 +245,39 @@
 			}
 		};
 
+		/* Draws a dashed vertical line at the maximum used value so each bar
+		   can be visually compared against the highest usage in the set. */
+		var maxRefPlugin = {
+			id: 'maxRef',
+			afterDatasetsDraw: function(chart) {
+				if (!currentVols || currentVols.length < 2) return;
+				var usedVals = currentVols.map(function(v) { return v.used; });
+				var maxUsed  = Math.max.apply(null, usedVals);
+				var minUsed  = Math.min.apply(null, usedVals);
+				if (maxUsed === minUsed) return;
+				var theme   = getThemeColors();
+				var xPx     = chart.scales.x.getPixelForValue(maxUsed);
+				var yTop    = chart.chartArea.top;
+				var yBottom = chart.chartArea.bottom;
+				var c = chart.ctx;
+				c.save();
+				c.strokeStyle = theme.mutedColor;
+				c.lineWidth   = 1.5;
+				c.setLineDash([4, 3]);
+				c.beginPath();
+				c.moveTo(xPx, yTop);
+				c.lineTo(xPx, yBottom);
+				c.stroke();
+				c.setLineDash([]);
+				c.fillStyle = theme.mutedColor;
+				c.font      = '10px sans-serif';
+				c.textAlign = 'center';
+				c.textBaseline = 'bottom';
+				c.fillText('max', xPx, yTop - 1);
+				c.restore();
+			}
+		};
+
 		function renderChart(vols) {
 			currentVols = vols || [];
 			var wrap = document.getElementById('tgDiskUsageWrap');
@@ -238,7 +285,19 @@
 				wrap.innerHTML = '<div class="alert alert-info py-1 px-2 small">No disk usage data available yet - waiting for first polling cycle.</div>';
 				return;
 			}
-			var labels   = vols.map(function(v) { return 'Vol ' + v.volume; });
+			var theme   = getThemeColors();
+			var pctVals = vols.map(function(v) { return v.pct; });
+			var gMin = vols.length > 1 ? Math.min.apply(null, pctVals) : null;
+			var gMax = vols.length > 1 ? Math.max.apply(null, pctVals) : null;
+			var showMM = gMin !== null && gMin !== gMax;
+			var labels = vols.map(function(v) {
+				var lbl = 'Vol ' + v.volume;
+				if (showMM) {
+					if (v.pct === gMax) lbl += ' \u25B2';
+					else if (v.pct === gMin) lbl += ' \u25BC';
+				}
+				return lbl;
+			});
 			var usedData = vols.map(function(v) { return v.used; });
 			var freeData = vols.map(function(v) { return v.free; });
 			var bgColors = vols.map(function(v) { return pctColor(v.pct); });
@@ -248,6 +307,7 @@
 				chartInst.data.datasets[0].data = usedData;
 				chartInst.data.datasets[0].backgroundColor = bgColors;
 				chartInst.data.datasets[1].data = freeData;
+				chartInst.data.datasets[1].backgroundColor = theme.secondaryBg;
 				chartInst.update('none');
 				return;
 			}
@@ -261,7 +321,7 @@
 					labels: labels,
 					datasets: [
 						{ label: 'Used', data: usedData, backgroundColor: bgColors, stack: 'disk' },
-						{ label: 'Free', data: freeData, backgroundColor: '#e9ecef', stack: 'disk' }
+						{ label: 'Free', data: freeData, backgroundColor: theme.secondaryBg, stack: 'disk' }
 					]
 				},
 				options: {
@@ -287,11 +347,19 @@
 						}
 					},
 					scales: {
-						x: { stacked: true, ticks: { callback: function(v) { return fmtBytes(v); } } },
-						y: { stacked: true }
+						x: {
+							stacked: true,
+							ticks: { color: theme.bodyColor, callback: function(v) { return fmtBytes(v); } },
+							grid:  { color: theme.borderColor }
+						},
+						y: {
+							stacked: true,
+							ticks: { color: theme.bodyColor },
+							grid:  { color: theme.borderColor }
+						}
 					}
 				},
-				plugins: [pctLabelPlugin]
+				plugins: [pctLabelPlugin, maxRefPlugin]
 			});
 		}
 
@@ -334,22 +402,45 @@
 			el.textContent = '(updated ' + sec + 's ago)';
 		}
 
+		var _tgFails = 0, _tgRefIv, _tgAgeIv;
 		function refresh() {
 			var p1 = $.getJSON('/do/datafile/diskusage/' + encodeURIComponent(groupName));
 			var p2 = $.getJSON('/do/datafile/moverdiskusage');
 			$.when(p1, p2).done(function(r1, r2) {
+				_tgFails = 0;
 				fetchedAt = Date.now();
 				var worstVols  = (r1[0].groups && r1[0].groups[groupName]) ? r1[0].groups[groupName] : [];
 				var moversData = r2[0].movers || {};
 				lastWorstVols  = worstVols;
 				lastAvgVols    = worstVols.length > 0 ? computeAverage(moversData, worstVols.length) : [];
 				renderChart(currentView === 'worst' ? lastWorstVols : lastAvgVols);
+			}).fail(function() {
+				if (++_tgFails >= 3) {
+					clearInterval(_tgRefIv);
+					clearInterval(_tgAgeIv);
+					var el = document.getElementById('tgDiskUsageAge');
+					if (el) el.innerHTML = '<i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>'
+						+ '<span class="text-warning-emphasis">Session expired</span>'
+						+ ' <a href="#" onclick="location.reload();return false;" class="small">reload</a>';
+				}
 			});
 		}
 
 		refresh();
-		setInterval(refresh, 5000);
-		setInterval(updateAge, 1000);
+		_tgRefIv = setInterval(refresh, 5000);
+		_tgAgeIv = setInterval(updateAge, 1000);
+
+		new MutationObserver(function() {
+			var t = document.documentElement.getAttribute('data-bs-theme') || 'light';
+			if (t === _obsTheme) return;
+			_obsTheme = t;
+			if (chartInst) {
+				chartInst.destroy();
+				chartInst = null;
+				document.getElementById('tgDiskUsageWrap').innerHTML = '';
+			}
+			if (currentVols && currentVols.length > 0) renderChart(currentVols);
+		}).observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] });
 	})();
 	</script>
 

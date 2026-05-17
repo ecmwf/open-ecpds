@@ -24,7 +24,7 @@
 		</ul>
 		<div class="d-flex gap-3 flex-wrap">
 			<span><span class="text-muted" style="font-size:0.7rem">&#8211;</span> Idle (0)</span>
-			<span><span class="badge rounded-pill bg-light text-dark border">1</span> Low</span>
+			<span><span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis border">1</span> Low</span>
 			<span><span class="badge rounded-pill bg-warning text-dark">2&ndash;4</span> Moderate</span>
 			<span><span class="badge rounded-pill text-white" style="background:#fd7e14">5&ndash;7</span> High</span>
 			<span><span class="badge rounded-pill bg-danger text-white">8+</span> Very high</span>
@@ -159,7 +159,7 @@ td.dl-flash {
 		var cls = n >= 8 ? 'bg-danger text-white'
 		        : n >= 5 ? 'bg-warning text-dark'
 		        : n >= 2 ? 'bg-warning text-dark'
-		        :          'bg-light text-dark border';
+		        :          'bg-secondary-subtle text-secondary-emphasis border';
 		var style = n >= 5 && n < 8 ? ' style="background:#fd7e14!important;color:#fff!important"' : '';
 		return '<span class="badge rounded-pill ' + cls + '"' + style + '>' + n + '</span>';
 	}
@@ -374,9 +374,11 @@ td.dl-flash {
 	}
 
 	/* ── Fetch & render ── */
+	var _dlFails = 0, _dlRefIv, _dlAgeIv;
 	function refresh() {
 		$.getJSON('/do/datafile/moverdownloads/data')
 			.done(function (data) {
+				_dlFails = 0;
 				fetchedAt = Date.now();
 				var downloads = data.downloads || {};
 				var container = document.getElementById('dlMatrixContainer');
@@ -396,8 +398,14 @@ td.dl-flash {
 				prevData = view;
 			})
 			.fail(function () {
-				var el = document.getElementById('dlAge');
-				if (el) el.textContent = 'fetch failed';
+				if (++_dlFails >= 3) {
+					clearInterval(_dlRefIv);
+					clearInterval(_dlAgeIv);
+					var el = document.getElementById('dlAge');
+					if (el) el.innerHTML = '<i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>'
+						+ '<span class="text-warning-emphasis">Session expired</span>'
+						+ ' <a href="#" onclick="location.reload();return false;" class="small">reload</a>';
+				}
 			});
 	}
 
@@ -419,7 +427,7 @@ td.dl-flash {
 	window.addEventListener('resize', function () { applyColWidths(); });
 
 	refresh();
-	setInterval(refresh, 1000);
-	setInterval(updateAge, 1000);
+	_dlRefIv = setInterval(refresh, 1000);
+	_dlAgeIv = setInterval(updateAge, 1000);
 })();
 </script>

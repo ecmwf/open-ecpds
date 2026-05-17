@@ -89,7 +89,7 @@ _ar.push({id:'${transfer.dataFileId}',target:'${acTarget}',status:${acStatus},ea
 
 <%-- -- Chart container ------------------------------------------------------ --%>
 <div id="acChartView">
-  <div id="acChart" style="width:100%; border:1px solid #dee2e6; border-radius:6px;"></div>
+  <div id="acChart" style="width:100%; border:1px solid var(--bs-border-color); border-radius:6px;"></div>
 </div>
 <div id="acZoomHint" class="text-muted mt-1 d-none" style="font-size:0.72rem;">
   <i class="bi bi-lightbulb"></i>
@@ -102,7 +102,7 @@ _ar.push({id:'${transfer.dataFileId}',target:'${acTarget}',status:${acStatus},ea
     <input type="text" id="acFilter" class="form-control form-control-sm"
            placeholder="Filter by filename..." oninput="acFilterTable()" style="max-width:360px;">
   </div>
-  <div style="max-height:75vh; overflow-y:auto; border:1px solid #dee2e6; border-radius:6px;">
+  <div style="max-height:75vh; overflow-y:auto; border:1px solid var(--bs-border-color); border-radius:6px;">
     <table class="table table-sm table-hover table-bordered mb-0" style="font-size:0.8rem;">
       <thead class="table-dark sticky-top">
         <tr>
@@ -132,6 +132,7 @@ var _ACMD = ['Scheduled', 'Earliest', 'Latest', 'Target', 'Predicted', 'Actual a
 var _ACSBG  = ['#e2e3e5','#d1ecf1','#d4edda','#cce0ff','#fff3cd','#ffe5d0','#f8d7da'];
 var _ACSTXT = ['#41464b','#0c5460','#155724','#084298','#856404','#5c2e00','#721c24'];
 var _ACSLBL = ['unknown','scheduled','done','executing','warning','retrying','failed'];
+function _isDark() { return document.documentElement.getAttribute('data-bs-theme') === 'dark'; }
 
 // -- Format helpers ------------------------------------------------------------
 function _fmtAc(ms) {
@@ -272,7 +273,7 @@ function _acEnsureChart() {
   var el          = document.getElementById('acChart');
   el.style.height = chartH + 'px';
 
-  _acChart = echarts.init(el);
+  _acChart = echarts.init(el, _isDark() ? 'dark' : null);
   _acChart.setOption({
     animation: false,
     tooltip: {
@@ -310,9 +311,9 @@ function _acEnsureChart() {
       axisLabel: { formatter: _fmtAc, fontSize: 11 },
       name: 'Time (UTC)', nameLocation: 'middle', nameGap: 34,
       nameTextStyle: { fontSize: 11, color: '#888' },
-      splitLine:      { show: true, lineStyle: { color: 'rgba(0,0,0,0.1)' } },
+      splitLine:      { show: true, lineStyle: { color: _isDark() ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)' } },
       minorTick:      { show: true, splitNumber: 4 },
-      minorSplitLine: { show: true, lineStyle: { color: 'rgba(0,0,0,0.035)' } }
+      minorSplitLine: { show: true, lineStyle: { color: _isDark() ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.035)' } }
     },
     yAxis: {
       type: 'category',
@@ -322,7 +323,7 @@ function _acEnsureChart() {
       inverse: true,
       axisLabel: { fontSize: 10, width: 188, overflow: 'truncate', interval: 0 },
       splitLine: { show: false },
-      splitArea: { show: true, areaStyle: { color: ['rgba(255,255,255,0)','rgba(0,0,0,0.022)'] } }
+      splitArea: { show: true, areaStyle: { color: ['rgba(255,255,255,0)', _isDark() ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.022)'] } }
     },
     dataZoom: [
       { type:'inside',  xAxisIndex:0, zoomOnMouseWheel:false, moveOnMouseMove:true,  moveOnMouseWheel:false, filterMode:'weakFilter' },
@@ -439,6 +440,13 @@ function _acInit() {
   acBuildTable();
   acSetView(_acView);
 }
+
+new MutationObserver(function() {
+  if (!_acChart) return;
+  _acChart.dispose(); _acChart = null;
+  _acInited = false;
+  _acEnsureChart();
+}).observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] });
 </script>
 
 </c:if><%-- not empty datatransfers --%>

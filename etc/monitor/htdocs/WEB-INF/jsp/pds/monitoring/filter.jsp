@@ -7,8 +7,8 @@
   border-radius: 20px;
   font-size: 0.75rem;
   cursor: pointer;
-  border: 1px solid #ced4da;
-  background: #f8f9fa;
+  border: 1px solid var(--bs-border-color);
+  background: var(--bs-tertiary-bg);
   color: #adb5bd;
   transition: all 0.15s;
   white-space: nowrap;
@@ -41,7 +41,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #6c757d;
+  color: var(--bs-secondary-color);
   margin-bottom: 5px;
 }
 </style>
@@ -59,7 +59,7 @@
   <%-- Dropdown panel --%>
   <div id="filter" class="filter-panel">
 
-    <div class="mb-2" style="font-size:0.78rem; color:#495057;">
+    <div class="mb-2" style="font-size:0.78rem; color:var(--bs-secondary-color);">
       <i class="bi bi-info-circle me-1 text-muted"></i>
       <strong>Highlighted</strong> items are <span class="text-success fw-semibold">shown</span>.
       Click to toggle visibility.

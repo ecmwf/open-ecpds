@@ -19,6 +19,9 @@
 		<auth:if basePathKey="transferserver.basepath" paths="/edit/insert_form">
 		<auth:then>
 		<div class="d-flex gap-1 ms-auto flex-shrink-0">
+			<a href='<bean:message key="transferserver.basepath"/>'
+			   class="btn btn-sm btn-outline-secondary" title="View list of data movers"><i class="bi bi-arrow-left"></i></a>
+			<span class="vr align-self-center mx-1"></span>
 			<a href='<bean:message key="transferserver.basepath"/>/edit/insert_form'
 			   class="btn btn-sm btn-outline-success" title="Create new data mover"><i class="bi bi-plus-circle"></i></a>
 			<c:if test="${not empty transferserver.id}">
@@ -88,9 +91,11 @@
 	<script src="/assets/js/chart.umd.min.js"></script>
 	<script>
 	(function() {
-		var moverName = '${transferserver.name}';
-		var chartInst = null;
-		var fetchedAt = null;
+		var moverName  = '${transferserver.name}';
+		var chartInst  = null;
+		var fetchedAt  = null;
+		var currentVols = [];
+		var _obsTheme  = null;
 
 		function fmtBytes(b) {
 			if (b == null || isNaN(b)) return '?';
@@ -107,16 +112,92 @@
 			return '#0d6efd';
 		}
 
+		function getThemeColors() {
+			var s = getComputedStyle(document.documentElement);
+			return {
+				bodyColor:   (s.getPropertyValue('--bs-body-color')      || '').trim() || '#212529',
+				borderColor: (s.getPropertyValue('--bs-border-color')    || '').trim() || '#dee2e6',
+				secondaryBg: (s.getPropertyValue('--bs-secondary-bg')    || '').trim() || '#e9ecef',
+				mutedColor:  (s.getPropertyValue('--bs-secondary-color') || '').trim() || '#6c757d'
+			};
+		}
+
+		var pctLabelPlugin = {
+			id: 'pctLabels',
+			afterDatasetsDraw: function(chart) {
+				var meta = chart.getDatasetMeta(0);
+				var c = chart.ctx;
+				meta.data.forEach(function(bar, i) {
+					if (i >= currentVols.length) return;
+					var pct = currentVols[i].pct;
+					var barWidth = Math.abs(bar.x - bar.base);
+					if (barWidth < 28) return;
+					c.save();
+					c.fillStyle = '#fff';
+					c.font = 'bold 11px sans-serif';
+					c.textAlign = 'center';
+					c.textBaseline = 'middle';
+					c.fillText(pct + '%', (bar.x + bar.base) / 2, bar.y);
+					c.restore();
+				});
+			}
+		};
+
+		/* Draws a dashed vertical line at the maximum used value so each bar
+		   can be visually compared against the highest usage in the set. */
+		var maxRefPlugin = {
+			id: 'maxRef',
+			afterDatasetsDraw: function(chart) {
+				if (!currentVols || currentVols.length < 2) return;
+				var usedVals = currentVols.map(function(v) { return v.used; });
+				var maxUsed  = Math.max.apply(null, usedVals);
+				var minUsed  = Math.min.apply(null, usedVals);
+				if (maxUsed === minUsed) return;
+				var theme   = getThemeColors();
+				var xPx     = chart.scales.x.getPixelForValue(maxUsed);
+				var yTop    = chart.chartArea.top;
+				var yBottom = chart.chartArea.bottom;
+				var c = chart.ctx;
+				c.save();
+				c.strokeStyle = theme.mutedColor;
+				c.lineWidth   = 1.5;
+				c.setLineDash([4, 3]);
+				c.beginPath();
+				c.moveTo(xPx, yTop);
+				c.lineTo(xPx, yBottom);
+				c.stroke();
+				c.setLineDash([]);
+				c.fillStyle = theme.mutedColor;
+				c.font      = '10px sans-serif';
+				c.textAlign = 'center';
+				c.textBaseline = 'bottom';
+				c.fillText('max', xPx, yTop - 1);
+				c.restore();
+			}
+		};
+
 		function buildChart(vols) {
+			currentVols = vols || [];
 			var wrap = document.getElementById('moverDiskUsageWrap');
 			if (!vols || vols.length === 0) {
 				wrap.innerHTML = '<div class="alert alert-info py-1 px-2 small">No disk usage data available yet - waiting for first polling cycle.</div>';
 				return;
 			}
-			var labels   = vols.map(function(v) { return 'Vol ' + v.volume; });
+			var theme    = getThemeColors();
+			var pcts     = vols.map(function(v) { return v.pct; });
+			var gMin = vols.length > 1 ? Math.min.apply(null, pcts) : null;
+			var gMax = vols.length > 1 ? Math.max.apply(null, pcts) : null;
+			var showMM = gMin !== null && gMin !== gMax;
+			var labels = vols.map(function(v) {
+				var lbl = 'Vol ' + v.volume;
+				if (showMM) {
+					if (v.pct === gMax) lbl += ' \u25B2';
+					else if (v.pct === gMin) lbl += ' \u25BC';
+				}
+				return lbl;
+			});
 			var usedData = vols.map(function(v) { return v.used; });
 			var freeData = vols.map(function(v) { return v.free; });
-			var pcts     = vols.map(function(v) { return v.pct; });
 			var bgColors = pcts.map(pctColor);
 
 			if (chartInst) {
@@ -124,6 +205,7 @@
 				chartInst.data.datasets[0].data = usedData;
 				chartInst.data.datasets[0].backgroundColor = bgColors;
 				chartInst.data.datasets[1].data = freeData;
+				chartInst.data.datasets[1].backgroundColor = theme.secondaryBg;
 				chartInst.update('none');
 				return;
 			}
@@ -131,25 +213,6 @@
 			var chartHeight = Math.max(260, vols.length * 32);
 		wrap.innerHTML = '<canvas id="moverDiskUsageChart" style="height:' + chartHeight + 'px"></canvas>';
 			var ctx = document.getElementById('moverDiskUsageChart').getContext('2d');
-			var pctLabelPlugin = {
-				id: 'pctLabels',
-				afterDatasetsDraw: function(chart) {
-					var meta = chart.getDatasetMeta(0);
-					var c = chart.ctx;
-					meta.data.forEach(function(bar, i) {
-						var pct = vols[i].pct;
-						var barWidth = Math.abs(bar.x - bar.base);
-						if (barWidth < 28) return;
-						c.save();
-						c.fillStyle = '#fff';
-						c.font = 'bold 11px sans-serif';
-						c.textAlign = 'center';
-						c.textBaseline = 'middle';
-						c.fillText(pct + '%', (bar.x + bar.base) / 2, bar.y);
-						c.restore();
-					});
-				}
-			};
 			chartInst = new Chart(ctx, {
 				type: 'bar',
 				data: {
@@ -164,7 +227,7 @@
 						{
 							label: 'Free',
 							data: freeData,
-							backgroundColor: '#e9ecef',
+							backgroundColor: theme.secondaryBg,
 							stack: 'disk'
 						}
 					]
@@ -179,13 +242,13 @@
 						tooltip: {
 							callbacks: {
 								label: function(ctx) {
-									var v = vols[ctx.dataIndex];
+									var v = currentVols[ctx.dataIndex];
 									if (ctx.datasetIndex === 0)
 										return ' Used: ' + fmtBytes(v.used) + ' (' + v.pct + '%)';
 									return ' Free: ' + fmtBytes(v.free);
 								},
 								title: function(items) {
-									var v = vols[items[0].dataIndex];
+									var v = currentVols[items[0].dataIndex];
 									return 'Vol ' + v.volume + '  -  total: ' + fmtBytes(v.total);
 								}
 							}
@@ -194,12 +257,17 @@
 					scales: {
 						x: {
 							stacked: true,
-							ticks: { callback: function(v) { return fmtBytes(v); } }
+							ticks: { color: theme.bodyColor, callback: function(v) { return fmtBytes(v); } },
+							grid:  { color: theme.borderColor }
 						},
-						y: { stacked: true }
+						y: {
+							stacked: true,
+							ticks: { color: theme.bodyColor },
+							grid:  { color: theme.borderColor }
+						}
 					}
 				},
-				plugins: [pctLabelPlugin]
+				plugins: [pctLabelPlugin, maxRefPlugin]
 			});
 		}
 
@@ -210,18 +278,42 @@
 			el.textContent = '(updated ' + sec + 's ago)';
 		}
 
+		var _tsFails = 0, _tsRefIv, _tsAgeIv;
 		function refresh() {
 			$.getJSON('/do/datafile/moverdiskusage/' + encodeURIComponent(moverName))
 				.done(function(data) {
+					_tsFails = 0;
 					fetchedAt = Date.now();
 					var vols = (data.movers && data.movers[moverName]) ? data.movers[moverName] : [];
 					buildChart(vols);
+				})
+				.fail(function() {
+					if (++_tsFails >= 3) {
+						clearInterval(_tsRefIv);
+						clearInterval(_tsAgeIv);
+						var el = document.getElementById('moverDiskUsageAge');
+						if (el) el.innerHTML = '<i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>'
+							+ '<span class="text-warning-emphasis">Session expired</span>'
+							+ ' <a href="#" onclick="location.reload();return false;" class="small">reload</a>';
+					}
 				});
 		}
 
 		refresh();
-		setInterval(refresh, 5000);
-		setInterval(updateAge, 1000);
+		_tsRefIv = setInterval(refresh, 5000);
+		_tsAgeIv = setInterval(updateAge, 1000);
+
+		new MutationObserver(function() {
+			var t = document.documentElement.getAttribute('data-bs-theme') || 'light';
+			if (t === _obsTheme) return;
+			_obsTheme = t;
+			if (chartInst) {
+				chartInst.destroy();
+				chartInst = null;
+				document.getElementById('moverDiskUsageWrap').innerHTML = '';
+			}
+			if (currentVols && currentVols.length > 0) buildChart(currentVols);
+		}).observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] });
 	})();
 	</script>
 

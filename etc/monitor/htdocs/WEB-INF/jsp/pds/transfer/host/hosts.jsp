@@ -577,6 +577,12 @@ function _updateHostSearchBanner(queryError, total, hasSearch) {
     <div id="hostMap" style="height:calc(100vh - 300px); min-height:420px; border-radius:0.375rem; border:1px solid var(--bs-border-color)"></div>
 </div>
 
+<link rel="stylesheet" href="/openlayer/ol.css"/>
+<style>
+[data-bs-theme=dark] #hostMap .host-base-layer canvas {
+    filter: saturate(2) brightness(0.5) contrast(1.15);
+}
+</style>
 <script src="/openlayer/ol.js"></script>
 <script src="/openlayer/ol-layerswitcher.js"></script>
 <script>
@@ -599,6 +605,9 @@ function _updateHostSearchBanner(queryError, total, hasSearch) {
             else { loadMapFeatures(); }
             // Trigger OL resize since container was hidden during init
             setTimeout(function() { if (olMap) olMap.updateSize(); }, 50);
+        } else {
+            // Reload list so it reflects any filters changed while in map view
+            if (typeof hostsTableReload === 'function') hostsTableReload();
         }
     };
 
@@ -658,9 +667,9 @@ function _updateHostSearchBanner(queryError, total, hasSearch) {
 
         olMap = new ol.Map({
             target: 'hostMap',
-            controls: ol.control.defaults.defaults({ rotate: false, attribution: false }),
+            controls: ol.control.defaults.defaults({ rotate: false }),
             layers: [
-                new ol.layer.Tile({ source: new ol.source.OSM({ attributions: [] }) }),
+                new ol.layer.Tile({ source: new ol.source.OSM(), className: 'host-base-layer' }),
                 layer
             ],
             view: new ol.View({ center: ol.proj.fromLonLat([10, 48]), zoom: 3 })
@@ -714,6 +723,8 @@ function _updateHostSearchBanner(queryError, total, hasSearch) {
     var _loadTimer = null;
     function loadMapFeatures() {
         document.getElementById('mapFoundLabel').textContent = 'Loading...';
+        /* Keep the toolbar "X host(s) found" label in sync with the map filters */
+        if (typeof hostsTableReload === 'function') hostsTableReload();
         fetch(buildMapUrl())
             .then(function(r) { return r.json(); })
             .then(function(geojson) {

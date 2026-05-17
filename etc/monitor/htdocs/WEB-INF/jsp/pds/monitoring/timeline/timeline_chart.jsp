@@ -129,7 +129,7 @@ _dt.push({
 
 <%-- ECharts container --%>
 <div id="tlChartView" class="d-none">
-  <div id="tlChart" style="width:100%; border:1px solid #dee2e6; border-radius:6px;"></div>
+  <div id="tlChart" style="width:100%; border:1px solid var(--bs-border-color); border-radius:6px;"></div>
 </div>
 
 <%-- Tip (shown once chart is ready) --%>
@@ -143,7 +143,7 @@ _dt.push({
   <div class="mb-2">
     <input type="text" id="tlFilter" class="form-control form-control-sm" placeholder="Filter by target, label, status, host..." oninput="tlFilterTable()" style="max-width:380px;">
   </div>
-  <div style="max-height:75vh; overflow-y:auto; border:1px solid #dee2e6; border-radius:6px;">
+  <div style="max-height:75vh; overflow-y:auto; border:1px solid var(--bs-border-color); border-radius:6px;">
     <table class="table table-sm table-hover table-bordered mb-0" style="font-size:0.8rem;">
       <thead class="table-dark sticky-top">
         <tr>
@@ -171,6 +171,7 @@ _dt.push({
 var _SC    = { DONE:'#198754', EXEC:'#0d6efd', STOP:'#dc3545', RETR:'#fd7e14' };
 var _SCBG  = { DONE:'#d1e7dd', EXEC:'#cfe2ff', STOP:'#f8d7da', RETR:'#ffe5d0' };
 var _SCTXT = { DONE:'#0a3622', EXEC:'#084298', STOP:'#58151c', RETR:'#5c2e00' };
+function _isDark() { return document.documentElement.getAttribute('data-bs-theme') === 'dark'; }
 function _sc(s)    { return _SC[s]    || '#6c757d'; }
 function _scbg(s)  { return _SCBG[s]  || '#e2e3e5'; }
 function _sctxt(s) { return _SCTXT[s] || '#41464b'; }
@@ -415,7 +416,7 @@ function _tlEnsureChart() {
   // Rows visible in initial window
   var rowsVisible = Math.min(n, Math.max(10, Math.floor((chartH - 80) / rowH)));
 
-  _tlEChart = echarts.init(chartEl);
+  _tlEChart = echarts.init(chartEl, _isDark() ? 'dark' : null);
 
   _tlEChart.setOption({
     animation: false,
@@ -457,12 +458,12 @@ function _tlEnsureChart() {
       nameTextStyle: { fontSize: 11, color: '#888' },
       splitLine: {
         show: true,
-        lineStyle: { color: 'rgba(0,0,0,0.15)' }
+        lineStyle: { color: _isDark() ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.15)' }
       },
       minorTick: { show: true, splitNumber: 6 },
       minorSplitLine: {
         show: true,
-        lineStyle: { color: 'rgba(0,0,0,0.05)' }
+        lineStyle: { color: _isDark() ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }
       }
     },
     yAxis: {
@@ -478,7 +479,7 @@ function _tlEnsureChart() {
       splitLine: { show: false },
       splitArea: {
         show: true,
-        areaStyle: { color: ['rgba(255,255,255,0)', 'rgba(0,0,0,0.025)'] }
+        areaStyle: { color: ['rgba(255,255,255,0)', _isDark() ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.025)'] }
       }
     },
     dataZoom: [
@@ -579,6 +580,13 @@ function _tlInit() {
   tlBuildTable();
   tlSetView(_tlView); // kicks off lazy chart init if needed
 }
+
+new MutationObserver(function() {
+  if (!_tlEChart) return;
+  _tlEChart.dispose(); _tlEChart = null;
+  _tlInited = false;
+  _tlEnsureChart();
+}).observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] });
 </script>
 
 </c:if>

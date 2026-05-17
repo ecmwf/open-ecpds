@@ -64,7 +64,7 @@
                                 <span class="input-group-text px-2"><i class="bi bi-list-ol"></i></span>
                                 <select id="transferPageLen" class="form-select" style="width:auto">
                                     <option value="10">10</option>
-                                    <option value="25" selected>25</option>
+                                    <option value="25">25</option>
                                     <option value="50">50</option>
                                     <option value="100">100</option>
                                 </select>
@@ -469,7 +469,7 @@ function _updateTransferSearchBanner(queryError, total, hasSearch) {
             { title: 'Mbits/s',       orderable: true,  className: 'text-end', render: function (d) { return d; } },
             { title: 'Prior',         orderable: true,  className: 'text-end' }
         ],
-        pageLength: 25,
+        pageLength: (function() { try { var v = parseInt(localStorage.getItem('transferPageLen'), 10); return [10,25,50,100].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })(),
         lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
         language: {
             emptyTable:     'No Data Transfers found for the selected criteria.',
@@ -484,8 +484,13 @@ function _updateTransferSearchBanner(queryError, total, hasSearch) {
         }
     });
 
+    var _savedPageLen = (function() { try { var v = parseInt(localStorage.getItem('transferPageLen'), 10); return [10,25,50,100].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })();
+    $('#transferPageLen').val(_savedPageLen);
+
     $('#transferPageLen').on('change', function () {
-        table.page.len(parseInt(this.value, 10)).draw();
+        var len = parseInt(this.value, 10);
+        try { localStorage.setItem('transferPageLen', len); } catch(e) {}
+        table.page.len(len).draw();
     });
 })();
 </script>

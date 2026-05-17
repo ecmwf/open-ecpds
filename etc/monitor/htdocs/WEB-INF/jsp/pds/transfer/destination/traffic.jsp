@@ -21,8 +21,8 @@
 
 <style>
 .traffic-stat-card {
-  background: #f8f9fa;
-  border: 1px solid #dee2e6;
+  background: var(--bs-tertiary-bg);
+  border: 1px solid var(--bs-border-color);
   border-radius: 8px;
   padding: 0.75rem 1.25rem;
   flex: 1;
@@ -32,15 +32,15 @@
   font-size: 0.7rem;
   font-weight: 600;
   text-transform: uppercase;
-  color: #6c757d;
+  color: var(--bs-secondary-color);
   letter-spacing: 0.04em;
 }
 .traffic-stat-card .stat-value {
   font-size: 1.15rem;
   font-weight: 700;
-  color: #212529;
+  color: var(--bs-body-color);
 }
-.traffic-stat-card .stat-sub { font-size: 0.72rem; color: #6c757d; }
+.traffic-stat-card .stat-sub { font-size: 0.72rem; color: var(--bs-secondary-color); }
 .rate-excellent { color: #198754; font-weight: 600; }
 .rate-good      { color: #0dcaf0; font-weight: 600; }
 .rate-normal    { color: #0d6efd; font-weight: 600; }
@@ -343,7 +343,17 @@ function setChartPeriod(days) {
   buildCharts();
 }
 
+function getThemeColors() {
+  var s = getComputedStyle(document.documentElement);
+  return {
+    bodyColor:   (s.getPropertyValue('--bs-body-color')      || '').trim() || '#212529',
+    borderColor: (s.getPropertyValue('--bs-border-color')    || '').trim() || '#dee2e6'
+  };
+}
+
 function buildCharts() {
+  var theme = getThemeColors();
+
   if (_chartBR) { _chartBR.destroy(); _chartBR = null; }
   if (_chartF)  { _chartF.destroy();  _chartF  = null; }
 
@@ -388,7 +398,7 @@ function buildCharts() {
       maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
       plugins: {
-        legend: { position: 'top' },
+        legend: { position: 'top', labels: { color: theme.bodyColor } },
         tooltip: {
           callbacks: {
             label: function(ctx) {
@@ -401,15 +411,21 @@ function buildCharts() {
         }
       },
       scales: {
+        x: {
+          ticks: { color: theme.bodyColor },
+          grid: { color: theme.borderColor }
+        },
         yBytes: {
           type: 'linear', position: 'left',
-          title: { display: true, text: 'Volume' },
-          ticks: { callback: function(v) { return fmtBytes(v); } }
+          title: { display: true, text: 'Volume', color: theme.bodyColor },
+          ticks: { color: theme.bodyColor, callback: function(v) { return fmtBytes(v); } },
+          grid: { color: theme.borderColor }
         },
         yRate: {
           type: 'linear', position: 'right',
-          title: { display: true, text: 'Mbit/s' },
-          grid: { drawOnChartArea: false }
+          title: { display: true, text: 'Mbit/s', color: theme.bodyColor },
+          ticks: { color: theme.bodyColor },
+          grid: { color: theme.borderColor, drawOnChartArea: false }
         }
       }
     }
@@ -430,8 +446,19 @@ function buildCharts() {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { position: 'top' } },
-      scales: { y: { title: { display: true, text: 'Files' }, beginAtZero: true, ticks: { precision: 0 } } }
+      plugins: { legend: { position: 'top', labels: { color: theme.bodyColor } } },
+      scales: {
+        x: {
+          ticks: { color: theme.bodyColor },
+          grid: { color: theme.borderColor }
+        },
+        y: {
+          title: { display: true, text: 'Files', color: theme.bodyColor },
+          beginAtZero: true,
+          ticks: { precision: 0, color: theme.bodyColor },
+          grid: { color: theme.borderColor }
+        }
+      }
     }
   });
 }
@@ -472,6 +499,14 @@ document.addEventListener('DOMContentLoaded', function() {
   try { saved = localStorage.getItem('trafficView') || 'chart'; } catch(e) {}
   setView(saved);
 });
+
+var _obsTheme = null;
+new MutationObserver(function() {
+  var t = document.documentElement.getAttribute('data-bs-theme') || 'light';
+  if (t === _obsTheme) return;
+  _obsTheme = t;
+  if (_chartBR || _chartF) buildCharts();
+}).observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] });
 </script>
 
 </c:if>

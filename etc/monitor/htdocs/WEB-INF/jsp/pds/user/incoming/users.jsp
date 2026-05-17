@@ -11,7 +11,7 @@
     <span id="incomingCount" class="text-muted small"></span>
     <select id="incomingPageLen" class="form-select form-select-sm" style="width:auto" title="Rows per page">
         <option value="10">10</option>
-        <option value="25" selected>25</option>
+        <option value="25">25</option>
         <option value="50">50</option>
         <option value="-1">All</option>
     </select>
@@ -95,7 +95,7 @@
 $(document).ready(function() {
     var table = $('#usersTable').DataTable({
         paging:     true,
-        pageLength: 25,
+        pageLength: (function() { try { var v = parseInt(localStorage.getItem('incomingPageLen'), 10); return [10,25,50,-1].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })(),
         searching:  false,
         ordering:   true,
         info:       true,
@@ -103,8 +103,11 @@ $(document).ready(function() {
         dom: "t<'d-flex align-items-start mt-2'i<'ms-auto'p>>"
     });
     $('#incomingCount').html('<i class="bi bi-list-ul"></i> <strong>' + table.rows().count() + '</strong> user(s)');
+    $('#incomingPageLen').val((function() { try { var v = parseInt(localStorage.getItem('incomingPageLen'), 10); return [10,25,50,-1].indexOf(v) >= 0 ? String(v) : '25'; } catch(e) { return '25'; } })());
     $('#incomingPageLen').on('change', function() {
-        table.page.len(parseInt(this.value)).draw();
+        var len = parseInt(this.value);
+        try { localStorage.setItem('incomingPageLen', len); } catch(e) {}
+        table.page.len(len).draw();
     });
 });
 </script>
