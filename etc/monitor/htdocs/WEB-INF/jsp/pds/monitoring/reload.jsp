@@ -254,7 +254,7 @@ document.querySelectorAll('.mon-refresh-pill').forEach(function(pill) {
   };
 
   document.addEventListener('DOMContentLoaded', function() {
-    var savedCols = localStorage.getItem('monHeaderCols') || 'all';
+    var savedCols = localStorage.getItem('monHeaderCols') || 'auto';
     _applyHeaderCols(savedCols);
     if (savedCols === 'auto') {
       /* Re-measure after layout is complete (DOMContentLoaded fires before first paint) */
@@ -264,7 +264,7 @@ document.querySelectorAll('.mon-refresh-pill').forEach(function(pill) {
   });
 
   window.addEventListener('resize', function() {
-    if ((localStorage.getItem('monHeaderCols') || 'all') === 'auto') {
+    if ((localStorage.getItem('monHeaderCols') || 'auto') === 'auto') {
       _applyHeaderCols('auto');
     }
   });

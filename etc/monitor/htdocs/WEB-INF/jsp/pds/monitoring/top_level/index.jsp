@@ -256,7 +256,7 @@ function createAndSubmitDynamicForm(action,bcc,subject,body) {
 
 /* -- Products per line -- */
 (function() {
-    var _saved = localStorage.getItem('monProductsLimit') || 'all';
+    var _saved = localStorage.getItem('monProductsLimit') || 'auto';
 
     function _computeAutoLimit() {
         var vw = window.innerWidth;
@@ -278,7 +278,7 @@ function createAndSubmitDynamicForm(action,bcc,subject,body) {
     }
 
     window.applyProductLimit = function() {
-        var val = localStorage.getItem('monProductsLimit') || 'all';
+        var val = localStorage.getItem('monProductsLimit') || 'auto';
         var limit;
         if (val === 'auto') {
             limit = _computeAutoLimit();
@@ -331,7 +331,7 @@ function createAndSubmitDynamicForm(action,bcc,subject,body) {
     };
 
     document.addEventListener('DOMContentLoaded', function() {
-        var savedLimit = localStorage.getItem('monProductsLimit') || 'all';
+        var savedLimit = localStorage.getItem('monProductsLimit') || 'auto';
         window.applyProductLimit();
         if (savedLimit === 'auto') {
             /* Re-measure after layout is complete */
@@ -341,7 +341,7 @@ function createAndSubmitDynamicForm(action,bcc,subject,body) {
 
     /* Re-apply on resize when in auto mode */
     window.addEventListener('resize', function() {
-        if ((localStorage.getItem('monProductsLimit') || 'all') === 'auto') {
+        if ((localStorage.getItem('monProductsLimit') || 'auto') === 'auto') {
             window.applyProductLimit();
         }
     });
