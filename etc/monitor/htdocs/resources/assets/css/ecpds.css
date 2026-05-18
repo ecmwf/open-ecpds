@@ -2026,6 +2026,7 @@ html:not([data-bs-theme=dark]) .card.shadow-sm {
     border: 1px solid var(--bs-border-color-translucent);
     word-break: break-all;
     display: inline-block;
+    max-width: 100%;
 }
 .val-num {
     font-family: var(--bs-font-monospace);
@@ -2088,10 +2089,11 @@ html:not([data-bs-theme=dark]) .card.shadow-sm {
 }
 .field-row {
     display: flex;
-    align-items: baseline;
+    align-items: flex-start;
     padding: 0.45rem 0;
     border-bottom: 1px solid var(--bs-border-color-translucent);
     gap: 1rem;
+    min-width: 0; /* prevent grid item from overflowing its 1fr cell */
 }
 .field-row:last-child { border-bottom: none; }
 @media (min-width: 576px) {
@@ -2104,6 +2106,7 @@ html:not([data-bs-theme=dark]) .card.shadow-sm {
     text-transform: uppercase;
     letter-spacing: 0.04em;
     color: var(--bs-secondary-color);
+    padding-top: 0.2em; /* align label text with value content top */
 }
 .field-value {
     flex: 1 1 auto;
