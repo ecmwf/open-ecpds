@@ -223,10 +223,10 @@ public class GetDestinationTransferListJsonAction extends PDSAction {
         }
         final var hostName = escapeHtml(dt.getHostName());
         final var serverName = dt.getTransferServerName();
-        final var title = serverName != null && !serverName.isBlank()
-                ? " title=\"Transmitted through " + escapeHtml(serverName) + "\"" : "";
-        return "<a href=\"" + HOST_BASE_PATH + "/" + hostName + "\"" + title + " class=\"text-decoration-none\">"
-                + escapeHtml(nickName) + "</a>";
+        final var titleText = serverName != null && !serverName.isBlank()
+                ? escapeHtml(nickName) + " (via " + escapeHtml(serverName) + ")" : escapeHtml(nickName);
+        return "<a href=\"" + HOST_BASE_PATH + "/" + hostName + "\" title=\"" + titleText
+                + "\" class=\"text-decoration-none\">" + escapeHtml(nickName) + "</a>";
     }
 
     private static String buildScheduledTimeHtml(final DataTransfer dt) {
