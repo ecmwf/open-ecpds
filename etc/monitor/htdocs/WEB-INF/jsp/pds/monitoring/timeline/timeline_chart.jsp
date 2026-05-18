@@ -187,9 +187,9 @@ function _fmtSize(b) {
 function _fmtMs(ms) {
   if (!ms || ms <= 0) return '--';
   var d = new Date(ms);
-  return d.getHours().toString().padStart(2,'0')+':'+
-         d.getMinutes().toString().padStart(2,'0')+':'+
-         d.getSeconds().toString().padStart(2,'0');
+  return d.getUTCHours().toString().padStart(2,'0')+':'+
+         d.getUTCMinutes().toString().padStart(2,'0')+':'+
+         d.getUTCSeconds().toString().padStart(2,'0');
 }
 function _fmtDur(ms) {
   if (ms <= 0)      return '--';

@@ -163,9 +163,9 @@ function _isDark() { return document.documentElement.getAttribute('data-bs-theme
 function _fmtMs(ms) {
   if (!ms || ms <= 0) return '--';
   var d = new Date(ms);
-  return d.getHours().toString().padStart(2,'0')+':'+
-         d.getMinutes().toString().padStart(2,'0')+':'+
-         d.getSeconds().toString().padStart(2,'0');
+  return d.getUTCHours().toString().padStart(2,'0')+':'+
+         d.getUTCMinutes().toString().padStart(2,'0')+':'+
+         d.getUTCSeconds().toString().padStart(2,'0');
 }
 
 // Get the 6 marker timestamps for a transfer as array [s, e, l, t, p, a]

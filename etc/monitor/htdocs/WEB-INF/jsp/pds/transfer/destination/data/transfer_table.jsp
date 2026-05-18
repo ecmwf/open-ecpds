@@ -236,8 +236,8 @@ var _dftSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search us
             var statusLabel = STATUS_NAMES[status] || status;
             var now    = new Date();
             var pad    = function(n) { return String(n).padStart(2, '0'); };
-            var ts     = now.getFullYear() + '-' + pad(now.getMonth()+1) + '-' + pad(now.getDate())
-                       + ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
+            var ts     = now.getUTCFullYear() + '-' + pad(now.getUTCMonth()+1) + '-' + pad(now.getUTCDate())
+                       + ' ' + pad(now.getUTCHours()) + ':' + pad(now.getUTCMinutes()) + ':' + pad(now.getUTCSeconds());
             // Only include filters which are visible on the page (some pages hide certain selectors)
             var hasDiss   = $('th:contains("Dissem_Str")').length > 0;
             var hasDS     = $('th:contains("Data_Str")').length > 0;
@@ -262,7 +262,7 @@ var _dftSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search us
                 '<span class="text-secondary">Selection:</span>'
                 + '&ensp;<strong>' + (selectionText || 'All') + '</strong>'
                 + '&ensp;<span class="vr"></span>&ensp;'
-                + '<i class="bi bi-arrow-clockwise text-secondary"></i>&thinsp;<strong>' + ts + '</strong>'
+                + '<i class="bi bi-arrow-clockwise text-secondary"></i>&thinsp;<strong>' + ts + '</strong>&thinsp;<span class="text-secondary" style="font-size:0.75em">UTC</span>'
                 + (fileCount !== null
                     ? '&ensp;<span class="vr"></span>&ensp;<span class="text-secondary">Files:</span>&ensp;<strong>' + Number(fileCount).toLocaleString() + '</strong>'
                     : '')
