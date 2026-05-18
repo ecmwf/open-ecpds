@@ -924,7 +924,9 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      *            the new MQTT interface
      */
     public void setMQTTInterface(final MQTTInterface mqttInterface) {
-        _log.debug("MQTTInterface registered: {}", mqttInterface.getClass().getCanonicalName());
+        if (mqttInterface != null) {
+            _log.debug("MQTTInterface registered: {}", mqttInterface.getClass().getCanonicalName());
+        }
         this.mqttInterface = mqttInterface;
     }
 
