@@ -4,6 +4,14 @@ This document summarizes the most significant changes in OpenECPDS across all ma
 
 ---
 
+## open-ecpds 7.7.0-18052026 (2026-05-18)
+
+-- Introduces several user interface improvements designed to enhance usability, accessibility, and overall user experience, following the numerous feedbacks received from end users.
+-- A major enhancement is the introduction of a fully responsive interface, providing improved support for mobile phones, tablets, and different screen sizes. The interface can now automatically adapt tables and layouts to the available screen space, prioritising the most relevant information to improve readability and usability across various environments.
+-- In addition, better support for dark themes has been introduced, particularly for map-based views and geographical visualisations, improving visual comfort and integration with dark mode environments.
+-- On the administration side, additional monitoring capabilities have been introduced, including new visual graphs to monitor disk usage at both data mover and transfer group levels.
+-- A new download monitoring page is also now available, allowing administrators to track retrieval activity live at both the data mover and disk levels, helping to check that resource allocation and usage are fully optimised.
+
 ## open-ecpds 7.5.0-05042026 (2026-04-05)
 
 - A major new release of the web interface, featuring significant updates that enhance both design and functionality. The previous stack (JSP + Apache Struts 1.x + jQuery) has been fully modernized to incorporate the latest technologies, including Bootstrap 5, Bootstrap Icons, and DataTables.js. These upgrades not only deliver a sleeker, more responsive interface, but also introduce advanced features and significantly improved performance across all pages. A broad range of UI improvements ensures a fresh, user-friendly, and highly interactive experience for all users.
