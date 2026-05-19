@@ -1,20 +1,26 @@
 <%@ page session="true" %>
 
 <%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean" %>
+<%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content" %>
+<%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth" %>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
 
-<div class="form-info-banner" style="margin-left:0">
-	<i class="bi bi-clock-history text-primary flex-shrink-0"></i>
-	Transfer History Entry
+<div class="d-flex align-items-center gap-2 mb-3 px-3 py-2 rounded"
+style="background:rgba(13,110,253,0.06); font-size:0.9rem; color:var(--bs-body-color); border-left:4px solid #0d6efd;">
+<i class="bi bi-clock-history text-primary flex-shrink-0"></i>
+Transfer History Entry: <strong><c:out value="${item.id}"/></strong>
 </div>
 
-<table class="fields">
-<!--<tr><th>Id</th><td>${item.id}</td></tr>-->
-<tr><th>Date</th><td>${item.date}</td></tr>
-<tr><th>Transfer Host</th><td><a href="<bean:message key="host.basepath"/>/${item.hostName}">${item.hostNickName}</a></td></tr>
-<tr><th>Data File</th><td><a href="<bean:message key="datafile.basepath"/>/${item.dataTransfer.dataFile.id}">${item.dataTransfer.dataFile.original}</a></td></tr>
-<tr><th>Data Transfer</th><td><a href="<bean:message key="datatransfer.basepath"/>/${item.dataTransfer.id}">${item.dataTransfer.target}</a></td></tr>
-<tr><th>Status</th><td>
+<%-- Card: Event Details --%>
+<div class="card border-0 shadow-sm mb-3">
+<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+<i class="bi bi-info-circle text-primary"></i>
+<span class="fw-semibold">Event Details</span>
+</div>
+<div class="card-body py-0">
+<div class="field-grid">
+<div class="field-row"><div class="field-label">Event Time</div><div class="field-value"><c:choose><c:when test="${not empty item.date}"><content:content name="item.date" dateFormatKey="date.format.long.iso" ignoreNull="true"/></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
+<div class="field-row"><div class="field-label">Status</div><div class="field-value">
 <c:choose>
   <c:when test="${item.status == 'DONE'}"><span class="badge bg-success">${item.formattedStatus}</span></c:when>
   <c:when test="${item.status == 'EXEC' or item.status == 'FETC'}"><span class="badge bg-primary">${item.formattedStatus}</span></c:when>
@@ -23,8 +29,25 @@
   <c:when test="${item.status == 'FAIL'}"><span class="badge bg-danger">${item.formattedStatus}</span></c:when>
   <c:otherwise><span class="badge bg-secondary">${item.formattedStatus}</span></c:otherwise>
 </c:choose>
-</td></tr>
-<tr><th>Sent</th><td>${item.formattedSent}</td></tr>
-<tr><th>Comment</th><td>${item.formattedComment}</td></tr>
-<tr><th>Error</th><td><c:choose><c:when test="${item.error}"><span class="badge rounded-pill border fw-normal bg-danger-subtle text-danger-emphasis"><i class="bi bi-x-circle-fill me-1"></i>Yes</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>No</span></c:otherwise></c:choose></td></tr>
-</table>
+</div></div>
+<div class="field-row"><div class="field-label">Error</div><div class="field-value"><c:choose><c:when test="${item.error}"><span class="badge rounded-pill border fw-normal bg-danger-subtle text-danger-emphasis"><i class="bi bi-x-circle-fill me-1"></i>Yes</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>No</span></c:otherwise></c:choose></div></div>
+<div class="field-row"><div class="field-label">Sent</div><div class="field-value"><span class="val-num" title="${item.formattedSent}">${item.sent} bytes</span></div></div>
+<div class="field-row"><div class="field-label">Comment</div><div class="field-value"><c:choose><c:when test="${not empty item.formattedComment}">${item.formattedComment}</c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
+</div>
+</div>
+</div>
+
+<%-- Card: Transfer Reference --%>
+<div class="card border-0 shadow-sm mb-3">
+<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+<i class="bi bi-arrow-left-right text-primary"></i>
+<span class="fw-semibold">Transfer Reference</span>
+</div>
+<div class="card-body py-0">
+<div class="field-grid">
+<div class="field-row"><div class="field-label">Data Transfer</div><div class="field-value"><a href="<bean:message key="datatransfer.basepath"/>/${item.dataTransfer.id}"><span class="val-code">${item.dataTransfer.id}</span></a><c:if test="${not empty item.dataTransfer.target}"><span class="val-code text-break d-inline-block ms-1">${item.dataTransfer.target}</span></c:if></div></div>
+<div class="field-row"><div class="field-label">Data File</div><div class="field-value"><auth:if basePathKey="datafile.basepath" paths="/${item.dataTransfer.dataFileId}"><auth:then><a href="<bean:message key="datafile.basepath"/>/${item.dataTransfer.dataFileId}"><span class="val-code">${item.dataTransfer.dataFileId}</span></a></auth:then><auth:else><span class="val-code">${item.dataTransfer.dataFileId}</span></auth:else></auth:if><c:if test="${not empty item.dataTransfer.dataFile.original}"><span class="val-code text-break d-inline-block ms-1">${item.dataTransfer.dataFile.original}</span></c:if></div></div>
+<div class="field-row"><div class="field-label">Transfer Host</div><div class="field-value"><c:choose><c:when test="${not empty item.hostName}"><a href="<bean:message key="host.basepath"/>/${item.hostName}"><c:out value="${not empty item.hostNickName ? item.hostNickName : item.hostName}"/></a></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
+</div>
+</div>
+</div>

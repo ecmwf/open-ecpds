@@ -55,6 +55,7 @@ Error retrieving object by key &mdash; DataTransfer not found: <code>${datatrans
 <th>Status</th>
 <th>Transfer Host</th>
 <th>Comment</th>
+<th></th>
 </tr>
 </thead>
 <tbody>
@@ -66,7 +67,7 @@ Error retrieving object by key &mdash; DataTransfer not found: <code>${datatrans
 <c:otherwise><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>OK</span></c:otherwise>
 </c:choose>
 </td>
-<td>
+<td data-order="${not empty history.date ? history.date.time : 0}">
 <c:if test="${not empty canSeeHistoryDetail}">
 <a href="<bean:message key="transferhistory.basepath"/>/${history.id}"><content:content name="history.date" dateFormatKey="date.format.transfer" ignoreNull="true"/></a>
 </c:if>
@@ -93,6 +94,7 @@ Error retrieving object by key &mdash; DataTransfer not found: <code>${datatrans
 </c:if>
 </td>
 <td>${history.formattedComment}</td>
+<td>${history.id}</td>
 </tr>
 </c:forEach>
 </tbody>
@@ -105,7 +107,8 @@ pageLength: 25,
 searching: false,
 ordering:  true,
 info:      true,
-order:     [[1, 'asc']]
+order:     [[1, 'desc'], [5, 'desc']],
+columnDefs: [{ targets: 5, visible: false, searchable: false, type: 'num' }]
 });
 });
 </script>
