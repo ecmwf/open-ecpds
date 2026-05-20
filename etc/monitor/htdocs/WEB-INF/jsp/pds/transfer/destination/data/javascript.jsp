@@ -7,18 +7,41 @@
 	var selectedTransfers = {};
 
 	function checkAll(all, reverse) {
-		$('#destTransferTable tbody tr').each(function () {
-			var span = $(this).find('span.star-select');
-			if (span.length) {
-				var id = String(span.data('transferId'));
-				if (id) {
-					var current = selectedTransfers[id] ? true : false;
-					var target  = reverse ? !current : all;
-					if (target !== current) {
-						select(span[0], id);
-					}
+		var params = {
+			json:                'idList',
+			destinationName:     document.getElementById('dt-dest-name').value,
+			disseminationStream: document.getElementById('dt-dissStream').value,
+			dataStream:          document.getElementById('dt-dataStream').value,
+			dataTime:            document.getElementById('dt-dataTime').value,
+			status:              document.getElementById('dt-status').value,
+			date:                document.getElementById('dt-date').value,
+			fileNameSearch:      document.getElementById('dt-search').value
+		};
+		$.get('/do/transfer/destination', params).done(function (json) {
+			if (!json || !json.ids) return;
+			json.ids.forEach(function (id) {
+				var strId = String(id);
+				if (all) {
+					selectedTransfers[strId] = true;
+				} else if (!reverse) {
+					selectedTransfers[strId] = false;
+				} else {
+					selectedTransfers[strId] = !selectedTransfers[strId];
 				}
-			}
+			});
+			// Mark dirty immediately so form submit uses syncSelection even if the
+			// user clicks Basket before the next drawCallback fires (race condition fix).
+			// _fullSyncNeeded tells submit to use replace-mode (not delta-mode) because
+			// selectedTransfers has the complete ID list from the idList fetch.
+			window._clientDirty = true;
+			window._fullSyncNeeded = true;
+			window._deltaAdd = {};
+			window._deltaDel = {};
+			// Count the new selection and pass it to the next drawCallback for display
+			var n = 0;
+			for (var k in selectedTransfers) { if (selectedTransfers[k]) n++; }
+			window._pendingClientCount = n;
+			if (window._destTransferTable) window._destTransferTable.ajax.reload(null, false);
 		});
 	}
 
@@ -145,7 +168,17 @@
 			tr.removeClass('selected');
 			icon.removeClass('bi-star-fill text-warning').addClass('bi-star');
 		}
-		window._selectedDelta = (window._selectedDelta || 0) + (isOn ? 1 : -1);
+		window._clientDirty = true;
+		window._clientTotal = (window._clientTotal || 0) + (isOn ? 1 : -1);
+		// Track incremental change for delta-mode sync (used when selectedTransfers
+		// is sparse, e.g. after a browser Back without a full checkAll).
+		if (isOn) {
+			(window._deltaAdd = window._deltaAdd || {})[id] = true;
+			delete (window._deltaDel = window._deltaDel || {})[id];
+		} else {
+			(window._deltaDel = window._deltaDel || {})[id] = true;
+			delete (window._deltaAdd = window._deltaAdd || {})[id];
+		}
 		if (typeof window._refreshSelectedCount === 'function') window._refreshSelectedCount();
 	}
 
@@ -315,21 +348,41 @@
 			return true;
 	}
 	$(document).ready(function () {
-	    // Intercept all form submits to inject selected-transfer hidden fields
+	    // Intercept all form submits: sync the client-side selection to the server
+	    // via a small AJAX POST, then trigger the original GET form submit.
+	    // This avoids injecting hundreds of selectedTransfer params into the GET URL
+	    // which would exceed Jetty's request header size limit (HTTP 431).
 	    var frm = document.destinationDetailActionForm;
 	    if (frm) {
 	        var _orig = HTMLFormElement.prototype.submit.bind(frm);
 	        frm.submit = function () {
-	            $(frm).find('input.injected-selection').remove();
-	            $.each(selectedTransfers, function (id, on) {
-	                $('<input>').attr({
-	                    type:  'hidden',
-	                    name:  'selectedTransfer(' + id + ')',
-	                    value: on ? 'on' : 'off',
-	                    class: 'injected-selection'
-	                }).appendTo(frm);
+	            // Only sync when the client has changed the selection (_clientDirty).
+	            // When the server is already authoritative (e.g. after a browser Back),
+	            // selectedTransfers only contains the current page's IDs, so syncing would
+	            // wrongly wipe the server's full selection down to just the current page.
+	            if (!window._clientDirty) {
+	                _orig();
+	                return;
+	            }
+	            var dest = document.getElementById('dt-dest-name').value;
+	            var postData;
+	            if (window._fullSyncNeeded) {
+	                // Replace mode: checkAll() ran so selectedTransfers has all IDs.
+	                var ids = [];
+	                $.each(selectedTransfers, function (id, on) { if (on) ids.push(id); });
+	                postData = { json: 'syncSelection', destinationName: dest,
+	                             type: 'replace', 'ids[]': ids };
+	            } else {
+	                // Delta mode: only star-clicks were made; send add/del changes so the
+	                // server's full selection (from the last basket visit) is preserved.
+	                postData = { json: 'syncSelection', destinationName: dest,
+	                             type: 'delta',
+	                             'add[]': Object.keys(window._deltaAdd || {}),
+	                             'del[]': Object.keys(window._deltaDel || {}) };
+	            }
+	            $.post('/do/transfer/destination', postData).always(function () {
+	                _orig();
 	            });
-	            _orig();
 	        };
 	    }
 	});

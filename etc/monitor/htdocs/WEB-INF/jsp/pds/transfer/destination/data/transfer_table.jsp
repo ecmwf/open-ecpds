@@ -88,7 +88,7 @@
     <strong class="d-block mb-1">Selecting transfers and applying bulk actions</strong>
     <p class="mb-1">Use the controls in the toolbar to build a <em>selection basket</em>, then open the basket to act on all selected transfers at once.</p>
     <ul class="mb-1 ps-3">
-      <li><strong>A / N / R</strong> &mdash; Select All / Unselect All / Reverse selection on the <em>current page</em>.</li>
+      <li><strong>A / N / R</strong> &mdash; Select All / Unselect All / Reverse selection across <em>all pages</em> matching the current filter.</li>
       <li><strong><i class="bi bi-star"></i> star icon</strong> on each row &mdash; toggle that individual transfer in or out of the basket.</li>
       <li><strong><i class="bi bi-basket2-fill"></i> Basket</strong> in the toolbar &mdash; click to open the basket and act on all selected transfers.</li>
     </ul>
@@ -253,11 +253,19 @@ var _dftSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search us
             var selectionText = parts.join('/');
             var fileCount = json && json.recordsFiltered != null ? json.recordsFiltered
                           : (json && json.recordsTotal != null ? json.recordsTotal : null);
-            var selCount = json && json.totalSelected != null ? json.totalSelected
-                         : (window._countSelected ? window._countSelected() : 0);
-            // Anchor the delta-tracking base to the fresh server total
-            _baseTotal = selCount;
-            window._selectedDelta = 0;
+            var selCount;
+            if (window._pendingClientCount != null) {
+                // A/N/R was called: trust the client-computed count and mark dirty
+                window._clientTotal = window._pendingClientCount;
+                window._clientDirty = true;
+                window._pendingClientCount = null;
+            } else if (window._clientDirty) {
+                // Client has unsynchronised changes: keep _clientTotal, ignore server value
+            } else {
+                // Server is authoritative: sync from server total
+                window._clientTotal = (json && json.totalSelected != null ? json.totalSelected : 0);
+            }
+            selCount = window._clientTotal || 0;
             document.getElementById('destSelectionInfo').innerHTML =
                 '<span class="text-secondary">Selection:</span>'
                 + '&ensp;<strong>' + (selectionText || 'All') + '</strong>'
@@ -441,19 +449,18 @@ var _dftSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search us
     // Expose table globally so checkAll() in javascript.jsp can access it
     window._destTransferTable = table;
 
-    // Count and refresh the "Basket" segment in destSelectionInfo without a full redraw.
-    // _baseTotal = last server-confirmed total (json.totalSelected, covers all pages).
-    // window._selectedDelta = incremental changes made by star-clicks since last draw.
-    var _baseTotal = 0;
-    window._selectedDelta = 0;
-    window._countSelected = function () {
-        var n = 0;
-        for (var id in selectedTransfers) { if (selectedTransfers[id]) n++; }
-        return n;
-    };
+    // _clientTotal     = the displayed basket count, updated by drawCallback and star-clicks.
+    // _clientDirty     = true once the client has changed selection (A/N/R or star-click).
+    // _fullSyncNeeded  = true when checkAll() was used; triggers replace-mode sync on submit.
+    // _deltaAdd/_deltaDel = incremental star-click changes for delta-mode sync on submit.
+    window._clientTotal = 0;
+    window._clientDirty = false;
+    window._fullSyncNeeded = false;
+    window._deltaAdd = {};
+    window._deltaDel = {};
     window._refreshSelectedCount = function () {
         var span = document.getElementById('destSelectedSpan');
-        if (span) span.textContent = Math.max(0, _baseTotal + (window._selectedDelta || 0)).toLocaleString();
+        if (span) span.textContent = Math.max(0, window._clientTotal || 0).toLocaleString();
     };
 })();
 </script>
