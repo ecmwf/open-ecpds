@@ -396,13 +396,7 @@ public class OperationsAction extends PDSAction {
                     transfer.requeue(u);
                 }
             };
-            if (exceptions.isEmpty()) {
-                form.cleanActionTransfers();
-                form.cleanSelectedTransfers();
-                forward = mapping.findForward("detail");
-            } else {
-                forward = mapping.findForward("validate.redir");
-            }
+            forward = mapping.findForward("validate.redir");
         } else if (STOP.equals(subAction)) {
             new ExecutorRepository<>(exceptions, processedCount, form.getActionTransfers()) {
                 @Override
@@ -464,13 +458,59 @@ public class OperationsAction extends PDSAction {
                     "The subAction '" + subAction + "' is not defined for class " + this.getClass().getName());
         }
         if (processedCount.get() > 0) {
-            form.setMessage("Action '" + subAction + "' performed on " + processedCount.get() + " Data Transfer(s) in "
-                    + Format.formatDuration(startTime, System.currentTimeMillis()));
+            form.setMessage(
+                    friendlyActionMessage(subAction, processedCount.get(), System.currentTimeMillis() - startTime,
+                            SET_TRANSFER_PRIORITY.equals(subAction) ? form.getNewPriority() : null));
         }
         if (!exceptions.isEmpty()) {
             form.setMessagesFromExceptions(exceptions);
         }
         return forward;
+    }
+
+    private static String friendlyActionMessage(final String action, final long count, final long durationMs,
+            final String extra) {
+        final var n = count + (count == 1 ? " data transfer" : " data transfers");
+        final var dur = formatFriendlyDuration(durationMs);
+        switch (action) {
+        case "extendLifetime":
+            return "Lifetime extended for " + n + " in " + dur;
+        case "increaseTransferPriority":
+            return "Transfer priority increased for " + n + " in " + dur;
+        case "decreaseTransferPriority":
+            return "Transfer priority decreased for " + n + " in " + dur;
+        case "setTransferPriority":
+            return "Transfer priority set to " + (extra != null ? extra : "?") + " for " + n + " in " + dur;
+        case "requeue":
+            return (count == 1 ? "Requeued 1 data transfer" : "Requeued " + n) + " in " + dur;
+        case "stop":
+            return (count == 1 ? "Stopped 1 data transfer" : "Stopped " + n) + " in " + dur;
+        case "delete":
+            return (count == 1 ? "Deleted 1 data transfer" : "Deleted " + n) + " in " + dur;
+        default:
+            return action + " performed on " + n + " in " + dur;
+        }
+    }
+
+    static String formatFriendlyDuration(final long ms) {
+        if (ms < 1000) {
+            return ms + " ms";
+        }
+        final var seconds = ms / 1000;
+        final var millis = ms % 1000;
+        if (seconds < 60) {
+            final var tenths = millis / 100;
+            if (tenths == 0) {
+                return seconds + (seconds == 1 ? " second" : " seconds");
+            }
+            return seconds + "." + tenths + (seconds == 1 && tenths == 0 ? " second" : " seconds");
+        }
+        final var minutes = seconds / 60;
+        final var secs = seconds % 60;
+        if (secs == 0) {
+            return minutes + (minutes == 1 ? " minute" : " minutes");
+        }
+        return minutes + (minutes == 1 ? " minute " : " minutes ") + secs + (secs == 1 ? " second" : " seconds");
     }
 
     /**

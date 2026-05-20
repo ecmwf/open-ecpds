@@ -31,6 +31,8 @@ package ecmwf.ecpds.master.plugin.http.controller.transfer.destination;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -44,7 +46,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import ecmwf.common.text.Format;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
+import ecmwf.ecpds.master.plugin.http.home.transfer.DataTransferHome;
 import ecmwf.ecpds.master.plugin.http.model.transfer.DataTransfer;
+import ecmwf.ecpds.master.transfer.StatusFactory;
 import ecmwf.web.controller.ECMWFActionFormException;
 import ecmwf.web.model.users.User;
 
@@ -59,6 +63,9 @@ public class GetValidateTransferListJsonAction extends PDSAction {
     /** Base paths for linked detail pages. */
     private static final String HOST_BASE_PATH = "/do/transfer/host";
     private static final String DATATRANSFER_BASE_PATH = "/do/transfer/data";
+
+    /** Last sortable column index (0-based, inclusive). Columns 11-12 are actions/select and are not sortable. */
+    private static final int MAX_SORT_COLUMN = 10;
 
     /** Shared Jackson mapper. */
     private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -79,6 +86,9 @@ public class GetValidateTransferListJsonAction extends PDSAction {
             length = 25;
         }
         final var destinationName = request.getParameter("destinationName");
+        final var orderCol = parseSafeInt(request.getParameter("order[0][column]"), -1);
+        final var orderDir = request.getParameter("order[0][dir]");
+        final var ascending = !"desc".equalsIgnoreCase(orderDir);
 
         // Compute permissions server-side
         boolean memberState = false;
@@ -100,7 +110,22 @@ public class GetValidateTransferListJsonAction extends PDSAction {
             }
             if (daf != null) {
                 recordsTotal = daf.getSelectedTransfersCount();
-                transfers = daf.getSelectedTransfers(start, start + length);
+                if (orderCol >= 0 && orderCol <= MAX_SORT_COLUMN) {
+                    // Sort the full basket in-memory, then paginate
+                    final List<DataTransfer> all = new ArrayList<>(recordsTotal);
+                    for (final String id : daf.getSelectedTransferIds()) {
+                        try {
+                            all.add(DataTransferHome.findByPrimaryKey(id));
+                        } catch (final Exception _) {
+                            // ghost entry — skip (count stays as-is, minor discrepancy accepted)
+                        }
+                    }
+                    all.sort(comparatorForColumn(orderCol, ascending));
+                    recordsTotal = all.size();
+                    transfers = all.subList(Math.min(start, all.size()), Math.min(start + length, all.size()));
+                } else {
+                    transfers = daf.getSelectedTransfers(start, start + length);
+                }
             }
         } catch (final Exception e) {
             queryError = e.getMessage();
@@ -236,17 +261,181 @@ public class GetValidateTransferListJsonAction extends PDSAction {
             statusText = "";
         }
         final var escaped = escapeHtml(statusText);
+        // Extract base status (before any "-username" suffix) for colour selection and display
+        final var base = statusText.contains("-") ? statusText.substring(0, statusText.indexOf('-')).trim()
+                : statusText.trim();
+        final var baseEscaped = escapeHtml(base);
         if (dt.getExpired() && dt.getDeleted()) {
             final var expiry = dt.getExpiryDate();
             final var expStr = expiry != null ? new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(expiry)
                     : "";
-            return "<span class=\"text-danger\" title=\"Data Transfer expired on " + escapeHtml(expStr) + "\">"
-                    + escaped + "</span>";
+            return "<span class=\"badge bg-danger\" title=\"Data Transfer expired on " + escapeHtml(expStr) + "\">"
+                    + baseEscaped + "</span>";
         }
         if (dt.getDeleted()) {
-            return "<span class=\"text-danger\" title=\"Data Transfer deleted\">" + escaped + "</span>";
+            return "<span class=\"badge bg-danger\" title=\"Data Transfer deleted\">" + baseEscaped + "</span>";
         }
-        return escaped;
+        final String cls;
+        switch (base) {
+        case "Done":
+            cls = "badge bg-success";
+            break;
+        case "Transferring":
+        case "Fetching":
+        case "Arriving":
+            cls = "badge bg-primary";
+            break;
+        case "Queued":
+        case "Preset":
+        case "StandBy":
+        case "ReQueued":
+            cls = "badge bg-warning text-dark";
+            break;
+        case "Failed":
+            cls = "badge bg-danger";
+            break;
+        case "Stopped":
+        case "Interrupted":
+        default:
+            cls = "badge bg-secondary";
+            break;
+        }
+        // Show only base status in badge; full text (including any "-username" suffix) in tooltip
+        return "<span class=\"" + cls + "\" title=\"" + escaped + "\">" + baseEscaped + "</span>";
+    }
+
+    /** Returns a sort key for a raw status code, mapping it to its display name for consistent A-Z ordering. */
+    private static String statusSortKey(final String code) {
+        if (code == null) {
+            return "";
+        }
+        for (final String[] pair : StatusFactory.dataTransferMapping) {
+            if (pair[0].equals(code)) {
+                return pair[1];
+            }
+        }
+        return code;
+    }
+
+    /** Returns a {@link Comparator} for the given DataTables column index and sort direction. */
+    private static Comparator<DataTransfer> comparatorForColumn(final int col, final boolean ascending) {
+        final Comparator<DataTransfer> cmp;
+        switch (col) {
+        case 0: // Err icon — failed (non-null failedTime) sorted before non-failed when ascending
+            cmp = (a, b) -> {
+                final var da = a.getFailedTime();
+                final var db = b.getFailedTime();
+                if (da == null && db == null)
+                    return 0;
+                if (da == null)
+                    return 1;
+                if (db == null)
+                    return -1;
+                return Long.compare(da.getTime(), db.getTime());
+            };
+            break;
+        case 1: // Host nickname (case-insensitive)
+            cmp = (a, b) -> safeStr(a.getHostNickName()).compareToIgnoreCase(safeStr(b.getHostNickName()));
+            break;
+        case 2: // Scheduled time (nulls last)
+            cmp = (a, b) -> {
+                final var da = a.getScheduledTime();
+                final var db = b.getScheduledTime();
+                if (da == null && db == null)
+                    return 0;
+                if (da == null)
+                    return 1;
+                if (db == null)
+                    return -1;
+                return Long.compare(da.getTime(), db.getTime());
+            };
+            break;
+        case 3: // Start time (nulls last)
+            cmp = (a, b) -> {
+                final var da = a.getStartTime();
+                final var db = b.getStartTime();
+                if (da == null && db == null)
+                    return 0;
+                if (da == null)
+                    return 1;
+                if (db == null)
+                    return -1;
+                return Long.compare(da.getTime(), db.getTime());
+            };
+            break;
+        case 4: // Finish time (nulls last)
+            cmp = (a, b) -> {
+                final var da = a.getRealFinishTime();
+                final var db = b.getRealFinishTime();
+                if (da == null && db == null)
+                    return 0;
+                if (da == null)
+                    return 1;
+                if (db == null)
+                    return -1;
+                return Long.compare(da.getTime(), db.getTime());
+            };
+            break;
+        case 5: // Target filename (case-insensitive)
+            cmp = (a, b) -> safeStr(a.getTarget()).compareToIgnoreCase(safeStr(b.getTarget()));
+            break;
+        case 6: // TimeStep
+            cmp = (a, b) -> Long.compare(safeTimeStep(a), safeTimeStep(b));
+            break;
+        case 7: // Progress (%)
+            cmp = (a, b) -> Integer.compare(safeProgress(a), safeProgress(b));
+            break;
+        case 8: // Transfer rate
+            cmp = (a, b) -> Long.compare(safeRate(a), safeRate(b));
+            break;
+        case 9: // Status display name
+            cmp = (a, b) -> statusSortKey(a.getStatusCode() != null ? a.getStatusCode() : "")
+                    .compareTo(statusSortKey(b.getStatusCode() != null ? b.getStatusCode() : ""));
+            break;
+        case 10: // Priority
+            cmp = (a, b) -> Integer.compare(a.getPriority(), b.getPriority());
+            break;
+        default: // Fall back to numeric ID (ascending = natural DB insertion order)
+            cmp = (a, b) -> Long.compare(safeId(a), safeId(b));
+            break;
+        }
+        return ascending ? cmp : cmp.reversed();
+    }
+
+    private static String safeStr(final String s) {
+        return s != null ? s : "";
+    }
+
+    private static long safeTimeStep(final DataTransfer dt) {
+        try {
+            return dt.getDataFile().getTimeStep();
+        } catch (final Exception _) {
+            return 0L;
+        }
+    }
+
+    private static int safeProgress(final DataTransfer dt) {
+        try {
+            return dt.getProgress();
+        } catch (final Exception _) {
+            return 0;
+        }
+    }
+
+    private static long safeRate(final DataTransfer dt) {
+        try {
+            return dt.getTransferRate();
+        } catch (final Exception _) {
+            return 0L;
+        }
+    }
+
+    private static long safeId(final DataTransfer dt) {
+        try {
+            return Long.parseLong(dt.getId());
+        } catch (final Exception _) {
+            return 0L;
+        }
     }
 
     private static String buildActionsHtml(final DataTransfer dt) {

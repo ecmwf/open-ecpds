@@ -296,18 +296,19 @@ public class GetDestinationTransferListJsonAction extends PDSAction {
             statusText = "";
         }
         final var escaped = escapeHtml(statusText);
-        // Extract base status (before any "-username" suffix) for colour selection
+        // Extract base status (before any "-username" suffix) for colour selection and display
         final var base = statusText.contains("-") ? statusText.substring(0, statusText.indexOf('-')).trim()
                 : statusText.trim();
+        final var baseEscaped = escapeHtml(base);
         if (dt.getExpired() && dt.getDeleted()) {
             final var expiry = dt.getExpiryDate();
             final var expStr = expiry != null ? new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(expiry)
                     : "";
             return "<span class=\"badge bg-danger\" title=\"Data Transfer expired on " + escapeHtml(expStr) + "\">"
-                    + escaped + "</span>";
+                    + baseEscaped + "</span>";
         }
         if (dt.getDeleted()) {
-            return "<span class=\"badge bg-danger\" title=\"Data Transfer deleted\">" + escaped + "</span>";
+            return "<span class=\"badge bg-danger\" title=\"Data Transfer deleted\">" + baseEscaped + "</span>";
         }
         final String cls;
         switch (base) {
@@ -334,7 +335,8 @@ public class GetDestinationTransferListJsonAction extends PDSAction {
             cls = "badge bg-secondary";
             break;
         }
-        return "<span class=\"" + cls + "\" title=\"" + escaped + "\">" + escaped + "</span>";
+        // Show only base status in badge; full text (including any "-username" suffix) in tooltip
+        return "<span class=\"" + cls + "\" title=\"" + escaped + "\">" + baseEscaped + "</span>";
     }
 
     private static String buildActionsHtml(final DataTransfer dt) {

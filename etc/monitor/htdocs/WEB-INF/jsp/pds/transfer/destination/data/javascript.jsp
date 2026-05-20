@@ -365,22 +365,27 @@
 	                return;
 	            }
 	            var dest = document.getElementById('dt-dest-name').value;
-	            var postData;
+	            var payload;
 	            if (window._fullSyncNeeded) {
 	                // Replace mode: checkAll() ran so selectedTransfers has all IDs.
 	                var ids = [];
 	                $.each(selectedTransfers, function (id, on) { if (on) ids.push(id); });
-	                postData = { json: 'syncSelection', destinationName: dest,
-	                             type: 'replace', 'ids[]': ids };
+	                payload = { destinationName: dest, type: 'replace', ids: ids.join(',') };
 	            } else {
 	                // Delta mode: only star-clicks were made; send add/del changes so the
 	                // server's full selection (from the last basket visit) is preserved.
-	                postData = { json: 'syncSelection', destinationName: dest,
-	                             type: 'delta',
-	                             'add[]': Object.keys(window._deltaAdd || {}),
-	                             'del[]': Object.keys(window._deltaDel || {}) };
+	                payload = { destinationName: dest, type: 'delta',
+	                            add: Object.keys(window._deltaAdd || {}).join(','),
+	                            del: Object.keys(window._deltaDel || {}).join(',') };
 	            }
-	            $.post('/do/transfer/destination', postData).always(function () {
+	            // Send as JSON body so Jetty's maxFormContentSize limit does not apply —
+	            // the dispatcher reads json=syncSelection from the URL query string.
+	            $.ajax({
+	                url:         '/do/transfer/destination?json=syncSelection',
+	                type:        'POST',
+	                contentType: 'application/json',
+	                data:        JSON.stringify(payload)
+	            }).always(function () {
 	                _orig();
 	            });
 	        };

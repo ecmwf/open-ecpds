@@ -69,6 +69,9 @@ public class DestinationDispatcherAction extends PDSAction {
                 return new GetDestinationTransferIdListAction().safeAuthorizedPerform(mapping, form, request, response,
                         user);
 
+            } else if ("basketIdList".equalsIgnoreCase(json)) {
+                return new GetBasketIdListAction().safeAuthorizedPerform(mapping, form, request, response, user);
+
             } else if ("syncSelection".equalsIgnoreCase(json)) {
                 return new GetDestinationSyncSelectionAction().safeAuthorizedPerform(mapping, form, request, response,
                         user);

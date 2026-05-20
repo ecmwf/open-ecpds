@@ -349,6 +349,15 @@ public class DetailActionForm extends ECMWFActionForm {
     }
 
     /**
+     * Gets all IDs currently in the basket (no DB lookup).
+     *
+     * @return collection of selected transfer IDs
+     */
+    public Collection<String> getSelectedTransferIds() {
+        return getCache().getSelectedTransferIds();
+    }
+
+    /**
      * Adds the to selections.
      *
      * @param c

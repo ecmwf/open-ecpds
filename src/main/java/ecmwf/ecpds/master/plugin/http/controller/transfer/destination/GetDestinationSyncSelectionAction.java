@@ -21,20 +21,28 @@ package ecmwf.ecpds.master.plugin.http.controller.transfer.destination;
 /**
  * ECMWF Product Data Store (OpenECPDS) Project
  *
- * Syncs the client-side selection state to the server before a basket operation. Supports two modes:
+ * Syncs the client-side selection state to the server before a basket operation. Supports three modes:
  * <ul>
- * <li><b>replace</b> (type=replace or omitted): Clears all existing selections then marks the submitted ids[] as "on".
- * Used after A/N/R which has the full selection in client memory.</li>
- * <li><b>delta</b> (type=delta): Applies incremental changes on top of the existing server selection. Marks add[] IDs
- * as "on" and del[] IDs as "off". Used after individual star-clicks where the client only knows what changed.</li>
+ * <li><b>replace</b> (type=replace or omitted): Clears all existing selections then marks the submitted IDs
+ * (comma-separated in the "ids" field) as "on". Used after A/N/R which has the full selection in client memory.</li>
+ * <li><b>delta</b> (type=delta): Applies incremental changes on top of the existing server selection. Marks IDs in the
+ * "add" field as "on" and IDs in the "del" field (both comma-separated) as "off". Used after individual star-clicks
+ * where the client only knows what changed.</li>
+ * <li><b>basketAction</b> (type=basketAction): Syncs only the pages visited in the basket view. Sets IDs in the "on"
+ * field as "on" and IDs in the "off" field as "off"; unvisited basket items remain unchanged in the session. Used
+ * before a basket bulk action (requeue/stop/delete/priority) to avoid HTTP 414 from URL-encoded params.</li>
  * </ul>
- * Called via AJAX (POST) before the form submit so that the GET form URL does not carry thousands of selectedTransfer
- * params (HTTP 431 prevention).
+ * The request body is JSON (Content-Type: application/json) so that Jetty's maxFormContentSize limit does not apply —
+ * the routing parameter json=syncSelection is passed as a URL query string parameter instead. Called via AJAX before
+ * the form submit so that the GET form URL does not carry thousands of selectedTransfer params (HTTP 431 prevention).
  *
  * @author Laurent Gougeon <sy8iecmwf.int>, ECMWF.
  * @version 6.7.7
  * @since 2004-10-09
  */
+
+import java.io.IOException;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -43,8 +51,10 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
-import ecmwf.ecpds.master.plugin.http.dao.Util;
 import ecmwf.web.controller.ECMWFActionFormException;
 import ecmwf.web.model.users.User;
 
@@ -53,47 +63,42 @@ import ecmwf.web.model.users.User;
  */
 public class GetDestinationSyncSelectionAction extends PDSAction {
 
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
     @Override
     public ActionForward safeAuthorizedPerform(final ActionMapping mapping, final ActionForm form,
             final HttpServletRequest request, final HttpServletResponse response, final User user)
             throws ECMWFActionFormException {
 
-        final var destinationName = Util.getValue(request, "destinationName", "");
-        final var type = Util.getValue(request, "type", "replace");
-
         try {
+            JsonNode root;
+            try (var reader = request.getReader()) {
+                root = MAPPER.readTree(reader.lines().collect(Collectors.joining()));
+            } catch (final IOException e) {
+                root = MAPPER.createObjectNode();
+            }
+
+            final var destinationName = root.path("destinationName").asText("").trim();
+            final var type = root.path("type").asText("replace");
+
             final var daf = (DetailActionForm) request.getSession().getAttribute("destinationDetailActionForm");
-            if (daf != null) {
+            if (daf != null && !destinationName.isEmpty()) {
                 daf.setId(destinationName);
                 if ("delta".equals(type)) {
-                    // Apply incremental changes: add[] → "on", del[] → "off"
-                    final var addIds = request.getParameterValues("add[]");
-                    final var delIds = request.getParameterValues("del[]");
-                    if (addIds != null) {
-                        for (final var id : addIds) {
-                            if (id != null && !id.isBlank()) {
-                                daf.setSelectedTransfer(id, "on");
-                            }
-                        }
-                    }
-                    if (delIds != null) {
-                        for (final var id : delIds) {
-                            if (id != null && !id.isBlank()) {
-                                daf.setSelectedTransfer(id, "off");
-                            }
-                        }
-                    }
+                    // Apply incremental changes: add → "on", del → "off" (both comma-separated)
+                    applyIds(daf, root.path("add").asText(""), "on");
+                    applyIds(daf, root.path("del").asText(""), "off");
+                } else if ("basketAction".equals(type)) {
+                    // Sync basket action state without clearing unvisited items.
+                    // on/off contain only IDs from pages the user visited; unvisited items
+                    // keep their existing "on" state in the session (they were "on" when added to basket).
+                    applyIds(daf, root.path("on").asText(""), "on");
+                    applyIds(daf, root.path("off").asText(""), "off");
                 } else {
-                    // Replace mode: clear everything then set the provided IDs
-                    final var ids = request.getParameterValues("ids[]");
+                    // Replace mode: clear everything then set the provided IDs.
+                    // JSON body bypasses Jetty's maxFormContentSize limit so any selection size works.
                     daf.cleanSelectedTransfers();
-                    if (ids != null) {
-                        for (final var id : ids) {
-                            if (id != null && !id.isBlank()) {
-                                daf.setSelectedTransfer(id, "on");
-                            }
-                        }
-                    }
+                    applyIds(daf, root.path("ids").asText(""), "on");
                 }
             }
         } catch (final Exception _) {
@@ -105,5 +110,17 @@ public class GetDestinationSyncSelectionAction extends PDSAction {
         } catch (final Exception _) {
         }
         return null;
+    }
+
+    private static void applyIds(final DetailActionForm daf, final String csv, final String value) {
+        if (csv == null || csv.isBlank()) {
+            return;
+        }
+        for (final var id : csv.split(",")) {
+            final var trimmed = id.trim();
+            if (!trimmed.isEmpty()) {
+                daf.setSelectedTransfer(trimmed, value);
+            }
+        }
     }
 }

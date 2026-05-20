@@ -206,8 +206,9 @@ public class DeleteTransfersAction extends PDSAction {
         form.cleanActionTransfers();
         forward = mapping.findForward("validate.redir");
         if (processedCount.get() > 0) {
-            form.setMessage("Action '" + subAction + "' performed on " + processedCount.get() + " Data Transfer(s) in "
-                    + Format.formatDuration(startTime, System.currentTimeMillis()));
+            final var n = processedCount.get();
+            final var dur = OperationsAction.formatFriendlyDuration(System.currentTimeMillis() - startTime);
+            form.setMessage((n == 1 ? "Deleted 1 data transfer" : "Deleted " + n + " data transfers") + " in " + dur);
         }
         if (!exceptions.isEmpty()) {
             form.setMessagesFromExceptions(exceptions);

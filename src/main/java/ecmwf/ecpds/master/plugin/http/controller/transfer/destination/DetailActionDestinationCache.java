@@ -156,15 +156,22 @@ public class DetailActionDestinationCache {
      */
     public Collection<DataTransfer> getActionTransfers() {
         final List<DataTransfer> l = new ArrayList<>(actionTransfers.size());
+        final List<String> deadKeys = new ArrayList<>();
         for (final String key : actionTransfers.keySet()) {
             final var value = String.valueOf(actionTransfers.get(key));
             if ("on".equalsIgnoreCase(value) || "true".equalsIgnoreCase(value)) {
                 try {
                     l.add(DataTransferHome.findByPrimaryKey(key));
                 } catch (final TransferException e) {
-                    log.warn("Problem adding Transfer with key '" + key + "' to list of action transfers", e);
+                    // Transfer no longer exists in DB — remove it as a ghost entry
+                    log.warn("Transfer key '" + key + "' not found; removing from action/selected sets", e);
+                    deadKeys.add(key);
                 }
             }
+        }
+        for (final String key : deadKeys) {
+            actionTransfers.remove(key);
+            selectedTransfers.remove(key);
         }
         return l;
     }
@@ -387,6 +394,22 @@ public class DetailActionDestinationCache {
     }
 
     /**
+     * Gets all selected transfer IDs (no DB lookup) — used for basket All/None/Invert.
+     *
+     * @return the selected transfer ids
+     */
+    public Collection<String> getSelectedTransferIds() {
+        final List<String> ids = new ArrayList<>(selectedTransfers.size());
+        for (final String key : selectedTransfers.keySet()) {
+            final var value = selectedTransfers.get(key);
+            if ("on".equalsIgnoreCase(value) || "true".equalsIgnoreCase(value)) {
+                ids.add(key);
+            }
+        }
+        return ids;
+    }
+
+    /**
      * Gets the selected transfers count.
      *
      * @return the selected transfers count
@@ -430,7 +453,10 @@ public class DetailActionDestinationCache {
                         l.add(DataTransferHome.findByPrimaryKey(id));
                         count++;
                     } catch (final TransferException e) {
-                        log.warn("Problem getting Transfer with key '" + id + "' to list selected transfers", e);
+                        // Transfer no longer exists — remove ghost entry and advance cursor
+                        log.warn("Transfer key '" + id + "' not found; removing from selected set", e);
+                        selectedTransfers.remove(id);
+                        count++;
                     }
                 }
             }

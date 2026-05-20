@@ -20,18 +20,45 @@
 	}
 
 	function checkAll(all, reverse) {
-		$('#validateTable tbody tr').each(function () {
-			var span = $(this).find('span.batch-select');
-			if (span.length) {
-				var id = String(span.data('transferId'));
-				if (id) {
-					var current = batchTransfers[id] ? true : false;
-					var target  = reverse ? !current : all;
-					if (target !== current) select(span[0], id);
-				}
+		var destName = (document.getElementById('vl-dest-name') || {}).value || '';
+		$.getJSON('/do/transfer/destination', { json: 'basketIdList', destinationName: destName }, function(json) {
+			var ids = (json && json.ids) ? json.ids.map(String) : [];
+			// For None: also clear any extra entries already in batchTransfers (from page visits)
+			if (!all && !reverse) {
+				Object.keys(batchTransfers).forEach(function(id) { batchTransfers[id] = false; });
 			}
+			ids.forEach(function(id) {
+				if (all) {
+					batchTransfers[id] = true;
+				} else if (reverse) {
+					batchTransfers[id] = batchTransfers[id] !== true;
+				} else {
+					batchTransfers[id] = false;
+				}
+			});
+			// Refresh visual state of current page rows
+			$('#validateTable tbody tr').each(function () {
+				var span = $(this).find('span.batch-select');
+				if (!span.length) return;
+				var id = String(span.data('transfer-id') || span.data('transferId'));
+				var tr = $(this);
+				var icon = span.find('i');
+				if (batchTransfers[id]) {
+					tr.addClass('selected');
+					icon.removeClass('bi-star').addClass('bi-star-fill text-warning');
+				} else {
+					tr.removeClass('selected');
+					icon.removeClass('bi-star-fill text-warning').addClass('bi-star');
+				}
+			});
+			// Recount
+			var count = 0;
+			Object.keys(batchTransfers).forEach(function(id) { if (batchTransfers[id]) count++; });
+			totalInSelection = count;
+			var el = document.getElementById('validateTransferTotal');
+			if (el) el.textContent = '(' + count + ' in selection)';
+			updateBatchButtons();
 		});
-		updateBatchButtons();
 	}
 
 	function select(el, id) {
@@ -261,7 +288,7 @@
             <strong class="d-block mb-1">Using bulk actions on the selection basket</strong>
             <p class="mb-1">This page shows the transfers currently in your <em>selection basket</em>. Use the controls above to act on them:</p>
             <ul class="mb-1 ps-3">
-                <li><strong>All / None / Invert</strong> &mdash; select, deselect, or invert the row-level checkboxes on the <em>current page</em> to refine which transfers a bulk action will affect.</li>
+                <li><strong>All / None / Invert</strong> &mdash; select, deselect, or invert the row-level checkboxes <em>across all pages</em> to refine which transfers a bulk action will affect.</li>
                 <li><strong>Requeue</strong> &mdash; re-submit all checked transfers for delivery.</li>
                 <li><strong>Stop</strong> &mdash; interrupt the transfer of all checked entries.</li>
                 <li><strong>Delete</strong> &mdash; permanently remove all checked transfers.</li>
@@ -271,7 +298,7 @@
                 <li><strong>Clean</strong> &mdash; clear the entire basket and return to an empty selection.</li>
                 <li><strong>Back</strong> &mdash; return to the destination page without changing the basket.</li>
             </ul>
-            <p class="mb-0 text-muted">Actions apply to <em>checked</em> rows on the current page. Use <strong>All</strong> first if you want every listed transfer to be affected.</p>
+            <p class="mb-0 text-muted">Actions apply to <em>checked</em> rows across all pages. Use <strong>All</strong> first if you want every basket entry to be affected.</p>
         </div>
     </div>
 
@@ -301,7 +328,7 @@
         lengthChange: false,
         searching: true,
         dom: 'rt<"d-flex justify-content-between align-items-center mt-2"ip>',
-        ordering: false,
+        ordering: true,
         ajax: {
             url: '/do/transfer/destination?json=validateList',
             type: 'GET',
@@ -315,7 +342,7 @@
             { data: 10 }, { data: 11 }, { data: 12 }
         ],
         columnDefs: [
-            { targets: [0,1,2,3,4,5,6,7,8,9,10,11,12], orderable: false },
+            { targets: [11,12], orderable: false },
             { targets: [11], visible: canQueue }
         ],
         drawCallback: function (settings) {
@@ -459,20 +486,35 @@
         _vlApplyMode(mode);
     });
 
-    // Form submit hook: inject actionTransfer AND selectedTransfer fields.
-    // selectedTransfer is session-scoped -- Struts auto-populates it before any action runs,
-    // so deselecting a transfer here (star off) persists to the session even on cancel/back.
+    // Form submit hook: pre-sync basket action state as a JSON body POST before submitting.
+    // This avoids injecting thousands of actionTransfer/selectedTransfer params into the GET URL,
+    // which would cause HTTP 414 (URI Too Long). The JSON body bypasses Jetty's form size limits.
+    // Unvisited basket pages are not in batchTransfers but remain "on" in the server session.
     var frm = document.validateActionForm;
     if (frm) {
         var _orig = HTMLFormElement.prototype.submit.bind(frm);
         frm.submit = function () {
-            $(frm).find('input.injected-batch').remove();
-            $.each(batchTransfers, function (id, on) {
-                var val = on ? 'on' : 'off';
-                $('<input>').attr({ type: 'hidden', name: 'actionTransfer(' + id + ')',   value: val, class: 'injected-batch' }).appendTo(frm);
-                $('<input>').attr({ type: 'hidden', name: 'selectedTransfer(' + id + ')', value: val, class: 'injected-batch' }).appendTo(frm);
+            var onIds = [], offIds = [];
+            Object.keys(batchTransfers).forEach(function (id) {
+                (batchTransfers[id] ? onIds : offIds).push(id);
             });
-            _orig();
+            $.ajax({
+                url: '/do/transfer/destination?json=syncSelection',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    destinationName: destName,
+                    type: 'basketAction',
+                    on: onIds.join(','),
+                    off: offIds.join(',')
+                }),
+                success: function () {
+                    _orig();
+                },
+                error: function () {
+                    alert('Failed to sync basket state with the server. Please try again.');
+                }
+            });
         };
     }
 })();
