@@ -10,15 +10,17 @@
 <div class="card border-0 shadow-sm mb-3">
     <div class="card-body py-2 px-3">
         <div class="row g-2 align-items-center">
-            <div class="col-auto d-flex align-items-center gap-1">
-                <span class="text-nowrap text-muted small">Show</span>
-                <select id="datafilePageLen" class="form-select form-select-sm" style="width:auto" title="Entries per page">
-                    <option value="10">10</option>
-                    <option value="25">25</option>
-                    <option value="50">50</option>
-                    <option value="100">100</option>
-                </select>
-                <span class="text-nowrap text-muted small">entries</span>
+            <div class="col-auto d-flex align-items-center">
+                <div class="input-group flex-nowrap" style="width:auto" title="Page size">
+                    <span class="input-group-text px-2"><i class="bi bi-list-ol"></i></span>
+                    <select id="datafilePageLen" class="form-select" style="width:auto">
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                        <option value="250">250</option>
+                    </select>
+                </div>
             </div>
             <div class="col">
                 <div class="input-group">
@@ -79,8 +81,8 @@
                 { title: 'TS',           orderable: true,  className: 'text-end' }
             ],
             columnDefs: [],
-            pageLength: (function() { try { var v = parseInt(localStorage.getItem('datafilePageLen'), 10); return [10,25,50,100].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })(),
-            lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+            pageLength: (function() { try { var v = parseInt(localStorage.getItem('datafilePageLen'), 10); return [10,25,50,100,250].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })(),
+            lengthMenu: [[10, 25, 50, 100, 250], [10, 25, 50, 100, 250]],
             language: {
                 emptyTable:     'No Data Files found for the selected date and metadata.',
                 loadingRecords: 'Loading&hellip;',
@@ -90,7 +92,7 @@
             buttons: []
         });
 
-        $('#datafilePageLen').val((function() { try { var v = parseInt(localStorage.getItem('datafilePageLen'), 10); return [10,25,50,100].indexOf(v) >= 0 ? String(v) : '25'; } catch(e) { return '25'; } })());
+        $('#datafilePageLen').val((function() { try { var v = parseInt(localStorage.getItem('datafilePageLen'), 10); return [10,25,50,100,250].indexOf(v) >= 0 ? String(v) : '25'; } catch(e) { return '25'; } })());
         $('#datafilePageLen').on('change', function () {
             var len = parseInt(this.value, 10);
             try { localStorage.setItem('datafilePageLen', len); } catch(e) {}

@@ -123,11 +123,11 @@
 .assoc-chooser-item:hover { background:var(--bs-secondary-bg); }
 .assoc-empty { display:flex; align-items:center; gap:.35rem; color:#856404; background:#fff3cd; border:1px solid #ffc107; border-radius:.25rem; font-size:.8rem; padding:.3rem .5rem; margin:0; }
 </style>
-<div class="row g-3" style="max-width:480px">
+<div class="row g-3">
 
-  <%-- Data Policies --%>
-  <div class="col-12">
-    <div class="card assoc-card">
+  <%-- Data Policies + Permissions side-by-side --%>
+  <div class="col-sm-6">
+    <div class="card assoc-card h-100">
       <div class="card-header">
         <i class="bi bi-shield-check text-secondary"></i>
         <strong>Data Policies</strong>
@@ -165,6 +165,59 @@
               <div style="max-height:180px;overflow-y:auto">
                 <c:forEach var="column" items="${incomingUserActionForm.incomingPolicyOptions}">
                   <a href="/do/user/incoming/edit/update/${incomingUserActionForm.id}/addPolicy/${column.id}"
+                     class="assoc-chooser-item d-flex align-items-center gap-1 px-2 py-1 rounded text-decoration-none">
+                    <i class="bi bi-plus-circle text-success small flex-shrink-0"></i>
+                    <span title="${column.comment}">${column.id}</span>
+                  </a>
+                </c:forEach>
+              </div>
+            </c:otherwise>
+          </c:choose>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%-- Permissions --%>
+  <div class="col-sm-6">
+    <div class="card assoc-card h-100">
+      <div class="card-header">
+        <i class="bi bi-gear text-secondary"></i>
+        <strong>Permissions</strong>
+        <button type="button" class="btn btn-sm btn-outline-primary ms-auto"
+                data-bs-toggle="collapse" data-bs-target="#operationChooser">
+          <i class="bi bi-plus-lg"></i> Add
+        </button>
+      </div>
+      <div class="card-body p-2">
+        <c:choose>
+          <c:when test="${empty incomingUserActionForm.operations}">
+            <p class="text-muted small mb-2"><em>No permissions assigned.</em></p>
+          </c:when>
+          <c:otherwise>
+            <div class="d-flex flex-wrap mb-2">
+              <c:forEach var="operation" items="${incomingUserActionForm.operations}">
+                <span class="assoc-chip">
+                  <c:choose>
+                    <c:when test="${not empty operation.comment}"><span title="${operation.comment}">${operation.id}</span></c:when>
+                    <c:otherwise>${operation.id}</c:otherwise>
+                  </c:choose>
+                  <a href="javascript:validate('<bean:message key="incoming.basepath"/>/edit/update/<c:out value="${incomingUserActionForm.id}"/>/deleteOperation/<c:out value="${operation.name}"/>','<bean:message key="ecpds.incoming.deleteOperation.warning" arg0="${operation.name}" arg1="${incomingUserActionForm.id}"/>')" title="Remove"><i class="bi bi-x-lg"></i></a>
+                </span>
+              </c:forEach>
+            </div>
+          </c:otherwise>
+        </c:choose>
+        <div class="collapse" id="operationChooser">
+          <c:choose>
+            <c:when test="${empty incomingUserActionForm.operationOptions}">
+              <p class="assoc-empty"><i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i> No permissions available to add.</p>
+            </c:when>
+            <c:otherwise>
+              <input type="text" class="form-control form-control-sm assoc-search mb-1" oninput="assocSearch(this)" placeholder="Search permissions...">
+              <div style="max-height:180px;overflow-y:auto">
+                <c:forEach var="column" items="${incomingUserActionForm.operationOptions}">
+                  <a href="/do/user/incoming/edit/update/${incomingUserActionForm.id}/addOperation/${column.id}"
                      class="assoc-chooser-item d-flex align-items-center gap-1 px-2 py-1 rounded text-decoration-none">
                     <i class="bi bi-plus-circle text-success small flex-shrink-0"></i>
                     <span title="${column.comment}">${column.id}</span>
@@ -231,89 +284,80 @@
     </div>
   </div>
 
-  <%-- Permissions --%>
-  <div class="col-12">
-    <div class="card assoc-card">
-      <div class="card-header">
-        <i class="bi bi-gear text-secondary"></i>
-        <strong>Permissions</strong>
-        <button type="button" class="btn btn-sm btn-outline-primary ms-auto"
-                data-bs-toggle="collapse" data-bs-target="#operationChooser">
-          <i class="bi bi-plus-lg"></i> Add
-        </button>
-      </div>
-      <div class="card-body p-2">
-        <c:choose>
-          <c:when test="${empty incomingUserActionForm.operations}">
-            <p class="text-muted small mb-2"><em>No permissions assigned.</em></p>
-          </c:when>
-          <c:otherwise>
-            <div class="d-flex flex-wrap mb-2">
-              <c:forEach var="operation" items="${incomingUserActionForm.operations}">
-                <span class="assoc-chip">
-                  <c:choose>
-                    <c:when test="${not empty operation.comment}"><span title="${operation.comment}">${operation.id}</span></c:when>
-                    <c:otherwise>${operation.id}</c:otherwise>
-                  </c:choose>
-                  <a href="javascript:validate('<bean:message key="incoming.basepath"/>/edit/update/<c:out value="${incomingUserActionForm.id}"/>/deleteOperation/<c:out value="${operation.name}"/>','<bean:message key="ecpds.incoming.deleteOperation.warning" arg0="${operation.name}" arg1="${incomingUserActionForm.id}"/>')" title="Remove"><i class="bi bi-x-lg"></i></a>
-                </span>
-              </c:forEach>
-            </div>
-          </c:otherwise>
-        </c:choose>
-        <div class="collapse" id="operationChooser">
-          <c:choose>
-            <c:when test="${empty incomingUserActionForm.operationOptions}">
-              <p class="assoc-empty"><i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i> No permissions available to add.</p>
-            </c:when>
-            <c:otherwise>
-              <input type="text" class="form-control form-control-sm assoc-search mb-1" oninput="assocSearch(this)" placeholder="Search permissions...">
-              <div style="max-height:180px;overflow-y:auto">
-                <c:forEach var="column" items="${incomingUserActionForm.operationOptions}">
-                  <a href="/do/user/incoming/edit/update/${incomingUserActionForm.id}/addOperation/${column.id}"
-                     class="assoc-chooser-item d-flex align-items-center gap-1 px-2 py-1 rounded text-decoration-none">
-                    <i class="bi bi-plus-circle text-success small flex-shrink-0"></i>
-                    <span title="${column.comment}">${column.id}</span>
-                  </a>
-                </c:forEach>
-              </div>
-            </c:otherwise>
-          </c:choose>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-12">
-    <div class="card assoc-card">
-      <div class="card-header">
-        <i class="bi bi-plug text-secondary"></i>
-        <strong>Current Sessions</strong>
-      </div>
-      <div class="card-body p-2">
-        <c:choose>
-          <c:when test="${empty incomingUserActionForm.incomingUser.incomingConnections}">
-            <p class="text-muted small mb-0"><em>No active sessions.</em></p>
-          </c:when>
-          <c:otherwise>
-            <div class="d-flex flex-wrap">
-              <c:forEach var="mySession" items="${incomingUserActionForm.incomingUser.incomingConnections}">
-                <span class="assoc-chip">
-                  <span title="Mover: ${mySession.dataMoverName} | Duration: ${mySession.formatedDuration}">${mySession.protocol} &middot; ${mySession.remoteIpAddress}</span>
-                  <a href="javascript:validate('<bean:message key="incoming.basepath"/>/edit/update/<c:out value="${incomingUserActionForm.id}"/>/closeSession/<c:out value="${mySession.id}"/>','<bean:message key="ecpds.incoming.disconnectOperation.warning" arg0="${mySession.login}" arg1="${mySession.dataMoverName}"/>')" title="Disconnect"><i class="bi bi-x-lg"></i></a>
-                </span>
-              </c:forEach>
-            </div>
-          </c:otherwise>
-        </c:choose>
-      </div>
-    </div>
-  </div>
-
 </div>
 	</div>
 	</c:if>
 </div>
+
+<c:if test="${isInsert != 'true'}">
+<div class="mt-3">
+	<div class="card assoc-card">
+		<div class="card-header">
+			<i class="bi bi-plug text-secondary"></i>
+			<strong>Current Sessions</strong>
+		</div>
+		<c:choose>
+			<c:when test="${empty incomingUserActionForm.incomingUser.incomingConnections}">
+				<div class="card-body p-2">
+					<p class="text-muted small mb-0"><em>No active sessions.</em></p>
+				</div>
+			</c:when>
+			<c:otherwise>
+				<div class="table-responsive">
+					<table id="incomingSessionsEditTable" class="table table-sm table-hover table-striped align-middle mb-0" style="width:100%">
+						<thead class="table-light">
+							<tr>
+								<th>Session ID</th>
+								<th>Protocol</th>
+								<th>Remote IP</th>
+								<th>Data Mover</th>
+								<th>Start Time (UTC)</th>
+								<th>Duration</th>
+								<th class="text-center no-sort">Action</th>
+							</tr>
+						</thead>
+						<tbody>
+							<c:forEach var="mySession" items="${incomingUserActionForm.incomingUser.incomingConnections}">
+								<tr>
+									<td><code>${mySession.id}</code></td>
+									<td><span class="badge bg-secondary-subtle text-secondary-emphasis border">${mySession.protocol}</span></td>
+									<td>${mySession.remoteIpAddress}</td>
+									<td>${mySession.dataMoverName}</td>
+									<td data-order="${mySession.startTime}"><span class="ic-ts" data-ts="${mySession.startTime}">${mySession.startTime}</span></td>
+									<td>${mySession.formatedDuration}</td>
+									<td class="text-center">
+										<a href="javascript:validate('<bean:message key="incoming.basepath"/>/edit/update/<c:out value="${incomingUserActionForm.id}"/>/closeSession/<c:out value="${mySession.id}"/>','<bean:message key="ecpds.incoming.disconnectOperation.warning" arg0="${mySession.login}" arg1="${mySession.dataMoverName}"/>')"
+										   class="btn btn-sm btn-outline-danger py-0 px-1" title="Disconnect session">
+											<i class="bi bi-x-lg"></i>
+										</a>
+									</td>
+								</tr>
+							</c:forEach>
+						</tbody>
+					</table>
+				</div>
+				<script>
+				$(function() {
+					document.querySelectorAll('#incomingSessionsEditTable .ic-ts').forEach(function(el) {
+						var ts = parseInt(el.getAttribute('data-ts'), 10);
+						if (ts) el.textContent = new Date(ts).toISOString().replace('T', ' ').substring(0, 19);
+					});
+					if ($.fn.DataTable) {
+						$('#incomingSessionsEditTable').DataTable({
+							paging: false, searching: false, ordering: true,
+							order: [[4, 'desc']],
+							scrollY: '220px', scrollCollapse: true,
+							dom: 't',
+							columnDefs: [{ orderable: false, targets: [0, 6] }]
+						});
+					}
+				});
+				</script>
+			</c:otherwise>
+		</c:choose>
+	</div>
+</div>
+</c:if>
 
 <div class="mt-3">
 	<div class="card">

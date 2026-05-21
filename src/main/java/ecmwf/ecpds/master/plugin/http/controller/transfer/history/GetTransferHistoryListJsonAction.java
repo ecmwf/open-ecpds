@@ -93,7 +93,7 @@ public class GetTransferHistoryListJsonAction extends PDSAction {
             final var row = data.addArray();
             row.add(buildErrorHtml(history));
             row.add(buildEventTimeHtml(history));
-            row.add(escapeHtml(history.getFormattedStatus()));
+            row.add(buildStatusHtml(history));
             row.add(buildHostHtml(history));
             row.add(buildCommentHtml(history));
         }
@@ -113,6 +113,40 @@ public class GetTransferHistoryListJsonAction extends PDSAction {
             return "<i class=\"bi bi-x-circle-fill text-danger\" title=\"Error\"></i>";
         }
         return "<i class=\"bi bi-check-circle-fill text-success\" title=\"OK\"></i>";
+    }
+
+    private static String buildStatusHtml(final TransferHistory history) {
+        final var code = history.getStatus();
+        final var label = escapeHtml(history.getFormattedStatus());
+        final String cls;
+        if (code == null) {
+            cls = "badge bg-secondary";
+        } else {
+            switch (code) {
+            case "DONE":
+                cls = "badge bg-success";
+                break;
+            case "EXEC":
+            case "FETC":
+                cls = "badge bg-primary";
+                break;
+            case "INIT":
+                cls = "badge bg-info text-dark";
+                break;
+            case "RETR":
+            case "STOP":
+            case "INTR":
+                cls = "badge bg-warning text-dark";
+                break;
+            case "FAIL":
+                cls = "badge bg-danger";
+                break;
+            default:
+                cls = "badge bg-secondary";
+                break;
+            }
+        }
+        return "<span class=\"" + cls + "\">" + label + "</span>";
     }
 
     private static String buildEventTimeHtml(final TransferHistory history) {

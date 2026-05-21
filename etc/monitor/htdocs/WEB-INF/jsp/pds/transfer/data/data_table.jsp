@@ -81,22 +81,19 @@ Data Transfer: <strong><c:out value="${datatransfer.id}"/></strong>
   <span class="badge bg-danger" title="Deleted">${_dtStatus}</span>
 </c:when>
 <c:when test="${datatransfer.statusCode == 'DONE'}">
-  <span class="badge bg-success">${_dtStatus}</span>
+  <span class="badge bg-success" title="${_dtStatus}">${_dtStatus}</span>
 </c:when>
-<c:when test="${datatransfer.statusCode == 'EXEC' or datatransfer.statusCode == 'FETC'}">
-  <span class="badge bg-primary">${_dtStatus}</span>
+<c:when test="${datatransfer.statusCode == 'EXEC' or datatransfer.statusCode == 'FETC' or datatransfer.statusCode == 'INIT'}">
+  <span class="badge bg-primary" title="${_dtStatus}">${_dtStatus}</span>
 </c:when>
-<c:when test="${datatransfer.statusCode == 'INIT'}">
-  <span class="badge bg-info text-dark">${_dtStatus}</span>
-</c:when>
-<c:when test="${datatransfer.statusCode == 'RETR' or datatransfer.statusCode == 'STOP' or datatransfer.statusCode == 'INTR'}">
-  <span class="badge bg-warning text-dark">${_dtStatus}</span>
+<c:when test="${datatransfer.statusCode == 'RETR' or datatransfer.statusCode == 'WAIT' or datatransfer.statusCode == 'SCHE' or datatransfer.statusCode == 'HOLD'}">
+  <span class="badge bg-warning text-dark" title="${_dtStatus}">${_dtStatus}</span>
 </c:when>
 <c:when test="${datatransfer.statusCode == 'FAIL'}">
-  <span class="badge bg-danger">${_dtStatus}</span>
+  <span class="badge bg-danger" title="${_dtStatus}">${_dtStatus}</span>
 </c:when>
 <c:otherwise>
-  <span class="badge bg-secondary">${_dtStatus}</span>
+  <span class="badge bg-secondary" title="${_dtStatus}">${_dtStatus}</span>
 </c:otherwise>
 </c:choose>
 </div></div>

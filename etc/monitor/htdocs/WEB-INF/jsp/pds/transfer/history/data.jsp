@@ -22,12 +22,11 @@ Transfer History Entry: <strong><c:out value="${item.id}"/></strong>
 <div class="field-row"><div class="field-label">Event Time</div><div class="field-value"><c:choose><c:when test="${not empty item.date}"><content:content name="item.date" dateFormatKey="date.format.long.iso" ignoreNull="true"/></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
 <div class="field-row"><div class="field-label">Status</div><div class="field-value">
 <c:choose>
-  <c:when test="${item.status == 'DONE'}"><span class="badge bg-success">${item.formattedStatus}</span></c:when>
-  <c:when test="${item.status == 'EXEC' or item.status == 'FETC'}"><span class="badge bg-primary">${item.formattedStatus}</span></c:when>
-  <c:when test="${item.status == 'INIT'}"><span class="badge bg-info text-dark">${item.formattedStatus}</span></c:when>
-  <c:when test="${item.status == 'RETR' or item.status == 'STOP' or item.status == 'INTR'}"><span class="badge bg-warning text-dark">${item.formattedStatus}</span></c:when>
-  <c:when test="${item.status == 'FAIL'}"><span class="badge bg-danger">${item.formattedStatus}</span></c:when>
-  <c:otherwise><span class="badge bg-secondary">${item.formattedStatus}</span></c:otherwise>
+  <c:when test="${item.status == 'DONE'}"><span class="badge bg-success" title="${item.formattedStatus}">${item.formattedStatus}</span></c:when>
+  <c:when test="${item.status == 'EXEC' or item.status == 'FETC' or item.status == 'INIT'}"><span class="badge bg-primary" title="${item.formattedStatus}">${item.formattedStatus}</span></c:when>
+  <c:when test="${item.status == 'RETR' or item.status == 'WAIT' or item.status == 'SCHE' or item.status == 'HOLD'}"><span class="badge bg-warning text-dark" title="${item.formattedStatus}">${item.formattedStatus}</span></c:when>
+  <c:when test="${item.status == 'FAIL'}"><span class="badge bg-danger" title="${item.formattedStatus}">${item.formattedStatus}</span></c:when>
+  <c:otherwise><span class="badge bg-secondary" title="${item.formattedStatus}">${item.formattedStatus}</span></c:otherwise>
 </c:choose>
 </div></div>
 <div class="field-row"><div class="field-label">Error</div><div class="field-value"><c:choose><c:when test="${item.error}"><span class="badge rounded-pill border fw-normal bg-danger-subtle text-danger-emphasis"><i class="bi bi-x-circle-fill me-1"></i>Yes</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>No</span></c:otherwise></c:choose></div></div>

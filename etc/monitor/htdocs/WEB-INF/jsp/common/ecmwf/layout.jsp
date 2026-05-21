@@ -92,15 +92,15 @@ body{background:#fff;color:#000;font-family:Arial,sans-serif;margin:0;padding:0;
 </div>
 
 <logic:present name="<%=ecmwf.web.model.users.User.SESSION_KEY%>">
-<button id="ai-chat-open">Ask OpenECPDS</button>
+<button id="ai-chat-open">Ask <%=System.getProperty("monitor.nickName")%></button>
 <div id="ai-chat-widget">
     <div id="ai-chat-header">
-        OpenECPDS Assistant
+        <%=System.getProperty("monitor.nickName")%> Assistant
         <span id="ai-chat-close">&times;</span>
     </div>
     <div id="ai-chat-messages"></div>
     <div id="ai-chat-input">
-        <input type="text" id="ai-chat-text" placeholder="Ask about OpenECPDS..." aria-label="Ask OpenECPDS" />
+        <input type="text" id="ai-chat-text" placeholder="Ask about <%=System.getProperty("monitor.nickName")%>..." aria-label="Ask <%=System.getProperty("monitor.nickName")%>" />
         <button id="ai-chat-send">Send</button>
     </div>
 </div>

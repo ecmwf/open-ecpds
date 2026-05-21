@@ -54,9 +54,16 @@
             <span class="filter-label">Status</span>
             <c:set var="statusNow" value="${destinationDetailActionForm.status}"/>
             <c:forEach var="status" items="${statusOptionsWithSizes}">
+                <c:choose>
+                    <c:when test="${status.first == 'DONE'}"><c:set var="sPillColor" value="success"/><c:set var="sPillTxt" value="text-white"/></c:when>
+                    <c:when test="${status.first == 'EXEC' or status.first == 'FETC' or status.first == 'INIT'}"><c:set var="sPillColor" value="primary"/><c:set var="sPillTxt" value="text-white"/></c:when>
+                    <c:when test="${status.first == 'FAIL'}"><c:set var="sPillColor" value="danger"/><c:set var="sPillTxt" value="text-white"/></c:when>
+                    <c:when test="${status.first == 'RETR' or status.first == 'WAIT' or status.first == 'SCHE' or status.first == 'HOLD'}"><c:set var="sPillColor" value="warning"/><c:set var="sPillTxt" value="text-dark"/></c:when>
+                    <c:otherwise><c:set var="sPillColor" value="secondary"/><c:set var="sPillTxt" value="text-white"/></c:otherwise>
+                </c:choose>
                 <a href="javascript:setStatus('${status.first}')"
                    title="Size: ${status.formattedSize}"
-                   class="badge rounded-pill border fw-normal text-decoration-none <c:choose><c:when test="${status.first == statusNow}">bg-primary text-white border-primary</c:when><c:otherwise>bg-body-tertiary text-body</c:otherwise></c:choose>">
+                   class="badge rounded-pill fw-normal text-decoration-none border <c:choose><c:when test="${status.first == statusNow}">bg-${sPillColor} ${sPillTxt} border-${sPillColor}</c:when><c:otherwise>bg-${sPillColor}-subtle text-${sPillColor}-emphasis border-${sPillColor}-subtle</c:otherwise></c:choose>">
                     ${status.second} <span class="opacity-75">(${status.third})</span>
                 </a>
             </c:forEach>

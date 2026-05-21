@@ -21,7 +21,7 @@
                 <auth:link basePathKey="user.basepath" href="" wrappingTags="li"><i class="bi bi-people"></i>Web Users</auth:link>
                 <auth:link basePathKey="category.basepath" href="" wrappingTags="li"><i class="bi bi-folder"></i>Web Categories</auth:link>
                 <auth:link basePathKey="resource.basepath" href="" wrappingTags="li"><i class="bi bi-files"></i>Web Resources</auth:link>
-                <auth:link basePathKey="event.basepath" href="" wrappingTags="li"><i class="bi bi-journal-text"></i>Web Event Log</auth:link>
+                <auth:link basePathKey="event.basepath" href="" wrappingTags="li"><i class="bi bi-journal-text"></i>Web Events Log</auth:link>
             </ul>
         </div>
     </div>
@@ -33,7 +33,7 @@
             <ul class="home-menu">
                 <auth:link basePathKey="incoming.basepath" href="" wrappingTags="li"><i class="bi bi-person-badge"></i>Data Users</auth:link>
                 <auth:link basePathKey="policy.basepath" href="" wrappingTags="li"><i class="bi bi-shield-check"></i>Data Policies</auth:link>
-                <auth:link basePathKey="history.basepath" href="" wrappingTags="li"><i class="bi bi-list-ul"></i>Data Event Log</auth:link>
+                <auth:link basePathKey="history.basepath" href="" wrappingTags="li"><i class="bi bi-list-ul"></i>Data Events Log</auth:link>
             </ul>
         </div>
     </div>

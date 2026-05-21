@@ -23,6 +23,7 @@
                                     <option value="25">25</option>
                                     <option value="50">50</option>
                                     <option value="100">100</option>
+                                    <option value="250">250</option>
                                 </select>
                             </div>
                         </div>
@@ -478,7 +479,7 @@ function _updateDestSearchBanner(queryError, total, hasSearch) {
     var _allRows = [];
     var _sortCol = -1;
     var _sortAsc = true;
-    var _pageLen = (function() { try { var v = parseInt(localStorage.getItem('destsPageLen'), 10); return [10,25,50,100].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })();
+    var _pageLen = (function() { try { var v = parseInt(localStorage.getItem('destsPageLen'), 10); return [10,25,50,100,250].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })();
     var _curPage = 0;
     var _destsTable;
     var _lastTotal = 0;

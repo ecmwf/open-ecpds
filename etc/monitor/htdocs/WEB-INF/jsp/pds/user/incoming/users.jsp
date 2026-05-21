@@ -7,37 +7,44 @@
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
 <script>window._validIso=new Set(["AC","AD","AE","AF","AG","AI","AL","AM","AO","AQ","AR","AS","AT","AU","AW","AX","AZ","BA","BB","BD","BE","BF","BG","BH","BI","BJ","BL","BM","BN","BO","BQ","BR","BS","BT","BV","BW","BY","BZ","CA","CC","CD","CF","CG","CH","CI","CK","CL","CM","CN","CO","CP","CR","CU","CV","CW","CX","CY","CZ","DE","DG","DJ","DK","DM","DO","DZ","EA","EE","EG","EH","ER","ES","ET","EU","FI","FJ","FK","FM","FO","FR","GA","GB","GD","GE","GF","GG","GH","GI","GL","GM","GN","GP","GQ","GR","GS","GT","GU","GW","GY","HK","HM","HN","HR","HT","HU","IC","ID","IE","IL","IM","IN","IO","IQ","IR","IS","IT","JE","JM","JO","JP","KE","KG","KH","KI","KM","KN","KP","KR","KW","KY","KZ","LA","LB","LC","LI","LK","LR","LS","LT","LU","LV","LY","MA","MC","MD","ME","MF","MG","MH","MK","ML","MM","MN","MO","MP","MQ","MR","MS","MT","MU","MV","MW","MX","MY","MZ","NA","NC","NE","NF","NG","NI","NL","NO","NP","NR","NU","NZ","OM","PA","PE","PF","PG","PH","PK","PL","PM","PN","PR","PS","PT","PW","PY","QA","RE","RO","RS","RU","RW","SA","SB","SC","SD","SE","SG","SH","SI","SJ","SK","SL","SM","SN","SO","SR","SS","ST","SV","SX","SY","SZ","TA","TC","TD","TF","TG","TH","TJ","TK","TL","TM","TN","TO","TR","TT","TV","TW","TZ","UA","UG","UM","UN","US","UY","UZ","VA","VC","VE","VG","VI","VN","VU","WF","WS","XK","YE","YT","ZA","ZM","ZW"]);</script>
 
-<div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
-    <span id="incomingCount" class="text-muted small"></span>
-    <select id="incomingPageLen" class="form-select form-select-sm" style="width:auto" title="Rows per page">
-        <option value="10">10</option>
-        <option value="25">25</option>
-        <option value="50">50</option>
-        <option value="-1">All</option>
-    </select>
-    <c:set var="destParam" value="destinationNameForSearch" scope="request"/>
-    <tiles:insert name="destination.select" />
-    <form method="GET" class="m-0">
-        <input type="hidden" name="destinationNameForSearch" value="<c:out value="${destinationNameForSearch}"/>">
-        <div class="input-group input-group-sm">
-            <input type="text" class="form-control" name="search"
-                   placeholder="Search login..." autocomplete="off"
-                   title="Search is performed across the Name (case-insensitive)"
-                   value="<c:out value="${param['search']}"/>">
-            <button class="btn btn-outline-secondary" type="submit" title="Search">
-                <i class="bi bi-search"></i>
-            </button>
+<div class="card border-0 shadow-sm mt-3">
+<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+    <i class="bi bi-people text-primary"></i>
+    <span class="fw-semibold">Data Users</span>
+    <div class="ms-auto d-flex flex-wrap align-items-center gap-2">
+        <c:set var="destParam" value="destinationNameForSearch" scope="request"/>
+        <tiles:insert name="destination.select" />
+        <form method="GET" class="m-0">
+            <input type="hidden" name="destinationNameForSearch" value="<c:out value="${destinationNameForSearch}"/>">
+            <div class="input-group input-group-sm">
+                <input type="text" class="form-control" name="search"
+                       placeholder="Search login..." autocomplete="off"
+                       title="Search is performed across the Name (case-insensitive)"
+                       value="<c:out value="${param['search']}"/>">
+                <button class="btn btn-outline-secondary btn-sm" type="submit" title="Search">
+                    <i class="bi bi-search"></i>
+                </button>
+            </div>
+        </form>
+        <div class="input-group input-group-sm flex-nowrap" style="width:auto" title="Page size">
+            <span class="input-group-text px-2"><i class="bi bi-list-ol"></i></span>
+            <select id="incomingPageLen" class="form-select form-select-sm" style="width:auto">
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="-1">All</option>
+            </select>
         </div>
-    </form>
-    <a href="<bean:message key="incoming.basepath"/>/edit/insert_form"
-       class="btn btn-sm btn-outline-success ms-auto"><i class="bi bi-plus-circle"></i> Create</a>
+        <a href="<bean:message key="incoming.basepath"/>/edit/insert_form"
+           class="btn btn-sm btn-outline-success"><i class="bi bi-plus-circle"></i> Create</a>
+    </div>
 </div>
-
+<div class="card-body p-0">
 <c:if test="${empty users}">
-    <div class="alert alert-info">No Data Users found based on these criteria.</div>
+    <div class="alert alert-info m-3 mb-2">No Data Users found based on these criteria.</div>
 </c:if>
-
 <c:if test="${not empty users}">
+<div class="table-responsive">
 <table id="usersTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
     <thead class="table-light">
         <tr>
@@ -91,6 +98,11 @@
         </c:forEach>
     </tbody>
 </table>
+</div>
+</c:if>
+</div>
+</div>
+<c:if test="${not empty users}">
 <script>
 $(document).ready(function() {
     var table = $('#usersTable').DataTable({
@@ -100,9 +112,8 @@ $(document).ready(function() {
         ordering:   true,
         info:       true,
         columnDefs: [{ orderable: false, targets: 'no-sort' }],
-        dom: "t<'d-flex align-items-start mt-2'i<'ms-auto'p>>"
+        dom: 't<"d-flex align-items-start mt-2 px-3 pb-2"i<"ms-auto"p>>'
     });
-    $('#incomingCount').html('<i class="bi bi-list-ul"></i> <strong>' + table.rows().count() + '</strong> user(s)');
     $('#incomingPageLen').val((function() { try { var v = parseInt(localStorage.getItem('incomingPageLen'), 10); return [10,25,50,-1].indexOf(v) >= 0 ? String(v) : '25'; } catch(e) { return '25'; } })());
     $('#incomingPageLen').on('change', function() {
         var len = parseInt(this.value);
@@ -112,4 +123,3 @@ $(document).ready(function() {
 });
 </script>
 </c:if>
-

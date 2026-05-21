@@ -75,6 +75,12 @@
 	line-height: 1.6em;
 }
 
+.dest-listbox {
+    width: 100%;
+    min-width: 0;
+    max-height: clamp(180px, 40vh, 380px);
+    overflow-y: auto;
+}
 .acc-help-btn {
     position: absolute; top: 50%; right: 3rem;
     transform: translateY(-50%);
@@ -169,8 +175,8 @@
 									autocomplete="off">
 							</div>
 							<div class="form-text mt-0 mb-1"><i class="bi bi-hand-index me-1"></i>Type to filter the list, then <strong>click</strong> a destination below to select it.</div>
-							<html:select property="fromDestination" styleId="fromDestination" styleClass="form-select form-select-sm"
-								size="20" style="min-width:280px;width:100%;height:220px;overflow-y:auto">
+							<html:select property="fromDestination" styleId="fromDestination" styleClass="form-select form-select-sm dest-listbox"
+								size="20" style="width:100%">
 								<html:options collection="destinations" property="name" labelProperty="name" />
 							</html:select>
 						</div>
@@ -213,8 +219,8 @@
 									autocomplete="off">
 							</div>
 							<div class="form-text mt-0 mb-1"><i class="bi bi-hand-index me-1"></i>Type to filter the list, then <strong>click</strong> a destination below to select it.</div>
-							<html:select property="sourceDestination" styleId="sourceDestination" styleClass="form-select form-select-sm"
-								size="20" style="min-width:280px;width:100%;height:220px;overflow-y:auto">
+							<html:select property="sourceDestination" styleId="sourceDestination" styleClass="form-select form-select-sm dest-listbox"
+								size="20" style="width:100%">
 								<html:options collection="destinations" property="name" labelProperty="name" />
 							</html:select>
 						</div>
@@ -310,7 +316,7 @@
 						<div class="col-sm-6">
 							<label for="ecUserName" class="form-label mb-1">Owner <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Only for the record" tabindex="0"></i></label>
 							<c:set var="ecUsers" value="${destinationActionForm.ecUserOptions}" />
-							<html:select property="ecUserName" styleId="ecUserName" styleClass="form-select form-select-sm">
+							<html:select property="ecUserName" styleId="ecUserName" styleClass="form-select form-select-sm" style="width:100%;max-width:100%">
 								<html:options collection="ecUsers" property="name" labelProperty="comment" />
 							</html:select>
 						</div>

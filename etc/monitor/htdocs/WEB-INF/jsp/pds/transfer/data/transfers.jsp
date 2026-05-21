@@ -10,30 +10,98 @@
 
 <%-- Status tabs + refresh --%>
 <c:set var="currentRefresh" value="${empty param['refreshPeriod'] ? '0' : param['refreshPeriod']}"/>
-<div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
-    <div class="d-flex flex-wrap gap-1">
-        <c:forEach var="transferStatus" items="${transferStatusOptions}">
-            <c:choose>
-                <c:when test="${transferStatus.id == currentTransferStatus.id}">
-                    <a href="?transferStatus=${transferStatus.id}&refreshPeriod=${currentRefresh}"
-                       class="badge text-decoration-none bg-primary"
-                       style="padding:0.35em 0.7em; font-size:0.8rem;">${transferStatus.name}</a>
-                </c:when>
-                <c:otherwise>
-                    <a href="?transferStatus=${transferStatus.id}&refreshPeriod=${currentRefresh}"
-                       class="badge text-decoration-none bg-secondary-subtle text-body"
-                       style="padding:0.35em 0.7em; font-size:0.8rem;">${transferStatus.name}</a>
-                </c:otherwise>
-            </c:choose>
-        </c:forEach>
+<div class="d-flex flex-wrap align-items-start gap-2 mb-3">
+
+    <%-- Submission: Arriving, Preset, Fetching --%>
+    <div>
+        <div class="text-muted mb-1" style="font-size:0.68rem; font-weight:600; letter-spacing:0.05em; text-transform:uppercase;">Submission</div>
+        <div class="d-flex flex-wrap gap-1">
+            <a href="?transferStatus=INIT&refreshPeriod=${currentRefresh}" class="badge rounded-pill fw-normal text-decoration-none border ${currentTransferStatus.id == 'INIT' ? 'bg-primary text-white border-primary' : 'bg-primary-subtle text-primary-emphasis border-primary-subtle'}">Arriving</a>
+            <a href="?transferStatus=SCHE&refreshPeriod=${currentRefresh}" class="badge rounded-pill fw-normal text-decoration-none border ${currentTransferStatus.id == 'SCHE' ? 'bg-warning text-dark border-warning' : 'bg-warning-subtle text-warning-emphasis border-warning-subtle'}">Preset</a>
+            <a href="?transferStatus=FETC&refreshPeriod=${currentRefresh}" class="badge rounded-pill fw-normal text-decoration-none border ${currentTransferStatus.id == 'FETC' ? 'bg-primary text-white border-primary' : 'bg-primary-subtle text-primary-emphasis border-primary-subtle'}">Fetching</a>
+        </div>
     </div>
-    <div class="d-flex align-items-center gap-1 flex-shrink-0">
+
+    <div class="vr align-self-stretch d-none d-md-flex"></div>
+
+    <%-- Processing: StandBy, Queued, Transferring, Done --%>
+    <div>
+        <div class="text-muted mb-1" style="font-size:0.68rem; font-weight:600; letter-spacing:0.05em; text-transform:uppercase;">Processing</div>
+        <div class="d-flex flex-wrap gap-1">
+            <a href="?transferStatus=HOLD&refreshPeriod=${currentRefresh}" class="badge rounded-pill fw-normal text-decoration-none border ${currentTransferStatus.id == 'HOLD' ? 'bg-warning text-dark border-warning' : 'bg-warning-subtle text-warning-emphasis border-warning-subtle'}">StandBy</a>
+            <a href="?transferStatus=WAIT&refreshPeriod=${currentRefresh}" class="badge rounded-pill fw-normal text-decoration-none border ${currentTransferStatus.id == 'WAIT' ? 'bg-warning text-dark border-warning' : 'bg-warning-subtle text-warning-emphasis border-warning-subtle'}">Queued</a>
+            <a href="?transferStatus=EXEC&refreshPeriod=${currentRefresh}" class="badge rounded-pill fw-normal text-decoration-none border ${currentTransferStatus.id == 'EXEC' ? 'bg-primary text-white border-primary' : 'bg-primary-subtle text-primary-emphasis border-primary-subtle'}">Transferring</a>
+            <a href="?transferStatus=DONE&refreshPeriod=${currentRefresh}" class="badge rounded-pill fw-normal text-decoration-none border ${currentTransferStatus.id == 'DONE' ? 'bg-success text-white border-success' : 'bg-success-subtle text-success-emphasis border-success-subtle'}">Done</a>
+        </div>
+    </div>
+
+    <div class="vr align-self-stretch d-none d-md-flex"></div>
+
+    <%-- Failure Handling: ReQueued, Stopped, Failed, Interrupted --%>
+    <div>
+        <div class="text-muted mb-1" style="font-size:0.68rem; font-weight:600; letter-spacing:0.05em; text-transform:uppercase;">Failure Handling</div>
+        <div class="d-flex flex-wrap gap-1">
+            <a href="?transferStatus=RETR&refreshPeriod=${currentRefresh}" class="badge rounded-pill fw-normal text-decoration-none border ${currentTransferStatus.id == 'RETR' ? 'bg-warning text-dark border-warning' : 'bg-warning-subtle text-warning-emphasis border-warning-subtle'}">ReQueued</a>
+            <a href="?transferStatus=STOP&refreshPeriod=${currentRefresh}" class="badge rounded-pill fw-normal text-decoration-none border ${currentTransferStatus.id == 'STOP' ? 'bg-secondary text-white border-secondary' : 'bg-secondary-subtle text-secondary-emphasis border-secondary-subtle'}">Stopped</a>
+            <a href="?transferStatus=FAIL&refreshPeriod=${currentRefresh}" class="badge rounded-pill fw-normal text-decoration-none border ${currentTransferStatus.id == 'FAIL' ? 'bg-danger text-white border-danger' : 'bg-danger-subtle text-danger-emphasis border-danger-subtle'}">Failed</a>
+            <a href="?transferStatus=INTR&refreshPeriod=${currentRefresh}" class="badge rounded-pill fw-normal text-decoration-none border ${currentTransferStatus.id == 'INTR' ? 'bg-secondary text-white border-secondary' : 'bg-secondary-subtle text-secondary-emphasis border-secondary-subtle'}">Interrupted</a>
+        </div>
+    </div>
+
+    <%-- Info toggle --%>
+    <button class="btn btn-sm btn-link p-0 text-muted align-self-end mb-1" type="button" data-bs-toggle="collapse" data-bs-target="#transferStatusLegend" title="Status legend">
+        <i class="bi bi-info-circle"></i>
+    </button>
+
+    <%-- Refresh bar pushed to the right --%>
+    <div class="ms-auto d-flex align-items-center gap-1 flex-shrink-0 align-self-end">
         <i class="bi bi-arrow-clockwise text-muted me-1" style="font-size:0.85rem;" title="Auto-refresh interval"></i>
         <a href="#" class="date-pill refresh-pill ${currentRefresh == '0' ? 'active' : ''}" data-value="0">Off</a>
         <a href="#" class="date-pill refresh-pill ${currentRefresh == '30' ? 'active' : ''}" data-value="30">30s</a>
         <a href="#" class="date-pill refresh-pill ${currentRefresh == '60' ? 'active' : ''}" data-value="60">1m</a>
         <a href="#" class="date-pill refresh-pill ${currentRefresh == '300' ? 'active' : ''}" data-value="300">5m</a>
         <a href="#" class="date-pill refresh-pill ${currentRefresh == '600' ? 'active' : ''}" data-value="600">10m</a>
+    </div>
+
+</div>
+
+<div class="collapse mb-3" id="transferStatusLegend">
+    <div class="px-3 py-2 mt-1" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-radius:var(--bs-border-radius); border:1px solid var(--bs-border-color);">
+        <div class="row g-3">
+            <%-- Submission --%>
+            <div class="col-12 col-md-4">
+                <strong class="d-block mb-1">Submission</strong>
+                <p class="text-muted mb-2" style="font-size:0.78rem;">Submitting a data file to the <%=System.getProperty("monitor.nickName")%> data store and registering a transfer request.</p>
+                <div class="fw-semibold text-muted mb-1" style="font-size:0.78rem;">Push Mode &mdash; metadata and file pushed directly</div>
+                <div class="mb-2"><span class="badge bg-primary me-1">Arriving</span> Metadata registered; file content being uploaded to the data store</div>
+                <div class="fw-semibold text-muted mb-1" style="font-size:0.78rem;">Fetch Mode &mdash; metadata first, file retrieved asynchronously</div>
+                <div class="mb-1"><span class="badge bg-warning text-dark me-1">Preset</span> Metadata registered; retrieval scheduled, awaiting the Data Retrieval Scheduler</div>
+                <div><span class="badge bg-primary me-1">Fetching</span> Data Retrieval Scheduler actively retrieving the file into the data store</div>
+            </div>
+            <%-- Processing --%>
+            <div class="col-12 col-md-4">
+                <strong class="d-block mb-1">Processing</strong>
+                <p class="text-muted mb-2" style="font-size:0.78rem;">Transfer request processed by <%=System.getProperty("monitor.nickName")%> schedulers; file downloaded via data portal or disseminated to a remote site.</p>
+                <div class="fw-semibold text-muted mb-1" style="font-size:0.78rem;">Data Portal &mdash; file waiting to be retrieved</div>
+                <div class="mb-1"><span class="badge bg-warning text-dark me-1">StandBy</span> Submitted with standby option; ignored by the Data Transfer Scheduler</div>
+                <div class="mb-2"><span class="badge bg-success me-1">Done</span> Data file successfully downloaded</div>
+                <div class="fw-semibold text-muted mb-1" style="font-size:0.78rem;">Dissemination &mdash; file sent to a remote site</div>
+                <div class="mb-1"><span class="badge bg-warning text-dark me-1">Queued</span> Waiting to be picked up by the Data Transfer Scheduler</div>
+                <div class="mb-1"><span class="badge bg-primary me-1">Transferring</span> Being actively disseminated to the remote site</div>
+                <div><span class="badge bg-success me-1">Done</span> Transmission to the remote site completed successfully</div>
+            </div>
+            <%-- Failure Handling --%>
+            <div class="col-12 col-md-4">
+                <strong class="d-block mb-1">Failure Handling</strong>
+                <p class="text-muted mb-2" style="font-size:0.78rem;">On error, the request is assigned a status; the scheduler may retry or remain in error state depending on destination/host configuration.</p>
+                <div class="fw-semibold text-muted mb-1" style="font-size:0.78rem;">Error State</div>
+                <div class="mb-1"><span class="badge bg-danger me-1">Failed</span> Dissemination to the remote site has failed</div>
+                <div class="mb-1"><span class="badge bg-secondary me-1">Interrupted</span> Processing interrupted (e.g. destination or <%=System.getProperty("monitor.nickName")%> restart)</div>
+                <div class="mb-2"><span class="badge bg-secondary me-1">Stopped</span> Stopped manually, due to an unrecoverable error, or because the maximum number of retries was reached</div>
+                <div class="fw-semibold text-muted mb-1" style="font-size:0.78rem;">Retry &mdash; automatic or manual</div>
+                <div><span class="badge bg-warning text-dark me-1">ReQueued</span> Error not considered unrecoverable; re-queued for retry. Can also be manually requeued. Retries may be rescheduled to avoid too-frequent attempts, with configurable limits per destination and host</div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -67,6 +135,7 @@
                                     <option value="25">25</option>
                                     <option value="50">50</option>
                                     <option value="100">100</option>
+                                    <option value="250">250</option>
                                 </select>
                             </div>
                         </div>
@@ -469,8 +538,8 @@ function _updateTransferSearchBanner(queryError, total, hasSearch) {
             { title: 'Mbits/s',       orderable: true,  className: 'text-end', render: function (d) { return d; } },
             { title: 'Prior',         orderable: true,  className: 'text-end' }
         ],
-        pageLength: (function() { try { var v = parseInt(localStorage.getItem('transferPageLen'), 10); return [10,25,50,100].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })(),
-        lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+        pageLength: (function() { try { var v = parseInt(localStorage.getItem('transferPageLen'), 10); return [10,25,50,100,250].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })(),
+        lengthMenu: [[10, 25, 50, 100, 250], [10, 25, 50, 100, 250]],
         language: {
             emptyTable:     'No Data Transfers found for the selected criteria.',
             loadingRecords: 'Loading&hellip;',
@@ -484,7 +553,7 @@ function _updateTransferSearchBanner(queryError, total, hasSearch) {
         }
     });
 
-    var _savedPageLen = (function() { try { var v = parseInt(localStorage.getItem('transferPageLen'), 10); return [10,25,50,100].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })();
+    var _savedPageLen = (function() { try { var v = parseInt(localStorage.getItem('transferPageLen'), 10); return [10,25,50,100,250].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })();
     $('#transferPageLen').val(_savedPageLen);
 
     $('#transferPageLen').on('change', function () {

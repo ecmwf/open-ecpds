@@ -13,6 +13,30 @@
 </c:if>
 
 <c:if test="${not empty policies}">
+<div class="card border-0 shadow-sm mt-3">
+<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+    <i class="bi bi-shield-check text-primary"></i>
+    <span class="fw-semibold">Data Policies</span>
+    <div class="ms-auto d-flex align-items-center gap-2">
+        <div class="input-group input-group-sm" style="width:auto">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input type="text" id="policiesSearch" class="form-control" placeholder="Search policies..." style="min-width:180px">
+        </div>
+        <div class="input-group flex-nowrap" style="width:auto" title="Page size">
+            <span class="input-group-text px-2"><i class="bi bi-list-ol"></i></span>
+            <select id="policiesPageLen" class="form-select form-select-sm" style="width:auto">
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+                <option value="250">250</option>
+            </select>
+        </div>
+        <a href="<bean:message key="policy.basepath"/>/edit/insert_form" class="btn btn-sm btn-outline-success"><i class="bi bi-plus-circle"></i> Create</a>
+    </div>
+</div>
+<div class="card-body p-0">
+<div class="table-responsive">
 <table id="policiesTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
     <thead class="table-light">
         <tr>
@@ -47,22 +71,25 @@
     </c:forEach>
     </tbody>
 </table>
+</div>
+</div>
+</div>
 <script>
 $(document).ready(function() {
-    var createUrl = '<bean:message key="policy.basepath"/>/edit/insert_form';
     var table = $('#policiesTable').DataTable({
         paging:     true,
-        pageLength: 25,
+        pageLength: (function() { try { var v = parseInt(localStorage.getItem('policiesPageLen'), 10); return [10,25,50,100,250].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })(),
         searching:  true,
         ordering:   true,
         info:       true,
         columnDefs: [{ orderable: false, targets: -1 }],
-        dom: "<'d-flex align-items-center gap-2 mb-3'<'count-slot'>l<'ms-auto d-flex align-items-center gap-2'f<'policies-create-slot'>>>t<'d-flex align-items-start mt-2'i<'ms-auto'p>>"
+        dom: 't<"d-flex align-items-start mt-2 px-3 pb-2"i<"ms-auto"p>>'
     });
-    $('.count-slot').html('<span class="text-muted small"><i class="bi bi-list-ul"></i> <strong>' + table.rows().count() + '</strong> policy(ies)</span>');
-    $('.policies-create-slot').html(
-        '<a href="' + createUrl + '" class="btn btn-sm btn-outline-success"><i class="bi bi-plus-circle"></i> Create</a>'
-    );
+    var _len = (function() { try { var v = parseInt(localStorage.getItem('policiesPageLen'), 10); return [10,25,50,100,250].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })();
+    table.page.len(_len).draw(false);
+    $('#policiesPageLen').val(_len);
+    $('#policiesPageLen').on('change', function() { var len = +this.value; try { localStorage.setItem('policiesPageLen', len); } catch(e) {} table.page.len(len).draw(); });
+    $('#policiesSearch').on('keyup', function() { table.search(this.value).draw(); });
 });
 </script>
 </c:if>

@@ -70,10 +70,10 @@
 			</div>
 		</div>
 		<div class="col-lg-6">
-			<div class="row g-2" style="max-width:480px">
+			<div class="row g-2">
 
-			  <div class="col-12">
-			    <div class="card assoc-card">
+			  <div class="col-sm-6">
+			    <div class="card assoc-card h-100">
 			      <div class="card-header">
 			        <i class="bi bi-shield-check text-secondary"></i>
 			        <strong>Data Policies</strong>
@@ -88,6 +88,31 @@
 			              <c:forEach var="policy" items="${incoming.associatedIncomingPolicies}">
 			                <span class="assoc-chip">
 			                  <a href="<bean:message key="policy.basepath"/>/${policy.id}" title="${policy.comment}" class="text-decoration-none text-body">${policy.id}</a>
+			                </span>
+			              </c:forEach>
+			            </div>
+			          </c:otherwise>
+			        </c:choose>
+			      </div>
+			    </div>
+			  </div>
+
+			  <div class="col-sm-6">
+			    <div class="card assoc-card h-100">
+			      <div class="card-header">
+			        <i class="bi bi-gear text-secondary"></i>
+			        <strong>Permissions</strong>
+			      </div>
+			      <div class="card-body p-2">
+			        <c:choose>
+			          <c:when test="${empty incoming.associatedOperations}">
+			            <p class="text-muted small mb-0"><em>No permissions assigned.</em></p>
+			          </c:when>
+			          <c:otherwise>
+			            <div class="d-flex flex-wrap">
+			              <c:forEach var="operation" items="${incoming.associatedOperations}">
+			                <span class="assoc-chip">
+			                  <span title="${operation.comment}">${operation.name}</span>
 			                </span>
 			              </c:forEach>
 			            </div>
@@ -122,59 +147,70 @@
 			    </div>
 			  </div>
 
-			  <div class="col-12">
-			    <div class="card assoc-card">
-			      <div class="card-header">
-			        <i class="bi bi-gear text-secondary"></i>
-			        <strong>Permissions</strong>
-			      </div>
-			      <div class="card-body p-2">
-			        <c:choose>
-			          <c:when test="${empty incoming.associatedOperations}">
-			            <p class="text-muted small mb-0"><em>No permissions assigned.</em></p>
-			          </c:when>
-			          <c:otherwise>
-			            <div class="d-flex flex-wrap">
-			              <c:forEach var="operation" items="${incoming.associatedOperations}">
-			                <span class="assoc-chip">
-			                  <span title="${operation.comment}">${operation.name}</span>
-			                </span>
-			              </c:forEach>
-			            </div>
-			          </c:otherwise>
-			        </c:choose>
-			      </div>
-			    </div>
-			  </div>
-
-			  <div class="col-12">
-			    <div class="card assoc-card">
-			      <div class="card-header">
-			        <i class="bi bi-plug text-secondary"></i>
-			        <strong>Current Sessions</strong>
-			      </div>
-			      <div class="card-body p-2">
-			        <c:choose>
-			          <c:when test="${empty incoming.incomingConnections}">
-			            <p class="text-muted small mb-0"><em>No active sessions.</em></p>
-			          </c:when>
-			          <c:otherwise>
-			            <div class="d-flex flex-wrap">
-			              <c:forEach var="incomingSession" items="${incoming.incomingConnections}">
-			                <span class="assoc-chip">
-			                  <span title="Mover: ${incomingSession.dataMoverName} | Duration: ${incomingSession.formatedDuration}">${incomingSession.protocol} &middot; ${incomingSession.remoteIpAddress}</span>
-			                </span>
-			              </c:forEach>
-			            </div>
-			          </c:otherwise>
-			        </c:choose>
-			      </div>
-			    </div>
-			  </div>
-
 			</div>
 		</div>
 	</div>
+
+<div class="mt-3">
+	<div class="card assoc-card">
+		<div class="card-header">
+			<i class="bi bi-plug text-secondary"></i>
+			<strong>Current Sessions</strong>
+		</div>
+		<c:choose>
+			<c:when test="${empty incoming.incomingConnections}">
+				<div class="card-body p-2">
+					<p class="text-muted small mb-0"><em>No active sessions.</em></p>
+				</div>
+			</c:when>
+			<c:otherwise>
+				<div class="table-responsive">
+					<table id="incomingSessionsTable" class="table table-sm table-hover table-striped align-middle mb-0" style="width:100%">
+						<thead class="table-light">
+							<tr>
+								<th>Session ID</th>
+								<th>Protocol</th>
+								<th>Remote IP</th>
+								<th>Data Mover</th>
+								<th>Start Time (UTC)</th>
+								<th>Duration</th>
+							</tr>
+						</thead>
+						<tbody>
+							<c:forEach var="s" items="${incoming.incomingConnections}">
+								<tr>
+									<td><code>${s.id}</code></td>
+									<td><span class="badge bg-secondary-subtle text-secondary-emphasis border">${s.protocol}</span></td>
+									<td>${s.remoteIpAddress}</td>
+									<td>${s.dataMoverName}</td>
+									<td data-order="${s.startTime}"><span class="ic-ts" data-ts="${s.startTime}">${s.startTime}</span></td>
+									<td>${s.formatedDuration}</td>
+								</tr>
+							</c:forEach>
+						</tbody>
+					</table>
+				</div>
+				<script>
+				$(function() {
+					document.querySelectorAll('.ic-ts').forEach(function(el) {
+						var ts = parseInt(el.getAttribute('data-ts'), 10);
+						if (ts) el.textContent = new Date(ts).toISOString().replace('T', ' ').substring(0, 19);
+					});
+					if ($.fn.DataTable) {
+						$('#incomingSessionsTable').DataTable({
+							paging: false, searching: false, ordering: true,
+							order: [[4, 'desc']],
+							scrollY: '220px', scrollCollapse: true,
+							dom: 't',
+							columnDefs: [{ orderable: false, targets: [0] }]
+						});
+					}
+				});
+				</script>
+			</c:otherwise>
+		</c:choose>
+	</div>
+</div>
 
 <div class="mt-3">
 	<div class="card">

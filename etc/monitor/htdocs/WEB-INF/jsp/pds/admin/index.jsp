@@ -27,7 +27,7 @@
     <div class="admin-tool p-3 d-flex align-items-start gap-3">
         <i class="bi bi-hourglass-split text-secondary flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
         <div>
-            <span class="tool-title">Outstanding Files</span>
+            <span class="tool-title">Outstanding Transfers</span>
             <p class="tool-desc">View and manage files that are queued but have not yet been transferred. Use this tool
             to identify stuck or failed transfers matching a given file pattern, and requeue them for processing.</p>
         </div>

@@ -1289,7 +1289,7 @@
 
 	<definition name=".pds.admin.requeue.list"
 		extends=".pds.admin">
-		<put name="title" value="Outstanding Files" />
+		<put name="title" value="Outstanding Transfers" />
 		<put name="content"
 			value="/WEB-INF/jsp/pds/admin/requeue/requeued.jsp" />
 		<put name="subcontent"

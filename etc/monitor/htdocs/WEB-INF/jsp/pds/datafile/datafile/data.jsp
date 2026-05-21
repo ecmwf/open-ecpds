@@ -118,12 +118,38 @@ Data File: <strong><c:out value="${datafile.id}"/></strong>
 </div>
 
 <%-- Metadata table --%>
-<p class="fw-bold mb-1 mt-3">Meta Data for ${datafile.id}</p>
 <c:if test="${empty datafile.metaData}">
-<div class="alert alert-info mt-1">No Meta Data for ${datafile.id}</div>
+<div class="card border-0 shadow-sm mb-3 mt-3">
+<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+<i class="bi bi-tags text-primary"></i>
+<span class="fw-semibold">Meta Data</span>
+</div>
+<div class="card-body">
+<div class="alert alert-info mb-0">No Meta Data for <c:out value="${datafile.id}"/></div>
+</div>
+</div>
 </c:if>
 <c:if test="${not empty datafile.metaData}">
-<table id="metadataTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
+<div class="card border-0 shadow-sm mb-3 mt-3">
+<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+<i class="bi bi-tags text-primary"></i>
+<span class="fw-semibold">Meta Data</span>
+<div class="ms-auto d-flex align-items-center gap-2">
+  <div class="input-group flex-nowrap" style="width:auto" title="Page size">
+    <span class="input-group-text px-2"><i class="bi bi-list-ol"></i></span>
+    <select id="dfMetaPageLen" class="form-select form-select-sm" style="width:auto">
+      <option value="10">10</option>
+      <option value="25">25</option>
+      <option value="50">50</option>
+      <option value="100">100</option>
+      <option value="250">250</option>
+    </select>
+  </div>
+</div>
+</div>
+<div class="card-body p-0">
+<div class="table-responsive">
+<table id="metadataTable" class="table table-sm table-hover table-striped align-middle mb-0" style="width:100%">
 <thead class="table-light">
 <tr>
 <th>Name</th>
@@ -139,16 +165,68 @@ Data File: <strong><c:out value="${datafile.id}"/></strong>
 </c:forEach>
 </tbody>
 </table>
+</div>
+</div>
+</div>
 <script>
 $(document).ready(function() {
-$('#metadataTable').DataTable({ paging: false, searching: false, ordering: true, info: false });
+var _dfMetaLen = (function() { try { var v = parseInt(localStorage.getItem('dfMetaPageLen'), 10); return [10,25,50,100,250].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })();
+var dfMetaTable = $('#metadataTable').DataTable({ paging: true, pageLength: _dfMetaLen, searching: false, ordering: true, info: true,
+dom: 't<"d-flex align-items-start mt-2 px-3 pb-2"i<"ms-auto"p>>' });
+$('#dfMetaPageLen').val(_dfMetaLen);
+$('#dfMetaPageLen').on('change', function() {
+    var len = +this.value;
+    try { localStorage.setItem('dfMetaPageLen', len); } catch(e) {}
+    dfMetaTable.page.len(len).draw();
+});
 });
 </script>
 </c:if>
 
 <%-- Transfers table --%>
-<p class="fw-bold mb-1 mt-3">Transfers for this datafile</p>
-<table id="datafileTransfersTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
+<div class="card border-0 shadow-sm mb-3 mt-3">
+<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+<i class="bi bi-arrow-left-right text-primary"></i>
+<span class="fw-semibold">Transfers for this datafile</span>
+<div class="ms-auto d-flex align-items-center gap-2">
+  <div class="dropdown">
+    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="dfTransColModeBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" data-bs-boundary="viewport" aria-expanded="false">
+      <i class="bi bi-layout-three-columns me-1"></i>Auto
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dfTransColModeBtn">
+      <li><a class="dropdown-item" href="#" data-col-mode="auto"><i class="bi bi-check me-1"></i><strong>Auto</strong><small class="d-block text-muted ms-4">Adapts to screen width</small></a></li>
+      <li><a class="dropdown-item" href="#" data-col-mode="all"><strong>All</strong><small class="d-block text-muted ms-0">All columns visible</small></a></li>
+      <li><a class="dropdown-item" href="#" data-col-mode="compact"><strong>Compact</strong><small class="d-block text-muted ms-0">Hides: Host, %, Mbits/s, Prior</small></a></li>
+      <li><hr class="dropdown-divider"></li>
+      <li><a class="dropdown-item" href="#" data-col-mode="custom"><strong>Custom</strong><small class="d-block text-muted ms-0">Choose individual columns</small></a></li>
+      <li id="dfTransCustomColChkPanel" style="display:none;">
+        <div class="px-3 py-2 d-flex flex-column gap-1" style="min-width:160px;">
+          <div class="form-check mb-0"><input class="form-check-input dft-col-chk" type="checkbox" id="dftchk-0" data-col="0" checked disabled><label class="form-check-label text-muted" for="dftchk-0">Destination <small>(required)</small></label></div>
+          <div class="form-check mb-0"><input class="form-check-input dft-col-chk" type="checkbox" id="dftchk-1" data-col="1" checked><label class="form-check-label" for="dftchk-1">Transfer Host</label></div>
+          <div class="form-check mb-0"><input class="form-check-input dft-col-chk" type="checkbox" id="dftchk-2" data-col="2" checked><label class="form-check-label" for="dftchk-2">Sched. Time</label></div>
+          <div class="form-check mb-0"><input class="form-check-input dft-col-chk" type="checkbox" id="dftchk-3" data-col="3" checked disabled><label class="form-check-label text-muted" for="dftchk-3">Target <small>(required)</small></label></div>
+          <div class="form-check mb-0"><input class="form-check-input dft-col-chk" type="checkbox" id="dftchk-4" data-col="4" checked><label class="form-check-label" for="dftchk-4">%</label></div>
+          <div class="form-check mb-0"><input class="form-check-input dft-col-chk" type="checkbox" id="dftchk-5" data-col="5" checked><label class="form-check-label" for="dftchk-5">Mbits/s</label></div>
+          <div class="form-check mb-0"><input class="form-check-input dft-col-chk" type="checkbox" id="dftchk-6" data-col="6" checked><label class="form-check-label" for="dftchk-6">Prior</label></div>
+        </div>
+      </li>
+    </ul>
+  </div>
+  <div class="input-group flex-nowrap" style="width:auto" title="Page size">
+    <span class="input-group-text px-2"><i class="bi bi-list-ol"></i></span>
+    <select id="dfTransPageLen" class="form-select form-select-sm" style="width:auto">
+      <option value="10">10</option>
+      <option value="25">25</option>
+      <option value="50">50</option>
+      <option value="100">100</option>
+      <option value="250">250</option>
+    </select>
+  </div>
+</div>
+</div>
+<div class="card-body p-0">
+<div class="table-responsive">
+<table id="datafileTransfersTable" class="table table-sm table-hover table-striped align-middle mb-0" style="width:100%">
 <thead class="table-light">
 <tr>
 <th>Destination</th>
@@ -200,16 +278,49 @@ $('#metadataTable').DataTable({ paging: false, searching: false, ordering: true,
 </c:forEach>
 </tbody>
 </table>
+</div>
+</div>
+</div>
 <script>
 $(document).ready(function() {
-$('#datafileTransfersTable').DataTable({
+var _dftLen = (function() { try { var v = parseInt(localStorage.getItem('dfTransPageLen'), 10); return [10,25,50,100,250].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })();
+var dftTable = $('#datafileTransfersTable').DataTable({
 paging:    true,
-pageLength: 25,
-searching: true,
+pageLength: _dftLen,
+searching: false,
 ordering:  true,
 info:      true,
-order:     [[2, 'asc']]
+order:     [[2, 'asc']],
+dom: 't<"d-flex align-items-start mt-2 px-3 pb-2"i<"ms-auto"p>>'
 });
+$('#dfTransPageLen').val(_dftLen);
+$('#dfTransPageLen').on('change', function() {
+    var len = +this.value;
+    try { localStorage.setItem('dfTransPageLen', len); } catch(e) {}
+    dftTable.page.len(len).draw();
+});
+// Cols:Auto
+var _dftColMode = (function() { try { return localStorage.getItem('dfTransColMode') || 'auto'; } catch(e) { return 'auto'; } })();
+var _dftCustomCols = (function() { try { var s = localStorage.getItem('dfTransCustomCols'); return s ? JSON.parse(s) : [0,1,2,3,4,5,6]; } catch(e) { return [0,1,2,3,4,5,6]; } })();
+var _DFT_MD = [4,5,6];
+var _DFT_SM = [1,2];
+function _dftShowCols(hide) { dftTable.columns().every(function(i) { dftTable.column(i).visible(hide.indexOf(i) === -1, false); }); dftTable.columns.adjust(); }
+function _dftApplyCustom() { dftTable.columns().every(function(i) { var v = _dftCustomCols.indexOf(i) !== -1; if (i === 0 || i === 3) v = true; dftTable.column(i).visible(v, false); }); dftTable.columns.adjust(); }
+function _dftApplyAuto() { if (_dftColMode !== 'auto') return; var w = window.innerWidth; if (w < 768) _dftShowCols(_DFT_MD.concat(_DFT_SM)); else if (w < 992) _dftShowCols(_DFT_MD); else _dftShowCols([]); }
+function _dftApplyMode(mode) {
+    var label = mode.charAt(0).toUpperCase() + mode.slice(1);
+    $('#dfTransColModeBtn').html('<i class="bi bi-layout-three-columns me-1"></i>' + label);
+    $('#dfTransColModeBtn').toggleClass('btn-outline-secondary', mode === 'auto').toggleClass('btn-primary', mode !== 'auto');
+    document.getElementById('dfTransCustomColChkPanel').style.display = mode === 'custom' ? '' : 'none';
+    $('#dfTransColModeBtn').closest('.dropdown').find('[data-col-mode]').each(function() { $(this).find('i.bi-check').remove(); if ($(this).data('col-mode') === mode) $(this).prepend('<i class="bi bi-check me-1"></i>'); });
+    if (mode === 'auto') _dftApplyAuto(); else if (mode === 'all') _dftShowCols([]); else if (mode === 'compact') _dftShowCols([1,4,5,6]); else if (mode === 'custom') { _dftApplyCustom(); document.querySelectorAll('.dft-col-chk').forEach(function(c) { c.checked = _dftCustomCols.indexOf(+c.dataset.col) !== -1; }); }
+}
+document.querySelectorAll('.dft-col-chk').forEach(function(chk) {
+    chk.addEventListener('change', function() { var col = +this.dataset.col; var idx = _dftCustomCols.indexOf(col); if (this.checked && idx === -1) _dftCustomCols.push(col); else if (!this.checked && idx !== -1) _dftCustomCols.splice(idx, 1); try { localStorage.setItem('dfTransCustomCols', JSON.stringify(_dftCustomCols)); } catch(e) {} if (_dftColMode === 'custom') _dftApplyCustom(); });
+});
+$('#dfTransColModeBtn').closest('.dropdown').on('click', '[data-col-mode]', function(e) { e.preventDefault(); _dftColMode = $(this).data('col-mode'); try { localStorage.setItem('dfTransColMode', _dftColMode); } catch(e) {} _dftApplyMode(_dftColMode); });
+$(window).on('resize.dft', function() { _dftApplyAuto(); });
+_dftApplyMode(_dftColMode);
 });
 </script>
 </c:if>

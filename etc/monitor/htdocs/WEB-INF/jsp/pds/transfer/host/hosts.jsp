@@ -21,6 +21,7 @@
                                     <option value="25">25</option>
                                     <option value="50">50</option>
                                     <option value="100">100</option>
+                                    <option value="250">250</option>
                                 </select>
                             </div>
                         </div>
@@ -426,7 +427,7 @@ function _updateHostSearchBanner(queryError, total, hasSearch) {
                     d.hostSearch = $('#hostSearch').val() || '';
                 }
             },
-            pageLength: (function() { try { var v = parseInt(localStorage.getItem('hostsPageLen'), 10); return [10,25,50,100].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })(),
+            pageLength: (function() { try { var v = parseInt(localStorage.getItem('hostsPageLen'), 10); return [10,25,50,100,250].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })(),
             lengthChange: false,
             searching: false, autoWidth: false,
             order: [],

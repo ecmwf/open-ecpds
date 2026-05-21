@@ -6,16 +6,33 @@
 
 <tiles:insert name="date.select" />
 
-<form id="userEventSearchForm">
-<div class="input-group input-group-sm mb-2" style="max-width:520px">
-<span class="input-group-text"><i class="bi bi-search"></i></span>
-<input id="userEventSearch" class="form-control" name="search" type="text" placeholder="Search.." title="Search is performed across the Web User, Action and Comment in case-sensitive" value="${param['search']}">
-<button class="btn btn-outline-secondary" type="submit">Search</button>
+<div class="card border-0 shadow-sm mt-3">
+<div class="card-header d-flex align-items-center gap-2 flex-wrap" style="background:var(--bs-secondary-bg)">
+<i class="bi bi-clock-history text-primary"></i>
+<span class="fw-semibold">Events for <auth:link basePathKey="user.basepath" href="">All Web Users</auth:link></span>
+<div class="ms-auto d-flex align-items-center gap-2">
+  <form id="userEventSearchForm" class="m-0">
+    <div class="input-group input-group-sm">
+      <span class="input-group-text"><i class="bi bi-search"></i></span>
+      <input id="userEventSearch" class="form-control" name="search" type="text" placeholder="Search.." title="Search is performed across the Web User, Action and Comment in case-sensitive" value="${param['search']}" style="min-width:180px">
+      <button class="btn btn-outline-secondary btn-sm" type="submit">Search</button>
+    </div>
+  </form>
+  <div class="input-group input-group-sm flex-nowrap" style="width:auto" title="Page size">
+    <span class="input-group-text px-2"><i class="bi bi-list-ol"></i></span>
+    <select id="userEventPageLen" class="form-select form-select-sm" style="width:auto">
+      <option value="10">10</option>
+      <option value="25">25</option>
+      <option value="50">50</option>
+      <option value="100">100</option>
+      <option value="250">250</option>
+    </select>
+  </div>
 </div>
-</form>
-
-<p class="fw-bold mb-1 mt-2">Events for <auth:link basePathKey="user.basepath" href="">All Web Users</auth:link></p>
-<table id="userEventTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
+</div>
+<div class="card-body p-0">
+<div class="table-responsive">
+<table id="userEventTable" class="table table-sm table-hover table-striped align-middle mb-0" style="width:100%">
     <thead class="table-light">
         <tr>
             <th title="Time (UTC)">Time</th>
@@ -29,6 +46,9 @@
     </thead>
     <tbody></tbody>
 </table>
+</div>
+</div>
+</div>
 
 <script>
 var _userEventTable;
@@ -49,7 +69,7 @@ $(function() {
                 d.search = $('#userEventSearch').val() || '';
             }
         },
-        pageLength: 25,
+        pageLength: (function() { try { var v = parseInt(localStorage.getItem('userEventPageLen'), 10); return [10,25,50,100,250].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })(),
         searching: false,
         autoWidth: false,
         order: [[0, 'desc']],
@@ -66,12 +86,19 @@ $(function() {
         createdRow: function(row, data) {
             $('td', row).each(function(i) { $(this).html(data[i]); });
         },
-        dom: '<"d-flex align-items-start justify-content-between mt-2"i p>t<"d-flex align-items-start justify-content-between mt-2"i p>',
+        dom: 't<"d-flex align-items-start mt-2 px-3 pb-2"i<"ms-auto"p>>',
         language: {
             info: 'Showing _START_-_END_ of _TOTAL_',
             processing: 'Loading...',
             emptyTable: 'No Web Event Log available with the criteria selected'
         }
+    });
+    var _ueLen = (function() { try { var v = parseInt(localStorage.getItem('userEventPageLen'), 10); return [10,25,50,100,250].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })();
+    $('#userEventPageLen').val(_ueLen);
+    $('#userEventPageLen').on('change', function() {
+        var len = +this.value;
+        try { localStorage.setItem('userEventPageLen', len); } catch(e) {}
+        _userEventTable.page.len(len).draw();
     });
     $('#userEventSearchForm').on('submit', function(e) {
         e.preventDefault();
