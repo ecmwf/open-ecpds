@@ -199,7 +199,6 @@ public class DeleteTransfersAction extends PDSAction {
         new ExecutorRepository<>(exceptions, processedCount, form.getActionTransfers()) {
             @Override
             public void exec(final DataTransfer transfer) throws Exception {
-                form.deleteFromSelections(transfer);
                 transfer.delete(u);
             }
         };

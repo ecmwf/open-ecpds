@@ -329,6 +329,7 @@
         searching: true,
         dom: 'rt<"d-flex justify-content-between align-items-center mt-2"ip>',
         ordering: true,
+        order: [],
         ajax: {
             url: '/do/transfer/destination?json=validateList',
             type: 'GET',

@@ -30,9 +30,13 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.TreeSet;
 
@@ -116,6 +120,25 @@ public class DetailActionDestinationCache {
     // for
     // the
     // operation.
+
+    /**
+     * Cache of all DataTransfer objects keyed by ID (regardless of on/off). Loaded on the first sort request and
+     * retained until the basket composition changes (add/remove) or the TTL expires. Allows in-memory re-sorting
+     * without hitting the database on every sort or page-navigation request.
+     */
+    private Map<String, DataTransfer> transferObjectCache = null;
+
+    /** Sorted + filtered (on-only) view of the object cache for the current sort parameters. */
+    private List<DataTransfer> sortedList = null;
+
+    /** Cache key for the current sorted list — encodes column index and sort direction. */
+    private String sortCacheKey = null;
+
+    /** Timestamp when the object cache was last populated. */
+    private long cacheTimestamp = 0L;
+
+    /** How long the object cache is considered fresh (fallback TTL for external DB changes). */
+    private static final long CACHE_TTL_MS = 30_000L;
 
     /**
      * Instantiates a new detail action destination cache.
@@ -482,6 +505,121 @@ public class DetailActionDestinationCache {
     }
 
     /**
+     * Returns a sorted + filtered (on-only) view of the basket.
+     *
+     * <p>
+     * On the first call (or after the object cache has expired or been invalidated), all basket items are loaded from
+     * the database. The result is cached in the HTTP session so subsequent sort/pagination calls are served entirely
+     * from memory. The comparator is applied once; changing the sort column re-sorts the already-loaded objects without
+     * any further database I/O.
+     * </p>
+     *
+     * <p>
+     * The expensive database-load phase is intentionally executed <em>outside</em> the synchronised block to avoid
+     * holding the monitor for tens of seconds. A brief second lock is acquired to commit the result.
+     * </p>
+     *
+     * @param cacheKey
+     *            an opaque string that uniquely identifies the (column, direction) combination
+     * @param comparator
+     *            the sort order to apply
+     *
+     * @return an unmodifiable sorted list of the currently selected (on) transfers
+     */
+    public List<DataTransfer> getSortedTransfers(final String cacheKey, final Comparator<DataTransfer> comparator) {
+        // --- Fast path: everything is cached and still fresh ---
+        synchronized (this) {
+            if (transferObjectCache != null && System.currentTimeMillis() - cacheTimestamp <= CACHE_TTL_MS) {
+                if (sortedList != null && cacheKey.equals(sortCacheKey)) {
+                    return sortedList; // full cache hit
+                }
+                // Object cache is still valid; just re-sort
+                return buildSortedList(cacheKey, comparator);
+            }
+        }
+
+        // --- Slow path: (re)build the object cache from the database ---
+        // Snapshot the basket IDs outside the lock to avoid a ConcurrentModificationException.
+        // We deliberately do NOT hold the lock during DB I/O.
+        final List<String> snapshotIds;
+        synchronized (this) {
+            snapshotIds = new ArrayList<>(selectedTransfers.size());
+            for (final Map.Entry<String, String> e : selectedTransfers.entrySet()) {
+                snapshotIds.add(e.getKey());
+            }
+        }
+
+        // Load all basket objects from the database (one call per item — the slow part).
+        final Map<String, DataTransfer> newCache = new LinkedHashMap<>(snapshotIds.size() * 2);
+        final List<String> deadKeys = new ArrayList<>();
+        for (final String id : snapshotIds) {
+            try {
+                newCache.put(id, DataTransferHome.findByPrimaryKey(id));
+            } catch (final Exception _) {
+                deadKeys.add(id); // ghost: no longer in DB
+            }
+        }
+
+        // --- Commit the new cache and build the sorted list ---
+        synchronized (this) {
+            for (final String id : deadKeys) {
+                selectedTransfers.remove(id);
+            }
+            transferObjectCache = newCache;
+            cacheTimestamp = System.currentTimeMillis();
+            sortedList = null;
+            sortCacheKey = null;
+            return buildSortedList(cacheKey, comparator);
+        }
+    }
+
+    /**
+     * Builds and caches a sorted list from the current object cache. Must be called under the instance lock.
+     *
+     * @param cacheKey
+     *            the sort cache key
+     * @param comparator
+     *            the sort comparator
+     *
+     * @return the sorted list
+     */
+    private List<DataTransfer> buildSortedList(final String cacheKey, final Comparator<DataTransfer> comparator) {
+        final var all = new ArrayList<DataTransfer>(transferObjectCache.size());
+        for (final Map.Entry<String, String> e : selectedTransfers.entrySet()) {
+            final var v = e.getValue();
+            if ("on".equalsIgnoreCase(v) || "true".equalsIgnoreCase(v)) {
+                final var dt = transferObjectCache.get(e.getKey());
+                if (dt != null) {
+                    all.add(dt);
+                }
+            }
+        }
+        all.sort(comparator);
+        sortedList = Collections.unmodifiableList(all);
+        sortCacheKey = cacheKey;
+        return sortedList;
+    }
+
+    /**
+     * Discards the sorted-list cache, forcing a re-sort on the next request. The object cache is kept because the
+     * basket content has not changed — only which items are selected (on/off).
+     */
+    private synchronized void invalidateSortedList() {
+        sortedList = null;
+        sortCacheKey = null;
+    }
+
+    /**
+     * Discards both the object cache and the sorted list. Must be called whenever the basket composition changes (items
+     * added or removed).
+     */
+    private synchronized void invalidateTransferCache() {
+        transferObjectCache = null;
+        sortedList = null;
+        sortCacheKey = null;
+    }
+
+    /**
      * Delete from selection.
      *
      * @param dt
@@ -490,6 +628,14 @@ public class DetailActionDestinationCache {
     public void deleteFromSelection(final DataTransfer dt) {
         selectedTransfers.remove(dt.getId());
         actionTransfers.remove(dt.getId());
+        // Remove just this item from the object cache; re-sort will be needed.
+        synchronized (this) {
+            if (transferObjectCache != null) {
+                transferObjectCache.remove(dt.getId());
+            }
+            sortedList = null;
+            sortCacheKey = null;
+        }
     }
 
     /**
@@ -508,6 +654,8 @@ public class DetailActionDestinationCache {
                         + dt.getId() + "', which belongs to destination '" + dt.getDestinationName() + "'. Not added.");
             }
         }
+        // New items were added to the basket — the object cache is stale.
+        invalidateTransferCache();
     }
 
     /**
@@ -533,6 +681,9 @@ public class DetailActionDestinationCache {
     public void setSelectedTransfer(final String name, final String value) {
         selectedTransfers.put(name, value);
         setActionTransfer(name, value);
+        // The on/off state changed: the filtered sorted list is now stale.
+        // The object cache itself can be kept — the item is still in the basket.
+        invalidateSortedList();
     }
 
     /**
@@ -686,6 +837,7 @@ public class DetailActionDestinationCache {
      */
     public void cleanSelectedTransfers() {
         selectedTransfers.clear();
+        invalidateTransferCache();
     }
 
     /**

@@ -46,7 +46,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import ecmwf.common.text.Format;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
-import ecmwf.ecpds.master.plugin.http.home.transfer.DataTransferHome;
 import ecmwf.ecpds.master.plugin.http.model.transfer.DataTransfer;
 import ecmwf.ecpds.master.transfer.StatusFactory;
 import ecmwf.web.controller.ECMWFActionFormException;
@@ -111,16 +110,9 @@ public class GetValidateTransferListJsonAction extends PDSAction {
             if (daf != null) {
                 recordsTotal = daf.getSelectedTransfersCount();
                 if (orderCol >= 0 && orderCol <= MAX_SORT_COLUMN) {
-                    // Sort the full basket in-memory, then paginate
-                    final List<DataTransfer> all = new ArrayList<>(recordsTotal);
-                    for (final String id : daf.getSelectedTransferIds()) {
-                        try {
-                            all.add(DataTransferHome.findByPrimaryKey(id));
-                        } catch (final Exception _) {
-                            // ghost entry — skip (count stays as-is, minor discrepancy accepted)
-                        }
-                    }
-                    all.sort(comparatorForColumn(orderCol, ascending));
+                    // Use session cache: objects are loaded once and re-sorted in-memory.
+                    final var cacheKey = orderCol + ":" + ascending;
+                    final var all = daf.getSortedTransfers(cacheKey, comparatorForColumn(orderCol, ascending));
                     recordsTotal = all.size();
                     transfers = all.subList(Math.min(start, all.size()), Math.min(start + length, all.size()));
                 } else {
@@ -399,7 +391,11 @@ public class GetValidateTransferListJsonAction extends PDSAction {
             cmp = (a, b) -> Long.compare(safeId(a), safeId(b));
             break;
         }
-        return ascending ? cmp : cmp.reversed();
+        // Add a stable tie-breaker (ID descending) so rows don't shift between pages when the primary
+        // sort key has low cardinality (e.g. status or priority).
+        final Comparator<DataTransfer> tieBreaker = (a, b) -> Long.compare(safeId(b), safeId(a));
+        final Comparator<DataTransfer> withTie = cmp.thenComparing(tieBreaker);
+        return ascending ? withTie : withTie.reversed();
     }
 
     private static String safeStr(final String s) {

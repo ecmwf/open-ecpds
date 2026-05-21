@@ -33,6 +33,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -336,6 +337,20 @@ public class DetailActionForm extends ECMWFActionForm {
      */
     public Collection<DataTransfer> getSelectedTransfers(final Integer from, final Integer to) {
         return getCache().getSelectedTransfers(from, to);
+    }
+
+    /**
+     * Returns a sorted + filtered (on-only) view of the basket, using a session-level cache.
+     *
+     * @param cacheKey
+     *            an opaque key that uniquely identifies (column, direction)
+     * @param comparator
+     *            the sort comparator to apply
+     *
+     * @return an unmodifiable sorted list of selected transfers
+     */
+    public List<DataTransfer> getSortedTransfers(final String cacheKey, final Comparator<DataTransfer> comparator) {
+        return getCache().getSortedTransfers(cacheKey, comparator);
     }
 
     /**
