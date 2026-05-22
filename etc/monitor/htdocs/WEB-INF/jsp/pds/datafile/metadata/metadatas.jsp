@@ -9,7 +9,7 @@
 
 <c:if test="${not empty attributes}">
     <div class="card border-0 shadow-sm mt-3">
-    <div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+    <div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)">
         <i class="bi bi-database text-primary"></i>
         <span class="fw-semibold">
             <c:choose>
@@ -17,7 +17,7 @@
                 <c:otherwise>All Meta Data Parameters</c:otherwise>
             </c:choose>
         </span>
-        <div class="ms-auto d-flex align-items-center gap-2">
+        <div class="ms-auto d-flex flex-wrap align-items-center gap-2">
             <div class="input-group input-group-sm" style="width:auto">
                 <span class="input-group-text"><i class="bi bi-search"></i></span>
                 <input type="text" id="metaAttrSearch" class="form-control" placeholder="Filter..." style="min-width:160px">

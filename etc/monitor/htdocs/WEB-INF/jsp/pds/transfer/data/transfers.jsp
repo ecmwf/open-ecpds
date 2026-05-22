@@ -139,6 +139,32 @@
                                 </select>
                             </div>
                         </div>
+                        <div class="col-auto">
+                            <div class="dropdown">
+                                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="tfrColModeBtn"
+                                        data-bs-toggle="dropdown" data-bs-auto-close="outside" data-bs-boundary="viewport" aria-expanded="false">
+                                    Auto
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="tfrColModeBtn">
+                                    <li><a class="dropdown-item" href="#" data-tfrcol-mode="auto"><strong>Auto</strong><br><small class="text-muted">Hides columns based on screen width</small></a></li>
+                                    <li><a class="dropdown-item" href="#" data-tfrcol-mode="all"><strong>All</strong><br><small class="text-muted">Shows all columns</small></a></li>
+                                    <li><a class="dropdown-item" href="#" data-tfrcol-mode="compact"><strong>Compact</strong><br><small class="text-muted">Hides: Transfer Host, Sched. Time, Mbits/s, Prior</small></a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="#" data-tfrcol-mode="custom"><strong>Custom</strong><br><small class="text-muted">Choose individual columns</small></a></li>
+                                    <li id="tfrCustomColChkPanel" style="display:none;">
+                                        <div class="px-3 py-2 d-flex flex-column gap-1" style="min-width:170px;">
+                                            <div class="form-check mb-0"><input class="form-check-input tfr-col-chk" type="checkbox" id="tfrchk-0" data-col="0" checked disabled><label class="form-check-label text-muted" for="tfrchk-0">Destination <small>(required)</small></label></div>
+                                            <div class="form-check mb-0"><input class="form-check-input tfr-col-chk" type="checkbox" id="tfrchk-1" data-col="1" checked><label class="form-check-label" for="tfrchk-1">Transfer Host</label></div>
+                                            <div class="form-check mb-0"><input class="form-check-input tfr-col-chk" type="checkbox" id="tfrchk-2" data-col="2" checked><label class="form-check-label" for="tfrchk-2">Sched. Time</label></div>
+                                            <div class="form-check mb-0"><input class="form-check-input tfr-col-chk" type="checkbox" id="tfrchk-3" data-col="3" checked disabled><label class="form-check-label text-muted" for="tfrchk-3">Target <small>(required)</small></label></div>
+                                            <div class="form-check mb-0"><input class="form-check-input tfr-col-chk" type="checkbox" id="tfrchk-4" data-col="4" checked><label class="form-check-label" for="tfrchk-4">%</label></div>
+                                            <div class="form-check mb-0"><input class="form-check-input tfr-col-chk" type="checkbox" id="tfrchk-5" data-col="5" checked><label class="form-check-label" for="tfrchk-5">Mbits/s</label></div>
+                                            <div class="form-check mb-0"><input class="form-check-input tfr-col-chk" type="checkbox" id="tfrchk-6" data-col="6" checked><label class="form-check-label" for="tfrchk-6">Prior</label></div>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
                         <div class="col">
                             <div class="input-group">
                                 <span class="input-group-text text-muted"><i class="bi bi-search"></i></span>
@@ -560,6 +586,73 @@ function _updateTransferSearchBanner(queryError, total, hasSearch) {
         var len = parseInt(this.value, 10);
         try { localStorage.setItem('transferPageLen', len); } catch(e) {}
         table.page.len(len).draw();
+    });
+
+    /* ---- Cols:Auto ---- */
+    var _TFR_COL_KEY        = 'tfrColMode';
+    var _TFR_CUSTOM_COL_KEY = 'tfrCustomCols';
+    var _TFR_COMPACT        = [1, 2, 5, 6];
+    var _tfrColMode = (function() { try { return localStorage.getItem(_TFR_COL_KEY) || 'auto'; } catch(e) { return 'auto'; } })();
+    var _tfrCustomCols = (function() {
+        try { var s = localStorage.getItem(_TFR_CUSTOM_COL_KEY); if (s) return JSON.parse(s); } catch(e) {}
+        return [0,1,2,3,4,5,6];
+    })();
+
+    function _tfrShowCols(hideCols) {
+        var n = table.columns().count();
+        for (var i = 0; i < n; i++) table.column(i).visible(hideCols.indexOf(i) === -1, false);
+        table.columns.adjust();
+    }
+    function _tfrApplyCustomCols() {
+        var n = table.columns().count();
+        for (var i = 0; i < n; i++) {
+            var vis = (i === 0 || i === 3) ? true : _tfrCustomCols.indexOf(i) !== -1;
+            table.column(i).visible(vis, false);
+        }
+        table.columns.adjust();
+    }
+    function _tfrSyncChkBoxes() {
+        document.querySelectorAll('.tfr-col-chk').forEach(function(chk) {
+            chk.checked = _tfrCustomCols.indexOf(+chk.dataset.col) !== -1;
+        });
+    }
+    document.querySelectorAll('.tfr-col-chk').forEach(function(chk) {
+        chk.addEventListener('change', function() {
+            var col = +this.dataset.col;
+            var idx = _tfrCustomCols.indexOf(col);
+            if (this.checked && idx === -1) _tfrCustomCols.push(col);
+            else if (!this.checked && idx !== -1) _tfrCustomCols.splice(idx, 1);
+            try { localStorage.setItem(_TFR_CUSTOM_COL_KEY, JSON.stringify(_tfrCustomCols)); } catch(e) {}
+            if (_tfrColMode === 'custom') _tfrApplyCustomCols();
+        });
+    });
+    function _tfrApplyResponsive() {
+        if (_tfrColMode !== 'auto') return;
+        _tfrShowCols(window.innerWidth < 992 ? [1, 2] : []);
+    }
+    function _tfrApplyMode(mode) {
+        var label = mode.charAt(0).toUpperCase() + mode.slice(1);
+        $('#tfrColModeBtn').html('<i class="bi bi-layout-three-columns me-1"></i>' + label);
+        $('#tfrColModeBtn').toggleClass('btn-outline-secondary', mode === 'auto').toggleClass('btn-primary', mode !== 'auto');
+        $('#tfrColModeBtn').closest('.dropdown').find('.dropdown-item').each(function() {
+            $(this).find('i.bi-check').remove();
+            if ($(this).data('tfrcol-mode') === mode) $(this).prepend('<i class="bi bi-check me-1"></i>');
+        });
+        document.getElementById('tfrCustomColChkPanel').style.display = (mode === 'custom') ? '' : 'none';
+        if (mode === 'auto') _tfrApplyResponsive();
+        else if (mode === 'all') _tfrShowCols([]);
+        else if (mode === 'compact') _tfrShowCols(_TFR_COMPACT);
+        else if (mode === 'custom') { _tfrSyncChkBoxes(); _tfrApplyCustomCols(); }
+    }
+    $(window).on('resize', _tfrApplyResponsive);
+    _tfrApplyMode(_tfrColMode);
+    $('#tfrColModeBtn').closest('.dropdown').find('.dropdown-item').on('click', function(e) {
+        e.preventDefault();
+        var mode = $(this).data('tfrcol-mode');
+        if (!mode) return;
+        _tfrColMode = mode;
+        try { localStorage.setItem(_TFR_COL_KEY, mode); } catch(e) {}
+        _tfrApplyMode(mode);
     });
 })();
 </script>

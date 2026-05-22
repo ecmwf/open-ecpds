@@ -17,7 +17,7 @@
 <%-- Toolbar row -- shows current filter selection, last-refresh time, and column-mode picker --%>
 <div class="d-flex align-items-center gap-2 my-2 flex-wrap">
   <span class="d-flex align-items-center gap-2 small bg-body-tertiary border rounded px-2 py-1" id="destSelectionInfo"></span>
-  <div class="ms-auto d-flex align-items-center gap-2">
+  <div class="ms-auto d-flex flex-wrap align-items-center gap-2">
     <div class="dropdown">
       <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="colModeBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" data-bs-boundary="viewport" aria-expanded="false">
         <i class="bi bi-layout-three-columns me-1"></i>Auto

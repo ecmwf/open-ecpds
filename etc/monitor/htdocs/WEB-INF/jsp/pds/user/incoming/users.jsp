@@ -8,7 +8,7 @@
 <script>window._validIso=new Set(["AC","AD","AE","AF","AG","AI","AL","AM","AO","AQ","AR","AS","AT","AU","AW","AX","AZ","BA","BB","BD","BE","BF","BG","BH","BI","BJ","BL","BM","BN","BO","BQ","BR","BS","BT","BV","BW","BY","BZ","CA","CC","CD","CF","CG","CH","CI","CK","CL","CM","CN","CO","CP","CR","CU","CV","CW","CX","CY","CZ","DE","DG","DJ","DK","DM","DO","DZ","EA","EE","EG","EH","ER","ES","ET","EU","FI","FJ","FK","FM","FO","FR","GA","GB","GD","GE","GF","GG","GH","GI","GL","GM","GN","GP","GQ","GR","GS","GT","GU","GW","GY","HK","HM","HN","HR","HT","HU","IC","ID","IE","IL","IM","IN","IO","IQ","IR","IS","IT","JE","JM","JO","JP","KE","KG","KH","KI","KM","KN","KP","KR","KW","KY","KZ","LA","LB","LC","LI","LK","LR","LS","LT","LU","LV","LY","MA","MC","MD","ME","MF","MG","MH","MK","ML","MM","MN","MO","MP","MQ","MR","MS","MT","MU","MV","MW","MX","MY","MZ","NA","NC","NE","NF","NG","NI","NL","NO","NP","NR","NU","NZ","OM","PA","PE","PF","PG","PH","PK","PL","PM","PN","PR","PS","PT","PW","PY","QA","RE","RO","RS","RU","RW","SA","SB","SC","SD","SE","SG","SH","SI","SJ","SK","SL","SM","SN","SO","SR","SS","ST","SV","SX","SY","SZ","TA","TC","TD","TF","TG","TH","TJ","TK","TL","TM","TN","TO","TR","TT","TV","TW","TZ","UA","UG","UM","UN","US","UY","UZ","VA","VC","VE","VG","VI","VN","VU","WF","WS","XK","YE","YT","ZA","ZM","ZW"]);</script>
 
 <div class="card border-0 shadow-sm mt-3">
-<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+<div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)">
     <i class="bi bi-people text-primary"></i>
     <span class="fw-semibold">Data Users</span>
     <div class="ms-auto d-flex flex-wrap align-items-center gap-2">
@@ -35,6 +35,31 @@
                 <option value="-1">All</option>
             </select>
         </div>
+<div class="dropdown">
+                    <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" id="incUsrColModeBtn"
+                            data-bs-toggle="dropdown" data-bs-auto-close="outside" data-bs-boundary="viewport" aria-expanded="false">
+                        <i class="bi bi-layout-three-columns me-1"></i>Auto
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="incUsrColModeBtn">
+                        <li><a class="dropdown-item" href="#" data-incUsr-mode="auto"><strong>Auto</strong><br><small class="text-muted">Hides columns based on screen width</small></a></li>
+                        <li><a class="dropdown-item" href="#" data-incUsr-mode="all"><strong>All</strong><br><small class="text-muted">Shows all columns</small></a></li>
+                        <li><a class="dropdown-item" href="#" data-incUsr-mode="compact"><strong>Compact</strong><br><small class="text-muted">Hides: Comment, Country, TOTP, Anonymous, Sessions</small></a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#" data-incUsr-mode="custom"><strong>Custom</strong><br><small class="text-muted">Choose individual columns</small></a></li>
+                        <li id="incUsrCustomColChkPanel" style="display:none;">
+                            <div class="px-3 py-2 d-flex flex-column gap-1" style="min-width:180px;">
+            <div class="form-check mb-0"><input class="form-check-input incUsr-col-chk" type="checkbox" id="incUsrchk-0" data-col="0" checked disabled><label class="form-check-label text-muted" for="incUsrchk-0">Data Login <small>(required)</small></label></div>
+            <div class="form-check mb-0"><input class="form-check-input incUsr-col-chk" type="checkbox" id="incUsrchk-1" data-col="1" checked><label class="form-check-label" for="incUsrchk-1">Comment</label></div>
+            <div class="form-check mb-0"><input class="form-check-input incUsr-col-chk" type="checkbox" id="incUsrchk-2" data-col="2" checked><label class="form-check-label" for="incUsrchk-2">Country</label></div>
+            <div class="form-check mb-0"><input class="form-check-input incUsr-col-chk" type="checkbox" id="incUsrchk-3" data-col="3" checked><label class="form-check-label" for="incUsrchk-3">Enabled</label></div>
+            <div class="form-check mb-0"><input class="form-check-input incUsr-col-chk" type="checkbox" id="incUsrchk-4" data-col="4" checked><label class="form-check-label" for="incUsrchk-4">TOTP</label></div>
+            <div class="form-check mb-0"><input class="form-check-input incUsr-col-chk" type="checkbox" id="incUsrchk-5" data-col="5" checked><label class="form-check-label" for="incUsrchk-5">Anonymous</label></div>
+            <div class="form-check mb-0"><input class="form-check-input incUsr-col-chk" type="checkbox" id="incUsrchk-6" data-col="6" checked><label class="form-check-label" for="incUsrchk-6">Sessions</label></div>
+            <div class="form-check mb-0"><input class="form-check-input incUsr-col-chk" type="checkbox" id="incUsrchk-7" data-col="7" checked disabled><label class="form-check-label text-muted" for="incUsrchk-7">Actions <small>(required)</small></label></div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
         <a href="<bean:message key="incoming.basepath"/>/edit/insert_form"
            class="btn btn-sm btn-outline-success"><i class="bi bi-plus-circle"></i> Create</a>
     </div>
@@ -120,6 +145,71 @@ $(document).ready(function() {
         try { localStorage.setItem('incomingPageLen', len); } catch(e) {}
         table.page.len(len).draw();
     });
+
+        /* ---- Cols:Auto ---- */
+        var _incUsrColKey        = 'incUsrColMode';
+        var _incUsrCustomColKey  = 'incUsrCustomCols';
+        var _incUsrCompact       = [1, 2, 4, 5, 6];
+        var _incUsrColMode = (function() { try { return localStorage.getItem(_incUsrColKey) || 'auto'; } catch(e) { return 'auto'; } })();
+        var _incUsrCustomCols = (function() {
+            try { var s = localStorage.getItem(_incUsrCustomColKey); if (s) return JSON.parse(s); } catch(e) {}
+            return [0, 1, 2, 3, 4, 5, 6, 7];
+        })();
+        function _incUsrShowCols(hideCols) {
+            var n = table.columns().count();
+            for (var i = 0; i < n; i++) table.column(i).visible(hideCols.indexOf(i) === -1, false);
+            table.columns.adjust();
+        }
+        function _incUsrApplyCustomCols() {
+            var n = table.columns().count();
+            for (var i = 0; i < n; i++) {
+                table.column(i).visible((i === 0 || i === 7) ? true : _incUsrCustomCols.indexOf(i) !== -1, false);
+            }
+            table.columns.adjust();
+        }
+        function _incUsrSyncChkBoxes() {
+            document.querySelectorAll('.incUsr-col-chk').forEach(function(chk) {
+                chk.checked = _incUsrCustomCols.indexOf(+chk.dataset.col) !== -1;
+            });
+        }
+        document.querySelectorAll('.incUsr-col-chk').forEach(function(chk) {
+            chk.addEventListener('change', function() {
+                var col = +this.dataset.col;
+                var idx = _incUsrCustomCols.indexOf(col);
+                if (this.checked && idx === -1) _incUsrCustomCols.push(col);
+                else if (!this.checked && idx !== -1) _incUsrCustomCols.splice(idx, 1);
+                try { localStorage.setItem(_incUsrCustomColKey, JSON.stringify(_incUsrCustomCols)); } catch(e) {}
+                if (_incUsrColMode === 'custom') _incUsrApplyCustomCols();
+            });
+        });
+        function _incUsrApplyResponsive() {
+            if (_incUsrColMode !== 'auto') return;
+            _incUsrShowCols(window.innerWidth < 992 ? [1, 2, 4, 5, 6] : []);
+        }
+        function _incUsrApplyMode(mode) {
+            var label = mode.charAt(0).toUpperCase() + mode.slice(1);
+            $('#incUsrColModeBtn').html('<i class="bi bi-layout-three-columns me-1"></i>' + label);
+            $('#incUsrColModeBtn').toggleClass('btn-outline-secondary', mode === 'auto').toggleClass('btn-primary', mode !== 'auto');
+            $('#incUsrColModeBtn').closest('.dropdown').find('.dropdown-item').each(function() {
+                $(this).find('i.bi-check').remove();
+                if ($(this).data('incUsr-mode') === mode) $(this).prepend('<i class="bi bi-check me-1"></i>');
+            });
+            document.getElementById('incUsrCustomColChkPanel').style.display = (mode === 'custom') ? '' : 'none';
+            if (mode === 'auto') _incUsrApplyResponsive();
+            else if (mode === 'all') _incUsrShowCols([]);
+            else if (mode === 'compact') _incUsrShowCols(_incUsrCompact);
+            else if (mode === 'custom') { _incUsrSyncChkBoxes(); _incUsrApplyCustomCols(); }
+        }
+        $(window).on('resize', _incUsrApplyResponsive);
+        _incUsrApplyMode(_incUsrColMode);
+        $('#incUsrColModeBtn').closest('.dropdown').find('.dropdown-item').on('click', function(e) {
+            e.preventDefault();
+            var mode = $(this).data('incUsr-mode');
+            if (!mode) return;
+            _incUsrColMode = mode;
+            try { localStorage.setItem(_incUsrColKey, mode); } catch(e) {}
+            _incUsrApplyMode(mode);
+        });
 });
 </script>
 </c:if>

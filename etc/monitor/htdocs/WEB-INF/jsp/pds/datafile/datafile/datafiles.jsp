@@ -10,7 +10,7 @@
 <div class="card border-0 shadow-sm mb-3">
     <div class="card-body py-2 px-3">
         <div class="row g-2 align-items-center">
-            <div class="col-auto d-flex align-items-center">
+            <div class="col-auto d-flex align-items-center gap-2">
                 <div class="input-group flex-nowrap" style="width:auto" title="Page size">
                     <span class="input-group-text px-2"><i class="bi bi-list-ol"></i></span>
                     <select id="datafilePageLen" class="form-select" style="width:auto">
@@ -20,6 +20,27 @@
                         <option value="100">100</option>
                         <option value="250">250</option>
                     </select>
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="dfColModeBtn"
+                            data-bs-toggle="dropdown" data-bs-auto-close="outside" data-bs-boundary="viewport" aria-expanded="false">
+                        Auto
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dfColModeBtn">
+                        <li><a class="dropdown-item" href="#" data-dfcol-mode="auto"><strong>Auto</strong><br><small class="text-muted">Hides columns based on screen width</small></a></li>
+                        <li><a class="dropdown-item" href="#" data-dfcol-mode="all"><strong>All</strong><br><small class="text-muted">Shows all columns</small></a></li>
+                        <li><a class="dropdown-item" href="#" data-dfcol-mode="compact"><strong>Compact</strong><br><small class="text-muted">Hides: Product Time, TS</small></a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#" data-dfcol-mode="custom"><strong>Custom</strong><br><small class="text-muted">Choose individual columns</small></a></li>
+                        <li id="dfCustomColChkPanel" style="display:none;">
+                            <div class="px-3 py-2 d-flex flex-column gap-1" style="min-width:160px;">
+                                <div class="form-check mb-0"><input class="form-check-input df-col-chk" type="checkbox" id="dfchk-0" data-col="0" checked disabled><label class="form-check-label text-muted" for="dfchk-0">Original <small>(required)</small></label></div>
+                                <div class="form-check mb-0"><input class="form-check-input df-col-chk" type="checkbox" id="dfchk-1" data-col="1" checked><label class="form-check-label" for="dfchk-1">Product Time</label></div>
+                                <div class="form-check mb-0"><input class="form-check-input df-col-chk" type="checkbox" id="dfchk-2" data-col="2" checked><label class="form-check-label" for="dfchk-2">Size</label></div>
+                                <div class="form-check mb-0"><input class="form-check-input df-col-chk" type="checkbox" id="dfchk-3" data-col="3" checked><label class="form-check-label" for="dfchk-3">TS</label></div>
+                            </div>
+                        </li>
+                    </ul>
                 </div>
             </div>
             <div class="col">
@@ -112,6 +133,72 @@
             $('#datafileSearch').val('');
             currentSearch = '';
             table.ajax.reload();
+        });
+
+        /* ---- Cols:Auto ---- */
+        var _DF_COL_KEY        = 'dfColMode';
+        var _DF_CUSTOM_COL_KEY = 'dfCustomCols';
+        var _DF_COMPACT        = [1, 3];
+        var _dfColMode = (function() { try { return localStorage.getItem(_DF_COL_KEY) || 'auto'; } catch(e) { return 'auto'; } })();
+        var _dfCustomCols = (function() {
+            try { var s = localStorage.getItem(_DF_CUSTOM_COL_KEY); if (s) return JSON.parse(s); } catch(e) {}
+            return [0,1,2,3];
+        })();
+
+        function _dfShowCols(hideCols) {
+            var n = table.columns().count();
+            for (var i = 0; i < n; i++) table.column(i).visible(hideCols.indexOf(i) === -1, false);
+            table.columns.adjust();
+        }
+        function _dfApplyCustomCols() {
+            var n = table.columns().count();
+            for (var i = 0; i < n; i++) {
+                table.column(i).visible(i === 0 ? true : _dfCustomCols.indexOf(i) !== -1, false);
+            }
+            table.columns.adjust();
+        }
+        function _dfSyncChkBoxes() {
+            document.querySelectorAll('.df-col-chk').forEach(function(chk) {
+                chk.checked = _dfCustomCols.indexOf(+chk.dataset.col) !== -1;
+            });
+        }
+        document.querySelectorAll('.df-col-chk').forEach(function(chk) {
+            chk.addEventListener('change', function() {
+                var col = +this.dataset.col;
+                var idx = _dfCustomCols.indexOf(col);
+                if (this.checked && idx === -1) _dfCustomCols.push(col);
+                else if (!this.checked && idx !== -1) _dfCustomCols.splice(idx, 1);
+                try { localStorage.setItem(_DF_CUSTOM_COL_KEY, JSON.stringify(_dfCustomCols)); } catch(e) {}
+                if (_dfColMode === 'custom') _dfApplyCustomCols();
+            });
+        });
+        function _dfApplyResponsive() {
+            if (_dfColMode !== 'auto') return;
+            _dfShowCols(window.innerWidth < 768 ? [1, 3] : []);
+        }
+        function _dfApplyMode(mode) {
+            var label = mode.charAt(0).toUpperCase() + mode.slice(1);
+            $('#dfColModeBtn').html('<i class="bi bi-layout-three-columns me-1"></i>' + label);
+            $('#dfColModeBtn').toggleClass('btn-outline-secondary', mode === 'auto').toggleClass('btn-primary', mode !== 'auto');
+            $('#dfColModeBtn').closest('.dropdown').find('.dropdown-item').each(function() {
+                $(this).find('i.bi-check').remove();
+                if ($(this).data('dfcol-mode') === mode) $(this).prepend('<i class="bi bi-check me-1"></i>');
+            });
+            document.getElementById('dfCustomColChkPanel').style.display = (mode === 'custom') ? '' : 'none';
+            if (mode === 'auto') _dfApplyResponsive();
+            else if (mode === 'all') _dfShowCols([]);
+            else if (mode === 'compact') _dfShowCols(_DF_COMPACT);
+            else if (mode === 'custom') { _dfSyncChkBoxes(); _dfApplyCustomCols(); }
+        }
+        $(window).on('resize', _dfApplyResponsive);
+        _dfApplyMode(_dfColMode);
+        $('#dfColModeBtn').closest('.dropdown').find('.dropdown-item').on('click', function(e) {
+            e.preventDefault();
+            var mode = $(this).data('dfcol-mode');
+            if (!mode) return;
+            _dfColMode = mode;
+            try { localStorage.setItem(_DF_COL_KEY, mode); } catch(e) {}
+            _dfApplyMode(mode);
         });
     });
 })();

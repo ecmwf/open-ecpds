@@ -8,10 +8,13 @@
 .disk-bar-track { background:var(--bs-secondary-bg); border-radius:3px; height:8px; width:100px; flex-shrink:0; }
 </style>
 
-<div class="d-flex align-items-center mb-2 gap-2">
-    <span class="text-muted small"><i class="bi bi-list-ul"></i> <strong>${fn:length(transfergroups)}</strong> transfer group(s)</span>
-    <span id="tgDiskAge" class="small"></span>
-    <div class="ms-auto d-flex gap-2 align-items-center">
+
+<div class="card border-0 shadow-sm mt-3">
+<div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+    <i class="bi bi-collection text-primary"></i>
+    <span class="fw-semibold">Transfer Groups</span>
+    <span id="tgDiskAge" class="small ms-2"></span>
+    <div class="ms-auto d-flex flex-wrap align-items-center gap-2">
         <div class="dropdown">
             <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="tgColModeBtn"
                     data-bs-toggle="dropdown" data-bs-auto-close="outside" data-bs-boundary="viewport" aria-expanded="false">
@@ -44,13 +47,14 @@
                    styleClass="btn btn-sm btn-outline-success"><i class="bi bi-plus-circle"></i> Create</auth:link>
     </div>
 </div>
-
+<div class="card-body p-0">
 <c:if test="${empty transfergroups}">
-    <div class="alert">No Transfer Groups found.</div>
+    <div class="alert alert-info m-3 mb-2">No Transfer Groups found.</div>
 </c:if>
 
 <c:if test="${not empty transfergroups}">
-    <table id="transfergroupsTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
+<div class="table-responsive">
+    <table id="transfergroupsTable" class="table table-sm table-hover table-striped align-middle mb-0" style="width:100%">
         <thead class="table-light">
             <tr>
                 <th>Name</th>
@@ -127,6 +131,12 @@
             </c:forEach>
         </tbody>
     </table>
+</div>
+</c:if>
+</div>
+</div>
+
+<c:if test="${not empty transfergroups}">
     <script>
     var _tgTable;
     $(function() {
@@ -286,5 +296,3 @@
     })();
     </script>
 </c:if>
-
-

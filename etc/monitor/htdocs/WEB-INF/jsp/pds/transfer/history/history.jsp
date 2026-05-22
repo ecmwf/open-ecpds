@@ -33,9 +33,9 @@
 
 <div class="mt-3">
 <div class="d-flex gap-2 justify-content-end align-items-center mb-2">
-  <div class="input-group flex-nowrap" style="width:auto" title="Page size">
+  <div class="input-group input-group-sm flex-nowrap" style="width:auto" title="Page size">
     <span class="input-group-text px-2"><i class="bi bi-list-ol"></i></span>
-    <select id="histPageLen" class="form-select" style="width:auto">
+    <select id="histPageLen" class="form-select form-select-sm" style="width:auto">
       <option value="10">10</option>
       <option value="25">25</option>
       <option value="50">50</option>

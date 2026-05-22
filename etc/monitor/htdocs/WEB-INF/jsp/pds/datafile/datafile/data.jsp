@@ -134,7 +134,7 @@ Data File: <strong><c:out value="${datafile.id}"/></strong>
 <div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
 <i class="bi bi-tags text-primary"></i>
 <span class="fw-semibold">Meta Data</span>
-<div class="ms-auto d-flex align-items-center gap-2">
+<div class="ms-auto d-flex flex-wrap align-items-center gap-2">
   <div class="input-group flex-nowrap" style="width:auto" title="Page size">
     <span class="input-group-text px-2"><i class="bi bi-list-ol"></i></span>
     <select id="dfMetaPageLen" class="form-select form-select-sm" style="width:auto">
@@ -188,7 +188,7 @@ $('#dfMetaPageLen').on('change', function() {
 <div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
 <i class="bi bi-arrow-left-right text-primary"></i>
 <span class="fw-semibold">Transfers for this datafile</span>
-<div class="ms-auto d-flex align-items-center gap-2">
+<div class="ms-auto d-flex flex-wrap align-items-center gap-2">
   <div class="dropdown">
     <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="dfTransColModeBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" data-bs-boundary="viewport" aria-expanded="false">
       <i class="bi bi-layout-three-columns me-1"></i>Auto

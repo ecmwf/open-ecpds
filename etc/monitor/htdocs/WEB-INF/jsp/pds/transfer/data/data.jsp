@@ -58,7 +58,7 @@ Error retrieving object by key &mdash; DataTransfer not found: <code>${datatrans
 <div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
 <i class="bi bi-clock-history text-primary"></i>
 <span class="fw-semibold">Transfer History</span>
-<div class="ms-auto d-flex align-items-center gap-2">
+<div class="ms-auto d-flex flex-wrap align-items-center gap-2">
   <div class="dropdown">
     <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="dtHistColModeBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" data-bs-boundary="viewport" aria-expanded="false">
       <i class="bi bi-layout-three-columns me-1"></i>Auto
@@ -197,7 +197,7 @@ _dthApplyMode(_dthColMode);
 <i class="bi bi-files text-primary"></i>
 <span class="fw-semibold">Transfers for this identity</span>
 <span class="text-muted" style="cursor:default" tabindex="0" data-bs-toggle="tooltip" data-bs-placement="bottom" title="<c:out value="${datatransfer.identity}"/>"><i class="bi bi-question-circle"></i></span>
-<div class="ms-auto d-flex align-items-center gap-2">
+<div class="ms-auto d-flex flex-wrap align-items-center gap-2">
   <div class="dropdown">
     <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="dtOlderColModeBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" data-bs-boundary="viewport" aria-expanded="false">
       <i class="bi bi-layout-three-columns me-1"></i>Auto

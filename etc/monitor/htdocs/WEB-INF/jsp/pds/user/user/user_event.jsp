@@ -20,7 +20,7 @@
 <div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
     <i class="bi bi-clock-history text-primary"></i>
     <span class="fw-semibold">Events for <auth:link basePathKey="user.basepath" href="/${user.id}">Web User ${user.uid}</auth:link></span>
-    <div class="ms-auto d-flex align-items-center gap-2">
+    <div class="ms-auto d-flex flex-wrap align-items-center gap-2">
         <div class="input-group input-group-sm" style="width:auto">
             <span class="input-group-text"><i class="bi bi-search"></i></span>
             <input type="text" id="userEventsSearch" class="form-control" placeholder="Search events..." style="min-width:180px">

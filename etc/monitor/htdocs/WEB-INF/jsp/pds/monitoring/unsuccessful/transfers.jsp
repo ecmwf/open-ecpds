@@ -48,14 +48,14 @@ Error retrieving object by key &larr; Destination not found: ${destination.name}
 </div>
 
 <div class="card border-0 shadow-sm mt-3">
-<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+<div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)">
 <i class="bi bi-exclamation-triangle text-primary"></i>
 <span class="fw-semibold">Outstanding Transfers</span>
 <small class="text-muted ms-1" id="badTransfersFoundLabel">Loading...</small>
 <button class="btn btn-link btn-sm text-muted p-0" type="button" data-bs-toggle="collapse" data-bs-target="#outstandingLegend" aria-expanded="false" title="What are outstanding transfers?">
 <i class="bi bi-info-circle"></i>
 </button>
-<div class="ms-auto d-flex align-items-center gap-2">
+<div class="ms-auto d-flex flex-wrap align-items-center gap-2">
 <div class="input-group input-group-sm" style="width:auto">
 <span class="input-group-text"><i class="bi bi-search"></i></span>
 <input type="text" id="unsuccessfulSearch" class="form-control" placeholder="Filter..." style="min-width:160px">
@@ -69,6 +69,30 @@ Error retrieving object by key &larr; Destination not found: ${destination.name}
 <option value="100">100</option>
 <option value="250">250</option>
 </select>
+</div>
+<div class="dropdown">
+    <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" id="btColModeBtn"
+            data-bs-toggle="dropdown" data-bs-auto-close="outside" data-bs-boundary="viewport" aria-expanded="false">
+        <i class="bi bi-layout-three-columns me-1"></i>Auto
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="btColModeBtn">
+        <li><a class="dropdown-item" href="#" data-bt-mode="auto"><strong>Auto</strong><br><small class="text-muted">Hides columns based on screen width</small></a></li>
+        <li><a class="dropdown-item" href="#" data-bt-mode="all"><strong>All</strong><br><small class="text-muted">Shows all columns</small></a></li>
+        <li><a class="dropdown-item" href="#" data-bt-mode="compact"><strong>Compact</strong><br><small class="text-muted">Hides: %, B/s, Priority</small></a></li>
+        <li><hr class="dropdown-divider"></li>
+        <li><a class="dropdown-item" href="#" data-bt-mode="custom"><strong>Custom</strong><br><small class="text-muted">Choose individual columns</small></a></li>
+        <li id="btCustomColChkPanel" style="display:none;">
+            <div class="px-3 py-2 d-flex flex-column gap-1" style="min-width:180px;">
+                <div class="form-check mb-0"><input class="form-check-input bt-col-chk" type="checkbox" id="btchk-0" data-col="0" checked disabled><label class="form-check-label text-muted" for="btchk-0">Host <small>(required)</small></label></div>
+                <div class="form-check mb-0"><input class="form-check-input bt-col-chk" type="checkbox" id="btchk-1" data-col="1" checked disabled><label class="form-check-label text-muted" for="btchk-1">Target <small>(required)</small></label></div>
+                <div class="form-check mb-0"><input class="form-check-input bt-col-chk" type="checkbox" id="btchk-2" data-col="2" checked><label class="form-check-label" for="btchk-2">Status</label></div>
+                <div class="form-check mb-0"><input class="form-check-input bt-col-chk" type="checkbox" id="btchk-3" data-col="3" checked><label class="form-check-label" for="btchk-3">%</label></div>
+                <div class="form-check mb-0"><input class="form-check-input bt-col-chk" type="checkbox" id="btchk-4" data-col="4" checked><label class="form-check-label" for="btchk-4">B/s</label></div>
+                <div class="form-check mb-0"><input class="form-check-input bt-col-chk" type="checkbox" id="btchk-5" data-col="5" checked><label class="form-check-label" for="btchk-5">Priority</label></div>
+                <div class="form-check mb-0"><input class="form-check-input bt-col-chk" type="checkbox" id="btchk-6" data-col="6" checked><label class="form-check-label" for="btchk-6">Comment</label></div>
+            </div>
+        </li>
+    </ul>
 </div>
 </div>
 </div>
@@ -199,6 +223,71 @@ var len = +this.value;
 try { localStorage.setItem('unsuccessfulPageLen', len); } catch(e) {}
 _table.page.len(len).draw();
 });
+
+        /* ---- Cols:Auto ---- */
+        var _btColKey        = 'btColMode';
+        var _btCustomColKey  = 'btCustomCols';
+        var _btCompact       = [3,4,5];
+        var _btColMode = (function() { try { return localStorage.getItem(_btColKey) || 'auto'; } catch(e) { return 'auto'; } })();
+        var _btCustomCols = (function() {
+            try { var s = localStorage.getItem(_btCustomColKey); if (s) return JSON.parse(s); } catch(e) {}
+            return [0,1,2,3,4,5,6];
+        })();
+        function _btShowCols(hideCols) {
+            var n = _table.columns().count();
+            for (var i = 0; i < n; i++) _table.column(i).visible(hideCols.indexOf(i) === -1, false);
+            _table.columns.adjust();
+        }
+        function _btApplyCustomCols() {
+            var n = _table.columns().count();
+            for (var i = 0; i < n; i++) {
+                _table.column(i).visible((i === 0 || i === 1) ? true : _btCustomCols.indexOf(i) !== -1, false);
+            }
+            _table.columns.adjust();
+        }
+        function _btSyncChkBoxes() {
+            document.querySelectorAll('.bt-col-chk').forEach(function(chk) {
+                chk.checked = _btCustomCols.indexOf(+chk.dataset.col) !== -1;
+            });
+        }
+        document.querySelectorAll('.bt-col-chk').forEach(function(chk) {
+            chk.addEventListener('change', function() {
+                var col = +this.dataset.col;
+                var idx = _btCustomCols.indexOf(col);
+                if (this.checked && idx === -1) _btCustomCols.push(col);
+                else if (!this.checked && idx !== -1) _btCustomCols.splice(idx, 1);
+                try { localStorage.setItem(_btCustomColKey, JSON.stringify(_btCustomCols)); } catch(e) {}
+                if (_btColMode === 'custom') _btApplyCustomCols();
+            });
+        });
+        function _btApplyResponsive() {
+            if (_btColMode !== 'auto') return;
+            _btShowCols(window.innerWidth < 992 ? [3,4,5] : []);
+        }
+        function _btApplyMode(mode) {
+            var label = mode.charAt(0).toUpperCase() + mode.slice(1);
+            $('#btColModeBtn').html('<i class="bi bi-layout-three-columns me-1"></i>' + label);
+            $('#btColModeBtn').toggleClass('btn-outline-secondary', mode === 'auto').toggleClass('btn-primary', mode !== 'auto');
+            $('#btColModeBtn').closest('.dropdown').find('.dropdown-item').each(function() {
+                $(this).find('i.bi-check').remove();
+                if ($(this).data('bt-mode') === mode) $(this).prepend('<i class="bi bi-check me-1"></i>');
+            });
+            document.getElementById('btCustomColChkPanel').style.display = (mode === 'custom') ? '' : 'none';
+            if (mode === 'auto') _btApplyResponsive();
+            else if (mode === 'all') _btShowCols([]);
+            else if (mode === 'compact') _btShowCols(_btCompact);
+            else if (mode === 'custom') { _btSyncChkBoxes(); _btApplyCustomCols(); }
+        }
+        $(window).on('resize', _btApplyResponsive);
+        _btApplyMode(_btColMode);
+        $('#btColModeBtn').closest('.dropdown').find('.dropdown-item').on('click', function(e) {
+            e.preventDefault();
+            var mode = $(this).data('bt-mode');
+            if (!mode) return;
+            _btColMode = mode;
+            try { localStorage.setItem(_btColKey, mode); } catch(e) {}
+            _btApplyMode(mode);
+        });
 
 var _dest = '<c:out value="${destination.name}"/>';
 
