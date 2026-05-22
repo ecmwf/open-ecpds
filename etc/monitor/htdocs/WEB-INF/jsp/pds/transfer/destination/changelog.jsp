@@ -60,11 +60,33 @@
 [data-bs-theme=light] .diff-pre del { color:#cf222e; }
 </style>
 
-<table id="changelogTable" class="table table-sm table-hover table-striped table-bordered" style="width:100%">
+<div class="card border-0 shadow-sm mt-3">
+<div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+    <i class="bi bi-clock-history text-primary"></i>
+    <span class="fw-semibold">Change Log</span>
+    <div class="ms-auto d-flex flex-wrap align-items-center gap-2">
+        <div class="input-group input-group-sm" style="width:auto">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input type="text" id="clDestSearch" class="form-control" placeholder="Search..." style="min-width:160px">
+        </div>
+        <div class="input-group input-group-sm flex-nowrap" style="width:auto" title="Page size">
+            <span class="input-group-text px-2"><i class="bi bi-list-ol"></i></span>
+            <select id="clDestPageLen" class="form-select form-select-sm" style="width:auto">
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+            </select>
+        </div>
+    </div>
+</div>
+<div class="card-body p-0">
+<div class="table-responsive">
+<table id="changelogTable" class="table table-sm table-hover table-striped align-middle mb-0" style="width:100%">
 	<thead class="table-light">
 		<tr>
 			<th title="Date &amp; Time (UTC)">Date &amp; Time</th>
-			<th style="white-space:nowrap">Web User</th>
+			<th style="white-space:nowrap" class="text-center">Web User</th>
 			<th>Differences</th>
 		</tr>
 	</thead>
@@ -72,9 +94,10 @@
 		<c:forEach var="changelog" items="${destination.changeLogList}">
 		<tr>
 			<td data-order="${changelog.date.time}">
-				<content:content name="changelog.date" dateFormatKey="date.format.long.iso" ignoreNull="true"/>
+				<content:content name="changelog.date" dateFormatKey="date.format.iso" ignoreNull="true"/><br>
+				<small class="text-muted"><content:content name="changelog.date" dateFormatKey="date.format.time" ignoreNull="true"/></small>
 			</td>
-			<td>${changelog.webUserId}</td>
+			<td class="text-center">${changelog.webUserId}</td>
 			<td>
 				<div class="cl-tabs">
 					<ul class="nav nav-tabs" role="tablist">
@@ -110,21 +133,33 @@
 		</c:forEach>
 	</tbody>
 </table>
+</div>
+</div>
+</div>
 
 <script>
 $(document).ready(function() {
-	$('#changelogTable').DataTable({
+	var _len = (function() { try { var v = parseInt(localStorage.getItem('clDestPageLen'), 10); return [5,10,25,50].indexOf(v) >= 0 ? v : 5; } catch(e) { return 5; } })();
+	$('#clDestPageLen').val(_len);
+	var table = $('#changelogTable').DataTable({
 		order:       [[0, 'desc']],
-		pageLength:  5,
-		lengthMenu:  [5, 10, 25, 50],
+		pageLength:  _len,
+		searching:   true,
+		info:        true,
+		dom:         't<"d-flex align-items-start mt-2 px-3 pb-2"i<"ms-auto"p>>',
 		columnDefs:  [
 			{ width: '155px', targets: 0 },
 			{ width: '1%',    targets: 1 },
 			{ orderable: false, targets: 2 }
 		]
 	});
+	$('#clDestPageLen').on('change', function() {
+		var len = +this.value;
+		try { localStorage.setItem('clDestPageLen', len); } catch(e) {}
+		table.page.len(len).draw();
+	});
+	$('#clDestSearch').on('keyup', function() { table.search(this.value).draw(); });
 });
 </script>
 
 </c:if>
-

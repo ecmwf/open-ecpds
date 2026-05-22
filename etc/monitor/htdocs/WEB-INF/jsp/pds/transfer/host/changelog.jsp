@@ -56,21 +56,46 @@
 [data-bs-theme=light] .diff-pre .cl-note { color:#57606a; }
 [data-bs-theme=light] .diff-pre .cl-multiline { background:rgba(255,240,0,0.15); }
 [data-bs-theme=light] .diff-pre b { color:#0550ae; }
+#changelogTable td:first-child, #changelogTable td:nth-child(2) { white-space:nowrap; vertical-align:top; padding-top:0.6rem; }
 </style>
 
-<table id="changelogTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
+<div class="card border-0 shadow-sm mt-3">
+<div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+    <i class="bi bi-clock-history text-primary"></i>
+    <span class="fw-semibold">Change Log</span>
+    <div class="ms-auto d-flex flex-wrap align-items-center gap-2">
+        <div class="input-group input-group-sm" style="width:auto">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input type="text" id="clHostSearch" class="form-control" placeholder="Search..." style="min-width:160px">
+        </div>
+        <div class="input-group input-group-sm flex-nowrap" style="width:auto" title="Page size">
+            <span class="input-group-text px-2"><i class="bi bi-list-ol"></i></span>
+            <select id="clHostPageLen" class="form-select form-select-sm" style="width:auto">
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+            </select>
+        </div>
+    </div>
+</div>
+<div class="card-body p-0">
+<div class="table-responsive">
+<table id="changelogTable" class="table table-sm table-hover table-striped align-middle mb-0" style="width:100%">
     <thead class="table-light">
         <tr>
-            <th style="width:130px; white-space:nowrap" title="Date &amp; Time (UTC)">Date &amp; Time</th>
-            <th style="width:100px; white-space:nowrap">Web User</th>
+            <th style="width:155px; white-space:nowrap" title="Date &amp; Time (UTC)">Date &amp; Time</th>
+            <th style="width:1%; white-space:nowrap" class="text-center">Web User</th>
             <th>Differences</th>
         </tr>
     </thead>
     <tbody>
     <c:forEach var="changelog" items="${host.changeLogList}">
         <tr>
-            <td style="white-space:nowrap"><content:content name="changelog.date" dateFormatKey="date.format.long.iso" ignoreNull="true"/></td>
-            <td style="white-space:nowrap">${changelog.webUserId}</td>
+            <td style="white-space:nowrap" data-order="${changelog.date.time}">
+                <content:content name="changelog.date" dateFormatKey="date.format.iso" ignoreNull="true"/><br>
+                <small class="text-muted"><content:content name="changelog.date" dateFormatKey="date.format.time" ignoreNull="true"/></small></td>
+            <td style="white-space:nowrap" class="text-center">${changelog.webUserId}</td>
             <td>
                 <div class="cl-tabs">
                     <ul class="nav nav-tabs" role="tablist">
@@ -106,17 +131,28 @@
     </c:forEach>
     </tbody>
 </table>
+</div>
+</div>
+</div>
+
 <script>
 $(document).ready(function() {
-    $('#changelogTable').DataTable({
-        paging:    true,
-        pageLength: 10,
-        searching: true,
-        ordering:  true,
-        info:      true,
-        order:     [[0, 'desc']],
+    var _len = (function() { try { var v = parseInt(localStorage.getItem('clHostPageLen'), 10); return [5,10,25,50].indexOf(v) >= 0 ? v : 10; } catch(e) { return 10; } })();
+    $('#clHostPageLen').val(_len);
+    var table = $('#changelogTable').DataTable({
+        order:      [[0, 'desc']],
+        pageLength: _len,
+        searching:  true,
+        info:       true,
+        dom:        't<"d-flex align-items-start mt-2 px-3 pb-2"i<"ms-auto"p>>',
         columnDefs: [{ orderable: false, targets: 2 }]
     });
+    $('#clHostPageLen').on('change', function() {
+        var len = +this.value;
+        try { localStorage.setItem('clHostPageLen', len); } catch(e) {}
+        table.page.len(len).draw();
+    });
+    $('#clHostSearch').on('keyup', function() { table.search(this.value).draw(); });
 });
 </script>
 

@@ -34,18 +34,6 @@ Error retrieving object by key &larr; Destination not found: ${destination.name}
 <c:if test="${authorized == 'true'}">
 <jsp:include page="/WEB-INF/jsp/pds/transfer/destination/destination_header.jsp"/>
 
-<div class="collapse mb-2 mt-2" id="outstandingLegend">
-<div class="px-3 py-2" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-bottom:1px solid var(--bs-border-color);">
-    <p class="text-muted mb-2" style="font-size:0.78rem;">Outstanding transfers are those in an error or retry state that may need attention. Deleted transfers and transfers manually stopped or requeued by a user are excluded.</p>
-    <div class="fw-semibold text-muted mb-1" style="font-size:0.78rem;">Error State</div>
-    <div class="mb-1"><span class="badge bg-danger me-1">Failed</span> Dissemination to the remote site has failed</div>
-    <div class="mb-2"><span class="badge bg-secondary me-1">Stopped</span> Stopped by the system due to an unrecoverable error or because the maximum number of retries was reached (not manually stopped by a user)</div>
-    <div class="fw-semibold text-muted mb-1" style="font-size:0.78rem;">Retry &mdash; automatic</div>
-    <div class="mb-1"><span class="badge bg-warning text-dark me-1">Queued</span> Waiting to be retried &mdash; has at least one prior failed attempt</div>
-    <div><span class="badge bg-warning text-dark me-1">ReQueued</span> Re-queued by the scheduler (not manually). Covers transfers requeued after a transient error, when the maximum requeue limit was reached, or when the maximum start limit was reached</div>
-</div>
-</div>
-
 <div class="card border-0 shadow-sm mt-3">
 <div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)">
 <i class="bi bi-exclamation-triangle text-primary"></i>
@@ -92,6 +80,17 @@ Error retrieving object by key &larr; Destination not found: ${destination.name}
         </li>
     </ul>
 </div>
+</div>
+</div>
+<div class="collapse mb-2 mt-2" id="outstandingLegend">
+<div class="px-3 py-2" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-bottom:1px solid var(--bs-border-color);">
+    <p class="text-muted mb-2" style="font-size:0.78rem;">Outstanding transfers are those in an error or retry state that may need attention. Deleted transfers and transfers manually stopped or requeued by a user are excluded.</p>
+    <div class="fw-semibold text-muted mb-1" style="font-size:0.78rem;">Error State</div>
+    <div class="mb-1"><span class="badge bg-danger me-1">Failed</span> Dissemination to the remote site has failed</div>
+    <div class="mb-2"><span class="badge bg-secondary me-1">Stopped</span> Stopped by the system due to an unrecoverable error or because the maximum number of retries was reached (not manually stopped by a user)</div>
+    <div class="fw-semibold text-muted mb-1" style="font-size:0.78rem;">Retry &mdash; automatic</div>
+    <div class="mb-1"><span class="badge bg-warning text-dark me-1">Queued</span> Waiting to be retried &mdash; has at least one prior failed attempt</div>
+    <div><span class="badge bg-warning text-dark me-1">ReQueued</span> Re-queued by the scheduler (not manually). Covers transfers requeued after a transient error, when the maximum requeue limit was reached, or when the maximum start limit was reached</div>
 </div>
 </div>
 <div class="card-body p-0">
