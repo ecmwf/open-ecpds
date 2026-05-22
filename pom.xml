@@ -447,15 +447,6 @@
 											<directoryIncluded>true</directoryIncluded>
 											<filemode>0644</filemode>
 											<dirmode>0755</dirmode>
-											<sources>
-												<source>
-													<location>etc/monitor/htdocs</location>
-													<excludes>
-														<exclude>etc/monitor/htdocs/resources/maps/*.kml</exclude>
-														<exclude>/etc/monitor/htdocs/resources/maps/contacts.txt</exclude>
-													</excludes>
-												</source>
-											</sources>
 										</mapping>
 									</mappings>
 								</configuration>

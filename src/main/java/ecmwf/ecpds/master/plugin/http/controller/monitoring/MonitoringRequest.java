@@ -105,8 +105,7 @@ public class MonitoringRequest {
             "productsToShowMonitoredOnly", false);
 
     /** The Constant CONTACTS_FILE_NAME. */
-    private static final String CONTACTS_FILE_NAME = Cnf.at("MonitorPlugin", "contactsFileName",
-            Cnf.at("MonitorPlugin", "htdocs") + "/resources/contacts.txt");
+    private static final String CONTACTS_FILE_NAME = Cnf.at("MonitorPlugin", "contactsFileName");
 
     /** The last contact list update. */
     private static long lastContactListUpdate = System.currentTimeMillis();
@@ -167,28 +166,32 @@ public class MonitoringRequest {
 
     // Reading the list of email per Product from the configuration file
     static {
-        final var contactsFile = new File(CONTACTS_FILE_NAME);
-        if (contactsFile.exists() && contactsFile.canRead()) {
-            try (final var br = new BufferedReader(new FileReader(contactsFile))) {
-                String line;
-                while ((line = br.readLine()) != null) {
-                    final var tokenizer = new StringTokenizer(line, ",");
-                    if (tokenizer.countTokens() > 2) {
-                        final var product = tokenizer.nextToken();
-                        final var lastupdate = Long.parseLong(tokenizer.nextToken());
-                        final var emailList = tokenizer.nextToken("\n").substring(1);
-                        final var contactList = new ContactList(emailList, lastupdate);
-                        if (log.isDebugEnabled()) {
-                            log.debug("Importing contacts for {}: {}", product, contactList.displayEmailList());
-                        }
-                        contacts.put(product, contactList);
-                    }
-                }
-            } catch (final Throwable t) {
-                log.warn("Importing contacts", t);
-            }
+        if (CONTACTS_FILE_NAME == null) {
+            log.warn("No contacts file available");
         } else {
-            log.warn("No contacts file available: {}", contactsFile.getAbsolutePath());
+            final var contactsFile = new File(CONTACTS_FILE_NAME);
+            if (contactsFile.exists() && contactsFile.canRead()) {
+                try (final var br = new BufferedReader(new FileReader(contactsFile))) {
+                    String line;
+                    while ((line = br.readLine()) != null) {
+                        final var tokenizer = new StringTokenizer(line, ",");
+                        if (tokenizer.countTokens() > 2) {
+                            final var product = tokenizer.nextToken();
+                            final var lastupdate = Long.parseLong(tokenizer.nextToken());
+                            final var emailList = tokenizer.nextToken("\n").substring(1);
+                            final var contactList = new ContactList(emailList, lastupdate);
+                            if (log.isDebugEnabled()) {
+                                log.debug("Importing contacts for {}: {}", product, contactList.displayEmailList());
+                            }
+                            contacts.put(product, contactList);
+                        }
+                    }
+                } catch (final Throwable t) {
+                    log.warn("Importing contacts", t);
+                }
+            } else {
+                log.warn("No contacts file available: {}", contactsFile.getAbsolutePath());
+            }
         }
     }
 
@@ -229,7 +232,8 @@ public class MonitoringRequest {
                 }
             }
             // Do we write it to the disk and synchronize it with ActiveDirectory?
-            if (System.currentTimeMillis() - lastContactListUpdate > 5 * Timer.ONE_MINUTE) {
+            if (CONTACTS_FILE_NAME != null
+                    && System.currentTimeMillis() - lastContactListUpdate > 5 * Timer.ONE_MINUTE) {
                 var successful = true;
                 log.debug("Exporting contact list to: {}", CONTACTS_FILE_NAME);
                 try (final var pw = new PrintWriter(new FileWriter(new File(CONTACTS_FILE_NAME)))) {

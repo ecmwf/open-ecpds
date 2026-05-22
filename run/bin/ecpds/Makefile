@@ -126,7 +126,7 @@ check-db:
 		echo "No active connections from user 'master'."; \
 	fi
 
-clean: check-db down .clean-log .clean-lib .clean-tmp .clean-kml .fix-perms ## Remove all logs, persistent data, and fix database permissions
+clean: check-db down .clean-log .clean-lib .clean-tmp .fix-perms ## Remove all logs, persistent data, and fix database permissions
 
 .clean-log: # Remove all logs (master, monitor and mover)
 	cd ${LOCAL_ROOT_PATH}/var/log/ecpds ; rm -f master/* monitor/* mover/*
@@ -136,9 +136,6 @@ clean: check-db down .clean-log .clean-lib .clean-tmp .clean-kml .fix-perms ## R
 
 .clean-tmp: # Remove all temporary files
 	cd ${LOCAL_ROOT_PATH}/var/tmp/ecpds ; rm -fr master/* monitor/* mover/*
-
-.clean-kml: # Remove all kml files
-	cd ${LOCAL_ROOT_PATH}/../etc/monitor/htdocs/resources/maps ; rm -f *.kml
 
 .fix-perms: # Fix permissions for the database directories
 	cd ${LOCAL_ROOT_PATH}/var/lib/ecpds ; chown -R $(shell id -u):$(shell id -g) database/ ; chmod -R 755 database/
