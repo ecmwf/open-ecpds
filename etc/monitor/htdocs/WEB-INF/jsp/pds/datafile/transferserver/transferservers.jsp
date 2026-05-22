@@ -4,11 +4,10 @@
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 
-<style>
-.disk-bar-track { background:var(--bs-secondary-bg); border-radius:3px; height:8px; width:100px; flex-shrink:0; }
-</style>
-
-
+<c:if test="${empty transferservers}">
+<div class="d-flex align-items-center alert alert-info mt-2 gap-2">No Data Movers found.</div>
+</c:if>
+<c:if test="${not empty transferservers}">
 <div class="card border-0 shadow-sm mt-3">
 <div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)">
     <i class="bi bi-server text-primary"></i>
@@ -47,11 +46,6 @@
     </div>
 </div>
 <div class="card-body p-0">
-<c:if test="${empty transferservers}">
-    <div class="alert alert-info m-3 mb-2">No Data Movers found.</div>
-</c:if>
-
-<c:if test="${not empty transferservers}">
 <div class="table-responsive">
     <table id="transferserversTable" class="table table-sm table-hover table-striped align-middle mb-0" style="width:100%">
         <thead class="table-light">
@@ -119,9 +113,9 @@
         </tbody>
     </table>
 </div>
+</div>
+</div>
 </c:if>
-</div>
-</div>
 
 <c:if test="${not empty transferservers}">
     <script>
@@ -131,6 +125,7 @@
             paging:    false,
             searching: false,
             order:     [[0, 'asc']],
+            dom:       't<"d-flex align-items-start mt-2 px-3 pb-2"i>',
             language: { info: 'Showing _START_-_END_ of _TOTAL_' },
             columnDefs: [{ orderable: false, targets: -1 }]
         });
@@ -261,7 +256,7 @@
                     item.cell.html(
                         '<div class="d-flex align-items-center gap-1" title="' + fmtBytes(item.totalUsed) + ' used of ' + fmtBytes(item.totalCap) +
                         ' (' + item.volCount + ' vols, max vol: ' + item.maxVolPct + '%)" style="cursor:default">' +
-                        '<div class="disk-bar-track">' +
+                        '<div style="background:var(--bs-secondary-bg);border-radius:3px;height:8px;width:100px;flex-shrink:0">' +
                         '<div style="background:' + color + ';border-radius:3px;height:8px;width:' + barPct + 'px"></div></div>' +
                         '<span style="color:' + color + ';font-weight:600;white-space:nowrap">' + item.pct + '%</span>' + badge + '</div>'
                     );

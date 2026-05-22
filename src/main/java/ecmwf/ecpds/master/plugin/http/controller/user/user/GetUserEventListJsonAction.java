@@ -173,10 +173,10 @@ public class GetUserEventListJsonAction extends PDSAction {
             return "";
         }
         if (date == null) {
-            return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(time);
+            return new SimpleDateFormat("HH:mm:ss").format(time);
         }
         if (time == null) {
-            return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(date);
+            return new SimpleDateFormat("HH:mm:ss").format(date);
         }
         final var calendar = Calendar.getInstance();
         calendar.setTime(date);
@@ -186,7 +186,7 @@ public class GetUserEventListJsonAction extends PDSAction {
         calendar.set(Calendar.MINUTE, timeCalendar.get(Calendar.MINUTE));
         calendar.set(Calendar.SECOND, timeCalendar.get(Calendar.SECOND));
         calendar.set(Calendar.MILLISECOND, 0);
-        return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(calendar.getTime());
+        return new SimpleDateFormat("HH:mm:ss").format(calendar.getTime());
     }
 
     private static String escapeHtml(final String s) {

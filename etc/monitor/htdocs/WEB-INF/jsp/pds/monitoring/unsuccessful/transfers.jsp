@@ -35,15 +35,14 @@ Error retrieving object by key &larr; Destination not found: ${destination.name}
 <jsp:include page="/WEB-INF/jsp/pds/transfer/destination/destination_header.jsp"/>
 
 <div class="collapse mb-2 mt-2" id="outstandingLegend">
-<div class="card card-body py-2 px-3" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd);">
-<strong class="d-block mb-1">Outstanding transfers include:</strong>
-<ul class="mb-0 ps-3">
-<li><span class="badge bg-warning text-dark me-1">WAIT</span> with at least one prior attempt &mdash; waiting to be retried</li>
-<li><span class="badge bg-warning text-dark me-1">RETR</span> not stopped by a user, comment indicates a scheduler requeue or limit reached</li>
-<li><span class="badge bg-secondary me-1">STOP</span> stopped by the system (not manually by a user)</li>
-<li><span class="badge bg-danger me-1">FAIL</span> transfer failed</li>
-</ul>
-<div class="mt-1 text-muted">Deleted transfers and transfers manually stopped by a user are excluded.</div>
+<div class="px-3 py-2" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-bottom:1px solid var(--bs-border-color);">
+    <p class="text-muted mb-2" style="font-size:0.78rem;">Outstanding transfers are those in an error or retry state that may need attention. Deleted transfers and transfers manually stopped or requeued by a user are excluded.</p>
+    <div class="fw-semibold text-muted mb-1" style="font-size:0.78rem;">Error State</div>
+    <div class="mb-1"><span class="badge bg-danger me-1">Failed</span> Dissemination to the remote site has failed</div>
+    <div class="mb-2"><span class="badge bg-secondary me-1">Stopped</span> Stopped by the system due to an unrecoverable error or because the maximum number of retries was reached (not manually stopped by a user)</div>
+    <div class="fw-semibold text-muted mb-1" style="font-size:0.78rem;">Retry &mdash; automatic</div>
+    <div class="mb-1"><span class="badge bg-warning text-dark me-1">Queued</span> Waiting to be retried &mdash; has at least one prior failed attempt</div>
+    <div><span class="badge bg-warning text-dark me-1">ReQueued</span> Re-queued by the scheduler (not manually). Covers transfers requeued after a transient error, when the maximum requeue limit was reached, or when the maximum start limit was reached</div>
 </div>
 </div>
 
@@ -51,7 +50,6 @@ Error retrieving object by key &larr; Destination not found: ${destination.name}
 <div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)">
 <i class="bi bi-exclamation-triangle text-primary"></i>
 <span class="fw-semibold">Outstanding Transfers</span>
-<small class="text-muted ms-1" id="badTransfersFoundLabel">Loading...</small>
 <button class="btn btn-link btn-sm text-muted p-0" type="button" data-bs-toggle="collapse" data-bs-target="#outstandingLegend" aria-expanded="false" title="What are outstanding transfers?">
 <i class="bi bi-info-circle"></i>
 </button>
@@ -186,27 +184,17 @@ autoWidth: false,
 dom: 't<"d-flex align-items-start mt-2 px-3 pb-2"i<"ms-auto"p>>',
 order: [[0, 'asc']],
 columns: [
-{ orderable: true,  data: 0 },
-{ orderable: true,  data: 1 },
-{ orderable: true,  data: 2 },
-{ orderable: false, data: 3 },
-{ orderable: false, data: 4 },
-{ orderable: true,  data: 5 },
-{ orderable: true,  data: 6 }
+{ orderable: true,  data: 0 , render: function(d) { return d || ''; } },
+{ orderable: true,  data: 1 , render: function(d) { return d || ''; } },
+{ orderable: true,  data: 2 , render: function(d) { return d || ''; } },
+{ orderable: false, data: 3 , render: function(d) { return d || ''; } },
+{ orderable: false, data: 4 , render: function(d) { return d || ''; } },
+{ orderable: true,  data: 5 , render: function(d) { return d || ''; } },
+{ orderable: true,  data: 6 , render: function(d) { return d || ''; } }
 ],
-columnDefs: [{ targets: '_all', render: $.fn.dataTable.render.text() }],
-createdRow: function(row, data) {
-$('td', row).each(function(i) { $(this).html(data[i]); });
-},
 drawCallback: function(settings) {
 var json = settings.json || {};
 var total = json.recordsTotal || 0;
-var filtered = json.recordsFiltered || 0;
-var label = total + ' total';
-if (filtered !== total) {
-label += ' — ' + filtered + ' matching filter';
-}
-$('#badTransfersFoundLabel').text(label);
 $('#requeueBtn, #deleteBtn').prop('disabled', total === 0);
 },
 language: {

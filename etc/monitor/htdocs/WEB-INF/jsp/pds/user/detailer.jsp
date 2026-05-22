@@ -114,13 +114,13 @@ $(document).ready(function() {
 <div class="mt-4">
 <c:choose>
   <c:when test="${not empty param.ref and fn:startsWith(param.ref, '/')}">
-    <a href="${fn:escapeXml(param.ref)}" class="btn btn-sm btn-outline-secondary">
-        <i class="bi bi-arrow-left"></i> Back
+    <a href="${fn:escapeXml(param.ref)}" class="btn btn-outline-primary">
+        <i class="bi bi-arrow-left me-1"></i>Back
     </a>
   </c:when>
   <c:otherwise>
-    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="history.back()">
-        <i class="bi bi-arrow-left"></i> Back
+    <button type="button" class="btn btn-outline-primary" onclick="history.back()">
+        <i class="bi bi-arrow-left me-1"></i>Back
     </button>
   </c:otherwise>
 </c:choose>

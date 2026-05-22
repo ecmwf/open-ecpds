@@ -7,10 +7,6 @@
 <jsp:include page="/WEB-INF/jsp/pds/transfer/destination/destination_header.jsp"/>
 </c:if>
 <tiles:insert name="date.select" />
-<div class="mb-2"></div>
-<c:if test="${empty destination}">
-<tiles:insert name="destination.select" />
-</c:if>
 <script>
 (function() {
     var destName = '<c:out value="${selectedDestination.name}" />';
@@ -24,6 +20,90 @@
 })();
 </script>
 
+<%-- Hidden data list for destination autocomplete --%>
+<ul id="destPickerData" style="display:none">
+    <c:forEach var="d" items="${destinationOptions}">
+        <li data-name="<c:out value="${d.name}"/>"
+            data-label="<c:out value="${d.value}"/>"></li>
+    </c:forEach>
+</ul>
+
+<div class="card border-0 shadow-sm mb-3 mt-2">
+    <div class="card-body py-2 px-3">
+        <div class="row g-2 align-items-center">
+            <div class="col-auto d-flex align-items-center gap-2">
+                <div class="input-group flex-nowrap" style="width:auto" title="Page size">
+                    <span class="input-group-text px-2"><i class="bi bi-list-ol"></i></span>
+                    <select id="histPageLen" class="form-select" style="width:auto">
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                        <option value="250">250</option>
+                    </select>
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="histColModeBtn"
+                            data-bs-toggle="dropdown" data-bs-auto-close="outside" data-bs-boundary="viewport" aria-expanded="false">
+                        <i class="bi bi-layout-three-columns me-1"></i>Auto
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="histColModeBtn">
+                        <li><a class="dropdown-item active" href="#" data-col-mode="auto">
+                            <i class="bi bi-check me-1"></i><strong>Auto</strong>
+                            <small class="d-block text-muted ms-4">Adapts to screen width</small>
+                        </a></li>
+                        <li><a class="dropdown-item" href="#" data-col-mode="all">
+                            <strong>All</strong>
+                            <small class="d-block text-muted ms-0">All columns visible</small>
+                        </a></li>
+                        <li><a class="dropdown-item" href="#" data-col-mode="compact">
+                            <strong>Compact</strong>
+                            <small class="d-block text-muted ms-0">Hides: Error, Transfer Host</small>
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#" data-col-mode="custom">
+                            <strong>Custom</strong>
+                            <small class="d-block text-muted ms-0">Choose individual columns</small>
+                        </a></li>
+                        <li id="histCustomColChkPanel" style="display:none;">
+                            <div class="px-3 py-2 d-flex flex-column gap-1" style="min-width:160px;">
+                                <div class="form-check mb-0"><input class="form-check-input hh-custom-col-chk" type="checkbox" id="hhchk-0" data-col="0" checked><label class="form-check-label" for="hhchk-0">Error</label></div>
+                                <div class="form-check mb-0"><input class="form-check-input hh-custom-col-chk" type="checkbox" id="hhchk-1" data-col="1" checked disabled><label class="form-check-label text-muted" for="hhchk-1">Event Time <small>(required)</small></label></div>
+                                <div class="form-check mb-0"><input class="form-check-input hh-custom-col-chk" type="checkbox" id="hhchk-2" data-col="2" checked disabled><label class="form-check-label text-muted" for="hhchk-2">Status <small>(required)</small></label></div>
+                                <div class="form-check mb-0"><input class="form-check-input hh-custom-col-chk" type="checkbox" id="hhchk-3" data-col="3" checked><label class="form-check-label" for="hhchk-3">Transfer Host</label></div>
+                                <div class="form-check mb-0"><input class="form-check-input hh-custom-col-chk" type="checkbox" id="hhchk-4" data-col="4" checked><label class="form-check-label" for="hhchk-4">Comment</label></div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col" style="position:relative">
+                <div class="input-group">
+                    <span class="input-group-text text-muted"><i class="bi bi-search"></i></span>
+                    <input type="text" id="destPickerInput" class="form-control"
+                           placeholder="Search destination..." autocomplete="off"
+                           value="<c:out value="${selectedDestination.name}"/>"
+                           oninput="destPickerFilter()"
+                           onfocus="destPickerOpen()"
+                           onblur="setTimeout(destPickerClose, 200)"
+                           onkeydown="destPickerKey(event)">
+                </div>
+                <ul id="destPickerDropdown" role="listbox"
+                    class="list-unstyled border rounded bg-body shadow-sm mb-0"
+                    style="display:none;position:absolute;z-index:1050;min-width:360px;max-height:260px;overflow-y:auto;top:100%;left:0;margin-top:2px;padding:3px 0"></ul>
+            </div>
+            <div class="col-auto">
+                <button id="histSearchBtn" class="btn btn-primary">
+                    <i class="bi bi-search"></i> Search
+                </button>
+                <button id="histSearchClear" class="btn btn-outline-secondary" title="Clear destination">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <c:if test="${historyItemsSize == '0'}">
     <div class="alert alert-info d-flex align-items-center gap-2 mt-3">
         <i class="bi bi-info-circle-fill"></i>
@@ -31,57 +111,11 @@
     </div>
 </c:if>
 
-<div class="mt-3">
-<div class="d-flex gap-2 justify-content-end align-items-center mb-2">
-  <div class="input-group input-group-sm flex-nowrap" style="width:auto" title="Page size">
-    <span class="input-group-text px-2"><i class="bi bi-list-ol"></i></span>
-    <select id="histPageLen" class="form-select form-select-sm" style="width:auto">
-      <option value="10">10</option>
-      <option value="25">25</option>
-      <option value="50">50</option>
-      <option value="100">100</option>
-      <option value="250">250</option>
-    </select>
-  </div>
-  <div class="dropdown">
-    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="histColModeBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" data-bs-boundary="viewport" aria-expanded="false">
-      <i class="bi bi-layout-three-columns me-1"></i>Auto
-    </button>
-    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="histColModeBtn">
-      <li><a class="dropdown-item active" href="#" data-col-mode="auto">
-        <i class="bi bi-check me-1"></i><strong>Auto</strong>
-        <small class="d-block text-muted ms-4">Adapts to screen width</small>
-      </a></li>
-      <li><a class="dropdown-item" href="#" data-col-mode="all">
-        <strong>All</strong>
-        <small class="d-block text-muted ms-0">All columns visible</small>
-      </a></li>
-      <li><a class="dropdown-item" href="#" data-col-mode="compact">
-        <strong>Compact</strong>
-        <small class="d-block text-muted ms-0">Hides: Error, Transfer Host</small>
-      </a></li>
-      <li><hr class="dropdown-divider"></li>
-      <li><a class="dropdown-item" href="#" data-col-mode="custom">
-        <strong>Custom</strong>
-        <small class="d-block text-muted ms-0">Choose individual columns</small>
-      </a></li>
-      <li id="histCustomColChkPanel" style="display:none;">
-        <div class="px-3 py-2 d-flex flex-column gap-1" style="min-width:160px;">
-          <div class="form-check mb-0"><input class="form-check-input hh-custom-col-chk" type="checkbox" id="hhchk-0" data-col="0" checked><label class="form-check-label" for="hhchk-0">Error</label></div>
-          <div class="form-check mb-0"><input class="form-check-input hh-custom-col-chk" type="checkbox" id="hhchk-1" data-col="1" checked disabled><label class="form-check-label text-muted" for="hhchk-1">Event Time <small>(required)</small></label></div>
-          <div class="form-check mb-0"><input class="form-check-input hh-custom-col-chk" type="checkbox" id="hhchk-2" data-col="2" checked disabled><label class="form-check-label text-muted" for="hhchk-2">Status <small>(required)</small></label></div>
-          <div class="form-check mb-0"><input class="form-check-input hh-custom-col-chk" type="checkbox" id="hhchk-3" data-col="3" checked><label class="form-check-label" for="hhchk-3">Transfer Host</label></div>
-          <div class="form-check mb-0"><input class="form-check-input hh-custom-col-chk" type="checkbox" id="hhchk-4" data-col="4" checked><label class="form-check-label" for="hhchk-4">Comment</label></div>
-        </div>
-      </li>
-    </ul>
-  </div>
-</div>
 <table id="transferHistoryTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
     <thead class="table-light">
         <tr>
             <th>Error</th>
-            <th title="Event Time (UTC)">Event Time</th>
+            <th title="Event Time (UTC) — date shown in selector above">Event Time</th>
             <th>Status</th>
             <th>Transfer Host</th>
             <th>Comment</th>
@@ -89,7 +123,6 @@
     </thead>
     <tbody></tbody>
 </table>
-</div>
 
 <script>
 $(function() {
@@ -113,16 +146,12 @@ $(function() {
         autoWidth: false,
         order: [[1, 'desc']],
         columns: [
-            { orderable: true,  data: 0, width: '5em' },
-            { orderable: true,  data: 1 },
-            { orderable: true,  data: 2 },
-            { orderable: true,  data: 3 },
-            { orderable: false, data: 4 }
+            { orderable: true,  data: 0, width: '5em', render: function(d) { return d || ''; } },
+            { orderable: true,  data: 1,               render: function(d) { return d || ''; } },
+            { orderable: true,  data: 2,               render: function(d) { return d || ''; } },
+            { orderable: true,  data: 3,               render: function(d) { return d || ''; } },
+            { orderable: false, data: 4,               render: function(d) { return d || ''; } }
         ],
-        columnDefs: [{ targets: '_all', render: $.fn.dataTable.render.text() }],
-        createdRow: function(row, data) {
-            $('td', row).each(function(i) { $(this).html(data[i]); });
-        },
         dom: 't<"d-flex align-items-start mt-2"i<"ms-auto"p>>',
         language: {
             processing: '<span class="spinner-border spinner-border-sm me-1"></span> Loading&hellip;',
@@ -135,6 +164,89 @@ $(function() {
         try { localStorage.setItem('histPageLen', len); } catch(e) {}
         dt.page.len(len).draw();
     });
+
+    // Destination picker autocomplete
+    (function(){
+        var opts = Array.from(document.querySelectorAll('#destPickerData li')).map(function(el) {
+            return { n: el.dataset.name, l: el.dataset.label };
+        });
+        var active = -1, filtered = [];
+
+        function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+        function render(q) {
+            var drop = document.getElementById('destPickerDropdown');
+            var lq = q ? q.toLowerCase() : '';
+            filtered = lq ? opts.filter(function(o) {
+                return o.n.toLowerCase().indexOf(lq) >= 0 || o.l.toLowerCase().indexOf(lq) >= 0;
+            }) : opts.slice();
+            active = -1;
+            if (!filtered.length) {
+                drop.innerHTML = '<li style="padding:4px 10px;font-size:0.875rem;color:var(--bs-secondary-color)">No match</li>';
+                return;
+            }
+            drop.innerHTML = filtered.map(function(o, i) {
+                var label = o.l ? '<br><small class="text-muted" style="font-size:0.78rem">' + esc(o.l) + '</small>' : '';
+                return '<li role="option" data-idx="' + i + '"'
+                     + ' style="padding:5px 10px;cursor:pointer;line-height:1.3"'
+                     + ' onmouseover="destHover(this)" onmousedown="destGo(' + i + ')">'
+                     + esc(o.n) + label + '</li>';
+            }).join('');
+        }
+
+        function setActive(idx) {
+            var items = document.querySelectorAll('#destPickerDropdown li[data-idx]');
+            items.forEach(function(el) { el.style.background = ''; });
+            active = (idx >= 0 && idx < items.length) ? idx : -1;
+            if (active >= 0) { items[active].style.background = 'var(--bs-secondary-bg)'; items[active].scrollIntoView({ block: 'nearest' }); }
+        }
+
+        function navigate(name) {
+            var url = new URL(window.location.href);
+            url.searchParams.set('destinationName', name);
+            window.location.href = url.toString();
+        }
+
+        window.destPickerFilter = function() {
+            render(document.getElementById('destPickerInput').value);
+            document.getElementById('destPickerDropdown').style.display = 'block';
+        };
+        window.destPickerOpen = function() {
+            render(document.getElementById('destPickerInput').value);
+            document.getElementById('destPickerDropdown').style.display = 'block';
+        };
+        window.destPickerClose = function() { document.getElementById('destPickerDropdown').style.display = 'none'; };
+        window.destHover = function(el) { setActive(parseInt(el.dataset.idx, 10)); };
+        window.destGo = function(idx) { if (filtered[idx]) navigate(filtered[idx].n); };
+        window.destPickerKey = function(e) {
+            var drop = document.getElementById('destPickerDropdown');
+            var isOpen = drop.style.display !== 'none';
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (!isOpen) { render(document.getElementById('destPickerInput').value); drop.style.display = 'block'; }
+                setActive(Math.min(active + 1, filtered.length - 1));
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                setActive(Math.max(active - 1, 0));
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (active >= 0 && filtered[active]) destGo(active);
+                else if (filtered.length === 1) destGo(0);
+            } else if (e.key === 'Escape') {
+                drop.style.display = 'none';
+            }
+        };
+
+        $('#histSearchBtn').on('click', function() {
+            var name = $('#destPickerInput').val().trim();
+            if (name) navigate(name);
+        });
+        $('#histSearchClear').on('click', function() {
+            var url = new URL(window.location.href);
+            url.searchParams.delete('destinationName');
+            window.location.href = url.toString();
+        });
+    })();
 
     // Column-mode dropdown
     var HH_CUSTOM_COL_KEY = 'histCustomCols';

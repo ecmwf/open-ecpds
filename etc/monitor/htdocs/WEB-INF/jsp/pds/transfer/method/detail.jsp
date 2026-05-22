@@ -9,8 +9,8 @@
 
 <auth:if basePathKey="method.basepath" paths="">
 <auth:then>
-<div class="pt-2">
-<a href="<bean:message key="method.basepath"/>" class="btn btn-sm btn-outline-secondary">
+<div class="mt-3">
+<a href="<bean:message key="method.basepath"/>" class="btn btn-outline-primary">
     <i class="bi bi-arrow-left"></i> All Transfer Methods
 </a>
 </div>

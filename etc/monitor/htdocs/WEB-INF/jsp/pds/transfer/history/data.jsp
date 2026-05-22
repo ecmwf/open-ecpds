@@ -44,9 +44,18 @@ Transfer History Entry: <strong><c:out value="${item.id}"/></strong>
 </div>
 <div class="card-body py-0">
 <div class="field-grid">
-<div class="field-row"><div class="field-label">Data Transfer</div><div class="field-value"><a href="<bean:message key="datatransfer.basepath"/>/${item.dataTransfer.id}"><span class="val-code">${item.dataTransfer.id}</span></a><c:if test="${not empty item.dataTransfer.target}"><span class="val-code text-break d-inline-block ms-1">${item.dataTransfer.target}</span></c:if></div></div>
-<div class="field-row"><div class="field-label">Data File</div><div class="field-value"><auth:if basePathKey="datafile.basepath" paths="/${item.dataTransfer.dataFileId}"><auth:then><a href="<bean:message key="datafile.basepath"/>/${item.dataTransfer.dataFileId}"><span class="val-code">${item.dataTransfer.dataFileId}</span></a></auth:then><auth:else><span class="val-code">${item.dataTransfer.dataFileId}</span></auth:else></auth:if><c:if test="${not empty item.dataTransfer.dataFile.original}"><span class="val-code text-break d-inline-block ms-1">${item.dataTransfer.dataFile.original}</span></c:if></div></div>
+<div class="field-row"><div class="field-label">Data Transfer</div><div class="field-value"><div class="d-flex flex-wrap align-items-baseline gap-2"><a href="<bean:message key="datatransfer.basepath"/>/${item.dataTransfer.id}"><span class="val-code">${item.dataTransfer.id}</span></a><c:if test="${not empty item.dataTransfer.target}"><span class="val-code text-break">${item.dataTransfer.target}</span></c:if></div></div></div>
+<div class="field-row"><div class="field-label">Data File</div><div class="field-value"><div class="d-flex flex-wrap align-items-baseline gap-2"><auth:if basePathKey="datafile.basepath" paths="/${item.dataTransfer.dataFileId}"><auth:then><a href="<bean:message key="datafile.basepath"/>/${item.dataTransfer.dataFileId}"><span class="val-code">${item.dataTransfer.dataFileId}</span></a></auth:then><auth:else><span class="val-code">${item.dataTransfer.dataFileId}</span></auth:else></auth:if><c:if test="${not empty item.dataTransfer.dataFile.original}"><span class="val-code text-break">${item.dataTransfer.dataFile.original}</span></c:if></div></div></div>
 <div class="field-row"><div class="field-label">Transfer Host</div><div class="field-value"><c:choose><c:when test="${not empty item.hostName}"><a href="<bean:message key="host.basepath"/>/${item.hostName}"><c:out value="${not empty item.hostNickName ? item.hostNickName : item.hostName}"/></a></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
 </div>
 </div>
 </div>
+
+<c:if test="${not empty item.dataTransfer.destinationName and not empty item.date}">
+<div class="mt-3">
+    <a href="/do/transfer/history?destinationName=<c:out value="${item.dataTransfer.destinationName}"/>&date=<content:content name="item.date" dateFormatKey="date.format.iso" ignoreNull="true"/>"
+       class="btn btn-outline-primary">
+        <i class="bi bi-arrow-left me-1"></i>Full Transfer History
+    </a>
+</div>
+</c:if>

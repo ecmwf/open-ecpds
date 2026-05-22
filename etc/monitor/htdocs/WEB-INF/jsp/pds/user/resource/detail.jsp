@@ -5,7 +5,7 @@
 
 <tiles:insert page="/WEB-INF/jsp/pds/user/resource/data.jsp"/>
 <div class="mt-3">
-<a href="/do/user/resource" class="btn btn-sm btn-outline-secondary">
+<a href="/do/user/resource" class="btn btn-outline-primary">
     <i class="bi bi-arrow-left"></i> All Web Resources
 </a>
 </div>

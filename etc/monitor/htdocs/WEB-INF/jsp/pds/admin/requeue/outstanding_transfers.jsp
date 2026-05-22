@@ -158,19 +158,15 @@ autoWidth: false,
 dom: 't<"d-flex align-items-start mt-2 px-3 pb-2"i<"ms-auto"p>>',
 order: [[0, 'asc']],
 columns: [
-{ orderable: true,  data: 0 },
-{ orderable: true,  data: 1 },
-{ orderable: true,  data: 2 },
-{ orderable: true,  data: 3 },
-{ orderable: false, data: 4 },
-{ orderable: false, data: 5 },
-{ orderable: true,  data: 6 },
-{ orderable: true,  data: 7 }
+{ orderable: true,  data: 0 , render: function(d) { return d || ''; } },
+{ orderable: true,  data: 1 , render: function(d) { return d || ''; } },
+{ orderable: true,  data: 2 , render: function(d) { return d || ''; } },
+{ orderable: true,  data: 3 , render: function(d) { return d || ''; } },
+{ orderable: false, data: 4 , render: function(d) { return d || ''; } },
+{ orderable: false, data: 5 , render: function(d) { return d || ''; } },
+{ orderable: true,  data: 6 , render: function(d) { return d || ''; } },
+{ orderable: true,  data: 7 , render: function(d) { return d || ''; } }
 ],
-columnDefs: [{ targets: '_all', render: $.fn.dataTable.render.text() }],
-createdRow: function(row, data) {
-$('td', row).each(function(i) { $(this).html(data[i]); });
-},
 drawCallback: function(settings) {
 var json = settings.json || {};
 var total = json.recordsTotal || 0;

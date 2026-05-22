@@ -22,7 +22,7 @@
 <auth:then>
 <tr>
 <td colspan="2" class="pt-2">
-<a href="<bean:message key="host.basepath"/>" class="btn btn-sm btn-outline-secondary">
+<a href="<bean:message key="host.basepath"/>" class="btn btn-outline-primary">
     <i class="bi bi-arrow-left"></i> All Transfer Hosts
 </a>
 </td>

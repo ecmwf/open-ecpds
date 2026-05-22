@@ -8,7 +8,7 @@
 
 <tiles:insert page="/WEB-INF/jsp/pds/user/category/data.jsp"/>
 <div class="mt-3">
-<a href="/do/user/category" class="btn btn-sm btn-outline-secondary">
-    <i class="bi bi-arrow-left"></i> All Web Categories
+<a href="/do/user/category" class="btn btn-outline-primary">
+    <i class="bi bi-arrow-left me-1"></i>All Web Categories
 </a>
 </div>

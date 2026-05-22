@@ -10,9 +10,9 @@
 
 <auth:if basePathKey="datafile.basepath" paths="">
 <auth:then>
-<div class="pt-2">
-<a href="<bean:message key="datafile.basepath"/>" class="btn btn-sm btn-outline-secondary">
-    <i class="bi bi-arrow-left"></i> All Data Files
+<div class="mt-3">
+<a href="<bean:message key="datafile.basepath"/>" class="btn btn-outline-primary">
+    <i class="bi bi-arrow-left me-1"></i>All Data Files
 </a>
 </div>
 </auth:then>

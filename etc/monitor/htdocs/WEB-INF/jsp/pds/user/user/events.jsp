@@ -59,7 +59,7 @@
 <table id="userEventTable" class="table table-sm table-hover table-striped align-middle mb-0" style="width:100%">
     <thead class="table-light">
         <tr>
-            <th title="Time (UTC)">Time</th>
+            <th title="Time (UTC) — date shown in selector above">Time</th>
             <th>Web User</th>
             <th>Action</th>
             <th>Comment</th>
@@ -98,18 +98,14 @@ $(function() {
         autoWidth: false,
         order: [[0, 'desc']],
         columns: [
-            { orderable: true,  data: 0 },
-            { orderable: true,  data: 1 },
-            { orderable: true,  data: 2 },
-            { orderable: true,  data: 3 },
-            { orderable: false, data: 4 },
-            { orderable: false, data: 5 },
-            { orderable: false, data: 6, width: '48px' }
+            { orderable: true,  data: 0 , render: function(d) { return d || ''; } },
+            { orderable: true,  data: 1 , render: function(d) { return d || ''; } },
+            { orderable: true,  data: 2 , render: function(d) { return d || ''; } },
+            { orderable: true,  data: 3 , render: function(d) { return d || ''; } },
+            { orderable: false, data: 4 , render: function(d) { return d || ''; } },
+            { orderable: false, data: 5 , render: function(d) { return d || ''; } },
+            { orderable: false, data: 6, width: '48px' , render: function(d) { return d || ''; } }
         ],
-        columnDefs: [{ targets: '_all', render: $.fn.dataTable.render.text() }],
-        createdRow: function(row, data) {
-            $('td', row).each(function(i) { $(this).html(data[i]); });
-        },
         dom: 't<"d-flex align-items-start mt-2 px-3 pb-2"i<"ms-auto"p>>',
         language: {
             info: 'Showing _START_-_END_ of _TOTAL_',

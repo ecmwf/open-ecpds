@@ -8,8 +8,8 @@
 
 <tiles:insert page="/WEB-INF/jsp/pds/user/user/data.jsp"/>
 <div class="mt-3 d-flex gap-2 flex-wrap">
-<a href="/do/user/user" class="btn btn-sm btn-outline-secondary">
-    <i class="bi bi-arrow-left"></i> All Web Users
+<a href="/do/user/user" class="btn btn-outline-primary">
+    <i class="bi bi-arrow-left me-1"></i>All Web Users
 </a>
-<auth:link basePathKey="event.basepath" href="/${user.id}" styleClass="btn btn-sm btn-outline-secondary">Web Event Logs for ${user.id}</auth:link>
+<auth:link basePathKey="event.basepath" href="/${user.id}" styleClass="btn btn-outline-primary">Web Event Logs for ${user.id}</auth:link>
 </div>

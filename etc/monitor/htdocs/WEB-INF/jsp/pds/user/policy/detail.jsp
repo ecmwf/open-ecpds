@@ -10,7 +10,7 @@
 <tiles:insert page="/WEB-INF/jsp/pds/user/policy/data.jsp"/>
 
 <div class="mt-3">
-<a href="/do/user/policy" class="btn btn-sm btn-outline-secondary">
+<a href="/do/user/policy" class="btn btn-outline-primary">
     <i class="bi bi-arrow-left"></i> All Data Policies
 </a>
 </div>

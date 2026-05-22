@@ -102,20 +102,16 @@ $(function() {
         autoWidth: false,
         order: [[5, 'desc']],
         columns: [
-            { orderable: true,  data: 0 },
-            { orderable: true,  data: 1 },
-            { orderable: true,  data: 2 },
-            { orderable: true,  data: 3 },
-            { orderable: true,  data: 4 },
-            { orderable: true,  data: 5 },
-            { orderable: false, data: 6 },
-            { orderable: false, data: 7 },
-            { orderable: true,  data: 8 }
+            { orderable: true,  data: 0 , render: function(d) { return d || ''; } },
+            { orderable: true,  data: 1 , render: function(d) { return d || ''; } },
+            { orderable: true,  data: 2 , render: function(d) { return d || ''; } },
+            { orderable: true,  data: 3 , render: function(d) { return d || ''; } },
+            { orderable: true,  data: 4 , render: function(d) { return d || ''; } },
+            { orderable: true,  data: 5 , render: function(d) { return d || ''; } },
+            { orderable: false, data: 6 , render: function(d) { return d || ''; } },
+            { orderable: false, data: 7 , render: function(d) { return d || ''; } },
+            { orderable: true,  data: 8 , render: function(d) { return d || ''; } }
         ],
-        columnDefs: [{ targets: '_all', render: $.fn.dataTable.render.text() }],
-        createdRow: function(row, data) {
-            $('td', row).each(function(i) { $(this).html(data[i]); });
-        },
         dom: 't<"d-flex align-items-start mt-2 px-3 pb-2"i<"ms-auto"p>>',
         language: {
             info: 'Showing _START_-_END_ of _TOTAL_',
