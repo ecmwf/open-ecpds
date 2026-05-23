@@ -687,6 +687,10 @@
 			type="ecmwf.ecpds.master.plugin.http.controller.transfer.data.GetDataTransferAction">
 			<forward name="success" path=".pds.transfer.data" />
 		</action>
+		<action path="/transfer/data/progress/*" parameter="{1}"
+			type="ecmwf.ecpds.master.plugin.http.controller.transfer.data.GetDataTransferProgressJsonAction">
+			<forward name="success" path=".pds.transfer.data.detail" />
+		</action>
 		<action path="/transfer/data/*" parameter="{1}"
 			type="ecmwf.ecpds.master.plugin.http.controller.transfer.data.GetDataTransferAction">
 			<forward name="success" path=".pds.transfer.data.detail" />
