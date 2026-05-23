@@ -1,18 +1,8 @@
 <%@ page session="true" %>
 
 <%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean" %>
-<%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth" %>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
 
-<c:if test="${empty users}">
-<div class="d-flex align-items-center alert alert-info mt-2 gap-2">
-    No Web Users found.
-    <a href="<bean:message key="user.basepath"/>/edit/insert_form"
-       class="btn btn-sm btn-outline-success ms-auto"><i class="bi bi-plus-circle"></i> Create</a>
-</div>
-</c:if>
-
-<c:if test="${not empty users}">
 <div class="card border-0 shadow-sm mt-3">
 <div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)">
     <i class="bi bi-people text-primary"></i>
@@ -38,11 +28,11 @@
                         <i class="bi bi-layout-three-columns me-1"></i>Auto
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="webUsrColModeBtn">
-                        <li><a class="dropdown-item" href="#" data-webUsr-mode="auto"><strong>Auto</strong><br><small class="text-muted">Hides columns based on screen width</small></a></li>
-                        <li><a class="dropdown-item" href="#" data-webUsr-mode="all"><strong>All</strong><br><small class="text-muted">Shows all columns</small></a></li>
-                        <li><a class="dropdown-item" href="#" data-webUsr-mode="compact"><strong>Compact</strong><br><small class="text-muted">Hides: Comment, Categories</small></a></li>
+                        <li><a class="dropdown-item" href="#" data-webusr-mode="auto"><strong>Auto</strong><br><small class="text-muted">Hides columns based on screen width</small></a></li>
+                        <li><a class="dropdown-item" href="#" data-webusr-mode="all"><strong>All</strong><br><small class="text-muted">Shows all columns</small></a></li>
+                        <li><a class="dropdown-item" href="#" data-webusr-mode="compact"><strong>Compact</strong><br><small class="text-muted">Hides: Comment, Categories</small></a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="#" data-webUsr-mode="custom"><strong>Custom</strong><br><small class="text-muted">Choose individual columns</small></a></li>
+                        <li><a class="dropdown-item" href="#" data-webusr-mode="custom"><strong>Custom</strong><br><small class="text-muted">Choose individual columns</small></a></li>
                         <li id="webUsrCustomColChkPanel" style="display:none;">
                             <div class="px-3 py-2 d-flex flex-column gap-1" style="min-width:180px;">
             <div class="form-check mb-0"><input class="form-check-input webUsr-col-chk" type="checkbox" id="webUsrchk-0" data-col="0" checked disabled><label class="form-check-label text-muted" for="webUsrchk-0">Web Login <small>(required)</small></label></div>
@@ -69,29 +59,7 @@
             <th class="text-center">Actions</th>
         </tr>
     </thead>
-    <tbody>
-    <c:forEach var="user" items="${users}">
-        <tr>
-            <td><a href="<bean:message key="user.basepath"/>/${user.id}">${user.id}</a></td>
-            <td>${user.commonName}</td>
-            <td class="text-center" data-order="${user.active ? 1 : 0}">
-                <c:choose>
-                    <c:when test="${user.active}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when>
-                    <c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise>
-                </c:choose>
-            </td>
-            <td>
-                <c:forEach var="category" items="${user.categories}">
-                    <a href="<bean:message key="category.basepath"/>/${category.id}" title="${category.description}">${category.name}</a>&nbsp;
-                </c:forEach>
-            </td>
-            <td class="buttons text-center">
-                <auth:link styleClass="menuitem" href="/do/user/user/edit/update_form/${user.id}" imageKey="icon.small.update"/>
-                <auth:link styleClass="menuitem" href="/do/user/user/edit/delete_form/${user.id}" imageKey="icon.small.delete"/>
-            </td>
-        </tr>
-    </c:forEach>
-    </tbody>
+    <tbody></tbody>
 </table>
 </div>
 </div>
@@ -99,12 +67,18 @@
 <script>
 $(document).ready(function() {
     var table = $('#usersWebTable').DataTable({
+        ajax:       { url: '/do/user/user/list', dataSrc: 'data' },
         paging:     true,
         pageLength: (function() { try { var v = parseInt(localStorage.getItem('usersWebPageLen'), 10); return [10,25,50,100,250].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })(),
         searching:  true,
         ordering:   true,
         info:       true,
-        columnDefs: [{ orderable: false, targets: -1 }],
+        language:   { emptyTable: 'No Web Users found.' },
+        columnDefs: [
+            { orderable: false, targets: -1 },
+            { orderData: [5], targets: [2] },
+            { visible: false, targets: [5] }
+        ],
         dom: 't<"d-flex align-items-start mt-2 px-3 pb-2"i<"ms-auto"p>>'
     });
     var _len = (function() { try { var v = parseInt(localStorage.getItem('usersWebPageLen'), 10); return [10,25,50,100,250].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })();
@@ -124,12 +98,16 @@ $(document).ready(function() {
         })();
         function _webUsrShowCols(hideCols) {
             var n = table.columns().count();
-            for (var i = 0; i < n; i++) table.column(i).visible(hideCols.indexOf(i) === -1, false);
+            for (var i = 0; i < n; i++) {
+                if (i >= 5) continue;
+                table.column(i).visible(hideCols.indexOf(i) === -1, false);
+            }
             table.columns.adjust();
         }
         function _webUsrApplyCustomCols() {
             var n = table.columns().count();
             for (var i = 0; i < n; i++) {
+                if (i >= 5) continue;
                 table.column(i).visible((i === 0 || i === 4) ? true : _webUsrCustomCols.indexOf(i) !== -1, false);
             }
             table.columns.adjust();
@@ -159,7 +137,7 @@ $(document).ready(function() {
             $('#webUsrColModeBtn').toggleClass('btn-outline-secondary', mode === 'auto').toggleClass('btn-primary', mode !== 'auto');
             $('#webUsrColModeBtn').closest('.dropdown').find('.dropdown-item').each(function() {
                 $(this).find('i.bi-check').remove();
-                if ($(this).data('webUsr-mode') === mode) $(this).prepend('<i class="bi bi-check me-1"></i>');
+                if ($(this).data('webusr-mode') === mode) $(this).prepend('<i class="bi bi-check me-1"></i>');
             });
             document.getElementById('webUsrCustomColChkPanel').style.display = (mode === 'custom') ? '' : 'none';
             if (mode === 'auto') _webUsrApplyResponsive();
@@ -171,7 +149,7 @@ $(document).ready(function() {
         _webUsrApplyMode(_webUsrColMode);
         $('#webUsrColModeBtn').closest('.dropdown').find('.dropdown-item').on('click', function(e) {
             e.preventDefault();
-            var mode = $(this).data('webUsr-mode');
+            var mode = $(this).data('webusr-mode');
             if (!mode) return;
             _webUsrColMode = mode;
             try { localStorage.setItem(_webUsrColKey, mode); } catch(e) {}
@@ -179,4 +157,3 @@ $(document).ready(function() {
         });
 });
 </script>
-</c:if>

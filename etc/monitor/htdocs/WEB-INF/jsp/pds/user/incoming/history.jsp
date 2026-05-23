@@ -11,6 +11,24 @@
         <i class="bi bi-clock-history text-primary"></i>
         <span class="fw-semibold">Data Events Log</span>
         <div class="ms-auto d-flex align-items-center gap-2 flex-nowrap">
+            <div class="input-group input-group-sm flex-nowrap">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input id="incomingHistorySearch" class="form-control form-control-sm" name="search" type="text"
+                    placeholder="Search filename..."
+                    title="Search is performed against the File Name (case-sensitive)"
+                    value="${param['search']}">
+                <button id="incomingHistorySearchBtn" class="btn btn-outline-secondary btn-sm" type="button">Search</button>
+            </div>
+            <div class="input-group input-group-sm flex-nowrap" style="width:auto" title="Page size">
+                <span class="input-group-text px-2"><i class="bi bi-list-ol"></i></span>
+                <select id="incomingHistPageLen" class="form-select form-select-sm" style="width:auto">
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                    <option value="250">250</option>
+                </select>
+            </div>
             <div class="dropdown">
                 <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="ihColModeBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" data-bs-boundary="viewport" aria-expanded="false">
                     <i class="bi bi-layout-three-columns me-1"></i>Auto
@@ -34,24 +52,6 @@
                         </div>
                     </li>
                 </ul>
-            </div>
-            <div class="input-group input-group-sm flex-nowrap" style="width:auto" title="Page size">
-                <span class="input-group-text px-2"><i class="bi bi-list-ol"></i></span>
-                <select id="incomingHistPageLen" class="form-select form-select-sm" style="width:auto">
-                    <option value="10">10</option>
-                    <option value="25">25</option>
-                    <option value="50">50</option>
-                    <option value="100">100</option>
-                    <option value="250">250</option>
-                </select>
-            </div>
-            <div class="input-group input-group-sm flex-nowrap">
-                <span class="input-group-text"><i class="bi bi-search"></i></span>
-                <input id="incomingHistorySearch" class="form-control form-control-sm" name="search" type="text"
-                    placeholder="Search filename..."
-                    title="Search is performed against the File Name (case-sensitive)"
-                    value="${param['search']}">
-                <button id="incomingHistorySearchBtn" class="btn btn-outline-secondary btn-sm" type="button">Search</button>
             </div>
         </div>
     </div>

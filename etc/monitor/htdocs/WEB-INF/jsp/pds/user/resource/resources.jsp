@@ -1,18 +1,8 @@
 <%@ page session="true" %>
 
 <%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean" %>
-<%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth" %>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
 
-<c:if test="${empty resources}">
-<div class="d-flex align-items-center alert alert-info mt-2 gap-2">
-    No Web Resources found.
-    <a href="<bean:message key="resource.basepath"/>/edit/insert_form"
-       class="btn btn-sm btn-outline-success ms-auto"><i class="bi bi-plus-circle"></i> Create</a>
-</div>
-</c:if>
-
-<c:if test="${not empty resources}">
 <div class="card border-0 shadow-sm mt-3">
 <div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)">
     <i class="bi bi-key text-primary"></i>
@@ -65,23 +55,7 @@
             <th class="text-center">Actions</th>
         </tr>
     </thead>
-    <tbody>
-    <c:forEach var="resource" items="${resources}">
-        <tr>
-            <td><a href="/do/user/resource/${resource.id}">${resource.path}</a></td>
-            <td>
-                <c:forEach var="category" items="${resource.categories}">
-                    <a href="<bean:message key="category.basepath"/>/${category.id}" title="${category.description}">${category.name}</a>&nbsp;
-                </c:forEach>
-            </td>
-            <td class="buttons text-center">
-                <auth:link styleClass="menuitem" basePathKey="accesscontrol.basepath" href="/detailer?page=${resource.id}" imageKey="icon.small.text" imageTitleKey="ecpds.user.detailer"/>
-                <auth:link styleClass="menuitem" basePathKey="resource.basepath" href="/edit/update_form/${resource.id}" imageKey="icon.small.update"/>
-                <auth:link styleClass="menuitem" basePathKey="resource.basepath" href="/edit/delete_form/${resource.id}" imageKey="icon.small.delete"/>
-            </td>
-        </tr>
-    </c:forEach>
-    </tbody>
+    <tbody></tbody>
 </table>
 </div>
 </div>
@@ -89,11 +63,13 @@
 <script>
 $(document).ready(function() {
     var table = $('#resourcesTable').DataTable({
+        ajax:       { url: '/do/user/resource/list', dataSrc: 'data' },
         paging:     true,
         pageLength: (function() { try { var v = parseInt(localStorage.getItem('resourcesPageLen'), 10); return [10,25,50,100,250].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })(),
         searching:  true,
         ordering:   true,
         info:       true,
+        language:   { emptyTable: 'No Web Resources found.' },
         columnDefs: [{ orderable: false, targets: -1 }],
         dom: 't<"d-flex align-items-start mt-2 px-3 pb-2"i<"ms-auto"p>>'
     });
@@ -169,4 +145,3 @@ $(document).ready(function() {
         });
 });
 </script>
-</c:if>

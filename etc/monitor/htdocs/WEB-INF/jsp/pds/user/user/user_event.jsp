@@ -20,7 +20,7 @@
 <div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
     <i class="bi bi-clock-history text-primary"></i>
     <span class="fw-semibold">Events for <auth:link basePathKey="user.basepath" href="/${user.id}">Web User ${user.uid}</auth:link></span>
-    <div class="ms-auto d-flex flex-wrap align-items-center gap-2">
+        <div class="ms-auto d-flex flex-wrap align-items-center gap-2">
         <div class="input-group input-group-sm" style="width:auto">
             <span class="input-group-text"><i class="bi bi-search"></i></span>
             <input type="text" id="userEventsSearch" class="form-control" placeholder="Search events..." style="min-width:180px">
@@ -30,6 +30,28 @@
             <select id="userEventsPageLen" class="form-select form-select-sm" style="width:auto">
                 <option value="10">10</option><option value="25">25</option><option value="50">50</option><option value="100">100</option><option value="250">250</option>
             </select>
+        </div>
+        <div class="dropdown">
+            <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" id="ueaColModeBtn"
+                    data-bs-toggle="dropdown" data-bs-auto-close="outside" data-bs-boundary="viewport" aria-expanded="false">
+                <i class="bi bi-layout-three-columns me-1"></i>Auto
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="ueaColModeBtn">
+                <li><a class="dropdown-item" href="#" data-uea-mode="auto"><strong>Auto</strong><br><small class="text-muted">Hides columns based on screen width</small></a></li>
+                <li><a class="dropdown-item" href="#" data-uea-mode="all"><strong>All</strong><br><small class="text-muted">Shows all columns</small></a></li>
+                <li><a class="dropdown-item" href="#" data-uea-mode="compact"><strong>Compact</strong><br><small class="text-muted">Hides: Host, Comment</small></a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="#" data-uea-mode="custom"><strong>Custom</strong><br><small class="text-muted">Choose individual columns</small></a></li>
+                <li id="ueaCustomColChkPanel" style="display:none;">
+                    <div class="px-3 py-2 d-flex flex-column gap-1" style="min-width:180px;">
+                        <div class="form-check mb-0"><input class="form-check-input uea-col-chk" type="checkbox" id="ueachk-0" data-col="0" checked disabled><label class="form-check-label text-muted" for="ueachk-0">Time <small>(required)</small></label></div>
+                        <div class="form-check mb-0"><input class="form-check-input uea-col-chk" type="checkbox" id="ueachk-1" data-col="1" checked><label class="form-check-label" for="ueachk-1">Host</label></div>
+                        <div class="form-check mb-0"><input class="form-check-input uea-col-chk" type="checkbox" id="ueachk-2" data-col="2" checked disabled><label class="form-check-label text-muted" for="ueachk-2">Action <small>(required)</small></label></div>
+                        <div class="form-check mb-0"><input class="form-check-input uea-col-chk" type="checkbox" id="ueachk-3" data-col="3" checked><label class="form-check-label" for="ueachk-3">Comment</label></div>
+                        <div class="form-check mb-0"><input class="form-check-input uea-col-chk" type="checkbox" id="ueachk-4" data-col="4" checked disabled><label class="form-check-label text-muted" for="ueachk-4">Link <small>(required)</small></label></div>
+                    </div>
+                </li>
+            </ul>
         </div>
     </div>
 </div>
@@ -91,6 +113,71 @@ $(document).ready(function() {
         table.page.len(len).draw();
     });
     $('#userEventsSearch').on('keyup', function() { table.search(this.value).draw(); });
+
+    /* ---- Cols:Auto ---- */
+    var _ueaColKey       = 'ueaColMode';
+    var _ueaCustomColKey = 'ueaCustomCols';
+    var _ueaCompact      = [1, 3];
+    var _ueaColMode = (function() { try { return localStorage.getItem(_ueaColKey) || 'auto'; } catch(e) { return 'auto'; } })();
+    var _ueaCustomCols = (function() {
+        try { var s = localStorage.getItem(_ueaCustomColKey); if (s) return JSON.parse(s); } catch(e) {}
+        return [0, 1, 2, 3, 4];
+    })();
+    function _ueaShowCols(hideCols) {
+        var n = table.columns().count();
+        for (var i = 0; i < n; i++) table.column(i).visible(hideCols.indexOf(i) === -1, false);
+        table.columns.adjust();
+    }
+    function _ueaApplyCustomCols() {
+        var n = table.columns().count();
+        for (var i = 0; i < n; i++) {
+            table.column(i).visible((i === 0 || i === 2 || i === 4) ? true : _ueaCustomCols.indexOf(i) !== -1, false);
+        }
+        table.columns.adjust();
+    }
+    function _ueaSyncChkBoxes() {
+        document.querySelectorAll('.uea-col-chk').forEach(function(chk) {
+            chk.checked = _ueaCustomCols.indexOf(+chk.dataset.col) !== -1;
+        });
+    }
+    document.querySelectorAll('.uea-col-chk').forEach(function(chk) {
+        chk.addEventListener('change', function() {
+            var col = +this.dataset.col;
+            var idx = _ueaCustomCols.indexOf(col);
+            if (this.checked && idx === -1) _ueaCustomCols.push(col);
+            else if (!this.checked && idx !== -1) _ueaCustomCols.splice(idx, 1);
+            try { localStorage.setItem(_ueaCustomColKey, JSON.stringify(_ueaCustomCols)); } catch(e) {}
+            if (_ueaColMode === 'custom') _ueaApplyCustomCols();
+        });
+    });
+    function _ueaApplyResponsive() {
+        if (_ueaColMode !== 'auto') return;
+        _ueaShowCols(window.innerWidth < 768 ? [1, 3] : []);
+    }
+    function _ueaApplyMode(mode) {
+        var label = mode.charAt(0).toUpperCase() + mode.slice(1);
+        $('#ueaColModeBtn').html('<i class="bi bi-layout-three-columns me-1"></i>' + label);
+        $('#ueaColModeBtn').toggleClass('btn-outline-secondary', mode === 'auto').toggleClass('btn-primary', mode !== 'auto');
+        $('#ueaColModeBtn').closest('.dropdown').find('.dropdown-item').each(function() {
+            $(this).find('i.bi-check').remove();
+            if ($(this).data('uea-mode') === mode) $(this).prepend('<i class="bi bi-check me-1"></i>');
+        });
+        document.getElementById('ueaCustomColChkPanel').style.display = (mode === 'custom') ? '' : 'none';
+        if (mode === 'auto') _ueaApplyResponsive();
+        else if (mode === 'all') _ueaShowCols([]);
+        else if (mode === 'compact') _ueaShowCols(_ueaCompact);
+        else if (mode === 'custom') { _ueaSyncChkBoxes(); _ueaApplyCustomCols(); }
+    }
+    $(window).on('resize', _ueaApplyResponsive);
+    _ueaApplyMode(_ueaColMode);
+    $('#ueaColModeBtn').closest('.dropdown').find('.dropdown-item').on('click', function(e) {
+        e.preventDefault();
+        var mode = $(this).data('uea-mode');
+        if (!mode) return;
+        _ueaColMode = mode;
+        try { localStorage.setItem(_ueaColKey, mode); } catch(e) {}
+        _ueaApplyMode(mode);
+    });
 });
 </script>
 </c:if>

@@ -27,6 +27,7 @@
       <option value="100">100</option>
       <option value="250">250</option>
     </select>
+  </div>
 <div class="dropdown">
                     <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" id="ueColModeBtn"
                             data-bs-toggle="dropdown" data-bs-auto-close="outside" data-bs-boundary="viewport" aria-expanded="false">
@@ -51,7 +52,6 @@
                         </li>
                     </ul>
                 </div>
-  </div>
 </div>
 </div>
 <div class="card-body p-0">

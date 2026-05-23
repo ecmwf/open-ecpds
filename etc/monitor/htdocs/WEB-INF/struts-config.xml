@@ -828,6 +828,9 @@
 			type="ecmwf.ecpds.master.plugin.http.controller.user.user.GetUserAction">
 			<forward name="success" path=".pds.user.user" />
 		</action>
+		<action path="/user/user/list"
+			type="ecmwf.ecpds.master.plugin.http.controller.user.user.GetWebUserListJsonAction">
+		</action>
 		<action path="/user/event"
 			type="ecmwf.ecpds.master.plugin.http.controller.user.user.GetUserEventsAction">
 			<forward name="success" path=".pds.user.event" />
@@ -906,6 +909,9 @@
 		<action path="/user/incoming"
 			type="ecmwf.ecpds.master.plugin.http.controller.user.incoming.GetIncomingUserAction">
 			<forward name="success" path=".pds.user.incoming" />
+		</action>
+		<action path="/user/incoming/list"
+			type="ecmwf.ecpds.master.plugin.http.controller.user.incoming.GetIncomingUserListJsonAction">
 		</action>
 		<action path="/user/incoming/*" parameter="{1}"
 			type="ecmwf.ecpds.master.plugin.http.controller.user.incoming.GetIncomingUserAction">
@@ -1104,6 +1110,9 @@
 			type="ecmwf.ecpds.master.plugin.http.controller.user.resource.GetResourceAction"
 			name="resourceDetailActionForm" scope="session">
 			<forward name="success" path=".pds.user.resource" />
+		</action>
+		<action path="/user/resource/list"
+			type="ecmwf.ecpds.master.plugin.http.controller.user.resource.GetResourceListJsonAction">
 		</action>
 		<action path="/user/resource/*" parameter="{1}"
 			type="ecmwf.ecpds.master.plugin.http.controller.user.resource.GetResourceAction"
