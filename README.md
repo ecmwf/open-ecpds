@@ -1036,11 +1036,13 @@ The following map, taken from the OpenECPDS Web Interface, illustrates the globa
 
 <img src="img/Figure20.png" alt="Global Reach of OpenECPDS Data Dissemination" width="550"/>
 
+A corresponding view is available for the acquisition service:
+
+<img src="img/Figure27.png" alt="Global Reach of OpenECPDS Data Acquisition" width="550"/>
+
 > **Warning:** Map pins may represent multiple destinations in dense areas. When applicable, the number of hosts is shown inside the pin.
 
 > **Note:** Geolocation in OpenECPDS is based on the [GeoLite2-City database](https://github.com/wp-statistics/GeoLite2-City), which performs IP-to-location mapping. The resulting locations are approximate and accuracy may vary depending on the IP data available.
-
-A corresponding view is available for the acquisition service.
 
 In addition to this global view, it is also useful to observe how data volumes have evolved over time. The graph below illustrates the annual average monthly data volume (in terabytes) handled by OpenECPDS from 2007 to 2025. This trend highlights the steady and continuous growth of data transfers over eighteen years, reflecting both an expanding user base and the increasing scale of operational activities.
 
