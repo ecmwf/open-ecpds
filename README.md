@@ -381,7 +381,7 @@ A **data transfer** is linked to a unique data file and represents a transfer re
 
 A **destination** should be understood as a place where data transfers are queued and processed in order to deliver data to a unique remote place, hence the name ‘destination’. It specifies the information the Data Dissemination service needs to disseminate the content of a data file to a particular remote site.
 
-<img src="img/Figure02.jpg" alt="The OpenECPDS interface for internal and external user" width="600"/>
+<img src="img/Figure02.png" alt="The OpenECPDS interface for internal and external user" width="600"/>
 
 A breadcrumb trail at the top shows where a user currently is in the tool. In this case, a user has created a destination called EC1. Users with the right credentials can see the status of this destination and can review the progress of data transmission. They can manage the destination by, for example, requesting data transfers, changing priorities and stopping or starting data transmissions.
 
@@ -1026,9 +1026,11 @@ To further optimize performance and reduce latency for transatlantic transfers, 
 
 The following map, taken from the OpenECPDS Web Interface, illustrates the global infrastructure for data dissemination, highlighting all served destinations. It provides a clear visual representation of the system’s extensive reach.
 
-<img src="img/Figure20.svg" alt="Global Reach of OpenECPDS Data Dissemination" width="550"/>
+<img src="img/Figure20.png" alt="Global Reach of OpenECPDS Data Dissemination" width="550"/>
 
->**Warning:** Please note that in areas with a high concentration of destinations within a small region, a single pin on the map may represent multiple destinations.
+> **Warning:** Map pins may represent multiple destinations in dense areas. When applicable, the number of hosts is shown inside the pin.
+
+> **Note:** Geolocation in OpenECPDS is based on the [GeoLite2-City database](https://github.com/wp-statistics/GeoLite2-City), which performs IP-to-location mapping. The resulting locations are approximate and accuracy may vary depending on the IP data available.
 
 A corresponding view is available for the acquisition service.
 
@@ -1048,11 +1050,12 @@ This poster provides an accessible, high-level overview of the system, including
 
 ## Notes
 
-![GraalVM](https://img.shields.io/badge/GraalVM-25.0.0-brightgreen)
+![GraalVM](https://img.shields.io/badge/GraalVM-25.0.3-brightgreen)
 ![Maven](https://img.shields.io/badge/Maven-3.9.9-brightgreen)
 ![Docker](https://img.shields.io/badge/Docker-29.2.1-blue)
 ![Kompose](https://img.shields.io/badge/Kompose-1.37.0-blue)
 ![Kubectl](https://img.shields.io/badge/Kubectl-1.37.2-blue)
+![GeoIP](https://img.shields.io/badge/GeoIP-GeoLite2--City-blue)
 
 This project automates the downloading of specific tools (GraalVM, Maven, Docker, Kompose, Kubectl). Additionally, it uses external APIs that are downloaded via Maven. For licenses and details on these dependencies, please refer to their respective documentation. You can retrieve the licenses from the development container using:
 
