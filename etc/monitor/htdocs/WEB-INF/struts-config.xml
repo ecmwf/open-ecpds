@@ -1047,6 +1047,10 @@
 			type="ecmwf.ecpds.master.plugin.http.controller.user.category.GetCategoryAction">
 			<forward name="success" path=".pds.user.category" />
 		</action>
+		<action path="/user/category/list"
+			type="ecmwf.ecpds.master.plugin.http.controller.user.category.GetCategoryListJsonAction">
+			<forward name="success" path=".pds.user.category" />
+		</action>
 		<action path="/user/category/*" parameter="{1}"
 			type="ecmwf.ecpds.master.plugin.http.controller.user.category.GetCategoryAction">
 			<forward name="success" path=".pds.user.category.detail" />
