@@ -198,6 +198,10 @@ It might take a few seconds for all the services to start. Once they are up, you
 |                       | [http://127.0.0.1:3062](http://127.0.0.1:3062)   | monitor/admin         |
 |                       | [http://127.0.0.1:4062](http://127.0.0.1:4062)   | mover/admin           |
 
+The screenshot below illustrates the Monitoring interface available on port 3443 at the login screen (prior to authentication):
+
+<img src="img/Figure26.jpg" alt="The OpenECPDS interface for internal and external user" width="600"/>
+
 ### Checking the Containers and Logs
 
 To verify that the containers are running, use:
