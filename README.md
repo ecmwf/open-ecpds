@@ -375,6 +375,8 @@ Understanding some key OpenECPDS concepts will help users to benefit fully from 
 
 A user connecting to the OpenECPDS web interface will come across each of these entities, which are related to each other through the different services.
 
+<img src="img/Figure24.png" alt="The OpenECPDS interface for internal and external user" width="600"/>
+
 A **data file** is a record of a product stored in the OpenECPDS Data Store with a one-to-one mapping between the data file and the product. The data file contains information on the physical specifications of the product, such as its size, type, compression and entity tag (ETag) in the Data Store, as well as the metadata associated with it by the data provider (e.g. meteorological parameters, name or comments concerning the product).
 
 A **data transfer** is linked to a unique data file and represents a transfer request for its content, together with any related information (e.g. schedule, priority, progress, status, rate, errors, history). A single data file can be linked to several data transfers as many remote sites might be interested in obtaining the same products from the Data Store.
@@ -386,6 +388,8 @@ A **destination** should be understood as a place where data transfers are queue
 A breadcrumb trail at the top shows where a user currently is in the tool. In this case, a user has created a destination called EC1. Users with the right credentials can see the status of this destination and can review the progress of data transmission. They can manage the destination by, for example, requesting data transfers, changing priorities and stopping or starting data transmissions.
 
 Each destination implements a transfer scheduler with its own configuration parameters, which can be fine-tuned to meet the remote site’s needs. These settings make it possible to control various things, such as how to organise the data transmission by using data transfer priorities and parallel transmissions, or how to deal with transmission errors with a fully customisable retry mechanism.
+
+<img src="img/Figure25.png" alt="The OpenECPDS interface for internal and external user" width="600"/>
 
 In addition, a destination can be associated with a list of **dissemination hosts**, with a primary host indicating the main target system where to deliver the data, and a list of fall-back hosts to switch to if for some reason the primary host is unavailable.
 
