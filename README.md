@@ -24,6 +24,7 @@ Data Acquisition and Data Dissemination are active services initiated by OpenECP
   - [Checking the Containers and Logs](#checking-the-containers-and-logs)
   - [Additional Makefile Options](#additional-makefile-options)
   - [Stopping OpenECPDS](#stopping-openecpds)
+  - [Releasing OpenECPDS to a Container Registry](#releasing-openecpds-to-a-container-registry)
 - [IDE Setup for OpenECPDS Development](#ide-setup-for-openecpds-development)
   - [Visual Studio Code](#visual-studio-code)
   - [Eclipse](#eclipse)
@@ -250,6 +251,32 @@ To clean the logs and data:
 
 ```
 make clean
+```
+
+### Releasing OpenECPDS to a Container Registry
+
+To deploy the built container images to a container registry, go to the `docker` directory, which contains a dedicated [Makefile](docker/Makefile) for building and publishing images:
+
+```bash
+cd docker
+```
+
+This is an example configuration for pushing OpenECPDS container images to a container registry (in this case the GitHub Container Registry, GHCR). The same configuration can also be adapted for other container registries by updating the `CR_URL` accordingly.
+
+The file should follow this format:
+
+```bash
+CR_UID=<GITHUB_USERNAME>
+CR_PWD=<GITHUB_PERSONAL_ACCESS_TOKEN>
+CR_URL=ghcr.io/ecmwf/open-ecpds
+```
+
+>**Warning:** CR_PWD must be a GitHub Personal Access Token (PAT), not your GitHub password.
+
+Once the credentials are set, you can push the images to the container registry with:
+
+```bash
+make push
 ```
 
 ## IDE Setup for OpenECPDS Development
