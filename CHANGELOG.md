@@ -4,6 +4,12 @@ This document summarizes the most significant changes in OpenECPDS across all ma
 
 ---
 
+## open-ecpds 8.0.0-26052026 (2026-05-26)
+
+- Introduction of the new Aegis release following the initial Genesis release.
+- Upgrade to the latest GraalVM release (25.0.3).
+- Various external API upgrades addressing security-related issues.
+
 ## open-ecpds 7.7.0-18052026 (2026-05-18)
 
 - Introduces several user interface improvements designed to enhance usability, accessibility, and overall user experience, following the numerous feedbacks received from end users.
