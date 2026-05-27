@@ -261,7 +261,7 @@ To deploy the built container images to a container registry, go to the `docker`
 cd docker
 ```
 
-This is an example configuration for pushing OpenECPDS container images to a container registry (in this case the GitHub Container Registry, GHCR). The same configuration can be adapted for other container registries by updating `CR_URL` and, if necessary, the authentication credentials (`CR_UID` and `CR_PWD`).
+This is an example configuration for pushing OpenECPDS container images to a container registry (in this case the GitHub Container Registry, GHCR). The credentials are stored in the `.settings/.cr-credentials` file. The same configuration can be adapted for other container registries by updating `CR_URL` and, if necessary, the authentication credentials (`CR_UID` and `CR_PWD`).
 
 The file should follow this format:
 
