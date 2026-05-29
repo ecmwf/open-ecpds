@@ -1,4 +1,4 @@
-FROM rockylinux/rockylinux:9.6
+FROM rockylinux/rockylinux:9.7
 
 ARG SDKMAN_JDK
 ENV SDKMAN_JDK=${SDKMAN_JDK}

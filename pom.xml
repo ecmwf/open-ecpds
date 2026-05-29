@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>ecmwf</groupId>
 	<artifactId>product-data-store</artifactId>
-	<version>8.0.0</version>
+	<version>8.0.1</version>
 	<name>Product Data Store (OpenECPDS)</name>
 	<description>Product Data Store for Acquisition and Dissemination activities</description>
 	<url>https://github.com/ecmwf/open-ecpds</url>
@@ -19,7 +19,7 @@
 		<packager.name>Laurent Gougeon</packager.name>
 		<packager.email>laurent.gougeon@ecmwf.int</packager.email>
 		<packager.distribution>OpenECPDS</packager.distribution>
-		<build.number>26052026</build.number>
+		<build.number>29052026</build.number>
 	</properties>
 	<licenses>
 		<license>
@@ -447,6 +447,11 @@
 											<directoryIncluded>true</directoryIncluded>
 											<filemode>0644</filemode>
 											<dirmode>0755</dirmode>
+											<sources>
+												<source>
+													<location>etc/monitor/htdocs</location>
+												</source>
+											</sources>
 										</mapping>
 									</mappings>
 								</configuration>
@@ -657,9 +662,14 @@
 			<version>1.27.1</version>
 		</dependency>
 		<dependency>
+    		<groupId>org.apache.commons</groupId>
+    		<artifactId>commons-csv</artifactId>
+    		<version>1.14.1</version>
+		</dependency>
+		<dependency>
 			<groupId>commons-io</groupId>
 			<artifactId>commons-io</artifactId>
-			<version>2.16.1</version>
+			<version>2.20.0</version>
 		</dependency>
 		<dependency>
 			<groupId>commons-net</groupId>

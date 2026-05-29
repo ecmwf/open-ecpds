@@ -4,6 +4,11 @@ This document summarizes the most significant changes in OpenECPDS across all ma
 
 ---
 
+## open-ecpds 8.0.1-29052026 (2026-05-29)
+
+- Fix packaging issue affecting the monitor RPM where the ecpds.war application was not included in the generated package.
+- Release 8.0.0-26052026 has been withdrawn and should no longer be used.
+
 ## open-ecpds 8.0.0-26052026 (2026-05-26)
 
 - Introduction of the new Aegis release following the initial Genesis release.

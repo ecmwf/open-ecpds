@@ -1,5 +1,5 @@
 # Base image: Rocky Linux 9                                                                                                                                           
-FROM rockylinux/rockylinux:9.6                                                                                                                                        
+FROM rockylinux/rockylinux:9.7                                                                                                                                        
                                                                                                                                                                       
 # Metadata                                                                                                                                                            
 LABEL maintainer="Laurent.Gougeon@ecmwf.int"                                                                                                                          
