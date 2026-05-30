@@ -1,9 +1,7 @@
 <img src="img/OpenECPDS.svg" alt="SVG Image" width="500">
 
 > **Our mission with OpenECPDS is to keep data moving.**  
-> Inspired by operational excellence. Powered by open-source innovation.  
-> Acquire from anywhere. Deliver everywhere.  
-> Connect with confidence. Share without limits.
+> Inspired by operational excellence. Powered by open-source innovation. Acquire from anywhere. Deliver everywhere. Connect with confidence. Share without limits.
 
 ## Introduction
 
