@@ -243,46 +243,178 @@ JavaScript
 <div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
 <i class="bi bi-activity text-primary"></i>
 <span class="fw-semibold">Progress</span>
-</div>
-<div class="card-body">
-<div class="progress-terminal" style="width:100%">
-<div class="progress-terminal-hdr">
-<i class="bi bi-activity text-success"></i> Activity Log
+<button class="btn btn-link btn-sm text-muted p-0" type="button"
+	data-bs-toggle="collapse" data-bs-target="#progressInfoLegend"
+	aria-expanded="false" title="About this panel">
+	<i class="bi bi-info-circle"></i>
+</button>
+<span id="progressLiveStatus"></span>
+<div class="ms-auto d-flex gap-1">
 <button id="refreshLogBtn"
-class="btn btn-sm btn-outline-secondary progress-terminal-btn py-0 px-2 ms-auto"
+class="btn btn-sm btn-outline-secondary progress-terminal-btn py-0 px-2"
 style="font-size:0.7rem;"
-onclick="(function(btn){
-btn.disabled=true;
-var orig=btn.innerHTML;
-btn.innerHTML='<span class=\'spinner-border spinner-border-sm\' role=\'status\'></span> Refreshing...';
-fetch(window.location.href)
-.then(function(r){return r.text();})
-.then(function(html){
-var doc=new DOMParser().parseFromString(html,'text/html');
-var el=doc.getElementById('progressBody');
-if(el) document.getElementById('progressBody').innerHTML=el.innerHTML;
-btn.disabled=false; btn.innerHTML=orig;
-})
-.catch(function(){ btn.disabled=false; btn.innerHTML=orig; });
-})(this)">
+onclick="progressRefresh(this)">
 <i class="bi bi-arrow-clockwise"></i> Refresh
 </button>
 <button class="btn btn-sm btn-outline-secondary progress-terminal-btn py-0 px-2"
 style="font-size:0.7rem;"
-onclick="(function(btn){
-var text = document.getElementById('progressBody').innerText;
-navigator.clipboard.writeText(text).then(function(){
-btn.innerHTML='<i class=\'bi bi-check-lg\'></i> Copied';
-setTimeout(function(){ btn.innerHTML='<i class=\'bi bi-clipboard\'></i> Copy'; }, 1500);
-});
-})(this)">
+onclick="progressCopy(this)">
 <i class="bi bi-clipboard"></i> Copy
 </button>
 </div>
-<div class="progress-terminal-body" id="progressBody">${host.formattedLastOutput}</div>
+</div>
+<div class="collapse" id="progressInfoLegend">
+	<div class="card-body py-2 px-3 border-bottom" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
+		<strong class="d-block mb-1">Acquisition host activity log</strong>
+		<p class="mb-1">This panel shows the live output produced by this Acquisition host as it accesses and parses remote directories, listing files, resolving metadata, and scheduling new transfers. Each line starts with a timestamp (<code>Mon DD HH:MM:SS</code>) followed by the log message.</p>
+		<ul class="mb-1 ps-3">
+			<li><strong><i class="bi bi-arrow-clockwise"></i> Refresh:</strong> fetches the latest output immediately and restarts live monitoring.</li>
+			<li><strong><i class="bi bi-clipboard"></i> Copy:</strong> copies the full log text to the clipboard.</li>
+		</ul>
+		<div class="d-flex gap-3 flex-wrap mb-1">
+			<span><span class="badge bg-primary-subtle text-primary-emphasis border"><span class="spinner-border spinner-border-sm" style="width:.55rem;height:.55rem"></span> Watching</span> polling for new activity every few seconds.</span>
+			<span><span class="badge bg-success-subtle text-success-emphasis border"><span class="spinner-grow spinner-grow-sm" style="width:.55rem;height:.55rem"></span> Live</span> new output detected, updating in real time.</span>
+			<span><span class="badge bg-secondary-subtle text-secondary-emphasis border">Idle</span> no recent activity; reload the page or click Refresh to resume monitoring.</span>
+		</div>
+	</div>
+</div>
+<div class="card-body p-0">
+<div class="progress-terminal" style="width:100%;border-radius:0 0 var(--bs-card-border-radius) var(--bs-card-border-radius)">
+<div class="progress-terminal-body" id="progressBody" style="border-radius:0 0 var(--bs-card-border-radius) var(--bs-card-border-radius)">${host.formattedLastOutput}</div>
 </div>
 </div>
 </div>
+<script>
+(function () {
+    var POLL_INTERVAL = 4000; // ms between polls
+    var MAX_STALE     = 3;    // consecutive unchanged polls before stopping
+    var _timer        = null;
+    var _staleCount   = 0;
+    var _lastLine     = '';   // last non-empty text line of the output
+
+    function getBody()      { return document.getElementById('progressBody'); }
+    function getStatus()    { return document.getElementById('progressLiveStatus'); }
+    function scrollToBottom() { var b = getBody(); if (b) b.scrollTop = b.scrollHeight; }
+
+    // Extract the last non-empty text line from raw HTML (avoids full-content diffing)
+    function lastLine(html) {
+        if (!html) return '';
+        var tmp = document.createElement('div');
+        tmp.innerHTML = html;
+        var lines = (tmp.innerText || tmp.textContent || '').split('\n');
+        for (var i = lines.length - 1; i >= 0; i--) {
+            var l = lines[i].trim();
+            if (l) return l;
+        }
+        return '';
+    }
+
+    function setStatus(state) {
+        var el = getStatus();
+        if (!el) return;
+        if (state === 'live') {
+            el.innerHTML = '<span class="badge bg-success ms-1" style="font-size:0.65rem;vertical-align:middle">'
+                + '<span class="spinner-grow spinner-grow-sm me-1" style="width:.5rem;height:.5rem;vertical-align:middle"></span>Live</span>';
+        } else if (state === 'watching') {
+            el.innerHTML = '<span class="badge bg-primary ms-1" style="font-size:0.65rem;vertical-align:middle;opacity:0.7">'
+                + '<span class="spinner-border spinner-border-sm me-1" style="width:.5rem;height:.5rem;vertical-align:middle"></span>Watching</span>';
+        } else if (state === 'idle') {
+            el.innerHTML = '<span class="badge bg-secondary ms-1" style="font-size:0.65rem;vertical-align:middle">Idle</span>';
+        } else {
+            el.innerHTML = '';
+        }
+    }
+
+    function stopPolling() {
+        if (_timer) { clearTimeout(_timer); _timer = null; }
+        setStatus('idle');
+    }
+
+    function fetchProgress(callback) {
+        fetch(window.location.href)
+            .then(function (r) { return r.text(); })
+            .then(function (html) {
+                var doc = new DOMParser().parseFromString(html, 'text/html');
+                var el  = doc.getElementById('progressBody');
+                callback(el ? el.innerHTML : null);
+            })
+            .catch(function () { callback(null); });
+    }
+
+    function poll() {
+        _timer = null;
+        fetchProgress(function (newContent) {
+            if (newContent === null) {
+                // network error — try again after interval
+                _timer = setTimeout(poll, POLL_INTERVAL);
+                return;
+            }
+            var body = getBody();
+            if (lastLine(newContent) !== _lastLine) {
+                if (body) { body.innerHTML = newContent; scrollToBottom(); }
+                _lastLine   = lastLine(newContent);
+                _staleCount = 0;
+                setStatus('live');
+                _timer = setTimeout(poll, POLL_INTERVAL);
+            } else {
+                _staleCount++;
+                if (_staleCount >= MAX_STALE) {
+                    stopPolling();
+                } else {
+                    setStatus('watching'); // content unchanged — revert live badge
+                    _timer = setTimeout(poll, POLL_INTERVAL);
+                }
+            }
+        });
+    }
+
+    function startPolling() {
+        if (_timer) clearTimeout(_timer);
+        _staleCount = 0;
+        _lastLine   = lastLine(getBody() ? getBody().innerHTML : '');
+        setStatus('watching');
+        _timer = setTimeout(poll, POLL_INTERVAL);
+    }
+
+    window.progressRefresh = function (btn) {
+        btn.disabled = true;
+        var orig = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Refreshing...';
+        if (_timer) { clearTimeout(_timer); _timer = null; }
+        fetchProgress(function (newContent) {
+            btn.disabled = false;
+            btn.innerHTML = orig;
+            if (newContent === null) return;
+            var body = getBody();
+            if (body) { body.innerHTML = newContent; scrollToBottom(); }
+            _lastLine   = lastLine(newContent);
+            _staleCount = 0;
+            if (newContent.trim()) startPolling();
+            else setStatus('idle');
+        });
+    };
+
+    window.progressCopy = function (btn) {
+        var body = getBody();
+        if (!body) return;
+        navigator.clipboard.writeText(body.innerText).then(function () {
+            btn.innerHTML = '<i class="bi bi-check-lg"></i> Copied';
+            setTimeout(function () { btn.innerHTML = '<i class="bi bi-clipboard"></i> Copy'; }, 1500);
+        });
+    };
+
+    // Auto-start on page load if there is already content
+    document.addEventListener('DOMContentLoaded', function () {
+        var body = getBody();
+        if (body && body.innerHTML.trim()) {
+            scrollToBottom();
+            startPolling();
+        } else {
+            setStatus('idle');
+        }
+    });
+}());
+</script>
 </c:if>
 
 <div class="card border-0 shadow-sm mb-3">

@@ -164,9 +164,9 @@
 </style>
 
 <div class="card shadow-sm mt-2">
-    <div class="card-header d-flex align-items-center justify-content-between py-2 px-3 report-card-hdr">
-        <span class="fw-semibold" style="font-size:0.875rem;">
-            <i class="bi bi-terminal-fill me-2 text-success"></i>
+    <div class="card-header d-flex align-items-center justify-content-between py-2 px-3 report-card-hdr flex-nowrap">
+        <span class="fw-semibold d-inline-flex align-items-center gap-1 flex-shrink-0" style="font-size:0.875rem;">
+            <i class="bi bi-terminal-fill me-1 text-success"></i>
             <c:choose>
                 <c:when test="${not empty proxy}">
                     Network Report: <c:out value="${host.nickName}" />
@@ -176,8 +176,14 @@
                     Network Report: <c:out value="${host.nickName}" />
                 </c:otherwise>
             </c:choose>
+            <button class="btn btn-link p-0 ms-1 report-card-hdr-btn" style="font-size:0.85rem;line-height:1;vertical-align:middle;"
+                    data-bs-toggle="collapse" data-bs-target="#reportInfoPanel"
+                    aria-expanded="false" aria-controls="reportInfoPanel"
+                    title="What is this report?">
+                <i class="bi bi-info-circle"></i>
+            </button>
         </span>
-        <div class="d-flex gap-2 align-items-center">
+        <div class="d-flex gap-2 align-items-center flex-shrink-0">
             <div id="viewToggleGroup" class="btn-group btn-group-sm" role="group"
                  aria-label="View mode" style="display:none!important; font-size:0.75rem;">
                 <button id="btnViewRaw" type="button"
@@ -208,6 +214,23 @@
                     onclick="copyReport(this)" title="Copy to clipboard" style="font-size:0.75rem;" disabled>
                 <i class="bi bi-clipboard"></i> Copy
             </button>
+        </div>
+    </div>
+    <div class="collapse" id="reportInfoPanel">
+        <div class="px-3 pt-2 pb-3 border-bottom small" style="background:var(--bs-secondary-bg)">
+            This report runs an <strong>MTR</strong> (Matt's Traceroute) combined with an <strong>Nmap</strong> port scan against
+            the remote host. MTR combines the functionality of <em>traceroute</em> and <em>ping</em>: it traces the network path
+            hop by hop, measuring packet loss and round-trip latency at each intermediate router. This makes it easy to pinpoint
+            where network degradation or packet loss is occurring between ECPDS and the remote site.
+            <br><br>
+            The report can be viewed in three modes: <strong>Raw</strong> (the plain-text output), <strong>Chart</strong>
+            (a visual bar chart of latency and loss per hop), and <strong>Map</strong> (an interactive map plotting the
+            geographic route of the network path). The map view attempts to geolocate each hop using its IP address.
+            <br><br>
+            <i class="bi bi-exclamation-triangle text-warning me-1"></i>
+            <strong>Note:</strong> GeoIP location data is provided on a best-effort basis and is not guaranteed to be accurate.
+            IP addresses are often registered to a country or city that differs from their actual physical location, and
+            intermediate hops (e.g. backbone routers) may resolve to unexpected locations.
         </div>
     </div>
     <div class="card-body p-0">

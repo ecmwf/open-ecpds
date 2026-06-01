@@ -97,7 +97,11 @@ public class GetDestinationSyncSelectionAction extends PDSAction {
                 } else {
                     // Replace mode: clear everything then set the provided IDs.
                     // JSON body bypasses Jetty's maxFormContentSize limit so any selection size works.
+                    // Both maps must be cleared together: cleanSelectedTransfers only clears selectedTransfers,
+                    // leaving stale "on" entries in actionTransfers that would cause Stop/Requeue to act on
+                    // more transfers than the basket display shows.
                     daf.cleanSelectedTransfers();
+                    daf.cleanActionTransfers();
                     applyIds(daf, root.path("ids").asText(""), "on");
                 }
             }

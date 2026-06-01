@@ -19,28 +19,28 @@
 		};
 		$.get('/do/transfer/destination', params).done(function (json) {
 			if (!json || !json.ids) return;
+			// Update only the current filter's IDs — basket entries from other filters
+			// are left untouched by using delta mode (not replace mode).
+			var addIds = [], delIds = [], delta = 0;
 			json.ids.forEach(function (id) {
 				var strId = String(id);
-				if (all) {
-					selectedTransfers[strId] = true;
-				} else if (!reverse) {
-					selectedTransfers[strId] = false;
-				} else {
-					selectedTransfers[strId] = !selectedTransfers[strId];
-				}
+				var wasOn = !!selectedTransfers[strId];
+				var isOn  = all ? true : (reverse ? !wasOn : false);
+				selectedTransfers[strId] = isOn;
+				if (isOn)  addIds.push(strId);
+				else       delIds.push(strId);
+				if (!wasOn && isOn)  delta++;
+				if (wasOn  && !isOn) delta--;
 			});
-			// Mark dirty immediately so form submit uses syncSelection even if the
-			// user clicks Basket before the next drawCallback fires (race condition fix).
-			// _fullSyncNeeded tells submit to use replace-mode (not delta-mode) because
-			// selectedTransfers has the complete ID list from the idList fetch.
 			window._clientDirty = true;
-			window._fullSyncNeeded = true;
-			window._deltaAdd = {};
-			window._deltaDel = {};
-			// Count the new selection and pass it to the next drawCallback for display
-			var n = 0;
-			for (var k in selectedTransfers) { if (selectedTransfers[k]) n++; }
-			window._pendingClientCount = n;
+			// Merge into existing delta maps so previous star-clicks are not lost.
+			window._deltaAdd = window._deltaAdd || {};
+			window._deltaDel = window._deltaDel || {};
+			addIds.forEach(function (id) { window._deltaAdd[id] = true; delete window._deltaDel[id]; });
+			delIds.forEach(function (id) { window._deltaDel[id] = true; delete window._deltaAdd[id]; });
+			// Derive count from server-authoritative baseline plus the net change of this
+			// operation, so basket entries added in a previous filter/page are not lost.
+			window._pendingClientCount = Math.max(0, (window._clientTotal || 0) + delta);
 			if (window._destTransferTable) window._destTransferTable.ajax.reload(null, false);
 		});
 	}
@@ -55,6 +55,49 @@
 				}
 			}
 		});
+	}
+
+	function _updateHdrStar() {
+		var rows = $('#destTransferTable tbody tr');
+		if (!rows.length) return;
+		var allSelected = true;
+		rows.each(function () {
+			var span = $(this).find('span.star-select');
+			if (span.length) {
+				var id = String(span.data('transferId'));
+				if (!selectedTransfers[id]) { allSelected = false; return false; }
+			}
+		});
+		var icon = document.getElementById('hdr-star-icon');
+		if (!icon) return;
+		if (allSelected) {
+			icon.className = 'bi bi-star-fill text-warning';
+		} else {
+			icon.className = 'bi bi-star';
+		}
+	}
+
+	function togglePageSelection() {
+		var rows = $('#destTransferTable tbody tr');
+		var allSelected = true;
+		rows.each(function () {
+			var span = $(this).find('span.star-select');
+			if (span.length) {
+				var id = String(span.data('transferId'));
+				if (!selectedTransfers[id]) { allSelected = false; return false; }
+			}
+		});
+		rows.each(function () {
+			var span = $(this).find('span.star-select');
+			if (span.length) {
+				var id = String(span.data('transferId'));
+				var isOn = selectedTransfers[id] ? true : false;
+				if (allSelected ? isOn : !isOn) {
+					select(span[0], id);
+				}
+			}
+		});
+		_updateHdrStar();
 	}
 
 	function transferChange(operation, subOp) {
@@ -180,6 +223,7 @@
 			delete (window._deltaAdd = window._deltaAdd || {})[id];
 		}
 		if (typeof window._refreshSelectedCount === 'function') window._refreshSelectedCount();
+		_updateHdrStar();
 	}
 
 	function clickField(field) {

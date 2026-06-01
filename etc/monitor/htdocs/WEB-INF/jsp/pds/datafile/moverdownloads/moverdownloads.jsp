@@ -4,17 +4,38 @@
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 
-<div class="d-flex align-items-center mb-1 gap-2">
-	<h5 class="mb-0"><i class="bi bi-grid-3x3 text-primary me-1"></i>Download Activity</h5>
-	<button class="btn btn-link btn-sm text-muted ms-1 p-0" type="button"
+<div class="card border-0 shadow-sm mb-3">
+<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+	<i class="bi bi-grid-3x3 text-primary"></i>
+	<span class="fw-semibold">Download Activity</span>
+	<button class="btn btn-link btn-sm text-muted p-0" type="button"
 		data-bs-toggle="collapse" data-bs-target="#dlInfoLegend"
 		aria-expanded="false" title="About this matrix">
 		<i class="bi bi-info-circle"></i>
 	</button>
+	<div class="ms-auto d-flex align-items-center gap-2">
+		<div class="dropdown">
+			<button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
+				id="dlGroupDropdown" data-bs-toggle="dropdown" data-bs-auto-close="outside"
+				aria-expanded="false">
+				All groups
+			</button>
+			<ul class="dropdown-menu dropdown-menu-end" id="dlGroupMenu" style="min-width:14rem; max-height:18rem; overflow-y:auto;">
+				<li class="px-3 py-1 border-bottom">
+					<div class="d-flex gap-2">
+						<button class="btn btn-link btn-sm p-0 text-decoration-none" id="dlSelectAll">All</button>
+						<span class="text-muted">|</span>
+						<button class="btn btn-link btn-sm p-0 text-decoration-none" id="dlSelectNone">None</button>
+					</div>
+				</li>
+			</ul>
+		</div>
+		<span id="dlAge" class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis border text-nowrap">updating&hellip;</span>
+	</div>
 </div>
 
-<div class="collapse mb-2" id="dlInfoLegend">
-	<div class="card card-body py-2 px-3" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd);">
+<div class="collapse" id="dlInfoLegend">
+	<div class="card-body py-2 px-3 border-bottom" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
 		<strong class="d-block mb-1">Live in-flight download counts per Data Mover and volume</strong>
 		<p class="mb-1">A <em>download</em> is the process of fetching the content of a new data file onto a Data Mover. It is triggered either by the discovery of a file through an acquisition host, or by the retrieval of a file following a registration via the <code>ecpds</code> command utility.</p>
 		<ul class="mb-1 ps-3">
@@ -33,29 +54,11 @@
 	</div>
 </div>
 
-<div class="d-flex align-items-center mb-2 gap-2">
-	<span class="small fw-semibold text-nowrap text-muted">Transfer Group:</span>
-	<div class="dropdown">
-		<button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
-			id="dlGroupDropdown" data-bs-toggle="dropdown" data-bs-auto-close="outside"
-			aria-expanded="false">
-			All groups
-		</button>
-		<ul class="dropdown-menu" id="dlGroupMenu" style="min-width:14rem; max-height:18rem; overflow-y:auto;">
-			<li class="px-3 py-1 border-bottom">
-				<div class="d-flex gap-2">
-					<button class="btn btn-link btn-sm p-0 text-decoration-none" id="dlSelectAll">All</button>
-					<span class="text-muted">|</span>
-					<button class="btn btn-link btn-sm p-0 text-decoration-none" id="dlSelectNone">None</button>
-				</div>
-			</li>
-		</ul>
-	</div>
-	<span id="dlAge" class="text-muted small ms-auto text-nowrap"></span>
-</div>
-
+<div class="card-body p-0">
 <div id="dlMatrixContainer">
 	<div class="text-muted small fst-italic">Loading&hellip;</div>
+</div>
+</div>
 </div>
 
 <style>
@@ -369,7 +372,8 @@ td.dl-flash {
 	/* ── Age indicator ── */
 	function updateAge() {
 		var el = document.getElementById('dlAge');
-		if (!el || !fetchedAt) return;
+		if (!el) return;
+		if (!fetchedAt) { el.textContent = 'updating\u2026'; return; }
 		el.textContent = 'updated ' + Math.round((Date.now() - fetchedAt) / 1000) + 's ago';
 	}
 
@@ -402,9 +406,11 @@ td.dl-flash {
 					clearInterval(_dlRefIv);
 					clearInterval(_dlAgeIv);
 					var el = document.getElementById('dlAge');
-					if (el) el.innerHTML = '<i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>'
-						+ '<span class="text-warning-emphasis">Session expired</span>'
-						+ ' <a href="#" onclick="location.reload();return false;" class="small">reload</a>';
+					if (el) {
+						el.className = 'badge rounded-pill bg-warning-subtle text-warning-emphasis border text-nowrap';
+						el.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-1"></i>Session expired'
+							+ ' &mdash; <a href="#" onclick="location.reload();return false;">reload</a>';
+					}
 				}
 			});
 	}

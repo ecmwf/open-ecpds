@@ -98,8 +98,8 @@
             columns: [
                 { title: 'Original',     orderable: true,  render: function (data) { return data; } },
                 { title: 'Product Time', orderable: true,  className: 'text-nowrap' },
-                { title: 'Size',         orderable: true,  className: 'text-end text-nowrap' },
-                { title: 'TS',           orderable: true,  className: 'text-end' }
+                { title: 'Size',         orderable: true,  className: 'text-nowrap' },
+                { title: 'TS',           orderable: true,  className: 'text-start' }
             ],
             columnDefs: [],
             pageLength: (function() { try { var v = parseInt(localStorage.getItem('datafilePageLen'), 10); return [10,25,50,100,250].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })(),

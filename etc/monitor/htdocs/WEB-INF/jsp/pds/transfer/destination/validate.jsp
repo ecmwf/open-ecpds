@@ -78,6 +78,41 @@
 		var el = document.getElementById('validateTransferTotal');
 		if (el) el.textContent = '(' + totalInSelection + ' in selection)';
 		updateBatchButtons();
+		_vlUpdateHdrStar();
+	}
+
+	function _vlUpdateHdrStar() {
+		var hdr = document.getElementById('vl-hdr-star-icon');
+		if (!hdr) return;
+		var rows = document.querySelectorAll('#validateTable tbody tr');
+		if (!rows.length) { hdr.className = 'bi bi-star'; return; }
+		var allSelected = true;
+		rows.forEach(function (tr) {
+			var span = tr.querySelector('span.batch-select');
+			if (!span) { allSelected = false; return; }
+			var id = String(span.dataset.transferId || span.getAttribute('data-transfer-id'));
+			if (!batchTransfers[id]) allSelected = false;
+		});
+		hdr.className = allSelected ? 'bi bi-star-fill text-warning' : 'bi bi-star';
+	}
+
+	function _vlTogglePageSelection() {
+		var rows = document.querySelectorAll('#validateTable tbody tr');
+		if (!rows.length) return;
+		var allSelected = true;
+		rows.forEach(function (tr) {
+			var span = tr.querySelector('span.batch-select');
+			if (!span) { allSelected = false; return; }
+			var id = String(span.dataset.transferId || span.getAttribute('data-transfer-id'));
+			if (!batchTransfers[id]) allSelected = false;
+		});
+		rows.forEach(function (tr) {
+			var span = tr.querySelector('span.batch-select');
+			if (!span) return;
+			var id = String(span.dataset.transferId || span.getAttribute('data-transfer-id'));
+			var isOn = batchTransfers[id] ? true : false;
+			if (allSelected ? isOn : !isOn) select(span, id);
+		});
 	}
 
 	function transferChange(operation, transfer) {
@@ -229,7 +264,7 @@
                 <th>Status</th>
                 <th>Prior</th>
                 <th>Actions</th>
-                <th>Select</th>
+                <th style="cursor:pointer;white-space:nowrap" title="Click to select/unselect all transfers on this page" onclick="_vlTogglePageSelection()"><i id="vl-hdr-star-icon" class="bi bi-star"></i></th>
             </tr>
         </thead>
     </table>
@@ -380,13 +415,15 @@
             } else {
                 errorDiv.style.display = 'none';
             }
-            // Total count
+            // Total count — adjust server total by any local deselections not yet submitted
             if (json && typeof json.recordsTotal !== 'undefined') {
-                totalInSelection = json.recordsTotal;
+                var localFalse = Object.keys(batchTransfers).filter(function(id) { return batchTransfers[id] === false; }).length;
+                totalInSelection = Math.max(0, json.recordsTotal - localFalse);
                 document.getElementById('validateTransferTotal').textContent =
-                    '(' + json.recordsTotal + ' in selection)';
+                    '(' + totalInSelection + ' in selection)';
             }
             updateBatchButtons();
+            _vlUpdateHdrStar();
         }
     });
 
@@ -487,6 +524,39 @@
         _vlApplyMode(mode);
     });
 
+    // Sync helper: POST any pending batchTransfers changes, then call callback.
+    function _vlSyncBasket(callback) {
+        var onIds = [], offIds = [];
+        Object.keys(batchTransfers).forEach(function (id) {
+            (batchTransfers[id] ? onIds : offIds).push(id);
+        });
+        $.ajax({
+            url: '/do/transfer/destination?json=syncSelection',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                destinationName: destName,
+                type: 'basketAction',
+                on: onIds.join(','),
+                off: offIds.join(',')
+            }),
+            success: callback,
+            error: function () {
+                alert('Failed to sync basket state with the server. Please try again.');
+            }
+        });
+    }
+
+    // Intercept "remove from basket" (red-cross) link clicks: sync pending star-deselections
+    // first so they are not forgotten when the page navigates away.
+    $(document).on('click', 'a[href*="/unselectTransfer/"]', function (e) {
+        var hasPending = Object.keys(batchTransfers).some(function (id) { return batchTransfers[id] === false; });
+        if (!hasPending) return; // nothing pending — let the browser navigate normally
+        e.preventDefault();
+        var url = this.href;
+        _vlSyncBasket(function () { window.location.href = url; });
+    });
+
     // Form submit hook: pre-sync basket action state as a JSON body POST before submitting.
     // This avoids injecting thousands of actionTransfer/selectedTransfer params into the GET URL,
     // which would cause HTTP 414 (URI Too Long). The JSON body bypasses Jetty's form size limits.
@@ -495,27 +565,7 @@
     if (frm) {
         var _orig = HTMLFormElement.prototype.submit.bind(frm);
         frm.submit = function () {
-            var onIds = [], offIds = [];
-            Object.keys(batchTransfers).forEach(function (id) {
-                (batchTransfers[id] ? onIds : offIds).push(id);
-            });
-            $.ajax({
-                url: '/do/transfer/destination?json=syncSelection',
-                method: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({
-                    destinationName: destName,
-                    type: 'basketAction',
-                    on: onIds.join(','),
-                    off: offIds.join(',')
-                }),
-                success: function () {
-                    _orig();
-                },
-                error: function () {
-                    alert('Failed to sync basket state with the server. Please try again.');
-                }
-            });
+            _vlSyncBasket(_orig);
         };
     }
 })();

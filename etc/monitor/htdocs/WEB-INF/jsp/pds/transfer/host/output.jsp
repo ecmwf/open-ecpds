@@ -136,12 +136,18 @@
 </style>
 
 <div class="card shadow-sm mt-2">
-    <div class="card-header d-flex align-items-center justify-content-between py-2 px-3 report-card-hdr">
-        <span class="fw-semibold" style="font-size:0.875rem;">
-            <i class="bi bi-terminal-fill me-2 text-success"></i>
+    <div class="card-header d-flex align-items-center justify-content-between py-2 px-3 report-card-hdr flex-nowrap">
+        <span class="fw-semibold d-inline-flex align-items-center gap-1 flex-shrink-0" style="font-size:0.875rem;">
+            <i class="bi bi-terminal-fill me-1 text-success"></i>
             Output: <c:out value="${host.nickName}" />
+            <button class="btn btn-link p-0 ms-1 report-card-hdr-btn" style="font-size:0.85rem;line-height:1;vertical-align:middle;"
+                    data-bs-toggle="collapse" data-bs-target="#outputInfoPanel"
+                    aria-expanded="false" aria-controls="outputInfoPanel"
+                    title="What is this output?">
+                <i class="bi bi-info-circle"></i>
+            </button>
         </span>
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 flex-shrink-0">
             <button id="refreshBtn"
                     class="btn btn-sm btn-outline-secondary py-0 px-2 report-card-hdr-btn"
                     title="Refresh output" style="font-size:0.75rem;">
@@ -157,6 +163,14 @@
                     title="Copy to clipboard" style="font-size:0.75rem;">
                 <i class="bi bi-clipboard"></i> Copy
             </button>
+        </div>
+    </div>
+    <div class="collapse" id="outputInfoPanel">
+        <div class="px-3 pt-2 pb-3 border-bottom small" style="background:var(--bs-secondary-bg)">
+            This output is specific to <strong>Acquisition hosts</strong>. It shows the directory listing retrieved from the
+            remote site defined in the underlying host entity. This listing is parsed by the <strong>Acquisition Scheduler</strong>
+            to determine which files should be selected for data retrieval and which should be ignored &mdash; for example, because
+            they have already been retrieved, do not match the configured pattern, or fall outside the selection criteria.
         </div>
     </div>
     <div class="card-body p-0" style="position:relative;">

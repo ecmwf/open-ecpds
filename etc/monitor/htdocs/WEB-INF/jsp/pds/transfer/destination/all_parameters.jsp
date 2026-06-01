@@ -34,7 +34,27 @@
 <div class="card border-0 shadow-sm mb-3">
 	<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
 		<i class="bi bi-send text-primary"></i>
-		<span class="fw-semibold">Delivery</span>
+		<span class="fw-semibold d-inline-flex align-items-center gap-1">Delivery
+			<button class="btn btn-sm p-0 border-0 text-secondary" style="line-height:1;font-size:0.85rem"
+				data-bs-toggle="collapse" data-bs-target="#destDeliveryInfoPanel" aria-expanded="false"
+				title="What is a destination?"><i class="bi bi-info-circle"></i></button>
+		</span>
+	</div>
+	<div class="collapse" id="destDeliveryInfoPanel">
+		<div class="px-3 pt-2 pb-3 border-bottom small" style="background:var(--bs-secondary-bg)">
+			A destination should be understood as a place where data transfers are queued and processed in order to deliver
+			data to a unique remote place, hence the name &lsquo;destination&rsquo;. It specifies the information the Data
+			Dissemination service needs to disseminate the content of a data file to a particular remote site.
+			<br><br>
+			Each destination implements a transfer scheduler with its own configuration parameters, which can be fine-tuned
+			to meet the remote site&rsquo;s needs. These settings make it possible to control various things, such as how to
+			organise the data transmission by using data transfer priorities and parallel transmissions, or how to deal with
+			transmission errors with a fully customisable retry mechanism.
+			<br><br>
+			In addition, a destination can be associated with a list of dissemination hosts, with a primary host indicating
+			the main target system where to deliver the data, and a list of fall-back hosts to switch to if for some reason
+			the primary host is unavailable.
+		</div>
 	</div>
 	<div class="card-body py-0">
 		<div class="field-grid">

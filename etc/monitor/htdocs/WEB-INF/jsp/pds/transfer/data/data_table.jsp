@@ -36,13 +36,13 @@ Data Transfer: <strong><c:out value="${datatransfer.id}"/></strong>
 </div>
 </div>
 <div class="col-6 col-sm-3">
-<div class="card border-0 shadow-sm text-center py-2 h-100">
+<div class="card border-0 shadow-sm text-center py-2 h-100 d-flex flex-column justify-content-center">
 <div class="text-muted small fw-semibold text-uppercase" style="font-size:0.7rem;letter-spacing:0.04em">Duration</div>
 <div id="dt-duration-val" class="fw-bold fs-6"><c:choose><c:when test="${not empty datatransfer.formattedDuration}">${datatransfer.formattedDuration}</c:when><c:otherwise><span class="text-muted">&mdash;</span></c:otherwise></c:choose></div>
 </div>
 </div>
 <div class="col-6 col-sm-3">
-<div class="card border-0 shadow-sm text-center py-2 h-100">
+<div class="card border-0 shadow-sm text-center py-2 h-100 d-flex flex-column justify-content-center">
 <div class="text-muted small fw-semibold text-uppercase" style="font-size:0.7rem;letter-spacing:0.04em">Rate</div>
 <div id="dt-rate-val" class="fw-bold fs-6">
 <c:if test="${datatransfer.transferRate > 0}">
@@ -53,7 +53,7 @@ Data Transfer: <strong><c:out value="${datatransfer.id}"/></strong>
 </div>
 </div>
 <div class="col-6 col-sm-3">
-<div class="card border-0 shadow-sm text-center py-2 h-100">
+<div class="card border-0 shadow-sm text-center py-2 h-100 d-flex flex-column justify-content-center">
 <div class="text-muted small fw-semibold text-uppercase" style="font-size:0.7rem;letter-spacing:0.04em">Priority</div>
 <div class="fw-bold fs-6">${datatransfer.priority}</div>
 </div>
@@ -64,7 +64,22 @@ Data Transfer: <strong><c:out value="${datatransfer.id}"/></strong>
 <div class="card border-0 shadow-sm mb-3">
 <div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
 <i class="bi bi-info-circle text-primary"></i>
-<span class="fw-semibold">Transfer Details</span>
+<span class="fw-semibold d-inline-flex align-items-center gap-1">Transfer Details
+    <button class="btn btn-link p-0 ms-1" style="font-size:0.85rem;line-height:1;vertical-align:middle;color:var(--bs-secondary-color);"
+            data-bs-toggle="collapse" data-bs-target="#dtDetailsInfoPanel"
+            aria-expanded="false" aria-controls="dtDetailsInfoPanel"
+            title="What is a data transfer?">
+        <i class="bi bi-info-circle"></i>
+    </button>
+</span>
+</div>
+<div class="collapse" id="dtDetailsInfoPanel">
+    <div class="px-3 pt-2 pb-3 border-bottom small" style="background:var(--bs-secondary-bg)">
+        A data transfer is linked to a unique data file and represents a transfer request for its content, together with
+        any related information (e.g. schedule, priority, progress, status, rate, errors, history). A single data file
+        can be linked to several data transfers as many remote sites might be interested in obtaining the same products
+        from the <strong><%=System.getProperty("monitor.title")%></strong>.
+    </div>
 </div>
 <div class="card-body py-0">
 <div class="field-grid">

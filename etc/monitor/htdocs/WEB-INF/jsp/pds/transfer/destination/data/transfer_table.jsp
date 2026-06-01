@@ -22,7 +22,7 @@
       <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="colModeBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" data-bs-boundary="viewport" aria-expanded="false">
         <i class="bi bi-layout-three-columns me-1"></i>Auto
       </button>
-      <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="colModeBtn">
+      <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="colModeBtn" style="max-height:80vh;overflow-y:auto;">
         <li><a class="dropdown-item active" href="#" data-col-mode="auto">
           <i class="bi bi-check me-1"></i><strong>Auto</strong>
           <small class="d-block text-muted ms-4">Adapts to screen width</small>
@@ -88,8 +88,9 @@
     <strong class="d-block mb-1">Selecting transfers and applying bulk actions</strong>
     <p class="mb-1">Use the controls in the toolbar to build a <em>selection basket</em>, then open the basket to act on all selected transfers at once.</p>
     <ul class="mb-1 ps-3">
-      <li><strong>A / N / R</strong> &mdash; Select All / Unselect All / Reverse selection across <em>all pages</em> matching the current filter.</li>
+      <li><strong>A / N / R</strong> &mdash; Select All / Unselect All / Reverse selection across <em>all pages</em> matching the current filter, without affecting basket entries added by a different filter.</li>
       <li><strong><i class="bi bi-star"></i> star icon</strong> on each row &mdash; toggle that individual transfer in or out of the basket.</li>
+      <li><strong><i class="bi bi-star"></i> star icon in the column header</strong> &mdash; click to select or deselect all transfers on the <em>current page</em>.</li>
       <li><strong><i class="bi bi-basket2-fill"></i> Basket</strong> in the toolbar &mdash; click to open the basket and act on all selected transfers.</li>
     </ul>
     <p class="mb-0">From the basket page you can <strong>Requeue</strong>, <strong>Stop</strong>, <strong>Delete</strong>, change <strong>priority</strong>, or <strong>extend</strong> the expiry of all selected transfers in one operation. The basket is preserved as you change filters or navigate pages.</p>
@@ -97,7 +98,7 @@
 </div>
 
 <%-- DataTable: 13 columns (Actions hidden when user lacks queue access) --%>
-<table id="destTransferTable" class="table table-striped table-sm table-hover w-100" style="table-layout:fixed">
+<table id="destTransferTable" class="table table-striped table-sm table-hover w-100">
   <thead class="table-light">
     <tr>
       <th>Err</th>
@@ -112,7 +113,7 @@
       <th>Status</th>
       <th>Prior</th>
       <th>Actions</th>
-      <th>Select</th>
+      <th style="cursor:pointer;white-space:nowrap" title="Click to select/unselect all transfers on this page" onclick="togglePageSelection()"><i id="hdr-star-icon" class="bi bi-star"></i></th>
     </tr>
   </thead>
   <tbody></tbody>
@@ -164,22 +165,23 @@ var _dftSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search us
             }
         },
         columns: [
-            { data: 0, width: '50px' },
-            { data: 1, width: '90px' },
-            { data: 2, width: '110px' },
-            { data: 3, width: '110px' },
-            { data: 4, width: '110px' },
-            { data: 5, width: '200px' },
-            { data: 6, width: '70px' },
-            { data: 7, width: '70px' },
-            { data: 8, width: '90px' },
-            { data: 9, width: '90px' },
-            { data: 10, width: '65px' },
-            { data: 11, width: '110px' },
-            { data: 12, width: '70px' }
+            { data: 0, width: '40px' },
+            { data: 1, width: '110px' },
+            { data: 2, width: '130px' },
+            { data: 3, width: '130px' },
+            { data: 4, width: '130px' },
+            { data: 5 },
+            { data: 6, width: '55px' },
+            { data: 7, width: '45px' },
+            { data: 8, width: '70px' },
+            { data: 9, width: '95px' },
+            { data: 10, width: '45px' },
+            { data: 11, width: '95px' },
+            { data: 12, width: '40px' }
         ],
         columnDefs: [
             { targets: 5, className: 'col-target' },
+            { targets: [0, 6, 7, 8, 9, 10, 11, 12], className: 'text-nowrap' },
             { targets: 11, orderable: false, visible: canQueue },
             { targets: 12, orderable: false }
         ],
@@ -292,6 +294,7 @@ var _dftSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search us
                 sessionStorage.removeItem('hostChangeScrollY');
                 window.scrollTo({ top: parseInt(_savedY, 10), behavior: 'instant' });
             }
+            _updateHdrStar();
         }
     });
 

@@ -19,22 +19,22 @@
         <jsp:include page="/WEB-INF/jsp/pds/transfer/destination/destination_type_badge.jsp"/>
         <c:choose>
             <c:when test="${_dsb == 'Idle'}">
-                <span class="badge bg-secondary fs-status" title="${_ds}">${_ds}</span>
+                <a href="/do/transfer/destination?destinationStatus=${_dsb}&amp;destinationSearch=" class="dest-type-link" title="Show all ${_dsb} destinations"><span class="badge bg-secondary fs-status">${_ds}</span></a>
             </c:when>
             <c:when test="${_dsb == 'Running'}">
-                <span class="badge bg-success fs-status" title="${_ds}">${_ds}</span>
+                <a href="/do/transfer/destination?destinationStatus=${_dsb}&amp;destinationSearch=" class="dest-type-link" title="Show all ${_dsb} destinations"><span class="badge bg-success fs-status">${_ds}</span></a>
             </c:when>
             <c:when test="${_dsb == 'Restarting' or _dsb == 'Resending'}">
-                <span class="badge bg-info text-dark fs-status" title="${_ds}">${_ds}</span>
+                <a href="/do/transfer/destination?destinationStatus=${_dsb}&amp;destinationSearch=" class="dest-type-link" title="Show all ${_dsb} destinations"><span class="badge bg-info text-dark fs-status">${_ds}</span></a>
             </c:when>
             <c:when test="${_dsb == 'Waiting' or _dsb == 'Retrying' or _dsb == 'Interrupted'}">
-                <span class="badge bg-warning text-dark fs-status" title="${_ds}">${_ds}</span>
+                <a href="/do/transfer/destination?destinationStatus=${_dsb}&amp;destinationSearch=" class="dest-type-link" title="Show all ${_dsb} destinations"><span class="badge bg-warning text-dark fs-status">${_ds}</span></a>
             </c:when>
             <c:when test="${_dsb == 'Initialized' or _dsb == 'Stopped' or _dsb == 'NoHosts' or _dsb == 'Failed'}">
-                <span class="badge bg-danger fs-status" title="${_ds}">${_ds}</span>
+                <a href="/do/transfer/destination?destinationStatus=${_dsb}&amp;destinationSearch=" class="dest-type-link" title="Show all ${_dsb} destinations"><span class="badge bg-danger fs-status">${_ds}</span></a>
             </c:when>
             <c:otherwise>
-                <span class="badge bg-secondary fs-status" title="${_ds}">${_ds}</span>
+                <a href="/do/transfer/destination?destinationStatus=${_dsb}&amp;destinationSearch=" class="dest-type-link" title="Show all ${_dsb} destinations"><span class="badge bg-secondary fs-status">${_ds}</span></a>
             </c:otherwise>
         </c:choose>
         <c:if test="${not destination.showInMonitors}">

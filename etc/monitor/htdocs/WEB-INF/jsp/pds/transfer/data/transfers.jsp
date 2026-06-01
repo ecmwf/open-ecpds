@@ -555,14 +555,15 @@ function _updateTransferSearchBanner(queryError, total, hasSearch) {
             }
         },
         order: [[2, 'desc']],
+        autoWidth: false,
         columns: [
             { title: 'Destination',   orderable: true,  render: function (d) { return d; } },
-            { title: 'Transfer Host', orderable: true,  render: function (d) { return d; } },
-            { title: 'Sched. Time',   orderable: true,  className: 'text-nowrap' },
+            { title: 'Transfer Host', orderable: true,  render: function (d) { return d; }, width: '110px' },
+            { title: 'Sched. Time',   orderable: true,  className: 'text-nowrap', width: '130px' },
             { title: 'Target',        orderable: true,  render: function (d) { return d; } },
-            { title: '%',             orderable: true,  className: 'text-end' },
-            { title: 'Mbits/s',       orderable: true,  className: 'text-end', render: function (d) { return d; } },
-            { title: 'Prior',         orderable: true,  className: 'text-end' }
+            { title: '%',             orderable: true,  className: 'text-nowrap', width: '45px' },
+            { title: 'Mbits/s',       orderable: true,  className: 'text-nowrap', render: function (d) { return d; }, width: '70px' },
+            { title: 'Prior',         orderable: true,  className: 'text-nowrap', width: '45px' }
         ],
         pageLength: (function() { try { var v = parseInt(localStorage.getItem('transferPageLen'), 10); return [10,25,50,100,250].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })(),
         lengthMenu: [[10, 25, 50, 100, 250], [10, 25, 50, 100, 250]],

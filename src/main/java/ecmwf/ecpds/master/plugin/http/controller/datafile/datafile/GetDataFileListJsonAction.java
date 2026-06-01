@@ -140,7 +140,7 @@ public class GetDataFileListJsonAction extends PDSAction {
             final var row = data.addArray();
             row.add(buildOriginalHtml(df));
             final var pt = df.getProductTime();
-            row.add(pt != null ? Format.formatTime(pt.getTime()) : "");
+            row.add(pt != null ? Format.formatTime("MMM dd HH:mm:ss", pt.getTime()) : "");
             row.add(Format.formatSize(df.getSize()));
             row.add(String.valueOf(df.getTimeStep()));
         }
@@ -176,8 +176,9 @@ public class GetDataFileListJsonAction extends PDSAction {
     private static String buildOriginalHtml(final DataFile df) {
         final var id = escapeHtml(df.getId());
         final var original = escapeHtml(df.getOriginal());
+        final var size = escapeHtml(Format.formatSize(df.getSize()));
         return "<a href=\"" + DATAFILE_BASE_PATH + "/" + id
-                + "\" class=\"text-decoration-none font-monospace\" style=\"font-size:0.82rem\">" + original + "</a>";
+                + "\" class=\"text-decoration-none text-break\" title=\"Size: " + size + "\">" + original + "</a>";
     }
 
     // -------------------------------------------------------------------------

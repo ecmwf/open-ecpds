@@ -147,6 +147,11 @@
     margin: 0;
 }
 
+/* Ensure dropdowns always render above the fixed footer (z-index 1030) */
+.dropdown-menu {
+    z-index: 1040;
+}
+
 /* Force the inner navbar row to never wrap, and let the title shrink/truncate */
 #topheader .container-fluid {
     flex-wrap: nowrap !important;
@@ -1426,6 +1431,26 @@ table.spareBox2 td, table.spareBox td {
     color: #0969da;
 }
 
+/* Disabled (non-clickable) sidebar items */
+#sidebarMenu table.spareBox2 td span.sidebar-disabled-item,
+#sidebarMenu table.spareBox td span.sidebar-disabled-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 5px 12px 5px 16px;
+    font-size: 0.8125rem;
+    font-weight: 400;
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+#sidebarMenu table.spareBox2 td span.sidebar-disabled-item > i,
+#sidebarMenu table.spareBox td span.sidebar-disabled-item > i {
+    flex-shrink: 0;
+    width: 1em;
+    text-align: center;
+    font-size: 0.875rem;
+}
+
 /* Badge links keep badge styling */
 #sidebarMenu table.spareBox2 td a.badge,
 #sidebarMenu table.editSpareBox td a.badge,
@@ -1625,6 +1650,20 @@ img[src*="/assets/icons/"] {
     background: #eff6ff;
     color: #1e40af;
     border: 1px solid #93c5fd;
+}
+a.dest-type-link {
+    text-decoration: none;
+    cursor: pointer;
+}
+a.dest-type-link:hover .dest-page-type {
+    filter: brightness(0.9);
+}
+a.dest-type-link:hover .badge {
+    filter: brightness(0.9);
+}
+a.dest-type-link:hover .fi,
+a.dest-type-link:hover .bi-globe {
+    opacity: 0.75;
 }
 .dest-page-comment {
     margin: 0.2rem 0 0;
@@ -2000,15 +2039,36 @@ html[data-bs-theme=dark] .ui-slider-handle { outline: none; }
     word-break: break-all;
     overflow-wrap: anywhere;
 }
-/* destTransferTable — keep header alignment stable; prevents DataTables' dt-type-numeric
-   detection from shifting TS / % headers to right-aligned after first draw */
+/* destTransferTable — Host column: allow long hostnames to wrap across multiple lines */
 #destTransferTable td:nth-child(2) {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 0; /* triggers truncation under table-layout:fixed */
+    word-break: break-word;
+    overflow-wrap: anywhere;
 }
 #destTransferTable thead th {
+    text-align: left !important;
+}
+/* transferTable — keep Transfer Host header left-aligned; prevents DataTables' type
+   detection from right-aligning the header after sort */
+#transferTable thead th:nth-child(2),
+#datafileTransfersTable thead th:nth-child(2),
+#olderTransfersTable thead th:nth-child(2),
+#transferHistoryTable thead th:nth-child(4) {
+    text-align: left !important;
+}
+
+/* Force left-alignment on all cells in the identity/history tables */
+#olderTransfersTable thead th,
+#olderTransfersTable tbody td,
+#transferHistoryTable thead th,
+#transferHistoryTable tbody td {
+    text-align: left !important;
+}
+
+/* Force left-alignment on all cells in the data transfers table */
+#transferTable thead th,
+#transferTable tbody td,
+#datafileTransfersTable thead th,
+#datafileTransfersTable tbody td {
     text-align: left !important;
 }
 
@@ -2122,4 +2182,9 @@ html:not([data-bs-theme=dark]) .card.shadow-sm {
 .dt-info {
     font-size: 0.875rem;
     color: var(--bs-secondary-color, #6c757d);
+}
+
+/* Left-align the DataTables empty-table message consistently across all pages */
+table.dataTable td.dt-empty {
+    text-align: left !important;
 }

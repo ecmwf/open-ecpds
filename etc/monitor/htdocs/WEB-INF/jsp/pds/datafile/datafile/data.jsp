@@ -60,11 +60,27 @@ Data File: <strong><c:out value="${datafile.id}"/></strong>
 </div>
 </div>
 
-<%-- Card: File Info --%>
+<%-- Card: File Details --%>
 <div class="card border-0 shadow-sm mb-3">
 <div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
 <i class="bi bi-file-earmark-code text-primary"></i>
-<span class="fw-semibold">File Info</span>
+<span class="fw-semibold d-inline-flex align-items-center gap-1">File Details
+    <button class="btn btn-link p-0 ms-1" style="font-size:0.85rem;line-height:1;vertical-align:middle;color:var(--bs-secondary-color);"
+            data-bs-toggle="collapse" data-bs-target="#fileInfoInfoPanel"
+            aria-expanded="false" aria-controls="fileInfoInfoPanel"
+            title="What is a data file?">
+        <i class="bi bi-info-circle"></i>
+    </button>
+</span>
+</div>
+<div class="collapse" id="fileInfoInfoPanel">
+    <div class="px-3 pt-2 pb-3 border-bottom small" style="background:var(--bs-secondary-bg)">
+        A data file is a record of a product stored in the <strong><%=System.getProperty("monitor.title")%></strong> with a one-to-one
+        mapping between the data file and the product. The data file contains information on the physical specifications
+        of the product, such as its size, type, compression and entity tag (ETag) in the
+        <strong><%=System.getProperty("monitor.title")%></strong>, as well as the metadata associated with it by the data provider
+        (e.g. meteorological parameters, name or comments concerning the product).
+    </div>
 </div>
 <div class="card-body py-0">
 <div class="field-grid">
@@ -246,7 +262,7 @@ $('#dfMetaPageLen').on('change', function() {
 <td><a title="${transfer.destination.comment}" href="<bean:message key="destination.basepath"/>/${transfer.destinationName}">${transfer.destinationName}</a></td>
 <td>
 <c:if test='<%="".equals(nickName)%>'>
-<span class="text-muted">[not-transferred]</span>
+<span class="text-muted">&ndash;</span>
 </c:if>
 <c:if test="<%=nickName.length()>0%>">
 <c:if test="${transfer.transferServerName == null}">
@@ -259,18 +275,13 @@ $('#dfMetaPageLen').on('change', function() {
 </td>
 <td><content:content name="transfer.scheduledTime" dateFormatKey="date.format.transfer" ignoreNull="true"/></td>
 <td><a title="Size: ${transfer.formattedSize}" href="/do/transfer/data/${transfer.id}"><c:if test="${transfer.deleted}"><span class="text-danger"></c:if>${transfer.target}<c:if test="${transfer.deleted}"></span></c:if></a></td>
-<td>${transfer.progress}</td>
+<td><c:choose><c:when test="${not empty transfer.progress}">${transfer.progress}</c:when><c:otherwise><span class="text-muted">&ndash;</span></c:otherwise></c:choose></td>
 <td>
 <c:if test="${transfer.transferRate != 0}">
 <a style="text-decoration:none" title="Rate: ${transfer.formattedTransferRate}">${transfer.formattedTransferRateInMBitsPerSeconds}</a>
 </c:if>
 <c:if test="${transfer.transferRate == 0}">
-<c:if test="${transfer.size != 0}">
-<span class="text-muted">[n/a]</span>
-</c:if>
-<c:if test="${transfer.size == 0}">
-<span class="text-muted" title="Empty file">[n/a]</span>
-</c:if>
+<span class="text-muted">&ndash;</span>
 </c:if>
 </td>
 <td>${transfer.priority}</td>
@@ -291,6 +302,16 @@ searching: false,
 ordering:  true,
 info:      true,
 order:     [[2, 'asc']],
+autoWidth: false,
+columns: [
+    { width: '110px' },
+    { width: '110px' },
+    { width: '130px' },
+    null,
+    { width: '45px',  className: 'text-nowrap' },
+    { width: '70px',  className: 'text-nowrap' },
+    { width: '45px',  className: 'text-nowrap' }
+],
 dom: 't<"d-flex align-items-start mt-2 px-3 pb-2"i<"ms-auto"p>>'
 });
 $('#dfTransPageLen').val(_dftLen);

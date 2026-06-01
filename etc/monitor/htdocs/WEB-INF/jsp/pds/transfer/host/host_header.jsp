@@ -26,17 +26,17 @@
         </c:if>
         <c:choose>
             <c:when test="${host.type == 'Dissemination'}">
-                <span class="badge bg-secondary fs-status" title="Dissemination"><i class="bi bi-send-fill"></i></span>
+                <a href="/do/transfer/host?hostType=${host.type}&amp;hostSearch=" class="dest-type-link" title="Show all ${host.type} hosts"><span class="badge bg-secondary fs-status"><i class="bi bi-send-fill"></i> ${host.type}</span></a>
             </c:when>
             <c:when test="${host.type == 'Acquisition'}">
-                <span class="badge bg-secondary fs-status" title="Acquisition"><i class="bi bi-cloud-download-fill"></i></span>
+                <a href="/do/transfer/host?hostType=${host.type}&amp;hostSearch=" class="dest-type-link" title="Show all ${host.type} hosts"><span class="badge bg-secondary fs-status"><i class="bi bi-cloud-download-fill"></i> ${host.type}</span></a>
             </c:when>
             <c:otherwise>
-                <span class="badge bg-secondary fs-status">${host.type}</span>
+                <a href="/do/transfer/host?hostType=${host.type}&amp;hostSearch=" class="dest-type-link" title="Show all ${host.type} hosts"><span class="badge bg-secondary fs-status">${host.type}</span></a>
             </c:otherwise>
         </c:choose>
         <c:if test="${not empty host.transferMethodName}">
-            <span class="badge bg-info text-dark fs-status" title="${host.transferMethod.comment}"><i class="bi bi-hdd-network me-1"></i>${host.transferMethodName}</span>
+            <a href="/do/transfer/host?hostSearch=method%3D${host.transferMethodName}&amp;hostType=All" class="dest-type-link" title="Show all hosts using ${host.transferMethodName}"><span class="badge bg-info text-dark fs-status"><i class="bi bi-hdd-network me-1"></i>${host.transferMethodName}</span></a>
         </c:if>
         <c:if test="${not empty host.filterName and host.filterName ne 'none'}">
             <jsp:include page="/WEB-INF/jsp/pds/transfer/compression_icon.jsp"><jsp:param name="name" value="${host.filterName}"/></jsp:include>
@@ -87,8 +87,16 @@
             </c:if>
             <auth:if basePathKey="host.basepath" paths="/edit/getOutput/">
             <auth:then>
+            <c:choose>
+            <c:when test="${host.type == 'Acquisition'}">
             <a href='<bean:message key="host.basepath"/>/edit/getOutput/view/${host.id}'
                class="btn btn-sm btn-outline-secondary" title="View Output"><i class="bi bi-terminal"></i></a>
+            </c:when>
+            <c:otherwise>
+            <a href="#" class="btn btn-sm btn-outline-secondary disabled" title="View Output (Acquisition hosts only)"
+               aria-disabled="true" tabindex="-1" onclick="return false;"><i class="bi bi-terminal"></i></a>
+            </c:otherwise>
+            </c:choose>
             </auth:then>
             </auth:if>
             <a href='<bean:message key="host.basepath"/>/edit/getReport/${host.id}'
@@ -127,10 +135,18 @@
                 if (!bar || !menu) return;
                 function addItem(a) {
                     var li   = document.createElement('li');
-                    var item = document.createElement('a');
-                    item.className = 'dropdown-item';
-                    item.href = a.getAttribute('href');
-                    if (a.getAttribute('onclick')) item.setAttribute('onclick', a.getAttribute('onclick'));
+                    var isDisabled = a.classList.contains('disabled') || a.getAttribute('aria-disabled') === 'true';
+                    var item;
+                    if (isDisabled) {
+                        item = document.createElement('span');
+                        item.className = 'dropdown-item disabled';
+                        item.setAttribute('aria-disabled', 'true');
+                    } else {
+                        item = document.createElement('a');
+                        item.className = 'dropdown-item';
+                        item.href = a.getAttribute('href');
+                        if (a.getAttribute('onclick')) item.setAttribute('onclick', a.getAttribute('onclick'));
+                    }
                     var ic = a.querySelector('i[class]');
                     if (ic) {
                         var icon = document.createElement('i');

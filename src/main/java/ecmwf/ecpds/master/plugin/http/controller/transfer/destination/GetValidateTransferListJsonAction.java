@@ -176,7 +176,7 @@ public class GetValidateTransferListJsonAction extends PDSAction {
     private static String buildHostHtml(final DataTransfer dt) {
         final var nickName = dt.getHostNickName();
         if (nickName == null || nickName.isBlank()) {
-            return "<i class=\"bi bi-x-circle text-warning\" title=\"Not transferred to remote host\"></i>";
+            return "<i class=\"bi bi-dash text-muted\" title=\"Not transferred to remote host\"></i>";
         }
         final var hostName = escapeHtml(dt.getHostName());
         final var serverName = dt.getTransferServerName();

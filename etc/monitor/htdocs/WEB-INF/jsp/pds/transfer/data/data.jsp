@@ -193,11 +193,17 @@ _dthApplyMode(_dthColMode);
 
 <%-- Older Transfers with Same Identity --%>
 <div class="card border-0 shadow-sm mt-3 mb-3">
-<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
-<i class="bi bi-files text-primary"></i>
-<span class="fw-semibold">Transfers for this identity</span>
-<span class="text-muted" style="cursor:default" tabindex="0" data-bs-toggle="tooltip" data-bs-placement="bottom" title="<c:out value="${datatransfer.identity}"/>"><i class="bi bi-question-circle"></i></span>
-<div class="ms-auto d-flex flex-wrap align-items-center gap-2">
+<div class="card-header d-flex align-items-center gap-2 flex-nowrap" style="background:var(--bs-secondary-bg)">
+<i class="bi bi-files text-primary flex-shrink-0"></i>
+<span class="d-inline-flex align-items-center gap-1 flex-shrink-0">
+  <span class="fw-semibold">Transfers for this identity</span>
+  <button class="btn btn-sm btn-link text-muted p-0" type="button"
+      data-bs-toggle="collapse" data-bs-target="#identityInfoPanel"
+      aria-expanded="false" title="About transfer identity">
+    <i class="bi bi-info-circle"></i>
+  </button>
+</span>
+<div class="ms-auto d-flex flex-wrap align-items-center gap-2 flex-shrink-0">
   <div class="dropdown">
     <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="dtOlderColModeBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" data-bs-boundary="viewport" aria-expanded="false">
       <i class="bi bi-layout-three-columns me-1"></i>Auto
@@ -237,6 +243,16 @@ _dthApplyMode(_dthColMode);
   </div>
 </div>
 </div>
+<div class="collapse" id="identityInfoPanel">
+<div class="px-3 pt-2 pb-3 border-bottom small" style="background:var(--bs-secondary-bg)">
+  <p class="mb-2">An <strong>identity</strong> is a string that allows the identification of recurring data transfers.
+  It enables the <strong><%=System.getProperty("monitor.title")%></strong> to track the same data transfer that runs periodically and monitor the sending time over multiple days.
+  Typically, if the target name includes a date and time, the identity would be the target name without them.
+  By default, the identity is the target name itself.</p>
+  <p class="mb-0"><span class="text-muted">Current identity:</span>
+  <code class="ms-1"><c:out value="${datatransfer.identity}"/></code></p>
+</div>
+</div>
 <div class="card-body p-0">
 <div class="table-responsive">
 <table id="olderTransfersTable" class="table table-sm table-hover table-striped align-middle mb-0" style="width:100%">
@@ -263,7 +279,7 @@ _dthApplyMode(_dthColMode);
 <td><a href="<bean:message key="destination.basepath"/>/${transfer.destinationName}">${transfer.destinationName}</a></td>
 <td>
 <c:if test='<%="".equals(nickName)%>'>
-<i class="bi bi-x-circle text-warning" title="Not transferred to remote host"></i>
+<i class="bi bi-dash text-muted" title="Not transferred to remote host"></i>
 </c:if>
 <c:if test="<%=nickName.length()>0%>">
 <c:if test="${transfer.transferServerName == null}">

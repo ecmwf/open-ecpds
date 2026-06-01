@@ -30,7 +30,14 @@
 
     <auth:if basePathKey="host.basepath" paths="/edit/getOutput/">
         <auth:then>
+            <c:choose>
+            <c:when test="${host.type == 'Acquisition'}">
             <tr><td><a href='<bean:message key="host.basepath"/>/edit/getOutput/view/${host.id}'><i class="bi bi-terminal sidebar-icon"></i> View Output</a></td></tr>
+            </c:when>
+            <c:otherwise>
+            <tr><td><span class="sidebar-disabled-item" title="View Output (Acquisition hosts only)"><i class="bi bi-terminal sidebar-icon"></i> View Output</span></td></tr>
+            </c:otherwise>
+            </c:choose>
         </auth:then>
     </auth:if>
 
@@ -53,7 +60,6 @@
 
     <auth:if basePathKey="transferhistory.basepath" paths="/">
         <auth:then>
-            <tr><td style="border-top:1px solid var(--bs-border-color);"></td></tr>
             <tr>
                 <td><a href="#" onclick="confirmationDialog({
                     title: 'Clean Options',
