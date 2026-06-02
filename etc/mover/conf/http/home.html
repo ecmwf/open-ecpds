@@ -1,240 +1,535 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-<link rel="icon" type="image/png" href="/favicon.png">
-<link rel="icon" type="image/x-icon" href="/favicon.ico">
-<title>${tab}</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>(function(){var t=localStorage.getItem('ecpds-theme');if(t)document.documentElement.setAttribute('data-bs-theme',t);}());</script>
+  <title>${tab}</title>
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="stylesheet" href="/bootstrap/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/bootstrap-icons/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/datatables/css/dataTables.bootstrap5.min.css">
+  <style>
+    body { padding-top: 85px; padding-bottom: 44px; min-height: 100vh; }
+    .topheader {
+      position: fixed; z-index: 1030; top: 0; left: 0; width: 100%; margin: 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.30);
+    }
+    #topheader .container-fluid { flex-wrap: nowrap !important; }
+    .header_nav_divider {
+      display: inline-block; width: 1px; height: 22px;
+      background: rgba(255,255,255,0.3); margin: 0 0.3rem; flex-shrink: 0;
+    }
+    .header_simple_title {
+      font-size: 0.9rem; font-weight: 500; color: rgba(255,255,255,0.9);
+      font-family: "Open Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
+      padding-left: 0.4rem; padding-right: 0.75rem;
+      flex: 1 1 0% !important; min-width: 0;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .location_simple {
+      padding: 4px 14px; background: rgba(255,255,255,0.12);
+      border-top: 1px solid rgba(255,255,255,0.18);
+      border-bottom: 1px solid rgba(255,255,255,0.15);
+      font-size: 0.78rem; color: rgba(255,255,255,0.7);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .location_simple .btn-about {
+      color: rgba(255,255,255,0.55); background: none; border: none; padding: 0 2px;
+      line-height: 1; cursor: pointer; flex-shrink: 0;
+    }
+    .location_simple .btn-about:hover { color: #fff; }
+    .location_simple .breadcrumb {
+      margin: 0; padding: 0; background: transparent;
+      font-size: 0.78rem; flex-wrap: nowrap; overflow: hidden;
+    }
+    .location_simple .breadcrumb-item { color: rgba(255,255,255,0.7); white-space: nowrap; }
+    .location_simple .breadcrumb-item + .breadcrumb-item::before {
+      content: "›"; color: rgba(255,255,255,0.4); font-size: 1rem; line-height: 1; vertical-align: middle;
+    }
+    .location_simple .breadcrumb-item a { color: rgba(255,255,255,0.82); text-decoration: none; }
+    .location_simple .breadcrumb-item a:hover { color: #fff; text-decoration: underline; }
+    .location_simple .breadcrumb-item.active { color: #fff; font-weight: 500; }
+    .bottomfooter {
+      position: fixed; z-index: 1030; bottom: 0; left: 0; width: 100%; margin: 0;
+    }
+    .footer_simple_title {
+      font-size: 0.78rem; color: rgba(255,255,255,0.85);
+      font-family: "Open Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
+    }
+    .footer_simple_title a { color: #fff; text-decoration: none; font-weight: 600; }
+    .footer_simple_title a:hover { color: #fff; text-decoration: underline; }
+    /* Subtle column separators */
+    table.dataTable td + td, table.dataTable th + th { border-left: 1px solid rgba(0,0,0,0.08); }
+    /* DataTables thead light mode */
+    table.dataTable thead > tr > th { white-space: nowrap; border-bottom: 2px solid var(--bs-border-color) !important; }
+    /* DT2: right-align header title text in flex container */
+    table.dataTable thead th.text-end .dt-column-title { justify-content: flex-end; }
+    /* DataTables thead dark mode */
+    [data-bs-theme=dark] thead.table-light > tr > th,
+    [data-bs-theme=dark] thead.table-light > tr > td,
+    [data-bs-theme=dark] table.dataTable thead > tr > th {
+      background-color: var(--bs-secondary-bg) !important;
+      color: var(--bs-body-color) !important;
+      border-bottom: 2px solid var(--bs-border-color-translucent) !important;
+    }
+    /* DataTables info text style, matching monitor */
+    div.dt-container .dt-info { padding-top: 0 !important; font-size: 0.875rem; color: var(--bs-secondary-color, #6c757d); }
+    div.dt-container .d-flex.mt-2 { align-items: flex-start !important; }
+    /* Left-align empty-table message */
+    table.dataTable td.dt-empty { text-align: left !important; }
+    /* Hide pagination when all rows fit on one page */
+    .dt-paging:not(:has(li.dt-paging-button:not(.active):not(.disabled))) { display: none !important; }
+    /* Sort icon: inline after title text (same as monitor ecpds.css lines 1249-1276) */
+    table.dataTable thead > tr > th span.dt-column-order::before,
+    table.dataTable thead > tr > th span.dt-column-order::after { opacity: 0.45 !important; }
+    table.dataTable thead > tr > th.dt-ordering-asc span.dt-column-order::before,
+    table.dataTable thead > tr > th.dt-ordering-desc span.dt-column-order::after { opacity: 0.9 !important; }
+    table.dataTable thead > tr > th span.dt-column-order {
+      position: relative !important; display: inline-block !important;
+      right: auto !important; top: auto !important; bottom: auto !important;
+      width: 12px !important; height: 1em; vertical-align: middle; margin-left: 3px;
+    }
+    table.dataTable thead > tr > th.dt-orderable-asc,
+    table.dataTable thead > tr > th.dt-orderable-desc,
+    table.dataTable thead > tr > th.dt-ordering-asc,
+    table.dataTable thead > tr > th.dt-ordering-desc { padding-right: 0.5rem !important; }
+    .listing-table td:first-child a { text-decoration: none; color: inherit; }
+  </style>
 </head>
-<style>
-html {
-	Font-family: Verdana, Arial, Helvetica;
-	Color: black;
-	Font-size: 10pt;
-	Background-color: white;
-	Text-decoration: None;
-}
+<body>
+  <nav id="topheader" class="topheader navbar py-0" style="background-color: ${color};">
+    <div class="container-fluid d-flex align-items-center px-3 py-2">
+      <a class="navbar-brand p-0 me-0 flex-shrink-0" href="/">
+        <img src="/images/logo.production.png" alt="ECPDS" width="140" height="24" style="display:block;">
+      </a>
+      <span class="header_nav_divider"></span>
+      <span class="header_simple_title">${title}</span>
+      <div class="d-flex align-items-center gap-2 flex-shrink-0">
+        <button id="btnTheme" class="btn btn-sm btn-outline-light p-1 lh-1"
+                onclick="ecpdsToggleTheme()" title="Toggle light/dark theme"
+                style="width:28px;height:28px;">
+          <i id="themeIcon" class="bi bi-moon-fill" style="font-size:0.8rem;"></i>
+        </button>
+      </div>
+    </div>
+    <div class="w-100 location_simple" id="locationBar" data-base="${base}">
+      <div id="locationBreadcrumb"></div>
+      <button class="btn-about" data-bs-toggle="modal" data-bs-target="#aboutModal" title="About OpenECPDS">
+        <i class="bi bi-info-circle" style="font-size:0.85rem;"></i>
+      </button>
+    </div>
+  </nav>
 
-a:link {
-	text-decoration: none;
-	color: black;
-}
+  <!-- About modal (must be outside the fixed <nav> to render at full z-index) -->
+  <div class="modal fade" id="aboutModal" tabindex="-1" aria-labelledby="aboutModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header border-0 pb-0">
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-center px-4 pt-0 pb-4">
+          <img src="/img/OpenECPDS.svg" alt="OpenECPDS" class="img-fluid mb-3" style="max-height:80px;">
+          <p class="text-muted small mb-2">Our mission with OpenECPDS is to keep data moving!</p>
+          <ul class="list-unstyled mb-0" style="font-size:0.82rem; line-height:2;">
+            <li><span class="badge bg-primary bg-opacity-10 text-primary fw-normal px-2">Inspired by operational excellence</span></li>
+            <li><span class="badge bg-primary bg-opacity-10 text-primary fw-normal px-2">Powered by open-source innovation</span></li>
+            <li><span class="badge bg-success bg-opacity-10 text-success fw-normal px-2">Acquire from anywhere</span></li>
+            <li><span class="badge bg-success bg-opacity-10 text-success fw-normal px-2">Deliver everywhere</span></li>
+            <li><span class="badge bg-info bg-opacity-10 text-info fw-normal px-2">Connect with confidence</span></li>
+            <li><span class="badge bg-info bg-opacity-10 text-info fw-normal px-2">Share without limits</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
 
-a:visited {
-	text-decoration: none;
-	color: black;
-}
+  <!-- Connection info modal -->
+  <div class="modal fade" id="connectModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h6 class="modal-title fw-semibold mb-0"><i class="bi bi-plug-fill me-2 text-primary"></i>How to connect</h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body px-4 pb-4">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="card h-100 border-primary border-opacity-25">
+                <div class="card-header py-2 bg-primary bg-opacity-10">
+                  <i class="bi bi-shield-lock-fill me-1 text-primary"></i><strong class="small">HTTPS</strong>
+                </div>
+                <div class="card-body small">
+                  <p class="text-muted mb-2">Browse and download files via web browser or any HTTP client.</p>
+                  <div class="text-muted mb-1">Base URL</div>
+                  <code id="connectHttpsUrl" class="d-block bg-body-secondary rounded px-2 py-1 mb-3 user-select-all"></code>
+                  <div class="text-muted mb-1">curl examples <span class="fw-normal">(replace <em>DIR</em>, <em>FILE</em>)</span></div>
+                  <div id="connectHttpsExamples"></div>
+                  <p class="text-muted mt-1 mb-0" style="font-size:0.72rem;"><i class="bi bi-info-circle me-1"></i>Add <code>-k</code> to skip TLS certificate verification — only if using a self-signed certificate, but this is not secure.</p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="card h-100 border-warning border-opacity-25">
+                <div class="card-header py-2 bg-warning bg-opacity-10">
+                  <i class="bi bi-bucket-fill me-1 text-warning"></i><strong class="small">S3</strong>
+                </div>
+                <div class="card-body small">
+                  <p class="text-muted mb-2">Use the AWS CLI, MinIO Client (mc), rclone, boto3, or s5cmd, or any other S3-compatible client that supports S3 endpoints such as /s3.</p>
+                  <div class="text-muted mb-1">Endpoint URL</div>
+                  <code id="connectS3Url" class="d-block bg-body-secondary rounded px-2 py-1 mb-2 user-select-all"></code>
+                  <div class="text-muted mb-1">~/.aws/credentials <span class="fw-normal">(replace <em>USER</em>, <em>PASS</em>)</span></div>
+                  <div id="connectS3Config" class="mb-2"></div>
+                  <div class="text-muted mb-1">AWS CLI examples <span class="fw-normal">(replace <em>DIR</em>, <em>FILE</em>)</span></div>
+                  <div id="connectS3Examples"></div>
+                  <p class="text-muted mt-1 mb-0" style="font-size:0.72rem;"><i class="bi bi-info-circle me-1"></i>Add <code>--no-verify-ssl</code> to skip TLS certificate verification — only if using a self-signed certificate, but this is not secure.</p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="card h-100 border-success border-opacity-25">
+                <div class="card-header py-2 bg-success bg-opacity-10">
+                  <i class="bi bi-hdd-network-fill me-1 text-success"></i><strong class="small">FTP</strong>
+                </div>
+                <div class="card-body small">
+                  <p class="text-muted mb-2">Connect with any FTP client. Passive mode recommended.</p>
+                  <div class="mb-1"><span class="text-muted">Host: </span><code id="connectFtpHost"></code></div>
+                  <div class="mb-2"><span class="text-muted">Port: </span><code>${ftpPort}</code></div>
+                  <p class="text-muted mb-0">Use your portal username and password.</p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div id="sftpCard" class="card h-100 border-secondary border-opacity-25 opacity-50">
+                <div class="card-header py-2 bg-secondary bg-opacity-10">
+                  <i class="bi bi-lock-fill me-1 text-secondary"></i><strong class="small">SFTP</strong>
+                  <span id="sftpBadge" class="badge bg-secondary fw-normal ms-2" style="font-size:0.7rem;">Not yet available</span>
+                </div>
+                <div id="sftpBody" class="card-body small text-muted">
+                  <p class="mb-0">Secure FTP over SSH will be available in a future release.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+  (function() {
+    function copyBlock(container, lines, last) {
+      var wrap = document.createElement('div');
+      wrap.className = 'position-relative' + (last ? '' : ' mb-2');
+      var pre = document.createElement('pre');
+      pre.className = 'bg-body-secondary rounded px-2 py-2 mb-0';
+      pre.style.cssText = 'font-size:0.72rem;white-space:pre;overflow-x:auto;padding-right:2rem;';
+      pre.textContent = lines.join('\n');
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn position-absolute top-0 end-0 mt-1 me-1 p-0 border-0 text-muted';
+      btn.title = 'Copy to clipboard';
+      btn.style.cssText = 'font-size:0.85rem;line-height:1;';
+      btn.innerHTML = '<i class="bi bi-clipboard"></i>';
+      btn.addEventListener('click', function() {
+        navigator.clipboard.writeText(pre.textContent).then(function() {
+          btn.innerHTML = '<i class="bi bi-clipboard-check text-success"></i>';
+          setTimeout(function() { btn.innerHTML = '<i class="bi bi-clipboard"></i>'; }, 2000);
+        });
+      });
+      wrap.appendChild(pre);
+      wrap.appendChild(btn);
+      container.appendChild(wrap);
+    }
+    var origin = window.location.protocol + '//' + window.location.host;
+    var host = window.location.hostname;
+    var base = origin + '/ecpds/';
+    var s3Endpoint = origin + '${s3Path}';
+    document.getElementById('connectHttpsUrl').textContent = base + 'home/USER/';
+    document.getElementById('connectS3Url').textContent = s3Endpoint;
+    document.getElementById('connectFtpHost').textContent = host;
+    var httpsEx = document.getElementById('connectHttpsExamples');
+    copyBlock(httpsEx, ['# List a directory (no password required)', 'curl ' + base + 'home/USER/DIR/']);
+    copyBlock(httpsEx, ['# Download a file', 'curl \\', '  ' + base + 'home/USER/DIR/FILE -o FILE'], true);
+    var s3Cfg = document.getElementById('connectS3Config');
+    copyBlock(s3Cfg, ['# Save to ~/.aws/credentials', '[default]', 'aws_access_key_id     = USER', 'aws_secret_access_key = PASS'], true);
+    var s3Ex = document.getElementById('connectS3Examples');
+    copyBlock(s3Ex, ['# List files', 'aws --endpoint-url ' + s3Endpoint + ' \\', '  s3 ls s3://USER/']);
+    copyBlock(s3Ex, ['# Download a file', 'aws --endpoint-url ' + s3Endpoint + ' \\', '  s3 cp s3://USER/DIR/FILE ./FILE'], true);
+    var sftpPort = '${sftpPort}';
+    if (sftpPort) {
+      var sftpCard = document.getElementById('sftpCard');
+      sftpCard.classList.remove('opacity-50');
+      sftpCard.classList.replace('border-secondary', 'border-info');
+      sftpCard.querySelector('.card-header').classList.replace('bg-secondary', 'bg-info');
+      sftpCard.querySelector('i').classList.replace('text-secondary', 'text-info');
+      document.getElementById('sftpBadge').remove();
+      var sftpBody = document.getElementById('sftpBody');
+      sftpBody.classList.remove('text-muted');
+      sftpBody.innerHTML =
+        '<p class="text-muted mb-2">Connect using any SFTP/SCP client over SSH.</p>' +
+        '<div class="mb-1"><span class="text-muted">Host: </span><code id="connectSftpHost"></code></div>' +
+        '<div class="mb-2"><span class="text-muted">Port: </span><code>' + sftpPort + '</code></div>' +
+        '<p class="text-muted mb-0">Use your portal username and password.</p>';
+      document.getElementById('connectSftpHost').textContent = host;
+    }
+  }());
+  </script>
 
-a:hover {
-	text-decoration: underline;
-	color: black;
-}
+  <!-- Hidden carrier for the ${parent} link; extracted by JS below -->
+  <div id="parentData" style="display:none">${parent}</div>
 
-a:active {
-	text-decoration: underline;
-	color: black;
-}
+  <div class="container-xxl px-3 pt-2 pb-1 mx-auto">
+    <div id="warning" class="alert alert-danger d-none"><pre class="mb-0">${warning}</pre></div>
+    <div id="msgTop" class="alert alert-info d-none"><pre class="mb-0">${msgTop}</pre></div>
 
-h1 {
-	Font-size: 10pt;
-	font-weight: bold;
-	color: navy;
-	padding-top: 8pt;
-}
+    <div class="card border-0 shadow-sm mt-2">
+      <div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+        <i class="bi bi-folder2-open text-primary"></i>
+        <span class="fw-semibold">Files</span>
+        <a href="#" class="text-primary ms-1" role="button" data-bs-toggle="modal" data-bs-target="#connectModal" title="How to connect" style="line-height:1; text-decoration:none;">
+          <i class="bi bi-info-circle" style="font-size:0.85rem;"></i>
+        </a>
+        <div class="ms-auto d-flex flex-wrap align-items-center gap-2">
+          <div class="input-group input-group-sm" style="width:auto">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input type="text" id="listingSearch" class="form-control" placeholder="Search files..." style="min-width:160px">
+          </div>
+          <div class="input-group input-group-sm flex-nowrap" style="width:auto" title="Page size">
+            <span class="input-group-text px-2"><i class="bi bi-list-ol"></i></span>
+            <select id="listingPageLen" class="form-select form-select-sm" style="width:auto">
+              <option value="10">10</option>
+              <option value="25" selected>25</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+              <option value="250">250</option>
+            </select>
+          </div>
+          <div class="dropdown">
+            <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" id="listingColModeBtn"
+                    data-bs-toggle="dropdown" data-bs-auto-close="outside" data-bs-boundary="viewport" aria-expanded="false">
+              <i class="bi bi-layout-three-columns me-1"></i>Auto
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="listingColModeBtn">
+              <li><a class="dropdown-item" href="#" data-listing-mode="auto"><strong>Auto</strong><br><small class="text-muted">Hides columns based on screen width</small></a></li>
+              <li><a class="dropdown-item" href="#" data-listing-mode="all"><strong>All</strong><br><small class="text-muted">Shows all columns</small></a></li>
+              <li><a class="dropdown-item" href="#" data-listing-mode="compact"><strong>Compact</strong><br><small class="text-muted">Hides: ID</small></a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="#" data-listing-mode="custom"><strong>Custom</strong><br><small class="text-muted">Choose individual columns</small></a></li>
+              <li id="listingCustomColChkPanel" style="display:none;">
+                <div class="px-3 py-2 d-flex flex-column gap-1" style="min-width:180px;">
+                  <div class="form-check mb-0"><input class="form-check-input listing-col-chk" type="checkbox" id="listingChk-0" data-col="0" checked disabled><label class="form-check-label text-muted" for="listingChk-0">Name <small>(required)</small></label></div>
+                  <div class="form-check mb-0"><input class="form-check-input listing-col-chk" type="checkbox" id="listingChk-1" data-col="1" checked><label class="form-check-label" for="listingChk-1">Date</label></div>
+                  <div class="form-check mb-0"><input class="form-check-input listing-col-chk" type="checkbox" id="listingChk-2" data-col="2" checked><label class="form-check-label" for="listingChk-2">Size</label></div>
+                  <div class="form-check mb-0"><input class="form-check-input listing-col-chk" type="checkbox" id="listingChk-3" data-col="3" checked><label class="form-check-label" for="listingChk-3">ID</label></div>
+                </div>
+              </li>
+            </ul>
+          </div>
+          <a id="parentBtn" class="btn btn-sm btn-outline-secondary disabled" title="Parent Directory"
+             aria-label="Parent Directory" aria-disabled="true">
+            <i class="bi bi-arrow-up-circle"></i>
+          </a>
+        </div>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table id="listingTable" class="table table-sm table-hover table-striped align-middle listing-table mb-0" style="width:100%">
+            <thead class="table-light">
+              <tr>
+                <th>Name</th>
+                <th>Date</th>
+                <th>Size</th>
+                <th>ID</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${listing}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
 
-h2 {
-	Font-size: 10pt;
-	width: 100%;
-	font-weight: bold;
-	border-width: 0pt 0pt 0pt 0pt;
-}
+    <div id="msgDown" class="alert alert-info d-none mt-2"><pre class="mb-0">${msgDown}</pre></div>
+  </div>
 
-h3 {
-	Font-size: 10pt;
-	width: 100%;
-}
+  <div id="bottomfooter" class="bottomfooter d-flex align-items-center justify-content-between text-white px-3"
+       style="background-color: ${color}; height:34px; border-top:1px solid rgba(255,255,255,0.15);">
+    <div class="footer_simple_title">${footer}</div>
+    <div class="footer_simple_title">
+      <span class="text-white-50">v</span>${version}
+      <span class="text-white-50 small ms-1">(${build})</span>
+    </div>
+  </div>
 
-.location_simple {
-	padding-left: 123px;
-	margin-top: 1px;
-	margin-bottom: 2px;
-	background: #000000;
-	color: white;
-	font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
-	font-size: 11pt;
-}
+  <script src="/jquery/jquery-3.7.0.min.js"></script>
+  <script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="/datatables/js/dataTables.min.js"></script>
+  <script src="/datatables/js/dataTables.bootstrap5.min.js"></script>
+  <script>
+    $.fn.dataTable.ext.errMode = 'none';
+    $(document).on('error.dt', function(e, settings, techNote, message) {
+      console.warn('DataTables warning (tn/' + techNote + '):', message);
+    });
 
-.location_simple a:link {
-	text-decoration: none;
-	color: white;
-}
+    // Alerts
+    ['warning', 'msgTop', 'msgDown'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el && el.querySelector('pre') && el.querySelector('pre').textContent.trim().length > 0)
+        el.classList.remove('d-none');
+    });
 
-.location_simple a:visited {
-	text-decoration: none;
-	color: white;
-}
+    // Build breadcrumb from window.location.pathname, stripping the base prefix
+    (function() {
+      var bar      = document.getElementById('locationBar');
+      var base     = (bar.dataset.base || '/').replace(/\/$/, ''); // e.g. /ecpds/data/list
+      var pathname = window.location.pathname.replace(/\/$/, '');  // strip trailing slash
+      // Strip base prefix to get only the user-navigable sub-path
+      var sub = pathname.indexOf(base) === 0 ? pathname.slice(base.length) : pathname;
+      var segments = sub.replace(/^\//, '').split('/').filter(Boolean);
+      var ol = document.createElement('ol');
+      ol.className = 'breadcrumb';
+      var home = document.createElement('li');
+      home.className = 'breadcrumb-item';
+      home.innerHTML = '<a href="' + base + '/"><i class="bi bi-house-fill"></i></a>';
+      ol.appendChild(home);
+      var acc = base + '/';
+      for (var i = 0; i < segments.length; i++) {
+        acc += segments[i] + '/';
+        var li = document.createElement('li');
+        if (i === segments.length - 1) {
+          li.className = 'breadcrumb-item active';
+          li.setAttribute('aria-current', 'page');
+          li.textContent = segments[i];
+        } else {
+          li.className = 'breadcrumb-item';
+          var a = document.createElement('a');
+          a.href = acc;
+          a.textContent = segments[i];
+          li.appendChild(a);
+        }
+        ol.appendChild(li);
+      }
+      var nav = document.createElement('nav');
+      nav.setAttribute('aria-label', 'breadcrumb');
+      nav.appendChild(ol);
+      document.getElementById('locationBreadcrumb').appendChild(nav);
+    }());
+    (function() {
+      var carrier = document.getElementById('parentData');
+      var btn = document.getElementById('parentBtn');
+      var a = carrier ? carrier.querySelector('a') : null;
+      if (a && btn) {
+        btn.href = a.href;
+        btn.classList.remove('disabled');
+        btn.removeAttribute('aria-disabled');
+      }
+    }());
 
-.location_simple a:hover {
-	text-decoration: underline;
-	color: white;
-}
+    // Page length — restore from localStorage
+    var _savedLen = (function() {
+      try { var v = parseInt(localStorage.getItem('portalPageLen'), 10); return [10,25,50,100,250].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; }
+    })();
+    document.getElementById('listingPageLen').value = _savedLen;
 
-.location_simple a:active {
-	text-decoration: underline;
-	color: white;
-}
+    var _table = $('#listingTable').DataTable({
+      paging:       true,
+      pageLength:   _savedLen,
+      searching:    true,
+      ordering:     true,
+      info:         true,
+      dom:          't<"d-flex align-items-start mt-2 px-3 pb-2"i<"ms-auto"p>>',
+      language:     { info: 'Showing _START_ to _END_ of _TOTAL_ files', infoFiltered: '(filtered)', emptyTable: 'No files found.' },
+      columnDefs:   [{ targets: [1, 2, 3], className: 'text-end' }]
+    });
 
-.footer_simple_title {
-	font-size: 11pt;
-	font-weight: none;
-	color: white;
-	padding-top: 0px;
-	padding-left: 8pt;
-	padding-right: 8pt;
-	font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
-}
+    $('#listingPageLen').on('change', function() {
+      var len = +this.value;
+      try { localStorage.setItem('portalPageLen', len); } catch(e) {}
+      _table.page.len(len).draw();
+    });
+    $('#listingSearch').on('input', function() {
+      _table.search(this.value).draw();
+    });
 
-.footer_simple_title a:link {
-    text-decoration: none;
-    color: white;
-}
+    // Column visibility
+    var _colModeKey       = 'portalColMode';
+    var _customColsKey    = 'portalCustomCols';
+    var _compactHide      = [3];
+    var _colMode = (function() { try { return localStorage.getItem(_colModeKey) || 'auto'; } catch(e) { return 'auto'; } })();
+    var _customCols = (function() {
+      try { var s = localStorage.getItem(_customColsKey); if (s) return JSON.parse(s); } catch(e) {}
+      return [0, 1, 2, 3];
+    })();
+    function _showCols(hideCols) {
+      for (var i = 0; i < 4; i++)
+        _table.column(i).visible(hideCols.indexOf(i) === -1, false);
+      _table.columns.adjust();
+    }
+    function _applyCustomCols() {
+      for (var i = 0; i < 4; i++)
+        _table.column(i).visible(i === 0 ? true : _customCols.indexOf(i) !== -1, false);
+      _table.columns.adjust();
+    }
+    function _syncChkBoxes() {
+      document.querySelectorAll('.listing-col-chk').forEach(function(chk) {
+        chk.checked = _customCols.indexOf(+chk.dataset.col) !== -1;
+      });
+    }
+    document.querySelectorAll('.listing-col-chk').forEach(function(chk) {
+      chk.addEventListener('change', function() {
+        var col = +this.dataset.col;
+        var idx = _customCols.indexOf(col);
+        if (this.checked && idx === -1) _customCols.push(col);
+        else if (!this.checked && idx !== -1) _customCols.splice(idx, 1);
+        try { localStorage.setItem(_customColsKey, JSON.stringify(_customCols)); } catch(e) {}
+        if (_colMode === 'custom') _applyCustomCols();
+      });
+    });
+    function _applyResponsive() {
+      if (_colMode !== 'auto') return;
+      if (window.innerWidth < 576)      _showCols([1, 3]);
+      else if (window.innerWidth < 768) _showCols([3]);
+      else                              _showCols([]);
+    }
+    function _applyMode(mode) {
+      var label = mode.charAt(0).toUpperCase() + mode.slice(1);
+      $('#listingColModeBtn').html('<i class="bi bi-layout-three-columns me-1"></i>' + label);
+      $('#listingColModeBtn').toggleClass('btn-outline-secondary', mode === 'auto').toggleClass('btn-primary', mode !== 'auto');
+      $('#listingColModeBtn').closest('.dropdown').find('.dropdown-item').each(function() {
+        $(this).find('i.bi-check').remove();
+        if ($(this).data('listing-mode') === mode) $(this).prepend('<i class="bi bi-check me-1"></i>');
+      });
+      document.getElementById('listingCustomColChkPanel').style.display = (mode === 'custom') ? '' : 'none';
+      if      (mode === 'auto')    _applyResponsive();
+      else if (mode === 'all')     _showCols([]);
+      else if (mode === 'compact') _showCols(_compactHide);
+      else if (mode === 'custom')  { _syncChkBoxes(); _applyCustomCols(); }
+    }
+    $(window).on('resize', _applyResponsive);
+    _applyMode(_colMode);
+    $('#listingColModeBtn').closest('.dropdown').find('.dropdown-item').on('click', function(e) {
+      e.preventDefault();
+      var mode = $(this).data('listing-mode');
+      if (!mode) return;
+      _colMode = mode;
+      try { localStorage.setItem(_colModeKey, mode); } catch(e) {}
+      _applyMode(mode);
+    });
 
-.footer_simple_title a:visited {
-    text-decoration: none;
-    color: white;
-}
-
-.footer_simple_title a:hover {
-    text-decoration: underline;
-    color: white;
-}
-
-.footer_simple_title a:active {
-    text-decoration: underline;
-    color: white;
-}
-
-.topheader {
-	position: fixed;
-	z-index: 2147483646 !important;
-	top: 0;
-	left: 0;
-	width: 100%;
-	margin: 0;
-}
-
-.bottomfooter {
-	position: fixed;
-	z-index: 2147483646 !important;
-	bottom: 0;
-	left: 0;
-	width: 100%;
-	margin: 0;
-}
-
-.header_simple_title {
-	font-size: 16pt;
-	font-weight: bold;
-	color: white;
-	padding-top: 8px;
-	font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
-}
-
-td.content {
-	Font-size: 10pt;
-	padding: 5pt;
-	padding-left: 8pt;
-}
-
-.message {
-	border: 1px outset black;
-	color: black;
-	background-color: #eeeeee;
-	width: 98%;
-	margin-top: 5;
-}
-
-.warning {
-	border: 1px outset red;
-	color: white;
-	background-color: #ff0000;
-	width: 98%;
-	margin-top: 5;
-}
-</style>
-<body bgcolor="#ffffff" text="#000000">
-	<div id="topheader" class="topheader">
-		<table width="100%" cellpadding="0" cellspacing="0" height="100"
-			border=0>
-			<tr>
-				<td bgcolor="${color}">
-					<table width="100%" border=0>
-						<tr>
-							<td width="50">&nbsp;</td>
-							<td width="240"><img src="/images/logo.production.png"
-								border="0" alt="Home page" width="140" height="24"></td>
-							<td><div class="header_simple_title">${title}</div></td>
-							<td align="right" valign="middle"></td>
-						</tr>
-					</table>
-				</td>
-				<td bgcolor="${color}" colspan=2></td>
-			</tr>
-			<tr>
-				<td bgcolor="#ffffff" height="1" colspan="3"></td>
-			</tr>
-			<tr>
-				<td bgcolor="#000000" colspan="3"><div class="location_simple">Index
-						of ${path}</div></td>
-			</tr>
-		</table>
-	</div>
-	<div id="contentDiv">
-		<table id="outerTable" width="100%" border="0" cellspacing="0"
-			cellpadding="0" bgcolor="#ffffff">
-			<tr>
-				<td colspan=2 height=100>&nbsp;</td>
-			</tr>
-			<tr id="warning" class="warning">
-				<td valign="top" class="content"><pre>${warning}</pre></td>
-			</tr>
-			<tr id="msgTop" class="message">
-				<td valign="top" class="content"><pre>${msgTop}</pre></td>
-			</tr>
-			<tr>
-				<td valign="top" class="content"><pre>${header}</pre>
-					<hr> <pre>${listing}</pre>
-					<hr> <pre>${parent}</pre></td>
-			</tr>
-			<tr id="msgDown" class="message">
-				<td valign="top" class="content"><pre>${msgDown}</pre></td>
-			</tr>
-			<tr>
-				<td colspan=2 height=40>&nbsp;</td>
-			</tr>
-		</table>
-	</div>
-	<div id="bottomfooter" class="bottomfooter">
-		<table border=0 height="40" border="0" cellspacing="0" cellpadding="0"
-			width="100%">
-			<tr>
-				<td bgcolor="#000000" width="30%" align="left" valign="middle"><div
-						class="footer_simple_title">${footer}</div></td>
-				<td bgcolor="#000000" align="center" valign="middle"></td>
-				<td bgcolor="#000000" width="30%" align="right" valign="middle"><div
-						class="footer_simple_title">
-						v${version}&nbsp;<font size=-1>(${build})</font>
-					</div></td>
-			</tr>
-		</table>
-	</div>
-	<script>
-		var msgTop = document.getElementById("msgTop");
-		msgTop.style.display = "${msgTop}".length > 0 ? "block" : "none";
-		var msgDown = document.getElementById("msgDown");
-		msgDown.style.display = "${msgDown}".length > 0 ? "block" : "none";
-		var warning = document.getElementById("warning");
-		warning.style.display = "${warning}".length > 0 ? "block" : "none";
-	</script>
+    function ecpdsToggleTheme() {
+      var t = document.documentElement.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-bs-theme', t);
+      localStorage.setItem('ecpds-theme', t);
+      var ic = document.getElementById('themeIcon');
+      if (ic) ic.className = t === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-fill';
+    }
+    (function() {
+      var t = document.documentElement.getAttribute('data-bs-theme') || 'light';
+      var ic = document.getElementById('themeIcon');
+      if (ic) ic.className = t === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-fill';
+    }());
+  </script>
 </body>
 </html>

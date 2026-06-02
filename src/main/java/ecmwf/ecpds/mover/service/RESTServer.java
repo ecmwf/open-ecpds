@@ -1309,13 +1309,7 @@ public final class RESTServer {
             setTemplateParameters(sb, uriList, filename, biggerIndexes);
             final var listing = new StringBuilder();
             for (final FileListElement element : elements) {
-                addListElement(listing, uriList, uriGet, filename, element, biggerIndexes);
-            }
-            final var length = listing.length();
-            if (length > 0) {
-                listing.deleteCharAt(length - 1);
-            } else {
-                listing.append("empty");
+                addListElement(listing, uriList, uriGet, filename, element);
             }
             Format.replaceAll(sb, "${listing}", listing.toString());
             final var builder = Response.ok(sb.toString(), MediaType.TEXT_HTML);
@@ -1630,15 +1624,8 @@ public final class RESTServer {
      */
     private static void setTemplateParameters(final StringBuilder builder, final String uriList, final String filename,
             final long[] biggerIndexes) throws FileNotFoundException {
-        final var path = new StringBuilder();
-        // Let's build the list of links!
-        final var currentPath = new StringBuilder();
-        for (final String directory : "./".concat(filename).split("/")) {
-            path.append(
-                    "/<a href=\"" + uriList + "/" + (path.isEmpty() ? currentPath : currentPath.append(directory + "/"))
-                            + "\">" + (path.isEmpty() ? "home" : directory) + "</a>");
-        }
-        Format.replaceAll(builder, "${path}", Format.normalizePath(path.toString()) + "/ directory");
+        Format.replaceAll(builder, "${path}", "");
+        Format.replaceAll(builder, "${base}", Format.normalizePath(uriList) + "/");
         final var header = new StringBuilder();
         header.append(Format.formatString("Name", (int) biggerIndexes[0], ' ', true));
         final var fmt = new Formatter(header);
@@ -1656,6 +1643,9 @@ public final class RESTServer {
         }
         Format.replaceAll(builder, "${version}", Version.getVersion());
         Format.replaceAll(builder, "${build}", Version.getBuild());
+        Format.replaceAll(builder, "${ftpPort}", Cnf.at("FtpPlugin", "port", ""));
+        Format.replaceAll(builder, "${s3Path}", Cnf.at("HttpPlugin", "s3ServicePath", "/s3"));
+        Format.replaceAll(builder, "${sftpPort}", Cnf.at("Ssh2Plugin", "port", ""));
     }
 
     /**
@@ -1671,37 +1661,37 @@ public final class RESTServer {
      *            the path
      * @param element
      *            the element
-     * @param biggerIndexes
-     *            the bigger indexes
      *
      * @throws FileNotFoundException
      *             the file not found exception
      */
     private static void addListElement(final StringBuilder builder, final String uriList, final String uriGet,
-            final String path, final FileListElement element, final long[] biggerIndexes) throws FileNotFoundException {
+            final String path, final FileListElement element) throws FileNotFoundException {
         final var name = element.getName();
-        final String srvc;
-        final String dir;
-        if (element.isDirectory()) {
-            // This is a directory so we forward the user to the list service!
-            srvc = uriList;
-            dir = "/";
-        } else {
-            // This is a file so we forward the user to the get service!
-            srvc = uriGet;
-            dir = "";
-        }
-        final var url = Format.normalizePath(srvc + "/" + path + "/" + name) + dir;
-        builder.append(Format.formatString("<a href=\"" + url + "\">" + name + dir + "</a>",
-                (int) biggerIndexes[0] + 15 + url.length(), ' ', true));
-        final var fmt = new Formatter(builder);
-        fmt.format(" %-16s", Format.formatTime("dd-MM-yyyy HH:mm", element.getTime()));
-        fmt.close();
         final var isDir = element.isDirectory();
-        builder.append(Format.formatString(isDir ? "-" : element.getSize().trim(), (int) biggerIndexes[1], ' ', false))
-                .append(Format.formatString(isDir ? "-" : element.getComment().trim(), (int) biggerIndexes[2], ' ',
-                        false))
-                .append("\n");
+        final var srvc = isDir ? uriList : uriGet;
+        final var dir = isDir ? "/" : "";
+        final var url = Format.normalizePath(srvc + "/" + path + "/" + name) + dir;
+        final String sizeRaw = isDir ? null : element.getSize().trim();
+        final String sizeDisplay = isDir ? "-" : Format.formatSize(Long.parseLong(sizeRaw));
+        final String sizeOrder = isDir ? "-1" : sizeRaw;
+        builder.append("<tr>").append("<td><a href=\"").append(url).append("\">").append(escapeHtml(name)).append(dir)
+                .append("</a></td>").append("<td>").append(Format.formatTime("dd-MM-yyyy HH:mm", element.getTime()))
+                .append("</td>").append("<td data-order=\"").append(sizeOrder).append("\">").append(sizeDisplay)
+                .append("</td>").append("<td>").append(isDir ? "-" : escapeHtml(element.getComment().trim()))
+                .append("</td>").append("</tr>\n");
+    }
+
+    /**
+     * Escapes HTML special characters in a string to prevent markup injection.
+     *
+     * @param text
+     *            the text to escape
+     *
+     * @return the escaped text
+     */
+    private static String escapeHtml(final String text) {
+        return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
     }
 
     /**
