@@ -161,6 +161,28 @@
 [data-bs-theme=light] .mc-range.mc-bad  { background: #cf222e; }
 [data-bs-theme=light] .mc-pin  { background: #24292f; }
 [data-bs-theme=light] .mc-lnums { color: #8c959f; }
+/* -- Packet animation button -------------------------------- */
+.mm-anim-btn {
+    position: absolute; top: 8px; right: 8px; z-index: 1000;
+    background: rgba(20,20,20,0.85); border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 6px; color: #e8e8e8; font-size: 0.75rem;
+    padding: 4px 10px; cursor: pointer; backdrop-filter: blur(4px);
+    display: flex; align-items: center; gap: 0.3rem; transition: background 0.15s;
+}
+.mm-anim-btn:hover { background: rgba(60,60,60,0.95); }
+[data-bs-theme=light] .mm-anim-btn {
+    background: rgba(250,250,252,0.92); border-color: rgba(0,0,0,0.12); color: #24292f;
+}
+[data-bs-theme=light] .mm-anim-btn:hover { background: rgba(220,224,230,0.98); }
+/* OL zoom buttons: use flex centering so all icons (+/−/fit) are properly centred */
+.ol-zoom button {
+    display: flex !important; align-items: center !important;
+    justify-content: center !important; line-height: 1 !important;
+}
+/* Fit icon: match visual weight of bold +/− glyphs */
+#mtrFitBtn i { font-size: 1em; -webkit-text-stroke: 0.4px currentColor; }
+/* Attribution 'i' button: add breathing room from map edges */
+#mtrMap .ol-attribution { bottom: 8px; right: 8px; }
 </style>
 
 <div class="card shadow-sm mt-2">
@@ -242,6 +264,9 @@
         <div id="mtrChartPanel" class="mc-panel" style="display:none;"></div>
         <div id="mtrMapPanel" class="mm-panel" style="display:none;">
             <div id="mtrMap" class="mm-map"></div>
+            <button id="mtrAnimBtn" class="mm-anim-btn" style="display:none;" title="Animate packet along route">
+                <i class="bi bi-play-fill"></i> Animate
+            </button>
             <div class="mm-legend" id="mmLegend">
                 <div class="mm-legend-row"><div class="mm-dot" style="background:#3fb950;"></div> &lt;50 ms</div>
                 <div class="mm-legend-row"><div class="mm-dot" style="background:#d29922;"></div> 50&ndash;150 ms</div>
@@ -261,6 +286,7 @@
     var _view = 'raw', _chartReady = false, _mapReady = false;
     var _olMap = null, _olInited = false, _routeExtent = null, _mapFitted = false;
     var _lastMtr = null, _lastGeoMap = null, _mtrGeneration = 0;
+    var _animRunning = false, _animRaf = null, _animLayer = null, _hopPoints = [];
     /* Host's manually-configured coordinates — used as fallback for the last MTR hop
        when the GeoIP database has no entry for the destination IP. */
     var _hostFallback = <c:choose><c:when test="${not empty host.latitude and not empty host.longitude}">{ hostname: '<c:out value="${host.host}"/>', lat: ${host.latitude}, lon: ${host.longitude}, geo: '<c:out value="${host.nickName}"/>' }</c:when><c:otherwise>null</c:otherwise></c:choose>;
@@ -524,6 +550,106 @@
         return document.documentElement.getAttribute('data-bs-theme') === 'dark';
     }
 
+    function _stopAnim() {
+        _animRunning = false;
+        if (_animRaf) { cancelAnimationFrame(_animRaf); _animRaf = null; }
+        if (_animLayer && _olMap) { try { _olMap.removeLayer(_animLayer); } catch(e) {} }
+        _animLayer = null;
+        var btn = document.getElementById('mtrAnimBtn');
+        if (btn) { btn.innerHTML = '<i class="bi bi-play-fill"></i> Animate'; }
+    }
+
+    function _startAnim() {
+        if (_animRunning || _hopPoints.length < 2 || !_olMap) return;
+        _animRunning = true;
+        var btn = document.getElementById('mtrAnimBtn');
+        if (btn) { btn.innerHTML = '<i class="bi bi-stop-fill"></i> Stop'; }
+
+        var animSource = new ol.source.Vector();
+        var packetFeat = new ol.Feature({ geometry: new ol.geom.Point(_hopPoints[0].coord.slice()) });
+        animSource.addFeature(packetFeat);
+        _animLayer = new ol.layer.Vector({ source: animSource, zIndex: 20 });
+        _olMap.addLayer(_animLayer);
+
+        /* Build segment list with lengths for proportional travel time */
+        var segments = [], totalDist = 0;
+        for (var i = 0; i < _hopPoints.length - 1; i++) {
+            var dx = _hopPoints[i + 1].coord[0] - _hopPoints[i].coord[0];
+            var dy = _hopPoints[i + 1].coord[1] - _hopPoints[i].coord[1];
+            var dist = Math.sqrt(dx * dx + dy * dy);
+            segments.push({ from: _hopPoints[i].coord, to: _hopPoints[i + 1].coord, dist: dist });
+            totalDist += dist;
+        }
+        var routeDuration = 4000; /* ms for the full route */
+        var pauseDuration = 400;  /* ms pause at each intermediate hop */
+        var dstPause = 1000;      /* ms pause at DST before restarting */
+        segments.forEach(function(s) {
+            s.duration = totalDist > 0 ? (s.dist / totalDist) * routeDuration : routeDuration / segments.length;
+        });
+
+        var segIdx = 0, phase = 'travel', phaseStart = null;
+
+        function frame(ts) {
+            if (!_animRunning) return;
+            if (phaseStart === null) phaseStart = ts;
+            var elapsed = ts - phaseStart;
+            var dark = _isDark();
+
+            if (phase === 'travel') {
+                var seg = segments[segIdx];
+                var raw = Math.min(elapsed / seg.duration, 1);
+                /* ease-in-out */
+                var t = raw < 0.5 ? 2 * raw * raw : -1 + (4 - 2 * raw) * raw;
+                var x = seg.from[0] + (seg.to[0] - seg.from[0]) * t;
+                var y = seg.from[1] + (seg.to[1] - seg.from[1]) * t;
+                packetFeat.getGeometry().setCoordinates([x, y]);
+
+                var pulse = 0.5 + 0.5 * Math.sin(ts / 150);
+                packetFeat.setStyle([
+                    new ol.style.Style({ image: new ol.style.Circle({
+                        radius: 11 + 4 * pulse,
+                        fill: new ol.style.Fill({ color: 'rgba(255,210,0,' + (0.15 + 0.10 * pulse) + ')' })
+                    })}),
+                    new ol.style.Style({ image: new ol.style.Circle({
+                        radius: 6,
+                        fill: new ol.style.Fill({ color: '#ffd700' }),
+                        stroke: new ol.style.Stroke({ color: dark ? '#fff' : '#333', width: 2 })
+                    })})
+                ]);
+
+                if (raw >= 1) { phase = 'pause'; phaseStart = ts; }
+
+            } else {
+                var pd = segIdx === segments.length - 1 ? dstPause : pauseDuration;
+                var flashT = Math.min(elapsed / pd, 1);
+                packetFeat.setStyle([
+                    new ol.style.Style({ image: new ol.style.Circle({
+                        radius: 8 + 14 * flashT,
+                        fill: new ol.style.Fill({ color: 'rgba(255,210,0,' + Math.max(0, 0.55 * (1 - flashT)) + ')' })
+                    })}),
+                    new ol.style.Style({ image: new ol.style.Circle({
+                        radius: 6,
+                        fill: new ol.style.Fill({ color: '#ffd700' }),
+                        stroke: new ol.style.Stroke({ color: dark ? '#fff' : '#333', width: 2 })
+                    })})
+                ]);
+
+                if (elapsed >= pd) {
+                    segIdx++;
+                    if (segIdx >= segments.length) {
+                        /* Reached DST — stop automatically */
+                        _stopAnim();
+                        return;
+                    }
+                    phase = 'travel';
+                    phaseStart = ts;
+                }
+            }
+            _animRaf = requestAnimationFrame(frame);
+        }
+        _animRaf = requestAnimationFrame(frame);
+    }
+
     function _buildMap(mtr, geoMap) {
         if (!window.ol) return;
         var mapEl = document.getElementById('mtrMap');
@@ -541,6 +667,14 @@
                 hopPoints.push({ hop: h, geo: g, coord: ol.proj.fromLonLat([g.lon, g.lat]) });
             }
         });
+        _hopPoints = hopPoints;
+
+        /* Show / wire the animate button */
+        var animBtn = document.getElementById('mtrAnimBtn');
+        if (animBtn) {
+            animBtn.style.display = hopPoints.length >= 2 ? '' : 'none';
+            animBtn.onclick = function() { if (_animRunning) { _stopAnim(); } else { _startAnim(); } };
+        }
 
         /* Route polyline */
         if (hopPoints.length >= 2) {
@@ -579,14 +713,14 @@
                     fill: new ol.style.Fill({ color: color }),
                     stroke: new ol.style.Stroke({ color: '#fff', width: strokeW })
                 }),
-                text: (isFirst || isLast) ? new ol.style.Text({
-                    text: isFirst ? 'SRC' : 'DST',
-                    font: 'bold 9px sans-serif',
+                text: new ol.style.Text({
+                    text: isFirst ? 'SRC' : (isLast ? 'DST' : String(h.hop)),
+                    font: (isFirst || isLast ? 'bold ' : '') + '9px sans-serif',
                     offsetY: -14,
                     fill: new ol.style.Fill({ color: dark ? '#e8e8e8' : '#24292f' }),
                     backgroundFill: new ol.style.Fill({ color: dark ? 'rgba(30,30,30,0.75)' : 'rgba(250,250,252,0.8)' }),
                     padding: [1, 3, 1, 3]
-                }) : null
+                })
             }));
             vectorSource.addFeature(feat);
             isFirst = false;
@@ -599,7 +733,12 @@
 
         _olMap = new ol.Map({
             target: 'mtrMap',
-            controls: ol.control.defaults.defaults({ rotate: false }),
+            controls: ol.control.defaults.defaults({
+                rotate: false,
+                attribution: false
+            }).extend([
+                new ol.control.Attribution({ collapsible: true, collapsed: true })
+            ]),
             layers: [
                 new ol.layer.Tile({ source: tileSource, className: 'mtr-base-layer' }),
                 vectorLayer
@@ -607,6 +746,24 @@
             view: new ol.View({ center: ol.proj.fromLonLat([0, 30]), zoom: 3 })
         });
         _olInited = true;
+
+        /* Inject fit button into OL zoom control so it inherits identical styling */
+        var zoomCtrl = _olMap.getTargetElement().querySelector('.ol-zoom');
+        if (zoomCtrl) {
+            var fitBtn = document.createElement('button');
+            fitBtn.id = 'mtrFitBtn';
+            fitBtn.type = 'button';
+            fitBtn.title = 'Fit map to all hops';
+            fitBtn.style.display = 'none';
+            fitBtn.innerHTML = '<i class="bi bi-arrows-fullscreen"></i>';
+            fitBtn.onclick = function() {
+                if (_routeExtent && isFinite(_routeExtent[0])) {
+                    _olMap.getView().fit(_routeExtent, { padding: [40, 40, 40, 40], duration: 300 });
+                }
+            };
+            zoomCtrl.appendChild(fitBtn);
+            if (hopPoints.length >= 2) { fitBtn.style.display = ''; }
+        }
 
         /* Save extent — fit is deferred until the panel is actually visible */
         var ext = vectorSource.getExtent();
@@ -667,6 +824,7 @@
             return;
         }
         _obsTheme = newTheme;
+        _stopAnim();
         /* Preserve user's current view so theme toggle doesn't reset pan/zoom */
         var savedCenter = _mapFitted ? _olMap.getView().getCenter() : null;
         var savedZoom   = _mapFitted ? _olMap.getView().getZoom()   : null;

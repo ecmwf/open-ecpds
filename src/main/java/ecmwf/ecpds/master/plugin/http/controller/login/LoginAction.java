@@ -39,6 +39,7 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
+import ecmwf.common.technical.Cnf;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.web.ECMWFException;
 import ecmwf.web.controller.ECMWFAction;
@@ -65,6 +66,7 @@ public class LoginAction extends ECMWFAction {
             final HttpServletRequest request, final HttpServletResponse response)
             throws ECMWFException, ClassCastException {
         request.setAttribute("title", System.getProperty("monitor.title"));
+        setAuthModeAttributes(request);
         final UserAuthStrategy strategy = new EcPdsUserAuthStrategy();
         try {
             final var auto = request.getParameter("auto");
@@ -88,5 +90,36 @@ public class LoginAction extends ECMWFAction {
             }
             return mapping.findForward("failure");
         }
+    }
+
+    /**
+     * Reads the {@code authMode} config key from the {@code [MonitorPlugin]} section and sets two boolean request
+     * attributes — {@code showPassword} and {@code showOtp} — that the login JSP uses to conditionally render the
+     * credential field. Accepted values (comma-separated, case-insensitive): {@code password}, {@code otp}. Defaults to
+     * both when the key is absent or empty.
+     *
+     * @param request
+     *            the current HTTP request
+     */
+    static void setAuthModeAttributes(final HttpServletRequest request) {
+        final var mode = Cnf.at("MonitorPlugin", "authMode", "password,otp").toLowerCase();
+        final var tokens = mode.split(",");
+        var showPassword = false;
+        var showOtp = false;
+        for (final var token : tokens) {
+            final var t = token.trim();
+            if ("password".equals(t)) {
+                showPassword = true;
+            } else if ("otp".equals(t)) {
+                showOtp = true;
+            }
+        }
+        // Default to both if config is missing or unrecognised
+        if (!showPassword && !showOtp) {
+            showPassword = true;
+            showOtp = true;
+        }
+        request.setAttribute("showPassword", showPassword);
+        request.setAttribute("showOtp", showOtp);
     }
 }

@@ -71,6 +71,11 @@ table.fields > tbody > tr > th {
 }
 .acc-help-btn:hover { color: var(--bs-primary); }
 .acc-help-btn.acc-help-active { color: var(--bs-primary); }
+/* OL zoom buttons: flex centering for +/−/fit icons */
+.ol-zoom button {
+    display: flex !important; align-items: center !important;
+    justify-content: center !important; line-height: 1 !important;
+}
 </style>
 
 <tiles:useAttribute id="actionFormName" name="action.form.name"

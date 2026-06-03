@@ -583,6 +583,15 @@ function _updateHostSearchBanner(queryError, total, hasSearch) {
 [data-bs-theme=dark] #hostMap .host-base-layer canvas {
     filter: saturate(2) brightness(0.5) contrast(1.15);
 }
+/* OL zoom buttons: flex centering for +/−/fit icons */
+.ol-zoom button {
+    display: flex !important; align-items: center !important;
+    justify-content: center !important; line-height: 1 !important;
+}
+/* Fit icon: match visual weight of +/− */
+#hostFitBtn i { font-size: 1em; -webkit-text-stroke: 0.4px currentColor; }
+/* Attribution 'i' button: breathing room from map edges */
+#hostMap .ol-attribution { bottom: 8px; right: 8px; }
 </style>
 <script src="/openlayer/ol.js"></script>
 <script src="/openlayer/ol-layerswitcher.js"></script>
@@ -668,13 +677,36 @@ function _updateHostSearchBanner(queryError, total, hasSearch) {
 
         olMap = new ol.Map({
             target: 'hostMap',
-            controls: ol.control.defaults.defaults({ rotate: false }),
+            controls: ol.control.defaults.defaults({
+                rotate: false,
+                attribution: false
+            }).extend([
+                new ol.control.Attribution({ collapsible: true, collapsed: true })
+            ]),
             layers: [
                 new ol.layer.Tile({ source: new ol.source.OSM(), className: 'host-base-layer' }),
                 layer
             ],
             view: new ol.View({ center: ol.proj.fromLonLat([10, 48]), zoom: 3 })
         });
+
+        /* Inject fit button into OL zoom control */
+        var zoomCtrl = olMap.getTargetElement().querySelector('.ol-zoom');
+        if (zoomCtrl) {
+            var fitBtn = document.createElement('button');
+            fitBtn.id = 'hostFitBtn';
+            fitBtn.type = 'button';
+            fitBtn.title = 'Fit map to all hosts';
+            fitBtn.style.display = 'none';
+            fitBtn.innerHTML = '<i class="bi bi-arrows-fullscreen"></i>';
+            fitBtn.onclick = function() {
+                var ext = olSource.getExtent();
+                if (ext && !ol.extent.isEmpty(ext)) {
+                    olMap.getView().fit(ext, { padding: [40, 40, 40, 40], maxZoom: 7, duration: 300 });
+                }
+            };
+            zoomCtrl.appendChild(fitBtn);
+        }
 
         // Initial load with current filters
         loadMapFeatures();
@@ -751,6 +783,11 @@ function _updateHostSearchBanner(queryError, total, hasSearch) {
                     if (!ol.extent.isEmpty(ext)) {
                         olMap.getView().fit(ext, { padding: [40,40,40,40], maxZoom: 7, duration: 300 });
                     }
+                    var fb = document.getElementById('hostFitBtn');
+                    if (fb) fb.style.display = '';
+                } else {
+                    var fb = document.getElementById('hostFitBtn');
+                    if (fb) fb.style.display = 'none';
                 }
             })
             .catch(function(e) {

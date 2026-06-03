@@ -129,8 +129,9 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
     /** The email pattern **/
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
 
-    /** Cached GeoIP result (latitude, longitude, textual description). */
-    private record GeoIpResult(Double latitude, Double longitude, String description) {
+    /** Cached GeoIP result (latitude, longitude, textual description, continent, country, city). */
+    record GeoIpResult(Double latitude, Double longitude, String description, String continent, String country,
+            String city) {
     }
 
     /**
@@ -2663,7 +2664,49 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
         return monitor.done(result);
     }
 
-    private static GeoIpResult resolveGeoIp(final String hostName) {
+    static GeoIpResult resolveGeoIp(final String hostName) {
+        // Before calling GeoIP2, check the [GeoIP] config section for a forced
+        // location. Keys are "forced.<ip-or-prefix>" and values are:
+        // "lat,long[,continent,country,city]"
+        // The continent/country/city fields are optional but required for geoblocking.
+        // The most specific (longest) matching prefix wins, so "forced.1.2.3.4"
+        // takes precedence over "forced.1.2" for the address 1.2.3.4.
+        final var geoIpConfig = Cnf.at("GeoIP");
+        if (geoIpConfig != null) {
+            String bestPrefix = null;
+            String bestValue = null;
+            for (final var entry : geoIpConfig.entrySet()) {
+                final var key = entry.getKey();
+                if (!key.startsWith("forced.")) {
+                    continue;
+                }
+                final var prefix = key.substring("forced.".length());
+                if (hostName.equals(prefix) || hostName.startsWith(prefix + ".")) {
+                    if (bestPrefix == null || prefix.length() > bestPrefix.length()) {
+                        bestPrefix = prefix;
+                        bestValue = entry.getValue();
+                    }
+                }
+            }
+            if (bestValue != null) {
+                try {
+                    final var parts = bestValue.split(",", 5);
+                    final var latitude = Double.parseDouble(parts[0].trim());
+                    final var longitude = Double.parseDouble(parts[1].trim());
+                    final var continent = parts.length > 2 && !parts[2].isBlank() ? parts[2].trim() : null;
+                    final var country = parts.length > 3 && !parts[3].isBlank() ? parts[3].trim() : null;
+                    final var city = parts.length > 4 && !parts[4].isBlank() ? parts[4].trim() : null;
+                    final var textualLocation = Stream.of(city, country, continent).filter(Objects::nonNull)
+                            .collect(Collectors.joining(" / "));
+                    final var description = !textualLocation.isEmpty() ? textualLocation
+                            : String.format(Locale.ROOT, "Coordinates: %.4f / %.4f", latitude, longitude);
+                    _log.debug("GeoIP forced location for {} (prefix {}): {}", hostName, bestPrefix, description);
+                    return new GeoIpResult(latitude, longitude, description, continent, country, city);
+                } catch (final Exception e) {
+                    _log.warn("GeoIP forced location for {} is invalid ({}): {}", hostName, bestValue, e.getMessage());
+                }
+            }
+        }
         try {
             final var response = GeoIP2Helper.getCityResponse(hostName);
             final var continent = response.getContinent() != null ? response.getContinent().getName() : null;
@@ -2678,10 +2721,10 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
                     : (latitude != null && longitude != null)
                             ? String.format(Locale.ROOT, "Coordinates: %.4f / %.4f", latitude, longitude)
                             : "No geolocation available";
-            return new GeoIpResult(latitude, longitude, description);
+            return new GeoIpResult(latitude, longitude, description, continent, country, city);
         } catch (final Exception e) {
             _log.warn("GeoIP lookup failed for {}: {}", hostName, e.getMessage());
-            return new GeoIpResult(null, null, "No geolocation available");
+            return new GeoIpResult(null, null, "No geolocation available", null, null, null);
         }
     }
 

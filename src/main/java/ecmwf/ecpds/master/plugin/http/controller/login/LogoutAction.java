@@ -56,6 +56,7 @@ public class LogoutAction extends ECMWFAction {
             final HttpServletRequest request, final HttpServletResponse response)
             throws ECMWFException, ClassCastException {
         request.setAttribute("title", System.getProperty("monitor.title"));
+        LoginAction.setAuthModeAttributes(request);
         // Wipe the user out from the session
         request.getSession().setAttribute(User.SESSION_KEY, null);
         // Delete the RETURN_AFTER_LOGIN, to avoid returning to a place you

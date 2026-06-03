@@ -29,16 +29,41 @@
         <input id="login-user" name="user" type="text" placeholder="Enter your username" autocomplete="username" autofocus>
       </div>
 
-      <div class="login-field">
-        <label for="login-pass"><i class="bi bi-lock"></i> Password / OTP</label>
-        <div class="login-pass-wrap">
-          <input id="login-pass" name="password" type="password" placeholder="Password or 6-digit one-time code" autocomplete="current-password">
-          <button type="button" id="login-toggle-pass" tabindex="-1" title="Show/hide password">
-            <i class="bi bi-eye" id="login-eye"></i>
-          </button>
-        </div>
-        <div id="login-pass-hint" class="login-pass-hint"></div>
-      </div>
+      <c:choose>
+        <c:when test="${showPassword and showOtp}">
+          <%-- Both password and OTP allowed --%>
+          <div class="login-field">
+            <label for="login-pass"><i class="bi bi-lock"></i> Password / OTP</label>
+            <div class="login-pass-wrap">
+              <input id="login-pass" name="password" type="password" placeholder="Password or 6-digit one-time code" autocomplete="current-password">
+              <button type="button" id="login-toggle-pass" tabindex="-1" title="Show/hide password">
+                <i class="bi bi-eye" id="login-eye"></i>
+              </button>
+            </div>
+            <div id="login-pass-hint" class="login-pass-hint"></div>
+          </div>
+        </c:when>
+        <c:when test="${showOtp}">
+          <%-- OTP only --%>
+          <div class="login-field">
+            <label for="login-pass"><i class="bi bi-shield-lock"></i> One-Time Passcode</label>
+            <input id="login-pass" name="password" type="text" inputmode="numeric" maxlength="6"
+                   pattern="[0-9]{6}" placeholder="6-digit one-time code" autocomplete="one-time-code">
+          </div>
+        </c:when>
+        <c:otherwise>
+          <%-- Password only --%>
+          <div class="login-field">
+            <label for="login-pass"><i class="bi bi-lock"></i> Password</label>
+            <div class="login-pass-wrap">
+              <input id="login-pass" name="password" type="password" placeholder="Enter your password" autocomplete="current-password">
+              <button type="button" id="login-toggle-pass" tabindex="-1" title="Show/hide password">
+                <i class="bi bi-eye" id="login-eye"></i>
+              </button>
+            </div>
+          </div>
+        </c:otherwise>
+      </c:choose>
 
       <button type="submit" id="login-btn">
         <i class="bi bi-box-arrow-in-right"></i> Sign in
@@ -49,19 +74,40 @@
   </div>
 </div>
 
+<c:if test="${showPassword}">
 <script>
-document.getElementById('login-toggle-pass').addEventListener('click', function() {
-    var inp = document.getElementById('login-pass');
-    var eye = document.getElementById('login-eye');
-    if (inp.type === 'password') {
-        inp.type = 'text';
-        eye.className = 'bi bi-eye-slash';
-    } else {
-        inp.type = 'password';
-        eye.className = 'bi bi-eye';
+var _toggleBtn = document.getElementById('login-toggle-pass');
+if (_toggleBtn) {
+    _toggleBtn.addEventListener('click', function() {
+        var inp = document.getElementById('login-pass');
+        var eye = document.getElementById('login-eye');
+        if (inp.type === 'password') {
+            inp.type = 'text';
+            eye.className = 'bi bi-eye-slash';
+        } else {
+            inp.type = 'password';
+            eye.className = 'bi bi-eye';
+        }
+    });
+}
+</script>
+</c:if>
+
+<c:if test="${showOtp and not showPassword}">
+<script>
+document.getElementById('login-pass').addEventListener('input', function() {
+    var pos = this.selectionStart;
+    var cleaned = this.value.replace(/\D/g, '').slice(0, 6);
+    if (this.value !== cleaned) {
+        this.value = cleaned;
+        this.setSelectionRange(Math.min(pos, cleaned.length), Math.min(pos, cleaned.length));
     }
 });
+</script>
+</c:if>
 
+<c:if test="${showPassword and showOtp}">
+<script>
 document.getElementById('login-pass').addEventListener('input', function() {
     var val = this.value;
     var hint = document.getElementById('login-pass-hint');
@@ -78,4 +124,5 @@ document.getElementById('login-pass').addEventListener('input', function() {
     }
 });
 </script>
+</c:if>
 

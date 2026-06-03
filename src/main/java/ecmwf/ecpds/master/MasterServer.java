@@ -184,8 +184,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.graalvm.polyglot.Value;
 
-import com.maxmind.geoip2.exception.AddressNotFoundException;
-
 import ecmwf.common.callback.RemoteInputStreamImp;
 import ecmwf.common.database.Alias;
 import ecmwf.common.database.Association;
@@ -246,7 +244,6 @@ import ecmwf.common.technical.ByteSize;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.technical.ExecutorManager;
 import ecmwf.common.technical.ExecutorRunnable;
-import ecmwf.common.technical.GeoIP2Helper;
 import ecmwf.common.technical.MonitoredOutputStream;
 import ecmwf.common.technical.ScriptManager;
 import ecmwf.common.technical.StreamPlugThread;
@@ -825,18 +822,16 @@ public final class MasterServer extends ECaccessProvider
                     // Local host is obviously not in the database!
                     if (!"127.0.0.1".equals(ipAddress) && !"::1".equals(ipAddress)) {
                         try {
-                            final var response = GeoIP2Helper.getCityResponse(ipAddress);
-                            final var continent = response.getContinent().getName();
-                            final var country = response.getCountry().getIsoCode();
-                            final var city = response.getCity().getName();
+                            final var geo = DataBaseImpl.resolveGeoIp(ipAddress);
+                            final var continent = geo.continent();
+                            final var country = geo.country();
+                            final var city = geo.city();
                             blocked = geoblocking.stream().anyMatch(str -> str.equalsIgnoreCase(continent)
                                     || str.equalsIgnoreCase(country) || str.equalsIgnoreCase(city));
                             if (blocked) {
                                 _log.warn("Geolocation restriction for incoming user {} ({}->{}->{})", incomingUser,
                                         continent, country, city);
                             }
-                        } catch (final AddressNotFoundException e) {
-                            _log.debug("No location found for {}", ipAddress);
                         } catch (final Throwable t) {
                             _log.warn("Getting location for {}", ipAddress, t);
                         }
@@ -4194,12 +4189,12 @@ public final class MasterServer extends ECaccessProvider
                                 // Local host is obviously not in the database!
                                 if (!"127.0.0.1".equals(hostIp) && !"::1".equals(hostIp)) {
                                     final var start = System.currentTimeMillis();
-                                    final var location = GeoIP2Helper.getCityResponse(hostIp).getLocation();
-                                    if (location == null) {
+                                    final var geo = DataBaseImpl.resolveGeoIp(hostIp);
+                                    final var latitude = geo.latitude();
+                                    final var longitude = geo.longitude();
+                                    if (latitude == null || longitude == null) {
                                         _log.warn("Could not get geolocation for Host-{}: {}", hostId, hostIp);
                                     } else {
-                                        final var latitude = location.getLatitude();
-                                        final var longitude = location.getLongitude();
                                         if (_log.isDebugEnabled()) {
                                             _log.debug(
                                                     "New location found for Host-{} ({}): latitude={}, longitude={} ({})",
@@ -4212,8 +4207,6 @@ public final class MasterServer extends ECaccessProvider
                                     }
                                 }
                             }
-                        } catch (final AddressNotFoundException e) {
-                            _log.warn("Could not get geolocation for Host-{}: {}", hostId, e.getMessage());
                         } catch (final Throwable t) {
                             _log.warn("Could not get geolocation for Host-{}: {}", hostId, hostIp, t);
                         }
