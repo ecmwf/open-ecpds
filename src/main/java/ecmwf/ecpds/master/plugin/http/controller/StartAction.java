@@ -56,7 +56,8 @@ public class StartAction extends PDSAction {
                         || user.hasAccess(getResource(request, "metadata.basepath"))
                         || user.hasAccess(getResource(request, "transfergroup.basepath"))
                         || user.hasAccess(getResource(request, "transferserver.basepath"))
-                        || user.hasAccess(getResource(request, "retrievalmonitoring.basepath")));
+                        || user.hasAccess(getResource(request, "retrievalmonitoring.basepath"))
+                        || user.hasAccess(getResource(request, "datarates.basepath")));
 
         request.setAttribute("hasTransmission",
                 user.hasAccess(getResource(request, "datatransfer.basepath"))

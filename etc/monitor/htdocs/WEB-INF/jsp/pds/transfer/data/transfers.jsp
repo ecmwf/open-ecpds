@@ -561,7 +561,7 @@ function _updateTransferSearchBanner(queryError, total, hasSearch) {
             { title: 'Transfer Host', orderable: true,  render: function (d) { return d; }, width: '110px' },
             { title: 'Sched. Time',   orderable: true,  className: 'text-nowrap', width: '130px' },
             { title: 'Target',        orderable: true,  render: function (d) { return d; } },
-            { title: '%',             orderable: true,  className: 'text-nowrap', width: '45px' },
+            { title: '%',             orderable: false, className: 'text-nowrap', width: '45px' },
             { title: 'Mbits/s',       orderable: true,  className: 'text-nowrap', render: function (d) { return d; }, width: '70px' },
             { title: 'Prior',         orderable: true,  className: 'text-nowrap', width: '45px' }
         ],

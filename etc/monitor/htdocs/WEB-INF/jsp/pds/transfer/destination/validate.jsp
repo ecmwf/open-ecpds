@@ -236,12 +236,13 @@
                     <div class="form-check mb-0"><input class="form-check-input vl-custom-col-chk" type="checkbox" id="vlchk-6"  data-col="6"  checked><label class="form-check-label" for="vlchk-6">TS</label></div>
                     <div class="form-check mb-0"><input class="form-check-input vl-custom-col-chk" type="checkbox" id="vlchk-7"  data-col="7"  checked><label class="form-check-label" for="vlchk-7">%</label></div>
                     <div class="form-check mb-0"><input class="form-check-input vl-custom-col-chk" type="checkbox" id="vlchk-8"  data-col="8"  checked><label class="form-check-label" for="vlchk-8">Mbits/s</label></div>
-                    <div class="form-check mb-0"><input class="form-check-input vl-custom-col-chk" type="checkbox" id="vlchk-9"  data-col="9"  checked><label class="form-check-label" for="vlchk-9">Status</label></div>
-                    <div class="form-check mb-0"><input class="form-check-input vl-custom-col-chk" type="checkbox" id="vlchk-10" data-col="10" checked><label class="form-check-label" for="vlchk-10">Prior</label></div>
+                    <div class="form-check mb-0"><input class="form-check-input vl-custom-col-chk" type="checkbox" id="vlchk-9"  data-col="9"       ><label class="form-check-label" for="vlchk-9">Size</label></div>
+                    <div class="form-check mb-0"><input class="form-check-input vl-custom-col-chk" type="checkbox" id="vlchk-10" data-col="10" checked><label class="form-check-label" for="vlchk-10">Status</label></div>
+                    <div class="form-check mb-0"><input class="form-check-input vl-custom-col-chk" type="checkbox" id="vlchk-11" data-col="11" checked><label class="form-check-label" for="vlchk-11">Prior</label></div>
                     <c:if test="${not empty ecpdsCanHandleQueue}">
-                    <div class="form-check mb-0"><input class="form-check-input vl-custom-col-chk" type="checkbox" id="vlchk-11" data-col="11" checked disabled><label class="form-check-label text-muted" for="vlchk-11">Actions <small>(required)</small></label></div>
+                    <div class="form-check mb-0"><input class="form-check-input vl-custom-col-chk" type="checkbox" id="vlchk-12" data-col="12" checked disabled><label class="form-check-label text-muted" for="vlchk-12">Actions <small>(required)</small></label></div>
                     </c:if>
-                    <div class="form-check mb-0"><input class="form-check-input vl-custom-col-chk" type="checkbox" id="vlchk-12" data-col="12" checked disabled><label class="form-check-label text-muted" for="vlchk-12">Select <small>(required)</small></label></div>
+                    <div class="form-check mb-0"><input class="form-check-input vl-custom-col-chk" type="checkbox" id="vlchk-13" data-col="13" checked disabled><label class="form-check-label text-muted" for="vlchk-13">Select <small>(required)</small></label></div>
                   </div>
                 </li>
             </ul>
@@ -261,6 +262,7 @@
                 <th>TS</th>
                 <th>%</th>
                 <th>Mbits/s</th>
+                <th>Size</th>
                 <th>Status</th>
                 <th>Prior</th>
                 <th>Actions</th>
@@ -375,11 +377,12 @@
         columns: [
             { data: 0 }, { data: 1 }, { data: 2 }, { data: 3 }, { data: 4 },
             { data: 5 }, { data: 6 }, { data: 7 }, { data: 8 }, { data: 9 },
-            { data: 10 }, { data: 11 }, { data: 12 }
+            { data: 10 }, { data: 11 }, { data: 12 }, { data: 13 }
         ],
         columnDefs: [
-            { targets: [11,12], orderable: false },
-            { targets: [11], visible: canQueue }
+            { targets: [12,13], orderable: false },
+            { targets: [9], visible: false },
+            { targets: [12], visible: canQueue }
         ],
         drawCallback: function (settings) {
             var json = settings.json;
@@ -440,18 +443,18 @@
     var VL_COL_MODE_KEY   = 'validateColMode';
     var _vlCustomCols = (function() {
         try { var s = localStorage.getItem(VL_CUSTOM_COL_KEY); if (s) return JSON.parse(s); } catch(e) {}
-        return [0,1,2,3,4,5,6,7,8,9,10<c:if test="${not empty ecpdsCanHandleQueue}">,11</c:if>,12];
+        return [0,1,2,3,4,5,6,7,8,10,11<c:if test="${not empty ecpdsCanHandleQueue}">,12</c:if>,13]; // Size(9) hidden by default
     })();
     var _vlColMode = (function() {
         try { return localStorage.getItem(VL_COL_MODE_KEY) || 'auto'; } catch(e) { return 'auto'; }
     })();
-    var _VL_MED = [0, 1, 2, 6, 7, 8, 10];
+    var _VL_MED = [0, 1, 2, 6, 7, 8, 11];
     var _VL_SM  = [3, 4];
 
     function _vlShowCols(hideCols) {
         table.columns().every(function (i) {
             var vis = hideCols.indexOf(i) === -1;
-            if (i === 11 && !canQueue) vis = false;
+            if (i === 12 && !canQueue) vis = false;
             table.column(i).visible(vis, false);
         });
         table.columns.adjust();
@@ -460,8 +463,8 @@
     function _vlApplyCustomCols() {
         table.columns().every(function (i) {
             var vis = _vlCustomCols.indexOf(i) !== -1;
-            if (i === 5 || i === 12) vis = true;  // Target, Select: mandatory
-            if (i === 11) vis = canQueue;           // Actions: mandatory if canQueue
+            if (i === 5 || i === 13) vis = true;  // Target, Select: mandatory
+            if (i === 12) vis = canQueue;           // Actions: mandatory if canQueue
             table.column(i).visible(vis, false);
         });
         table.columns.adjust();

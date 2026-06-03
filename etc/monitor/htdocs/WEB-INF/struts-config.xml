@@ -342,6 +342,12 @@
 			type="ecmwf.ecpds.master.plugin.http.controller.datafile.transferserver.GetMoverDownloadsJsonAction">
 		</action>
 
+		<!-- Global Data Rates -->
+		<action path="/datafile/datarates"
+			type="ecmwf.ecpds.master.plugin.http.controller.datafile.GetDataRatesAction">
+			<forward name="success" path=".pds.datafile.datarates" />
+		</action>
+
 		<!-- *** Transfer ******************************************************************************************************* -->
 
 		<action path="/transfer"

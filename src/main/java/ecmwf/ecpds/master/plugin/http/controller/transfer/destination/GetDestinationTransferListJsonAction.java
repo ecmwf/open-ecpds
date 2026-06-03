@@ -73,10 +73,11 @@ public class GetDestinationTransferListJsonAction extends PDSAction {
     /**
      * Maps DataTables column index (0-based) to the DB sort column. SQL sort values defined in
      * getSortedDataTransfersByFilter.sql: 0=failed_time, 1=host, 2=sched_time, 3=start_time, 4=finish_time, 5=target,
-     * 6=ts, 7=%, 8=mbits, 9=status, 10=priority. Columns 11 (Actions) and 12 (Select) are non-sortable, defaulting to
-     * column 2 (scheduled time).
+     * 6=ts, 7=% (non-sortable — live value from TransferScheduler, not DB), 8=mbits, 9=size (maps to target for
+     * ordering), 10=status, 11=priority. Columns 12 (Actions) and 13 (Select) are non-sortable, defaulting to column 2
+     * (scheduled time).
      */
-    private static final int[] SORT_COLS = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 2, 2 };
+    private static final int[] SORT_COLS = { 0, 1, 2, 3, 4, 5, 6, 2, 8, 5, 9, 10, 2, 2 };
 
     /**
      * {@inheritDoc}
@@ -190,6 +191,7 @@ public class GetDestinationTransferListJsonAction extends PDSAction {
             row.add(buildTimeStepHtml(dt));
             row.add(buildProgressHtml(dt));
             row.add(buildRateHtml(dt));
+            row.add(buildSizeHtml(dt));
             row.add(buildStatusHtml(dt, memberState));
             row.add(String.valueOf(dt.getPriority()));
             row.add(buildActionsHtml(dt));
@@ -280,6 +282,14 @@ public class GetDestinationTransferListJsonAction extends PDSAction {
             final var mbit = dt.getFormattedTransferRateInMBitsPerSeconds();
             final var rate = escapeHtml(dt.getFormattedTransferRate());
             return "<span title=\"Rate: " + rate + "\">" + String.format("%.3f", mbit) + "</span>";
+        } catch (final Exception _) {
+            return "";
+        }
+    }
+
+    private static String buildSizeHtml(final DataTransfer dt) {
+        try {
+            return escapeHtml(dt.getFormattedSize());
         } catch (final Exception _) {
             return "";
         }

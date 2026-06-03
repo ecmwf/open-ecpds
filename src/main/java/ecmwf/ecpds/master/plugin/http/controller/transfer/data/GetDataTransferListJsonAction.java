@@ -74,10 +74,10 @@ public class GetDataTransferListJsonAction extends PDSAction {
 
     /**
      * Maps DataTables column index (0-based) to the DB sort column. SQL sort values defined in
-     * getSortedDataTransfersByStatusOnDate.sql: 0=DES_NAME, 1=HOS_NAME, 2=DAT_SCHEDULED_TIME, 3=DAT_TARGET,
-     * 4=DAT_SENT/DAT_SIZE (%), 5=DAT_SENT/DAT_DURATION (rate), 6=DAT_PRIORITY
+     * getSortedDataTransfersByStatusOnDate.sql: 0=DES_NAME, 1=HOS_NAME, 2=DAT_SCHEDULED_TIME, 3=DAT_TARGET, 4=%
+     * (non-sortable — live value from TransferScheduler, not DB), 5=DAT_SENT/DAT_DURATION (rate), 6=DAT_PRIORITY
      */
-    private static final int[] SORT_COLS = { 0, 1, 2, 3, 4, 5, 6 };
+    private static final int[] SORT_COLS = { 0, 1, 2, 3, 2, 5, 6 };
 
     /**
      * {@inheritDoc}

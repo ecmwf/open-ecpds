@@ -1796,6 +1796,17 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
     /**
      * {@inheritDoc}
      *
+     * Gets all traffic aggregated across all destinations.
+     */
+    @Override
+    public Collection<Traffic> getAllTraffic() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getAllTraffic()");
+        return monitor.done(ecpds.getAllTraffic());
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * Gets the destination counts by host.
      */
     @Override
@@ -2522,16 +2533,39 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
         }
         try {
             if (Boolean.TRUE.equals(host.getAutomaticLocation())) {
-                // Automatic location via GeoIP — check in-memory cache first to avoid
-                // repeated network lookups for the same hostname across map refreshes.
-                var cached = GEOIP_CACHE.getIfPresent(hostName);
-                if (cached == null) {
-                    cached = resolveGeoIp(hostName);
-                    GEOIP_CACHE.put(hostName, cached);
+                // For auto-location hosts the DB-stored lat/lon is the authoritative value —
+                // it is maintained by updateLocation() which resolves by IP and correctly
+                // applies any forced entries from the [GeoIP] config section.
+                // Only fall back to a live GeoIP lookup if the DB has no coordinates yet.
+                final var latitude = hostLocation.getLatitude();
+                final var longitude = hostLocation.getLongitude();
+                if (latitude != null && longitude != null) {
+                    // Use the stored IP (set by updateLocation) to get a rich description
+                    // (city/country/continent). For forced IPs this is a config lookup only;
+                    // for others the result is cached by IP so subsequent calls are free.
+                    final var ip = hostLocation.getIp();
+                    if (ip != null && !ip.isBlank()) {
+                        var cached = GEOIP_CACHE.getIfPresent(ip);
+                        if (cached == null) {
+                            cached = resolveGeoIp(ip);
+                            GEOIP_CACHE.put(ip, cached);
+                        }
+                        host.setGeoIpLocation(cached.description());
+                    } else {
+                        host.setGeoIpLocation(
+                                String.format(Locale.ROOT, "Coordinates: %.4f / %.4f", latitude, longitude));
+                    }
+                } else {
+                    // No DB value yet — do a one-off lookup and cache by hostname.
+                    var cached = GEOIP_CACHE.getIfPresent(hostName);
+                    if (cached == null) {
+                        cached = resolveGeoIp(hostName);
+                        GEOIP_CACHE.put(hostName, cached);
+                    }
+                    hostLocation.setLatitude(cached.latitude());
+                    hostLocation.setLongitude(cached.longitude());
+                    host.setGeoIpLocation(cached.description());
                 }
-                hostLocation.setLatitude(cached.latitude());
-                hostLocation.setLongitude(cached.longitude());
-                host.setGeoIpLocation(cached.description());
             } else {
                 // Manual location - do NOT use GeoIP
                 final var latitude = hostLocation.getLatitude();
@@ -2572,13 +2606,18 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
                 "getHostsForMap(" + label + "," + filter + "," + network + "," + hostType + ")");
         final List<Host> rawHosts = ecpds.getHostsForMap(label, filter, network, hostType, hostSearch);
 
+        // For hosts without DB coordinates yet, pre-warm the cache in parallel.
         final var futures = new java.util.HashMap<String, CompletableFuture<GeoIpResult>>();
         for (final var host : rawHosts) {
             if (Boolean.TRUE.equals(host.getAutomaticLocation())) {
-                final var hostName = host.getHost();
-                if (hostName != null && !hostName.isBlank() && GEOIP_CACHE.getIfPresent(hostName) == null
-                        && !futures.containsKey(hostName)) {
-                    futures.put(hostName, CompletableFuture.supplyAsync(() -> resolveGeoIp(hostName), GEOIP_EXECUTOR));
+                final var loc = host.getHostLocation();
+                if (loc == null || loc.getLatitude() == null || loc.getLongitude() == null) {
+                    final var hostName = host.getHost();
+                    if (hostName != null && !hostName.isBlank() && GEOIP_CACHE.getIfPresent(hostName) == null
+                            && !futures.containsKey(hostName)) {
+                        futures.put(hostName,
+                                CompletableFuture.supplyAsync(() -> resolveGeoIp(hostName), GEOIP_EXECUTOR));
+                    }
                 }
             }
         }
@@ -2599,13 +2638,33 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
                 double lon;
                 String geo;
                 if (Boolean.TRUE.equals(host.getAutomaticLocation())) {
-                    final var cached = GEOIP_CACHE.getIfPresent(host.getHost());
-                    if (cached == null || cached.latitude() == null || cached.longitude() == null) {
-                        continue;
+                    // Prefer DB-stored coordinates (set authoritatively by updateLocation()).
+                    // Fall back to the GeoIP cache only if the DB has no value yet.
+                    final var loc = host.getHostLocation();
+                    if (loc != null && loc.getLatitude() != null && loc.getLongitude() != null) {
+                        lat = loc.getLatitude();
+                        lon = loc.getLongitude();
+                        // Use stored IP for a rich description; cached by IP after first lookup.
+                        final var ip = loc.getIp();
+                        if (ip != null && !ip.isBlank()) {
+                            var cached = GEOIP_CACHE.getIfPresent(ip);
+                            if (cached == null) {
+                                cached = resolveGeoIp(ip);
+                                GEOIP_CACHE.put(ip, cached);
+                            }
+                            geo = cached.description();
+                        } else {
+                            geo = String.format(Locale.ROOT, "Coordinates: %.4f / %.4f", lat, lon);
+                        }
+                    } else {
+                        final var cached = GEOIP_CACHE.getIfPresent(host.getHost());
+                        if (cached == null || cached.latitude() == null || cached.longitude() == null) {
+                            continue;
+                        }
+                        lat = cached.latitude();
+                        lon = cached.longitude();
+                        geo = cached.description();
                     }
-                    lat = cached.latitude();
-                    lon = cached.longitude();
-                    geo = cached.description();
                 } else {
                     final var loc = host.getHostLocation();
                     if (loc == null || loc.getLatitude() == null || loc.getLongitude() == null) {
@@ -2726,6 +2785,21 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
             _log.warn("GeoIP lookup failed for {}: {}", hostName, e.getMessage());
             return new GeoIpResult(null, null, "No geolocation available", null, null, null);
         }
+    }
+
+    /**
+     * Puts a resolved {@link GeoIpResult} directly into the GeoIP cache under the given key (typically an IP address).
+     * Called by {@code MasterServer.updateLocation()} after a successful DB write so that subsequent calls to
+     * {@code getHost()} and {@code getHostsForMap()} immediately see the updated description without waiting for the
+     * cache TTL to expire.
+     *
+     * @param key
+     *            the cache key (IP address)
+     * @param result
+     *            the resolved GeoIP result
+     */
+    static void updateGeoIpCache(final String key, final GeoIpResult result) {
+        GEOIP_CACHE.put(key, result);
     }
 
     private static String _safeStr(final String value) {

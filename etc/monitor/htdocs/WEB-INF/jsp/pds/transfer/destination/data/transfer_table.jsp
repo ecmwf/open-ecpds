@@ -55,12 +55,13 @@
             <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-6"  data-col="6"  checked><label class="form-check-label" for="chk-col-6">TS</label></div>
             <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-7"  data-col="7"  checked><label class="form-check-label" for="chk-col-7">%</label></div>
             <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-8"  data-col="8"  checked><label class="form-check-label" for="chk-col-8">Mbits/s</label></div>
-            <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-9"  data-col="9"  checked><label class="form-check-label" for="chk-col-9">Status</label></div>
-            <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-10" data-col="10" checked><label class="form-check-label" for="chk-col-10">Prior</label></div>
+            <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-9"  data-col="9"       ><label class="form-check-label" for="chk-col-9">Size</label></div>
+            <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-10" data-col="10" checked><label class="form-check-label" for="chk-col-10">Status</label></div>
+            <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-11" data-col="11" checked><label class="form-check-label" for="chk-col-11">Prior</label></div>
             <c:if test="${not empty ecpdsCanHandleQueue}">
-            <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-11" data-col="11" checked><label class="form-check-label" for="chk-col-11">Actions</label></div>
+            <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-12" data-col="12" checked><label class="form-check-label" for="chk-col-12">Actions</label></div>
             </c:if>
-            <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-12" data-col="12" checked><label class="form-check-label" for="chk-col-12">Select</label></div>
+            <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-13" data-col="13" checked><label class="form-check-label" for="chk-col-13">Select</label></div>
           </div>
         </li>
       </ul>
@@ -97,7 +98,7 @@
   </div>
 </div>
 
-<%-- DataTable: 13 columns (Actions hidden when user lacks queue access) --%>
+<%-- DataTable: 14 columns (Actions hidden when user lacks queue access; Size hidden by default) --%>
 <table id="destTransferTable" class="table table-striped table-sm table-hover w-100">
   <thead class="table-light">
     <tr>
@@ -110,6 +111,7 @@
       <th>TS</th>
       <th>%</th>
       <th>Mbits/s</th>
+      <th>Size</th>
       <th>Status</th>
       <th>Prior</th>
       <th>Actions</th>
@@ -174,16 +176,19 @@ var _dftSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search us
             { data: 6, width: '55px' },
             { data: 7, width: '45px' },
             { data: 8, width: '70px' },
-            { data: 9, width: '95px' },
-            { data: 10, width: '45px' },
-            { data: 11, width: '95px' },
-            { data: 12, width: '40px' }
+            { data: 9, width: '80px' },
+            { data: 10, width: '95px' },
+            { data: 11, width: '45px' },
+            { data: 12, width: '95px' },
+            { data: 13, width: '40px' }
         ],
         columnDefs: [
             { targets: 5, className: 'col-target' },
-            { targets: [0, 6, 7, 8, 9, 10, 11, 12], className: 'text-nowrap' },
-            { targets: 11, orderable: false, visible: canQueue },
-            { targets: 12, orderable: false }
+            { targets: [0, 6, 7, 8, 9, 10, 11, 12, 13], className: 'text-nowrap' },
+            { targets: 7, orderable: false },
+            { targets: 9, visible: false },
+            { targets: 12, orderable: false, visible: canQueue },
+            { targets: 13, orderable: false }
         ],
         order: [[2, 'desc']],
         dom: "t<'d-flex align-items-start mt-2'i<'ms-auto'p>>",
@@ -305,7 +310,7 @@ var _dftSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search us
             var s = localStorage.getItem(CUSTOM_COL_KEY);
             if (s) return JSON.parse(s);
         } catch(e) {}
-        return [0,1,2,3,4,5,6,7,8,9,10<c:if test="${not empty ecpdsCanHandleQueue}">,11</c:if>,12]; // all visible by default
+        return [0,1,2,3,4,5,6,7,8,10,11<c:if test="${not empty ecpdsCanHandleQueue}">,12</c:if>,13]; // Size(9) hidden by default
     })();
 
     function _applyCustomCols() {
@@ -313,7 +318,7 @@ var _dftSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search us
         for (var i = 0; i < total; i++) {
             var visible = _customCols.indexOf(i) !== -1;
             if (i === 5) visible = true;  // Target is mandatory
-            if (i === 11 && !canQueue) visible = false;
+            if (i === 12 && !canQueue) visible = false;
             _destTable.column(i).visible(visible, false);
         }
         _destTable.columns.adjust();
@@ -339,8 +344,8 @@ var _dftSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search us
     var _colMode = (function() {
         try { return localStorage.getItem(COL_MODE_KEY) || 'auto'; } catch(e) { return 'auto'; }
     })();
-    // Columns hidden at medium width (<992px) in auto mode: Err(0), Host(1), Scheduled(2), TS(6), %(7), Mbits/s(8), Prior(10)
-    var _MED_COLS = [0, 1, 2, 6, 7, 8, 10];
+    // Columns hidden at medium width (<992px) in auto mode: Err(0), Host(1), Scheduled(2), TS(6), %(7), Mbits/s(8), Prior(11)
+    var _MED_COLS = [0, 1, 2, 6, 7, 8, 11];
     // Additional columns hidden at small width (<768px): Start(3), Finish(4)
     var _SM_COLS = [3, 4];
     // Compact: hide Err + all MED cols
@@ -354,7 +359,7 @@ var _dftSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search us
         var total = _destTable.columns().count();
         for (var i = 0; i < total; i++) {
             var visible = hideCols.indexOf(i) === -1;
-            if (i === 11 && !canQueue) {
+            if (i === 12 && !canQueue) {
                 visible = false;
             }
             _destTable.column(i).visible(visible, false);

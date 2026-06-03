@@ -210,6 +210,20 @@ final class ECpdsGet {
     }
 
     /**
+     * Gets the traffic aggregated across all destinations, grouped by date.
+     *
+     * @return the DB result set
+     *
+     * @throws SQLException
+     *             the SQL exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     */
+    DBResultSet getAllTraffic() throws SQLException, IOException {
+        return _database.executeSelect("ECpdsBase", "getAllTraffic", new String[0]);
+    }
+
+    /**
      * Gets the destination count per host (all hosts, single query).
      *
      * @return the DB result set

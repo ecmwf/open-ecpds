@@ -617,6 +617,15 @@ public final class MasterServer extends ECaccessProvider
         _log.debug("Monitors to notify: {}", containersToNotify);
         _log.debug("Passwords allowed from: {}", allowedPasswordOn);
         localContainer.startPlugins();
+        // Trigger an initial forced host-location update in the background so that
+        // forced GeoIP entries from the [GeoIP] config section are applied at startup.
+        final var startupThread = new Thread(() -> {
+            _log.info("Starting initial host location update");
+            final var count = updateHostLocations();
+            _log.info("Initial host location update completed ({} host(s) processed)", count);
+        }, "startup-host-location-update");
+        startupThread.setDaemon(true);
+        startupThread.start();
     }
 
     /**
@@ -4018,8 +4027,10 @@ public final class MasterServer extends ECaccessProvider
                         // the update must be propagated to the transfer scheduler!
                         theTransferScheduler.updateHost(host);
                     }
-                    // The location might have changed?
-                    updateLocation(host);
+                    // The location might have changed? Force re-resolution so that saving a host
+                    // with automaticLocation=true always overwrites any manual coordinates with the
+                    // GeoIP-authoritative values (including any forced entries from [GeoIP] config).
+                    updateLocation(host, true);
                 } catch (final Throwable t) {
                     _log.warn("Updating Host-{}", hostName, t);
                 }
@@ -4169,6 +4180,19 @@ public final class MasterServer extends ECaccessProvider
      */
     @Override
     public void updateLocation(final Host host) {
+        updateLocation(host, false);
+    }
+
+    /**
+     * Update location.
+     *
+     * @param host
+     *            the host
+     * @param force
+     *            when {@code true}, re-resolve GeoIP even if the IP address has not changed since the last update (e.g.
+     *            to pick up a newly forced location from the {@code [GeoIP]} config section)
+     */
+    private void updateLocation(final Host host, final boolean force) {
         final var hostLocation = host.getHostLocation();
         final var hostId = host.getName();
         try (final var mutex = hostLocationMutexProvider.getMutex(hostId)) {
@@ -4182,29 +4206,33 @@ public final class MasterServer extends ECaccessProvider
                         var hostIp = hostLocation.getIp();
                         try {
                             final var latestHostIp = InetAddress.getByName(dnsName).getHostAddress();
-                            if (isEmpty(hostIp) || !hostIp.equals(latestHostIp)) {
+                            final var ipChanged = isEmpty(hostIp) || !hostIp.equals(latestHostIp);
+                            if (ipChanged) {
                                 hostIp = latestHostIp;
                                 // No IP address defined, or IP updated!
                                 hostLocation.setIp(hostIp);
-                                // Local host is obviously not in the database!
-                                if (!"127.0.0.1".equals(hostIp) && !"::1".equals(hostIp)) {
-                                    final var start = System.currentTimeMillis();
-                                    final var geo = DataBaseImpl.resolveGeoIp(hostIp);
-                                    final var latitude = geo.latitude();
-                                    final var longitude = geo.longitude();
-                                    if (latitude == null || longitude == null) {
-                                        _log.warn("Could not get geolocation for Host-{}: {}", hostId, hostIp);
-                                    } else {
-                                        if (_log.isDebugEnabled()) {
-                                            _log.debug(
-                                                    "New location found for Host-{} ({}): latitude={}, longitude={} ({})",
-                                                    hostId, hostIp, latitude, longitude,
-                                                    Format.formatDuration(System.currentTimeMillis() - start));
-                                        }
-                                        hostLocation.setLatitude(latitude);
-                                        hostLocation.setLongitude(longitude);
-                                        getDataBase().update(hostLocation);
+                            }
+                            // Resolve GeoIP when the IP has changed or a forced refresh is requested.
+                            if ((force || ipChanged) && !"127.0.0.1".equals(hostIp) && !"::1".equals(hostIp)) {
+                                final var start = System.currentTimeMillis();
+                                final var geo = DataBaseImpl.resolveGeoIp(hostIp);
+                                final var latitude = geo.latitude();
+                                final var longitude = geo.longitude();
+                                if (latitude == null || longitude == null) {
+                                    _log.warn("Could not get geolocation for Host-{}: {}", hostId, hostIp);
+                                } else {
+                                    if (_log.isDebugEnabled()) {
+                                        _log.debug(
+                                                "New location found for Host-{} ({}): latitude={}, longitude={} ({})",
+                                                hostId, hostIp, latitude, longitude,
+                                                Format.formatDuration(System.currentTimeMillis() - start));
                                     }
+                                    hostLocation.setLatitude(latitude);
+                                    hostLocation.setLongitude(longitude);
+                                    getDataBase().update(hostLocation);
+                                    // Keep the GeoIP cache in sync so getHost()/getHostsForMap()
+                                    // immediately see the new description without waiting for TTL expiry.
+                                    DataBaseImpl.updateGeoIpCache(hostIp, geo);
                                 }
                             }
                         } catch (final Throwable t) {
@@ -4226,14 +4254,16 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * This method is updating the locations for every Host in the database (called from the JMX interface).
+     * This method is updating the locations for every Host in the database (called from the JMX interface and at
+     * startup). It always forces a GeoIP re-resolution regardless of whether the IP has changed, so that any forced
+     * locations added to the {@code [GeoIP]} config section are picked up immediately.
      *
-     * @return the int
+     * @return the number of hosts processed
      */
     public int updateHostLocations() {
         var update = 0;
         for (final Host host : getDataBase().getHostArray()) {
-            updateLocation(host);
+            updateLocation(host, true);
             update++;
         }
         return update;

@@ -125,7 +125,12 @@
       <div class="col-sm-4">
         <div class="form-check form-switch">
           <html:checkbox property="check" styleClass="form-check-input" styleId="check" />
-          <label class="form-check-label" for="check">Check</label>
+          <label class="form-check-label" for="check">Check
+            <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em"
+               data-bs-toggle="popover" data-bs-placement="right"
+               data-bs-content="When enabled, this Data Mover is eligible to perform host connectivity checks - periodic probes used to verify whether destination hosts are reachable."
+               tabindex="0"></i>
+          </label>
         </div>
       </div>
       <div class="col-sm-4">

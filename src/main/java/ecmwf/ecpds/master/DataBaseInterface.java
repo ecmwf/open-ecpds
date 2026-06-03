@@ -1248,6 +1248,18 @@ public interface DataBaseInterface extends Remote {
             throws DataBaseException, RemoteException;
 
     /**
+     * Gets traffic aggregated across all destinations, grouped by date.
+     *
+     * @return the traffic
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    Collection<Traffic> getAllTraffic() throws DataBaseException, RemoteException;
+
+    /**
      * Gets a map of host name to destination count using a single GROUP BY query on the ASSOCIATION table.
      *
      * @return map of host name → destination count

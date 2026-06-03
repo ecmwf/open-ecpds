@@ -202,9 +202,13 @@ public class S3ProxyHandler {
 
         final var method = request.getMethod();
         var uri = request.getRequestURI();
+        final var originalUri = uri;
 
-        if (!servicePath.isEmpty() && uri.length() > servicePath.length()) {
+        if (!servicePath.isEmpty() && uri.length() >= servicePath.length()) {
             uri = uri.substring(servicePath.length());
+        }
+        if (uri.isEmpty()) {
+            uri = "/";
         }
 
         response.addHeader(AwsHttpHeaders.REQUEST_ID, FAKE_REQUEST_ID);
@@ -401,7 +405,7 @@ public class S3ProxyHandler {
             final String expectedSignature;
             if (authHeader.hmacAlgorithm == null) {
                 // V2. WWhen presigned url is generated, it doesn't consider the service path
-                final var uriForSigning = presignedUrl ? uri : this.servicePath + uri;
+                final var uriForSigning = presignedUrl ? uri : originalUri;
                 expectedSignature = AwsSignature.createAuthorizationSignature(request, uriForSigning, provider.getKey(),
                         presignedUrl, haveBothDateHeader);
             } else {
@@ -434,7 +438,7 @@ public class S3ProxyHandler {
                     }
 
                     // When presigned url is generated, it doesn't consider the service path
-                    final var uriForSigning = presignedUrl ? uri : this.servicePath + uri;
+                    final var uriForSigning = presignedUrl ? uri : originalUri;
                     // v4 signature
                     expectedSignature = AwsSignature.createAuthorizationSignatureV4(baseRequest, authHeader, payload,
                             uriForSigning, provider.getKey());

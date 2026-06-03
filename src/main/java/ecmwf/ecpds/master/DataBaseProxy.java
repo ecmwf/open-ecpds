@@ -1152,6 +1152,17 @@ final class DataBaseProxy implements DataBaseInterface {
     /**
      * {@inheritDoc}
      *
+     * Gets all traffic aggregated across all destinations.
+     */
+    @Override
+    public Collection<Traffic> getAllTraffic() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getAllTraffic()");
+        return monitor.done(dataBaseInterface.getAllTraffic());
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * Gets the destination counts by host.
      */
     @Override

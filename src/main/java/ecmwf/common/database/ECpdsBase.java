@@ -2919,6 +2919,7 @@ public final class ECpdsBase extends DataBase {
                         final var loc = new HostLocation();
                         loc.setLatitude(((Number) latObj).doubleValue());
                         loc.setLongitude(((Number) lonObj).doubleValue());
+                        loc.setIp(rs.getString("HLO_IP"));
                         host.setHostLocation(loc);
                     }
                     list.add(host);
@@ -3960,6 +3961,33 @@ public final class ECpdsBase extends DataBase {
         } catch (SQLException | IOException e) {
             _log.warn("getTrafficByDestinationName", e);
             throw new DataBaseException("getTrafficByDestinationName", e);
+        }
+    }
+
+    /**
+     * Gets the traffic aggregated across all destinations, grouped by date.
+     *
+     * @return a list of traffic entries (one per date)
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public List<Traffic> getAllTraffic() throws DataBaseException {
+        try (var rs = ecpds.getAllTraffic()) {
+            final List<Traffic> array = new ArrayList<>();
+            while (rs.next()) {
+                final var traffic = new Traffic();
+                traffic.setDate(rs.getString("DATE"));
+                traffic.setBytes(rs.getLong("BYTES"));
+                traffic.setDuration(rs.getLong("DURATION"));
+                traffic.setFiles(rs.getInt("FILES"));
+                array.add(traffic);
+            }
+            logSqlRequest("getAllTraffic", array.size());
+            return array;
+        } catch (SQLException | IOException e) {
+            _log.warn("getAllTraffic", e);
+            throw new DataBaseException("getAllTraffic", e);
         }
     }
 

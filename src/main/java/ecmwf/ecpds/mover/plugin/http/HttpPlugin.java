@@ -197,6 +197,9 @@ public final class HttpPlugin extends PluginThread {
             final var s3ServicePath = Cnf.at("HttpPlugin", "s3ServicePath", "/s3");
             final var s3proxy = new ContextHandler();
             s3proxy.setContextPath(s3ServicePath);
+            // Allow requests to exactly /s3 (no trailing slash) to pass through without
+            // Jetty issuing an HTTP redirect — S3 clients cannot follow non-S3 redirects.
+            s3proxy.setAllowNullPathInfo(true);
             s3proxy.setHandler(new S3ProxyHandlerJetty(
                     AuthenticationType.fromString(Cnf.at("HttpPlugin", "s3AuthenticationType", "AWS_V2_OR_V4")),
                     Cnf.at("HttpPlugin", "s3V4MaxNonChunkedRequestSize", 32 * 1024 * 1024),

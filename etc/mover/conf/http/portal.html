@@ -179,10 +179,12 @@
                 </div>
                 <div class="card-body small">
                   <p class="text-muted mb-2">Browse and download files via web browser or any HTTP client.</p>
-                  <div class="text-muted mb-1">Base URL</div>
+                  <div class="text-muted mb-1">Server</div>
                   <code id="connectHttpsUrl" class="d-block bg-body-secondary rounded px-2 py-1 mb-3 user-select-all"></code>
                   <div class="text-muted mb-1">curl examples <span class="fw-normal">(replace <em>DIR</em>, <em>FILE</em>, <em>PASS</em>)</span></div>
                   <div id="connectHttpsExamples"></div>
+                  <div class="text-muted mb-1 mt-2">Structured listing formats <span class="fw-normal">(use <code>Accept</code> header)</span></div>
+                  <div id="connectHttpsFormats"></div>
                   <p class="text-muted mt-1 mb-0" style="font-size:0.72rem;"><i class="bi bi-info-circle me-1"></i>Add <code>-k</code> to skip TLS certificate verification — only if using a self-signed certificate, but this is not secure.</p>
                 </div>
               </div>
@@ -198,7 +200,7 @@
                   <code id="connectS3Url" class="d-block bg-body-secondary rounded px-2 py-1 mb-2 user-select-all"></code>
                   <div class="text-muted mb-1">~/.aws/credentials <span class="fw-normal">(replace <em>USER</em>, <em>PASS</em>)</span></div>
                   <div id="connectS3Config" class="mb-2"></div>
-                  <div class="text-muted mb-1">AWS CLI examples <span class="fw-normal">(replace <em>DIR</em>, <em>FILE</em>)</span></div>
+                  <div class="text-muted mb-1">AWS CLI examples <span class="fw-normal">(replace <em>BUCKET</em>, <em>DIR</em>, <em>FILE</em>)</span></div>
                   <div id="connectS3Examples"></div>
                   <p class="text-muted mt-1 mb-0" style="font-size:0.72rem;"><i class="bi bi-info-circle me-1"></i>Add <code>--no-verify-ssl</code> to skip TLS certificate verification — only if using a self-signed certificate, but this is not secure.</p>
                 </div>
@@ -228,6 +230,10 @@
                 </div>
               </div>
             </div>
+          </div>
+          <div class="alert alert-secondary d-flex align-items-start gap-2 py-2 px-3 mt-3 mb-0 small" role="alert" style="font-size:0.78rem;">
+            <i class="bi bi-person-lock flex-shrink-0 mt-1"></i>
+            <span>The operations shown above depend on the permissions granted to your account. For example, uploading files may not be available if your profile does not include write access, and the set of visible directories is determined by your access rights. Contact your system administrator if you believe your permissions are incorrect.</span>
           </div>
         </div>
       </div>
@@ -262,18 +268,23 @@
     var host = window.location.hostname;
     var base = origin + '/ecpds/';
     var s3Endpoint = origin + '${s3Path}';
-    document.getElementById('connectHttpsUrl').textContent = base;
+    document.getElementById('connectHttpsUrl').textContent = origin;
     document.getElementById('connectS3Url').textContent = s3Endpoint;
     document.getElementById('connectFtpHost').textContent = host;
     var httpsEx = document.getElementById('connectHttpsExamples');
     copyBlock(httpsEx, ['# List a directory', 'curl -u USER:PASS \\', '  ' + base + 'data/list/DIR/']);
     copyBlock(httpsEx, ['# Download a file', 'curl -u USER:PASS \\', '  ' + base + 'data/file/DIR/FILE -o FILE']);
     copyBlock(httpsEx, ['# Upload a file', 'curl -u USER:PASS -X POST \\', '  -H "Content-Type: application/octet-stream" \\', '  --data-binary @FILE \\', '  ' + base + 'data/file/DIR/FILE'], true);
+    var fmtEx = document.getElementById('connectHttpsFormats');
+    copyBlock(fmtEx, ['# List as JSON', 'curl -u USER:PASS \\', '  -H "Accept: application/json" \\', '  ' + base + 'data/list/DIR/']);
+    copyBlock(fmtEx, ['# List as CSV', 'curl -u USER:PASS \\', '  -H "Accept: text/csv" \\', '  ' + base + 'data/list/DIR/']);
+    copyBlock(fmtEx, ['# List as plain text (one name per line)', 'curl -u USER:PASS \\', '  -H "Accept: text/plain" \\', '  ' + base + 'data/list/DIR/'], true);
     var s3Cfg = document.getElementById('connectS3Config');
     copyBlock(s3Cfg, ['# Save to ~/.aws/credentials', '[default]', 'aws_access_key_id     = USER', 'aws_secret_access_key = PASS'], true);
     var s3Ex = document.getElementById('connectS3Examples');
-    copyBlock(s3Ex, ['# List files', 'aws --endpoint-url ' + s3Endpoint + ' \\', '  s3 ls s3://USER/']);
-    copyBlock(s3Ex, ['# Download a file', 'aws --endpoint-url ' + s3Endpoint + ' \\', '  s3 cp s3://USER/DIR/FILE ./FILE'], true);
+    copyBlock(s3Ex, ['# List buckets', 'aws --endpoint-url ' + s3Endpoint + ' \\', '  s3 ls']);
+    copyBlock(s3Ex, ['# List files in a bucket', 'aws --endpoint-url ' + s3Endpoint + ' \\', '  s3 ls s3://BUCKET/']);
+    copyBlock(s3Ex, ['# Download a file', 'aws --endpoint-url ' + s3Endpoint + ' \\', '  s3 cp s3://BUCKET/DIR/FILE ./FILE'], true);
     var sftpPort = '${sftpPort}';
     if (sftpPort) {
       var sftpCard = document.getElementById('sftpCard');

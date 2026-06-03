@@ -37,11 +37,13 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Formatter;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -62,6 +64,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
@@ -70,6 +73,7 @@ import javax.ws.rs.core.UriInfo;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.codehaus.jackson.map.ObjectMapper;
 
 import ecmwf.common.database.DataFile;
 import ecmwf.common.database.DataTransfer;
@@ -829,8 +833,8 @@ public final class RESTServer {
     @Path("home/{user}")
     public Response homeGet(@Context final UriInfo ui, @PathParam("user") final String user,
             @HeaderParam("range") final String range, @Context final HttpServletRequest request,
-            @Context final HttpServletResponse response) {
-        return fileGet(ui, getBasicAuth(user + ":" + user), range, request, response, "");
+            @Context final HttpServletResponse response, @Context final HttpHeaders headers) {
+        return fileGet(ui, getBasicAuth(user + ":" + user), range, request, response, headers, "");
     }
 
     /**
@@ -856,8 +860,9 @@ public final class RESTServer {
     @Path("home/{user}/{filename: .*}")
     public Response homeGet(@Context final UriInfo ui, @PathParam("user") final String user,
             @HeaderParam("range") final String range, @Context final HttpServletRequest request,
-            @Context final HttpServletResponse response, @PathParam("filename") final String filename) {
-        return fileGet(ui, getBasicAuth(user + ":" + user), range, request, response, filename);
+            @Context final HttpServletResponse response, @Context final HttpHeaders headers,
+            @PathParam("filename") final String filename) {
+        return fileGet(ui, getBasicAuth(user + ":" + user), range, request, response, headers, filename);
     }
 
     /**
@@ -881,8 +886,8 @@ public final class RESTServer {
     @Path("file")
     public Response fileGet(@Context final UriInfo ui, @HeaderParam("authorization") final String authString,
             @HeaderParam("range") final String range, @Context final HttpServletRequest request,
-            @Context final HttpServletResponse response) {
-        return fileGet(ui, authString, range, request, response, "");
+            @Context final HttpServletResponse response, @Context final HttpHeaders headers) {
+        return fileGet(ui, authString, range, request, response, headers, "");
     }
 
     /**
@@ -908,7 +913,8 @@ public final class RESTServer {
     @Path("file/{filename: .*}")
     public Response fileGet(@Context final UriInfo ui, @HeaderParam("authorization") final String authString,
             @HeaderParam("range") final String range, @Context final HttpServletRequest request,
-            @Context final HttpServletResponse response, @PathParam("filename") final String filename) {
+            @Context final HttpServletResponse response, @Context final HttpHeaders headers,
+            @PathParam("filename") final String filename) {
         _log.debug("REST received request: fileGet({})", filename);
         checkIsControlChannel(ui);
         final var session = getUserSession(authString, request, response);
@@ -922,8 +928,8 @@ public final class RESTServer {
             // Let's treat it as a list request!
             final var setup = session.getECtransSetup();
             if (setup != null && !setup.getBoolean(ECtransOptions.USER_PORTAL_SIMPLE_LIST)) {
-                // Send the full html page
-                return dataListGet(ui, authString, request, response, filename);
+                // Send the full html page (or negotiated format)
+                return dataListGet(ui, authString, request, response, headers, filename);
             }
             // Only send a simple text list
             final var builder = Response.ok();
@@ -1251,11 +1257,11 @@ public final class RESTServer {
      * @return the listing
      */
     @GET
-    @Produces(MediaType.TEXT_HTML)
+    @Produces({ MediaType.TEXT_HTML, MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN, "text/csv" })
     @Path("data/list/{filename: .*}")
     public Response dataListGet(@Context final UriInfo ui, @HeaderParam("authorization") final String authString,
             @Context final HttpServletRequest request, @Context final HttpServletResponse response,
-            @PathParam("filename") final String filename) {
+            @Context final HttpHeaders headers, @PathParam("filename") final String filename) {
         _log.debug("REST received request: dataListGet({})", filename);
         checkIsControlChannel(ui);
         final var session = getUserSession(authString, request, response);
@@ -1268,6 +1274,19 @@ public final class RESTServer {
             }
             final var elements = session.getFileList(path);
             final var biggerIndexes = getBiggerIndexes(elements);
+            final var lastModified = new Date(biggerIndexes[3]);
+            // Determine the response format from the Accept header (HTML is the default).
+            final var fmt = resolveListFormat(headers.getAcceptableMediaTypes());
+            if ("json".equals(fmt)) {
+                return buildJsonListing(elements, lastModified);
+            }
+            if ("text".equals(fmt)) {
+                return buildTextListing(elements, lastModified);
+            }
+            if ("csv".equals(fmt)) {
+                return buildCsvListing(elements, lastModified);
+            }
+            // HTML (default)
             // Load the appropriate template!
             final var setup = session.getECtransSetup();
             final var anonymous = setup != null && setup.getBoolean(ECtransOptions.USER_PORTAL_ANONYMOUS);
@@ -1313,7 +1332,7 @@ public final class RESTServer {
             }
             Format.replaceAll(sb, "${listing}", listing.toString());
             final var builder = Response.ok(sb.toString(), MediaType.TEXT_HTML);
-            builder.lastModified(new Date(biggerIndexes[3]));
+            builder.lastModified(lastModified);
             builder.header(CACHE_CONTROL, NO_CACHE);
             return builder.build();
         } catch (final WebApplicationException w) {
@@ -1680,6 +1699,127 @@ public final class RESTServer {
                 .append("</td>").append("<td data-order=\"").append(sizeOrder).append("\">").append(sizeDisplay)
                 .append("</td>").append("<td>").append(isDir ? "-" : escapeHtml(element.getComment().trim()))
                 .append("</td>").append("</tr>\n");
+    }
+
+    /**
+     * Resolves the desired listing format from the JAX-RS Accept media types. Returns "json", "text", "csv", or "html"
+     * (the default when no specific format is requested or Accept is *\/*).
+     *
+     * @param acceptTypes
+     *            the acceptable media types from the request
+     *
+     * @return the format token
+     */
+    private static String resolveListFormat(final List<MediaType> acceptTypes) {
+        for (final MediaType mt : acceptTypes) {
+            // Wildcards (*/* or text/*) default to HTML for backwards compatibility —
+            // isCompatible() would otherwise match JSON/text for */* too.
+            if (mt.isWildcardType() || mt.isWildcardSubtype()) {
+                return "html";
+            }
+            if (mt.isCompatible(MediaType.APPLICATION_JSON_TYPE)) {
+                return "json";
+            }
+            if (mt.isCompatible(new MediaType("text", "csv"))) {
+                return "csv";
+            }
+            if (mt.isCompatible(MediaType.TEXT_PLAIN_TYPE)) {
+                return "text";
+            }
+            if (mt.isCompatible(MediaType.TEXT_HTML_TYPE)) {
+                return "html";
+            }
+        }
+        return "html";
+    }
+
+    /**
+     * Builds a JSON listing response for the given file elements.
+     *
+     * @param elements
+     *            the file list elements
+     * @param lastModified
+     *            the last-modified date for the response header
+     *
+     * @return the response
+     *
+     * @throws Exception
+     *             on serialization error
+     */
+    private static Response buildJsonListing(final FileListElement[] elements, final Date lastModified)
+            throws Exception {
+        final var items = new ArrayList<Map<String, Object>>(elements.length);
+        for (final FileListElement e : elements) {
+            final var item = new LinkedHashMap<String, Object>();
+            item.put("name", e.getName());
+            item.put("size", e.isDirectory() ? null : Long.parseLong(e.getSize().trim()));
+            item.put("time", Instant.ofEpochMilli(e.getTime()).toString());
+            item.put("directory", e.isDirectory());
+            items.add(item);
+        }
+        return Response.ok(new ObjectMapper().writeValueAsString(items), MediaType.APPLICATION_JSON)
+                .lastModified(lastModified).header(CACHE_CONTROL, NO_CACHE).build();
+    }
+
+    /**
+     * Builds a plain-text listing response: one entry per line, directories have a trailing '/'.
+     *
+     * @param elements
+     *            the file list elements
+     * @param lastModified
+     *            the last-modified date for the response header
+     *
+     * @return the response
+     */
+    private static Response buildTextListing(final FileListElement[] elements, final Date lastModified) {
+        final var sb = new StringBuilder();
+        for (final FileListElement e : elements) {
+            sb.append(e.getName());
+            if (e.isDirectory()) {
+                sb.append('/');
+            }
+            sb.append('\n');
+        }
+        return Response.ok(sb.toString(), MediaType.TEXT_PLAIN).lastModified(lastModified)
+                .header(CACHE_CONTROL, NO_CACHE).build();
+    }
+
+    /**
+     * Builds a CSV listing response with columns: name, size, time, directory.
+     *
+     * @param elements
+     *            the file list elements
+     * @param lastModified
+     *            the last-modified date for the response header
+     *
+     * @return the response
+     */
+    private static Response buildCsvListing(final FileListElement[] elements, final Date lastModified) {
+        final var sb = new StringBuilder("name,size,time,directory\n");
+        for (final FileListElement e : elements) {
+            sb.append(quoteCsv(e.getName())).append(',');
+            sb.append(e.isDirectory() ? "" : e.getSize().trim()).append(',');
+            sb.append(Instant.ofEpochMilli(e.getTime())).append(',');
+            sb.append(e.isDirectory()).append('\n');
+        }
+        return Response.ok(sb.toString(), "text/csv; charset=UTF-8").lastModified(lastModified)
+                .header(CACHE_CONTROL, NO_CACHE).build();
+    }
+
+    /**
+     * Quotes a value for CSV output per RFC 4180: wraps in double-quotes if the value contains a comma, double-quote,
+     * or newline, escaping any embedded double-quotes by doubling them.
+     *
+     * @param value
+     *            the value to quote
+     *
+     * @return the CSV-safe value
+     */
+    private static String quoteCsv(final String value) {
+        if (value.contains(",") || value.contains("\"") || value.contains("\n")) {
+            return "\"" + value.replace("\"", "\"\"") + "\"";
+        }
+        return value;
     }
 
     /**

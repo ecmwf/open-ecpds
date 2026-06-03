@@ -1342,6 +1342,13 @@
 			value="/WEB-INF/jsp/pds/datafile/moverdownloads/moverdownloads.jsp" />
 	</definition>
 
+	<definition name=".pds.datafile.datarates"
+		extends=".pds.datafile.base">
+		<put name="title" value="Data Rates" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/datafile/datarates.jsp" />
+	</definition>
+
 	<definition
 		name=".pds.transfer.destination.metadata.send.success"
 		extends=".pds.base">

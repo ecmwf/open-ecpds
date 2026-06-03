@@ -63,8 +63,11 @@ public class GetValidateTransferListJsonAction extends PDSAction {
     private static final String HOST_BASE_PATH = "/do/transfer/host";
     private static final String DATATRANSFER_BASE_PATH = "/do/transfer/data";
 
-    /** Last sortable column index (0-based, inclusive). Columns 11-12 are actions/select and are not sortable. */
-    private static final int MAX_SORT_COLUMN = 10;
+    /**
+     * Last sortable column index (0-based, inclusive). Column 9 (Size) maps to target ordering. Columns 12-13 are
+     * actions/select and are not sortable.
+     */
+    private static final int MAX_SORT_COLUMN = 11;
 
     /** Shared Jackson mapper. */
     private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -147,6 +150,7 @@ public class GetValidateTransferListJsonAction extends PDSAction {
             row.add(buildTimeStepHtml(dt));
             row.add(buildProgressHtml(dt));
             row.add(buildRateHtml(dt));
+            row.add(buildSizeHtml(dt));
             row.add(buildStatusHtml(dt, memberState));
             row.add(String.valueOf(dt.getPriority()));
             row.add(buildActionsHtml(dt));
@@ -237,6 +241,14 @@ public class GetValidateTransferListJsonAction extends PDSAction {
             final var mbit = dt.getFormattedTransferRateInMBitsPerSeconds();
             final var rate = escapeHtml(dt.getFormattedTransferRate());
             return "<span title=\"Rate: " + rate + "\">" + String.format("%.3f", mbit) + "</span>";
+        } catch (final Exception _) {
+            return "";
+        }
+    }
+
+    private static String buildSizeHtml(final DataTransfer dt) {
+        try {
+            return escapeHtml(dt.getFormattedSize());
         } catch (final Exception _) {
             return "";
         }
@@ -380,11 +392,14 @@ public class GetValidateTransferListJsonAction extends PDSAction {
         case 8: // Transfer rate
             cmp = (a, b) -> Long.compare(safeRate(a), safeRate(b));
             break;
-        case 9: // Status display name
+        case 9: // File size
+            cmp = (a, b) -> Long.compare(safeSize(a), safeSize(b));
+            break;
+        case 10: // Status display name
             cmp = (a, b) -> statusSortKey(a.getStatusCode() != null ? a.getStatusCode() : "")
                     .compareTo(statusSortKey(b.getStatusCode() != null ? b.getStatusCode() : ""));
             break;
-        case 10: // Priority
+        case 11: // Priority
             cmp = (a, b) -> Integer.compare(a.getPriority(), b.getPriority());
             break;
         default: // Fall back to numeric ID (ascending = natural DB insertion order)
@@ -421,6 +436,14 @@ public class GetValidateTransferListJsonAction extends PDSAction {
     private static long safeRate(final DataTransfer dt) {
         try {
             return dt.getTransferRate();
+        } catch (final Exception _) {
+            return 0L;
+        }
+    }
+
+    private static long safeSize(final DataTransfer dt) {
+        try {
+            return dt.getSize();
         } catch (final Exception _) {
             return 0L;
         }
