@@ -112,4 +112,72 @@ public class BlobStoreLocator {
             }
         } : null;
     }
+
+    /**
+     * Check if an IncomingUser is configured for anonymous (unauthenticated) access.
+     *
+     * @param identity
+     *            the incoming user name
+     *
+     * @return true if the user exists and has USER_PORTAL_ANONYMOUS set
+     */
+    boolean isAnonymousUser(final String identity) {
+        try {
+            return _mover.getMasterInterface().isAnonymousIncomingUser(identity);
+        } catch (final Throwable t) {
+            logger.warn("isAnonymousUser", t);
+            return false;
+        }
+    }
+
+    /**
+     * Locate blob store for an anonymous (unsigned) S3 request. The bucket name is used as the identity; MasterServer
+     * skips password verification for USER_PORTAL_ANONYMOUS users, so no credentials are required.
+     *
+     * @param request
+     *            the request
+     * @param response
+     *            the response
+     * @param identity
+     *            the incoming user name (= bucket name)
+     *
+     * @return the map entry, or null if the session cannot be created
+     */
+    Map.Entry<String, BlobStore> locateAnonymousBlobStore(final HttpServletRequest request,
+            final HttpServletResponse response, final String identity) {
+        logger.debug("anonymous S3 access: identity={}", identity);
+        return new Map.Entry<>() {
+
+            BlobStore blobStore;
+
+            @Override
+            public String getKey() {
+                return identity;
+            }
+
+            @Override
+            public synchronized BlobStore getValue() {
+                if (blobStore != null) {
+                    return blobStore;
+                }
+                final var remoteAddr = request.getRemoteAddr();
+                try {
+                    // Pass an empty string as the credential — MasterServer skips password
+                    // verification when USER_PORTAL_ANONYMOUS is true for this user.
+                    return blobStore = new BlobStore(remoteAddr,
+                            NativeAuthenticationProvider.getInstance().getUserSession(remoteAddr, identity, "", "s3",
+                                    (Closeable) () -> response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE,
+                                            "Interrupted by server")));
+                } catch (final Throwable t) {
+                    logger.warn("locateAnonymousBlobStore getUserSession", t);
+                    return null;
+                }
+            }
+
+            @Override
+            public BlobStore setValue(final BlobStore value) {
+                return blobStore = value;
+            }
+        };
+    }
 }

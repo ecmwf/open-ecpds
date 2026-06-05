@@ -278,9 +278,16 @@ public class BlobStore implements Closeable {
      */
     private final Map.Entry<Boolean, String> _getFilename(final String filename) throws S3Exception {
         try {
-            final var path = Format.normalizePath(filename);
+            // When the bucket name equals the session username (used for anonymous / self-named
+            // bucket access), strip that leading segment so the path maps to the root of the
+            // user's data space — mirroring the HTTPS home endpoint behaviour.
+            final var user = _session.getUser();
+            final var userPrefix = user + "/";
+            final var effective = filename.startsWith(userPrefix) ? filename.substring(userPrefix.length())
+                    : filename.equals(user) ? "" : filename;
+            final var path = Format.normalizePath(effective);
             return new AbstractMap.SimpleEntry<>(path.startsWith("/") && path.split("/").length == 2,
-                    "[" + _session.getUser() + "]DATA:" + path);
+                    "[" + user + "]DATA:" + path);
         } catch (final FileNotFoundException e) {
             throw new S3Exception(S3ErrorCode.NO_SUCH_BUCKET);
         }

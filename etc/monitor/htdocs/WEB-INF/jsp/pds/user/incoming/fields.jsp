@@ -192,7 +192,10 @@
       <div class="card-body p-2">
         <c:choose>
           <c:when test="${empty incomingUserActionForm.operations}">
-            <p class="text-muted small mb-2"><em>No permissions assigned.</em></p>
+            <div class="alert alert-warning d-flex align-items-start gap-2 py-2 px-3 mb-2 small" role="alert">
+              <i class="bi bi-exclamation-triangle-fill flex-shrink-0 mt-1"></i>
+              <span><strong>No permissions assigned.</strong> All login attempts for this user will be denied until at least one permission is added.</span>
+            </div>
           </c:when>
           <c:otherwise>
             <div class="d-flex flex-wrap mb-2">
@@ -245,7 +248,10 @@
       <div class="card-body p-2">
         <c:choose>
           <c:when test="${empty incomingUserActionForm.destinations}">
-            <p class="text-muted small mb-2"><em>No destinations assigned.</em></p>
+            <div class="alert alert-warning d-flex align-items-start gap-2 py-2 px-3 mb-2 small" role="alert">
+              <i class="bi bi-exclamation-triangle-fill flex-shrink-0 mt-1"></i>
+              <span><strong>No destinations assigned.</strong> All login attempts for this user will be denied until at least one destination is added.</span>
+            </div>
           </c:when>
           <c:otherwise>
             <div class="d-flex flex-wrap mb-2">

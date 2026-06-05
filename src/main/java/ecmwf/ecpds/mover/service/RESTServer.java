@@ -829,7 +829,8 @@ public final class RESTServer {
      * @return the input stream
      */
     @GET
-    @Produces({ MediaType.APPLICATION_OCTET_STREAM, MediaType.TEXT_HTML, MediaType.TEXT_PLAIN })
+    @Produces({ MediaType.APPLICATION_OCTET_STREAM, MediaType.TEXT_HTML, MediaType.TEXT_PLAIN,
+            MediaType.APPLICATION_JSON, "text/csv" })
     @Path("home/{user}")
     public Response homeGet(@Context final UriInfo ui, @PathParam("user") final String user,
             @HeaderParam("range") final String range, @Context final HttpServletRequest request,
@@ -856,7 +857,8 @@ public final class RESTServer {
      * @return the input stream
      */
     @GET
-    @Produces({ MediaType.APPLICATION_OCTET_STREAM, MediaType.TEXT_HTML, MediaType.TEXT_PLAIN })
+    @Produces({ MediaType.APPLICATION_OCTET_STREAM, MediaType.TEXT_HTML, MediaType.TEXT_PLAIN,
+            MediaType.APPLICATION_JSON, "text/csv" })
     @Path("home/{user}/{filename: .*}")
     public Response homeGet(@Context final UriInfo ui, @PathParam("user") final String user,
             @HeaderParam("range") final String range, @Context final HttpServletRequest request,
@@ -1316,6 +1318,24 @@ public final class RESTServer {
                     setup != null ? setup.get(ECtransOptions.USER_PORTAL_MSG_DOWN, msgDown) : msgDown);
             final var userId = session.getUser();
             Format.replaceAll(sb, "${userid}", userId);
+            final var destination = setup != null
+                    ? setup.getOptionalString(ECtransOptions.USER_PORTAL_DESTINATION).orElse("") : "";
+            Format.replaceAll(sb, "${destination}", destination);
+            final var maxConnections = setup != null ? setup.getInteger(ECtransOptions.USER_PORTAL_MAX_CONNECTIONS)
+                    : -1;
+            Format.replaceAll(sb, "${maxconnections}", maxConnections > 0 ? String.valueOf(maxConnections) : "");
+            if (maxConnections > 0) {
+                try {
+                    final var currentConnections = mover.getMasterInterface().getIncomingConnectionCount(userId);
+                    Format.replaceAll(sb, "${currentconnections}",
+                            currentConnections >= 0 ? String.valueOf(currentConnections) : "");
+                } catch (final Throwable t) {
+                    _log.warn("getIncomingConnectionCount", t);
+                    Format.replaceAll(sb, "${currentconnections}", "");
+                }
+            } else {
+                Format.replaceAll(sb, "${currentconnections}", "");
+            }
             final String uriList;
             final String uriGet;
             if (request.getAttribute("original-target") instanceof final String originalTarget) {
@@ -1665,6 +1685,15 @@ public final class RESTServer {
         Format.replaceAll(builder, "${ftpPort}", Cnf.at("FtpPlugin", "port", ""));
         Format.replaceAll(builder, "${s3Path}", Cnf.at("HttpPlugin", "s3ServicePath", "/s3"));
         Format.replaceAll(builder, "${sftpPort}", Cnf.at("Ssh2Plugin", "port", ""));
+        Format.replaceAll(builder, "${httpsPublicBaseUrl}", Cnf.at("DataPortal", "httpsPublicBaseUrl", ""));
+        Format.replaceAll(builder, "${s3PublicEndpointUrl}", Cnf.at("DataPortal", "s3PublicEndpointUrl", ""));
+        Format.replaceAll(builder, "${ftpPublicHost}", Cnf.at("DataPortal", "ftpPublicHost", ""));
+        Format.replaceAll(builder, "${ftpPublicPort}", Cnf.at("DataPortal", "ftpPublicPort", ""));
+        Format.replaceAll(builder, "${sftpPublicHost}", Cnf.at("DataPortal", "sftpPublicHost", ""));
+        Format.replaceAll(builder, "${sftpPublicPort}", Cnf.at("DataPortal", "sftpPublicPort", ""));
+        Format.replaceAll(builder, "${s3Enabled}", Cnf.at("DataPortal", "s3Enabled", true));
+        Format.replaceAll(builder, "${ftpEnabled}", Cnf.at("DataPortal", "ftpEnabled", true));
+        Format.replaceAll(builder, "${sftpEnabled}", Cnf.at("DataPortal", "sftpEnabled", true));
     }
 
     /**

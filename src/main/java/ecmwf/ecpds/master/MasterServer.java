@@ -753,6 +753,50 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
+     * Check whether an IncomingUser is configured for anonymous (password-free) access.
+     *
+     * @param incomingUser
+     *            the incoming user name
+     *
+     * @return true if the user exists and has USER_PORTAL_ANONYMOUS set
+     */
+    @Override
+    public boolean isAnonymousIncomingUser(final String incomingUser) {
+        try {
+            final var base = getECpdsBase();
+            final var user = base.getIncomingUserObject(incomingUser);
+            if (user == null) {
+                return false;
+            }
+            // Use getDataFromUserPolicies to match the behaviour of getIncomingProfile, which
+            // merges policy-level settings with user-level settings when checking the flag.
+            final var setup = USER_PORTAL.getECtransSetup(base.getDataFromUserPolicies(user));
+            return setup.getBoolean(USER_PORTAL_ANONYMOUS);
+        } catch (final Throwable t) {
+            _log.warn("isAnonymousIncomingUser", t);
+            return false;
+        }
+    }
+
+    /**
+     * Get the current number of active connections for the specified incoming user across all data movers.
+     *
+     * @param incomingUser
+     *            the incoming user name
+     *
+     * @return the active connection count
+     */
+    @Override
+    public int getIncomingConnectionCount(final String incomingUser) {
+        try {
+            return _getIncomingConnectionCountFor(incomingUser);
+        } catch (final Throwable t) {
+            _log.warn("getIncomingConnectionCount", t);
+            return -1;
+        }
+    }
+
+    /**
      * Return a hash of the incoming user in the form user:password.
      *
      * @param user

@@ -19,7 +19,7 @@
 .output-content { background: #1e1e1e; }
 [data-bs-theme=light] .report-card-hdr { background: #f0f2f4; border-bottom-color: #d0d7de !important; color: #24292f; }
 [data-bs-theme=light] .report-card-hdr-btn { color: #57606a; border-color: #d0d7de; }
-[data-bs-theme=light] .report-card-hdr-btn:hover { color: #fff; }
+[data-bs-theme=light] .report-card-hdr-btn:hover { color: #24292f; }
 [data-bs-theme=light] .output-loading { background: #f6f8fa; }
 [data-bs-theme=light] .output-content { background: #f6f8fa; }
 .go-key { color: #555; text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.64rem; }

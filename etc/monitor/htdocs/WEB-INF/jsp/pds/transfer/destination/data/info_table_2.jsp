@@ -100,6 +100,17 @@
 					</div>
 				</auth:then>
 			</auth:if>
+			<div class="meta-item">
+				<span class="meta-label">Monitored</span>
+				<c:choose>
+					<c:when test="${destination.showInMonitors}">
+						<span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span>
+					</c:when>
+					<c:otherwise>
+						<span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-dash-circle me-1"></i>No</span>
+					</c:otherwise>
+				</c:choose>
+			</div>
 			<span class="text-muted ms-auto" style="font-size:0.72rem;" title="All times shown are in UTC"><i class="bi bi-clock"></i> UTC</span>
 			<%-- File count was moved to the Selection bar in transfer_table.jsp --%>
 		</div>

@@ -211,6 +211,15 @@ public class S3ProxyHandler {
             uri = "/";
         }
 
+        // Determine early if this is an unsigned anonymous request so auth checks can be skipped.
+        // The container name (= bucket = username) is extracted from the URI before any auth parsing.
+        final var earlyPath = uri.split("/", 3);
+        final var earlyContainer = earlyPath.length > 1 && !earlyPath[1].isEmpty()
+                ? URLDecoder.decode(earlyPath[1], UTF_8) : "";
+        final var anonymousS3 = !earlyContainer.isEmpty() && request.getHeader(HttpHeaders.AUTHORIZATION) == null
+                && request.getParameter("X-Amz-Algorithm") == null && request.getParameter("AWSAccessKeyId") == null
+                && blobStoreLocator.isAnonymousUser(earlyContainer);
+
         response.addHeader(AwsHttpHeaders.REQUEST_ID, FAKE_REQUEST_ID);
 
         var hasDateHeader = false;
@@ -232,7 +241,8 @@ public class S3ProxyHandler {
 
         // when access information is not provided in request header,
         // treat it as anonymous, return all public accessible information
-        if (("GET".equals(method) || "HEAD".equals(method) || "POST".equals(method) || "OPTIONS".equals(method))
+        if (!anonymousS3
+                && ("GET".equals(method) || "HEAD".equals(method) || "POST".equals(method) || "OPTIONS".equals(method))
                 && request.getHeader(HttpHeaders.AUTHORIZATION) == null &&
                 // v2 or /v4
                 request.getParameter("X-Amz-Algorithm") == null && // v4 query
@@ -242,7 +252,7 @@ public class S3ProxyHandler {
         }
 
         // should according the AWSAccessKeyId= Signature or auth header nil
-        if (!hasDateHeader && !hasXAmzDateHeader && request.getParameter("X-Amz-Date") == null
+        if (!anonymousS3 && !hasDateHeader && !hasXAmzDateHeader && request.getParameter("X-Amz-Date") == null
                 && request.getParameter("Expires") == null) {
             throw new S3Exception(S3ErrorCode.ACCESS_DENIED,
                     "AWS authentication requires a valid Date or x-amz-date header");
@@ -253,7 +263,7 @@ public class S3ProxyHandler {
         S3AuthorizationHeader authHeader = null;
         var presignedUrl = false;
 
-        {
+        if (!anonymousS3) {
             if (headerAuthorization == null) {
                 final var algorithm = request.getParameter("X-Amz-Algorithm");
                 if (algorithm == null) { // v2 query
@@ -285,15 +295,16 @@ public class S3ProxyHandler {
                 throw new S3Exception(S3ErrorCode.INVALID_ARGUMENT, iae);
             }
             requestIdentity = authHeader.identity;
+        } else {
+            requestIdentity = earlyContainer;
         }
 
         var dateSkew = 0L; // date for timeskew check
 
-        // v2 GET /s3proxy-1080747708/foo?AWSAccessKeyId=local-identity&Expires=
-        // 1510322602&Signature=UTyfHY1b1Wgr5BFEn9dpPlWdtFE%3D)
-        // have no date
-
-        {
+        if (!anonymousS3) {
+            // v2 GET /s3proxy-1080747708/foo?AWSAccessKeyId=local-identity&Expires=
+            // 1510322602&Signature=UTyfHY1b1Wgr5BFEn9dpPlWdtFE%3D)
+            // have no date
             var haveDate = true;
 
             final AuthenticationType finalAuthType;
@@ -327,7 +338,6 @@ public class S3ProxyHandler {
                     throw new S3Exception(S3ErrorCode.ACCESS_DENIED, iae);
                 }
                 dateSkew /= 1000;
-
             } else {
                 haveDate = false;
             }
@@ -344,112 +354,121 @@ public class S3ProxyHandler {
         final Map.Entry<String, BlobStore> provider;
         BlobStore blobStore = null;
         try {
-            if (requestIdentity == null) {
-                throw new S3Exception(S3ErrorCode.ACCESS_DENIED);
-            }
-            var expiresString = request.getParameter("Expires");
-            if (expiresString != null) { // v2 query
-                final var expires = Long.parseLong(expiresString);
-                final var nowSeconds = System.currentTimeMillis() / 1000;
-                if (nowSeconds >= expires) {
-                    throw new S3Exception(S3ErrorCode.ACCESS_DENIED, "Request has expired");
+            if (anonymousS3) {
+                // Anonymous (unsigned) request — bucket name is the user identity;
+                // MasterServer skips password verification for USER_PORTAL_ANONYMOUS users.
+                provider = blobStoreLocator.locateAnonymousBlobStore(request, response, earlyContainer);
+                if (provider == null) {
+                    throw new S3Exception(S3ErrorCode.INVALID_ACCESS_KEY_ID);
                 }
-                if (expires - nowSeconds > TimeUnit.DAYS.toSeconds(365)) {
-                    throw new S3Exception(S3ErrorCode.ACCESS_DENIED);
-                }
-            }
-
-            final var dateString = request.getParameter("X-Amz-Date");
-            // from para v4 query
-            expiresString = request.getParameter("X-Amz-Expires");
-            if (dateString != null && expiresString != null) { // v4 query
-                final var date = parseIso8601(dateString);
-                final var expires = Long.parseLong(expiresString);
-                final var nowSeconds = System.currentTimeMillis() / 1000;
-                if (nowSeconds >= date + expires) {
-                    throw new S3Exception(S3ErrorCode.ACCESS_DENIED, "Request has expired");
-                }
-                if (expires > TimeUnit.DAYS.toSeconds(7)) {
-                    throw new S3Exception(S3ErrorCode.ACCESS_DENIED);
-                }
-            }
-
-            // The aim ?
-            switch (authHeader.authenticationType) {
-            case AWS_V2:
-                switch (authenticationType) {
-                case AWS_V2, AWS_V2_OR_V4:
-                    break;
-                default:
-                    throw new S3Exception(S3ErrorCode.ACCESS_DENIED);
-                }
-                break;
-            case AWS_V4:
-                switch (authenticationType) {
-                case AWS_V4, AWS_V2_OR_V4:
-                    break;
-                default:
-                    throw new S3Exception(S3ErrorCode.ACCESS_DENIED);
-                }
-                break;
-            default:
-                throw new IllegalArgumentException("Unhandled type: " + authHeader.authenticationType);
-            }
-
-            provider = blobStoreLocator.locateBlobStore(request, response, requestIdentity,
-                    path.length > 1 ? path[1] : null, path.length > 2 ? path[2] : null);
-            if (provider == null) {
-                throw new S3Exception(S3ErrorCode.INVALID_ACCESS_KEY_ID);
-            }
-
-            final String expectedSignature;
-            if (authHeader.hmacAlgorithm == null) {
-                // V2. WWhen presigned url is generated, it doesn't consider the service path
-                final var uriForSigning = presignedUrl ? uri : originalUri;
-                expectedSignature = AwsSignature.createAuthorizationSignature(request, uriForSigning, provider.getKey(),
-                        presignedUrl, haveBothDateHeader);
             } else {
-                final var contentSha256 = request.getHeader(AwsHttpHeaders.CONTENT_SHA256);
-                try {
-                    final byte[] payload;
-                    if (request.getParameter("X-Amz-Algorithm") != null) {
-                        payload = new byte[0];
-                    } else if ("STREAMING-AWS4-HMAC-SHA256-PAYLOAD".equals(contentSha256)) {
-                        payload = new byte[0];
-                        is = new ChunkedInputStream(is);
-                    } else if ("UNSIGNED-PAYLOAD".equals(contentSha256)) {
-                        payload = new byte[0];
-                    } else {
-                        // buffer the entire stream to calculate digest
-                        // why input stream read contentlength of header?
-                        payload = ByteStreams.toByteArray(ByteStreams.limit(is, v4MaxNonChunkedRequestSize + 1));
-                        if (payload.length == v4MaxNonChunkedRequestSize + 1) {
-                            throw new S3Exception(S3ErrorCode.MAX_MESSAGE_LENGTH_EXCEEDED);
-                        }
-
-                        // maybe we should check this when signing,
-                        // a lot of dup code with aws sign code.
-                        final var md = MessageDigest.getInstance(authHeader.hashAlgorithm);
-                        final var hash = md.digest(payload);
-                        if (!contentSha256.equals(BaseEncoding.base16().lowerCase().encode(hash))) {
-                            throw new S3Exception(S3ErrorCode.X_AMZ_CONTENT_S_H_A_256_MISMATCH);
-                        }
-                        is = new ByteArrayInputStream(payload);
-                    }
-
-                    // When presigned url is generated, it doesn't consider the service path
-                    final var uriForSigning = presignedUrl ? uri : originalUri;
-                    // v4 signature
-                    expectedSignature = AwsSignature.createAuthorizationSignatureV4(baseRequest, authHeader, payload,
-                            uriForSigning, provider.getKey());
-                } catch (InvalidKeyException | NoSuchAlgorithmException | ConnectionException e) {
-                    throw new S3Exception(S3ErrorCode.INVALID_ARGUMENT, e);
+                if (requestIdentity == null) {
+                    throw new S3Exception(S3ErrorCode.ACCESS_DENIED);
                 }
-            }
+                var expiresString = request.getParameter("Expires");
+                if (expiresString != null) { // v2 query
+                    final var expires = Long.parseLong(expiresString);
+                    final var nowSeconds = System.currentTimeMillis() / 1000;
+                    if (nowSeconds >= expires) {
+                        throw new S3Exception(S3ErrorCode.ACCESS_DENIED, "Request has expired");
+                    }
+                    if (expires - nowSeconds > TimeUnit.DAYS.toSeconds(365)) {
+                        throw new S3Exception(S3ErrorCode.ACCESS_DENIED);
+                    }
+                }
 
-            if (!constantTimeEquals(expectedSignature, authHeader.signature)) {
-                throw new S3Exception(S3ErrorCode.SIGNATURE_DOES_NOT_MATCH);
-            }
+                final var dateString = request.getParameter("X-Amz-Date");
+                // from para v4 query
+                expiresString = request.getParameter("X-Amz-Expires");
+                if (dateString != null && expiresString != null) { // v4 query
+                    final var date = parseIso8601(dateString);
+                    final var expires = Long.parseLong(expiresString);
+                    final var nowSeconds = System.currentTimeMillis() / 1000;
+                    if (nowSeconds >= date + expires) {
+                        throw new S3Exception(S3ErrorCode.ACCESS_DENIED, "Request has expired");
+                    }
+                    if (expires > TimeUnit.DAYS.toSeconds(7)) {
+                        throw new S3Exception(S3ErrorCode.ACCESS_DENIED);
+                    }
+                }
+
+                // The aim ?
+                switch (authHeader.authenticationType) {
+                case AWS_V2:
+                    switch (authenticationType) {
+                    case AWS_V2, AWS_V2_OR_V4:
+                        break;
+                    default:
+                        throw new S3Exception(S3ErrorCode.ACCESS_DENIED);
+                    }
+                    break;
+                case AWS_V4:
+                    switch (authenticationType) {
+                    case AWS_V4, AWS_V2_OR_V4:
+                        break;
+                    default:
+                        throw new S3Exception(S3ErrorCode.ACCESS_DENIED);
+                    }
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unhandled type: " + authHeader.authenticationType);
+                }
+
+                provider = blobStoreLocator.locateBlobStore(request, response, requestIdentity,
+                        path.length > 1 ? path[1] : null, path.length > 2 ? path[2] : null);
+                if (provider == null) {
+                    throw new S3Exception(S3ErrorCode.INVALID_ACCESS_KEY_ID);
+                }
+
+                final String expectedSignature;
+                if (authHeader.hmacAlgorithm == null) {
+                    // V2. WWhen presigned url is generated, it doesn't consider the service path
+                    final var uriForSigning = presignedUrl ? uri : originalUri;
+                    expectedSignature = AwsSignature.createAuthorizationSignature(request, uriForSigning,
+                            provider.getKey(), presignedUrl, haveBothDateHeader);
+                } else {
+                    final var contentSha256 = request.getHeader(AwsHttpHeaders.CONTENT_SHA256);
+                    try {
+                        final byte[] payload;
+                        if (request.getParameter("X-Amz-Algorithm") != null) {
+                            payload = new byte[0];
+                        } else if ("STREAMING-AWS4-HMAC-SHA256-PAYLOAD".equals(contentSha256)) {
+                            payload = new byte[0];
+                            is = new ChunkedInputStream(is);
+                        } else if ("UNSIGNED-PAYLOAD".equals(contentSha256)) {
+                            payload = new byte[0];
+                        } else {
+                            // buffer the entire stream to calculate digest
+                            // why input stream read contentlength of header?
+                            payload = ByteStreams.toByteArray(ByteStreams.limit(is, v4MaxNonChunkedRequestSize + 1));
+                            if (payload.length == v4MaxNonChunkedRequestSize + 1) {
+                                throw new S3Exception(S3ErrorCode.MAX_MESSAGE_LENGTH_EXCEEDED);
+                            }
+
+                            // maybe we should check this when signing,
+                            // a lot of dup code with aws sign code.
+                            final var md = MessageDigest.getInstance(authHeader.hashAlgorithm);
+                            final var hash = md.digest(payload);
+                            if (!contentSha256.equals(BaseEncoding.base16().lowerCase().encode(hash))) {
+                                throw new S3Exception(S3ErrorCode.X_AMZ_CONTENT_S_H_A_256_MISMATCH);
+                            }
+                            is = new ByteArrayInputStream(payload);
+                        }
+
+                        // When presigned url is generated, it doesn't consider the service path
+                        final var uriForSigning = presignedUrl ? uri : originalUri;
+                        // v4 signature
+                        expectedSignature = AwsSignature.createAuthorizationSignatureV4(baseRequest, authHeader,
+                                payload, uriForSigning, provider.getKey());
+                    } catch (InvalidKeyException | NoSuchAlgorithmException | ConnectionException e) {
+                        throw new S3Exception(S3ErrorCode.INVALID_ARGUMENT, e);
+                    }
+                }
+
+                if (!constantTimeEquals(expectedSignature, authHeader.signature)) {
+                    throw new S3Exception(S3ErrorCode.SIGNATURE_DOES_NOT_MATCH);
+                }
+            } // end authenticated block
 
             for (final String parameter : Collections.list(request.getParameterNames())) {
                 if (UNSUPPORTED_PARAMETERS.contains(parameter)) {

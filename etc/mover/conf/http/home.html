@@ -96,6 +96,19 @@
     table.dataTable thead > tr > th.dt-ordering-asc,
     table.dataTable thead > tr > th.dt-ordering-desc { padding-right: 0.5rem !important; }
     .listing-table td:first-child a { text-decoration: none; color: inherit; }
+    /* Portal notice / warning bars */
+    .portal-notice, .portal-warning {
+      display: flex; align-items: flex-start; gap: 0.6rem;
+      padding: 0.6rem 0.9rem; border-radius: 8px; font-size: 0.875rem;
+      border: 1px solid var(--bs-border-color);
+      background: var(--bs-secondary-bg); color: var(--bs-body-color);
+      line-height: 1.5;
+    }
+    .portal-notice > i  { color: var(--bs-primary);  margin-top: 0.15rem; flex-shrink: 0; }
+    .portal-warning > i { color: var(--bs-danger);   margin-top: 0.15rem; flex-shrink: 0; }
+    .portal-warning { border-color: rgba(var(--bs-danger-rgb), 0.35); background: rgba(var(--bs-danger-rgb), 0.06); }
+    .portal-notice a, .portal-warning a { color: inherit; text-decoration: underline; }
+    .portal-notice a:hover, .portal-warning a:hover { opacity: 0.8; }
   </style>
 </head>
 <body>
@@ -104,9 +117,9 @@
       <a class="navbar-brand p-0 me-0 flex-shrink-0" href="/">
         <img src="/images/logo.production.png" alt="ECPDS" width="140" height="24" style="display:block;">
       </a>
-      <span class="header_nav_divider"></span>
-      <span class="header_simple_title">${title}</span>
-      <div class="d-flex align-items-center gap-2 flex-shrink-0">
+      <span class="header_nav_divider d-none d-sm-inline-block"></span>
+      <span class="header_simple_title d-none d-sm-block">${title}</span>
+      <div class="d-flex align-items-center gap-2 flex-shrink-0 ms-auto">
         <button id="btnTheme" class="btn btn-sm btn-outline-light p-1 lh-1"
                 onclick="ecpdsToggleTheme()" title="Toggle light/dark theme"
                 style="width:28px;height:28px;">
@@ -150,29 +163,44 @@
     <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
       <div class="modal-content">
         <div class="modal-header">
-          <h6 class="modal-title fw-semibold mb-0"><i class="bi bi-plug-fill me-2 text-primary"></i>How to connect</h6>
+          <h6 class="modal-title fw-semibold mb-0"><i class="bi bi-book me-2 text-primary"></i>Access Guide</h6>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body px-4 pb-4">
           <div class="row g-3">
-            <div class="col-md-6">
+            <div id="connectHttpsCol" class="col-md-6">
               <div class="card h-100 border-primary border-opacity-25">
                 <div class="card-header py-2 bg-primary bg-opacity-10">
                   <i class="bi bi-shield-lock-fill me-1 text-primary"></i><strong class="small">HTTPS</strong>
                 </div>
                 <div class="card-body small">
                   <p class="text-muted mb-2">Browse and download files via web browser or any HTTP client.</p>
-                  <div class="text-muted mb-1">Home directory URL <span class="fw-normal">(replace <em>USER</em>)</span></div>
+                  <div class="text-muted mb-1">Your home directory URL</div>
                   <code id="connectHttpsUrl" class="d-block bg-body-secondary rounded px-2 py-1 mb-3 user-select-all"></code>
                   <div class="text-muted mb-1">curl examples <span class="fw-normal">(replace <em>DIR</em>, <em>FILE</em>)</span></div>
                   <div id="connectHttpsExamples"></div>
-                  <div class="text-muted mb-1 mt-2">Structured listing formats <span class="fw-normal">(use <code>Accept</code> header)</span></div>
-                  <div id="connectHttpsFormats"></div>
-                  <p class="text-muted mt-1 mb-0" style="font-size:0.72rem;"><i class="bi bi-info-circle me-1"></i>Add <code>-k</code> to skip TLS certificate verification — only if using a self-signed certificate, but this is not secure.</p>
+                  <p class="text-muted mt-1 mb-2" style="font-size:0.72rem;"><i class="bi bi-info-circle me-1"></i>Add <code>-k</code> to skip TLS certificate verification — only if using a self-signed certificate, but this is not secure.</p>
+                  <div class="mt-2 border-top pt-2">
+                    <p class="text-muted mb-1" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.05em;">Advanced usage</p>
+                    <a class="small text-muted text-decoration-none d-block mb-1" data-bs-toggle="collapse" href="#httpsFormats" role="button" aria-expanded="false" aria-controls="httpsFormats" style="cursor:pointer;">
+                      <i class="bi bi-chevron-right me-1" style="font-size:0.7rem;transition:transform .2s;" id="httpsFormatsChevron"></i>Structured listing formats
+                    </a>
+                    <div class="collapse" id="httpsFormats">
+                      <p class="text-muted mb-1" style="font-size:0.72rem;">Use the <code>Accept</code> header to request a specific format when listing a directory.</p>
+                      <div id="connectHttpsFormats" class="mb-2"></div>
+                    </div>
+                    <a class="small text-muted text-decoration-none d-block" data-bs-toggle="collapse" href="#httpsParallel" role="button" aria-expanded="false" aria-controls="httpsParallel" style="cursor:pointer;">
+                      <i class="bi bi-chevron-right me-1" style="font-size:0.7rem;transition:transform .2s;" id="httpsParallelChevron"></i>Byte-range &amp; parallel downloads
+                    </a>
+                    <div class="collapse" id="httpsParallel">
+                      <p class="text-muted mt-1 mb-1" style="font-size:0.72rem;"><i class="bi bi-lightning-charge-fill me-1 text-warning"></i>The server honours HTTP <code>Range</code> requests — tools that split a download into parallel chunks will work and can significantly improve throughput.</p>
+                      <div id="connectHttpsParallel"></div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-            <div class="col-md-6">
+            <div id="connectS3Col" class="col-md-6">
               <div class="card h-100 border-warning border-opacity-25">
                 <div class="card-header py-2 bg-warning bg-opacity-10">
                   <i class="bi bi-bucket-fill me-1 text-warning"></i><strong class="small">S3</strong>
@@ -181,15 +209,13 @@
                   <p class="text-muted mb-2">Use the AWS CLI, MinIO Client (mc), rclone, boto3, or s5cmd, or any other S3-compatible client that supports S3 endpoints such as /s3.</p>
                   <div class="text-muted mb-1">Endpoint URL</div>
                   <code id="connectS3Url" class="d-block bg-body-secondary rounded px-2 py-1 mb-2 user-select-all"></code>
-                  <div class="text-muted mb-1">~/.aws/credentials <span class="fw-normal">(replace <em>USER</em>, <em>PASS</em>)</span></div>
-                  <div id="connectS3Config" class="mb-2"></div>
-                  <div class="text-muted mb-1">AWS CLI examples <span class="fw-normal">(replace <em>BUCKET</em>, <em>DIR</em>, <em>FILE</em>)</span></div>
-                  <div id="connectS3Examples"></div>
-                  <p class="text-muted mt-1 mb-0" style="font-size:0.72rem;"><i class="bi bi-info-circle me-1"></i>Add <code>--no-verify-ssl</code> to skip TLS certificate verification — only if using a self-signed certificate, but this is not secure.</p>
+                  <div class="text-muted mb-1" id="connectS3AnonLabel">AWS CLI examples <span class="fw-normal">(replace <em>DESTINATION</em>, <em>DIR</em>, <em>FILE</em>)</span></div>
+                  <div id="connectS3Anon"></div>
+                  <p id="connectS3AnonNote" class="text-muted mt-1 mb-0" style="font-size:0.72rem;"><i class="bi bi-info-circle me-1"></i>The bucket name is your username (<code>${userid}</code>); destinations are the top-level path segments. Add <code>--no-verify-ssl</code> to skip TLS certificate verification — only if using a self-signed certificate.</p>
                 </div>
               </div>
             </div>
-            <div class="col-md-6">
+            <div id="connectFtpCol" class="col-md-6">
               <div class="card h-100 border-success border-opacity-25">
                 <div class="card-header py-2 bg-success bg-opacity-10">
                   <i class="bi bi-hdd-network-fill me-1 text-success"></i><strong class="small">FTP</strong>
@@ -197,12 +223,13 @@
                 <div class="card-body small">
                   <p class="text-muted mb-2">Connect with any FTP client. Passive mode recommended.</p>
                   <div class="mb-1"><span class="text-muted">Host: </span><code id="connectFtpHost"></code></div>
-                  <div class="mb-2"><span class="text-muted">Port: </span><code>${ftpPort}</code></div>
-                  <p class="text-muted mb-0">Use your portal username and password.</p>
+                  <div class="mb-1"><span class="text-muted">Port: </span><code id="connectFtpPort"></code></div>
+                  <div class="mb-1"><span class="text-muted">Username: </span><code>${userid}</code></div>
+                  <div class="mb-0"><span class="text-muted">Password: </span><span>any valid email address (e.g. <code>user@example.com</code>)</span></div>
                 </div>
               </div>
             </div>
-            <div class="col-md-6">
+            <div id="connectSftpCol" class="col-md-6">
               <div id="sftpCard" class="card h-100 border-secondary border-opacity-25 opacity-50">
                 <div class="card-header py-2 bg-secondary bg-opacity-10">
                   <i class="bi bi-lock-fill me-1 text-secondary"></i><strong class="small">SFTP</strong>
@@ -213,17 +240,38 @@
                 </div>
               </div>
             </div>
-          </div>
-          <div class="alert alert-secondary d-flex align-items-start gap-2 py-2 px-3 mt-3 mb-0 small" role="alert" style="font-size:0.78rem;">
-            <i class="bi bi-person-lock flex-shrink-0 mt-1"></i>
-            <span>The operations shown above depend on the permissions granted to your account. For example, uploading files may not be available if your profile does not include write access, and the set of visible directories is determined by your access rights. Contact your system administrator if you believe your permissions are incorrect.</span>
+            <div id="connectInfoCol" class="col-12">
+              <div class="alert alert-secondary d-flex align-items-start gap-2 py-2 px-3 mb-0 small" role="alert" style="font-size:0.78rem;">
+                <i class="bi bi-person-lock flex-shrink-0 mt-1"></i>
+                <span>The files and directories visible to you are determined by the access rights configured for this account. Contact your system administrator if you believe you are missing access.</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
+  <!-- Portal public-URL overrides injected server-side (empty = use request-derived defaults) -->
+  <div id="portalConfig" style="display:none"
+    data-https-base="${httpsPublicBaseUrl}"
+    data-s3-endpoint="${s3PublicEndpointUrl}"
+    data-ftp-host="${ftpPublicHost}"
+    data-ftp-port="${ftpPublicPort}"
+    data-sftp-host="${sftpPublicHost}"
+    data-sftp-port="${sftpPublicPort}"
+    data-s3-enabled="${s3Enabled}"
+    data-ftp-enabled="${ftpEnabled}"
+    data-sftp-enabled="${sftpEnabled}"></div>
   <script>
   (function() {
+    // Rotate chevrons on Advanced usage sub-collapses
+    [['httpsFormats', 'httpsFormatsChevron'], ['httpsParallel', 'httpsParallelChevron']].forEach(function(pair) {
+      var el = document.getElementById(pair[0]);
+      if (el) {
+        el.addEventListener('show.bs.collapse', function() { var ch = document.getElementById(pair[1]); if (ch) ch.style.transform = 'rotate(90deg)'; });
+        el.addEventListener('hide.bs.collapse', function() { var ch = document.getElementById(pair[1]); if (ch) ch.style.transform = 'rotate(0deg)'; });
+      }
+    });
     function copyBlock(container, lines, last) {
       var wrap = document.createElement('div');
       wrap.className = 'position-relative' + (last ? '' : ' mb-2');
@@ -247,29 +295,59 @@
       wrap.appendChild(btn);
       container.appendChild(wrap);
     }
+    var cfg = document.getElementById('portalConfig').dataset;
     var origin = window.location.protocol + '//' + window.location.host;
     var host = window.location.hostname;
+    // Remove disabled protocol cards immediately (before any other JS touches them)
+    if (cfg.s3Enabled === 'false') { var el = document.getElementById('connectS3Col'); if (el) el.remove(); }
+    if (cfg.ftpEnabled === 'false') { var el = document.getElementById('connectFtpCol'); if (el) el.remove(); }
+    if (cfg.sftpEnabled === 'false') { var el = document.getElementById('connectSftpCol'); if (el) el.remove(); }
+    // Widen HTTPS card when it is the only visible protocol
+    var siblingsVisible = ['connectS3Col','connectFtpCol','connectSftpCol'].some(function(id){ return !!document.getElementById(id); });
+    if (!siblingsVisible) { var hc = document.getElementById('connectHttpsCol'); if (hc) { hc.classList.remove('col-md-6'); hc.classList.add('col-12'); } var ic = document.getElementById('connectInfoCol'); if (ic) { ic.classList.add('col-12'); } }
+    // Use public-facing overrides when configured; otherwise derive from request.
+    // When httpsBase is set it IS the user's public home directory URL, fully
+    // replacing origin + '/ecpds/home/${userid}/' (the LB rewrites the full prefix).
     var base = origin + '/ecpds/';
-    var s3Endpoint = origin + '${s3Path}';
-    document.getElementById('connectHttpsUrl').textContent = base + 'home/USER/';
-    document.getElementById('connectS3Url').textContent = s3Endpoint;
-    document.getElementById('connectFtpHost').textContent = host;
+    var homeBase = cfg.httpsBase ? cfg.httpsBase.replace(/\/?$/, '/') : (base + 'home/${userid}/');
+    var s3Endpoint = cfg.s3Endpoint || (origin + '${s3Path}');
+    var ftpHost = cfg.ftpHost || host;
+    var ftpPort = cfg.ftpPort || '${ftpPort}';
+    document.getElementById('connectHttpsUrl').textContent = homeBase;
+    var s3UrlEl = document.getElementById('connectS3Url'); if (s3UrlEl) s3UrlEl.textContent = s3Endpoint;
+    var ftpHostEl = document.getElementById('connectFtpHost'); if (ftpHostEl) ftpHostEl.textContent = ftpHost;
+    var ftpPortEl = document.getElementById('connectFtpPort'); if (ftpPortEl) ftpPortEl.textContent = ftpPort;
     var httpsEx = document.getElementById('connectHttpsExamples');
-    copyBlock(httpsEx, ['# List a directory (no password required)', 'curl ' + base + 'home/USER/DIR/']);
-    copyBlock(httpsEx, ['# Download a file', 'curl \\', '  ' + base + 'home/USER/DIR/FILE -o FILE'], true);
+    copyBlock(httpsEx, ['# List a directory', 'curl ' + homeBase + 'DIR/']);
+    copyBlock(httpsEx, ['# Download a file', 'curl \\', '  ' + homeBase + 'DIR/FILE -o FILE'], true);
     var fmtEx = document.getElementById('connectHttpsFormats');
-    copyBlock(fmtEx, ['# List as JSON (no password required)', 'curl \\', '  -H "Accept: application/json" \\', '  ' + base + 'home/USER/DIR/']);
-    copyBlock(fmtEx, ['# List as CSV (no password required)', 'curl \\', '  -H "Accept: text/csv" \\', '  ' + base + 'home/USER/DIR/']);
-    copyBlock(fmtEx, ['# List as plain text, one name per line (no password required)', 'curl \\', '  -H "Accept: text/plain" \\', '  ' + base + 'home/USER/DIR/'], true);
-    var s3Cfg = document.getElementById('connectS3Config');
-    copyBlock(s3Cfg, ['# Save to ~/.aws/credentials', '[default]', 'aws_access_key_id     = USER', 'aws_secret_access_key = PASS'], true);
-    var s3Ex = document.getElementById('connectS3Examples');
-    copyBlock(s3Ex, ['# List buckets', 'aws --endpoint-url ' + s3Endpoint + ' \\', '  s3 ls']);
-    copyBlock(s3Ex, ['# List files in a bucket', 'aws --endpoint-url ' + s3Endpoint + ' \\', '  s3 ls s3://BUCKET/']);
-    copyBlock(s3Ex, ['# Download a file', 'aws --endpoint-url ' + s3Endpoint + ' \\', '  s3 cp s3://BUCKET/DIR/FILE ./FILE'], true);
-    var sftpPort = '${sftpPort}';
-    if (sftpPort) {
-      var sftpCard = document.getElementById('sftpCard');
+    copyBlock(fmtEx, ['# List as JSON', 'curl \\', '  -H "Accept: application/json" \\', '  ' + homeBase + 'DIR/']);
+    copyBlock(fmtEx, ['# List as CSV', 'curl \\', '  -H "Accept: text/csv" \\', '  ' + homeBase + 'DIR/']);
+    copyBlock(fmtEx, ['# List as plain text, one name per line', 'curl \\', '  -H "Accept: text/plain" \\', '  ' + homeBase + 'DIR/'], true);
+    var parEx = document.getElementById('connectHttpsParallel');
+    copyBlock(parEx, ['# aria2c — 8 parallel connections (fastest for large files)', 'aria2c -x8 -s8 \\', '  ' + homeBase + 'DIR/FILE']);
+    copyBlock(parEx, ['# axel — 8 parallel connections', 'axel -n8 ' + homeBase + 'DIR/FILE']);
+    copyBlock(parEx, ['# curl byte-range resume / partial download', 'curl -C - \\', '  ' + homeBase + 'DIR/FILE -o FILE'], true);
+    var s3AnonSection = document.getElementById('connectS3Anon');
+    if (s3AnonSection) {
+      var dest = '${destination}';
+      if (dest) {
+        // User is pinned to a single destination — files are directly at root of their bucket
+        document.getElementById('connectS3AnonLabel').innerHTML = 'AWS CLI examples <span class="fw-normal">(replace <em>DIR</em>, <em>FILE</em>)</span>';
+        document.getElementById('connectS3AnonNote').innerHTML = '<i class="bi bi-info-circle me-1"></i>Your bucket is <code>${userid}</code> and you are connected directly to destination <code>' + dest + '</code>. Add <code>--no-verify-ssl</code> to skip TLS certificate verification — only if using a self-signed certificate.';
+        copyBlock(s3AnonSection, ['# List files', 'aws --no-sign-request --endpoint-url ' + s3Endpoint + ' \\', '  s3 ls s3://${userid}/DIR/']);
+        copyBlock(s3AnonSection, ['# Download a file', 'aws --no-sign-request --endpoint-url ' + s3Endpoint + ' \\', '  s3 cp s3://${userid}/DIR/FILE ./FILE'], true);
+      } else {
+        // User has access to multiple destinations — bucket name is username, then destination/path
+        copyBlock(s3AnonSection, ['# List all destinations', 'aws --no-sign-request --endpoint-url ' + s3Endpoint + ' \\', '  s3 ls s3://${userid}/']);
+        copyBlock(s3AnonSection, ['# List files in a destination', 'aws --no-sign-request --endpoint-url ' + s3Endpoint + ' \\', '  s3 ls s3://${userid}/DESTINATION/DIR/']);
+        copyBlock(s3AnonSection, ['# Download a file', 'aws --no-sign-request --endpoint-url ' + s3Endpoint + ' \\', '  s3 cp s3://${userid}/DESTINATION/DIR/FILE ./FILE'], true);
+      }
+    }
+    var sftpPort = cfg.sftpPort || '${sftpPort}';
+    var sftpHost = cfg.sftpHost || host;
+    var sftpCard = document.getElementById('sftpCard');
+    if (sftpCard && ('${sftpPort}' || sftpPort)) {
       sftpCard.classList.remove('opacity-50');
       sftpCard.classList.replace('border-secondary', 'border-info');
       sftpCard.querySelector('.card-header').classList.replace('bg-secondary', 'bg-info');
@@ -280,9 +358,10 @@
       sftpBody.innerHTML =
         '<p class="text-muted mb-2">Connect using any SFTP/SCP client over SSH.</p>' +
         '<div class="mb-1"><span class="text-muted">Host: </span><code id="connectSftpHost"></code></div>' +
-        '<div class="mb-2"><span class="text-muted">Port: </span><code>' + sftpPort + '</code></div>' +
-        '<p class="text-muted mb-0">Use your portal username and password.</p>';
-      document.getElementById('connectSftpHost').textContent = host;
+        '<div class="mb-1"><span class="text-muted">Port: </span><code>' + sftpPort + '</code></div>' +
+        '<div class="mb-1"><span class="text-muted">Username: </span><code>${userid}</code></div>' +
+        '<p class="text-muted mb-0">Password: any valid email address (e.g. <code>user@example.com</code>).</p>';
+      document.getElementById('connectSftpHost').textContent = sftpHost;
     }
   }());
   </script>
@@ -291,16 +370,32 @@
   <div id="parentData" style="display:none">${parent}</div>
 
   <div class="container-xxl px-3 pt-2 pb-1 mx-auto">
-    <div id="warning" class="alert alert-danger d-none"><pre class="mb-0">${warning}</pre></div>
-    <div id="msgTop" class="alert alert-info d-none"><pre class="mb-0">${msgTop}</pre></div>
+    <div id="warning" class="portal-warning d-none mb-2"><i class="bi bi-exclamation-triangle-fill"></i><div>${warning}</div></div>
+    <div id="msgTop" class="portal-notice d-none mb-2"><i class="bi bi-info-circle-fill"></i><div>${msgTop}</div></div>
 
     <div class="card border-0 shadow-sm mt-2">
       <div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)">
         <i class="bi bi-folder2-open text-primary"></i>
         <span class="fw-semibold">Files</span>
-        <a href="#" class="text-primary ms-1" role="button" data-bs-toggle="modal" data-bs-target="#connectModal" title="How to connect" style="line-height:1; text-decoration:none;">
-          <i class="bi bi-info-circle" style="font-size:0.85rem;"></i>
-        </a>
+        <button type="button" class="btn btn-sm btn-outline-primary ms-1" data-bs-toggle="modal" data-bs-target="#connectModal">
+          <i class="bi bi-book me-1"></i>Access Guide
+        </button>
+        <script>
+        (function(){
+          var max='${maxconnections}', cur='${currentconnections}';
+          if(max==='') return;
+          var remaining = max - (cur==='' ? 0 : parseInt(cur,10));
+          var html = '<span class="badge rounded-pill border fw-normal ms-1 '
+            + (remaining<=0 ? 'bg-danger-subtle text-danger-emphasis' : remaining<=2 ? 'bg-warning-subtle text-warning-emphasis' : 'bg-secondary-subtle text-secondary-emphasis')
+            + '" data-bs-toggle="popover" data-bs-placement="bottom" data-bs-trigger="hover focus" tabindex="0"'
+            + ' data-bs-content="Maximum simultaneous sessions across all protocols (HTTPS, S3, FTP, SFTP/SCP). Once the limit is reached, new connections will be refused."'
+            + ' style="cursor:default">';
+          if(cur!=='') html += '<i class="bi bi-plug me-1"></i>' + cur + '\u200a/\u200a' + max;
+          else html += '<i class="bi bi-plug me-1"></i>max\u00a0' + max;
+          html += '</span>';
+          document.write(html);
+        })();
+        </script>
         <div class="ms-auto d-flex flex-wrap align-items-center gap-2">
           <div class="input-group input-group-sm" style="width:auto">
             <span class="input-group-text"><i class="bi bi-search"></i></span>
@@ -362,7 +457,7 @@
       </div>
     </div>
 
-    <div id="msgDown" class="alert alert-info d-none mt-2"><pre class="mb-0">${msgDown}</pre></div>
+    <div id="msgDown" class="portal-notice d-none mt-2"><i class="bi bi-info-circle-fill"></i><div>${msgDown}</div></div>
   </div>
 
   <div id="bottomfooter" class="bottomfooter d-flex align-items-center justify-content-between text-white px-3"
@@ -387,7 +482,7 @@
     // Alerts
     ['warning', 'msgTop', 'msgDown'].forEach(function(id) {
       var el = document.getElementById(id);
-      if (el && el.querySelector('pre') && el.querySelector('pre').textContent.trim().length > 0)
+      if (el && el.textContent.trim().length > 0)
         el.classList.remove('d-none');
     });
 

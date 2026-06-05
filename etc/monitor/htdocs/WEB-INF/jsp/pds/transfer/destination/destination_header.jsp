@@ -153,6 +153,20 @@
                     }
                     /* <div style="border-left:..."> separators: skip, handled by addDivider() */
                 });
+                // Mark the active page icon on both the desktop bar and mobile menu
+                var curPath   = window.location.pathname;
+                var curSearch = window.location.search;
+                Array.from(bar.querySelectorAll('a.btn')).forEach(function(a) {
+                    if (a.pathname === curPath && a.search === curSearch) {
+                        a.classList.add('active');
+                    }
+                });
+                Array.from(menu.querySelectorAll('a.dropdown-item')).forEach(function(item) {
+                    var u = new URL(item.href, window.location.origin);
+                    if (u.pathname === curPath && u.search === curSearch) {
+                        item.classList.add('active');
+                    }
+                });
             });
         })();
         </script>

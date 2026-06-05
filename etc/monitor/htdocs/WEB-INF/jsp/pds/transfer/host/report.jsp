@@ -26,7 +26,7 @@
 [data-bs-theme=light] .report-card-hdr { background: #f0f2f4; border-bottom-color: #d0d7de; color: #24292f; }
 [data-bs-theme=light] .report-card-hdr-sub { color: #57606a; }
 [data-bs-theme=light] .report-card-hdr-btn { color: #57606a; border-color: #d0d7de; }
-[data-bs-theme=light] .report-card-hdr-btn:hover { color: #fff; }
+[data-bs-theme=light] .report-card-hdr-btn:hover { color: #24292f; }
 [data-bs-theme=light] .report-pre-spinner { color: #57606a; }
 [data-bs-theme=light] .report-pre { background: #f6f8fa; color: #24292f; }
 [data-bs-theme=light] .report-pre font[color="red"]   { color: #cf222e; }
@@ -183,12 +183,23 @@
 #mtrFitBtn i { font-size: 1em; -webkit-text-stroke: 0.4px currentColor; }
 /* Attribution 'i' button: add breathing room from map edges */
 #mtrMap .ol-attribution { bottom: 8px; right: 8px; }
+/* Geo pin in chart host cell */
+.mc-geo-pin {
+    display: inline-flex; align-items: center;
+    margin-left: 0.35rem; font-size: 0.72rem;
+    color: #3fb950; vertical-align: middle;
+    transition: color 0.15s;
+}
+.mc-geo-pin:hover { color: #58e573; }
+[data-bs-theme=light] .mc-geo-pin       { color: #1a7f37; }
+[data-bs-theme=light] .mc-geo-pin:hover { color: #0d5c28; }
 </style>
 
 <div class="card shadow-sm mt-2">
-    <div class="card-header d-flex align-items-center justify-content-between py-2 px-3 report-card-hdr flex-nowrap">
-        <span class="fw-semibold d-inline-flex align-items-center gap-1 flex-shrink-0" style="font-size:0.875rem;">
-            <i class="bi bi-terminal-fill me-1 text-success"></i>
+    <div class="card-header d-flex flex-wrap align-items-center gap-2 py-2 px-3 report-card-hdr">
+        <span class="fw-semibold d-inline-flex align-items-center gap-1" style="font-size:0.875rem; min-width:0;">
+            <i class="bi bi-terminal-fill me-1 text-success flex-shrink-0"></i>
+            <span class="text-truncate">
             <c:choose>
                 <c:when test="${not empty proxy}">
                     Network Report: <c:out value="${host.nickName}" />
@@ -198,14 +209,15 @@
                     Network Report: <c:out value="${host.nickName}" />
                 </c:otherwise>
             </c:choose>
-            <button class="btn btn-link p-0 ms-1 report-card-hdr-btn" style="font-size:0.85rem;line-height:1;vertical-align:middle;"
+            </span>
+            <button class="btn btn-link p-0 ms-1 report-card-hdr-btn flex-shrink-0" style="font-size:0.85rem;line-height:1;vertical-align:middle;"
                     data-bs-toggle="collapse" data-bs-target="#reportInfoPanel"
                     aria-expanded="false" aria-controls="reportInfoPanel"
                     title="What is this report?">
                 <i class="bi bi-info-circle"></i>
             </button>
         </span>
-        <div class="d-flex gap-2 align-items-center flex-shrink-0">
+        <div class="d-flex gap-2 align-items-center flex-shrink-0 ms-auto">
             <div id="viewToggleGroup" class="btn-group btn-group-sm" role="group"
                  aria-label="View mode" style="display:none!important; font-size:0.75rem;">
                 <button id="btnViewRaw" type="button"
@@ -391,7 +403,7 @@
             o += '<div class="mc-row' + (nd ? ' mc-nd' : '') + '" title="' + _esc(tip) + '">';
             o += '<div class="mc-c-hop">' + h.hop + '</div>';
             o += '<div class="mc-c-as"><span class="mc-as">' + _esc(h.as === 'AS???' ? '?' : h.as.replace(/^AS/, '')) + '</span></div>';
-            o += '<div class="mc-c-host">' + (nd ? '<span class="mc-muted">\u2014</span>' : _esc(h.host)) + '</div>';
+            o += '<div class="mc-c-host"' + (!nd ? ' data-mtr-host="' + _esc(h.host) + '"' : '') + '>' + (nd ? '<span class="mc-muted">\u2014</span>' : _esc(h.host)) + '</div>';
 
             if (nd) {
                 o += '<div class="mc-c-loss"><span class="mc-badge mc-bad">100%</span></div>'
@@ -534,6 +546,7 @@
                     }
                 }
                 var resolved = mtr.hops.filter(function(h) { return !h.noData && geoMap[h.host]; });
+                _patchChartGeo(geoMap);
                 if (resolved.length >= 2) {
                     _lastMtr = mtr;
                     _lastGeoMap = geoMap;
@@ -544,6 +557,31 @@
                 }
             })
             .catch(function() { /* silently skip map */ });
+    }
+
+    function _patchChartGeo(geoMap) {
+        var chart = document.getElementById('mtrChartPanel');
+        if (!chart) return;
+        chart.querySelectorAll('[data-mtr-host]').forEach(function(el) {
+            if (el.querySelector('.mc-geo-pin')) return; /* already patched */
+            var host = el.getAttribute('data-mtr-host');
+            var geo  = geoMap[host];
+            if (!geo) return;
+            var label = (geo.geo && geo.geo.trim()) ? geo.geo.trim()
+                      : geo.lat.toFixed(2) + '\u00b0, ' + geo.lon.toFixed(2) + '\u00b0';
+            var pin = document.createElement('span');
+            pin.className = 'mc-geo-pin';
+            pin.title = label;
+            pin.innerHTML = '<i class="bi bi-geo-alt-fill"></i>';
+            if (_mapReady) {
+                pin.style.cursor = 'pointer';
+                pin.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    window._setView('map');
+                });
+            }
+            el.appendChild(pin);
+        });
     }
 
     function _isDark() {
@@ -577,7 +615,10 @@
             var dx = _hopPoints[i + 1].coord[0] - _hopPoints[i].coord[0];
             var dy = _hopPoints[i + 1].coord[1] - _hopPoints[i].coord[1];
             var dist = Math.sqrt(dx * dx + dy * dy);
-            segments.push({ from: _hopPoints[i].coord, to: _hopPoints[i + 1].coord, dist: dist });
+            /* colour reflects the latency of the hop being travelled toward */
+            var destHop = _hopPoints[i + 1].hop;
+            var segColor = destHop && !destHop.noData ? _latColor(destHop.avg) : '#6c757d';
+            segments.push({ from: _hopPoints[i].coord, to: _hopPoints[i + 1].coord, dist: dist, color: segColor });
             totalDist += dist;
         }
         var routeDuration = 4000; /* ms for the full route */
@@ -605,14 +646,16 @@
                 packetFeat.getGeometry().setCoordinates([x, y]);
 
                 var pulse = 0.5 + 0.5 * Math.sin(ts / 150);
+                var segColor = seg.color;
+                var pulseRgb = segColor + Math.round((0.15 + 0.10 * pulse) * 255).toString(16).padStart(2,'0');
                 packetFeat.setStyle([
                     new ol.style.Style({ image: new ol.style.Circle({
                         radius: 11 + 4 * pulse,
-                        fill: new ol.style.Fill({ color: 'rgba(255,210,0,' + (0.15 + 0.10 * pulse) + ')' })
+                        fill: new ol.style.Fill({ color: segColor + '33' })
                     })}),
                     new ol.style.Style({ image: new ol.style.Circle({
                         radius: 6,
-                        fill: new ol.style.Fill({ color: '#ffd700' }),
+                        fill: new ol.style.Fill({ color: segColor }),
                         stroke: new ol.style.Stroke({ color: dark ? '#fff' : '#333', width: 2 })
                     })})
                 ]);
@@ -622,14 +665,15 @@
             } else {
                 var pd = segIdx === segments.length - 1 ? dstPause : pauseDuration;
                 var flashT = Math.min(elapsed / pd, 1);
+                var pauseColor = segments[segIdx].color;
                 packetFeat.setStyle([
                     new ol.style.Style({ image: new ol.style.Circle({
                         radius: 8 + 14 * flashT,
-                        fill: new ol.style.Fill({ color: 'rgba(255,210,0,' + Math.max(0, 0.55 * (1 - flashT)) + ')' })
+                        fill: new ol.style.Fill({ color: pauseColor + Math.round(Math.max(0, 0.55 * (1 - flashT)) * 255).toString(16).padStart(2,'0') })
                     })}),
                     new ol.style.Style({ image: new ol.style.Circle({
                         radius: 6,
-                        fill: new ol.style.Fill({ color: '#ffd700' }),
+                        fill: new ol.style.Fill({ color: pauseColor }),
                         stroke: new ol.style.Stroke({ color: dark ? '#fff' : '#333', width: 2 })
                     })})
                 ]);

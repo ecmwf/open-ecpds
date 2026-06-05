@@ -180,6 +180,33 @@ public interface MasterInterface extends ProviderInterface {
     String getIncomingUserHash(String incomingUser) throws RemoteException;
 
     /**
+     * Check whether an IncomingUser is configured for anonymous (password-free) access.
+     *
+     * @param incomingUser
+     *            the incoming user name
+     *
+     * @return true if the user exists and has USER_PORTAL_ANONYMOUS set to true
+     *
+     * @throws RemoteException
+     *             the remote exception
+     */
+    boolean isAnonymousIncomingUser(String incomingUser) throws RemoteException;
+
+    /**
+     * Get the current number of active connections for the specified incoming user across all data movers and
+     * protocols.
+     *
+     * @param incomingUser
+     *            the incoming user name
+     *
+     * @return the active connection count
+     *
+     * @throws RemoteException
+     *             the remote exception
+     */
+    int getIncomingConnectionCount(String incomingUser) throws RemoteException;
+
+    /**
      * Return a hash of the specified incoming user (the string is in the form userid:password).
      *
      * @param incomingUser

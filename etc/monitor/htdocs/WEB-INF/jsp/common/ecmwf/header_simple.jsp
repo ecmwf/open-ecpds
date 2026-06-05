@@ -25,19 +25,18 @@
 
         <span class="header_nav_divider"></span>
 
-        <span class="header_simple_title flex-grow-1 text-truncate">
+        <span class="header_simple_title flex-grow-1 text-truncate d-none d-sm-inline">
             <tiles:getAsString name="title" />
         </span>
 
-        <div class="d-flex align-items-center gap-2 flex-shrink-0">
+        <div class="d-flex align-items-center gap-2 flex-shrink-0 ms-auto">
             <tiles:insert name="submenu_top" />
 
             <logic:present name="<%=ecmwf.web.model.users.User.SESSION_KEY%>">
                 <div class="dropdown">
                     <a class="dropdown-toggle text-white text-decoration-none fw-semibold small"
                        href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="bi bi-person-circle me-1"></i><auth:info property="commonName" />
-                        <span class="text-white-50">(<auth:info property="uid" />)</span>
+                        <i class="bi bi-person-circle me-1"></i><span class="d-none d-sm-inline"><auth:info property="commonName" /><span class="text-white-50"> (<auth:info property="uid" />)</span></span><span class="d-inline d-sm-none"><auth:info property="uid" /></span>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end shadow">
                         <li><a class="dropdown-item" href="/do/logout">
