@@ -193,7 +193,7 @@
                       <i class="bi bi-chevron-right me-1" style="font-size:0.7rem;transition:transform .2s;" id="httpsParallelChevron"></i>Byte-range &amp; parallel downloads
                     </a>
                     <div class="collapse" id="httpsParallel">
-                      <p class="text-muted mt-1 mb-1" style="font-size:0.72rem;"><i class="bi bi-lightning-charge-fill me-1 text-warning"></i>The server honours HTTP <code>Range</code> requests — tools that split a download into parallel chunks will work and can significantly improve throughput.</p>
+                      <p class="text-muted mt-1 mb-1" style="font-size:0.72rem;"><i class="bi bi-lightning-charge-fill me-1 text-warning"></i>The server honours HTTP <code>Range</code> requests — tools that split a download into parallel chunks will work and can significantly improve throughput, with each chunk using a separate session that counts toward the allowed concurrent connection limit.</p>
                       <div id="connectHttpsParallel"></div>
                     </div>
                   </div>
@@ -325,8 +325,8 @@
     copyBlock(fmtEx, ['# List as CSV', 'curl \\', '  -H "Accept: text/csv" \\', '  ' + homeBase + 'DIR/']);
     copyBlock(fmtEx, ['# List as plain text, one name per line', 'curl \\', '  -H "Accept: text/plain" \\', '  ' + homeBase + 'DIR/'], true);
     var parEx = document.getElementById('connectHttpsParallel');
-    copyBlock(parEx, ['# aria2c — 8 parallel connections (fastest for large files)', 'aria2c -x8 -s8 \\', '  ' + homeBase + 'DIR/FILE']);
-    copyBlock(parEx, ['# axel — 8 parallel connections', 'axel -n8 ' + homeBase + 'DIR/FILE']);
+    copyBlock(parEx, ['# aria2c — 4 parallel connections (fastest for large files)', 'aria2c -x4 -s4 \\', '  ' + homeBase + 'DIR/FILE']);
+    copyBlock(parEx, ['# axel — 4 parallel connections', 'axel -n4 ' + homeBase + 'DIR/FILE']);
     copyBlock(parEx, ['# curl byte-range resume / partial download', 'curl -C - \\', '  ' + homeBase + 'DIR/FILE -o FILE'], true);
     var s3AnonSection = document.getElementById('connectS3Anon');
     if (s3AnonSection) {
@@ -360,7 +360,7 @@
         '<div class="mb-1"><span class="text-muted">Host: </span><code id="connectSftpHost"></code></div>' +
         '<div class="mb-1"><span class="text-muted">Port: </span><code>' + sftpPort + '</code></div>' +
         '<div class="mb-1"><span class="text-muted">Username: </span><code>${userid}</code></div>' +
-        '<p class="text-muted mb-0">Password: any valid email address (e.g. <code>user@example.com</code>).</p>';
+        '<div class="mb-0"><span class="text-muted">Password: </span>any valid email address (e.g. <code>user@example.com</code>)</div>';
       document.getElementById('connectSftpHost').textContent = sftpHost;
     }
   }());

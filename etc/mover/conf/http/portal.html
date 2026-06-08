@@ -209,7 +209,7 @@
                       <i class="bi bi-chevron-right me-1" style="font-size:0.7rem;transition:transform .2s;" id="httpsParallelChevron"></i>Byte-range &amp; parallel downloads
                     </a>
                     <div class="collapse" id="httpsParallel">
-                      <p class="text-muted mt-1 mb-1" style="font-size:0.72rem;"><i class="bi bi-lightning-charge-fill me-1 text-warning"></i>The server honours HTTP <code>Range</code> requests — tools that split a download into parallel chunks will work and can significantly improve throughput.</p>
+                      <p class="text-muted mt-1 mb-1" style="font-size:0.72rem;"><i class="bi bi-lightning-charge-fill me-1 text-warning"></i>The server honours HTTP <code>Range</code> requests — tools that split a download into parallel chunks will work and can significantly improve throughput, with each chunk using a separate session that counts toward your permitted concurrent connection limit.</p>
                       <div id="connectHttpsParallel"></div>
                     </div>
                   </div>
@@ -241,8 +241,9 @@
                 <div class="card-body small">
                   <p class="text-muted mb-2">Connect with any FTP client. Passive mode recommended.</p>
                   <div class="mb-1"><span class="text-muted">Host: </span><code id="connectFtpHost"></code></div>
-                  <div class="mb-2"><span class="text-muted">Port: </span><code id="connectFtpPort"></code></div>
-                  <div class="mb-0"><span class="text-muted">Username: </span><code>${userid}</code></div>
+                  <div class="mb-1"><span class="text-muted">Port: </span><code id="connectFtpPort"></code></div>
+                  <div class="mb-1"><span class="text-muted">Username: </span><code>${userid}</code></div>
+                  <div class="mb-0"><span class="text-muted">Password: </span>your data portal password</div>
                 </div>
               </div>
             </div>
@@ -341,8 +342,8 @@
     copyBlock(fmtEx, ['# List as CSV', 'curl -u ${userid}:PASS \\', '  -H "Accept: text/csv" \\', '  ' + base + 'data/list/DIR/']);
     copyBlock(fmtEx, ['# List as plain text (one name per line)', 'curl -u ${userid}:PASS \\', '  -H "Accept: text/plain" \\', '  ' + base + 'data/list/DIR/'], true);
     var parEx = document.getElementById('connectHttpsParallel');
-    copyBlock(parEx, ['# aria2c — 8 parallel connections (fastest for large files)', 'aria2c -x8 -s8 --http-auth-challenge=true \\', '  --http-user=${userid} --http-passwd=PASS \\', '  ' + base + 'data/file/DIR/FILE']);
-    copyBlock(parEx, ['# axel — 8 parallel connections', 'axel -n8 --header="Authorization: Basic $(echo -n ${userid}:PASS | base64)" \\', '  ' + base + 'data/file/DIR/FILE']);
+    copyBlock(parEx, ['# aria2c — 4 parallel connections (fastest for large files)', 'aria2c -x4 -s4 --http-auth-challenge=true \\', '  --http-user=${userid} --http-passwd=PASS \\', '  ' + base + 'data/file/DIR/FILE']);
+    copyBlock(parEx, ['# axel — 4 parallel connections', 'axel -n4 --header="Authorization: Basic $(echo -n ${userid}:PASS | base64)" \\', '  ' + base + 'data/file/DIR/FILE']);
     copyBlock(parEx, ['# curl byte-range resume / partial download', 'curl -u ${userid}:PASS -C - \\', '  ' + base + 'data/file/DIR/FILE -o FILE'], true);
     var s3Cfg = document.getElementById('connectS3Config');
     if (s3Cfg) {
@@ -366,8 +367,9 @@
       sftpBody.innerHTML =
         '<p class="text-muted mb-2">Connect using any SFTP/SCP client over SSH.</p>' +
         '<div class="mb-1"><span class="text-muted">Host: </span><code id="connectSftpHost"></code></div>' +
-        '<div class="mb-2"><span class="text-muted">Port: </span><code>' + sftpPort + '</code></div>' +
-        '<p class="text-muted mb-0">Use your portal username and password.</p>';
+        '<div class="mb-1"><span class="text-muted">Port: </span><code>' + sftpPort + '</code></div>' +
+        '<div class="mb-1"><span class="text-muted">Username: </span><code>${userid}</code></div>' +
+        '<div class="mb-0"><span class="text-muted">Password: </span>your data portal password</div>';
       document.getElementById('connectSftpHost').textContent = sftpHost;
     }
   }());
