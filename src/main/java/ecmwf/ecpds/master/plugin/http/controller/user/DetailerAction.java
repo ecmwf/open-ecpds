@@ -72,20 +72,16 @@ public class DetailerAction extends PDSAction {
         final var resource = ResourceHome.findByURI(url);
         final Collection<?> categories = resource.getCategories();
         final Collection<User> users = new ArrayList<>();
-        final Collection<User> usersNo = new ArrayList<>();
         final Iterator<User> j = UserHome.findAll().iterator();
         while (j.hasNext()) {
             final var u = j.next();
             if (u.hasAccess(resource)) {
                 users.add(u);
-            } else {
-                usersNo.add(u);
             }
         }
         request.setAttribute("resource", resource);
         request.setAttribute("categories", categories);
         request.setAttribute("users", users);
-        request.setAttribute("usersNo", usersNo);
         request.setAttribute("user", user);
         return mapping.findForward("success");
     }

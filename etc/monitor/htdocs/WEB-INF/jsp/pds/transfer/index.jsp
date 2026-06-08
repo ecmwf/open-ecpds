@@ -15,7 +15,7 @@
     <div class="col-12">
         <div class="home-section-card">
             <div class="home-section-hdr" style="background:#e9f7ef;">
-                <i class="bi bi-send text-success"></i> Transmission Options
+                <i class="bi bi-send text-success"></i> Transmission
             </div>
             <ul class="home-menu">
                 <auth:link basePathKey="transfer.basepath" href="/data" wrappingTags="li"><i class="bi bi-arrow-left-right"></i>Data Transfers</auth:link>

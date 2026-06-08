@@ -1074,6 +1074,20 @@ A.menusubitem:visited {
     content: none;
 }
 
+/* Restore distinct colors for Bootstrap alert variants (overridden by the bare .alert rule above) */
+.alert.alert-info {
+    background-color: #e8f4fd;
+    border-color: #b8dffc;
+    border-left-color: #0d6efd;
+    color: #084298;
+}
+.alert.alert-warning {
+    background-color: #fff8e6;
+    border-color: #ffe49e;
+    border-left-color: #ffc107;
+    color: #664d03;
+}
+
 /* .closebtn: back-navigation × used inside warning alerts */
 .closebtn {
     float: right;
@@ -1601,7 +1615,7 @@ img[src*="/assets/icons/"] {
     border-left-color: #0d6efd;
 }
 .help-row:last-child { border-bottom: none; }
-.help-row code { font-size: 0.71rem; color: #0d6efd; white-space: nowrap; min-width: 220px; }
+.help-row code { font-size: 0.71rem; color: #0d6efd; word-break: break-all; }
 .help-type {
     font-size: 0.6rem !important; padding: 0.1em 0.4em !important;
     border-radius: 3px; white-space: nowrap; flex-shrink: 0;
@@ -1697,7 +1711,7 @@ a.dest-type-link:hover .bi-globe {
 
 /* ---- Section index / home page cards ---- */
 .home-section-card { border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.06); flex: 1; }
-.home-section-hdr  { padding: 0.6rem 1rem; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; border-bottom: 1px solid #dee2e6; }
+.home-section-hdr  { padding: 0.6rem 1rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; border-bottom: 1px solid #dee2e6; }
 .home-section-hdr-link { color: inherit; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; }
 .home-section-hdr-link:hover { text-decoration: underline; color: inherit; }
 .home-menu         { list-style: none; margin: 0; padding: 0; }
@@ -1900,6 +1914,18 @@ a.dest-type-link:hover .bi-globe {
 }
 [data-bs-theme=dark] .alert::before { color: #ffc107; }
 [data-bs-theme=dark] .closebtn { color: #ffd966; }
+[data-bs-theme=dark] .alert.alert-warning {
+    background-color: #2a1f00;
+    border-color: #6b5000;
+    border-left-color: #ffc107;
+    color: #ffd966;
+}
+[data-bs-theme=dark] .alert.alert-info {
+    background-color: #001830;
+    border-color: #083d73;
+    border-left-color: #0d6efd;
+    color: #7bb6fa;
+}
 [data-bs-theme=dark] .info {
     background-color: #001830;
     border-color: #083d73;
@@ -1991,12 +2017,47 @@ a.dest-type-link:hover .bi-globe {
     box-shadow: none !important;
 }
 
+/* assoc-chip / assoc-card — shared styles for user/category/resource/policy/incoming/detailer pages */
+.assoc-card .card-header { display:flex; align-items:center; gap:.4rem; padding:.5rem .75rem; background:var(--bs-tertiary-bg); }
+.assoc-card .card-header .ms-auto { margin-left:auto !important; }
+.assoc-chip { display:inline-flex; align-items:center; gap:.25rem; background:var(--bs-secondary-bg); border-radius:1rem; padding:.2rem .6rem; font-size:.8rem; margin:.15rem; }
+.assoc-chip a { color:var(--bs-secondary-color); text-decoration:none; line-height:1; }
+.assoc-chip a:hover { color:#dc3545; }
+.assoc-chooser-item { color:var(--bs-body-color); font-size:.82rem; transition:background .15s; }
+.assoc-chooser-item:hover { background:var(--bs-secondary-bg); }
+.assoc-empty { display:flex; align-items:center; gap:.35rem; color:#856404; background:#fff3cd; border:1px solid #ffc107; border-radius:.25rem; font-size:.8rem; padding:.3rem .5rem; margin:0; }
+
+/* Accordion help button — floated ? icon at the right edge of an accordion header */
+.acc-help-btn {
+    position: absolute; top: 50%; right: 3rem;
+    transform: translateY(-50%);
+    color: var(--bs-secondary-color); font-size: 0.9rem; line-height: 1;
+    cursor: pointer; z-index: 10;
+    transition: color 0.15s;
+}
+.acc-help-btn:hover { color: var(--bs-primary); }
+.acc-help-btn.acc-help-active { color: var(--bs-primary); }
+
+/* Ace editor panel wrapper */
+.ace-panel {
+    max-width: 100%;
+    overflow: hidden;
+    border: solid 1px var(--bs-border-color);
+    border-radius: 4px;
+}
+.ace-clip {
+    border: solid 1px var(--bs-border-color);
+    border-radius: 4px;
+    position: relative;
+}
+
 /* assoc-chip / assoc-card dark mode (user, category, resource, policy, incoming pages) */
 [data-bs-theme=dark] .assoc-card .card-header { background: var(--bs-tertiary-bg); }
 [data-bs-theme=dark] .assoc-chip { background: var(--bs-secondary-bg); }
 [data-bs-theme=dark] .assoc-chip a { color: var(--bs-secondary-color); }
 [data-bs-theme=dark] .assoc-chooser-item { color: var(--bs-body-color); }
 [data-bs-theme=dark] .assoc-chooser-item:hover { background: var(--bs-secondary-bg); }
+[data-bs-theme=dark] .assoc-empty { color:#ffd966; background:#332701; border-color:#6b5000; }
 
 /* jQuery UI slider dark mode overrides */
 html[data-bs-theme=dark] .ui-widget-content {

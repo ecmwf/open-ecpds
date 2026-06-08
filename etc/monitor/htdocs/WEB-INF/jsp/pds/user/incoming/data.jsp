@@ -6,7 +6,6 @@
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content"%>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
-<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 <script>window._validIso=new Set(["AC","AD","AE","AF","AG","AI","AL","AM","AO","AQ","AR","AS","AT","AU","AW","AX","AZ","BA","BB","BD","BE","BF","BG","BH","BI","BJ","BL","BM","BN","BO","BQ","BR","BS","BT","BV","BW","BY","BZ","CA","CC","CD","CF","CG","CH","CI","CK","CL","CM","CN","CO","CP","CR","CU","CV","CW","CX","CY","CZ","DE","DG","DJ","DK","DM","DO","DZ","EA","EE","EG","EH","ER","ES","ET","EU","FI","FJ","FK","FM","FO","FR","GA","GB","GD","GE","GF","GG","GH","GI","GL","GM","GN","GP","GQ","GR","GS","GT","GU","GW","GY","HK","HM","HN","HR","HT","HU","IC","ID","IE","IL","IM","IN","IO","IQ","IR","IS","IT","JE","JM","JO","JP","KE","KG","KH","KI","KM","KN","KP","KR","KW","KY","KZ","LA","LB","LC","LI","LK","LR","LS","LT","LU","LV","LY","MA","MC","MD","ME","MF","MG","MH","MK","ML","MM","MN","MO","MP","MQ","MR","MS","MT","MU","MV","MW","MX","MY","MZ","NA","NC","NE","NF","NG","NI","NL","NO","NP","NR","NU","NZ","OM","PA","PE","PF","PG","PH","PK","PL","PM","PN","PR","PS","PT","PW","PY","QA","RE","RO","RS","RU","RW","SA","SB","SC","SD","SE","SG","SH","SI","SJ","SK","SL","SM","SN","SO","SR","SS","ST","SV","SX","SY","SZ","TA","TC","TD","TF","TG","TH","TJ","TK","TL","TM","TN","TO","TR","TT","TV","TW","TZ","UA","UG","UM","UN","US","UY","UZ","VA","VC","VE","VG","VI","VN","VU","WF","WS","XK","YE","YT","ZA","ZM","ZW"]);</script>
 
 <tiles:importAttribute name="isDelete" ignore="true" />
@@ -15,28 +14,7 @@
 </c:if>
 <c:if test="${empty isDelete}">
 
-	<style>
-.ace-panel {
-	max-width: 100%;
-	overflow: hidden;
-	border: solid 1px lightgray;
-	border-radius: 4px;
-	margin-top: 8px;
-	margin-bottom: 4px;
-}
-.assoc-card .card-header { display:flex; align-items:center; gap:.4rem; padding:.5rem .75rem; background:var(--bs-tertiary-bg); font-size:.85rem; }
-.assoc-chip { display:inline-flex; align-items:center; gap:.25rem; background:var(--bs-secondary-bg); border-radius:1rem; padding:.2rem .6rem; font-size:.8rem; margin:.15rem; }
-.acc-help-btn {
-    position: absolute; top: 50%; right: 3rem;
-    transform: translateY(-50%);
-    color: var(--bs-secondary-color); font-size: 0.9rem; line-height: 1;
-    cursor: pointer; z-index: 10;
-    transition: color 0.15s;
-}
-.acc-help-btn:hover { color: var(--bs-primary); }
-.acc-help-btn.acc-help-active { color: var(--bs-primary); }
-</style>
-
+	
 	<div class="row g-3">
 		<div class="col-lg-6">
 			<div class="card">
@@ -132,11 +110,24 @@
 			        <strong>Destinations</strong>
 			      </div>
 			      <div class="card-body p-2">
+			        <%-- Check whether any associated policy provides at least one destination --%>
+			        <c:set var="policyHasDestinations" value="false"/>
+			        <c:forEach var="p" items="${incoming.associatedIncomingPolicies}">
+			          <c:if test="${not empty p.associatedDestinations}">
+			            <c:set var="policyHasDestinations" value="true"/>
+			          </c:if>
+			        </c:forEach>
 			        <c:choose>
-			          <c:when test="${empty incoming.associatedDestinations}">
+			          <c:when test="${empty incoming.associatedDestinations and not policyHasDestinations}">
 			            <div class="alert alert-warning d-flex align-items-start gap-2 py-2 px-3 mb-0 small" role="alert">
 			              <i class="bi bi-exclamation-triangle-fill flex-shrink-0 mt-1"></i>
-			              <span><strong>No destinations assigned.</strong> All login attempts for this user will be denied until at least one destination is added.</span>
+			              <span><strong>No destinations assigned.</strong> All login attempts for this user will be denied until at least one destination is added here or via an associated Data Policy.</span>
+			            </div>
+			          </c:when>
+			          <c:when test="${empty incoming.associatedDestinations and policyHasDestinations}">
+			            <div class="alert alert-info d-flex align-items-start gap-2 py-2 px-3 mb-0 small" role="alert">
+			              <i class="bi bi-info-circle-fill flex-shrink-0 mt-1"></i>
+			              <span>No destinations assigned directly, but access is granted through the associated Data <c:choose><c:when test="${fn:length(incoming.associatedIncomingPolicies) gt 1}">Policies</c:when><c:otherwise>Policy</c:otherwise></c:choose>.</span>
 			            </div>
 			          </c:when>
 			          <c:otherwise>

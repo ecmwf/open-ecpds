@@ -358,9 +358,9 @@ th {
             </a>
             <button type="button"
                     class="btn btn-sm btn-outline-secondary"
-                    title="Copy CC email addresses to clipboard"
+                    title="Copy BCC email addresses to clipboard"
                     onclick="copyToClipboard('<c:out value="${emails}" />')">
-                <i class="bi bi-clipboard me-1"></i>Copy CC Emails
+                <i class="bi bi-clipboard me-1"></i>Copy BCC Emails
             </button>
         </div>
     </div>

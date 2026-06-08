@@ -71,10 +71,13 @@
         <div class="input-group input-group-sm flex-nowrap" style="width:auto" title="Page size">
             <span class="input-group-text px-2"><i class="bi bi-list-ol"></i></span>
             <select id="clHostPageLen" class="form-select form-select-sm" style="width:auto">
+                <option value="2">2</option>
                 <option value="5">5</option>
                 <option value="10">10</option>
                 <option value="25">25</option>
                 <option value="50">50</option>
+                <option value="100">100</option>
+                <option value="250">250</option>
             </select>
         </div>
     </div>
@@ -137,7 +140,7 @@
 
 <script>
 $(document).ready(function() {
-    var _len = (function() { try { var v = parseInt(localStorage.getItem('clHostPageLen'), 10); return [5,10,25,50].indexOf(v) >= 0 ? v : 10; } catch(e) { return 10; } })();
+    var _len = (function() { try { var v = parseInt(localStorage.getItem('clHostPageLen'), 10); return [2,5,10,25,50,100,250].indexOf(v) >= 0 ? v : 10; } catch(e) { return 10; } })();
     $('#clHostPageLen').val(_len);
     var table = $('#changelogTable').DataTable({
         order:      [[0, 'desc']],

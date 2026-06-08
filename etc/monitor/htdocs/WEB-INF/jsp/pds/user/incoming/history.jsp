@@ -10,7 +10,7 @@
     <div class="card-header d-flex align-items-center gap-2 flex-wrap" style="background:var(--bs-secondary-bg)">
         <i class="bi bi-clock-history text-primary"></i>
         <span class="fw-semibold">Data Events Log</span>
-        <div class="ms-auto d-flex align-items-center gap-2 flex-nowrap">
+        <div class="ms-auto d-flex align-items-center gap-2 flex-wrap">
             <div class="input-group input-group-sm flex-nowrap">
                 <span class="input-group-text"><i class="bi bi-search"></i></span>
                 <input id="incomingHistorySearch" class="form-control form-control-sm" name="search" type="text"

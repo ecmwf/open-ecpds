@@ -27,12 +27,12 @@
             <span class="text-muted small"><i class="bi bi-clock me-1"></i>${file.lastModificationDate}</span>
         </span>
     </div>
-    <div class="card-body p-0">
+    <div class="card-body p-0" style="min-width:0;overflow-x:auto;">
         <c:if test="${file.contentType == 'text/plain'}">
             <pre class="m-0 p-3" style="white-space:pre-wrap;word-break:break-word;font-size:0.85rem;background:var(--bs-tertiary-bg);border-radius:0 0 0.375rem 0.375rem">${file.stringContent}</pre>
         </c:if>
         <c:if test="${file.contentType != 'text/plain'}">
-            <div class="p-3">
+            <div class="p-3" style="overflow-x:auto;">
                 <content:content name="file" outputContentType="text/html" thumbnail="false" embedded="true"/>
             </div>
         </c:if>

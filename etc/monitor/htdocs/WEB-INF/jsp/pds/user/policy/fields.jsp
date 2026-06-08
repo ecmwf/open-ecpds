@@ -9,25 +9,6 @@
 
 <tiles:useAttribute name="isInsert" classname="java.lang.String" />
 
-<style>
-.ace-panel {
-	max-width: 100%;
-	overflow: hidden;
-	border: solid 1px lightgray;
-	border-radius: 4px;
-	margin-top: 8px;
-	margin-bottom: 4px;
-}
-.acc-help-btn {
-    position: absolute; top: 50%; right: 3rem;
-    transform: translateY(-50%);
-    color: var(--bs-secondary-color); font-size: 0.9rem; line-height: 1;
-    cursor: pointer; z-index: 10;
-    transition: color 0.15s;
-}
-.acc-help-btn:hover { color: var(--bs-primary); }
-.acc-help-btn.acc-help-active { color: var(--bs-primary); }
-</style>
 
 <script>
 function validate(path, message) {
@@ -82,16 +63,6 @@ function validate(path, message) {
 
 <c:if test="${isInsert != 'true'}">
 <div class="col-lg-6">
-<style>
-.assoc-card .card-header { display:flex; align-items:center; gap:.4rem; padding:.5rem .75rem; background:var(--bs-tertiary-bg); font-size:.85rem; }
-.assoc-card .card-header .ms-auto { margin-left:auto !important; }
-.assoc-chip { display:inline-flex; align-items:center; gap:.25rem; background:var(--bs-secondary-bg); border-radius:1rem; padding:.2rem .6rem; font-size:.8rem; margin:.15rem; }
-.assoc-chip a { color:var(--bs-secondary-color); text-decoration:none; line-height:1; }
-.assoc-chip a:hover { color:#dc3545; }
-.assoc-chooser-item { color:var(--bs-body-color); font-size:.82rem; transition:background .15s; }
-.assoc-chooser-item:hover { background:var(--bs-secondary-bg); }
-.assoc-empty { display:flex; align-items:center; gap:.35rem; color:#856404; background:#fff3cd; border:1px solid #ffc107; border-radius:.25rem; font-size:.8rem; padding:.3rem .5rem; margin:0; }
-</style>
 <div class="card assoc-card">
   <div class="card-header">
     <i class="bi bi-geo-alt text-secondary"></i>
@@ -104,9 +75,9 @@ function validate(path, message) {
   <div class="card-body p-2">
     <c:choose>
       <c:when test="${empty incomingPolicyActionForm.destinations}">
-        <div class="alert alert-warning d-flex align-items-start gap-2 py-2 px-3 mb-2 small" role="alert">
-          <i class="bi bi-exclamation-triangle-fill flex-shrink-0 mt-1"></i>
-          <span><strong>No destinations assigned.</strong> All login attempts for users under this policy will be denied until at least one destination is added.</span>
+        <div class="alert alert-info d-flex align-items-start gap-2 py-2 px-3 mb-2 small" role="alert">
+          <i class="bi bi-info-circle-fill flex-shrink-0 mt-1"></i>
+          <span>No destinations assigned to this policy. Login attempts will still succeed if each associated Data User has its own destinations configured directly &mdash; but users who rely solely on this policy for destination access will be denied.</span>
         </div>
       </c:when>
       <c:otherwise>

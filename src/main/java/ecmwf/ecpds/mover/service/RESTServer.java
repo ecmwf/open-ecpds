@@ -1723,11 +1723,14 @@ public final class RESTServer {
         final String sizeRaw = isDir ? null : element.getSize().trim();
         final String sizeDisplay = isDir ? "-" : Format.formatSize(Long.parseLong(sizeRaw));
         final String sizeOrder = isDir ? "-1" : sizeRaw;
-        builder.append("<tr>").append("<td><a href=\"").append(url).append("\">").append(escapeHtml(name)).append(dir)
-                .append("</a></td>").append("<td>").append(Format.formatTime("dd-MM-yyyy HH:mm", element.getTime()))
-                .append("</td>").append("<td data-order=\"").append(sizeOrder).append("\">").append(sizeDisplay)
-                .append("</td>").append("<td>").append(isDir ? "-" : escapeHtml(element.getComment().trim()))
-                .append("</td>").append("</tr>\n");
+        final var icon = isDir ? "<i class=\"bi bi-folder-fill text-warning me-1\" style=\"font-size:0.85rem;\"></i>"
+                : "<i class=\"bi bi-file-earmark text-secondary me-1\" style=\"font-size:0.85rem;\"></i>";
+        builder.append("<tr>").append("<td><a href=\"").append(url).append("\">").append(icon).append(escapeHtml(name))
+                .append(dir).append("</a></td>").append("<td>")
+                .append(Format.formatTime("dd-MM-yyyy HH:mm", element.getTime())).append("</td>")
+                .append("<td data-order=\"").append(sizeOrder).append("\">").append(sizeDisplay).append("</td>")
+                .append("<td>").append(isDir ? "-" : escapeHtml(element.getComment().trim())).append("</td>")
+                .append("</tr>\n");
     }
 
     /**

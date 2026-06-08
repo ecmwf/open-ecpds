@@ -125,6 +125,11 @@
                 style="width:28px;height:28px;">
           <i id="themeIcon" class="bi bi-moon-fill" style="font-size:0.8rem;"></i>
         </button>
+        <button class="btn btn-sm btn-outline-light p-1 lh-1" style="width:28px;height:28px;"
+                data-bs-toggle="offcanvas" data-bs-target="#portalHelpOffcanvas"
+                title="Interface help">
+          <i class="bi bi-question-circle" style="font-size:0.85rem;"></i>
+        </button>
       </div>
     </div>
     <div class="w-100 location_simple" id="locationBar" data-base="${base}">
@@ -642,5 +647,92 @@
       if (ic) ic.className = t === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-fill';
     }());
   </script>
+
+  <!-- Portal interface help offcanvas -->
+  <div class="offcanvas offcanvas-end" tabindex="-1" id="portalHelpOffcanvas" aria-labelledby="portalHelpOffcanvasLabel"
+       style="width:360px;max-width:95vw;">
+    <div class="offcanvas-header border-bottom">
+      <h6 class="offcanvas-title fw-semibold" id="portalHelpOffcanvasLabel">
+        <i class="bi bi-question-circle me-2 text-primary"></i>Interface Help
+      </h6>
+      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body small" style="font-size:0.82rem;">
+
+      <p class="text-muted mb-3">A quick reference for the Data Portal interface.</p>
+
+      <!-- Theme toggle -->
+      <div class="mb-3">
+        <div class="fw-semibold mb-1"><i class="bi bi-circle-half me-1 text-secondary"></i>Light / Dark theme</div>
+        <p class="text-muted mb-0">Click the <i class="bi bi-moon-fill"></i>&nbsp;/&nbsp;<i class="bi bi-sun-fill"></i> button in the top-right corner to switch between light and dark mode. Your preference is remembered across sessions.</p>
+      </div>
+
+      <!-- Breadcrumb navigation -->
+      <div class="mb-3">
+        <div class="fw-semibold mb-1"><i class="bi bi-signpost-split me-1 text-secondary"></i>Breadcrumb navigation</div>
+        <p class="text-muted mb-0">The bar below the header shows your current location (e.g. <em>Home &rsaquo; folder &rsaquo; subfolder</em>). Click any segment to jump directly to that level. The <i class="bi bi-arrow-up-circle"></i> button on the right goes up one level.</p>
+      </div>
+
+      <!-- File browser -->
+      <div class="mb-3">
+        <div class="fw-semibold mb-1"><i class="bi bi-folder2-open me-1 text-primary"></i>Browsing files</div>
+        <p class="text-muted mb-0">Click a <i class="bi bi-folder-fill text-warning"></i> folder to navigate into it. Click a <i class="bi bi-file-earmark"></i> file to download it directly to your browser.</p>
+      </div>
+
+      <!-- Search -->
+      <div class="mb-3">
+        <div class="fw-semibold mb-1"><i class="bi bi-search me-1 text-secondary"></i>Search</div>
+        <p class="text-muted mb-0">Type in the <em>Search files&hellip;</em> box to filter the current directory listing in real time. The filter is case-insensitive and matches anywhere in the file name.</p>
+      </div>
+
+      <!-- Page size -->
+      <div class="mb-3">
+        <div class="fw-semibold mb-1"><i class="bi bi-list-ol me-1 text-secondary"></i>Page size</div>
+        <p class="text-muted mb-0">The <i class="bi bi-list-ol"></i> selector next to the search box controls how many entries are shown per page. Use the pagination links at the bottom of the table to move between pages.</p>
+      </div>
+
+      <!-- Column visibility -->
+      <div class="mb-3">
+        <div class="fw-semibold mb-1"><i class="bi bi-layout-three-columns me-1 text-secondary"></i>Column visibility</div>
+        <p class="text-muted mb-0">The <i class="bi bi-layout-three-columns"></i> dropdown lets you choose which columns are shown:
+          <br>&bull; <strong>Auto</strong> &mdash; hides columns automatically on narrow screens.
+          <br>&bull; <strong>All</strong> &mdash; always shows every column.
+          <br>&bull; <strong>Compact</strong> &mdash; hides the ID column.
+          <br>&bull; <strong>Custom</strong> &mdash; pick individual columns with checkboxes.
+        </p>
+      </div>
+
+      <!-- Sorting -->
+      <div class="mb-3">
+        <div class="fw-semibold mb-1"><i class="bi bi-arrow-down-up me-1 text-secondary"></i>Sorting</div>
+        <p class="text-muted mb-0">Click any column header to sort the listing. Click again to reverse the order. A third click removes the sort.</p>
+      </div>
+
+      <!-- Session badge -->
+      <div class="mb-3">
+        <div class="fw-semibold mb-1"><i class="bi bi-plug me-1 text-secondary"></i>Session badge</div>
+        <p class="text-muted mb-0">The <i class="bi bi-plug"></i> badge next to the <em>Access Guide</em> button shows the current number of active protocol connections (HTTPS, S3, FTP, SFTP/SCP) vs. the configured maximum. It turns yellow when capacity is nearly reached and red when the limit is hit &mdash; new connections will be refused until an existing one closes. Hover over the badge for more details.</p>
+      </div>
+
+      <!-- Access Guide -->
+      <div class="mb-3">
+        <div class="fw-semibold mb-1"><i class="bi bi-book me-1 text-primary"></i>Access Guide</div>
+        <p class="text-muted mb-0">Click the <strong>Access Guide</strong> button to open connection instructions for all available protocols (HTTPS, S3, FTP, SFTP/SCP). Each card provides ready-to-use commands with a <i class="bi bi-clipboard"></i> copy button. Expand the <em>Structured listing formats</em> and <em>Byte-range &amp; parallel downloads</em> sections for advanced usage.</p>
+      </div>
+
+      <!-- Notice banners -->
+      <div class="mb-3">
+        <div class="fw-semibold mb-1"><i class="bi bi-info-circle me-1 text-secondary"></i>Notice banners</div>
+        <p class="text-muted mb-0">Blue information banners and orange warning banners may appear above or below the file listing. These are messages set by the system administrator &mdash; read them before downloading.</p>
+      </div>
+
+      <!-- About -->
+      <div class="mb-0">
+        <div class="fw-semibold mb-1"><i class="bi bi-info-circle me-1 text-secondary"></i>About</div>
+        <p class="text-muted mb-0">Click the <i class="bi bi-info-circle"></i> icon at the right end of the breadcrumb bar to open the About panel for version and build information.</p>
+      </div>
+
+    </div>
+  </div>
 </body>
 </html>

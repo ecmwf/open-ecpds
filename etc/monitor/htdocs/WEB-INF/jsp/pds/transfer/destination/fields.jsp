@@ -81,20 +81,6 @@
     max-height: clamp(180px, 40vh, 380px);
     overflow-y: auto;
 }
-.acc-help-btn {
-    position: absolute; top: 50%; right: 3rem;
-    transform: translateY(-50%);
-    color: var(--bs-secondary-color); font-size: 0.9rem; line-height: 1;
-    cursor: pointer; z-index: 10; transition: color 0.15s;
-}
-.acc-help-btn:hover { color: var(--bs-primary); }
-.acc-help-btn.acc-help-active { color: var(--bs-primary); }
-.ace-clip {
-	border: solid 1px var(--bs-border-color);
-	border-radius: 4px;
-	position: relative;
-}
-.ace-panel {
 	max-width: 100%;
 	overflow: hidden;
 	border: solid 1px var(--bs-border-color);
@@ -587,21 +573,7 @@
 	</div>
 	<div class="col-lg-5" id="dest-assoc-col">
 <c:if test="${isInsert != 'true'}">
-<style>
-.assoc-card .card-header { display:flex; align-items:center; gap:.4rem; padding:.5rem .75rem; background:var(--bs-secondary-bg); font-size:.85rem; }
-.assoc-card .card-header .ms-auto { margin-left:auto !important; }
-.assoc-table { font-size:.82rem; }
-.assoc-table td, .assoc-table th { padding:.25rem .4rem; vertical-align:middle; }
-.assoc-table a { color:var(--bs-secondary-color); text-decoration:none; }
-.assoc-table a:hover { color:#0d6efd; }
-.assoc-chip { display:inline-flex; align-items:center; gap:.25rem; background:var(--bs-secondary-bg); border-radius:1rem; padding:.2rem .6rem; font-size:.8rem; margin:.15rem; }
-.assoc-chip a { color:var(--bs-secondary-color); text-decoration:none; line-height:1; }
-.assoc-chip a:hover { color:#dc3545; }
-.assoc-chooser-item { color:var(--bs-body-color); font-size:.82rem; transition:background .15s; }
-.assoc-chooser-item:hover { background:var(--bs-secondary-bg); }
-.assoc-empty { display:flex; align-items:center; gap:.35rem; color:#856404; background:#fff3cd; border:1px solid #ffc107; border-radius:.25rem; font-size:.8rem; padding:.3rem .5rem; margin:0; }
-</style>
-<div class="row g-3" style="max-width:480px">
+<div class="row g-3">
 
   <%-- Dissemination Hosts --%>
   <div class="col-12">

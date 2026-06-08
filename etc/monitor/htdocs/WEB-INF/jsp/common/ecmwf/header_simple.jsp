@@ -50,6 +50,13 @@
             <button id="btnTheme" class="btn btn-sm btn-outline-light p-1 lh-1" onclick="ecpdsToggleTheme()" title="Toggle light/dark theme" style="width:28px;height:28px;">
               <i id="themeIcon" class="bi bi-moon-fill" style="font-size:0.8rem;"></i>
             </button>
+            <logic:present name="<%=ecmwf.web.model.users.User.SESSION_KEY%>">
+            <button class="btn btn-sm btn-outline-light p-1 lh-1" type="button"
+                    data-bs-toggle="offcanvas" data-bs-target="#uiHelpOffcanvas" aria-controls="uiHelpOffcanvas"
+                    title="Interface help" style="width:28px;height:28px;">
+              <i class="bi bi-question-circle" style="font-size:0.85rem;"></i>
+            </button>
+            </logic:present>
         </div>
 
     </div>

@@ -13,7 +13,7 @@
 <c:if test="${empty isDelete}">
 
 	<div class="d-flex align-items-center gap-2 mb-3 px-3 py-2 rounded"
-		style="background:rgba(13,110,253,0.06); font-size:0.9rem; color:var(--bs-body-color); border-left:4px solid #0d6efd;">
+		style="background:rgba(13,110,253,0.06); color:var(--bs-body-color); border-left:4px solid #0d6efd;">
 		<i class="bi bi-collection text-primary flex-shrink-0"></i>
 		<span>Transfer Group: <strong><c:out value="${transfergroup.name}"/></strong></span>
 		<auth:if basePathKey="transfergroup.basepath" paths="/edit/insert_form">

@@ -60,10 +60,10 @@
         <c:forEach var="row" items="${ectransmodules}">
         <tr>
             <td><a href="<bean:message key="module.basepath"/>/${row.id}">${row.name}</a></td>
-            <td><code>${row.classe}</code></td>
+            <td><span class="val-code">${row.classe}</span></td>
             <td>
                 <c:choose>
-                    <c:when test="${fn:length(row.archive) gt 0}"><code>${row.archive}</code></c:when>
+                    <c:when test="${fn:length(row.archive) gt 0}"><span class="val-code">${row.archive}</span></c:when>
                     <c:otherwise><span class="text-muted fst-italic">default</span></c:otherwise>
                 </c:choose>
             </td>

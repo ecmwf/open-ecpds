@@ -13,28 +13,7 @@
 </c:if>
 <c:if test="${empty isDelete}">
 
-	<style>
-.ace-panel {
-	max-width: 100%;
-	overflow: hidden;
-	border: solid 1px lightgray;
-	border-radius: 4px;
-	margin-top: 8px;
-	margin-bottom: 4px;
-}
-.acc-help-btn {
-    position: absolute; top: 50%; right: 3rem;
-    transform: translateY(-50%);
-    color: var(--bs-secondary-color); font-size: 0.9rem; line-height: 1;
-    cursor: pointer; z-index: 10;
-    transition: color 0.15s;
-}
-.acc-help-btn:hover { color: var(--bs-primary); }
-.acc-help-btn.acc-help-active { color: var(--bs-primary); }
-.assoc-card .card-header { display:flex; align-items:center; gap:.4rem; padding:.5rem .75rem; background:var(--bs-tertiary-bg); font-size:.85rem; }
-.assoc-chip { display:inline-flex; align-items:center; gap:.25rem; background:var(--bs-secondary-bg); border-radius:1rem; padding:.2rem .6rem; font-size:.8rem; margin:.15rem; }
-</style>
-
+	
 <div class="row g-3">
 <div class="col-lg-6">
 <div class="card">
@@ -74,9 +53,9 @@
   <div class="card-body p-2">
     <c:choose>
       <c:when test="${empty policy.associatedDestinations}">
-        <div class="alert alert-warning d-flex align-items-start gap-2 py-2 px-3 mb-0 small" role="alert">
-          <i class="bi bi-exclamation-triangle-fill flex-shrink-0 mt-1"></i>
-          <span><strong>No destinations assigned.</strong> All login attempts for users under this policy will be denied until at least one destination is added.</span>
+        <div class="alert alert-info d-flex align-items-start gap-2 py-2 px-3 mb-0 small" role="alert">
+          <i class="bi bi-info-circle-fill flex-shrink-0 mt-1"></i>
+          <span>No destinations assigned to this policy. Login attempts will still succeed if each associated Data User has its own destinations configured directly &mdash; but users who rely solely on this policy for destination access will be denied.</span>
         </div>
       </c:when>
       <c:otherwise>

@@ -341,9 +341,9 @@ function _updateHostSearchBanner(queryError, total, hasSearch) {
 </script>
 
 <%-- Results table --%>
-<div class="d-flex align-items-end mb-2 gap-2">
+<div class="d-flex align-items-start mb-2 gap-2 flex-wrap-reverse">
     <span class="text-muted small" id="hostsFoundLabel"><i class="bi bi-list-ul"></i> Loading...</span>
-    <div class="ms-auto d-flex gap-2 align-items-center">
+    <div class="ms-auto d-flex gap-2 align-items-center flex-wrap">
         <auth:if basePathKey="host.basepath" paths="/edit/insert_form">
         <auth:then>
             <a href='<bean:message key="host.basepath"/>/edit/insert_form'
@@ -352,7 +352,7 @@ function _updateHostSearchBanner(queryError, total, hasSearch) {
             </a>
         </auth:then>
         </auth:if>
-        <div class="dropdown me-2">
+        <div class="dropdown">
             <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="hColModeBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" data-bs-boundary="viewport" aria-expanded="false">
                 Auto
             </button>

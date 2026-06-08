@@ -22,7 +22,8 @@
                 <option value="10">10</option>
                 <option value="25">25</option>
                 <option value="50">50</option>
-                <option value="-1">All</option>
+                <option value="100">100</option>
+                <option value="250">250</option>
             </select>
         </div>
 <div class="dropdown">
@@ -82,7 +83,7 @@ $(document).ready(function() {
     var table = $('#usersTable').DataTable({
         ajax:       { url: _ajaxUrl, dataSrc: 'data' },
         paging:     true,
-        pageLength: (function() { try { var v = parseInt(localStorage.getItem('incomingPageLen'), 10); return [10,25,50,-1].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })(),
+        pageLength: (function() { try { var v = parseInt(localStorage.getItem('incomingPageLen'), 10); return [10,25,50,100,250].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })(),
         searching:  true,
         ordering:   true,
         info:       true,
@@ -96,7 +97,7 @@ $(document).ready(function() {
         ],
         dom: 't<"d-flex align-items-start mt-2 px-3 pb-2"i<"ms-auto"p>>'
     });
-    $('#incomingPageLen').val((function() { try { var v = parseInt(localStorage.getItem('incomingPageLen'), 10); return [10,25,50,-1].indexOf(v) >= 0 ? String(v) : '25'; } catch(e) { return '25'; } })());
+    $('#incomingPageLen').val((function() { try { var v = parseInt(localStorage.getItem('incomingPageLen'), 10); return [10,25,50,100,250].indexOf(v) >= 0 ? String(v) : '25'; } catch(e) { return '25'; } })());
     $('#incomingPageLen').on('change', function() {
         var len = parseInt(this.value);
         try { localStorage.setItem('incomingPageLen', len); } catch(e) {}

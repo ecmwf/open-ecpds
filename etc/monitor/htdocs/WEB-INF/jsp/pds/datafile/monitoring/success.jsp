@@ -529,10 +529,11 @@ new MutationObserver(function() {
       <label class="text-muted mb-0" style="font-size:0.82rem;">Rows:</label>
       <select id="pageSizeSelect" class="form-select form-select-sm" style="width:auto;"
               onchange="setPageSize(this.value)">
+        <option value="10">10</option>
         <option value="25">25</option>
         <option value="50">50</option>
         <option value="100">100</option>
-        <option value="0">All</option>
+        <option value="250">250</option>
       </select>
     </div>
   </div>

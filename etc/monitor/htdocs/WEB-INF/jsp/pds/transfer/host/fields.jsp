@@ -26,15 +26,6 @@ table.fields > tbody > tr > th {
 	overflow: hidden;
 }
 
-.ace-panel {
-	max-width: 100%;
-	overflow: hidden;
-	border: solid 1px lightgray;
-	border-radius: 4px;
-	margin-top: 8px;
-	margin-bottom: 4px;
-}
-
 #maxConnectionsHandle {
 	width: 3em;
 	height: 1.6em;
@@ -62,15 +53,6 @@ table.fields > tbody > tr > th {
 	padding: 8px;
 	position: relative;
 }
-.acc-help-btn {
-    position: absolute; top: 50%; right: 3rem;
-    transform: translateY(-50%);
-    color: var(--bs-secondary-color); font-size: 0.9rem; line-height: 1;
-    cursor: pointer; z-index: 10;
-    transition: color 0.15s;
-}
-.acc-help-btn:hover { color: var(--bs-primary); }
-.acc-help-btn.acc-help-active { color: var(--bs-primary); }
 /* OL zoom buttons: flex centering for +/−/fit icons */
 .ol-zoom button {
     display: flex !important; align-items: center !important;

@@ -11,118 +11,6 @@
 <tiles:useAttribute name="isInsert" classname="java.lang.String" />
 <tiles:useAttribute id="actionFormName" name="action.form.name" classname="java.lang.String" />
 
-<style>
-.ace-panel {
-	max-width: 100%;
-	overflow: hidden;
-	border: solid 1px lightgray;
-	border-radius: 4px;
-	margin-top: 8px;
-	margin-bottom: 4px;
-}
-
-.acc-help-btn {
-    position: absolute; top: 50%; right: 3rem;
-    transform: translateY(-50%);
-    color: var(--bs-secondary-color); font-size: 0.9rem; line-height: 1;
-    cursor: pointer; z-index: 10;
-    transition: color 0.15s;
-}
-.acc-help-btn:hover { color: var(--bs-primary); }
-.acc-help-btn.acc-help-active { color: var(--bs-primary); }
-</style>
-
-<script>
-	function validate(path, message) {
-	    confirmationDialog({
-	        title: "Please Confirm",
-	        message: message,
-	        onConfirm: function () { window.location = path; },
-	        onCancel: function () {}
-	    });
-	}
-</script>
-
-<div class="row g-3">
-	<div class="col-lg-6">
-		<div class="card">
-			<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
-				<i class="bi bi-person-plus text-primary"></i>
-				<span class="fw-semibold">
-					<c:choose>
-						<c:when test="${isInsert == 'true'}">Create Data User</c:when>
-						<c:otherwise>Edit Data User</c:otherwise>
-					</c:choose>
-				</span>
-			</div>
-			<div class="card-body">
-				<div class="d-flex flex-column gap-2">
-					<c:if test="${isInsert != 'true'}">
-						<div class="row g-2 align-items-center">
-							<div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">Data Login</label></div>
-							<div class="col-sm-8">${incomingUserActionForm.id}<html:hidden property="id" /></div>
-						</div>
-					</c:if>
-					<c:if test="${isInsert == 'true'}">
-						<div class="row g-2 align-items-center">
-							<div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">Data Login <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Login name for this Data User. Use letters, digits, '_' and '.' only (e.g. john.doe_1)" tabindex="0"></i></label></div>
-							<div class="col-sm-8">
-								<div class="d-flex align-items-center gap-2">
-									<input id="id" name="id" type="text" required class="form-control form-control-sm"
-										pattern="[a-zA-Z0-9._]+"
-										oninput="validatePatternInput(this, 'id-feedback')">
-									<span id="id-feedback"></span>
-								</div>
-							</div>
-						</div>
-					</c:if>
-					<div class="row g-2 align-items-center">
-						<div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">Comment <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="A short description or note for this user." tabindex="0"></i></label></div>
-						<div class="col-sm-8"><html:text property="comment" styleClass="form-control form-control-sm" /></div>
-					</div>
-					<div class="row g-2 align-items-center">
-						<div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">Country <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Country associated with this user (used to display the corresponding flag)." tabindex="0"></i></label></div>
-						<div class="col-sm-8"><c:set var="countries" value="${incomingUserActionForm.countryOptions}" />
-							<div class="d-flex align-items-center gap-2"><html:select property="countryIso" styleId="incomingCountryIso" styleClass="form-select form-select-sm flex-grow-1" style="min-width:0">
-								<html:options collection="countries" property="iso" labelProperty="name" />
-							</html:select></div></div>
-					</div>
-					<div class="row g-2 align-items-center">
-						<div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">Enabled <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="When disabled, this user cannot connect." tabindex="0"></i></label></div>
-						<div class="col-sm-8"><div class="form-check form-switch mb-0"><html:checkbox property="active" styleClass="form-check-input" /></div></div>
-					</div>
-					<div class="row g-2 align-items-center">
-						<div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">TOTP authentication <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Enable Time-based One-Time Password (TOTP) authentication. When enabled, the password field is not used." tabindex="0"></i></label></div>
-						<div class="col-sm-8"><div class="form-check form-switch mb-0"><html:checkbox property="isSynchronized" styleId="isSynchronized" onclick="handleTOTPClick(this)" styleClass="form-check-input" /></div></div>
-					</div>
-					<div class="row g-2 align-items-center" id="passwordRow">
-						<div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">Or password <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Password for authentication when TOTP is disabled. Use 'Generate' to create a secure random password." tabindex="0"></i></label></div>
-						<div class="col-sm-8">
-							<div class="d-flex align-items-center gap-2">
-								<input type="password" id="password" name="password" class="form-control form-control-sm"
-									value="${incomingUserActionForm.password}" />
-								<button type="button" id="buttonPassword" name="buttonPassword"
-									class="btn btn-sm btn-outline-secondary" onclick="generatePassword(); return false">Generate</button>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
-
-	<c:if test="${isInsert != 'true'}">
-	<div class="col-lg-6">
-<style>
-.assoc-card .card-header { display:flex; align-items:center; gap:.4rem; padding:.5rem .75rem; background:var(--bs-tertiary-bg); font-size:.85rem; }
-.assoc-card .card-header .ms-auto { margin-left:auto !important; }
-.assoc-chip { display:inline-flex; align-items:center; gap:.25rem; background:var(--bs-secondary-bg); border-radius:1rem; padding:.2rem .6rem; font-size:.8rem; margin:.15rem; }
-.assoc-chip a { color:var(--bs-secondary-color); text-decoration:none; line-height:1; }
-.assoc-chip a:hover { color:#dc3545; }
-.assoc-chooser-item { color:var(--bs-body-color); font-size:.82rem; transition:background .15s; }
-.assoc-chooser-item:hover { background:var(--bs-secondary-bg); }
-.assoc-empty { display:flex; align-items:center; gap:.35rem; color:#856404; background:#fff3cd; border:1px solid #ffc107; border-radius:.25rem; font-size:.8rem; padding:.3rem .5rem; margin:0; }
-</style>
 <div class="row g-3">
 
   <%-- Data Policies + Permissions side-by-side --%>
@@ -246,11 +134,24 @@
         </button>
       </div>
       <div class="card-body p-2">
+        <%-- Check whether any associated policy provides at least one destination --%>
+        <c:set var="policyHasDestinations" value="false"/>
+        <c:forEach var="p" items="${incomingUserActionForm.incomingPolicies}">
+          <c:if test="${not empty p.associatedDestinations}">
+            <c:set var="policyHasDestinations" value="true"/>
+          </c:if>
+        </c:forEach>
         <c:choose>
-          <c:when test="${empty incomingUserActionForm.destinations}">
+          <c:when test="${empty incomingUserActionForm.destinations and not policyHasDestinations}">
             <div class="alert alert-warning d-flex align-items-start gap-2 py-2 px-3 mb-2 small" role="alert">
               <i class="bi bi-exclamation-triangle-fill flex-shrink-0 mt-1"></i>
-              <span><strong>No destinations assigned.</strong> All login attempts for this user will be denied until at least one destination is added.</span>
+              <span><strong>No destinations assigned.</strong> All login attempts for this user will be denied until at least one destination is added here or via an associated Data Policy.</span>
+            </div>
+          </c:when>
+          <c:when test="${empty incomingUserActionForm.destinations and policyHasDestinations}">
+            <div class="alert alert-info d-flex align-items-start gap-2 py-2 px-3 mb-2 small" role="alert">
+              <i class="bi bi-info-circle-fill flex-shrink-0 mt-1"></i>
+              <span>No destinations assigned directly, but access is granted through the associated Data <c:choose><c:when test="${fn:length(incomingUserActionForm.incomingPolicies) gt 1}">Policies</c:when><c:otherwise>Policy</c:otherwise></c:choose>.</span>
             </div>
           </c:when>
           <c:otherwise>
@@ -301,6 +202,13 @@
 		<div class="card-header">
 			<i class="bi bi-plug text-secondary"></i>
 			<strong>Current Sessions</strong>
+			<c:if test="${not empty incomingUserActionForm.incomingUser.incomingConnections}">
+			<c:set var="sessionCount" value="${fn:length(incomingUserActionForm.incomingUser.incomingConnections)}"/>
+			<button type="button" class="btn btn-sm btn-outline-danger ms-auto"
+			        onclick="confirmCloseAll('<bean:message key="incoming.basepath"/>/edit/update/<c:out value="${incomingUserActionForm.id}"/>/closeAllSessions/all', ${sessionCount})">
+			  <i class="bi bi-x-circle"></i> Close All
+			</button>
+			</c:if>
 		</div>
 		<c:choose>
 			<c:when test="${empty incomingUserActionForm.incomingUser.incomingConnections}">

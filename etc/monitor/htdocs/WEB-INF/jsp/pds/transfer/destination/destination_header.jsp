@@ -153,19 +153,26 @@
                     }
                     /* <div style="border-left:..."> separators: skip, handled by addDivider() */
                 });
-                // Mark the active page icon on both the desktop bar and mobile menu
+                // Mark the active page icon on both the desktop bar and mobile menu.
+                // Matching rules:
+                //  - Icons with ?mode=X  → active only when current URL also has ?mode=X
+                //  - Icons without mode= → active when pathname matches AND current URL
+                //    has no mode= (covers status/date filter params on the main page)
                 var curPath   = window.location.pathname;
-                var curSearch = window.location.search;
+                var curParams = new URLSearchParams(window.location.search);
+                var curMode   = curParams.get('mode') || '';
+                function isActive(a) {
+                    if (a.pathname !== curPath) return false;
+                    var aMode = new URLSearchParams(a.search).get('mode') || '';
+                    return aMode === curMode;
+                }
                 Array.from(bar.querySelectorAll('a.btn')).forEach(function(a) {
-                    if (a.pathname === curPath && a.search === curSearch) {
-                        a.classList.add('active');
-                    }
+                    if (isActive(a)) a.classList.add('active');
                 });
                 Array.from(menu.querySelectorAll('a.dropdown-item')).forEach(function(item) {
                     var u = new URL(item.href, window.location.origin);
-                    if (u.pathname === curPath && u.search === curSearch) {
-                        item.classList.add('active');
-                    }
+                    var aMode = new URLSearchParams(u.search).get('mode') || '';
+                    if (u.pathname === curPath && aMode === curMode) item.classList.add('active');
                 });
             });
         })();

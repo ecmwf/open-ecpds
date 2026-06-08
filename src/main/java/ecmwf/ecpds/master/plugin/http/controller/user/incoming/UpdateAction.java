@@ -76,6 +76,9 @@ public class UpdateAction extends PDSAction {
     /** The Constant CLOSE_SESSION. */
     private static final String CLOSE_SESSION = "closeSession";
 
+    /** The Constant CLOSE_ALL_SESSIONS. */
+    private static final String CLOSE_ALL_SESSIONS = "closeAllSessions";
+
     /**
      * {@inheritDoc}
      *
@@ -150,6 +153,10 @@ public class UpdateAction extends PDSAction {
             iu.deleteOperation(OperationHome.findByPrimaryKey(subActionParameter));
         } else if (CLOSE_SESSION.equals(subAction)) {
             iu.closeSession(u, subActionParameter);
+        } else if (CLOSE_ALL_SESSIONS.equals(subAction)) {
+            for (final var conn : iu.getIncomingConnections()) {
+                iu.closeSession(u, conn.getId());
+            }
         } else {
             throw new ECMWFException(
                     "The subAction '" + subAction + "' is not defined for class " + UpdateAction.class.getName());

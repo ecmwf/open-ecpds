@@ -442,6 +442,97 @@ window.addEventListener('pageshow', function(event) {
 });
 </script>
 
+<!-- UI Help offcanvas -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="uiHelpOffcanvas" aria-labelledby="uiHelpOffcanvasLabel" style="width:360px;max-width:95vw;">
+  <div class="offcanvas-header border-bottom py-2 px-3">
+    <span class="fw-semibold small" id="uiHelpOffcanvasLabel"><i class="bi bi-question-circle me-2 text-primary"></i>Interface Guide</span>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body px-3 py-2" style="font-size:0.83rem; overflow-y:auto;">
+
+    <div class="mb-3">
+      <div class="fw-semibold mb-1 d-flex align-items-center gap-2"><i class="bi bi-list text-secondary"></i> Navigation Menu</div>
+      <p class="mb-1 text-muted">The <strong>&#9776; hamburger button</strong> (top-left) opens the side navigation panel, providing access to all sections and subsections available on the current page.</p>
+    </div>
+
+    <hr class="my-2">
+
+    <div class="mb-3">
+      <div class="fw-semibold mb-1 d-flex align-items-center gap-2"><i class="bi bi-moon-fill text-secondary"></i> Light / Dark Theme</div>
+      <p class="mb-1 text-muted">The <strong>moon / sun button</strong> (top-right) toggles between light and dark display mode. Your preference is remembered across sessions.</p>
+    </div>
+
+    <hr class="my-2">
+
+    <div class="mb-3">
+      <div class="fw-semibold mb-1 d-flex align-items-center gap-2"><i class="bi bi-info-circle text-primary"></i> Tooltips &amp; Info Icons</div>
+      <p class="mb-1 text-muted"><strong>Hover</strong> over any <i class="bi bi-question-circle text-muted"></i> or <i class="bi bi-info-circle text-muted"></i> icon next to a field to read a description. Some icons open a full reference panel when clicked.</p>
+    </div>
+
+    <hr class="my-2">
+
+    <div class="mb-3">
+      <div class="fw-semibold mb-1 d-flex align-items-center gap-2"><i class="bi bi-list-ol text-secondary"></i> Page Size Selector</div>
+      <p class="mb-1 text-muted">The <i class="bi bi-list-ol text-muted"></i> dropdown in table headers controls how many rows are shown per page. Your choice is remembered separately for each table.</p>
+    </div>
+
+    <hr class="my-2">
+
+    <div class="mb-3">
+      <div class="fw-semibold mb-1 d-flex align-items-center gap-2"><i class="bi bi-arrow-down-up text-secondary"></i> Column Sorting</div>
+      <p class="mb-1 text-muted">Click any <strong>column header</strong> to sort. Columns cycle through three states:</p>
+      <ul class="mb-1 ps-3 text-muted">
+        <li><i class="bi bi-arrow-down-up"></i> <strong>Unsorted</strong> &mdash; natural order</li>
+        <li><i class="bi bi-sort-up"></i> <strong>Ascending</strong> &mdash; A &rarr; Z / oldest first</li>
+        <li><i class="bi bi-sort-down"></i> <strong>Descending</strong> &mdash; Z &rarr; A / newest first</li>
+      </ul>
+    </div>
+
+    <hr class="my-2">
+
+    <div class="mb-3">
+      <div class="fw-semibold mb-1 d-flex align-items-center gap-2"><i class="bi bi-search text-secondary"></i> Search &amp; Filter Boxes</div>
+      <p class="mb-1 text-muted">The <i class="bi bi-search text-muted"></i> search box above a table filters rows instantly as you type. It matches any column. Use it together with the page size selector for faster navigation on large tables.</p>
+    </div>
+
+    <hr class="my-2">
+
+    <div class="mb-3">
+      <div class="fw-semibold mb-1 d-flex align-items-center gap-2"><i class="bi bi-funnel text-secondary"></i> Query Builder</div>
+      <p class="mb-1 text-muted">Some pages (e.g. Transfer History, Data Files) include an advanced <strong>query builder</strong>. Click the <i class="bi bi-sliders2"></i> <strong>Filter</strong> button next to the search box to open the condition panel. Fill in the available condition rows (field, operator, value), then click <strong>Apply &amp; Search</strong> to run the query. You can also type filter expressions directly in the search box.</p>
+    </div>
+
+    <hr class="my-2">
+
+    <div class="mb-3">
+      <div class="fw-semibold mb-1 d-flex align-items-center gap-2"><i class="bi bi-layout-three-columns text-secondary"></i> Column Visibility</div>
+      <p class="mb-1 text-muted">Tables with many columns have a <strong>Columns</strong> dropdown button in the header. Choose a preset (<em>Auto</em>, <em>All</em>, <em>Compact</em>) or <em>Custom</em> to pick individual columns. <em>Auto</em> mode hides less important columns on small screens automatically.</p>
+    </div>
+
+    <hr class="my-2">
+
+    <div class="mb-3">
+      <div class="fw-semibold mb-1 d-flex align-items-center gap-2"><i class="bi bi-code-square text-secondary"></i> Properties &amp; Script Editors</div>
+      <p class="mb-1 text-muted">The code editors for <strong>Properties</strong> and <strong>JavaScript</strong> support syntax highlighting and auto-completion. Press <kbd>Ctrl+Space</kbd> for suggestions. Use the <strong>Format</strong> button to pretty-print the content and <strong>Clear</strong> to empty it. The <i class="bi bi-question-circle text-muted"></i> icon in the accordion header opens the full properties reference &mdash; it automatically highlights the option matching the word at the current cursor position.</p>
+    </div>
+
+    <hr class="my-2">
+
+    <div class="mb-3">
+      <div class="fw-semibold mb-1 d-flex align-items-center gap-2"><i class="bi bi-plus-circle text-secondary"></i> Association Panels</div>
+      <p class="mb-1 text-muted">On edit pages, panels like <em>Dissemination Hosts</em> or <em>Data Policies</em> show current associations as chips. Click <strong>+ Add</strong> to expand a searchable chooser and add new entries. Click the <i class="bi bi-x-lg text-muted"></i> on a chip to remove it.</p>
+    </div>
+
+    <hr class="my-2">
+
+    <div class="mb-3">
+      <div class="fw-semibold mb-1 d-flex align-items-center gap-2"><i class="bi bi-graph-up text-secondary"></i> Charts &amp; Tables</div>
+      <p class="mb-1 text-muted">Pages with both a <strong>chart</strong> and a <strong>table</strong> view have a toggle button to switch between them. The search box and row count selector apply to the table view only.</p>
+    </div>
+
+  </div>
+</div>
+
 <div id="contentDiv">
     <div id="outerTable">
         <div class="content">

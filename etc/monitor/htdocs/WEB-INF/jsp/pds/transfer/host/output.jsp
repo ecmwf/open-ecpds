@@ -136,7 +136,7 @@
 </style>
 
 <div class="card shadow-sm mt-2">
-    <div class="card-header d-flex align-items-center justify-content-between py-2 px-3 report-card-hdr flex-nowrap">
+    <div class="card-header d-flex align-items-center justify-content-between py-2 px-3 report-card-hdr flex-wrap gap-2">
         <span class="fw-semibold d-inline-flex align-items-center gap-1 flex-shrink-0" style="font-size:0.875rem;">
             <i class="bi bi-terminal-fill me-1 text-success"></i>
             Output: <c:out value="${host.nickName}" />
@@ -147,7 +147,7 @@
                 <i class="bi bi-info-circle"></i>
             </button>
         </span>
-        <div class="d-flex gap-2 flex-shrink-0">
+        <div class="d-flex gap-2 flex-wrap">
             <button id="refreshBtn"
                     class="btn btn-sm btn-outline-secondary py-0 px-2 report-card-hdr-btn"
                     title="Refresh output" style="font-size:0.75rem;">

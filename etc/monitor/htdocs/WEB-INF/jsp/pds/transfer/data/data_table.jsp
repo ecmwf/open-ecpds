@@ -6,19 +6,18 @@
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
 
 <div class="d-flex align-items-center gap-2 mb-3 px-3 py-2 rounded"
-style="background:rgba(13,110,253,0.06); font-size:0.9rem; color:var(--bs-body-color); border-left:4px solid #0d6efd;">
+style="background:rgba(13,110,253,0.06); color:var(--bs-body-color); border-left:4px solid #0d6efd;">
 <i class="bi bi-arrow-left-right text-primary flex-shrink-0"></i>
 Data Transfer: <strong><c:out value="${datatransfer.id}"/></strong>
 </div>
 
 <%-- Stat strip --%>
-<div class="row g-2 mb-3">
+<div class="row g-2 mb-3" style="align-items:stretch;">
 <div class="col-6 col-sm-3">
 <div class="card border-0 shadow-sm text-center py-2 h-100 d-flex flex-column justify-content-center">
-<div class="text-muted small fw-semibold text-uppercase" style="font-size:0.7rem;letter-spacing:0.04em">Progress<span id="dt-live-dot" style="display:none"> <span class="badge bg-primary" style="font-size:0.55rem;vertical-align:middle;animation:dtLivePulse 1.5s ease-in-out infinite"><i class="bi bi-broadcast me-1"></i>Live</span></span></div>
-<div id="dt-progress-pct" class="fw-bold fs-6 mb-1">${datatransfer.progress}%</div>
-<div class="px-3">
-<div id="dt-progress-bar-wrap" class="progress" style="height:6px" role="progressbar"
+<div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.7rem;letter-spacing:0.04em">Progress<span id="dt-live-dot" style="display:none"> <span class="badge bg-primary" style="font-size:0.55rem;vertical-align:middle;animation:dtLivePulse 1.5s ease-in-out infinite"><i class="bi bi-broadcast me-1"></i>Live</span></span></div>
+<div class="d-flex align-items-center gap-2 px-3">
+<div id="dt-progress-bar-wrap" class="progress flex-grow-1" style="height:0.75rem" role="progressbar"
      aria-valuenow="${datatransfer.progress}" aria-valuemin="0" aria-valuemax="100">
   <c:choose>
     <c:when test="${datatransfer.progress >= 100}">
@@ -31,10 +30,11 @@ Data Transfer: <strong><c:out value="${datatransfer.id}"/></strong>
       <div class="progress-bar bg-secondary" style="width:0%"></div>
     </c:otherwise>
   </c:choose>
-</div>
-</div>
-</div>
-</div>
+</div><%-- /progress-bar-wrap --%>
+<span id="dt-progress-pct" class="fw-bold flex-shrink-0" style="font-size:0.8rem;min-width:2.8rem;">${datatransfer.progress}%</span>
+</div><%-- /flex row --%>
+</div><%-- /card --%>
+</div><%-- /col --%>
 <div class="col-6 col-sm-3">
 <div class="card border-0 shadow-sm text-center py-2 h-100 d-flex flex-column justify-content-center">
 <div class="text-muted small fw-semibold text-uppercase" style="font-size:0.7rem;letter-spacing:0.04em">Duration</div>

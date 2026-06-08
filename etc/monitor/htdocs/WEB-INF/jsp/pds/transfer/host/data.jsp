@@ -13,15 +13,7 @@
 </c:if>
 <c:if test="${empty isDelete}">
 
-	<style>
-.ace-panel {
-	max-width: 100%;
-	overflow: hidden;
-	border: solid 1px lightgray;
-	border-radius: 4px;
-	margin-top: 8px;
-	margin-bottom: 4px;
-}
+<style>
 .scrollable-tab {
 	height: 300px;
 	overflow-y: auto;
@@ -76,19 +68,7 @@ table.fields > tbody > tr > th {
 [data-bs-theme=light] .progress-terminal-body a { color: #0969da; }
 [data-bs-theme=light] .progress-terminal-btn { color: #57606a; border-color: #d0d7de; }
 [data-bs-theme=light] .progress-terminal-btn:hover { color: #24292f; }
-.assoc-card .card-header { display:flex; align-items:center; gap:.4rem; padding:.5rem .75rem; background:var(--bs-tertiary-bg); font-size:.85rem; }
-.assoc-chip { display:inline-flex; align-items:center; gap:.25rem; background:var(--bs-secondary-bg); border-radius:1rem; padding:.2rem .6rem; font-size:.8rem; margin:.15rem; }
-[data-bs-theme=dark] .assoc-chip { background: var(--bs-secondary-bg); }
 /* Accordion header with inline help trigger */
-.acc-help-btn {
-    position: absolute; top: 50%; right: 3rem;
-    transform: translateY(-50%);
-    color: var(--bs-secondary-color); font-size: 0.9rem; line-height: 1;
-    cursor: pointer; z-index: 10;
-    transition: color 0.15s;
-}
-.acc-help-btn:hover { color: var(--bs-primary); }
-.acc-help-btn.acc-help-active { color: var(--bs-primary); }
 </style>
 
 	<c:set var="authorized" value="false" />

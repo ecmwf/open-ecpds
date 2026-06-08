@@ -73,11 +73,18 @@ const tFmtDur   = _si.map(i=>_tFmtDur[i]);
 const tDuration = _si.map(i=>_tDuration[i]);
 </script>
 
-<%-- Header bar: title + view toggle --%>
+<%-- Header bar: title + info button + view toggle --%>
 <div class="d-flex justify-content-between align-items-center mb-3 mt-2 flex-wrap gap-2">
-  <h6 class="fw-semibold text-secondary mb-0">
-    <i class="bi bi-bar-chart-line-fill me-1"></i>Traffic Statistics
-  </h6>
+  <div class="d-flex align-items-center gap-2">
+    <h6 class="fw-semibold text-secondary mb-0">
+      <i class="bi bi-bar-chart-line-fill me-1"></i>Traffic Statistics
+    </h6>
+    <button class="btn btn-link btn-sm text-muted p-0" type="button"
+        data-bs-toggle="collapse" data-bs-target="#destTrafficInfo"
+        aria-expanded="false" title="About this page">
+      <i class="bi bi-info-circle"></i>
+    </button>
+  </div>
   <div class="btn-group btn-group-sm" role="group">
     <button type="button" class="btn btn-outline-secondary" id="btnTable" onclick="setView('table')">
       <i class="bi bi-table me-1"></i>Table
@@ -85,6 +92,16 @@ const tDuration = _si.map(i=>_tDuration[i]);
     <button type="button" class="btn btn-outline-secondary active" id="btnChart" onclick="setView('chart')">
       <i class="bi bi-bar-chart-fill me-1"></i>Chart
     </button>
+  </div>
+</div>
+
+<div class="collapse mb-3" id="destTrafficInfo">
+  <div class="card-body py-2 px-3 border rounded" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
+    <strong class="d-block mb-1">Transfer traffic recorded for this destination</strong>
+    <p class="mb-1">This chart shows the daily volume, transfer rate and file count for files sent through this destination. The same per-destination data is aggregated across all destinations in the <auth:if basePathKey="datarates.basepath" paths=""><auth:then><a href="/do/datafile/datarates" class="text-decoration-none">Data Rates</a> page</auth:then><auth:else>Data Rates page</auth:else></auth:if>.</p>
+    <ul class="mb-1 ps-3">
+      <li><strong>Deleted destination</strong> — if this destination is removed from the system, its traffic history is also permanently deleted and will no longer appear in the global Data Rates page.</li>
+    </ul>
   </div>
 </div>
 
@@ -125,10 +142,11 @@ const tDuration = _si.map(i=>_tDuration[i]);
       <label class="text-muted mb-0" style="font-size:0.82rem;">Rows:</label>
       <select id="pageSizeSelect" class="form-select form-select-sm" style="width:auto;"
               onchange="setPageSize(this.value)">
+        <option value="10">10</option>
         <option value="25">25</option>
         <option value="50">50</option>
         <option value="100">100</option>
-        <option value="0">All</option>
+        <option value="250">250</option>
       </select>
     </div>
   </div>

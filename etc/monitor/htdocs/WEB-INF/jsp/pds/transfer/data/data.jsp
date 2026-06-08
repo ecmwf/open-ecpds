@@ -193,7 +193,7 @@ _dthApplyMode(_dthColMode);
 
 <%-- Older Transfers with Same Identity --%>
 <div class="card border-0 shadow-sm mt-3 mb-3">
-<div class="card-header d-flex align-items-center gap-2 flex-nowrap" style="background:var(--bs-secondary-bg)">
+<div class="card-header d-flex align-items-center gap-2 flex-wrap" style="background:var(--bs-secondary-bg)">
 <i class="bi bi-files text-primary flex-shrink-0"></i>
 <span class="d-inline-flex align-items-center gap-1 flex-shrink-0">
   <span class="fw-semibold">Transfers for this identity</span>
@@ -203,7 +203,7 @@ _dthApplyMode(_dthColMode);
     <i class="bi bi-info-circle"></i>
   </button>
 </span>
-<div class="ms-auto d-flex flex-wrap align-items-center gap-2 flex-shrink-0">
+<div class="ms-auto d-flex flex-wrap align-items-center gap-2">
   <div class="dropdown">
     <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="dtOlderColModeBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" data-bs-boundary="viewport" aria-expanded="false">
       <i class="bi bi-layout-three-columns me-1"></i>Auto

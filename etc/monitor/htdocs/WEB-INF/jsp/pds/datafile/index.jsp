@@ -14,7 +14,7 @@
     <div class="col-12">
         <div class="home-section-card">
             <div class="home-section-hdr" style="background:#e8f4fd;">
-                <i class="bi bi-database text-primary"></i> Data Storage Options
+                <i class="bi bi-database text-primary"></i> Data Storage
             </div>
             <ul class="home-menu">
                 <auth:link basePathKey="datafile.basepath" href="" wrappingTags="li"><i class="bi bi-file-earmark-text"></i>Data Files</auth:link>
