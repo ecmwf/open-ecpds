@@ -860,8 +860,8 @@ public final class MasterServer extends ECaccessProvider
             final var user = base.getIncomingUserObject(incomingUser);
             if (user == null) {
                 if (_splunk.isInfoEnabled())
-                    _splunk.info("DEA;TimeStamp={};UserId={};Message=Not found;Context={}",
-                            Timestamp.from(Instant.now()), incomingUser, from);
+                    _splunk.info("DEA;{};UserId={};Message=Not found;Context={}",
+                            "TimeStamp=" + Timestamp.from(Instant.now()), incomingUser, from);
                 throw new MasterException("Login failed");
             }
             // Let's get the data from the user and the data policies!
@@ -893,14 +893,14 @@ public final class MasterServer extends ECaccessProvider
             }
             if (blocked) {
                 if (_splunk.isInfoEnabled())
-                    _splunk.info("DEA;TimeStamp={};UserId={};Message=Geolocation restriction;Context={}",
-                            Timestamp.from(Instant.now()), incomingUser, from);
+                    _splunk.info("DEA;{};UserId={};Message=Geolocation restriction;Context={}",
+                            "TimeStamp=" + Timestamp.from(Instant.now()), incomingUser, from);
                 throw new MasterException("Login failed");
             }
             if (!user.getActive()) {
                 if (_splunk.isInfoEnabled())
-                    _splunk.info("DEA;TimeStamp={};UserId={};Message=Disabled;Context={}",
-                            Timestamp.from(Instant.now()), incomingUser, from);
+                    _splunk.info("DEA;{};UserId={};Message=Disabled;Context={}",
+                            "TimeStamp=" + Timestamp.from(Instant.now()), incomingUser, from);
                 throw new MasterException("Login failed");
             }
             if (setup.getBoolean(USER_PORTAL_ANONYMOUS)) {
@@ -917,8 +917,8 @@ public final class MasterServer extends ECaccessProvider
                     }
                     if (!authenticated) {
                         if (_splunk.isInfoEnabled())
-                            _splunk.info("DEA;TimeStamp={};UserId={};Message=TOTP authentication failed;Context={}",
-                                    Timestamp.from(Instant.now()), incomingUser, from);
+                            _splunk.info("DEA;{};UserId={};Message=TOTP authentication failed;Context={}",
+                                    "TimeStamp=" + Timestamp.from(Instant.now()), incomingUser, from);
                         throw new MasterException("Login failed");
                     }
                 } else {
@@ -927,15 +927,15 @@ public final class MasterServer extends ECaccessProvider
                     if (localPassword != null && !localPassword.equals(incomingPassword)
                             && !_getIncomingUserHash(user).equals(incomingPassword)) {
                         if (_splunk.isInfoEnabled())
-                            _splunk.info("DEA;TimeStamp={};UserId={};Message=Password authentication failed;Context={}",
-                                    Timestamp.from(Instant.now()), incomingUser, from);
+                            _splunk.info("DEA;{};UserId={};Message=Password authentication failed;Context={}",
+                                    "TimeStamp=" + Timestamp.from(Instant.now()), incomingUser, from);
                         throw new MasterException("Login failed");
                     }
                     if (localPassword == null) {
                         // There was no password set for this user!
                         if (_splunk.isInfoEnabled())
-                            _splunk.info("DEA;TimeStamp={};UserId={};Message=Password not set;Context={}",
-                                    Timestamp.from(Instant.now()), incomingUser, from);
+                            _splunk.info("DEA;{};UserId={};Message=Password not set;Context={}",
+                                    "TimeStamp=" + Timestamp.from(Instant.now()), incomingUser, from);
                         _log.debug("Password not set for IncomingUser {}", incomingUser);
                         throw new MasterException("Login failed");
                     }
@@ -947,7 +947,7 @@ public final class MasterServer extends ECaccessProvider
             if (count >= setup.getInteger(USER_PORTAL_MAX_CONNECTIONS)) {
                 final var message = "Maximum number of connections exceeded (" + count + ")";
                 if (_splunk.isInfoEnabled())
-                    _splunk.info("DEA;TimeStamp={};UserId={};Message={};Context={}", Timestamp.from(Instant.now()),
+                    _splunk.info("DEA;{};UserId={};Message={};Context={}", "TimeStamp=" + Timestamp.from(Instant.now()),
                             incomingUser, message, from);
                 _log.warn("{} for IncomingUser {}", message, incomingUser);
                 throw new MasterException(message);
@@ -962,16 +962,16 @@ public final class MasterServer extends ECaccessProvider
             }
             if (destinations.isEmpty()) {
                 if (_splunk.isInfoEnabled())
-                    _splunk.info("DEA;TimeStamp={};UserId={};Message=No associated Destinations;Context={}",
-                            Timestamp.from(Instant.now()), incomingUser, from);
+                    _splunk.info("DEA;{};UserId={};Message=No associated Destinations;Context={}",
+                            "TimeStamp=" + Timestamp.from(Instant.now()), incomingUser, from);
                 throw new MasterException("Login failed");
             }
             // Look for the Permissions associated to this user!
             final var permissions = base.getIncomingPermissionsForIncomingUser(incomingUser);
             if (permissions.isEmpty()) {
                 if (_splunk.isInfoEnabled())
-                    _splunk.info("DEA;TimeStamp={};UserId={};Message=No associated Permissions;Context={}",
-                            Timestamp.from(Instant.now()), incomingUser, from);
+                    _splunk.info("DEA;{};UserId={};Message=No associated Permissions;Context={}",
+                            "TimeStamp=" + Timestamp.from(Instant.now()), incomingUser, from);
                 throw new MasterException("Login failed");
             }
             // Let's update with the last login informations!
