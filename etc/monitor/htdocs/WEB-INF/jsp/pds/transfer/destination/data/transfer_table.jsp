@@ -348,6 +348,8 @@ var _dftSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search us
     var _MED_COLS = [0, 1, 2, 6, 7, 8, 11];
     // Additional columns hidden at small width (<768px): Start(3), Finish(4)
     var _SM_COLS = [3, 4];
+    // Size(9) is always hidden in auto mode — only available in Custom mode
+    var _AUTO_ALWAYS_HIDE = [9];
     // Compact: hide Err + all MED cols
     var _COMPACT_HIDE = [0].concat(_MED_COLS.filter(function(c){return c!==0;}));
     // Small: hide everything in Compact + SM cols
@@ -371,11 +373,11 @@ var _dftSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search us
         if (_colMode !== 'auto') return;
         var w = window.innerWidth;
         if (w < 768) {
-            _showCols(_MED_COLS.concat(_SM_COLS));
+            _showCols(_AUTO_ALWAYS_HIDE.concat(_MED_COLS).concat(_SM_COLS));
         } else if (w < 992) {
-            _showCols(_MED_COLS);
+            _showCols(_AUTO_ALWAYS_HIDE.concat(_MED_COLS));
         } else {
-            _showCols([]);
+            _showCols(_AUTO_ALWAYS_HIDE);
         }
     }
 

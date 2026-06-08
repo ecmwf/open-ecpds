@@ -100,7 +100,7 @@ const tDuration = _si.map(i=>_tDuration[i]);
     <strong class="d-block mb-1">Transfer traffic recorded for this destination</strong>
     <p class="mb-1">This chart shows the daily volume, transfer rate and file count for files sent through this destination. The same per-destination data is aggregated across all destinations in the <auth:if basePathKey="datarates.basepath" paths=""><auth:then><a href="/do/datafile/datarates" class="text-decoration-none">Data Rates</a> page</auth:then><auth:else>Data Rates page</auth:else></auth:if>.</p>
     <ul class="mb-1 ps-3">
-      <li><strong>Deleted destination</strong> — if this destination is removed from the system, its traffic history is also permanently deleted and will no longer appear in the global Data Rates page.</li>
+      <li><strong>Deleted destination</strong> &mdash; if this destination is removed from the system, its traffic history is also permanently deleted and will no longer appear in the global Data Rates page.</li>
     </ul>
   </div>
 </div>

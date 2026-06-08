@@ -115,7 +115,7 @@
     <thead class="table-light">
         <tr>
             <th>Error</th>
-            <th title="Event Time (UTC) — date shown in selector above">Event Time</th>
+            <th title="Event Time (UTC) &mdash; date shown in selector above">Event Time</th>
             <th>Status</th>
             <th>Transfer Host</th>
             <th>Comment</th>

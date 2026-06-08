@@ -102,9 +102,9 @@ const tFiles    = _si.map(i=>_tFiles[i]);
 <div class="collapse mb-3" id="drInfoLegend">
   <div class="card-body py-2 px-3 border rounded" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
     <strong class="d-block mb-1">Aggregated transfer traffic across all active destinations</strong>
-    <p class="mb-1">The figures shown here are the <em>sum</em> of the daily traffic recorded for every destination in the system — equivalent to combining the individual traffic charts visible on each destination's page (e.g. <a href="/do/transfer/destination/wis2_sat?mode=traffic" class="text-decoration-none">Destination &rsaquo; Traffic</a>).</p>
+    <p class="mb-1">The figures shown here are the <em>sum</em> of the daily traffic recorded for every destination in the system &mdash; equivalent to combining the individual traffic charts visible on each destination's page (e.g. <a href="/do/transfer/destination/wis2_sat?mode=traffic" class="text-decoration-none">Destination &rsaquo; Traffic</a>).</p>
     <ul class="mb-1 ps-3">
-      <li><strong>Deleted destinations</strong> — once a destination is removed from the system its historical traffic records are also permanently deleted and will no longer be included in these totals.</li>
+      <li><strong>Deleted destinations</strong> &mdash; once a destination is removed from the system its historical traffic records are also permanently deleted and will no longer be included in these totals.</li>
     </ul>
     <p class="mb-0 text-muted">As a result, the totals on this page may be lower than the true cumulative historical traffic if destinations have been deleted.</p>
   </div>
