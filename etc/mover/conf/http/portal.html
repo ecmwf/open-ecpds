@@ -209,7 +209,7 @@
                       <i class="bi bi-chevron-right me-1" style="font-size:0.7rem;transition:transform .2s;" id="httpsParallelChevron"></i>Byte-range &amp; parallel downloads
                     </a>
                     <div class="collapse" id="httpsParallel">
-                      <p class="text-muted mt-1 mb-1" style="font-size:0.72rem;"><i class="bi bi-lightning-charge-fill me-1 text-warning"></i>The server honours HTTP <code>Range</code> requests — tools that split a download into parallel chunks will work and can significantly improve throughput, with each chunk using a separate session that counts toward your permitted concurrent connection limit.</p>
+                      <p class="text-muted mt-1 mb-1" style="font-size:0.72rem;"><i class="bi bi-lightning-charge-fill me-1 text-warning"></i>The server honours HTTP <code>Range</code> requests — tools that split a download into parallel chunks will work and can significantly improve throughput. Each parallel connection counts as one session against your limit, so keep the number of chunks below your maximum allowed sessions.</p>
                       <div id="connectHttpsParallel"></div>
                     </div>
                   </div>
@@ -395,7 +395,7 @@
           var html = '<span class="badge rounded-pill border fw-normal ms-1 '
             + (remaining<=0 ? 'bg-danger-subtle text-danger-emphasis' : remaining<=2 ? 'bg-warning-subtle text-warning-emphasis' : 'bg-secondary-subtle text-secondary-emphasis')
             + '" data-bs-toggle="popover" data-bs-placement="bottom" data-bs-trigger="hover focus" tabindex="0"'
-            + ' data-bs-content="Maximum simultaneous sessions across all protocols (HTTPS, S3, FTP, SFTP/SCP). Once the limit is reached, new connections will be refused."'
+            + ' data-bs-content="Number of active data transfer sessions (HTTPS downloads, S3, FTP, SFTP/SCP) as reported by the last heartbeat (updated every few seconds). Browsing this page counts as a session but may not yet appear in this snapshot. Once the limit is reached, new connections will be refused."'
             + ' style="cursor:default">';
           if(cur!=='') html += '<i class="bi bi-plug me-1"></i>' + cur + '\u200a/\u200a' + max;
           else html += '<i class="bi bi-plug me-1"></i>max\u00a0' + max;
@@ -484,6 +484,11 @@
     $.fn.dataTable.ext.errMode = 'none';
     $(document).on('error.dt', function(e, settings, techNote, message) {
       console.warn('DataTables warning (tn/' + techNote + '):', message);
+    });
+
+    // Popovers
+    document.querySelectorAll('[data-bs-toggle="popover"]').forEach(function(el) {
+      new bootstrap.Popover(el);
     });
 
     // Alerts
