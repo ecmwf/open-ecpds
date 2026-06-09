@@ -65,6 +65,7 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_LIST_RECURSIVE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MAX_REDIRECTS;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MAX_SIZE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_PARSER;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_PARSER_OPTIONS;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_ADD_PAYLOAD;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_ALTERNATIVE_NAME;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_AWAIT;
@@ -1627,6 +1628,35 @@ public final class HttpModule extends TransferModule {
     }
 
     /**
+     * Merges a set of user-supplied key=value pairs (comma-separated) into a copy of the provided defaults map. User
+     * options take precedence over defaults. Entries with a blank key or value are silently ignored.
+     *
+     * @param defaults
+     *            the default parser properties
+     * @param options
+     *            a comma-separated string of key=value pairs, e.g. {@code arrayPath=results,nameField=filename}; may be
+     *            null or empty
+     *
+     * @return a new mutable map containing the merged properties
+     */
+    private static Map<String, String> mergeParserOptions(final Map<String, String> defaults, final String options) {
+        final var result = new HashMap<>(defaults);
+        if (options != null && !options.isBlank()) {
+            for (final var pair : options.split(",")) {
+                final var eq = pair.indexOf('=');
+                if (eq > 0) {
+                    final var key = pair.substring(0, eq).trim();
+                    final var value = pair.substring(eq + 1).trim();
+                    if (!key.isEmpty()) {
+                        result.put(key, value);
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
      * The Class FormattingVisitor.
      */
     // the formatting rules, implemented in a breadth-first DOM traverse
@@ -1924,6 +1954,7 @@ public final class HttpModule extends TransferModule {
                             _log.debug("Content: {}", content);
                         }
                         final var parser = getSetup().getString(HOST_HTTP_PARSER);
+                        final var parserOptions = getSetup().getString(HOST_HTTP_PARSER_OPTIONS);
                         final ParserConfig config;
                         if (parser.equalsIgnoreCase("html")) { // Legacy processing (default)
                             config = null;
@@ -1981,16 +2012,21 @@ public final class HttpModule extends TransferModule {
                             }
                         } else if (parser.equalsIgnoreCase("csv")) {
                             config = new ParserConfig("csv",
-                                    Map.of("delimiter", ",", "nameCol", "0", "timeCol", "1", "urlCol", "2"));
+                                    mergeParserOptions(
+                                            Map.of("delimiter", ",", "nameCol", "0", "timeCol", "1", "urlCol", "2"),
+                                            parserOptions));
                         } else if (parser.equalsIgnoreCase("json")) {
-                            config = new ParserConfig("json", Map.of("arrayPath", "items", "nameField", "name",
-                                    "urlField", "url", "timeField", "time"));
+                            config = new ParserConfig("json", mergeParserOptions(Map.of("arrayPath", "items",
+                                    "nameField", "name", "urlField", "url", "timeField", "time"), parserOptions));
                         } else if (parser.equalsIgnoreCase("xml")) {
-                            config = new ParserConfig("xml", Map.of("arrayPath", "items.item", "nameField", "name",
-                                    "urlField", "url", "timeField", "time"));
+                            config = new ParserConfig("xml", mergeParserOptions(Map.of("arrayPath", "items.item",
+                                    "nameField", "name", "urlField", "url", "timeField", "time"), parserOptions));
                         } else if (parser.equalsIgnoreCase("stac")) {
-                            config = new ParserConfig("stac", Map.of("arrayPath", "features", "nameField", "id",
-                                    "urlField", "assets.data.href", "timeField", "properties.start_datetime"));
+                            config = new ParserConfig("stac",
+                                    mergeParserOptions(
+                                            Map.of("arrayPath", "features", "nameField", "id", "urlField",
+                                                    "assets.data.href", "timeField", "properties.start_datetime"),
+                                            parserOptions));
                         } else if (parser.equalsIgnoreCase("script")) {
                             config = null;
                         } else {
@@ -2001,8 +2037,11 @@ public final class HttpModule extends TransferModule {
                                 for (final var result : listingEngine.process(config, content)) {
                                     if (result.link != null && !result.link.isBlank()) {
                                         listSize++;
+                                        final var altName = isNotEmpty(result.name) ? result.name : null;
+                                        final var entrySize = result.size >= 0 ? ByteSize.of(result.size) : null;
+                                        final var entryDate = result.time >= 0 ? result.time : null;
                                         addEntry(manager, resultList, rootDirectory, directory, result.link, level,
-                                                pattern, counter, null, null, null, null, null);
+                                                pattern, counter, altName, entrySize, entryDate, null, null);
                                     }
                                 }
                             } catch (final Exception e) {

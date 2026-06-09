@@ -1341,6 +1341,9 @@ public enum ECtransOptions {
     /** The host http parser. */
     HOST_HTTP_PARSER("parser", String.class, Arrays.asList("html", "csv", "json", "xml", "stac", "script")),
 
+    /** The host http parser options. */
+    HOST_HTTP_PARSER_OPTIONS("parserOptions", String.class, STRING_NONE),
+
     /** The host http select. */
     HOST_HTTP_SELECT("select", String.class, "a[href]"),
 
