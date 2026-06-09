@@ -71,7 +71,7 @@
                                 <li><code>id=100</code>, <code>id&gt;=50</code> &mdash; filter by host ID (supports <code>=</code> <code>&gt;</code> <code>&gt;=</code> <code>&lt;</code> <code>&lt;=</code>).</li>
                                 <li><code>enabled=yes|no</code> &mdash; filter by enabled state.</li>
                                 <li><code>case=i</code> &mdash; make the search case-insensitive (default is case-sensitive).</li>
-                                <li><i class="bi bi-sliders2 me-1"></i><strong>Filter panel</strong> also provides <strong>Network</strong>, <strong>Label</strong> and <strong>Compression</strong> drop-downs that apply independently of the search text.</li>
+                                <li><i class="bi bi-sliders2 me-1"></i><strong>Filter panel</strong> also provides <strong>Group</strong>, <strong>Label</strong> and <strong>Compression</strong> drop-downs that apply independently of the search text.</li>
                             </ul>
                             <p class="mb-0 text-muted">Example: <code>hostname=*.ecmwf.int method=*Ftp enabled=yes case=i</code></p>
                         </div>
@@ -160,8 +160,8 @@
                             <div class="border-top mt-1 pt-1">
                                 <div class="row g-1 mb-1">
                                     <div class="col-12 col-md-4">
-                                        <label class="form-label mb-0 fw-semibold"><i class="bi bi-diagram-3 me-1 text-muted"></i>Network</label>
-                                        <select class="form-select form-select-sm" name="network" id="network" onchange="hostsTableReload()" title="Filter by Network">
+                                        <label class="form-label mb-0 fw-semibold"><i class="bi bi-diagram-3 me-1 text-muted"></i>Group</label>
+                                        <select class="form-select form-select-sm" name="network" id="network" onchange="hostsTableReload()" title="Filter by Group">
                                             <c:forEach var="option" items="${networkOptions}">
                                                 <option value="${option.name}" <c:if test="${network == option.name}">selected</c:if>>${option.value}</option>
                                             </c:forEach>
@@ -468,10 +468,10 @@ function _updateHostSearchBanner(queryError, total, hasSearch) {
         var _hCOMPACT_HIDE = [3, 4];
         // Small: hide Hostname/IP(2) + Transfer Group(3) + Network(4) + Destinations(5)
         var _hSMALL_HIDE = [2, 3, 4, 5];
-        // Auto medium (<992px): hide Transfer Group(3) + Network(4)
-        var _hMED_COLS = [3, 4];
-        // Auto small (<768px): also hide Hostname/IP(2) + Destinations(5)
-        var _hSM_COLS = [2, 5];
+        // Auto medium (<992px): hide Transfer Group(3) + Network(4) + Destinations(5)
+        var _hMED_COLS = [3, 4, 5];
+        // Auto small (<768px): also hide Hostname/IP(2)
+        var _hSM_COLS = [2];
 
         function _hShowCols(hideCols) {
             var total = _hostsTable.columns().count();

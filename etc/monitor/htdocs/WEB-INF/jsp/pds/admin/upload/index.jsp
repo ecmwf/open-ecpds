@@ -18,6 +18,19 @@ property="hostOptions" type="java.util.Collection" />
 <div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
 <i class="bi bi-cloud-upload text-primary"></i>
 <span class="fw-semibold">Upload Parameters</span>
+<button class="btn btn-link btn-sm text-muted p-0 ms-1" type="button" data-bs-toggle="collapse" data-bs-target="#uploadParamInfo" aria-expanded="false" title="About Test Upload">
+  <i class="bi bi-info-circle"></i>
+</button>
+</div>
+<div class="collapse" id="uploadParamInfo">
+<div class="px-3 py-2" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-bottom:1px solid var(--bs-border-color);">
+  <p class="text-muted mb-2">This page lets you upload a test file directly to a Transfer Host, bypassing the normal transfer pipeline. It is useful for verifying a host's connectivity and write access.</p>
+  <div class="fw-semibold text-muted mb-1" style="font-size:0.78rem;">Fields</div>
+  <div class="mb-1"><i class="bi bi-hdd-network text-secondary me-1"></i><strong>Transfer Host</strong> &mdash; the host to write the file to.</div>
+  <div class="mb-1"><i class="bi bi-file-earmark-text text-secondary me-1"></i><strong>Target File Name</strong> &mdash; destination path on the remote host (e.g. <code>file.txt</code> or <code>/path/to/file.txt</code>).</div>
+  <div class="mb-1"><i class="bi bi-skip-forward text-secondary me-1"></i><strong>From Position</strong> &mdash; byte offset at which to start writing. Use <code>0</code> to write from the beginning of the file.</div>
+  <div><i class="bi bi-body-text text-secondary me-1"></i><strong>File Content</strong> &mdash; the text content to write into the file.</div>
+</div>
 </div>
 <div class="card-body">
 <div class="row g-3">

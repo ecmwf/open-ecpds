@@ -33,6 +33,18 @@ property="destinationOptions" type="java.util.Collection" />
 <div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
 <i class="bi bi-sliders text-primary"></i>
 <span class="fw-semibold">Simulation Parameters</span>
+<button class="btn btn-link btn-sm text-muted p-0 ms-1" type="button" data-bs-toggle="collapse" data-bs-target="#filterSimInfo" aria-expanded="false" title="About Compression Simulation">
+  <i class="bi bi-info-circle"></i>
+</button>
+</div>
+<div class="collapse" id="filterSimInfo">
+<div class="px-3 py-2" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-bottom:1px solid var(--bs-border-color);">
+  <p class="text-muted mb-2">This page lets you select files from a Destination to test a chosen compression algorithm. Once the simulation is complete, a report is sent by e-mail.</p>
+  <div class="fw-semibold text-muted mb-1" style="font-size:0.78rem;">Notes</div>
+  <div class="mb-1"><i class="bi bi-check-circle text-success me-1"></i>Files that have already been <strong>pre-compressed</strong> will not be re-compressed, but their compressed size is still included in the report.</div>
+  <div class="mb-1"><i class="bi bi-trash text-danger me-1"></i>All files compressed during a simulation are <strong>removed from the movers</strong> after compression &mdash; they are not kept.</div>
+  <div><i class="bi bi-shield-check text-primary me-1"></i><strong>Exception:</strong> files that already existed in their compressed form before the simulation are <strong>not deleted</strong>.</div>
+</div>
 </div>
 <div class="card-body">
 <div class="row g-3">

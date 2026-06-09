@@ -11,6 +11,90 @@
 <tiles:useAttribute name="isInsert" classname="java.lang.String" />
 <tiles:useAttribute id="actionFormName" name="action.form.name" classname="java.lang.String" />
 
+<script>
+	function validate(path, message) {
+	    confirmationDialog({
+	        title: "Please Confirm",
+	        message: message,
+	        onConfirm: function () { window.location = path; },
+	        onCancel: function () {}
+	    });
+	}
+</script>
+
+<div class="row g-3">
+  <%-- Column 1: Edit Data User form --%>
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+        <i class="bi bi-person-plus text-primary"></i>
+        <span class="fw-semibold">
+          <c:choose>
+            <c:when test="${isInsert == 'true'}">Create Data User</c:when>
+            <c:otherwise>Edit Data User</c:otherwise>
+          </c:choose>
+        </span>
+      </div>
+      <div class="card-body">
+        <div class="d-flex flex-column gap-2">
+          <c:if test="${isInsert != 'true'}">
+            <div class="row g-2 align-items-center">
+              <div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">Data Login</label></div>
+              <div class="col-sm-8">${incomingUserActionForm.id}<html:hidden property="id" /></div>
+            </div>
+          </c:if>
+          <c:if test="${isInsert == 'true'}">
+            <div class="row g-2 align-items-center">
+              <div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">Data Login <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Login name for this Data User. Use letters, digits, '_' and '.' only (e.g. john.doe_1)" tabindex="0"></i></label></div>
+              <div class="col-sm-8">
+                <div class="d-flex align-items-center gap-2">
+                  <input id="id" name="id" type="text" required class="form-control form-control-sm"
+                    pattern="[a-zA-Z0-9._]+"
+                    oninput="validatePatternInput(this, 'id-feedback')">
+                  <span id="id-feedback"></span>
+                </div>
+              </div>
+            </div>
+          </c:if>
+          <div class="row g-2 align-items-center">
+            <div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">Comment <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="A short description or note for this user." tabindex="0"></i></label></div>
+            <div class="col-sm-8"><html:text property="comment" styleClass="form-control form-control-sm" /></div>
+          </div>
+          <div class="row g-2 align-items-center">
+            <div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">Country <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Country associated with this user (used to display the corresponding flag)." tabindex="0"></i></label></div>
+            <div class="col-sm-8"><c:set var="countries" value="${incomingUserActionForm.countryOptions}" />
+              <div class="d-flex align-items-center gap-2"><html:select property="countryIso" styleId="incomingCountryIso" styleClass="form-select form-select-sm flex-grow-1" style="min-width:0">
+                <html:options collection="countries" property="iso" labelProperty="name" />
+              </html:select></div></div>
+          </div>
+          <div class="row g-2 align-items-center">
+            <div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">Enabled <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="When disabled, this user cannot connect." tabindex="0"></i></label></div>
+            <div class="col-sm-8"><div class="form-check form-switch mb-0"><html:checkbox property="active" styleClass="form-check-input" /></div></div>
+          </div>
+          <div class="row g-2 align-items-center">
+            <div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">TOTP authentication <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Enable Time-based One-Time Password (TOTP) authentication. When enabled, the password field is not used." tabindex="0"></i></label></div>
+            <div class="col-sm-8"><div class="form-check form-switch mb-0"><html:checkbox property="isSynchronized" styleId="isSynchronized" onclick="handleTOTPClick(this)" styleClass="form-check-input" /></div></div>
+          </div>
+          <div class="row g-2 align-items-center" id="passwordRow">
+            <div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">Or password <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Password for authentication when TOTP is disabled. Use 'Generate' to create a secure random password." tabindex="0"></i></label></div>
+            <div class="col-sm-8">
+              <div class="d-flex align-items-center gap-2">
+                <input type="password" id="password" name="password" class="form-control form-control-sm"
+                  value="${incomingUserActionForm.password}" />
+                <button type="button" id="buttonPassword" name="buttonPassword"
+                  class="btn btn-sm btn-outline-secondary" onclick="generatePassword(); return false">Generate</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%-- Column 2: Associations (update only) --%>
+  <c:if test="${isInsert != 'true'}">
+  <div class="col-lg-6">
+
 <div class="row g-3">
 
   <%-- Data Policies + Permissions side-by-side --%>
@@ -191,7 +275,12 @@
     </div>
   </div>
 
-</div>
+</div><%-- closes inner associations row --%>
+
+  </div><%-- closes col-lg-6 for associations --%>
+  </c:if><%-- closes isInsert != 'true' wrapper for column 2 --%>
+
+</div><%-- closes outer row g-3 --%>
 
 <c:if test="${isInsert != 'true'}">
 <div class="mt-3">

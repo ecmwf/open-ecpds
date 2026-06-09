@@ -629,7 +629,8 @@ function _updateTransferSearchBanner(queryError, total, hasSearch) {
     });
     function _tfrApplyResponsive() {
         if (_tfrColMode !== 'auto') return;
-        _tfrShowCols(window.innerWidth < 992 ? [1, 2] : []);
+        var w = window.innerWidth;
+        _tfrShowCols(w < 576 ? [1, 2, 5, 6] : w < 992 ? [1, 2] : []);
     }
     function _tfrApplyMode(mode) {
         var label = mode.charAt(0).toUpperCase() + mode.slice(1);

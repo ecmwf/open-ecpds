@@ -202,7 +202,7 @@ public class GetHostAction extends PDSAction {
      */
     private static final Collection<Pair> getNetworkOptions() {
         final Collection<Pair> options = new ArrayList<>();
-        options.add(new Pair("All", "All Networks"));
+        options.add(new Pair("All", "All Groups"));
         try {
             for (final TransferGroup group : TransferGroupHome.findAll()) {
                 options.add(new Pair(group.getName(), group.getName()));

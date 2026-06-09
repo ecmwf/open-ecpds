@@ -717,7 +717,22 @@
       <!-- Access Guide -->
       <div class="mb-3">
         <div class="fw-semibold mb-1"><i class="bi bi-book me-1 text-primary"></i>Access Guide</div>
-        <p class="text-muted mb-0">Click the <strong>Access Guide</strong> button to open connection instructions for all available protocols (HTTPS, S3, FTP, SFTP/SCP). Each card provides ready-to-use commands with a <i class="bi bi-clipboard"></i> copy button. Expand the <em>Structured listing formats</em> and <em>Byte-range &amp; parallel downloads</em> sections for advanced usage.</p>
+        <p class="text-muted mb-1">Click the <strong>Access Guide</strong> button to open connection instructions for all available protocols (HTTPS, S3, FTP, SFTP/SCP). Each card provides ready-to-use commands with a <i class="bi bi-clipboard"></i> copy button.</p>
+        <div class="text-muted" style="font-size:0.78rem;">
+          <div id="help-ep-https" class="mb-1"><i class="bi bi-globe me-1"></i><strong>HTTPS:</strong> <code>${httpsPublicBaseUrl}</code></div>
+          <div id="help-ep-s3" class="mb-1"><i class="bi bi-bucket me-1"></i><strong>S3:</strong> <code>${s3PublicEndpointUrl}</code></div>
+          <div id="help-ep-ftp" class="mb-1"><i class="bi bi-hdd-network me-1"></i><strong>FTP:</strong> <code>${ftpPublicHost}:${ftpPublicPort}</code></div>
+          <div id="help-ep-sftp" class="mb-1"><i class="bi bi-lock me-1"></i><strong>SFTP:</strong> <code>${sftpPublicHost}:${sftpPublicPort}</code></div>
+        </div>
+        <script>
+          (function(){
+            var hide = function(id){ var el=document.getElementById(id); if(el) el.style.display='none'; };
+            if('${httpsPublicBaseUrl}'==='') hide('help-ep-https');
+            if('${s3Enabled}'==='false'||'${s3PublicEndpointUrl}'==='') hide('help-ep-s3');
+            if('${ftpEnabled}'==='false'||'${ftpPublicHost}'==='') hide('help-ep-ftp');
+            if('${sftpEnabled}'==='false'||'${sftpPublicHost}'==='') hide('help-ep-sftp');
+          })();
+        </script>
       </div>
 
       <!-- Notice banners -->
