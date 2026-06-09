@@ -19,7 +19,7 @@
 package ecmwf.common.ectrans.module;
 
 /**
- * ECMWF Product Data Store (ECPDS) Project
+ * ECMWF Product Data Store (OpenECPDS) Project
  *
  * @author Laurent Gougeon - syi@ecmwf.int, ECMWF.
  * @version 6.7.7
@@ -64,6 +64,7 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_LIST_MAX_WAITING;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_LIST_RECURSIVE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MAX_REDIRECTS;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MAX_SIZE;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_PARSER;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_ADD_PAYLOAD;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_ALTERNATIVE_NAME;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_AWAIT;
@@ -195,6 +196,8 @@ import org.jsoup.select.NodeVisitor;
 
 import ecmwf.common.ectrans.ECtransSetup;
 import ecmwf.common.ectrans.TransferModule;
+import ecmwf.common.parser.core.ParserConfig;
+import ecmwf.common.parser.core.RemoteListingEngine;
 import ecmwf.common.rmi.ClientSocketFactory;
 import ecmwf.common.rmi.ClientSocketStatistics;
 import ecmwf.common.rmi.SSLClientSocketFactory;
@@ -215,6 +218,9 @@ import ecmwf.common.version.Version;
 public final class HttpModule extends TransferModule {
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(HttpModule.class);
+
+    /** The listingEngine. */
+    private static RemoteListingEngine listingEngine = new RemoteListingEngine();
 
     /** The currentStatus. */
     private String currentStatus = "INIT";
@@ -1257,8 +1263,9 @@ public final class HttpModule extends TransferModule {
         @Override
         public void add(final String line) {
             if (!closed.get()) {
-                if (getDebug())
+                if (getDebug()) {
                     _log.debug("Adding new line: {}", line);
+                }
                 resultList.add(line);
             }
         }
@@ -1271,8 +1278,9 @@ public final class HttpModule extends TransferModule {
          */
         @Override
         public void addAll(final List<String> lines) {
-            if (!closed.get())
+            if (!closed.get()) {
                 resultList.addAll(lines);
+            }
         }
 
         /**
@@ -1343,8 +1351,9 @@ public final class HttpModule extends TransferModule {
             var successful = false;
             try {
                 if (!closed.get()) {
-                    if (getDebug())
+                    if (getDebug()) {
                         _log.debug("Writing new line: {}", line);
+                    }
                     out.write((line + "\n").getBytes());
                     out.flush();
                     count.addAndGet(1);
@@ -1498,25 +1507,40 @@ public final class HttpModule extends TransferModule {
     }
 
     /**
+     * Log response. preview
+     *
+     * @param entity
+     *            the entity
+     */
+    private static void logResponsePreview(final HttpEntity entity) {
+        try (final var in = entity.getContent()) {
+            _log.debug("HTTP response body (first 4KB): {}", new String(in.readNBytes(4096), StandardCharsets.UTF_8));
+        } catch (Exception e) {
+            _log.debug("Preview skipped (non-critical): {}", e.getMessage());
+        }
+    }
+
+    /**
      * Close response.
      *
      * @param response
      *            the response
      */
     private void closeResponse(final ClassicHttpResponse response) {
-        if (response != null) {
-            final var entity = response.getEntity();
-            if (entity != null) {
-                try {
-                    if (getDebug() && _log.isDebugEnabled()) {
-                        _log.debug("HTTP response body: {}", EntityUtils.toString(entity));
-                    } else {
-                        EntityUtils.consume(entity);
-                    }
-                } catch (final Throwable t) {
-                    _log.warn("Consuming entity", t);
-                }
+        if (response == null) {
+            return;
+        }
+        final var entity = response.getEntity();
+        if (entity == null) {
+            return;
+        }
+        try {
+            if (getDebug() && _log.isDebugEnabled()) {
+                logResponsePreview(entity);
             }
+            EntityUtils.consumeQuietly(entity);
+        } catch (Exception e) {
+            _log.warn("Consuming entity", e);
         }
     }
 
@@ -1626,16 +1650,18 @@ public final class HttpModule extends TransferModule {
          *            the depth
          */
         // hit when the node is first seen
+        @Override
         public void head(final Node node, final int depth) {
             final var name = node.nodeName();
-            if (node instanceof final TextNode textNode)
+            if (node instanceof final TextNode textNode) {
                 append(textNode.text()); // TextNodes carry all user-readable text in the DOM.
-            else if (name.equals("li"))
+            } else if (name.equals("li")) {
                 append("\n * ");
-            else if (name.equals("dt"))
+            } else if (name.equals("dt")) {
                 append("  ");
-            else if (StringUtil.in(name, "p", "h1", "h2", "h3", "h4", "h5", "tr"))
+            } else if (StringUtil.in(name, "p", "h1", "h2", "h3", "h4", "h5", "tr")) {
                 append("\n");
+            }
         }
 
         /**
@@ -1650,10 +1676,11 @@ public final class HttpModule extends TransferModule {
         @Override
         public void tail(final Node node, final int depth) {
             final var name = node.nodeName();
-            if (StringUtil.in(name, "br", "dd", "dt", "p", "h1", "h2", "h3", "h4", "h5"))
+            if (StringUtil.in(name, "br", "dd", "dt", "p", "h1", "h2", "h3", "h4", "h5")) {
                 append("\n");
-            else if (name.equals("a"))
+            } else if (name.equals("a")) {
                 append(String.format(" <%s>", node.absUrl("href")));
+            }
         }
 
         /**
@@ -1664,19 +1691,23 @@ public final class HttpModule extends TransferModule {
          */
         // appends text to the string builder with a simple word wrap method
         private void append(final String text) {
-            if (text.startsWith("\n"))
+            if (text.startsWith("\n")) {
                 width = 0; // reset counter if starts with a newline. only from formats above, not in
-                           // natural text
-            if (text.equals(" ") && (accum.isEmpty() || StringUtil.in(accum.substring(accum.length() - 1), " ", "\n")))
+            }
+            // natural text
+            if (text.equals(" ")
+                    && (accum.isEmpty() || StringUtil.in(accum.substring(accum.length() - 1), " ", "\n"))) {
                 return; // don't accumulate long runs of empty spaces
+            }
 
             if (text.length() + width > MAX_WIDTH) { // won't fit, needs to wrap
                 final var words = text.split("\\s+");
                 for (var i = 0; i < words.length; i++) {
                     var word = words[i];
                     final var last = i == words.length - 1;
-                    if (!last) // insert a space if not the last word
+                    if (!last) { // insert a space if not the last word
                         word = word + " ";
+                    }
                     if (word.length() + width > MAX_WIDTH) { // wrap and reset counter
                         accum.append("\n").append(word);
                         width = word.length();
@@ -1770,8 +1801,9 @@ public final class HttpModule extends TransferModule {
                     @Override
                     public void messageArrived(final String topic, final MqttMessage message) throws Exception {
                         receivedSignal.countDown();
-                        if (getDebug())
+                        if (getDebug()) {
                             _log.debug("messageArrived: topic={} ; debugString={}", topic, message.toDebugString());
+                        }
                         try {
                             final var bindings = new HashMap<>(Map.of("mqttPayload",
                                     new ObjectMapper().readValue(
@@ -1880,64 +1912,101 @@ public final class HttpModule extends TransferModule {
                                 + (entity != null ? " (length is " + entity.getContentLength() + " bytes > "
                                         + Format.formatSize(maxSize) + ")" : ""));
                     }
-                    final var select = getSetup().getString(HOST_HTTP_SELECT);
-                    final String html;
+                    // Let's get the full content
+                    final String content;
                     try {
-                        html = EntityUtils.toString(entity);
+                        content = EntityUtils.toString(entity);
                     } catch (final ParseException e) {
                         throw new IOException(e.getMessage(), e.getCause());
                     }
-                    final var doc = Jsoup.parse(html);
-                    if (getDebug()) {
-                        _log.debug("Content: {}", html);
-                    }
-                    if (select.isEmpty()) {
-                        // We are just processing line by line (e.g. ftp view with file names only)
-                        _log.debug("Parsing html and extracting {} tags", select);
-                        BufferedReader br = null;
-                        try {
-                            final var text = getPlainText(doc);
-                            br = new BufferedReader(new StringReader(text));
-                            String line;
-                            while ((line = br.readLine()) != null) {
-                                final var filesCount = resultListSize + listSize;
-                                if (filesCount >= getSetup().getInteger(HOST_HTTP_LIST_MAX_FILES)) {
-                                    _log.debug("Processed maximum number of files: {}", filesCount);
-                                    break;
-                                } else {
-                                    listSize++;
-                                    addEntry(manager, resultList, rootDirectory, directory, line, level, pattern,
-                                            counter, null, null, null, null, null);
-                                }
-                            }
-                        } finally {
-                            if (br != null) {
-                                br.close();
-                            }
+                    if (content != null && !content.isBlank()) {
+                        if (getDebug()) {
+                            _log.debug("Content: {}", content);
                         }
-                    } else {
-                        // We are only extracting specified tags (e.g. a[href])
-                        final var attribute = getSetup().getString(HOST_HTTP_ATTRIBUTE);
-                        _log.debug("Parsing {} elements (using {})", select, attribute);
-                        for (final Element element : doc.select(select)) {
-                            final var filesCount = resultListSize + listSize;
-                            if (filesCount >= getSetup().getInteger(HOST_HTTP_LIST_MAX_FILES)) {
-                                _log.debug("Processed maximum number of files: {}", filesCount);
-                                break;
-                            }
-                            final var href = !attribute.isEmpty() ? element.attr(attribute) : element.text();
-                            try {
-                                final var line = resolveHref(
-                                        (directory != null && !directory.isEmpty() && !directory.endsWith("/"))
-                                                ? directory + "/" : directory,
-                                        href);
-                                listSize++;
-                                addEntry(manager, resultList, rootDirectory, directory, line, level, pattern, counter,
-                                        null, null, null, null, null);
-                            } catch (final URISyntaxException e) {
-                                if (getDebug()) {
-                                    _log.debug("Resolving HREF {} -> {}", directory, href, e);
+                        final var parser = getSetup().getString(HOST_HTTP_PARSER);
+                        final ParserConfig config;
+                        if (parser.equalsIgnoreCase("html")) { // Legacy processing (default)
+                            config = null;
+                            final var doc = Jsoup.parse(content);
+                            final var select = getSetup().getString(HOST_HTTP_SELECT);
+                            if (select.isEmpty()) {
+                                // We are just processing line by line (e.g. ftp view with file names only)
+                                _log.debug("Parsing html and extracting {} tags", select);
+                                BufferedReader br = null;
+                                try {
+                                    final var text = getPlainText(doc);
+                                    br = new BufferedReader(new StringReader(text));
+                                    String line;
+                                    while ((line = br.readLine()) != null) {
+                                        final var filesCount = resultListSize + listSize;
+                                        if (filesCount >= getSetup().getInteger(HOST_HTTP_LIST_MAX_FILES)) {
+                                            _log.debug("Processed maximum number of files: {}", filesCount);
+                                            break;
+                                        } else {
+                                            listSize++;
+                                            addEntry(manager, resultList, rootDirectory, directory, line, level,
+                                                    pattern, counter, null, null, null, null, null);
+                                        }
+                                    }
+                                } finally {
+                                    if (br != null) {
+                                        br.close();
+                                    }
                                 }
+                            } else {
+                                // We are only extracting specified tags (e.g. a[href])
+                                final var attribute = getSetup().getString(HOST_HTTP_ATTRIBUTE);
+                                _log.debug("Parsing {} elements (using {})", select, attribute);
+                                for (final Element element : doc.select(select)) {
+                                    final var filesCount = resultListSize + listSize;
+                                    if (filesCount >= getSetup().getInteger(HOST_HTTP_LIST_MAX_FILES)) {
+                                        _log.debug("Processed maximum number of files: {}", filesCount);
+                                        break;
+                                    }
+                                    final var href = !attribute.isEmpty() ? element.attr(attribute) : element.text();
+                                    try {
+                                        final var line = resolveHref(
+                                                (directory != null && !directory.isEmpty() && !directory.endsWith("/"))
+                                                        ? directory + "/" : directory,
+                                                href);
+                                        listSize++;
+                                        addEntry(manager, resultList, rootDirectory, directory, line, level, pattern,
+                                                counter, null, null, null, null, null);
+                                    } catch (final URISyntaxException e) {
+                                        if (getDebug()) {
+                                            _log.debug("Resolving HREF {} -> {}", directory, href, e);
+                                        }
+                                    }
+                                }
+                            }
+                        } else if (parser.equalsIgnoreCase("csv")) {
+                            config = new ParserConfig("csv",
+                                    Map.of("delimiter", ",", "nameCol", "0", "timeCol", "1", "urlCol", "2"));
+                        } else if (parser.equalsIgnoreCase("json")) {
+                            config = new ParserConfig("json", Map.of("arrayPath", "items", "nameField", "name",
+                                    "urlField", "url", "timeField", "time"));
+                        } else if (parser.equalsIgnoreCase("xml")) {
+                            config = new ParserConfig("xml", Map.of("arrayPath", "items.item", "nameField", "name",
+                                    "urlField", "url", "timeField", "time"));
+                        } else if (parser.equalsIgnoreCase("stac")) {
+                            config = new ParserConfig("stac", Map.of("arrayPath", "features", "nameField", "id",
+                                    "urlField", "assets.data.href", "timeField", "properties.start_datetime"));
+                        } else if (parser.equalsIgnoreCase("script")) {
+                            config = null;
+                        } else {
+                            config = null;
+                        }
+                        if (config != null) {
+                            try {
+                                for (final var result : listingEngine.process(config, content)) {
+                                    if (result.link != null && !result.link.isBlank()) {
+                                        listSize++;
+                                        addEntry(manager, resultList, rootDirectory, directory, result.link, level,
+                                                pattern, counter, null, null, null, null, null);
+                                    }
+                                }
+                            } catch (final Exception e) {
+                                _log.warn("Parsing: {}", config.getType(), e);
                             }
                         }
                     }
@@ -1955,6 +2024,7 @@ public final class HttpModule extends TransferModule {
         }
         // Now we have the listing!
         _log.debug("{} line(s) selected", listSize);
+
     }
 
     /**
@@ -2172,7 +2242,6 @@ public final class HttpModule extends TransferModule {
     private ClassicHttpResponse execute(final HttpHost targetHost, final HttpUriRequestBase httpRequest,
             final Integer... acceptedStatusCodes) throws IOException {
         try {
-            httpRequest.setHeader("Host", targetHost.getHostName());
             for (final String key : headersList.keySet().toArray(new String[0])) {
                 final var value = headersList.get(key);
                 httpRequest.setHeader(key, value);
@@ -2180,9 +2249,11 @@ public final class HttpModule extends TransferModule {
             // Ensure absolute URI (deprecated overloads with target host are avoided)
             makeAbsoluteUriIfNeeded(targetHost, httpRequest);
             if (getDebug()) {
-                _log.debug("Processing URI {}", httpRequest.getRequestUri());
-                _log.debug("Method: {}", httpRequest.getMethod());
-                _log.debug("Path: {}", httpRequest.getPath());
+                _log.debug("Processing {}: {} (version={})", httpRequest.getMethod(), httpRequest.getRequestUri(),
+                        httpRequest.getVersion());
+                for (final Header header : httpRequest.getHeaders()) {
+                    _log.debug("Request Header: {}={}", header.getName(), header.getValue());
+                }
             }
             final var context = HttpClientContext.create();
             if (authCache != null) {
@@ -2193,6 +2264,9 @@ public final class HttpModule extends TransferModule {
             }
             // High-level execute -> redirect/cookie/auth handling is automatic.
             final var httpResponse = httpClient.execute(targetHost, httpRequest, context);
+            if (getDebug()) {
+                _log.debug("Protocol version: {}", httpResponse.getVersion());
+            }
             final var statusCode = httpResponse.getCode();
             if (getDebug()) {
                 _log.debug("Response status: {} {}", statusCode, httpResponse.getReasonPhrase());

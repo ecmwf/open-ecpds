@@ -1316,6 +1316,8 @@ public final class RESTServer {
                     setup != null ? setup.get(ECtransOptions.USER_PORTAL_MSG_TOP, msgTop) : msgTop);
             Format.replaceAll(sb, "${msgDown}",
                     setup != null ? setup.get(ECtransOptions.USER_PORTAL_MSG_DOWN, msgDown) : msgDown);
+            final var accessGuide = setup == null || setup.getBoolean(ECtransOptions.USER_PORTAL_ACCESS_GUIDE);
+            Format.replaceAll(sb, "${accessGuide}", String.valueOf(accessGuide));
             final var userId = session.getUser();
             Format.replaceAll(sb, "${userid}", userId);
             final var destination = setup != null

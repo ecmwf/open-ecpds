@@ -1338,6 +1338,9 @@ public enum ECtransOptions {
     /** The host http max size. */
     HOST_HTTP_MAX_SIZE("maxSize", ByteSize.class, ByteSize.ofMB(10)),
 
+    /** The host http parser. */
+    HOST_HTTP_PARSER("parser", String.class, Arrays.asList("html", "csv", "json", "xml", "stac", "script")),
+
     /** The host http select. */
     HOST_HTTP_SELECT("select", String.class, "a[href]"),
 
@@ -1482,6 +1485,9 @@ public enum ECtransOptions {
 
     /** The user portal anonymous. */
     USER_PORTAL_ANONYMOUS("anonymous", Boolean.class, false),
+
+    /** The user portal access guide. */
+    USER_PORTAL_ACCESS_GUIDE("accessGuide", Boolean.class, true),
 
     /** The user portal geoblocling. */
     USER_PORTAL_GEOBLOCLING("geoblocking", String.class, STRING_NONE),

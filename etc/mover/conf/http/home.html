@@ -382,9 +382,10 @@
       <div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)">
         <i class="bi bi-folder2-open text-primary"></i>
         <span class="fw-semibold">Files</span>
-        <button type="button" class="btn btn-sm btn-outline-primary ms-1" data-bs-toggle="modal" data-bs-target="#connectModal">
+        <button type="button" class="btn btn-sm btn-outline-primary ms-1" id="accessGuideBtn" data-bs-toggle="modal" data-bs-target="#connectModal">
           <i class="bi bi-book me-1"></i>Access Guide
         </button>
+        <script>if('${accessGuide}'==='false'){var _agb=document.getElementById('accessGuideBtn');if(_agb)_agb.style.display='none';}</script>
         <script>
         (function(){
           var max='${maxconnections}', cur='${currentconnections}';
@@ -709,13 +710,13 @@
       </div>
 
       <!-- Session badge -->
-      <div class="mb-3">
+      <div class="mb-3" id="help-session-badge-section">
         <div class="fw-semibold mb-1"><i class="bi bi-plug me-1 text-secondary"></i>Session badge</div>
         <p class="text-muted mb-0">The <i class="bi bi-plug"></i> badge next to the <em>Access Guide</em> button shows the current number of active protocol connections (HTTPS, S3, FTP, SFTP/SCP) vs. the configured maximum. It turns yellow when capacity is nearly reached and red when the limit is hit &mdash; new connections will be refused until an existing one closes. Hover over the badge for more details.</p>
       </div>
 
       <!-- Access Guide -->
-      <div class="mb-3">
+      <div class="mb-3" id="help-access-guide-section">
         <div class="fw-semibold mb-1"><i class="bi bi-book me-1 text-primary"></i>Access Guide</div>
         <p class="text-muted mb-1">Click the <strong>Access Guide</strong> button to open connection instructions for all available protocols (HTTPS, S3, FTP, SFTP/SCP). Each card provides ready-to-use commands with a <i class="bi bi-clipboard"></i> copy button.</p>
         <div class="text-muted" style="font-size:0.78rem;">
@@ -727,6 +728,7 @@
         <script>
           (function(){
             var hide = function(id){ var el=document.getElementById(id); if(el) el.style.display='none'; };
+            if('${accessGuide}'==='false'){ hide('help-session-badge-section'); hide('help-access-guide-section'); return; }
             if('${httpsPublicBaseUrl}'==='') hide('help-ep-https');
             if('${s3Enabled}'==='false'||'${s3PublicEndpointUrl}'==='') hide('help-ep-s3');
             if('${ftpEnabled}'==='false'||'${ftpPublicHost}'==='') hide('help-ep-ftp');
