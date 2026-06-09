@@ -550,10 +550,12 @@
                 if (resolved.length >= 2) {
                     _lastMtr = mtr;
                     _lastGeoMap = geoMap;
-                    _buildMap(mtr, geoMap);
+                    try { _buildMap(mtr, geoMap); } catch(e) { /* map build failed — skip */ }
                     _mapReady = true;
                     var btnMap = document.getElementById('btnViewMap');
                     if (btnMap) btnMap.style.display = '';
+                    /* Now that _mapReady is true, wire up any already-rendered geo pins */
+                    _patchChartGeo(geoMap);
                 }
             })
             .catch(function() { /* silently skip map */ });

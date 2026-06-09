@@ -192,9 +192,6 @@
   </div>
 
 </div>
-	</div>
-	</c:if>
-</div>
 
 <c:if test="${isInsert != 'true'}">
 <div class="mt-3">
