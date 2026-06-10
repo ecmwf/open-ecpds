@@ -873,11 +873,11 @@
 			<artifactId>taglibs-standard-spec</artifactId>
 			<version>1.2.5</version>
 		</dependency>
-
 		<dependency>
-			<groupId>com.amazonaws</groupId>
-			<artifactId>aws-java-sdk-bundle</artifactId>
-			<version>1.12.791</version>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>bundle</artifactId>
+			<version>2.46.6</version>
+			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.azure</groupId>
@@ -954,11 +954,6 @@
 			<groupId>org.eclipse.paho</groupId>
 			<artifactId>org.eclipse.paho.mqttv5.client</artifactId>
 			<version>1.2.5</version>
-		</dependency>
-		<dependency>
-			<groupId>com.github.alexmojaki</groupId>
-			<artifactId>s3-stream-upload</artifactId>
-			<version>2.2.4</version>
 		</dependency>
 		<dependency>
 			<groupId>dev.langchain4j</groupId>

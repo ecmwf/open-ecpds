@@ -47,21 +47,17 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_BUCKET_NAME;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_DISABLE_CHUNKED_ENCODING;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_DUALSTACK;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_DURATION_SECONDS;
-import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_ENABLE_MARK_AND_RESET;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_ENABLE_PATH_STYLE_ACCESS;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_EXTERNAL_ID;
-import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_FORCE_GLOBAL_BUCKET_ACCESS;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_FTPGROUP;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_FTPUSER;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_LISTEN_ADDRESS;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_MK_BUCKET;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_MULTIPART_SIZE;
-import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_NUM_UPLOAD_THREADS;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_PART_SIZE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_PORT;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_PREFIX;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_PROTOCOL;
-import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_QUEUE_CAPACITY;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_RECURSIVE_LEVEL;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_REGION;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_ROLE_ARN;
@@ -77,66 +73,72 @@ import static ecmwf.common.text.Util.isNotEmpty;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FilterInputStream;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
+import java.net.Socket;
+import java.net.URI;
 import java.net.UnknownHostException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Map;
+import java.util.Queue;
 import java.util.StringTokenizer;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.Deflater;
 import java.util.zip.GZIPOutputStream;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocket;
 
 import org.apache.commons.io.filefilter.WildcardFileFilter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.Request;
-import com.amazonaws.RequestClientOptions;
-import com.amazonaws.Response;
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.AnonymousAWSCredentials;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.auth.BasicSessionCredentials;
-import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
-import com.amazonaws.handlers.RequestHandler2;
-import com.amazonaws.regions.Regions;
-import com.amazonaws.services.neptunedata.model.S3Exception;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.internal.SkipMd5CheckStrategy;
-import com.amazonaws.services.s3.model.AmazonS3Exception;
-import com.amazonaws.services.s3.model.Bucket;
-import com.amazonaws.services.s3.model.GetObjectRequest;
-import com.amazonaws.services.s3.model.ListBucketsPaginatedRequest;
-import com.amazonaws.services.s3.model.ListObjectsRequest;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
-import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
-import com.amazonaws.services.securitytoken.model.AssumeRoleRequest;
-import com.amazonaws.thirdparty.apache.http.Header;
-import com.amazonaws.thirdparty.apache.http.conn.ssl.NoopHostnameVerifier;
-import com.amazonaws.thirdparty.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import com.amazonaws.util.IOUtils;
+import software.amazon.awssdk.thirdparty.org.apache.http.conn.ssl.NoopHostnameVerifier;
+import software.amazon.awssdk.thirdparty.org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 
-import alex.mojaki.s3upload.StreamTransferManager;
+import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.core.interceptor.Context;
+import software.amazon.awssdk.core.interceptor.ExecutionAttributes;
+import software.amazon.awssdk.core.interceptor.ExecutionInterceptor;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.http.apache.ApacheHttpClient;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3Configuration;
+import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest;
+import software.amazon.awssdk.services.s3.model.Bucket;
+import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest;
+import software.amazon.awssdk.services.s3.model.CompletedMultipartUpload;
+import software.amazon.awssdk.services.s3.model.CompletedPart;
+import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
+import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
+import software.amazon.awssdk.services.s3.model.DeleteBucketRequest;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.awssdk.services.s3.model.S3Object;
+import software.amazon.awssdk.services.s3.model.UploadPartRequest;
+import software.amazon.awssdk.services.sts.StsClient;
+import software.amazon.awssdk.services.sts.model.AssumeRoleRequest;
+import software.amazon.awssdk.utils.IoUtils;
+
 import ecmwf.common.ectrans.ECtransSetup;
 import ecmwf.common.ectrans.TransferModule;
 import ecmwf.common.rmi.ClientSocketStatistics;
-import ecmwf.common.rmi.SSLClientSocketFactory;
 import ecmwf.common.rmi.SocketConfig;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.technical.StreamPlugThread;
@@ -168,27 +170,11 @@ public final class AmazonS3Module extends TransferModule {
     /** The bucket name. */
     private String bucketName = null;
 
-    /** The numUploadThreads. */
-    private int numUploadThreads = 2;
-
-    /** The queueCapacity. */
-    private int queueCapacity = 2;
-
-    /** The partSize. */
+    /** The partSize in MB (minimum part size for S3 multipart is 5 MB except for the last part). */
     private int partSize = 10;
 
     /** The closed. */
     private final AtomicBoolean closed = new AtomicBoolean(false);
-
-    /**
-     * Allow skipping the MD5 check for GET and PUT
-     **/
-    static {
-        if (Cnf.at("AmazonS3", "skipMd5CheckStrategy", false)) {
-            System.setProperty(SkipMd5CheckStrategy.DISABLE_GET_OBJECT_MD5_VALIDATION_PROPERTY, "true");
-            System.setProperty(SkipMd5CheckStrategy.DISABLE_PUT_OBJECT_MD5_VALIDATION_PROPERTY, "true");
-        }
-    }
 
     /**
      * Gets the status.
@@ -261,8 +247,6 @@ public final class AmazonS3Module extends TransferModule {
         final var scheme = setup.getString(HOST_S3_SCHEME);
         bucketName = setup.getString(HOST_S3_BUCKET_NAME);
         s3prefix = setup.getString(HOST_S3_PREFIX).trim();
-        numUploadThreads = setup.getInteger(HOST_S3_NUM_UPLOAD_THREADS);
-        queueCapacity = setup.getInteger(HOST_S3_QUEUE_CAPACITY);
         partSize = setup.getInteger(HOST_S3_PART_SIZE);
         if (isNotEmpty(s3prefix) && !s3prefix.endsWith("/")) {
             s3prefix += "/";
@@ -280,6 +264,9 @@ public final class AmazonS3Module extends TransferModule {
         } else {
             statistics = null;
         }
+        // Build a SocketConfig to capture and apply all TCP options at connect time.
+        // All options (NO_DELAY, QUICK_ACK, congestion, keepalive tuning, etc.) are applied
+        // via TcpTunedSslSocketFactory.prepareSocket() once the TCP connection is established.
         final var socketConfig = new SocketConfig(statistics, "S3SocketConfig", getDebug());
         setup.setBooleanIfPresent(HOST_ECTRANS_TCP_NO_DELAY, socketConfig::setTcpNoDelay);
         setup.setBooleanIfPresent(HOST_ECTRANS_TCP_KEEP_ALIVE, socketConfig::setKeepAlive);
@@ -299,10 +286,9 @@ public final class AmazonS3Module extends TransferModule {
             s3 = Session.getSession(user, password, setup.getString(HOST_S3_LISTEN_ADDRESS), socketConfig,
                     setup.getString(HOST_S3_PROTOCOL), setup.getBoolean(HOST_S3_SSL_VALIDATION),
                     setup.getBoolean(HOST_S3_STRICT), setup.getBoolean(HOST_S3_ACCELERATION),
-                    setup.getBoolean(HOST_S3_DUALSTACK), setup.getBoolean(HOST_S3_FORCE_GLOBAL_BUCKET_ACCESS),
-                    setup.getBoolean(HOST_S3_DISABLE_CHUNKED_ENCODING),
+                    setup.getBoolean(HOST_S3_DUALSTACK), setup.getBoolean(HOST_S3_DISABLE_CHUNKED_ENCODING),
                     setup.getBoolean(HOST_S3_ENABLE_PATH_STYLE_ACCESS), bucketName, url,
-                    isNotEmpty(region) ? region : Regions.DEFAULT_REGION.getName(), setup.getBoolean(HOST_S3_MK_BUCKET),
+                    isNotEmpty(region) ? region : Region.US_EAST_1.id(), setup.getBoolean(HOST_S3_MK_BUCKET),
                     setup.getString(HOST_S3_ROLE_ARN), setup.getString(HOST_S3_ROLE_SESSION_NAME),
                     setup.getInteger(HOST_S3_DURATION_SECONDS), setup.getString(HOST_S3_EXTERNAL_ID), getDebug());
             connected = true;
@@ -390,7 +376,7 @@ public final class AmazonS3Module extends TransferModule {
         setStatus("DEL");
         final var bnk = getBucketNameAndKey(name);
         try {
-            s3.getAmazonS3().deleteObject(bnk[0], bnk[1]);
+            s3.getS3Client().deleteObject(DeleteObjectRequest.builder().bucket(bnk[0]).key(bnk[1]).build());
         } catch (final S3Exception e) {
             _log.debug("deleteObject", e);
             throw new IOException("Deleting object " + name + ": " + formatS3Exception(e));
@@ -426,17 +412,14 @@ public final class AmazonS3Module extends TransferModule {
             throw new IOException("Resume not supported by the " + getSetup().getModuleName() + " module");
         }
         if (size < 0 || size >= getSetup().getByteSize(HOST_S3_MULTIPART_SIZE).size()) {
-            // The size of the file is not know beforehand or we are instructed to perform a
-            // multi-part transfer!
-            _log.debug("Using StreamTransferManager");
-            final var manager = new StreamTransferManager(bnk[0], bnk[1], s3.getAmazonS3()).numStreams(1)
-                    .numUploadThreads(numUploadThreads).queueCapacity(queueCapacity).partSize(partSize);
+            // The size of the file is not known beforehand or we are instructed to perform a
+            // multi-part transfer — use the streaming multipart upload.
+            _log.debug("Using MultipartUploadOutputStream");
+            final var mpu = new MultipartUploadOutputStream(bnk[0], bnk[1], partSize);
             var completed = false;
             try {
-                final OutputStream out = manager.getMultiPartOutputStreams().get(0);
-                StreamPlugThread.copy(out, in, StreamPlugThread.DEFAULT_BUFF_SIZE);
-                out.close();
-                manager.complete();
+                StreamPlugThread.copy(mpu, in, StreamPlugThread.DEFAULT_BUFF_SIZE);
+                mpu.close();
                 _log.debug("Multi-part transfer completed");
                 completed = true;
             } catch (final S3Exception e) {
@@ -447,22 +430,21 @@ public final class AmazonS3Module extends TransferModule {
                 throw new IOException("Pushing Object " + name + ": " + Format.getMessage(t, "", 0));
             } finally {
                 if (!completed) {
-                    manager.abort();
+                    mpu.abort();
                 }
             }
         } else {
-            // We know the file size so we can use the default mechanism!
+            // We know the file size so we can use a single-part PUT.
             try {
-                final var input = getSetup().getBoolean(HOST_S3_USE_BYTE_ARRAY_INPUT_STREAM)
-                        && size < getSetup().getLong(HOST_S3_SINGLEPART_SIZE)
-                                ? new ByteArrayInputStream(IOUtils.toByteArray(in)) : in;
-                final var metadata = new ObjectMetadata();
-                metadata.setContentLength(size);
-                final var request = new PutObjectRequest(bnk[0], bnk[1], input, metadata);
-                if (getSetup().getBoolean(HOST_S3_ENABLE_MARK_AND_RESET)) {
-                    request.getRequestClientOptions().setReadLimit(RequestClientOptions.DEFAULT_STREAM_BUFFER_SIZE);
+                final RequestBody requestBody;
+                if (getSetup().getBoolean(HOST_S3_USE_BYTE_ARRAY_INPUT_STREAM)
+                        && size < getSetup().getLong(HOST_S3_SINGLEPART_SIZE)) {
+                    requestBody = RequestBody.fromBytes(IoUtils.toByteArray(in));
+                } else {
+                    requestBody = RequestBody.fromInputStream(in, size);
                 }
-                s3.getAmazonS3().putObject(request);
+                s3.getS3Client().putObject(
+                        PutObjectRequest.builder().bucket(bnk[0]).key(bnk[1]).contentLength(size).build(), requestBody);
             } catch (final S3Exception e) {
                 _log.debug("putObject", e);
                 throw new IOException("Pushing object " + name + ": " + formatS3Exception(e));
@@ -497,46 +479,8 @@ public final class AmazonS3Module extends TransferModule {
         if (posn > 0) {
             throw new IOException("Resume not supported by the " + getSetup().getModuleName() + " module");
         }
-        _log.debug("Using StreamTransferManager");
-        final var manager = new StreamTransferManager(bnk[0], bnk[1], s3.getAmazonS3()).numStreams(1)
-                .numUploadThreads(numUploadThreads).queueCapacity(queueCapacity).partSize(partSize);
-        // Let's implement the various write methods for better performances!
-        return new FilterOutputStream(manager.getMultiPartOutputStreams().get(0)) {
-            private boolean closed = false;
-
-            @Override
-            public void write(final int b) throws IOException {
-                out.write(b);
-            }
-
-            @Override
-            public void write(final byte[] b) throws IOException {
-                out.write(b);
-            }
-
-            @Override
-            public void write(final byte[] b, final int off, final int len) throws IOException {
-                out.write(b, off, len);
-            }
-
-            @Override
-            public void close() throws IOException {
-                if (closed)
-                    return;
-                var complete = false;
-                try {
-                    super.close();
-                    complete = true;
-                } finally {
-                    if (complete) {
-                        manager.complete();
-                    } else {
-                        manager.abort();
-                    }
-                    closed = true;
-                }
-            }
-        };
+        _log.debug("Using MultipartUploadOutputStream");
+        return new MultipartUploadOutputStream(bnk[0], bnk[1], partSize);
     }
 
     /**
@@ -561,13 +505,7 @@ public final class AmazonS3Module extends TransferModule {
         }
         final var bnk = getBucketNameAndKey(name);
         try {
-            final var s3Object = s3.getAmazonS3().getObject(new GetObjectRequest(bnk[0], bnk[1]));
-            s3input = new FilterInputStream(s3Object.getObjectContent()) {
-                @Override
-                public void close() throws IOException {
-                    s3Object.close();
-                }
-            };
+            s3input = s3.getS3Client().getObject(GetObjectRequest.builder().bucket(bnk[0]).key(bnk[1]).build());
             return s3input;
         } catch (final S3Exception e) {
             _log.debug("getObject", e);
@@ -595,16 +533,15 @@ public final class AmazonS3Module extends TransferModule {
         setStatus("SIZE");
         final var bnk = getBucketNameAndKey(name);
         try {
-            final var s3Object = s3.getAmazonS3().getObject(new GetObjectRequest(bnk[0], bnk[1]));
-            try (s3Object) {
-                return s3Object.getObjectMetadata().getContentLength();
-            }
+            // Use HeadObject — avoids downloading the object body just to get its size.
+            return s3.getS3Client().headObject(HeadObjectRequest.builder().bucket(bnk[0]).key(bnk[1]).build())
+                    .contentLength();
         } catch (final S3Exception e) {
-            _log.debug("getObject", e);
-            throw new IOException("Getting Object " + name + ": " + formatS3Exception(e));
+            _log.debug("headObject", e);
+            throw new IOException("Getting size of " + name + ": " + formatS3Exception(e));
         } catch (final Exception e) {
-            _log.debug("getObject", e);
-            throw new IOException("Getting Object " + name + ": " + Format.getMessage(e, "", 0));
+            _log.debug("headObject", e);
+            throw new IOException("Getting size of " + name + ": " + Format.getMessage(e, "", 0));
         }
     }
 
@@ -633,7 +570,7 @@ public final class AmazonS3Module extends TransferModule {
         if (count == 1) {
             final var bucketName = token.nextToken();
             try {
-                s3.getAmazonS3().createBucket(bucketName);
+                s3.getS3Client().createBucket(CreateBucketRequest.builder().bucket(bucketName).build());
             } catch (final S3Exception e) {
                 _log.debug("createBucket", e);
                 throw new IOException("Creating Bucket " + bucketName + ": " + formatS3Exception(e));
@@ -671,7 +608,7 @@ public final class AmazonS3Module extends TransferModule {
         if (count == 1) {
             final var bucketName = token.nextToken();
             try {
-                s3.getAmazonS3().deleteBucket(bucketName);
+                s3.getS3Client().deleteBucket(DeleteBucketRequest.builder().bucket(bucketName).build());
             } catch (final S3Exception e) {
                 _log.debug("deleteBucket", e);
                 throw new IOException("Deleting Bucket " + bucketName + ": " + formatS3Exception(e));
@@ -747,10 +684,9 @@ public final class AmazonS3Module extends TransferModule {
                 final var extractedBucketName = token.nextToken();
                 listObjects(output, extractedBucketName, processKey(token.nextToken("\0")), pattern);
             }
-        } catch (final AmazonS3Exception e) {
+        } catch (final S3Exception e) {
             _log.debug("list", e);
-            throw new IOException(
-                    "Listing " + directory + ": " + e.getErrorResponseXml() + " <- " + Format.getMessage(e, "", 0));
+            throw new IOException("Listing " + directory + ": " + formatS3Exception(e));
         } catch (final Exception e) {
             _log.debug("list", e);
             throw new IOException("Listing " + directory + ": " + Format.getMessage(e, "", 0));
@@ -822,21 +758,24 @@ public final class AmazonS3Module extends TransferModule {
         if (getDebug()) {
             _log.debug("listBuckets: {},{}", bucketName, pattern);
         }
-        final var request = new ListBucketsPaginatedRequest();
-        final var result = s3.getAmazonS3().listBuckets(request);
-        for (final Bucket bucket : result.getBuckets()) {
-            final var owner = bucket.getOwner();
-            final var ownerName = owner != null ? owner.getDisplayName() : "unknown";
-            final var name = bucket.getName();
+        final var result = s3.getS3Client().listBuckets();
+        // In v2, the owner is account-level (same for all buckets) and returned on the response.
+        final var responseOwner = result.owner();
+        final var defaultOwnerName = (responseOwner != null && responseOwner.displayName() != null)
+                ? responseOwner.displayName() : "unknown";
+        for (final Bucket bucket : result.buckets()) {
+            final var name = bucket.name();
             final var matchesPattern = (pattern == null || name.matches(pattern));
             var matchesWildcard = true;
             if (bucketName != null) {
                 final var filter = WildcardFileFilter.builder().setWildcards(bucketName).get();
-                matchesWildcard = filter.accept(new File(name));
+                matchesWildcard = filter.accept(new java.io.File(name));
             }
             if (matchesPattern && matchesWildcard) {
-                output.add(Format.getFtpList("drw-r--r--", getSetup().get(HOST_S3_FTPUSER, ownerName),
-                        getSetup().get(HOST_S3_FTPGROUP, ownerName), "2048", bucket.getCreationDate().getTime(), name));
+                final var creationTime = bucket.creationDate() != null ? bucket.creationDate().toEpochMilli()
+                        : System.currentTimeMillis();
+                output.add(Format.getFtpList("drw-r--r--", getSetup().get(HOST_S3_FTPUSER, defaultOwnerName),
+                        getSetup().get(HOST_S3_FTPGROUP, defaultOwnerName), "2048", creationTime, name));
             }
         }
     }
@@ -885,57 +824,61 @@ public final class AmazonS3Module extends TransferModule {
         if (getDebug()) {
             _log.debug("listObjects: {},{},{}", bucketName, fileName, pattern);
         }
-        final var request = new ListObjectsRequest();
-        if (isNotEmpty(bucketName)) {
-            request.withBucketName(bucketName);
-        }
         final var prefix = s3prefix + (fileName != null ? fileName : "");
+        final var reqBuilder = ListObjectsV2Request.builder().fetchOwner(true);
+        if (isNotEmpty(bucketName)) {
+            reqBuilder.bucket(bucketName);
+        }
         if (isNotEmpty(prefix)) {
-            request.withPrefix(prefix);
+            reqBuilder.prefix(prefix);
             if (getDebug()) {
                 _log.debug("Using prefix: {}", prefix);
             }
         }
-        var objectListing = s3.getAmazonS3().listObjects(request);
-        final List<S3ObjectSummary> keyList = new ArrayList<>(objectListing.getObjectSummaries());
-        while (objectListing.isTruncated()) {
-            objectListing = s3.getAmazonS3().listNextBatchOfObjects(objectListing);
-            keyList.addAll(objectListing.getObjectSummaries());
-        }
-        for (final S3ObjectSummary objectSummary : keyList) {
-            var name = objectSummary.getKey();
-            if (getDebug()) {
-                _log.debug("Processing key: {}", name);
+        // Paginate through all results using the continuation token.
+        String continuationToken = null;
+        do {
+            if (continuationToken != null) {
+                reqBuilder.continuationToken(continuationToken);
             }
-            if (isNotEmpty(prefix)) {
-                name = name.substring(prefix.length());
+            final var response = s3.getS3Client().listObjectsV2(reqBuilder.build());
+            for (final S3Object objectSummary : response.contents()) {
+                var name = objectSummary.key();
                 if (getDebug()) {
-                    _log.debug("Name: {} ({})", name, pattern);
+                    _log.debug("Processing key: {}", name);
                 }
-            }
-            if (pattern == null || name.matches(pattern)) {
-                final var isDirectory = name.endsWith("/");
-                if (level > 0 && isDirectory) { // This is a directory and we are required to go one level up!
-                    listObjects(output, bucketName, rootName + name, fileName + name, pattern, level - 1);
-                } else { // This is a file!
-                    final var displayName = (!rootName.isBlank() ? rootName : "") + name;
-                    if (pattern == null || displayName.matches(pattern)) {
-                        final var owner = objectSummary.getOwner();
-                        final var ownerDisplayName = owner != null ? owner.getDisplayName() : "unknown";
-                        final var ownerName = ownerDisplayName != null ? ownerDisplayName : "unknown";
-                        final var date = objectSummary.getLastModified();
-                        final var entry = Format.getFtpList((isDirectory ? "d" : "-") + "rw-r--r--",
-                                getSetup().get(HOST_S3_FTPUSER, ownerName), getSetup().get(HOST_S3_FTPGROUP, ownerName),
-                                String.valueOf(objectSummary.getSize()),
-                                date != null ? date.getTime() : new Date().getTime(), displayName);
-                        output.add(entry);
-                        if (getDebug()) {
-                            _log.debug("Adding entry: {}", entry);
+                if (isNotEmpty(prefix)) {
+                    name = name.substring(prefix.length());
+                    if (getDebug()) {
+                        _log.debug("Name: {} ({})", name, pattern);
+                    }
+                }
+                if (pattern == null || name.matches(pattern)) {
+                    final var isDirectory = name.endsWith("/");
+                    if (level > 0 && isDirectory) {
+                        listObjects(output, bucketName, rootName + name, fileName + name, pattern, level - 1);
+                    } else {
+                        final var displayName = (!rootName.isBlank() ? rootName : "") + name;
+                        if (pattern == null || displayName.matches(pattern)) {
+                            final var owner = objectSummary.owner();
+                            final var ownerName = (owner != null && owner.displayName() != null) ? owner.displayName()
+                                    : "unknown";
+                            final var lastModified = objectSummary.lastModified();
+                            final var entry = Format.getFtpList((isDirectory ? "d" : "-") + "rw-r--r--",
+                                    getSetup().get(HOST_S3_FTPUSER, ownerName),
+                                    getSetup().get(HOST_S3_FTPGROUP, ownerName), String.valueOf(objectSummary.size()),
+                                    lastModified != null ? lastModified.toEpochMilli() : System.currentTimeMillis(),
+                                    displayName);
+                            output.add(entry);
+                            if (getDebug()) {
+                                _log.debug("Adding entry: {}", entry);
+                            }
                         }
                     }
                 }
             }
-        }
+            continuationToken = response.isTruncated() ? response.nextContinuationToken() : null;
+        } while (continuationToken != null);
     }
 
     /**
@@ -966,7 +909,7 @@ public final class AmazonS3Module extends TransferModule {
             currentStatus = "CLOSE";
             StreamPlugThread.closeQuietly(s3input);
             if (s3 != null)
-                s3.getAmazonS3().shutdown();
+                s3.getS3Client().close();
             _log.debug("Close completed");
         } else {
             _log.debug("Already closed");
@@ -991,54 +934,127 @@ public final class AmazonS3Module extends TransferModule {
     }
 
     /**
+     * An {@link SSLConnectionSocketFactory} subclass that applies all {@link SocketConfig} TCP options (NO_DELAY,
+     * QUICK_ACK, congestion control, keepalive tuning, etc.) to the underlying TCP socket inside
+     * {@link #prepareSocket(SSLSocket)}, which is called after TCP connection is established but before the SSL
+     * handshake begins. This is the same hook used by the SDK's own {@code SdkTlsSocketFactory}. When
+     * {@link ClientSocketStatistics} is present in the config, each connected socket is tracked so that
+     * {@link #updateStatistics()} can snapshot OS-level TCP statistics on demand.
+     */
+    private static final class TcpTunedSslSocketFactory extends SSLConnectionSocketFactory {
+
+        private final SocketConfig tcpConfig;
+        private final ClientSocketStatistics statistics;
+        private final Queue<SocketEntry> tracked = new ConcurrentLinkedQueue<>();
+
+        /** Strict-mode constructor — uses the default hostname verifier. */
+        TcpTunedSslSocketFactory(final SSLContext ctx, final SocketConfig cfg) {
+            super(ctx);
+            tcpConfig = cfg;
+            statistics = cfg.getStatistics();
+        }
+
+        /** Non-strict constructor — allows a custom (e.g. no-op) hostname verifier. */
+        TcpTunedSslSocketFactory(final SSLContext ctx, final HostnameVerifier hv, final SocketConfig cfg) {
+            super(ctx, hv);
+            tcpConfig = cfg;
+            statistics = cfg.getStatistics();
+        }
+
+        @Override
+        protected void prepareSocket(final SSLSocket socket) throws IOException {
+            super.prepareSocket(socket);
+            final var tcp = getUnderlyingSocket(socket);
+            tcpConfig.configureSocket(tcp);
+            if (statistics != null) {
+                tracked.add(new SocketEntry(tcp, System.currentTimeMillis()));
+            }
+        }
+
+        /**
+         * Snapshots OS-level TCP statistics for all currently live sockets. Closed or disconnected sockets are pruned
+         * from the tracking queue.
+         *
+         * @throws IOException
+         *             if an error occurs collecting statistics for a socket
+         */
+        void updateStatistics() throws IOException {
+            if (statistics == null) {
+                return;
+            }
+            tracked.removeIf(e -> e.socket().isClosed() || !e.socket().isConnected());
+            for (final var entry : tracked) {
+                statistics.add(entry.socket(), entry.startTime());
+            }
+        }
+
+        /**
+         * Unwrap the SSL socket to get the underlying TCP socket so that native TCP options (congestion algorithm,
+         * quick-ack, etc.) can be applied via file-descriptor access. Falls back to the SSL socket itself if the JVM
+         * internals are not accessible.
+         */
+        private static Socket getUnderlyingSocket(final SSLSocket sslSocket) {
+            try {
+                final var selfField = Class.forName("sun.security.ssl.BaseSSLSocketImpl").getDeclaredField("self");
+                selfField.setAccessible(true);
+                if (selfField.get(sslSocket) instanceof final Socket socket) {
+                    return socket;
+                }
+            } catch (final Exception e) {
+                // Reflection not available — fall through to the SSL socket itself
+            }
+            return sslSocket;
+        }
+
+        private record SocketEntry(Socket socket, long startTime) {
+        }
+    }
+
+    /**
      * The Class Session.
      */
     private static class Session {
 
-        /** The amazon S 3. */
-        private final AmazonS3 amazonS3;
+        /** The S3 client. */
+        private final S3Client s3Client;
 
-        /** The socket factory. */
-        final SSLClientSocketFactory socketFactory;
+        /** The socket factory — tracks live sockets for statistics collection. */
+        private final TcpTunedSslSocketFactory socketFactory;
 
         /**
          * Instantiates a new Session.
          *
-         * @param key
-         *            the key
-         * @param s3
-         *            the s 3
-         * @param clientSocketFactory
-         *            the client socket factory
+         * @param client
+         *            the S3 client
+         * @param factory
+         *            the socket factory (may be null if statistics are disabled)
          */
-        Session(final AmazonS3 s3, final SSLClientSocketFactory clientSocketFactory) {
-            amazonS3 = s3;
-            socketFactory = clientSocketFactory;
+        Session(final S3Client client, final TcpTunedSslSocketFactory factory) {
+            s3Client = client;
+            socketFactory = factory;
         }
 
         /**
          * Gets the Session.
          *
          * @param user
-         *            the user
+         *            the access key id
          * @param password
-         *            the password
+         *            the secret access key
          * @param listenAddress
-         *            the listen address
+         *            the local address to bind outgoing connections to (optional)
          * @param tcpConfig
-         *            the tcp config
+         *            the tcp config (SSL context + socket options applied via TcpTunedSslSocketFactory)
          * @param protocol
-         *            the protocol
+         *            the SSL protocol (e.g. TLS)
          * @param sslValidation
          *            the ssl validation
          * @param strict
-         *            the strict
+         *            the strict hostname verification
          * @param acceleration
          *            the acceleration
          * @param dualstack
          *            the dualstack
-         * @param forceGlobalBucketAccess
-         *            the force global bucket access
          * @param disableChunkedEncoding
          *            the disable chunked encoding
          * @param enablePathStyleAccess
@@ -1055,6 +1071,10 @@ public final class AmazonS3Module extends TransferModule {
          *            the role arn
          * @param roleSessionName
          *            the role session name
+         * @param durationSeconds
+         *            the duration seconds
+         * @param externalId
+         *            the external id
          * @param debug
          *            the debug
          *
@@ -1067,135 +1087,131 @@ public final class AmazonS3Module extends TransferModule {
          */
         static Session getSession(final String user, final String password, final String listenAddress,
                 final SocketConfig tcpConfig, final String protocol, final boolean sslValidation, final boolean strict,
-                final boolean acceleration, final boolean dualstack, final boolean forceGlobalBucketAccess,
-                final boolean disableChunkedEncoding, final boolean enablePathStyleAccess, final String bucketName,
-                final String url, final String region, final boolean mkBucket, final String roleArn,
-                final String roleSessionName, final int durationSeconds, final String externalId, final boolean debug)
-                throws NoSuchAlgorithmException, KeyManagementException {
-            final var builder = AmazonS3ClientBuilder.standard();
-            final var clientConfiguration = new ClientConfiguration();
+                final boolean acceleration, final boolean dualstack, final boolean disableChunkedEncoding,
+                final boolean enablePathStyleAccess, final String bucketName, final String url, final String region,
+                final boolean mkBucket, final String roleArn, final String roleSessionName, final int durationSeconds,
+                final String externalId, final boolean debug) throws NoSuchAlgorithmException, KeyManagementException {
+            // Build the SSL socket factory controlling both certificate and hostname validation.
+            // TcpTunedSslSocketFactory hooks into prepareSocket() to apply all SocketConfig TCP
+            // options (TCP_NODELAY, QUICK_ACK, congestion, keepalive tuning, etc.) to the
+            // underlying TCP socket immediately after connection and before the SSL handshake.
+            final var sslContext = sslValidation ? getSslContext(protocol)
+                    : SocketConfig.getBlindlyTrustingSSLContext(protocol);
+            final var sslSocketFactory = strict ? new TcpTunedSslSocketFactory(sslContext, tcpConfig)
+                    : new TcpTunedSslSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE, tcpConfig);
+            // Build the Apache HTTP client for the SDK.
+            final var httpClientBuilder = ApacheHttpClient.builder().socketFactory(sslSocketFactory);
             if (isNotEmpty(listenAddress)) {
                 try {
-                    clientConfiguration.setLocalAddress(InetAddress.getByName(listenAddress));
-                } catch (final UnknownHostException ignored) {
-                    _log.warn("Cannot set listen address: {}", listenAddress, ignored);
+                    httpClientBuilder.localAddress(InetAddress.getByName(listenAddress));
+                } catch (final UnknownHostException e) {
+                    _log.warn("Cannot set listen address: {}", listenAddress, e);
                 }
             }
-            final SSLClientSocketFactory clientSocketFactory;
-            if (acceleration) {
-                // Acceleration is not working with the tweaked SSL socket factory!
-                clientSocketFactory = null;
-            } else {
-                clientSocketFactory = tcpConfig.getSSLSocketFactory(protocol, sslValidation);
-                clientConfiguration.getApacheHttpClientConfig().withSslSocketFactory(new SSLConnectionSocketFactory(
-                        clientSocketFactory, !strict ? NoopHostnameVerifier.INSTANCE : null));
-            }
-            builder.withCredentials(loadCredentials(user, password, region, clientConfiguration, roleArn,
-                    roleSessionName, durationSeconds, externalId)).withClientConfiguration(clientConfiguration)
-                    .withForceGlobalBucketAccessEnabled(forceGlobalBucketAccess).withAccelerateModeEnabled(acceleration)
-                    .withDualstackEnabled(dualstack);
+            // S3-specific service configuration.
+            final var skipChecksumValidation = Cnf.at("AmazonS3", "skipMd5CheckStrategy", false);
+            final var s3Config = S3Configuration.builder().accelerateModeEnabled(acceleration)
+                    .pathStyleAccessEnabled(enablePathStyleAccess).chunkedEncodingEnabled(!disableChunkedEncoding)
+                    .checksumValidationEnabled(!skipChecksumValidation).build();
+            // Build the S3 client.
+            final var clientBuilder = S3Client.builder()
+                    .credentialsProvider(loadCredentials(user, password, region, sslContext, roleArn, roleSessionName,
+                            durationSeconds, externalId))
+                    .serviceConfiguration(s3Config).dualstackEnabled(dualstack).httpClientBuilder(httpClientBuilder);
             if (acceleration || isEmpty(url)) {
-                builder.withRegion(region);
+                clientBuilder.region(Region.of(region));
             } else {
-                builder.withEndpointConfiguration(new EndpointConfiguration(url, region));
-                _log.debug("EndPoint: {} - {}", builder.getEndpoint().getServiceEndpoint(),
-                        builder.getEndpoint().getSigningRegion());
-            }
-            if (disableChunkedEncoding) {
-                builder.disableChunkedEncoding();
-            }
-            if (enablePathStyleAccess) {
-                builder.enablePathStyleAccess();
+                clientBuilder.endpointOverride(URI.create(url)).region(Region.of(region));
+                _log.debug("EndPoint: {} - region: {}", url, region);
             }
             if (debug) {
-                builder.withRequestHandlers(new RequestHandler2() {
+                clientBuilder.overrideConfiguration(c -> c.addExecutionInterceptor(new ExecutionInterceptor() {
                     @Override
-                    public void afterResponse(final Request<?> request, final Response<?> response) {
-                        final var headers2 = response.getHttpResponse().getHttpRequest().getAllHeaders();
-                        for (final Header header : headers2) {
-                            _log.debug("Request Headers: {}:{}", header.getName(), header.getValue());
-                        }
-                        final var header1 = response.getHttpResponse().getAllHeaders();
-                        for (final Map.Entry<String, List<String>> entry : header1.entrySet()) {
-                            final var sb = new StringBuilder();
-                            for (final String value : entry.getValue()) {
-                                sb.append((sb.length() > 0 ? "," : "") + value);
-                            }
-                            _log.debug("Response Headers: {}:{}", entry.getKey(), sb);
-                        }
+                    public void beforeTransmission(final Context.BeforeTransmission context,
+                            final ExecutionAttributes attributes) {
+                        context.httpRequest().headers().forEach((k, v) -> _log.debug("Request Header: {}={}", k, v));
                     }
 
                     @Override
-                    public void beforeRequest(final Request<?> request) {
-                        final var parameters = request.getParameters();
-                        for (final Map.Entry<String, List<String>> entry : parameters.entrySet()) {
-                            final var sb = new StringBuilder();
-                            for (final String key : entry.getValue()) {
-                                sb.append((sb.length() > 0 ? "," : "") + key);
-                            }
-                            _log.debug("Request Parameters: {}:{}", entry.getKey(), sb);
-                        }
-                        final var headers = request.getHeaders();
-                        for (final Map.Entry<String, String> entry : headers.entrySet()) {
-                            _log.debug("Request Headers: {},{}", entry.getKey(), entry.getValue());
-                        }
+                    public void afterExecution(final Context.AfterExecution context,
+                            final ExecutionAttributes attributes) {
+                        context.httpResponse().headers().forEach((k, v) -> _log.debug("Response Header: {}={}", k, v));
                     }
-                });
+                }));
             }
             var connected = false;
-            AmazonS3 s3 = null;
+            S3Client s3 = null;
             try {
-                s3 = builder.build();
+                s3 = clientBuilder.build();
                 if (isNotEmpty(bucketName) && mkBucket) {
-                    // The user has configured a Bucket Name!
                     var bucketFound = false;
-                    final var request = new ListBucketsPaginatedRequest();
-                    final var result = s3.listBuckets(request);
-                    for (final var bucket : result.getBuckets()) {
-                        if (bucketName.equals(bucket.getName())) {
+                    for (final var bucket : s3.listBuckets().buckets()) {
+                        if (bucketName.equals(bucket.name())) {
                             bucketFound = true;
                             break;
                         }
                     }
                     if (!bucketFound) {
-                        s3.createBucket(bucketName);
+                        s3.createBucket(CreateBucketRequest.builder().bucket(bucketName).build());
                     }
                 }
                 connected = true;
             } finally {
                 if (!connected && s3 != null) {
                     try {
-                        s3.shutdown();
+                        s3.close();
                     } catch (final Throwable t) {
-                        // Ignore!
+                        // Ignore
                     }
                 }
             }
-            return new Session(s3, clientSocketFactory);
+            return new Session(s3, sslSocketFactory);
         }
 
         /**
-         * Gets the amazon S 3.
+         * Gets the S3 client.
          *
-         * @return the amazon S 3
+         * @return the S3 client
          */
-        AmazonS3 getAmazonS3() {
-            return amazonS3;
+        S3Client getS3Client() {
+            return s3Client;
         }
 
         /**
-         * Update statistics.
+         * Update statistics. Snapshots OS-level TCP statistics for all live sockets tracked by the SSL socket factory.
          *
          * @throws IOException
          *             Signals that an I/O exception has occurred.
          */
         void updateStatistics() throws IOException {
-            if (socketFactory != null)
+            if (socketFactory != null) {
                 socketFactory.updateStatistics();
+            }
         }
 
         /**
-         * Load credentials.
+         * Builds a validated SSL context for the given protocol.
+         *
+         * @param protocol
+         *            the protocol
+         *
+         * @return the SSL context
+         *
+         * @throws NoSuchAlgorithmException
+         *             the no such algorithm exception
+         * @throws KeyManagementException
+         *             the key management exception
+         */
+        private static SSLContext getSslContext(final String protocol)
+                throws NoSuchAlgorithmException, KeyManagementException {
+            final var ctx = SSLContext.getInstance(protocol);
+            ctx.init(null, null, null);
+            return ctx;
+        }
+
+        /**
+         * Load credentials. Returns a static provider wrapping real AWS keys, anonymous credentials, or temporary STS
+         * credentials obtained by assuming a role.
          *
          * @param accessKeyId
          *            the access key id
@@ -1203,62 +1219,219 @@ public final class AmazonS3Module extends TransferModule {
          *            the secret access key
          * @param region
          *            the region
-         * @param clientConfiguration
-         *            the client configuration
+         * @param sslContext
+         *            the ssl context used for the STS client
          * @param roleArn
          *            the role arn
          * @param roleSessionName
          *            the role session name
+         * @param durationSeconds
+         *            the duration seconds
+         * @param externalId
+         *            the external id
          *
-         * @return the AWS credentials provider
+         * @return the aws credentials provider
          */
-        private static AWSCredentialsProvider loadCredentials(final String accessKeyId, final String secretAccessKey,
-                final String region, final ClientConfiguration clientConfiguration, final String roleArn,
-                final String roleSessionName, final int durationSeconds, final String externalId) {
-            // Base credentials: either real AWS keys or anonymous
+        private static AwsCredentialsProvider loadCredentials(final String accessKeyId, final String secretAccessKey,
+                final String region, final SSLContext sslContext, final String roleArn, final String roleSessionName,
+                final int durationSeconds, final String externalId) {
+            // Base credentials: real key-pair or anonymous.
             final var baseProvider = (accessKeyId != null && !accessKeyId.isBlank())
-                    ? new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKeyId, secretAccessKey))
-                    : new AWSStaticCredentialsProvider(new AnonymousAWSCredentials());
-            // If no role is specified, just return the base provider
+                    ? StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKeyId, secretAccessKey))
+                    : AnonymousCredentialsProvider.create();
+            // If no role is specified, return the base provider directly.
             if (isEmpty(roleArn) || isEmpty(roleSessionName)) {
                 return baseProvider;
             }
-            // Create an STS client using the base credentials
-            final var stsClient = AWSSecurityTokenServiceClientBuilder.standard().withCredentials(baseProvider)
-                    .withClientConfiguration(clientConfiguration).withRegion(region).build();
-            // Call STS to assume the role
-            final var assumeRoleRequest = new AssumeRoleRequest().withRoleArn(roleArn)
-                    .withRoleSessionName(roleSessionName).withDurationSeconds(durationSeconds);
-            // Add external ID if provided
-            if (externalId != null && !externalId.isBlank()) {
-                assumeRoleRequest.withExternalId(externalId);
+            // Assume the specified role via STS.
+            try (final var stsClient = StsClient.builder().credentialsProvider(baseProvider).region(Region.of(region))
+                    .httpClientBuilder(
+                            ApacheHttpClient.builder().socketFactory(new SSLConnectionSocketFactory(sslContext)))
+                    .build()) {
+                final var assumeReqBuilder = AssumeRoleRequest.builder().roleArn(roleArn)
+                        .roleSessionName(roleSessionName).durationSeconds(durationSeconds);
+                if (externalId != null && !externalId.isBlank()) {
+                    assumeReqBuilder.externalId(externalId);
+                }
+                final var stsCreds = stsClient.assumeRole(assumeReqBuilder.build()).credentials();
+                return StaticCredentialsProvider.create(AwsSessionCredentials.create(stsCreds.accessKeyId(),
+                        stsCreds.secretAccessKey(), stsCreds.sessionToken()));
             }
-            final var assumeRoleResult = stsClient.assumeRole(assumeRoleRequest);
-            final var stsCreds = assumeRoleResult.getCredentials();
-            // Wrap the temporary session credentials in a static provider
-            return new AWSStaticCredentialsProvider(new BasicSessionCredentials(stsCreds.getAccessKeyId(),
-                    stsCreds.getSecretAccessKey(), stsCreds.getSessionToken()));
         }
     }
 
     /**
-     * Formats a S3Exception into a single-line string with full AWS info.
+     * An OutputStream that accumulates data into fixed-size parts and uploads them via the S3 multipart upload API.
+     * Parts are uploaded as they fill (each must be at least 5 MB except the last). The upload is completed when
+     * {@link #close()} is called. On error, {@link #abort()} cancels the in-progress upload on S3.
+     */
+    private final class MultipartUploadOutputStream extends FilterOutputStream {
+
+        /** The bucket. */
+        private final String bucket;
+
+        /** The key. */
+        private final String key;
+
+        /** The part size bytes. */
+        private final int partSizeBytes;
+
+        /** The upload id. */
+        private final String uploadId;
+
+        /** The completed parts. */
+        private final List<CompletedPart> completedParts = new ArrayList<>();
+
+        /** The part buffer. */
+        private final byte[] partBuffer;
+
+        /** The buffer position. */
+        private int bufferPos = 0;
+
+        /** The part number (1-based). */
+        private int partNumber = 1;
+
+        /** Whether close() has already been called. */
+        private boolean uploadClosed = false;
+
+        /**
+         * Initiates a new multipart upload for the given bucket and key.
+         *
+         * @param bucket
+         *            the bucket
+         * @param key
+         *            the key
+         * @param partSizeMB
+         *            the part size in megabytes (must be ≥ 5 MB for all parts except the last)
+         *
+         * @throws IOException
+         *             if the multipart upload cannot be initiated
+         */
+        MultipartUploadOutputStream(final String bucket, final String key, final int partSizeMB) throws IOException {
+            super(OutputStream.nullOutputStream());
+            this.bucket = bucket;
+            this.key = key;
+            this.partSizeBytes = partSizeMB * 1024 * 1024;
+            this.partBuffer = new byte[this.partSizeBytes];
+            try {
+                uploadId = s3.getS3Client()
+                        .createMultipartUpload(CreateMultipartUploadRequest.builder().bucket(bucket).key(key).build())
+                        .uploadId();
+            } catch (final S3Exception e) {
+                throw new IOException("Initiating multipart upload for " + key + ": " + formatS3Exception(e));
+            } catch (final Exception e) {
+                throw new IOException("Initiating multipart upload for " + key + ": " + Format.getMessage(e, "", 0));
+            }
+        }
+
+        @Override
+        public void write(final int b) throws IOException {
+            partBuffer[bufferPos++] = (byte) b;
+            if (bufferPos == partSizeBytes) {
+                uploadCurrentPart();
+            }
+        }
+
+        @Override
+        public void write(final byte[] b, final int off, final int len) throws IOException {
+            var remaining = len;
+            var offset = off;
+            while (remaining > 0) {
+                final var space = partSizeBytes - bufferPos;
+                final var toWrite = Math.min(remaining, space);
+                System.arraycopy(b, offset, partBuffer, bufferPos, toWrite);
+                bufferPos += toWrite;
+                offset += toWrite;
+                remaining -= toWrite;
+                if (bufferPos == partSizeBytes) {
+                    uploadCurrentPart();
+                }
+            }
+        }
+
+        /**
+         * Uploads the current buffer content as the next part.
+         */
+        private void uploadCurrentPart() throws IOException {
+            if (bufferPos == 0) {
+                return;
+            }
+            try {
+                final var response = s3.getS3Client().uploadPart(
+                        UploadPartRequest.builder().bucket(bucket).key(key).uploadId(uploadId).partNumber(partNumber)
+                                .contentLength((long) bufferPos).build(),
+                        RequestBody.fromInputStream(new ByteArrayInputStream(partBuffer, 0, bufferPos), bufferPos));
+                completedParts.add(CompletedPart.builder().partNumber(partNumber).eTag(response.eTag()).build());
+                partNumber++;
+                bufferPos = 0;
+            } catch (final S3Exception e) {
+                throw new IOException("Uploading part " + partNumber + " for " + key + ": " + formatS3Exception(e));
+            } catch (final Exception e) {
+                throw new IOException(
+                        "Uploading part " + partNumber + " for " + key + ": " + Format.getMessage(e, "", 0));
+            }
+        }
+
+        /**
+         * Completes the multipart upload. If completion fails, the upload is aborted before rethrowing.
+         */
+        @Override
+        public void close() throws IOException {
+            if (uploadClosed) {
+                return;
+            }
+            uploadClosed = true;
+            IOException failure = null;
+            try {
+                uploadCurrentPart();
+                s3.getS3Client().completeMultipartUpload(CompleteMultipartUploadRequest.builder().bucket(bucket)
+                        .key(key).uploadId(uploadId)
+                        .multipartUpload(CompletedMultipartUpload.builder().parts(completedParts).build()).build());
+            } catch (final IOException e) {
+                failure = e;
+            } catch (final S3Exception e) {
+                failure = new IOException("Completing multipart upload for " + key + ": " + formatS3Exception(e));
+            } catch (final Exception e) {
+                failure = new IOException(
+                        "Completing multipart upload for " + key + ": " + Format.getMessage(e, "", 0));
+            }
+            if (failure != null) {
+                abort();
+                throw failure;
+            }
+        }
+
+        /**
+         * Aborts the in-progress multipart upload, cleaning up any already-uploaded parts on S3.
+         */
+        void abort() {
+            try {
+                s3.getS3Client().abortMultipartUpload(
+                        AbortMultipartUploadRequest.builder().bucket(bucket).key(key).uploadId(uploadId).build());
+            } catch (final Exception e) {
+                _log.warn("Failed to abort multipart upload for {}/{}: {}", bucket, key, Format.getMessage(e, "", 0));
+            }
+        }
+    }
+
+    /**
+     * Formats a S3Exception into a single-line string with the key AWS diagnostic fields.
+     *
+     * @param e
+     *            the S3Exception
+     *
+     * @return formatted string
      */
     public static String formatS3Exception(final S3Exception e) {
+        final var details = e.awsErrorDetails();
         final var sb = new StringBuilder();
-        sb.append("HTTPStatus=").append(e.getStatusCode()).append(", ");
-        sb.append("AWSCode=").append(e.getErrorCode()).append(", ");
-        sb.append("Message=").append(e.getErrorMessage()).append(", ");
-        sb.append("RequestId=").append(e.getRequestId());
+        sb.append("HTTPStatus=").append(e.statusCode()).append(", ");
+        sb.append("AWSCode=").append(details != null ? details.errorCode() : "unknown").append(", ");
+        sb.append("Message=").append(details != null ? details.errorMessage() : e.getMessage()).append(", ");
+        sb.append("RequestId=").append(e.requestId());
         final var cause = e.getCause();
         if (cause != null) {
             sb.append(", Cause=").append(cause.getClass().getSimpleName()).append(":").append(cause.getMessage());
-        }
-        // Include chained AmazonServiceException causes if present
-        AmazonServiceException ase = e;
-        while (ase.getCause() instanceof AmazonServiceException) {
-            ase = (AmazonServiceException) ase.getCause();
-            sb.append(", ChainedAWSCode=").append(ase.getErrorCode());
         }
         return sb.toString();
     }

@@ -989,12 +989,6 @@ public enum ECtransOptions {
     /** The host s3 prefix. */
     HOST_S3_PREFIX("prefix", String.class, ""),
 
-    /** The host s3 num upload threads. */
-    HOST_S3_NUM_UPLOAD_THREADS("numUploadThreads", Integer.class, 2),
-
-    /** The host s3 queue capacity. */
-    HOST_S3_QUEUE_CAPACITY("queueCapacity", Integer.class, 2),
-
     /** The host s3 recursive level. */
     HOST_S3_RECURSIVE_LEVEL("recursiveLevel", Integer.class, 0),
 
@@ -1025,9 +1019,6 @@ public enum ECtransOptions {
     /** The host s3 dualstack. */
     HOST_S3_DUALSTACK("dualstack", Boolean.class, false),
 
-    /** The host s3 force global bucket access. */
-    HOST_S3_FORCE_GLOBAL_BUCKET_ACCESS("forceGlobalBucketAccess", Boolean.class, true),
-
     /** The host s3 disable chunked encoding. */
     HOST_S3_DISABLE_CHUNKED_ENCODING("disableChunkedEncoding", Boolean.class, false),
 
@@ -1057,9 +1048,6 @@ public enum ECtransOptions {
 
     /** The host s3 use byte array input stream. */
     HOST_S3_USE_BYTE_ARRAY_INPUT_STREAM("useByteArrayInputStream", Boolean.class, false),
-
-    /** The host s3 enable mark and reset. */
-    HOST_S3_ENABLE_MARK_AND_RESET("enableMarkAndReset", Boolean.class, false),
 
     /** The host s3 singlepart size. */
     HOST_S3_SINGLEPART_SIZE("singlepartSize", Long.class, Long.MAX_VALUE),

@@ -274,7 +274,7 @@ public class SocketConfig {
      *
      * @return the statistics
      */
-    protected ClientSocketStatistics getStatistics() {
+    public ClientSocketStatistics getStatistics() {
         return statistics;
     }
 
@@ -1296,6 +1296,23 @@ public class SocketConfig {
             return getClientSocketFactory().getWrapper(configured);
         }
         return configured;
+    }
+
+    /**
+     * Configure a connected socket fully (basic options + advanced TCP options). This is the public entry point for
+     * external code that needs to apply all socket settings — for example, a custom Apache HTTP client socket factory
+     * that intercepts newly connected sockets. Calls {@link #configureConnectedSocket(Socket)} followed by
+     * {@link #setTCPOptions(Socket)}.
+     *
+     * @param socket
+     *            the socket
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     */
+    public void configureSocket(final Socket socket) throws IOException {
+        configureConnectedSocket(socket);
+        setTCPOptions(socket);
     }
 
     /**

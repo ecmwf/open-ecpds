@@ -101,7 +101,7 @@ public class ClientSocketStatistics {
      * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
-    protected void add(final Socket socket, final long startTime) throws IOException {
+    public void add(final Socket socket, final long startTime) throws IOException {
         try {
             if (SocketOptions.isAccessible(socket)) {
                 final var ssOutput = SocketOptions.getSSOutput(socket).trim();
