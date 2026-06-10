@@ -97,11 +97,10 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
 
 import org.apache.commons.io.filefilter.WildcardFileFilter;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import software.amazon.awssdk.thirdparty.org.apache.http.conn.ssl.NoopHostnameVerifier;
-import software.amazon.awssdk.thirdparty.org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 
 import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
