@@ -390,13 +390,15 @@
         (function(){
           var max='${maxconnections}', cur='${currentconnections}';
           if(max==='') return;
-          var remaining = max - (cur==='' ? 0 : parseInt(cur,10));
+          var curInt = cur==='' ? 0 : parseInt(cur,10), maxInt = parseInt(max,10);
+          var remaining = maxInt - curInt;
+          var displayCur = Math.min(curInt, maxInt);
           var html = '<span class="badge rounded-pill border fw-normal ms-1 '
             + (remaining<=0 ? 'bg-danger-subtle text-danger-emphasis' : remaining<=2 ? 'bg-warning-subtle text-warning-emphasis' : 'bg-secondary-subtle text-secondary-emphasis')
             + '" data-bs-toggle="popover" data-bs-placement="bottom" data-bs-trigger="hover focus" tabindex="0"'
             + ' data-bs-content="Number of active data transfer sessions (HTTPS downloads, S3, FTP, SFTP/SCP) as reported by the last heartbeat (updated every few seconds). Browsing this page counts as a session but may not yet appear in this snapshot. Once the limit is reached, new connections will be refused."'
             + ' style="cursor:default">';
-          if(cur!=='') html += '<i class="bi bi-plug me-1"></i>' + cur + '\u200a/\u200a' + max;
+          if(cur!=='') html += '<i class="bi bi-plug me-1"></i>' + displayCur + '\u200a/\u200a' + max;
           else html += '<i class="bi bi-plug me-1"></i>max\u00a0' + max;
           html += '</span>';
           document.write(html);
