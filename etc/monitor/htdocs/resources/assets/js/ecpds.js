@@ -61,8 +61,12 @@ function checkValueForType(type, choices, currentLine) {
 			result = "max-size" === value || byteSizeRegex.test(value) ? null : "The value should be a number of bytes (e.g. \"10MB\" or \"1024B\")";
 		} else if (type === "TimeRange") {
 			const localTimeRegex = /^(?:[01]\d|2[0-3]):[0-5]\d(:[0-5]\d(\.\d{1,9})?)?$/;
-			time = value.split("-");
-			result = time.length == 2 && localTimeRegex.test(time[0]) && localTimeRegex.test(time[1]) ? null : "The value should be a time range (e.g. \"10:15-11:25:30\")";
+			const isValidTimeRange = function(v) {
+				const parts = v.trim().split("-");
+				return parts.length === 2 && localTimeRegex.test(parts[0]) && localTimeRegex.test(parts[1]);
+			};
+			result = value.split(",").every(function(t) { return isValidTimeRange(t); })
+				? null : "The value should be one or more time ranges separated by commas (e.g. \"10:15-11:25\" or \"10:15-11:25,14:00-16:00\")";
 		} else if (type === "Integer") {
 			const integerRegex = /^-?\d+$/;
 			result = "max-integer" === value || integerRegex.test(value) ? null : "The value should be an integer (e.g. \"12345\")";
@@ -544,4 +548,14 @@ function escapeHtml(text) {
     var textNode = document.createTextNode(text);
     element.appendChild(textNode);
     return element.innerHTML;
+}
+
+function confirmCloseAll(path, count) {
+    confirmationDialog({
+        title: "Close All Sessions",
+        message: count === 1 ? "Are you sure you want to close the active session?" : "Are you sure you want to close all " + count + " active sessions?",
+        confirmText: "Close All",
+        showLoading: true,
+        onConfirm: function () { window.location = path; }
+    });
 }

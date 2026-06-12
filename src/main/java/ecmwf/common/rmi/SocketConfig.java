@@ -73,12 +73,6 @@ public class SocketConfig {
     /** The Constant DEFAULT_SERVER_FACTORY. */
     public static final ServerSocketFactory DEFAULT_SERVER_FACTORY = ServerSocketFactory.getDefault();
 
-    /** The Constant MIN_PORT. */
-    public static final int MIN_PORT = Cnf.at("SocketConfig", "minPrivilegedPort", 500);
-
-    /** The Constant MAX_PORT. */
-    public static final int MAX_PORT = Cnf.at("SocketConfig", "maxPrivilegedPort", 1023);
-
     /** The Constant ssl context map. */
     private static final ConcurrentHashMap<String, SSLContext> sslContextMap = new ConcurrentHashMap<>();
 
@@ -87,6 +81,12 @@ public class SocketConfig {
 
     /** The cached current local address. */
     private static volatile String currentLocalAddress;
+
+    /** The minimum privileged port. */
+    public int minPrivilegedPort = Cnf.at("SocketConfig", "minPrivilegedPort", 500);
+
+    /** The maximum privileged port. */
+    public int maxPrivilegedPort = Cnf.at("SocketConfig", "maxPrivilegedPort", 1023);
 
     /** The current name. */
     private String currentName = null;
@@ -261,11 +261,48 @@ public class SocketConfig {
                 currentInterruptible = Cnf.at(name, "interruptible", currentInterruptible);
                 currentPrivilegedLocalPortNumber = Cnf.at(name, "privilegedLocalPort",
                         currentPrivilegedLocalPortNumber);
+                minPrivilegedPort = Cnf.at(name, "minPrivilegedPort", minPrivilegedPort);
+                maxPrivilegedPort = Cnf.at(name, "maxPrivilegedPort", maxPrivilegedPort);
                 currentTrace = Cnf.at(name, "trace", currentTrace);
                 currentHost = Cnf.at(name, "host", currentHost);
                 currentPortNumber = Cnf.at(name, "port", currentPortNumber);
                 currentServerPortNumber = Cnf.at(name, "serverPort", currentServerPortNumber);
+                // TCP socket options (all nullable — only applied when non-null)
+                tcpCongestion = Cnf.at(name, "tcpCongestion", tcpCongestion);
+                soMaxPacingRate = _integerAt(name, "soMaxPacingRate", soMaxPacingRate);
+                tcpMaxSegment = _integerAt(name, "tcpMaxSegment", tcpMaxSegment);
+                tcpTimeStamp = Cnf.booleanAt(name, "tcpTimeStamp", tcpTimeStamp);
+                tcpWindowClamp = _integerAt(name, "tcpWindowClamp", tcpWindowClamp);
+                tcpKeepAliveTime = _integerAt(name, "tcpKeepAliveTime", tcpKeepAliveTime);
+                tcpKeepAliveInterval = _integerAt(name, "tcpKeepAliveInterval", tcpKeepAliveInterval);
+                tcpKeepAliveProbes = _integerAt(name, "tcpKeepAliveProbes", tcpKeepAliveProbes);
+                tcpLingerEnable = Cnf.booleanAt(name, "tcpLingerEnable", tcpLingerEnable);
+                tcpLingerTime = _integerAt(name, "tcpLingerTime", tcpLingerTime);
+                tcpUserTimeout = _integerAt(name, "tcpUserTimeout", tcpUserTimeout);
+                tcpQuickAck = Cnf.booleanAt(name, "tcpQuickAck", tcpQuickAck);
             }
+        }
+    }
+
+    /**
+     * Reads a nullable Integer from the configuration. Returns the defaultValue when the key is absent or unparseable,
+     * matching the behaviour of {@link Cnf#booleanAt} for Boolean fields.
+     *
+     * @param group
+     *            the configuration group name
+     * @param key
+     *            the key within the group
+     * @param defaultValue
+     *            the value to return when the key is absent or cannot be parsed
+     *
+     * @return the parsed Integer, or defaultValue
+     */
+    private static Integer _integerAt(final String group, final String key, final Integer defaultValue) {
+        try {
+            final var value = Cnf.at(group, key);
+            return value != null ? Integer.parseInt(value.trim()) : defaultValue;
+        } catch (final Exception _) {
+            return defaultValue;
         }
     }
 
@@ -1143,8 +1180,8 @@ public class SocketConfig {
         }
         synchronized (synchroPrivilegedPort) {
             var count = 0;
-            while (count++ < MAX_PORT - MIN_PORT) {
-                currentPrivilegedPortNumber = currentPrivilegedPortNumber < MIN_PORT ? MAX_PORT
+            while (count++ < maxPrivilegedPort - minPrivilegedPort) {
+                currentPrivilegedPortNumber = currentPrivilegedPortNumber < minPrivilegedPort ? maxPrivilegedPort
                         : currentPrivilegedPortNumber - 1;
                 try {
                     final var socket = getSocket(factory, host, port, currentPrivilegedPortNumber);
@@ -1359,7 +1396,7 @@ public class SocketConfig {
         if (!currentPrivilegedLocalPortNumber) {
             return getServerSocket(getServerPort());
         }
-        for (var port = MIN_PORT; port <= MAX_PORT; port++) {
+        for (var port = minPrivilegedPort; port <= maxPrivilegedPort; port++) {
             try {
                 return getServerSocket(port);
             } catch (final SecurityException e) {
@@ -1368,7 +1405,7 @@ public class SocketConfig {
                 // Ignore and continue!
             }
         }
-        throw new IOException("No port available in range " + MIN_PORT + ".." + MAX_PORT);
+        throw new IOException("No port available in range " + minPrivilegedPort + ".." + maxPrivilegedPort);
     }
 
     /**

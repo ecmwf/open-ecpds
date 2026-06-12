@@ -1489,6 +1489,9 @@ public enum ECtransOptions {
     /** The user portal max connections. */
     USER_PORTAL_MAX_CONNECTIONS("maxConnections", Integer.class, Cnf.at("Server", "maxIncomingConnections", 10)),
 
+    /** The user portal max connections schedule. */
+    USER_PORTAL_MAX_CONNECTIONS_SCHEDULE("maxConnectionsSchedule", String.class, STRING_NONE),
+
     /** The user portal update last login information. */
     USER_PORTAL_UPDATE_LAST_LOGIN_INFORMATION("updateLastLoginInformation", Boolean.class, true),
 

@@ -64,6 +64,13 @@ public class GetIncomingUserListJsonAction extends PDSAction {
             users = filterByDestination(users, destFilter);
         }
 
+        // Check once whether the current user can manage (edit/update) incoming users
+        var canEdit = false;
+        try {
+            canEdit = user.hasAccess(INCOMING_BASE_PATH + "/edit/update");
+        } catch (final Exception ignored) {
+        }
+
         final var root = MAPPER.createObjectNode();
         root.put("draw", draw);
         root.put("recordsTotal", users.size());
@@ -72,14 +79,15 @@ public class GetIncomingUserListJsonAction extends PDSAction {
         final var data = root.putArray("data");
         for (final IncomingUser u : users) {
             final var row = data.addArray();
+            final var connCount = u.getIncomingConnections().size();
             row.add(buildIdLink(u.getId()));
             row.add(escapeHtml(u.getComment()));
             row.add(buildCountryHtml(u));
             row.add(buildBadge(u.getActive()));
             row.add(buildBadge(u.getIsSynchronized()));
             row.add(buildAnonymousHtml(u.getAnonymous()));
-            row.add(u.getIncomingConnections().size());
-            row.add(buildActions(u.getId()));
+            row.add(connCount);
+            row.add(buildActions(u.getId(), connCount, canEdit));
             // Hidden sort values for boolean columns (cols 3, 4, 5)
             row.add(u.getActive() ? 1 : 0);
             row.add(u.getIsSynchronized() ? 1 : 0);
@@ -139,12 +147,20 @@ public class GetIncomingUserListJsonAction extends PDSAction {
         return "<i class=\"bi bi-dash text-muted\" title=\"No\"></i>";
     }
 
-    private static String buildActions(final String id) {
+    private static String buildActions(final String id, final int connectionCount, final boolean canEdit) {
         final var escaped = escapeHtml(id);
-        return "<a href=\"" + INCOMING_BASE_PATH + "/edit/update_form/" + escaped
-                + "\" title=\"Edit\"><i class=\"bi bi-pencil-square text-primary\" style=\"font-size:1rem\"></i></a>"
-                + "&nbsp;<a href=\"" + INCOMING_BASE_PATH + "/edit/delete_form/" + escaped
-                + "\" title=\"Delete\"><i class=\"bi bi-trash text-danger\" style=\"font-size:1rem\"></i></a>";
+        final var sb = new StringBuilder();
+        sb.append("<a href=\"").append(INCOMING_BASE_PATH).append("/edit/update_form/").append(escaped).append(
+                "\" title=\"Edit\"><i class=\"bi bi-pencil-square text-primary\" style=\"font-size:1rem\"></i></a>")
+                .append("&nbsp;<a href=\"").append(INCOMING_BASE_PATH).append("/edit/delete_form/").append(escaped)
+                .append("\" title=\"Delete\"><i class=\"bi bi-trash text-danger\" style=\"font-size:1rem\"></i></a>");
+        if (canEdit && connectionCount > 0) {
+            final var closeUrl = INCOMING_BASE_PATH + "/edit/update/" + escaped + "/closeAllSessions/all";
+            sb.append("&nbsp;<a href=\"javascript:confirmCloseAll('").append(closeUrl).append("',")
+                    .append(connectionCount).append(")\" title=\"Close all sessions (").append(connectionCount)
+                    .append(")\"><i class=\"bi bi-plug-fill text-warning\" style=\"font-size:1rem\"></i></a>");
+        }
+        return sb.toString();
     }
 
     private static Collection<IncomingUser> filterByDestination(final Collection<IncomingUser> users,

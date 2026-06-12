@@ -20,6 +20,15 @@
 	        onCancel: function () {}
 	    });
 	}
+	function confirmCloseAll(path, count) {
+	    confirmationDialog({
+	        title: "Close All Sessions",
+	        message: "Are you sure you want to close all " + count + " active session" + (count !== 1 ? "s" : "") + "?",
+	        confirmText: "Close All",
+	        showLoading: true,
+	        onConfirm: function () { window.location = path; }
+	    });
+	}
 </script>
 
 <div class="row g-3">

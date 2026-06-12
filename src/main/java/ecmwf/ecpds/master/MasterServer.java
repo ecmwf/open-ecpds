@@ -106,6 +106,7 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_PROXY_USE_DESTINATION_FIL
 import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_ANONYMOUS;
 import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_GEOBLOCLING;
 import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_MAX_CONNECTIONS;
+import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_MAX_CONNECTIONS_SCHEDULE;
 import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_UPDATE_LAST_LOGIN_INFORMATION;
 import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_USE_PASSCODE;
 import static ecmwf.common.text.Util.isEmpty;
@@ -143,6 +144,8 @@ import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -153,6 +156,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.OptionalInt;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
@@ -249,6 +253,7 @@ import ecmwf.common.technical.ScriptManager;
 import ecmwf.common.technical.StreamPlugThread;
 import ecmwf.common.technical.Synchronized;
 import ecmwf.common.technical.ThreadService.ConfigurableRunnable;
+import ecmwf.common.technical.TimeRange;
 import ecmwf.common.text.Format;
 import ecmwf.common.text.Options;
 import ecmwf.common.version.Version;
@@ -944,7 +949,10 @@ public final class MasterServer extends ECaccessProvider
             // Let's check if the maximum number of connections have not been
             // reached for this user!
             final var count = _getIncomingConnectionCountFor(incomingUser);
-            if (count >= setup.getInteger(USER_PORTAL_MAX_CONNECTIONS)) {
+            final var maxConnections = _getMaxConnectionsForSchedule(
+                    setup.getString(USER_PORTAL_MAX_CONNECTIONS_SCHEDULE), LocalTime.now(ZoneOffset.UTC))
+                            .orElse(setup.getInteger(USER_PORTAL_MAX_CONNECTIONS));
+            if (count >= maxConnections) {
                 final var message = "Maximum number of connections exceeded (" + count + ")";
                 if (_splunk.isInfoEnabled())
                     _splunk.info("DEA;{};UserId={};Message={};Context={}", "TimeStamp=" + Timestamp.from(Instant.now()),
@@ -2372,6 +2380,39 @@ public final class MasterServer extends ECaccessProvider
             }
         }
         return count;
+    }
+
+    /**
+     * Returns the maximum connections from a time-based schedule for the given UTC time. The schedule is a
+     * comma-separated list of entries in the format {@code HH:MM-HH:MM=N} (e.g.
+     * {@code "00:00-08:00=200,08:00-20:00=50,20:00-24:00=100"}). The first matching range wins. Returns
+     * {@link OptionalInt#empty()} when the schedule is blank or no range matches the current time, so the caller can
+     * fall back to the default maxConnections value.
+     *
+     * @param schedule
+     *            the schedule string (may be null or blank)
+     * @param now
+     *            the current UTC time to evaluate against
+     *
+     * @return the matching maximum, or empty if none matched
+     */
+    private static OptionalInt _getMaxConnectionsForSchedule(final String schedule, final LocalTime now) {
+        if (schedule == null || schedule.isBlank())
+            return OptionalInt.empty();
+        for (final var entry : schedule.split(",")) {
+            final var trimmed = entry.trim();
+            final var eqIdx = trimmed.lastIndexOf('=');
+            if (eqIdx < 0)
+                continue;
+            try {
+                final var range = TimeRange.parse(trimmed.substring(0, eqIdx).trim());
+                if (range.within(now))
+                    return OptionalInt.of(Integer.parseInt(trimmed.substring(eqIdx + 1).trim()));
+            } catch (final Exception e) {
+                _log.warn("Invalid maxConnectionsSchedule entry: {}", trimmed, e);
+            }
+        }
+        return OptionalInt.empty();
     }
 
     /**

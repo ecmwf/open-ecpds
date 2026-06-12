@@ -7,6 +7,15 @@
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 <script>window._validIso=new Set(["AC","AD","AE","AF","AG","AI","AL","AM","AO","AQ","AR","AS","AT","AU","AW","AX","AZ","BA","BB","BD","BE","BF","BG","BH","BI","BJ","BL","BM","BN","BO","BQ","BR","BS","BT","BV","BW","BY","BZ","CA","CC","CD","CF","CG","CH","CI","CK","CL","CM","CN","CO","CP","CR","CU","CV","CW","CX","CY","CZ","DE","DG","DJ","DK","DM","DO","DZ","EA","EE","EG","EH","ER","ES","ET","EU","FI","FJ","FK","FM","FO","FR","GA","GB","GD","GE","GF","GG","GH","GI","GL","GM","GN","GP","GQ","GR","GS","GT","GU","GW","GY","HK","HM","HN","HR","HT","HU","IC","ID","IE","IL","IM","IN","IO","IQ","IR","IS","IT","JE","JM","JO","JP","KE","KG","KH","KI","KM","KN","KP","KR","KW","KY","KZ","LA","LB","LC","LI","LK","LR","LS","LT","LU","LV","LY","MA","MC","MD","ME","MF","MG","MH","MK","ML","MM","MN","MO","MP","MQ","MR","MS","MT","MU","MV","MW","MX","MY","MZ","NA","NC","NE","NF","NG","NI","NL","NO","NP","NR","NU","NZ","OM","PA","PE","PF","PG","PH","PK","PL","PM","PN","PR","PS","PT","PW","PY","QA","RE","RO","RS","RU","RW","SA","SB","SC","SD","SE","SG","SH","SI","SJ","SK","SL","SM","SN","SO","SR","SS","ST","SV","SX","SY","SZ","TA","TC","TD","TF","TG","TH","TJ","TK","TL","TM","TN","TO","TR","TT","TV","TW","TZ","UA","UG","UM","UN","US","UY","UZ","VA","VC","VE","VG","VI","VN","VU","WF","WS","XK","YE","YT","ZA","ZM","ZW"]);</script>
+<script>
+	function validate(path, message) {
+	    confirmationDialog({
+	        title: "Please Confirm",
+	        message: message,
+	        onConfirm: function () { window.location = path; }
+	    });
+	}
+</script>
 
 <tiles:importAttribute name="isDelete" ignore="true" />
 <c:if test="${not empty isDelete}">
@@ -150,9 +159,20 @@
 
 <div class="mt-3">
 	<div class="card assoc-card">
-		<div class="card-header">
+		<div class="card-header d-flex align-items-center gap-2">
 			<i class="bi bi-plug text-secondary"></i>
 			<strong>Current Sessions</strong>
+			<auth:if basePathKey="incoming.basepath" paths="/edit/update">
+			<auth:then>
+			<c:if test="${not empty incoming.incomingConnections}">
+			<c:set var="sessionCount" value="${fn:length(incoming.incomingConnections)}"/>
+			<button type="button" class="btn btn-sm btn-outline-danger ms-auto"
+			        onclick="confirmCloseAll('<bean:message key="incoming.basepath"/>/edit/update/<c:out value="${incoming.id}"/>/closeAllSessions/all', ${sessionCount})">
+			  <i class="bi bi-x-circle"></i> Close All
+			</button>
+			</c:if>
+			</auth:then>
+			</auth:if>
 		</div>
 		<c:choose>
 			<c:when test="${empty incoming.incomingConnections}">
@@ -171,6 +191,9 @@
 								<th>Data Mover</th>
 								<th>Start Time (UTC)</th>
 								<th>Duration</th>
+								<auth:if basePathKey="incoming.basepath" paths="/edit/update">
+								<auth:then><th class="text-center no-sort">Action</th></auth:then>
+								</auth:if>
 							</tr>
 						</thead>
 						<tbody>
@@ -182,6 +205,16 @@
 									<td>${s.dataMoverName}</td>
 									<td data-order="${s.startTime}"><span class="ic-ts" data-ts="${s.startTime}">${s.startTime}</span></td>
 									<td>${s.formatedDuration}</td>
+									<auth:if basePathKey="incoming.basepath" paths="/edit/update">
+									<auth:then>
+									<td class="text-center">
+										<a href="javascript:validate('<bean:message key="incoming.basepath"/>/edit/update/<c:out value="${incoming.id}"/>/closeSession/<c:out value="${s.id}"/>','<bean:message key="ecpds.incoming.disconnectOperation.warning" arg0="${s.login}" arg1="${s.dataMoverName}"/>')"
+										   class="btn btn-sm btn-outline-danger py-0 px-1" title="Disconnect session">
+											<i class="bi bi-x-lg"></i>
+										</a>
+									</td>
+									</auth:then>
+									</auth:if>
 								</tr>
 							</c:forEach>
 						</tbody>
@@ -199,7 +232,7 @@
 							order: [[4, 'desc']],
 							scrollY: '220px', scrollCollapse: true,
 							dom: 't',
-							columnDefs: [{ orderable: false, targets: [0] }]
+							columnDefs: [{ orderable: false, targets: [0, 6] }]
 						});
 					}
 				});

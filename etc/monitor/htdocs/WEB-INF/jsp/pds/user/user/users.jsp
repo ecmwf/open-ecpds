@@ -56,7 +56,7 @@
             <th>Comment</th>
             <th class="text-center">Enabled</th>
             <th>Categories</th>
-            <th class="text-center">Actions</th>
+            <th class="text-center no-sort">Actions</th>
         </tr>
     </thead>
     <tbody></tbody>
@@ -75,7 +75,7 @@ $(document).ready(function() {
         info:       true,
         language:   { emptyTable: 'No Web Users found.' },
         columnDefs: [
-            { orderable: false, targets: -1 },
+            { orderable: false, targets: [4] },
             { orderData: [5], targets: [2] },
             { visible: false, targets: [5] }
         ],

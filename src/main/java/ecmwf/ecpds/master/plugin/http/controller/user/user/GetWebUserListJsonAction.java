@@ -111,16 +111,16 @@ public class GetWebUserListJsonAction extends PDSAction {
                     final var id = escapeHtml(cat.getId());
                     final var name = escapeHtml(cat.getName());
                     final var desc = escapeHtml(cat.getDescription());
-                    if (!sb.isEmpty()) {
-                        sb.append("&nbsp;");
-                    }
-                    sb.append("<a href=\"").append(CATEGORY_BASE_PATH).append("/").append(id).append("\" title=\"")
-                            .append(desc).append("\">").append(name).append("</a>");
+                    sb.append("<span class=\"assoc-chip\"><a href=\"").append(CATEGORY_BASE_PATH).append("/").append(id)
+                            .append("\" title=\"").append(desc).append("\">").append(name).append("</a></span>");
                 }
             }
         } catch (final Exception ignored) {
         }
-        return sb.toString();
+        if (sb.isEmpty()) {
+            return "";
+        }
+        return "<div class=\"d-flex flex-wrap\">" + sb + "</div>";
     }
 
     private static String buildActions(final String id) {
