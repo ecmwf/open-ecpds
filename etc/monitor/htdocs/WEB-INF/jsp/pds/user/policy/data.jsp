@@ -83,7 +83,7 @@
 <div class="accordion" id="policyViewOptionsAccordion">
 <div class="accordion-item">
 <h2 class="accordion-header" id="policyViewAccHeadProperties" style="position:relative;">
-<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#policyViewAccProperties" aria-expanded="false" aria-controls="policyViewAccProperties">
+<button class="accordion-button collapsed" id="policyViewAccPropertiesBtn" type="button" data-bs-toggle="collapse" data-bs-target="#policyViewAccProperties" aria-expanded="false" aria-controls="policyViewAccProperties">
 Properties
 </button>
 <span role="button" tabindex="0" class="acc-help-btn" id="policyViewPropsHelpBtn"
@@ -136,7 +136,7 @@ Properties
     	});
 
     	// Call the function to process each line
-    	checkEachLine(editorProperties);
+    	checkEachLine(editorProperties, 'policyViewAccPropertiesBtn');
         
 		function _scrollPolicyViewHelpToCursor() {
 			var row = editorProperties.selection.getCursor().row;
@@ -150,8 +150,7 @@ Properties
 		}
 
     	editorProperties.addEventListener("changeSelection", function (event) {
-    		editorProperties.session.setAnnotations(
-    			getAnnotations(editorProperties, editorProperties.selection.getCursor().row));
+    		checkEachLine(editorProperties, 'policyViewAccPropertiesBtn');
 			var _oc = document.getElementById('policyViewHelpOffcanvas');
 			if (_oc && _oc.classList.contains('show')) _scrollPolicyViewHelpToCursor();
     	});

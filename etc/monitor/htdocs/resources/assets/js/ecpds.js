@@ -118,25 +118,207 @@ function getAnnotations(aceEditor, row) {
 	return [];
 }
 
-function checkEachLine(aceEditor) {
-	var editor = aceEditor.session;
-	var markers = editor.getMarkers();
-	for (var i = 0; i < editor.getLength(); i++) {
+function checkEachLine(aceEditor, accordionBtnId) {
+	var session = aceEditor.session;
+	// Remove all existing validation markers in one pass
+	var markers = session.getMarkers();
+	for (var markerId in markers) {
+		var m = markers[markerId];
+		if (m.clazz === "custom-ace-marker-error" || m.clazz === "custom-ace-marker-warning")
+			session.removeMarker(markerId);
+	}
+	var errorCount = 0, warningCount = 0;
+	var allAnnotations = [];
+	for (var i = 0; i < session.getLength(); i++) {
 		var annotations = getAnnotations(aceEditor, i);
 		if (annotations && annotations.length > 0) {
+			allAnnotations = allAnnotations.concat(annotations);
 			if (annotations[0].type === "error") {
-				editor.addMarker(new Range(i, 0, i, Number.MAX_VALUE), "custom-ace-marker-info", "text");
+				session.addMarker(new Range(i, 0, i, Number.MAX_VALUE), "custom-ace-marker-error", "fullLine");
+				errorCount++;
 			} else if (annotations[0].type === "warning") {
-				editor.addMarker(new Range(i, 0, i, Number.MAX_VALUE), "custom-ace-marker-warning", "text");
-			} else {
-				for (var markerId in markers) {
-					var marker = markers[markerId];
-					if (marker.range && marker.range.start.row === i
-						&& (marker.clazz === "custom-ace-marker-info" || marker.clazz === "custom-ace-marker-warning"))
-						editor.removeMarker(markerId);
-				}
+				session.addMarker(new Range(i, 0, i, Number.MAX_VALUE), "custom-ace-marker-warning", "fullLine");
+				warningCount++;
 			}
 		}
+	}
+	// Push all annotations to ACE (drives gutter icons for the current cursor row)
+	session.setAnnotations(allAnnotations);
+	// Update the accordion button badge if an ID was provided
+	if (accordionBtnId) {
+		updateAccordionErrorBadge(accordionBtnId, errorCount, warningCount);
+	}
+	return { errors: errorCount, warnings: warningCount };
+}
+
+function updateAccordionErrorBadge(btnId, errorCount, warningCount) {
+	var btn = document.getElementById(btnId);
+	if (!btn) return;
+	var badgeId = btnId + '-validation-badge';
+	var badge = document.getElementById(badgeId);
+	if (errorCount === 0 && warningCount === 0) {
+		if (badge) badge.remove();
+		return;
+	}
+	if (!badge) {
+		badge = document.createElement('span');
+		badge.id = badgeId;
+		badge.className = 'acc-props-badge';
+		btn.appendChild(badge);
+	}
+	var html = '';
+	if (errorCount > 0) {
+		html += '<span class="badge rounded-pill bg-danger">'
+			+ '<i class="bi bi-exclamation-circle-fill me-1"></i>' + errorCount + '</span>';
+	}
+	if (warningCount > 0) {
+		html += '<span class="badge rounded-pill bg-warning text-dark' + (errorCount > 0 ? ' ms-1' : '') + '">'
+			+ '<i class="bi bi-exclamation-triangle-fill me-1"></i>' + warningCount + '</span>';
+	}
+	badge.innerHTML = html;
+}
+
+// Applies full-line background markers and an accordion badge based on ACE's
+// built-in annotations (e.g. from the JS linter). Call on 'changeAnnotation'.
+function applyAnnotationMarkers(aceEditor, accordionBtnId) {
+	var session = aceEditor.session;
+	// Remove existing validation markers
+	var markers = session.getMarkers();
+	for (var markerId in markers) {
+		var m = markers[markerId];
+		if (m.clazz === "custom-ace-marker-error" || m.clazz === "custom-ace-marker-warning")
+			session.removeMarker(markerId);
+	}
+	// Gather worst annotation type per row
+	var rowSeverity = {};
+	var annotations = session.getAnnotations() || [];
+	for (var i = 0; i < annotations.length; i++) {
+		var a = annotations[i];
+		var row = a.row;
+		if (a.type === "error") {
+			rowSeverity[row] = "error";
+		} else if (a.type === "warning" && rowSeverity[row] !== "error") {
+			rowSeverity[row] = "warning";
+		}
+	}
+	var errorCount = 0, warningCount = 0;
+	for (var r in rowSeverity) {
+		if (rowSeverity[r] === "error") {
+			session.addMarker(new Range(parseInt(r), 0, parseInt(r), Number.MAX_VALUE), "custom-ace-marker-error", "fullLine");
+			errorCount++;
+		} else {
+			session.addMarker(new Range(parseInt(r), 0, parseInt(r), Number.MAX_VALUE), "custom-ace-marker-warning", "fullLine");
+			warningCount++;
+		}
+	}
+	if (accordionBtnId) {
+		updateAccordionErrorBadge(accordionBtnId, errorCount, warningCount);
+	}
+}
+
+// Checks Python syntax using Skulpt (loaded lazily on first use).
+// Feeds errors into ACE annotations + full-line markers + accordion badge.
+var _pythonCheckTimer = null;
+function checkPythonSyntax(aceEditor, accordionBtnId) {
+	// Lazy-load Skulpt on first use, then re-invoke
+	if (typeof Sk === 'undefined') {
+		var s = document.createElement('script');
+		s.src = '/ace-editor/skulpt.min.js';
+		s.onload = function() { checkPythonSyntax(aceEditor, accordionBtnId); };
+		document.head.appendChild(s);
+		return;
+	}
+	var session = aceEditor.session;
+	// Clear existing validation markers
+	var markers = session.getMarkers();
+	for (var markerId in markers) {
+		var m = markers[markerId];
+		if (m.clazz === "custom-ace-marker-error" || m.clazz === "custom-ace-marker-warning")
+			session.removeMarker(markerId);
+	}
+	var annotations = [];
+	try {
+		Sk.configure({ output: function() {}, read: function(x) { throw x + ' not found'; } });
+		Sk.compile(aceEditor.getValue(), 'input.py', 'exec');
+		// No syntax error — clear everything
+	} catch (e) {
+		// Extract line number: Skulpt SyntaxError exposes $lineno, traceback, or args
+		var lineno = 1;
+		var msg = 'Syntax error';
+		if (e.$lineno) {
+			lineno = parseInt(e.$lineno) || 1;
+		} else if (e.traceback && e.traceback.length > 0) {
+			lineno = e.traceback[0].lineno || 1;
+		}
+		if (e.$msg) {
+			msg = String(e.$msg);
+		} else if (e.args && e.args.v && e.args.v[0]) {
+			msg = e.args.v[0].v !== undefined ? String(e.args.v[0].v) : String(e.args.v[0]);
+		} else if (e.message) {
+			msg = e.message;
+		}
+		var row = Math.max(0, lineno - 1);
+		session.addMarker(new Range(row, 0, row, Number.MAX_VALUE), "custom-ace-marker-error", "fullLine");
+		annotations.push({ row: row, col: 0, text: msg, type: 'error' });
+	}
+	session.setAnnotations(annotations);
+	if (accordionBtnId) updateAccordionErrorBadge(accordionBtnId, annotations.length, 0);
+}
+
+function debouncedCheckPythonSyntax(aceEditor, accordionBtnId) {
+	clearTimeout(_pythonCheckTimer);
+	_pythonCheckTimer = setTimeout(function() {
+		checkPythonSyntax(aceEditor, accordionBtnId);
+	}, 600);
+}
+
+// Detects whether code looks like JavaScript or Python based on keyword heuristics.
+// Returns 'javascript', 'python', or null if inconclusive.
+function detectCodeType(code) {
+	if (!code || code.trim().length === 0) return null;
+	var lines = code.split('\n');
+	var jsScore = 0, pyScore = 0;
+	var jsPatterns = [
+		/\bfunction\b/, /\bvar\s+\w/, /\blet\s+\w/, /\bconst\s+\w/,
+		/=>/, /\bconsole\./, /\bdocument\./, /\bwindow\./, /\brequire\s*\(/,
+		/\bjQuery\b/, /\$\s*\(/, /\.forEach\s*\(/, /\.map\s*\(/, /\bawait\b/, /\basync\b/
+	];
+	var pyPatterns = [
+		/^\s*def\s+\w/, /^\s*import\s+\w/, /^\s*from\s+\w+\s+import\b/,
+		/^\s*class\s+\w/, /^\s*elif\b/, /^\s*except[\s:]/, /^\s*with\s+\w/,
+		/^\s*print\s*\(/, /^\s*raise\b/, /^\s*yield\b/
+	];
+	for (var i = 0; i < lines.length; i++) {
+		var line = lines[i];
+		for (var j = 0; j < jsPatterns.length; j++) {
+			if (jsPatterns[j].test(line)) jsScore++;
+		}
+		for (var j = 0; j < pyPatterns.length; j++) {
+			if (pyPatterns[j].test(line)) pyScore++;
+		}
+	}
+	if (jsScore === 0 && pyScore === 0) return null;
+	if (jsScore > pyScore) return 'javascript';
+	if (pyScore > jsScore) return 'python';
+	// Tie-break: if any strong Python-only signal present, prefer python
+	return pyScore > 0 ? 'python' : 'javascript';
+}
+
+// Shows or hides the Plain Text mismatch warning near the dirType radio buttons.
+function updateDirTypeMismatchWarning(warningId, textId, aceEditor, isPlainText) {
+	var warn = document.getElementById(warningId);
+	var txt = document.getElementById(textId);
+	if (!warn || !txt) return;
+	if (!isPlainText) { warn.style.display = 'none'; return; }
+	var detected = detectCodeType(aceEditor.getValue());
+	if (detected === 'javascript') {
+		txt.textContent = 'Content looks like JavaScript — did you mean to select "JavaScript"?';
+		warn.style.display = '';
+	} else if (detected === 'python') {
+		txt.textContent = 'Content looks like Python — did you mean to select "Python"?';
+		warn.style.display = '';
+	} else {
+		warn.style.display = 'none';
 	}
 }
 

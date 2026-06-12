@@ -369,7 +369,7 @@
 			<div class="accordion" id="incomingOptionsAccordion">
 			<div class="accordion-item">
 				<h2 class="accordion-header" id="incomingAccHeadProperties" style="position:relative;">
-					<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#incomingAccProperties" aria-expanded="false" aria-controls="incomingAccProperties">
+					<button class="accordion-button collapsed" id="incomingAccPropertiesBtn" type="button" data-bs-toggle="collapse" data-bs-target="#incomingAccProperties" aria-expanded="false" aria-controls="incomingAccProperties">
 						Properties
 					</button>
 					<span role="button" tabindex="0" class="acc-help-btn" id="incomingPropsHelpBtn"
@@ -493,9 +493,7 @@
 	}
 
 	editorProperties.addEventListener("changeSelection", function (event) {
-    	editorProperties.session.setAnnotations(
-    		getAnnotations(editorProperties, editorProperties.selection.getCursor().row));
-    	checkEachLine(editorProperties);
+    	checkEachLine(editorProperties, 'incomingAccPropertiesBtn');
 		var _oc = document.getElementById('incomingHelpOffcanvas');
 		if (_oc && _oc.classList.contains('show')) _scrollIncomingHelpToCursor();
     });
@@ -507,6 +505,7 @@
     				editorProperties.selection.clearSelection();
     			}, 0);
   		}
+  		checkEachLine(editorProperties, 'incomingAccPropertiesBtn');
 	});
 
 	var textareaProperties = $('textarea[name="userData"]');
@@ -549,6 +548,7 @@
 
 	makeResizable(editorProperties);
 	makeResizable(editorAuthorizedSSHKeys);
+	checkEachLine(editorProperties, 'incomingAccPropertiesBtn');
 
 	window.addEventListener('resize', function() {
 		editorProperties.resize(true);

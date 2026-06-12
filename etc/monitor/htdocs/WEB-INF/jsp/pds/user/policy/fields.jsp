@@ -129,7 +129,7 @@ function validate(path, message) {
 <div class="accordion" id="policyOptionsAccordion">
 <div class="accordion-item">
 <h2 class="accordion-header" id="policyAccHeadProperties" style="position:relative;">
-<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#policyAccProperties" aria-expanded="false" aria-controls="policyAccProperties">
+<button class="accordion-button collapsed" id="policyAccPropertiesBtn" type="button" data-bs-toggle="collapse" data-bs-target="#policyAccProperties" aria-expanded="false" aria-controls="policyAccProperties">
 Properties
 </button>
 <span role="button" tabindex="0" class="acc-help-btn" id="policyPropsHelpBtn"
@@ -217,9 +217,7 @@ function _scrollPolicyHelpToCursor() {
 }
 
 editorProperties.addEventListener("changeSelection", function (event) {
-    editorProperties.session.setAnnotations(
-    getAnnotations(editorProperties, editorProperties.selection.getCursor().row));
-    checkEachLine(editorProperties);
+    checkEachLine(editorProperties, 'policyAccPropertiesBtn');
 	var _oc = document.getElementById('policyHelpOffcanvas');
 	if (_oc && _oc.classList.contains('show')) _scrollPolicyHelpToCursor();
     });
@@ -231,6 +229,7 @@ editorProperties.moveCursorTo(e.end.row, e.end.column - 1);
     editorProperties.selection.clearSelection();
     }, 0);
   }
+  checkEachLine(editorProperties, 'policyAccPropertiesBtn');
 });
 
 var textareaProperties = $('textarea[name="data"]');
@@ -239,6 +238,7 @@ textareaProperties.val(editorProperties.getSession().getValue());
 });
 
 makeResizable(editorProperties);
+checkEachLine(editorProperties, 'policyAccPropertiesBtn');
 
 document.getElementById('policyAccProperties').addEventListener('shown.bs.collapse', function() {
 	editorProperties.resize(true);

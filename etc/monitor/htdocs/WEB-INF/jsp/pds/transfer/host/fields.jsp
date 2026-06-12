@@ -258,7 +258,7 @@ labelProperty="name" />
 </div>
 
 <div class="card border-0 shadow-sm mb-3">
-<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+<div class="card-header d-flex align-items-center gap-2" id="hostDirCardHeader" style="background:var(--bs-secondary-bg)">
 <i class="bi bi-folder2-open text-primary"></i>
 <span class="fw-semibold">Directory</span>
 </div>
@@ -270,6 +270,9 @@ labelProperty="name" />
 type='radio' id='isjs' name='dirType' />JavaScript <input
 type='radio' id='ispython' name='dirType' />Python
 </div>
+<small id="dirTypeMismatchWarning" style="display:none;color:var(--bs-warning-text-emphasis)">
+  <i class="bi bi-exclamation-triangle-fill"></i> <span id="dirTypeMismatchText"></span>
+</small>
 <div class="ace-panel">
 <pre id="dir">
 <c:out value="${requestScope[actionFormName].dir}" />
@@ -387,7 +390,7 @@ onclick="testSource(editorDir); return false">Test</button>
 <div class="accordion" id="hostOptionsAccordion">
 <div class="accordion-item">
 <h2 class="accordion-header" id="hostAccHeadProperties" style="position:relative;">
-<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#hostAccProperties" aria-expanded="false" aria-controls="hostAccProperties">
+<button class="accordion-button collapsed" id="hostAccPropertiesBtn" type="button" data-bs-toggle="collapse" data-bs-target="#hostAccProperties" aria-expanded="false" aria-controls="hostAccProperties">
 Properties
 </button>
 <span role="button" tabindex="0" class="acc-help-btn" id="hostEditPropsHelpBtn"
@@ -411,7 +414,7 @@ onclick="openHostEditHelp();" onkeydown="if(event.key==='Enter'||event.key===' '
 </div>
 <div class="accordion-item">
 <h2 class="accordion-header" id="hostAccHeadJavascript">
-<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#hostAccJavascript" aria-expanded="false" aria-controls="hostAccJavascript">
+<button class="accordion-button collapsed" id="hostAccJavascriptBtn" type="button" data-bs-toggle="collapse" data-bs-target="#hostAccJavascript" aria-expanded="false" aria-controls="hostAccJavascript">
 JavaScript
 </button>
 </h2>
@@ -850,30 +853,24 @@ oninput="validateMailInput(this); toggleMailRows()" />
 	}
    	
 	document.getElementById("transferMethod").addEventListener("change", function() {
-    	editorProperties.session.setAnnotations(
-    		getAnnotations(editorProperties, editorProperties.selection.getCursor().row));
     	bootstrap.Collapse.getOrCreateInstance(document.getElementById('hostAccProperties')).show();
-    	checkEachLine(editorProperties);
+    	checkEachLine(editorProperties, 'hostAccPropertiesBtn');
     	populateHelpTab();
 	});
 	
    	var selectElement = document.getElementById("type");
    	if (selectElement && selectElement.tagName === "SELECT") {
 		document.getElementById("type").addEventListener("change", function() {
-    		editorProperties.session.setAnnotations(
-    			getAnnotations(editorProperties, editorProperties.selection.getCursor().row));
     		bootstrap.Collapse.getOrCreateInstance(document.getElementById('hostAccProperties')).show();
-    		checkEachLine(editorProperties);
+    		checkEachLine(editorProperties, 'hostAccPropertiesBtn');
     		populateHelpTab();
     		toggleAcquisitionRow();
 		});
    	};
 
-	// Add a click event listener to the properties editor
+	// Update annotations and markers on cursor movement
     editorProperties.addEventListener("changeSelection", function (event) {
-    	editorProperties.session.setAnnotations(
-    		getAnnotations(editorProperties, editorProperties.selection.getCursor().row));
-    	checkEachLine(editorProperties);
+    	checkEachLine(editorProperties, 'hostAccPropertiesBtn');
     	/* Live-track help offcanvas when open */
     	var _oc = document.getElementById('hostEditHelpOffcanvas');
     	if (_oc && _oc.classList.contains('show')) {
@@ -891,6 +888,7 @@ oninput="validateMailInput(this); toggleMailRows()" />
     			editorProperties.selection.clearSelection();
     		}, 0);
   		}
+  		checkEachLine(editorProperties, 'hostAccPropertiesBtn');
 	});
 	
 	var editorJavascript = getEditorProperties(false, false, "javascript", "javascript");
@@ -961,11 +959,14 @@ oninput="validateMailInput(this); toggleMailRows()" />
 	makeResizable(editorDir);
 	makeResizable(editorProperties);
 	makeResizable(editorJavascript);
+	// Initial full validation pass — highlights all errors/warnings on page load
+	checkEachLine(editorProperties, 'hostAccPropertiesBtn');
 
 	function updateTestJsBtn() {
 		var hasError = editorJavascript.getSession().getAnnotations().some(function(a) { return a.type === 'error'; });
 		$('#testJs').prop('disabled', hasError).toggleClass('disabled', hasError);
 		$('#testJsOverlay').toggle(hasError);
+		applyAnnotationMarkers(editorJavascript, 'hostAccJavascriptBtn');
 	}
 	editorJavascript.getSession().on('changeAnnotation', updateTestJsBtn);
 
@@ -989,20 +990,43 @@ oninput="validateMailInput(this); toggleMailRows()" />
 		var hasError = editorDir.getSession().getAnnotations().some(function(a) { return a.type === 'error'; });
 		$('#testDir').prop('disabled', hasError).toggleClass('disabled', hasError);
 		$('#testDirOverlay').toggle(hasError);
+		applyAnnotationMarkers(editorDir, 'hostDirCardHeader');
 	}
 	editorDir.getSession().on('changeAnnotation', updateTestDirBtn);
+
+	// For Python mode: check syntax on every edit (Skulpt, no built-in worker)
+	// For Plain Text mode: check for accidental JS/Python content on every edit
+	var _dirMismatchTimer = null;
+	editorDir.session.on('change', function() {
+		var modeId = editorDir.session.getMode().$id;
+		if (modeId === 'ace/mode/python') {
+			debouncedCheckPythonSyntax(editorDir, 'hostDirCardHeader');
+		} else if (modeId === 'ace/mode/toml') {
+			clearTimeout(_dirMismatchTimer);
+			_dirMismatchTimer = setTimeout(function() {
+				updateDirTypeMismatchWarning('dirTypeMismatchWarning', 'dirTypeMismatchText', editorDir, true);
+			}, 600);
+		}
+	});
 
 	$("#dirType").on('change', function() {
 		if ($("#istext").is(":checked")) {
 			editorDir.session.setMode("ace/mode/toml");
+			editorDir.session.clearAnnotations();
+			applyAnnotationMarkers(editorDir, 'hostDirCardHeader');
+			updateDirTypeMismatchWarning('dirTypeMismatchWarning', 'dirTypeMismatchText', editorDir, true);
 			$('#formatDir').prop('style', "display: none;");
 			$('#testDir').prop('style', "display: none;");
 		} else if ($("#ispython").is(":checked")) {
 			editorDir.session.setMode("ace/mode/python");
+			editorDir.session.clearAnnotations();
+			checkPythonSyntax(editorDir, 'hostDirCardHeader');
+			updateDirTypeMismatchWarning('dirTypeMismatchWarning', 'dirTypeMismatchText', editorDir, false);
 			$('#formatDir').prop('style', "display: none;");
 			$('#testDir').prop('style', "display: none;");
 		} else {
 			editorDir.session.setMode("ace/mode/javascript");
+			updateDirTypeMismatchWarning('dirTypeMismatchWarning', 'dirTypeMismatchText', editorDir, false);
 			$('#formatDir').prop('style', "");
 			$('#testDir').prop('style', "");
 		}

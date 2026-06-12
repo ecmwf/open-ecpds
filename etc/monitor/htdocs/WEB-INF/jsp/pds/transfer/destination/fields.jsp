@@ -963,7 +963,7 @@
 			<div class="accordion" id="optionsAccordion">
 					<div class="accordion-item">
 						<h2 class="accordion-header" id="acc-properties-heading" style="position:relative;">
-							<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+							<button class="accordion-button collapsed" id="destAccPropertiesBtn" type="button" data-bs-toggle="collapse"
 								data-bs-target="#acc-properties" aria-expanded="false"
 								aria-controls="acc-properties">Properties</button>
 							<span role="button" tabindex="0" class="acc-help-btn" id="destPropsHelpBtn"
@@ -986,7 +986,7 @@
 					</div>
 					<div class="accordion-item">
 						<h2 class="accordion-header" id="acc-javascript-heading">
-							<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+							<button class="accordion-button collapsed" id="destAccJavascriptBtn" type="button" data-bs-toggle="collapse"
 								data-bs-target="#acc-javascript" aria-expanded="false"
 								aria-controls="acc-javascript">JavaScript</button>
 						</h2>
@@ -1223,9 +1223,7 @@
 		}
 	}
     editorProperties.addEventListener("changeSelection", function (event) {
-    	editorProperties.session.setAnnotations(
-    		getAnnotations(editorProperties, editorProperties.selection.getCursor().row));
-    	checkEachLine(editorProperties);
+    	checkEachLine(editorProperties, 'destAccPropertiesBtn');
 		var _oc = document.getElementById('destHelpOffcanvas');
 		if (_oc && _oc.classList.contains('show')) _scrollDestHelpToCursor();
     });
@@ -1240,6 +1238,7 @@
     			editorProperties.selection.clearSelection();
     		}, 0);
   		}
+  		checkEachLine(editorProperties, 'destAccPropertiesBtn');
 	});
 
 	var editorJavascript = getEditorProperties(false, false, "javascript", "javascript");
@@ -1257,6 +1256,7 @@
 
 	makeResizable(editorProperties);
 	makeResizable(editorJavascript);
+	checkEachLine(editorProperties, 'destAccPropertiesBtn');
 
 	window.addEventListener('resize', function() {
 		editorProperties.resize(true);
@@ -1267,6 +1267,7 @@
 		var hasError = editorJavascript.getSession().getAnnotations().some(function(a) { return a.type === 'error'; });
 		$('#testJs').prop('disabled', hasError).toggleClass('disabled', hasError);
 		$('#testJsOverlay').toggle(hasError);
+		applyAnnotationMarkers(editorJavascript, 'destAccJavascriptBtn');
 	}
 	editorJavascript.getSession().on('changeAnnotation', updateTestJsBtn);
 

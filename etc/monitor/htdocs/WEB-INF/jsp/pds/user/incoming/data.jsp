@@ -219,7 +219,7 @@
 			<div class="accordion" id="incomingViewOptionsAccordion">
 				<div class="accordion-item">
 					<h2 class="accordion-header" id="incomingViewAccHeadProperties" style="position:relative;">
-						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#incomingViewAccProperties" aria-expanded="false" aria-controls="incomingViewAccProperties">
+						<button class="accordion-button collapsed" id="incomingViewAccPropertiesBtn" type="button" data-bs-toggle="collapse" data-bs-target="#incomingViewAccProperties" aria-expanded="false" aria-controls="incomingViewAccProperties">
 							Properties
 						</button>
 						<span role="button" tabindex="0" class="acc-help-btn" id="incomingViewPropsHelpBtn"
@@ -287,7 +287,7 @@
     	});
 
     	// Call the function to process each line
-    	checkEachLine(editorProperties);
+    	checkEachLine(editorProperties, 'incomingViewAccPropertiesBtn');
 
 		function _scrollIncomingViewHelpToCursor() {
 			var row = editorProperties.selection.getCursor().row;
@@ -301,8 +301,7 @@
 		}
 
     	editorProperties.addEventListener("changeSelection", function (event) {
-    		editorProperties.session.setAnnotations(
-    			getAnnotations(editorProperties, editorProperties.selection.getCursor().row));
+    		checkEachLine(editorProperties, 'incomingViewAccPropertiesBtn');
 			var _oc = document.getElementById('incomingViewHelpOffcanvas');
 			if (_oc && _oc.classList.contains('show')) _scrollIncomingViewHelpToCursor();
     	});

@@ -121,7 +121,7 @@
 		<div class="accordion" id="paramsOptionsAccordion">
 			<div class="accordion-item">
 				<h2 class="accordion-header" id="paramsAccHeadProperties" style="position:relative;">
-					<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#paramsAccProperties" aria-expanded="false" aria-controls="paramsAccProperties">
+					<button class="accordion-button collapsed" id="paramsAccPropertiesBtn" type="button" data-bs-toggle="collapse" data-bs-target="#paramsAccProperties" aria-expanded="false" aria-controls="paramsAccProperties">
 						Properties
 					</button>
 					<span role="button" tabindex="0" class="acc-help-btn" id="paramsPropsHelpBtn"
@@ -138,7 +138,7 @@
 			</div>
 			<div class="accordion-item">
 				<h2 class="accordion-header" id="paramsAccHeadJavascript">
-					<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#paramsAccJavascript" aria-expanded="false" aria-controls="paramsAccJavascript">
+					<button class="accordion-button collapsed" id="paramsAccJavascriptBtn" type="button" data-bs-toggle="collapse" data-bs-target="#paramsAccJavascript" aria-expanded="false" aria-controls="paramsAccJavascript">
 						JavaScript
 					</button>
 				</h2>
@@ -182,7 +182,7 @@
 		if (navEl) document.getElementById('paramsHelpNav').appendChild(navEl);
 	});
 
-	checkEachLine(editorProperties);
+	checkEachLine(editorProperties, 'paramsAccPropertiesBtn');
 
 	function _scrollParamsHelpToCursor() {
 		var row = editorProperties.selection.getCursor().row;
@@ -196,8 +196,7 @@
 	}
 
 	editorProperties.addEventListener("changeSelection", function (event) {
-		editorProperties.session.setAnnotations(
-			getAnnotations(editorProperties, editorProperties.selection.getCursor().row));
+		checkEachLine(editorProperties, 'paramsAccPropertiesBtn');
 		var _oc = document.getElementById('paramsHelpOffcanvas');
 		if (_oc && _oc.classList.contains('show')) _scrollParamsHelpToCursor();
 	});
@@ -209,6 +208,10 @@
 	});
 	document.getElementById('paramsAccJavascript').addEventListener('shown.bs.collapse', function() {
 		editorJavascript.resize(true);
+	});
+
+	editorJavascript.getSession().on('changeAnnotation', function() {
+		applyAnnotationMarkers(editorJavascript, 'paramsAccJavascriptBtn');
 	});
 
 	window.openParamsHelp = function() {

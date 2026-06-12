@@ -149,7 +149,7 @@ table.fields > tbody > tr > th {
 
 <c:if test="${!(isRestrictedUser == 'true' && host.type == 'Proxy')}">
 <div class="card border-0 shadow-sm mb-3">
-<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+<div class="card-header d-flex align-items-center gap-2" id="hostViewDirCardHeader" style="background:var(--bs-secondary-bg)">
 <i class="bi bi-folder2-open text-primary"></i>
 <span class="fw-semibold">Directory</span>
 </div>
@@ -178,7 +178,7 @@ type='radio' id='ispython' name='dirType' />Python
 <div class="accordion" id="hostViewOptionsAccordion">
 <div class="accordion-item">
 <h2 class="accordion-header" id="hostViewAccHeadProperties" style="position:relative;">
-<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#hostViewAccProperties" aria-expanded="false" aria-controls="hostViewAccProperties">
+<button class="accordion-button collapsed" id="hostViewAccPropertiesBtn" type="button" data-bs-toggle="collapse" data-bs-target="#hostViewAccProperties" aria-expanded="false" aria-controls="hostViewAccProperties">
 Properties
 </button>
 <span role="button" tabindex="0" class="acc-help-btn" id="hostPropsHelpBtn"
@@ -197,7 +197,7 @@ onclick="openHostHelp();" onkeydown="if(event.key==='Enter'||event.key===' ')ope
 </div>
 <div class="accordion-item">
 <h2 class="accordion-header" id="hostViewAccHeadJavascript">
-<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#hostViewAccJavascript" aria-expanded="false" aria-controls="hostViewAccJavascript">
+<button class="accordion-button collapsed" id="hostViewAccJavascriptBtn" type="button" data-bs-toggle="collapse" data-bs-target="#hostViewAccJavascript" aria-expanded="false" aria-controls="hostViewAccJavascript">
 JavaScript
 </button>
 </h2>
@@ -601,12 +601,11 @@ onclick="progressCopy(this)">
    		}
     	
     	// Call the function to process each line
-    	checkEachLine(editorProperties);
+    	checkEachLine(editorProperties, 'hostViewAccPropertiesBtn');
     	
 		// Add a click event listener to the properties editor
     	editorProperties.addEventListener("changeSelection", function (event) {
-    		editorProperties.session.setAnnotations(
-    			getAnnotations(editorProperties, editorProperties.selection.getCursor().row));
+    		checkEachLine(editorProperties, 'hostViewAccPropertiesBtn');
     		/* Live-track help panel when offcanvas is open */
     		var _oc = document.getElementById('hostHelpOffcanvas');
     		if (_oc && _oc.classList.contains('show')) {
@@ -657,6 +656,13 @@ onclick="progressCopy(this)">
 		makeResizable(editorProperties);
 		makeResizable(editorJavascript);
 
+		editorJavascript.getSession().on('changeAnnotation', function() {
+			applyAnnotationMarkers(editorJavascript, 'hostViewAccJavascriptBtn');
+		});
+		editorDir.getSession().on('changeAnnotation', function() {
+			applyAnnotationMarkers(editorDir, 'hostViewDirCardHeader');
+		});
+
 		window.addEventListener('resize', function() {
 			editorDir.resize(true);
 			editorProperties.resize(true);
@@ -670,9 +676,14 @@ onclick="progressCopy(this)">
 		var dirType = getEditorType(editorDir);
 		$('#is' + dirType).prop('checked', true);
 		$('#is' + dirType).prop('disabled', false);
-		editorDir.session.setMode("ace/mode/"
-				+ (dirType === "js" ? "javascript"
-						: dirType === "text" ? "toml" : dirType));
+		var dirMode = (dirType === "js" ? "javascript" : dirType === "text" ? "toml" : dirType);
+		editorDir.session.setMode("ace/mode/" + dirMode);
+		if (dirMode === "python") {
+			checkPythonSyntax(editorDir, 'hostViewDirCardHeader');
+		} else if (dirMode !== "javascript") {
+			editorDir.session.clearAnnotations();
+			applyAnnotationMarkers(editorDir, 'hostViewDirCardHeader');
+		}
 
 	</script>
 
