@@ -245,19 +245,6 @@ var _dftSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search us
             var pad    = function(n) { return String(n).padStart(2, '0'); };
             var ts     = now.getUTCFullYear() + '-' + pad(now.getUTCMonth()+1) + '-' + pad(now.getUTCDate())
                        + ' ' + pad(now.getUTCHours()) + ':' + pad(now.getUTCMinutes()) + ':' + pad(now.getUTCSeconds());
-            // Only include filters which are visible on the page (some pages hide certain selectors)
-            var hasDiss   = $('th:contains("Dissem_Str")').length > 0;
-            var hasDS     = $('th:contains("Data_Str")').length > 0;
-            var hasDTime  = $('th:contains("Base_Time")').length > 0;
-            var hasStatus = $('th:contains("Status")').length > 0;
-            var hasDate   = $('th:contains("Prod_Date")').length > 0;
-            var parts = [];
-            if (hasDiss)  parts.push(document.getElementById('dt-dissStream').value || 'All');
-            if (hasDS)    parts.push(document.getElementById('dt-dataStream').value || 'All');
-            if (hasDTime) parts.push(document.getElementById('dt-dataTime').value || 'All');
-            if (hasStatus)parts.push(statusLabel);
-            if (hasDate)  parts.push(document.getElementById('dt-date').value || '*');
-            var selectionText = parts.join('/');
             var fileCount = json && json.recordsFiltered != null ? json.recordsFiltered
                           : (json && json.recordsTotal != null ? json.recordsTotal : null);
             var selCount;
@@ -274,10 +261,7 @@ var _dftSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search us
             }
             selCount = window._clientTotal || 0;
             document.getElementById('destSelectionInfo').innerHTML =
-                '<span class="text-secondary">Selection:</span>'
-                + '&ensp;<strong>' + (selectionText || 'All') + '</strong>'
-                + '&ensp;<span class="vr"></span>&ensp;'
-                + '<i class="bi bi-arrow-clockwise text-secondary"></i>&thinsp;<strong>' + ts + '</strong>&thinsp;<span class="text-secondary" style="font-size:0.75em">UTC</span>'
+                '<i class="bi bi-arrow-clockwise text-secondary"></i>&thinsp;<strong>' + ts + '</strong>&thinsp;<span class="text-secondary" style="font-size:0.75em">UTC</span>'
                 + (fileCount !== null
                     ? '&ensp;<span class="vr"></span>&ensp;<span class="text-secondary">Files:</span>&ensp;<strong>' + Number(fileCount).toLocaleString() + '</strong>'
                     : '')
