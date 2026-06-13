@@ -91,7 +91,9 @@ public class Blob {
     Blob(final String remoteAddress, final UserSession session, final BlobMetadata metadata, final GetOptions options)
             throws IOException {
         try {
-            _element = session.getFileListElement(metadata.getPath());
+            // Reuse the FileListElement already fetched by BlobMetadata — avoids a duplicate
+            // getFileListElement() RPC call per GET request.
+            _element = metadata._element;
             _fileSize = Long.parseLong(_element.getSize());
             _remoteAddress = remoteAddress;
             _session = session;
@@ -111,7 +113,7 @@ public class Blob {
                 _contentLength = _fileSize - rangeFrom;
                 _offset = rangeFrom;
             }
-        } catch (final EccmdException e) {
+        } catch (final Exception e) {
             throw new IOException(e.getMessage());
         }
     }

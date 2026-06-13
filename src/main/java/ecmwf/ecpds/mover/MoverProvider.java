@@ -606,6 +606,16 @@ public final class MoverProvider extends NativeAuthenticationProvider {
         }
 
         /**
+         * {@inheritDoc}
+         *
+         * Delegates to the underlying IncomingProfile permission list.
+         */
+        @Override
+        public boolean hasPermission(final String permission) {
+            return _profile.hasPermission(permission);
+        }
+
+        /**
          * Gets the destinations.
          *
          * @param options

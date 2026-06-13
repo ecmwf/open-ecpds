@@ -109,6 +109,19 @@ public abstract class UserSession {
     }
 
     /**
+     * Checks if the user has been granted the named permission for any path. Returns false by default; overridden by
+     * implementations that have a permission model (e.g. data-portal sessions).
+     *
+     * @param permission
+     *            the operation name (e.g. "put", "delete")
+     *
+     * @return true if the permission is granted
+     */
+    public boolean hasPermission(final String permission) {
+        return false;
+    }
+
+    /**
      * Chmod.
      *
      * @param mode

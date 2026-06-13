@@ -216,7 +216,16 @@
                   <code id="connectS3Url" class="d-block bg-body-secondary rounded px-2 py-1 mb-2 user-select-all"></code>
                   <div class="text-muted mb-1" id="connectS3AnonLabel">AWS CLI examples <span class="fw-normal">(replace <em>DESTINATION</em>, <em>DIR</em>, <em>FILE</em>)</span></div>
                   <div id="connectS3Anon"></div>
-                  <p id="connectS3AnonNote" class="text-muted mt-1 mb-0" style="font-size:0.72rem;"><i class="bi bi-info-circle me-1"></i>The bucket name is your username (<code>${userid}</code>); destinations are the top-level path segments. Add <code>--no-verify-ssl</code> to skip TLS certificate verification — only if using a self-signed certificate.</p>
+                  <p id="connectS3AnonNote" class="text-muted mt-1 mb-2" style="font-size:0.72rem;"><i class="bi bi-info-circle me-1"></i>The bucket name is your username (<code>${userid}</code>); destinations are the top-level path segments. Add <code>--no-verify-ssl</code> to skip TLS certificate verification — only if using a self-signed certificate.</p>
+                  <div class="mt-2 border-top pt-2" id="s3Advanced">
+                    <p class="text-muted mb-1" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.05em;">Advanced usage</p>
+                    <a class="small text-muted text-decoration-none d-block" data-bs-toggle="collapse" href="#s3WriteExamples" role="button" aria-expanded="false" aria-controls="s3WriteExamples" style="cursor:pointer;">
+                      <i class="bi bi-chevron-right me-1" style="font-size:0.7rem;transition:transform .2s;" id="s3WriteChevron"></i>Upload
+                    </a>
+                    <div class="collapse" id="s3WriteExamples">
+                      <div id="connectS3Write" class="mt-1"></div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -266,11 +275,13 @@
     data-sftp-port="${sftpPublicPort}"
     data-s3-enabled="${s3Enabled}"
     data-ftp-enabled="${ftpEnabled}"
-    data-sftp-enabled="${sftpEnabled}"></div>
+    data-sftp-enabled="${sftpEnabled}"
+    data-s3-can-write="${s3CanWrite}"
+    data-s3-can-delete="${s3CanDelete}"></div>
   <script>
   (function() {
     // Rotate chevrons on Advanced usage sub-collapses
-    [['httpsFormats', 'httpsFormatsChevron'], ['httpsParallel', 'httpsParallelChevron']].forEach(function(pair) {
+    [['httpsFormats', 'httpsFormatsChevron'], ['httpsParallel', 'httpsParallelChevron'], ['s3WriteExamples', 's3WriteChevron']].forEach(function(pair) {
       var el = document.getElementById(pair[0]);
       if (el) {
         el.addEventListener('show.bs.collapse', function() { var ch = document.getElementById(pair[1]); if (ch) ch.style.transform = 'rotate(90deg)'; });
@@ -324,7 +335,10 @@
     var ftpPortEl = document.getElementById('connectFtpPort'); if (ftpPortEl) ftpPortEl.textContent = ftpPort;
     var httpsEx = document.getElementById('connectHttpsExamples');
     copyBlock(httpsEx, ['# List a directory', 'curl ' + homeBase + 'DIR/']);
-    copyBlock(httpsEx, ['# Download a file', 'curl \\', '  ' + homeBase + 'DIR/FILE -o FILE'], true);
+    copyBlock(httpsEx, ['# Download a file', 'curl \\', '  ' + homeBase + 'DIR/FILE -o FILE'], cfg.s3CanWrite !== 'true');
+    if (cfg.s3CanWrite === 'true') {
+      copyBlock(httpsEx, ['# Upload a file', 'curl -X POST \\', '  -H "Content-Type: application/octet-stream" \\', '  --data-binary @FILE \\', '  ' + homeBase + 'DIR/FILE'], true);
+    }
     var fmtEx = document.getElementById('connectHttpsFormats');
     copyBlock(fmtEx, ['# List as JSON', 'curl \\', '  -H "Accept: application/json" \\', '  ' + homeBase + 'DIR/']);
     copyBlock(fmtEx, ['# List as CSV', 'curl \\', '  -H "Accept: text/csv" \\', '  ' + homeBase + 'DIR/']);
@@ -336,17 +350,28 @@
     var s3AnonSection = document.getElementById('connectS3Anon');
     if (s3AnonSection) {
       var dest = '${destination}';
+      var s3Write = document.getElementById('connectS3Write');
       if (dest) {
         // User is pinned to a single destination — files are directly at root of their bucket
         document.getElementById('connectS3AnonLabel').innerHTML = 'AWS CLI examples <span class="fw-normal">(replace <em>DIR</em>, <em>FILE</em>)</span>';
         document.getElementById('connectS3AnonNote').innerHTML = '<i class="bi bi-info-circle me-1"></i>Your bucket is <code>${userid}</code> and you are connected directly to destination <code>' + dest + '</code>. Add <code>--no-verify-ssl</code> to skip TLS certificate verification — only if using a self-signed certificate.';
         copyBlock(s3AnonSection, ['# List files', 'aws --no-sign-request --endpoint-url ' + s3Endpoint + ' \\', '  s3 ls s3://${userid}/DIR/']);
         copyBlock(s3AnonSection, ['# Download a file', 'aws --no-sign-request --endpoint-url ' + s3Endpoint + ' \\', '  s3 cp s3://${userid}/DIR/FILE ./FILE'], true);
+        if (cfg.s3CanWrite === 'true') {
+          copyBlock(s3Write, ['# Upload a file', 'aws --no-sign-request --endpoint-url ' + s3Endpoint + ' \\', '  s3 cp ./FILE s3://${userid}/DIR/FILE'], true);
+        }
       } else {
         // User has access to multiple destinations — bucket name is username, then destination/path
         copyBlock(s3AnonSection, ['# List all destinations', 'aws --no-sign-request --endpoint-url ' + s3Endpoint + ' \\', '  s3 ls s3://${userid}/']);
         copyBlock(s3AnonSection, ['# List files in a destination', 'aws --no-sign-request --endpoint-url ' + s3Endpoint + ' \\', '  s3 ls s3://${userid}/DESTINATION/DIR/']);
         copyBlock(s3AnonSection, ['# Download a file', 'aws --no-sign-request --endpoint-url ' + s3Endpoint + ' \\', '  s3 cp s3://${userid}/DESTINATION/DIR/FILE ./FILE'], true);
+        if (cfg.s3CanWrite === 'true') {
+          copyBlock(s3Write, ['# Upload a file', 'aws --no-sign-request --endpoint-url ' + s3Endpoint + ' \\', '  s3 cp ./FILE s3://${userid}/DESTINATION/DIR/FILE'], true);
+        }
+      }
+      if (cfg.s3CanWrite !== 'true') {
+        var s3Adv = document.getElementById('s3Advanced');
+        if (s3Adv) s3Adv.style.display = 'none';
       }
     }
     var sftpPort = cfg.sftpPort || '${sftpPort}';

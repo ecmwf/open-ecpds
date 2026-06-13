@@ -234,7 +234,23 @@
                   <div id="connectS3Config" class="mb-2"></div>
                   <div class="text-muted mb-1">AWS CLI examples <span class="fw-normal">(replace <em>BUCKET</em>, <em>DIR</em>, <em>FILE</em>)</span></div>
                   <div id="connectS3Examples"></div>
-                  <p class="text-muted mt-1 mb-0" style="font-size:0.72rem;"><i class="bi bi-info-circle me-1"></i>Add <code>--no-verify-ssl</code> to skip TLS certificate verification — only if using a self-signed certificate, but this is not secure.</p>
+                  <p class="text-muted mt-1 mb-2" style="font-size:0.72rem;"><i class="bi bi-info-circle me-1"></i>Add <code>--no-verify-ssl</code> to skip TLS certificate verification — only if using a self-signed certificate, but this is not secure.</p>
+                  <div class="mt-2 border-top pt-2" id="s3Advanced">
+                    <p class="text-muted mb-1" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.05em;">Advanced usage</p>
+                    <a class="small text-muted text-decoration-none d-block mb-1" data-bs-toggle="collapse" href="#s3WriteExamples" role="button" aria-expanded="false" aria-controls="s3WriteExamples" style="cursor:pointer;">
+                      <i class="bi bi-chevron-right me-1" style="font-size:0.7rem;transition:transform .2s;" id="s3WriteChevron"></i>Upload, sync &amp; delete
+                    </a>
+                    <div class="collapse" id="s3WriteExamples">
+                      <div id="connectS3Write" class="mb-2"></div>
+                    </div>
+                    <a class="small text-muted text-decoration-none d-block" data-bs-toggle="collapse" href="#s3Boto3" role="button" aria-expanded="false" aria-controls="s3Boto3" style="cursor:pointer;" id="s3Boto3Link">
+                      <i class="bi bi-chevron-right me-1" style="font-size:0.7rem;transition:transform .2s;" id="s3Boto3Chevron"></i>Python (boto3)
+                    </a>
+                    <div class="collapse" id="s3Boto3">
+                      <p class="text-muted mt-1 mb-1" style="font-size:0.72rem;">Replace <em>BUCKET</em>, <em>DIR</em>, <em>FILE</em>, <em>PASS</em>. Pass <code>verify=False</code> to skip TLS verification on self-signed certificates.</p>
+                      <div id="connectS3Python"></div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -284,11 +300,13 @@
     data-sftp-port="${sftpPublicPort}"
     data-s3-enabled="${s3Enabled}"
     data-ftp-enabled="${ftpEnabled}"
-    data-sftp-enabled="${sftpEnabled}"></div>
+    data-sftp-enabled="${sftpEnabled}"
+    data-s3-can-write="${s3CanWrite}"
+    data-s3-can-delete="${s3CanDelete}"></div>
   <script>
   (function() {
     // Rotate chevrons on Advanced usage sub-collapses
-    [['httpsFormats', 'httpsFormatsChevron'], ['httpsParallel', 'httpsParallelChevron']].forEach(function(pair) {
+    [['httpsFormats', 'httpsFormatsChevron'], ['httpsParallel', 'httpsParallelChevron'], ['s3WriteExamples', 's3WriteChevron'], ['s3Boto3', 's3Boto3Chevron']].forEach(function(pair) {
       var el = document.getElementById(pair[0]);
       if (el) {
         el.addEventListener('show.bs.collapse', function() { var ch = document.getElementById(pair[1]); if (ch) ch.style.transform = 'rotate(90deg)'; });
@@ -340,8 +358,10 @@
     var ftpPortEl = document.getElementById('connectFtpPort'); if (ftpPortEl) ftpPortEl.textContent = ftpPort;
     var httpsEx = document.getElementById('connectHttpsExamples');
     copyBlock(httpsEx, ['# List a directory', 'curl -u ${userid}:PASS \\', '  ' + base + 'data/list/DIR/']);
-    copyBlock(httpsEx, ['# Download a file', 'curl -u ${userid}:PASS \\', '  ' + base + 'data/file/DIR/FILE -o FILE']);
-    copyBlock(httpsEx, ['# Upload a file', 'curl -u ${userid}:PASS -X POST \\', '  -H "Content-Type: application/octet-stream" \\', '  --data-binary @FILE \\', '  ' + base + 'data/file/DIR/FILE'], true);
+    copyBlock(httpsEx, ['# Download a file', 'curl -u ${userid}:PASS \\', '  ' + base + 'data/file/DIR/FILE -o FILE'], cfg.s3CanWrite !== 'true');
+    if (cfg.s3CanWrite === 'true') {
+      copyBlock(httpsEx, ['# Upload a file', 'curl -u ${userid}:PASS -X POST \\', '  -H "Content-Type: application/octet-stream" \\', '  --data-binary @FILE \\', '  ' + base + 'data/file/DIR/FILE'], true);
+    }
     var fmtEx = document.getElementById('connectHttpsFormats');
     copyBlock(fmtEx, ['# List as JSON', 'curl -u ${userid}:PASS \\', '  -H "Accept: application/json" \\', '  ' + base + 'data/list/DIR/']);
     copyBlock(fmtEx, ['# List as CSV', 'curl -u ${userid}:PASS \\', '  -H "Accept: text/csv" \\', '  ' + base + 'data/list/DIR/']);
@@ -357,6 +377,39 @@
       copyBlock(s3Ex, ['# List buckets', 'aws --endpoint-url ' + s3Endpoint + ' \\', '  s3 ls']);
       copyBlock(s3Ex, ['# List files in a bucket', 'aws --endpoint-url ' + s3Endpoint + ' \\', '  s3 ls s3://BUCKET/']);
       copyBlock(s3Ex, ['# Download a file', 'aws --endpoint-url ' + s3Endpoint + ' \\', '  s3 cp s3://BUCKET/DIR/FILE ./FILE'], true);
+      var s3CanWrite = cfg.s3CanWrite === 'true';
+      var s3CanDelete = cfg.s3CanDelete === 'true';
+      var s3Write = document.getElementById('connectS3Write');
+      if (s3CanWrite) {
+        copyBlock(s3Write, ['# Upload a file', 'aws --endpoint-url ' + s3Endpoint + ' \\', '  s3 cp ./FILE s3://BUCKET/DIR/FILE']);
+        copyBlock(s3Write, ['# Upload a directory (sync)', 'aws --endpoint-url ' + s3Endpoint + ' \\', '  s3 sync ./DIR/ s3://BUCKET/DIR/'], !s3CanDelete);
+      }
+      if (s3CanDelete) {
+        copyBlock(s3Write, ['# Delete a file', 'aws --endpoint-url ' + s3Endpoint + ' \\', '  s3 rm s3://BUCKET/DIR/FILE'], true);
+      }
+      var s3Py = document.getElementById('connectS3Python');
+      if (s3CanWrite) {
+        copyBlock(s3Py, [
+          'import boto3',
+          's3 = boto3.client(',
+          '    "s3",',
+          '    endpoint_url="' + s3Endpoint + '",',
+          '    aws_access_key_id="${userid}",',
+          '    aws_secret_access_key="PASS",',
+          ')',
+          '# Upload a file',
+          's3.upload_file("FILE", "BUCKET", "DIR/FILE")',
+          '# Download a file',
+          's3.download_file("BUCKET", "DIR/FILE", "FILE")',
+        ], true);
+      } else {
+        var boto3Link = document.getElementById('s3Boto3Link');
+        if (boto3Link) boto3Link.style.display = 'none';
+      }
+      if (!s3CanWrite && !s3CanDelete) {
+        var s3Adv = document.getElementById('s3Advanced');
+        if (s3Adv) s3Adv.style.display = 'none';
+      }
     }
     var sftpPort = cfg.sftpPort || '${sftpPort}';
     var sftpHost = cfg.sftpHost || host;

@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -50,7 +51,7 @@ public class BlobMetadata {
     private static final MoverServer _mover = StarterServer.getInstance(MoverServer.class);
 
     /** The element. */
-    private final FileListElement _element;
+    final FileListElement _element;
 
     /** The content metadata. */
     private final ContentMetadata _contentMetadata;
@@ -58,8 +59,11 @@ public class BlobMetadata {
     /** The user metadata. */
     private final Map<String, String> _userMetadata;
 
-    /** The etag. */
-    private final String _etag;
+    /** The data transfer id, used for lazy ETag computation. */
+    private final String _dataTransferId;
+
+    /** Lazily-computed ETag — null means not yet fetched. */
+    private final AtomicReference<String> _etagRef = new AtomicReference<>(null);
 
     /** The path. */
     private final String _path;
@@ -79,7 +83,7 @@ public class BlobMetadata {
         _userMetadata = new HashMap<>();
         _contentMetadata = new ContentMetadata(element);
         _element = element;
-        _etag = _getETag(_element.getComment().trim());
+        _dataTransferId = element.getComment() != null ? element.getComment().trim() : null;
         _path = path;
     }
 
@@ -93,12 +97,21 @@ public class BlobMetadata {
     }
 
     /**
-     * Gets the e tag.
+     * Gets the e tag — computed lazily on first call and cached.
      *
-     * @return the e tag
+     * @return the e tag, or null if unavailable
      */
     public String getETag() {
-        return _etag;
+        var etag = _etagRef.get();
+        if (etag == null && _dataTransferId != null) {
+            try {
+                etag = _getETag(_dataTransferId);
+                _etagRef.compareAndSet(null, etag);
+            } catch (final IOException e) {
+                logger.warn("Cannot compute ETag for {}", _path, e);
+            }
+        }
+        return etag;
     }
 
     /**
@@ -144,7 +157,7 @@ public class BlobMetadata {
             return _mover.getMasterInterface().getETag(Long.parseLong(dataTransferId));
         } catch (final Throwable t) {
             logger.warn("Cannot process ETag", t);
-            throw new IOException("Cannot process ETag");
+            throw new IOException("Cannot process ETag: " + t.getMessage());
         }
     }
 }

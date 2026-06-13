@@ -28,6 +28,7 @@ package ecmwf.ecpds.mover.plugin.http;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -80,6 +81,9 @@ public class StorageMetadata {
     /** The truncated. */
     private boolean _truncated = false;
 
+    /** Cached ETag — computed on first call to {@link #getETag()}. */
+    private final AtomicReference<String> _etagRef = new AtomicReference<>(null);
+
     /**
      * Instantiates a new storage metadata.
      *
@@ -131,7 +135,7 @@ public class StorageMetadata {
     }
 
     /**
-     * Gets the e tag.
+     * Gets the e tag — computed lazily on first call and cached to avoid repeated RPC calls per listing item.
      *
      * @return the e tag
      *
@@ -142,7 +146,12 @@ public class StorageMetadata {
         if (_type != Type.BLOB) {
             throw new IOException("ETags only available for Blobs");
         }
-        return _getETag(_element.getComment().trim());
+        var etag = _etagRef.get();
+        if (etag == null) {
+            etag = _getETag(_element.getComment().trim());
+            _etagRef.compareAndSet(null, etag);
+        }
+        return etag;
     }
 
     /**

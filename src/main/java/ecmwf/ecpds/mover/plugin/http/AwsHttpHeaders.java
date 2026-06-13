@@ -60,6 +60,30 @@ final class AwsHttpHeaders {
     /** The Constant STORAGE_CLASS. */
     static final String STORAGE_CLASS = "x-amz-storage-class";
 
+    // SDK v2 checksum / integrity headers
+    static final String CHECKSUM_ALGORITHM = "x-amz-sdk-checksum-algorithm";
+
+    /** The Constant CHECKSUM_CRC32. */
+    static final String CHECKSUM_CRC32 = "x-amz-checksum-crc32";
+
+    /** The Constant CHECKSUM_CRC32C. */
+    static final String CHECKSUM_CRC32C = "x-amz-checksum-crc32c";
+
+    /** The Constant CHECKSUM_SHA1. */
+    static final String CHECKSUM_SHA1 = "x-amz-checksum-sha1";
+
+    /** The Constant CHECKSUM_SHA256. */
+    static final String CHECKSUM_SHA256 = "x-amz-checksum-sha256";
+
+    /** The Constant TRAILER. */
+    static final String TRAILER = "x-amz-trailer";
+
+    /** The Constant TE. */
+    static final String TE = "x-amz-te";
+
+    /** The Constant EXPECTED_BUCKET_OWNER. */
+    static final String EXPECTED_BUCKET_OWNER = "x-amz-expected-bucket-owner";
+
     /**
      * Instantiates a new aws http headers.
      */

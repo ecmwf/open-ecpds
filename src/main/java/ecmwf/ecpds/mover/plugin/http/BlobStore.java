@@ -29,6 +29,9 @@ package ecmwf.ecpds.mover.plugin.http;
 import java.io.Closeable;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.security.MessageDigest;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -40,8 +43,13 @@ import org.apache.logging.log4j.Logger;
 
 import ecmwf.common.ecaccess.EccmdException;
 import ecmwf.common.ecaccess.FileListElement;
+import ecmwf.common.ecaccess.StarterServer;
 import ecmwf.common.ecaccess.UserSession;
+import ecmwf.common.technical.ProxyEvent;
+import ecmwf.common.technical.ProxySocket;
+import ecmwf.common.technical.StreamPlugThread;
 import ecmwf.common.text.Format;
+import ecmwf.ecpds.mover.MoverServer;
 
 /**
  * The Class BlobStore.
@@ -50,6 +58,9 @@ public class BlobStore implements Closeable {
 
     /** The Constant logger. */
     private static final Logger logger = LogManager.getLogger(BlobStore.class);
+
+    /** The Constant _mover. */
+    private static final MoverServer _mover = StarterServer.getInstance(MoverServer.class);
 
     /** The remote address. */
     final String _remoteAddress;
@@ -290,6 +301,71 @@ public class BlobStore implements Closeable {
                     "[" + user + "]DATA:" + path);
         } catch (final FileNotFoundException e) {
             throw new S3Exception(S3ErrorCode.NO_SUCH_BUCKET);
+        }
+    }
+
+    /**
+     * Put blob.
+     *
+     * Upload data from the given input stream and store it at containerName/blobName. Mirrors the write path used by
+     * the REST server (RESTServer.dataFilePost). After the transfer completes a ProxyEvent is recorded so the upload
+     * appears in the transfer history, and the ECPDS-assigned ETag is returned.
+     *
+     * @param containerName
+     *            the container name
+     * @param blobName
+     *            the blob name
+     * @param is
+     *            the input stream supplying the object data
+     *
+     * @return the ETag string assigned by ECPDS for the stored object
+     *
+     * @throws ecmwf.ecpds.mover.plugin.http.S3Exception
+     *             the s 3 exception
+     * @throws java.io.IOException
+     *             Signals that an I/O exception has occurred.
+     */
+    public String putBlob(final String containerName, final String blobName, final InputStream is)
+            throws S3Exception, IOException {
+        final var path = _getFilename(containerName + "/" + blobName);
+        logger.debug("putBlob: bucket=" + containerName + ", blob=" + blobName + ": " + path);
+        ProxySocket proxy = null;
+        OutputStream out = null;
+        StreamPlugThread plug = null;
+        try {
+            proxy = _session.getProxySocketOutput(path.getValue(), 0, 640);
+            plug = new StreamPlugThread(is, out = proxy.getDataOutputStream());
+            plug.configurableRun();
+            final var message = plug.getMessage();
+            plug.close();
+            out.close();
+            out = null;
+            proxy.close();
+            _session.check(proxy);
+            if (message != null) {
+                throw new IOException("Upload failed: " + message);
+            }
+            // Record the transfer event (download = false means upload direction)
+            final var setup = _session.getECtransSetup();
+            if (setup == null || setup.getBoolean(ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_TRIGGER_EVENT)) {
+                final var event = new ProxyEvent(proxy);
+                event.setProtocol("s3");
+                event.setLocalHost(_mover.getRoot());
+                event.setRemoteHost(_remoteAddress);
+                event.setUserType(ProxyEvent.UserType.DATA_USER);
+                event.setUserName(_session.getUser());
+            }
+            // Return the ECPDS ETag for the uploaded object
+            final var element = _session.getFileListElement(path.getValue());
+            return _mover.getMasterInterface().getETag(Long.parseLong(element.getComment().trim()));
+        } catch (final IOException ioe) {
+            throw ioe;
+        } catch (final Throwable t) {
+            throw new IOException("putBlob failed: " + Format.getMessage(t), t);
+        } finally {
+            StreamPlugThread.closeQuietly(plug);
+            StreamPlugThread.closeQuietly(out);
+            StreamPlugThread.closeQuietly(proxy);
         }
     }
 

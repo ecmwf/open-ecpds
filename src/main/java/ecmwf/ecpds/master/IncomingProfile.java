@@ -121,6 +121,23 @@ public final class IncomingProfile implements Serializable {
     }
 
     /**
+     * Checks if the user has been granted the named permission for any path.
+     *
+     * @param permission
+     *            the operation name (e.g. "put", "delete")
+     *
+     * @return true if at least one IncomingPermission with that operation name exists
+     */
+    public boolean hasPermission(final String permission) {
+        for (final IncomingPermission p : permissions) {
+            if (permission.equals(p.getOperationName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Check permission.
      *
      * @param permission

@@ -22,6 +22,9 @@ import java.io.InputStream;
 import java.io.Writer;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.DigestInputStream;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -30,11 +33,14 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeSet;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletRequest;
@@ -46,6 +52,8 @@ import javax.xml.stream.XMLStreamWriter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.codehaus.jackson.map.ObjectMapper;
+
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
@@ -101,7 +109,11 @@ public class S3ProxyHandler {
             AwsHttpHeaders.COPY_SOURCE, AwsHttpHeaders.COPY_SOURCE_IF_MATCH,
             AwsHttpHeaders.COPY_SOURCE_IF_MODIFIED_SINCE, AwsHttpHeaders.COPY_SOURCE_IF_NONE_MATCH,
             AwsHttpHeaders.COPY_SOURCE_IF_UNMODIFIED_SINCE, AwsHttpHeaders.COPY_SOURCE_RANGE, AwsHttpHeaders.DATE,
-            AwsHttpHeaders.DECODED_CONTENT_LENGTH, AwsHttpHeaders.METADATA_DIRECTIVE, AwsHttpHeaders.STORAGE_CLASS);
+            AwsHttpHeaders.DECODED_CONTENT_LENGTH, AwsHttpHeaders.METADATA_DIRECTIVE, AwsHttpHeaders.STORAGE_CLASS,
+            // SDK v2 checksum / integrity headers — accept but do not verify (we rely on ECPDS checksums)
+            AwsHttpHeaders.CHECKSUM_ALGORITHM, AwsHttpHeaders.CHECKSUM_CRC32, AwsHttpHeaders.CHECKSUM_CRC32C,
+            AwsHttpHeaders.CHECKSUM_SHA1, AwsHttpHeaders.CHECKSUM_SHA256, AwsHttpHeaders.TRAILER, AwsHttpHeaders.TE,
+            AwsHttpHeaders.EXPECTED_BUCKET_OWNER);
 
     /** The Constant XML_CONTENT_TYPE. */
     private static final String XML_CONTENT_TYPE = "application/xml";
@@ -110,6 +122,44 @@ public class S3ProxyHandler {
     private static final String UTF_8 = "UTF-8";
     /** URLEncoder escapes / which we do not want. */
     private static final Escaper urlEscaper = new PercentEscaper("*-./_", /* plusForSpace= */ false);
+
+    /**
+     * In-progress multipart upload state. Key = uploadId. Parts are stored as local temp files so that the final
+     * CompleteMultipartUpload can stream them in order to ECPDS in a single getProxySocketOutput call.
+     */
+    private static final ConcurrentHashMap<String, MultipartUpload> _multipartUploads = new ConcurrentHashMap<>();
+
+    /** Tracks a single in-progress multipart upload. */
+    private static final class MultipartUpload {
+        final String containerName;
+        final String blobName;
+        final Date initiated;
+        final Path tempDir;
+        /** partNumber (1-based) → {tempFile, etag(MD5 hex)} */
+        final ConcurrentHashMap<Integer, PartInfo> parts = new ConcurrentHashMap<>();
+
+        MultipartUpload(final String containerName, final String blobName, final Path tempDir) {
+            this.containerName = containerName;
+            this.blobName = blobName;
+            this.initiated = new Date();
+            this.tempDir = tempDir;
+        }
+    }
+
+    /** Metadata for a single uploaded part. */
+    private static final class PartInfo {
+        final Path file;
+        final String etag;
+        final long size;
+        final Date lastModified;
+
+        PartInfo(final Path file, final String etag, final long size) {
+            this.file = file;
+            this.etag = etag;
+            this.size = size;
+            this.lastModified = new Date();
+        }
+    }
 
     /** The authentication type. */
     private final AuthenticationType authenticationType;
@@ -897,8 +947,42 @@ public class S3ProxyHandler {
      *             the s 3 exception
      */
     private void handleListMultipartUploads(final HttpServletRequest request, final HttpServletResponse response,
-            final BlobStore blobStore, final String container) throws S3Exception {
-        throw new S3Exception(S3ErrorCode.NOT_IMPLEMENTED);
+            final BlobStore blobStore, final String container) throws IOException, S3Exception {
+        if (!blobStore.containerExists(container)) {
+            throw new S3Exception(S3ErrorCode.NO_SUCH_BUCKET);
+        }
+        response.setCharacterEncoding(UTF_8);
+        try (final Writer writer = response.getWriter()) {
+            response.setContentType(XML_CONTENT_TYPE);
+            final var xml = xmlOutputFactory.createXMLStreamWriter(writer);
+            xml.writeStartDocument();
+            xml.writeStartElement("ListMultipartUploadsResult");
+            xml.writeDefaultNamespace(AWS_XMLNS);
+            writeSimpleElement(xml, "Bucket", container);
+            writeSimpleElement(xml, "MaxUploads", "1000");
+            writeSimpleElement(xml, "IsTruncated", "false");
+            for (final var entry : _multipartUploads.entrySet()) {
+                final var mpu = entry.getValue();
+                if (!container.equals(mpu.containerName)) {
+                    continue;
+                }
+                xml.writeStartElement("Upload");
+                writeSimpleElement(xml, "Key", mpu.blobName);
+                writeSimpleElement(xml, "UploadId", entry.getKey());
+                writeSimpleElement(xml, "Initiated", formatDate(mpu.initiated));
+                xml.writeStartElement("Initiator");
+                writeSimpleElement(xml, "ID", FAKE_OWNER_ID);
+                writeSimpleElement(xml, "DisplayName", FAKE_OWNER_DISPLAY_NAME);
+                xml.writeEndElement();
+                writeOwnerStanza(xml);
+                writeSimpleElement(xml, "StorageClass", "STANDARD");
+                xml.writeEndElement();
+            }
+            xml.writeEndElement();
+            xml.flush();
+        } catch (final XMLStreamException xse) {
+            throw new IOException(xse);
+        }
     }
 
     /**
@@ -1450,8 +1534,58 @@ public class S3ProxyHandler {
      */
     private void handleCopyBlob(final HttpServletRequest request, final HttpServletResponse response,
             final InputStream is, final BlobStore blobStore, final String destContainerName, final String destBlobName)
-            throws S3Exception {
-        throw new S3Exception(S3ErrorCode.NOT_IMPLEMENTED);
+            throws IOException, S3Exception {
+        // x-amz-copy-source is /srcBucket/srcKey or srcBucket/srcKey
+        var copySource = request.getHeader(AwsHttpHeaders.COPY_SOURCE);
+        if (copySource == null) {
+            throw new S3Exception(S3ErrorCode.INVALID_ARGUMENT);
+        }
+        copySource = URLDecoder.decode(copySource, UTF_8);
+        if (copySource.startsWith("/")) {
+            copySource = copySource.substring(1);
+        }
+        final var slash = copySource.indexOf('/');
+        if (slash < 0) {
+            throw new S3Exception(S3ErrorCode.INVALID_ARGUMENT);
+        }
+        final var srcContainer = copySource.substring(0, slash);
+        final var srcBlob = copySource.substring(slash + 1);
+
+        if (!blobStore.containerExists(srcContainer)) {
+            throw new S3Exception(S3ErrorCode.NO_SUCH_BUCKET);
+        }
+        if (!blobStore.containerExists(destContainerName)) {
+            throw new S3Exception(S3ErrorCode.NO_SUCH_BUCKET);
+        }
+
+        // Open source and stream directly into the destination
+        final var srcBlob_ = blobStore.getBlob(srcContainer, srcBlob, new GetOptions());
+        if (srcBlob_ == null) {
+            throw new S3Exception(S3ErrorCode.NO_SUCH_KEY);
+        }
+        final var in = srcBlob_.openStream();
+        try {
+            final var eTag = blobStore.putBlob(destContainerName, destBlobName, in);
+            addCorsResponseHeader(request, response);
+            response.setCharacterEncoding(UTF_8);
+            try (final Writer writer = response.getWriter()) {
+                response.setContentType(XML_CONTENT_TYPE);
+                final var xml = xmlOutputFactory.createXMLStreamWriter(writer);
+                xml.writeStartDocument();
+                xml.writeStartElement("CopyObjectResult");
+                xml.writeDefaultNamespace(AWS_XMLNS);
+                writeSimpleElement(xml, "LastModified", formatDate(new Date()));
+                if (eTag != null) {
+                    writeSimpleElement(xml, "ETag", maybeQuoteETag(eTag));
+                }
+                xml.writeEndElement();
+                xml.flush();
+            } catch (final XMLStreamException xse) {
+                throw new IOException(xse);
+            }
+        } finally {
+            StreamPlugThread.closeQuietly(in);
+        }
     }
 
     /**
@@ -1475,8 +1609,23 @@ public class S3ProxyHandler {
      */
     private void handlePutBlob(final HttpServletRequest request, final HttpServletResponse response,
             final InputStream is, final BlobStore blobStore, final String containerName, final String blobName)
-            throws S3Exception {
-        throw new S3Exception(S3ErrorCode.NOT_IMPLEMENTED);
+            throws IOException, S3Exception {
+        if (!blobStore.containerExists(containerName)) {
+            throw new S3Exception(S3ErrorCode.NO_SUCH_BUCKET);
+        }
+        // For streaming uploads (STREAMING-AWS4-HMAC-SHA256-PAYLOAD), SDK v2 sets
+        // Content-Length to the chunked-envelope size and puts the real object size in
+        // x-amz-decoded-content-length. Pass it through so ECPDS can size correctly.
+        final var decodedLength = request.getHeader(AwsHttpHeaders.DECODED_CONTENT_LENGTH);
+        if (decodedLength != null) {
+            response.setHeader(AwsHttpHeaders.DECODED_CONTENT_LENGTH, decodedLength);
+        }
+        final var eTag = blobStore.putBlob(containerName, blobName, is);
+        addCorsResponseHeader(request, response);
+        if (eTag != null) {
+            response.addHeader(HttpHeaders.ETAG, maybeQuoteETag(eTag));
+        }
+        response.setStatus(HttpServletResponse.SC_OK);
     }
 
     /**
@@ -1497,8 +1646,30 @@ public class S3ProxyHandler {
      *             the s 3 exception
      */
     private void handleInitiateMultipartUpload(final HttpServletRequest request, final HttpServletResponse response,
-            final BlobStore blobStore, final String containerName, final String blobName) throws S3Exception {
-        throw new S3Exception(S3ErrorCode.NOT_IMPLEMENTED);
+            final BlobStore blobStore, final String containerName, final String blobName)
+            throws IOException, S3Exception {
+        if (!blobStore.containerExists(containerName)) {
+            throw new S3Exception(S3ErrorCode.NO_SUCH_BUCKET);
+        }
+        final var uploadId = UUID.randomUUID().toString();
+        final var tempDir = Files.createTempDirectory("s3mpu-" + uploadId);
+        _multipartUploads.put(uploadId, new MultipartUpload(containerName, blobName, tempDir));
+        logger.debug("InitiateMultipartUpload: {}/{} uploadId={}", containerName, blobName, uploadId);
+        response.setCharacterEncoding(UTF_8);
+        try (final Writer writer = response.getWriter()) {
+            response.setContentType(XML_CONTENT_TYPE);
+            final var xml = xmlOutputFactory.createXMLStreamWriter(writer);
+            xml.writeStartDocument();
+            xml.writeStartElement("InitiateMultipartUploadResult");
+            xml.writeDefaultNamespace(AWS_XMLNS);
+            writeSimpleElement(xml, "Bucket", containerName);
+            writeSimpleElement(xml, "Key", blobName);
+            writeSimpleElement(xml, "UploadId", uploadId);
+            xml.writeEndElement();
+            xml.flush();
+        } catch (final XMLStreamException xse) {
+            throw new IOException(xse);
+        }
     }
 
     /**
@@ -1524,8 +1695,67 @@ public class S3ProxyHandler {
      */
     private void handleCompleteMultipartUpload(final HttpServletRequest request, final HttpServletResponse response,
             final InputStream is, final BlobStore blobStore, final String containerName, final String blobName,
-            final String uploadId) throws S3Exception {
-        throw new S3Exception(S3ErrorCode.NOT_IMPLEMENTED);
+            final String uploadId) throws IOException, S3Exception {
+        final var mpu = _multipartUploads.get(uploadId);
+        if (mpu == null) {
+            throw new S3Exception(S3ErrorCode.NO_SUCH_UPLOAD);
+        }
+        // Parse the <CompleteMultipartUpload> body for ordered part list
+        final XmlMapper xmlMapper = new XmlMapper();
+        xmlMapper.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        final CompleteMultipartUploadRequest req;
+        try {
+            req = xmlMapper.readValue(is, CompleteMultipartUploadRequest.class);
+        } catch (final Exception e) {
+            throw new S3Exception(S3ErrorCode.MALFORMED_X_M_L);
+        }
+        if (req == null || req.parts == null || req.parts.isEmpty()) {
+            throw new S3Exception(S3ErrorCode.MALFORMED_X_M_L);
+        }
+        req.parts.sort(Comparator.comparingInt(p -> p.partNumber));
+
+        // Validate all parts are present
+        for (final var p : req.parts) {
+            if (!mpu.parts.containsKey(p.partNumber)) {
+                throw new S3Exception(S3ErrorCode.INVALID_PART);
+            }
+        }
+
+        // Stream all parts in order as a single SequenceInputStream into putBlob
+        final var partStreams = new ArrayList<InputStream>();
+        try {
+            for (final var p : req.parts) {
+                partStreams.add(Files.newInputStream(mpu.parts.get(p.partNumber).file));
+            }
+            final InputStream combined = new java.io.SequenceInputStream(Collections.enumeration(partStreams));
+            final var eTag = blobStore.putBlob(containerName, blobName, combined);
+            _multipartUploads.remove(uploadId);
+            _deleteMultipartTempDir(mpu);
+            logger.debug("CompleteMultipartUpload: {}/{} uploadId={} eTag={}", containerName, blobName, uploadId, eTag);
+            addCorsResponseHeader(request, response);
+            response.setCharacterEncoding(UTF_8);
+            try (final Writer writer = response.getWriter()) {
+                response.setContentType(XML_CONTENT_TYPE);
+                final var xml = xmlOutputFactory.createXMLStreamWriter(writer);
+                xml.writeStartDocument();
+                xml.writeStartElement("CompleteMultipartUploadResult");
+                xml.writeDefaultNamespace(AWS_XMLNS);
+                writeSimpleElement(xml, "Location", "/" + containerName + "/" + blobName);
+                writeSimpleElement(xml, "Bucket", containerName);
+                writeSimpleElement(xml, "Key", blobName);
+                if (eTag != null) {
+                    writeSimpleElement(xml, "ETag", maybeQuoteETag(eTag));
+                }
+                xml.writeEndElement();
+                xml.flush();
+            } catch (final XMLStreamException xse) {
+                throw new IOException(xse);
+            }
+        } finally {
+            for (final var s : partStreams) {
+                StreamPlugThread.closeQuietly(s);
+            }
+        }
     }
 
     /**
@@ -1550,7 +1780,13 @@ public class S3ProxyHandler {
     private void handleAbortMultipartUpload(final HttpServletRequest request, final HttpServletResponse response,
             final BlobStore blobStore, final String containerName, final String blobName, final String uploadId)
             throws S3Exception {
-        throw new S3Exception(S3ErrorCode.NOT_IMPLEMENTED);
+        final var mpu = _multipartUploads.remove(uploadId);
+        if (mpu == null) {
+            throw new S3Exception(S3ErrorCode.NO_SUCH_UPLOAD);
+        }
+        _deleteMultipartTempDir(mpu);
+        logger.debug("AbortMultipartUpload: {}/{} uploadId={}", containerName, blobName, uploadId);
+        response.setStatus(HttpServletResponse.SC_NO_CONTENT);
     }
 
     /**
@@ -1574,8 +1810,41 @@ public class S3ProxyHandler {
      */
     private void handleListParts(final HttpServletRequest request, final HttpServletResponse response,
             final BlobStore blobStore, final String containerName, final String blobName, final String uploadId)
-            throws S3Exception {
-        throw new S3Exception(S3ErrorCode.NOT_IMPLEMENTED);
+            throws IOException, S3Exception {
+        final var mpu = _multipartUploads.get(uploadId);
+        if (mpu == null) {
+            throw new S3Exception(S3ErrorCode.NO_SUCH_UPLOAD);
+        }
+        final var maxParts = 1000;
+        response.setCharacterEncoding(UTF_8);
+        try (final Writer writer = response.getWriter()) {
+            response.setContentType(XML_CONTENT_TYPE);
+            final var xml = xmlOutputFactory.createXMLStreamWriter(writer);
+            xml.writeStartDocument();
+            xml.writeStartElement("ListPartsResult");
+            xml.writeDefaultNamespace(AWS_XMLNS);
+            writeSimpleElement(xml, "Bucket", containerName);
+            writeSimpleElement(xml, "Key", blobName);
+            writeSimpleElement(xml, "UploadId", uploadId);
+            writeSimpleElement(xml, "MaxParts", String.valueOf(maxParts));
+            writeSimpleElement(xml, "IsTruncated", "false");
+            writeOwnerStanza(xml);
+            final var sorted = new ArrayList<>(mpu.parts.entrySet());
+            sorted.sort(Comparator.comparingInt(Map.Entry::getKey));
+            for (final var entry : sorted) {
+                final var info = entry.getValue();
+                xml.writeStartElement("Part");
+                writeSimpleElement(xml, "PartNumber", String.valueOf(entry.getKey()));
+                writeSimpleElement(xml, "LastModified", formatDate(info.lastModified));
+                writeSimpleElement(xml, "ETag", maybeQuoteETag(info.etag));
+                writeSimpleElement(xml, "Size", String.valueOf(info.size));
+                xml.writeEndElement();
+            }
+            xml.writeEndElement();
+            xml.flush();
+        } catch (final XMLStreamException xse) {
+            throw new IOException(xse);
+        }
     }
 
     /**
@@ -1626,8 +1895,39 @@ public class S3ProxyHandler {
      */
     private void handleUploadPart(final HttpServletRequest request, final HttpServletResponse response,
             final InputStream is, final BlobStore blobStore, final String containerName, final String blobName,
-            final String uploadId) throws S3Exception {
-        throw new S3Exception(S3ErrorCode.NOT_IMPLEMENTED);
+            final String uploadId) throws IOException, S3Exception {
+        final var mpu = _multipartUploads.get(uploadId);
+        if (mpu == null) {
+            throw new S3Exception(S3ErrorCode.NO_SUCH_UPLOAD);
+        }
+        final var partNumberStr = request.getParameter("partNumber");
+        final int partNumber;
+        try {
+            partNumber = Integer.parseInt(partNumberStr);
+        } catch (final NumberFormatException e) {
+            throw new S3Exception(S3ErrorCode.INVALID_ARGUMENT);
+        }
+        if (partNumber < 1 || partNumber > 10000) {
+            throw new S3Exception(S3ErrorCode.INVALID_ARGUMENT);
+        }
+        // Write part to a temp file, computing MD5 for the part ETag
+        final var partFile = mpu.tempDir.resolve(String.valueOf(partNumber));
+        final MessageDigest md5;
+        try {
+            md5 = MessageDigest.getInstance("MD5");
+        } catch (final NoSuchAlgorithmException e) {
+            throw new IOException(e);
+        }
+        long size;
+        try (final var dis = new DigestInputStream(is, md5); final var out = Files.newOutputStream(partFile)) {
+            size = StreamPlugThread.copy(out, dis, StreamPlugThread.DEFAULT_BUFF_SIZE);
+        }
+        final var etag = BaseEncoding.base16().lowerCase().encode(md5.digest());
+        mpu.parts.put(partNumber, new PartInfo(partFile, etag, size));
+        logger.debug("UploadPart: {}/{} uploadId={} part={} size={} etag={}", containerName, blobName, uploadId,
+                partNumber, size, etag);
+        response.addHeader(HttpHeaders.ETAG, maybeQuoteETag(etag));
+        response.setStatus(HttpServletResponse.SC_OK);
     }
 
     /**
@@ -1937,5 +2237,31 @@ public class S3ProxyHandler {
      */
     private static boolean constantTimeEquals(final String x, final String y) {
         return MessageDigest.isEqual(x.getBytes(StandardCharsets.UTF_8), y.getBytes(StandardCharsets.UTF_8));
+    }
+
+    /** Deletes all temp files and the temp directory for a multipart upload. */
+    private static void _deleteMultipartTempDir(final MultipartUpload mpu) {
+        try {
+            for (final var info : mpu.parts.values()) {
+                Files.deleteIfExists(info.file);
+            }
+            Files.deleteIfExists(mpu.tempDir);
+        } catch (final IOException e) {
+            logger.warn("Failed to delete multipart temp dir: {}", mpu.tempDir, e);
+        }
+    }
+
+    /** XML-deserializable body for CompleteMultipartUpload requests. */
+    private static final class CompleteMultipartUploadRequest {
+        @com.fasterxml.jackson.annotation.JsonProperty("Part")
+        @com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper(useWrapping = false)
+        public java.util.List<PartEntry> parts;
+
+        static final class PartEntry {
+            @com.fasterxml.jackson.annotation.JsonProperty("PartNumber")
+            public int partNumber;
+            @com.fasterxml.jackson.annotation.JsonProperty("ETag")
+            public String etag;
+        }
     }
 }

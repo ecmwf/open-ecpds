@@ -1320,6 +1320,8 @@ public final class RESTServer {
             Format.replaceAll(sb, "${accessGuide}", String.valueOf(accessGuide));
             final var userId = session.getUser();
             Format.replaceAll(sb, "${userid}", userId);
+            Format.replaceAll(sb, "${s3CanWrite}", String.valueOf(session.hasPermission("put")));
+            Format.replaceAll(sb, "${s3CanDelete}", String.valueOf(session.hasPermission("delete")));
             final var destination = setup != null
                     ? setup.getOptionalString(ECtransOptions.USER_PORTAL_DESTINATION).orElse("") : "";
             Format.replaceAll(sb, "${destination}", destination);
