@@ -4,6 +4,15 @@ This document summarizes the most significant changes in OpenECPDS across all ma
 
 ---
 
+## open-ecpds 8.0.1-12062026 (2026-06-12)
+
+- The Data Portal now supports server-side AWS S3 SDK v2 operations, including file upload and synchronization. This improves compatibility with modern S3 environments and S3-compatible object storage platforms while benefiting from the latest AWS SDK enhancements.
+- Add warning badges to the Properties, Directory, JavaScript, and Python editor accordions to improve the visibility of errors and warnings.
+- In the Host editor, display a warning message when the Directory content does not appear to match the selected type (JavaScript or Python), a common source of configuration errors.
+- Allow all active sessions for a data user to be closed with a single click.
+- Allow the maximum number of connections for a data user to be scheduled (e.g. higher limits during off-peak hours).
+- Upgrade the S3 transfer module client to the AWS SDK v2.
+
 ## open-ecpds 8.0.1-29052026 (2026-05-29)
 
 - Fix packaging issue affecting the monitor RPM where the ecpds.war application was not included in the generated package.
