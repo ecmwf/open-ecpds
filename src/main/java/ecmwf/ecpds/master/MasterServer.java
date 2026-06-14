@@ -159,8 +159,8 @@ import java.util.Objects;
 import java.util.OptionalInt;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.regex.Pattern;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import java.util.zip.Deflater;
@@ -376,8 +376,15 @@ public final class MasterServer extends ECaccessProvider
     /** The incoming connection ids. */
     private final transient Map<String, List<IncomingConnection>> incomingConnectionIds = new ConcurrentHashMap<>();
 
-    /** Pending connection reservations: login approved but not yet confirmed by poll snapshot. */
-    private final transient ConcurrentHashMap<String, AtomicInteger> _pendingConnections = new ConcurrentHashMap<>();
+    /**
+     * Pending connection reservations: login approved but not yet confirmed by poll snapshot. Each entry is the
+     * System.currentTimeMillis() at reservation time. Entries older than PENDING_CONNECTION_TTL_MS are treated as
+     * expired (e.g. the mover died before the snapshot could confirm the connection) so a leaked slot cannot
+     * permanently block the user.
+     */
+    private static final long PENDING_CONNECTION_TTL_MS = 30_000L;
+
+    private final transient ConcurrentHashMap<String, ConcurrentLinkedDeque<Long>> _pendingConnections = new ConcurrentHashMap<>();
 
     /** Per-user interned locks used to make the check-and-reserve atomic. */
     private final transient ConcurrentHashMap<String, Object> _connLocks = new ConcurrentHashMap<>();
@@ -890,9 +897,9 @@ public final class MasterServer extends ECaccessProvider
     @Override
     public void releaseConnectionSlot(final String incomingUser) throws RemoteException {
         synchronized (_connLockFor(incomingUser)) {
-            final var pending = _pendingConnections.get(incomingUser);
-            if (pending != null && pending.get() > 0) {
-                pending.decrementAndGet();
+            final var deque = _pendingConnections.get(incomingUser);
+            if (deque != null) {
+                deque.pollFirst();
             }
         }
     }
@@ -1009,7 +1016,7 @@ public final class MasterServer extends ECaccessProvider
                             .orElse(setup.getInteger(USER_PORTAL_MAX_CONNECTIONS));
             synchronized (_connLockFor(incomingUser)) {
                 final var confirmed = _getIncomingConnectionCountFor(incomingUser);
-                final var pending = _pendingConnections.getOrDefault(incomingUser, new AtomicInteger(0)).get();
+                final var pending = _countPendingFor(incomingUser);
                 final var count = confirmed + pending;
                 if (count >= maxConnections) {
                     final var message = "Maximum number of connections exceeded (" + count + ")";
@@ -1019,8 +1026,10 @@ public final class MasterServer extends ECaccessProvider
                     _log.warn("{} for IncomingUser {}", message, incomingUser);
                     throw new MasterException(message);
                 }
-                // Reserve a slot — will be released when the session appears in the next poll snapshot
-                _pendingConnections.computeIfAbsent(incomingUser, _ -> new AtomicInteger(0)).incrementAndGet();
+                // Reserve a slot — will be released when the session appears in the next poll snapshot,
+                // or will expire automatically after PENDING_CONNECTION_TTL_MS if the mover dies first
+                _pendingConnections.computeIfAbsent(incomingUser, _ -> new ConcurrentLinkedDeque<>())
+                        .addLast(System.currentTimeMillis());
                 final var minuteKey = incomingUser + "|"
                         + new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm").format(new java.util.Date());
                 DataFileAccessImpl.PORTAL_TRAFFIC_BUFFER.computeIfAbsent(minuteKey, _ -> {
@@ -2130,12 +2139,13 @@ public final class MasterServer extends ECaccessProvider
                 final var uid = entry.getKey();
                 final var gained = entry.getValue() - oldCounts.getOrDefault(uid, 0);
                 if (gained > 0) {
-                    final var pending = _pendingConnections.get(uid);
-                    if (pending != null) {
+                    final var deque = _pendingConnections.get(uid);
+                    if (deque != null) {
                         synchronized (_connLockFor(uid)) {
-                            final var cur = pending.get();
-                            if (cur > 0) {
-                                pending.addAndGet(-Math.min(gained, cur));
+                            for (var i = 0; i < gained; i++) {
+                                if (deque.isEmpty())
+                                    break;
+                                deque.pollFirst();
                             }
                         }
                     }
@@ -2446,6 +2456,24 @@ public final class MasterServer extends ECaccessProvider
 
     private Object _connLockFor(final String uid) {
         return _connLocks.computeIfAbsent(uid, _ -> new Object());
+    }
+
+    /**
+     * Count pending (unconfirmed) connection slots for the given user, pruning any entries that have exceeded
+     * PENDING_CONNECTION_TTL_MS. Must be called within the per-user lock (_connLockFor).
+     *
+     * @param uid
+     *            the uid
+     *
+     * @return the number of live pending slots
+     */
+    private int _countPendingFor(final String uid) {
+        final var deque = _pendingConnections.get(uid);
+        if (deque == null || deque.isEmpty())
+            return 0;
+        final var cutoff = System.currentTimeMillis() - PENDING_CONNECTION_TTL_MS;
+        deque.removeIf(ts -> ts < cutoff);
+        return deque.size();
     }
 
     /**
