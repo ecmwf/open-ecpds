@@ -528,6 +528,11 @@ public final class MoverProvider extends NativeAuthenticationProvider {
         public void close(final boolean remove) {
             _log.debug("Closing DataSpace");
             _remove(this);
+            try {
+                _mover.getMasterProxy().releaseConnectionSlot(getUser());
+            } catch (final Throwable t) {
+                _log.warn("releaseConnectionSlot for {}", getUser(), t);
+            }
         }
 
         /**

@@ -347,6 +347,10 @@
 			type="ecmwf.ecpds.master.plugin.http.controller.datafile.GetDataRatesAction">
 			<forward name="success" path=".pds.datafile.datarates" />
 		</action>
+		<action path="/datafile/portaltraffic"
+			type="ecmwf.ecpds.master.plugin.http.controller.datafile.GetPortalTrafficAction">
+			<forward name="success" path=".pds.datafile.portaltraffic" />
+		</action>
 
 		<!-- *** Transfer ******************************************************************************************************* -->
 
@@ -922,6 +926,10 @@
 		</action>
 		<action path="/user/incoming/list"
 			type="ecmwf.ecpds.master.plugin.http.controller.user.incoming.GetIncomingUserListJsonAction">
+		</action>
+		<action path="/user/incoming/portaltraffic/*" parameter="{1}"
+			type="ecmwf.ecpds.master.plugin.http.controller.user.incoming.GetIncomingUserPortalTrafficAction">
+			<forward name="success" path=".pds.datafile.portaltraffic" />
 		</action>
 		<action path="/user/incoming/*" parameter="{1}"
 			type="ecmwf.ecpds.master.plugin.http.controller.user.incoming.GetIncomingUserAction">

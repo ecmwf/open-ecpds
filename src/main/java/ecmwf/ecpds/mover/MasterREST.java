@@ -210,6 +210,11 @@ final class MasterREST implements MasterProxy {
         throw new RestException("No implemented");
     }
 
+    @Override
+    public void releaseConnectionSlot(final String incomingUser) throws Exception {
+        // Not applicable for REST — no-op
+    }
+
     /**
      * {@inheritDoc}
      *

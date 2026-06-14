@@ -32,7 +32,6 @@ package ecmwf.ecpds.master.plugin.http.controller.transfer.destination;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;

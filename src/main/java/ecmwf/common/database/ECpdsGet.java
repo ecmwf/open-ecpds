@@ -223,6 +223,27 @@ final class ECpdsGet {
         return _database.executeSelect("ECpdsBase", "getAllTraffic", new String[0]);
     }
 
+    DBResultSet getAllPortalTraffic() throws SQLException, IOException {
+        return _database.executeSelect("ECpdsBase", "getAllPortalTraffic", new String[0]);
+    }
+
+    DBResultSet getRecentPortalTrafficByUser(final String userId, final int hours) throws SQLException, IOException {
+        return _database.executeSelect("ECpdsBase", "getRecentPortalTrafficByUser",
+                new String[] { "userId=" + userId, "hours=" + hours });
+    }
+
+    DBResultSet getPortalTrafficByUser(final String userId) throws SQLException, IOException {
+        return _database.executeSelect("ECpdsBase", "getPortalTrafficByUser", new String[] { "userId=" + userId });
+    }
+
+    void upsertPortalTraffic(final java.sql.Timestamp time, final String user, final int connections,
+            final long bytesIn, final long bytesOut, final long durationIn, final long durationOut)
+            throws SQLException, IOException {
+        _database.executeUpdate("ECpdsBase", "upsertPortalTraffic",
+                new String[] { "user=" + user, "time=" + time, "connections=" + connections, "bytesIn=" + bytesIn,
+                        "bytesOut=" + bytesOut, "durationIn=" + durationIn, "durationOut=" + durationOut });
+    }
+
     /**
      * Gets the destination count per host (all hosts, single query).
      *

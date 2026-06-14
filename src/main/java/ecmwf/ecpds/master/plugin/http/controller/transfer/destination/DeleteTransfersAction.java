@@ -43,7 +43,6 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
 import ecmwf.common.technical.ExecutorRepository;
-import ecmwf.common.text.Format;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.ecpds.master.plugin.http.home.transfer.DataTransferHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.DestinationHome;

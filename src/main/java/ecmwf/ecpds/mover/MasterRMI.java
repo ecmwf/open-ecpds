@@ -174,6 +174,11 @@ final class MasterRMI implements MasterProxy {
         return _mover.getMasterInterface().getIncomingProfile(incomingUser, incomingPassword, from);
     }
 
+    @Override
+    public void releaseConnectionSlot(final String incomingUser) throws Exception {
+        _mover.getMasterInterface().releaseConnectionSlot(incomingUser);
+    }
+
     /**
      * {@inheritDoc}
      *

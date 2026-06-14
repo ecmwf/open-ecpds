@@ -1260,6 +1260,52 @@ public interface DataBaseInterface extends Remote {
     Collection<Traffic> getAllTraffic() throws DataBaseException, RemoteException;
 
     /**
+     * Gets all portal traffic statistics (system-wide aggregate, last 90 days).
+     *
+     * @return the portal traffic list
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     * @throws RemoteException
+     *             the remote exception
+     */
+    List<ecmwf.common.database.PortalTraffic> getAllPortalTraffic() throws DataBaseException, RemoteException;
+
+    /**
+     * Gets portal traffic statistics for a specific user (last 90 days).
+     *
+     * @param userId
+     *            the incoming user ID
+     *
+     * @return the portal traffic list
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     * @throws RemoteException
+     *             the remote exception
+     */
+    List<ecmwf.common.database.PortalTraffic> getPortalTrafficByUser(String userId)
+            throws DataBaseException, RemoteException;
+
+    /**
+     * Gets recent portal traffic for a specific user from the minute-bucket table (last N hours).
+     *
+     * @param userId
+     *            the incoming user ID
+     * @param hours
+     *            number of hours to look back
+     *
+     * @return the recent portal traffic list
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     * @throws RemoteException
+     *             the remote exception
+     */
+    List<ecmwf.common.database.PortalTraffic> getRecentPortalTrafficByUser(String userId, int hours)
+            throws DataBaseException, RemoteException;
+
+    /**
      * Gets a map of host name to destination count using a single GROUP BY query on the ASSOCIATION table.
      *
      * @return map of host name → destination count

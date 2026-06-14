@@ -444,11 +444,15 @@ final class DBResultSet implements AutoCloseable {
      */
     public Timestamp getTimestamp(final String columnName) throws SQLException {
         final var timestamp = getString(columnName);
-        Timestamp result = null;
-        if (timestamp != null) {
-            result = new Timestamp(Long.parseLong(timestamp));
+        if (timestamp == null) {
+            return null;
         }
-        return result;
+        try {
+            return new Timestamp(Long.parseLong(timestamp));
+        } catch (final NumberFormatException ignored) {
+            // Column returned a formatted date or datetime string rather than epoch millis
+            return Timestamp.valueOf(timestamp.length() == 10 ? timestamp + " 00:00:00" : timestamp);
+        }
     }
 
     /**

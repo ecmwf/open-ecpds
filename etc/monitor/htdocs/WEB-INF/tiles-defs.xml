@@ -1349,6 +1349,12 @@
 			value="/WEB-INF/jsp/pds/datafile/datarates.jsp" />
 	</definition>
 
+	<definition name=".pds.datafile.portaltraffic"
+		extends=".pds.datafile.datarates">
+		<put name="title" value="Data Portal Traffic" />
+		<put name="content" value="/WEB-INF/jsp/pds/datafile/portaltraffic.jsp" />
+	</definition>
+
 	<definition
 		name=".pds.transfer.destination.metadata.send.success"
 		extends=".pds.base">

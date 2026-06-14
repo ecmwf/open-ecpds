@@ -135,6 +135,9 @@ enum S3ErrorCode {
     /** The signature does not match. */
     SIGNATURE_DOES_NOT_MATCH(HttpServletResponse.SC_FORBIDDEN, "Forbidden"),
 
+    /** The service unavailable (e.g. connection limit exceeded). */
+    SERVICE_UNAVAILABLE(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Service Unavailable"),
+
     /** The x amz content s h a 256 mismatch. */
     X_AMZ_CONTENT_S_H_A_256_MISMATCH(HttpServletResponse.SC_BAD_REQUEST,
             "The provided 'x-amz-content-sha256' header does not match what" + " was computed.");

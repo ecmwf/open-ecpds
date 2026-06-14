@@ -131,58 +131,63 @@ const tDuration = _si.map(i=>_tDuration[i]);
 
 <%-- TABLE VIEW --%>
 <div id="tableView">
-  <%-- Toolbar: search + rows per page --%>
-  <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
-    <div class="input-group input-group-sm" style="max-width:220px;">
-      <span class="input-group-text"><i class="bi bi-search"></i></span>
-      <input type="search" id="trafficSearch" class="form-control"
-             placeholder="Filter by date..." oninput="setSearchTerm(this.value)">
+  <div class="card border-0 shadow-sm">
+    <div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+      <i class="bi bi-table text-primary"></i>
+      <span class="fw-semibold">Daily Traffic</span>
+      <div class="ms-auto d-flex flex-wrap align-items-center gap-2">
+        <div class="input-group input-group-sm" style="width:auto">
+          <span class="input-group-text"><i class="bi bi-search"></i></span>
+          <input type="search" id="trafficSearch" class="form-control"
+                 placeholder="Filter by date..." oninput="setSearchTerm(this.value)" style="min-width:160px">
+        </div>
+        <div class="input-group input-group-sm flex-nowrap" style="width:auto" title="Page size">
+          <span class="input-group-text px-2"><i class="bi bi-list-ol"></i></span>
+          <select id="pageSizeSelect" class="form-select form-select-sm" style="width:auto"
+                  onchange="setPageSize(this.value)">
+            <option value="10">10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+            <option value="250">250</option>
+          </select>
+        </div>
+      </div>
     </div>
-    <div class="d-flex align-items-center gap-2">
-      <label class="text-muted mb-0" style="font-size:0.82rem;">Rows:</label>
-      <select id="pageSizeSelect" class="form-select form-select-sm" style="width:auto;"
-              onchange="setPageSize(this.value)">
-        <option value="10">10</option>
-        <option value="25">25</option>
-        <option value="50">50</option>
-        <option value="100">100</option>
-        <option value="250">250</option>
-      </select>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-sm table-striped table-hover table-bordered align-middle mb-0"
+               id="trafficTable" style="font-size:0.82rem; white-space:nowrap;">
+          <thead class="table-light">
+            <tr>
+              <th onclick="sortTrafficTable(0)" style="cursor:pointer;" data-order="asc">
+                Date <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i>
+              </th>
+              <th onclick="sortTrafficTable(1)" style="cursor:pointer;" data-order="asc">
+                Volume <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i>
+              </th>
+              <th onclick="sortTrafficTable(2)" style="cursor:pointer;" data-order="asc">
+                Duration <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i>
+              </th>
+              <th onclick="sortTrafficTable(3)" style="cursor:pointer;" data-order="asc">
+                Rate (Mbit/s) <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i>
+              </th>
+              <th onclick="sortTrafficTable(4)" style="cursor:pointer;" data-order="asc">
+                Files <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i>
+              </th>
+            </tr>
+          </thead>
+          <tbody id="trafficTbody"></tbody>
+        </table>
+      </div>
     </div>
-  </div>
-
-  <div class="table-responsive">
-    <table class="table table-sm table-striped table-hover table-bordered align-middle"
-           id="trafficTable" style="font-size:0.82rem; white-space:nowrap;">
-      <thead class="table-light">
-        <tr>
-          <th onclick="sortTrafficTable(0)" style="cursor:pointer;" data-order="asc">
-            Date <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i>
-          </th>
-          <th onclick="sortTrafficTable(1)" style="cursor:pointer;" data-order="asc">
-            Volume <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i>
-          </th>
-          <th onclick="sortTrafficTable(2)" style="cursor:pointer;" data-order="asc">
-            Duration <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i>
-          </th>
-          <th onclick="sortTrafficTable(3)" style="cursor:pointer;" data-order="asc">
-            Rate (Mbit/s) <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i>
-          </th>
-          <th onclick="sortTrafficTable(4)" style="cursor:pointer;" data-order="asc">
-            Files <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i>
-          </th>
-        </tr>
-      </thead>
-      <tbody id="trafficTbody"></tbody>
-    </table>
-  </div>
-
-  <%-- Paginator --%>
-  <div class="d-flex justify-content-between align-items-center mt-2 flex-wrap gap-2">
-    <span id="paginatorInfo" class="text-muted" style="font-size:0.82rem;"></span>
-    <nav aria-label="Traffic table pages">
-      <ul class="pagination pagination-sm mb-0" id="paginatorPages"></ul>
-    </nav>
+    <div class="card-footer d-flex justify-content-between align-items-center flex-wrap gap-2 py-2"
+         style="background:var(--bs-secondary-bg)">
+      <span id="paginatorInfo" class="text-muted" style="font-size:0.82rem;"></span>
+      <nav aria-label="Traffic table pages">
+        <ul class="pagination pagination-sm mb-0" id="paginatorPages"></ul>
+      </nav>
+    </div>
   </div>
 </div>
 

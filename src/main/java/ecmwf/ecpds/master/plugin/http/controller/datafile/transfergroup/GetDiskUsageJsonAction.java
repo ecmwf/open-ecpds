@@ -59,7 +59,6 @@ import org.apache.struts.action.ActionMapping;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import ecmwf.ecpds.master.MasterException;
 import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.web.ECMWFException;

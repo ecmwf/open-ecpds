@@ -32,7 +32,7 @@
 					<span class="fw-semibold">Data User: <c:out value="${incoming.id}" /></span>
 					<auth:if basePathKey="incoming.basepath" paths="/edit/insert_form">
 					<auth:then>
-					<div class="d-flex gap-1 ms-auto flex-shrink-0">
+					<div class="d-flex gap-1 ms-auto flex-shrink-0 align-items-center">
 						<a href='<bean:message key="incoming.basepath"/>/edit/insert_form'
 						   class="btn btn-sm btn-outline-success" title="Create new data user"><i class="bi bi-plus-circle"></i></a>
 						<c:if test="${not empty incoming.id}">
@@ -40,6 +40,9 @@
 						   class="btn btn-sm btn-outline-primary" title="Edit this data user"><i class="bi bi-pencil"></i></a>
 						<a href='<bean:message key="incoming.basepath"/>/edit/delete_form/${incoming.id}'
 						   class="btn btn-sm btn-outline-danger" title="Delete this data user"><i class="bi bi-trash"></i></a>
+						<span class="border-start mx-1" style="height:1.4em;"></span>
+						<a href="/do/user/incoming/portaltraffic/${incoming.id}"
+						   class="btn btn-sm btn-outline-secondary" title="Portal Traffic"><i class="bi bi-graph-up-arrow"></i></a>
 						</c:if>
 					</div>
 					</auth:then>

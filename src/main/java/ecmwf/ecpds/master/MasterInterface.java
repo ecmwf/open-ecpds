@@ -207,6 +207,22 @@ public interface MasterInterface extends ProviderInterface {
     int getIncomingConnectionCount(String incomingUser) throws RemoteException;
 
     /**
+     * Gets portal traffic statistics. Returns minute-bucket rows for the given user (or all users if userId is empty),
+     * covering the specified number of hours back from now.
+     *
+     * @param userId
+     *            the incoming user ID, or empty string for system-wide
+     * @param hours
+     *            how many hours of history to return
+     *
+     * @return list of PortalTraffic rows ordered by time descending
+     *
+     * @throws RemoteException
+     *             the remote exception
+     */
+    List<ecmwf.common.database.PortalTraffic> getPortalTraffic(String userId, int hours) throws RemoteException;
+
+    /**
      * Return a hash of the specified incoming user (the string is in the form userid:password).
      *
      * @param incomingUser
@@ -243,6 +259,18 @@ public interface MasterInterface extends ProviderInterface {
      */
     IncomingProfile getIncomingProfile(String incomingUser, String incomingPassword, String from)
             throws RemoteException;
+
+    /**
+     * Releases a pending connection slot for the given user. Must be called when a session closes before being
+     * confirmed by the incoming connections poll, to prevent the pending counter from leaking.
+     *
+     * @param incomingUser
+     *            the incoming user id
+     *
+     * @throws RemoteException
+     *             the remote exception
+     */
+    void releaseConnectionSlot(String incomingUser) throws RemoteException;
 
     /**
      * Gets the ETag for a given dataTransferId.

@@ -31,7 +31,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.security.MessageDigest;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -332,28 +331,52 @@ public class BlobStore implements Closeable {
         ProxySocket proxy = null;
         OutputStream out = null;
         StreamPlugThread plug = null;
+        final var startTime = System.currentTimeMillis();
+        // Wrap to count bytes uploaded
+        final long[] bytesSent = { 0 };
+        final var countingIs = new java.io.FilterInputStream(is) {
+            @Override
+            public int read() throws IOException {
+                final int b = super.read();
+                if (b != -1)
+                    bytesSent[0]++;
+                return b;
+            }
+
+            @Override
+            public int read(final byte[] b, final int off, final int len) throws IOException {
+                final int n = super.read(b, off, len);
+                if (n > 0)
+                    bytesSent[0] += n;
+                return n;
+            }
+        };
         try {
             proxy = _session.getProxySocketOutput(path.getValue(), 0, 640);
-            plug = new StreamPlugThread(is, out = proxy.getDataOutputStream());
+            plug = new StreamPlugThread(countingIs, out = proxy.getDataOutputStream());
             plug.configurableRun();
             final var message = plug.getMessage();
             plug.close();
             out.close();
             out = null;
             proxy.close();
-            _session.check(proxy);
-            if (message != null) {
-                throw new IOException("Upload failed: " + message);
-            }
-            // Record the transfer event (download = false means upload direction)
+            // Record the transfer event BEFORE check() so DataFileAccessImpl picks it up
             final var setup = _session.getECtransSetup();
             if (setup == null || setup.getBoolean(ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_TRIGGER_EVENT)) {
-                final var event = new ProxyEvent(proxy);
+                final var event = new ProxyEvent(proxy); // constructor attaches event to proxy
                 event.setProtocol("s3");
                 event.setLocalHost(_mover.getRoot());
                 event.setRemoteHost(_remoteAddress);
                 event.setUserType(ProxyEvent.UserType.DATA_USER);
                 event.setUserName(_session.getUser());
+                event.setUpload(true);
+                event.setStartTime(startTime);
+                event.setDuration(System.currentTimeMillis() - startTime);
+                event.setSent(bytesSent[0]);
+            }
+            _session.check(proxy);
+            if (message != null) {
+                throw new IOException("Upload failed: " + message);
             }
             // Return the ECPDS ETag for the uploaded object
             final var element = _session.getFileListElement(path.getValue());

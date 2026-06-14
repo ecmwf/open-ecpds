@@ -160,6 +160,7 @@ import java.util.OptionalInt;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import java.util.zip.Deflater;
@@ -210,6 +211,7 @@ import ecmwf.common.database.HostOutput;
 import ecmwf.common.database.HostStats;
 import ecmwf.common.database.IncomingConnection;
 import ecmwf.common.database.IncomingUser;
+import ecmwf.common.database.PortalTraffic;
 import ecmwf.common.database.Publication;
 import ecmwf.common.database.SchedulerValue;
 import ecmwf.common.database.TransferGroup;
@@ -347,6 +349,9 @@ public final class MasterServer extends ECaccessProvider
     /** The filter scheduler. */
     private final transient FilterScheduler theFilterScheduler;
 
+    /** The portal traffic scheduler. */
+    private final transient PortalTrafficScheduler thePortalTrafficScheduler;
+
     /** The data transfer check. */
     private final transient DataTransferCheck theDataTransferCheck;
 
@@ -370,6 +375,12 @@ public final class MasterServer extends ECaccessProvider
 
     /** The incoming connection ids. */
     private final transient Map<String, List<IncomingConnection>> incomingConnectionIds = new ConcurrentHashMap<>();
+
+    /** Pending connection reservations: login approved but not yet confirmed by poll snapshot. */
+    private final transient ConcurrentHashMap<String, AtomicInteger> _pendingConnections = new ConcurrentHashMap<>();
+
+    /** Per-user interned locks used to make the check-and-reserve atomic. */
+    private final transient ConcurrentHashMap<String, Object> _connLocks = new ConcurrentHashMap<>();
 
     /**
      * Per-DataMover volume usage cache, populated on every background polling cycle. Key: mover name; value:
@@ -619,6 +630,13 @@ public final class MasterServer extends ECaccessProvider
         } else {
             theFilterScheduler = null;
         }
+        if (Cnf.at("Server", "portalTrafficScheduler", true)) {
+            _log.debug("Starting PortalTrafficScheduler");
+            thePortalTrafficScheduler = new PortalTrafficScheduler("PortalTrafficScheduler");
+            thePortalTrafficScheduler.start();
+        } else {
+            thePortalTrafficScheduler = null;
+        }
         _log.debug("Monitors to notify: {}", containersToNotify);
         _log.debug("Passwords allowed from: {}", allowedPasswordOn);
         localContainer.startPlugins();
@@ -801,6 +819,19 @@ public final class MasterServer extends ECaccessProvider
         }
     }
 
+    @Override
+    public List<PortalTraffic> getPortalTraffic(final String userId, final int hours) throws RemoteException {
+        try {
+            if (!isEmpty(userId) && hours > 0)
+                return getECpdsBase().getRecentPortalTrafficByUser(userId, hours);
+            return isEmpty(userId) ? getECpdsBase().getAllPortalTraffic()
+                    : getECpdsBase().getPortalTrafficByUser(userId);
+        } catch (final DataBaseException e) {
+            _log.warn("getPortalTraffic userId={} hours={}", userId, hours, e);
+            throw new RemoteException("getPortalTraffic", e);
+        }
+    }
+
     /**
      * Return a hash of the incoming user in the form user:password.
      *
@@ -838,6 +869,31 @@ public final class MasterServer extends ECaccessProvider
         } catch (final Throwable t) {
             _log.warn("getS3AuthorizationSignature", t);
             return null;
+        }
+    }
+
+    /**
+     * Gets the incoming profile.
+     *
+     * @param incomingUser
+     *            the incoming user
+     * @param incomingPassword
+     *            the incoming password
+     * @param from
+     *            the from
+     *
+     * @return the incoming profile
+     *
+     * @throws RemoteException
+     *             the remote exception
+     */
+    @Override
+    public void releaseConnectionSlot(final String incomingUser) throws RemoteException {
+        synchronized (_connLockFor(incomingUser)) {
+            final var pending = _pendingConnections.get(incomingUser);
+            if (pending != null && pending.get() > 0) {
+                pending.decrementAndGet();
+            }
         }
     }
 
@@ -948,17 +1004,31 @@ public final class MasterServer extends ECaccessProvider
             }
             // Let's check if the maximum number of connections have not been
             // reached for this user!
-            final var count = _getIncomingConnectionCountFor(incomingUser);
             final var maxConnections = _getMaxConnectionsForSchedule(
                     setup.getString(USER_PORTAL_MAX_CONNECTIONS_SCHEDULE), LocalTime.now(ZoneOffset.UTC))
                             .orElse(setup.getInteger(USER_PORTAL_MAX_CONNECTIONS));
-            if (count >= maxConnections) {
-                final var message = "Maximum number of connections exceeded (" + count + ")";
-                if (_splunk.isInfoEnabled())
-                    _splunk.info("DEA;{};UserId={};Message={};Context={}", "TimeStamp=" + Timestamp.from(Instant.now()),
-                            incomingUser, message, from);
-                _log.warn("{} for IncomingUser {}", message, incomingUser);
-                throw new MasterException(message);
+            synchronized (_connLockFor(incomingUser)) {
+                final var confirmed = _getIncomingConnectionCountFor(incomingUser);
+                final var pending = _pendingConnections.getOrDefault(incomingUser, new AtomicInteger(0)).get();
+                final var count = confirmed + pending;
+                if (count >= maxConnections) {
+                    final var message = "Maximum number of connections exceeded (" + count + ")";
+                    if (_splunk.isInfoEnabled())
+                        _splunk.info("DEA;{};UserId={};Message={};Context={}",
+                                "TimeStamp=" + Timestamp.from(Instant.now()), incomingUser, message, from);
+                    _log.warn("{} for IncomingUser {}", message, incomingUser);
+                    throw new MasterException(message);
+                }
+                // Reserve a slot — will be released when the session appears in the next poll snapshot
+                _pendingConnections.computeIfAbsent(incomingUser, _ -> new AtomicInteger(0)).incrementAndGet();
+                final var minuteKey = incomingUser + "|"
+                        + new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm").format(new java.util.Date());
+                DataFileAccessImpl.PORTAL_TRAFFIC_BUFFER.computeIfAbsent(minuteKey, _ -> {
+                    final var pt = new PortalTraffic();
+                    pt.setUser(incomingUser);
+                    pt.setTime(new java.sql.Timestamp((System.currentTimeMillis() / 60000L) * 60000L));
+                    return pt;
+                }).accumulate(1, 0, 0, 0, 0);
             }
             // Look for the Destinations accessible to this user!
             final List<Destination> destinations = new ArrayList<>();
@@ -2044,7 +2114,34 @@ public final class MasterServer extends ECaccessProvider
     @Override
     public void updateIncomingConnectionIds(final String serverName,
             final List<IncomingConnection> incomingConnections) {
-        incomingConnectionIds.put(serverName, incomingConnections);
+        final var previous = incomingConnectionIds.put(serverName, incomingConnections);
+        if (isNotEmpty(incomingConnections)) {
+            final var newCounts = new HashMap<String, Integer>();
+            for (final IncomingConnection c : incomingConnections) {
+                newCounts.merge(c.getLogin(), 1, Integer::sum);
+            }
+            final var oldCounts = new HashMap<String, Integer>();
+            if (isNotEmpty(previous)) {
+                for (final IncomingConnection c : previous) {
+                    oldCounts.merge(c.getLogin(), 1, Integer::sum);
+                }
+            }
+            for (final var entry : newCounts.entrySet()) {
+                final var uid = entry.getKey();
+                final var gained = entry.getValue() - oldCounts.getOrDefault(uid, 0);
+                if (gained > 0) {
+                    final var pending = _pendingConnections.get(uid);
+                    if (pending != null) {
+                        synchronized (_connLockFor(uid)) {
+                            final var cur = pending.get();
+                            if (cur > 0) {
+                                pending.addAndGet(-Math.min(gained, cur));
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -2345,6 +2442,10 @@ public final class MasterServer extends ECaccessProvider
             }
         }
         return result.toString();
+    }
+
+    private Object _connLockFor(final String uid) {
+        return _connLocks.computeIfAbsent(uid, _ -> new Object());
     }
 
     /**
@@ -5458,6 +5559,9 @@ public final class MasterServer extends ECaccessProvider
         if (theFilterScheduler != null) {
             theFilterScheduler.shutdown();
         }
+        if (thePortalTrafficScheduler != null) {
+            thePortalTrafficScheduler.shutdown();
+        }
         if (theDissDownloadScheduler != null) {
             theDissDownloadScheduler.shutdown();
         }
@@ -6941,6 +7045,39 @@ public final class MasterServer extends ECaccessProvider
          */
         public String getByAndFrom() {
             return _byAndFrom;
+        }
+    }
+
+    /**
+     * The Class PortalTrafficScheduler. Flushes the in-memory portal traffic buffer to the database every minute.
+     */
+    public final class PortalTrafficScheduler extends MBeanScheduler {
+
+        private PortalTrafficScheduler(final String name) {
+            super(name);
+            setDelay(Cnf.durationAt("Scheduler", "portalTrafficScheduler", Timer.ONE_MINUTE));
+            setJammedTimeout(Cnf.durationAt("Scheduler", "portalTrafficSchedulerJammedTimeout", 5 * Timer.ONE_MINUTE));
+        }
+
+        @Override
+        public int nextStep() {
+            final var now = System.currentTimeMillis();
+            final var currentMinute = (now / 60000L) * 60000L;
+            final var base = getECpdsBase();
+            for (final var iter = DataFileAccessImpl.PORTAL_TRAFFIC_BUFFER.entrySet().iterator(); iter.hasNext();) {
+                final var entry = iter.next();
+                final var pt = entry.getValue();
+                if (pt.getTime() != null && pt.getTime().getTime() < currentMinute) {
+                    iter.remove();
+                    try {
+                        base.upsertPortalTraffic(pt);
+                    } catch (final DataBaseException e) {
+                        _log.warn("PortalTrafficScheduler: failed to flush entry for user={} time={}", pt.getUser(),
+                                pt.getTime(), e);
+                    }
+                }
+            }
+            return NEXT_STEP_DELAY;
         }
     }
 

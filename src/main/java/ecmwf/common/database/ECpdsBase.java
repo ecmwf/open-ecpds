@@ -3991,6 +3991,82 @@ public final class ECpdsBase extends DataBase {
         }
     }
 
+    public List<PortalTraffic> getAllPortalTraffic() throws DataBaseException {
+        try (var rs = ecpds.getAllPortalTraffic()) {
+            final List<PortalTraffic> array = new ArrayList<>();
+            while (rs.next()) {
+                final var pt = new PortalTraffic();
+                pt.setTime(rs.getTimestamp("TIME"));
+                pt.setConnections(rs.getInt("CONNECTIONS"));
+                pt.setBytesIn(rs.getLong("BYTES_IN"));
+                pt.setBytesOut(rs.getLong("BYTES_OUT"));
+                pt.setDurationIn(rs.getLong("DURATION_IN"));
+                pt.setDurationOut(rs.getLong("DURATION_OUT"));
+                array.add(pt);
+            }
+            logSqlRequest("getAllPortalTraffic", array.size());
+            return array;
+        } catch (final Exception e) {
+            _log.warn("getAllPortalTraffic", e);
+            throw new DataBaseException("getAllPortalTraffic", e);
+        }
+    }
+
+    public List<PortalTraffic> getPortalTrafficByUser(final String userId) throws DataBaseException {
+        try (var rs = ecpds.getPortalTrafficByUser(userId)) {
+            final List<PortalTraffic> array = new ArrayList<>();
+            while (rs.next()) {
+                final var pt = new PortalTraffic();
+                pt.setUser(userId);
+                pt.setTime(rs.getTimestamp("TIME"));
+                pt.setConnections(rs.getInt("CONNECTIONS"));
+                pt.setBytesIn(rs.getLong("BYTES_IN"));
+                pt.setBytesOut(rs.getLong("BYTES_OUT"));
+                pt.setDurationIn(rs.getLong("DURATION_IN"));
+                pt.setDurationOut(rs.getLong("DURATION_OUT"));
+                array.add(pt);
+            }
+            logSqlRequest("getPortalTrafficByUser", array.size());
+            return array;
+        } catch (final Exception e) {
+            _log.warn("getPortalTrafficByUser", e);
+            throw new DataBaseException("getPortalTrafficByUser", e);
+        }
+    }
+
+    public List<PortalTraffic> getRecentPortalTrafficByUser(final String userId, final int hours)
+            throws DataBaseException {
+        try (var rs = ecpds.getRecentPortalTrafficByUser(userId, hours)) {
+            final List<PortalTraffic> array = new ArrayList<>();
+            while (rs.next()) {
+                final var pt = new PortalTraffic();
+                pt.setUser(userId);
+                pt.setTime(rs.getTimestamp("TIME"));
+                pt.setConnections(rs.getInt("CONNECTIONS"));
+                pt.setBytesIn(rs.getLong("BYTES_IN"));
+                pt.setBytesOut(rs.getLong("BYTES_OUT"));
+                pt.setDurationIn(rs.getLong("DURATION_IN"));
+                pt.setDurationOut(rs.getLong("DURATION_OUT"));
+                array.add(pt);
+            }
+            logSqlRequest("getRecentPortalTrafficByUser", array.size());
+            return array;
+        } catch (final Exception e) {
+            _log.warn("getRecentPortalTrafficByUser", e);
+            throw new DataBaseException("getRecentPortalTrafficByUser", e);
+        }
+    }
+
+    public void upsertPortalTraffic(final PortalTraffic pt) throws DataBaseException {
+        try {
+            ecpds.upsertPortalTraffic(pt.getTime(), pt.getUser(), pt.getConnections(), pt.getBytesIn(),
+                    pt.getBytesOut(), pt.getDurationIn(), pt.getDurationOut());
+        } catch (final Exception e) {
+            _log.warn("upsertPortalTraffic", e);
+            throw new DataBaseException("upsertPortalTraffic", e);
+        }
+    }
+
     /**
      * Gets a map of host name to destination count using a single GROUP BY query on the ASSOCIATION table.
      *

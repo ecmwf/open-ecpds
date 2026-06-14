@@ -10,4 +10,5 @@
    <auth:link basePathKey="retrievalmonitoring.basepath" href="" wrappingTags="tr,td"><i class="bi bi-speedometer2"></i> Retrieval Rates</auth:link>
    <auth:link basePathKey="moverdownloads.basepath" href="" wrappingTags="tr,td"><i class="bi bi-grid-3x3"></i> Download Activity</auth:link>
    <auth:link basePathKey="datarates.basepath" href="" wrappingTags="tr,td"><i class="bi bi-bar-chart-line"></i> Data Rates</auth:link>
+   <auth:link basePathKey="portaltraffic.basepath" href="" wrappingTags="tr,td"><i class="bi bi-graph-up-arrow"></i> Portal Traffic</auth:link>
 </table>

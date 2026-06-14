@@ -100,6 +100,10 @@ public class BlobStoreLocator {
                             .getUserSession(remoteAddr, identity, incomingUserHash, "s3", (Closeable) () -> response
                                     .sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Interrupted by server")));
                 } catch (final Throwable t) {
+                    final var msg = t.getMessage();
+                    if (msg != null && msg.contains("Maximum number of connections")) {
+                        throw new RuntimeException(new S3Exception(S3ErrorCode.SERVICE_UNAVAILABLE, msg));
+                    }
                     logger.warn("getUserSession", t);
                     return null;
                 }
@@ -169,6 +173,10 @@ public class BlobStoreLocator {
                                     (Closeable) () -> response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE,
                                             "Interrupted by server")));
                 } catch (final Throwable t) {
+                    final var msg = t.getMessage();
+                    if (msg != null && msg.contains("Maximum number of connections")) {
+                        throw new RuntimeException(new S3Exception(S3ErrorCode.SERVICE_UNAVAILABLE, msg));
+                    }
                     logger.warn("locateAnonymousBlobStore getUserSession", t);
                     return null;
                 }

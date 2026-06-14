@@ -549,7 +549,14 @@ public class S3ProxyHandler {
             }
 
             // Lets get the BlobStore
-            blobStore = provider.getValue();
+            try {
+                blobStore = provider.getValue();
+            } catch (final RuntimeException e) {
+                if (e.getCause() instanceof S3Exception s3e) {
+                    throw s3e;
+                }
+                throw e;
+            }
             if (blobStore == null) {
                 throw new S3Exception(S3ErrorCode.INVALID_ACCESS_KEY_ID);
             }

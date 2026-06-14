@@ -186,6 +186,17 @@ public interface MasterProxy {
     IncomingProfile getIncomingProfile(String incomingUser, String incomingPassword, String from) throws Exception;
 
     /**
+     * Releases a pending connection slot for the given user.
+     *
+     * @param incomingUser
+     *            the incoming user id
+     *
+     * @throws java.lang.Exception
+     *             the exception
+     */
+    void releaseConnectionSlot(String incomingUser) throws Exception;
+
+    /**
      * Gets the ecauth token.
      *
      * @param user

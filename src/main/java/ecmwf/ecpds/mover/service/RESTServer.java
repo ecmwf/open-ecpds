@@ -53,6 +53,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.HEAD;
 import javax.ws.rs.HeaderParam;
@@ -77,6 +78,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 
 import ecmwf.common.database.DataFile;
 import ecmwf.common.database.DataTransfer;
+import ecmwf.common.database.PortalTraffic;
 import ecmwf.common.database.ExistingStorageDirectory;
 import ecmwf.common.database.Host;
 import ecmwf.common.ecaccess.EccmdException;
@@ -672,6 +674,42 @@ public final class RESTServer {
     public Response dataPortalGet(@Context final UriInfo ui, @Context final HttpServletRequest request,
             @Context final HttpServletResponse response, @PathParam("filename") final String filename) {
         return dataFileGet(ui, getBasicAuth("portal:portal"), null, request, response, filename);
+    }
+
+    /**
+     * Returns portal traffic statistics for the authenticated user as a JSON array, covering the last {@code hours}
+     * hours (default 24).
+     */
+    @GET
+    @Path("stats/traffic")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getPortalTraffic(@HeaderParam("Authorization") final String authString,
+            @QueryParam("hours") @DefaultValue("24") final int hours, @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response) {
+        try {
+            final var session = getUserSession(authString, request, response);
+            final var userId = session.getUser();
+            session.close(true);
+            final List<PortalTraffic> traffic = mover.getMasterInterface().getPortalTraffic(userId, hours);
+            final var sb = new StringBuilder("[");
+            var first = true;
+            for (final var pt : traffic) {
+                if (!first)
+                    sb.append(",");
+                first = false;
+                sb.append("{\"time\":\"").append(pt.getTime()).append("\"").append(",\"connections\":")
+                        .append(pt.getConnections()).append(",\"bytesIn\":").append(pt.getBytesIn())
+                        .append(",\"bytesOut\":").append(pt.getBytesOut()).append(",\"durationIn\":")
+                        .append(pt.getDurationIn()).append(",\"durationOut\":").append(pt.getDurationOut()).append("}");
+            }
+            sb.append("]");
+            return Response.ok(sb.toString(), MediaType.APPLICATION_JSON).build();
+        } catch (final WebApplicationException w) {
+            return w.getResponse();
+        } catch (final Exception e) {
+            _log.warn("getPortalTraffic", e);
+            return Response.serverError().build();
+        }
     }
 
     /**
@@ -1318,6 +1356,8 @@ public final class RESTServer {
                     setup != null ? setup.get(ECtransOptions.USER_PORTAL_MSG_DOWN, msgDown) : msgDown);
             final var accessGuide = setup == null || setup.getBoolean(ECtransOptions.USER_PORTAL_ACCESS_GUIDE);
             Format.replaceAll(sb, "${accessGuide}", String.valueOf(accessGuide));
+            final var trafficStats = setup == null || setup.getBoolean(ECtransOptions.USER_PORTAL_TRAFFIC_STATS);
+            Format.replaceAll(sb, "${trafficStats}", String.valueOf(trafficStats));
             final var userId = session.getUser();
             Format.replaceAll(sb, "${userid}", userId);
             Format.replaceAll(sb, "${s3CanWrite}", String.valueOf(session.hasPermission("put")));
@@ -1328,6 +1368,10 @@ public final class RESTServer {
             final var maxConnections = setup != null ? setup.getInteger(ECtransOptions.USER_PORTAL_MAX_CONNECTIONS)
                     : -1;
             Format.replaceAll(sb, "${maxconnections}", maxConnections > 0 ? String.valueOf(maxConnections) : "");
+            final var maxConnectionsSchedule = setup != null
+                    ? setup.getString(ECtransOptions.USER_PORTAL_MAX_CONNECTIONS_SCHEDULE) : "";
+            Format.replaceAll(sb, "${maxConnectionsSchedule}",
+                    maxConnectionsSchedule != null ? maxConnectionsSchedule : "");
             if (maxConnections > 0) {
                 try {
                     final var currentConnections = mover.getMasterInterface().getIncomingConnectionCount(userId);

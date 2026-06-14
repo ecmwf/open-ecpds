@@ -93,6 +93,7 @@ import ecmwf.common.database.MetadataValue;
 import ecmwf.common.database.Operation;
 import ecmwf.common.database.PolicyAssociation;
 import ecmwf.common.database.PolicyUser;
+import ecmwf.common.database.PortalTraffic;
 import ecmwf.common.database.ProductStatus;
 import ecmwf.common.database.Rates;
 import ecmwf.common.database.SQLParameterParser;
@@ -1802,6 +1803,22 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
     public Collection<Traffic> getAllTraffic() throws DataBaseException, RemoteException {
         final var monitor = new MonitorCall("getAllTraffic()");
         return monitor.done(ecpds.getAllTraffic());
+    }
+
+    @Override
+    public List<PortalTraffic> getAllPortalTraffic() throws DataBaseException {
+        return ecpds.getAllPortalTraffic();
+    }
+
+    @Override
+    public List<PortalTraffic> getPortalTrafficByUser(final String userId) throws DataBaseException {
+        return ecpds.getPortalTrafficByUser(userId);
+    }
+
+    @Override
+    public List<PortalTraffic> getRecentPortalTrafficByUser(final String userId, final int hours)
+            throws DataBaseException {
+        return ecpds.getRecentPortalTrafficByUser(userId, hours);
     }
 
     /**

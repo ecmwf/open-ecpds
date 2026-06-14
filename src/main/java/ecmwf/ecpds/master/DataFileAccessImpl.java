@@ -51,6 +51,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.management.timer.Timer;
 
@@ -64,6 +65,7 @@ import ecmwf.common.database.Destination;
 import ecmwf.common.database.ECpdsBase;
 import ecmwf.common.database.IncomingHistory;
 import ecmwf.common.database.IncomingUser;
+import ecmwf.common.database.PortalTraffic;
 import ecmwf.common.ectrans.ECtransSetup;
 import ecmwf.common.rmi.SocketConfig;
 import ecmwf.common.technical.CloseableIterator;
@@ -93,6 +95,11 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
 
     /** The Constant ECPDS_MKDIR_FILE. */
     private static final transient String ECPDS_MKDIR_FILE = "/.ecpds_mkdir";
+
+    /**
+     * In-memory buffer for portal traffic, flushed every minute by PortalTrafficScheduler. Key: "user|YYYY-MM-DDTHH:mm"
+     */
+    static final ConcurrentHashMap<String, PortalTraffic> PORTAL_TRAFFIC_BUFFER = new ConcurrentHashMap<>();
 
     /** The master. */
     private final transient MasterServer master;
@@ -1238,6 +1245,23 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
                             }
                         } catch (final Throwable t) {
                             _log.error("Creating IncomingHistory", t);
+                        }
+                    }
+                    if (success) {
+                        final var minuteKey = event.getUserName() + "|"
+                                + new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm")
+                                        .format(new java.util.Date(event.getStartTime()));
+                        final var entry = PORTAL_TRAFFIC_BUFFER.computeIfAbsent(minuteKey, _ -> {
+                            final var pt = new PortalTraffic();
+                            pt.setUser(event.getUserName());
+                            final var truncated = (event.getStartTime() / 60000L) * 60000L;
+                            pt.setTime(new Timestamp(truncated));
+                            return pt;
+                        });
+                        if (event.getUpload()) {
+                            entry.accumulate(0, event.getSent(), 0, event.getDuration(), 0);
+                        } else {
+                            entry.accumulate(0, 0, event.getSent(), 0, event.getDuration());
                         }
                     }
                 }
