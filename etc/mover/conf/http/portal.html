@@ -672,7 +672,6 @@
         .then(function(data) {
           loadingEl.style.display = 'none';
           if (!data.length) { loadingEl.style.display = ''; loadingEl.textContent = 'No traffic data available yet.'; return; }
-          data.reverse();
           var labels = data.map(function(d){ return d.time.substring(11,16); });
           var conns  = data.map(function(d){ return d.connections; });
           var mbin   = data.map(function(d){ return d.durationIn  > 0 ? (d.bytesIn  * 8 / d.durationIn  / 1000).toFixed(3) : 0; });
