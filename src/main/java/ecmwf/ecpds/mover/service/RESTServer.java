@@ -1484,19 +1484,22 @@ public final class RESTServer {
     }
 
     /**
-     * Logout endpoint — clears the portal session cookie and evicts the token from the cache, then redirects to the
-     * authenticated portal entry point so the browser prompts for fresh credentials.
+     * Logout endpoint — clears the portal session cookie and evicts the token from the cache, then flushes any
+     * browser-cached Basic Auth credentials and redirects to the given {@code next} path (default: {@code file}).
      *
+     * @param next
+     *            optional path to redirect to after logout (relative to the context path, e.g. {@code data/list/})
      * @param request
      *            the HTTP request
      * @param response
      *            the HTTP response
      *
-     * @return redirect to /ecpds/file
+     * @return HTML page that flushes credentials then redirects
      */
     @GET
     @Path("logout")
-    public Response logout(@Context final HttpServletRequest request, @Context final HttpServletResponse response) {
+    public Response logout(@QueryParam("next") final String next, @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response) {
         final var cookies = request.getCookies();
         if (cookies != null) {
             for (final var cookie : cookies) {
@@ -1514,15 +1517,17 @@ public final class RESTServer {
         expired.setMaxAge(0);
         response.addCookie(expired);
         // Build the target URL from the request to avoid WAR context-path doubling.
-        final var fileUrl = request.getScheme() + "://" + request.getServerName()
+        final var base = request.getScheme() + "://" + request.getServerName()
                 + (request.getServerPort() == 443 || request.getServerPort() == 80 ? "" : ":" + request.getServerPort())
-                + request.getContextPath() + "/file";
+                + request.getContextPath() + "/";
+        final var targetPath = (next != null && !next.isBlank()) ? next : "file";
+        final var targetUrl = base + targetPath;
         // Return an HTML page that flushes any browser-cached Basic Auth credentials before
         // redirecting — same technique as portal.html's logout() function: send an XHR with
         // clearly invalid credentials to the target so the browser discards its cached ones,
         // then navigate to the target URL which will now prompt for fresh credentials.
         final var html = "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title>Logging out\u2026</title>"
-                + "<script>" + "var u='" + fileUrl + "';" + "var x=new XMLHttpRequest();"
+                + "<script>" + "var u='" + targetUrl + "';" + "var x=new XMLHttpRequest();"
                 + "x.open('GET',u,true,'logout','logout');"
                 + "x.setRequestHeader('Authorization','Basic bG9nb3V0OmxvZ291dA==');"
                 + "x.onload=function(){location.href=u;};" + "x.onerror=function(){location.href=u;};" + "x.send();"
