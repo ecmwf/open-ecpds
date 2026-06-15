@@ -171,7 +171,7 @@ Please enter a valid email address.
 </div>
 </div>
 
-<div class="pt-3">
+<div class="mt-2">
 <button type="submit" id="filterSubmitBtn" class="btn btn-primary">
 <i class="bi bi-play-fill me-1"></i>Launch Compression Simulation
 </button>

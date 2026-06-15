@@ -5,6 +5,19 @@
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 
 <div class="metadata-strip">
+    <c:choose>
+    <c:when test="${empty metaDataNameOptions and empty metaDataValueOptions}">
+        <div class="metadata-strip-row">
+            <span class="metadata-strip-label text-muted">Field</span>
+            <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis border">None</span>
+        </div>
+        <div class="metadata-strip-row">
+            <span class="metadata-strip-label text-muted">Value</span>
+            <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis border">None</span>
+        </div>
+    </c:when>
+    <c:otherwise>
+
     <%-- Metadata name selector --%>
     <c:if test="${not empty metaDataNameOptions}">
         <div class="metadata-strip-row">
@@ -42,4 +55,7 @@
             </div>
         </div>
     </c:if>
+
+    </c:otherwise>
+    </c:choose>
 </div>

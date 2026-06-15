@@ -10,12 +10,13 @@
     <div class="card-header d-flex align-items-center gap-2 flex-wrap" style="background:var(--bs-secondary-bg)">
         <i class="bi bi-clock-history text-primary"></i>
         <span class="fw-semibold">Data Events Log</span>
-        <div class="ms-auto d-flex align-items-center gap-2 flex-nowrap">
-            <div class="input-group input-group-sm flex-nowrap">
+        <div class="ms-auto d-flex align-items-center gap-2 flex-wrap">
+            <div class="input-group input-group-sm flex-nowrap" style="width:auto">
                 <span class="input-group-text"><i class="bi bi-search"></i></span>
                 <input id="incomingHistorySearch" class="form-control form-control-sm" name="search" type="text"
                     placeholder="Search filename..."
                     title="Search is performed against the File Name (case-sensitive)"
+                    style="width:160px;min-width:80px"
                     value="${param['search']}">
                 <button id="incomingHistorySearchBtn" class="btn btn-outline-secondary btn-sm" type="button">Search</button>
             </div>
