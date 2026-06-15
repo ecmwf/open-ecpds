@@ -175,6 +175,11 @@ final class MasterRMI implements MasterProxy {
     }
 
     @Override
+    public IncomingProfile getIncomingProfileNoAuth(final String incomingUser) throws Exception {
+        return _mover.getMasterInterface().getIncomingProfileNoAuth(incomingUser);
+    }
+
+    @Override
     public void releaseConnectionSlot(final String incomingUser) throws Exception {
         _mover.getMasterInterface().releaseConnectionSlot(incomingUser);
     }

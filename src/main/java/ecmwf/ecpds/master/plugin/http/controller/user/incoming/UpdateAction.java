@@ -73,6 +73,19 @@ public class UpdateAction extends PDSAction {
     /** The Constant DELETE_OPERATION. */
     private static final String DELETE_OPERATION = "deleteOperation";
 
+    /** The Constant ADD_ALL_OPERATIONS. */
+    private static final String ADD_ALL_OPERATIONS = "addAllOperations";
+
+    /** The Constant SET_READONLY_OPERATIONS. */
+    private static final String SET_READONLY_OPERATIONS = "setReadOnlyOperations";
+
+    /** The Constant DELETE_ALL_OPERATIONS. */
+    private static final String DELETE_ALL_OPERATIONS = "deleteAllOperations";
+
+    /** Operations that modify data — excluded from the read-only preset. */
+    private static final java.util.Set<String> WRITE_OPERATIONS = java.util.Set.of("delete", "mkdir", "put", "rename",
+            "rmdir");
+
     /** The Constant CLOSE_SESSION. */
     private static final String CLOSE_SESSION = "closeSession";
 
@@ -151,6 +164,34 @@ public class UpdateAction extends PDSAction {
             iu.addOperation(OperationHome.findByPrimaryKey(subActionParameter));
         } else if (DELETE_OPERATION.equals(subAction)) {
             iu.deleteOperation(OperationHome.findByPrimaryKey(subActionParameter));
+        } else if (ADD_ALL_OPERATIONS.equals(subAction)) {
+            final var currentNames = iu.getAssociatedOperations().stream().map(op -> op.getName())
+                    .collect(java.util.stream.Collectors.toSet());
+            for (final var op : OperationHome.findAll()) {
+                if (!currentNames.contains(op.getName())) {
+                    iu.addOperation(op);
+                }
+            }
+        } else if (SET_READONLY_OPERATIONS.equals(subAction)) {
+            final var currentOps = new java.util.ArrayList<>(iu.getAssociatedOperations());
+            final var currentNames = currentOps.stream().map(op -> op.getName())
+                    .collect(java.util.stream.Collectors.toSet());
+            // Remove write operations that are currently assigned
+            for (final var op : currentOps) {
+                if (WRITE_OPERATIONS.contains(op.getName())) {
+                    iu.deleteOperation(op);
+                }
+            }
+            // Add read-only operations not yet assigned
+            for (final var op : OperationHome.findAll()) {
+                if (!WRITE_OPERATIONS.contains(op.getName()) && !currentNames.contains(op.getName())) {
+                    iu.addOperation(op);
+                }
+            }
+        } else if (DELETE_ALL_OPERATIONS.equals(subAction)) {
+            for (final var op : new java.util.ArrayList<>(iu.getAssociatedOperations())) {
+                iu.deleteOperation(op);
+            }
         } else if (CLOSE_SESSION.equals(subAction)) {
             iu.closeSession(u, subActionParameter);
         } else if (CLOSE_ALL_SESSIONS.equals(subAction)) {

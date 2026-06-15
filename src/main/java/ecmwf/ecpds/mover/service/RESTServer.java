@@ -1358,6 +1358,8 @@ public final class RESTServer {
                     setup != null ? setup.get(ECtransOptions.USER_PORTAL_MSG_DOWN, msgDown) : msgDown);
             final var accessGuide = setup == null || setup.getBoolean(ECtransOptions.USER_PORTAL_ACCESS_GUIDE);
             Format.replaceAll(sb, "${accessGuide}", String.valueOf(accessGuide));
+            final var loginButton = setup == null || setup.getBoolean(ECtransOptions.USER_PORTAL_LOGIN_BUTTON);
+            Format.replaceAll(sb, "${loginButtonHidden}", loginButton ? "" : "d-none");
             final var trafficStats = setup == null || setup.getBoolean(ECtransOptions.USER_PORTAL_TRAFFIC_STATS);
             Format.replaceAll(sb, "${trafficStats}", String.valueOf(trafficStats));
             final var userId = session.getUser();
@@ -1479,6 +1481,53 @@ public final class RESTServer {
                 session.close(true);
             }
         }
+    }
+
+    /**
+     * Logout endpoint — clears the portal session cookie and evicts the token from the cache, then redirects to the
+     * authenticated portal entry point so the browser prompts for fresh credentials.
+     *
+     * @param request
+     *            the HTTP request
+     * @param response
+     *            the HTTP response
+     *
+     * @return redirect to /ecpds/file
+     */
+    @GET
+    @Path("logout")
+    public Response logout(@Context final HttpServletRequest request, @Context final HttpServletResponse response) {
+        final var cookies = request.getCookies();
+        if (cookies != null) {
+            for (final var cookie : cookies) {
+                if ("portal_session".equals(cookie.getName())) {
+                    MoverProvider.invalidatePortalSession(cookie.getValue());
+                    break;
+                }
+            }
+        }
+        // Clear the cookie in the browser
+        final var expired = new Cookie("portal_session", "");
+        expired.setHttpOnly(true);
+        expired.setSecure(true);
+        expired.setPath("/");
+        expired.setMaxAge(0);
+        response.addCookie(expired);
+        // Build the target URL from the request to avoid WAR context-path doubling.
+        final var fileUrl = request.getScheme() + "://" + request.getServerName()
+                + (request.getServerPort() == 443 || request.getServerPort() == 80 ? "" : ":" + request.getServerPort())
+                + request.getContextPath() + "/file";
+        // Return an HTML page that flushes any browser-cached Basic Auth credentials before
+        // redirecting — same technique as portal.html's logout() function: send an XHR with
+        // clearly invalid credentials to the target so the browser discards its cached ones,
+        // then navigate to the target URL which will now prompt for fresh credentials.
+        final var html = "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title>Logging out\u2026</title>"
+                + "<script>" + "var u='" + fileUrl + "';" + "var x=new XMLHttpRequest();"
+                + "x.open('GET',u,true,'logout','logout');"
+                + "x.setRequestHeader('Authorization','Basic bG9nb3V0OmxvZ291dA==');"
+                + "x.onload=function(){location.href=u;};" + "x.onerror=function(){location.href=u;};" + "x.send();"
+                + "</script></head><body></body></html>";
+        return Response.ok(html, MediaType.TEXT_HTML).build();
     }
 
     /**

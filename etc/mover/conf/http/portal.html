@@ -376,7 +376,8 @@
       var s3Ex = document.getElementById('connectS3Examples');
       copyBlock(s3Ex, ['# List buckets', 'aws --endpoint-url ' + s3Endpoint + ' \\', '  s3 ls']);
       copyBlock(s3Ex, ['# List files in a bucket', 'aws --endpoint-url ' + s3Endpoint + ' \\', '  s3 ls s3://BUCKET/']);
-      copyBlock(s3Ex, ['# Download a file', 'aws --endpoint-url ' + s3Endpoint + ' \\', '  s3 cp s3://BUCKET/DIR/FILE ./FILE'], true);
+      copyBlock(s3Ex, ['# Download a file', 'aws --endpoint-url ' + s3Endpoint + ' \\', '  s3 cp s3://BUCKET/DIR/FILE ./FILE']);
+      copyBlock(s3Ex, ['# Download a directory (sync)', 'aws --endpoint-url ' + s3Endpoint + ' \\', '  s3 sync s3://BUCKET/DIR/ ./DIR/'], true);
       var s3CanWrite = cfg.s3CanWrite === 'true';
       var s3CanDelete = cfg.s3CanDelete === 'true';
       var s3Write = document.getElementById('connectS3Write');

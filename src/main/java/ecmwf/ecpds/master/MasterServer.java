@@ -1076,6 +1076,37 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
+     * {@inheritDoc}
+     *
+     * Returns a fresh IncomingProfile for an already-authenticated user without re-running credential validation, TOTP,
+     * connection-count checks, or last-login updates.
+     */
+    @Override
+    public IncomingProfile getIncomingProfileNoAuth(final String incomingUser) throws RemoteException {
+        try {
+            final var base = getECpdsBase();
+            final var user = base.getIncomingUserObject(incomingUser);
+            if (user == null || !user.getActive()) {
+                throw new MasterException("Login failed");
+            }
+            final var setup = USER_PORTAL.getECtransSetup(base.getDataFromUserPolicies(user));
+            final List<Destination> destinations = new ArrayList<>();
+            Collections.addAll(destinations, base.getDestinationsForIncomingUser(incomingUser));
+            for (final Destination destination : base.getDestinationsByUserPolicies(incomingUser)) {
+                if (!destinations.contains(destination)) {
+                    destinations.add(destination);
+                }
+            }
+            final var permissions = base.getIncomingPermissionsForIncomingUser(incomingUser);
+            // Pass merged policy data to the profile (same as full auth path)
+            user.setData(setup.getData());
+            return new IncomingProfile(user, permissions, destinations);
+        } catch (final Throwable t) {
+            throw Format.getRemoteException("MasterServer=" + getRoot(), t);
+        }
+    }
+
+    /**
      * Gets the transfer scheduler.
      *
      * @return the transfer scheduler

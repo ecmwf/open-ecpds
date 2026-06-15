@@ -211,6 +211,11 @@ final class MasterREST implements MasterProxy {
     }
 
     @Override
+    public IncomingProfile getIncomingProfileNoAuth(final String incomingUser) throws Exception {
+        throw new RestException("Not implemented");
+    }
+
+    @Override
     public void releaseConnectionSlot(final String incomingUser) throws Exception {
         // Not applicable for REST — no-op
     }

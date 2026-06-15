@@ -1480,6 +1480,9 @@ public enum ECtransOptions {
     /** The user portal access guide. */
     USER_PORTAL_ACCESS_GUIDE("accessGuide", Boolean.class, true),
 
+    /** The user portal login button. */
+    USER_PORTAL_LOGIN_BUTTON("loginButton", Boolean.class, true),
+
     /** The user portal traffic stats. */
     USER_PORTAL_TRAFFIC_STATS("trafficStats", Boolean.class, true),
 

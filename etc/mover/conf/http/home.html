@@ -120,6 +120,13 @@
       <span class="header_nav_divider d-none d-sm-inline-block"></span>
       <span class="header_simple_title d-none d-sm-block">${title}</span>
       <div class="d-flex align-items-center gap-2 flex-shrink-0 ms-auto">
+        <a id="loginBtn" class="btn btn-sm btn-outline-light d-flex align-items-center gap-1 px-2 ${loginButtonHidden}"
+           href="/ecpds/logout" title="Sign in with a different account"
+           style="height:28px;">
+          <i class="bi bi-box-arrow-in-right" style="font-size:0.85rem;"></i>
+          <span class="d-none d-sm-inline" style="font-size:0.8rem;">Login</span>
+        </a>
+        <span class="header_nav_divider ${loginButtonHidden}"></span>
         <button id="btnTheme" class="btn btn-sm btn-outline-light p-1 lh-1"
                 onclick="ecpdsToggleTheme()" title="Toggle light/dark theme"
                 style="width:28px;height:28px;">
@@ -219,11 +226,17 @@
                   <p id="connectS3AnonNote" class="text-muted mt-1 mb-2" style="font-size:0.72rem;"><i class="bi bi-info-circle me-1"></i>The bucket name is your username (<code>${userid}</code>); destinations are the top-level path segments. Add <code>--no-verify-ssl</code> to skip TLS certificate verification — only if using a self-signed certificate.</p>
                   <div class="mt-2 border-top pt-2" id="s3Advanced">
                     <p class="text-muted mb-1" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.05em;">Advanced usage</p>
-                    <a class="small text-muted text-decoration-none d-block" data-bs-toggle="collapse" href="#s3WriteExamples" role="button" aria-expanded="false" aria-controls="s3WriteExamples" style="cursor:pointer;">
-                      <i class="bi bi-chevron-right me-1" style="font-size:0.7rem;transition:transform .2s;" id="s3WriteChevron"></i>Upload
+                    <a class="small text-muted text-decoration-none d-block mb-1" data-bs-toggle="collapse" href="#s3WriteExamples" role="button" aria-expanded="false" aria-controls="s3WriteExamples" style="cursor:pointer;">
+                      <i class="bi bi-chevron-right me-1" style="font-size:0.7rem;transition:transform .2s;" id="s3WriteChevron"></i>Upload, sync &amp; delete
                     </a>
                     <div class="collapse" id="s3WriteExamples">
-                      <div id="connectS3Write" class="mt-1"></div>
+                      <div id="connectS3Write" class="mb-2"></div>
+                    </div>
+                    <a class="small text-muted text-decoration-none d-block" data-bs-toggle="collapse" href="#s3Boto3" role="button" aria-expanded="false" aria-controls="s3Boto3" style="cursor:pointer;" id="s3Boto3Link">
+                      <i class="bi bi-chevron-right me-1" style="font-size:0.7rem;transition:transform .2s;" id="s3Boto3Chevron"></i>Python (boto3)
+                    </a>
+                    <div class="collapse" id="s3Boto3">
+                      <div id="connectS3Python"></div>
                     </div>
                   </div>
                 </div>
@@ -281,7 +294,7 @@
   <script>
   (function() {
     // Rotate chevrons on Advanced usage sub-collapses
-    [['httpsFormats', 'httpsFormatsChevron'], ['httpsParallel', 'httpsParallelChevron'], ['s3WriteExamples', 's3WriteChevron']].forEach(function(pair) {
+    [['httpsFormats', 'httpsFormatsChevron'], ['httpsParallel', 'httpsParallelChevron'], ['s3WriteExamples', 's3WriteChevron'], ['s3Boto3', 's3Boto3Chevron']].forEach(function(pair) {
       var el = document.getElementById(pair[0]);
       if (el) {
         el.addEventListener('show.bs.collapse', function() { var ch = document.getElementById(pair[1]); if (ch) ch.style.transform = 'rotate(90deg)'; });
@@ -351,25 +364,57 @@
     if (s3AnonSection) {
       var dest = '${destination}';
       var s3Write = document.getElementById('connectS3Write');
+      var s3CanWrite = cfg.s3CanWrite === 'true';
+      var s3CanDelete = cfg.s3CanDelete === 'true';
       if (dest) {
         // User is pinned to a single destination — files are directly at root of their bucket
         document.getElementById('connectS3AnonLabel').innerHTML = 'AWS CLI examples <span class="fw-normal">(replace <em>DIR</em>, <em>FILE</em>)</span>';
         document.getElementById('connectS3AnonNote').innerHTML = '<i class="bi bi-info-circle me-1"></i>Your bucket is <code>${userid}</code> and you are connected directly to destination <code>' + dest + '</code>. Add <code>--no-verify-ssl</code> to skip TLS certificate verification — only if using a self-signed certificate.';
         copyBlock(s3AnonSection, ['# List files', 'aws --no-sign-request --endpoint-url ' + s3Endpoint + ' \\', '  s3 ls s3://${userid}/DIR/']);
-        copyBlock(s3AnonSection, ['# Download a file', 'aws --no-sign-request --endpoint-url ' + s3Endpoint + ' \\', '  s3 cp s3://${userid}/DIR/FILE ./FILE'], true);
-        if (cfg.s3CanWrite === 'true') {
-          copyBlock(s3Write, ['# Upload a file', 'aws --no-sign-request --endpoint-url ' + s3Endpoint + ' \\', '  s3 cp ./FILE s3://${userid}/DIR/FILE'], true);
+        copyBlock(s3AnonSection, ['# Download a file', 'aws --no-sign-request --endpoint-url ' + s3Endpoint + ' \\', '  s3 cp s3://${userid}/DIR/FILE ./FILE']);
+        copyBlock(s3AnonSection, ['# Download a directory (sync)', 'aws --no-sign-request --endpoint-url ' + s3Endpoint + ' \\', '  s3 sync s3://${userid}/DIR/ ./DIR/'], true);
+        if (s3CanWrite) {
+          copyBlock(s3Write, ['# Upload a file', 'aws --no-sign-request --endpoint-url ' + s3Endpoint + ' \\', '  s3 cp ./FILE s3://${userid}/DIR/FILE']);
+          copyBlock(s3Write, ['# Upload a directory (sync)', 'aws --no-sign-request --endpoint-url ' + s3Endpoint + ' \\', '  s3 sync ./DIR/ s3://${userid}/DIR/'], !s3CanDelete);
+        }
+        if (s3CanDelete) {
+          copyBlock(s3Write, ['# Delete a file', 'aws --no-sign-request --endpoint-url ' + s3Endpoint + ' \\', '  s3 rm s3://${userid}/DIR/FILE'], true);
         }
       } else {
         // User has access to multiple destinations — bucket name is username, then destination/path
         copyBlock(s3AnonSection, ['# List all destinations', 'aws --no-sign-request --endpoint-url ' + s3Endpoint + ' \\', '  s3 ls s3://${userid}/']);
         copyBlock(s3AnonSection, ['# List files in a destination', 'aws --no-sign-request --endpoint-url ' + s3Endpoint + ' \\', '  s3 ls s3://${userid}/DESTINATION/DIR/']);
-        copyBlock(s3AnonSection, ['# Download a file', 'aws --no-sign-request --endpoint-url ' + s3Endpoint + ' \\', '  s3 cp s3://${userid}/DESTINATION/DIR/FILE ./FILE'], true);
-        if (cfg.s3CanWrite === 'true') {
-          copyBlock(s3Write, ['# Upload a file', 'aws --no-sign-request --endpoint-url ' + s3Endpoint + ' \\', '  s3 cp ./FILE s3://${userid}/DESTINATION/DIR/FILE'], true);
+        copyBlock(s3AnonSection, ['# Download a file', 'aws --no-sign-request --endpoint-url ' + s3Endpoint + ' \\', '  s3 cp s3://${userid}/DESTINATION/DIR/FILE ./FILE']);
+        copyBlock(s3AnonSection, ['# Download a directory (sync)', 'aws --no-sign-request --endpoint-url ' + s3Endpoint + ' \\', '  s3 sync s3://${userid}/DESTINATION/DIR/ ./DIR/'], true);
+        if (s3CanWrite) {
+          copyBlock(s3Write, ['# Upload a file', 'aws --no-sign-request --endpoint-url ' + s3Endpoint + ' \\', '  s3 cp ./FILE s3://${userid}/DESTINATION/DIR/FILE']);
+          copyBlock(s3Write, ['# Upload a directory (sync)', 'aws --no-sign-request --endpoint-url ' + s3Endpoint + ' \\', '  s3 sync ./DIR/ s3://${userid}/DESTINATION/DIR/'], !s3CanDelete);
+        }
+        if (s3CanDelete) {
+          copyBlock(s3Write, ['# Delete a file', 'aws --no-sign-request --endpoint-url ' + s3Endpoint + ' \\', '  s3 rm s3://${userid}/DESTINATION/DIR/FILE'], true);
         }
       }
-      if (cfg.s3CanWrite !== 'true') {
+      var s3Py = document.getElementById('connectS3Python');
+      if (s3CanWrite) {
+        copyBlock(s3Py, [
+          'import boto3',
+          'from botocore import UNSIGNED',
+          'from botocore.config import Config',
+          's3 = boto3.client(',
+          '    "s3",',
+          '    endpoint_url="' + s3Endpoint + '",',
+          '    config=Config(signature_version=UNSIGNED),',
+          ')',
+          '# Upload a file',
+          's3.upload_file("FILE", "${userid}", "DIR/FILE")',
+          '# Download a file',
+          's3.download_file("${userid}", "DIR/FILE", "FILE")',
+        ], true);
+      } else {
+        var boto3Link = document.getElementById('s3Boto3Link');
+        if (boto3Link) boto3Link.style.display = 'none';
+      }
+      if (!s3CanWrite && !s3CanDelete) {
         var s3Adv = document.getElementById('s3Advanced');
         if (s3Adv) s3Adv.style.display = 'none';
       }

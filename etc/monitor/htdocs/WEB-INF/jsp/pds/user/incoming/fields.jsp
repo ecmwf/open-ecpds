@@ -165,10 +165,34 @@
       <div class="card-header">
         <i class="bi bi-gear text-secondary"></i>
         <strong>Permissions</strong>
-        <button type="button" class="btn btn-sm btn-outline-primary ms-auto"
-                data-bs-toggle="collapse" data-bs-target="#operationChooser">
-          <i class="bi bi-plus-lg"></i> Add
-        </button>
+        <div class="btn-group btn-group-sm ms-auto">
+          <button type="button" class="btn btn-outline-primary"
+                  data-bs-toggle="collapse" data-bs-target="#operationChooser">
+            <i class="bi bi-plus-lg"></i> Add
+          </button>
+          <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split"
+                  data-bs-toggle="dropdown" aria-expanded="false">
+            <span class="visually-hidden">Presets</span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li>
+              <a class="dropdown-item" href="/do/user/incoming/edit/update/<c:out value="${incomingUserActionForm.id}"/>/addAllOperations/all">
+                <i class="bi bi-check2-all text-success me-1"></i>Add All
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="javascript:validate('/do/user/incoming/edit/update/<c:out value="${incomingUserActionForm.id}"/>/setReadOnlyOperations/all','Set read-only permissions (dir, get, mtime, size) for user <c:out value="${incomingUserActionForm.id}"/>? This will replace all current permissions.')">
+                <i class="bi bi-eye text-info me-1"></i>Read Only
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a class="dropdown-item text-danger" href="javascript:validate('/do/user/incoming/edit/update/<c:out value="${incomingUserActionForm.id}"/>/deleteAllOperations/all','Remove ALL permissions for user <c:out value="${incomingUserActionForm.id}"/>? The user will be unable to login until permissions are restored.')">
+                <i class="bi bi-trash me-1"></i>Remove All
+              </a>
+            </li>
+          </ul>
+        </div>
       </div>
       <div class="card-body p-2">
         <c:choose>

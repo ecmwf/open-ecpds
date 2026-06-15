@@ -261,6 +261,20 @@ public interface MasterInterface extends ProviderInterface {
             throws RemoteException;
 
     /**
+     * Returns a fresh IncomingProfile for an already-authenticated user without re-running credential validation, TOTP,
+     * connection-count checks, or last-login updates.
+     *
+     * @param incomingUser
+     *            the incoming user id
+     *
+     * @return the incoming profile
+     *
+     * @throws RemoteException
+     *             the remote exception
+     */
+    IncomingProfile getIncomingProfileNoAuth(String incomingUser) throws RemoteException;
+
+    /**
      * Releases a pending connection slot for the given user. Must be called when a session closes before being
      * confirmed by the incoming connections poll, to prevent the pending counter from leaking.
      *

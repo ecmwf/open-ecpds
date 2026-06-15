@@ -186,6 +186,21 @@ public interface MasterProxy {
     IncomingProfile getIncomingProfile(String incomingUser, String incomingPassword, String from) throws Exception;
 
     /**
+     * Returns a fresh {@link IncomingProfile} for an already-authenticated user, without re-running credential
+     * validation, TOTP, connection-count checks, or last-login updates. Used to refresh user settings (e.g.
+     * portal.color, portal.maxConnections) from INU_DATA for an existing portal session.
+     *
+     * @param incomingUser
+     *            the incoming user id
+     *
+     * @return the incoming profile
+     *
+     * @throws java.lang.Exception
+     *             the exception
+     */
+    IncomingProfile getIncomingProfileNoAuth(String incomingUser) throws Exception;
+
+    /**
      * Releases a pending connection slot for the given user.
      *
      * @param incomingUser

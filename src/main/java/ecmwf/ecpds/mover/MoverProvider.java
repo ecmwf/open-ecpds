@@ -90,7 +90,7 @@ public final class MoverProvider extends NativeAuthenticationProvider {
     /** TTL for HTTPS portal session tokens (default: 1 hour). */
     public static final long _portalSessionTtlMs = Cnf.at("MoverProvider", "portalSessionTtlMs", 60 * Timer.ONE_MINUTE);
 
-    /** Portal HTTPS session cache: token -> (user, profile, expiry). */
+    /** Portal HTTPS session cache: token -> (user, expiry). */
     private static final ConcurrentHashMap<String, PortalSessionEntry> _portalSessions = new ConcurrentHashMap<>();
 
     /** Prefix used in the password field to signal a cached session token. */
@@ -99,12 +99,10 @@ public final class MoverProvider extends NativeAuthenticationProvider {
     /** The Class PortalSessionEntry. */
     private static final class PortalSessionEntry {
         final String user;
-        final IncomingProfile profile;
         volatile long expiry;
 
-        PortalSessionEntry(final String user, final IncomingProfile profile) {
+        PortalSessionEntry(final String user) {
             this.user = user;
-            this.profile = profile;
             this.expiry = System.currentTimeMillis() + _portalSessionTtlMs;
         }
     }
@@ -135,14 +133,24 @@ public final class MoverProvider extends NativeAuthenticationProvider {
      * @param user
      *            the user name
      * @param profile
-     *            the already-validated incoming profile
+     *            the already-validated incoming profile (ignored — kept for API compatibility)
      *
      * @return the new session token
      */
     public static String registerPortalSession(final String user, final IncomingProfile profile) {
         final var token = UUID.randomUUID().toString();
-        _portalSessions.put(token, new PortalSessionEntry(user, profile));
+        _portalSessions.put(token, new PortalSessionEntry(user));
         return token;
+    }
+
+    /**
+     * Invalidate a portal session token, removing it from the cache immediately. A no-op if the token is unknown.
+     *
+     * @param token
+     *            the session token to invalidate
+     */
+    public static void invalidatePortalSession(final String token) {
+        _portalSessions.remove(token);
     }
 
     /**
@@ -375,14 +383,22 @@ public final class MoverProvider extends NativeAuthenticationProvider {
             }
             // Slide the expiry window
             entry.expiry = System.currentTimeMillis() + _portalSessionTtlMs;
-            incomingProfile = entry.profile;
+            // Always fetch a fresh profile so INU_DATA changes (portal.color, portal.maxConnections, etc.)
+            // are reflected immediately without requiring re-authentication. If the user has been deleted
+            // or deactivated, this throws and the token is evicted from the cache.
+            try {
+                incomingProfile = _mover.getMasterProxy().getIncomingProfileNoAuth(entry.user);
+            } catch (final Exception e) {
+                _portalSessions.remove(token);
+                throw e;
+            }
             sessionToken = token;
         } else {
             // Normal auth (password or TOTP) — validate against the master
             incomingProfile = _mover.getMasterProxy().getIncomingProfile(user, password, from);
-            // Issue a fresh session token and cache the profile for browser reuse
+            // Issue a fresh session token (profile not cached — fetched fresh on every subsequent hit)
             sessionToken = UUID.randomUUID().toString();
-            _portalSessions.put(sessionToken, new PortalSessionEntry(user, incomingProfile));
+            _portalSessions.put(sessionToken, new PortalSessionEntry(user));
             // Prune expired sessions opportunistically (avoid unbounded growth)
             try {
                 _portalSessions.entrySet().removeIf(e -> e.getValue().expiry < System.currentTimeMillis());
