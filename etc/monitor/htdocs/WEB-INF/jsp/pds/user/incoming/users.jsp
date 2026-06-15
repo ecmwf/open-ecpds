@@ -8,9 +8,15 @@
 <div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)">
     <i class="bi bi-people text-primary"></i>
     <span class="fw-semibold">Data Users</span>
+    <button class="btn btn-link btn-sm text-muted p-0" type="button"
+        data-bs-toggle="collapse" data-bs-target="#incomingUsersInfo"
+        aria-expanded="false" title="About this page">
+        <i class="bi bi-info-circle"></i>
+    </button>
     <div class="ms-auto d-flex flex-wrap align-items-center gap-2">
         <c:set var="destParam" value="destinationNameForSearch" scope="request"/>
         <tiles:insert name="destination.select" />
+        <jsp:include page="/WEB-INF/jsp/pds/common/policy_select.jsp" />
         <div class="input-group input-group-sm" style="width:auto">
             <span class="input-group-text"><i class="bi bi-search"></i></span>
             <input type="text" id="incomingSearch" class="form-control" placeholder="Search login..."
@@ -55,6 +61,20 @@
            class="btn btn-sm btn-outline-success"><i class="bi bi-plus-circle"></i> Create</a>
     </div>
 </div>
+
+<div class="collapse" id="incomingUsersInfo">
+    <div class="card-body py-2 px-3 border-bottom" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
+        <strong class="d-block mb-1">Data Users &mdash; search and filter</strong>
+        <p class="mb-1">This page lists all Data Portal users (incoming users). Use the controls in the header to narrow the list:</p>
+        <ul class="mb-1 ps-3">
+            <li><strong>Search Destination</strong> &mdash; shows only users who have access to the selected destination, either directly or indirectly via a Data Policy.</li>
+            <li><strong>Search Policy</strong> &mdash; shows only users attached to the selected Data Policy.</li>
+            <li><strong>Search login</strong> &mdash; client-side text filter on the login name, applied on top of the destination/policy filters.</li>
+        </ul>
+        <div class="text-muted">Combining destination and policy filters applies both simultaneously (AND logic).</div>
+    </div>
+</div>
+
 <div class="card-body p-0">
 <div class="table-responsive">
 <table id="usersTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
@@ -77,11 +97,18 @@
 </div>
 <script>
 $(document).ready(function() {
-    var _destFilter = '<c:out value="${destinationNameForSearch}"/>';
-    var _ajaxUrl = '/do/user/incoming/list'
-        + (_destFilter ? '?destinationNameForSearch=' + encodeURIComponent(_destFilter) : '');
+    var _destFilter   = '<c:out value="${destinationNameForSearch}"/>';
+    var _policyFilter = '<c:out value="${policyNameForSearch}"/>';
+    function _buildAjaxUrl() {
+        var params = [];
+        if (_destFilter && _destFilter !== 'Any Destination')
+            params.push('destinationNameForSearch=' + encodeURIComponent(_destFilter));
+        if (_policyFilter && _policyFilter !== 'Any Policy')
+            params.push('policyNameForSearch=' + encodeURIComponent(_policyFilter));
+        return '/do/user/incoming/list' + (params.length ? '?' + params.join('&') : '');
+    }
     var table = $('#usersTable').DataTable({
-        ajax:       { url: _ajaxUrl, dataSrc: 'data' },
+        ajax:       { url: _buildAjaxUrl(), dataSrc: 'data' },
         paging:     true,
         pageLength: (function() { try { var v = parseInt(localStorage.getItem('incomingPageLen'), 10); return [10,25,50,100,250].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })(),
         searching:  true,

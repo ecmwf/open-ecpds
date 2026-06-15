@@ -34,6 +34,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.ecpds.master.plugin.http.home.transfer.IncomingUserHome;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Destination;
+import ecmwf.ecpds.master.plugin.http.model.transfer.IncomingPolicy;
 import ecmwf.ecpds.master.plugin.http.model.transfer.IncomingUser;
 import ecmwf.web.ECMWFException;
 import ecmwf.web.model.users.User;
@@ -62,6 +63,11 @@ public class GetIncomingUserListJsonAction extends PDSAction {
         final var destFilter = request.getParameter("destinationNameForSearch");
         if (destFilter != null && !destFilter.isBlank() && !"Any Destination".equals(destFilter)) {
             users = filterByDestination(users, destFilter);
+        }
+
+        final var policyFilter = request.getParameter("policyNameForSearch");
+        if (policyFilter != null && !policyFilter.isBlank() && !"Any Policy".equals(policyFilter)) {
+            users = filterByPolicy(users, policyFilter);
         }
 
         // Check once whether the current user can manage (edit/update) incoming users
@@ -168,8 +174,38 @@ public class GetIncomingUserListJsonAction extends PDSAction {
         final var filtered = new ArrayList<IncomingUser>();
         for (final IncomingUser u : users) {
             try {
+                // Direct link: INCOMING_USER -> DESTINATION
                 for (final Destination dest : u.getAssociatedDestinations()) {
                     if (destinationName.equals(dest.getName())) {
+                        filtered.add(u);
+                        break;
+                    }
+                }
+                if (filtered.contains(u)) {
+                    continue;
+                }
+                // Indirect link: INCOMING_USER -> POLICY -> DESTINATION
+                outer: for (final IncomingPolicy policy : u.getAssociatedIncomingPolicies()) {
+                    for (final Destination dest : policy.getAssociatedDestinations()) {
+                        if (destinationName.equals(dest.getName())) {
+                            filtered.add(u);
+                            break outer;
+                        }
+                    }
+                }
+            } catch (final Exception ignored) {
+            }
+        }
+        return filtered;
+    }
+
+    private static Collection<IncomingUser> filterByPolicy(final Collection<IncomingUser> users,
+            final String policyId) {
+        final var filtered = new ArrayList<IncomingUser>();
+        for (final IncomingUser u : users) {
+            try {
+                for (final IncomingPolicy policy : u.getAssociatedIncomingPolicies()) {
+                    if (policyId.equals(policy.getId())) {
                         filtered.add(u);
                         break;
                     }

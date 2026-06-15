@@ -6,6 +6,48 @@
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth" %>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
 
+<%-- Header: title + info button --%>
+<div class="d-flex align-items-center gap-2 mb-3 px-3 py-2 rounded"
+     style="background:rgba(13,110,253,0.06); color:var(--bs-body-color); border-left:4px solid #0d6efd;">
+  <i class="bi bi-graph-up-arrow text-primary flex-shrink-0"></i>
+  <span>
+    <strong>Data Portal Traffic</strong><c:if test="${not empty portalTrafficUser}"> &mdash; <c:out value="${portalTrafficUser}"/></c:if>
+    <c:if test="${empty portalTrafficUser}"> - aggregated portal connections and transfer rates across all users</c:if>
+  </span>
+  <button class="btn btn-link btn-sm text-muted p-0 ms-1" type="button"
+      data-bs-toggle="collapse" data-bs-target="#ptInfoPanel"
+      aria-expanded="false" title="About this page">
+    <i class="bi bi-info-circle"></i>
+  </button>
+</div>
+
+<%-- Info panel --%>
+<div class="collapse mb-3" id="ptInfoPanel">
+  <div class="card-body py-2 px-3 border rounded" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
+    <c:choose>
+      <c:when test="${not empty portalTrafficUser}">
+        <strong class="d-block mb-1">Data Portal Traffic &mdash; user <c:out value="${portalTrafficUser}"/></strong>
+        <p class="mb-1">This page shows the Data Portal activity for user <strong><c:out value="${portalTrafficUser}"/></strong>, aggregated by day. It can help identify the best time to connect: periods with fewer connections and lower transfer rates indicate less contention on the portal.</p>
+        <ul class="mb-1 ps-3">
+          <li><strong>Connections</strong> &mdash; number of sessions authenticated by this user during the day.</li>
+          <li><strong>Uploaded / Downloaded</strong> &mdash; total bytes transferred in each direction by this user.</li>
+          <li><strong>Upload / Download Rate</strong> &mdash; average Mbps computed from total bytes and cumulated transfer duration for this user's sessions.</li>
+          <li><strong>Granularity</strong> &mdash; today's activity appears immediately from live minute-buckets; past days are aggregated nightly and kept indefinitely.</li>
+        </ul>
+      </c:when>
+      <c:otherwise>
+        <strong class="d-block mb-1">Data Portal Traffic &mdash; all users</strong>
+        <p class="mb-1">This page shows aggregated Data Portal traffic across all incoming users, by day.</p>
+        <ul class="mb-1 ps-3">
+          <li><strong>Connections</strong> &mdash; total number of new sessions authenticated across all users during the period.</li>
+          <li><strong>Upload / Download Rate</strong> &mdash; average Mbps computed from total bytes and cumulated transfer duration across all sessions.</li>
+          <li><strong>Granularity</strong> &mdash; today's data is shown at daily granularity from live minute-buckets; historical data is aggregated nightly into a permanent daily table and kept indefinitely.</li>
+        </ul>
+      </c:otherwise>
+    </c:choose>
+  </div>
+</div>
+
 <c:if test="${not empty portalTrafficError}">
   <div class="alert alert-danger mt-3">Failed to load portal traffic data: <strong><c:out value="${portalTrafficError}"/></strong></div>
 </c:if>
@@ -124,19 +166,8 @@ function ptSetView(v) {
 });
 </script>
 
-<%-- Header: title + info button + Table|Chart toggle --%>
-<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-  <div class="d-flex align-items-center gap-2">
-    <h6 class="fw-semibold text-secondary mb-0">
-      <i class="bi bi-graph-up-arrow me-1"></i>
-      Data Portal Traffic<c:if test="${not empty portalTrafficUser}"> &mdash; <c:out value="${portalTrafficUser}"/></c:if>
-    </h6>
-    <button class="btn btn-link btn-sm text-muted p-0" type="button"
-        data-bs-toggle="collapse" data-bs-target="#ptInfoPanel"
-        aria-expanded="false" title="About this page">
-      <i class="bi bi-info-circle"></i>
-    </button>
-  </div>
+<%-- Table|Chart toggle --%>
+<div class="d-flex justify-content-end align-items-center mb-3 flex-wrap gap-2">
   <div class="btn-group btn-group-sm" role="group">
     <button type="button" class="btn btn-outline-secondary" id="ptBtnTable" onclick="ptSetView('table')">
       <i class="bi bi-table me-1"></i>Table
@@ -144,33 +175,6 @@ function ptSetView(v) {
     <button type="button" class="btn btn-outline-secondary" id="ptBtnChart" onclick="ptSetView('chart')">
       <i class="bi bi-bar-chart-fill me-1"></i>Chart
     </button>
-  </div>
-</div>
-
-<%-- Info panel --%>
-<div class="collapse mb-3" id="ptInfoPanel">
-  <div class="card-body py-2 px-3 border rounded" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
-    <c:choose>
-      <c:when test="${not empty portalTrafficUser}">
-        <strong class="d-block mb-1">Data Portal Traffic &mdash; user <c:out value="${portalTrafficUser}"/></strong>
-        <p class="mb-1">This page shows the Data Portal activity for user <strong><c:out value="${portalTrafficUser}"/></strong>, aggregated by day. It can help identify the best time to connect: periods with fewer connections and lower transfer rates indicate less contention on the portal.</p>
-        <ul class="mb-1 ps-3">
-          <li><strong>Connections</strong> &mdash; number of sessions authenticated by this user during the day.</li>
-          <li><strong>Uploaded / Downloaded</strong> &mdash; total bytes transferred in each direction by this user.</li>
-          <li><strong>Upload / Download Rate</strong> &mdash; average Mbps computed from total bytes and cumulated transfer duration for this user's sessions.</li>
-          <li><strong>Granularity</strong> &mdash; today's activity appears immediately from live minute-buckets; past days are aggregated nightly and kept indefinitely.</li>
-        </ul>
-      </c:when>
-      <c:otherwise>
-        <strong class="d-block mb-1">Data Portal Traffic &mdash; all users</strong>
-        <p class="mb-1">This page shows aggregated Data Portal traffic across all incoming users, by day.</p>
-        <ul class="mb-1 ps-3">
-          <li><strong>Connections</strong> &mdash; total number of new sessions authenticated across all users during the period.</li>
-          <li><strong>Upload / Download Rate</strong> &mdash; average Mbps computed from total bytes and cumulated transfer duration across all sessions.</li>
-          <li><strong>Granularity</strong> &mdash; today's data is shown at daily granularity from live minute-buckets; historical data is aggregated nightly into a permanent daily table and kept indefinitely.</li>
-        </ul>
-      </c:otherwise>
-    </c:choose>
   </div>
 </div>
 

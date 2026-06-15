@@ -11,7 +11,7 @@
         <span class="input-group-text text-muted"><i class="bi bi-search"></i></span>
         <input type="text" id="destPickerInput" class="form-control" style="width:200px"
                placeholder="Search destination..." autocomplete="off"
-               value="<c:out value="${selectedDestination.name}"/>"
+               value="<c:out value="${selectedDestination.name != 'Any Destination' ? selectedDestination.name : ''}"/>"
                oninput="destPickerFilter()"
                onfocus="destPickerOpen()"
                onblur="setTimeout(destPickerClose, 200)"

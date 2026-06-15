@@ -11,6 +11,24 @@
      style="background:rgba(13,110,253,0.06); color:var(--bs-body-color); border-left:4px solid #0d6efd;">
   <i class="bi bi-bar-chart-line-fill text-primary flex-shrink-0"></i>
   <span><strong>Data Rates</strong> - aggregated transfer traffic across all destinations</span>
+  <button class="btn btn-link btn-sm text-muted p-0 ms-1" type="button"
+      data-bs-toggle="collapse" data-bs-target="#drInfoPanel"
+      aria-expanded="false" title="About this page">
+    <i class="bi bi-info-circle"></i>
+  </button>
+</div>
+
+<div class="collapse mb-3" id="drInfoPanel">
+  <div class="card-body py-2 px-3 border rounded" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
+    <strong class="d-block mb-1">Data Rates &mdash; aggregated transfer traffic</strong>
+    <p class="mb-1">This page shows the overall dissemination traffic produced by ECPDS across all destinations, aggregated by day.</p>
+    <ul class="mb-1 ps-3">
+      <li><strong>Transfers</strong> &mdash; total number of files successfully disseminated during the period.</li>
+      <li><strong>Bytes</strong> &mdash; total volume of data transferred.</li>
+      <li><strong>Transfer Rate</strong> &mdash; average Mbps computed from total bytes and cumulated transfer duration.</li>
+      <li><strong>Granularity</strong> &mdash; today's data is available immediately from live counters; historical data is aggregated nightly and kept indefinitely.</li>
+    </ul>
+  </div>
 </div>
 
 <c:if test="${not empty trafficError}">

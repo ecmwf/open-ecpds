@@ -47,6 +47,24 @@ $("#toDate").val($.datepicker.formatDate('yy-mm-dd', new Date()));
 style="background:rgba(13,110,253,0.06); font-size:0.9rem; color:var(--bs-body-color); border-left:4px solid #0d6efd;">
 <i class="bi bi-speedometer2 text-primary flex-shrink-0"></i>
 <span>Use this form to monitor the transfer rates of the Data Retrieval Mechanism.</span>
+<button class="btn btn-link btn-sm text-muted p-0 ms-1" type="button"
+    data-bs-toggle="collapse" data-bs-target="#drMonitorInfoPanel"
+    aria-expanded="false" title="About this page">
+  <i class="bi bi-info-circle"></i>
+</button>
+</div>
+
+<div class="collapse mb-3" id="drMonitorInfoPanel">
+  <div class="card-body py-2 px-3 border rounded" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
+    <strong class="d-block mb-1">Data Retrieval Monitoring</strong>
+    <p class="mb-1">This form analyses the transfer rates of the Data Retrieval Mechanism over a custom date and time range. Results are broken down by Transfer Group or, optionally, by individual Data Mover.</p>
+    <ul class="mb-1 ps-3">
+      <li><strong>Date &amp; Time Range</strong> &mdash; select the start and end dates, and optionally restrict to a specific time window within each day.</li>
+      <li><strong>Caller</strong> &mdash; filter by the process that submitted the retrieval request (use <code>*</code> for all callers).</li>
+      <li><strong>Source Host</strong> &mdash; filter by the host that ran the <code>ecpds</code> command; this may differ from the host that actually retrieved the file.</li>
+      <li><strong>Per Data Mover</strong> &mdash; when enabled, rates are shown per individual Data Mover instead of being aggregated by Transfer Group. A specific Data Mover can then be selected for further drill-down.</li>
+    </ul>
+  </div>
 </div>
 
 <html:form action="/datafile/monitoring">

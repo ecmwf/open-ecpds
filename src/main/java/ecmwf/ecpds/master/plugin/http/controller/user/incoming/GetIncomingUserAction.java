@@ -40,8 +40,10 @@ import org.apache.struts.action.ActionMapping;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.ecpds.master.plugin.http.dao.Util;
 import ecmwf.ecpds.master.plugin.http.home.transfer.DestinationHome;
+import ecmwf.ecpds.master.plugin.http.home.transfer.IncomingPolicyHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.IncomingUserHome;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Destination;
+import ecmwf.ecpds.master.plugin.http.model.transfer.IncomingPolicy;
 import ecmwf.ecpds.master.plugin.http.model.transfer.IncomingUser;
 import ecmwf.web.ECMWFException;
 import ecmwf.web.controller.ECMWFActionForm;
@@ -74,16 +76,27 @@ public class GetIncomingUserAction extends PDSAction {
         destinationNamesAndComment
                 .addAll(Util.getDestinationPairList(DestinationHome.findAllNamesAndComments(), List.of()));
         request.setAttribute("destinationOptions", destinationNamesAndComment);
-        final var destinationNameForSearch = Util.getValue(request, "destinationNameForSearch", "Any Destination");
+        final var destParam = request.getParameter("destinationNameForSearch");
+        final var destinationNameForSearch = (destParam != null && !destParam.isBlank()) ? destParam
+                : "Any Destination";
         // Set selectedDestination so destination_select.jsp can display the current choice.
         final var selectedDestination = destinationNamesAndComment.stream()
                 .filter(p -> destinationNameForSearch.equals(p.getName())).findFirst()
                 .orElse(destinationNamesAndComment.get(0));
         request.setAttribute("selectedDestination", selectedDestination);
         request.setAttribute("destinationNameForSearch", destinationNameForSearch);
-        if (!"Any Destination".equals(destinationNameForSearch)) {
-            users = associatedTo(users, destinationNameForSearch);
+
+        // Policy filter
+        final var policyOptions = new ArrayList<String>();
+        policyOptions.add("Any Policy");
+        try {
+            IncomingPolicyHome.findAll().stream().map(IncomingPolicy::getId).sorted().forEach(policyOptions::add);
+        } catch (final Exception ignored) {
         }
+        request.setAttribute("policyOptions", policyOptions);
+        final var policyParam = request.getParameter("policyNameForSearch");
+        final var policyNameForSearch = (policyParam != null && !policyParam.isBlank()) ? policyParam : "Any Policy";
+        request.setAttribute("policyNameForSearch", policyNameForSearch);
         final var search = request.getParameter("search");
         if (search != null && !"".equals(search.trim())) {
             users = search(users, search);
