@@ -1486,9 +1486,6 @@ public enum ECtransOptions {
     /** The user portal geoblocling. */
     USER_PORTAL_GEOBLOCLING("geoblocking", String.class, STRING_NONE),
 
-    /** The user portal use passcode. */
-    USER_PORTAL_USE_PASSCODE("usePasscode", Boolean.class, false),
-
     /** The user portal max connections. */
     USER_PORTAL_MAX_CONNECTIONS("maxConnections", Integer.class, Cnf.at("Server", "maxIncomingConnections", 10)),
 

@@ -108,7 +108,6 @@ import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_GEOBLOCLING;
 import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_MAX_CONNECTIONS;
 import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_MAX_CONNECTIONS_SCHEDULE;
 import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_UPDATE_LAST_LOGIN_INFORMATION;
-import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_USE_PASSCODE;
 import static ecmwf.common.text.Util.isEmpty;
 import static ecmwf.common.text.Util.isNotEmpty;
 import static ecmwf.common.text.Util.nullToNone;
@@ -975,11 +974,12 @@ public final class MasterServer extends ECaccessProvider
                 // This is an anonymous user so no authentication required!
             } else if (incomingPassword != null) {
                 if (user.getSynchronized()) {
-                    // User/password authentication through TOTP!
+                    // User/password authentication through TOTP. Auto-detect passcodes (6 or 8 digits)
+                    // to match the behaviour of getWebUser/LoginManagement.
+                    final var isPasscode = LoginManagement.isPasscode(incomingPassword);
                     boolean authenticated;
                     try {
-                        authenticated = TOTP.authenticate(incomingUser, incomingPassword,
-                                setup.getBoolean(USER_PORTAL_USE_PASSCODE));
+                        authenticated = TOTP.authenticate(incomingUser, incomingPassword, isPasscode);
                     } catch (IOException | URISyntaxException e) {
                         authenticated = false;
                     }

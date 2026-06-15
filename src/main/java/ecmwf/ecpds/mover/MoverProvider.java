@@ -38,7 +38,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.ConcurrentModificationException;
 import java.util.StringTokenizer;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.management.timer.Timer;
 
@@ -83,6 +86,64 @@ public final class MoverProvider extends NativeAuthenticationProvider {
 
     /** The Constant _cacheTimeout. */
     private static final long _cacheTimeout = Cnf.at("MoverProvider", "cacheTimeout", 15 * Timer.ONE_MINUTE);
+
+    /** TTL for HTTPS portal session tokens (default: 1 hour). */
+    public static final long _portalSessionTtlMs = Cnf.at("MoverProvider", "portalSessionTtlMs", 60 * Timer.ONE_MINUTE);
+
+    /** Portal HTTPS session cache: token -> (user, profile, expiry). */
+    private static final ConcurrentHashMap<String, PortalSessionEntry> _portalSessions = new ConcurrentHashMap<>();
+
+    /** Prefix used in the password field to signal a cached session token. */
+    public static final String PORTAL_SESSION_PREFIX = "portal_session:";
+
+    /** The Class PortalSessionEntry. */
+    private static final class PortalSessionEntry {
+        final String user;
+        final IncomingProfile profile;
+        volatile long expiry;
+
+        PortalSessionEntry(final String user, final IncomingProfile profile) {
+            this.user = user;
+            this.profile = profile;
+            this.expiry = System.currentTimeMillis() + _portalSessionTtlMs;
+        }
+    }
+
+    /**
+     * Look up the cached user name for a portal session token. Returns {@code null} if the token is unknown or has
+     * expired.
+     *
+     * @param token
+     *            the session token
+     *
+     * @return the user name, or {@code null}
+     */
+    public static String getUserForPortalSession(final String token) {
+        final var entry = _portalSessions.get(token);
+        if (entry == null || entry.expiry < System.currentTimeMillis()) {
+            _portalSessions.remove(token);
+            return null;
+        }
+        return entry.user;
+    }
+
+    /**
+     * Register a portal session token for a user whose credentials have already been validated (e.g. SSH password auth
+     * that runs before the SFTP FileSystemProvider is initialised). Returns the token so the caller can pass it as the
+     * password in a subsequent {@link #getUserSession} call, avoiding a second TOTP round-trip.
+     *
+     * @param user
+     *            the user name
+     * @param profile
+     *            the already-validated incoming profile
+     *
+     * @return the new session token
+     */
+    public static String registerPortalSession(final String user, final IncomingProfile profile) {
+        final var token = UUID.randomUUID().toString();
+        _portalSessions.put(token, new PortalSessionEntry(user, profile));
+        return token;
+    }
 
     /**
      * Adds the.
@@ -302,8 +363,34 @@ public final class MoverProvider extends NativeAuthenticationProvider {
     public UserSession getUserSession(final String host, final String user, final String password, final String profile,
             final Closeable closeable) throws Exception {
         final var from = "Using " + profile + " on DataMover=" + _mover.getRoot() + " from " + user + "@" + host;
-        return new UserDataSpace(_mover.getMasterProxy().getIncomingProfile(user, password, from), from, profile, host,
-                closeable);
+        final IncomingProfile incomingProfile;
+        final String sessionToken;
+        if (password != null && password.startsWith(PORTAL_SESSION_PREFIX)) {
+            // Cookie-based re-auth: validate the cached session and skip TOTP
+            final var token = password.substring(PORTAL_SESSION_PREFIX.length());
+            final var entry = _portalSessions.get(token);
+            if (entry == null || entry.expiry < System.currentTimeMillis()) {
+                _portalSessions.remove(token);
+                throw new EccmdException("Portal session expired");
+            }
+            // Slide the expiry window
+            entry.expiry = System.currentTimeMillis() + _portalSessionTtlMs;
+            incomingProfile = entry.profile;
+            sessionToken = token;
+        } else {
+            // Normal auth (password or TOTP) — validate against the master
+            incomingProfile = _mover.getMasterProxy().getIncomingProfile(user, password, from);
+            // Issue a fresh session token and cache the profile for browser reuse
+            sessionToken = UUID.randomUUID().toString();
+            _portalSessions.put(sessionToken, new PortalSessionEntry(user, incomingProfile));
+            // Prune expired sessions opportunistically (avoid unbounded growth)
+            try {
+                _portalSessions.entrySet().removeIf(e -> e.getValue().expiry < System.currentTimeMillis());
+            } catch (final ConcurrentModificationException ignored) {
+                // Safe to ignore — pruning is best-effort
+            }
+        }
+        return new UserDataSpace(incomingProfile, sessionToken, from, profile, host, closeable);
     }
 
     /**
@@ -485,6 +572,8 @@ public final class MoverProvider extends NativeAuthenticationProvider {
          *
          * @param profile
          *            the profile
+         * @param sessionToken
+         *            the portal session token (used by the HTTP layer to set a session cookie)
          * @param from
          *            the from
          * @param protocol
@@ -497,9 +586,9 @@ public final class MoverProvider extends NativeAuthenticationProvider {
          * @throws Exception
          *             the exception
          */
-        UserDataSpace(final IncomingProfile profile, final String from, final String protocol, final String host,
-                final Closeable closeable) throws Exception {
-            super(profile.getIncomingUser().getId(), profile.getIncomingUser().getId());
+        UserDataSpace(final IncomingProfile profile, final String sessionToken, final String from,
+                final String protocol, final String host, final Closeable closeable) throws Exception {
+            super(profile.getIncomingUser().getId(), sessionToken);
             _id = _mover.getRoot() + "_" + this.hashCode();
             _profile = profile;
             _from = from;

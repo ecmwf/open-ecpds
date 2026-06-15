@@ -49,6 +49,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -95,6 +96,7 @@ import ecmwf.common.technical.StreamPlugThread;
 import ecmwf.common.text.BASE64Coder;
 import ecmwf.common.text.Format;
 import ecmwf.common.version.Version;
+import ecmwf.ecpds.mover.MoverProvider;
 import ecmwf.ecpds.mover.MoverServer;
 import ecmwf.ecpds.mover.service.RESTClient.MonitorRequest;
 import ecmwf.ecpds.mover.service.RESTClient.PutRequest;
@@ -1945,6 +1947,35 @@ public final class RESTServer {
      */
     private UserSession getUserSession(final String authString, final HttpServletRequest request,
             final HttpServletResponse response) {
+        // Check for an existing portal session cookie first — avoids re-validating
+        // TOTP on every browser request (TOTP codes are single-use and expire quickly)
+        final var cookies = request.getCookies();
+        if (cookies != null) {
+            for (final var cookie : cookies) {
+                if ("portal_session".equals(cookie.getName())) {
+                    final var token = cookie.getValue();
+                    final var cachedUser = MoverProvider.getUserForPortalSession(token);
+                    if (cachedUser != null) {
+                        try {
+                            final var session = NativeAuthenticationProvider.getInstance().getUserSession(
+                                    request.getRemoteAddr(), cachedUser, MoverProvider.PORTAL_SESSION_PREFIX + token,
+                                    "https", (Closeable) () -> {
+                                        try {
+                                            response.sendError(-1);
+                                        } catch (IOException ignored) {
+                                        }
+                                    });
+                            setPortalSessionCookie(response, session.getToken());
+                            return session;
+                        } catch (final Throwable t) {
+                            _log.debug("Portal session cookie invalid, falling back to Basic Auth", t);
+                            // Fall through to Basic Auth
+                        }
+                    }
+                    break;
+                }
+            }
+        }
         if (authString != null && authString.toLowerCase().startsWith("basic ")) {
             // Header is in the format "Basic 5tyc0uiDat4". Let's decode the data back to
             // its original string!
@@ -1952,9 +1983,12 @@ public final class RESTServer {
                 final var decodedAuth = new String(BASE64Coder.decode(authString.split("\\s+")[1]));
                 final var credentials = decodedAuth.split(":");
                 if (credentials.length == 2) {
-                    final var provider = NativeAuthenticationProvider.getInstance();
-                    final var session = provider.getUserSession(request.getRemoteAddr(), credentials[0], credentials[1],
-                            "https", (Closeable) () -> response.sendError(-1));
+                    final var session = NativeAuthenticationProvider.getInstance().getUserSession(
+                            request.getRemoteAddr(), credentials[0], credentials[1], "https",
+                            (Closeable) () -> response.sendError(-1));
+                    // Successful auth — issue/refresh the portal session cookie so the browser
+                    // doesn't need to re-validate TOTP on every subsequent request
+                    setPortalSessionCookie(response, session.getToken());
                     // Log headers if asked to do so?
                     if (Cnf.at("HttpPlugin", "logHeadersAndUri", false)) {
                         final var headerNames = request.getHeaderNames();
@@ -1983,6 +2017,23 @@ public final class RESTServer {
         // For whatever reason we were not able to authenticate the user!
         throw new WebApplicationException(Response.status(401).type(MediaType.TEXT_PLAIN).entity("Unauthorized")
                 .header("WWW-Authenticate", "Basic realm=\"Data User Credentials\"").build());
+    }
+
+    /**
+     * Set (or refresh) the portal session cookie on the HTTP response.
+     *
+     * @param response
+     *            the HTTP response
+     * @param token
+     *            the session token
+     */
+    private static void setPortalSessionCookie(final HttpServletResponse response, final String token) {
+        final var cookie = new Cookie("portal_session", token);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);
+        cookie.setPath("/");
+        cookie.setMaxAge((int) (MoverProvider._portalSessionTtlMs / 1000));
+        response.addCookie(cookie);
     }
 
     /**
