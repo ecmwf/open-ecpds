@@ -456,16 +456,31 @@
         (function(){
           var max='${maxconnections}', cur='${currentconnections}';
           if(max==='') return;
-          var curInt = cur==='' ? 0 : parseInt(cur,10), maxInt = parseInt(max,10);
-          var displayCur = Math.max(1, Math.min(curInt, maxInt));
-          var remaining = maxInt - displayCur;
+          var defaultMax = parseInt(max,10);
+          // Apply schedule: find the effective max for the current UTC time
+          var effectiveMax = defaultMax;
+          var schedStr = '${maxConnectionsSchedule}';
+          if (schedStr && schedStr !== 'none') {
+            var _now = new Date();
+            var nowUtcMin = _now.getUTCHours()*60+_now.getUTCMinutes();
+            schedStr.split(',').forEach(function(entry) {
+              var m = entry.trim().match(/^(\d{1,2}):(\d{2})-(\d{1,2}):(\d{2})=(\d+)$/);
+              if (!m) return;
+              var sMin = parseInt(m[1])*60+parseInt(m[2]);
+              var eMin = parseInt(m[3])*60+parseInt(m[4]);
+              if (nowUtcMin >= sMin && nowUtcMin < eMin) effectiveMax = parseInt(m[5]);
+            });
+          }
+          var curInt = cur==='' ? 0 : parseInt(cur,10);
+          var displayCur = Math.max(1, Math.min(curInt, effectiveMax));
+          var remaining = effectiveMax - displayCur;
           var html = '<span class="badge rounded-pill border fw-normal ms-1 '
             + (remaining<=0 ? 'bg-danger-subtle text-danger-emphasis' : remaining<=2 ? 'bg-warning-subtle text-warning-emphasis' : 'bg-secondary-subtle text-secondary-emphasis')
             + '" data-bs-toggle="popover" data-bs-placement="bottom" data-bs-trigger="hover focus" tabindex="0"'
             + ' data-bs-content="Number of active protocol sessions (HTTPS, S3, FTP, SFTP/SCP) for your account, against the configured maximum. A session is counted from authentication and released when it ends; short-lived operations such as individual S3 API calls open and close quickly. The counter is at least 1 while you are logged in. When the limit is reached, new connections will be refused."'
             + ' style="cursor:default">';
-          if(cur!=='') html += '<i class="bi bi-plug me-1"></i>' + displayCur + '\u200a/\u200a' + max;
-          else html += '<i class="bi bi-plug me-1"></i>max\u00a0' + max;
+          if(cur!=='') html += '<i class="bi bi-plug me-1"></i>' + displayCur + '\u200a/\u200a' + effectiveMax;
+          else html += '<i class="bi bi-plug me-1"></i>max\u00a0' + effectiveMax;
           html += '</span>';
           document.write(html);
         })();
