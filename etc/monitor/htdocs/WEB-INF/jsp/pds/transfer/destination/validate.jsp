@@ -31,7 +31,9 @@
 				if (all) {
 					batchTransfers[id] = true;
 				} else if (reverse) {
-					batchTransfers[id] = batchTransfers[id] !== true;
+					// undefined and true both mean "currently selected"; false means "deselected".
+					// Invert: selected → deselected, deselected → selected.
+					batchTransfers[id] = batchTransfers[id] === false;
 				} else {
 					batchTransfers[id] = false;
 				}
