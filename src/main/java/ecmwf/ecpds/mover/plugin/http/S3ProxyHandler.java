@@ -35,6 +35,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
@@ -53,7 +54,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.codehaus.jackson.map.ObjectMapper;
 
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import javax.xml.parsers.DocumentBuilderFactory;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
@@ -1708,21 +1709,39 @@ public class S3ProxyHandler {
             throw new S3Exception(S3ErrorCode.NO_SUCH_UPLOAD);
         }
         // Parse the <CompleteMultipartUpload> body for ordered part list
-        final XmlMapper xmlMapper = new XmlMapper();
-        xmlMapper.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        final CompleteMultipartUploadRequest req;
+        final List<PartEntry> parts = new ArrayList<>();
         try {
-            req = xmlMapper.readValue(is, CompleteMultipartUploadRequest.class);
+            final var dbf = DocumentBuilderFactory.newInstance();
+            dbf.setNamespaceAware(false);
+            final var doc = dbf.newDocumentBuilder().parse(is);
+            final var partNodes = doc.getElementsByTagName("Part");
+            for (var i = 0; i < partNodes.getLength(); i++) {
+                final var part = partNodes.item(i);
+                var partNumber = 0;
+                String etag = null;
+                final var children = part.getChildNodes();
+                for (var j = 0; j < children.getLength(); j++) {
+                    final var child = children.item(j);
+                    if ("PartNumber".equals(child.getNodeName())) {
+                        partNumber = Integer.parseInt(child.getTextContent().trim());
+                    } else if ("ETag".equals(child.getNodeName())) {
+                        etag = child.getTextContent().trim();
+                    }
+                }
+                if (partNumber > 0) {
+                    parts.add(new PartEntry(partNumber, etag));
+                }
+            }
         } catch (final Exception e) {
             throw new S3Exception(S3ErrorCode.MALFORMED_X_M_L);
         }
-        if (req == null || req.parts == null || req.parts.isEmpty()) {
+        if (parts.isEmpty()) {
             throw new S3Exception(S3ErrorCode.MALFORMED_X_M_L);
         }
-        req.parts.sort(Comparator.comparingInt(p -> p.partNumber));
+        parts.sort(Comparator.comparingInt((PartEntry p) -> p.partNumber));
 
         // Validate all parts are present
-        for (final var p : req.parts) {
+        for (final var p : parts) {
             if (!mpu.parts.containsKey(p.partNumber)) {
                 throw new S3Exception(S3ErrorCode.INVALID_PART);
             }
@@ -1731,7 +1750,7 @@ public class S3ProxyHandler {
         // Stream all parts in order as a single SequenceInputStream into putBlob
         final var partStreams = new ArrayList<InputStream>();
         try {
-            for (final var p : req.parts) {
+            for (final var p : parts) {
                 partStreams.add(Files.newInputStream(mpu.parts.get(p.partNumber).file));
             }
             final InputStream combined = new java.io.SequenceInputStream(Collections.enumeration(partStreams));
@@ -2258,17 +2277,14 @@ public class S3ProxyHandler {
         }
     }
 
-    /** XML-deserializable body for CompleteMultipartUpload requests. */
-    private static final class CompleteMultipartUploadRequest {
-        @com.fasterxml.jackson.annotation.JsonProperty("Part")
-        @com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper(useWrapping = false)
-        public java.util.List<PartEntry> parts;
+    /** Simple holder for a parsed part entry from a CompleteMultipartUpload body. */
+    private static final class PartEntry {
+        final int partNumber;
+        final String etag;
 
-        static final class PartEntry {
-            @com.fasterxml.jackson.annotation.JsonProperty("PartNumber")
-            public int partNumber;
-            @com.fasterxml.jackson.annotation.JsonProperty("ETag")
-            public String etag;
+        PartEntry(final int partNumber, final String etag) {
+            this.partNumber = partNumber;
+            this.etag = etag;
         }
     }
 }
