@@ -78,6 +78,45 @@
 	</div>
 	</div>
 
+<!-- UI Help offcanvas -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="uiHelpOffcanvas" aria-labelledby="uiHelpOffcanvasLabel" style="width:360px;max-width:95vw;">
+  <div class="offcanvas-header border-bottom py-2 px-3">
+    <span class="fw-semibold small" id="uiHelpOffcanvasLabel"><i class="bi bi-question-circle me-2 text-primary"></i>Interface Guide</span>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body px-3 py-2" style="font-size:0.83rem; overflow-y:auto;">
+    <div class="mb-3">
+      <div class="fw-semibold mb-1 d-flex align-items-center gap-2"><i class="bi bi-list text-secondary"></i> Navigation Menu</div>
+      <p class="mb-1 text-muted">The <strong>&#9776; hamburger button</strong> (top-left) opens the side navigation panel, providing access to all sections and subsections available on the current page.</p>
+    </div>
+    <hr class="my-2">
+    <div class="mb-3">
+      <div class="fw-semibold mb-1 d-flex align-items-center gap-2"><i class="bi bi-moon-fill text-secondary"></i> Light / Dark Theme</div>
+      <p class="mb-1 text-muted">The <strong>moon / sun button</strong> (top-right) toggles between light and dark display mode. Your preference is remembered across sessions.</p>
+    </div>
+    <hr class="my-2">
+    <div class="mb-3">
+      <div class="fw-semibold mb-1 d-flex align-items-center gap-2"><i class="bi bi-info-circle text-primary"></i> Tooltips &amp; Info Icons</div>
+      <p class="mb-1 text-muted"><strong>Hover</strong> over any <i class="bi bi-question-circle text-muted"></i> or <i class="bi bi-info-circle text-muted"></i> icon next to a field to read a description. Some icons open a full reference panel when clicked.</p>
+    </div>
+    <hr class="my-2">
+    <div class="mb-3">
+      <div class="fw-semibold mb-1 d-flex align-items-center gap-2"><i class="bi bi-funnel text-secondary"></i> Monitoring Filters</div>
+      <p class="mb-1 text-muted">Use the <strong>Application</strong>, <strong>Status</strong>, <strong>Stream</strong> and <strong>Time</strong> dropdowns in the top bar to filter what is shown. Click <strong>Reload</strong> or wait for the auto-refresh to apply changes.</p>
+    </div>
+    <hr class="my-2">
+    <div class="mb-3">
+      <div class="fw-semibold mb-1 d-flex align-items-center gap-2"><i class="bi bi-arrow-clockwise text-secondary"></i> Auto-Refresh</div>
+      <p class="mb-1 text-muted">The monitoring display refreshes automatically at regular intervals. The countdown is shown next to the <strong>Reload</strong> button. Click <strong>Reload</strong> at any time to force an immediate refresh.</p>
+    </div>
+    <hr class="my-2">
+    <div class="mb-3">
+      <div class="fw-semibold mb-1 d-flex align-items-center gap-2"><i class="bi bi-graph-up text-secondary"></i> Status Indicators</div>
+      <p class="mb-1 text-muted">Each product or destination cell uses colour-coded status badges. Hover over a badge to see the full status description and timing details.</p>
+    </div>
+  </div>
+</div>
+
 	<tiles:insert name="footer">
 		<tiles:put name="helpKey"><tiles:getAsString name="helpKey" ignore="true"/></tiles:put>
 	</tiles:insert>
