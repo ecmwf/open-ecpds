@@ -110,6 +110,28 @@ function assocSearch(inp) {
     });
 }
 
+// Keep association chooser panels open across page reloads (e.g. after adding an item).
+// When the user clicks an add-item link inside a chooser, save the chooser's id to
+// sessionStorage. On the next page load we re-open it so they can keep adding without
+// having to click '+ Add' again each time.
+document.addEventListener('DOMContentLoaded', function() {
+    var key = 'assocChooserOpen';
+    var toReopen = sessionStorage.getItem(key);
+    if (toReopen) {
+        sessionStorage.removeItem(key);
+        var el = document.getElementById(toReopen);
+        if (el && el.classList.contains('collapse')) {
+            bootstrap.Collapse.getOrCreateInstance(el, {toggle: false}).show();
+        }
+    }
+    document.addEventListener('click', function(e) {
+        var link = e.target.closest('.assoc-chooser-item');
+        if (!link) return;
+        var collapse = link.closest('.collapse');
+        if (collapse && collapse.id) sessionStorage.setItem(key, collapse.id);
+    });
+});
+
 // Switch destination insert mode panels (Copy / Create / Export)
 function selectDestMode(mode, btn) {
     // Update button styles

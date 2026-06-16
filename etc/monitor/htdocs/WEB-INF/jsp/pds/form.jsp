@@ -25,6 +25,19 @@
 	} else {
 		operation = "update";
 	}
+	// Compute cancel URL: for any /edit/* action, derive the view/list URL directly
+	// so the Cancel button does a fresh navigation instead of history.back() (which
+	// would replay intermediate operation GET requests, e.g. addOperation/deleteOperation).
+	String cancelUrl = "";
+	int editIdx = action.indexOf("/edit");
+	if (editIdx >= 0) {
+		String basePath = action.substring(0, editIdx); // e.g. /user/incoming
+		if ("insert".equals(operation)) {
+			cancelUrl = "/do" + basePath; // go to the list page
+		} else {
+			cancelUrl = "/do" + basePath + "/" + actionFormId; // go to the detail view
+		}
+	}
 %>
 
 <!--<html:form action='<%=htmlFormAction%>'>-->
@@ -41,6 +54,7 @@
 <div class="pt-3">
 <tiles:insert name="buttons">
 	<tiles:put name="operation" value="<%=operation%>" />
+	<tiles:put name="cancelUrl" value="<%=cancelUrl%>" />
 </tiles:insert>
 </div>
 </div>

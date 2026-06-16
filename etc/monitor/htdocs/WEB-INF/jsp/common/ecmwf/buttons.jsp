@@ -8,6 +8,7 @@
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 
 <tiles:importAttribute name="operation" />
+<tiles:importAttribute name="cancelUrl" ignore="true" />
 
 <c:set var="buttonLabel" value="${empty buttonLabel ? 'Process' : buttonLabel}" />
 <c:set var="safeButtonLabel" value="${fn:escapeXml(buttonLabel)}" />
@@ -97,6 +98,11 @@ $(document).ready(function () {
     <button type="submit" class="btn btn-primary"><i class="bi ${submitIcon} me-1"></i><c:out value="${safeButtonLabel}" /></button>
   </c:otherwise>
 </c:choose>
-<button type="button" class="btn btn-outline-secondary ms-2" onclick="history.back()"><i class="bi bi-x me-1"></i>Cancel</button>
+<button type="button" class="btn btn-outline-secondary ms-2"
+    <c:choose>
+      <c:when test="${not empty cancelUrl}">onclick="window.location='<c:out value="${cancelUrl}"/>';"</c:when>
+      <c:otherwise>onclick="history.back()"</c:otherwise>
+    </c:choose>
+><i class="bi bi-x me-1"></i>Cancel</button>
 
 <!-- buttons.jsp -->
