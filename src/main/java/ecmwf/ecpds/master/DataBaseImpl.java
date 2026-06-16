@@ -1045,6 +1045,17 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
     /**
      * {@inheritDoc}
      *
+     * Gets the destination names with proxy hosts.
+     */
+    @Override
+    public Set<String> getDestinationNamesWithProxyHosts() throws DataBaseException, IOException {
+        final var monitor = new MonitorCall("getDestinationNamesWithProxyHosts()");
+        return monitor.done(ecpds.getDestinationNamesWithProxyHosts());
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * Gets the authorised hosts and destinations for a web user.
      */
     @Override

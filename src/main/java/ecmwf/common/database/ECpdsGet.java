@@ -1728,6 +1728,20 @@ final class ECpdsGet {
     }
 
     /**
+     * Gets the destination names that have at least one active proxy host assigned.
+     *
+     * @return a result set with one DES_NAME column per matching destination
+     *
+     * @throws SQLException
+     *             the SQL exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     */
+    DBResultSet getDestinationNamesWithProxyHosts() throws SQLException, IOException {
+        return _database.executeSelect("ECpdsBase", "getDestinationNamesWithProxyHosts");
+    }
+
+    /**
      * Gets the authorized hosts.
      *
      * @param user

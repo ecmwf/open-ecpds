@@ -32,28 +32,6 @@ Error retrieving object by key &mdash; DataTransfer not found: <code>${datatrans
 <jsp:include page="./pds/transfer/data/data_table.jsp"/>
 
 <%-- Transfer History --%>
-<auth:if basePathKey="transferhistory.basepath" paths="/">
-<auth:then>
-<c:set var="transferHistory" value="${datatransfer.transferHistory}"/>
-<c:set var="canSeeHistoryDetail" value="true"/>
-</auth:then>
-<auth:else>
-<c:set var="transferHistory" value="${datatransfer.transferHistoryAfterScheduledTime}"/>
-</auth:else>
-</auth:if>
-
-<c:if test="${historyItemsSize == '0'}">
-<div class="card border-0 shadow-sm mt-3 mb-3">
-<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
-<i class="bi bi-clock-history text-primary"></i>
-<span class="fw-semibold">Transfer History</span>
-</div>
-<div class="card-body">
-<div class="alert alert-info mb-0">No Transfer History available for this Data Transfer</div>
-</div>
-</div>
-</c:if>
-<c:if test="${historyItemsSize != '0'}">
 <div class="card border-0 shadow-sm mt-3 mb-3">
 <div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
 <i class="bi bi-clock-history text-primary"></i>
@@ -102,48 +80,9 @@ Error retrieving object by key &mdash; DataTransfer not found: <code>${datatrans
 <th>Status</th>
 <th>Transfer Host</th>
 <th>Comment</th>
-<th></th>
 </tr>
 </thead>
-<tbody>
-<c:forEach var="history" items="${historyItems}">
-<tr>
-<td>
-<c:choose>
-<c:when test="${history.error}"><span class="badge rounded-pill border fw-normal bg-danger-subtle text-danger-emphasis"><i class="bi bi-x-circle-fill me-1"></i>Err</span></c:when>
-<c:otherwise><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>OK</span></c:otherwise>
-</c:choose>
-</td>
-<td data-order="${not empty history.date ? history.date.time : 0}">
-<c:if test="${not empty canSeeHistoryDetail}">
-<a href="<bean:message key="transferhistory.basepath"/>/${history.id}"><content:content name="history.date" dateFormatKey="date.format.transfer" ignoreNull="true"/></a>
-</c:if>
-<c:if test="${empty canSeeHistoryDetail}">
-<content:content name="history.date" dateFormatKey="date.format.transfer" ignoreNull="true"/>
-</c:if>
-</td>
-<td>
-<c:choose>
-  <c:when test="${history.status == 'DONE'}"><span class="badge bg-success" title="${history.formattedStatus}">${history.formattedStatus}</span></c:when>
-  <c:when test="${history.status == 'EXEC' or history.status == 'FETC' or history.status == 'INIT'}"><span class="badge bg-primary" title="${history.formattedStatus}">${history.formattedStatus}</span></c:when>
-  <c:when test="${history.status == 'RETR' or history.status == 'WAIT' or history.status == 'SCHE' or history.status == 'HOLD'}"><span class="badge bg-warning text-dark" title="${history.formattedStatus}">${history.formattedStatus}</span></c:when>
-  <c:when test="${history.status == 'FAIL'}"><span class="badge bg-danger" title="${history.formattedStatus}">${history.formattedStatus}</span></c:when>
-  <c:otherwise><span class="badge bg-secondary" title="${history.formattedStatus}">${history.formattedStatus}</span></c:otherwise>
-</c:choose>
-</td>
-<td>
-<c:if test="${history.hostName != null}">
-<a href="<bean:message key="host.basepath"/>/${history.hostName}">${history.hostNickName}</a>
-</c:if>
-<c:if test="${history.hostName == null}">
-<i class="bi bi-dash text-muted" title="Not applicable"></i>
-</c:if>
-</td>
-<td>${history.formattedComment}</td>
-<td>${history.id}</td>
-</tr>
-</c:forEach>
-</tbody>
+<tbody></tbody>
 </table>
 </div>
 </div>
@@ -152,14 +91,28 @@ Error retrieving object by key &mdash; DataTransfer not found: <code>${datatrans
 $(document).ready(function() {
 var _dtHistLen = (function() { try { var v = parseInt(localStorage.getItem('dtHistPageLen'), 10); return [10,25,50,100,250].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })();
 var dtHist = $('#transferHistoryTable').DataTable({
-paging:    true,
+serverSide: true,
+processing: true,
+ajax: {
+    url: '/do/transfer/data/history/${datatransfer.id}',
+    type: 'GET'
+},
 pageLength: _dtHistLen,
 searching: false,
 ordering:  true,
-info:      true,
-order:     [[1, 'desc'], [5, 'desc']],
-columnDefs: [{ targets: 5, visible: false, searchable: false, type: 'num' }],
-dom: 't<"d-flex align-items-start mt-2 px-3 pb-2"i<"ms-auto"p>>'
+order:     [[1, 'desc']],
+columns: [
+    { orderable: true,  data: 0, render: function(d) { return d || ''; } },
+    { orderable: true,  data: 1, render: function(d) { return d || ''; } },
+    { orderable: true,  data: 2, render: function(d) { return d || ''; } },
+    { orderable: true,  data: 3, render: function(d) { return d || ''; } },
+    { orderable: false, data: 4, render: function(d) { return d || ''; } }
+],
+dom: 't<"d-flex align-items-start mt-2 px-3 pb-2"i<"ms-auto"p>>',
+language: {
+    processing: '<span class="spinner-border spinner-border-sm me-1"></span> Loading&hellip;',
+    emptyTable: 'No Transfer History available for this Data Transfer.'
+}
 });
 $('#dtHistPageLen').val(_dtHistLen);
 $('#dtHistPageLen').on('change', function() {
@@ -170,8 +123,8 @@ $('#dtHistPageLen').on('change', function() {
 // Cols:Auto for Transfer History
 var _dthColMode = (function() { try { return localStorage.getItem('dtHistColMode') || 'auto'; } catch(e) { return 'auto'; } })();
 var _dthCustomCols = (function() { try { var s = localStorage.getItem('dtHistCustomCols'); return s ? JSON.parse(s) : [0,1,2,3,4]; } catch(e) { return [0,1,2,3,4]; } })();
-function _dthShowCols(hide) { dtHist.columns().every(function(i) { if (i < 5) dtHist.column(i).visible(hide.indexOf(i) === -1, false); }); dtHist.columns.adjust(); }
-function _dthApplyCustom() { dtHist.columns().every(function(i) { if (i >= 5) return; var v = _dthCustomCols.indexOf(i) !== -1; if (i === 1 || i === 2) v = true; dtHist.column(i).visible(v, false); }); dtHist.columns.adjust(); }
+function _dthShowCols(hide) { dtHist.columns().every(function(i) { dtHist.column(i).visible(hide.indexOf(i) === -1, false); }); dtHist.columns.adjust(); }
+function _dthApplyCustom() { dtHist.columns().every(function(i) { var v = _dthCustomCols.indexOf(i) !== -1; if (i === 1 || i === 2) v = true; dtHist.column(i).visible(v, false); }); dtHist.columns.adjust(); }
 function _dthApplyAuto() { if (_dthColMode !== 'auto') return; var w = window.innerWidth; if (w < 768) _dthShowCols([0,2,3]); else if (w < 992) _dthShowCols([0]); else _dthShowCols([]); }
 function _dthApplyMode(mode) {
     var label = mode.charAt(0).toUpperCase() + mode.slice(1);
@@ -189,7 +142,6 @@ $(window).on('resize.dth', function() { _dthApplyAuto(); });
 _dthApplyMode(_dthColMode);
 });
 </script>
-</c:if>
 
 <%-- Older Transfers with Same Identity --%>
 <div class="card border-0 shadow-sm mt-3 mb-3">

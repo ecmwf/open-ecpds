@@ -29,6 +29,7 @@ package ecmwf.ecpds.master.plugin.http.home.transfer;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -263,6 +264,23 @@ public class DestinationHome extends ModelHomeBase {
                     filter);
         } catch (final Exception e) {
             throw new TransferException("Error counting destinations for user '" + user.getId() + "'", e);
+        }
+    }
+
+    /**
+     * Returns the set of destination names that have at least one active proxy host assigned. This is a single query
+     * covering all destinations, suitable for use in list views without N+1 overhead.
+     *
+     * @return the set of destination names with proxy hosts
+     *
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
+     *             the transfer exception
+     */
+    public static final Set<String> findNamesWithProxyHosts() throws TransferException {
+        try {
+            return MasterManager.getDB().getDestinationNamesWithProxyHosts();
+        } catch (final Exception e) {
+            throw new TransferException("Error fetching destination names with proxy hosts", e);
         }
     }
 

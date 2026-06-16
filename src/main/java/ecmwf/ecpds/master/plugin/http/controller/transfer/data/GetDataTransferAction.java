@@ -47,7 +47,6 @@ import ecmwf.ecpds.master.plugin.http.dao.Util;
 import ecmwf.ecpds.master.plugin.http.dao.transfer.StatusBean;
 import ecmwf.ecpds.master.plugin.http.home.datafile.TransferServerHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.DataTransferHome;
-import ecmwf.ecpds.master.plugin.http.home.transfer.TransferHistoryHome;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Status;
 import ecmwf.ecpds.master.transfer.DestinationOption;
 import ecmwf.ecpds.master.transfer.StatusFactory;
@@ -147,14 +146,6 @@ public class GetDataTransferAction extends PDSAction {
             }
             request.setAttribute("datatransfer", transfer);
             request.setAttribute("datafile", transfer.getDataFile());
-            // Initialize the cursor for the database search
-            final var cursor = Util.getDataBaseCursor("history", 15, 1, true, request);
-            // Can the user see the transfer history details?
-            final var transferHistoryBasePath = getResource(request, "transferhistory.basepath");
-            final var canSeeHistoryDetail = user.hasAccess(transferHistoryBasePath);
-            final var historyItems = TransferHistoryHome.findByDataTransfer(transfer, !canSeeHistoryDetail, cursor);
-            request.setAttribute("historyItems", historyItems);
-            request.setAttribute("historyItemsSize", Util.getCollectionSizeFrom(historyItems));
         }
         return mapping.findForward("success");
     }

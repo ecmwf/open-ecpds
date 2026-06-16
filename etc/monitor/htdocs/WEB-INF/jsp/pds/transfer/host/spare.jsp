@@ -45,7 +45,7 @@
     <c:if test="${host.type == 'Dissemination'}">
         <tr>
             <td style="border-top:none; padding-bottom:6px;">
-                <div class="d-flex flex-wrap gap-1 justify-content-center">
+                <div class="d-flex flex-wrap gap-1" style="padding: 2px 12px 0 16px;">
                 <c:forEach var="destination" items="${host.destinations}">
                     <c:forEach var="proxy" items="${destination.proxyHostsAndPriorities}">
                         <a class="badge bg-secondary text-white text-decoration-none"

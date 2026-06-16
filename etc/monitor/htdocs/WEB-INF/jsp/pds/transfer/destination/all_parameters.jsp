@@ -52,6 +52,40 @@
 	</div>
 </div>
 
+<c:if test="${not empty destination.proxyHostsAndPriorities}">
+<div class="card border-0 shadow-sm mb-3">
+	<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+		<i class="bi bi-hdd-network text-primary"></i>
+		<span class="fw-semibold">Proxy Host(s)</span>
+	</div>
+	<div class="card-body p-0">
+		<table class="table table-sm table-hover mb-0 small">
+			<thead class="table-light">
+				<tr>
+					<th>Name</th>
+					<th class="text-center">Priority</th>
+					<th class="text-center">Status</th>
+				</tr>
+			</thead>
+			<tbody>
+				<c:forEach var="pair" items="${destination.proxyHostsAndPriorities}">
+				<tr>
+					<td><a href="/do/transfer/host/${pair.name.name}">${pair.name.nickName}</a></td>
+					<td class="text-center"><span class="val-num">${pair.value}</span></td>
+					<td class="text-center">
+						<c:choose>
+							<c:when test="${pair.name.active}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Active</span></c:when>
+							<c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>Inactive</span></c:otherwise>
+						</c:choose>
+					</td>
+				</tr>
+				</c:forEach>
+			</tbody>
+		</table>
+	</div>
+</div>
+</c:if>
+
 <div class="card border-0 shadow-sm mb-3">
 	<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
 		<i class="bi bi-sliders text-primary"></i>

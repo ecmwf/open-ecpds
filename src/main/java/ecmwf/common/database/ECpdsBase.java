@@ -164,6 +164,28 @@ public final class ECpdsBase extends DataBase {
     }
 
     /**
+     * Gets the set of destination names that have at least one active proxy host assigned.
+     *
+     * @return the set of destination names with proxy hosts
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public Set<String> getDestinationNamesWithProxyHosts() throws DataBaseException {
+        try (var rs = ecpds.getDestinationNamesWithProxyHosts()) {
+            final Set<String> names = new java.util.HashSet<>();
+            while (rs.next()) {
+                names.add(rs.getString("DES_NAME"));
+            }
+            logSqlRequest("getDestinationNamesWithProxyHosts", names.size());
+            return names;
+        } catch (SQLException | IOException e) {
+            _log.warn("getDestinationNamesWithProxyHosts", e);
+            throw new DataBaseException("getDestinationNamesWithProxyHosts", e);
+        }
+    }
+
+    /**
      * Gets the authorised hosts.
      *
      * @param user

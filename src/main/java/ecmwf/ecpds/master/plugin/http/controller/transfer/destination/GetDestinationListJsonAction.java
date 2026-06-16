@@ -34,6 +34,7 @@ package ecmwf.ecpds.master.plugin.http.controller.transfer.destination;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -96,6 +97,7 @@ public class GetDestinationListJsonAction extends PDSAction {
         Collection<Destination> page;
         int recordsTotal = 0;
         String queryError = null;
+        Set<String> proxyDestNames;
         try {
             page = DestinationHome.findByUser(user, search, aliases, orderCol, ascending, start, lengthParam,
                     StatusFactory.getDestinationStatusCode(status), GetDestinationAction.getDestinationTypeIds(type),
@@ -103,8 +105,10 @@ public class GetDestinationListJsonAction extends PDSAction {
             recordsTotal = DestinationHome.countByUser(user, search, aliases,
                     StatusFactory.getDestinationStatusCode(status), GetDestinationAction.getDestinationTypeIds(type),
                     filter);
+            proxyDestNames = DestinationHome.findNamesWithProxyHosts();
         } catch (final TransferException e) {
             page = new ArrayList<>(0);
+            proxyDestNames = java.util.Collections.emptySet();
             queryError = e.getMessage();
         }
 
@@ -119,7 +123,7 @@ public class GetDestinationListJsonAction extends PDSAction {
         for (final Destination d : page) {
             final var row = data.addArray();
             row.add(buildFlagHtml(d));
-            row.add(buildNameHtml(d));
+            row.add(buildNameHtml(d, proxyDestNames));
             row.add(escapeHtml(d.getId()));
             row.add(buildStatusHtml(d));
             row.add(buildAliasesHtml(d));
@@ -166,7 +170,7 @@ public class GetDestinationListJsonAction extends PDSAction {
                 + countryName + "\" style=\"font-size:1.1em;display:block\"></span>";
     }
 
-    private static String buildNameHtml(final Destination d) {
+    private static String buildNameHtml(final Destination d, final Set<String> proxyDestNames) {
         final var sb = new StringBuilder();
         final var active = d.getActive();
         final var id = escapeHtml(d.getId());
@@ -218,6 +222,11 @@ public class GetDestinationListJsonAction extends PDSAction {
         final var filterName = d.getFilterName();
         if (filterName != null && !filterName.isBlank() && !"none".equals(filterName)) {
             sb.append(buildCompressionIcon(filterName));
+        }
+        // Proxy icon
+        if (proxyDestNames.contains(d.getId())) {
+            sb.append(
+                    "<i class=\"bi bi-hdd-network text-secondary ms-1\" title=\"Uses a Proxy Host\" style=\"font-size:0.78rem;\"></i>");
         }
         sb.append("</span>");
         // Comment

@@ -666,6 +666,18 @@ public interface DataBaseInterface extends Remote {
     List<String> getAuthorisedDestinations(String uid) throws DataBaseException, IOException;
 
     /**
+     * Gets the set of destination names that have at least one active proxy host assigned.
+     *
+     * @return the set of destination names with proxy hosts
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.io.IOException
+     *             Signals that an I/O exception has occurred.
+     */
+    Set<String> getDestinationNamesWithProxyHosts() throws DataBaseException, IOException;
+
+    /**
      * Gets all (host, destination) pairs a web user is authorised to access, using a single combined permission query.
      *
      * @param uid

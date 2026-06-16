@@ -43,6 +43,9 @@
         <c:if test="${not empty destination.filterName and destination.filterName ne 'none'}">
             <jsp:include page="/WEB-INF/jsp/pds/transfer/compression_icon.jsp"><jsp:param name="name" value="${destination.filterName}"/></jsp:include>
         </c:if>
+        <c:if test="${not empty destination.proxyHostsAndPriorities}">
+            <i class="bi bi-hdd-network text-secondary" title="Uses a Proxy Host" style="font-size:0.9rem;"></i>
+        </c:if>
         </div>
         <%-- Desktop: full icon bar, hidden on mobile --%>
         <div id="_destIconBar" class="d-none d-sm-flex gap-2 align-items-center ms-auto">
