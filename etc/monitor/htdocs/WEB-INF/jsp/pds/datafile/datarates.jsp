@@ -12,22 +12,24 @@
   <i class="bi bi-bar-chart-line-fill text-primary flex-shrink-0"></i>
   <span><strong>Data Rates</strong> - aggregated transfer traffic across all destinations</span>
   <button class="btn btn-link btn-sm text-muted p-0 ms-1" type="button"
-      data-bs-toggle="collapse" data-bs-target="#drInfoPanel"
+      data-bs-toggle="collapse" data-bs-target="#drInfoLegend"
       aria-expanded="false" title="About this page">
     <i class="bi bi-info-circle"></i>
   </button>
 </div>
 
-<div class="collapse mb-3" id="drInfoPanel">
+<div class="collapse mb-3" id="drInfoLegend">
   <div class="card-body py-2 px-3 border rounded" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
-    <strong class="d-block mb-1">Data Rates &mdash; aggregated transfer traffic</strong>
-    <p class="mb-1">This page shows the overall dissemination traffic produced by ECPDS across all destinations, aggregated by day.</p>
+    <strong class="d-block mb-1">Aggregated transfer traffic across all active destinations</strong>
+    <p class="mb-1">The figures shown here are the <em>sum</em> of the daily traffic recorded for every destination in the system &mdash; equivalent to combining the individual traffic charts visible on each destination's page (e.g. <a href="/do/transfer/destination/wis2_sat?mode=traffic" class="text-decoration-none">Destination &rsaquo; Traffic</a>).</p>
     <ul class="mb-1 ps-3">
       <li><strong>Transfers</strong> &mdash; total number of files successfully disseminated during the period.</li>
       <li><strong>Bytes</strong> &mdash; total volume of data transferred.</li>
       <li><strong>Transfer Rate</strong> &mdash; average Mbps computed from total bytes and cumulated transfer duration.</li>
       <li><strong>Granularity</strong> &mdash; today's data is available immediately from live counters; historical data is aggregated nightly and kept indefinitely.</li>
+      <li><strong>Deleted destinations</strong> &mdash; once a destination is removed from the system its historical traffic records are also permanently deleted and will no longer be included in these totals.</li>
     </ul>
+    <p class="mb-0 text-muted">As a result, the totals on this page may be lower than the true cumulative historical traffic if destinations have been deleted.</p>
   </div>
 </div>
 
@@ -95,18 +97,8 @@ const tDuration = _si.map(i=>_tDuration[i]);
 const tFiles    = _si.map(i=>_tFiles[i]);
 </script>
 
-<%-- Header bar: title + info button + view toggle --%>
+<%-- Header bar: view toggle --%>
 <div class="d-flex justify-content-between align-items-center mb-3 mt-2 flex-wrap gap-2">
-  <div class="d-flex align-items-center gap-2">
-    <h6 class="fw-semibold text-secondary mb-0">
-      <i class="bi bi-bar-chart-line-fill me-1"></i>Traffic Statistics - All Destinations
-    </h6>
-    <button class="btn btn-link btn-sm text-muted p-0" type="button"
-        data-bs-toggle="collapse" data-bs-target="#drInfoLegend"
-        aria-expanded="false" title="About this page">
-      <i class="bi bi-info-circle"></i>
-    </button>
-  </div>
   <div class="btn-group btn-group-sm" role="group">
     <button type="button" class="btn btn-outline-secondary" id="btnTable" onclick="setView('table')">
       <i class="bi bi-table me-1"></i>Table
@@ -114,17 +106,6 @@ const tFiles    = _si.map(i=>_tFiles[i]);
     <button type="button" class="btn btn-outline-secondary active" id="btnChart" onclick="setView('chart')">
       <i class="bi bi-bar-chart-fill me-1"></i>Chart
     </button>
-  </div>
-</div>
-
-<div class="collapse mb-3" id="drInfoLegend">
-  <div class="card-body py-2 px-3 border rounded" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
-    <strong class="d-block mb-1">Aggregated transfer traffic across all active destinations</strong>
-    <p class="mb-1">The figures shown here are the <em>sum</em> of the daily traffic recorded for every destination in the system &mdash; equivalent to combining the individual traffic charts visible on each destination's page (e.g. <a href="/do/transfer/destination/wis2_sat?mode=traffic" class="text-decoration-none">Destination &rsaquo; Traffic</a>).</p>
-    <ul class="mb-1 ps-3">
-      <li><strong>Deleted destinations</strong> &mdash; once a destination is removed from the system its historical traffic records are also permanently deleted and will no longer be included in these totals.</li>
-    </ul>
-    <p class="mb-0 text-muted">As a result, the totals on this page may be lower than the true cumulative historical traffic if destinations have been deleted.</p>
   </div>
 </div>
 

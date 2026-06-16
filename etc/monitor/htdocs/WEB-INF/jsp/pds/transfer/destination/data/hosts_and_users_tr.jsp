@@ -15,18 +15,16 @@
 	<div class="col-12<c:if test="${destination.acquisition}"> col-md-6</c:if>">
 		<p class="fw-bold mb-1 d-flex align-items-center gap-1">
 			Dissemination Host(s)
-			<button class="btn btn-link p-0 ms-1 text-muted" type="button"
+			<button class="btn btn-link btn-sm p-0 ms-1 text-muted" type="button"
 				data-bs-toggle="collapse" data-bs-target="#disseminationHostsInfo"
 				aria-expanded="false" aria-controls="disseminationHostsInfo"
 				title="How host selection works">
-				<i class="bi bi-info-circle" style="font-size:0.9rem;"></i>
+				<i class="bi bi-info-circle"></i>
 			</button>
 		</p>
 		<div class="collapse mb-2" id="disseminationHostsInfo">
-			<div class="card border-info">
-				<div class="card-body py-2 px-3 bg-info-subtle text-info-emphasis small">
-					<i class="bi bi-shuffle me-1"></i><strong>Failover host selection</strong> &mdash; When a transfer is dispatched, hosts are evaluated in ascending priority order (the lower the number, the higher the precedence). The system always starts with the highest-priority active host. If that host fails or becomes unavailable, it automatically falls back to the next host in the priority sequence. This ensures continuous delivery even when individual hosts experience issues.
-				</div>
+			<div class="card-body py-2 px-3 border rounded mb-2" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
+				<i class="bi bi-shuffle me-1"></i><strong>Failover host selection</strong> &mdash; When a transfer is dispatched, hosts are evaluated in ascending priority order (the lower the number, the higher the precedence). The system always starts with the highest-priority active host. If that host fails or becomes unavailable, it automatically falls back to the next host in the priority sequence. This ensures continuous delivery even when individual hosts experience issues.
 			</div>
 		</div>
 		<table id="disseminationHostsTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
@@ -113,18 +111,16 @@
 		<div class="col-12 col-md-6">
 			<p class="fw-bold mb-1 d-flex align-items-center gap-1">
 				Acquisition Host(s)
-				<button class="btn btn-link p-0 ms-1 text-muted" type="button"
+				<button class="btn btn-link btn-sm p-0 ms-1 text-muted" type="button"
 					data-bs-toggle="collapse" data-bs-target="#acquisitionHostsInfo"
 					aria-expanded="false" aria-controls="acquisitionHostsInfo"
 					title="How host selection works">
-					<i class="bi bi-info-circle" style="font-size:0.9rem;"></i>
+					<i class="bi bi-info-circle"></i>
 				</button>
 			</p>
 			<div class="collapse mb-2" id="acquisitionHostsInfo">
-				<div class="card border-info">
-					<div class="card-body py-2 px-3 bg-info-subtle text-info-emphasis small">
-						<i class="bi bi-diagram-3 me-1"></i><strong>Parallel host processing</strong> &mdash; All active acquisition hosts are contacted <strong>simultaneously</strong>, regardless of their priority value. There is no failover or sequencing &mdash; every host participates in each acquisition cycle at the same time. The priority column is shown for reference only and has no effect on acquisition scheduling.
-					</div>
+				<div class="card-body py-2 px-3 border rounded mb-2" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
+					<i class="bi bi-diagram-3 me-1"></i><strong>Parallel host processing</strong> &mdash; All active acquisition hosts are contacted <strong>simultaneously</strong>, regardless of their priority value. There is no failover or sequencing &mdash; every host participates in each acquisition cycle at the same time. The priority column is shown for reference only and has no effect on acquisition scheduling.
 				</div>
 			</div>
 			<table id="acquisitionHostsTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
