@@ -355,6 +355,9 @@ public final class MasterServer extends ECaccessProvider
     /** The portal traffic scheduler. */
     private final transient PortalTrafficScheduler thePortalTrafficScheduler;
 
+    /** The portal bytes scheduler. */
+    private final transient PortalBytesScheduler thePortalBytesScheduler;
+
     /** The data transfer check. */
     private final transient DataTransferCheck theDataTransferCheck;
 
@@ -399,6 +402,12 @@ public final class MasterServer extends ECaccessProvider
      */
     private static final long PORTAL_BYTES_MAX_RETENTION_MS = 7 * 24 * 3600_000L; // 7 days
     static final ConcurrentHashMap<String, ConcurrentLinkedDeque<long[]>> PORTAL_BYTES_WINDOW = new ConcurrentHashMap<>();
+
+    /**
+     * In-memory buffer for portal byte snapshots, flushed to the database by PortalBytesScheduler. Key:
+     * "user|minuteEpochMs"; value: long[2] { uploadBytes, downloadBytes }.
+     */
+    static final ConcurrentHashMap<String, long[]> PORTAL_BYTES_FLUSH_BUFFER = new ConcurrentHashMap<>();
 
     /**
      * Per-DataMover volume usage cache, populated on every background polling cycle. Key: mover name; value:
@@ -654,6 +663,15 @@ public final class MasterServer extends ECaccessProvider
             thePortalTrafficScheduler.start();
         } else {
             thePortalTrafficScheduler = null;
+        }
+        if (Cnf.at("Server", "portalBytesScheduler", true)) {
+            _log.debug("Loading portal bytes snapshot from DB");
+            _loadPortalBytesFromDb();
+            _log.debug("Starting PortalBytesScheduler");
+            thePortalBytesScheduler = new PortalBytesScheduler("PortalBytesScheduler");
+            thePortalBytesScheduler.start();
+        } else {
+            thePortalBytesScheduler = null;
         }
         _log.debug("Monitors to notify: {}", containersToNotify);
         _log.debug("Passwords allowed from: {}", allowedPasswordOn);
@@ -2574,12 +2592,50 @@ public final class MasterServer extends ECaccessProvider
         if (isEmpty(userId) || bytes <= 0)
             return;
         final var now = System.currentTimeMillis();
+        final var minute = (now / 60000L) * 60000L;
         final var retentionCutoff = now - PORTAL_BYTES_MAX_RETENTION_MS;
         final var deque = PORTAL_BYTES_WINDOW.computeIfAbsent(userId, _ -> new ConcurrentLinkedDeque<>());
         while (!deque.isEmpty() && deque.peekFirst()[0] < retentionCutoff) {
             deque.pollFirst();
         }
         deque.addLast(new long[] { now, upload ? bytes : 0L, upload ? 0L : bytes });
+        PORTAL_BYTES_FLUSH_BUFFER.compute(userId + "|" + minute, (_, existing) -> {
+            if (existing == null)
+                return new long[] { upload ? bytes : 0L, upload ? 0L : bytes };
+            if (upload)
+                existing[0] += bytes;
+            else
+                existing[1] += bytes;
+            return existing;
+        });
+    }
+
+    /**
+     * Load portal bytes snapshots from the database into the in-memory rolling window so quota enforcement survives
+     * MasterServer restarts.
+     */
+    private void _loadPortalBytesFromDb() {
+        final var base = getECpdsBase();
+        if (base == null) {
+            _log.warn("Skipping portal bytes snapshot load because ECpdsBase is not available yet");
+            return;
+        }
+        try {
+            final var retentionHours = (int) (PORTAL_BYTES_MAX_RETENTION_MS / Timer.ONE_HOUR);
+            final var snapshots = base.getRecentPortalBytesSnapshots(retentionHours);
+            var entries = 0;
+            for (final var userEntry : snapshots.entrySet()) {
+                final var deque = PORTAL_BYTES_WINDOW.computeIfAbsent(userEntry.getKey(),
+                        _ -> new ConcurrentLinkedDeque<>());
+                for (final var entry : userEntry.getValue()) {
+                    deque.addLast(entry);
+                    entries++;
+                }
+            }
+            _log.info("Loaded {} portal bytes snapshot entries from DB for {} users", entries, snapshots.size());
+        } catch (final DataBaseException e) {
+            _log.warn("Failed to load portal bytes snapshots from DB", e);
+        }
     }
 
     /**
@@ -5740,6 +5796,9 @@ public final class MasterServer extends ECaccessProvider
         if (thePortalTrafficScheduler != null) {
             thePortalTrafficScheduler.shutdown();
         }
+        if (thePortalBytesScheduler != null) {
+            thePortalBytesScheduler.shutdown();
+        }
         if (theDissDownloadScheduler != null) {
             theDissDownloadScheduler.shutdown();
         }
@@ -7253,6 +7312,64 @@ public final class MasterServer extends ECaccessProvider
                         _log.warn("PortalTrafficScheduler: failed to flush entry for user={} time={}", pt.getUser(),
                                 pt.getTime(), e);
                     }
+                }
+            }
+            return NEXT_STEP_DELAY;
+        }
+    }
+
+    /**
+     * The Class PortalBytesScheduler. Flushes the in-memory portal byte buffer to the database every ~30 seconds.
+     */
+    public final class PortalBytesScheduler extends MBeanScheduler {
+
+        private int flushCount = 0;
+
+        private PortalBytesScheduler(final String name) {
+            super(name);
+            setDelay(Cnf.durationAt("Scheduler", "portalBytesScheduler", 30 * Timer.ONE_SECOND));
+            setJammedTimeout(Cnf.durationAt("Scheduler", "portalBytesSchedulerJammedTimeout", 5 * Timer.ONE_MINUTE));
+        }
+
+        @Override
+        public int nextStep() {
+            final var base = getECpdsBase();
+            if (base == null)
+                return NEXT_STEP_DELAY;
+            for (final var iter = PORTAL_BYTES_FLUSH_BUFFER.entrySet().iterator(); iter.hasNext();) {
+                final var entry = iter.next();
+                final var key = entry.getKey();
+                final var separator = key.lastIndexOf('|');
+                if (separator <= 0 || separator >= key.length() - 1) {
+                    _log.warn("PortalBytesScheduler: invalid buffer key={}", key);
+                    continue;
+                }
+                final var snapshot = entry.getValue().clone();
+                if (snapshot[0] <= 0 && snapshot[1] <= 0) {
+                    iter.remove();
+                    continue;
+                }
+                final var userId = key.substring(0, separator);
+                try {
+                    final var minute = new Timestamp(Long.parseLong(key.substring(separator + 1)));
+                    base.upsertPortalBytesSnapshot(minute, userId, snapshot[0], snapshot[1]);
+                    PORTAL_BYTES_FLUSH_BUFFER.compute(key, (_, current) -> {
+                        if (current == null)
+                            return null;
+                        current[0] -= snapshot[0];
+                        current[1] -= snapshot[1];
+                        return current[0] <= 0 && current[1] <= 0 ? null : current;
+                    });
+                } catch (final Exception e) {
+                    _log.warn("PortalBytesScheduler: failed to flush entry for user={} minute={}", userId,
+                            key.substring(separator + 1), e);
+                }
+            }
+            if (++flushCount % 10 == 0) {
+                try {
+                    base.deleteOldPortalBytesSnapshots((int) (PORTAL_BYTES_MAX_RETENTION_MS / Timer.ONE_HOUR));
+                } catch (final DataBaseException e) {
+                    _log.warn("PortalBytesScheduler: failed to delete old portal bytes snapshots", e);
                 }
             }
             return NEXT_STEP_DELAY;

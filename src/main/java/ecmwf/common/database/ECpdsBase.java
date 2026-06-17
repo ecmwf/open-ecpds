@@ -4090,6 +4090,81 @@ public final class ECpdsBase extends DataBase {
     }
 
     /**
+     * Upsert a portal bytes snapshot (minute-bucket aggregate) for a user.
+     *
+     * @param minute
+     *            truncated-to-minute timestamp
+     * @param user
+     *            the user id
+     * @param uploadBytes
+     *            bytes uploaded in this bucket
+     * @param downloadBytes
+     *            bytes downloaded in this bucket
+     *
+     * @throws DataBaseException
+     *             on DB error
+     */
+    public void upsertPortalBytesSnapshot(final Timestamp minute, final String user, final long uploadBytes,
+            final long downloadBytes) throws DataBaseException {
+        try {
+            ecpds.upsertPortalBytesSnapshot(minute, user, uploadBytes, downloadBytes);
+        } catch (final Exception e) {
+            _log.warn("upsertPortalBytesSnapshot", e);
+            throw new DataBaseException("upsertPortalBytesSnapshot", e);
+        }
+    }
+
+    /**
+     * Load all portal bytes snapshots within the given retention window for startup repopulation.
+     *
+     * @param retentionHours
+     *            how many hours back to fetch
+     *
+     * @return map keyed by user id; each value contains long[] { minuteMs, uploadBytes, downloadBytes }
+     *
+     * @throws DataBaseException
+     *             on DB error
+     */
+    public Map<String, List<long[]>> getRecentPortalBytesSnapshots(final int retentionHours) throws DataBaseException {
+        try (var rs = ecpds.getRecentPortalBytesSnapshots(retentionHours)) {
+            final Map<String, List<long[]>> result = new HashMap<>();
+            var rows = 0;
+            while (rs.next()) {
+                final var user = rs.getString("PBS_USER");
+                final var minuteTs = rs.getTimestamp("PBS_MINUTE");
+                if (user != null && minuteTs != null) {
+                    result.computeIfAbsent(user, _ -> new ArrayList<>()).add(new long[] { minuteTs.getTime(),
+                            rs.getLong("PBS_UPLOAD_BYTES"), rs.getLong("PBS_DOWNLOAD_BYTES") });
+                    rows++;
+                }
+            }
+            logSqlRequest("getRecentPortalBytesSnapshots", rows);
+            return result;
+        } catch (final Exception e) {
+            _log.warn("getRecentPortalBytesSnapshots", e);
+            throw new DataBaseException("getRecentPortalBytesSnapshots", e);
+        }
+    }
+
+    /**
+     * Delete portal bytes snapshots older than the configured retention window.
+     *
+     * @param retentionHours
+     *            number of hours to retain
+     *
+     * @throws DataBaseException
+     *             on DB error
+     */
+    public void deleteOldPortalBytesSnapshots(final int retentionHours) throws DataBaseException {
+        try {
+            ecpds.deleteOldPortalBytesSnapshots(retentionHours);
+        } catch (final Exception e) {
+            _log.warn("deleteOldPortalBytesSnapshots", e);
+            throw new DataBaseException("deleteOldPortalBytesSnapshots", e);
+        }
+    }
+
+    /**
      * Gets a map of host name to destination count using a single GROUP BY query on the ASSOCIATION table.
      *
      * @return map of host name → destination count
