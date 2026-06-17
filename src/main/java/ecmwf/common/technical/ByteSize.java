@@ -197,7 +197,9 @@ public class ByteSize {
     @Override
     public String toString() {
         final String displaySize;
-        if (bytesCount == Long.MAX_VALUE) {
+        if (bytesCount == 0) {
+            displaySize = "0B";
+        } else if (bytesCount == Long.MAX_VALUE) {
             displaySize = "max-size";
         } else if (bytesCount % 1152921504606846976L == 0) {
             // It is a multiple of 1 EB (1 EB = 1073741824 GB = 1152921504606846976 bytes)
