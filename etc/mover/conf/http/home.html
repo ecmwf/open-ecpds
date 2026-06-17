@@ -487,6 +487,66 @@
         </script>
         <script>
         (function(){
+          var maxUp='${maxUploadBytes}', curUp='${currentUploadBytes}', periodUp='${uploadPeriodMinutes}';
+          if(!maxUp) return;
+          var maxBytes = parseInt(maxUp,10), curBytes = curUp==='' ? 0 : parseInt(curUp,10);
+          var pct = maxBytes > 0 ? curBytes / maxBytes : 0;
+          var remaining = maxBytes - curBytes;
+          var colorCls = remaining<=0 ? 'bg-danger-subtle text-danger-emphasis'
+            : pct>=0.9 ? 'bg-warning-subtle text-warning-emphasis'
+            : 'bg-secondary-subtle text-secondary-emphasis';
+          var period = parseInt(periodUp,10);
+          var periodStr = period >= 1440 ? (period/1440).toFixed(0)+'d' : period >= 60 ? (period/60).toFixed(0)+'h' : period+'min';
+          function fmtBytes(b) {
+            if(b>=1099511627776) return (b/1099511627776).toFixed(1)+'TB';
+            if(b>=1073741824) return (b/1073741824).toFixed(1)+'GB';
+            if(b>=1048576) return (b/1048576).toFixed(1)+'MB';
+            if(b>=1024) return (b/1024).toFixed(1)+'KB';
+            return b+'B';
+          }
+          var html = '<span class="badge rounded-pill border fw-normal ms-1 ' + colorCls
+            + '" data-bs-toggle="popover" data-bs-placement="bottom" data-bs-trigger="hover focus" tabindex="0"'
+            + ' data-bs-content="Upload quota: bytes pushed to the portal in the last ' + periodStr
+            + '. When the limit is reached, new connections will be refused."'
+            + ' style="cursor:default"><i class="bi bi-upload me-1"></i>' ;
+          if(curUp!=='') html += fmtBytes(curBytes) + '\u200a/\u200a' + fmtBytes(maxBytes);
+          else html += fmtBytes(maxBytes) + '\u00a0max';
+          html += '</span>';
+          document.write(html);
+        })();
+        </script>
+        <script>
+        (function(){
+          var maxDn='${maxDownloadBytes}', curDn='${currentDownloadBytes}', periodDn='${downloadPeriodMinutes}';
+          if(!maxDn) return;
+          var maxBytes = parseInt(maxDn,10), curBytes = curDn==='' ? 0 : parseInt(curDn,10);
+          var pct = maxBytes > 0 ? curBytes / maxBytes : 0;
+          var remaining = maxBytes - curBytes;
+          var colorCls = remaining<=0 ? 'bg-danger-subtle text-danger-emphasis'
+            : pct>=0.9 ? 'bg-warning-subtle text-warning-emphasis'
+            : 'bg-secondary-subtle text-secondary-emphasis';
+          var period = parseInt(periodDn,10);
+          var periodStr = period >= 1440 ? (period/1440).toFixed(0)+'d' : period >= 60 ? (period/60).toFixed(0)+'h' : period+'min';
+          function fmtBytes(b) {
+            if(b>=1099511627776) return (b/1099511627776).toFixed(1)+'TB';
+            if(b>=1073741824) return (b/1073741824).toFixed(1)+'GB';
+            if(b>=1048576) return (b/1048576).toFixed(1)+'MB';
+            if(b>=1024) return (b/1024).toFixed(1)+'KB';
+            return b+'B';
+          }
+          var html = '<span class="badge rounded-pill border fw-normal ms-1 ' + colorCls
+            + '" data-bs-toggle="popover" data-bs-placement="bottom" data-bs-trigger="hover focus" tabindex="0"'
+            + ' data-bs-content="Download quota: bytes pulled from the portal in the last ' + periodStr
+            + '. When the limit is reached, new connections will be refused."'
+            + ' style="cursor:default"><i class="bi bi-download me-1"></i>' ;
+          if(curDn!=='') html += fmtBytes(curBytes) + '\u200a/\u200a' + fmtBytes(maxBytes);
+          else html += fmtBytes(maxBytes) + '\u00a0max';
+          html += '</span>';
+          document.write(html);
+        })();
+        </script>
+        <script>
+        (function(){
           if('${trafficStats}'!=='false' && '${maxconnections}'!=='') {
             document.write('<button type="button" class="btn btn-sm btn-outline-secondary ms-1" id="portalTrafficBtn" data-bs-toggle="modal" data-bs-target="#portalTrafficModal"><i class="bi bi-graph-up-arrow me-1"></i>Traffic</button>');
           }

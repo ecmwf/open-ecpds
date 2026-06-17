@@ -26,8 +26,15 @@ package ecmwf.common.ectrans;
  * @since 2024-07-01
  */
 
+import java.io.IOException;
 import java.io.OutputStream;
+import java.net.Socket;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import ecmwf.common.rmi.interruptible.InterruptibleOutputStream;
+import ecmwf.common.rmi.interruptible.InterruptibleRMIServerSocket;
 import ecmwf.common.technical.StreamPlugThread;
 import ecmwf.common.text.Format;
 
@@ -35,6 +42,9 @@ import ecmwf.common.text.Format;
  * The Class ECtransList.
  */
 public final class ECtransList extends ECtransAction {
+
+    /** The Constant _log. */
+    private static final Logger _log = LogManager.getLogger(ECtransList.class);
 
     /** The types available for listing. */
     private enum TYPE {
@@ -66,6 +76,12 @@ public final class ECtransList extends ECtransAction {
     private final OutputStream out;
 
     /**
+     * RMI socket captured at construction time (while still in the RMI dispatch thread). For async exec the listing
+     * runs in a different thread where getCurrentRMIServerThreadSocket() returns null, so we must save it here.
+     */
+    private final Socket rmiSocket;
+
+    /**
      * Instantiates a new ectrans list.
      *
      * @param directory
@@ -82,6 +98,8 @@ public final class ECtransList extends ECtransAction {
         this.pattern = pattern;
         this.out = out;
         this.type = type;
+        // Capture the RMI server socket from the calling (RMI dispatch) thread now, before any async handoff
+        this.rmiSocket = InterruptibleRMIServerSocket.getCurrentRMIServerThreadSocket();
     }
 
     /**
@@ -139,27 +157,90 @@ public final class ECtransList extends ECtransAction {
      */
     @Override
     protected void exec(final TransferModule module, final boolean interruptible) throws Exception {
+        // Resolve the best available RMI socket: prefer the one captured at construction
+        // (reliable for async exec where the current thread is no longer the RMI dispatch
+        // thread), fall back to the current thread's socket (for sync exec).
+        final var socket = rmiSocket != null ? rmiSocket
+                : InterruptibleRMIServerSocket.getCurrentRMIServerThreadSocket();
         switch (type) {
         case STRING_ARRAY:
-            listAsStringArray = module.listAsStringArray(directory, pattern);
+            if (interruptible && socket != null) {
+                // Run a watcher that interrupts this thread when the RMI client disconnects,
+                // so that the blocking listAsStringArray() call can be unblocked.
+                final var callerThread = Thread.currentThread();
+                final var watcher = startConnectionWatcher(socket, callerThread);
+                try {
+                    listAsStringArray = module.listAsStringArray(directory, pattern);
+                } finally {
+                    watcher.interrupt();
+                }
+            } else {
+                listAsStringArray = module.listAsStringArray(directory, pattern);
+            }
             break;
         case GZIPPED_BYTE_ARRAY:
-            listAsByteArray = module.listAsByteArray(directory, pattern);
+            if (interruptible && socket != null) {
+                final var callerThread = Thread.currentThread();
+                final var watcher = startConnectionWatcher(socket, callerThread);
+                try {
+                    listAsByteArray = module.listAsByteArray(directory, pattern);
+                } finally {
+                    watcher.interrupt();
+                }
+            } else {
+                listAsByteArray = module.listAsByteArray(directory, pattern);
+            }
             break;
         case BYTE_OUTPUT:
-            // This is asynchronous so in case of error we need to close the output and
-            // report about the error!
+            // Wrap the output stream so every write checks whether the RMI client is still
+            // connected. When the client disconnects, the InterruptibleOutputStream throws
+            // IOException on the next write, aborting the in-progress listing.
+            final var effectiveOut = (interruptible && socket != null) ? new InterruptibleOutputStream(out, socket)
+                    : out;
             try {
-                module.list(directory, pattern, out);
+                module.list(directory, pattern, effectiveOut);
             } catch (final Exception e) {
-                out.write(("err:" + Format.getMessage(e)).getBytes());
-                out.flush();
+                try {
+                    effectiveOut.write(("err:" + Format.getMessage(e)).getBytes());
+                    effectiveOut.flush();
+                } catch (final IOException ignored) {
+                    // Connection already lost — can't report the error downstream, ignore
+                    _log.debug("Could not write listing error to output (connection lost)", ignored);
+                }
                 throw e;
             } finally {
-                StreamPlugThread.closeQuietly(out);
+                StreamPlugThread.closeQuietly(effectiveOut);
             }
             break;
         }
+    }
+
+    /**
+     * Start a virtual watcher thread that polls the given RMI socket liveness every 2 seconds and interrupts the caller
+     * thread as soon as the client disconnects.
+     *
+     * @param socket
+     *            the RMI server-side socket to monitor
+     * @param callerThread
+     *            the thread to interrupt when the connection is lost
+     *
+     * @return the watcher thread (already started); caller must interrupt it when done
+     */
+    private static Thread startConnectionWatcher(final Socket socket, final Thread callerThread) {
+        return Thread.ofVirtual().name("ectrans-list-watcher").start(() -> {
+            while (!Thread.currentThread().isInterrupted()) {
+                if (!InterruptibleRMIServerSocket.isCurrentRMIServerThreadSocketAlive(socket)) {
+                    _log.debug("RMI client disconnected — interrupting listing thread");
+                    callerThread.interrupt();
+                    return;
+                }
+                try {
+                    Thread.sleep(2000);
+                } catch (final InterruptedException e) {
+                    return;
+                }
+            }
+        });
     }
 
     /**

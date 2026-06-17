@@ -1260,8 +1260,10 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
                         });
                         if (event.getUpload()) {
                             entry.accumulate(0, event.getSent(), 0, event.getDuration(), 0);
+                            MasterServer.recordPortalBytes(event.getUserName(), true, event.getSent());
                         } else {
                             entry.accumulate(0, 0, event.getSent(), 0, event.getDuration());
+                            MasterServer.recordPortalBytes(event.getUserName(), false, event.getSent());
                         }
                     }
                 }

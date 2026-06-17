@@ -1495,6 +1495,18 @@ public enum ECtransOptions {
     /** The user portal max connections schedule. */
     USER_PORTAL_MAX_CONNECTIONS_SCHEDULE("maxConnectionsSchedule", String.class, STRING_NONE),
 
+    /** The user portal max upload bytes per rolling window. Zero or negative means no limit. */
+    USER_PORTAL_MAX_UPLOAD_BYTES("maxUploadBytes", ByteSize.class, ByteSize.ZERO),
+
+    /** The user portal upload period (rolling window size). Empty means disabled. */
+    USER_PORTAL_UPLOAD_PERIOD("uploadPeriod", Duration.class, DURATION_NONE),
+
+    /** The user portal max download bytes per rolling window. Zero or negative means no limit. */
+    USER_PORTAL_MAX_DOWNLOAD_BYTES("maxDownloadBytes", ByteSize.class, ByteSize.ZERO),
+
+    /** The user portal download period (rolling window size). Empty means disabled. */
+    USER_PORTAL_DOWNLOAD_PERIOD("downloadPeriod", Duration.class, DURATION_NONE),
+
     /** The user portal update last login information. */
     USER_PORTAL_UPDATE_LAST_LOGIN_INFORMATION("updateLastLoginInformation", Boolean.class, true),
 

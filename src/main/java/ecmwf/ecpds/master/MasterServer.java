@@ -104,10 +104,14 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_FILTER_MINIMUM_SI
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_LASTUPDATE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_PROXY_USE_DESTINATION_FILTER;
 import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_ANONYMOUS;
+import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_DOWNLOAD_PERIOD;
 import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_GEOBLOCLING;
 import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_MAX_CONNECTIONS;
 import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_MAX_CONNECTIONS_SCHEDULE;
+import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_MAX_DOWNLOAD_BYTES;
+import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_MAX_UPLOAD_BYTES;
 import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_UPDATE_LAST_LOGIN_INFORMATION;
+import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_UPLOAD_PERIOD;
 import static ecmwf.common.text.Util.isEmpty;
 import static ecmwf.common.text.Util.isNotEmpty;
 import static ecmwf.common.text.Util.nullToNone;
@@ -387,6 +391,14 @@ public final class MasterServer extends ECaccessProvider
 
     /** Per-user interned locks used to make the check-and-reserve atomic. */
     private final transient ConcurrentHashMap<String, Object> _connLocks = new ConcurrentHashMap<>();
+
+    /**
+     * Rolling window of portal byte transfers per user, used to enforce upload/download quotas without hitting the DB.
+     * Each entry is a long[3]: [timestampMs, uploadBytes, downloadBytes]. Entries are appended in time order and pruned
+     * when they exceed PORTAL_BYTES_MAX_RETENTION_MS.
+     */
+    private static final long PORTAL_BYTES_MAX_RETENTION_MS = 7 * 24 * 3600_000L; // 7 days
+    static final ConcurrentHashMap<String, ConcurrentLinkedDeque<long[]>> PORTAL_BYTES_WINDOW = new ConcurrentHashMap<>();
 
     /**
      * Per-DataMover volume usage cache, populated on every background polling cycle. Key: mover name; value:
@@ -825,6 +837,24 @@ public final class MasterServer extends ECaccessProvider
         }
     }
 
+    /**
+     * Returns the total bytes transferred by the given portal user within the specified rolling window (milliseconds).
+     *
+     * @param userId
+     *            the user id
+     * @param upload
+     *            true for upload bytes, false for download bytes
+     * @param windowMs
+     *            the rolling window in milliseconds
+     *
+     * @return total bytes within the window, or 0 if none recorded
+     */
+    @Override
+    public long getPortalBytesUsed(final String userId, final boolean upload, final long windowMs)
+            throws RemoteException {
+        return _sumPortalBytes(userId, upload, windowMs);
+    }
+
     @Override
     public List<PortalTraffic> getPortalTraffic(final String userId, final int hours) throws RemoteException {
         try {
@@ -1038,6 +1068,50 @@ public final class MasterServer extends ECaccessProvider
                     pt.setTime(new java.sql.Timestamp((System.currentTimeMillis() / 60000L) * 60000L));
                     return pt;
                 }).accumulate(1, 0, 0, 0, 0);
+            }
+            // Check upload byte quota
+            final var maxUploadBytes = setup.getByteSize(USER_PORTAL_MAX_UPLOAD_BYTES).size();
+            final var uploadPeriod = setup.getOptionalDuration(USER_PORTAL_UPLOAD_PERIOD);
+            final var uploadPeriodMs = uploadPeriod.map(Duration::toMillis).orElse(0L);
+            if (maxUploadBytes > 0 && uploadPeriodMs > 0) {
+                final var usedUpload = _sumPortalBytes(incomingUser, true, uploadPeriodMs);
+                if (usedUpload >= maxUploadBytes) {
+                    final var message = "Upload quota exceeded (" + ByteSize.of(usedUpload).toApproximateSize() + " of "
+                            + ByteSize.of(maxUploadBytes).toApproximateSize() + " in the last "
+                            + Format.formatDuration(uploadPeriodMs) + ")";
+                    synchronized (_connLockFor(incomingUser)) {
+                        final var pending = _pendingConnections.get(incomingUser);
+                        if (pending != null)
+                            pending.pollLast();
+                    }
+                    if (_splunk.isInfoEnabled())
+                        _splunk.info("DEA;{};UserId={};Message={};Context={}",
+                                "TimeStamp=" + Timestamp.from(Instant.now()), incomingUser, message, from);
+                    _log.warn("{} for IncomingUser {}", message, incomingUser);
+                    throw new MasterException(message);
+                }
+            }
+            // Check download byte quota
+            final var maxDownloadBytes = setup.getByteSize(USER_PORTAL_MAX_DOWNLOAD_BYTES).size();
+            final var downloadPeriod = setup.getOptionalDuration(USER_PORTAL_DOWNLOAD_PERIOD);
+            final var downloadPeriodMs = downloadPeriod.map(Duration::toMillis).orElse(0L);
+            if (maxDownloadBytes > 0 && downloadPeriodMs > 0) {
+                final var usedDownload = _sumPortalBytes(incomingUser, false, downloadPeriodMs);
+                if (usedDownload >= maxDownloadBytes) {
+                    final var message = "Download quota exceeded (" + ByteSize.of(usedDownload).toApproximateSize()
+                            + " of " + ByteSize.of(maxDownloadBytes).toApproximateSize() + " in the last "
+                            + Format.formatDuration(downloadPeriodMs) + ")";
+                    synchronized (_connLockFor(incomingUser)) {
+                        final var pending = _pendingConnections.get(incomingUser);
+                        if (pending != null)
+                            pending.pollLast();
+                    }
+                    if (_splunk.isInfoEnabled())
+                        _splunk.info("DEA;{};UserId={};Message={};Context={}",
+                                "TimeStamp=" + Timestamp.from(Instant.now()), incomingUser, message, from);
+                    _log.warn("{} for IncomingUser {}", message, incomingUser);
+                    throw new MasterException(message);
+                }
             }
             // Look for the Destinations accessible to this user!
             final List<Destination> destinations = new ArrayList<>();
@@ -2483,6 +2557,51 @@ public final class MasterServer extends ECaccessProvider
             }
         }
         return result.toString();
+    }
+
+    /**
+     * Record bytes transferred by a portal user. Called from DataFileAccessImpl on successful transfer completion.
+     * Entries are pruned when older than PORTAL_BYTES_MAX_RETENTION_MS.
+     *
+     * @param userId
+     *            the user
+     * @param upload
+     *            true for upload (bytes in), false for download (bytes out)
+     * @param bytes
+     *            number of bytes transferred
+     */
+    static void recordPortalBytes(final String userId, final boolean upload, final long bytes) {
+        if (isEmpty(userId) || bytes <= 0)
+            return;
+        final var now = System.currentTimeMillis();
+        final var retentionCutoff = now - PORTAL_BYTES_MAX_RETENTION_MS;
+        final var deque = PORTAL_BYTES_WINDOW.computeIfAbsent(userId, _ -> new ConcurrentLinkedDeque<>());
+        while (!deque.isEmpty() && deque.peekFirst()[0] < retentionCutoff) {
+            deque.pollFirst();
+        }
+        deque.addLast(new long[] { now, upload ? bytes : 0L, upload ? 0L : bytes });
+    }
+
+    /**
+     * Sum bytes transferred by a portal user within the given rolling window.
+     *
+     * @param uid
+     *            the user id
+     * @param upload
+     *            true for upload bytes, false for download bytes
+     * @param windowMs
+     *            the rolling window size in milliseconds
+     *
+     * @return total bytes within the window
+     */
+    private static long _sumPortalBytes(final String uid, final boolean upload, final long windowMs) {
+        if (isEmpty(uid) || windowMs <= 0)
+            return 0L;
+        final var deque = PORTAL_BYTES_WINDOW.get(uid);
+        if (deque == null || deque.isEmpty())
+            return 0L;
+        final var cutoff = System.currentTimeMillis() - windowMs;
+        return deque.stream().filter(e -> e[0] >= cutoff).mapToLong(e -> e[upload ? 1 : 2]).sum();
     }
 
     private Object _connLockFor(final String uid) {
@@ -9305,14 +9424,21 @@ public final class MasterServer extends ECaccessProvider
             if (thread != null && thread.isAlive()) {
                 _log.debug("Interrupting AcquisitionThread for Host-{}", host.getName());
                 try {
+                    // Signal the thread's loop checks to stop
                     thread._running = false;
                     thread._time = System.currentTimeMillis();
-                    try {
-                        thread.join(10 * Timer.ONE_SECOND);
-                    } catch (final Exception e) {
-                        // The wait timed out? Interrupted?
-                        if (thread.isAlive())
-                            thread.interrupt();
+                    // Give the thread a short grace period to exit cleanly on its own.
+                    // join(timeout) returns normally on timeout — it does NOT throw — so we
+                    // must check isAlive() after it returns rather than relying on a catch block.
+                    thread.join(10 * Timer.ONE_SECOND);
+                    if (thread.isAlive()) {
+                        // Still running after grace period: forcibly interrupt it.
+                        // This is needed when the thread is blocked inside a synchronous
+                        // RMI call (e.g. mover.listAsByteArray) which _running=false cannot
+                        // unblock on its own.
+                        _log.debug("AcquisitionThread for Host-{} still alive after grace period, interrupting",
+                                host.getName());
+                        thread.interrupt();
                     }
                     return true;
                 } catch (final Throwable t) {
@@ -9483,6 +9609,7 @@ public final class MasterServer extends ECaccessProvider
                                 _log.debug("Interrupting slow acquisition: " + thread._host.getName() + " ("
                                         + Format.formatDuration(duration) + ")");
                                 try {
+                                    thread._running = false;
                                     thread.interrupt();
                                     thread._time = System.currentTimeMillis();
                                 } catch (final Throwable t) {

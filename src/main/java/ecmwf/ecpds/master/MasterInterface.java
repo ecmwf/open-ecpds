@@ -207,6 +207,23 @@ public interface MasterInterface extends ProviderInterface {
     int getIncomingConnectionCount(String incomingUser) throws RemoteException;
 
     /**
+     * Returns the total bytes transferred by the given portal user within the specified rolling window.
+     *
+     * @param userId
+     *            the user id
+     * @param upload
+     *            true for upload bytes, false for download bytes
+     * @param windowMs
+     *            the rolling window in milliseconds
+     *
+     * @return total bytes within the window
+     *
+     * @throws RemoteException
+     *             if the call fails
+     */
+    long getPortalBytesUsed(String userId, boolean upload, long windowMs) throws RemoteException;
+
+    /**
      * Gets portal traffic statistics. Returns minute-bucket rows for the given user (or all users if userId is empty),
      * covering the specified number of hours back from now.
      *

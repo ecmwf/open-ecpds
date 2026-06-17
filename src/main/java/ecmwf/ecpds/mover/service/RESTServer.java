@@ -37,6 +37,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1388,6 +1389,48 @@ public final class RESTServer {
             } else {
                 Format.replaceAll(sb, "${currentconnections}", "");
             }
+            // Upload byte quota
+            final var maxUploadBytes = setup != null
+                    ? setup.getByteSize(ECtransOptions.USER_PORTAL_MAX_UPLOAD_BYTES).size() : 0L;
+            final var uploadPeriodMs = setup != null ? setup
+                    .getOptionalDuration(ECtransOptions.USER_PORTAL_UPLOAD_PERIOD).map(Duration::toMillis).orElse(0L)
+                    : 0L;
+            if (maxUploadBytes > 0 && uploadPeriodMs > 0) {
+                Format.replaceAll(sb, "${maxUploadBytes}", String.valueOf(maxUploadBytes));
+                Format.replaceAll(sb, "${uploadPeriodMinutes}", String.valueOf(uploadPeriodMs / 60_000L));
+                try {
+                    final var used = mover.getMasterInterface().getPortalBytesUsed(userId, true, uploadPeriodMs);
+                    Format.replaceAll(sb, "${currentUploadBytes}", String.valueOf(used));
+                } catch (final Throwable t) {
+                    _log.warn("getPortalBytesUsed(upload)", t);
+                    Format.replaceAll(sb, "${currentUploadBytes}", "");
+                }
+            } else {
+                Format.replaceAll(sb, "${maxUploadBytes}", "");
+                Format.replaceAll(sb, "${uploadPeriodMinutes}", "");
+                Format.replaceAll(sb, "${currentUploadBytes}", "");
+            }
+            // Download byte quota
+            final var maxDownloadBytes = setup != null
+                    ? setup.getByteSize(ECtransOptions.USER_PORTAL_MAX_DOWNLOAD_BYTES).size() : 0L;
+            final var downloadPeriodMs = setup != null ? setup
+                    .getOptionalDuration(ECtransOptions.USER_PORTAL_DOWNLOAD_PERIOD).map(Duration::toMillis).orElse(0L)
+                    : 0L;
+            if (maxDownloadBytes > 0 && downloadPeriodMs > 0) {
+                Format.replaceAll(sb, "${maxDownloadBytes}", String.valueOf(maxDownloadBytes));
+                Format.replaceAll(sb, "${downloadPeriodMinutes}", String.valueOf(downloadPeriodMs / 60_000L));
+                try {
+                    final var used = mover.getMasterInterface().getPortalBytesUsed(userId, false, downloadPeriodMs);
+                    Format.replaceAll(sb, "${currentDownloadBytes}", String.valueOf(used));
+                } catch (final Throwable t) {
+                    _log.warn("getPortalBytesUsed(download)", t);
+                    Format.replaceAll(sb, "${currentDownloadBytes}", "");
+                }
+            } else {
+                Format.replaceAll(sb, "${maxDownloadBytes}", "");
+                Format.replaceAll(sb, "${downloadPeriodMinutes}", "");
+                Format.replaceAll(sb, "${currentDownloadBytes}", "");
+            }
             final String uriList;
             final String uriGet;
             if (request.getAttribute("original-target") instanceof final String originalTarget) {
@@ -2060,6 +2103,10 @@ public final class RESTServer {
                     if (message.contains("Maximum number of connections exceeded")) {
                         throw new WebApplicationException(
                                 Response.status(429).type(MediaType.TEXT_PLAIN).entity("Too Many Requests").build());
+                    }
+                    if (message.contains("Upload quota exceeded") || message.contains("Download quota exceeded")) {
+                        throw new WebApplicationException(Response.status(429).type(MediaType.TEXT_PLAIN)
+                                .entity("Too Many Requests: " + message).build());
                     }
                     if (message.contains(" not allowed for ")) {
                         throw new WebApplicationException(
