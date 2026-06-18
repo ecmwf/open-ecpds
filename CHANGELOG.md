@@ -16,6 +16,7 @@ This document summarizes the most significant changes in OpenECPDS across all ma
 - Allow all active sessions for a data user to be closed with a single click.
 - Allow the maximum number of connections for a data user to be scheduled (e.g. higher limits during off-peak hours).
 - Added support for upload and download byte quotas in the Data Portal. Administrators can now limit the amount of data a user may upload or download within a configurable rolling time window. Once the configured quota is reached, new transfer requests are automatically refused until usage falls back below the limit. This feature helps control bandwidth consumption, enforce usage policies, and prevent individual users from monopolising portal resources.
+- Added support for similar quotas at the Destination level.
 
 ## open-ecpds 8.0.1-29052026 (2026-05-29)
 
