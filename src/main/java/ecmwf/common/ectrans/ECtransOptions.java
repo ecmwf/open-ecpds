@@ -117,6 +117,18 @@ public enum ECtransOptions {
     /** The destination incoming max bytes per sec for output. */
     DESTINATION_INCOMING_MAX_BYTES_PER_SEC_FOR_OUTPUT("maxBytesPerSecForOutput", ByteSize.class, BYTE_SIZE_NONE),
 
+    /** The destination incoming max upload bytes per rolling window. Zero or negative means no limit. */
+    DESTINATION_INCOMING_MAX_UPLOAD_BYTES("maxUploadBytes", ByteSize.class, ByteSize.ZERO),
+
+    /** The destination incoming upload period (rolling window size). Empty means disabled. */
+    DESTINATION_INCOMING_UPLOAD_PERIOD("uploadPeriod", Duration.class, DURATION_NONE),
+
+    /** The destination incoming max download bytes per rolling window. Zero or negative means no limit. */
+    DESTINATION_INCOMING_MAX_DOWNLOAD_BYTES("maxDownloadBytes", ByteSize.class, ByteSize.ZERO),
+
+    /** The destination incoming download period (rolling window size). Empty means disabled. */
+    DESTINATION_INCOMING_DOWNLOAD_PERIOD("downloadPeriod", Duration.class, DURATION_NONE),
+
     /** The destination mqtt publish. */
     DESTINATION_MQTT_PUBLISH("publish", Boolean.class, false),
 

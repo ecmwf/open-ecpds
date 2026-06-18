@@ -260,6 +260,23 @@ final class ECpdsGet {
                 new String[] { "retentionHours=" + retentionHours });
     }
 
+    void upsertDestinationBytesSnapshot(final java.sql.Timestamp minute, final String destination,
+            final long uploadBytes, final long downloadBytes) throws SQLException, IOException {
+        _database.executeUpdate("ECpdsBase", "upsertDestinationBytesSnapshot",
+                new String[] { "destination=" + destination, "minute=" + minute, "uploadBytes=" + uploadBytes,
+                        "downloadBytes=" + downloadBytes });
+    }
+
+    DBResultSet getRecentDestinationBytesSnapshots(final int retentionHours) throws SQLException, IOException {
+        return _database.executeSelect("ECpdsBase", "getRecentDestinationBytesSnapshots",
+                new String[] { "retentionHours=" + retentionHours });
+    }
+
+    void deleteOldDestinationBytesSnapshots(final int retentionHours) throws SQLException, IOException {
+        _database.executeUpdate("ECpdsBase", "deleteOldDestinationBytesSnapshots",
+                new String[] { "retentionHours=" + retentionHours });
+    }
+
     /**
      * Gets the destination count per host (all hosts, single query).
      *

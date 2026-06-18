@@ -410,6 +410,18 @@ public final class MasterServer extends ECaccessProvider
     static final ConcurrentHashMap<String, long[]> PORTAL_BYTES_FLUSH_BUFFER = new ConcurrentHashMap<>();
 
     /**
+     * Rolling window of portal byte transfers per destination, used to enforce upload/download quotas at the
+     * destination level. Key: destination name. Each long[3]: {timestampMs, uploadBytes, downloadBytes}.
+     */
+    static final ConcurrentHashMap<String, ConcurrentLinkedDeque<long[]>> DESTINATION_BYTES_WINDOW = new ConcurrentHashMap<>();
+
+    /**
+     * In-memory flush buffer for destination bytes, drained to DB every ~30 seconds by PortalBytesScheduler. Key:
+     * "destinationName|YYYY-MM-DDTHH:mm". Value: long[2] {uploadBytes, downloadBytes}.
+     */
+    static final ConcurrentHashMap<String, long[]> DESTINATION_BYTES_FLUSH_BUFFER = new ConcurrentHashMap<>();
+
+    /**
      * Per-DataMover volume usage cache, populated on every background polling cycle. Key: mover name; value:
      * {@code long[2][volumeCount]} where {@code [0][i]} is used bytes and {@code [1][i]} is total bytes for volume
      * {@code i}. Entries are overwritten on every poll and survive until the next poll even if the mover disconnects,
@@ -667,6 +679,8 @@ public final class MasterServer extends ECaccessProvider
         if (Cnf.at("Server", "portalBytesScheduler", true)) {
             _log.debug("Loading portal bytes snapshot from DB");
             _loadPortalBytesFromDb();
+            _log.debug("Loading destination bytes snapshot from DB");
+            _loadDestinationBytesFromDb();
             _log.debug("Starting PortalBytesScheduler");
             thePortalBytesScheduler = new PortalBytesScheduler("PortalBytesScheduler");
             thePortalBytesScheduler.start();
@@ -2611,6 +2625,38 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
+     * Record bytes transferred via a destination. Called from DataFileAccessImpl on successful transfer completion.
+     *
+     * @param destinationName
+     *            the destination name
+     * @param upload
+     *            true for upload (push to portal), false for download (pull from portal)
+     * @param bytes
+     *            number of bytes transferred
+     */
+    static void recordDestinationBytes(final String destinationName, final boolean upload, final long bytes) {
+        if (isEmpty(destinationName) || bytes <= 0)
+            return;
+        final var now = System.currentTimeMillis();
+        final var retentionCutoff = now - PORTAL_BYTES_MAX_RETENTION_MS;
+        final var deque = DESTINATION_BYTES_WINDOW.computeIfAbsent(destinationName, _ -> new ConcurrentLinkedDeque<>());
+        while (!deque.isEmpty() && deque.peekFirst()[0] < retentionCutoff) {
+            deque.pollFirst();
+        }
+        deque.addLast(new long[] { now, upload ? bytes : 0L, upload ? 0L : bytes });
+        final var minute = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm").format(new Date(now));
+        DESTINATION_BYTES_FLUSH_BUFFER.compute(destinationName + "|" + minute, (_, existing) -> {
+            if (existing == null)
+                return new long[] { upload ? bytes : 0L, upload ? 0L : bytes };
+            if (upload)
+                existing[0] += bytes;
+            else
+                existing[1] += bytes;
+            return existing;
+        });
+    }
+
+    /**
      * Load portal bytes snapshots from the database into the in-memory rolling window so quota enforcement survives
      * MasterServer restarts.
      */
@@ -2639,6 +2685,31 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
+     * Load destination bytes snapshots from the database into the in-memory rolling window so quota enforcement
+     * survives MasterServer restarts.
+     */
+    private void _loadDestinationBytesFromDb() {
+        try {
+            final var retentionHours = (int) (PORTAL_BYTES_MAX_RETENTION_MS / 3_600_000L);
+            final var snapshots = getECpdsBase().getRecentDestinationBytesSnapshots(retentionHours);
+            var total = 0;
+            for (final var entry : snapshots.entrySet()) {
+                final var destName = entry.getKey();
+                final var deque = DESTINATION_BYTES_WINDOW.computeIfAbsent(destName,
+                        _ -> new ConcurrentLinkedDeque<>());
+                for (final var row : entry.getValue()) {
+                    deque.addLast(row);
+                    total++;
+                }
+            }
+            _log.info("Loaded {} destination bytes snapshot entries from DB for {} destinations", total,
+                    snapshots.size());
+        } catch (final DataBaseException e) {
+            _log.warn("Failed to load destination bytes snapshots from DB", e);
+        }
+    }
+
+    /**
      * Sum bytes transferred by a portal user within the given rolling window.
      *
      * @param uid
@@ -2654,6 +2725,28 @@ public final class MasterServer extends ECaccessProvider
         if (isEmpty(uid) || windowMs <= 0)
             return 0L;
         final var deque = PORTAL_BYTES_WINDOW.get(uid);
+        if (deque == null || deque.isEmpty())
+            return 0L;
+        final var cutoff = System.currentTimeMillis() - windowMs;
+        return deque.stream().filter(e -> e[0] >= cutoff).mapToLong(e -> e[upload ? 1 : 2]).sum();
+    }
+
+    /**
+     * Sum bytes transferred via a destination within the given rolling window.
+     *
+     * @param destinationName
+     *            the destination name
+     * @param upload
+     *            true for upload bytes, false for download bytes
+     * @param windowMs
+     *            the rolling window size in milliseconds
+     *
+     * @return total bytes within the window
+     */
+    static long _sumDestinationBytes(final String destinationName, final boolean upload, final long windowMs) {
+        if (isEmpty(destinationName) || windowMs <= 0)
+            return 0L;
+        final var deque = DESTINATION_BYTES_WINDOW.get(destinationName);
         if (deque == null || deque.isEmpty())
             return 0L;
         final var cutoff = System.currentTimeMillis() - windowMs;
@@ -7365,11 +7458,42 @@ public final class MasterServer extends ECaccessProvider
                             key.substring(separator + 1), e);
                 }
             }
-            if (++flushCount % 10 == 0) {
+            for (final var iter = DESTINATION_BYTES_FLUSH_BUFFER.entrySet().iterator(); iter.hasNext();) {
+                final var entry = iter.next();
+                final var key = entry.getKey();
+                final var separator = key.lastIndexOf('|');
+                if (separator <= 0 || separator >= key.length() - 1) {
+                    _log.warn("PortalBytesScheduler: invalid destination buffer key={}", key);
+                    continue;
+                }
+                final var snapshot = entry.getValue().clone();
+                if (snapshot[0] <= 0 && snapshot[1] <= 0) {
+                    iter.remove();
+                    continue;
+                }
+                final var destinationName = key.substring(0, separator);
                 try {
-                    base.deleteOldPortalBytesSnapshots((int) (PORTAL_BYTES_MAX_RETENTION_MS / Timer.ONE_HOUR));
+                    final var minute = Timestamp.valueOf(key.substring(separator + 1).replace('T', ' ') + ":00");
+                    base.upsertDestinationBytesSnapshot(minute, destinationName, snapshot[0], snapshot[1]);
+                    DESTINATION_BYTES_FLUSH_BUFFER.compute(key, (_, current) -> {
+                        if (current == null)
+                            return null;
+                        current[0] -= snapshot[0];
+                        current[1] -= snapshot[1];
+                        return current[0] <= 0 && current[1] <= 0 ? null : current;
+                    });
+                } catch (final Exception e) {
+                    _log.warn("PortalBytesScheduler: failed to flush entry for destination={} minute={}",
+                            destinationName, key.substring(separator + 1), e);
+                }
+            }
+            if (++flushCount % 10 == 0) {
+                final var retentionHours = (int) (PORTAL_BYTES_MAX_RETENTION_MS / Timer.ONE_HOUR);
+                try {
+                    base.deleteOldPortalBytesSnapshots(retentionHours);
+                    base.deleteOldDestinationBytesSnapshots(retentionHours);
                 } catch (final DataBaseException e) {
-                    _log.warn("PortalBytesScheduler: failed to delete old portal bytes snapshots", e);
+                    _log.warn("PortalBytesScheduler: failed to delete old bytes snapshots", e);
                 }
             }
             return NEXT_STEP_DELAY;

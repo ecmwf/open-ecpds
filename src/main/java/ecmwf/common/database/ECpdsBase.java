@@ -4164,6 +4164,47 @@ public final class ECpdsBase extends DataBase {
         }
     }
 
+    public void upsertDestinationBytesSnapshot(final Timestamp minute, final String destination, final long uploadBytes,
+            final long downloadBytes) throws DataBaseException {
+        try {
+            ecpds.upsertDestinationBytesSnapshot(minute, destination, uploadBytes, downloadBytes);
+        } catch (final Exception e) {
+            _log.warn("upsertDestinationBytesSnapshot", e);
+            throw new DataBaseException("upsertDestinationBytesSnapshot", e);
+        }
+    }
+
+    public Map<String, List<long[]>> getRecentDestinationBytesSnapshots(final int retentionHours)
+            throws DataBaseException {
+        try (var rs = ecpds.getRecentDestinationBytesSnapshots(retentionHours)) {
+            final var result = new java.util.LinkedHashMap<String, List<long[]>>();
+            while (rs.next()) {
+                final var dest = rs.getString("DBS_DESTINATION");
+                final var minuteTs = rs.getTimestamp("DBS_MINUTE");
+                final var uploadBytes = rs.getLong("DBS_UPLOAD_BYTES");
+                final var downloadBytes = rs.getLong("DBS_DOWNLOAD_BYTES");
+                if (dest != null && minuteTs != null) {
+                    result.computeIfAbsent(dest, _ -> new ArrayList<>())
+                            .add(new long[] { minuteTs.getTime(), uploadBytes, downloadBytes });
+                }
+            }
+            logSqlRequest("getRecentDestinationBytesSnapshots", result.size());
+            return result;
+        } catch (final Exception e) {
+            _log.warn("getRecentDestinationBytesSnapshots", e);
+            throw new DataBaseException("getRecentDestinationBytesSnapshots", e);
+        }
+    }
+
+    public void deleteOldDestinationBytesSnapshots(final int retentionHours) throws DataBaseException {
+        try {
+            ecpds.deleteOldDestinationBytesSnapshots(retentionHours);
+        } catch (final Exception e) {
+            _log.warn("deleteOldDestinationBytesSnapshots", e);
+            throw new DataBaseException("deleteOldDestinationBytesSnapshots", e);
+        }
+    }
+
     /**
      * Gets a map of host name to destination count using a single GROUP BY query on the ASSOCIATION table.
      *

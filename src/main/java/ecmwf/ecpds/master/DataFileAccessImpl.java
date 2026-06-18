@@ -29,11 +29,15 @@ package ecmwf.ecpds.master;
 import static ecmwf.common.ectrans.ECtransGroups.Module.DESTINATION_INCOMING;
 import static ecmwf.common.ectrans.ECtransGroups.Module.DESTINATION_SCHEDULER;
 import static ecmwf.common.ectrans.ECtransGroups.Module.USER_PORTAL;
+import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_INCOMING_DOWNLOAD_PERIOD;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_INCOMING_MAX_BYTES_PER_SEC_FOR_INPUT;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_INCOMING_MAX_BYTES_PER_SEC_FOR_OUTPUT;
+import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_INCOMING_MAX_DOWNLOAD_BYTES;
+import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_INCOMING_MAX_UPLOAD_BYTES;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_INCOMING_STANDBY;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_INCOMING_TMP_PATTERN;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_INCOMING_TMP_DETECT;
+import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_INCOMING_UPLOAD_PERIOD;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_SCHEDULER_STANDBY;
 import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_RECORD_HISTORY;
 import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_RECORD_SPLUNK;
@@ -46,6 +50,7 @@ import java.io.IOException;
 import java.rmi.RemoteException;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
@@ -71,6 +76,7 @@ import ecmwf.common.rmi.SocketConfig;
 import ecmwf.common.technical.CloseableIterator;
 import ecmwf.common.technical.ProxyEvent;
 import ecmwf.common.technical.ProxySocket;
+import ecmwf.common.technical.ByteSize;
 import ecmwf.common.text.Format;
 import ecmwf.common.ecaccess.FileListElement;
 import ecmwf.ecpds.master.plugin.ecpds.ECpdsClient;
@@ -411,6 +417,19 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
             proxy.addObject(DataTransfer.class.getName(), transfer);
             setup.getOptionalByteSize(DESTINATION_INCOMING_MAX_BYTES_PER_SEC_FOR_INPUT)
                     .ifPresent(maxBytesPerSec -> proxy.setMaxBytesPerSec(maxBytesPerSec.size()));
+            // Check destination download quota
+            final var maxDownloadBytes = setup.getByteSize(DESTINATION_INCOMING_MAX_DOWNLOAD_BYTES).size();
+            final var downloadPeriod = setup.getOptionalDuration(DESTINATION_INCOMING_DOWNLOAD_PERIOD);
+            final var downloadPeriodMs = downloadPeriod.map(Duration::toMillis).orElse(0L);
+            if (maxDownloadBytes > 0 && downloadPeriodMs > 0) {
+                final var used = MasterServer._sumDestinationBytes(destinationName, false, downloadPeriodMs);
+                if (used >= maxDownloadBytes) {
+                    throw new MasterException("Download quota exceeded for destination " + destinationName + " ("
+                            + ByteSize.of(used).toApproximateSize() + " of "
+                            + ByteSize.of(maxDownloadBytes).toApproximateSize() + " in the last "
+                            + Format.formatDuration(downloadPeriodMs) + ")");
+                }
+            }
             return monitor.done(proxy);
         } catch (final DataBaseException e) {
             _log.warn(source, e);
@@ -492,6 +511,19 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
         proxy.addObject(MoverAccessTicket.class.getName(), Boolean.TRUE);
         setup.getOptionalByteSize(DESTINATION_INCOMING_MAX_BYTES_PER_SEC_FOR_OUTPUT)
                 .ifPresent(maxBytesPerSec -> proxy.setMaxBytesPerSec(maxBytesPerSec.size()));
+        // Check destination upload quota
+        final var maxUploadBytes = setup.getByteSize(DESTINATION_INCOMING_MAX_UPLOAD_BYTES).size();
+        final var uploadPeriod = setup.getOptionalDuration(DESTINATION_INCOMING_UPLOAD_PERIOD);
+        final var uploadPeriodMs = uploadPeriod.map(Duration::toMillis).orElse(0L);
+        if (maxUploadBytes > 0 && uploadPeriodMs > 0) {
+            final var used = MasterServer._sumDestinationBytes(destinationName, true, uploadPeriodMs);
+            if (used >= maxUploadBytes) {
+                throw new MasterException("Upload quota exceeded for destination " + destinationName + " ("
+                        + ByteSize.of(used).toApproximateSize() + " of "
+                        + ByteSize.of(maxUploadBytes).toApproximateSize() + " in the last "
+                        + Format.formatDuration(uploadPeriodMs) + ")");
+            }
+        }
         return monitor.done(proxy);
     }
 
@@ -1264,6 +1296,14 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
                         } else {
                             entry.accumulate(0, 0, event.getSent(), 0, event.getDuration());
                             MasterServer.recordPortalBytes(event.getUserName(), false, event.getSent());
+                        }
+                        final var recordedDestinations = new java.util.HashSet<String>();
+                        for (final DataTransfer transfer : transfers) {
+                            final var destinationName = transfer.getDestinationName();
+                            if (destinationName != null && recordedDestinations.add(destinationName)) {
+                                MasterServer.recordDestinationBytes(destinationName, event.getUpload(),
+                                        event.getSent());
+                            }
                         }
                     }
                 }
