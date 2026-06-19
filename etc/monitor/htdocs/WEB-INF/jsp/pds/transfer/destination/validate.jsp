@@ -547,7 +547,11 @@
             }),
             success: callback,
             error: function () {
-                alert('Failed to sync basket state with the server. Please try again.');
+                var errorDiv = document.getElementById('validateTableError');
+                if (errorDiv) {
+                    errorDiv.innerHTML = '<strong>Error:</strong> Failed to sync basket state with the server. Please try again.';
+                    errorDiv.style.display = 'block';
+                }
             }
         });
     }

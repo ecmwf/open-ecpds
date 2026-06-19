@@ -34,6 +34,8 @@ package ecmwf.ecpds.master.plugin.http.controller.transfer.destination;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
@@ -49,6 +51,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.ecpds.master.plugin.http.dao.Util;
 import ecmwf.ecpds.master.plugin.http.home.transfer.DestinationHome;
+import ecmwf.ecpds.master.plugin.http.home.transfer.IncomingPolicyHome;
+import ecmwf.ecpds.master.plugin.http.home.transfer.IncomingUserHome;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Destination;
 import ecmwf.ecpds.master.plugin.http.model.transfer.TransferException;
 import ecmwf.ecpds.master.transfer.StatusFactory;
@@ -87,6 +91,7 @@ public class GetDestinationListJsonAction extends PDSAction {
         final var status = Util.getValue(request, "destinationStatus", "All Status");
         final var type = Util.getValue(request, "destinationType", "-1");
         final var filter = Util.getValue(request, "destinationFilter", "All");
+        final var dataUsersFilter = Util.getValue(request, "datausers", "any"); // "any" | "yes" | "no"
 
         // DataTables server-side sort params take priority over legacy sortDirection
         final var orderColParam = request.getParameter("order[0][column]");
@@ -94,28 +99,55 @@ public class GetDestinationListJsonAction extends PDSAction {
         final int orderCol = orderColParam != null ? parseSafeInt(orderColParam, 1) : 1;
         final boolean ascending = orderDirParam != null ? "asc".equals(orderDirParam) : "asc".equals(sortDirection);
 
+        final boolean filterByDataUsers = "yes".equals(dataUsersFilter) || "no".equals(dataUsersFilter);
+
         Collection<Destination> page;
         int recordsTotal = 0;
+        int recordsFiltered;
         String queryError = null;
         Set<String> proxyDestNames;
         try {
-            page = DestinationHome.findByUser(user, search, aliases, orderCol, ascending, start, lengthParam,
-                    StatusFactory.getDestinationStatusCode(status), GetDestinationAction.getDestinationTypeIds(type),
-                    filter);
-            recordsTotal = DestinationHome.countByUser(user, search, aliases,
-                    StatusFactory.getDestinationStatusCode(status), GetDestinationAction.getDestinationTypeIds(type),
-                    filter);
+            if (filterByDataUsers) {
+                // Fetch all matching destinations (ignoring pagination), then post-filter by
+                // data-user association and paginate in memory — same pattern as unassigned filter.
+                final var all = DestinationHome.findByUser(user, search, aliases, orderCol, ascending, 0, -1,
+                        StatusFactory.getDestinationStatusCode(status),
+                        GetDestinationAction.getDestinationTypeIds(type), filter);
+                recordsTotal = DestinationHome.countByUser(user, search, aliases,
+                        StatusFactory.getDestinationStatusCode(status),
+                        GetDestinationAction.getDestinationTypeIds(type), filter);
+                final var destsWithUsers = buildDestinationsWithDataUsers();
+                final boolean wantWith = "yes".equals(dataUsersFilter);
+                final List<Destination> filtered = new ArrayList<>();
+                for (final Destination d : all) {
+                    if (wantWith == destsWithUsers.contains(d.getName()))
+                        filtered.add(d);
+                }
+                recordsFiltered = filtered.size();
+                final int end = Math.min(start + (lengthParam < 0 ? filtered.size() : lengthParam), filtered.size());
+                page = start < filtered.size() ? filtered.subList(start, end) : new ArrayList<>(0);
+            } else {
+                page = DestinationHome.findByUser(user, search, aliases, orderCol, ascending, start, lengthParam,
+                        StatusFactory.getDestinationStatusCode(status),
+                        GetDestinationAction.getDestinationTypeIds(type), filter);
+                recordsTotal = DestinationHome.countByUser(user, search, aliases,
+                        StatusFactory.getDestinationStatusCode(status),
+                        GetDestinationAction.getDestinationTypeIds(type), filter);
+                recordsFiltered = recordsTotal;
+            }
             proxyDestNames = DestinationHome.findNamesWithProxyHosts();
         } catch (final TransferException e) {
             page = new ArrayList<>(0);
             proxyDestNames = java.util.Collections.emptySet();
+            recordsTotal = 0;
+            recordsFiltered = 0;
             queryError = e.getMessage();
         }
 
         final var root = MAPPER.createObjectNode();
         root.put("draw", draw);
         root.put("recordsTotal", recordsTotal);
-        root.put("recordsFiltered", recordsTotal);
+        root.put("recordsFiltered", recordsFiltered);
         if (queryError != null) {
             root.put("queryError", queryError);
         }
@@ -393,6 +425,41 @@ public class GetDestinationListJsonAction extends PDSAction {
         } catch (final Throwable _) {
             return fallback;
         }
+    }
+
+    /**
+     * Builds the set of destination names that have at least one associated data user (directly or via a Data Policy).
+     * Uses efficient DB-backed lookups where possible.
+     */
+    private static Set<String> buildDestinationsWithDataUsers() {
+        final Set<String> names = new LinkedHashSet<>();
+        // Policy-based (efficient): policy → destinations, policy → users
+        try {
+            for (final var policy : IncomingPolicyHome.findAll()) {
+                try {
+                    if (!IncomingUserHome.findAssociatedToIncomingPolicy(policy).isEmpty()) {
+                        for (final var dest : policy.getAssociatedDestinations()) {
+                            names.add(dest.getName());
+                        }
+                    }
+                } catch (final Exception ignored) {
+                }
+            }
+        } catch (final Exception ignored) {
+        }
+        // Direct associations (full user scan — no DB index from destination→user)
+        try {
+            for (final var user : IncomingUserHome.findAll()) {
+                try {
+                    for (final var dest : user.getAssociatedDestinations()) {
+                        names.add(dest.getName());
+                    }
+                } catch (final Exception ignored) {
+                }
+            }
+        } catch (final Exception ignored) {
+        }
+        return names;
     }
 
     private static void writeError(final HttpServletResponse response, final int draw, final String message) {

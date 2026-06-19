@@ -85,6 +85,9 @@
                class="btn btn-sm btn-outline-secondary" title="Parameters"><i class="bi bi-sliders"></i></a>
             </auth:then>
             </auth:if>
+            <a href='<bean:message key="destination.basepath"/>/${destination.id}?mode=datausers'
+               id="_destDataUsersBtn"
+               class="btn btn-sm btn-outline-secondary position-relative" title="Data Users"><i class="bi bi-people"></i></a>
             <a href='<bean:message key="destination.basepath"/>/${destination.id}?mode=traffic'
                class="btn btn-sm btn-outline-secondary" title="Data Rates"><i class="bi bi-graph-up"></i></a>
             <a href='<bean:message key="destination.basepath"/>/${destination.id}?mode=changelog'
@@ -178,6 +181,25 @@
                     if (u.pathname === curPath && aMode === curMode) item.classList.add('active');
                 });
             });
+        })();
+        // Async badge: fetch data-users count without blocking page load.
+        // Works on every page that includes this header (metadata, history, monitoring, etc.).
+        (function() {
+            var destName = '${destination.name}';
+            if (!destName) return;
+            fetch('/do/transfer/destination/' + encodeURIComponent(destName) + '?json=dataUsersCount')
+                .then(function(r) { return r.ok ? r.json() : null; })
+                .then(function(data) {
+                    if (!data || !data.count) return;
+                    var btn = document.getElementById('_destDataUsersBtn');
+                    if (!btn) return;
+                    var badge = document.createElement('span');
+                    badge.className = 'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary';
+                    badge.style.cssText = 'font-size:0.6rem;padding:2px 4px;line-height:1;';
+                    badge.textContent = data.count;
+                    btn.appendChild(badge);
+                })
+                .catch(function() {});
         })();
         </script>
     </div>

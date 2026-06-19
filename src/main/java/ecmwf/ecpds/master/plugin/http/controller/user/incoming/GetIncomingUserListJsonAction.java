@@ -70,10 +70,17 @@ public class GetIncomingUserListJsonAction extends PDSAction {
             users = filterByPolicy(users, policyFilter);
         }
 
+        final var unassignedOnly = "true".equals(request.getParameter("unassigned"));
+        if (unassignedOnly) {
+            users = filterUnassigned(users);
+        }
+
         // Check once whether the current user can manage (edit/update) incoming users
         var canEdit = false;
+        var canDelete = false;
         try {
             canEdit = user.hasAccess(INCOMING_BASE_PATH + "/edit/update");
+            canDelete = user.hasAccess(INCOMING_BASE_PATH + "/edit/delete");
         } catch (final Exception ignored) {
         }
 
@@ -81,6 +88,7 @@ public class GetIncomingUserListJsonAction extends PDSAction {
         root.put("draw", draw);
         root.put("recordsTotal", users.size());
         root.put("recordsFiltered", users.size());
+        root.put("canDelete", canDelete);
 
         final var data = root.putArray("data");
         for (final IncomingUser u : users) {
@@ -151,6 +159,48 @@ public class GetIncomingUserListJsonAction extends PDSAction {
             return "<i class=\"bi bi-exclamation-circle-fill text-warning\" title=\"Yes\"></i>";
         }
         return "<i class=\"bi bi-dash text-muted\" title=\"No\"></i>";
+    }
+
+    private static String buildDestinationsHtml(final int count) {
+        if (count == 0) {
+            return "<span class=\"badge rounded-pill border fw-normal bg-danger-subtle text-danger-emphasis\""
+                    + " title=\"No destinations assigned (direct or via policy)\">"
+                    + "<i class=\"bi bi-exclamation-triangle-fill me-1\"></i>None</span>";
+        }
+        return "<span class=\"badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis\""
+                + " title=\"" + count + " destination(s) reachable (direct or via policy)\">" + count + "</span>";
+    }
+
+    private static int countReachableDestinations(final IncomingUser u) {
+        final var names = new java.util.HashSet<String>();
+        try {
+            for (final Destination dest : u.getAssociatedDestinations()) {
+                names.add(dest.getName());
+            }
+        } catch (final Exception ignored) {
+        }
+        try {
+            for (final IncomingPolicy policy : u.getAssociatedIncomingPolicies()) {
+                try {
+                    for (final Destination dest : policy.getAssociatedDestinations()) {
+                        names.add(dest.getName());
+                    }
+                } catch (final Exception ignored) {
+                }
+            }
+        } catch (final Exception ignored) {
+        }
+        return names.size();
+    }
+
+    private static Collection<IncomingUser> filterUnassigned(final Collection<IncomingUser> users) {
+        final var filtered = new ArrayList<IncomingUser>();
+        for (final IncomingUser u : users) {
+            if (countReachableDestinations(u) == 0) {
+                filtered.add(u);
+            }
+        }
+        return filtered;
     }
 
     private static String buildActions(final String id, final int connectionCount, final boolean canEdit) {

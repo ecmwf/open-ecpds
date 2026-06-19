@@ -31,8 +31,11 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -50,7 +53,9 @@ import ecmwf.ecpds.master.plugin.http.dao.Util;
 import ecmwf.ecpds.master.plugin.http.home.monitoring.ProductStatusHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.CountryHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.DestinationHome;
+import ecmwf.ecpds.master.plugin.http.home.transfer.IncomingPolicyHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.IncomingUserHome;
+import ecmwf.ecpds.master.plugin.http.model.transfer.IncomingPolicy;
 import ecmwf.ecpds.master.plugin.http.home.datafile.TransferServerHome;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Destination;
 import ecmwf.ecpds.master.plugin.http.model.transfer.IncomingUser;
@@ -125,6 +130,24 @@ public class GetDestinationAction extends PDSAction {
             // Let's get the Destination!
             final var destination = DestinationHome.findByPrimaryKey(id);
             request.setAttribute("destination", destination);
+            // Lightweight JSON endpoint: returns the data-users count for the header badge.
+            // Called asynchronously by destination_header.jsp so it works on every page
+            // that embeds the header (including metadata, history, monitoring pages).
+            if ("dataUsersCount".equals(request.getParameter("json"))) {
+                int count = 0;
+                try {
+                    final var dataUsers = computeDataUsers(destination);
+                    count = dataUsers.get("direct").size() + dataUsers.get("policy").size();
+                } catch (final Exception ignored) {
+                }
+                try {
+                    response.setContentType("application/json; charset=UTF-8");
+                    response.getWriter().write("{\"count\":" + count + "}");
+                    response.getWriter().flush();
+                } catch (final java.io.IOException ignored) {
+                }
+                return null;
+            }
             final var mode = request.getParameter("mode");
             if ("parameters".equals(mode)) {
                 // This is the all_parameters.jsp page!
@@ -144,19 +167,19 @@ public class GetDestinationAction extends PDSAction {
                 return mapping.findForward("aliasesto");
             } else if ("datausers".equals(mode)) {
                 // This is the data users page for this destination!
-                final List<IncomingUser> users = new ArrayList<>();
-                for (final IncomingUser incoming : IncomingUserHome.findAll()) {
-                    try {
-                        for (final Destination dest : incoming.getAssociatedDestinations()) {
-                            if (dest.getName().equals(id)) {
-                                users.add(incoming);
-                                break;
-                            }
-                        }
-                    } catch (final Exception ignored) {
-                    }
+                List<IncomingUser> directUsers = new ArrayList<>();
+                List<IncomingUser> policyUsers = new ArrayList<>();
+                try {
+                    final var dataUsers = computeDataUsers(destination);
+                    directUsers = dataUsers.get("direct");
+                    policyUsers = dataUsers.get("policy");
+                } catch (final Exception ignored) {
                 }
-                request.setAttribute("incomingUsers", users);
+                request.setAttribute("directUsers", directUsers);
+                request.setAttribute("policyUsers", policyUsers);
+                final var allUsers = new ArrayList<>(directUsers);
+                allUsers.addAll(policyUsers);
+                request.setAttribute("incomingUsers", allUsers);
                 return mapping.findForward("datausers");
             } else {
                 // This is the main Destination page!
@@ -211,6 +234,46 @@ public class GetDestinationAction extends PDSAction {
             }
         }
         return mapping.findForward("success");
+    }
+
+    /**
+     * Computes data users for a destination, split into direct and policy-based. Policy users are found efficiently via
+     * IncomingPolicyHome.findAssociatedToDestination() + IncomingUserHome.findAssociatedToIncomingPolicy(). Direct
+     * users require a full scan.
+     */
+    private static Map<String, List<IncomingUser>> computeDataUsers(final Destination destination) throws Exception {
+        // Policy users: efficient DB-backed lookup.
+        final Set<String> seen = new LinkedHashSet<>();
+        final List<IncomingUser> policyUsers = new ArrayList<>();
+        for (final IncomingPolicy policy : IncomingPolicyHome.findAssociatedToDestination(destination)) {
+            try {
+                for (final IncomingUser u : IncomingUserHome.findAssociatedToIncomingPolicy(policy)) {
+                    if (seen.add(u.getId())) {
+                        policyUsers.add(u);
+                    }
+                }
+            } catch (final Exception ignored) {
+            }
+        }
+        // Direct users: full scan (no DB-level destination→user index exists).
+        final List<IncomingUser> directUsers = new ArrayList<>();
+        for (final IncomingUser incoming : IncomingUserHome.findAll()) {
+            if (seen.contains(incoming.getId()))
+                continue; // already via policy
+            try {
+                for (final Destination dest : incoming.getAssociatedDestinations()) {
+                    if (dest.getName().equals(destination.getName())) {
+                        directUsers.add(incoming);
+                        break;
+                    }
+                }
+            } catch (final Exception ignored) {
+            }
+        }
+        final Map<String, List<IncomingUser>> result = new LinkedHashMap<>();
+        result.put("direct", directUsers);
+        result.put("policy", policyUsers);
+        return result;
     }
 
     /**

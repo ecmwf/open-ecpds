@@ -18,7 +18,9 @@
 
 package ecmwf.ecpds.master.plugin.http.controller.user.user;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -46,6 +48,15 @@ public class GetWebUserListJsonAction extends PDSAction {
     private static final String CATEGORY_BASE_PATH = "/do/user/category";
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
+    // Monitor-only category names (non-destination monitor categories)
+    private static final Set<String> MONITOR_CATEGORY_NAMES = Set.of("mstate", "monitoring", "transfers",
+            "requirements");
+
+    // Monitor status values used for sorting and filtering
+    private static final int STATUS_NOT_MONITOR = 0;
+    private static final int STATUS_MONITOR_OK = 1;
+    private static final int STATUS_MONITOR_NO_DEST = 2;
+
     @Override
     public ActionForward safeAuthorizedPerform(final ActionMapping mapping, final ActionForm form,
             final HttpServletRequest request, final HttpServletResponse response, final User user)
@@ -59,25 +70,44 @@ public class GetWebUserListJsonAction extends PDSAction {
             return null;
         }
 
-        final var root = MAPPER.createObjectNode();
-        root.put("draw", draw);
-        root.put("recordsTotal", users.size());
-        root.put("recordsFiltered", users.size());
+        final var monitorNoDestOnly = "true".equals(request.getParameter("monitorNoDestination"));
 
+        final var root = MAPPER.createObjectNode();
         final var data = root.putArray("data");
+        var total = 0;
+        var filtered = 0;
         for (final Object obj : users) {
             if (!(obj instanceof final WebUser u)) {
                 continue;
             }
+            total++;
+            // Fetch categories once and reuse for both the chip display and monitor classification.
+            final var cats = getCategories(u);
+            final var monitorStatus = getMonitorStatus(cats);
+            if (monitorNoDestOnly && monitorStatus != STATUS_MONITOR_NO_DEST) {
+                continue;
+            }
+            filtered++;
             final var row = data.addArray();
             row.add(buildIdLink(u.getId()));
             row.add(escapeHtml(u.getCommonName()));
             row.add(buildBadge(u.getActive()));
-            row.add(buildCategoriesHtml(u));
+            row.add(buildCategoriesHtml(cats));
+            row.add(buildMonitorBadge(monitorStatus));
             row.add(buildActions(u.getId()));
-            // Hidden sort value for Enabled column (col 2)
+            // Hidden sort values: Enabled (col 2) and Monitor status (col 4)
             row.add(u.getActive() ? 1 : 0);
+            row.add(monitorStatus);
         }
+        root.put("draw", draw);
+        root.put("recordsTotal", total);
+        root.put("recordsFiltered", filtered);
+        var canDelete = false;
+        try {
+            canDelete = user.hasAccess(USER_BASE_PATH + "/edit/delete");
+        } catch (final Exception ignored) {
+        }
+        root.put("canDelete", canDelete);
 
         try {
             response.setContentType("application/json; charset=UTF-8");
@@ -87,6 +117,54 @@ public class GetWebUserListJsonAction extends PDSAction {
             writeError(response, draw, "Error building web users list: " + e.getMessage());
         }
         return null;
+    }
+
+    /**
+     * Collect the categories for a web user, returning an empty list on error. Called once per user so the result can
+     * be reused for both display and classification.
+     */
+    private static Collection<Category> getCategories(final WebUser u) {
+        final var cats = new ArrayList<Category>();
+        try {
+            for (final Object obj : u.getCategories()) {
+                if (obj instanceof final Category cat) {
+                    cats.add(cat);
+                }
+            }
+        } catch (final Exception ignored) {
+        }
+        return cats;
+    }
+
+    /**
+     * Classify a web user's monitor status based on their categories:
+     * <ul>
+     * <li>{@code STATUS_NOT_MONITOR} (0) — not a monitor user</li>
+     * <li>{@code STATUS_MONITOR_OK} (1) — monitor user with at least one destination category</li>
+     * <li>{@code STATUS_MONITOR_NO_DEST} (2) — monitor user without any destination category</li>
+     * </ul>
+     * A user is a monitor user when all their categories are from the monitor set {mstate, monitoring, transfers,
+     * requirements} (possibly plus destination categories ending in {@code " operations"}), and they have at least one
+     * monitor category.
+     */
+    private static int getMonitorStatus(final Collection<Category> cats) {
+        var hasMonitor = false;
+        var hasDestination = false;
+        var hasOther = false;
+        for (final Category cat : cats) {
+            final var name = cat.getName();
+            if (name != null && name.endsWith(" operations")) {
+                hasDestination = true;
+            } else if (name != null && MONITOR_CATEGORY_NAMES.contains(name)) {
+                hasMonitor = true;
+            } else {
+                hasOther = true;
+            }
+        }
+        if (!hasMonitor || hasOther) {
+            return STATUS_NOT_MONITOR;
+        }
+        return hasDestination ? STATUS_MONITOR_OK : STATUS_MONITOR_NO_DEST;
     }
 
     private static String buildIdLink(final String id) {
@@ -103,19 +181,26 @@ public class GetWebUserListJsonAction extends PDSAction {
                 + "<i class=\"bi bi-x-circle-fill me-1\"></i>No</span>";
     }
 
-    private static String buildCategoriesHtml(final WebUser u) {
+    private static String buildMonitorBadge(final int monitorStatus) {
+        return switch (monitorStatus) {
+        case STATUS_MONITOR_NO_DEST -> "<span class=\"badge rounded-pill border fw-normal bg-danger-subtle"
+                + " text-danger-emphasis\" title=\"Monitor user with no destination category assigned\">"
+                + "<i class=\"bi bi-exclamation-triangle-fill me-1\"></i>No destination</span>";
+        case STATUS_MONITOR_OK -> "<span class=\"badge rounded-pill border fw-normal bg-success-subtle"
+                + " text-success-emphasis\" title=\"Monitor user with at least one destination category\">"
+                + "<i class=\"bi bi-check-circle-fill me-1\"></i>OK</span>";
+        default -> "<span class=\"text-muted\" title=\"Not a monitor user\"><i class=\"bi bi-dash\"></i></span>";
+        };
+    }
+
+    private static String buildCategoriesHtml(final Collection<Category> cats) {
         final var sb = new StringBuilder();
-        try {
-            for (final Object obj : u.getCategories()) {
-                if (obj instanceof final Category cat) {
-                    final var id = escapeHtml(cat.getId());
-                    final var name = escapeHtml(cat.getName());
-                    final var desc = escapeHtml(cat.getDescription());
-                    sb.append("<span class=\"assoc-chip\"><a href=\"").append(CATEGORY_BASE_PATH).append("/").append(id)
-                            .append("\" title=\"").append(desc).append("\">").append(name).append("</a></span>");
-                }
-            }
-        } catch (final Exception ignored) {
+        for (final Category cat : cats) {
+            final var id = escapeHtml(cat.getId());
+            final var name = escapeHtml(cat.getName());
+            final var desc = escapeHtml(cat.getDescription());
+            sb.append("<span class=\"assoc-chip\"><a href=\"").append(CATEGORY_BASE_PATH).append("/").append(id)
+                    .append("\" title=\"").append(desc).append("\">").append(name).append("</a></span>");
         }
         if (sb.isEmpty()) {
             return "";

@@ -32,7 +32,10 @@
 					<span class="fw-semibold">Web User: <c:out value="${user.uid}" /></span>
 					<auth:if basePathKey="user.basepath" paths="/edit/insert_form">
 					<auth:then>
-					<div class="d-flex gap-1 ms-auto flex-shrink-0">
+					<div class="d-flex gap-1 ms-auto flex-shrink-0 align-items-center">
+						<a href='<bean:message key="user.basepath"/>'
+						   class="btn btn-sm btn-outline-secondary" title="Back to Web Users list"><i class="bi bi-arrow-left"></i></a>
+						<span class="border-start mx-1" style="height:1.4em;"></span>
 						<a href='<bean:message key="user.basepath"/>/edit/insert_form'
 						   class="btn btn-sm btn-outline-success" title="Create new web user"><i class="bi bi-plus-circle"></i></a>
 						<c:if test="${not empty user.id}">

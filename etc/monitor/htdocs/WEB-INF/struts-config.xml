@@ -848,6 +848,9 @@
 		<action path="/user/user/list"
 			type="ecmwf.ecpds.master.plugin.http.controller.user.user.GetWebUserListJsonAction">
 		</action>
+		<action path="/user/user/edit/deleteAllMonitorNoDest"
+			type="ecmwf.ecpds.master.plugin.http.controller.user.user.BulkDeleteMonitorNoDestAction">
+		</action>
 		<action path="/user/event"
 			type="ecmwf.ecpds.master.plugin.http.controller.user.user.GetUserEventsAction">
 			<forward name="success" path=".pds.user.event" />
@@ -929,6 +932,9 @@
 		</action>
 		<action path="/user/incoming/list"
 			type="ecmwf.ecpds.master.plugin.http.controller.user.incoming.GetIncomingUserListJsonAction">
+		</action>
+		<action path="/user/incoming/edit/deleteAllUnassigned"
+			type="ecmwf.ecpds.master.plugin.http.controller.user.incoming.BulkDeleteUnassignedAction">
 		</action>
 		<action path="/user/incoming/portaltraffic/*" parameter="{1}"
 			type="ecmwf.ecpds.master.plugin.http.controller.user.incoming.GetIncomingUserPortalTrafficAction">

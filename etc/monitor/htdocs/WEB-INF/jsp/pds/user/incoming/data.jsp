@@ -33,6 +33,9 @@
 					<auth:if basePathKey="incoming.basepath" paths="/edit/insert_form">
 					<auth:then>
 					<div class="d-flex gap-1 ms-auto flex-shrink-0 align-items-center">
+						<a href='<bean:message key="incoming.basepath"/>'
+						   class="btn btn-sm btn-outline-secondary" title="Back to Data Users list"><i class="bi bi-arrow-left"></i></a>
+						<span class="border-start mx-1" style="height:1.4em;"></span>
 						<a href='<bean:message key="incoming.basepath"/>/edit/insert_form'
 						   class="btn btn-sm btn-outline-success" title="Create new data user"><i class="bi bi-plus-circle"></i></a>
 						<c:if test="${not empty incoming.id}">

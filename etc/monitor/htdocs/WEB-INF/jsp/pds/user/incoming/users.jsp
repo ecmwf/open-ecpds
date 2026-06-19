@@ -13,6 +13,11 @@
         aria-expanded="false" title="About this page">
         <i class="bi bi-info-circle"></i>
     </button>
+    <button id="incomingUnassignedBtn" type="button"
+            class="btn btn-sm btn-outline-secondary"
+            title="Show only Data Users with no destinations (direct or via policy)">
+        <i class="bi bi-exclamation-triangle-fill me-1"></i>Unassigned only
+    </button>
     <div class="ms-auto d-flex flex-wrap align-items-center gap-2">
         <c:set var="destParam" value="destinationNameForSearch" scope="request"/>
         <tiles:insert name="destination.select" />
@@ -69,13 +74,15 @@
         <ul class="mb-1 ps-3">
             <li><strong>Search Destination</strong> &mdash; shows only users who have access to the selected destination, either directly or indirectly via a Data Policy.</li>
             <li><strong>Search Policy</strong> &mdash; shows only users attached to the selected Data Policy.</li>
-            <li><strong>Search login</strong> &mdash; client-side text filter on the login name, applied on top of the destination/policy filters.</li>
+            <li><strong>Unassigned only</strong> &mdash; shows only users with no reachable destinations (neither direct nor via a Data Policy).</li>
+            <li><strong>Search login</strong> &mdash; client-side text filter on the login name, applied on top of the other filters.</li>
         </ul>
-        <div class="text-muted">Combining destination and policy filters applies both simultaneously (AND logic).</div>
+        <div class="text-muted">Use the <strong>Unassigned only</strong> button to filter to Data Users with no reachable destinations (neither direct nor via a Data Policy). The normal list does not compute destination associations to avoid performance overhead.</div>
     </div>
 </div>
 
 <div class="card-body p-0">
+<div id="incomingBulkMsg" style="display:none" class="mx-2 mt-2"></div>
 <div class="table-responsive">
 <table id="usersTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
     <thead class="table-light">
@@ -95,20 +102,39 @@
 </div>
 </div>
 </div>
+<div class="mt-3">
+    <button id="incomingDeleteAllBtn" type="button"
+            class="btn btn-outline-danger d-none"
+            title="Delete all currently listed unassigned Data Users">
+        <i class="bi bi-trash-fill me-1"></i>Delete All
+    </button>
+</div>
 <script>
 $(document).ready(function() {
-    var _destFilter   = '<c:out value="${destinationNameForSearch}"/>';
-    var _policyFilter = '<c:out value="${policyNameForSearch}"/>';
+    var _destFilter     = '<c:out value="${destinationNameForSearch}"/>';
+    var _policyFilter   = '<c:out value="${policyNameForSearch}"/>';
+    var _unassignedOnly = false;
     function _buildAjaxUrl() {
         var params = [];
         if (_destFilter && _destFilter !== 'Any Destination')
             params.push('destinationNameForSearch=' + encodeURIComponent(_destFilter));
         if (_policyFilter && _policyFilter !== 'Any Policy')
             params.push('policyNameForSearch=' + encodeURIComponent(_policyFilter));
+        if (_unassignedOnly)
+            params.push('unassigned=true');
         return '/do/user/incoming/list' + (params.length ? '?' + params.join('&') : '');
     }
+    var _canDelete = false;
+    var _filteredCount = 0;
     var table = $('#usersTable').DataTable({
-        ajax:       { url: _buildAjaxUrl(), dataSrc: 'data' },
+        ajax: {
+            url: _buildAjaxUrl(),
+            dataSrc: function(json) {
+                _canDelete = !!json.canDelete;
+                _filteredCount = json.recordsFiltered || 0;
+                return json.data;
+            }
+        },
         paging:     true,
         pageLength: (function() { try { var v = parseInt(localStorage.getItem('incomingPageLen'), 10); return [10,25,50,100,250].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })(),
         searching:  true,
@@ -122,6 +148,7 @@ $(document).ready(function() {
             { orderData: [10], targets: [5] },
             { visible: false,  targets: [8, 9, 10] }
         ],
+        drawCallback: function() { _updateDeleteAllBtn(); },
         dom: 't<"d-flex align-items-start mt-2 px-3 pb-2"i<"ms-auto"p>>'
     });
     $('#incomingPageLen').val((function() { try { var v = parseInt(localStorage.getItem('incomingPageLen'), 10); return [10,25,50,100,250].indexOf(v) >= 0 ? String(v) : '25'; } catch(e) { return '25'; } })());
@@ -131,6 +158,60 @@ $(document).ready(function() {
         table.page.len(len).draw();
     });
     $('#incomingSearch').on('input', function() { table.search(this.value).draw(); });
+
+    $('#incomingUnassignedBtn').on('click', function() {
+        _unassignedOnly = !_unassignedOnly;
+        $(this).toggleClass('btn-outline-secondary', !_unassignedOnly)
+               .toggleClass('btn-warning', _unassignedOnly);
+        if (!_unassignedOnly) $('#incomingDeleteAllBtn').addClass('d-none');
+        table.ajax.url(_buildAjaxUrl()).load();
+    });
+
+    function _updateDeleteAllBtn() {
+        var show = _unassignedOnly && _canDelete && _filteredCount > 0;
+        $('#incomingDeleteAllBtn').toggleClass('d-none', !show);
+        if (show) {
+            $('#incomingDeleteAllBtn').html('<i class="bi bi-trash-fill me-1"></i>Delete All (' + _filteredCount + ')');
+        }
+    }
+
+    function _showBulkMsg(type, html) {
+        var $m = $('#incomingBulkMsg');
+        $m.attr('class', 'mx-2 mt-2 alert alert-' + type + ' alert-dismissible d-flex align-items-center gap-2 p-2 mb-0');
+        var icon = type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill';
+        $m.html('<i class="bi ' + icon + ' flex-shrink-0"></i><div class="flex-grow-1">' + html + '</div>'
+              + '<button type="button" class="btn-close p-2" data-bs-dismiss="alert" aria-label="Close"></button>');
+        $m.show();
+        setTimeout(function() { $m.fadeOut(); }, 6000);
+    }
+
+    $('#incomingDeleteAllBtn').on('click', function() {
+        var n = _filteredCount;
+        var label = n === 1 ? '1 unassigned Data User' : 'all ' + n + ' unassigned Data Users';
+        confirmationDialog({
+            title: 'Delete Unassigned Data Users',
+            message: 'Delete ' + label + '? This action cannot be undone.',
+            confirmText: 'Delete',
+            showLoading: false,
+            onConfirm: function() {
+                $.ajax({
+                    url: '/do/user/incoming/edit/deleteAllUnassigned',
+                    method: 'GET',
+                    success: function(data) {
+                        var msg = 'Deleted ' + data.deleted + ' Data User' + (data.deleted !== 1 ? 's' : '');
+                        if (data.errors > 0) {
+                            msg += ' &mdash; ' + data.errors + ' could not be deleted.';
+                            _showBulkMsg('warning', msg);
+                        } else {
+                            _showBulkMsg('success', msg + '.');
+                        }
+                        table.ajax.url(_buildAjaxUrl()).load();
+                    },
+                    error: function() { _showBulkMsg('danger', 'Error performing bulk delete. Please try again.'); }
+                });
+            }
+        });
+    });
 
         /* ---- Cols:Auto ---- */
         var _incUsrColKey        = 'incUsrColMode';
@@ -202,3 +283,4 @@ $(document).ready(function() {
         });
 });
 </script>
+

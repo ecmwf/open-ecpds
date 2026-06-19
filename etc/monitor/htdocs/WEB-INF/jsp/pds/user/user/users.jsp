@@ -7,6 +7,16 @@
 <div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)">
     <i class="bi bi-people text-primary"></i>
     <span class="fw-semibold">Web Users</span>
+    <button class="btn btn-link btn-sm text-muted p-0" type="button"
+        data-bs-toggle="collapse" data-bs-target="#webUsersInfo"
+        aria-expanded="false" title="About this page">
+        <i class="bi bi-info-circle"></i>
+    </button>
+    <button id="webUserMonitorNoDestBtn" type="button"
+            class="btn btn-sm btn-outline-secondary"
+            title="Show only Monitor users with no destination category assigned">
+        <i class="bi bi-exclamation-triangle-fill me-1"></i>Monitor, no destination
+    </button>
     <div class="ms-auto d-flex flex-wrap align-items-center gap-2">
         <div class="input-group input-group-sm" style="width:auto">
             <span class="input-group-text"><i class="bi bi-search"></i></span>
@@ -39,7 +49,8 @@
             <div class="form-check mb-0"><input class="form-check-input webUsr-col-chk" type="checkbox" id="webUsrchk-1" data-col="1" checked><label class="form-check-label" for="webUsrchk-1">Comment</label></div>
             <div class="form-check mb-0"><input class="form-check-input webUsr-col-chk" type="checkbox" id="webUsrchk-2" data-col="2" checked><label class="form-check-label" for="webUsrchk-2">Enabled</label></div>
             <div class="form-check mb-0"><input class="form-check-input webUsr-col-chk" type="checkbox" id="webUsrchk-3" data-col="3" checked><label class="form-check-label" for="webUsrchk-3">Categories</label></div>
-            <div class="form-check mb-0"><input class="form-check-input webUsr-col-chk" type="checkbox" id="webUsrchk-4" data-col="4" checked disabled><label class="form-check-label text-muted" for="webUsrchk-4">Actions <small>(required)</small></label></div>
+            <div class="form-check mb-0"><input class="form-check-input webUsr-col-chk" type="checkbox" id="webUsrchk-4" data-col="4" checked><label class="form-check-label" for="webUsrchk-4">Monitor</label></div>
+            <div class="form-check mb-0"><input class="form-check-input webUsr-col-chk" type="checkbox" id="webUsrchk-5" data-col="5" checked disabled><label class="form-check-label text-muted" for="webUsrchk-5">Actions <small>(required)</small></label></div>
                             </div>
                         </li>
                     </ul>
@@ -47,7 +58,21 @@
         <a href="<bean:message key="user.basepath"/>/edit/insert_form" class="btn btn-sm btn-outline-success"><i class="bi bi-plus-circle"></i> Create</a>
     </div>
 </div>
+
+<div class="collapse" id="webUsersInfo">
+    <div class="card-body py-2 px-3 border-bottom" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
+        <strong class="d-block mb-1">Web Users &mdash; search and filter</strong>
+        <p class="mb-1">The <strong>Monitor</strong> column classifies users whose categories are exclusively from the monitor set ({mstate, monitoring, transfers, requirements}, optionally with <em>* operations</em> destination categories):</p>
+        <ul class="mb-1 ps-3">
+            <li><span class="badge rounded-pill border fw-normal bg-danger-subtle text-danger-emphasis"><i class="bi bi-exclamation-triangle-fill me-1"></i>No destination</span> &mdash; monitor user with no <em>* operations</em> destination category; they can view monitoring pages but cannot access any destination.</li>
+            <li><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>OK</span> &mdash; monitor user with at least one destination category.</li>
+        </ul>
+        <div class="text-muted">Use the <strong>Monitor, no destination</strong> button to filter just the problematic users. The Monitor column is sortable to group them.</div>
+    </div>
+</div>
+
 <div class="card-body p-0">
+<div id="webUserBulkMsg" style="display:none" class="mx-2 mt-2"></div>
 <div class="table-responsive">
 <table id="usersWebTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
     <thead class="table-light">
@@ -56,6 +81,7 @@
             <th>Comment</th>
             <th class="text-center">Enabled</th>
             <th>Categories</th>
+            <th class="text-center">Monitor</th>
             <th class="text-center no-sort">Actions</th>
         </tr>
     </thead>
@@ -64,10 +90,30 @@
 </div>
 </div>
 </div>
+<div class="mt-3">
+    <button id="webUserDeleteAllBtn" type="button"
+            class="btn btn-outline-danger d-none"
+            title="Delete all currently listed Monitor Web Users with no destination">
+        <i class="bi bi-trash-fill me-1"></i>Delete All
+    </button>
+</div>
 <script>
 $(document).ready(function() {
+    var _monitorNoDestOnly = false;
+    function _buildAjaxUrl() {
+        return '/do/user/user/list' + (_monitorNoDestOnly ? '?monitorNoDestination=true' : '');
+    }
+    var _canDelete = false;
+    var _filteredCount = 0;
     var table = $('#usersWebTable').DataTable({
-        ajax:       { url: '/do/user/user/list', dataSrc: 'data' },
+        ajax: {
+            url: _buildAjaxUrl(),
+            dataSrc: function(json) {
+                _canDelete = !!json.canDelete;
+                _filteredCount = json.recordsFiltered || 0;
+                return json.data;
+            }
+        },
         paging:     true,
         pageLength: (function() { try { var v = parseInt(localStorage.getItem('usersWebPageLen'), 10); return [10,25,50,100,250].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })(),
         searching:  true,
@@ -75,10 +121,12 @@ $(document).ready(function() {
         info:       true,
         language:   { emptyTable: 'No Web Users found.' },
         columnDefs: [
-            { orderable: false, targets: [4] },
-            { orderData: [5], targets: [2] },
-            { visible: false, targets: [5] }
+            { orderable: false, targets: [5] },
+            { orderData: [6], targets: [2] },
+            { orderData: [7], targets: [4] },
+            { visible: false, targets: [6, 7] }
         ],
+        drawCallback: function() { _updateDeleteAllBtn(); },
         dom: 't<"d-flex align-items-start mt-2 px-3 pb-2"i<"ms-auto"p>>'
     });
     var _len = (function() { try { var v = parseInt(localStorage.getItem('usersWebPageLen'), 10); return [10,25,50,100,250].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })();
@@ -87,6 +135,60 @@ $(document).ready(function() {
     $('#usersWebPageLen').on('change', function() { var len = +this.value; try { localStorage.setItem('usersWebPageLen', len); } catch(e) {} table.page.len(len).draw(); });
     $('#usersWebSearch').on('keyup', function() { table.search(this.value).draw(); });
 
+    $('#webUserMonitorNoDestBtn').on('click', function() {
+        _monitorNoDestOnly = !_monitorNoDestOnly;
+        $(this).toggleClass('btn-outline-secondary', !_monitorNoDestOnly)
+               .toggleClass('btn-warning', _monitorNoDestOnly);
+        if (!_monitorNoDestOnly) $('#webUserDeleteAllBtn').addClass('d-none');
+        table.ajax.url(_buildAjaxUrl()).load();
+    });
+
+    function _updateDeleteAllBtn() {
+        var show = _monitorNoDestOnly && _canDelete && _filteredCount > 0;
+        $('#webUserDeleteAllBtn').toggleClass('d-none', !show);
+        if (show) {
+            $('#webUserDeleteAllBtn').html('<i class="bi bi-trash-fill me-1"></i>Delete All (' + _filteredCount + ')');
+        }
+    }
+
+    function _showBulkMsg(type, html) {
+        var $m = $('#webUserBulkMsg');
+        $m.attr('class', 'mx-2 mt-2 alert alert-' + type + ' alert-dismissible d-flex align-items-center gap-2 p-2 mb-0');
+        var icon = type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill';
+        $m.html('<i class="bi ' + icon + ' flex-shrink-0"></i><div class="flex-grow-1">' + html + '</div>'
+              + '<button type="button" class="btn-close p-2" data-bs-dismiss="alert" aria-label="Close"></button>');
+        $m.show();
+        setTimeout(function() { $m.fadeOut(); }, 6000);
+    }
+
+    $('#webUserDeleteAllBtn').on('click', function() {
+        var n = _filteredCount;
+        var label = n === 1 ? '1 Monitor Web User with no destination' : 'all ' + n + ' Monitor Web Users with no destination';
+        confirmationDialog({
+            title: 'Delete Monitor Web Users',
+            message: 'Delete ' + label + '? This action cannot be undone.',
+            confirmText: 'Delete',
+            showLoading: false,
+            onConfirm: function() {
+                $.ajax({
+                    url: '/do/user/user/edit/deleteAllMonitorNoDest',
+                    method: 'GET',
+                    success: function(data) {
+                        var msg = 'Deleted ' + data.deleted + ' Web User' + (data.deleted !== 1 ? 's' : '');
+                        if (data.errors > 0) {
+                            msg += ' &mdash; ' + data.errors + ' could not be deleted.';
+                            _showBulkMsg('warning', msg);
+                        } else {
+                            _showBulkMsg('success', msg + '.');
+                        }
+                        table.ajax.url(_buildAjaxUrl()).load();
+                    },
+                    error: function() { _showBulkMsg('danger', 'Error performing bulk delete. Please try again.'); }
+                });
+            }
+        });
+    });
+
         /* ---- Cols:Auto ---- */
         var _webUsrColKey        = 'webUsrColMode';
         var _webUsrCustomColKey  = 'webUsrCustomCols';
@@ -94,12 +196,12 @@ $(document).ready(function() {
         var _webUsrColMode = (function() { try { return localStorage.getItem(_webUsrColKey) || 'auto'; } catch(e) { return 'auto'; } })();
         var _webUsrCustomCols = (function() {
             try { var s = localStorage.getItem(_webUsrCustomColKey); if (s) return JSON.parse(s); } catch(e) {}
-            return [0, 1, 2, 3, 4];
+            return [0, 1, 2, 3, 4, 5];
         })();
         function _webUsrShowCols(hideCols) {
             var n = table.columns().count();
             for (var i = 0; i < n; i++) {
-                if (i >= 5) continue;
+                if (i >= 6) continue;
                 table.column(i).visible(hideCols.indexOf(i) === -1, false);
             }
             table.columns.adjust();
@@ -107,8 +209,8 @@ $(document).ready(function() {
         function _webUsrApplyCustomCols() {
             var n = table.columns().count();
             for (var i = 0; i < n; i++) {
-                if (i >= 5) continue;
-                table.column(i).visible((i === 0 || i === 4) ? true : _webUsrCustomCols.indexOf(i) !== -1, false);
+                if (i >= 6) continue;
+                table.column(i).visible((i === 0 || i === 5) ? true : _webUsrCustomCols.indexOf(i) !== -1, false);
             }
             table.columns.adjust();
         }
@@ -157,3 +259,4 @@ $(document).ready(function() {
         });
 });
 </script>
+

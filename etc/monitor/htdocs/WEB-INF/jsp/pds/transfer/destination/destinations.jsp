@@ -155,7 +155,7 @@
                             <%-- Direct filters (not part of search string, applied immediately) --%>
                             <div class="border-top mt-1 pt-1">
                                 <div class="row g-1 mb-1">
-                                    <div class="col-12 col-md-4">
+                                    <div class="col-12 col-md-3">
                                         <label class="form-label mb-0 fw-semibold"><i class="bi bi-activity me-1 text-muted"></i>Status</label>
                                         <select class="form-select form-select-sm" name="destinationStatus" id="destinationStatus" onchange="destsTableReload()" title="Filter by Status">
                                             <c:forEach var="option" items="${statusOptions}">
@@ -163,7 +163,7 @@
                                             </c:forEach>
                                         </select>
                                     </div>
-                                    <div class="col-12 col-md-4">
+                                    <div class="col-12 col-md-3">
                                         <label class="form-label mb-0 fw-semibold"><i class="bi bi-file-zip me-1 text-muted"></i>Compression</label>
                                         <select class="form-select form-select-sm" name="destinationFilter" id="destinationFilter" onchange="destsTableReload()" title="Filter by Compression">
                                             <c:forEach var="option" items="${filterOptions}">
@@ -171,12 +171,20 @@
                                             </c:forEach>
                                         </select>
                                     </div>
-                                    <div class="col-12 col-md-4">
+                                    <div class="col-12 col-md-3">
                                         <label class="form-label mb-0 fw-semibold"><i class="bi bi-diagram-2 me-1 text-muted"></i>Aliases</label>
                                         <select class="form-select form-select-sm" name="aliases" id="aliases" onchange="destsTableReload()" title="Aliased From/To">
                                             <option value="all" <c:if test="${aliases == 'all'}">selected</c:if>>All Destinations</option>
                                             <option value="to"  <c:if test="${aliases == 'to'}">selected</c:if>>Aliased From ...</option>
                                             <option value="from" <c:if test="${aliases == 'from'}">selected</c:if>>Aliases To ...</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12 col-md-3">
+                                        <label class="form-label mb-0 fw-semibold"><i class="bi bi-people me-1 text-muted"></i>Data Users</label>
+                                        <select class="form-select form-select-sm" id="datausers" onchange="destsTableReload()" title="Filter by Data User association">
+                                            <option value="any">Any</option>
+                                            <option value="yes">With Data Users</option>
+                                            <option value="no">Without Data Users</option>
                                         </select>
                                     </div>
                                 </div>
@@ -438,6 +446,7 @@ function _updateDestSearchBanner(queryError, total, hasSearch) {
                 d.destinationStatus  = $('#destinationStatus').val() || 'All Status';
                 d.destinationType    = $('#destinationType').val() || '-1';
                 d.destinationFilter  = $('#destinationFilter').val() || 'All';
+                d.datausers          = $('#datausers').val() || 'any';
             }
         },
         paging: true, pageLength: 25, lengthChange: false, searching: false, autoWidth: false, order: [],
@@ -500,7 +509,8 @@ function _updateDestSearchBanner(queryError, total, hasSearch) {
             aliases:            $('#aliases').val() || 'All',
             destinationStatus:  $('#destinationStatus').val() || 'All Status',
             destinationType:    $('#destinationType').val() || '-1',
-            destinationFilter:  $('#destinationFilter').val() || 'All'
+            destinationFilter:  $('#destinationFilter').val() || 'All',
+            datausers:          $('#datausers').val() || 'any'
         };
     }
 

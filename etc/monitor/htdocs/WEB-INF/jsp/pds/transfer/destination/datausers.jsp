@@ -14,17 +14,18 @@
 </c:if>
 
 <c:if test="${not empty incomingUsers}">
-<table id="destUsersTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
+<table id="destUsersTable" class="table table-sm table-hover table-striped align-middle mt-3" style="width:100%">
     <thead class="table-light">
         <tr>
             <th>Data Login</th>
             <th>Comment</th>
             <th>Country</th>
             <th class="text-center">Enabled</th>
+            <th class="text-center">Association</th>
         </tr>
     </thead>
     <tbody>
-        <c:forEach var="user" items="${incomingUsers}">
+        <c:forEach var="user" items="${directUsers}">
         <tr>
             <td><a href="<bean:message key="incoming.basepath"/>/${user.id}">${user.id}</a></td>
             <td>${user.comment}</td>
@@ -35,6 +36,21 @@
                     <c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise>
                 </c:choose>
             </td>
+            <td class="text-center"><span class="badge rounded-pill border fw-normal bg-primary-subtle text-primary-emphasis" title="Directly assigned to this destination"><i class="bi bi-person-check me-1"></i>Direct</span></td>
+        </tr>
+        </c:forEach>
+        <c:forEach var="user" items="${policyUsers}">
+        <tr>
+            <td><a href="<bean:message key="incoming.basepath"/>/${user.id}">${user.id}</a></td>
+            <td>${user.comment}</td>
+            <td>${user.country.name}</td>
+            <td class="text-center" data-order="${user.active ? 1 : 0}">
+                <c:choose>
+                    <c:when test="${user.active}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when>
+                    <c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise>
+                </c:choose>
+            </td>
+            <td class="text-center"><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis" title="Access via a Data Policy"><i class="bi bi-diagram-3 me-1"></i>Via Policy</span></td>
         </tr>
         </c:forEach>
     </tbody>
