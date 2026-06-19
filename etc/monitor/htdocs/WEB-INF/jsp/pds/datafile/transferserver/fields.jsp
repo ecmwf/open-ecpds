@@ -43,8 +43,9 @@
             class="form-control form-control-sm"
             pattern="[a-zA-Z0-9]+([_-][a-zA-Z0-9]+)*"
             title="Must start and end with a letter or digit; '_' or '-' allowed as single separators (e.g. server-1)"
-            oninput="validatePatternInput(this, 'name-feedback')">
+            oninput="validatePatternInput(this, 'name-feedback'); _checkNameExists(this.value, '/do/datafile/transferserver')">
           <div id="name-feedback" class="form-text"></div>
+          <div id="name-exists-msg" style="display:none" class="small mt-1"></div>
           <div class="form-text">Letters, digits, <code>_</code> and <code>-</code> separators (e.g. <code>server-1</code>).</div>
         </logic:match>
         <logic:notMatch name="isInsert" value="true">
@@ -148,3 +149,26 @@
     </div>
   </div>
 </div>
+
+<script>
+var _checkNameTimer = null;
+function _checkNameExists(value, basePath) {
+  clearTimeout(_checkNameTimer);
+  var $msg = $('#name-exists-msg');
+  var $submit = $('button[type="submit"]').first();
+  $msg.hide();
+  $submit.prop('disabled', false);
+  if (!value || value.length < 1) return;
+  _checkNameTimer = setTimeout(function() {
+    $.getJSON(basePath + '?json=checkId&id=' + encodeURIComponent(value), function(data) {
+      if (data.exists) {
+        $msg.html('<i class="bi bi-x-circle-fill text-danger me-1"></i><span class="text-danger">Name <strong>' + $('<span>').text(value).html() + '</strong> is already taken.</span>').show();
+        $submit.prop('disabled', true);
+      } else {
+        $msg.html('<i class="bi bi-check-circle-fill text-success me-1"></i><span class="text-success">Available.</span>').show();
+        $submit.prop('disabled', false);
+      }
+    });
+  }, 400);
+}
+</script>

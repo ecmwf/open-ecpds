@@ -31,9 +31,10 @@
               class="form-control form-control-sm"
               pattern="[a-zA-Z0-9]+"
               title="Letters and digits only (e.g. Ftp)"
-              oninput="validatePatternInput(this, 'name-feedback')">
+              oninput="validatePatternInput(this, 'name-feedback'); _checkNameExists(this.value)">
             <span id="name-feedback"></span>
           </div>
+          <div id="name-exists-msg" style="display:none" class="small mt-1"></div>
         </logic:match>
         <logic:notMatch name="isInsert" value="true">
           <div class="form-control-plaintext form-control-sm fw-medium">
@@ -87,3 +88,26 @@
     </div>
   </div>
 </div>
+
+<script>
+var _checkNameTimer = null;
+function _checkNameExists(value) {
+  clearTimeout(_checkNameTimer);
+  var $msg = $('#name-exists-msg');
+  var $submit = $('button[type="submit"]').first();
+  $msg.hide();
+  $submit.prop('disabled', false);
+  if (!value || value.length < 1) return;
+  _checkNameTimer = setTimeout(function() {
+    $.getJSON('/do/transfer/method?json=checkId&id=' + encodeURIComponent(value), function(data) {
+      if (data.exists) {
+        $msg.html('<i class="bi bi-x-circle-fill text-danger me-1"></i><span class="text-danger">Name <strong>' + $('<span>').text(value).html() + '</strong> is already taken.</span>').show();
+        $submit.prop('disabled', true);
+      } else {
+        $msg.html('<i class="bi bi-check-circle-fill text-success me-1"></i><span class="text-success">Available.</span>').show();
+        $submit.prop('disabled', false);
+      }
+    });
+  }, 400);
+}
+</script>

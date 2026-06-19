@@ -49,9 +49,10 @@
 									<input id="name" name="name" type="text" class="form-control form-control-sm"
 										pattern="[a-zA-Z0-9]+([_-][a-zA-Z0-9]+)*"
 										title="Must start and end with a letter or digit; '_' or '-' allowed as single separators (e.g. admin-users)"
-										oninput="validatePatternInput(this, 'name-feedback')">
+										oninput="validatePatternInput(this, 'name-feedback'); _checkCategoryExists(this.value)">
 									<span id="name-feedback"></span>
 								</div>
+								<div id="name-exists-msg" style="display:none" class="small mt-1"></div>
 							</div>
 						</div>
 					</c:if>
@@ -136,3 +137,26 @@
 	</div>
 	</c:if>
 </div>
+
+<script>
+var _checkCategoryTimer = null;
+function _checkCategoryExists(value) {
+  clearTimeout(_checkCategoryTimer);
+  var $msg = $('#name-exists-msg');
+  var $submit = $('button[type="submit"]').first();
+  $msg.hide();
+  $submit.prop('disabled', false);
+  if (!value || value.length < 1) return;
+  _checkCategoryTimer = setTimeout(function() {
+    $.getJSON('/do/user/category?json=checkId&id=' + encodeURIComponent(value), function(data) {
+      if (data.exists) {
+        $msg.html('<i class="bi bi-x-circle-fill text-danger me-1"></i><span class="text-danger">Category <strong>' + $('<span>').text(value).html() + '</strong> already exists.</span>').show();
+        $submit.prop('disabled', true);
+      } else {
+        $msg.html('<i class="bi bi-check-circle-fill text-success me-1"></i><span class="text-success">Available.</span>').show();
+        $submit.prop('disabled', false);
+      }
+    });
+  }, 400);
+}
+</script>

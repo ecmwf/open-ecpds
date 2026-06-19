@@ -81,6 +81,25 @@ public class GetDestinationListJsonAction extends PDSAction {
     public ActionForward safeAuthorizedPerform(final ActionMapping mapping, final ActionForm form,
             final HttpServletRequest request, final HttpServletResponse response, final User user)
             throws TransferException, ECMWFActionFormException {
+        // Lightweight existence check used by the insert form to validate name uniqueness.
+        if ("checkId".equals(request.getParameter("json"))) {
+            final var id = request.getParameter("id");
+            boolean exists = false;
+            if (id != null && !id.isBlank()) {
+                try {
+                    DestinationHome.findByPrimaryKey(id);
+                    exists = true;
+                } catch (final Exception ignored) {
+                }
+            }
+            try {
+                response.setContentType("application/json; charset=UTF-8");
+                response.getWriter().write("{\"exists\":" + exists + "}");
+                response.getWriter().flush();
+            } catch (final java.io.IOException ignored) {
+            }
+            return null;
+        }
         final var draw = parseSafeInt(request.getParameter("draw"), 1);
         final var start = parseSafeInt(request.getParameter("start"), 0);
         final var lengthParam = parseSafeInt(request.getParameter("length"), 25);

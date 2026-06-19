@@ -58,6 +58,24 @@ public class GetIncomingPolicyAction extends PDSAction {
     public ActionForward safeAuthorizedPerform(final ActionMapping mapping, final ActionForm form,
             final HttpServletRequest request, final HttpServletResponse response, final User user)
             throws ECMWFException, ClassCastException {
+        if ("checkId".equals(request.getParameter("json"))) {
+            final var id = request.getParameter("id");
+            boolean exists = false;
+            if (id != null && !id.isBlank()) {
+                try {
+                    IncomingPolicyHome.findByPrimaryKey(id);
+                    exists = true;
+                } catch (final Exception ignored) {
+                }
+            }
+            try {
+                response.setContentType("application/json; charset=UTF-8");
+                response.getWriter().write("{\"exists\":" + exists + "}");
+                response.getWriter().flush();
+            } catch (final java.io.IOException ignored) {
+            }
+            return null;
+        }
         final ArrayList<?> parameters = ECMWFActionForm.getPathParameters(mapping, request);
         if (parameters.isEmpty()) {
             final Collection<? extends ModelBean> policies = IncomingPolicyHome.findAll();

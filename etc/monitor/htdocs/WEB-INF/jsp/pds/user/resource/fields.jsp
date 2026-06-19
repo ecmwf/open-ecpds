@@ -48,9 +48,10 @@
 		<input id="path" name="path" type="text" class="form-control form-control-sm"
 			pattern="/[a-zA-Z0-9_./-]*"
 			title="Path must start with '/' and contain only letters, digits, '_', '-', '.' and '/' (e.g. /do/transfer/destination/edit/)"
-			oninput="validatePatternInput(this, 'path-feedback')">
+			oninput="validatePatternInput(this, 'path-feedback'); _checkResourceExists(this.value)">
 		<span id="path-feedback"></span>
 	</div>
+	<div id="path-exists-msg" style="display:none" class="small mt-1"></div>
 </div>
 </div>
 </c:if>
@@ -134,3 +135,26 @@
 </div>
 </c:if>
 </div>
+
+<script>
+var _checkResourceTimer = null;
+function _checkResourceExists(value) {
+  clearTimeout(_checkResourceTimer);
+  var $msg = $('#path-exists-msg');
+  var $submit = $('button[type="submit"]').first();
+  $msg.hide();
+  $submit.prop('disabled', false);
+  if (!value || value.length < 1) return;
+  _checkResourceTimer = setTimeout(function() {
+    $.getJSON('/do/user/resource?json=checkId&id=' + encodeURIComponent(value), function(data) {
+      if (data.exists) {
+        $msg.html('<i class="bi bi-x-circle-fill text-danger me-1"></i><span class="text-danger">Resource <strong>' + $('<span>').text(value).html() + '</strong> already exists.</span>').show();
+        $submit.prop('disabled', true);
+      } else {
+        $msg.html('<i class="bi bi-check-circle-fill text-success me-1"></i><span class="text-success">Available.</span>').show();
+        $submit.prop('disabled', false);
+      }
+    });
+  }, 400);
+}
+</script>

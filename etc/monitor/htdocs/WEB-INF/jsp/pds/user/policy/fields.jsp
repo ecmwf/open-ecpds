@@ -43,9 +43,10 @@ function validate(path, message) {
 <input id="id" name="id" type="text" class="form-control form-control-sm"
     pattern="[a-zA-Z0-9]+([_.][a-zA-Z0-9]+)*"
     title="Must start and end with a letter or digit; '_' or '.' allowed as single separators (e.g. policy.read)"
-    oninput="validatePatternInput(this, 'id-feedback')">
+    oninput="validatePatternInput(this, 'id-feedback'); _checkPolicyIdExists(this.value)">
 <span id="id-feedback"></span>
 </div>
+<div id="id-exists-msg" style="display:none" class="small mt-1"></div>
 </c:if>
 </div>
 </div>
@@ -341,4 +342,25 @@ event.preventDefault();
 return false;
 }
 });
+
+var _checkPolicyIdTimer = null;
+function _checkPolicyIdExists(value) {
+  clearTimeout(_checkPolicyIdTimer);
+  var $msg = $('#id-exists-msg');
+  var $submit = $('button[type="submit"]').first();
+  $msg.hide();
+  $submit.prop('disabled', false);
+  if (!value || value.length < 1) return;
+  _checkPolicyIdTimer = setTimeout(function() {
+    $.getJSON('/do/user/policy?json=checkId&id=' + encodeURIComponent(value), function(data) {
+      if (data.exists) {
+        $msg.html('<i class="bi bi-x-circle-fill text-danger me-1"></i><span class="text-danger">Policy <strong>' + $('<span>').text(value).html() + '</strong> already exists.</span>').show();
+        $submit.prop('disabled', true);
+      } else {
+        $msg.html('<i class="bi bi-check-circle-fill text-success me-1"></i><span class="text-success">Available.</span>').show();
+        $submit.prop('disabled', false);
+      }
+    });
+  }, 400);
+}
 </script>

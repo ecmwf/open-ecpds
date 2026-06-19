@@ -254,13 +254,14 @@
 									maxlength="32"
 									pattern="[a-zA-Z0-9]+([_-][a-zA-Z0-9]+)*"
 									title="Must start and end with a letter or digit; '_' or '-' allowed as single separators (e.g. my-destination). Maximum 32 characters."
-									oninput="validatePatternInput(this, 'name-feedback')"
+										oninput="validatePatternInput(this, 'name-feedback'); _checkDestNameExists(this.value)"
 									<c:if test="${empty destinationActionForm.fromDestinationOptions}">required</c:if>>
 								<span id="name-feedback"></span>
 							</div>
+								<div id="name-exists-msg" style="display:none" class="small mt-1"></div>
+							</div>
 						</div>
 					</div>
-				</div>
 				</c:if>
 
 				<div class="dest-common-section">
@@ -1656,4 +1657,25 @@
 			document.getElementById(id).style.display = show ? '' : 'none';
 		});
 	}
+
+    var _checkDestNameTimer = null;
+    function _checkDestNameExists(value) {
+        clearTimeout(_checkDestNameTimer);
+        var $msg = $('#name-exists-msg');
+        var $submit = $('button[type="submit"]').first();
+        $msg.hide();
+        $submit.prop('disabled', false);
+        if (!value || value.length < 1) return;
+        _checkDestNameTimer = setTimeout(function() {
+            $.getJSON('/do/transfer/destination/list?json=checkId&id=' + encodeURIComponent(value), function(data) {
+                if (data.exists) {
+                    $msg.html('<i class="bi bi-x-circle-fill text-danger me-1"></i><span class="text-danger">Destination <strong>' + $('<span>').text(value).html() + '</strong> already exists.</span>').show();
+                    $submit.prop('disabled', true);
+                } else {
+                    $msg.html('<i class="bi bi-check-circle-fill text-success me-1"></i><span class="text-success">Available.</span>').show();
+                    $submit.prop('disabled', false);
+                }
+            });
+        }, 400);
+    }
 </script>

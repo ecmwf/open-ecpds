@@ -65,12 +65,13 @@
 									<input id="uid" name="uid" type="text" class="form-control form-control-sm"
 										pattern="[A-Za-z0-9]+(\.[A-Za-z0-9]+)*"
 										title="Only letters and digits, optionally separated by a single '.'"
-										oninput="validatePatternInput(this, 'uid-feedback')">
+										oninput="validatePatternInput(this, 'uid-feedback'); _checkLoginExists(this.value, 'uid-exists-msg', 'user')">
 									<span id="uid-feedback"></span>
 								</div>
 								<div id="uid-feedback-msg" class="invalid-feedback" style="display:none">
 									Must start and end with a letter or digit; single <code>.</code> separators only (e.g. <code>john.doe</code>).
 								</div>
+								<div id="uid-exists-msg" style="display:none" class="small mt-1"></div>
 							</div>
 						</div>
 					</c:if>
@@ -316,4 +317,26 @@
         const msg = document.getElementById('uid-feedback-msg');
         if (msg) msg.style.display = this.validity.valid || !this.value ? 'none' : 'block';
     });
+
+    var _checkLoginTimer = null;
+    function _checkLoginExists(value, msgId, type) {
+        clearTimeout(_checkLoginTimer);
+        var $msg = $('#' + msgId);
+        var $submit = $('button[type="submit"]').first();
+        $msg.hide();
+        $submit.prop('disabled', false);
+        if (!value || value.length < 1) return;
+        _checkLoginTimer = setTimeout(function() {
+            var url = type === 'incoming' ? '/do/user/incoming/list?json=checkId&id=' : '/do/user/user/list?json=checkId&id=';
+            $.getJSON(url + encodeURIComponent(value), function(data) {
+                if (data.exists) {
+                    $msg.html('<i class="bi bi-x-circle-fill text-danger me-1"></i><span class="text-danger">Login <strong>' + $('<span>').text(value).html() + '</strong> is already taken.</span>').show();
+                    $submit.prop('disabled', true);
+                } else {
+                    $msg.html('<i class="bi bi-check-circle-fill text-success me-1"></i><span class="text-success">Available.</span>').show();
+                    $submit.prop('disabled', false);
+                }
+            });
+        }, 400);
+    }
 </script>
