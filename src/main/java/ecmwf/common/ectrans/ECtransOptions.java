@@ -1070,6 +1070,12 @@ public enum ECtransOptions {
     /** The host s3 ftpgroup. */
     HOST_S3_FTPGROUP("ftpgroup", String.class, STRING_NONE),
 
+    /** The host s3 request checksum calculation. */
+    HOST_S3_REQUEST_CHECKSUM_CALCULATION("requestChecksumCalculation", String.class, STRING_NONE),
+
+    /** The host s3 response checksum validation. */
+    HOST_S3_RESPONSE_CHECKSUM_VALIDATION("responseChecksumValidation", String.class, STRING_NONE),
+
     /** The host gcs allow empty bucket name. */
     HOST_GCS_ALLOW_EMPTY_BUCKET_NAME("allowEmptyBucketName", Boolean.class, false),
 

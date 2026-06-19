@@ -60,6 +60,8 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_PREFIX;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_PROTOCOL;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_RECURSIVE_LEVEL;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_REGION;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_REQUEST_CHECKSUM_CALCULATION;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_RESPONSE_CHECKSUM_VALIDATION;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_ROLE_ARN;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_ROLE_SESSION_NAME;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_SCHEME;
@@ -107,6 +109,8 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.core.checksums.RequestChecksumCalculation;
+import software.amazon.awssdk.core.checksums.ResponseChecksumValidation;
 import software.amazon.awssdk.core.interceptor.Context;
 import software.amazon.awssdk.core.interceptor.ExecutionAttributes;
 import software.amazon.awssdk.core.interceptor.ExecutionInterceptor;
@@ -139,7 +143,6 @@ import ecmwf.common.ectrans.ECtransSetup;
 import ecmwf.common.ectrans.TransferModule;
 import ecmwf.common.rmi.ClientSocketStatistics;
 import ecmwf.common.rmi.SocketConfig;
-import ecmwf.common.technical.Cnf;
 import ecmwf.common.technical.StreamPlugThread;
 import ecmwf.common.text.Format;
 
@@ -289,7 +292,9 @@ public final class AmazonS3Module extends TransferModule {
                     setup.getBoolean(HOST_S3_ENABLE_PATH_STYLE_ACCESS), bucketName, url,
                     isNotEmpty(region) ? region : Region.US_EAST_1.id(), setup.getBoolean(HOST_S3_MK_BUCKET),
                     setup.getString(HOST_S3_ROLE_ARN), setup.getString(HOST_S3_ROLE_SESSION_NAME),
-                    setup.getInteger(HOST_S3_DURATION_SECONDS), setup.getString(HOST_S3_EXTERNAL_ID), getDebug());
+                    setup.getInteger(HOST_S3_DURATION_SECONDS), setup.getString(HOST_S3_EXTERNAL_ID),
+                    setup.getString(HOST_S3_REQUEST_CHECKSUM_CALCULATION),
+                    setup.getString(HOST_S3_RESPONSE_CHECKSUM_VALIDATION), getDebug());
             connected = true;
         } catch (final S3Exception e) {
             _log.error("Connection failed to {}", url, e);
@@ -1074,6 +1079,10 @@ public final class AmazonS3Module extends TransferModule {
          *            the duration seconds
          * @param externalId
          *            the external id
+         * @param requestChecksumCalculation
+         *            the request checksum calculation (WHEN_SUPPORTED or WHEN_REQUIRED, empty to use SDK default)
+         * @param responseChecksumValidation
+         *            the response checksum validation (WHEN_SUPPORTED or WHEN_REQUIRED, empty to use SDK default)
          * @param debug
          *            the debug
          *
@@ -1089,7 +1098,9 @@ public final class AmazonS3Module extends TransferModule {
                 final boolean acceleration, final boolean dualstack, final boolean disableChunkedEncoding,
                 final boolean enablePathStyleAccess, final String bucketName, final String url, final String region,
                 final boolean mkBucket, final String roleArn, final String roleSessionName, final int durationSeconds,
-                final String externalId, final boolean debug) throws NoSuchAlgorithmException, KeyManagementException {
+                final String externalId, final String requestChecksumCalculation,
+                final String responseChecksumValidation, final boolean debug)
+                throws NoSuchAlgorithmException, KeyManagementException {
             // Build the SSL socket factory controlling both certificate and hostname validation.
             // TcpTunedSslSocketFactory hooks into prepareSocket() to apply all SocketConfig TCP
             // options (TCP_NODELAY, QUICK_ACK, congestion, keepalive tuning, etc.) to the
@@ -1108,15 +1119,22 @@ public final class AmazonS3Module extends TransferModule {
                 }
             }
             // S3-specific service configuration.
-            final var skipChecksumValidation = Cnf.at("AmazonS3", "skipMd5CheckStrategy", false);
             final var s3Config = S3Configuration.builder().accelerateModeEnabled(acceleration)
                     .pathStyleAccessEnabled(enablePathStyleAccess).chunkedEncodingEnabled(!disableChunkedEncoding)
-                    .checksumValidationEnabled(!skipChecksumValidation).build();
+                    .build();
             // Build the S3 client.
             final var clientBuilder = S3Client.builder()
                     .credentialsProvider(loadCredentials(user, password, region, sslContext, roleArn, roleSessionName,
                             durationSeconds, externalId))
                     .serviceConfiguration(s3Config).dualstackEnabled(dualstack).httpClientBuilder(httpClientBuilder);
+            if (isNotEmpty(requestChecksumCalculation)) {
+                clientBuilder
+                        .requestChecksumCalculation(RequestChecksumCalculation.fromValue(requestChecksumCalculation));
+            }
+            if (isNotEmpty(responseChecksumValidation)) {
+                clientBuilder
+                        .responseChecksumValidation(ResponseChecksumValidation.fromValue(responseChecksumValidation));
+            }
             if (acceleration || isEmpty(url)) {
                 clientBuilder.region(Region.of(region));
             } else {
