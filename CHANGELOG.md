@@ -4,7 +4,7 @@ This document summarizes the most significant changes in OpenECPDS across all ma
 
 ---
 
-## open-ecpds 8.0.1-16062026 (2026-06-16)
+## open-ecpds 8.0.1-19062026 (2026-06-19)
 
 - Added new dashboards to the Monitoring Interface for tracking Data Portal activity, including uploads and downloads, both globally and per data user.
 - Added activity statistics to the Data Portal, helping users identify less busy periods and optimize transfer performance by selecting the most suitable time for uploads and downloads.
@@ -17,6 +17,11 @@ This document summarizes the most significant changes in OpenECPDS across all ma
 - Allow the maximum number of connections for a data user to be scheduled (e.g. higher limits during off-peak hours).
 - Added support for upload and download byte quotas in the Data Portal. Administrators can now limit the amount of data a user may upload or download within a configurable rolling time window. Once the configured quota is reached, new transfer requests are automatically refused until usage falls back below the limit. This feature helps control bandwidth consumption, enforce usage policies, and prevent individual users from monopolising portal resources.
 - Added support for similar quotas at the Destination level.
+- Added a filter to select destinations with or without associated data users.
+- Added a badge indicating whether a destination has associated data users, either directly or indirectly through a data policy.
+- Improved the workflow for creating data users, web users, and other entities.
+- Added presets and a "Remove All" option to association cards.
+- Added a filter to identify problematic data users and web users, along with a "Delete All" button to remove them all at once.
 
 ## open-ecpds 8.0.1-29052026 (2026-05-29)
 
