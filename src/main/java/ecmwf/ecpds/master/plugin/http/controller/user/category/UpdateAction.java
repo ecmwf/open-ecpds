@@ -57,6 +57,9 @@ public class UpdateAction extends PDSAction {
     /** The Constant DELETE_RESOURCE. */
     private static final String DELETE_RESOURCE = "deleteResource";
 
+    /** The Constant DELETE_ALL_RESOURCES. */
+    private static final String DELETE_ALL_RESOURCES = "deleteAllResources";
+
     /**
      * {@inheritDoc}
      *
@@ -120,6 +123,12 @@ public class UpdateAction extends PDSAction {
             return mapping.findForward("edit");
         } else if (DELETE_RESOURCE.equals(subAction)) {
             webCategory.deleteResource(ResourceHome.findByURI(subActionParameter));
+            webCategory.save(u);
+            return mapping.findForward("edit");
+        } else if (DELETE_ALL_RESOURCES.equals(subAction)) {
+            for (final var resource : new java.util.ArrayList<>(category.getAccessibleResources())) {
+                webCategory.deleteResource((ecmwf.web.model.users.Resource) resource);
+            }
             webCategory.save(u);
             return mapping.findForward("edit");
         } else {

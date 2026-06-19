@@ -28,6 +28,7 @@ package ecmwf.ecpds.master.plugin.http.controller.user.user;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -43,6 +44,7 @@ import ecmwf.web.controller.ECMWFActionForm;
 import ecmwf.web.controller.ECMWFActionFormException;
 import ecmwf.web.home.users.CategoryHome;
 import ecmwf.web.home.users.UserHome;
+import ecmwf.web.model.users.Category;
 import ecmwf.web.model.users.User;
 
 /**
@@ -53,8 +55,27 @@ public class UpdateAction extends PDSAction {
     /** The Constant ADD_CATEGORY. */
     private static final String ADD_CATEGORY = "addCategory";
 
+    /** The Constant ADD_CATEGORIES. */
+    private static final String ADD_CATEGORIES = "addCategories";
+
     /** The Constant DELETE_CATEGORY. */
     private static final String DELETE_CATEGORY = "deleteCategory";
+
+    /** The Constant DELETE_ALL_CATEGORIES. */
+    private static final String DELETE_ALL_CATEGORIES = "deleteAllCategories";
+
+    /** The Constant SET_ADMIN_CATEGORIES. */
+    private static final String SET_ADMIN_CATEGORIES = "setAdminCategories";
+
+    /** The Constant SET_MONITOR_CATEGORIES. */
+    private static final String SET_MONITOR_CATEGORIES = "setMonitorCategories";
+
+    /** Web categories assigned to the Admin preset. */
+    private static final Set<String> ADMIN_CATEGORIES = Set.of("operator", "administrator", "mstate", "monitoring",
+            "admin", "datafile", "transfer info", "transfer admin", "transfers", "operations");
+
+    /** Web categories assigned to the Monitor preset. */
+    private static final Set<String> MONITOR_CATEGORIES = Set.of("mstate", "monitoring", "transfers");
 
     /**
      * {@inheritDoc}
@@ -117,8 +138,44 @@ public class UpdateAction extends PDSAction {
             webUser.addCategory(CategoryHome.findByPrimaryKey(subActionParameter));
             webUser.save(u);
             return mapping.findForward("edit");
+        } else if (ADD_CATEGORIES.equals(subAction)) {
+            for (final var id : subActionParameter.split(",")) {
+                final var trimmed = id.trim();
+                if (!trimmed.isEmpty()) {
+                    webUser.addCategory(CategoryHome.findByPrimaryKey(trimmed));
+                }
+            }
+            webUser.save(u);
+            return mapping.findForward("edit");
         } else if (DELETE_CATEGORY.equals(subAction)) {
             webUser.deleteCategory(CategoryHome.findByPrimaryKey(subActionParameter));
+            webUser.save(u);
+            return mapping.findForward("edit");
+        } else if (DELETE_ALL_CATEGORIES.equals(subAction)) {
+            for (final var cat : new java.util.ArrayList<>(webUser.getCategories())) {
+                webUser.deleteCategory((Category) cat);
+            }
+            webUser.save(u);
+            return mapping.findForward("edit");
+        } else if (SET_ADMIN_CATEGORIES.equals(subAction) || SET_MONITOR_CATEGORIES.equals(subAction)) {
+            final var targetNames = SET_ADMIN_CATEGORIES.equals(subAction) ? ADMIN_CATEGORIES : MONITOR_CATEGORIES;
+            final java.util.Set<String> currentNames = new java.util.HashSet<>();
+            for (final var cat : webUser.getCategories()) {
+                currentNames.add(((Category) cat).getName());
+            }
+            // Remove categories not in the target preset
+            for (final var cat : new java.util.ArrayList<>(webUser.getCategories())) {
+                if (!targetNames.contains(((Category) cat).getName())) {
+                    webUser.deleteCategory((Category) cat);
+                }
+            }
+            // Add missing categories from the preset
+            for (final var cat : CategoryHome.findAll()) {
+                if (targetNames.contains(((Category) cat).getName())
+                        && !currentNames.contains(((Category) cat).getName())) {
+                    webUser.addCategory((Category) cat);
+                }
+            }
             webUser.save(u);
             return mapping.findForward("edit");
         } else {

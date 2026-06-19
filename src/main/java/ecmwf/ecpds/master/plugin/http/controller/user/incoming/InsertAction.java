@@ -71,7 +71,8 @@ public class InsertAction extends PDSAction {
                 iuaf.setId(id.trim());
                 iuaf.populateUser(incomingUser);
                 incomingUser.insert(user);
-                return mapping.findForward("success");
+                response.sendRedirect(request.getContextPath() + "/do/user/incoming/edit/update_form/" + id.trim());
+                return null;
             } else {
                 throw new Exception(
                         "Please choose a valid non-empty Data User name (only letters, digits, '_' and '.' are allowed): \""

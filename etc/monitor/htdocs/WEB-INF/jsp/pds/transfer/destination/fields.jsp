@@ -581,10 +581,25 @@
       <div class="card-header">
         <i class="bi bi-hdd-network text-secondary"></i>
         <strong>Dissemination Hosts</strong>
-        <button type="button" class="btn btn-sm btn-outline-primary ms-auto"
-                data-bs-toggle="collapse" data-bs-target="#dissChooser">
-          <i class="bi bi-plus-lg"></i> Add
-        </button>
+        <div class="btn-group btn-group-sm ms-auto">
+          <button type="button" class="btn btn-outline-primary"
+                  data-bs-toggle="collapse" data-bs-target="#dissChooser">
+            <i class="bi bi-plus-lg"></i> Add
+          </button>
+          <c:if test="${not empty destinationActionForm.disseminationHostsAndPriorities}">
+          <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split"
+                  data-bs-toggle="dropdown" aria-expanded="false">
+            <span class="visually-hidden">Toggle dropdown</span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li>
+              <a class="dropdown-item text-danger" href="javascript:validate('<bean:message key="destination.basepath"/>/associations/<c:out value="${destinationActionForm.id}"/>/deleteAllHosts/Dissemination','Remove ALL dissemination hosts from destination <c:out value="${destinationActionForm.id}"/>?')">
+                <i class="bi bi-trash me-1"></i>Remove All
+              </a>
+            </li>
+          </ul>
+          </c:if>
+        </div>
       </div>
       <div class="card-body p-2">
         <c:choose>
@@ -642,10 +657,25 @@
       <div class="card-header">
         <i class="bi bi-hdd-stack text-secondary"></i>
         <strong>Acquisition Hosts</strong>
-        <button type="button" class="btn btn-sm btn-outline-primary ms-auto"
-                data-bs-toggle="collapse" data-bs-target="#acqChooser">
-          <i class="bi bi-plus-lg"></i> Add
-        </button>
+        <div class="btn-group btn-group-sm ms-auto">
+          <button type="button" class="btn btn-outline-primary"
+                  data-bs-toggle="collapse" data-bs-target="#acqChooser">
+            <i class="bi bi-plus-lg"></i> Add
+          </button>
+          <c:if test="${not empty destinationActionForm.acquisitionHostsAndPriorities}">
+          <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split"
+                  data-bs-toggle="dropdown" aria-expanded="false">
+            <span class="visually-hidden">Toggle dropdown</span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li>
+              <a class="dropdown-item text-danger" href="javascript:validate('<bean:message key="destination.basepath"/>/associations/<c:out value="${destinationActionForm.id}"/>/deleteAllHosts/Acquisition','Remove ALL acquisition hosts from destination <c:out value="${destinationActionForm.id}"/>?')">
+                <i class="bi bi-trash me-1"></i>Remove All
+              </a>
+            </li>
+          </ul>
+          </c:if>
+        </div>
       </div>
       <div class="card-body p-2">
         <c:choose>
@@ -703,10 +733,25 @@
       <div class="card-header">
         <i class="bi bi-arrow-left-right text-secondary"></i>
         <strong>Proxy Hosts</strong>
-        <button type="button" class="btn btn-sm btn-outline-primary ms-auto"
-                data-bs-toggle="collapse" data-bs-target="#proxyChooser">
-          <i class="bi bi-plus-lg"></i> Add
-        </button>
+        <div class="btn-group btn-group-sm ms-auto">
+          <button type="button" class="btn btn-outline-primary"
+                  data-bs-toggle="collapse" data-bs-target="#proxyChooser">
+            <i class="bi bi-plus-lg"></i> Add
+          </button>
+          <c:if test="${not empty destinationActionForm.proxyHostsAndPriorities}">
+          <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split"
+                  data-bs-toggle="dropdown" aria-expanded="false">
+            <span class="visually-hidden">Toggle dropdown</span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li>
+              <a class="dropdown-item text-danger" href="javascript:validate('<bean:message key="destination.basepath"/>/associations/<c:out value="${destinationActionForm.id}"/>/deleteAllHosts/Proxy','Remove ALL proxy hosts from destination <c:out value="${destinationActionForm.id}"/>?')">
+                <i class="bi bi-trash me-1"></i>Remove All
+              </a>
+            </li>
+          </ul>
+          </c:if>
+        </div>
       </div>
       <div class="card-body p-2">
         <c:choose>
@@ -764,10 +809,25 @@
       <div class="card-header">
         <i class="bi bi-people text-secondary"></i>
         <strong>Authorized Web Users</strong>
-        <button type="button" class="btn btn-sm btn-outline-primary ms-auto"
-                data-bs-toggle="collapse" data-bs-target="#userChooser">
-          <i class="bi bi-plus-lg"></i> Add
-        </button>
+        <div class="btn-group btn-group-sm ms-auto">
+          <button type="button" class="btn btn-outline-primary"
+                  data-bs-toggle="collapse" data-bs-target="#userChooser">
+            <i class="bi bi-plus-lg"></i> Add
+          </button>
+          <c:if test="${not empty destinationActionForm.associatedEcUsers}">
+          <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split"
+                  data-bs-toggle="dropdown" aria-expanded="false">
+            <span class="visually-hidden">Toggle dropdown</span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li>
+              <a class="dropdown-item text-danger" href="javascript:validate('<bean:message key="destination.basepath"/>/associations/<c:out value="${destinationActionForm.id}"/>/deleteAllEcUsers/all','Remove ALL EC users from destination <c:out value="${destinationActionForm.id}"/>?')">
+                <i class="bi bi-trash me-1"></i>Remove All
+              </a>
+            </li>
+          </ul>
+          </c:if>
+        </div>
       </div>
       <div class="card-body p-2">
         <c:choose>
@@ -817,10 +877,25 @@
       <div class="card-header">
         <i class="bi bi-shield-check text-secondary"></i>
         <strong>Authorized Data Policies</strong>
-        <button type="button" class="btn btn-sm btn-outline-primary ms-auto"
-                data-bs-toggle="collapse" data-bs-target="#policyChooser">
-          <i class="bi bi-plus-lg"></i> Add
-        </button>
+        <div class="btn-group btn-group-sm ms-auto">
+          <button type="button" class="btn btn-outline-primary"
+                  data-bs-toggle="collapse" data-bs-target="#policyChooser">
+            <i class="bi bi-plus-lg"></i> Add
+          </button>
+          <c:if test="${not empty destinationActionForm.associatedIncomingPolicies}">
+          <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split"
+                  data-bs-toggle="dropdown" aria-expanded="false">
+            <span class="visually-hidden">Toggle dropdown</span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li>
+              <a class="dropdown-item text-danger" href="javascript:validate('<bean:message key="destination.basepath"/>/associations/<c:out value="${destinationActionForm.id}"/>/deleteAllPolicies/all','Remove ALL authorized policies from destination <c:out value="${destinationActionForm.id}"/>?')">
+                <i class="bi bi-trash me-1"></i>Remove All
+              </a>
+            </li>
+          </ul>
+          </c:if>
+        </div>
       </div>
       <div class="card-body p-2">
         <c:choose>
@@ -870,10 +945,25 @@
       <div class="card-header">
         <i class="bi bi-signpost-split text-secondary"></i>
         <strong>Destination Aliases</strong>
-        <button type="button" class="btn btn-sm btn-outline-primary ms-auto"
-                data-bs-toggle="collapse" data-bs-target="#aliasChooser">
-          <i class="bi bi-plus-lg"></i> Add
-        </button>
+        <div class="btn-group btn-group-sm ms-auto">
+          <button type="button" class="btn btn-outline-primary"
+                  data-bs-toggle="collapse" data-bs-target="#aliasChooser">
+            <i class="bi bi-plus-lg"></i> Add
+          </button>
+          <c:if test="${not empty destinationActionForm.aliases}">
+          <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split"
+                  data-bs-toggle="dropdown" aria-expanded="false">
+            <span class="visually-hidden">Toggle dropdown</span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li>
+              <a class="dropdown-item text-danger" href="javascript:validate('<bean:message key="destination.basepath"/>/associations/<c:out value="${destinationActionForm.id}"/>/deleteAllAliases/all','Remove ALL destination aliases from destination <c:out value="${destinationActionForm.id}"/>?')">
+                <i class="bi bi-trash me-1"></i>Remove All
+              </a>
+            </li>
+          </ul>
+          </c:if>
+        </div>
       </div>
       <div class="card-body p-2">
         <c:choose>
@@ -960,6 +1050,23 @@
 			<span class="fw-semibold">Options</span>
 		</div>
 		<div class="card-body p-2">
+			<%-- Quota summary badges --%>
+			<c:set var="uploadQuota" value="${requestScope[actionFormName].incomingUploadQuota}"/>
+			<c:set var="downloadQuota" value="${requestScope[actionFormName].incomingDownloadQuota}"/>
+			<c:if test="${not empty uploadQuota || not empty downloadQuota}">
+			<div class="d-flex flex-wrap gap-2 mb-2 px-1">
+			  <c:if test="${not empty uploadQuota}">
+			    <span class="badge rounded-pill bg-warning text-dark" title="Upload quota limit">
+			      <i class="bi bi-cloud-upload me-1"></i>Upload limit: <c:out value="${uploadQuota}"/>
+			    </span>
+			  </c:if>
+			  <c:if test="${not empty downloadQuota}">
+			    <span class="badge rounded-pill bg-info text-dark" title="Download quota limit">
+			      <i class="bi bi-cloud-download me-1"></i>Download limit: <c:out value="${downloadQuota}"/>
+			    </span>
+			  </c:if>
+			</div>
+			</c:if>
 			<div class="accordion" id="optionsAccordion">
 					<div class="accordion-item">
 						<h2 class="accordion-header" id="acc-properties-heading" style="position:relative;">

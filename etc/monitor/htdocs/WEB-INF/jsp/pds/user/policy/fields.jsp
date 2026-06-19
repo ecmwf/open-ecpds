@@ -67,17 +67,56 @@ function validate(path, message) {
   <div class="card-header">
     <i class="bi bi-geo-alt text-secondary"></i>
     <strong>Destinations</strong>
-    <button type="button" class="btn btn-sm btn-outline-primary ms-auto"
-            data-bs-toggle="collapse" data-bs-target="#destChooser">
-      <i class="bi bi-plus-lg"></i> Add
-    </button>
+    <div class="btn-group btn-group-sm ms-auto">
+      <button type="button" class="btn btn-outline-primary"
+              data-bs-toggle="collapse" data-bs-target="#destChooser">
+        <i class="bi bi-plus-lg"></i> Add
+      </button>
+      <c:if test="${not empty incomingPolicyActionForm.destinations}">
+      <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split"
+              data-bs-toggle="dropdown" aria-expanded="false">
+        <span class="visually-hidden">Toggle dropdown</span>
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end">
+        <li>
+          <a class="dropdown-item text-danger" href="javascript:validate('<bean:message key="policy.basepath"/>/edit/update/<c:out value="${incomingPolicyActionForm.id}"/>/deleteAllDestinations/all','Remove ALL destinations from policy <c:out value="${incomingPolicyActionForm.id}"/>?')">
+            <i class="bi bi-trash me-1"></i>Remove All
+          </a>
+        </li>
+      </ul>
+      </c:if>
+    </div>
   </div>
   <div class="card-body p-2">
     <c:choose>
       <c:when test="${empty incomingPolicyActionForm.destinations}">
-        <div class="alert alert-info d-flex align-items-start gap-2 py-2 px-3 mb-2 small" role="alert">
-          <i class="bi bi-info-circle-fill flex-shrink-0 mt-1"></i>
-          <span>No destinations assigned to this policy. Login attempts will still succeed if each associated Data User has its own destinations configured directly &mdash; but users who rely solely on this policy for destination access will be denied.</span>
+        <div class="alert alert-warning py-2 px-3 mb-2 small" role="alert">
+          <div class="d-flex align-items-start gap-2 mb-1">
+            <i class="bi bi-exclamation-triangle-fill flex-shrink-0 mt-1"></i>
+            <strong>No destinations assigned.</strong>
+          </div>
+          <div class="text-muted mb-2">Data users relying solely on this policy for destination access will be denied. Select one or more destinations below and click <em>Add Selected</em>.</div>
+          <c:if test="${not empty incomingPolicyActionForm.destinationOptions}">
+            <input type="text" id="policyDestSearch" class="form-control form-control-sm mb-1" placeholder="Search destinations..." oninput="filterPolicyDestList(this)">
+            <div id="policyDestList" style="max-height:160px;overflow-y:auto;border:1px solid #dee2e6;border-radius:4px;background:#fff">
+              <c:forEach var="column" items="${incomingPolicyActionForm.destinationOptions}">
+                <label class="policy-dest-item d-flex align-items-center gap-2 px-2 py-1 m-0" style="cursor:pointer">
+                  <input type="checkbox" class="form-check-input flex-shrink-0 m-0" value="${column.name}" onchange="updatePolicyDestAddBtn()">
+                  <c:out value="${column.name}"/>
+                  <c:if test="${not empty column.value}"><small class="text-muted ms-1"><c:out value="${column.value}"/></small></c:if>
+                </label>
+              </c:forEach>
+            </div>
+            <div class="mt-2 d-flex gap-2">
+              <button type="button" class="btn btn-sm btn-warning" id="policyDestAddBtn" disabled onclick="addSelectedPolicyDestinations('${incomingPolicyActionForm.id}')">
+                <i class="bi bi-plus-lg"></i> Add Selected
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleAllPolicyDest(this)">Select All</button>
+            </div>
+          </c:if>
+          <c:if test="${empty incomingPolicyActionForm.destinationOptions}">
+            <p class="text-muted small mb-0"><i class="bi bi-info-circle me-1"></i>All destinations are already assigned or none exist.</p>
+          </c:if>
         </div>
       </c:when>
       <c:otherwise>
@@ -239,6 +278,33 @@ textareaProperties.val(editorProperties.getSession().getValue());
 
 makeResizable(editorProperties);
 checkEachLine(editorProperties, 'policyAccPropertiesBtn');
+
+function filterPolicyDestList(inp) {
+    var q = inp.value.toLowerCase();
+    document.querySelectorAll('#policyDestList .policy-dest-item').forEach(function(el) {
+        el.style.display = el.textContent.toLowerCase().indexOf(q) === -1 ? 'none' : '';
+    });
+}
+
+function updatePolicyDestAddBtn() {
+    var btn = document.getElementById('policyDestAddBtn');
+    if (btn) btn.disabled = document.querySelectorAll('#policyDestList input[type=checkbox]:checked').length === 0;
+}
+
+function toggleAllPolicyDest(btn) {
+    var checkboxes = document.querySelectorAll('#policyDestList .policy-dest-item input[type=checkbox]');
+    var allChecked = Array.from(checkboxes).every(function(cb) { return cb.checked || cb.closest('.policy-dest-item').style.display === 'none'; });
+    checkboxes.forEach(function(cb) {
+        if (cb.closest('.policy-dest-item').style.display !== 'none') cb.checked = !allChecked;
+    });
+    btn.textContent = allChecked ? 'Select All' : 'Deselect All';
+    updatePolicyDestAddBtn();
+}
+
+function addSelectedPolicyDestinations(policyId) {
+    var names = Array.from(document.querySelectorAll('#policyDestList input[type=checkbox]:checked')).map(function(cb) { return cb.value; });
+    if (names.length > 0) location.href = '/do/user/policy/edit/update/' + policyId + '/addDestinations/' + names.join(',');
+}
 
 document.getElementById('policyAccProperties').addEventListener('shown.bs.collapse', function() {
 	editorProperties.resize(true);

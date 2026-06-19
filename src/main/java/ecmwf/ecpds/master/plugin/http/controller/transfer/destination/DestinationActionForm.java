@@ -568,6 +568,28 @@ public class DestinationActionForm extends ECMWFActionForm {
     }
 
     /**
+     * Gets the incoming upload quota formatted string, or null if not configured.
+     *
+     * @return the incoming upload quota (e.g. "1TB per 24h") or null
+     */
+    public String getIncomingUploadQuota() {
+        return formatQuota(ECtransGroups.Module.DESTINATION_INCOMING.getECtransSetup(properties),
+                ECtransOptions.DESTINATION_INCOMING_MAX_UPLOAD_BYTES,
+                ECtransOptions.DESTINATION_INCOMING_UPLOAD_PERIOD);
+    }
+
+    /**
+     * Gets the incoming download quota formatted string, or null if not configured.
+     *
+     * @return the incoming download quota (e.g. "500GB per 1h") or null
+     */
+    public String getIncomingDownloadQuota() {
+        return formatQuota(ECtransGroups.Module.DESTINATION_INCOMING.getECtransSetup(properties),
+                ECtransOptions.DESTINATION_INCOMING_MAX_DOWNLOAD_BYTES,
+                ECtransOptions.DESTINATION_INCOMING_DOWNLOAD_PERIOD);
+    }
+
+    /**
      * Gets the properties.
      *
      * @param data
@@ -1712,5 +1734,32 @@ public class DestinationActionForm extends ECMWFActionForm {
         setMaxFileSize(Long.toString(destination.getMaxFileSize()));
         setMaxInactivity(Integer.toString(destination.getMaxInactivity()));
         setType(Integer.toString(destination.getType()));
+    }
+
+    /**
+     * Formats a quota as a human-readable string like "1TB per 24h", or returns null if not configured.
+     */
+    private static String formatQuota(final ECtransSetup setup, final ECtransOptions bytesOption,
+            final ECtransOptions periodOption) {
+        final var bytes = setup.getOptionalByteSize(bytesOption);
+        if (bytes.isEmpty() || bytes.get().size() == 0)
+            return null;
+        final var period = setup.getOptionalDuration(periodOption);
+        final String periodStr;
+        if (period.isPresent()) {
+            final var secs = period.get().getSeconds();
+            if (secs % 86400 == 0) {
+                periodStr = " per " + (secs / 86400) + "d";
+            } else if (secs % 3600 == 0) {
+                periodStr = " per " + (secs / 3600) + "h";
+            } else if (secs % 60 == 0) {
+                periodStr = " per " + (secs / 60) + "m";
+            } else {
+                periodStr = " per " + secs + "s";
+            }
+        } else {
+            periodStr = "";
+        }
+        return bytes.get().toString() + periodStr;
     }
 }

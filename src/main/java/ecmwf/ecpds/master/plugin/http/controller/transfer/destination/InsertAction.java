@@ -82,6 +82,8 @@ public class InsertAction extends PDSAction {
                 mi.copyDestination(session, daf.getFromDestination(), name, daf.getLabel(),
                         "on".equalsIgnoreCase(daf.getCopySharedHost())
                                 || "true".equalsIgnoreCase(daf.getCopySharedHost()));
+                response.sendRedirect(request.getContextPath() + "/do/transfer/destination/edit/update_form/" + name);
+                return null;
             } else if ("export".equalsIgnoreCase(action)) {
                 // Export from an existing Destination/Host
                 final var mi = MasterManager.getMI();
@@ -89,6 +91,9 @@ public class InsertAction extends PDSAction {
                 mi.exportDestination(session, daf.getMaster(), daf.getSourceDestination(), daf.getExportToName(),
                         "on".equalsIgnoreCase(daf.getCopySourceSharedHost())
                                 || "true".equalsIgnoreCase(daf.getCopySourceSharedHost()));
+                response.sendRedirect(request.getContextPath() + "/do/transfer/destination/edit/update_form/"
+                        + daf.getExportToName());
+                return null;
             } else {
                 // Check if the Destination Name is a valid name?
                 final var name = daf.getName();
@@ -100,6 +105,8 @@ public class InsertAction extends PDSAction {
                 // Create from scratch
                 daf.populateDestination(d);
                 d.insert(user);
+                response.sendRedirect(request.getContextPath() + "/do/transfer/destination/edit/update_form/" + name);
+                return null;
             }
         } catch (final Throwable t) {
             log.warn(t);
@@ -107,6 +114,5 @@ public class InsertAction extends PDSAction {
             e.initCause(t);
             throw e;
         }
-        return mapping.findForward("success");
     }
 }

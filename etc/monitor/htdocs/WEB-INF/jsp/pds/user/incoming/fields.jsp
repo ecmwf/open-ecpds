@@ -185,12 +185,14 @@
                 <i class="bi bi-eye text-info me-1"></i>Read Only
               </a>
             </li>
+            <c:if test="${not empty incomingUserActionForm.operations}">
             <li><hr class="dropdown-divider"></li>
             <li>
               <a class="dropdown-item text-danger" href="javascript:validate('/do/user/incoming/edit/update/<c:out value="${incomingUserActionForm.id}"/>/deleteAllOperations/all','Remove ALL permissions for user <c:out value="${incomingUserActionForm.id}"/>? The user will be unable to login until permissions are restored.')">
                 <i class="bi bi-trash me-1"></i>Remove All
               </a>
             </li>
+            </c:if>
           </ul>
         </div>
       </div>
@@ -199,7 +201,7 @@
           <c:when test="${empty incomingUserActionForm.operations}">
             <div class="alert alert-warning d-flex align-items-start gap-2 py-2 px-3 mb-2 small" role="alert">
               <i class="bi bi-exclamation-triangle-fill flex-shrink-0 mt-1"></i>
-              <span><strong>No permissions assigned.</strong> All login attempts for this user will be denied until at least one permission is added.</span>
+              <span><strong>No permissions assigned.</strong> All login attempts for this user will be denied until at least one permission is added. Use the <i class="bi bi-chevron-down"></i> preset dropdown above to quickly assign <strong>Add All</strong> or <strong>Read Only</strong> permissions.</span>
             </div>
           </c:when>
           <c:otherwise>
@@ -399,6 +401,23 @@
 			<span class="fw-semibold">Options</span>
 		</div>
 		<div class="card-body p-2">
+			<%-- Quota summary badges --%>
+			<c:set var="uploadQuota" value="${requestScope[actionFormName].portalUploadQuota}"/>
+			<c:set var="downloadQuota" value="${requestScope[actionFormName].portalDownloadQuota}"/>
+			<c:if test="${not empty uploadQuota || not empty downloadQuota}">
+			<div class="d-flex flex-wrap gap-2 mb-2 px-1">
+			  <c:if test="${not empty uploadQuota}">
+			    <span class="badge rounded-pill bg-warning text-dark" title="Upload quota limit">
+			      <i class="bi bi-cloud-upload me-1"></i>Upload limit: <c:out value="${uploadQuota}"/>
+			    </span>
+			  </c:if>
+			  <c:if test="${not empty downloadQuota}">
+			    <span class="badge rounded-pill bg-info text-dark" title="Download quota limit">
+			      <i class="bi bi-cloud-download me-1"></i>Download limit: <c:out value="${downloadQuota}"/>
+			    </span>
+			  </c:if>
+			</div>
+			</c:if>
 			<div class="accordion" id="incomingOptionsAccordion">
 			<div class="accordion-item">
 				<h2 class="accordion-header" id="incomingAccHeadProperties" style="position:relative;">

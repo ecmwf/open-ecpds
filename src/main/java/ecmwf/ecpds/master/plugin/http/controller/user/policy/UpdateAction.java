@@ -53,8 +53,14 @@ public class UpdateAction extends PDSAction {
     /** The Constant ADD_DESTINATION. */
     private static final String ADD_DESTINATION = "addDestination";
 
+    /** The Constant ADD_DESTINATIONS. */
+    private static final String ADD_DESTINATIONS = "addDestinations";
+
     /** The Constant DELETE_DESTINATION. */
     private static final String DELETE_DESTINATION = "deleteDestination";
+
+    /** The Constant DELETE_ALL_DESTINATIONS. */
+    private static final String DELETE_ALL_DESTINATIONS = "deleteAllDestinations";
 
     /**
      * {@inheritDoc}
@@ -111,8 +117,19 @@ public class UpdateAction extends PDSAction {
             final String subAction, final String subActionParameter, final User u) throws ECMWFException {
         if (ADD_DESTINATION.equals(subAction)) {
             ip.addDestination(DestinationHome.findByPrimaryKey(subActionParameter));
+        } else if (ADD_DESTINATIONS.equals(subAction)) {
+            for (final var name : subActionParameter.split(",")) {
+                final var trimmed = name.trim();
+                if (!trimmed.isEmpty()) {
+                    ip.addDestination(DestinationHome.findByPrimaryKey(trimmed));
+                }
+            }
         } else if (DELETE_DESTINATION.equals(subAction)) {
             ip.deleteDestination(DestinationHome.findByPrimaryKey(subActionParameter));
+        } else if (DELETE_ALL_DESTINATIONS.equals(subAction)) {
+            for (final var destination : new java.util.ArrayList<>(ip.getAssociatedDestinations())) {
+                ip.deleteDestination(destination);
+            }
         } else {
             throw new ECMWFException(
                     "The subAction '" + subAction + "' is not defined for class " + UpdateAction.class.getName());

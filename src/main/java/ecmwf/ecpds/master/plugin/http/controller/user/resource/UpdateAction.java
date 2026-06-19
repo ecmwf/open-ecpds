@@ -57,6 +57,9 @@ public class UpdateAction extends PDSAction {
     /** The Constant DELETE_CATEGORY. */
     private static final String DELETE_CATEGORY = "deleteCategory";
 
+    /** The Constant DELETE_ALL_CATEGORIES. */
+    private static final String DELETE_ALL_CATEGORIES = "deleteAllCategories";
+
     /**
      * {@inheritDoc}
      *
@@ -120,6 +123,12 @@ public class UpdateAction extends PDSAction {
             return mapping.findForward("edit");
         } else if (DELETE_CATEGORY.equals(subAction)) {
             webResource.deleteCategory(CategoryHome.findByPrimaryKey(subActionParameter));
+            webResource.save(u);
+            return mapping.findForward("edit");
+        } else if (DELETE_ALL_CATEGORIES.equals(subAction)) {
+            for (final var category : new java.util.ArrayList<>(webResource.getCategories())) {
+                webResource.deleteCategory((ecmwf.web.model.users.Category) category);
+            }
             webResource.save(u);
             return mapping.findForward("edit");
         } else {

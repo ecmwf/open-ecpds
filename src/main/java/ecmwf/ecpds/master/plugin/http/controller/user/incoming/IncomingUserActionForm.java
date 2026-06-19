@@ -35,6 +35,7 @@ import org.apache.logging.log4j.Logger;
 
 import ecmwf.common.ectrans.ECtransGroups;
 import ecmwf.common.ectrans.ECtransOptions;
+import ecmwf.common.ectrans.ECtransSetup;
 import ecmwf.ecpds.master.plugin.http.dao.Util;
 import ecmwf.ecpds.master.plugin.http.home.transfer.CountryHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.DestinationHome;
@@ -270,6 +271,26 @@ public class IncomingUserActionForm extends ECMWFActionForm {
     }
 
     /**
+     * Gets the portal upload quota formatted string, or null if not configured.
+     *
+     * @return the portal upload quota (e.g. "1TB per 24h") or null
+     */
+    public String getPortalUploadQuota() {
+        return formatQuota(ECtransGroups.Module.USER_PORTAL.getECtransSetup(userData),
+                ECtransOptions.USER_PORTAL_MAX_UPLOAD_BYTES, ECtransOptions.USER_PORTAL_UPLOAD_PERIOD);
+    }
+
+    /**
+     * Gets the portal download quota formatted string, or null if not configured.
+     *
+     * @return the portal download quota (e.g. "500GB per 1h") or null
+     */
+    public String getPortalDownloadQuota() {
+        return formatQuota(ECtransGroups.Module.USER_PORTAL.getECtransSetup(userData),
+                ECtransOptions.USER_PORTAL_MAX_DOWNLOAD_BYTES, ECtransOptions.USER_PORTAL_DOWNLOAD_PERIOD);
+    }
+
+    /**
      * Gets the completions.
      *
      * @return the completions
@@ -438,5 +459,32 @@ public class IncomingUserActionForm extends ECMWFActionForm {
         this.setSynchronized(u.getIsSynchronized() ? "on" : "off");
         this.setUserData(u.getData());
         this.setAuthorizedSSHKeys(u.getAuthorizedSSHKeys());
+    }
+
+    /**
+     * Formats a quota as a human-readable string like "1TB per 24h", or returns null if not configured.
+     */
+    private static String formatQuota(final ecmwf.common.ectrans.ECtransSetup setup, final ECtransOptions bytesOption,
+            final ECtransOptions periodOption) {
+        final var bytes = setup.getOptionalByteSize(bytesOption);
+        if (bytes.isEmpty() || bytes.get().size() == 0)
+            return null;
+        final var period = setup.getOptionalDuration(periodOption);
+        final String periodStr;
+        if (period.isPresent()) {
+            final var secs = period.get().getSeconds();
+            if (secs % 86400 == 0) {
+                periodStr = " per " + (secs / 86400) + "d";
+            } else if (secs % 3600 == 0) {
+                periodStr = " per " + (secs / 3600) + "h";
+            } else if (secs % 60 == 0) {
+                periodStr = " per " + (secs / 60) + "m";
+            } else {
+                periodStr = " per " + secs + "s";
+            }
+        } else {
+            periodStr = "";
+        }
+        return bytes.get().toString() + periodStr;
     }
 }

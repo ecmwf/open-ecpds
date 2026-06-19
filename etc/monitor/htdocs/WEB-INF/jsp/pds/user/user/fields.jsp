@@ -111,16 +111,95 @@
       <div class="card-header">
         <i class="bi bi-folder2 text-secondary"></i>
         <strong>Web Categories</strong>
-        <button type="button" class="btn btn-sm btn-outline-primary ms-auto"
-                data-bs-toggle="collapse" data-bs-target="#catChooser">
-          <i class="bi bi-plus-lg"></i> Add
-        </button>
+        <div class="btn-group btn-group-sm ms-auto">
+          <button type="button" class="btn btn-outline-primary"
+                  data-bs-toggle="collapse" data-bs-target="#catChooser">
+            <i class="bi bi-plus-lg"></i> Add
+          </button>
+          <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split"
+                  data-bs-toggle="dropdown" aria-expanded="false">
+            <span class="visually-hidden">Presets</span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li>
+              <a class="dropdown-item" href="javascript:validate('/do/user/user/edit/update/<c:out value="${userActionForm.id}"/>/setAdminCategories/all','Set Admin user web categories for <c:out value="${userActionForm.id}"/>? This will replace all current web categories.')">
+                <i class="bi bi-shield-fill text-warning me-1"></i>Admin Users
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="javascript:validate('/do/user/user/edit/update/<c:out value="${userActionForm.id}"/>/setMonitorCategories/all','Set Monitor user web categories for <c:out value="${userActionForm.id}"/>? This will replace all current web categories.')">
+                <i class="bi bi-eye text-info me-1"></i>Monitor Users
+              </a>
+            </li>
+            <c:if test="${not empty userActionForm.categories}">
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a class="dropdown-item text-danger" href="javascript:validate('/do/user/user/edit/update/<c:out value="${userActionForm.id}"/>/deleteAllCategories/all','Remove ALL web categories for <c:out value="${userActionForm.id}"/>? The user may be unable to log in until categories are restored.')">
+                <i class="bi bi-trash me-1"></i>Remove All
+              </a>
+            </li>
+            </c:if>
+          </ul>
+        </div>
       </div>
       <div class="card-body p-2">
+      <%-- Check if any assigned category is a destination category (ends with ' operations') --%>
+      <c:set var="hasDestinationCategory" value="false"/>
+      <c:set var="hasMonitorCategories" value="false"/>
+      <c:set var="hasOtherCategories" value="false"/>
+      <c:forEach var="category" items="${userActionForm.categories}">
         <c:choose>
-          <c:when test="${empty userActionForm.categories}">
-            <p class="text-muted small mb-2"><em>No web categories assigned.</em></p>
+          <c:when test="${fn:endsWith(category.name, ' operations')}">
+            <c:set var="hasDestinationCategory" value="true"/>
           </c:when>
+          <c:when test="${category.name == 'mstate' || category.name == 'monitoring' || category.name == 'transfers' || category.name == 'requirements'}">
+            <c:set var="hasMonitorCategories" value="true"/>
+          </c:when>
+          <c:otherwise>
+            <c:set var="hasOtherCategories" value="true"/>
+          </c:otherwise>
+        </c:choose>
+      </c:forEach>
+      <c:if test="${hasMonitorCategories && !hasDestinationCategory && !hasOtherCategories}">
+        <div class="alert alert-warning py-2 px-3 mb-2 small" role="alert">
+          <div class="d-flex align-items-start gap-2 mb-1">
+            <i class="bi bi-exclamation-triangle-fill flex-shrink-0 mt-1"></i>
+            <strong>No destination assigned.</strong>
+          </div>
+          <div class="text-muted mb-2">Monitor users must have at least one destination category. Select one or more destinations below and click <em>Add Selected</em>.</div>
+          <c:set var="hasDestinationOptions" value="false"/>
+          <c:forEach var="column" items="${userActionForm.categoryOptions}">
+            <c:if test="${fn:endsWith(column.name, ' operations')}"><c:set var="hasDestinationOptions" value="true"/></c:if>
+          </c:forEach>
+          <c:if test="${hasDestinationOptions}">
+            <input type="text" id="destSearch" class="form-control form-control-sm mb-1" placeholder="Search destinations..." oninput="filterDestList(this)">
+            <div id="destList" style="max-height:160px;overflow-y:auto;border:1px solid #dee2e6;border-radius:4px;background:#fff">
+              <c:forEach var="column" items="${userActionForm.categoryOptions}">
+                <c:if test="${fn:endsWith(column.name, ' operations')}">
+                  <c:set var="destName" value="${fn:substring(column.name, 0, fn:length(column.name) - 11)}"/>
+                  <label class="dest-item d-flex align-items-center gap-2 px-2 py-1 m-0" style="cursor:pointer">
+                    <input type="checkbox" class="form-check-input flex-shrink-0 m-0" value="${column.id}" onchange="updateDestAddBtn()">
+                    <c:out value="${destName}"/>
+                  </label>
+                </c:if>
+              </c:forEach>
+            </div>
+            <div class="mt-2 d-flex gap-2">
+              <button type="button" class="btn btn-sm btn-warning" id="destAddBtn" disabled onclick="addSelectedDestinations('${userActionForm.id}')">
+                <i class="bi bi-plus-lg"></i> Add Selected
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleAllDest(this)">Select All</button>
+            </div>
+          </c:if>
+        </div>
+      </c:if>
+      <c:choose>
+        <c:when test="${empty userActionForm.categories}">
+          <div class="alert alert-danger d-flex align-items-start gap-2 py-2 px-3 mb-2 small" role="alert">
+            <i class="bi bi-x-octagon-fill flex-shrink-0 mt-1"></i>
+            <div><strong>No web categories assigned.</strong> This user will not be able to log in to the portal until at least one category is added. Use the <i class="bi bi-chevron-down"></i> preset dropdown above to quickly assign the <strong>Admin Users</strong> or <strong>Monitor Users</strong> category set.</div>
+          </div>
+        </c:when>
           <c:otherwise>
             <div class="d-flex flex-wrap mb-2">
               <c:forEach var="category" items="${userActionForm.categories}">
@@ -179,6 +258,33 @@
 	});
 
 	makeResizable(editorProperties);
+
+	function filterDestList(inp) {
+		var q = inp.value.toLowerCase();
+		document.querySelectorAll('#destList .dest-item').forEach(function(el) {
+			el.style.display = el.textContent.toLowerCase().indexOf(q) === -1 ? 'none' : '';
+		});
+	}
+
+	function updateDestAddBtn() {
+		var btn = document.getElementById('destAddBtn');
+		if (btn) btn.disabled = document.querySelectorAll('#destList input[type=checkbox]:checked').length === 0;
+	}
+
+	function toggleAllDest(btn) {
+		var checkboxes = document.querySelectorAll('#destList .dest-item input[type=checkbox]');
+		var allChecked = Array.from(checkboxes).every(function(cb) { return cb.checked || cb.closest('.dest-item').style.display === 'none'; });
+		checkboxes.forEach(function(cb) {
+			if (cb.closest('.dest-item').style.display !== 'none') cb.checked = !allChecked;
+		});
+		btn.textContent = allChecked ? 'Select All' : 'Deselect All';
+		updateDestAddBtn();
+	}
+
+	function addSelectedDestinations(userId) {
+		var ids = Array.from(document.querySelectorAll('#destList input[type=checkbox]:checked')).map(function(cb) { return cb.value; });
+		if (ids.length > 0) location.href = '/do/user/user/edit/update/' + userId + '/addCategories/' + ids.join(',');
+	}
 
     function copyGenPass(btn) {
         navigator.clipboard.writeText(document.getElementById('_genPass').value).then(function() {

@@ -73,7 +73,8 @@ public class InsertAction extends PDSAction {
                     uaf.setUid(uid.trim());
                     uaf.populateUser(webUser);
                     webUser.insert(user);
-                    return mapping.findForward("success");
+                    response.sendRedirect(request.getContextPath() + "/do/user/user/edit/update_form/" + uid.trim());
+                    return null;
                 } else {
                     throw new ECMWFActionFormException(
                             "Please choose a valid non-empty Web User name (only letters, digits and '.' are allowed): \""

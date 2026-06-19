@@ -68,10 +68,25 @@
       <div class="card-header">
         <i class="bi bi-folder2 text-secondary"></i>
         <strong>Web Categories</strong>
-        <button type="button" class="btn btn-sm btn-outline-primary ms-auto"
-                data-bs-toggle="collapse" data-bs-target="#catChooser">
-          <i class="bi bi-plus-lg"></i> Add
-        </button>
+        <div class="btn-group btn-group-sm ms-auto">
+          <button type="button" class="btn btn-outline-primary"
+                  data-bs-toggle="collapse" data-bs-target="#catChooser">
+            <i class="bi bi-plus-lg"></i> Add
+          </button>
+          <c:if test="${not empty resourceActionForm.categories}">
+          <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split"
+                  data-bs-toggle="dropdown" aria-expanded="false">
+            <span class="visually-hidden">Toggle dropdown</span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li>
+              <a class="dropdown-item text-danger" href="javascript:validate('<bean:message key="resource.basepath"/>/edit/update/<c:out value="${resourceActionForm.id}"/>/deleteAllCategories/all','Remove ALL web categories from resource <c:out value="${resourceActionForm.path}"/>?')">
+                <i class="bi bi-trash me-1"></i>Remove All
+              </a>
+            </li>
+          </ul>
+          </c:if>
+        </div>
       </div>
       <div class="card-body p-2">
         <c:choose>

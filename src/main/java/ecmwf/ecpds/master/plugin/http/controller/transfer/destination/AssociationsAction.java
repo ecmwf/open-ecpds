@@ -45,6 +45,7 @@ import ecmwf.ecpds.master.plugin.http.home.transfer.DestinationHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.HostHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.IncomingPolicyHome;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Destination;
+import ecmwf.ecpds.master.plugin.http.model.transfer.Host;
 import ecmwf.web.ECMWFException;
 import ecmwf.web.controller.ECMWFActionForm;
 import ecmwf.web.controller.ECMWFActionFormException;
@@ -68,11 +69,17 @@ public class AssociationsAction extends PDSAction {
     /** The Constant DELETE_HOST. */
     private static final String DELETE_HOST = "deleteHost";
 
+    /** The Constant DELETE_ALL_HOSTS. */
+    private static final String DELETE_ALL_HOSTS = "deleteAllHosts";
+
     /** The Constant ADD_ALIAS. */
     private static final String ADD_ALIAS = "addAlias";
 
     /** The Constant DELETE_ALIAS. */
     private static final String DELETE_ALIAS = "deleteAlias";
+
+    /** The Constant DELETE_ALL_ALIASES. */
+    private static final String DELETE_ALL_ALIASES = "deleteAllAliases";
 
     /** The Constant INCREASE_HOST_PRIORITY. */
     private static final String INCREASE_HOST_PRIORITY = "increaseHostPriority";
@@ -85,6 +92,12 @@ public class AssociationsAction extends PDSAction {
 
     /** The Constant DELETE_USER. */
     private static final String DELETE_USER = "deleteEcUser";
+
+    /** The Constant DELETE_ALL_EC_USERS. */
+    private static final String DELETE_ALL_EC_USERS = "deleteAllEcUsers";
+
+    /** The Constant DELETE_ALL_POLICIES. */
+    private static final String DELETE_ALL_POLICIES = "deleteAllPolicies";
 
     /** The Constant DELETE_METADATAFILE. */
     private static final String DELETE_METADATAFILE = "deleteMetadataFile";
@@ -157,12 +170,27 @@ public class AssociationsAction extends PDSAction {
             d.deleteHost(HostHome.findByPrimaryKey(subActionParameter));
             d.save(u);
             return mapping.findForward("edit");
+        } else if (DELETE_ALL_HOSTS.equals(subAction)) {
+            for (final var pair : new java.util.ArrayList<>(d.getHostsAndPriorities())) {
+                final var host = (Host) pair.getName();
+                if (subActionParameter.equals(host.getType())) {
+                    d.deleteHost(host);
+                }
+            }
+            d.save(u);
+            return mapping.findForward("edit");
         } else if (ADD_POLICY.equals(subAction)) {
             d.addIncomingPolicy(IncomingPolicyHome.findByPrimaryKey(subActionParameter));
             d.save(u);
             return mapping.findForward("edit");
         } else if (DELETE_POLICY.equals(subAction)) {
             d.deleteIncomingPolicy(IncomingPolicyHome.findByPrimaryKey(subActionParameter));
+            d.save(u);
+            return mapping.findForward("edit");
+        } else if (DELETE_ALL_POLICIES.equals(subAction)) {
+            for (final var policy : new java.util.ArrayList<>(d.getAssociatedIncomingPolicies())) {
+                d.deleteIncomingPolicy(policy);
+            }
             d.save(u);
             return mapping.findForward("edit");
         } else if (INCREASE_HOST_PRIORITY.equals(subAction)) {
@@ -184,12 +212,24 @@ public class AssociationsAction extends PDSAction {
             d.deleteAssociatedEcUser(EcUserHome.findByPrimaryKey(subActionParameter));
             d.save(u);
             return mapping.findForward("edit");
+        } else if (DELETE_ALL_EC_USERS.equals(subAction)) {
+            for (final var ecUser : new java.util.ArrayList<>(d.getAssociatedEcUsers())) {
+                d.deleteAssociatedEcUser(ecUser);
+            }
+            d.save(u);
+            return mapping.findForward("edit");
         } else if (ADD_ALIAS.equals(subAction)) {
             d.addAlias(DestinationHome.findByPrimaryKey(subActionParameter));
             d.save(u);
             return mapping.findForward("edit");
         } else if (DELETE_ALIAS.equals(subAction)) {
             d.deleteAlias(DestinationHome.findByPrimaryKey(subActionParameter));
+            d.save(u);
+            return mapping.findForward("edit");
+        } else if (DELETE_ALL_ALIASES.equals(subAction)) {
+            for (final var alias : new java.util.ArrayList<>(d.getAliases())) {
+                d.deleteAlias(alias);
+            }
             d.save(u);
             return mapping.findForward("edit");
         } else if (DELETE_METADATAFILE.equals(subAction)) {
