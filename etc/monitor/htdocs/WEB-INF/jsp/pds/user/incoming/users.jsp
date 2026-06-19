@@ -77,7 +77,7 @@
             <li><strong>Unassigned only</strong> &mdash; shows only users with no reachable destinations (neither direct nor via a Data Policy).</li>
             <li><strong>Search login</strong> &mdash; client-side text filter on the login name, applied on top of the other filters.</li>
         </ul>
-        <div class="text-muted">Use the <strong>Unassigned only</strong> button to filter to Data Users with no reachable destinations (neither direct nor via a Data Policy). The normal list does not compute destination associations to avoid performance overhead.</div>
+        <div class="text-muted">Use the <strong>Unassigned only</strong> button to filter just the problematic users (no reachable Destinations neither direct nor via a Data Policy).</div>
     </div>
 </div>
 
@@ -148,7 +148,7 @@ $(document).ready(function() {
             { orderData: [10], targets: [5] },
             { visible: false,  targets: [8, 9, 10] }
         ],
-        drawCallback: function() { _updateDeleteAllBtn(); },
+        drawCallback: function() { _updateDeleteAllBtn(); _setFilterLoading($('#incomingUnassignedBtn'), false); },
         dom: 't<"d-flex align-items-start mt-2 px-3 pb-2"i<"ms-auto"p>>'
     });
     $('#incomingPageLen').val((function() { try { var v = parseInt(localStorage.getItem('incomingPageLen'), 10); return [10,25,50,100,250].indexOf(v) >= 0 ? String(v) : '25'; } catch(e) { return '25'; } })());
@@ -159,11 +159,22 @@ $(document).ready(function() {
     });
     $('#incomingSearch').on('input', function() { table.search(this.value).draw(); });
 
+    function _setFilterLoading($btn, loading) {
+        if (loading) {
+            $btn.prop('disabled', true)
+                .prepend('<span class="spinner-border spinner-border-sm me-1 _filter-spinner" role="status" aria-hidden="true"></span>');
+        } else {
+            $btn.find('._filter-spinner').remove();
+            $btn.prop('disabled', false);
+        }
+    }
+
     $('#incomingUnassignedBtn').on('click', function() {
         _unassignedOnly = !_unassignedOnly;
         $(this).toggleClass('btn-outline-secondary', !_unassignedOnly)
                .toggleClass('btn-warning', _unassignedOnly);
         if (!_unassignedOnly) $('#incomingDeleteAllBtn').addClass('d-none');
+        _setFilterLoading($(this), true);
         table.ajax.url(_buildAjaxUrl()).load();
     });
 
