@@ -63,8 +63,7 @@ public class GetResourceAction extends PDSAction {
             boolean exists = false;
             if (id != null && !id.isBlank()) {
                 try {
-                    ResourceHome.findByURI(id);
-                    exists = true;
+                    exists = ResourceHome.findByURI(id) != null;
                 } catch (final Exception ignored) {
                 }
             }

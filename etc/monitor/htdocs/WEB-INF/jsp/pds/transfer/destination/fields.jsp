@@ -264,6 +264,31 @@
 					</div>
 				</c:if>
 
+				<c:if test="${isInsert == 'true'}">
+				<script>
+				var _checkDestNameTimer = null;
+				function _checkDestNameExists(value) {
+				  clearTimeout(_checkDestNameTimer);
+				  var $msg = $('#name-exists-msg');
+				  var $submit = $('button[type="submit"]').first();
+				  $msg.hide();
+				  $submit.prop('disabled', false);
+				  if (!value || value.length < 1) return;
+				  _checkDestNameTimer = setTimeout(function() {
+				    $.getJSON('/do/transfer/destination/list?json=checkId&id=' + encodeURIComponent(value), function(data) {
+				      if (data.exists) {
+				        $msg.html('<i class="bi bi-x-circle-fill text-danger me-1"></i><span class="text-danger">Destination <strong>' + $('<span>').text(value).html() + '</strong> already exists.</span>').show();
+				        $submit.prop('disabled', true);
+				      } else {
+				        $msg.html('<i class="bi bi-check-circle-fill text-success me-1"></i><span class="text-success">Available.</span>').show();
+				        $submit.prop('disabled', false);
+				      }
+				    });
+				  }, 400);
+				}
+				</script>
+				</c:if>
+
 				<div class="dest-common-section">
 					<div class="row g-2">
 						<c:if test="${isInsert != 'true'}">
@@ -1657,25 +1682,4 @@
 			document.getElementById(id).style.display = show ? '' : 'none';
 		});
 	}
-
-    var _checkDestNameTimer = null;
-    function _checkDestNameExists(value) {
-        clearTimeout(_checkDestNameTimer);
-        var $msg = $('#name-exists-msg');
-        var $submit = $('button[type="submit"]').first();
-        $msg.hide();
-        $submit.prop('disabled', false);
-        if (!value || value.length < 1) return;
-        _checkDestNameTimer = setTimeout(function() {
-            $.getJSON('/do/transfer/destination/list?json=checkId&id=' + encodeURIComponent(value), function(data) {
-                if (data.exists) {
-                    $msg.html('<i class="bi bi-x-circle-fill text-danger me-1"></i><span class="text-danger">Destination <strong>' + $('<span>').text(value).html() + '</strong> already exists.</span>').show();
-                    $submit.prop('disabled', true);
-                } else {
-                    $msg.html('<i class="bi bi-check-circle-fill text-success me-1"></i><span class="text-success">Available.</span>').show();
-                    $submit.prop('disabled', false);
-                }
-            });
-        }, 400);
-    }
 </script>

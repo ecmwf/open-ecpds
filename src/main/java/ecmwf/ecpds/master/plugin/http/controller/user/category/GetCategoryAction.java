@@ -59,12 +59,12 @@ public class GetCategoryAction extends PDSAction {
             final HttpServletRequest request, final HttpServletResponse response, final User user)
             throws ECMWFException, ClassCastException {
         if ("checkId".equals(request.getParameter("json"))) {
-            final var id = request.getParameter("id");
+            final var name = request.getParameter("id");
             boolean exists = false;
-            if (id != null && !id.isBlank()) {
+            if (name != null && !name.isBlank()) {
                 try {
-                    CategoryHome.findByPrimaryKey(id);
-                    exists = true;
+                    exists = CategoryHome.findAll().stream()
+                            .anyMatch(c -> name.equalsIgnoreCase(((Category) c).getName()));
                 } catch (final Exception ignored) {
                 }
             }
