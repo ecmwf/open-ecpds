@@ -247,7 +247,7 @@ function ptSetView(v) {
       <div class="table-responsive">
         <table class="table table-sm table-striped table-hover table-bordered align-middle mb-0"
                id="ptDataTable" style="font-size:0.82rem; white-space:nowrap;">
-          <thead class="table-light">
+          <thead class="table-primary">
             <tr>
               <th onclick="ptSortTable(0)" style="cursor:pointer;" data-order="desc">Date <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
               <th onclick="ptSortTable(1)" style="cursor:pointer;" data-order="asc">Connections <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>

@@ -22,11 +22,12 @@
       background: rgba(255,255,255,0.3); margin: 0 0.3rem; flex-shrink: 0;
     }
     .header_simple_title {
-      font-size: 0.9rem; font-weight: 500; color: rgba(255,255,255,0.9);
-      font-family: "Open Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
-      padding-left: 0.4rem; padding-right: 0.75rem;
-      flex: 1 1 0% !important; min-width: 0;
-      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      font-size: 0.75rem; font-weight: 600; letter-spacing: 0.025em;
+      color: rgba(255,255,255,0.95);
+      background: rgba(255,255,255,0.13); border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 20px; padding: 0.18rem 0.7rem;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      flex: 0 1 auto; min-width: 0; max-width: 40%;
     }
     .location_simple {
       padding: 4px 14px; background: rgba(255,255,255,0.12);
@@ -118,8 +119,7 @@
       <a class="navbar-brand p-0 me-0 flex-shrink-0" href="/">
         <img src="/images/logo.production.png" alt="ECPDS" width="140" height="24" style="display:block;">
       </a>
-      <span class="header_nav_divider d-none d-sm-inline-block"></span>
-      <span class="header_simple_title d-none d-sm-block">${title}</span>
+      <span class="header_simple_title d-none d-sm-block ms-2">${title}</span>
       <div class="d-flex align-items-center gap-2 flex-shrink-0 ms-auto">
         <div class="dropdown">
           <a class="dropdown-toggle text-white text-decoration-none fw-semibold small"

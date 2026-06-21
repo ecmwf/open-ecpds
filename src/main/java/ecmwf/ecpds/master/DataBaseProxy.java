@@ -52,6 +52,7 @@ import ecmwf.common.database.Association;
 import ecmwf.common.database.CatUrl;
 import ecmwf.common.database.Category;
 import ecmwf.common.database.ChangeLog;
+import ecmwf.common.database.Feedback;
 import ecmwf.common.database.Country;
 import ecmwf.common.database.DataBaseCursor;
 import ecmwf.common.database.DataBaseException;
@@ -1226,6 +1227,67 @@ final class DataBaseProxy implements DataBaseInterface {
         }
         final var monitor = new MonitorCall("getChangeLogByKey(" + keyName + "," + keyValue + ")");
         return monitor.done(dataBaseInterface.getChangeLogByKey(keyName, keyValue));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public List<Feedback> getFeedbackList() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getFeedbackList()");
+        return monitor.done(dataBaseInterface.getFeedbackList());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean tryInsertFeedback(final Feedback feedback) throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("tryInsertFeedback()");
+        return monitor.done(dataBaseInterface.tryInsertFeedback(feedback));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void removeFeedback(final Feedback feedback) throws DataBaseException, RemoteException {
+        if (feedback == null) {
+            throw new DataBaseException("Invalid parameter(s) for removeFeedback");
+        }
+        final var monitor = new MonitorCall("removeFeedback(" + feedback.getId() + ")");
+        dataBaseInterface.removeFeedback(feedback);
+        monitor.done();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void markFeedbackReviewed(final Feedback feedback) throws DataBaseException, RemoteException {
+        if (feedback == null) {
+            throw new DataBaseException("Invalid parameter(s) for markFeedbackReviewed");
+        }
+        final var monitor = new MonitorCall("markFeedbackReviewed(" + feedback.getId() + ")");
+        dataBaseInterface.markFeedbackReviewed(feedback);
+        monitor.done();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void removeAllReviewedFeedback() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("removeAllReviewedFeedback()");
+        dataBaseInterface.removeAllReviewedFeedback();
+        monitor.done();
+    }
+
+    @Override
+    public void removeAllFeedback() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("removeAllFeedback()");
+        dataBaseInterface.removeAllFeedback();
+        monitor.done();
     }
 
     /**

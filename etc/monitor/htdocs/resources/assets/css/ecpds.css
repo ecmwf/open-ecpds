@@ -172,18 +172,20 @@
 }
 
 .header_simple_title {
-    font-size: 0.9rem;
-    font-weight: 500;
-    color: rgba(255,255,255,0.9);
-    padding-top: 0;
-    font-family: "Open Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
-    padding-left: 0.4rem;     /* tighter gap after the divider */
-    padding-right: 0.75rem;   /* breathing room before the toggle icon */
-    flex: 1 1 0% !important; /* grow to fill space, shrink from 0 basis */
-    min-width: 0;             /* flex items need this to shrink below content size */
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.025em;
+    color: rgba(255,255,255,0.95);
+    background: rgba(255,255,255,0.13);
+    border: 1px solid rgba(255,255,255,0.22);
+    border-radius: 20px;
+    padding: 0.18rem 0.7rem;
+    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 40%;
 }
 
 /* Thin vertical divider between logo and page title */

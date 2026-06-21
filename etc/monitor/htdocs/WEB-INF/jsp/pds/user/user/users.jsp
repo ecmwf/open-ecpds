@@ -75,7 +75,7 @@
 <div id="webUserBulkMsg" style="display:none" class="mx-2 mt-2"></div>
 <div class="table-responsive">
 <table id="usersWebTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
-    <thead class="table-light">
+    <thead class="table-warning">
         <tr>
             <th>Web Login</th>
             <th>Comment</th>

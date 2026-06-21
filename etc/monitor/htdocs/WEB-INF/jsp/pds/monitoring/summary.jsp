@@ -85,7 +85,7 @@
     </h5>
     <div class="table-responsive mb-4">
       <table class="table table-sm table-hover table-bordered align-middle" style="font-size:0.82rem;">
-        <thead class="table-light">
+        <thead class="table-info">
           <tr>
             <th class="text-nowrap">Product</th>
             <c:forEach var="step" items="${steps}">
@@ -119,7 +119,7 @@
     </h5>
     <div class="table-responsive mb-4">
       <table class="table table-sm table-hover table-bordered align-middle" style="font-size:0.82rem;">
-        <thead class="table-light">
+        <thead class="table-info">
           <tr>
             <th rowspan="2" class="align-middle text-nowrap">Product</th>
             <c:forEach var="step" items="${steps}">

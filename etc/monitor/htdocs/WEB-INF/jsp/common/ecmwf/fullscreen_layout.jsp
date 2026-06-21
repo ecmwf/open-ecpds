@@ -1,6 +1,13 @@
 <!DOCTYPE html>
 
 <%@ page session="true" import ="ecmwf.web.view.taglibs.util.TagUtils"%>
+<%
+    boolean _showFeedbackBtn = true;
+    Object _sessionUser = session.getAttribute(ecmwf.web.model.users.User.SESSION_KEY);
+    if (_sessionUser instanceof ecmwf.ecpds.master.plugin.http.model.ecuser.WebUser) {
+        _showFeedbackBtn = ((ecmwf.ecpds.master.plugin.http.model.ecuser.WebUser) _sessionUser).isShareFeedbackEnabled();
+    }
+%>
 
 <%@ taglib uri="/WEB-INF/tld/struts-tiles.tld" prefix="tiles" %>
 <%@ taglib uri="/WEB-INF/tld/struts-logic.tld" prefix="logic" %>
@@ -165,11 +172,199 @@
       <div class="fw-semibold mb-1 d-flex align-items-center gap-2"><i class="bi bi-graph-up text-secondary"></i> Charts &amp; Tables</div>
       <p class="mb-1 text-muted">Pages with both a <strong>chart</strong> and a <strong>table</strong> view have a toggle button to switch between them. The search box and row count selector apply to the table view only.</p>
     </div>
-
   </div>
 </div>
 
 	<tiles:insert name="footer">
+<!-- Feedback offcanvas -->
+<logic:present name="<%=ecmwf.web.model.users.User.SESSION_KEY%>">
+<% if (_showFeedbackBtn) { %>
+<div class="offcanvas offcanvas-end" tabindex="-1" id="feedbackOffcanvas" aria-labelledby="feedbackOffcanvasLabel" style="width:380px;max-width:95vw;">
+  <div class="offcanvas-header border-bottom">
+    <h6 class="offcanvas-title fw-semibold" id="feedbackOffcanvasLabel">
+      <i class="bi bi-chat-left-text me-2 text-primary"></i>Share Feedback
+    </h6>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body p-3" style="font-size:0.85rem; overflow-y:auto;">
+    <p class="text-muted small mb-3">Help us improve OpenECPDS. Tell us what works well, what doesn't, or what features you would like to see.</p>
+
+    <div id="fbkForm">
+      <div class="mb-3">
+        <label class="form-label fw-semibold mb-1">Overall rating <span class="text-danger">*</span></label>
+        <div class="d-flex align-items-center gap-1" id="fbkStars">
+          <span class="fbk-star fs-4" data-val="1" style="cursor:pointer;color:#ccc;" title="Very poor">&#9733;</span>
+          <span class="fbk-star fs-4" data-val="2" style="cursor:pointer;color:#ccc;" title="Poor">&#9733;</span>
+          <span class="fbk-star fs-4" data-val="3" style="cursor:pointer;color:#ccc;" title="Average">&#9733;</span>
+          <span class="fbk-star fs-4" data-val="4" style="cursor:pointer;color:#ccc;" title="Good">&#9733;</span>
+          <span class="fbk-star fs-4" data-val="5" style="cursor:pointer;color:#ccc;" title="Excellent">&#9733;</span>
+          <span id="fbkRatingLabel" class="ms-2 small text-muted"></span>
+        </div>
+        <input type="hidden" id="fbkRating" value="">
+      </div>
+      <div class="mb-3">
+        <label class="form-label fw-semibold mb-1" for="fbkComment">Comments</label>
+        <textarea id="fbkComment" class="form-control form-control-sm" rows="3"
+          placeholder="Is there anything you would like to tell us? Suggestions, missing features, problems, success stories&hellip;"></textarea>
+      </div>
+      <div class="mb-3">
+        <label class="form-label fw-semibold mb-1" for="fbkOneThing">What is the one thing that would make OpenECPDS better for you?</label>
+        <textarea id="fbkOneThing" class="form-control form-control-sm" rows="2" placeholder="Optional"></textarea>
+      </div>
+      <div class="mb-3">
+        <label class="form-label fw-semibold mb-1" for="fbkUsage">How are you using OpenECPDS?</label>
+        <select id="fbkUsage" class="form-select form-select-sm">
+          <option value="">&mdash; select &mdash;</option>
+          <option value="Evaluation">Evaluation</option>
+          <option value="Production">Production</option>
+          <option value="Research">Research</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label fw-semibold mb-1" for="fbkComponent">Which component do you use most?</label>
+        <select id="fbkComponent" class="form-select form-select-sm">
+          <option value="">&mdash; select &mdash;</option>
+          <option value="Data dissemination">Data dissemination</option>
+          <option value="Data acquisition">Data acquisition</option>
+          <option value="Data portal">Data portal</option>
+          <option value="Monitoring">Monitoring</option>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label fw-semibold mb-1">Would you recommend OpenECPDS to a colleague?</label>
+        <div class="d-flex gap-3">
+          <div class="form-check"><input class="form-check-input" type="radio" name="fbkRecommend" id="fbkRecYes" value="yes"><label class="form-check-label" for="fbkRecYes">Yes</label></div>
+          <div class="form-check"><input class="form-check-input" type="radio" name="fbkRecommend" id="fbkRecNo"  value="no"><label class="form-check-label" for="fbkRecNo">No</label></div>
+        </div>
+      </div>
+      <div class="mb-3">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="fbkQuoteOk">
+          <label class="form-check-label" for="fbkQuoteOk">We may quote my comments anonymously in presentations or documentation.</label>
+        </div>
+      </div>
+      <div class="mb-3 p-2 rounded" style="background:var(--bs-secondary-bg)">
+        <div class="d-flex align-items-start gap-2">
+          <div class="form-check form-switch mb-0 mt-1">
+            <input class="form-check-input" type="checkbox" id="fbkAnonymous" checked>
+          </div>
+          <div>
+            <label class="form-check-label fw-semibold" for="fbkAnonymous">Submit anonymously</label>
+            <div class="text-muted small mt-1">Your feedback helps improve OpenECPDS. You may submit it anonymously or associate it with your account if you would like us to follow up with you.</div>
+          </div>
+        </div>
+        <div id="fbkContactRow" class="mt-2" style="display:none;">
+          <input type="email" id="fbkContact" class="form-control form-control-sm" placeholder="Contact email (optional)">
+        </div>
+      </div>
+      <div id="fbkValidationMsg" class="text-danger small mb-2" style="display:none;"></div>
+      <button type="button" id="fbkSubmitBtn" class="btn btn-primary btn-sm w-100">
+        <i class="bi bi-send me-1"></i>Submit Feedback
+      </button>
+    </div>
+
+    <div id="fbkSuccess" style="display:none;" class="text-center py-4">
+      <i class="bi bi-check-circle-fill text-success" style="font-size:2rem;"></i>
+      <p class="fw-semibold mt-2 mb-1">Thank you!</p>
+      <p class="text-muted small">Your feedback has been received.</p>
+      <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="fbkReset">Submit another</button>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var ratingLabels = ['Very poor','Poor','Average','Good','Excellent'];
+  var selectedRating = 0;
+  function setRating(val) {
+    selectedRating = val;
+    document.getElementById('fbkRating').value = val;
+    document.getElementById('fbkRatingLabel').textContent = ratingLabels[val-1] || '';
+    document.querySelectorAll('#fbkStars .fbk-star').forEach(function(s) {
+      s.style.color = parseInt(s.getAttribute('data-val')) <= val ? '#f59e0b' : '#ccc';
+    });
+  }
+  document.querySelectorAll('#fbkStars .fbk-star').forEach(function(s) {
+    s.addEventListener('click', function() { setRating(parseInt(this.getAttribute('data-val'))); });
+    s.addEventListener('mouseenter', function() {
+      var v = parseInt(this.getAttribute('data-val'));
+      document.querySelectorAll('#fbkStars .fbk-star').forEach(function(ss) {
+        ss.style.color = parseInt(ss.getAttribute('data-val')) <= v ? '#f59e0b' : '#ccc';
+      });
+    });
+  });
+  document.getElementById('fbkStars').addEventListener('mouseleave', function() { setRating(selectedRating); });
+  document.getElementById('fbkAnonymous').addEventListener('change', function() {
+    document.getElementById('fbkContactRow').style.display = this.checked ? 'none' : 'block';
+  });
+  document.getElementById('fbkSubmitBtn').addEventListener('click', function() {
+    var rating = document.getElementById('fbkRating').value;
+    var valMsg = document.getElementById('fbkValidationMsg');
+    if (!rating) {
+      valMsg.textContent = 'Please select a rating before submitting.';
+      valMsg.style.display = 'block';
+      return;
+    }
+    valMsg.style.display = 'none';
+    var btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Sending&hellip;';
+    var rec = document.querySelector('input[name="fbkRecommend"]:checked');
+    $.ajax({
+      url: '/do/feedback/submit',
+      method: 'POST',
+      data: {
+        rating:    rating,
+        comment:   document.getElementById('fbkComment').value,
+        oneThing:  document.getElementById('fbkOneThing').value,
+        usage:     document.getElementById('fbkUsage').value,
+        component: document.getElementById('fbkComponent').value,
+        recommend: rec ? rec.value : '',
+        quoteOk:   document.getElementById('fbkQuoteOk').checked ? 'true' : 'false',
+        anonymous: document.getElementById('fbkAnonymous').checked ? 'true' : 'false',
+        contact:   document.getElementById('fbkContact') ? document.getElementById('fbkContact').value : ''
+      },
+      success: function(resp) {
+        if (resp && resp.ok) {
+          document.getElementById('fbkForm').style.display = 'none';
+          document.getElementById('fbkSuccess').style.display = 'block';
+        } else {
+          valMsg.textContent = 'Submission failed. Please try again.';
+          valMsg.style.display = 'block';
+          btn.disabled = false;
+          btn.innerHTML = '<i class="bi bi-send me-1"></i>Submit Feedback';
+        }
+      },
+      error: function() {
+        valMsg.textContent = 'An error occurred. Please try again.';
+        valMsg.style.display = 'block';
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-send me-1"></i>Submit Feedback';
+      }
+    });
+  });
+  document.getElementById('fbkReset').addEventListener('click', function() {
+    selectedRating = 0;
+    setRating(0);
+    document.getElementById('fbkComment').value = '';
+    document.getElementById('fbkOneThing').value = '';
+    document.getElementById('fbkUsage').value = '';
+    document.getElementById('fbkComponent').value = '';
+    document.querySelectorAll('input[name="fbkRecommend"]').forEach(function(r){ r.checked = false; });
+    document.getElementById('fbkQuoteOk').checked = false;
+    document.getElementById('fbkAnonymous').checked = true;
+    document.getElementById('fbkContactRow').style.display = 'none';
+    document.getElementById('fbkContact').value = '';
+    document.getElementById('fbkValidationMsg').style.display = 'none';
+    document.getElementById('fbkSubmitBtn').disabled = false;
+    document.getElementById('fbkSubmitBtn').innerHTML = '<i class="bi bi-send me-1"></i>Submit Feedback';
+    document.getElementById('fbkForm').style.display = 'block';
+    document.getElementById('fbkSuccess').style.display = 'none';
+  });
+}());
+</script>
+<% } %>
+</logic:present>
 		<tiles:put name="helpKey"><tiles:getAsString name="helpKey" ignore="true"/></tiles:put>
 	</tiles:insert>
 

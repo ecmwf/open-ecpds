@@ -96,6 +96,46 @@
 		</property>
 	</class>
 
+	<class name="Feedback" table="FEEDBACK">
+		<id name="FBK_ID" type="java.lang.Long">
+			<column name="FBK_ID" />
+			<generator class="increment" />
+		</id>
+		<property name="WEU_ID" type="java.lang.String">
+			<column name="WEU_ID" />
+		</property>
+		<property name="FBK_TIME" type="java.math.BigDecimal">
+			<column name="FBK_TIME" />
+		</property>
+		<property name="FBK_RATING" type="java.lang.Integer">
+			<column name="FBK_RATING" />
+		</property>
+		<property name="FBK_COMMENT" type="java.lang.String">
+			<column name="FBK_COMMENT" />
+		</property>
+		<property name="FBK_USAGE" type="java.lang.String">
+			<column name="FBK_USAGE" />
+		</property>
+		<property name="FBK_COMPONENT" type="java.lang.String">
+			<column name="FBK_COMPONENT" />
+		</property>
+		<property name="FBK_CONTACT" type="java.lang.String">
+			<column name="FBK_CONTACT" />
+		</property>
+		<property name="FBK_ONE_THING" type="java.lang.String">
+			<column name="FBK_ONE_THING" />
+		</property>
+		<property name="FBK_RECOMMEND" type="java.lang.Boolean">
+			<column name="FBK_RECOMMEND" />
+		</property>
+		<property name="FBK_QUOTE_OK" type="boolean">
+			<column name="FBK_QUOTE_OK" />
+		</property>
+		<property name="FBK_REVIEWED" type="boolean">
+			<column name="FBK_REVIEWED" />
+		</property>
+	</class>
+
 	<class name="PolicyAssociation" table="POLICY_ASSOCIATION">
 		<cache usage="read-write"/>
 		<composite-id>

@@ -48,7 +48,7 @@
 <div class="card-body p-0">
 <div class="table-responsive">
     <table id="transferserversTable" class="table table-sm table-hover table-striped align-middle mb-0" style="width:100%">
-        <thead class="table-light">
+        <thead class="table-primary">
             <tr>
                 <th>Name</th>
                 <th>Host / Port</th>

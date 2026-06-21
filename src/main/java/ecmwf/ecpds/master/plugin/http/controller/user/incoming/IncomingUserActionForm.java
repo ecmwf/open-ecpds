@@ -35,7 +35,6 @@ import org.apache.logging.log4j.Logger;
 
 import ecmwf.common.ectrans.ECtransGroups;
 import ecmwf.common.ectrans.ECtransOptions;
-import ecmwf.common.ectrans.ECtransSetup;
 import ecmwf.ecpds.master.plugin.http.dao.Util;
 import ecmwf.ecpds.master.plugin.http.home.transfer.CountryHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.DestinationHome;

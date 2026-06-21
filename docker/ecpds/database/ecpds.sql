@@ -1969,6 +1969,31 @@ INSERT INTO `URL` VALUES
 UNLOCK TABLES;
 
 --
+-- Table structure for table `FEEDBACK`
+--
+
+DROP TABLE IF EXISTS `FEEDBACK`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `FEEDBACK` (
+  `FBK_ID`        bigint(20) NOT NULL AUTO_INCREMENT,
+  `WEU_ID`        varchar(32) CHARACTER SET latin1 COLLATE latin1_bin DEFAULT NULL,
+  `FBK_TIME`      decimal(20,0) NOT NULL,
+  `FBK_RATING`    tinyint(4) NOT NULL,
+  `FBK_COMMENT`   text DEFAULT NULL,
+  `FBK_USAGE`     varchar(32) DEFAULT NULL,
+  `FBK_COMPONENT` varchar(32) DEFAULT NULL,
+  `FBK_CONTACT`   varchar(255) DEFAULT NULL,
+  `FBK_ONE_THING` text DEFAULT NULL,
+  `FBK_RECOMMEND` tinyint(1) DEFAULT NULL,
+  `FBK_QUOTE_OK`  tinyint(1) NOT NULL DEFAULT 0,
+  `FBK_REVIEWED`  tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`FBK_ID`),
+  CONSTRAINT `FEEDBACK_ibfk_1` FOREIGN KEY (`WEU_ID`) REFERENCES `WEB_USER` (`WEU_ID`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `WEB_USER`
 --
 

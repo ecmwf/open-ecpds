@@ -89,7 +89,7 @@
     <div class="col-xl-4 col-md-6 d-flex flex-column">
         <div class="home-section-card">
             <div class="home-section-hdr" style="background:#e9f7ef;">
-                <a href="/do/transfer" class="home-section-hdr-link"><i class="bi bi-send text-success"></i> Transmission</a>
+                <a href="/do/transfer" class="home-section-hdr-link"><i class="bi bi-send"></i> Transmission</a>
             </div>
             <ul class="home-menu">
                 <auth:link basePathKey="datatransfer.basepath" href="" wrappingTags="li"><i class="bi bi-arrow-left-right"></i>Data Transfers</auth:link>
@@ -140,6 +140,7 @@
                 <auth:link basePathKey="admin.basepath" href="/filter" wrappingTags="li"><i class="bi bi-file-zip"></i>Compress Files</auth:link>
                 <auth:link basePathKey="admin.basepath" href="/requeue" wrappingTags="li"><i class="bi bi-hourglass-split"></i>Outstanding Transfers</auth:link>
                 <auth:link basePathKey="admin.basepath" href="/upload" wrappingTags="li"><i class="bi bi-upload"></i>Upload Files</auth:link>
+                <auth:link basePathKey="admin.feedback.basepath" href="" wrappingTags="li"><i class="bi bi-chat-left-text"></i>User Feedback</auth:link>
             </ul>
         </div>
     </div>

@@ -189,7 +189,7 @@
 			<c:otherwise>
 				<div class="table-responsive">
 					<table id="incomingSessionsTable" class="table table-sm table-hover table-striped align-middle mb-0" style="width:100%">
-						<thead class="table-light">
+						<thead class="table-warning">
 							<tr>
 								<th>Session ID</th>
 								<th>Protocol</th>

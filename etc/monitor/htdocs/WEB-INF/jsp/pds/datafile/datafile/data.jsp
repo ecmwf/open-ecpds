@@ -166,7 +166,7 @@ Data File: <strong><c:out value="${datafile.id}"/></strong>
 <div class="card-body p-0">
 <div class="table-responsive">
 <table id="metadataTable" class="table table-sm table-hover table-striped align-middle mb-0" style="width:100%">
-<thead class="table-light">
+<thead class="table-primary">
 <tr>
 <th>Name</th>
 <th>Value</th>
@@ -243,7 +243,7 @@ $('#dfMetaPageLen').on('change', function() {
 <div class="card-body p-0">
 <div class="table-responsive">
 <table id="datafileTransfersTable" class="table table-sm table-hover table-striped align-middle mb-0" style="width:100%">
-<thead class="table-light">
+<thead class="table-primary">
 <tr>
 <th>Destination</th>
 <th>Transfer Host</th>

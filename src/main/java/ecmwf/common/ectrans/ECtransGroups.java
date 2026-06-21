@@ -48,7 +48,10 @@ public enum ECtransGroups {
             Module.DESTINATION_SCHEDULER, Module.DESTINATION_MQTT),
 
     /** The user. */
-    USER(Module.USER_PORTAL);
+    USER(Module.USER_PORTAL),
+
+    /** The web user. */
+    WEB(Module.WEB_MONITOR);
 
     /** The modules. */
     private final List<Module> modules = new ArrayList<>();
@@ -79,6 +82,8 @@ public enum ECtransGroups {
 
         /** The user portal. */
         USER_PORTAL,
+        /** The web monitor. */
+        WEB_MONITOR,
         /** The host proxy. */
         HOST_PROXY,
         /** The host ecauth. */

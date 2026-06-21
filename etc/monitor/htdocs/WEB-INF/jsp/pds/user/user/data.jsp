@@ -12,18 +12,6 @@
 </c:if>
 <c:if test="${empty isDelete}">
 
-	<style>
-#properties {
-	width: 550px;
-	height: 375px;
-	resize: both;
-	overflow: hidden;
-	border: solid 1px lightgray;
-	margin-top: 8px;
-	margin-bottom: 8px;
-}
-	</style>
-
 	<div class="row g-3">
 		<div class="col-lg-6">
 			<div class="card">
@@ -81,15 +69,97 @@
 			  </div>
 			</div>
 		</div>
-	</div>
 
-	<div style="display:none">
-		<pre id="properties"><c:out value="${user.userData}" /></pre>
-		<textarea id="properties" name="properties" style="display: none;"></textarea>
+		<%-- Options card: full-width below both columns --%>
+		<div class="col-12">
+			<div class="card">
+				<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+					<i class="bi bi-sliders text-warning"></i>
+					<span class="fw-semibold">Options</span>
+				</div>
+				<div class="card-body p-2">
+					<div class="accordion" id="webUserViewOptionsAccordion">
+					<div class="accordion-item">
+						<h2 class="accordion-header" id="webUserViewAccHeadProperties" style="position:relative;">
+							<button class="accordion-button collapsed" id="webUserViewAccPropertiesBtn" type="button" data-bs-toggle="collapse" data-bs-target="#webUserViewAccProperties" aria-expanded="false" aria-controls="webUserViewAccProperties">
+								Properties
+							</button>
+							<span role="button" tabindex="0" class="acc-help-btn" id="webUserViewPropsHelpBtn"
+								onclick="openWebUserViewHelp();" onkeydown="if(event.key==='Enter'||event.key===' ')openWebUserViewHelp();" title="Open properties reference">
+								<i class="bi bi-question-circle"></i>
+							</span>
+						</h2>
+						<div id="webUserViewAccProperties" class="accordion-collapse collapse" aria-labelledby="webUserViewAccHeadProperties" data-bs-parent="#webUserViewOptionsAccordion">
+						<div class="accordion-body p-2">
+							<pre id="properties" class="ace-panel"><c:out value="${user.userData}" /></pre>
+						</div>
+						</div>
+					</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+</div>
+
+	<%-- Help offcanvas panel --%>
+	<div class="offcanvas offcanvas-end" tabindex="-1" id="webUserViewHelpOffcanvas"
+	     aria-labelledby="webUserViewHelpOffcanvasLabel" style="width:min(480px,42vw);">
+		<div class="offcanvas-header border-bottom py-2 px-3">
+			<h6 class="offcanvas-title mb-0 fw-semibold" id="webUserViewHelpOffcanvasLabel">
+				<i class="bi bi-book me-2 text-warning"></i>Properties Reference
+			</h6>
+			<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+		</div>
+		<div class="offcanvas-body p-0" style="display:flex; flex-direction:column; overflow:hidden;">
+			<div id="webUserViewHelpNav" style="flex:0 0 auto; padding:0 1rem;"></div>
+			<div id="webUserViewHelpContent" style="padding:0.75rem 1rem; overflow-y:auto; flex:1; min-height:0;"></div>
+		</div>
 	</div>
 
 	<script>
 		var editorProperties = getEditorProperties(true, false, "properties", "crystal");
+		editorProperties.setOptions({minLines: 10, maxLines: 20});
+
+		var completions = [
+			${user.completions}
+		];
+
+		$(document).ready(function() {
+			$('#webUserViewHelpContent').html(getHelpHtmlContent(completions, 'Available Options for this Web User'));
+			var navEl = document.querySelector('#webUserViewHelpContent .help-nav');
+			if (navEl) document.getElementById('webUserViewHelpNav').appendChild(navEl);
+		});
+
+		// Call the function to process each line
+		checkEachLine(editorProperties, 'webUserViewAccPropertiesBtn');
+
+		function _scrollWebUserViewHelpToCursor() {
+			var row = editorProperties.selection.getCursor().row;
+			var line = editorProperties.session.getLine(row) || '';
+			line = line.trim();
+			if (line && !line.startsWith('#') && !line.startsWith('//')) {
+				var eqIdx = line.indexOf('=');
+				var paramName = (eqIdx > 0 ? line.substring(0, eqIdx) : line).trim();
+				if (paramName) scrollHelpToParam('webUserViewHelpContent', paramName);
+			}
+		}
+
+		editorProperties.addEventListener("changeSelection", function (event) {
+			checkEachLine(editorProperties, 'webUserViewAccPropertiesBtn');
+			var _oc = document.getElementById('webUserViewHelpOffcanvas');
+			if (_oc && _oc.classList.contains('show')) _scrollWebUserViewHelpToCursor();
+		});
+
+		document.getElementById('webUserViewAccProperties').addEventListener('shown.bs.collapse', function() {
+			setTimeout(function() { editorProperties.resize(true); }, 50);
+		});
+
+		window.openWebUserViewHelp = function() {
+			var el = document.getElementById('webUserViewHelpOffcanvas');
+			if (el) bootstrap.Offcanvas.getOrCreateInstance(el).show();
+		};
+
 		makeResizable(editorProperties);
 	</script>
 </c:if>

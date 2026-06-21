@@ -40,6 +40,7 @@ import ecmwf.common.database.Association;
 import ecmwf.common.database.CatUrl;
 import ecmwf.common.database.Category;
 import ecmwf.common.database.ChangeLog;
+import ecmwf.common.database.Feedback;
 import ecmwf.common.database.Country;
 import ecmwf.common.database.DataBaseCursor;
 import ecmwf.common.database.DataBaseException;
@@ -1358,6 +1359,71 @@ public interface DataBaseInterface extends Remote {
      */
     Collection<ChangeLog> getChangeLogByKey(final String keyName, final String keyValue)
             throws DataBaseException, RemoteException;
+
+    /**
+     * Gets all feedback entries, most recent first.
+     *
+     * @return the feedback list
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    List<Feedback> getFeedbackList() throws DataBaseException, RemoteException;
+
+    /**
+     * Inserts a feedback entry.
+     *
+     * @param feedback
+     *            the feedback
+     *
+     * @return true if successful
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    boolean tryInsertFeedback(Feedback feedback) throws DataBaseException, RemoteException;
+
+    /**
+     * Deletes a feedback entry.
+     *
+     * @param feedback
+     *            the feedback
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    void removeFeedback(Feedback feedback) throws DataBaseException, RemoteException;
+
+    /**
+     * Marks a feedback entry as reviewed.
+     *
+     * @param feedback
+     *            the feedback
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    void markFeedbackReviewed(Feedback feedback) throws DataBaseException, RemoteException;
+
+    /**
+     * Removes all reviewed feedback entries.
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     * @throws RemoteException
+     *             the remote exception
+     */
+    void removeAllReviewedFeedback() throws DataBaseException, RemoteException;
+
+    void removeAllFeedback() throws DataBaseException, RemoteException;
 
     /**
      * Gets the data file.

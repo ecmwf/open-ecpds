@@ -32,6 +32,8 @@ import java.util.Collection;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import ecmwf.common.ectrans.ECtransGroups;
+import ecmwf.common.ectrans.ECtransOptions;
 import ecmwf.ecpds.master.plugin.http.model.ecuser.WebUser;
 import ecmwf.web.controller.ECMWFActionForm;
 import ecmwf.web.controller.ECMWFActionFormException;
@@ -234,6 +236,15 @@ public class UserActionForm extends ECMWFActionForm {
             log.error("Problem getting Category options", e);
         }
         return new ArrayList<>(0);
+    }
+
+    /**
+     * Gets the completions.
+     *
+     * @return the completions as JSON for the ACE editor autocomplete
+     */
+    public String getCompletions() {
+        return ECtransOptions.toString(ECtransGroups.WEB);
     }
 
     /**

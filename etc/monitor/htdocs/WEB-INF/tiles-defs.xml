@@ -1322,6 +1322,11 @@
 			value="/WEB-INF/jsp/pds/admin/filter/success.jsp" />
 	</definition>
 
+	<definition name=".pds.admin.feedback" extends=".pds.admin">
+		<put name="title" value="User Feedback" />
+		<put name="content" value="/WEB-INF/jsp/pds/admin/feedback/index.jsp" />
+	</definition>
+
 	<definition name=".pds.datafile.monitoring"
 		extends=".pds.datafile.base">
 		<put name="title" value="Retrieval Rates" />

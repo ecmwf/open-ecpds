@@ -1317,6 +1317,17 @@
 			<forward name="list" path=".pds.admin.requeue.list" />
 			<forward name="success" path=".pds.admin.requeue.success" />
 		</action>
+		<action path="/admin/feedback"
+			type="ecmwf.ecpds.master.plugin.http.controller.feedback.GetFeedbackAction">
+			<forward name="success" path=".pds.admin.feedback" />
+		</action>
+		<action path="/admin/feedback/*/*" parameter="{1}|{2}"
+			type="ecmwf.ecpds.master.plugin.http.controller.feedback.GetFeedbackAction">
+			<forward name="success" path="/do/admin/feedback" redirect="true" />
+		</action>
+		<action path="/feedback/submit"
+			type="ecmwf.ecpds.master.plugin.http.controller.feedback.SubmitFeedbackAction">
+		</action>
 	</action-mappings>
 
 	<!-- ========== Resources ========================== -->

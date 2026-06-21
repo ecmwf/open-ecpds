@@ -66,7 +66,7 @@
 <div class="card-body p-0">
 <div class="table-responsive">
 <table id="requeueTransfersTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
-<thead class="table-light">
+<thead class="table-secondary">
 <tr>
 <th>Destination</th>
 <th>Host</th>

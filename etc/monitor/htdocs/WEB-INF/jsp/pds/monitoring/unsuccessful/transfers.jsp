@@ -96,7 +96,7 @@ Error retrieving object by key &larr; Destination not found: ${destination.name}
 <div class="card-body p-0">
 <div class="table-responsive">
 <table id="badTransfersTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
-<thead class="table-light">
+<thead class="table-info">
 <tr>
 <th>Host</th>
 <th>Target</th>

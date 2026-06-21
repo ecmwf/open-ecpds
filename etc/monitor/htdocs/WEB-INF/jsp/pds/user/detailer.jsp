@@ -9,8 +9,8 @@
 
 <%-- Resource path header --%>
 <div class="d-flex align-items-center gap-2 px-2 py-2 rounded"
-     style="background:rgba(13,110,253,0.05); border-left:4px solid #0d6efd; color:var(--bs-body-color);">
-    <i class="bi bi-link-45deg text-primary flex-shrink-0"></i>
+     style="background:rgba(255,193,7,0.08); border-left:4px solid #ffc107; color:var(--bs-body-color);">
+    <i class="bi bi-link-45deg text-warning flex-shrink-0"></i>
     <span>Resource path: <code class="fw-semibold">${resource.path}</code></span>
 </div>
 
@@ -38,7 +38,7 @@
     </div>
     <div class="table-responsive">
         <table id="detailerCatTable" class="table table-sm table-hover table-striped align-middle mb-0" style="width:100%">
-            <thead class="table-light">
+            <thead class="table-warning">
                 <tr>
                     <th>Name</th>
                     <th>Description</th>
@@ -94,7 +94,7 @@ $(document).ready(function() {
     </div>
     <div class="table-responsive">
         <table id="detailerUsersWithTable" class="table table-sm table-hover table-striped align-middle mb-0" style="width:100%">
-            <thead class="table-light">
+            <thead class="table-warning">
                 <tr>
                     <th>UID</th>
                     <th>Name</th>

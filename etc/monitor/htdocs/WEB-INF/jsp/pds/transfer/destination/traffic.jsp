@@ -41,7 +41,7 @@
   color: var(--bs-body-color);
 }
 .traffic-stat-card .stat-sub { font-size: 0.72rem; color: var(--bs-secondary-color); }
-.rate-excellent { color: #198754; font-weight: 600; }
+.rate-excellent { color: var(--bs-border-color,#dee2e6); font-weight: 600; }
 .rate-good      { color: #0dcaf0; font-weight: 600; }
 .rate-normal    { color: #0d6efd; font-weight: 600; }
 .rate-slow      { color: #fd7e14; font-weight: 600; }

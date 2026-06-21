@@ -219,7 +219,7 @@
       key="icon.small.insert" titleKey="button.insert"
       altKey="button.insert" writeFullTag="true" /></a></p>
 <table id="tgFieldsServersTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
-  <thead class="table-light">
+  <thead class="table-primary">
     <tr>
       <th>Name</th>
       <th class="text-center">Actions</th>

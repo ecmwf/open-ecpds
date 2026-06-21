@@ -58,7 +58,7 @@
 <div class="card-body p-0">
 <div class="table-responsive">
 <table id="userEventsTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
-    <thead class="table-light">
+    <thead class="table-warning">
         <tr>
             <th title="Time (UTC)">Time</th>
             <th>Host</th>

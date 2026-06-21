@@ -10,18 +10,6 @@
 
 <tiles:useAttribute name="isInsert" classname="java.lang.String" />
 
-<style>
-#userData {
-	width: 550px;
-	height: 375px;
-	resize: both;
-	overflow: hidden;
-	border: solid 1px lightgray;
-	margin-top: 8px;
-	margin-bottom: 8px;
-}
-</style>
-
 <script>
 	function validate(path, message) {
 	    confirmationDialog({
@@ -104,14 +92,12 @@
 	</div>
 	<c:if test="${isInsert != 'true'}">
 	<div class="col-lg-6">
-<div class="row g-3" style="max-width:480px">
 
   <%-- Web Categories --%>
-  <div class="col-12">
     <div class="card assoc-card">
       <div class="card-header">
         <i class="bi bi-folder2 text-secondary"></i>
-        <strong>Web Categories</strong>
+        <strong>Associated Web Categories</strong>
         <div class="btn-group btn-group-sm ms-auto">
           <button type="button" class="btn btn-outline-primary"
                   data-bs-toggle="collapse" data-bs-target="#catChooser">
@@ -236,27 +222,139 @@
         </div>
       </div>
     </div>
-  </div>
 
-</div>
 	</div>
 	</c:if>
+
+	<%-- Options card: full-width below both columns --%>
+	<div class="col-12">
+		<div class="card">
+			<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+				<i class="bi bi-sliders text-warning"></i>
+				<span class="fw-semibold">Options</span>
+			</div>
+			<div class="card-body p-2">
+				<div class="accordion" id="webUserOptionsAccordion">
+					<div class="accordion-item">
+						<h2 class="accordion-header" id="webUserAccHeadProperties" style="position:relative;">
+							<button class="accordion-button collapsed" id="webUserAccPropertiesBtn" type="button" data-bs-toggle="collapse" data-bs-target="#webUserAccProperties" aria-expanded="false" aria-controls="webUserAccProperties">
+								Properties
+							</button>
+							<span role="button" tabindex="0" class="acc-help-btn" id="webUserPropsHelpBtn"
+								onclick="openWebUserHelp();" onkeydown="if(event.key==='Enter'||event.key===' ')openWebUserHelp();" title="Open properties reference">
+								<i class="bi bi-question-circle"></i>
+							</span>
+						</h2>
+						<div id="webUserAccProperties" class="accordion-collapse collapse" aria-labelledby="webUserAccHeadProperties" data-bs-parent="#webUserOptionsAccordion">
+							<div class="accordion-body p-2">
+								<pre id="userData" class="ace-panel"><c:out value="${userActionForm.userData}" /></pre>
+								<textarea id="userData" name="userData" style="display: none;"></textarea>
+								<div class="d-flex align-items-center gap-2 mt-2">
+									<button type="button" class="btn btn-sm btn-outline-secondary" onclick="formatSource(editorProperties); return false">Format</button>
+									<button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearSource(editorProperties); return false">Clear</button>
+									<small class="text-muted ms-auto"><i class="bi bi-keyboard"></i> Ctrl+Space for completions</small>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
 </div>
 
-<div style="display:none">
-	<pre id="userData"><c:out value="${userActionForm.userData}" /></pre>
-	<textarea id="userData" name="userData" style="display: none;"></textarea>
-	<button type="button" onclick="formatSource(editorProperties); return false">Format</button>
-	<button type="button" onclick="clearSource(editorProperties); return false">Clear</button>
+<%-- Help offcanvas panel --%>
+<div class="offcanvas offcanvas-end" tabindex="-1" id="webUserHelpOffcanvas"
+     aria-labelledby="webUserHelpOffcanvasLabel" style="width:min(480px,42vw);">
+	<div class="offcanvas-header border-bottom py-2 px-3">
+		<h6 class="offcanvas-title mb-0 fw-semibold" id="webUserHelpOffcanvasLabel">
+			<i class="bi bi-book me-2 text-warning"></i>Properties Reference
+		</h6>
+		<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+	</div>
+	<div class="offcanvas-body p-0" style="display:flex; flex-direction:column; overflow:hidden;">
+		<div id="webUserHelpNav" style="flex:0 0 auto; padding:0 1rem;"></div>
+		<div id="webUserHelpContent" style="padding:0.75rem 1rem; overflow-y:auto; flex:1; min-height:0;"></div>
+	</div>
 </div>
 
 <script>
-	var editorProperties = getEditorProperties(false, false, "userData", "crystal");
+	var editorProperties = getEditorProperties(false, true, "userData", "crystal");
+	editorProperties.setOptions({minLines: 10, maxLines: 20});
+
+	var completions = [
+    	${userActionForm.completions}
+    ];
+
+	$(document).ready(function() {
+		$('#webUserHelpContent').html(getHelpHtmlContent(completions, 'Available Options for this Web User'));
+		var navEl = document.querySelector('#webUserHelpContent .help-nav');
+		if (navEl) document.getElementById('webUserHelpNav').appendChild(navEl);
+	});
+
+	var customCompleter = {
+  		getCompletions: function(editor, session, pos, prefix, callback) {
+      			var line = session.getLine(editor.getCursorPosition().row);
+			completions.forEach(function(completion) {
+      				completion.value = completion.caption + ' = ""';
+    		});
+      			var matchingCompletions = completions.filter(function(completion) {
+      				return !checkIfExist(editor, completion.value) && (line.length === 0 || completion.value.startsWith(line));
+    		}).map(function(completion) {
+      				completion.value = prefix + completion.value.substring(line.length);
+      				return completion;
+    		});
+      			if (matchingCompletions.length > 0) {
+        				callback(null, matchingCompletions);
+      			} else {
+        				callback(null, []);
+      			}
+    	}
+	};
+
+	editorProperties.completers = [customCompleter];
+
+	function _scrollWebUserHelpToCursor() {
+		var row = editorProperties.selection.getCursor().row;
+		var line = editorProperties.session.getLine(row) || '';
+		line = line.trim();
+		if (line && !line.startsWith('#') && !line.startsWith('//')) {
+			var eqIdx = line.indexOf('=');
+			var paramName = (eqIdx > 0 ? line.substring(0, eqIdx) : line).trim();
+			if (paramName) scrollHelpToParam('webUserHelpContent', paramName);
+		}
+	}
+
+	editorProperties.addEventListener("changeSelection", function (event) {
+    	checkEachLine(editorProperties, 'webUserAccPropertiesBtn');
+		var _oc = document.getElementById('webUserHelpOffcanvas');
+		if (_oc && _oc.classList.contains('show')) _scrollWebUserHelpToCursor();
+    });
+
+	editorProperties.getSession().on("change", function(e) {
+  		if (e.action === "insert" && e.lines.length == 1 && e.lines[0] !== '"' && e.lines[0].endsWith('"')) {
+    			setTimeout(function() {
+				editorProperties.moveCursorTo(e.end.row, e.end.column - 1);
+    				editorProperties.selection.clearSelection();
+    			}, 0);
+  		}
+  		checkEachLine(editorProperties, 'webUserAccPropertiesBtn');
+	});
 
 	var textareaProperties = $('textarea[name="userData"]');
 	textareaProperties.closest('form').submit(function() {
 		textareaProperties.val(editorProperties.getSession().getValue());
 	});
+
+	document.getElementById('webUserAccProperties').addEventListener('shown.bs.collapse', function() {
+		setTimeout(function() { editorProperties.resize(true); }, 50);
+	});
+
+	window.openWebUserHelp = function() {
+		var el = document.getElementById('webUserHelpOffcanvas');
+		if (el) bootstrap.Offcanvas.getOrCreateInstance(el).show();
+	};
 
 	makeResizable(editorProperties);
 

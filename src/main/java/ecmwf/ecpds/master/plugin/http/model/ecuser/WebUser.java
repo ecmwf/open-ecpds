@@ -109,4 +109,11 @@ public interface WebUser extends User {
      *            the new active
      */
     void setActive(boolean b);
+
+    /**
+     * Checks if share feedback is enabled for this web user.
+     *
+     * @return true if the Share Feedback button should be shown (default: true)
+     */
+    boolean isShareFeedbackEnabled();
 }

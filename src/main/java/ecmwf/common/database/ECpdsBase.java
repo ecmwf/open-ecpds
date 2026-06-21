@@ -4563,4 +4563,101 @@ public final class ECpdsBase extends DataBase {
             throw new DataBaseException("removeIncomingPolicy", e);
         }
     }
+
+    /**
+     * Gets all feedback entries, most recent first.
+     *
+     * @return the feedback list
+     */
+    public List<Feedback> getFeedbackList() {
+        final List<Feedback> list = new ArrayList<>();
+        try (var it = getAll(Feedback.class)) {
+            while (it.hasNext()) {
+                list.add(it.next());
+            }
+            list.sort((a, b) -> b.getTime().compareTo(a.getTime()));
+        } catch (final Exception e) {
+            _log.warn("getFeedbackList", e);
+        }
+        logSqlRequest("getFeedbackList", list.size());
+        return list;
+    }
+
+    /**
+     * Inserts a feedback entry.
+     *
+     * @param feedback
+     *            the feedback
+     *
+     * @return true if inserted successfully
+     */
+    public boolean tryInsertFeedback(final Feedback feedback) {
+        return tryInsert(feedback, true);
+    }
+
+    /**
+     * Deletes a feedback entry by id.
+     *
+     * @param feedback
+     *            the feedback
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public void removeFeedback(final Feedback feedback) throws DataBaseException {
+        try {
+            remove(feedback);
+        } catch (final Exception e) {
+            _log.warn("removeFeedback", e);
+            throw new DataBaseException("removeFeedback", e);
+        }
+    }
+
+    /**
+     * Marks a feedback entry as reviewed.
+     *
+     * @param feedback
+     *            the feedback
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public void markFeedbackReviewed(final Feedback feedback) throws DataBaseException {
+        try {
+            update(feedback);
+        } catch (final Exception e) {
+            _log.warn("markFeedbackReviewed", e);
+            throw new DataBaseException("markFeedbackReviewed", e);
+        }
+    }
+
+    /**
+     * Deletes all feedback entries that have been marked as reviewed.
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public void removeAllReviewedFeedback() throws DataBaseException {
+        try {
+            executeUpdate("ECpdsBase", "removeAllReviewedFeedback", new String[0]);
+        } catch (final Exception e) {
+            _log.warn("removeAllReviewedFeedback", e);
+            throw new DataBaseException("removeAllReviewedFeedback", e);
+        }
+    }
+
+    /**
+     * Removes all feedback entries.
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public void removeAllFeedback() throws DataBaseException {
+        try {
+            executeUpdate("ECpdsBase", "removeAllFeedback", new String[0]);
+        } catch (final Exception e) {
+            _log.warn("removeAllFeedback", e);
+            throw new DataBaseException("removeAllFeedback", e);
+        }
+    }
 }

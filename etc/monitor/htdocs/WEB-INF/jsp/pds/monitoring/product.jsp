@@ -222,7 +222,7 @@ th {
 	<div class="d-flex gap-2 align-items-start">
 	<div style="flex:1; min-width:0;">
 	<table class="sortableTable table table-sm table-striped table-hover table-bordered align-middle" style="font-size:0.78rem; white-space:nowrap;">
-		<thead class="table-light">
+		<thead class="table-info">
 			<tr>
 				<th onclick="sortTable(0)" data-order="asc" style="cursor:pointer;" title="Sort by Time (UTC)">T <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
 				<th onclick="sortTable(1)" data-order="asc" style="cursor:pointer;" title="Sort by Step">Step <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
@@ -240,7 +240,7 @@ th {
 					</tbody></table></div>
 				<div id="productTable2Wrap" style="flex:1; min-width:0;">
 					<table class="sortableTable table table-sm table-striped table-hover table-bordered align-middle" style="font-size:0.78rem; white-space:nowrap;">
-						<thead class="table-light">
+						<thead class="table-info">
 							<tr>
 								<th onclick="sortTable(0)" data-order="asc" style="cursor:pointer;" title="Sort by Time (UTC)">T <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
 								<th onclick="sortTable(1)" data-order="asc" style="cursor:pointer;" title="Sort by Step">Step <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>

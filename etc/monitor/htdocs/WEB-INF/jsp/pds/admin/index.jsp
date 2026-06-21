@@ -45,4 +45,15 @@
     </div>
     </auth:link>
 
+    <auth:link basePathKey="admin.feedback.basepath" href="">
+    <div class="admin-tool p-3 d-flex align-items-start gap-3">
+        <i class="bi bi-chat-left-text text-secondary flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
+        <div>
+            <span class="tool-title">User Feedback</span>
+            <p class="tool-desc">Review, acknowledge and manage feedback submitted by users of the monitoring interface.
+            Includes ratings, comments, feature requests and contact information where provided.</p>
+        </div>
+    </div>
+    </auth:link>
+
 </div>

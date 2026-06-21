@@ -62,6 +62,7 @@ import ecmwf.common.database.Association;
 import ecmwf.common.database.CatUrl;
 import ecmwf.common.database.Category;
 import ecmwf.common.database.ChangeLog;
+import ecmwf.common.database.Feedback;
 import ecmwf.common.database.Country;
 import ecmwf.common.database.DataBaseCursor;
 import ecmwf.common.database.DataBaseException;
@@ -1875,6 +1876,61 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
         final var monitor = new MonitorCall("getChangeLogByKey(" + keyName + "," + keyValue + ")");
         final var changeLogList = ecpds.getChangeLogByKey(keyName, keyValue);
         return monitor.done(changeLogList);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public List<Feedback> getFeedbackList() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getFeedbackList()");
+        return monitor.done(ecpds.getFeedbackList());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean tryInsertFeedback(final Feedback feedback) throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("tryInsertFeedback()");
+        return monitor.done(ecpds.tryInsertFeedback(feedback));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void removeFeedback(final Feedback feedback) throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("removeFeedback(" + feedback.getId() + ")");
+        ecpds.removeFeedback(feedback);
+        monitor.done();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void markFeedbackReviewed(final Feedback feedback) throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("markFeedbackReviewed(" + feedback.getId() + ")");
+        ecpds.markFeedbackReviewed(feedback);
+        monitor.done();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void removeAllReviewedFeedback() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("removeAllReviewedFeedback()");
+        ecpds.removeAllReviewedFeedback();
+        monitor.done();
+    }
+
+    @Override
+    public void removeAllFeedback() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("removeAllFeedback()");
+        ecpds.removeAllFeedback();
+        monitor.done();
     }
 
     /**

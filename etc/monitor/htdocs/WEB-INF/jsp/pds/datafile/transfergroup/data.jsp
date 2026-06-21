@@ -115,7 +115,7 @@
 
 	<p class="fw-bold mb-1 mt-2">Data Movers</p>
 	<table id="tgServersTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
-		<thead class="table-light">
+		<thead class="table-primary">
 			<tr>
 				<th>Name</th>
 				<th>Host</th>

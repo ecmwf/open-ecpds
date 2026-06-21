@@ -36,6 +36,8 @@ import java.util.Date;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import ecmwf.common.ectrans.ECtransGroups;
+import ecmwf.common.ectrans.ECtransOptions;
 import ecmwf.common.database.DataBaseObject;
 import ecmwf.ecpds.master.plugin.http.dao.OjbImplementedBean;
 import ecmwf.ecpds.master.plugin.http.model.ecuser.WebUser;
@@ -532,6 +534,30 @@ public class UserBean extends ModelBeanBase implements WebUser, OjbImplementedBe
     @Override
     public Collection<?> getPolicies() throws UserException {
         return null;
+    }
+
+    /**
+     * Gets the completions for the ACE editor autocomplete.
+     *
+     * @return the completions as JSON
+     */
+    public String getCompletions() {
+        return ECtransOptions.toString(ECtransGroups.WEB);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Checks if share feedback is enabled.
+     */
+    @Override
+    public boolean isShareFeedbackEnabled() {
+        try {
+            final var setup = ECtransGroups.Module.WEB_MONITOR.getECtransSetup(user.getEnvironment());
+            return setup.getBoolean(ECtransOptions.WEB_MONITOR_SHARE_FEEDBACK);
+        } catch (final Exception e) {
+            return true;
+        }
     }
 
     /**
