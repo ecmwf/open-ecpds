@@ -22,7 +22,8 @@ This document summarizes the most significant changes in OpenECPDS across all ma
 - Improved the workflow for creating data users, web users, and other entities.
 - Added presets and a "Remove All" option to association cards.
 - Added a filter to identify problematic data users and web users, along with a "Delete All" button to remove them all at once.
-
+- Add feedback form to collect user input and satisfaction.
+- Introduce properties for Web Users, similar to those available for Data Users.
 ## open-ecpds 8.0.1-29052026 (2026-05-29)
 
 - Fix packaging issue affecting the monitor RPM where the ecpds.war application was not included in the generated package.
