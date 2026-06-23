@@ -5,10 +5,102 @@
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth" %>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
 
-<div class="d-flex align-items-center gap-2 mb-3 px-3 py-2 rounded"
-style="background:var(--bs-tertiary-bg,#f8f9fa); color:var(--bs-body-color); border-left:4px solid var(--bs-border-color,#dee2e6);">
+<div class="dest-page-header mb-3">
+<div class="d-flex align-items-center gap-2 flex-wrap mb-1">
 <i class="bi bi-arrow-left-right text-success flex-shrink-0"></i>
-Data Transfer: <strong><c:out value="${datatransfer.id}"/></strong>
+<span class="fw-semibold">Data Transfer:&nbsp;<strong><c:out value="${datatransfer.id}"/></strong></span>
+
+<%-- Desktop: full icon bar, hidden on mobile --%>
+<div id="_dtIconBar" class="d-none d-sm-flex gap-2 align-items-center ms-auto">
+<auth:if basePathKey="datatransfer.basepath" paths="">
+<auth:then>
+<a href='<bean:message key="datatransfer.basepath"/>' class="btn btn-sm btn-outline-secondary" title="All Data Transfers"><i class="bi bi-arrow-left"></i></a>
+</auth:then>
+</auth:if>
+<auth:if basePathKey="destination.basepath" paths="/deletions/${datatransfer.destinationName}/deleteTransferForm/${datatransfer.id}">
+<auth:then>
+<div class="d-flex gap-1 align-items-center" style="border-left:1px solid var(--bs-border-color);padding-left:0.5rem;">
+<c:choose>
+<c:when test="${!datatransfer.deleted}">
+<a href='<bean:message key="destination.basepath"/>/deletions/${datatransfer.destinationName}/deleteTransferForm/${datatransfer.id}'
+   class="btn btn-sm btn-outline-danger" title="Delete this Data Transfer"><i class="bi bi-trash"></i></a>
+</c:when>
+<c:otherwise>
+<button class="btn btn-sm btn-outline-danger" disabled title="Already deleted"><i class="bi bi-trash"></i></button>
+</c:otherwise>
+</c:choose>
+<c:choose>
+<c:when test="${datatransfer.canBeDownloaded}">
+<a href='<bean:message key="destination.basepath"/>/operations/${datatransfer.destinationName}/download/${datatransfer.id}'
+   class="btn btn-sm btn-outline-primary" title="Download"><i class="bi bi-cloud-download"></i></a>
+</c:when>
+<c:otherwise>
+<button class="btn btn-sm btn-outline-primary" disabled title="Not available for download"><i class="bi bi-cloud-download"></i></button>
+</c:otherwise>
+</c:choose>
+<c:if test="${not empty showScheduleNow}">
+<a href='<bean:message key="destination.basepath"/>/operations/${datatransfer.destinationName}/scheduleNow/${datatransfer.id}'
+   class="btn btn-sm btn-outline-secondary" title="Schedule Now"><i class="bi bi-calendar-check"></i></a>
+</c:if>
+<c:if test="${datatransfer.statusCode == 'FETC'}">
+<a href='<bean:message key="destination.basepath"/>/operations/${datatransfer.destinationName}/interrupt/${datatransfer.id}'
+   class="btn btn-sm btn-outline-warning" title="Interrupt Retrieval"><i class="bi bi-stop-circle"></i></a>
+</c:if>
+</div>
+</auth:then>
+</auth:if>
+</div><%-- end #_dtIconBar --%>
+
+<%-- Mobile: ⋯ dropdown, hidden on sm+ --%>
+<div class="d-sm-none ms-auto">
+    <div class="dropdown">
+        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
+                id="_dtActionsToggle" data-bs-toggle="dropdown" aria-expanded="false"
+                title="Actions">
+            <i class="bi bi-three-dots"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end" id="_dtActionsMenu" aria-labelledby="_dtActionsToggle"></ul>
+    </div>
+</div>
+<script>
+(function() {
+    document.addEventListener('DOMContentLoaded', function() {
+        var bar  = document.getElementById('_dtIconBar');
+        var menu = document.getElementById('_dtActionsMenu');
+        if (!bar || !menu) return;
+        function addItem(a) {
+            var li   = document.createElement('li');
+            var item = document.createElement('a');
+            item.className = 'dropdown-item';
+            item.href = a.getAttribute('href');
+            var ic = a.querySelector('i[class]');
+            if (ic) {
+                var icon = document.createElement('i');
+                icon.className = ic.className + ' me-2';
+                item.appendChild(icon);
+            }
+            item.appendChild(document.createTextNode(a.title || a.textContent.trim()));
+            li.appendChild(item);
+            menu.appendChild(li);
+        }
+        function addDivider() {
+            if (menu.children.length === 0) return;
+            var li = document.createElement('li');
+            li.innerHTML = '<hr class="dropdown-divider m-1">';
+            menu.appendChild(li);
+        }
+        Array.from(bar.children).forEach(function(child) {
+            if (child.tagName === 'A') {
+                addItem(child);
+            } else if (child.tagName === 'DIV' && child.querySelector('a')) {
+                addDivider();
+                Array.from(child.querySelectorAll('a')).forEach(addItem);
+            }
+        });
+    });
+})();
+</script>
+</div>
 </div>
 
 <%-- Stat strip --%>
@@ -75,10 +167,11 @@ Data Transfer: <strong><c:out value="${datatransfer.id}"/></strong>
 </div>
 <div class="collapse" id="dtDetailsInfoPanel">
     <div class="px-3 pt-2 pb-3 border-bottom small" style="background:var(--bs-secondary-bg)">
-        A data transfer is linked to a unique data file and represents a transfer request for its content, together with
-        any related information (e.g. schedule, priority, progress, status, rate, errors, history). A single data file
-        can be linked to several data transfers as many remote sites might be interested in obtaining the same products
-        from the <strong><%=System.getProperty("monitor.title")%></strong>.
+        A data transfer is linked to a unique data file and represents a request to move its content, either
+        by disseminating it to a remote destination or by retrieving it from a remote source. It carries
+        related information such as schedule, priority, progress, status, transfer rate, errors, and history.
+        A single data file can be linked to several data transfers, for example when multiple destinations
+        share the same product or when aliases are in use.
     </div>
 </div>
 <div class="card-body py-0">

@@ -47,6 +47,8 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_AUTHCACHE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_AUTHHEADER;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_CREDENTIALS;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_DODIR;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_URL_IS_FILE;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_URL_IS_FILE_NAME;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_ENABLE_CONTENT_COMPRESSION;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_ENCODE_URL;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_FAIL_ON_EMPTY_SYMLINK;
@@ -1909,7 +1911,33 @@ public final class HttpModule extends TransferModule {
                 }
             }
         } else {
-            // This is an HTTP/S server. Should we append a '/' at the end of the URL?
+            // This is an HTTP/S server.
+            if (getSetup().getBoolean(HOST_HTTP_URL_IS_FILE)) {
+                // The URL itself is the file — issue a single HEAD/GET to get size and date,
+                // then emit one FTP-like listing entry without crawling any directory.
+                _log.debug("urlIsFile: treating URL as direct file: {}", directory);
+                final var ownerUser = isNotEmpty(username) ? username : "nouser";
+                final var ownerGroup = isNotEmpty(username) ? username : "nogroup";
+                final var forcedName = getSetup().getString(HOST_HTTP_URL_IS_FILE_NAME);
+                final var entry = getElement("", directory, ownerUser, ownerGroup,
+                        isNotEmpty(forcedName) ? forcedName : null, null, null);
+                if (!entry.hasError()) {
+                    final var element = decodePath(getSetup().getBoolean(HOST_HTTP_ENCODE_URL),
+                            entry.getFtpList(rootDirectory));
+                    if (isEmpty(pattern) || entry.name.matches(pattern)) {
+                        _log.debug("urlIsFile adding entry: {}", element);
+                        resultList.add(element);
+                        listSize++;
+                    } else if (getDebug()) {
+                        _log.debug("urlIsFile discarding {} (wrong-pattern)", entry.name);
+                    }
+                } else {
+                    _log.warn("urlIsFile HEAD failed for {}: {}", directory, entry.getError());
+                }
+                _log.debug("{} line(s) selected", listSize);
+                return;
+            }
+            // Should we append a '/' at the end of the URL?
             // If specified, apply the requested behaviour; otherwise, determine
             // automatically: append '/' if the directory does not contain '?' and does not
             // end with '.html/', '.htm/', or '.txt/'.

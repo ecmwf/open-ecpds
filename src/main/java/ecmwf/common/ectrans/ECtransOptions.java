@@ -1341,6 +1341,12 @@ public enum ECtransOptions {
     /** The host http dodir. */
     HOST_HTTP_DODIR("dodir", Boolean.class, true),
 
+    /** The host http url is file. */
+    HOST_HTTP_URL_IS_FILE("urlIsFile", Boolean.class, false),
+
+    /** The host http url is file name. */
+    HOST_HTTP_URL_IS_FILE_NAME("urlIsFileName", String.class, STRING_NONE),
+
     /** The host http max size. */
     HOST_HTTP_MAX_SIZE("maxSize", ByteSize.class, ByteSize.ofMB(10)),
 

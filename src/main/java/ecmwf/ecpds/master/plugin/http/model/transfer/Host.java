@@ -848,6 +848,24 @@ public interface Host extends ModelBean, CollectionSizeBean {
     RemoteInputStream getOutput(final User u) throws TransferException;
 
     /**
+     * Check whether an acquisition thread is currently running for this Host.
+     *
+     * @param u
+     *            the user
+     *
+     * @return true if an acquisition thread is active right now
+     */
+    boolean isAcquisitionRunning(final User u);
+
+    /**
+     * Trigger acquisition for this Host immediately by resetting its acquisition time.
+     *
+     * @param u
+     *            the user
+     */
+    void triggerAcquisition(final User u);
+
+    /**
      * Transfer.
      *
      * @param u

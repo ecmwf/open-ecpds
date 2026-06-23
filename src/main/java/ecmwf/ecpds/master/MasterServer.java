@@ -2193,6 +2193,41 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
+     * Check whether the acquisition scheduler currently has a live thread running for the specified Host.
+     *
+     * @param host
+     *            the host
+     *
+     * @return true if an acquisition thread for this host is active right now
+     */
+    public boolean isAcquisitionRunning(final Host host) {
+        if (theAcquisitionScheduler == null) {
+            return false;
+        }
+        final var thread = theAcquisitionScheduler._acquisitionThreads.get(host.getName());
+        return thread != null && !theAcquisitionScheduler._toRemove.contains(host.getName()) && thread.isAlive();
+    }
+
+    /**
+     * Trigger acquisition for the specified Host immediately by resetting the acquisition time, causing the
+     * AcquisitionScheduler to pick it up on its next cycle. Does nothing if the host is already running.
+     *
+     * @param host
+     *            the host
+     *
+     * @throws DataBaseException
+     *             if the database update fails
+     */
+    public void triggerAcquisition(final Host host) throws DataBaseException {
+        if (isAcquisitionRunning(host)) {
+            _log.debug("Trigger acquisition skipped — Host-{} is already running", host.getName());
+            return;
+        }
+        _log.debug("Triggering acquisition for Host-{}", host.getName());
+        getDataBase().update(new HostOutput(host.getHostOutputId()));
+    }
+
+    /**
      * Get the output for the specified Host. This is used by the monitoring interface.
      *
      * @param host
@@ -10601,20 +10636,34 @@ public final class MasterServer extends ECaccessProvider
                     // This is an absolute entry name (forget currentPath)
                     original = name;
                     if (url) {
-                        final var urlName = new File(name).getName();
-                        if (_getBoolean(HOST_ACQUISITION_REMOVE_PARAMETERS)) {
-                            final var index = urlName.indexOf("?");
-                            // If we detect a ? then let's remove the parameters!
-                            initialTarget = index != -1 ? urlName.substring(0, index) : urlName;
+                        // If this is a symlink (e.g. from http.urlIsFileName), the link field
+                        // holds the forced filename — use it directly as the target.
+                        if (symlink && isNotEmpty(entry.link)) {
+                            initialTarget = entry.link;
                         } else {
-                            initialTarget = urlName;
+                            final var urlName = new File(name).getName();
+                            if (_getBoolean(HOST_ACQUISITION_REMOVE_PARAMETERS)) {
+                                final var index = urlName.indexOf("?");
+                                // If we detect a ? then let's remove the parameters!
+                                initialTarget = index != -1 ? urlName.substring(0, index) : urlName;
+                            } else {
+                                initialTarget = urlName;
+                            }
                         }
                     } else {
                         // Is it UNIX or Windows?
-                        final var index = name.lastIndexOf(windows ? "\\" : "/");
-                        // If we detect a file separator then let's remove the
-                        // parent directory!
-                        initialTarget = index != -1 ? name.substring(index + 1) : name;
+                        // When a symlink target is a plain filename (no path separator), it
+                        // represents the desired output filename (e.g. set via http.urlIsFileName)
+                        // — use it directly rather than extracting the last path segment of name.
+                        if (symlink && isNotEmpty(entry.link) && !entry.link.contains("/")
+                                && !entry.link.contains("\\")) {
+                            initialTarget = entry.link;
+                        } else {
+                            final var index = name.lastIndexOf(windows ? "\\" : "/");
+                            // If we detect a file separator then let's remove the
+                            // parent directory!
+                            initialTarget = index != -1 ? name.substring(index + 1) : name;
+                        }
                     }
                 } else {
                     // This is a relative entry name

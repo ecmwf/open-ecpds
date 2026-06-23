@@ -680,42 +680,6 @@ public final class RESTServer {
     }
 
     /**
-     * Returns portal traffic statistics for the authenticated user as a JSON array, covering the last {@code hours}
-     * hours (default 24).
-     */
-    @GET
-    @Path("stats/traffic")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response getPortalTraffic(@HeaderParam("Authorization") final String authString,
-            @QueryParam("hours") @DefaultValue("24") final int hours, @Context final HttpServletRequest request,
-            @Context final HttpServletResponse response) {
-        try {
-            final var session = getUserSession(authString, request, response);
-            final var userId = session.getUser();
-            session.close(true);
-            final List<PortalTraffic> traffic = mover.getMasterInterface().getPortalTraffic(userId, hours);
-            final var sb = new StringBuilder("[");
-            var first = true;
-            for (final var pt : traffic) {
-                if (!first)
-                    sb.append(",");
-                first = false;
-                sb.append("{\"time\":\"").append(pt.getTime()).append("\"").append(",\"connections\":")
-                        .append(pt.getConnections()).append(",\"bytesIn\":").append(pt.getBytesIn())
-                        .append(",\"bytesOut\":").append(pt.getBytesOut()).append(",\"durationIn\":")
-                        .append(pt.getDurationIn()).append(",\"durationOut\":").append(pt.getDurationOut()).append("}");
-            }
-            sb.append("]");
-            return Response.ok(sb.toString(), MediaType.APPLICATION_JSON).build();
-        } catch (final WebApplicationException w) {
-            return w.getResponse();
-        } catch (final Exception e) {
-            _log.warn("getPortalTraffic", e);
-            return Response.serverError().build();
-        }
-    }
-
-    /**
      * File get (if directory then list otherwise download).
      *
      * @param ui
@@ -1365,6 +1329,30 @@ public final class RESTServer {
             Format.replaceAll(sb, "${trafficStats}", String.valueOf(trafficStats));
             final var userId = session.getUser();
             Format.replaceAll(sb, "${userid}", userId);
+            if (trafficStats) {
+                try {
+                    final List<PortalTraffic> traffic = mover.getMasterInterface().getPortalTraffic(userId, 24);
+                    final var tsb = new StringBuilder("[");
+                    var tFirst = true;
+                    for (final var pt : traffic) {
+                        if (!tFirst)
+                            tsb.append(",");
+                        tFirst = false;
+                        tsb.append("{\"time\":\"").append(pt.getTime()).append("\"").append(",\"connections\":")
+                                .append(pt.getConnections()).append(",\"bytesIn\":").append(pt.getBytesIn())
+                                .append(",\"bytesOut\":").append(pt.getBytesOut()).append(",\"durationIn\":")
+                                .append(pt.getDurationIn()).append(",\"durationOut\":").append(pt.getDurationOut())
+                                .append("}");
+                    }
+                    tsb.append("]");
+                    Format.replaceAll(sb, "${trafficData}", tsb.toString());
+                } catch (final Throwable t) {
+                    _log.warn("getPortalTraffic inline", t);
+                    Format.replaceAll(sb, "${trafficData}", "[]");
+                }
+            } else {
+                Format.replaceAll(sb, "${trafficData}", "[]");
+            }
             Format.replaceAll(sb, "${s3CanWrite}", String.valueOf(session.hasPermission("put")));
             Format.replaceAll(sb, "${s3CanDelete}", String.valueOf(session.hasPermission("delete")));
             final var destination = setup != null

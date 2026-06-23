@@ -11,10 +11,85 @@
 </c:if>
 <c:if test="${empty isDelete}">
 
-<div class="d-flex align-items-center gap-2 mb-3 px-3 py-2 rounded"
-style="background:rgba(13,110,253,0.06); color:var(--bs-body-color); border-left:4px solid #0d6efd;">
+<div class="dest-page-header mb-3">
+<div class="d-flex align-items-center gap-2 flex-wrap mb-1">
 <i class="bi bi-file-earmark-text text-primary flex-shrink-0"></i>
-Data File: <strong><c:out value="${datafile.id}"/></strong>
+<span class="fw-semibold">Data File:&nbsp;<strong><c:out value="${datafile.id}"/></strong></span>
+
+<%-- Desktop: full icon bar, hidden on mobile --%>
+<div id="_dfIconBar" class="d-none d-sm-flex gap-2 align-items-center ms-auto">
+<auth:if basePathKey="datafile.basepath" paths="">
+<auth:then>
+<a href='<bean:message key="datafile.basepath"/>' class="btn btn-sm btn-outline-secondary" title="All Data Files"><i class="bi bi-arrow-left"></i></a>
+</auth:then>
+</auth:if>
+<auth:if paths="/do/datafile/datafile/edit/delete_form/${datafile.id}">
+<auth:then>
+<div class="d-flex gap-1 align-items-center" style="border-left:1px solid var(--bs-border-color);padding-left:0.5rem;">
+<c:choose>
+<c:when test="${!datafile.deleted}">
+<a href='/do/datafile/datafile/edit/delete_form/${datafile.id}'
+   class="btn btn-sm btn-outline-danger" title="Delete this Data File"><i class="bi bi-trash"></i></a>
+</c:when>
+<c:otherwise>
+<button class="btn btn-sm btn-outline-danger" disabled title="Already deleted"><i class="bi bi-trash"></i></button>
+</c:otherwise>
+</c:choose>
+</div>
+</auth:then>
+</auth:if>
+</div><%-- end #_dfIconBar --%>
+
+<%-- Mobile: ⋯ dropdown, hidden on sm+ --%>
+<div class="d-sm-none ms-auto">
+    <div class="dropdown">
+        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
+                id="_dfActionsToggle" data-bs-toggle="dropdown" aria-expanded="false"
+                title="Actions">
+            <i class="bi bi-three-dots"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end" id="_dfActionsMenu" aria-labelledby="_dfActionsToggle"></ul>
+    </div>
+</div>
+<script>
+(function() {
+    document.addEventListener('DOMContentLoaded', function() {
+        var bar  = document.getElementById('_dfIconBar');
+        var menu = document.getElementById('_dfActionsMenu');
+        if (!bar || !menu) return;
+        function addItem(a) {
+            var li   = document.createElement('li');
+            var item = document.createElement('a');
+            item.className = 'dropdown-item';
+            item.href = a.getAttribute('href');
+            var ic = a.querySelector('i[class]');
+            if (ic) {
+                var icon = document.createElement('i');
+                icon.className = ic.className + ' me-2';
+                item.appendChild(icon);
+            }
+            item.appendChild(document.createTextNode(a.title || a.textContent.trim()));
+            li.appendChild(item);
+            menu.appendChild(li);
+        }
+        function addDivider() {
+            if (menu.children.length === 0) return;
+            var li = document.createElement('li');
+            li.innerHTML = '<hr class="dropdown-divider m-1">';
+            menu.appendChild(li);
+        }
+        Array.from(bar.children).forEach(function(child) {
+            if (child.tagName === 'A') {
+                addItem(child);
+            } else if (child.tagName === 'DIV' && child.querySelector('a')) {
+                addDivider();
+                Array.from(child.querySelectorAll('a')).forEach(addItem);
+            }
+        });
+    });
+})();
+</script>
+</div>
 </div>
 
 <%-- Stat bar --%>

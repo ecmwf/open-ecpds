@@ -143,6 +143,33 @@ public class GetHostAction extends PDSAction {
         // Let's pass the user for the getLastOutput links!
         host.setUser(user);
         request.setAttribute("host", host);
+        // Lightweight JSON endpoint: returns whether an acquisition thread is running for this host.
+        // Called asynchronously by data.jsp to control the Run Now / polling behaviour.
+        if ("acquisitionRunning".equals(request.getParameter("json"))) {
+            final var running = host.isAcquisitionRunning(user);
+            try {
+                response.setContentType("application/json; charset=UTF-8");
+                response.getWriter().write("{\"running\":" + running + "}");
+                response.getWriter().flush();
+            } catch (final java.io.IOException ignored) {
+            }
+            return null;
+        }
+        // Trigger acquisition immediately by resetting the acquisition time so the scheduler picks it up.
+        if ("triggerAcquisition".equals(request.getParameter("json"))) {
+            final var alreadyRunning = host.isAcquisitionRunning(user);
+            if (!alreadyRunning) {
+                host.triggerAcquisition(user);
+            }
+            try {
+                response.setContentType("application/json; charset=UTF-8");
+                response.getWriter()
+                        .write("{\"triggered\":" + !alreadyRunning + ",\"running\":" + alreadyRunning + "}");
+                response.getWriter().flush();
+            } catch (final java.io.IOException ignored) {
+            }
+            return null;
+        }
         final var mode = request.getParameter("mode");
         if ("changelog".equals(mode)) {
             // This is the changelog.jsp page!

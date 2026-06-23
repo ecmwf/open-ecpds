@@ -742,6 +742,32 @@ public interface ManagementInterface extends Remote {
     RemoteInputStream getOutput(ECpdsSession session, Host host) throws MasterException, DataBaseException, IOException;
 
     /**
+     * Check whether an acquisition thread is currently running for the given Host.
+     *
+     * @param session
+     *            the session
+     * @param host
+     *            the host
+     *
+     * @return true if an acquisition thread for this host is active right now
+     */
+    boolean isAcquisitionRunning(ECpdsSession session, Host host) throws RemoteException;
+
+    /**
+     * Trigger acquisition for the given Host immediately by resetting its acquisition time. Does nothing if the host is
+     * already running.
+     *
+     * @param session
+     *            the session
+     * @param host
+     *            the host
+     *
+     * @throws RemoteException
+     *             the remote exception
+     */
+    void triggerAcquisition(ECpdsSession session, Host host) throws RemoteException;
+
+    /**
      * Gets the report.
      *
      * @param session

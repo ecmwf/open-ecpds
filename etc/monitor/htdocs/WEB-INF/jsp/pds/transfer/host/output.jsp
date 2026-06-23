@@ -167,10 +167,13 @@
     </div>
     <div class="collapse" id="outputInfoPanel">
         <div class="px-3 pt-2 pb-3 border-bottom small" style="background:var(--bs-secondary-bg)">
-            This output is specific to <strong>Acquisition hosts</strong>. It shows the directory listing retrieved from the
-            remote site defined in the underlying host entity. This listing is parsed by the <strong>Acquisition Scheduler</strong>
-            to determine which files should be selected for data retrieval and which should be ignored &mdash; for example, because
-            they have already been retrieved, do not match the configured pattern, or fall outside the selection criteria.
+            This page shows the file listing retrieved from the remote site during the last acquisition run.
+            This is the result used by the <strong>Acquisition Scheduler</strong> to determine which files to retrieve
+            and which to skip, for example because they were already retrieved, do not match the configured pattern,
+            or fall outside the selection criteria. The raw console log of the listing process itself (connection
+            attempts, timing, errors) is shown in the Progress panel on the host main page.
+            The <strong>Refresh</strong> button fetches the latest listing from the server.
+            The <strong>Raw</strong> button switches between the structured view and the original server response.
         </div>
     </div>
     <div class="card-body p-0" style="position:relative;">

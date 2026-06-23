@@ -230,12 +230,23 @@ JavaScript
 </button>
 <span id="progressLiveStatus"></span>
 <div class="ms-auto d-flex gap-1">
+<button id="runNowBtn"
+class="btn btn-sm btn-outline-success progress-terminal-btn py-0 px-2"
+style="font-size:0.7rem;" disabled
+onclick="progressRunNow(this)">
+<i class="bi bi-play-fill"></i> Run Now
+</button>
 <button id="refreshLogBtn"
 class="btn btn-sm btn-outline-secondary progress-terminal-btn py-0 px-2"
 style="font-size:0.7rem;"
 onclick="progressRefresh(this)">
 <i class="bi bi-arrow-clockwise"></i> Refresh
 </button>
+<a href='<bean:message key="host.basepath"/>/edit/getOutput/view/${host.id}'
+class="btn btn-sm btn-outline-secondary progress-terminal-btn py-0 px-2"
+style="font-size:0.7rem;" title="View full output page">
+<i class="bi bi-terminal"></i> Output
+</a>
 <button class="btn btn-sm btn-outline-secondary progress-terminal-btn py-0 px-2"
 style="font-size:0.7rem;"
 onclick="progressCopy(this)">
@@ -245,10 +256,12 @@ onclick="progressCopy(this)">
 </div>
 <div class="collapse" id="progressInfoLegend">
 	<div class="card-body py-2 px-3 border-bottom" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
-		<strong class="d-block mb-1">Acquisition host activity log</strong>
-		<p class="mb-1">This panel shows the live output produced by this Acquisition host as it accesses and parses remote directories, listing files, resolving metadata, and scheduling new transfers. Each line starts with a timestamp (<code>Mon DD HH:MM:SS</code>) followed by the log message.</p>
+		<strong class="d-block mb-1">Acquisition host progress log</strong>
+		<p class="mb-1">This panel shows the raw console log produced while the Acquisition host runs: connection attempts, timing, debug messages, and any errors encountered during the listing process. It does not contain the file listing itself. The resulting file listing, which the Acquisition Scheduler reads to decide which files to retrieve, is shown on the Output page.</p>
 		<ul class="mb-1 ps-3">
-			<li><strong><i class="bi bi-arrow-clockwise"></i> Refresh:</strong> fetches the latest output immediately and restarts live monitoring.</li>
+			<li><strong><i class="bi bi-play-fill"></i> Run Now:</strong> triggers the Acquisition Scheduler to process this host immediately. Disabled while a run is already in progress.</li>
+			<li><strong><i class="bi bi-arrow-clockwise"></i> Refresh:</strong> fetches the latest output. If the acquisition host is currently running, Live mode starts automatically and the panel updates in real time.</li>
+			<li><strong><i class="bi bi-terminal"></i> Output:</strong> opens the full output page with structured file listing view and raw toggle.</li>
 			<li><strong><i class="bi bi-clipboard"></i> Copy:</strong> copies the full log text to the clipboard.</li>
 		</ul>
 		<div class="d-flex gap-3 flex-wrap mb-1">
@@ -271,6 +284,7 @@ onclick="progressCopy(this)">
     var _timer        = null;
     var _staleCount   = 0;
     var _lastLine     = '';   // last non-empty text line of the output
+    var _hostId       = '<c:out value="${host.id}"/>';
 
     function getBody()      { return document.getElementById('progressBody'); }
     function getStatus()    { return document.getElementById('progressLiveStatus'); }
@@ -308,6 +322,21 @@ onclick="progressCopy(this)">
     function stopPolling() {
         if (_timer) { clearTimeout(_timer); _timer = null; }
         setStatus('idle');
+    }
+
+    // Check whether the acquisition host is currently running, and update button states accordingly
+    function checkRunning(callback) {
+        fetch('/do/transfer/host/' + encodeURIComponent(_hostId) + '?json=acquisitionRunning')
+            .then(function(r) { return r.ok ? r.json() : null; })
+            .then(function(data) {
+                var running = data && data.running === true;
+                var runBtn = document.getElementById('runNowBtn');
+                if (runBtn) runBtn.disabled = running;
+                if (callback) callback(running);
+            })
+            .catch(function() {
+                if (callback) callback(false);
+            });
     }
 
     function fetchProgress(callback) {
@@ -369,8 +398,14 @@ onclick="progressCopy(this)">
             if (body) { body.innerHTML = newContent; scrollToBottom(); }
             _lastLine   = lastLine(newContent);
             _staleCount = 0;
-            if (newContent.trim()) startPolling();
-            else setStatus('idle');
+            if (newContent.trim()) {
+                checkRunning(function(running) {
+                    if (running) startPolling();
+                    else setStatus('idle');
+                });
+            } else {
+                setStatus('idle');
+            }
         });
     };
 
@@ -383,12 +418,41 @@ onclick="progressCopy(this)">
         });
     };
 
+    window.progressRunNow = function (btn) {
+        btn.disabled = true;
+        var orig = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Starting...';
+        fetch('/do/transfer/host/' + encodeURIComponent(_hostId) + '?json=triggerAcquisition')
+            .then(function(r) { return r.ok ? r.json() : null; })
+            .then(function(data) {
+                btn.innerHTML = orig;
+                if (data && data.triggered) {
+                    // Triggered: wait a moment then refresh output and start watching
+                    setTimeout(function() {
+                        var refreshBtn = document.getElementById('refreshLogBtn');
+                        if (refreshBtn) refreshBtn.click();
+                        checkRunning(null);
+                    }, 1500);
+                } else {
+                    // Already running or failed — re-check state
+                    checkRunning(null);
+                }
+            })
+            .catch(function() {
+                btn.innerHTML = orig;
+                btn.disabled = false;
+            });
+    };
+
     // Auto-start on page load if there is already content
     document.addEventListener('DOMContentLoaded', function () {
         var body = getBody();
         if (body && body.innerHTML.trim()) {
             scrollToBottom();
-            startPolling();
+            checkRunning(function(running) {
+                if (running) startPolling();
+                else setStatus('idle');
+            });
         } else {
             setStatus('idle');
         }

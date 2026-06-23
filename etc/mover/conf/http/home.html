@@ -752,36 +752,32 @@
       var errorEl = document.getElementById('portalTrafficError');
       if (chartArea._loaded) return;
       chartArea._loaded = true;
-      fetch('/ecpds/stats/traffic?hours=24')
-        .then(function(r){ return r.json(); })
-        .then(function(data) {
-          loadingEl.style.display = 'none';
-          if (!data.length) { loadingEl.style.display = ''; loadingEl.textContent = 'No traffic data available yet.'; return; }
-          var labels = data.map(function(d){ return d.time.substring(11,16); });
-          var conns  = data.map(function(d){ return d.connections; });
-          var mbin   = data.map(function(d){ return d.durationIn  > 0 ? (d.bytesIn  * 8 / d.durationIn  / 1000).toFixed(3) : 0; });
-          var mbout  = data.map(function(d){ return d.durationOut > 0 ? (d.bytesOut * 8 / d.durationOut / 1000).toFixed(3) : 0; });
-          var ctx = document.getElementById('portalTrafficChart').getContext('2d');
-          _portalTrafficChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-              labels: labels,
-              datasets: [
-                { label: 'Connections', data: conns, borderColor: '#0d6efd', backgroundColor: 'rgba(13,110,253,0.08)', yAxisID: 'yConn', tension: 0.3, pointRadius: 2 },
-                { label: 'Download (Mbps)', data: mbout, borderColor: '#198754', backgroundColor: 'rgba(25,135,84,0.08)', yAxisID: 'yBw', tension: 0.3, pointRadius: 2 },
-                { label: 'Upload (Mbps)',   data: mbin,  borderColor: '#fd7e14', backgroundColor: 'rgba(253,126,20,0.08)', yAxisID: 'yBw', tension: 0.3, pointRadius: 2 }
-              ]
-            },
-            options: {
-              responsive: true, interaction: { mode: 'index', intersect: false },
-              scales: {
-                yConn: { type: 'linear', position: 'left', title: { display: true, text: 'Connections' }, beginAtZero: true },
-                yBw: { type: 'linear', position: 'right', title: { display: true, text: 'Mbps' }, beginAtZero: true, grid: { drawOnChartArea: false } }
-              }
-            }
-          });
-        })
-        .catch(function(e) { loadingEl.style.display='none'; errorEl.style.display=''; errorEl.textContent='Could not load traffic data: ' + e; });
+      var data = ${trafficData};
+      loadingEl.style.display = 'none';
+      if (!data.length) { loadingEl.style.display = ''; loadingEl.textContent = 'No traffic data available yet.'; return; }
+      var labels = data.map(function(d){ return d.time.substring(11,16); });
+      var conns  = data.map(function(d){ return d.connections; });
+      var mbin   = data.map(function(d){ return d.durationIn  > 0 ? (d.bytesIn  * 8 / d.durationIn  / 1000).toFixed(3) : 0; });
+      var mbout  = data.map(function(d){ return d.durationOut > 0 ? (d.bytesOut * 8 / d.durationOut / 1000).toFixed(3) : 0; });
+      var ctx = document.getElementById('portalTrafficChart').getContext('2d');
+      _portalTrafficChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            { label: 'Connections', data: conns, borderColor: '#0d6efd', backgroundColor: 'rgba(13,110,253,0.08)', yAxisID: 'yConn', tension: 0.3, pointRadius: 2 },
+            { label: 'Download (Mbps)', data: mbout, borderColor: '#198754', backgroundColor: 'rgba(25,135,84,0.08)', yAxisID: 'yBw', tension: 0.3, pointRadius: 2 },
+            { label: 'Upload (Mbps)',   data: mbin,  borderColor: '#fd7e14', backgroundColor: 'rgba(253,126,20,0.08)', yAxisID: 'yBw', tension: 0.3, pointRadius: 2 }
+          ]
+        },
+        options: {
+          responsive: true, interaction: { mode: 'index', intersect: false },
+          scales: {
+            yConn: { type: 'linear', position: 'left', title: { display: true, text: 'Connections' }, beginAtZero: true },
+            yBw: { type: 'linear', position: 'right', title: { display: true, text: 'Mbps' }, beginAtZero: true, grid: { drawOnChartArea: false } }
+          }
+        }
+      });
     });
 
     // Alerts

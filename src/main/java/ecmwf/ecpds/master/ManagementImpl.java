@@ -2297,7 +2297,30 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
-     * Gets the host report.
+     * {@inheritDoc}
+     *
+     * Check whether an acquisition thread is currently running for the given Host.
+     */
+    @Override
+    public boolean isAcquisitionRunning(final ECpdsSession session, final Host host) {
+        return master.isAcquisitionRunning(host);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Trigger acquisition for the given Host immediately.
+     */
+    @Override
+    public void triggerAcquisition(final ECpdsSession session, final Host host) {
+        try {
+            master.triggerAcquisition(host);
+        } catch (final DataBaseException e) {
+            _log.warn("triggerAcquisition for Host-{}", host.getName(), e);
+        }
+    }
+
+    /**
      *
      * @param session
      *            the session

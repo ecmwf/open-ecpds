@@ -1052,6 +1052,33 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     /**
      * {@inheritDoc}
      *
+     * Check whether an acquisition thread is currently running for this Host.
+     */
+    @Override
+    public boolean isAcquisitionRunning(final User u) {
+        try {
+            return MasterManager.getMI().isAcquisitionRunning(Util.getECpdsSessionFromObject(u), host);
+        } catch (final Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Trigger acquisition for this Host immediately.
+     */
+    @Override
+    public void triggerAcquisition(final User u) {
+        try {
+            MasterManager.getMI().triggerAcquisition(Util.getECpdsSessionFromObject(u), host);
+        } catch (final Exception ignored) {
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * Reset transfer statistics.
      */
     @Override
