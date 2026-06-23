@@ -659,8 +659,9 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
                     out.write("0".getBytes());
                     out.flush();
                     // socket.shutdownOutput();
-                    final var datafileId = ECpdsClient.put("From data portal", moverTicket.getDestination(),
-                            moverTicket.getTarget(), in, moverTicket.getTimeFile(), moverTicket.getTimeBase());
+                    final var datafileId = ECpdsClient.put("Via Data Portal on DataMover=" + moverTicket.getCaller(),
+                            moverTicket.getDestination(), moverTicket.getTarget(), in, moverTicket.getTimeFile(),
+                            moverTicket.getTimeBase());
                     moverTicket.setDataFileId(datafileId);
                     moverTicket.completed();
                     setLoop(false);

@@ -37,6 +37,9 @@ public final class MoverAccessTicket extends AbstractTicket {
     /** The Constant serialVersionUID. */
     private static final long serialVersionUID = -4375507915283871280L;
 
+    /** The _target. */
+    private final String _caller;
+
     /** The _destination. */
     private final Destination _destination;
 
@@ -55,6 +58,8 @@ public final class MoverAccessTicket extends AbstractTicket {
     /**
      * Instantiates a new mover access ticket.
      *
+     * @param caller
+     *            the caller
      * @param destination
      *            the destination
      * @param target
@@ -64,8 +69,9 @@ public final class MoverAccessTicket extends AbstractTicket {
      * @param timeBase
      *            the time base
      */
-    public MoverAccessTicket(final Destination destination, final String target, final long timeFile,
-            final long timeBase) {
+    public MoverAccessTicket(final String caller, final Destination destination, final String target,
+            final long timeFile, final long timeBase) {
+        _caller = caller;
         _destination = destination;
         _target = target;
         _timeFile = timeFile;
@@ -80,6 +86,15 @@ public final class MoverAccessTicket extends AbstractTicket {
      */
     public void setDataFileId(final long dataFileId) {
         _dataFileId = dataFileId;
+    }
+
+    /**
+     * Gets the caller.
+     *
+     * @return the caller
+     */
+    public String getCaller() {
+        return _caller;
     }
 
     /**

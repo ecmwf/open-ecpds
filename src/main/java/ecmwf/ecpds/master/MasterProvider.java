@@ -1778,8 +1778,8 @@ public final class MasterProvider extends NativeAuthenticationProvider {
                     throws EccmdException, IOException {
                 ProxySocket proxy;
                 try {
-                    proxy = master.getDataFileAccessInterface().getProxySocketOutput(currentDestination.getName(),
-                            getPath(), offset, umask);
+                    proxy = master.getDataFileAccessInterface().getProxySocketOutput(master.getRoot(),
+                            currentDestination.getName(), getPath(), offset, umask);
                 } catch (final MasterException e) {
                     throw new EccmdException(e.getMessage());
                 }
@@ -2147,8 +2147,8 @@ public final class MasterProvider extends NativeAuthenticationProvider {
                     throws EccmdException, IOException {
                 final ProxySocket proxy;
                 try {
-                    proxy = master.getAttachmentAccessInterface().getProxySocketOutput(currentDestinationNameOrType,
-                            getPath(), offset, umask);
+                    proxy = master.getAttachmentAccessInterface().getProxySocketOutput(master.getRoot(),
+                            currentDestinationNameOrType, getPath(), offset, umask);
                 } catch (final MasterException e) {
                     throw new EccmdException(e.getMessage());
                 }

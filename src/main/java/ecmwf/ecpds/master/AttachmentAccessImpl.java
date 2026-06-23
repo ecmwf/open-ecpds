@@ -156,10 +156,10 @@ final class AttachmentAccessImpl extends CallBackObject implements DataAccessInt
      * Gets the proxy socket output.
      */
     @Override
-    public ProxySocket getProxySocketOutput(final String destinationNameOrType, final String target, final long offset,
-            final int umask) throws MasterException, IOException {
-        final var monitor = new MonitorCall(
-                "getProxySocketOutput(" + destinationNameOrType + "," + target + "," + offset + "," + umask + ")");
+    public ProxySocket getProxySocketOutput(final String caller, final String destinationNameOrType,
+            final String target, final long offset, final int umask) throws MasterException, IOException {
+        final var monitor = new MonitorCall("getProxySocketOutput(" + caller + "," + destinationNameOrType + ","
+                + target + "," + offset + "," + umask + ")");
         final var ticket = master.getTicketRepository().add(new AttachmentAccessTicket(
                 getAttachmentFile(destinationNameOrType, target, false), AttachmentAccessTicket.OUTPUT, offset, umask));
         final var socketConfig = new SocketConfig("ECpdsPlugin");

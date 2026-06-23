@@ -106,12 +106,12 @@ final class AttachmentAccessProxy implements DataAccessInterface {
      * Gets the proxy socket output.
      */
     @Override
-    public ProxySocket getProxySocketOutput(final String destinationName, final String target, final long offset,
-            final int umask) throws MasterException, IOException {
-        if (destinationName == null || target == null || target.isEmpty()) {
+    public ProxySocket getProxySocketOutput(final String caller, final String destinationName, final String target,
+            final long offset, final int umask) throws MasterException, IOException {
+        if (caller == null || destinationName == null || target == null || target.isEmpty()) {
             throw new MasterException("Invalid parameter(s) for getProxySocketOutput");
         }
-        return _attachmentInterface.getProxySocketOutput(destinationName, target, offset, umask);
+        return _attachmentInterface.getProxySocketOutput(caller, destinationName, target, offset, umask);
     }
 
     /**

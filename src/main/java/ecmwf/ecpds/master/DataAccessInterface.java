@@ -132,6 +132,8 @@ public interface DataAccessInterface extends Remote {
     /**
      * Gets the proxy socket output.
      *
+     * @param caller
+     *            the caller (e.g. master, monitor)
      * @param destinationNameOrType
      *            the destination name or type
      * @param target
@@ -148,7 +150,7 @@ public interface DataAccessInterface extends Remote {
      * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
-    ProxySocket getProxySocketOutput(String destinationNameOrType, String target, long offset, int umask)
+    ProxySocket getProxySocketOutput(String caller, String destinationNameOrType, String target, long offset, int umask)
             throws MasterException, IOException;
 
     /**

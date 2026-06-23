@@ -1537,8 +1537,8 @@ public final class MoverProvider extends NativeAuthenticationProvider {
                     throws EccmdException, IOException {
                 final ProxySocket proxy;
                 try {
-                    proxy = _mover.getDataFileAccessInterface().getProxySocketOutput(_destination.getName(), getPath(),
-                            offset, umask);
+                    proxy = _mover.getDataFileAccessInterface().getProxySocketOutput(_mover.getRoot(),
+                            _destination.getName(), getPath(), offset, umask);
                 } catch (final MasterException e) {
                     throw new EccmdException(e.getMessage());
                 }
