@@ -36,6 +36,10 @@ UPDATE HOST
   SET ECU_NAME = 'anonymous'
   WHERE ECU_NAME = '$webUserId';
 
+UPDATE FEEDBACK
+  SET WEU_ID = NULL
+  WHERE WEU_ID = '$webUserId';
+
 DELETE FROM WEB_USER
   WHERE WEU_ID = '$webUserId';
 
