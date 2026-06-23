@@ -1885,6 +1885,34 @@ CREATE TABLE `UPLOAD_HISTORY` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `TRANSFER_STATISTICS`
+--
+
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `TRANSFER_STATISTICS` (
+  `TST_ID` bigint(20) NOT NULL AUTO_INCREMENT,
+  `DAT_ID` decimal(10,0) NOT NULL,
+  `TST_START_TIME` decimal(20,0) NOT NULL,
+  `TST_END_TIME` decimal(20,0) NOT NULL,
+  `TST_LOCAL_ADDRESS` varchar(64) DEFAULT NULL,
+  `TST_REMOTE_ADDRESS` varchar(64) DEFAULT NULL,
+  `TST_RTT_MS` double DEFAULT NULL,
+  `TST_BYTES_SENT` bigint(20) DEFAULT NULL,
+  `TST_BYTES_RECEIVED` bigint(20) DEFAULT NULL,
+  `TST_PACING_RATE_BPS` bigint(20) DEFAULT NULL,
+  `TST_DELIVERY_RATE_BPS` bigint(20) DEFAULT NULL,
+  `TST_CWND` int DEFAULT NULL,
+  `TST_SEGS_OUT` int DEFAULT NULL,
+  `TST_SEGS_IN` int DEFAULT NULL,
+  `TST_RAW` text DEFAULT NULL,
+  PRIMARY KEY (`TST_ID`),
+  KEY `DAT_ID` (`DAT_ID`),
+  CONSTRAINT `TRANSFER_STATISTICS_ibfk_1` FOREIGN KEY (`DAT_ID`) REFERENCES `DATA_TRANSFER` (`DAT_ID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Dumping data for table `UPLOAD_HISTORY`
 --
 

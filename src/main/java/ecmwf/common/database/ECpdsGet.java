@@ -2915,4 +2915,27 @@ final class ECpdsGet {
         return _database.executeUpdate("ECpdsBase", "resetDataTransferQueueAndRetryTimeToScheduledTime",
                 new String[] { "destinationName=" + paramDestinationName });
     }
+
+    /**
+     * Gets the transfer statistics by data transfer id.
+     *
+     * @param <T>
+     *            the generic type
+     * @param paramDatId
+     *            the data transfer id
+     * @param resultClass
+     *            the result class
+     *
+     * @return the transfer statistics
+     *
+     * @throws SQLException
+     *             the SQL exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     */
+    <T extends DataBaseObject> DBIterator<T> getTransferStatisticsByDataTransferId(final long paramDatId,
+            final Class<T> resultClass) throws SQLException, IOException {
+        return _database.executeQuery("ECpdsBase", "getTransferStatisticsByDataTransferId", resultClass,
+                new String[] { "datId=" + paramDatId });
+    }
 }

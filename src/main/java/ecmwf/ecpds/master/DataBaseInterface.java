@@ -71,6 +71,7 @@ import ecmwf.common.database.TransferGroup;
 import ecmwf.common.database.TransferHistory;
 import ecmwf.common.database.TransferMethod;
 import ecmwf.common.database.TransferServer;
+import ecmwf.common.database.TransferStatistics;
 import ecmwf.common.database.Url;
 import ecmwf.common.database.WebUser;
 import ecmwf.common.database.WeuCat;
@@ -2382,4 +2383,20 @@ public interface DataBaseInterface extends Remote {
      *             the remote exception
      */
     void datafileDel(String user, Long dataFileId) throws MasterException, DataBaseException, RemoteException;
+
+    /**
+     * Gets all TransferStatistics records for the given data transfer id.
+     *
+     * @param dataTransferId
+     *            the data transfer id
+     *
+     * @return list of statistics (may be empty, never null)
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    List<TransferStatistics> getTransferStatisticsByDataTransferId(long dataTransferId)
+            throws DataBaseException, RemoteException;
 }

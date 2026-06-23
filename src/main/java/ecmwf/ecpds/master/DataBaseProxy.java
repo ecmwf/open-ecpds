@@ -84,6 +84,7 @@ import ecmwf.common.database.TransferGroup;
 import ecmwf.common.database.TransferHistory;
 import ecmwf.common.database.TransferMethod;
 import ecmwf.common.database.TransferServer;
+import ecmwf.common.database.TransferStatistics;
 import ecmwf.common.database.Url;
 import ecmwf.common.database.WebUser;
 import ecmwf.common.database.WeuCat;
@@ -2255,6 +2256,20 @@ final class DataBaseProxy implements DataBaseInterface {
         final var monitor = new MonitorCall("datafileDel(" + user + "," + dataFileId + ")");
         dataBaseInterface.datafileDel(user, dataFileId);
         monitor.done();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public List<TransferStatistics> getTransferStatisticsByDataTransferId(final long dataTransferId)
+            throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getTransferStatisticsByDataTransferId(" + dataTransferId + ")");
+        try {
+            return monitor.done(dataBaseInterface.getTransferStatisticsByDataTransferId(dataTransferId));
+        } catch (final RemoteException e) {
+            throw new DataBaseException("getTransferStatisticsByDataTransferId", e);
+        }
     }
 
     /**

@@ -4,6 +4,7 @@
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content" %>
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth" %>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 
 <div class="dest-page-header mb-3">
 <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
@@ -275,6 +276,147 @@
 </div>
 </div>
 </div>
+
+<%-- Card: Network Statistics (TCP socket statistics per connection) --%>
+<c:if test="${not empty transferStatistics}">
+<div class="card border-0 shadow-sm mb-3">
+<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+<i class="bi bi-diagram-3 text-primary"></i>
+<span class="fw-semibold">Network Statistics</span>
+<span class="badge rounded-pill bg-secondary ms-1">${fn:length(transferStatistics)}</span>
+<button class="btn btn-link btn-sm ms-auto p-0 text-secondary" type="button"
+        data-bs-toggle="collapse" data-bs-target="#nst-collapse" aria-expanded="true">
+  <i class="bi bi-chevron-up" id="nst-chevron"></i>
+</button>
+</div>
+<div id="nst-collapse" class="collapse show">
+<div class="card-body pt-2 pb-1">
+<%-- Summary row --%>
+<c:set var="_nstTotalSent" value="0"/>
+<c:set var="_nstTotalRecv" value="0"/>
+<c:set var="_nstMaxRate" value="0"/>
+<c:set var="_nstMinStart" value="0"/>
+<c:set var="_nstMaxEnd" value="0"/>
+<c:forEach var="ts" items="${transferStatistics}" varStatus="loop">
+  <c:set var="_nstTotalSent" value="${_nstTotalSent + (empty ts.bytesSent ? 0 : ts.bytesSent)}"/>
+  <c:set var="_nstTotalRecv" value="${_nstTotalRecv + (empty ts.bytesReceived ? 0 : ts.bytesReceived)}"/>
+  <c:if test="${not empty ts.deliveryRateBps and ts.deliveryRateBps > _nstMaxRate}">
+    <c:set var="_nstMaxRate" value="${ts.deliveryRateBps}"/>
+  </c:if>
+  <c:if test="${loop.first or ts.startTime < _nstMinStart}">
+    <c:set var="_nstMinStart" value="${ts.startTime}"/>
+  </c:if>
+  <c:if test="${loop.first or ts.endTime > _nstMaxEnd}">
+    <c:set var="_nstMaxEnd" value="${ts.endTime}"/>
+  </c:if>
+</c:forEach>
+<c:set var="_nstSpan" value="${_nstMaxEnd - _nstMinStart}"/>
+<c:if test="${_nstSpan le 0}"><c:set var="_nstSpan" value="1"/></c:if>
+<div class="d-flex flex-wrap gap-3 mb-3 small text-muted">
+  <span><i class="bi bi-arrow-up-circle text-primary me-1"></i>Total sent: <strong class="text-body" id="nst-total-sent" data-bytes="${_nstTotalSent}">${_nstTotalSent}</strong> B</span>
+  <span><i class="bi bi-arrow-down-circle text-success me-1"></i>Total recv: <strong class="text-body" id="nst-total-recv" data-bytes="${_nstTotalRecv}">${_nstTotalRecv}</strong> B</span>
+  <span><i class="bi bi-speedometer2 text-warning me-1"></i>Peak delivery: <strong class="text-body" id="nst-max-rate" data-bps="${_nstMaxRate}">${_nstMaxRate}</strong> bps</span>
+  <span><i class="bi bi-clock text-secondary me-1"></i>Wall time: <strong class="text-body">${_nstMaxEnd - _nstMinStart} ms</strong></span>
+</div>
+<%-- Per-connection timeline bars --%>
+<div class="nst-timeline mb-2" style="position:relative;overflow-x:auto;">
+<c:forEach var="ts" items="${transferStatistics}" varStatus="loop">
+<c:set var="_nstLeft" value="${(ts.startTime - _nstMinStart) * 100 / _nstSpan}"/>
+<c:set var="_nstWidth" value="${(ts.endTime - ts.startTime) * 100 / _nstSpan}"/>
+<c:if test="${_nstWidth lt 1}"><c:set var="_nstWidth" value="1"/></c:if>
+<c:set var="_nstRateRel" value="0"/>
+<c:if test="${not empty ts.deliveryRateBps and _nstMaxRate gt 0}">
+  <c:set var="_nstRateRel" value="${ts.deliveryRateBps * 100 / _nstMaxRate}"/>
+</c:if>
+<c:choose>
+  <c:when test="${_nstRateRel ge 75}"><c:set var="_nstBarColor" value="#198754"/></c:when>
+  <c:when test="${_nstRateRel ge 40}"><c:set var="_nstBarColor" value="#0d6efd"/></c:when>
+  <c:otherwise><c:set var="_nstBarColor" value="#6c757d"/></c:otherwise>
+</c:choose>
+<div style="position:relative;height:28px;background:var(--bs-tertiary-bg);border-radius:4px;margin-bottom:4px;overflow:hidden;"
+     title="Conn ${loop.index+1}: ${ts.remoteAddress} | ${ts.durationMs}ms | RTT: ${ts.rttMs}ms | Sent: ${ts.bytesSent}B | Rate: ${ts.deliveryRateBps}bps">
+  <div style="position:absolute;left:${_nstLeft}%;width:${_nstWidth}%;height:100%;background:${_nstBarColor};opacity:0.8;border-radius:3px;">
+  </div>
+  <div style="position:absolute;left:${_nstLeft}%;padding:0 6px;line-height:28px;font-size:11px;color:#fff;white-space:nowrap;overflow:hidden;max-width:${_nstWidth}%;">
+    <c:out value="${ts.remoteAddress}"/>
+  </div>
+</div>
+</c:forEach>
+<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--bs-secondary-color);margin-top:2px;">
+  <span>0 ms</span><span>${_nstMaxEnd - _nstMinStart} ms</span>
+</div>
+</div>
+<%-- Per-connection detail table --%>
+<div class="table-responsive">
+<table class="table table-sm table-hover mb-0" style="font-size:0.8rem;">
+<thead class="table-light">
+<tr>
+  <th>#</th><th>Remote</th><th>Duration</th><th>RTT (ms)</th>
+  <th>Sent (B)</th><th>Rcvd (B)</th><th>Delivery Rate</th><th>cwnd</th><th>Segs out/in</th>
+</tr>
+</thead>
+<tbody>
+<c:forEach var="ts" items="${transferStatistics}" varStatus="loop">
+<tr>
+  <td class="text-muted">${loop.index+1}</td>
+  <td><span class="val-code small">${empty ts.remoteAddress ? '—' : ts.remoteAddress}</span></td>
+  <td><span class="val-num">${ts.durationMs}</span> ms</td>
+  <td><span class="val-num">${empty ts.rttMs ? '—' : ts.rttMs}</span></td>
+  <td><span class="val-num">${empty ts.bytesSent ? '—' : ts.bytesSent}</span></td>
+  <td><span class="val-num">${empty ts.bytesReceived ? '—' : ts.bytesReceived}</span></td>
+  <td><c:choose><c:when test="${not empty ts.deliveryRateBps}">
+    <span class="nst-rate" data-bps="${ts.deliveryRateBps}">${ts.deliveryRateBps}</span> bps
+  </c:when><c:otherwise>—</c:otherwise></c:choose></td>
+  <td>${empty ts.cwnd ? '—' : ts.cwnd}</td>
+  <td>${empty ts.segsOut ? '—' : ts.segsOut} / ${empty ts.segsIn ? '—' : ts.segsIn}</td>
+</tr>
+</c:forEach>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+</c:if>
+
+<c:if test="${not empty transferStatistics}">
+<script>
+(function() {
+    function fmtBytes(b) {
+        if (b >= 1073741824) return (b/1073741824).toFixed(2) + ' GiB';
+        if (b >= 1048576) return (b/1048576).toFixed(2) + ' MiB';
+        if (b >= 1024) return (b/1024).toFixed(1) + ' KiB';
+        return b + ' B';
+    }
+    function fmtBps(b) {
+        if (b >= 1000000000) return (b/1000000000).toFixed(2) + ' Gbps';
+        if (b >= 1000000) return (b/1000000).toFixed(2) + ' Mbps';
+        if (b >= 1000) return (b/1000).toFixed(1) + ' Kbps';
+        return b + ' bps';
+    }
+    var el;
+    el = document.getElementById('nst-total-sent');
+    if (el) { var b=parseInt(el.dataset.bytes); if(!isNaN(b)) el.textContent=fmtBytes(b); }
+    el = document.getElementById('nst-total-recv');
+    if (el) { var b=parseInt(el.dataset.bytes); if(!isNaN(b)) el.textContent=fmtBytes(b); }
+    el = document.getElementById('nst-max-rate');
+    if (el) { var b=parseInt(el.dataset.bps); if(!isNaN(b)) el.textContent=fmtBps(b); }
+    document.querySelectorAll('.nst-rate').forEach(function(s) {
+        var b=parseInt(s.dataset.bps); if(!isNaN(b)) s.textContent=fmtBps(b);
+    });
+    // Collapse chevron toggle
+    var col = document.getElementById('nst-collapse');
+    if (col) col.addEventListener('hidden.bs.collapse', function() {
+        var ch = document.getElementById('nst-chevron');
+        if (ch) { ch.classList.remove('bi-chevron-up'); ch.classList.add('bi-chevron-down'); }
+    });
+    if (col) col.addEventListener('shown.bs.collapse', function() {
+        var ch = document.getElementById('nst-chevron');
+        if (ch) { ch.classList.remove('bi-chevron-down'); ch.classList.add('bi-chevron-up'); }
+    });
+})();
+</script>
+</c:if>
 
 <%-- Live progress polling (only active when status is Transferring / Fetching / Arriving) --%>
 <style>

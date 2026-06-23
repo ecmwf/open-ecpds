@@ -4660,4 +4660,37 @@ public final class ECpdsBase extends DataBase {
             throw new DataBaseException("removeAllFeedback", e);
         }
     }
+
+    /**
+     * Inserts a TransferStatistics record. Uses auto-increment for the primary key.
+     *
+     * @param stats
+     *            the statistics record to insert
+     *
+     * @return true if the insert succeeded
+     */
+    public boolean tryInsertTransferStatistics(final TransferStatistics stats) {
+        return tryInsert(stats, true);
+    }
+
+    /**
+     * Gets all TransferStatistics records for the given data transfer id.
+     *
+     * @param dataTransferId
+     *            the data transfer id
+     *
+     * @return list of statistics (may be empty, never null)
+     */
+    public List<TransferStatistics> getTransferStatisticsByDataTransferId(final long dataTransferId) {
+        final List<TransferStatistics> list = new ArrayList<>();
+        try (var it = ecpds.getTransferStatisticsByDataTransferId(dataTransferId, TransferStatistics.class)) {
+            while (it.hasNext()) {
+                list.add(it.next());
+            }
+        } catch (SQLException | IOException e) {
+            _log.warn("getTransferStatisticsByDataTransferId", e);
+        }
+        logSqlRequest("getTransferStatisticsByDataTransferId", list.size());
+        return list;
+    }
 }

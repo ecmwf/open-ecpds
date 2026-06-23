@@ -220,6 +220,7 @@ import ecmwf.common.database.SchedulerValue;
 import ecmwf.common.database.TransferGroup;
 import ecmwf.common.database.TransferHistory;
 import ecmwf.common.database.TransferServer;
+import ecmwf.common.database.TransferStatistics;
 import ecmwf.common.database.UploadHistory;
 import ecmwf.common.database.WebUser;
 import ecmwf.common.ecaccess.AbstractTicket;
@@ -257,6 +258,7 @@ import ecmwf.common.technical.MonitoredOutputStream;
 import ecmwf.common.technical.ScriptManager;
 import ecmwf.common.technical.StreamPlugThread;
 import ecmwf.common.technical.Synchronized;
+import ecmwf.common.rmi.SocketStatisticsParser;
 import ecmwf.common.technical.ThreadService.ConfigurableRunnable;
 import ecmwf.common.technical.TimeRange;
 import ecmwf.common.text.Format;
@@ -6560,6 +6562,14 @@ public final class MasterServer extends ECaccessProvider
                     }
                     _log.debug("UploadHistory created for DataTransfer {} (statistics: {})", transfer.getId(),
                             socketStatistics);
+                    // Persist per-connection TCP statistics
+                    if (!"none".equals(socketStatistics)) {
+                        final var ecpdsBase = getDataBase(ECpdsBase.class);
+                        for (final var stats : SocketStatisticsParser.parse(transfer.getId(),
+                                transfer.getStatistics())) {
+                            ecpdsBase.tryInsertTransferStatistics(stats);
+                        }
+                    }
                 } catch (final Throwable t) {
                     _log.error("Creating UploadHistory", t);
                 }

@@ -4,6 +4,10 @@ This document summarizes the most significant changes in OpenECPDS across all ma
 
 ---
 
+## open-ecpds 8.0.2-23062026 (2026-06-23)
+
+- Added access to TCP network statistics for completed data transfers. The new Network Statistics card on the Data Transfer page visualizes connection activity and throughput, and exposes detailed per-connection metrics (RTT, congestion window, segment counts, etc.) to help users better understand and troubleshoot transfer performance.
+
 ## open-ecpds 8.0.1-19062026 (2026-06-19)
 
 - Added new dashboards to the Monitoring Interface for tracking Data Portal activity, including uploads and downloads, both globally and per data user.
@@ -24,6 +28,7 @@ This document summarizes the most significant changes in OpenECPDS across all ma
 - Added a filter to identify problematic data users and web users, along with a "Delete All" button to remove them all at once.
 - Add feedback form to collect user input and satisfaction.
 - Introduce properties for Web Users, similar to those available for Data Users.
+
 ## open-ecpds 8.0.1-29052026 (2026-05-29)
 
 - Fix packaging issue affecting the monitor RPM where the ecpds.war application was not included in the generated package.

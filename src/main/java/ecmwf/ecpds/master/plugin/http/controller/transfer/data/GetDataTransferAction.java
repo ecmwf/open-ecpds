@@ -42,6 +42,7 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
+import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.ecpds.master.plugin.http.dao.Util;
 import ecmwf.ecpds.master.plugin.http.dao.transfer.StatusBean;
@@ -146,6 +147,12 @@ public class GetDataTransferAction extends PDSAction {
             }
             request.setAttribute("datatransfer", transfer);
             request.setAttribute("datafile", transfer.getDataFile());
+            try {
+                request.setAttribute("transferStatistics",
+                        MasterManager.getDB().getTransferStatisticsByDataTransferId(Long.parseLong(transfer.getId())));
+            } catch (final Exception e) {
+                log.warn("Could not load transfer statistics for {}", transfer.getId(), e);
+            }
         }
         return mapping.findForward("success");
     }
