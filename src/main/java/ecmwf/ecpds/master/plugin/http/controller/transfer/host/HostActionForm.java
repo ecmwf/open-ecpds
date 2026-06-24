@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import ecmwf.common.database.DataBaseObject;
 import ecmwf.common.ectrans.ECtransGroups;
 import ecmwf.common.ectrans.ECtransOptions;
 import ecmwf.common.ectrans.ECtransSetup;
@@ -331,12 +332,38 @@ public class HostActionForm extends ECMWFActionForm {
      *
      * @return the properties
      */
+    /**
+     * Extracts only the hidden/internal option lines from the raw host data properties. These lines are re-injected on
+     * save so they survive a user edit without being visible in the editor.
+     */
+    private static String extractHiddenOptions(final String data) {
+        final var pos = data.indexOf(ECtransSetup.SEPARATOR);
+        final var raw = pos >= 0 ? data.substring(0, pos).trim() : data.trim();
+        try {
+            final var stripped = DataBaseObject.removeHiddenOptions(raw);
+            final var sb = new StringBuilder();
+            for (final var line : raw.split("\n")) {
+                if (!stripped.contains(line) && !line.isBlank()) {
+                    sb.append(line).append("\n");
+                }
+            }
+            return sb.toString();
+        } catch (final Exception e) {
+            log.warn("Could not extract hidden options from host properties", e);
+            return "";
+        }
+    }
+
     private String getProperties(final String data) {
         final var pos = data.indexOf(ECtransSetup.SEPARATOR);
-        if (pos >= 0) {
-            return data.substring(0, pos).trim();
+        final var raw = pos >= 0 ? data.substring(0, pos).trim() : data.trim();
+        try {
+            // Strip hidden/internal options so they are not shown or accidentally edited by the user.
+            return DataBaseObject.removeHiddenOptions(raw);
+        } catch (final Exception e) {
+            log.warn("Could not strip hidden options from host properties", e);
+            return raw;
         }
-        return data.trim();
     }
 
     /**
@@ -1054,7 +1081,11 @@ public class HostActionForm extends ECMWFActionForm {
         h.setComment(comment);
         h.setHost(host);
         h.setDir(dir);
-        h.setData(properties + "\n" + ECtransSetup.SEPARATOR + javascript);
+        // Rebuild the data from the user-edited properties + script. Then re-inject any hidden/internal
+        // options (tokenExpiry, tokenValue, lastupdate) that were stripped from the editor view, so they
+        // are not lost when the user saves the host.
+        final var existingHiddenOptions = extractHiddenOptions(h.getData());
+        h.setData(properties + "\n" + existingHiddenOptions + ECtransSetup.SEPARATOR + javascript);
         h.setECUserName(owner);
         h.setTransferMethodName(transferMethod);
         h.setTransferGroupName(transferGroup);

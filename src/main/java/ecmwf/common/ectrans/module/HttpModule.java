@@ -98,6 +98,11 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_SELECT;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_SSL_VALIDATION;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_STRICT;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_SUPPORTED_PROTOCOLS;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_TOKEN_EXPIRY;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_TOKEN_FUNCTION;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_TOKEN_HEADER;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_TOKEN_LOOKAHEAD;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_TOKEN_VALUE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_UPLOAD_END_POINT;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_URLDIR;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_USE_HEAD;
@@ -210,6 +215,8 @@ import ecmwf.common.technical.ExecutorManager;
 import ecmwf.common.technical.ExecutorRunnable;
 import ecmwf.common.technical.PipedInputStream;
 import ecmwf.common.technical.PipedOutputStream;
+import org.graalvm.polyglot.proxy.ProxyExecutable;
+import org.graalvm.polyglot.proxy.ProxyObject;
 import ecmwf.common.technical.ScriptManager;
 import ecmwf.common.technical.StreamPlugThread;
 import ecmwf.common.text.Format;
@@ -278,6 +285,13 @@ public final class HttpModule extends TransferModule {
 
     /** The cookie store. */
     private CookieStore cookieStore = null;
+
+    /**
+     * Per-host locks used to serialise token refresh within a single JVM. Keyed by the host identifier (the name part
+     * of the location string, i.e. the MSUser/Host name). Across JVMs the existing optimistic LASTUPDATE mechanism in
+     * MasterServer.updateData() is sufficient.
+     */
+    private static final ConcurrentHashMap<String, Object> _tokenLocks = new ConcurrentHashMap<>();
 
     /**
      * Gets the status.
@@ -453,6 +467,9 @@ public final class HttpModule extends TransferModule {
                     }
                 }
             }
+            // If a token-refresh function is defined in the script, check whether the cached token needs renewal.
+            // Called here (after Basic Auth handling) so the token header always takes precedence.
+            _refreshTokenIfNeeded(setup);
             // Default headers at client level (so we don't set them on each request)
             final var defaults = new ArrayList<Header>(headersList.size());
             for (final var e : headersList.entrySet()) {
@@ -2387,6 +2404,164 @@ public final class HttpModule extends TransferModule {
             throw new IOException("Module closed");
         }
         return currentSetup;
+    }
+
+    /**
+     * Checks whether the bearer token cached in the setup has expired (or is about to expire within the configured
+     * lookahead window) and, if so, calls the user-defined {@code getAuthToken()} function from the script section to
+     * obtain a fresh token. The refresh is serialised within the JVM on a per-host basis; across JVMs the existing
+     * optimistic-concurrency mechanism in {@code MasterServer.updateData()} prevents duplicate persists.
+     *
+     * <p>
+     * The function is only invoked when the script content is non-empty <em>and</em> it contains the configured
+     * function name (default: {@code getAuthToken}). When a token is successfully refreshed the following setup fields
+     * are updated so that the change is written back to the master at the end of the transfer:
+     * <ul>
+     * <li>{@code http.tokenHeader} value in {@code http.headers} — replaced with the new token</li>
+     * <li>{@code http.tokenExpiry} — set to the {@code expiresAt} epoch-ms returned by the function</li>
+     * <li>{@code ectrans.lastupdate} — bumped so that {@code MasterServer.updateData()} accepts the write</li>
+     * </ul>
+     *
+     * @param setup
+     *            the current ECtransSetup; modified in place when a token refresh occurs
+     */
+    private void _refreshTokenIfNeeded(final ECtransSetup setup) {
+        final var scriptContent = setup.getScriptContent();
+        if (isEmpty(scriptContent)) {
+            return;
+        }
+        final var functionName = setup.getString(HOST_HTTP_TOKEN_FUNCTION);
+        if (isEmpty(functionName) || !scriptContent.contains(functionName)) {
+            return;
+        }
+        final var lookaheadMs = setup.getInteger(HOST_HTTP_TOKEN_LOOKAHEAD) * 1000L;
+        final var expiry = setup.getLong(HOST_HTTP_TOKEN_EXPIRY);
+        // getLong() is a consuming read — put the value back immediately to keep it in HOS_DATA.
+        if (expiry >= 0) {
+            setup.set(HOST_HTTP_TOKEN_EXPIRY, expiry);
+        }
+        if (expiry >= 0 && System.currentTimeMillis() < expiry - lookaheadMs) {
+            // Cached token is still valid — nothing to do.
+            return;
+        }
+        // Token is absent or about to expire — acquire the per-host JVM lock before refreshing.
+        final var lockKey = host != null ? host : "unknown";
+        final var lock = _tokenLocks.computeIfAbsent(lockKey, _ -> new Object());
+        synchronized (lock) {
+            // Double-checked: another thread may have refreshed the token while we were waiting.
+            final var expiryNow = setup.getLong(HOST_HTTP_TOKEN_EXPIRY);
+            if (expiryNow >= 0) {
+                setup.set(HOST_HTTP_TOKEN_EXPIRY, expiryNow);
+            }
+            if (expiryNow >= 0 && System.currentTimeMillis() < expiryNow - lookaheadMs) {
+                return;
+            }
+            _log.debug("Token absent or expiring for {}; calling {}", lockKey, functionName);
+            try {
+                final var _login = username;
+                final var _password = password;
+                final var _basicAuth = "Basic " + java.util.Base64.getEncoder()
+                        .encodeToString((_login + ":" + _password).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                final var setupProxy = ProxyObject.fromMap(Map.of("get", (ProxyExecutable) args -> {
+                    if (args.length > 0) {
+                        final var key = args[0].asString();
+                        if ("http.login".equals(key))
+                            return _login;
+                        if ("http.password".equals(key))
+                            return _password;
+                        if ("http.basicAuth".equals(key))
+                            return _basicAuth;
+                        return setup.get(key, (String) null);
+                    }
+                    return null;
+                }));
+                final var httpProxy = ProxyObject.fromMap(Map.of("get",
+                        (ProxyExecutable) args -> args.length >= 2
+                                ? HttpTokenExecutor.execute("GET", args[0].asString(), args[1], null)
+                                : Map.of("status", -1, "body", "missing arguments"),
+                        "post",
+                        (ProxyExecutable) args -> args.length >= 3
+                                ? HttpTokenExecutor.execute("POST", args[0].asString(), args[1],
+                                        args[2].isNull() ? null : args[2].asString())
+                                : Map.of("status", -1, "body", "missing arguments")));
+                final var bindings = new HashMap<String, Object>(
+                        Map.of("setup", setupProxy, "http", httpProxy, "log", _log));
+                // Append the function call to the script so its return value is the last evaluated expression.
+                final var invocation = scriptContent + "\nreturn " + functionName + "();";
+                ScriptManager.exec(setup.getScriptLanguage(), bindings, invocation, value -> {
+                    final var tokenStr = setup.getString(HOST_HTTP_TOKEN_VALUE, value);
+                    if (isNotEmpty(tokenStr)) {
+                        // Inject the token into headersList for the current connection.
+                        final var headerName = setup.getString(HOST_HTTP_TOKEN_HEADER);
+                        headersList.put(headerName, tokenStr);
+                        // Update the setup so the change is persisted via updateMSUser after the transfer.
+                        // Rebuild http.headers: replace/add the token header line, keep all others.
+                        final var sb = new StringBuilder();
+                        final var existingHeaders = setup.getString(HOST_HTTP_HEADERS);
+                        final var headerPrefix = headerName + ":";
+                        try (final var br = new BufferedReader(new StringReader(existingHeaders))) {
+                            String l;
+                            while ((l = br.readLine()) != null) {
+                                if (!l.startsWith(headerPrefix)) {
+                                    sb.append(l).append("\n");
+                                }
+                            }
+                        } catch (final IOException ignored) {
+                        }
+                        sb.append(headerPrefix).append(" ").append(tokenStr);
+                        setup.set(HOST_HTTP_HEADERS, sb.toString().trim());
+                        final var exp = setup.getLong(HOST_HTTP_TOKEN_EXPIRY, value);
+                        if (exp > 0) {
+                            setup.set(HOST_HTTP_TOKEN_EXPIRY, exp);
+                            _log.debug("Token refreshed for {}; expires at {}", lockKey, exp);
+                        } else {
+                            // No expiry returned — expire immediately after this transfer.
+                            setup.set(HOST_HTTP_TOKEN_EXPIRY, 0L);
+                            _log.debug("Token refreshed for {} (no expiry returned)", lockKey);
+                        }
+                    } else {
+                        _log.warn("Token function {} returned no '{}' value for {}", functionName,
+                                HOST_HTTP_TOKEN_VALUE.getName(), lockKey);
+                    }
+                    return null;
+                });
+            } catch (final Exception e) {
+                _log.warn("Token refresh failed for {} via {}", lockKey, functionName, e);
+            }
+        }
+    }
+
+    /**
+     * Static HTTP execution helper used by the token-refresh proxy bindings. Performs GET/POST requests on behalf of
+     * the user-defined token script.
+     */
+    private static final class HttpTokenExecutor {
+
+        static Map<String, Object> execute(final String method, final String url,
+                final org.graalvm.polyglot.Value headersValue, final String body) {
+            try (final var client = HttpClients.createDefault()) {
+                final var request = "POST".equals(method) ? new HttpPost(url) : new HttpGet(url);
+                if (headersValue != null && !headersValue.isNull() && headersValue.hasMembers()) {
+                    for (final var key : headersValue.getMemberKeys()) {
+                        request.setHeader(key, headersValue.getMember(key).asString());
+                    }
+                }
+                if (body != null && request instanceof HttpPost post) {
+                    post.setEntity(new org.apache.hc.core5.http.io.entity.StringEntity(body,
+                            org.apache.hc.core5.http.ContentType.TEXT_PLAIN));
+                }
+                final var result = new HashMap<String, Object>();
+                client.execute(request, response -> {
+                    result.put("status", response.getCode());
+                    final var entity = response.getEntity();
+                    result.put("body", entity != null ? EntityUtils.toString(entity) : "");
+                    return null;
+                });
+                return result;
+            } catch (final Exception e) {
+                return Map.of("status", -1, "body", e.getMessage() != null ? e.getMessage() : "");
+            }
+        }
     }
 
     /**

@@ -1124,6 +1124,10 @@ public final class ECtransContainer implements MBeanService {
             _log.debug("TransferModule to be created (cookie={})", cookie);
             var success = false;
             try {
+                // Capture raw data before connect for change detection.
+                // msuser.toString() truncates HOS_DATA at 256 chars which hides changes
+                // to fields like http.headers that appear later in the data string.
+                final var initialData = msuser.getData();
                 final var initial = msuser.toString();
                 module = provider.loadTransferModule(ectrans);
                 module.setRemoteProvider(provider);
@@ -1149,7 +1153,12 @@ public final class ECtransContainer implements MBeanService {
                     msuser.setECtransDestination(destination);
                     _log.debug("Set {} as default destination for {}", destination.getName(), msuser.getName());
                 }
-                if (!initial.equals(msuser.toString())) {
+                // Use raw data comparison to detect any genuine change (e.g. http.headers
+                // added by token refresh). The toString() comparison above is kept for
+                // non-data field changes (name, passwd, etc.) but the raw data check ensures
+                // large data values (bearer tokens, etc.) beyond the 256-char toString truncation
+                // are not silently dropped.
+                if (!initial.equals(msuser.toString()) || !initialData.equals(msuser.getData())) {
                     _log.debug("Update destination {} for {}", destination.getName(), msuser.getName());
                     provider.updateMSUser(msuser);
                 }

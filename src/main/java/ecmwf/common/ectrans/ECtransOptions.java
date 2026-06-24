@@ -1037,6 +1037,9 @@ public enum ECtransOptions {
     /** The host s3 enable path style access. */
     HOST_S3_ENABLE_PATH_STYLE_ACCESS("enablePathStyleAccess", Boolean.class, false),
 
+    /** The host s3 cross region access. */
+    HOST_S3_CROSS_REGION_ACCESS("crossRegionAccess", Boolean.class, false),
+
     /** The host s3 mk bucket. */
     HOST_S3_MK_BUCKET("mkBucket", Boolean.class, false),
 
@@ -1370,6 +1373,57 @@ public enum ECtransOptions {
 
     /** The host http list max dirs. */
     HOST_HTTP_LIST_MAX_DIRS("listMaxDirs", Integer.class, 50000),
+
+    /**
+     * The string value of the token returned by {@code getAuthToken()} (or the configured function). The JavaScript
+     * function should return an object with this as a key, e.g.:
+     *
+     * <pre>
+     * return { "http.tokenValue": "Bearer " + json.access_token,
+     *          "http.tokenExpiry": Date.now() + json.expires_in * 1000 };
+     * </pre>
+     */
+    HOST_HTTP_TOKEN_VALUE("tokenValue", String.class, ""),
+
+    /**
+     * Name of the function defined in the JS script section that fetches/renews an auth token. When defined the
+     * function is called whenever the cached token is absent or about to expire. The function must return an object
+     * with two fields: {@code token} (the full header value, e.g. {@code "Bearer eyJ..."}) and {@code expiresAt} (epoch
+     * ms at which the token expires). Example:
+     *
+     * <pre>
+     * function getAuthToken() {
+     *     var r = http.post("https://auth.example.com/oauth2/token",
+     *         {"Content-Type": "application/x-www-form-urlencoded"},
+     *         "grant_type=client_credentials&client_id=" + setup.get("http.clientId")
+     *         + "&client_secret=" + setup.get("http.clientSecret"));
+     *     var json = JSON.parse(r.body);
+     *     return { token: "Bearer " + json.access_token,
+     *              expiresAt: Date.now() + json.expires_in * 1000 };
+     * }
+     * </pre>
+     *
+     * Bindings available to the script: {@code setup} (read-only option view), {@code http} (simple HTTP helper with
+     * {@code get}/{@code post} methods), {@code log} (logger).
+     */
+    HOST_HTTP_TOKEN_FUNCTION("tokenFunction", String.class, "getAuthToken"),
+
+    /**
+     * Name of the HTTP header into which the token value is injected. Defaults to {@code Authorization}.
+     */
+    HOST_HTTP_TOKEN_HEADER("tokenHeader", String.class, "Authorization"),
+
+    /**
+     * Number of seconds before the token's actual expiry at which a proactive refresh is triggered. Defaults to 60. Set
+     * to 0 to only refresh after the token has fully expired.
+     */
+    HOST_HTTP_TOKEN_LOOKAHEAD("tokenLookahead", Integer.class, 60),
+
+    /**
+     * Epoch milliseconds at which the current cached token expires. Managed automatically by the HttpModule; not
+     * intended to be set manually. Hidden from the UI display and diff comparisons.
+     */
+    HOST_HTTP_TOKEN_EXPIRY("tokenExpiry", Long.class, -1L),
 
     /** The host ecauth exec cmd. */
     HOST_ECAUTH_EXEC_CMD("execCmd", String.class, STRING_NONE),

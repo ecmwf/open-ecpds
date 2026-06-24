@@ -58,6 +58,12 @@ public abstract class DataBaseObject implements Serializable, Cloneable {
     /** The Constant ECTRANS_LASTUPDATE. */
     private static final String ECTRANS_LASTUPDATE = "ectrans.lastupdate";
 
+    /** The Constant HTTP_TOKEN_EXPIRY — hidden from display and diffs (managed automatically). */
+    private static final String HTTP_TOKEN_EXPIRY = "http.tokenExpiry";
+
+    /** The Constant HTTP_TOKEN_VALUE — hidden from display and diffs (managed automatically). */
+    private static final String HTTP_TOKEN_VALUE = "http.tokenValue";
+
     /** The Constant MAXIMUM_FIELD_SIZE. */
     private static final int MAXIMUM_FIELD_SIZE = 256;
 
@@ -152,9 +158,11 @@ public abstract class DataBaseObject implements Serializable, Cloneable {
                 try {
                     var value = valueOf(field.get(object));
                     if ("HOS_DATA".equals(fieldName)) {
-                        // We have to remove the "ectrans.lastupdate" parameter as it is irrelevant for
-                        // the display!
+                        // We have to remove the "ectrans.lastupdate" and "http.tokenExpiry" parameters as
+                        // they are irrelevant for the display!
                         value = remove(ECTRANS_LASTUPDATE, value);
+                        value = remove(HTTP_TOKEN_EXPIRY, value);
+                        value = remove(HTTP_TOKEN_VALUE, value);
                     }
                     if (!onSingleLine) {
                         // This is meant to be used in an email!
@@ -212,10 +220,14 @@ public abstract class DataBaseObject implements Serializable, Cloneable {
                     var value1 = valueOf(field.get(object1));
                     var value2 = valueOf(field.get(object2));
                     if ("HOS_DATA".equals(fieldName)) {
-                        // We have to remove the "ectrans.lastupdate" parameter as it is irrelevant for
-                        // the comparison!
+                        // We have to remove the "ectrans.lastupdate" and "http.tokenExpiry" parameters as
+                        // they are irrelevant for the comparison!
                         value1 = remove(ECTRANS_LASTUPDATE, value1);
+                        value1 = remove(HTTP_TOKEN_EXPIRY, value1);
+                        value1 = remove(HTTP_TOKEN_VALUE, value1);
                         value2 = remove(ECTRANS_LASTUPDATE, value2);
+                        value2 = remove(HTTP_TOKEN_EXPIRY, value2);
+                        value2 = remove(HTTP_TOKEN_VALUE, value2);
                     }
                     if (!value1.equals(value2)) {
                         result.append("[").append(fieldName).append("] ");
@@ -264,6 +276,26 @@ public abstract class DataBaseObject implements Serializable, Cloneable {
      * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
+    /**
+     * Removes all hidden/internal options from a raw HOS_DATA properties string. These options are managed
+     * automatically by the system and should not be visible or editable by the user in the host editor. The same set of
+     * options is stripped in {@link #toString(Object, boolean)} and {@link #compare(DataBaseObject, boolean)}.
+     *
+     * @param properties
+     *            the raw properties text (the portion before {@code ECtransSetup.SEPARATOR})
+     *
+     * @return the properties text with hidden options removed
+     *
+     * @throws IOException
+     *             if reading the properties string fails
+     */
+    public static String removeHiddenOptions(final String properties) throws IOException {
+        var result = remove(ECTRANS_LASTUPDATE, properties);
+        result = remove(HTTP_TOKEN_EXPIRY, result);
+        result = remove(HTTP_TOKEN_VALUE, result);
+        return result;
+    }
+
     private static final String remove(final String parameterName, final String source) throws IOException {
         final var sb = new StringBuilder();
         final var reader = new BufferedReader(new StringReader(source));

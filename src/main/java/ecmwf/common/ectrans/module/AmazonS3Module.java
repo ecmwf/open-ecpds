@@ -44,6 +44,7 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_TCP_WINDOW_CLAMP;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_ACCELERATION;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_ALLOW_EMPTY_BUCKET_NAME;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_BUCKET_NAME;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_CROSS_REGION_ACCESS;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_DISABLE_CHUNKED_ENCODING;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_DUALSTACK;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_DURATION_SECONDS;
@@ -289,11 +290,11 @@ public final class AmazonS3Module extends TransferModule {
                     setup.getString(HOST_S3_PROTOCOL), setup.getBoolean(HOST_S3_SSL_VALIDATION),
                     setup.getBoolean(HOST_S3_STRICT), setup.getBoolean(HOST_S3_ACCELERATION),
                     setup.getBoolean(HOST_S3_DUALSTACK), setup.getBoolean(HOST_S3_DISABLE_CHUNKED_ENCODING),
-                    setup.getBoolean(HOST_S3_ENABLE_PATH_STYLE_ACCESS), bucketName, url,
-                    isNotEmpty(region) ? region : Region.US_EAST_1.id(), setup.getBoolean(HOST_S3_MK_BUCKET),
-                    setup.getString(HOST_S3_ROLE_ARN), setup.getString(HOST_S3_ROLE_SESSION_NAME),
-                    setup.getInteger(HOST_S3_DURATION_SECONDS), setup.getString(HOST_S3_EXTERNAL_ID),
-                    setup.getString(HOST_S3_REQUEST_CHECKSUM_CALCULATION),
+                    setup.getBoolean(HOST_S3_ENABLE_PATH_STYLE_ACCESS), setup.getBoolean(HOST_S3_CROSS_REGION_ACCESS),
+                    bucketName, url, isNotEmpty(region) ? region : Region.US_EAST_1.id(),
+                    setup.getBoolean(HOST_S3_MK_BUCKET), setup.getString(HOST_S3_ROLE_ARN),
+                    setup.getString(HOST_S3_ROLE_SESSION_NAME), setup.getInteger(HOST_S3_DURATION_SECONDS),
+                    setup.getString(HOST_S3_EXTERNAL_ID), setup.getString(HOST_S3_REQUEST_CHECKSUM_CALCULATION),
                     setup.getString(HOST_S3_RESPONSE_CHECKSUM_VALIDATION), getDebug());
             connected = true;
         } catch (final S3Exception e) {
@@ -1063,6 +1064,8 @@ public final class AmazonS3Module extends TransferModule {
          *            the disable chunked encoding
          * @param enablePathStyleAccess
          *            the enable path style access
+         * @param crossRegionAccess
+         *            when true, automatically follow cross-region redirects to the correct bucket region
          * @param bucketName
          *            the bucket name
          * @param url
@@ -1096,10 +1099,10 @@ public final class AmazonS3Module extends TransferModule {
         static Session getSession(final String user, final String password, final String listenAddress,
                 final SocketConfig tcpConfig, final String protocol, final boolean sslValidation, final boolean strict,
                 final boolean acceleration, final boolean dualstack, final boolean disableChunkedEncoding,
-                final boolean enablePathStyleAccess, final String bucketName, final String url, final String region,
-                final boolean mkBucket, final String roleArn, final String roleSessionName, final int durationSeconds,
-                final String externalId, final String requestChecksumCalculation,
-                final String responseChecksumValidation, final boolean debug)
+                final boolean enablePathStyleAccess, final boolean crossRegionAccess, final String bucketName,
+                final String url, final String region, final boolean mkBucket, final String roleArn,
+                final String roleSessionName, final int durationSeconds, final String externalId,
+                final String requestChecksumCalculation, final String responseChecksumValidation, final boolean debug)
                 throws NoSuchAlgorithmException, KeyManagementException {
             // Build the SSL socket factory controlling both certificate and hostname validation.
             // TcpTunedSslSocketFactory hooks into prepareSocket() to apply all SocketConfig TCP
@@ -1140,6 +1143,10 @@ public final class AmazonS3Module extends TransferModule {
             } else {
                 clientBuilder.endpointOverride(URI.create(url)).region(Region.of(region));
                 _log.debug("EndPoint: {} - region: {}", url, region);
+            }
+            if (crossRegionAccess) {
+                clientBuilder.crossRegionAccessEnabled(true);
+                _log.debug("Cross-region access enabled (auto-redirect to bucket region)");
             }
             if (debug) {
                 clientBuilder.overrideConfiguration(c -> c.addExecutionInterceptor(new ExecutionInterceptor() {
