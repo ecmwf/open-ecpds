@@ -25,6 +25,7 @@
 #prompt "expired;Expired;%"
 #prompt "proxy;Proxy;%"
 #prompt "mover;Mover;%"
+#prompt "method;Method;%"
 #prompt "fromDate;From date;%;java.sql.Timestamp"
 #prompt "toDate;To date;%;java.sql.Timestamp"
 #prompt "sort;Column;%"
@@ -65,6 +66,9 @@ WHERE
 	$expired
 	$proxy
 	$mover
+#if ('$method' != '')
+	AND HOS_NAME IN (SELECT HOS_NAME FROM HOST WHERE MET_NAME LIKE '$method')
+#fi
 #if ('$status' != 'All')
   AND STA_CODE = '$status'
 #fi

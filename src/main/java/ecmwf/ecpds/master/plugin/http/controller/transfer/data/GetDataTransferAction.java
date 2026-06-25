@@ -48,6 +48,7 @@ import ecmwf.ecpds.master.plugin.http.dao.Util;
 import ecmwf.ecpds.master.plugin.http.dao.transfer.StatusBean;
 import ecmwf.ecpds.master.plugin.http.home.datafile.TransferServerHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.DataTransferHome;
+import ecmwf.ecpds.master.plugin.http.home.transfer.TransferMethodHome;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Status;
 import ecmwf.ecpds.master.transfer.DestinationOption;
 import ecmwf.ecpds.master.transfer.StatusFactory;
@@ -125,6 +126,11 @@ public class GetDataTransferAction extends PDSAction {
                 request.setAttribute("transferServerOptions", TransferServerHome.findAll());
             } catch (final Exception e) {
                 log.warn("Could not load transfer servers for autocomplete", e);
+            }
+            try {
+                request.setAttribute("transferMethodOptions", TransferMethodHome.findAll());
+            } catch (final Exception e) {
+                log.warn("Could not load transfer methods for autocomplete", e);
             }
         } else {
             final var transfer = DataTransferHome.findByPrimaryKey(parameters.get(0).toString());

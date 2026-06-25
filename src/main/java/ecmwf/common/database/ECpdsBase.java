@@ -1491,7 +1491,13 @@ public final class ECpdsBase extends DataBase {
         try {
             final var options = new SQLParameterParser(fileName, "target", "source", "ts=d", "priority=d", "checksum",
                     "groupby", "identity", "size=b", "replicated=?", "asap=?", "event=?", "deleted=?", "expired=?",
-                    "proxy=?", "mover");
+                    "proxy=?", "mover", "method");
+            // Extract the 'method' filter value early (it's the last option, index 15) so that
+            // indexed get() calls below remain stable. The value is already wildcard-converted
+            // (* → %, ? → _) by the parser; we SQL-escape it and pass it as a plain template
+            // variable — the subquery structure lives in the SQL file.
+            final var methodOps = options.remove(15);
+            final var methodValue = methodOps.isEmpty() ? "" : escapeSql(methodOps.get(0).getValue());
             final List<DataTransfer> array = new ArrayList<>();
             DataTransfer initialTransfer = null; // The first DataTransfer will contain the collection size (total)!
             try (var rs = ecpds.getSortedDataTransfersByStatusOnDate(status, new Timestamp(from.getTime()),
@@ -1500,8 +1506,8 @@ public final class ECpdsBase extends DataBase {
                     options.get(5, "DAF_GROUP_BY"), options.get(6, "DAT_IDENTITY"), options.get(7, "DAT_SIZE"),
                     options.get(8, "DAT_REPLICATED"), options.get(9, "DAT_ASAP"), options.get(10, "DAT_EVENT"),
                     options.get(11, "DAT_DELETED"), options.get(12, "DAT_EXPIRY_TIME < UNIX_TIMESTAMP() * 1000"),
-                    options.get(13, "HOS_NAME_PROXY is not null"), options.get(14, "TRS_NAME"), type, cursor.getSort(),
-                    cursor.getOrder(), cursor.getStart(), cursor.getLength(),
+                    options.get(13, "HOS_NAME_PROXY is not null"), options.get(14, "TRS_NAME"), methodValue, type,
+                    cursor.getSort(), cursor.getOrder(), cursor.getStart(), cursor.getLength(),
                     options.has(1) || options.has(4) || options.has(5))) {
                 final var hosts = new HashMap<String, Host>();
                 while (rs.next()) {

@@ -170,7 +170,7 @@
                                 <span class="input-group-text text-muted"><i class="bi bi-search"></i></span>
                                 <input class="form-control" name="transferSearch" id="transferSearch" type="text"
                                     placeholder="e.g. expired=no target=*.dat source=/tmp/* ts&gt;10 ts&lt;=99 size&gt;=700kb case=i"
-                                    title="Default search is by target. Use target, source, ts, priority, groupby, identity, checksum, size, replicated, asap, deleted, expired, proxy, mover and event rules."
+                                    title="Default search is by target. Use target, source, ts, priority, groupby, identity, checksum, size, replicated, asap, deleted, expired, proxy, mover, method and event rules."
                                     value='<c:out value="${transferSearch}"/>'>
                             </div>
                         </div>
@@ -207,6 +207,7 @@
                                 <li><strong>Default (no prefix)</strong> &mdash; matches the <code>target</code> filename. Wildcards <code>*</code> and <code>?</code> are supported.</li>
                                 <li><code>target=*.dat</code>, <code>source=/tmp/*</code> &mdash; filter by target filename or source path.</li>
                                 <li><code>mover=</code> &mdash; filter by Data Mover name.</li>
+                                <li><code>method=</code> &mdash; filter by Transfer Method name.</li>
                                 <li><code>ts&gt;10 ts&lt;=99</code> &mdash; filter by transfer size (numeric; supports <code>=</code> <code>&gt;</code> <code>&gt;=</code> <code>&lt;</code> <code>&lt;=</code>).</li>
                                 <li><code>size&gt;=700kb</code> &mdash; filter by file size; units: <code>b</code>, <code>kb</code>, <code>mb</code>, <code>gb</code>.</li>
                                 <li><code>priority=</code> &mdash; filter by transfer priority (0&ndash;99).</li>
@@ -336,6 +337,15 @@
                                         </c:forEach>
                                     </datalist>
                                 </div>
+                                <div class="col-md-4">
+                                    <label class="form-label mb-0 fw-semibold"><code>method=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
+                                    <input type="text" class="form-control form-control-sm" id="qb_method" oninput="qbPreview()" list="qb_method_list" autocomplete="off">
+                                    <datalist id="qb_method_list">
+                                        <c:forEach var="tm" items="${transferMethodOptions}">
+                                            <option value="${tm.name}">
+                                        </c:forEach>
+                                    </datalist>
+                                </div>
                                 <div class="col-md-6">
                                     <label class="form-label mb-0 fw-semibold"><code>identity=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
                                     <input type="text" class="form-control form-control-sm" id="qb_identity" oninput="qbPreview()">
@@ -373,7 +383,7 @@
         function qbQuote(v) { var q=v.indexOf(' ')>=0||v.indexOf('=')>=0||v.indexOf('"')>=0; return q?'"'+v.replace(/"/g,'\\"')+'"':v; }
         function qbBuild() {
             var p = [];
-            ['target','source','mover','identity','checksum','groupby'].forEach(function(f) {
+            ['target','source','mover','method','identity','checksum','groupby'].forEach(function(f) {
                 var v = qbVal('qb_' + f); if (v) p.push(f + '=' + qbQuote(v));
             });
             ['asap','deleted','expired','replicated','proxy','event'].forEach(function(f) {
@@ -397,7 +407,7 @@
             document.getElementById('transferSearchForm').submit();
         }
         function qbClear() {
-            ['target','source','mover','identity','checksum','groupby','priority'].forEach(function(f) {
+            ['target','source','mover','method','identity','checksum','groupby','priority'].forEach(function(f) {
                 var el = document.getElementById('qb_' + f); if (el) el.value = '';
             });
             ['qb_ts_val1','qb_ts_val2','qb_size_val1','qb_size_val2'].forEach(function(id) {
@@ -487,7 +497,7 @@ var _transferSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended sear
     '<li><code>target=<\/code>, <code>source=<\/code>, <code>ts=<\/code>, <code>priority=<\/code>, ' +
     '<code>groupby=<\/code>, <code>identity=<\/code>, <code>checksum=<\/code>, <code>size=<\/code>, ' +
     '<code>replicated=<\/code>, <code>asap=<\/code>, <code>deleted=<\/code>, <code>expired=<\/code>, ' +
-    '<code>proxy=<\/code>, <code>mover=<\/code>, <code>event=<\/code><\/li>' +
+    '<code>proxy=<\/code>, <code>mover=<\/code>, <code>method=<\/code>, <code>event=<\/code><\/li>' +
     '<li>Example: <code>asap=yes target=*.dat source=\/tmp\/* ts&gt;10 ts&lt;=99 size&gt;=700kb case=i<\/code><\/li>' +
     '<li><code>case=i<\/code> for case-insensitive, <code>case=s<\/code> for case-sensitive (default)<\/li>' +
     '<li>Enclose values with spaces or equals signs in double quotes, e.g. <code>&quot;United States&quot;<\/code><\/li>' +

@@ -130,6 +130,7 @@ import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.DeleteBucketRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetBucketLocationRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
@@ -1040,6 +1041,36 @@ public final class AmazonS3Module extends TransferModule {
         }
 
         /**
+         * Discovers the actual AWS region for a bucket by calling GetBucketLocation with a temporary cross-region
+         * enabled client. This avoids stream-replay errors that occur when a PUT/upload request hits a 301 redirect.
+         *
+         * @param creds
+         *            the credentials provider
+         * @param bucketName
+         *            the bucket name to look up
+         *
+         * @return the actual region for the bucket (e.g. "eu-west-1"), or null if discovery fails
+         */
+        private static String discoverBucketRegion(final AwsCredentialsProvider creds, final String bucketName) {
+            // Use ApacheHttpClient explicitly — the SDK default falls back to apache5 which
+            // is not on the classpath.
+            try (final var discoveryClient = S3Client.builder().credentialsProvider(creds).region(Region.US_EAST_1)
+                    .crossRegionAccessEnabled(true).httpClientBuilder(ApacheHttpClient.builder()).build()) {
+                final var location = discoveryClient
+                        .getBucketLocation(GetBucketLocationRequest.builder().bucket(bucketName).build())
+                        .locationConstraintAsString();
+                // Empty string means us-east-1; "EU" is the legacy alias for eu-west-1
+                if (location == null || location.isEmpty()) {
+                    return Region.US_EAST_1.id();
+                }
+                return "EU".equals(location) ? "eu-west-1" : location;
+            } catch (final Exception e) {
+                _log.warn("Could not discover region for bucket '{}': {}", bucketName, e.getMessage());
+                return null;
+            }
+        }
+
+        /**
          * Gets the Session.
          *
          * @param user
@@ -1126,10 +1157,10 @@ public final class AmazonS3Module extends TransferModule {
                     .pathStyleAccessEnabled(enablePathStyleAccess).chunkedEncodingEnabled(!disableChunkedEncoding)
                     .build();
             // Build the S3 client.
-            final var clientBuilder = S3Client.builder()
-                    .credentialsProvider(loadCredentials(user, password, region, sslContext, roleArn, roleSessionName,
-                            durationSeconds, externalId))
-                    .serviceConfiguration(s3Config).dualstackEnabled(dualstack).httpClientBuilder(httpClientBuilder);
+            final var creds = loadCredentials(user, password, region, sslContext, roleArn, roleSessionName,
+                    durationSeconds, externalId);
+            final var clientBuilder = S3Client.builder().credentialsProvider(creds).serviceConfiguration(s3Config)
+                    .dualstackEnabled(dualstack).httpClientBuilder(httpClientBuilder);
             if (isNotEmpty(requestChecksumCalculation)) {
                 clientBuilder
                         .requestChecksumCalculation(RequestChecksumCalculation.fromValue(requestChecksumCalculation));
@@ -1138,15 +1169,20 @@ public final class AmazonS3Module extends TransferModule {
                 clientBuilder
                         .responseChecksumValidation(ResponseChecksumValidation.fromValue(responseChecksumValidation));
             }
-            if (acceleration || isEmpty(url)) {
+            if (crossRegionAccess) {
+                // Pre-discover the bucket's actual region to avoid stream-replay errors on the
+                // first upload caused by an SDK retry after a 301 redirect.
+                var resolvedRegion = isNotEmpty(bucketName) ? discoverBucketRegion(creds, bucketName) : null;
+                if (resolvedRegion == null) {
+                    resolvedRegion = region;
+                }
+                clientBuilder.region(Region.of(resolvedRegion));
+                _log.debug("Cross-region access: bucket '{}' resolved to region '{}'", bucketName, resolvedRegion);
+            } else if (acceleration || isEmpty(url)) {
                 clientBuilder.region(Region.of(region));
             } else {
                 clientBuilder.endpointOverride(URI.create(url)).region(Region.of(region));
                 _log.debug("EndPoint: {} - region: {}", url, region);
-            }
-            if (crossRegionAccess) {
-                clientBuilder.crossRegionAccessEnabled(true);
-                _log.debug("Cross-region access enabled (auto-redirect to bucket region)");
             }
             if (debug) {
                 clientBuilder.overrideConfiguration(c -> c.addExecutionInterceptor(new ExecutionInterceptor() {
