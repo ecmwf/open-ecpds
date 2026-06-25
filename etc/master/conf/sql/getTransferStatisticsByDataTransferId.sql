@@ -3,7 +3,7 @@
 ##
 #menu "ECpdsBase"
 #name "getTransferStatisticsByDataTransferId"
-#group "select"
+#group "query"
 
 ##
 ## Request(s)

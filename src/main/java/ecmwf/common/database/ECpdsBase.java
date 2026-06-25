@@ -1496,8 +1496,9 @@ public final class ECpdsBase extends DataBase {
             // indexed get() calls below remain stable. The value is already wildcard-converted
             // (* → %, ? → _) by the parser; we SQL-escape it and pass it as a plain template
             // variable — the subquery structure lives in the SQL file.
-            final var methodOps = options.remove(15);
-            final var methodValue = methodOps.isEmpty() ? "" : escapeSql(methodOps.get(0).getValue());
+            final var methodOps = options.has(15) ? options.remove(15) : null;
+            final var methodValue = methodOps != null && !methodOps.isEmpty() ? escapeSql(methodOps.get(0).getValue())
+                    : "";
             final List<DataTransfer> array = new ArrayList<>();
             DataTransfer initialTransfer = null; // The first DataTransfer will contain the collection size (total)!
             try (var rs = ecpds.getSortedDataTransfersByStatusOnDate(status, new Timestamp(from.getTime()),

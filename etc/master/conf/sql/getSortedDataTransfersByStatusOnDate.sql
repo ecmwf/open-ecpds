@@ -67,7 +67,7 @@ WHERE
 	$proxy
 	$mover
 #if ('$method' != '')
-	AND HOS_NAME IN (SELECT HOS_NAME FROM HOST WHERE MET_NAME LIKE '$method')
+	AND HOS_NAME IN (SELECT HOS_NAME FROM HOST WHERE TME_NAME LIKE '$method')
 #fi
 #if ('$status' != 'All')
   AND STA_CODE = '$status'
