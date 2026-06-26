@@ -233,6 +233,7 @@ JavaScript
 <button id="runNowBtn"
 class="btn btn-sm btn-outline-success progress-terminal-btn py-0 px-2"
 style="font-size:0.7rem;" disabled
+<c:if test="${not empty acquisitionNote}">title="Cannot trigger: ${acquisitionNote}" </c:if>
 onclick="progressRunNow(this)">
 <i class="bi bi-play-fill"></i> Run Now
 </button>
@@ -259,20 +260,26 @@ onclick="progressCopy(this)">
 		<strong class="d-block mb-1">Acquisition host progress log</strong>
 		<p class="mb-1">This panel shows the raw console log produced while the Acquisition host runs: connection attempts, timing, debug messages, and any errors encountered during the listing process. It does not contain the file listing itself. The resulting file listing, which the Acquisition Scheduler reads to decide which files to retrieve, is shown on the Output page.</p>
 		<ul class="mb-1 ps-3">
-			<li><strong><i class="bi bi-play-fill"></i> Run Now:</strong> triggers the Acquisition Scheduler to process this host immediately. Disabled while a run is already in progress.</li>
-			<li><strong><i class="bi bi-arrow-clockwise"></i> Refresh:</strong> fetches the latest output. If the acquisition host is currently running, Live mode starts automatically and the panel updates in real time.</li>
+			<li><strong><i class="bi bi-play-fill"></i> Run Now:</strong> triggers the Acquisition Scheduler to process this host immediately. The button is disabled if no associated destination is active and running &mdash; the Scheduler requires at least one eligible destination. If a listing is already running the button turns into <strong><i class="bi bi-skip-start-fill"></i> Interrupt &amp; Run</strong> &mdash; clicking it (with confirmation) stops the active listing and starts a fresh one.</li>
+			<li><strong><i class="bi bi-arrow-clockwise"></i> Refresh:</strong> fetches the latest output. If the acquisition host is currently running, Watching mode starts automatically and the panel updates whenever new output appears.</li>
 			<li><strong><i class="bi bi-terminal"></i> Output:</strong> opens the full output page with structured file listing view and raw toggle.</li>
 			<li><strong><i class="bi bi-clipboard"></i> Copy:</strong> copies the full log text to the clipboard.</li>
 		</ul>
 		<div class="d-flex gap-3 flex-wrap mb-1">
-			<span><span class="badge bg-primary-subtle text-primary-emphasis border"><span class="spinner-border spinner-border-sm" style="width:.55rem;height:.55rem"></span> Watching</span> polling for new activity every few seconds.</span>
-			<span><span class="badge bg-success-subtle text-success-emphasis border"><span class="spinner-grow spinner-grow-sm" style="width:.55rem;height:.55rem"></span> Live</span> new output detected, updating in real time.</span>
-			<span><span class="badge bg-secondary-subtle text-secondary-emphasis border">Idle</span> no recent activity; reload the page or click Refresh to resume monitoring.</span>
+			<span><span class="badge bg-primary-subtle text-primary-emphasis border"><span class="spinner-border spinner-border-sm" style="width:.55rem;height:.55rem"></span> Watching</span> acquisition is running; polling for output changes every few seconds.</span>
+			<span><span class="badge bg-success-subtle text-success-emphasis border"><span class="spinner-grow spinner-grow-sm" style="width:.55rem;height:.55rem"></span> Live</span> output changed since last poll &mdash; panel is updating in real time.</span>
+			<span><span class="badge bg-secondary-subtle text-secondary-emphasis border">Idle</span> acquisition host is not running and no recent output changes detected; click Refresh or Run Now to start monitoring.</span>
 		</div>
 	</div>
 </div>
 <div class="card-body p-0">
 <div class="progress-terminal" style="width:100%;border-radius:0 0 var(--bs-card-border-radius) var(--bs-card-border-radius)">
+<c:if test="${not empty acquisitionNote}">
+<div class="d-flex align-items-start gap-2 px-3 py-2" style="background:rgba(255,193,7,0.12);border-bottom:1px solid rgba(255,193,7,0.3);font-size:0.82rem;color:var(--bs-warning-text-emphasis,#664d03)">
+  <i class="bi bi-exclamation-triangle-fill mt-1" style="flex-shrink:0;color:#f0ad4e"></i>
+  <span><strong>Run Now is disabled:</strong> <c:out value="${acquisitionNote}" escapeXml="false"/>. The Acquisition Scheduler requires at least one associated destination to be active and running.</span>
+</div>
+</c:if>
 <div class="progress-terminal-body" id="progressBody" style="border-radius:0 0 var(--bs-card-border-radius) var(--bs-card-border-radius)">${host.formattedLastOutput}</div>
 </div>
 </div>
@@ -285,6 +292,7 @@ onclick="progressCopy(this)">
     var _staleCount   = 0;
     var _lastLine     = '';   // last non-empty text line of the output
     var _hostId       = '<c:out value="${host.id}"/>';
+    var _blocked      = ${not empty acquisitionNote ? 'true' : 'false'}; // destination not eligible
 
     function getBody()      { return document.getElementById('progressBody'); }
     function getStatus()    { return document.getElementById('progressLiveStatus'); }
@@ -326,12 +334,34 @@ onclick="progressCopy(this)">
 
     // Check whether the acquisition host is currently running, and update button states accordingly
     function checkRunning(callback) {
+        // If the destination is not eligible (stopped/disabled/no acquisition), skip the fetch
+        // and keep the button permanently disabled.
+        if (_blocked) {
+            if (callback) callback(false);
+            return;
+        }
         fetch('/do/transfer/host/' + encodeURIComponent(_hostId) + '?json=acquisitionRunning')
             .then(function(r) { return r.ok ? r.json() : null; })
             .then(function(data) {
                 var running = data && data.running === true;
                 var runBtn = document.getElementById('runNowBtn');
-                if (runBtn) runBtn.disabled = running;
+                if (runBtn) {
+                    if (running) {
+                        runBtn.disabled = false;
+                        runBtn.dataset.force = 'true';
+                        runBtn.classList.remove('btn-outline-success');
+                        runBtn.classList.add('btn-outline-warning');
+                        runBtn.title = 'A listing is already running \u2014 click to interrupt and restart';
+                        runBtn.innerHTML = '<i class="bi bi-skip-start-fill"></i> Interrupt &amp; Run';
+                    } else {
+                        runBtn.disabled = false;
+                        runBtn.dataset.force = '';
+                        runBtn.classList.remove('btn-outline-warning');
+                        runBtn.classList.add('btn-outline-success');
+                        runBtn.title = 'Start a new listing now';
+                        runBtn.innerHTML = '<i class="bi bi-play-fill"></i> Run Now';
+                    }
+                }
                 if (callback) callback(running);
             })
             .catch(function() {
@@ -354,7 +384,7 @@ onclick="progressCopy(this)">
         _timer = null;
         fetchProgress(function (newContent) {
             if (newContent === null) {
-                // network error — try again after interval
+                // network error - try again after interval
                 _timer = setTimeout(poll, POLL_INTERVAL);
                 return;
             }
@@ -368,9 +398,19 @@ onclick="progressCopy(this)">
             } else {
                 _staleCount++;
                 if (_staleCount >= MAX_STALE) {
-                    stopPolling();
+                    // Output unchanged - check if the acquisition host is still running
+                    // before declaring idle (output can lag while a listing is in progress)
+                    checkRunning(function(running) {
+                        if (running) {
+                            _staleCount = 0;
+                            setStatus('watching');
+                            _timer = setTimeout(poll, POLL_INTERVAL);
+                        } else {
+                            stopPolling();
+                        }
+                    });
                 } else {
-                    setStatus('watching'); // content unchanged — revert live badge
+                    setStatus('watching'); // content unchanged - revert live badge
                     _timer = setTimeout(poll, POLL_INTERVAL);
                 }
             }
@@ -419,22 +459,44 @@ onclick="progressCopy(this)">
     };
 
     window.progressRunNow = function (btn) {
+        var force = btn.dataset.force === 'true';
+        if (force) {
+            if (!confirm('A listing is already running.\nStop it and start a new one?')) return;
+        }
+        // Stop polling while triggering to prevent checkRunning from overriding button state
+        if (_timer) { clearTimeout(_timer); _timer = null; }
         btn.disabled = true;
         var orig = btn.innerHTML;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Starting...';
-        fetch('/do/transfer/host/' + encodeURIComponent(_hostId) + '?json=triggerAcquisition')
+        // Always send force if the button was in "Interrupt & Run" state; server handles
+        // the case where the listing already stopped by the time the request arrives.
+        var url = '/do/transfer/host/' + encodeURIComponent(_hostId) + '?json=triggerAcquisition'
+                + (force ? '&force=true' : '');
+        fetch(url)
             .then(function(r) { return r.ok ? r.json() : null; })
             .then(function(data) {
-                btn.innerHTML = orig;
                 if (data && data.triggered) {
-                    // Triggered: wait a moment then refresh output and start watching
+                    // Show brief "Triggered!" confirmation, then fetch output and start polling.
+                    // Avoid progressRefresh - it calls checkRunning->setStatus('idle') which
+                    // conflicts with startPolling when the listing hasn't started yet.
+                    btn.innerHTML = '<i class="bi bi-check-circle-fill text-success me-1"></i> Triggered!';
                     setTimeout(function() {
-                        var refreshBtn = document.getElementById('refreshLogBtn');
-                        if (refreshBtn) refreshBtn.click();
-                        checkRunning(null);
+                        fetchProgress(function(newContent) {
+                            if (newContent !== null) {
+                                var body = getBody();
+                                if (body) { body.innerHTML = newContent; scrollToBottom(); }
+                                _lastLine = lastLine(newContent);
+                            }
+                            _staleCount = 0;
+                            btn.disabled = false;
+                            checkRunning(null); // update button: "Interrupt & Run" if already running, else "Run Now"
+                            startPolling();     // watch for output; stale check will call checkRunning
+                        });
                     }, 1500);
                 } else {
-                    // Already running or failed — re-check state
+                    // Already running and not forced - restore and re-check so button shows "Interrupt & Run"
+                    btn.innerHTML = orig;
+                    btn.disabled = false;
                     checkRunning(null);
                 }
             })
@@ -556,6 +618,9 @@ onclick="progressCopy(this)">
 			</c:if>
 		</c:if>
 	</c:if>
+
+	<%-- HTTP/MQTT Module Configuration Guide (Acquisition hosts only) --%>
+	<c:if test="${not empty moduleGuide}"><jsp:include page="${moduleGuide}"/></c:if>
 
 	<%-- Help offcanvas panel --%>
 	<div class="offcanvas offcanvas-end" tabindex="-1" id="hostHelpOffcanvas"

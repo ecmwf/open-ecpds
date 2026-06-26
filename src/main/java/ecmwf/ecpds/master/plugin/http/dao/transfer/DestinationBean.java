@@ -304,6 +304,16 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     /**
      * {@inheritDoc}
      *
+     * Gets the status code (raw STA_CODE).
+     */
+    @Override
+    public String getStatusCode() {
+        return destination.getStatusCode();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * Gets the ec user.
      */
     @Override

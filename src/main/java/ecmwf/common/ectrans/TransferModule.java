@@ -269,6 +269,18 @@ public abstract class TransferModule implements Closeable {
     }
 
     /**
+     * Returns a guide key for this module, or {@code null} if no documentation is available. The key maps to a JSP
+     * resource at {@code /WEB-INF/jsp/pds/transfer/module/guide/{key}.jsp} which is included by the monitoring UI to
+     * render the configuration guide offcanvas panel. Override in each module that provides documentation; the default
+     * implementation returns {@code null} (no guide, icon disabled).
+     *
+     * @return the guide key, or {@code null}
+     */
+    public String getGuide() {
+        return null;
+    }
+
+    /**
      * Connect.
      *
      * @param location

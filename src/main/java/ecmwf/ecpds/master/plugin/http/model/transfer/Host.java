@@ -866,6 +866,14 @@ public interface Host extends ModelBean, CollectionSizeBean {
     void triggerAcquisition(final User u);
 
     /**
+     * Interrupt a running acquisition thread for this Host and immediately restart it.
+     *
+     * @param u
+     *            the user
+     */
+    void interruptAcquisition(final User u);
+
+    /**
      * Transfer.
      *
      * @param u

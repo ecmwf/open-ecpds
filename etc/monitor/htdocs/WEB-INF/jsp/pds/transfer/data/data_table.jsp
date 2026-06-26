@@ -39,14 +39,35 @@
 <button class="btn btn-sm btn-outline-primary" disabled title="Not available for download"><i class="bi bi-cloud-download"></i></button>
 </c:otherwise>
 </c:choose>
-<c:if test="${not empty showScheduleNow}">
+<div class="d-flex gap-1 align-items-center" style="border-left:1px solid var(--bs-border-color);padding-left:0.5rem;">
+<c:choose>
+<c:when test="${not empty showScheduleNow}">
 <a href='<bean:message key="destination.basepath"/>/operations/${datatransfer.destinationName}/scheduleNow/${datatransfer.id}'
-   class="btn btn-sm btn-outline-secondary" title="Schedule Now"><i class="bi bi-calendar-check"></i></a>
-</c:if>
-<c:if test="${datatransfer.statusCode == 'FETC'}">
+   class="btn btn-sm btn-outline-secondary dt-op-btn" title="Schedule Now"><i class="bi bi-calendar-check"></i></a>
+</c:when>
+<c:otherwise>
+<button class="btn btn-sm btn-outline-secondary" disabled title="Schedule Now not available"><i class="bi bi-calendar-check"></i></button>
+</c:otherwise>
+</c:choose>
+<c:choose>
+<c:when test="${datatransfer.canBeRequeued}">
+<a href='<bean:message key="destination.basepath"/>/operations/${datatransfer.destinationName}/requeue/${datatransfer.id}'
+   class="btn btn-sm btn-outline-success dt-op-btn" title="Requeue"><i class="bi bi-arrow-repeat"></i></a>
+</c:when>
+<c:otherwise>
+<button class="btn btn-sm btn-outline-success" disabled title="Requeue not available"><i class="bi bi-arrow-repeat"></i></button>
+</c:otherwise>
+</c:choose>
+<c:choose>
+<c:when test="${datatransfer.statusCode == 'FETC'}">
 <a href='<bean:message key="destination.basepath"/>/operations/${datatransfer.destinationName}/interrupt/${datatransfer.id}'
-   class="btn btn-sm btn-outline-warning" title="Interrupt Retrieval"><i class="bi bi-stop-circle"></i></a>
-</c:if>
+   class="btn btn-sm btn-outline-warning dt-op-btn" title="Interrupt Retrieval"><i class="bi bi-stop-circle"></i></a>
+</c:when>
+<c:otherwise>
+<button class="btn btn-sm btn-outline-warning" disabled title="Interrupt not available"><i class="bi bi-stop-circle"></i></button>
+</c:otherwise>
+</c:choose>
+</div>
 </div>
 </auth:then>
 </auth:if>
@@ -69,18 +90,21 @@
         var bar  = document.getElementById('_dtIconBar');
         var menu = document.getElementById('_dtActionsMenu');
         if (!bar || !menu) return;
-        function addItem(a) {
+        function addItem(el) {
             var li   = document.createElement('li');
             var item = document.createElement('a');
-            item.className = 'dropdown-item';
-            item.href = a.getAttribute('href');
-            var ic = a.querySelector('i[class]');
+            var dis  = el.disabled || el.classList.contains('disabled');
+            item.className = 'dropdown-item' + (dis ? ' disabled text-muted' : '');
+            if (!dis && el.classList.contains('dt-op-btn')) item.classList.add('dt-op-btn');
+            item.href = el.getAttribute('href') || '#';
+            if (dis) item.setAttribute('aria-disabled', 'true');
+            var ic = el.querySelector('i[class]');
             if (ic) {
                 var icon = document.createElement('i');
                 icon.className = ic.className + ' me-2';
                 item.appendChild(icon);
             }
-            item.appendChild(document.createTextNode(a.title || a.textContent.trim()));
+            item.appendChild(document.createTextNode(el.title || el.textContent.trim()));
             li.appendChild(item);
             menu.appendChild(li);
         }
@@ -91,13 +115,43 @@
             menu.appendChild(li);
         }
         Array.from(bar.children).forEach(function(child) {
-            if (child.tagName === 'A') {
+            if (child.tagName === 'A' || child.tagName === 'BUTTON') {
                 addItem(child);
-            } else if (child.tagName === 'DIV' && child.querySelector('a')) {
+            } else if (child.tagName === 'DIV' && child.querySelector('a, button')) {
                 addDivider();
-                Array.from(child.querySelectorAll('a')).forEach(addItem);
+                Array.from(child.querySelectorAll('a, button')).forEach(addItem);
             }
         });
+    });
+})();
+</script>
+<%-- AJAX handler for Requeue / Schedule Now / Interrupt: stay on this page --%>
+<script>
+(function() {
+    document.addEventListener('click', function(e) {
+        var el = e.target.closest('a.dt-op-btn');
+        if (!el) return;
+        e.preventDefault();
+        var url = el.getAttribute('href');
+        if (!url || url === '#') return;
+        var origHTML = el.innerHTML;
+        var origTitle = el.title;
+        el.classList.add('disabled');
+        el.style.pointerEvents = 'none';
+        el.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
+        fetch(url, { credentials: 'same-origin' })
+            .then(function(r) {
+                el.innerHTML = '<i class="bi bi-check-circle-fill text-success"></i>';
+                el.title = 'Done \u2014 reloading\u2026';
+                setTimeout(function() { window.location.reload(); }, 800);
+            })
+            .catch(function(err) {
+                el.innerHTML = origHTML;
+                el.title = origTitle;
+                el.classList.remove('disabled');
+                el.style.pointerEvents = '';
+                alert('Operation failed: ' + (err.message || err));
+            });
     });
 })();
 </script>

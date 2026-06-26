@@ -1079,6 +1079,19 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     /**
      * {@inheritDoc}
      *
+     * Interrupt acquisition.
+     */
+    @Override
+    public void interruptAcquisition(final User u) {
+        try {
+            MasterManager.getMI().interruptAcquisition(Util.getECpdsSessionFromObject(u), host);
+        } catch (final Exception ignored) {
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * Reset transfer statistics.
      */
     @Override

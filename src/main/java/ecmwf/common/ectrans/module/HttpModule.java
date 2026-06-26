@@ -304,6 +304,16 @@ public final class HttpModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
+     * Returns the guide key for the HTTP/MQTT module configuration guide.
+     */
+    @Override
+    public String getGuide() {
+        return "http";
+    }
+
+    /**
      * Gets the port.
      *
      * @param setup
@@ -1199,7 +1209,7 @@ public final class HttpModule extends TransferModule {
             }
             return new FtpEntry(directory, isSymlink ? "lrwxrwxrwx" : isDirectory ? "drw-r--r--" : "-rw-r--r--",
                     getSetup().get(HOST_HTTP_FTPUSER, ownerUser), getSetup().get(HOST_HTTP_FTPGROUP, ownerGroup),
-                    String.valueOf(isSymlink ? 1 : isDirectory ? 1024 : size), date,
+                    String.valueOf(isSymlink ? (size > 0 ? size : 1) : isDirectory ? 1024 : size), date,
                     (pr.isAlternativeHost() ? name : path)
                             + (isSymlink && isNotEmpty(filename) ? " -> " + filename : ""),
                     null);

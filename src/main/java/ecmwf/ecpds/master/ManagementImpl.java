@@ -2321,6 +2321,20 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
+     * Interrupt a running acquisition thread for the given Host and immediately restart it.
+     */
+    @Override
+    public void interruptAcquisition(final ECpdsSession session, final Host host) {
+        try {
+            master.interruptAquisitionFor(host);
+        } catch (final DataBaseException e) {
+            _log.warn("interruptAcquisition for Host-{}", host.getName(), e);
+        }
+    }
+
+    /**
      *
      * @param session
      *            the session

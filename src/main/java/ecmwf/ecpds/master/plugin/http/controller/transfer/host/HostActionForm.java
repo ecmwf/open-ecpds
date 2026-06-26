@@ -405,6 +405,33 @@ public class HostActionForm extends ECMWFActionForm {
     }
 
     /**
+     * Gets a JSON map from transfer method name to guide key for methods that have a guide. Used in the edit form to
+     * dynamically show/hide the Configuration Guide button.
+     *
+     * @return JSON object string, e.g. {"genericHttp":"http","genericS3":"s3"}
+     *
+     * @throws TransferException
+     *             the transfer exception
+     */
+    public String getTransferMethodGuideMap() throws TransferException {
+        final var sb = new StringBuilder("{");
+        var first = true;
+        for (final TransferMethod method : TransferMethodHome.findAll()) {
+            final var guide = method.getModuleGuide();
+            if (guide != null) {
+                final var key = guide.replaceAll(".*/([^/]+)\\.jsp$", "$1");
+                if (!first) {
+                    sb.append(",");
+                }
+                sb.append("\"").append(method.getName()).append("\":\"").append(key).append("\"");
+                first = false;
+            }
+        }
+        sb.append("}");
+        return sb.toString();
+    }
+
+    /**
      * Gets the host.
      *
      * @return the host

@@ -191,6 +191,16 @@ public final class AmazonS3Module extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
+     * Returns the guide key for the Amazon S3 module configuration guide.
+     */
+    @Override
+    public String getGuide() {
+        return "s3";
+    }
+
+    /**
      * Gets the port.
      *
      * @param setup

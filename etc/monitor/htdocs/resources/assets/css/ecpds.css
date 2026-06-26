@@ -1072,7 +1072,9 @@ A.menusubitem:visited {
 .alert-danger::before,
 .alert-success::before,
 .alert-primary::before,
-.alert-secondary::before {
+.alert-secondary::before,
+.alert-light::before,
+.alert-dark::before {
     content: none;
 }
 

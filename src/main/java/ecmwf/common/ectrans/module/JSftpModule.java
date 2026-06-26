@@ -250,6 +250,16 @@ public class JSftpModule extends TransferModule {
     /**
      * {@inheritDoc}
      *
+     * Returns the guide key for the SFTP module configuration guide.
+     */
+    @Override
+    public String getGuide() {
+        return "sftp";
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * Gets the port.
      *
      * @param setup

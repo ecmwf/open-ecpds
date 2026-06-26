@@ -72,6 +72,13 @@ public interface Destination extends ModelBean {
     boolean getAcquisition();
 
     /**
+     * Gets the status code (raw STA_CODE from the database, e.g. STOP, INIT, FAIL).
+     *
+     * @return the status code
+     */
+    String getStatusCode();
+
+    /**
      * Gets the completions.
      *
      * @return the completions

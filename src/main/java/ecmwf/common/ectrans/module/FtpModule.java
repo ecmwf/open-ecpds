@@ -261,6 +261,16 @@ public final class FtpModule extends TransferModule {
     /**
      * {@inheritDoc}
      *
+     * Returns the guide key for the FTP module configuration guide.
+     */
+    @Override
+    public String getGuide() {
+        return "ftp";
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * Gets the port.
      */
     @Override

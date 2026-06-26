@@ -155,6 +155,14 @@ public final class GcsModule extends TransferModule {
     }
 
     /**
+     * Returns the guide key for the GCS module configuration guide.
+     */
+    @Override
+    public String getGuide() {
+        return "gcs";
+    }
+
+    /**
      * Gets the port.
      *
      * @param setup

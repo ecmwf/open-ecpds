@@ -101,6 +101,16 @@
             </auth:if>
             <a href='<bean:message key="host.basepath"/>/edit/getReport/${host.id}'
                class="btn btn-sm btn-outline-secondary" title="Network Info"><i class="bi bi-wifi"></i></a>
+            <c:choose>
+              <c:when test="${not empty moduleGuide}">
+                <a href="#" class="btn btn-sm btn-outline-info" title="Module Configuration Guide"
+                   onclick="var el=document.getElementById('moduleGuideOffcanvas');if(el)bootstrap.Offcanvas.getOrCreateInstance(el).show();return false;"><i class="bi bi-book"></i></a>
+              </c:when>
+              <c:otherwise>
+                <a href="#" class="btn btn-sm btn-outline-secondary disabled" title="No configuration guide available for this module"
+                   aria-disabled="true" tabindex="-1" onclick="return false;"><i class="bi bi-book"></i></a>
+              </c:otherwise>
+            </c:choose>
             <auth:if basePathKey="transferhistory.basepath" paths="/">
             <auth:then>
             <div style="border-left:1px solid var(--bs-border-color);height:1.5rem;"></div>

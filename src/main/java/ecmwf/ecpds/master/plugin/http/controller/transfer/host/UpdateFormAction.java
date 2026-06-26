@@ -58,6 +58,14 @@ public class UpdateFormAction extends PDSAction {
             final var haf = (HostActionForm) form;
             final var h = HostHome.findByPrimaryKey(id);
             haf.populateFromHost(h);
+            try {
+                final var guide = ecmwf.ecpds.master.plugin.http.home.transfer.TransferMethodHome
+                        .findByPrimaryKey(haf.getTransferMethod()).getModuleGuide();
+                if (guide != null) {
+                    request.setAttribute("moduleGuide", guide);
+                }
+            } catch (final Exception ignored) {
+            }
             return mapping.findForward("success");
         }
         return mapping.findForward("cancel");

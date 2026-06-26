@@ -40,11 +40,13 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
+import ecmwf.common.ectrans.TransferModule;
 import ecmwf.common.technical.StreamManager;
 import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.ecpds.master.plugin.http.dao.Util;
 import ecmwf.ecpds.master.plugin.http.home.datafile.TransferGroupHome;
+import ecmwf.ecpds.master.plugin.http.home.transfer.EcTransModuleHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.HostHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.TransferMethodHome;
 import ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException;
@@ -157,20 +159,83 @@ public class GetHostAction extends PDSAction {
         }
         // Trigger acquisition immediately by resetting the acquisition time so the scheduler picks it up.
         if ("triggerAcquisition".equals(request.getParameter("json"))) {
+            final var force = "true".equals(request.getParameter("force"));
             final var alreadyRunning = host.isAcquisitionRunning(user);
-            if (!alreadyRunning) {
+            if (force && alreadyRunning) {
+                // Interrupt the running listing, then schedule an immediate re-run
+                host.interruptAcquisition(user);
+            }
+            if (!alreadyRunning || force) {
+                // Trigger acquisition immediately
                 host.triggerAcquisition(user);
             }
+            final boolean triggered = !alreadyRunning || force;
             try {
                 response.setContentType("application/json; charset=UTF-8");
-                response.getWriter()
-                        .write("{\"triggered\":" + !alreadyRunning + ",\"running\":" + alreadyRunning + "}");
+                response.getWriter().write("{\"triggered\":" + triggered + ",\"running\":" + (alreadyRunning && !force)
+                        + ",\"interrupted\":" + (force && alreadyRunning) + "}");
                 response.getWriter().flush();
             } catch (final java.io.IOException ignored) {
             }
             return null;
         }
         final var mode = request.getParameter("mode");
+        // Resolve the module documentation guide key for the host's ECtrans module.
+        try {
+            final var ecmName = host.getTransferMethod().getEcTransModuleName();
+            final var classe = EcTransModuleHome.findByPrimaryKey(ecmName).getClasse();
+            final var module = (TransferModule) Class.forName(classe).getDeclaredConstructor().newInstance();
+            final var guideKey = module.getGuide();
+            if (guideKey != null) {
+                request.setAttribute("moduleGuide", "/WEB-INF/jsp/pds/transfer/module/guide/" + guideKey + ".jsp");
+            }
+        } catch (final Exception ignored) {
+        }
+        // For Acquisition hosts, check whether at least one associated destination is
+        // eligible for the scheduler to pick up this host. If none qualifies, expose
+        // a human-readable note so the progress panel can explain why Run Now won't work.
+        // The scheduler selects a host once per eligible destination, so a single running
+        // destination is enough — the note is suppressed as soon as one eligible one is found.
+        if (HostOption.ACQUISITION.equals(host.getType())) {
+            try {
+                final var reasons = new java.util.ArrayList<String>();
+                var canRun = false;
+                for (final var dest : host.getDestinations()) {
+                    if (!dest.getActive()) {
+                        reasons.add("<strong>" + dest.getName() + "</strong> is disabled");
+                    } else if (!dest.getAcquisition()) {
+                        reasons.add("<strong>" + dest.getName() + "</strong> has acquisition disabled");
+                    } else {
+                        final var sc = dest.getStatusCode();
+                        if ("STOP".equals(sc) || "INIT".equals(sc) || "FAIL".equals(sc)) {
+                            final var label = "STOP".equals(sc) ? "stopped"
+                                    : "INIT".equals(sc) ? "not yet started" : "failed";
+                            reasons.add("<strong>" + dest.getName() + "</strong> is " + label);
+                        } else {
+                            canRun = true;
+                            break;
+                        }
+                    }
+                }
+                if (!canRun && !reasons.isEmpty()) {
+                    final var note = new StringBuilder();
+                    if (reasons.size() == 1) {
+                        note.append(reasons.get(0)).append(" &mdash; start it to allow the listing to run");
+                    } else {
+                        note.append("none of the ").append(reasons.size())
+                                .append(" associated destinations is eligible: ");
+                        for (var i = 0; i < reasons.size(); i++) {
+                            if (i > 0)
+                                note.append(", ");
+                            note.append(reasons.get(i));
+                        }
+                        note.append(" &mdash; start at least one to allow the listing to run");
+                    }
+                    request.setAttribute("acquisitionNote", note.toString());
+                }
+            } catch (final Exception ignored) {
+            }
+        }
         if ("changelog".equals(mode)) {
             // This is the changelog.jsp page!
             return mapping.findForward("changelog");

@@ -3,8 +3,7 @@
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 
 <jsp:include page="/WEB-INF/jsp/pds/transfer/host/host_header.jsp"/>
-
-<link rel="stylesheet" href="/openlayer/ol.css"/>
+<c:if test="${not empty moduleGuide}"><jsp:include page="${moduleGuide}"/></c:if>
 <script src="/openlayer/ol.js"></script>
 
 <style>

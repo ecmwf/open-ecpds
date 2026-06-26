@@ -28,7 +28,11 @@ package ecmwf.ecpds.master.plugin.http.dao.transfer;
 
 import java.util.Collection;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import ecmwf.common.database.DataBaseObject;
+import ecmwf.common.ectrans.TransferModule;
 import ecmwf.ecpds.master.plugin.http.dao.OjbImplementedBean;
 import ecmwf.ecpds.master.plugin.http.home.transfer.TransferMethodHome;
 import ecmwf.ecpds.master.plugin.http.model.transfer.EcTransModule;
@@ -40,6 +44,9 @@ import ecmwf.web.dao.ModelBeanBase;
  * The Class EcTransModuleBean.
  */
 public class EcTransModuleBean extends ModelBeanBase implements EcTransModule, OjbImplementedBean {
+
+    /** The Constant _log. */
+    private static final Logger _log = LogManager.getLogger(EcTransModuleBean.class);
 
     /** The module. */
     private final ecmwf.common.database.ECtransModule module;
@@ -82,6 +89,29 @@ public class EcTransModuleBean extends ModelBeanBase implements EcTransModule, O
     @Override
     public String getId() {
         return getName();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Gets the guide JSP path for this module, or null if no guide is available.
+     */
+    @Override
+    public String getGuide() {
+        final var classe = module.getClasse();
+        if (classe == null || classe.isBlank()) {
+            return null;
+        }
+        try {
+            final var transferModule = (TransferModule) Class.forName(classe).getDeclaredConstructor().newInstance();
+            final var guideKey = transferModule.getGuide();
+            if (guideKey != null && !guideKey.isBlank()) {
+                return "/WEB-INF/jsp/pds/transfer/module/guide/" + guideKey + ".jsp";
+            }
+        } catch (final Exception e) {
+            _log.debug("Could not resolve guide for module class {}", classe, e);
+        }
+        return null;
     }
 
     /**

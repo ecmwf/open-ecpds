@@ -750,6 +750,22 @@ final class ManagementProxy implements ManagementInterface {
     /**
      * {@inheritDoc}
      *
+     * Interrupt acquisition.
+     */
+    @Override
+    public void interruptAcquisition(final ECpdsSession session, final Host host) {
+        if (session == null || host == null) {
+            return;
+        }
+        try {
+            managementInterface.interruptAcquisition(session, host);
+        } catch (final RemoteException ignored) {
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * Gets the report.
      */
     @Override

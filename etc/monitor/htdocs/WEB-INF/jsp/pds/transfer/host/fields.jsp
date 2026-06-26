@@ -151,7 +151,16 @@ labelProperty="name" />
 <div class="card-body">
 <div class="row g-3">
 <div class="col-sm-6">
-<label for="transferMethod" class="form-label mb-1">Transfer Protocol <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Select the Transfer Protocol to connect to the remote site" tabindex="0"></i></label>
+<label for="transferMethod" class="form-label mb-1 d-flex align-items-center gap-1">
+  Transfer Protocol
+  <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Select the Transfer Protocol to connect to the remote site" tabindex="0"></i>
+  <button id="formGuideBtn" type="button"
+          class="btn btn-sm btn-outline-secondary p-0 px-1 disabled"
+          style="font-size:0.75rem;line-height:1.2;"
+          title="No configuration guide available" disabled>
+    <i class="bi bi-book"></i>
+  </button>
+</label>
 <select id="transferMethod" name="transferMethod" class="form-select form-select-sm">
 <c:forEach var="method"
 items="${requestScope[actionFormName].transferMethodOptions}">
@@ -856,6 +865,7 @@ oninput="validateMailInput(this); toggleMailRows()" />
     	bootstrap.Collapse.getOrCreateInstance(document.getElementById('hostAccProperties')).show();
     	checkEachLine(editorProperties, 'hostAccPropertiesBtn');
     	populateHelpTab();
+    	_updateFormGuideBtn(this.value);
 	});
 	
    	var selectElement = document.getElementById("type");
@@ -1229,4 +1239,37 @@ oninput="validateMailInput(this); toggleMailRows()" />
     	if (nickInput) validatePatternInput(nickInput, 'nickNameFeedback');
 	};
 
+	// Configuration Guide button — tracks the selected Transfer Method
+	var _formGuideMap = ${requestScope[actionFormName].transferMethodGuideMap};
+	function _updateFormGuideBtn(methodName) {
+		var btn = document.getElementById('formGuideBtn');
+		if (!btn) return;
+		var key = _formGuideMap[methodName];
+		if (key) {
+			btn.setAttribute('data-bs-toggle', 'offcanvas');
+			btn.setAttribute('data-bs-target', '#mgocForm-' + key);
+			btn.setAttribute('title', 'Configuration Guide');
+			btn.classList.remove('btn-outline-secondary', 'disabled');
+			btn.classList.add('btn-outline-info');
+			btn.disabled = false;
+		} else {
+			btn.removeAttribute('data-bs-toggle');
+			btn.removeAttribute('data-bs-target');
+			btn.setAttribute('title', 'No configuration guide available');
+			btn.classList.remove('btn-outline-info');
+			btn.classList.add('btn-outline-secondary', 'disabled');
+			btn.disabled = true;
+		}
+	}
+	_updateFormGuideBtn('${requestScope[actionFormName].transferMethod}');
+
 </script>
+
+<%-- Guide offcanvases (all modules with guides, unique IDs for the form context) --%>
+<%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
+<c:set var="_allGuideKeys" value="http,s3,ftp,sftp,gcs,azure"/>
+<c:forTokens var="_gKey" items="${_allGuideKeys}" delims=",">
+    <jsp:include page="/WEB-INF/jsp/pds/transfer/module/guide/${_gKey}.jsp">
+        <jsp:param name="guideId" value="mgocForm-${_gKey}"/>
+    </jsp:include>
+</c:forTokens>

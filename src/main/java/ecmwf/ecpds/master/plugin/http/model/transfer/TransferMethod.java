@@ -78,6 +78,13 @@ public interface TransferMethod extends ModelBean {
     boolean getActive();
 
     /**
+     * Gets the guide JSP path for the underlying transfer module, or null if no guide is available.
+     *
+     * @return the module guide
+     */
+    String getModuleGuide();
+
+    /**
      * Gets the ec trans module.
      *
      * @return the ec trans module

@@ -4,7 +4,7 @@
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 
 <jsp:include page="/WEB-INF/jsp/pds/transfer/host/host_header.jsp"/>
-
+<c:if test="${not empty moduleGuide}"><jsp:include page="${moduleGuide}"/></c:if>
 <c:choose>
 <c:when test="${isRestrictedUser == 'true' && host.type == 'Proxy'}">
 	<div class="alert alert-info d-flex align-items-center gap-2 mt-3">

@@ -36,6 +36,13 @@ import ecmwf.web.model.ModelBean;
 public interface EcTransModule extends ModelBean {
 
     /**
+     * Gets the guide.
+     *
+     * @return the guide
+     */
+    String getGuide();
+
+    /**
      * Gets the active.
      *
      * @return the active

@@ -220,7 +220,6 @@ import ecmwf.common.database.SchedulerValue;
 import ecmwf.common.database.TransferGroup;
 import ecmwf.common.database.TransferHistory;
 import ecmwf.common.database.TransferServer;
-import ecmwf.common.database.TransferStatistics;
 import ecmwf.common.database.UploadHistory;
 import ecmwf.common.database.WebUser;
 import ecmwf.common.ecaccess.AbstractTicket;

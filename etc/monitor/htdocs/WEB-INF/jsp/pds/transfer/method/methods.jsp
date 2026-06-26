@@ -82,6 +82,17 @@
                 </c:choose>
             </td>
             <td class="buttons text-center">
+                <c:choose>
+                    <c:when test="${not empty row.moduleGuide}">
+                        <button class="btn btn-sm btn-outline-info p-0 px-1" type="button"
+                                data-bs-toggle="offcanvas" data-bs-target="#mgoc-${row.id}"
+                                title="Configuration Guide"><i class="bi bi-book"></i></button>
+                    </c:when>
+                    <c:otherwise>
+                        <button class="btn btn-sm btn-outline-secondary p-0 px-1" type="button"
+                                title="No configuration guide available" disabled><i class="bi bi-book"></i></button>
+                    </c:otherwise>
+                </c:choose>
                 <auth:link styleClass="menuitem" href="/do/transfer/method/edit/update_form/${row.id}" imageKey="icon.small.update"/>
                 <auth:link styleClass="menuitem" href="/do/transfer/method/edit/delete_form/${row.id}" imageKey="icon.small.delete"/>
             </td>
@@ -170,4 +181,14 @@ $(document).ready(function() {
     _methApplyMode(_methColMode);
 });
 </script>
+
+<%-- Guide offcanvases for methods whose underlying module has documentation --%>
+<c:forEach var="row" items="${methods}">
+    <c:if test="${not empty row.moduleGuide}">
+        <jsp:include page="${row.moduleGuide}">
+            <jsp:param name="guideId" value="mgoc-${row.id}"/>
+        </jsp:include>
+    </c:if>
+</c:forEach>
+
 </c:if>

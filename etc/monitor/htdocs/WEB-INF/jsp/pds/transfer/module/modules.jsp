@@ -74,6 +74,17 @@
                 </c:choose>
             </td>
             <td class="buttons text-center">
+                <c:choose>
+                    <c:when test="${not empty row.guide}">
+                        <button class="btn btn-sm btn-outline-info p-0 px-1" type="button"
+                                data-bs-toggle="offcanvas" data-bs-target="#mgoc-${row.id}"
+                                title="Configuration Guide"><i class="bi bi-book"></i></button>
+                    </c:when>
+                    <c:otherwise>
+                        <button class="btn btn-sm btn-outline-secondary p-0 px-1" type="button"
+                                title="No configuration guide available" disabled><i class="bi bi-book"></i></button>
+                    </c:otherwise>
+                </c:choose>
                 <auth:link styleClass="menuitem" basePathKey="module.basepath" href="/edit/update_form/${row.id}" imageKey="icon.small.update"/>
                 <auth:link styleClass="menuitem" basePathKey="module.basepath" href="/edit/delete_form/${row.id}" imageKey="icon.small.delete"/>
             </td>
@@ -162,4 +173,14 @@ $(document).ready(function() {
     _modApplyMode(_modColMode);
 });
 </script>
+
+<%-- Guide offcanvases for modules that have documentation --%>
+<c:forEach var="row" items="${ectransmodules}">
+    <c:if test="${not empty row.guide}">
+        <jsp:include page="${row.guide}">
+            <jsp:param name="guideId" value="mgoc-${row.id}"/>
+        </jsp:include>
+    </c:if>
+</c:forEach>
+
 </c:if>

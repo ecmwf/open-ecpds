@@ -3,6 +3,7 @@
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 
 <jsp:include page="/WEB-INF/jsp/pds/transfer/host/host_header.jsp"/>
+<c:if test="${not empty moduleGuide}"><jsp:include page="${moduleGuide}"/></c:if>
 
 <style>
 /* -- Global date bar -- */

@@ -768,6 +768,20 @@ public interface ManagementInterface extends Remote {
     void triggerAcquisition(ECpdsSession session, Host host) throws RemoteException;
 
     /**
+     * Interrupt a running acquisition thread for the given Host and immediately restart it. If no acquisition is
+     * running the host output is still reset, triggering a fresh run on the next scheduler cycle.
+     *
+     * @param session
+     *            the session
+     * @param host
+     *            the host
+     *
+     * @throws RemoteException
+     *             the remote exception
+     */
+    void interruptAcquisition(ECpdsSession session, Host host) throws RemoteException;
+
+    /**
      * Gets the report.
      *
      * @param session

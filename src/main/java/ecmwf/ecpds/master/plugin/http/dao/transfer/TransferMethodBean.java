@@ -149,6 +149,20 @@ public class TransferMethodBean extends ModelBeanBase implements TransferMethod,
     /**
      * {@inheritDoc}
      *
+     * Gets the guide JSP path for the underlying transfer module, or null if no guide is available.
+     */
+    @Override
+    public String getModuleGuide() {
+        try {
+            return EcTransModuleHome.findByPrimaryKey(getEcTransModuleName()).getGuide();
+        } catch (final Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * Gets the ec trans module name.
      */
     @Override

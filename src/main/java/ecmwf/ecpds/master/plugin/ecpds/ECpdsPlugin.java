@@ -714,7 +714,7 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     public void userReq(final String[] parameters) throws IOException, ParameterException {
         final var port = getSocket().getPort();
         if (port > 1023) {
-            _log.warn("Not a privileged IP port: {}", port);
+            _log.debug("Not a privileged IP port: {}", port);
             if (Cnf.at("ECpdsPlugin", "checkPort", true)) {
                 stopAndError("Not a privileged IP port (connection refused by server)");
                 return;
