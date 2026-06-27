@@ -153,14 +153,6 @@ public final class AzureModule extends TransferModule {
     }
 
     /**
-     * Returns the guide key for the Azure Blob Storage module configuration guide.
-     */
-    @Override
-    public String getGuide() {
-        return "azure";
-    }
-
-    /**
      * Gets the port.
      *
      * @param setup

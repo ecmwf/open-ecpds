@@ -304,16 +304,6 @@ public final class HttpModule extends TransferModule {
     }
 
     /**
-     * {@inheritDoc}
-     *
-     * Returns the guide key for the HTTP/MQTT module configuration guide.
-     */
-    @Override
-    public String getGuide() {
-        return "http";
-    }
-
-    /**
      * Gets the port.
      *
      * @param setup
