@@ -4,8 +4,13 @@ This document summarizes the most significant changes in OpenECPDS across all ma
 
 ---
 
-## open-ecpds 8.0.2-23062026 (2026-06-23)
+## open-ecpds 8.0.3-26062026 (2026-06-26)
 
+- Added comprehensive configuration guides, directly accessible from the Hosts pages in the Monitoring Interface, providing detailed information on the various configuration options for listing, authentication, connection, registration, acquisition, and dissemination engines.
+- Added a new authentication mechanism supporting static Bearer/API tokens as well as automatic refresh of expiring tokens. For tokens with limited lifetimes (OAuth 2, NASA Earthdata, etc.), define a function in the JavaScript editor; the engine automatically calls it when the cached token is approaching expiry.
+- Added support for single-file URL handling, allowing the Host Directory URL to point directly to a file to download. A HEAD (or GET) request is issued to retrieve the file size and last modification time, resulting in a single listing entry.
+- Allow filtering Data Transfers by Transfer Method for processed transfers that have already been assigned to a Host.
+- Added additional icons to improve workflow in the Monitoring Interface (e.g. Sync Now, Requeue, and Stop icons on the Data Transfer page).
 - Added access to TCP network statistics for completed data transfers. The new Network Statistics card on the Data Transfer page visualizes connection activity and throughput, and exposes detailed per-connection metrics (RTT, congestion window, segment counts, etc.) to help users better understand and troubleshoot transfer performance.
 
 ## open-ecpds 8.0.1-19062026 (2026-06-19)
