@@ -2442,6 +2442,7 @@ public final class HttpModule extends TransferModule {
         }
         if (expiry >= 0 && System.currentTimeMillis() < expiry - lookaheadMs) {
             // Cached token is still valid — nothing to do.
+            _log.debug("Cached token is still valid — nothing to do");
             return;
         }
         // Token is absent or about to expire — acquire the per-host JVM lock before refreshing.
