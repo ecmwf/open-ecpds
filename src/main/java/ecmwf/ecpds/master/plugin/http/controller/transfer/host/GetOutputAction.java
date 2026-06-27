@@ -39,11 +39,9 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
 import ecmwf.common.callback.LocalInputStream;
-import ecmwf.common.ectrans.TransferModule;
 import ecmwf.common.text.Format;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.ecpds.master.plugin.http.dao.Util;
-import ecmwf.ecpds.master.plugin.http.home.transfer.EcTransModuleHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.HostHome;
 import ecmwf.ecpds.master.plugin.http.model.transfer.TransferException;
 import ecmwf.web.controller.ECMWFActionForm;
@@ -77,12 +75,9 @@ public class GetOutputAction extends PDSAction {
                 request.setAttribute("host", host);
                 try {
                     final var ecmName = host.getTransferMethod().getEcTransModuleName();
-                    final var classe = EcTransModuleHome.findByPrimaryKey(ecmName).getClasse();
-                    final var module = (TransferModule) Class.forName(classe).getDeclaredConstructor().newInstance();
-                    final var guideKey = module.getGuide();
-                    if (guideKey != null) {
+                    if (ecmName != null) {
                         request.setAttribute("moduleGuide",
-                                "/WEB-INF/jsp/pds/transfer/module/guide/" + guideKey + ".jsp");
+                                "/WEB-INF/jsp/pds/transfer/module/guide/" + ecmName + ".jsp");
                     }
                 } catch (final Exception ignored) {
                 }

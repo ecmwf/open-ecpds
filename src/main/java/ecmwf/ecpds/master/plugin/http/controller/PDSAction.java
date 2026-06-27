@@ -186,6 +186,27 @@ public abstract class PDSAction extends ECMWFAction {
     }
 
     /**
+     * Sets the "moduleGuide" request attribute only if the guide JSP exists in the webapp. If the file is not deployed,
+     * the attribute is left unset, which disables the guide icon in the UI.
+     *
+     * @param guide
+     *            the webapp-relative JSP path (e.g. "/WEB-INF/jsp/pds/transfer/module/guide/s3.jsp")
+     * @param request
+     *            the current HTTP request
+     */
+    public static void setGuideIfPresent(final String guide, final HttpServletRequest request) {
+        if (guide == null || guide.isBlank()) {
+            return;
+        }
+        try {
+            if (request.getServletContext().getResource(guide) != null) {
+                request.setAttribute("moduleGuide", guide);
+            }
+        } catch (final Exception ignored) {
+        }
+    }
+
+    /**
      * Search.
      *
      * @param c

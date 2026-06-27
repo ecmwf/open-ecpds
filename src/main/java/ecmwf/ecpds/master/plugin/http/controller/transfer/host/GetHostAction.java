@@ -40,13 +40,11 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
-import ecmwf.common.ectrans.TransferModule;
 import ecmwf.common.technical.StreamManager;
 import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.ecpds.master.plugin.http.dao.Util;
 import ecmwf.ecpds.master.plugin.http.home.datafile.TransferGroupHome;
-import ecmwf.ecpds.master.plugin.http.home.transfer.EcTransModuleHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.HostHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.TransferMethodHome;
 import ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException;
@@ -183,11 +181,8 @@ public class GetHostAction extends PDSAction {
         // Resolve the module documentation guide key for the host's ECtrans module.
         try {
             final var ecmName = host.getTransferMethod().getEcTransModuleName();
-            final var classe = EcTransModuleHome.findByPrimaryKey(ecmName).getClasse();
-            final var module = (TransferModule) Class.forName(classe).getDeclaredConstructor().newInstance();
-            final var guideKey = module.getGuide();
-            if (guideKey != null) {
-                request.setAttribute("moduleGuide", "/WEB-INF/jsp/pds/transfer/module/guide/" + guideKey + ".jsp");
+            if (ecmName != null) {
+                request.setAttribute("moduleGuide", "/WEB-INF/jsp/pds/transfer/module/guide/" + ecmName + ".jsp");
             }
         } catch (final Exception ignored) {
         }

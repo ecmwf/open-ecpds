@@ -32,7 +32,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import ecmwf.common.database.DataBaseObject;
-import ecmwf.common.ectrans.TransferModule;
 import ecmwf.ecpds.master.plugin.http.dao.OjbImplementedBean;
 import ecmwf.ecpds.master.plugin.http.home.transfer.TransferMethodHome;
 import ecmwf.ecpds.master.plugin.http.model.transfer.EcTransModule;
@@ -98,18 +97,11 @@ public class EcTransModuleBean extends ModelBeanBase implements EcTransModule, O
      */
     @Override
     public String getGuide() {
-        final var classe = module.getClasse();
-        if (classe == null || classe.isBlank()) {
-            return null;
-        }
-        try {
-            final var transferModule = (TransferModule) Class.forName(classe).getDeclaredConstructor().newInstance();
-            final var guideKey = transferModule.getGuide();
-            if (guideKey != null && !guideKey.isBlank()) {
-                return "/WEB-INF/jsp/pds/transfer/module/guide/" + guideKey + ".jsp";
-            }
-        } catch (final Exception e) {
-            _log.debug("Could not resolve guide for module class {}", classe, e);
+        // The module name (primary key, e.g. "s3", "http", "ftp") maps directly to the
+        // guide JSP filename — no class instantiation or SDK dependencies needed.
+        final var name = module.getName();
+        if (name != null && !name.isBlank()) {
+            return "/WEB-INF/jsp/pds/transfer/module/guide/" + name + ".jsp";
         }
         return null;
     }
