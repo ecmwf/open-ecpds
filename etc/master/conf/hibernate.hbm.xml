@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
 
-<hibernate-mapping default-access="field" package="ecmwf.common.database"
-	default-lazy="false">
+<hibernate-mapping default-access="field"
+	package="ecmwf.common.database" default-lazy="false">
 
 	<class name="Activity" table="ACTIVITY">
 		<id name="ACT_ID" type="java.lang.Long">
@@ -21,15 +21,14 @@
 		<property name="ECU_NAME" type="java.lang.String">
 			<column name="ECU_NAME" />
 		</property>
-		<many-to-one name="ecuser"
-			class="ECUser" not-found="ignore" insert="false"
-			update="false" >
+		<many-to-one name="ecuser" class="ECUser"
+			not-found="ignore" insert="false" update="false">
 			<column name="ECU_NAME" length="128" not-null="true" />
 		</many-to-one>
 	</class>
 
 	<class name="Alias" table="ALIAS">
-		<cache usage="read-write"/>
+		<cache usage="read-write" />
 		<composite-id>
 			<key-property name="ALI_DES_NAME"
 				type="java.lang.String">
@@ -39,15 +38,14 @@
 				<column name="DES_NAME" length="32" />
 			</key-property>
 		</composite-id>
-		<many-to-one name="destination"
-			class="Destination" not-found="ignore"
-			insert="false" update="false" >
+		<many-to-one name="destination" class="Destination"
+			not-found="ignore" insert="false" update="false">
 			<column name="ALI_DES_NAME" length="32" not-null="true" />
 		</many-to-one>
 	</class>
 
 	<class name="Association" table="ASSOCIATION">
-		<cache usage="read-write"/>
+		<cache usage="read-write" />
 		<composite-id>
 			<key-property name="DES_NAME" type="java.lang.String">
 				<column name="DES_NAME" length="32" />
@@ -59,14 +57,12 @@
 		<property name="ASO_PRIORITY" type="java.lang.Integer">
 			<column name="ASO_PRIORITY" />
 		</property>
-		<many-to-one name="destination"
-			class="Destination" update="false"
-			insert="false" not-found="ignore" >
+		<many-to-one name="destination" class="Destination"
+			update="false" insert="false" not-found="ignore">
 			<column name="DES_NAME" length="32" not-null="true" />
 		</many-to-one>
-		<many-to-one name="host"
-			class="Host" update="false" insert="false"
-			not-found="ignore" >
+		<many-to-one name="host" class="Host" update="false"
+			insert="false" not-found="ignore">
 			<column name="HOS_NAME" not-null="true" />
 		</many-to-one>
 	</class>
@@ -137,7 +133,7 @@
 	</class>
 
 	<class name="PolicyAssociation" table="POLICY_ASSOCIATION">
-		<cache usage="read-write"/>
+		<cache usage="read-write" />
 		<composite-id>
 			<key-property name="DES_NAME" type="java.lang.String">
 				<column name="DES_NAME" length="32" />
@@ -146,20 +142,18 @@
 				<column name="INP_ID" length="128" />
 			</key-property>
 		</composite-id>
-		<many-to-one name="destination"
-			class="Destination" update="false"
-			insert="false" not-found="ignore" >
+		<many-to-one name="destination" class="Destination"
+			update="false" insert="false" not-found="ignore">
 			<column name="DES_NAME" length="32" not-null="true" />
 		</many-to-one>
-		<many-to-one name="incomingPolicy"
-			class="IncomingPolicy" update="false"
-			insert="false" not-found="ignore" >
+		<many-to-one name="incomingPolicy" class="IncomingPolicy"
+			update="false" insert="false" not-found="ignore">
 			<column name="INP_ID" not-null="true" />
 		</many-to-one>
 	</class>
 
 	<class name="PolicyUser" table="POLICY_USER">
-		<cache usage="read-write"/>
+		<cache usage="read-write" />
 		<composite-id>
 			<key-property name="INU_ID" type="java.lang.String">
 				<column name="INU_ID" length="128" />
@@ -168,20 +162,18 @@
 				<column name="INP_ID" precision="128" />
 			</key-property>
 		</composite-id>
-		<many-to-one name="incomingUser"
-			class="IncomingUser" not-found="ignore"
-			update="false" insert="false" >
+		<many-to-one name="incomingUser" class="IncomingUser"
+			not-found="ignore" update="false" insert="false">
 			<column name="INU_ID" length="128" not-null="true" />
 		</many-to-one>
-		<many-to-one name="incomingPolicy"
-			class="IncomingPolicy" update="false"
-			insert="false" not-found="ignore" >
+		<many-to-one name="incomingPolicy" class="IncomingPolicy"
+			update="false" insert="false" not-found="ignore">
 			<column name="INP_ID" not-null="true" />
 		</many-to-one>
 	</class>
 
 	<class name="CatUrl" table="CAT_URL">
-		<cache usage="read-write"/>
+		<cache usage="read-write" />
 		<composite-id>
 			<key-property name="URL_NAME" type="java.lang.String">
 				<column name="URL_NAME" length="128" />
@@ -190,19 +182,18 @@
 				<column name="CAT_ID" />
 			</key-property>
 		</composite-id>
-		<many-to-one name="category"
-			class="Category" update="false" insert="false"
-			not-found="ignore" >
+		<many-to-one name="category" class="Category"
+			update="false" insert="false" not-found="ignore">
 			<column name="CAT_ID" not-null="true" />
 		</many-to-one>
-		<many-to-one name="url" class="Url"
-			update="false" insert="false" not-found="ignore" >
+		<many-to-one name="url" class="Url" update="false"
+			insert="false" not-found="ignore">
 			<column name="URL_NAME" length="128" not-null="true" />
 		</many-to-one>
 	</class>
 
 	<class name="Category" table="CATEGORY">
-		<cache usage="read-write"/>
+		<cache usage="read-write" />
 		<id name="CAT_ID" type="java.lang.Long">
 			<column name="CAT_ID" />
 			<generator class="increment" />
@@ -219,7 +210,7 @@
 	</class>
 
 	<class name="Country" table="COUNTRY">
-		<cache usage="read-write"/>
+		<cache usage="read-write" />
 		<id name="COU_ISO" type="java.lang.String">
 			<column name="COU_ISO" length="2" />
 			<generator class="assigned" />
@@ -230,7 +221,7 @@
 	</class>
 
 	<class name="DataFile" table="DATA_FILE" dynamic-update="true">
-		<cache usage="read-write"/>
+		<cache usage="read-write" />
 		<id name="DAF_ID" type="java.lang.Long">
 			<column name="DAF_ID" />
 			<generator class="increment" />
@@ -342,21 +333,20 @@
 			type="java.lang.Integer">
 			<column name="HOS_NAME_FOR_ACQUISITION" precision="10" />
 		</property>
-		<many-to-one name="transferGroup"
-			class="TransferGroup" not-found="ignore"
-			insert="false" update="false" >
+		<many-to-one name="transferGroup" class="TransferGroup"
+			not-found="ignore" insert="false" update="false">
 			<column name="TRG_NAME" />
 		</many-to-one>
 		<many-to-one name="monitoringValue"
-			class="MonitoringValue" not-found="ignore"
-			insert="false" update="false" >
+			class="MonitoringValue" not-found="ignore" insert="false"
+			update="false">
 			<column name="MOV_ID" />
 		</many-to-one>
 	</class>
 
-	<class name="DataTransfer"
-		table="DATA_TRANSFER" dynamic-update="true">
-		<cache usage="read-write"/>
+	<class name="DataTransfer" table="DATA_TRANSFER"
+		dynamic-update="true">
+		<cache usage="read-write" />
 		<id name="DAT_ID" type="java.lang.Long">
 			<column name="DAT_ID" />
 			<generator class="increment" />
@@ -485,49 +475,44 @@
 			<column name="DAT_PROXY_TIME" />
 		</property>
 		<many-to-one name="originalTransferServer"
-			class="TransferServer" not-found="ignore"
-			insert="false" update="false" >
+			class="TransferServer" not-found="ignore" insert="false"
+			update="false">
 			<column name="TRS_NAME_ORIGINAL" />
 		</many-to-one>
-		<many-to-one name="transferServer"
-			class="TransferServer" not-found="ignore"
-			insert="false" update="false" >
+		<many-to-one name="transferServer" class="TransferServer"
+			not-found="ignore" insert="false" update="false">
 			<column name="TRS_NAME" />
 		</many-to-one>
-		<many-to-one name="destination"
-			class="Destination" not-found="ignore"
-			insert="false" update="false" >
+		<many-to-one name="destination" class="Destination"
+			not-found="ignore" insert="false" update="false">
 			<column name="DES_NAME" length="32" not-null="true" />
 		</many-to-one>
-		<many-to-one name="dataFile"
-			class="DataFile" not-found="ignore" insert="false"
-			update="false" >
+		<many-to-one name="dataFile" class="DataFile"
+			not-found="ignore" insert="false" update="false">
 			<column name="DAF_ID" not-null="true" />
 		</many-to-one>
-		<many-to-one name="host"
-			class="Host" not-found="ignore" insert="false"
-			update="false" >
+		<many-to-one name="host" class="Host" not-found="ignore"
+			insert="false" update="false">
 			<column name="HOS_NAME" length="32" />
 		</many-to-one>
-		<many-to-one name="backupHost"
-			class="Host" not-found="ignore" insert="false"
-			update="false" >
+		<many-to-one name="backupHost" class="Host"
+			not-found="ignore" insert="false" update="false">
 			<column name="HOS_NAME_BACKUP" length="32" />
 		</many-to-one>
-		<many-to-one name="proxyHost"
-			class="Host" not-found="ignore" insert="false"
-			update="false" >
+		<many-to-one name="proxyHost" class="Host"
+			not-found="ignore" insert="false" update="false">
 			<column name="HOS_NAME_PROXY" length="32" />
 		</many-to-one>
 		<many-to-one name="monitoringValue"
-			class="MonitoringValue" not-found="ignore"
-			insert="false" update="false" >
+			class="MonitoringValue" not-found="ignore" insert="false"
+			update="false">
 			<column name="MOV_ID" precision="10" scale="0" not-null="true" />
 		</many-to-one>
 	</class>
 
-	<class name="Destination" table="DESTINATION" dynamic-update="true">
-		<cache usage="read-write"/>
+	<class name="Destination" table="DESTINATION"
+		dynamic-update="true">
+		<cache usage="read-write" />
 		<id name="DES_NAME" type="java.lang.String">
 			<column name="DES_NAME" length="32" />
 			<generator class="assigned" />
@@ -649,35 +634,30 @@
 		<property name="DES_BACKUP" type="boolean">
 			<column name="DES_BACKUP" />
 		</property>
-		<many-to-one name="hostForSource"
-			class="Host" not-found="ignore" insert="false"
-			update="false" >
+		<many-to-one name="hostForSource" class="Host"
+			not-found="ignore" insert="false" update="false">
 			<column name="HOS_NAME_FOR_SOURCE" length="32" />
 		</many-to-one>
-		<many-to-one name="ecuser"
-			class="ECUser" not-found="ignore" insert="false"
-			update="false" >
+		<many-to-one name="ecuser" class="ECUser"
+			not-found="ignore" insert="false" update="false">
 			<column name="ECU_NAME" length="32" not-null="true" />
 		</many-to-one>
-		<many-to-one name="country"
-			class="Country" not-found="ignore" insert="false"
-			update="false" >
+		<many-to-one name="country" class="Country"
+			not-found="ignore" insert="false" update="false">
 			<column name="COU_ISO" length="2" not-null="true" />
 		</many-to-one>
-		<many-to-one name="schedulerValue"
-			class="SchedulerValue" not-found="ignore"
-			insert="false" update="false" >
+		<many-to-one name="schedulerValue" class="SchedulerValue"
+			not-found="ignore" insert="false" update="false">
 			<column name="SCV_ID" />
 		</many-to-one>
-		<many-to-one name="transferGroup"
-			class="TransferGroup" not-found="ignore"
-			insert="false" update="false" >
+		<many-to-one name="transferGroup" class="TransferGroup"
+			not-found="ignore" insert="false" update="false">
 			<column name="TRG_NAME" />
 		</many-to-one>
 	</class>
 
 	<class name="ECUser" table="ECUSER">
-	    <cache usage="read-write"/>
+		<cache usage="read-write" />
 		<id name="ECU_NAME" type="java.lang.String">
 			<column name="ECU_NAME" length="128" />
 			<generator class="assigned" />
@@ -700,7 +680,7 @@
 	</class>
 
 	<class name="ECtransModule" table="ECTRANS_MODULE">
-		<cache usage="read-write"/>
+		<cache usage="read-write" />
 		<id name="ECM_NAME" type="java.lang.String">
 			<column name="ECM_NAME" length="128" />
 			<generator class="assigned" />
@@ -739,14 +719,14 @@
 		<property name="EVE_TIME" type="java.sql.Time">
 			<column name="EVE_TIME" />
 		</property>
-		<many-to-one name="activity"
-			class="Activity" not-found="ignore" insert="false"
-			update="false" >
+		<many-to-one name="activity" class="Activity"
+			not-found="ignore" insert="false" update="false">
 			<column name="ACT_ID" precision="10" scale="0" not-null="true" />
 		</many-to-one>
 	</class>
 
-	<class name="Publication" table="PUBLICATION" dynamic-update="true">
+	<class name="Publication" table="PUBLICATION"
+		dynamic-update="true">
 		<id name="PUB_ID" type="long">
 			<column name="PUB_ID" precision="10" scale="0" />
 			<generator class="increment" />
@@ -771,7 +751,7 @@
 	</class>
 
 	<class name="Host" table="HOST" dynamic-update="true">
-		<cache usage="read-write"/>
+		<cache usage="read-write" />
 		<id name="HOS_NAME" type="java.lang.Integer">
 			<column name="HOS_NAME" precision="10" />
 			<generator class="increment" />
@@ -867,35 +847,30 @@
 		<property name="HOU_ID" type="java.lang.Integer">
 			<column name="HOU_ID" />
 		</property>
-		<many-to-one name="ecuser"
-			class="ECUser" not-found="ignore" insert="false"
-			update="false" >
+		<many-to-one name="ecuser" class="ECUser"
+			not-found="ignore" insert="false" update="false">
 			<column name="ECU_NAME" not-null="true" />
 		</many-to-one>
-		<many-to-one name="transferMethod"
-			class="TransferMethod" not-found="ignore"
-			insert="false" update="false" >
+		<many-to-one name="transferMethod" class="TransferMethod"
+			not-found="ignore" insert="false" update="false">
 			<column name="TME_NAME" />
 		</many-to-one>
-		<many-to-one name="transferGroup"
-			class="TransferGroup" not-found="ignore"
-			insert="false" update="false" >
+		<many-to-one name="transferGroup" class="TransferGroup"
+			not-found="ignore" insert="false" update="false">
 			<column name="TRG_NAME" />
 		</many-to-one>
-		<many-to-one name="hostLocation"
-			class="HostLocation" not-found="ignore"
-			insert="false" update="false" >
+		<many-to-one name="hostLocation" class="HostLocation"
+			not-found="ignore" insert="false" update="false">
 			<column name="HLO_ID" />
 		</many-to-one>
-		<many-to-one name="hostStats"
-			class="HostStats" not-found="ignore" insert="false"
-			update="false" >
+		<many-to-one name="hostStats" class="HostStats"
+			not-found="ignore" insert="false" update="false">
 			<column name="HST_ID" />
 		</many-to-one>
 	</class>
 
 	<class name="HostStats" table="HOST_STATS" dynamic-update="true">
-		<cache usage="read-write"/>
+		<cache usage="read-write" />
 		<id name="HST_ID" type="java.lang.Integer">
 			<column name="HST_ID" precision="10" scale="0" />
 			<generator class="increment" />
@@ -917,8 +892,9 @@
 		</property>
 	</class>
 
-	<class name="HostLocation" table="HOST_LOCATION" dynamic-update="true">
-		<cache usage="read-write"/>
+	<class name="HostLocation" table="HOST_LOCATION"
+		dynamic-update="true">
+		<cache usage="read-write" />
 		<id name="HLO_ID" type="java.lang.Integer">
 			<column name="HLO_ID" precision="10" scale="0" />
 			<generator class="increment" />
@@ -934,8 +910,9 @@
 		</property>
 	</class>
 
-	<class name="HostOutput" table="HOST_OUTPUT" dynamic-update="true">
-		<cache usage="read-write"/>
+	<class name="HostOutput" table="HOST_OUTPUT"
+		dynamic-update="true">
+		<cache usage="read-write" />
 		<id name="HOU_ID" type="java.lang.Integer">
 			<column name="HOU_ID" precision="10" scale="0" />
 			<generator class="increment" />
@@ -950,7 +927,7 @@
 	</class>
 
 	<class name="MetadataAttribute" table="METADATA_ATTRIBUTE">
-		<cache usage="read-write"/>
+		<cache usage="read-write" />
 		<id name="MEA_NAME" type="java.lang.String">
 			<column name="MEA_NAME" length="26" />
 			<generator class="assigned" />
@@ -958,7 +935,7 @@
 	</class>
 
 	<class name="MetadataValue" table="METADATA_VALUE">
-		<cache usage="read-write"/>
+		<cache usage="read-write" />
 		<id name="MEV_ID" type="java.lang.Long">
 			<column name="MEV_ID" />
 			<generator class="increment" />
@@ -972,20 +949,20 @@
 		<property name="MEV_VALUE" type="java.lang.String">
 			<column name="MEV_VALUE" length="256" />
 		</property>
-		<many-to-one name="dataFile"
-			class="DataFile" not-found="ignore" update="false"
-			insert="false" >
+		<many-to-one name="dataFile" class="DataFile"
+			not-found="ignore" update="false" insert="false">
 			<column name="DAF_ID" not-null="true" />
 		</many-to-one>
 		<many-to-one name="metadataAttribute"
-			class="MetadataAttribute" not-found="ignore"
-			update="false" insert="false" >
+			class="MetadataAttribute" not-found="ignore" update="false"
+			insert="false">
 			<column name="MEA_NAME" length="26" />
 		</many-to-one>
 	</class>
 
-	<class name="MonitoringValue" table="MONITORING_VALUE" dynamic-update="true">
-		<cache usage="read-write"/>
+	<class name="MonitoringValue" table="MONITORING_VALUE"
+		dynamic-update="true">
+		<cache usage="read-write" />
 		<id name="MOV_ID" type="java.lang.Long">
 			<generator class="increment" />
 		</id>
@@ -1006,7 +983,7 @@
 	</class>
 
 	<class name="Operation" table="OPERATION">
-		<cache usage="read-write"/>
+		<cache usage="read-write" />
 		<id name="OPE_NAME" type="java.lang.String">
 			<column name="OPE_NAME" length="128" />
 			<generator class="assigned" />
@@ -1034,20 +1011,19 @@
 		<property name="PER_VALIDITY" type="int">
 			<column name="PER_VALIDITY" />
 		</property>
-		<many-to-one name="ecuser"
-			class="ECUser" not-found="ignore" update="false"
-			insert="false" >
+		<many-to-one name="ecuser" class="ECUser"
+			not-found="ignore" update="false" insert="false">
 			<column name="ECU_NAME" length="128" not-null="true" />
 		</many-to-one>
-		<many-to-one name="operation"
-			class="Operation" update="false" insert="false"
-			not-found="ignore" >
+		<many-to-one name="operation" class="Operation"
+			update="false" insert="false" not-found="ignore">
 			<column name="OPE_NAME" length="128" not-null="true" />
 		</many-to-one>
 	</class>
 
-	<class name="IncomingUser" table="INCOMING_USER" dynamic-update="true">
-		<cache usage="read-write"/>
+	<class name="IncomingUser" table="INCOMING_USER"
+		dynamic-update="true">
+		<cache usage="read-write" />
 		<id name="INU_ID" type="java.lang.String">
 			<column name="INU_ID" length="128" />
 			<generator class="assigned" />
@@ -1082,7 +1058,7 @@
 	</class>
 
 	<class name="IncomingPolicy" table="INCOMING_POLICY">
-		<cache usage="read-write"/>
+		<cache usage="read-write" />
 		<id name="INP_ID" type="java.lang.String">
 			<column name="INP_ID" length="128" />
 			<generator class="assigned" />
@@ -1099,7 +1075,7 @@
 	</class>
 
 	<class name="IncomingPermission" table="INCOMING_PERMISSION">
-		<cache usage="read-write"/>
+		<cache usage="read-write" />
 		<composite-id>
 			<key-property name="INU_ID" type="java.lang.String">
 				<column name="INU_ID" length="128" />
@@ -1108,20 +1084,18 @@
 				<column name="OPE_NAME" length="128" />
 			</key-property>
 		</composite-id>
-		<many-to-one name="incomingUser"
-			class="IncomingUser" not-found="ignore"
-			update="false" insert="false" >
+		<many-to-one name="incomingUser" class="IncomingUser"
+			not-found="ignore" update="false" insert="false">
 			<column name="INU_ID" length="128" not-null="true" />
 		</many-to-one>
-		<many-to-one name="operation"
-			class="Operation" update="false" insert="false"
-			not-found="ignore" >
+		<many-to-one name="operation" class="Operation"
+			update="false" insert="false" not-found="ignore">
 			<column name="OPE_NAME" length="128" not-null="true" />
 		</many-to-one>
 	</class>
 
 	<class name="IncomingAssociation" table="INCOMING_ASSOCIATION">
-		<cache usage="read-write"/>
+		<cache usage="read-write" />
 		<composite-id>
 			<key-property name="INU_ID" type="java.lang.String">
 				<column name="INU_ID" length="128" />
@@ -1130,20 +1104,18 @@
 				<column name="DES_NAME" length="32" />
 			</key-property>
 		</composite-id>
-		<many-to-one name="incomingUser"
-			class="IncomingUser" not-found="ignore"
-			update="false" insert="false" >
+		<many-to-one name="incomingUser" class="IncomingUser"
+			not-found="ignore" update="false" insert="false">
 			<column name="INU_ID" length="128" not-null="true" />
 		</many-to-one>
-		<many-to-one name="destination"
-			class="Destination" update="false"
-			insert="false" not-found="ignore" >
+		<many-to-one name="destination" class="Destination"
+			update="false" insert="false" not-found="ignore">
 			<column name="DES_NAME" length="32" not-null="true" />
 		</many-to-one>
 	</class>
 
 	<class name="ProductStatus" table="PRODUCT_STATUS">
-		<cache usage="read-write"/>
+		<cache usage="read-write" />
 		<id name="PRS_ID" type="java.lang.Long">
 			<column name="PRS_ID" precision="10" scale="0" />
 			<generator class="increment" />
@@ -1184,8 +1156,9 @@
 		</property>
 	</class>
 
-	<class name="SchedulerValue" table="SCHEDULER_VALUE" dynamic-update="true">
-		<cache usage="read-write"/>
+	<class name="SchedulerValue" table="SCHEDULER_VALUE"
+		dynamic-update="true">
+		<cache usage="read-write" />
 		<id name="SCV_ID" type="java.lang.Integer">
 			<column name="SCV_ID" precision="10" scale="0" />
 			<generator class="increment" />
@@ -1208,15 +1181,15 @@
 		<property name="SCV_START_COUNT" type="int">
 			<column name="SCV_START_COUNT" />
 		</property>
-		<many-to-one name="host"
-			class="Host" not-found="ignore" update="false"
-			insert="false" >
+		<many-to-one name="host" class="Host" not-found="ignore"
+			update="false" insert="false">
 			<column name="HOS_NAME" length="32" />
 		</many-to-one>
 	</class>
 
-	<class name="TransferGroup" table="TRANSFER_GROUP" dynamic-update="true">
-		<cache usage="read-write"/>
+	<class name="TransferGroup" table="TRANSFER_GROUP"
+		dynamic-update="true">
+		<cache usage="read-write" />
 		<id name="TRG_NAME" type="java.lang.String">
 			<column name="TRG_NAME" length="32" />
 			<generator class="assigned" />
@@ -1256,9 +1229,8 @@
 		<property name="HOS_NAME_FOR_BACKUP" type="java.lang.Integer">
 			<column name="HOS_NAME_FOR_BACKUP" precision="10" />
 		</property>
-		<many-to-one name="hostForBackup"
-			class="Host" not-found="ignore" update="false"
-			insert="false" >
+		<many-to-one name="hostForBackup" class="Host"
+			not-found="ignore" update="false" insert="false">
 			<column name="HOS_NAME_FOR_BACKUP" />
 		</many-to-one>
 	</class>
@@ -1292,20 +1264,18 @@
 		<property name="STA_CODE" type="java.lang.String">
 			<column name="STA_CODE" />
 		</property>
-		<many-to-one name="dataTransfer"
-			class="DataTransfer" not-found="ignore"
-			update="false" insert="false" >
+		<many-to-one name="dataTransfer" class="DataTransfer"
+			not-found="ignore" update="false" insert="false">
 			<column name="DAT_ID" not-null="true" />
 		</many-to-one>
-		<many-to-one name="host"
-			class="Host" not-found="ignore" update="false"
-			insert="false" >
+		<many-to-one name="host" class="Host" not-found="ignore"
+			update="false" insert="false">
 			<column name="HOS_NAME" />
 		</many-to-one>
 	</class>
 
 	<class name="TransferMethod" table="TRANSFER_METHOD">
-		<cache usage="read-write"/>
+		<cache usage="read-write" />
 		<id name="TME_NAME" type="java.lang.String">
 			<column name="TME_NAME" length="128" />
 			<generator class="assigned" />
@@ -1328,15 +1298,15 @@
 		<property name="TME_VALUE" type="java.lang.String">
 			<column name="TME_VALUE" />
 		</property>
-		<many-to-one name="ectransModule"
-			class="ECtransModule" not-found="ignore"
-			update="false" insert="false" >
+		<many-to-one name="ectransModule" class="ECtransModule"
+			not-found="ignore" update="false" insert="false">
 			<column name="ECM_NAME" length="128" not-null="true" />
 		</many-to-one>
 	</class>
 
-	<class name="TransferServer" table="TRANSFER_SERVER" dynamic-update="true">
-		<cache usage="read-write"/>
+	<class name="TransferServer" table="TRANSFER_SERVER"
+		dynamic-update="true">
+		<cache usage="read-write" />
 		<id name="TRS_NAME" type="java.lang.String">
 			<column name="TRS_NAME" length="32" />
 			<generator class="assigned" />
@@ -1372,14 +1342,12 @@
 			type="java.lang.Integer">
 			<column name="HOS_NAME_FOR_REPLICATION" precision="10" />
 		</property>
-		<many-to-one name="transferGroup"
-			class="TransferGroup" not-found="ignore"
-			update="false" insert="false" >
+		<many-to-one name="transferGroup" class="TransferGroup"
+			not-found="ignore" update="false" insert="false">
 			<column name="TRG_NAME" length="32" not-null="true" />
 		</many-to-one>
-		<many-to-one name="hostForReplication"
-			class="Host" not-found="ignore" update="false"
-			insert="false" >
+		<many-to-one name="hostForReplication" class="Host"
+			not-found="ignore" update="false" insert="false">
 			<column name="HOS_NAME_FOR_REPLICATION" length="32" />
 		</many-to-one>
 	</class>
@@ -1463,9 +1431,8 @@
 		<property name="UPH_NETWORK_CODE" type="java.lang.String">
 			<column name="UPH_NETWORK_CODE" />
 		</property>
-		<many-to-one name="dataTransfer"
-			class="DataTransfer" not-found="ignore"
-			update="false" insert="false">
+		<many-to-one name="dataTransfer" class="DataTransfer"
+			not-found="ignore" update="false" insert="false">
 			<column name="DAT_ID" />
 		</many-to-one>
 	</class>
@@ -1533,15 +1500,14 @@
 		<property name="INH_UPLOAD" type="boolean">
 			<column name="INH_UPLOAD" />
 		</property>
-		<many-to-one name="dataTransfer"
-			class="DataTransfer" not-found="ignore"
-			update="false" insert="false">
+		<many-to-one name="dataTransfer" class="DataTransfer"
+			not-found="ignore" update="false" insert="false">
 			<column name="DAT_ID" />
 		</many-to-one>
 	</class>
 
 	<class name="Url" table="URL">
-		<cache usage="read-write"/>
+		<cache usage="read-write" />
 		<id name="URL_NAME" type="java.lang.String">
 			<column name="URL_NAME" length="128" />
 			<generator class="assigned" />
@@ -1549,7 +1515,7 @@
 	</class>
 
 	<class name="WebUser" table="WEB_USER">
-		<cache usage="read-write"/>
+		<cache usage="read-write" />
 		<id name="WEU_ID" type="java.lang.String">
 			<column name="WEU_ID" length="32" />
 			<generator class="assigned" />
@@ -1575,7 +1541,7 @@
 	</class>
 
 	<class name="WeuCat" table="WEU_CAT">
-		<cache usage="read-write"/>
+		<cache usage="read-write" />
 		<composite-id>
 			<key-property name="CAT_ID" type="java.lang.Long">
 				<column name="CAT_ID" />
@@ -1584,20 +1550,18 @@
 				<column name="WEU_ID" length="32" />
 			</key-property>
 		</composite-id>
-		<many-to-one name="category"
-			class="Category" update="false" insert="false"
-			not-found="ignore" >
+		<many-to-one name="category" class="Category"
+			update="false" insert="false" not-found="ignore">
 			<column name="CAT_ID" not-null="true" />
 		</many-to-one>
-		<many-to-one name="webUser"
-			class="WebUser" update="false" insert="false"
-			not-found="ignore" >
+		<many-to-one name="webUser" class="WebUser" update="false"
+			insert="false" not-found="ignore">
 			<column name="WEU_ID" length="32" not-null="true" />
 		</many-to-one>
 	</class>
 
 	<class name="HostECUser" table="HOS_ECU">
-		<cache usage="read-write"/>
+		<cache usage="read-write" />
 		<composite-id>
 			<key-property name="HOS_NAME" type="java.lang.Integer">
 				<column name="HOS_NAME" precision="10" />
@@ -1609,7 +1573,7 @@
 	</class>
 
 	<class name="DestinationECUser" table="DES_ECU">
-		<cache usage="read-write"/>
+		<cache usage="read-write" />
 		<composite-id>
 			<key-property name="DES_NAME" type="java.lang.String">
 				<column name="DES_NAME" />
@@ -1618,6 +1582,81 @@
 				<column name="ECU_NAME" />
 			</key-property>
 		</composite-id>
+	</class>
+
+	<class name="TransferStatistics" table="TRANSFER_STATISTICS">
+		<id name="TST_ID" type="java.lang.Long">
+			<column name="TST_ID" />
+			<generator class="increment" />
+		</id>
+		<property name="DAT_ID" type="java.math.BigDecimal">
+			<column name="DAT_ID" />
+		</property>
+		<property name="TST_START_TIME" type="java.math.BigDecimal">
+			<column name="TST_START_TIME" />
+		</property>
+		<property name="TST_END_TIME" type="java.math.BigDecimal">
+			<column name="TST_END_TIME" />
+		</property>
+		<property name="TST_LOCAL_ADDRESS" type="java.lang.String">
+			<column name="TST_LOCAL_ADDRESS" />
+		</property>
+		<property name="TST_REMOTE_ADDRESS" type="java.lang.String">
+			<column name="TST_REMOTE_ADDRESS" />
+		</property>
+		<property name="TST_RTT_MS" type="java.lang.Double">
+			<column name="TST_RTT_MS" />
+		</property>
+		<property name="TST_BYTES_SENT" type="java.lang.Long">
+			<column name="TST_BYTES_SENT" />
+		</property>
+		<property name="TST_BYTES_RECEIVED" type="java.lang.Long">
+			<column name="TST_BYTES_RECEIVED" />
+		</property>
+		<property name="TST_PACING_RATE_BPS" type="java.lang.Long">
+			<column name="TST_PACING_RATE_BPS" />
+		</property>
+		<property name="TST_DELIVERY_RATE_BPS" type="java.lang.Long">
+			<column name="TST_DELIVERY_RATE_BPS" />
+		</property>
+		<property name="TST_CWND" type="java.lang.Integer">
+			<column name="TST_CWND" />
+		</property>
+		<property name="TST_SEGS_OUT" type="java.lang.Integer">
+			<column name="TST_SEGS_OUT" />
+		</property>
+		<property name="TST_SEGS_IN" type="java.lang.Integer">
+			<column name="TST_SEGS_IN" />
+		</property>
+		<property name="TST_RAW" type="java.lang.String">
+			<column name="TST_RAW" />
+		</property>
+	</class>
+
+	<class name="PortalTraffic" table="PORTAL_TRAFFIC">
+		<composite-id>
+			<key-property name="PTR_USER" type="java.lang.String">
+				<column name="PTR_USER" length="64" />
+			</key-property>
+			<key-property name="PTR_TIME" type="java.sql.Timestamp">
+				<column name="PTR_TIME" />
+			</key-property>
+		</composite-id>
+		<property name="PTR_CONNECTIONS" type="int">
+			<column name="PTR_CONNECTIONS" />
+		</property>
+		<property name="PTR_BYTES_IN" type="java.lang.Long">
+			<column name="PTR_BYTES_IN" />
+		</property>
+		<property name="PTR_BYTES_OUT" type="java.lang.Long">
+			<column name="PTR_BYTES_OUT" />
+		</property>
+		<property name="PTR_DURATION_IN" type="java.lang.Long">
+			<column name="PTR_DURATION_IN" />
+		</property>
+		<property name="PTR_DURATION_OUT" type="java.lang.Long">
+			<column name="PTR_DURATION_OUT" />
+		</property>
 	</class>
 
 </hibernate-mapping>
