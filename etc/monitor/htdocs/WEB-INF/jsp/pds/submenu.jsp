@@ -9,7 +9,7 @@
 		<th><a href="/"><%=System.getProperty("monitor.nickName")%></a></th>
 	      </tr>
 	      <tr>
-		<td></td>
+		<td style="padding:1px 32px 1px 22px;"><hr style="margin:1px 0;opacity:0.15;border-top:1px solid currentColor;"/></td>
 	      </tr>
               <tr>
                 <td><auth:link basePathKey="data.basepath" href=""><i class="bi bi-database"></i> Data Storage</auth:link></td>

@@ -33,7 +33,7 @@
 	</auth:then>
 	<auth:else><i class="bi bi-eye"></i> Monitoring</auth:else>
 </auth:if>
-<tr><td></td></tr>	
+<tr><td style="padding:1px 32px 1px 22px;"><hr style="margin:1px 0;opacity:0.15;border-top:1px solid currentColor;"/></td></tr>	
 <auth:if basePathKey="transferhistory.basepath" paths="/">
 	<auth:then>
 		<tr><td><a href="/do/monitoring/arrival/${destination.name}/${product}/${time}?date=${param['date']}"><i class="bi bi-broadcast-pin"></i> ${destination.name} ${time}-${product} Arrivals</a></td></tr>

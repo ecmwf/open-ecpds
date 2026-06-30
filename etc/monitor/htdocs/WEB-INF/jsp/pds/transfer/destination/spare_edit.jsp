@@ -7,7 +7,7 @@
 
 <table class="editSpareBox">
 	<tr><th><bean:message key="ecpds.destination"/></th></tr>
-	<tr><td></td></tr>
+	<tr><td style="padding:1px 32px 1px 22px;"><hr style="margin:1px 0;opacity:0.15;border-top:1px solid currentColor;"/></td></tr>
 	<tr><td><auth:link basePathKey="destination.basepath" href="/edit/insert_form" imageKey="icon.small.insert">&nbsp;&nbsp;Create</auth:link></td></tr>
 	<c:if test="${not empty destination.id}">
 	<tr><td><auth:link basePathKey="destination.basepath" href="/edit/update_form/${destination.id}" imageKey="icon.small.update">&nbsp;&nbsp;Edit</auth:link></td></tr>

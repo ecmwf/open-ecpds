@@ -429,6 +429,9 @@ function getEditorType(aceEditor) {
 		}
 		aceEditor.setValue(value);
 		aceEditor.selection.clearSelection();
+		// Reset the undo history so Ctrl-Z cannot undo the programmatic wrapper-stripping
+		aceEditor.session.getUndoManager().reset();
+		aceEditor.session.getUndoManager().markClean();
 	}
 	return type;
 }

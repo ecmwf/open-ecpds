@@ -2,7 +2,7 @@
 
 <table class="spareBox2">
 <tr><th><a href="/do/datafile">Data Storage</a> </th></tr>
-<tr><td></td></tr>
+<tr><td style="padding:1px 32px 1px 22px;"><hr style="margin:1px 0;opacity:0.15;border-top:1px solid currentColor;"/></td></tr>
    <auth:link basePathKey="datafile.basepath" href="" wrappingTags="tr,td"><i class="bi bi-file-earmark-text"></i> Data Files</auth:link>
    <auth:link basePathKey="metadata.basepath" href="" wrappingTags="tr,td"><i class="bi bi-tags"></i> Meta Data</auth:link>
    <auth:link basePathKey="transfergroup.basepath" href="" wrappingTags="tr,td"><i class="bi bi-collection"></i> Transfer Groups</auth:link>

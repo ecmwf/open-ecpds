@@ -38,7 +38,7 @@
             <a title="${destination.id} (${destination.formattedStatus})" href='<bean:message key="destination.basepath"/>/${destination.id}'>Destination</a>
         </th>
     </tr>
-    <tr><td></td></tr>
+    <tr><td style="padding:1px 32px 1px 22px;"><hr style="margin:1px 0;opacity:0.15;border-top:1px solid currentColor;"/></td></tr>
 
     <%-- Create / Edit / Delete / Duplicate --%>
     <auth:if basePathKey="destination.basepath" paths="/edit/insert_form">
@@ -99,6 +99,7 @@
 <c:if test="${destination.monitoringStatus.present and not empty products}">
     <table class="spareBox2 spb-products">
         <tr><th><i class="bi bi-box-seam sidebar-icon"></i> Products</th></tr>
+        <tr><td style="padding:1px 32px 1px 22px;"><hr style="margin:1px 0;opacity:0.15;border-top:1px solid currentColor;"/></td></tr>
         <c:forEach var="product" items="${products}">
             <c:set var="key" value="${product.name}@${product.value}" />
             <c:if test="${destination.statusMapForProducts[key].present}">
@@ -127,6 +128,7 @@
 <c:if test="${not empty times}">
     <table class="spareBox2 spb-times">
         <tr><th><i class="bi bi-clock sidebar-icon"></i> Times</th></tr>
+        <tr><td style="padding:1px 32px 1px 22px;"><hr style="margin:1px 0;opacity:0.15;border-top:1px solid currentColor;"/></td></tr>
         <tr>
             <td style="padding: 8px 12px;">
                 <div class="d-flex flex-wrap gap-1">

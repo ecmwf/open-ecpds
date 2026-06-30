@@ -5,6 +5,7 @@
 <jsp:include page="/WEB-INF/jsp/pds/transfer/host/host_header.jsp"/>
 <c:if test="${not empty moduleGuide}"><jsp:include page="${moduleGuide}"/></c:if>
 <script src="/openlayer/ol.js"></script>
+<link rel="stylesheet" href="/openlayer/ol.css"/>
 
 <style>
 .report-card-hdr { background: #2d2d2d; border-bottom: 1px solid #444; color: #fff; }
@@ -897,6 +898,7 @@
 (function() {
     var dataUrl  = '<c:out value="${reportDataUrl}"/>';
     var cacheKey = 'hostReport_<c:out value="${host.name}"/>_<c:choose><c:when test="${not empty proxy}"><c:out value="${proxy.nickName}"/></c:when><c:otherwise>__direct__</c:otherwise></c:choose>';
+    var pendKey  = cacheKey + '_pending';
 
     function showCached(html, isStale) {
         var pre = document.getElementById('reportPre');
@@ -919,20 +921,29 @@
             + '<i class="bi bi-hourglass-split me-1"></i> Generating report, please wait\u2026</span>';
         copyBtn.disabled = true;
         refreshBtn.disabled = true;
+        // Mark as pending so if the user navigates away we know to retry on return
+        try { sessionStorage.setItem(pendKey, '1'); } catch(e) {}
         fetch(dataUrl)
             .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
             .then(function(text) {
-                try { sessionStorage.setItem(cacheKey, text); } catch(e) {}
+                try { sessionStorage.removeItem(pendKey); sessionStorage.setItem(cacheKey, text); } catch(e) {}
                 pre.innerHTML = text;
                 copyBtn.disabled = false;
                 refreshBtn.disabled = false;
                 window._tryMtrChart && window._tryMtrChart(text);
             })
             .catch(function(err) {
-                var html = '<span class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i>'
-                    + 'Failed to load report: ' + err.message + '</span>';
-                try { sessionStorage.setItem(cacheKey, html); } catch(e) {}
-                pre.innerHTML = html;
+                // If the fetch was aborted (navigation away), do not overwrite the cache with an error.
+                // The pending marker remains so the page auto-retries on next visit.
+                var wasAborted = err.name === 'AbortError' || err.message === 'Load failed'
+                    || err.message === 'Failed to fetch' || err.message === 'NetworkError when attempting to fetch resource.';
+                if (!wasAborted) {
+                    try { sessionStorage.removeItem(pendKey); } catch(e) {}
+                    var html = '<span class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i>'
+                        + 'Failed to load report: ' + err.message + '</span>';
+                    pre.innerHTML = html;
+                }
+                // On abort just leave the "please wait" spinner — the pending marker handles the rest
                 refreshBtn.disabled = false;
             });
     }
@@ -950,6 +961,17 @@
 
     var cached = null;
     try { cached = sessionStorage.getItem(cacheKey); } catch(e) {}
-    if (cached) { showCached(cached, true); } else { fetchReport(); }
+    var wasPending = false;
+    try { wasPending = !!sessionStorage.getItem(pendKey); } catch(e) {}
+    try { sessionStorage.removeItem(pendKey); } catch(e) {}
+
+    if (wasPending) {
+        // Previous fetch was interrupted by navigation — auto-retry so the user sees the fresh result
+        fetchReport();
+    } else if (cached) {
+        showCached(cached, true);
+    } else {
+        fetchReport();
+    }
 })();
 </script>

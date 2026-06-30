@@ -404,7 +404,6 @@
 	<definition name=".pds.transfer"
 		extends=".pds.transfer.base">
 		<put name="title" value="Transmission" />
-		<put name="submenu" value="/WEB-INF/jsp/pds/submenu.jsp" />
 		<put name="content" value="/WEB-INF/jsp/pds/transfer/index.jsp" />
 	</definition>
 
@@ -814,14 +813,12 @@
 
 	<definition name=".pds.user" extends=".pds.user.base">
 		<put name="title" value="Access Control" />
-		<put name="submenu" value="/WEB-INF/jsp/pds/submenu.jsp" />
 		<put name="content" value="/WEB-INF/jsp/pds/user/index.jsp" />
 	</definition>
 
 	<definition name=".pds.user.detailer"
 		extends=".pds.user.base">
 		<put name="title" value="Access Detailer" />
-		<put name="submenu" value="/WEB-INF/jsp/pds/submenu.jsp" />
 		<put name="content" value="/WEB-INF/jsp/pds/user/detailer.jsp" />
 	</definition>
 
@@ -1282,7 +1279,6 @@
 
 	<definition name=".pds.admin.index" extends=".pds.admin">
 		<put name="content" value="/WEB-INF/jsp/pds/admin/index.jsp" />
-		<put name="submenu" value="/WEB-INF/jsp/pds/submenu.jsp" />
 	</definition>
 
 	<definition name=".pds.admin.requeue.list"

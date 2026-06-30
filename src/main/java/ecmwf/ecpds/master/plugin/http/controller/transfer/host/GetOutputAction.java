@@ -80,6 +80,48 @@ public class GetOutputAction extends PDSAction {
                     }
                 } catch (final Exception ignored) {
                 }
+                // For Acquisition hosts, check whether at least one associated destination is
+                // eligible for the scheduler — same logic as GetHostAction.
+                if (ecmwf.ecpds.master.transfer.HostOption.ACQUISITION.equals(host.getType())) {
+                    try {
+                        final var reasons = new java.util.ArrayList<String>();
+                        var canRun = false;
+                        for (final var dest : host.getDestinations()) {
+                            if (!dest.getActive()) {
+                                reasons.add("<strong>" + dest.getName() + "</strong> is disabled");
+                            } else if (!dest.getAcquisition()) {
+                                reasons.add("<strong>" + dest.getName() + "</strong> has acquisition disabled");
+                            } else {
+                                final var sc = dest.getStatusCode();
+                                if ("STOP".equals(sc) || "INIT".equals(sc) || "FAIL".equals(sc)) {
+                                    final var label = "STOP".equals(sc) ? "stopped"
+                                            : "INIT".equals(sc) ? "not yet started" : "failed";
+                                    reasons.add("<strong>" + dest.getName() + "</strong> is " + label);
+                                } else {
+                                    canRun = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (!canRun && !reasons.isEmpty()) {
+                            final var note = new StringBuilder();
+                            if (reasons.size() == 1) {
+                                note.append(reasons.get(0)).append(" &mdash; start it to allow the listing to run");
+                            } else {
+                                note.append("none of the ").append(reasons.size())
+                                        .append(" associated destinations is eligible: ");
+                                for (var k = 0; k < reasons.size(); k++) {
+                                    if (k > 0)
+                                        note.append(", ");
+                                    note.append(reasons.get(k));
+                                }
+                                note.append(" &mdash; start at least one to allow the listing to run");
+                            }
+                            request.setAttribute("acquisitionNote", note.toString());
+                        }
+                    } catch (final Exception ignored) {
+                    }
+                }
                 return mapping.findForward("success");
             } else if ("load".equalsIgnoreCase(operation)) {
                 // TODO: if in progress then should display formattedLastOutput instead!

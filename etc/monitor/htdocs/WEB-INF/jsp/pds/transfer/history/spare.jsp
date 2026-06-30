@@ -3,7 +3,7 @@
 
 <table class="spareBox" id="mode-menu">
  <tr><th>Mode</th></tr>
- <tr><td></td></tr>
+ <tr><td style="padding:1px 32px 1px 22px;"><hr style="margin:1px 0;opacity:0.15;border-top:1px solid currentColor;"/></td></tr>
 
  <c:if test="${param['mode'] != 'productDate'}">
   <tr><td><a href="?destinationName=${destination.id}&mode=productDate&date=${param['date']}"><i class="bi bi-tag"></i> Product Date</a></td></tr>

@@ -1,6 +1,7 @@
 <%@ page session="true"%>
 
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
+<%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
 
 <jsp:include page="/WEB-INF/jsp/pds/transfer/host/host_header.jsp"/>
 <c:if test="${not empty moduleGuide}"><jsp:include page="${moduleGuide}"/></c:if>
@@ -134,14 +135,116 @@
 [data-bs-theme=light] .raw-ok  { color: #1a7f37; }
 [data-bs-theme=light] .raw-err { color: #cf222e; }
 [data-bs-theme=light] .raw-neu { color: #57606a; }
+/* -- Progress terminal (shared with data.jsp compact summary) -- */
+.progress-terminal { border-radius: 4px; overflow: hidden; margin-top: 2px; }
+.progress-terminal-hdr {
+    background: #2d2d2d; color: #ccc; padding: 0.25rem 0.75rem;
+    font-size: 0.75rem; border-bottom: 1px solid #444;
+    display: flex; align-items: center; gap: 0.4rem;
+}
+.progress-terminal-body {
+    background: #1e1e1e; color: #d4d4d4;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 0.75rem; line-height: 1.7;
+    padding: 0.5rem 0.75rem;
+    height: 200px; min-height: 80px; max-height: 500px;
+    overflow-y: auto; resize: vertical;
+    white-space: pre-wrap; word-break: break-word;
+}
+.progress-terminal-body font[color="black"],
+.progress-terminal-body font[color="#000000"] { color: #6c9abd; }
+.progress-terminal-body font[color="red"]   { color: #f88; }
+.progress-terminal-body font[color="green"] { color: #8f8; }
+.progress-terminal-body a { color: #79b8ff; text-decoration: none; }
+.progress-terminal-body a:hover { text-decoration: underline; }
+.progress-terminal-btn { color: rgba(255,255,255,0.5); border-color: #555; }
+[data-bs-theme=light] .progress-terminal-hdr { background: #f0f2f4; color: #24292f; border-bottom-color: #d0d7de; }
+[data-bs-theme=light] .progress-terminal-body { background: #f6f8fa; color: #24292f; }
+[data-bs-theme=light] .progress-terminal-body font[color="black"],
+[data-bs-theme=light] .progress-terminal-body font[color="#000000"] { color: #0550ae; }
+[data-bs-theme=light] .progress-terminal-body font[color="red"]   { color: #cf222e; }
+[data-bs-theme=light] .progress-terminal-body font[color="green"] { color: #1a7f37; }
+[data-bs-theme=light] .progress-terminal-body a { color: #0969da; }
+[data-bs-theme=light] .progress-terminal-btn { color: #57606a; border-color: #d0d7de; }
+[data-bs-theme=light] .progress-terminal-btn:hover { color: #24292f; }
 </style>
 
+<jsp:include page="/WEB-INF/jsp/pds/transfer/host/acquisition_guide.jsp"/>
+
+<auth:if basePathKey="transferhistory.basepath" paths="/">
+<auth:then>
+<div class="card border-0 shadow-sm mb-3">
+<div class="card-header d-flex align-items-center gap-2 flex-wrap" style="background:var(--bs-secondary-bg)">
+<i class="bi bi-activity text-primary flex-shrink-0"></i>
+<span class="fw-semibold">Progress</span>
+<button class="btn btn-link btn-sm text-muted p-0 flex-shrink-0" type="button"
+	data-bs-toggle="collapse" data-bs-target="#progressInfoLegend"
+	aria-expanded="false" title="About this panel">
+	<i class="bi bi-info-circle"></i>
+</button>
+<button class="btn btn-sm btn-outline-secondary ms-1 flex-shrink-0"
+data-bs-toggle="offcanvas" data-bs-target="#acquisitionGuideOffcanvas"
+title="Open Acquisition Guide">
+<i class="bi bi-book me-1"></i><span class="d-none d-sm-inline">Acquisition </span>Guide
+</button>
+<span id="progressLiveStatus" class="flex-shrink-0"></span>
+<div class="ms-auto d-flex gap-1 flex-shrink-0">
+<button id="runNowBtn"
+class="btn btn-sm btn-outline-success progress-terminal-btn py-0 px-2"
+style="font-size:0.7rem;" disabled
+<c:if test="${not empty acquisitionNote}">title="Cannot trigger: ${acquisitionNote}" </c:if>
+onclick="progressRunNow(this)">
+<i class="bi bi-play-fill"></i><span class="d-none d-sm-inline"> Run Now</span>
+</button>
+<button id="refreshLogBtn"
+class="btn btn-sm btn-outline-secondary progress-terminal-btn py-0 px-2"
+style="font-size:0.7rem;"
+onclick="progressRefresh(this)">
+<i class="bi bi-arrow-clockwise"></i><span class="d-none d-sm-inline"> Refresh</span>
+</button>
+<button class="btn btn-sm btn-outline-secondary progress-terminal-btn py-0 px-2"
+style="font-size:0.7rem;"
+onclick="progressCopy(this)">
+<i class="bi bi-clipboard"></i><span class="d-none d-sm-inline"> Copy</span>
+</button>
+</div>
+</div>
+<div class="collapse" id="progressInfoLegend">
+	<div class="card-body py-2 px-3 border-bottom" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
+		<p class="mb-1">This panel shows the raw console log produced while the Acquisition host runs: connection attempts, timing, debug messages, and any errors encountered during the listing process. It does not contain the file listing itself &mdash; the resulting file listing is shown in the Directory Listings panel below.</p>
+		<ul class="mb-1 ps-3">
+			<li><strong><i class="bi bi-play-fill"></i> Run Now:</strong> triggers the Acquisition Scheduler to process this host immediately. The button is disabled if no associated destination is active and running. If a listing is already running the button turns into <strong><i class="bi bi-skip-start-fill"></i> Interrupt &amp; Run</strong>.</li>
+			<li><strong><i class="bi bi-arrow-clockwise"></i> Refresh:</strong> fetches the latest output. If the acquisition host is currently running, Watching mode starts automatically.</li>
+			<li><strong><i class="bi bi-clipboard"></i> Copy:</strong> copies the full log text to the clipboard.</li>
+		</ul>
+		<div class="d-flex gap-3 flex-wrap mb-1">
+			<span><span class="badge bg-primary-subtle text-primary-emphasis border"><span class="spinner-border spinner-border-sm" style="width:.55rem;height:.55rem"></span> Watching</span> acquisition is running; polling for output changes every few seconds.</span>
+			<span><span class="badge bg-success-subtle text-success-emphasis border"><span class="spinner-grow spinner-grow-sm" style="width:.55rem;height:.55rem"></span> Live</span> output changed since last poll.</span>
+			<span><span class="badge bg-secondary-subtle text-secondary-emphasis border">Idle</span> acquisition host is not running; click Refresh or Run Now to start monitoring.</span>
+		</div>
+	</div>
+</div>
+<div class="card-body p-0">
+<div class="progress-terminal" style="width:100%;border-radius:0 0 var(--bs-card-border-radius) var(--bs-card-border-radius)">
+<c:if test="${not empty acquisitionNote}">
+<div class="d-flex align-items-start gap-2 px-3 py-2" style="background:rgba(255,193,7,0.12);border-bottom:1px solid rgba(255,193,7,0.3);font-size:0.82rem;color:var(--bs-warning-text-emphasis,#664d03)">
+  <i class="bi bi-exclamation-triangle-fill mt-1" style="flex-shrink:0;color:#f0ad4e"></i>
+  <span><strong>Run Now is disabled:</strong> <c:out value="${acquisitionNote}" escapeXml="false"/>. The Acquisition Scheduler requires at least one associated destination to be active and running.</span>
+</div>
+</c:if>
+<div class="progress-terminal-body" id="progressBody" style="border-radius:0 0 var(--bs-card-border-radius) var(--bs-card-border-radius)">${host.formattedLastOutput}</div>
+</div>
+</div>
+</div>
+</auth:then>
+</auth:if>
+
 <div class="card shadow-sm mt-2">
-    <div class="card-header d-flex align-items-center justify-content-between py-2 px-3 report-card-hdr flex-wrap gap-2">
-        <span class="fw-semibold d-inline-flex align-items-center gap-1 flex-shrink-0" style="font-size:0.875rem;">
-            <i class="bi bi-terminal-fill me-1 text-success"></i>
-            Output: <c:out value="${host.nickName}" />
-            <button class="btn btn-link p-0 ms-1 report-card-hdr-btn" style="font-size:0.85rem;line-height:1;vertical-align:middle;"
+    <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2" style="background:var(--bs-secondary-bg)">
+        <span class="fw-semibold d-inline-flex align-items-center gap-1 flex-shrink-0">
+            <i class="bi bi-list-ul me-1 text-success"></i>
+            Directory Listings
+            <button class="btn btn-link btn-sm text-muted p-0 ms-1" style="font-size:0.85rem;line-height:1;vertical-align:middle;"
                     data-bs-toggle="collapse" data-bs-target="#outputInfoPanel"
                     aria-expanded="false" aria-controls="outputInfoPanel"
                     title="What is this output?">
@@ -150,31 +253,31 @@
         </span>
         <div class="d-flex gap-2 flex-wrap">
             <button id="refreshBtn"
-                    class="btn btn-sm btn-outline-secondary py-0 px-2 report-card-hdr-btn"
-                    title="Refresh output" style="font-size:0.75rem;">
-                <i class="bi bi-arrow-clockwise"></i> Refresh
+                    class="btn btn-sm btn-outline-secondary progress-terminal-btn py-0 px-2"
+                    title="Refresh output" style="font-size:0.7rem;">
+                <i class="bi bi-arrow-clockwise"></i><span class="d-none d-sm-inline"> Refresh</span>
             </button>
             <button id="rawBtn"
-                    class="btn btn-sm btn-outline-secondary py-0 px-2 report-card-hdr-btn"
-                    title="Toggle between parsed view and raw server response" style="font-size:0.75rem;" disabled>
-                <i class="bi bi-code-slash"></i> Raw
+                    class="btn btn-sm btn-outline-secondary progress-terminal-btn py-0 px-2"
+                    title="Toggle between parsed view and raw server response" style="font-size:0.7rem;" disabled>
+                <i class="bi bi-code-slash"></i><span class="d-none d-sm-inline"> Raw</span>
             </button>
             <button id="copyBtn"
-                    class="btn btn-sm btn-outline-secondary py-0 px-2 report-card-hdr-btn"
-                    title="Copy to clipboard" style="font-size:0.75rem;">
-                <i class="bi bi-clipboard"></i> Copy
+                    class="btn btn-sm btn-outline-secondary progress-terminal-btn py-0 px-2"
+                    title="Copy to clipboard" style="font-size:0.7rem;">
+                <i class="bi bi-clipboard"></i><span class="d-none d-sm-inline"> Copy</span>
             </button>
         </div>
     </div>
     <div class="collapse" id="outputInfoPanel">
         <div class="px-3 pt-2 pb-3 border-bottom small" style="background:var(--bs-secondary-bg)">
-            This page shows the file listing retrieved from the remote site during the last acquisition run.
+            This panel shows the file listing retrieved from the remote site during the last acquisition run.
             This is the result used by the <strong>Acquisition Scheduler</strong> to determine which files to retrieve
             and which to skip, for example because they were already retrieved, do not match the configured pattern,
-            or fall outside the selection criteria. The raw console log of the listing process itself (connection
-            attempts, timing, errors) is shown in the Progress panel on the host main page.
+            or fall outside the selection criteria.
             The <strong>Refresh</strong> button fetches the latest listing from the server.
             The <strong>Raw</strong> button switches between the structured view and the original server response.
+            The raw console log of the listing process itself is shown in the <strong>Progress</strong> panel above.
         </div>
     </div>
     <div class="card-body p-0" style="position:relative;">
@@ -185,6 +288,209 @@
         <div id="outputContent" class="output-content" style="display:none; border-radius:0 0 4px 4px;"></div>
     </div>
 </div>
+
+<script>
+(function () {
+    var POLL_INTERVAL = 4000;
+    var MAX_STALE     = 3;
+    var _timer        = null;
+    var _staleCount   = 0;
+    var _lastLine     = '';
+    var _hostId       = '<c:out value="${host.id}"/>';
+    var _blocked      = ${not empty acquisitionNote ? 'true' : 'false'};
+
+    function getBody()      { return document.getElementById('progressBody'); }
+    function getStatus()    { return document.getElementById('progressLiveStatus'); }
+    function scrollToBottom() { var b = getBody(); if (b) b.scrollTop = b.scrollHeight; }
+
+    function lastLine(html) {
+        if (!html) return '';
+        var tmp = document.createElement('div');
+        tmp.innerHTML = html;
+        var lines = (tmp.innerText || tmp.textContent || '').split('\n');
+        for (var i = lines.length - 1; i >= 0; i--) {
+            var l = lines[i].trim();
+            if (l) return l;
+        }
+        return '';
+    }
+
+    function setStatus(state) {
+        var el = getStatus();
+        if (!el) return;
+        if (state === 'live') {
+            el.innerHTML = '<span class="badge bg-success ms-1" style="font-size:0.65rem;vertical-align:middle">'
+                + '<span class="spinner-grow spinner-grow-sm me-1" style="width:.5rem;height:.5rem;vertical-align:middle"></span>Live</span>';
+        } else if (state === 'watching') {
+            el.innerHTML = '<span class="badge bg-primary ms-1" style="font-size:0.65rem;vertical-align:middle;opacity:0.7">'
+                + '<span class="spinner-border spinner-border-sm me-1" style="width:.5rem;height:.5rem;vertical-align:middle"></span>Watching</span>';
+        } else if (state === 'idle') {
+            el.innerHTML = '<span class="badge bg-secondary ms-1" style="font-size:0.65rem;vertical-align:middle">Idle</span>';
+        } else {
+            el.innerHTML = '';
+        }
+        // Sync the acquisition console icon badge in the host header
+        if (typeof window._applyAcqBadge === 'function') {
+            window._applyAcqBadge((state === 'watching' || state === 'live') ? state : '');
+        }
+    }
+
+    function stopPolling() {
+        if (_timer) { clearTimeout(_timer); _timer = null; }
+        setStatus('idle');
+        // Acquisition just finished — refresh the Directory Listings to show the new result
+        if (typeof loadOutput === 'function') loadOutput();
+    }
+
+    function checkRunning(callback) {
+        if (_blocked) { if (callback) callback(false); return; }
+        fetch('/do/transfer/host/' + encodeURIComponent(_hostId) + '?json=acquisitionRunning')
+            .then(function(r) { return r.ok ? r.json() : null; })
+            .then(function(data) {
+                var running = data && data.running === true;
+                var runBtn = document.getElementById('runNowBtn');
+                if (runBtn) {
+                    if (running) {
+                        runBtn.disabled = false;
+                        runBtn.dataset.force = 'true';
+                        runBtn.classList.remove('btn-outline-success');
+                        runBtn.classList.add('btn-outline-warning');
+                        runBtn.title = 'A listing is already running \u2014 click to interrupt and restart';
+                        runBtn.innerHTML = '<i class="bi bi-skip-start-fill"></i> Interrupt &amp; Run';
+                    } else {
+                        runBtn.disabled = false;
+                        runBtn.dataset.force = '';
+                        runBtn.classList.remove('btn-outline-warning');
+                        runBtn.classList.add('btn-outline-success');
+                        runBtn.title = 'Start a new listing now';
+                        runBtn.innerHTML = '<i class="bi bi-play-fill"></i> Run Now';
+                    }
+                }
+                if (callback) callback(running);
+            })
+            .catch(function() { if (callback) callback(false); });
+    }
+
+    function fetchProgress(callback) {
+        fetch(window.location.href)
+            .then(function (r) { return r.text(); })
+            .then(function (html) {
+                var doc = new DOMParser().parseFromString(html, 'text/html');
+                var el  = doc.getElementById('progressBody');
+                callback(el ? el.innerHTML : null);
+            })
+            .catch(function () { callback(null); });
+    }
+
+    function poll() {
+        _timer = null;
+        fetchProgress(function (newContent) {
+            if (newContent === null) { _timer = setTimeout(poll, POLL_INTERVAL); return; }
+            var body = getBody();
+            if (lastLine(newContent) !== _lastLine) {
+                if (body) { body.innerHTML = newContent; scrollToBottom(); }
+                _lastLine   = lastLine(newContent);
+                _staleCount = 0;
+                setStatus('live');
+                _timer = setTimeout(poll, POLL_INTERVAL);
+            } else {
+                _staleCount++;
+                if (_staleCount >= MAX_STALE) {
+                    checkRunning(function(running) {
+                        if (running) { _staleCount = 0; setStatus('watching'); _timer = setTimeout(poll, POLL_INTERVAL); }
+                        else stopPolling();
+                    });
+                } else {
+                    setStatus('watching');
+                    _timer = setTimeout(poll, POLL_INTERVAL);
+                }
+            }
+        });
+    }
+
+    function startPolling() {
+        if (_timer) clearTimeout(_timer);
+        _staleCount = 0;
+        _lastLine   = lastLine(getBody() ? getBody().innerHTML : '');
+        setStatus('watching');
+        _timer = setTimeout(poll, POLL_INTERVAL);
+    }
+
+    window.progressRefresh = function (btn) {
+        btn.disabled = true;
+        var orig = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Refreshing...';
+        if (_timer) { clearTimeout(_timer); _timer = null; }
+        fetchProgress(function (newContent) {
+            btn.disabled = false;
+            btn.innerHTML = orig;
+            if (newContent === null) return;
+            var body = getBody();
+            if (body) { body.innerHTML = newContent; scrollToBottom(); }
+            _lastLine   = lastLine(newContent);
+            _staleCount = 0;
+            if (newContent.trim()) {
+                checkRunning(function(running) { if (running) startPolling(); else setStatus('idle'); });
+            } else { setStatus('idle'); }
+        });
+    };
+
+    window.progressCopy = function (btn) {
+        var body = getBody();
+        if (!body) return;
+        navigator.clipboard.writeText(body.innerText).then(function () {
+            btn.innerHTML = '<i class="bi bi-check-lg"></i> Copied';
+            setTimeout(function () { btn.innerHTML = '<i class="bi bi-clipboard"></i> Copy'; }, 1500);
+        });
+    };
+
+    window.progressRunNow = function (btn) {
+        var force = btn.dataset.force === 'true';
+        if (force) { if (!confirm('A listing is already running.\nStop it and start a new one?')) return; }
+        if (_timer) { clearTimeout(_timer); _timer = null; }
+        btn.disabled = true;
+        var orig = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Starting...';
+        var url = '/do/transfer/host/' + encodeURIComponent(_hostId) + '?json=triggerAcquisition'
+                + (force ? '&force=true' : '');
+        fetch(url)
+            .then(function(r) { return r.ok ? r.json() : null; })
+            .then(function(data) {
+                if (data && data.triggered) {
+                    btn.innerHTML = '<i class="bi bi-check-circle-fill text-success me-1"></i> Triggered!';
+                    setTimeout(function() {
+                        fetchProgress(function(newContent) {
+                            if (newContent !== null) {
+                                var body = getBody();
+                                if (body) { body.innerHTML = newContent; scrollToBottom(); }
+                                _lastLine = lastLine(newContent);
+                            }
+                            _staleCount = 0;
+                            btn.disabled = false;
+                            checkRunning(null);
+                            startPolling();
+                        });
+                    }, 1500);
+                } else {
+                    btn.innerHTML = orig;
+                    btn.disabled = false;
+                    checkRunning(null);
+                }
+            })
+            .catch(function() { btn.innerHTML = orig; btn.disabled = false; });
+    };
+
+    document.addEventListener('DOMContentLoaded', function () {
+        var body = getBody();
+        if (body && body.innerHTML.trim()) {
+            scrollToBottom();
+            checkRunning(function(running) { if (running) startPolling(); else setStatus('idle'); });
+        } else {
+            setStatus('idle');
+        }
+    });
+}());
+</script>
 
 <script>
 /* -- Helpers -- */

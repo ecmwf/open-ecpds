@@ -14,7 +14,7 @@
                href='<bean:message key="host.basepath"/>/${host.id}'>Host</a>
         </th>
     </tr>
-    <tr><td></td></tr>
+    <tr><td style="padding:1px 32px 1px 22px;"><hr style="margin:1px 0;opacity:0.15;border-top:1px solid currentColor;"/></td></tr>
 
     <%-- Create / Edit / Delete / Duplicate --%>
     <auth:if basePathKey="host.basepath" paths="/edit/insert_form">
@@ -50,10 +50,10 @@
         <auth:then>
             <c:choose>
             <c:when test="${host.type == 'Acquisition'}">
-            <tr><td><a href='<bean:message key="host.basepath"/>/edit/getOutput/view/${host.id}'><i class="bi bi-terminal sidebar-icon"></i> View Output</a></td></tr>
+            <tr><td><a href='<bean:message key="host.basepath"/>/edit/getOutput/view/${host.id}'><i class="bi bi-terminal sidebar-icon"></i> Acquisition Console</a></td></tr>
             </c:when>
             <c:otherwise>
-            <tr><td><span class="sidebar-disabled-item" title="View Output (Acquisition hosts only)"><i class="bi bi-terminal sidebar-icon"></i> View Output</span></td></tr>
+            <tr><td><span class="sidebar-disabled-item" title="Acquisition Console (Acquisition hosts only)"><i class="bi bi-terminal sidebar-icon"></i> Acquisition Console</span></td></tr>
             </c:otherwise>
             </c:choose>
         </auth:then>

@@ -5,7 +5,7 @@
 		<th><a href="/do/admin">Admin Tasks</a></th>
 	</tr>
 	<tr>
-		<td></td>
+		<td style="padding:1px 32px 1px 22px;"><hr style="margin:1px 0;opacity:0.15;border-top:1px solid currentColor;"/></td>
 	</tr>
 	<auth:link basePathKey="admin.basepath" href="/filter"
 		wrappingTags="tr,td"><i class="bi bi-file-zip"></i> Compress Files</auth:link>

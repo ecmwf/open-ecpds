@@ -2,7 +2,7 @@
 
 <table class="spareBox2">
 <tr><th><a href="/do/transfer">Transmission</a></th></tr>
-<tr><td></td></tr>
+<tr><td style="padding:1px 32px 1px 22px;"><hr style="margin:1px 0;opacity:0.15;border-top:1px solid currentColor;"/></td></tr>
 	<auth:link basePathKey="datatransfer.basepath" href="" wrappingTags="tr,td"><i class="bi bi-arrow-left-right"></i> Data Transfers</auth:link>
 	<auth:link basePathKey="destination.basepath" href="" wrappingTags="tr,td"><i class="bi bi-geo-alt"></i> Destinations</auth:link>
 	<auth:link basePathKey="host.basepath" href="" wrappingTags="tr,td"><i class="bi bi-pc-display"></i> Transfer Hosts</auth:link>

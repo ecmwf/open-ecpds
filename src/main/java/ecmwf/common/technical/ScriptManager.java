@@ -273,15 +273,59 @@ public final class ScriptManager implements AutoCloseable {
      *
      * @return a complete Python script string with injected Java imports and execution wrapper
      */
+    /** Fixed name for the Python wrapper result variable, read back from module members after eval. */
+    private static final String PYTHON_RESULT_VAR = "__ecpds_result__";
+
+    /** Python statement keywords that must NOT have 'return' prepended to them. */
+    private static final java.util.Set<String> PYTHON_STMT_KEYWORDS = java.util.Set.of("return", "def", "class", "if",
+            "else", "elif", "for", "while", "try", "except", "finally", "with", "import", "from", "pass", "break",
+            "continue", "raise", "del", "global", "nonlocal", "assert", "async", "yield", "#");
+
     private static String wrapPythonScript(final String scriptBody) {
-        final var wrapperName = "__wrapper_" + UUID.randomUUID().toString().replace("-", "");
-        final var wrapperFunction = "_" + wrapperName + "__";
-        final var resultVar = wrapperName + "_result__";
+        final var wrapperFunction = "__ecpds_wrapper__";
         final var preamble = Arrays.stream(EXPOSED_CLASSES)
                 .map(clazz -> "import " + clazz.getName() + " as " + clazz.getSimpleName())
                 .collect(Collectors.joining("\n"));
-        return preamble + "\n\n" + "def " + wrapperFunction + "():\n" + indent(scriptBody, 1) + "\n" + resultVar + " = "
-                + wrapperFunction + "()\n" + "del " + wrapperFunction + "\n" + resultVar;
+        // Note: in GraalVM Python, context.eval() returns the module object, not the last
+        // expression. The result is stored in PYTHON_RESULT_VAR and read back from the module
+        // via value.getMember(PYTHON_RESULT_VAR) after eval.
+        return preamble + "\n\n" + "def " + wrapperFunction + "():\n"
+                + indent(ensureLastExpressionReturned(scriptBody), 1) + "\n" + PYTHON_RESULT_VAR + " = "
+                + wrapperFunction + "()\n" + "del " + wrapperFunction;
+    }
+
+    /**
+     * If the last meaningful line of a Python script body is a bare expression statement (e.g. a function call like
+     * {@code main()}), prepend {@code return } to it so that when the body is placed inside a wrapper function the
+     * expression's value is actually returned.
+     * <p>
+     * Lines that are assignments ({@code x = ...}), statement keywords, or block-openers (ending with {@code :}) are
+     * left untouched.
+     *
+     * @param body
+     *            the Python script body
+     *
+     * @return the body with {@code return} prepended to its last expression statement if needed
+     */
+    private static String ensureLastExpressionReturned(final String body) {
+        final var lines = body.split("\n", -1);
+        for (var i = lines.length - 1; i >= 0; i--) {
+            final var trimmed = lines[i].trim();
+            if (trimmed.isEmpty() || trimmed.startsWith("#"))
+                continue; // skip blank / comment lines
+            // Skip if it already has return, is a block opener, or starts with a statement keyword
+            final var firstWord = trimmed.split("[^\\w]", 2)[0];
+            if (trimmed.endsWith(":") || PYTHON_STMT_KEYWORDS.contains(firstWord))
+                break;
+            // Skip assignments: bare word(s) followed by '=' (but not '==')
+            if (trimmed.matches("[\\w.,\\[\\] ]+=(?!=).*"))
+                break;
+            // This looks like an expression statement — add 'return'
+            final var leadingSpaces = lines[i].substring(0, lines[i].length() - lines[i].stripLeading().length());
+            lines[i] = leadingSpaces + "return " + trimmed;
+            break;
+        }
+        return String.join("\n", lines);
     }
 
     /**
@@ -567,6 +611,12 @@ public final class ScriptManager implements AutoCloseable {
             currentThread.setContextClassLoader(ScriptManager.class.getClassLoader());
             var value = getCache().context.eval(
                     Source.create(currentLanguage, wrapScript(addMissingReturnToSingleLineJSExpression(scriptBody))));
+            // In GraalVM Python, context.eval() returns the module object, not the last
+            // expression. Read the actual result from the module's member (the fixed binding
+            // variable set at the end of the wrapper) instead.
+            if (PYTHON.equals(currentLanguage)) {
+                value = value.getMember(PYTHON_RESULT_VAR);
+            }
             var duration = System.currentTimeMillis() - start;
             if (_log.isDebugEnabled() && duration > LONG_RUNNING_TIME) {
                 _log.debug("Time taken: {} ms", duration);

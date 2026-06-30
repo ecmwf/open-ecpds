@@ -2,7 +2,7 @@
 
 <table class="spareBox2">
 <tr><th><a href="/do/user">Access Control</a></th></tr>
-<tr><td></td></tr>
+<tr><td style="padding:1px 32px 1px 22px;"><hr style="margin:1px 0;opacity:0.15;border-top:1px solid currentColor;"/></td></tr>
 
 <auth:link basePathKey="user.basepath" href="" wrappingTags="tr,td"><i class="bi bi-people"></i> Web Users</auth:link>
 <auth:link basePathKey="category.basepath" href="" wrappingTags="tr,td"><i class="bi bi-folder"></i> Web Categories</auth:link>

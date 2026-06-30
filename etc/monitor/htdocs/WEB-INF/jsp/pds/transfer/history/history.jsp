@@ -104,13 +104,6 @@
     </div>
 </div>
 
-<c:if test="${historyItemsSize == '0'}">
-    <div class="alert alert-info d-flex align-items-center gap-2 mt-3">
-        <i class="bi bi-info-circle-fill"></i>
-        <span>No transfer history available for destination <strong><c:out value="${selectedDestination.name}" /></strong> on <c:out value="${selectedDate}" />.</span>
-    </div>
-</c:if>
-
 <table id="transferHistoryTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
     <thead class="table-light">
         <tr>

@@ -90,11 +90,12 @@
             <c:choose>
             <c:when test="${host.type == 'Acquisition'}">
             <a href='<bean:message key="host.basepath"/>/edit/getOutput/view/${host.id}'
-               class="btn btn-sm btn-outline-secondary" title="View Output"><i class="bi bi-terminal"></i></a>
+               id="_hostAcqConsoleBtn"
+               class="btn btn-sm btn-outline-secondary position-relative" title="Acquisition Console"><i class="bi bi-terminal"></i></a>
             </c:when>
             <c:otherwise>
-            <a href="#" class="btn btn-sm btn-outline-secondary disabled" title="View Output (Acquisition hosts only)"
-               data-label="View Output" aria-disabled="true" tabindex="-1" onclick="return false;"><i class="bi bi-terminal"></i></a>
+            <a href="#" class="btn btn-sm btn-outline-secondary disabled" title="Acquisition Console (Acquisition hosts only)"
+               data-label="Acquisition Console" aria-disabled="true" tabindex="-1" onclick="return false;"><i class="bi bi-terminal"></i></a>
             </c:otherwise>
             </c:choose>
             </auth:then>
@@ -200,6 +201,87 @@
             });
         })();
         </script>
+<c:if test="${host.type == 'Acquisition'}">
+<script>
+(function() {
+    var _hostId = '<c:out value="${host.id}"/>';
+
+    function _acqBadgeHtml(state) {
+        if (state === 'live') {
+            return '<span class="spinner-grow" style="width:0.5rem;height:0.5rem;vertical-align:middle;"></span>';
+        }
+        return '<span class="spinner-border" style="width:0.5rem;height:0.5rem;border-width:2px;vertical-align:middle;"></span>';
+    }
+
+    // state: 'live', 'watching', or falsy to clear
+    function applyAcqBadge(state) {
+        var colour = state === 'live' ? 'bg-success' : 'bg-primary';
+        // Icon bar button
+        var btn = document.getElementById('_hostAcqConsoleBtn');
+        if (btn) {
+            var existing = btn.querySelector('.acq-run-badge');
+            if (existing) existing.remove();
+            if (state) {
+                var b = document.createElement('span');
+                b.className = 'position-absolute top-0 start-100 translate-middle badge rounded-pill ' + colour + ' acq-run-badge';
+                b.style.cssText = 'font-size:0.55rem;padding:3px 4px;line-height:1;';
+                b.innerHTML = _acqBadgeHtml(state);
+                btn.appendChild(b);
+            }
+        }
+        // Mobile dropdown
+        var menu = document.getElementById('_hostActionsMenu');
+        if (menu) {
+            menu.querySelectorAll('a.dropdown-item').forEach(function(item) {
+                if (!item.href || item.href.indexOf('getOutput/view') === -1) return;
+                var eb = item.querySelector('.acq-run-badge-mob');
+                if (eb) eb.remove();
+                if (state) {
+                    var b2 = document.createElement('span');
+                    b2.className = 'badge rounded-pill ' + colour + ' ms-auto acq-run-badge-mob';
+                    b2.style.cssText = 'font-size:0.55rem;padding:3px 4px;line-height:1;';
+                    b2.innerHTML = _acqBadgeHtml(state);
+                    item.style.display = 'flex';
+                    item.style.alignItems = 'center';
+                    item.appendChild(b2);
+                }
+            });
+        }
+    }
+
+    function checkAndApply() {
+        fetch('/do/transfer/host/' + encodeURIComponent(_hostId) + '?json=acquisitionRunning')
+            .then(function(r) { return r.ok ? r.json() : null; })
+            .then(function(data) { applyAcqBadge((data && data.running) ? 'watching' : ''); })
+            .catch(function() {});
+    }
+
+    // Run after DOM is ready (mobile menu is built in DOMContentLoaded)
+    document.addEventListener('DOMContentLoaded', checkAndApply);
+    // Expose so output.jsp Progress JS can sync it without an extra fetch
+    window._applyAcqBadge = applyAcqBadge;
+
+    // Poll every 10 s on all pages except the Acquisition Console itself
+    // (which drives the badge directly from its own Progress polling via _applyAcqBadge).
+    // Stop polling when the tab is hidden to save resources.
+    if (window.location.href.indexOf('getOutput/view') === -1) {
+        var _pollTimer = null;
+        function _schedulePoll() {
+            _pollTimer = setTimeout(function() {
+                if (document.visibilityState !== 'hidden') checkAndApply();
+                _schedulePoll();
+            }, 4000);
+        }
+        document.addEventListener('DOMContentLoaded', _schedulePoll);
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'visible') {
+                checkAndApply(); // immediate refresh when tab becomes visible again
+            }
+        });
+    }
+}());
+</script>
+</c:if>
     </div>
 <script>
 function ecpdsHostDuplicate(hostId, nickName) {
