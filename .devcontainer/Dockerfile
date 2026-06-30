@@ -23,7 +23,11 @@ COPY .aws-credentials /root/.aws/credentials
 RUN dnf install -y yum-utils && \
     dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo && \
     dnf install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin && \
+    dnf install -y python3-pip && \
     dnf clean all
+
+# Install Mkdocs
+RUN python3 -m pip install mkdocs mkdocs-material mkdocs-minify-plugin
 
 # Declare build argument for Ollama model names
 ENV OLLAMA_FAST_MODEL_NAME=qwen2.5:7b-instruct-q4_K_M
