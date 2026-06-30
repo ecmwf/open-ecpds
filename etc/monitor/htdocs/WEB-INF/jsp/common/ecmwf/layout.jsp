@@ -370,6 +370,10 @@ $(document).ready(function() {
              style="max-height:60vh;overflow:auto;white-space:pre-wrap;word-break:break-word;font-size:0.85rem;border-radius:0;"></pre>
       </div>
       <div class="modal-footer py-2">
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="testResultCopyBtn"
+                onclick="var t=document.getElementById('testResultContent').textContent;navigator.clipboard.writeText(t).then(function(){var b=document.getElementById('testResultCopyBtn');var o=b.innerHTML;b.innerHTML='<i class=\'bi bi-check2 me-1\'></i>Copied!';setTimeout(function(){b.innerHTML=o;},1500);});">
+          <i class="bi bi-clipboard me-1"></i>Copy
+        </button>
         <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
       </div>
     </div>

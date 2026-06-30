@@ -2299,6 +2299,33 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     /**
      * {@inheritDoc}
      *
+     * Execute a Directory script on the DataMover for the given host.
+     */
+    @Override
+    public String execDirScript(final ECpdsSession session, final Host host, final String script)
+            throws MasterException, DataBaseException, IOException {
+        final var monitor = new MonitorCall(
+                "execDirScript(" + session.getWebUser().getName() + "," + host.getName() + ")");
+        final var action = master.startECpdsAction(session, "execDirScript", host);
+        Exception exception = null;
+        try {
+            return monitor.done(master.execDirScript(host, script));
+        } catch (final IOException e) {
+            exception = e;
+            _log.warn(e);
+            throw e;
+        } catch (final Exception e) {
+            exception = e;
+            _log.warn(e);
+            throw new MasterException(e.getMessage());
+        } finally {
+            master.logECpdsAction(action, null, exception);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * Check whether an acquisition thread is currently running for the given Host.
      */
     @Override

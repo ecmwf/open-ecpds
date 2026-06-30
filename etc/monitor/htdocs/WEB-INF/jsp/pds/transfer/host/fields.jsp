@@ -266,10 +266,19 @@ labelProperty="name" />
 </div>
 </div>
 
+<jsp:include page="/WEB-INF/jsp/pds/transfer/host/directory_guide.jsp">
+  <jsp:param name="actionFormName" value="${actionFormName}" />
+</jsp:include>
+
 <div class="card border-0 shadow-sm mb-3">
 <div class="card-header d-flex align-items-center gap-2" id="hostDirCardHeader" style="background:var(--bs-secondary-bg)">
 <i class="bi bi-folder2-open text-primary"></i>
 <span class="fw-semibold">Directory</span>
+<button class="btn btn-sm btn-outline-secondary ms-1 flex-shrink-0"
+  data-bs-toggle="offcanvas" data-bs-target="#directoryGuideOffcanvas"
+  title="Open Directory Guide" type="button">
+  <i class="bi bi-book me-1"></i><span class="d-none d-sm-inline">Directory </span>Guide
+</button>
 </div>
 <div class="card-body">
 <div class="row g-3">
@@ -287,18 +296,11 @@ type='radio' id='ispython' name='dirType' />Python
 <c:out value="${requestScope[actionFormName].dir}" />
 </pre> <textarea id="dir" name="dir" style="display: none;"></textarea>
 </div>
-<div class="d-flex align-items-center gap-2 mt-2" style="flex-wrap:wrap;">
-<button type="button" id="formatDir" name="formatDir" class="btn btn-sm btn-outline-secondary"
-onclick="formatSource(editorDir); return false">Format</button>
-<span style="position:relative;display:inline-block">
-<button type="button" id="testDir" name="testDir" class="btn btn-sm btn-outline-secondary"
-onclick="testSource(editorDir); return false">Test</button>
-<span id="testDirOverlay" style="display:none;position:absolute;inset:0;cursor:not-allowed"
-  data-bs-toggle="tooltip" data-bs-title="Fix the errors in the editor before testing"></span>
-</span>
+<div class="d-flex align-items-center gap-2 mt-2 flex-wrap justify-content-between">
+<div class="d-flex align-items-center gap-2 flex-wrap">
 <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearSource(editorDir); return false">Clear</button>
 
-<select name="dirParametersAcq" id="dirParametersAcq" size="1">
+<select name="dirParametersAcq" id="dirParametersAcq" class="form-select form-select-sm" style="width:auto">
 <option disabled selected>Insert parameter at cursor</option>
 <optgroup label="Host">
 <option>$host[name]</option>
@@ -315,7 +317,8 @@ onclick="testSource(editorDir); return false">Test</button>
 <option>$transferMethod[name]</option>
 <option>$transferMethod[comment]</option>
 </optgroup>
-</select> <select name="dirParametersDiss" id="dirParametersDiss" size="1">
+</select>
+<select name="dirParametersDiss" id="dirParametersDiss" class="form-select form-select-sm" style="width:auto">
 <option disabled selected>Insert parameter at cursor</option>
 <optgroup label="Country">
 <option>$country[name]</option>
@@ -382,6 +385,16 @@ onclick="testSource(editorDir); return false">Test</button>
 <option>$moverName</option>
 </optgroup>
 </select>
+</div>
+<div class="d-flex align-items-center gap-2 flex-wrap">
+<button type="button" id="formatDir" name="formatDir" class="btn btn-sm btn-outline-secondary"
+onclick="formatSource(editorDir); return false">Format</button>
+<span style="position:relative;display:inline-block">
+<button type="button" id="testDir" name="testDir" class="btn btn-sm btn-outline-secondary">Test on Server</button>
+<span id="testDirOverlay" style="display:none;position:absolute;inset:0;cursor:not-allowed"
+  data-bs-toggle="tooltip" data-bs-title="Fix the errors in the editor before testing"></span>
+</span>
+</div>
 </div>
 </div>
 </div>
@@ -650,6 +663,7 @@ oninput="validateMailInput(this); toggleMailRows()" />
 <script src="/openlayer/ol.js"></script>
 <script>
 	var editorDir = getEditorProperties(false, true, "dir", "toml");
+	var _testDirHostId = '${requestScope[actionFormName].id}';
 	var editorProperties = getEditorProperties(false, true, "properties", "crystal");
 	editorProperties.setOptions({minLines: 10, maxLines: 20});
 	
@@ -1004,17 +1018,41 @@ oninput="validateMailInput(this); toggleMailRows()" />
 	}
 	editorDir.getSession().on('changeAnnotation', updateTestDirBtn);
 
+	// Wire up Test on Server button via event listener (more reliable than onclick attribute)
+	(function() {
+		var btn = document.getElementById('testDir');
+		if (!btn) return;
+		btn.addEventListener('click', function(e) {
+			e.preventDefault();
+			try {
+				var lang = document.getElementById('ispython') && document.getElementById('ispython').checked ? 'python' : 'js';
+				testSourceServer(editorDir, _testDirHostId, lang);
+			} catch(err) {
+				showToast('Test error: ' + err.message, 'danger');
+			}
+		});
+	})();
+
 	// For Python mode: check syntax on every edit (Skulpt, no built-in worker)
-	// For Plain Text mode: check for accidental JS/Python content on every edit
+	// For Plain Text / JS modes: check for accidental content mismatch on every edit
 	var _dirMismatchTimer = null;
 	editorDir.session.on('change', function() {
 		var modeId = editorDir.session.getMode().$id;
 		if (modeId === 'ace/mode/python') {
 			debouncedCheckPythonSyntax(editorDir, 'hostDirCardHeader');
+			clearTimeout(_dirMismatchTimer);
+			_dirMismatchTimer = setTimeout(function() {
+				updateDirTypeMismatchWarning('dirTypeMismatchWarning', 'dirTypeMismatchText', editorDir, 'python');
+			}, 600);
 		} else if (modeId === 'ace/mode/toml') {
 			clearTimeout(_dirMismatchTimer);
 			_dirMismatchTimer = setTimeout(function() {
-				updateDirTypeMismatchWarning('dirTypeMismatchWarning', 'dirTypeMismatchText', editorDir, true);
+				updateDirTypeMismatchWarning('dirTypeMismatchWarning', 'dirTypeMismatchText', editorDir, 'text');
+			}, 600);
+		} else if (modeId === 'ace/mode/javascript') {
+			clearTimeout(_dirMismatchTimer);
+			_dirMismatchTimer = setTimeout(function() {
+				updateDirTypeMismatchWarning('dirTypeMismatchWarning', 'dirTypeMismatchText', editorDir, 'js');
 			}, 600);
 		}
 	});
@@ -1024,19 +1062,19 @@ oninput="validateMailInput(this); toggleMailRows()" />
 			editorDir.session.setMode("ace/mode/toml");
 			editorDir.session.clearAnnotations();
 			applyAnnotationMarkers(editorDir, 'hostDirCardHeader');
-			updateDirTypeMismatchWarning('dirTypeMismatchWarning', 'dirTypeMismatchText', editorDir, true);
+			updateDirTypeMismatchWarning('dirTypeMismatchWarning', 'dirTypeMismatchText', editorDir, 'text');
 			$('#formatDir').prop('style', "display: none;");
 			$('#testDir').prop('style', "display: none;");
 		} else if ($("#ispython").is(":checked")) {
 			editorDir.session.setMode("ace/mode/python");
 			editorDir.session.clearAnnotations();
 			checkPythonSyntax(editorDir, 'hostDirCardHeader');
-			updateDirTypeMismatchWarning('dirTypeMismatchWarning', 'dirTypeMismatchText', editorDir, false);
-			$('#formatDir').prop('style', "display: none;");
-			$('#testDir').prop('style', "display: none;");
+			updateDirTypeMismatchWarning('dirTypeMismatchWarning', 'dirTypeMismatchText', editorDir, 'python');
+			$('#formatDir').prop('style', "");
+			$('#testDir').prop('style', "");
 		} else {
 			editorDir.session.setMode("ace/mode/javascript");
-			updateDirTypeMismatchWarning('dirTypeMismatchWarning', 'dirTypeMismatchText', editorDir, false);
+			updateDirTypeMismatchWarning('dirTypeMismatchWarning', 'dirTypeMismatchText', editorDir, 'js');
 			$('#formatDir').prop('style', "");
 			$('#testDir').prop('style', "");
 		}

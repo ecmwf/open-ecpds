@@ -768,6 +768,29 @@ public interface ManagementInterface extends Remote {
     void triggerAcquisition(ECpdsSession session, Host host) throws RemoteException;
 
     /**
+     * Execute a Directory script on the DataMover for the given host and return the result as a GZIPped input stream.
+     * This replicates the production acquisition path: the script is sent to a DataMover in the host's transfer group.
+     *
+     * @param session
+     *            the session
+     * @param host
+     *            the host
+     * @param script
+     *            the script content, optionally prefixed with "python:" or "js:" to select the language
+     *
+     * @return a GZIPped input stream containing the script output (a newline-separated list of paths or a URL)
+     *
+     * @throws MasterException
+     *             the master exception
+     * @throws DataBaseException
+     *             the data base exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     */
+    String execDirScript(ECpdsSession session, Host host, String script)
+            throws MasterException, DataBaseException, IOException;
+
+    /**
      * Interrupt a running acquisition thread for the given Host and immediately restart it. If no acquisition is
      * running the host output is still reset, triggering a fresh run on the next scheduler cycle.
      *

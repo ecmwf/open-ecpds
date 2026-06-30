@@ -450,6 +450,9 @@
 		<action path="/transfer/host/edit/geoIp"
 			type="ecmwf.ecpds.master.plugin.http.controller.transfer.host.GetGeoIpJsonAction">
 		</action>
+		<action path="/transfer/host/edit/testScript/*" parameter="{1}"
+			type="ecmwf.ecpds.master.plugin.http.controller.transfer.host.TestScriptAction">
+		</action>
 		<action path="/transfer/host/edit/insert_form"
 			type="ecmwf.ecpds.master.plugin.http.controller.transfer.host.InsertFormAction"
 			name="hostActionForm" scope="request">

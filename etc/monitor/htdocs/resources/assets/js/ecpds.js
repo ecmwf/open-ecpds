@@ -308,19 +308,37 @@ function detectCodeType(code) {
 	return pyScore > 0 ? 'python' : 'javascript';
 }
 
-// Shows or hides the Plain Text mismatch warning near the dirType radio buttons.
-function updateDirTypeMismatchWarning(warningId, textId, aceEditor, isPlainText) {
+// Shows or hides the type mismatch warning near the dirType radio buttons.
+// mode: 'text' = Plain Text, 'js' = JavaScript, 'python' = Python
+function updateDirTypeMismatchWarning(warningId, textId, aceEditor, mode) {
 	var warn = document.getElementById(warningId);
 	var txt = document.getElementById(textId);
 	if (!warn || !txt) return;
-	if (!isPlainText) { warn.style.display = 'none'; return; }
-	var detected = detectCodeType(aceEditor.getValue());
-	if (detected === 'javascript') {
-		txt.textContent = 'Content looks like JavaScript — did you mean to select "JavaScript"?';
-		warn.style.display = '';
-	} else if (detected === 'python') {
-		txt.textContent = 'Content looks like Python — did you mean to select "Python"?';
-		warn.style.display = '';
+	var detected = (mode === 'text' || mode === 'js' || mode === 'python') ? detectCodeType(aceEditor.getValue()) : null;
+	if (mode === 'text') {
+		if (detected === 'javascript') {
+			txt.textContent = 'Content looks like JavaScript \u2014 did you mean to select \u201cJavaScript\u201d?';
+			warn.style.display = '';
+		} else if (detected === 'python') {
+			txt.textContent = 'Content looks like Python \u2014 did you mean to select \u201cPython\u201d?';
+			warn.style.display = '';
+		} else {
+			warn.style.display = 'none';
+		}
+	} else if (mode === 'js') {
+		if (detected === 'python') {
+			txt.textContent = 'Content looks like Python \u2014 did you mean to select \u201cPython\u201d?';
+			warn.style.display = '';
+		} else {
+			warn.style.display = 'none';
+		}
+	} else if (mode === 'python') {
+		if (detected === 'javascript') {
+			txt.textContent = 'Content looks like JavaScript \u2014 did you mean to select \u201cJavaScript\u201d?';
+			warn.style.display = '';
+		} else {
+			warn.style.display = 'none';
+		}
 	} else {
 		warn.style.display = 'none';
 	}
@@ -346,7 +364,48 @@ function makeResizable(aceEditor) {
 }
 
 function formatSource(aceEditor) {
-	beautify.beautify(aceEditor.session);
+	var modeId = aceEditor.session.getMode().$id;
+	if (modeId === 'ace/mode/python') {
+		formatPythonSource(aceEditor);
+	} else {
+		beautify.beautify(aceEditor.session);
+	}
+}
+
+var _ruffWasmModule = null;
+
+async function _loadRuffWasm() {
+	if (_ruffWasmModule) return _ruffWasmModule;
+	const mod = await import('/ruff-wasm/ruff_wasm.js');
+	await mod.default({ module_or_path: '/ruff-wasm/ruff_wasm_bg.wasm' });
+	_ruffWasmModule = mod;
+	return mod;
+}
+
+async function formatPythonSource(aceEditor) {
+	try {
+		const ruff = await _loadRuffWasm();
+		const original = aceEditor.getValue();
+		const workspace = new ruff.Workspace({ 'line-length': 88 });
+		const formatted = workspace.format(original);
+		if (formatted !== original) {
+			const pos = aceEditor.getCursorPosition();
+			aceEditor.setValue(formatted, -1);
+			aceEditor.moveCursorToPosition(pos);
+			aceEditor.session.getUndoManager().reset();
+			aceEditor.session.getUndoManager().markClean();
+		}
+	} catch(e) {
+		const msg = e.message || String(e);
+		// Ruff refuses to format code with syntax errors — surface a clear message rather than the
+		// raw byte-range error from the parser.
+		const isSyntaxError = /indented block|invalid syntax|SyntaxError|unexpected token|parse error/i.test(msg);
+		if (isSyntaxError) {
+			showToast('Fix syntax errors before formatting.', 'warning');
+		} else {
+			showToast('Format error: ' + msg, 'danger');
+		}
+	}
 }
 
 function clearSource(aceEditor) {
@@ -410,6 +469,58 @@ function testSource(aceEditor) {
   const blob = new Blob([iframeHTML], { type: 'text/html' });
   const iframe = document.getElementById("sandboxFrame");
   iframe.src = URL.createObjectURL(blob);
+}
+
+/**
+ * Execute a Directory script (JS or Python) on the DataMover via the server-side testScript
+ * endpoint, then show the result in the shared testResultModal.
+ *
+ * @param {object} aceEditor - ACE editor instance containing the script
+ * @param {string} hostId    - Host primary key (path param for the endpoint)
+ * @param {string} lang      - "js" or "python"
+ */
+function testSourceServer(aceEditor, hostId, lang) {
+  var script = aceEditor.getValue();
+  var btn = document.getElementById('testDir');
+  var origLabel = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span>Running\u2026';
+  }
+  var params = new URLSearchParams({ lang: lang, script: script });
+  fetch('/do/transfer/host/edit/testScript/' + encodeURIComponent(hostId), {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: params.toString()
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    var el = document.getElementById('testResultContent');
+    var modal = document.getElementById('testResultModal');
+    var label = document.getElementById('testResultModalLabel');
+    if (el && modal) {
+      var mover = data.mover ? ' \u2014 DataMover: ' + data.mover : '';
+      if (label) label.innerHTML = '<i class="bi bi-terminal me-2"></i>Test Result (' + lang.toUpperCase() + mover + ')';
+      if (data.error) {
+        el.textContent = 'Error: ' + data.error;
+        el.style.color = 'var(--bs-danger)';
+      } else {
+        el.textContent = data.output && data.output.length > 0 ? data.output : '(empty output)';
+        el.style.color = 'var(--bs-body-color)';
+      }
+      bootstrap.Modal.getOrCreateInstance(modal).show();
+    } else {
+      showToast(data.error ? 'Error: ' + data.error : (data.output || '(empty output)'),
+                data.error ? 'danger' : 'info');
+    }
+  })
+  .catch(function(err) {
+    showToast('Test request failed: ' + err.message, 'danger');
+  })
+  .finally(function() {
+    if (btn) { btn.disabled = false; btn.innerHTML = origLabel; }
+  });
 }
 
 function getEditorType(aceEditor) {

@@ -2257,6 +2257,74 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
+     * Execute a Directory script on the appropriate DataMover and return the GZIPped result.
+     *
+     * @param host
+     *            the host whose transfer group is used to select a DataMover
+     * @param script
+     *            the script content (e.g. "python:..." or "js:...")
+     *
+     * @return a GZIPped input stream containing the script output
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     * @throws TransferServerException
+     *             if no DataMover is available in the host's transfer group
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public String execDirScript(final Host host, final String script)
+            throws IOException, TransferServerException, DataBaseException {
+        // Resolve all variables that are available at test time (same substitutions as production).
+        // Transfer-specific variables ($dataFile[...], $dataTransfer[...], etc.) require a live
+        // DataTransfer and are left unreplaced — acceptable in a test context.
+        final var sb = new StringBuilder(script);
+        Format.replaceAll(sb, "$host[name]", host.getName());
+        Format.replaceAll(sb, "$host[comment]", host.getComment());
+        Format.replaceAll(sb, "$host[data]", host.getData());
+        Format.replaceAll(sb, "$host[checkFilename]", host.getCheckFilename());
+        Format.replaceAll(sb, "$host[host]", host.getHost());
+        Format.replaceAll(sb, "$host[login]", host.getLogin());
+        Format.replaceAll(sb, "$host[passwd]", host.getPasswd());
+        Format.replaceAll(sb, "$host[userMail]", host.getUserMail());
+        Format.replaceAll(sb, "$host[networkCode]", host.getNetworkCode());
+        Format.replaceAll(sb, "$host[networkName]", host.getNetworkName());
+        Format.replaceAll(sb, "$host[nickname]", host.getNickname());
+        final var method = host.getTransferMethod();
+        Format.replaceAll(sb, "$transferMethod[name]", method.getName());
+        Format.replaceAll(sb, "$transferMethod[comment]", method.getComment());
+        Format.replaceAll(sb, "$transferMethod[value]", method.getValue());
+        final var module = method.getECtransModule();
+        Format.replaceAll(sb, "$ectransModule[name]", module.getName());
+        Format.replaceAll(sb, "$ectransModule[classe]", module.getClasse());
+        Format.replaceAll(sb, "$ectransModule[archive]", module.getArchive());
+        final var resolvedScript = sb.toString();
+        final var er = TransferScheduler.execution(new StatusUpdate() {
+            @Override
+            public void info(final String... messages) {
+            }
+
+            @Override
+            public void warn(final String... messages) {
+            }
+        }, "", host, resolvedScript);
+        if (!er.complete) {
+            throw new IOException(er.message != null ? er.message
+                    : "No DataMover available in transfer group '" + host.getTransferGroupName() + "'");
+        }
+        // Eagerly read and decode all bytes from the DataMover stream on the MasterServer.
+        // Returning a String (not a RemoteInputStream) avoids nested RMI stream lifecycle issues.
+        final var baos = new ByteArrayOutputStream();
+        er.in.transferTo(baos);
+        try {
+            er.in.close();
+        } catch (final IOException ignored) {
+            // DataMover RMI stream may already be unregistered once all bytes are consumed.
+        }
+        return baos.toString(StandardCharsets.UTF_8);
+    }
+
+    /**
      * Get a report for the specified TransferServer.
      *
      * @param server

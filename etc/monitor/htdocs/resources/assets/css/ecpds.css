@@ -1394,7 +1394,7 @@ table.spareBox2 td, table.spareBox td {
 #sidebarMenu table.editSpareBox th a,
 #sidebarMenu table.spareBox th a {
     color: #24292f !important;
-    font-size: 0.8125rem;
+    font-size: 1rem;
     font-weight: 600;
     text-decoration: none;
     display: block;
@@ -1430,7 +1430,7 @@ table.spareBox2 td, table.spareBox td {
     gap: 0.5rem;
     padding: 5px 12px 5px 16px;
     color: #24292f !important;
-    font-size: 0.8125rem;
+    font-size: 1rem;
     font-weight: 400;
     text-decoration: none;
     border-radius: 6px;

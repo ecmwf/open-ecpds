@@ -51,7 +51,7 @@
 	<tiles:put name="action.form.name" value="<%=actionFormName%>" />
 </tiles:insert>
 </div>
-<div class="pt-3">
+<div>
 <tiles:insert name="buttons">
 	<tiles:put name="operation" value="<%=operation%>" />
 	<tiles:put name="cancelUrl" value="<%=cancelUrl%>" />

@@ -717,6 +717,22 @@ final class ManagementProxy implements ManagementInterface {
     /**
      * {@inheritDoc}
      *
+     * Execute a Directory script on the DataMover for the given host.
+     */
+    @Override
+    public String execDirScript(final ECpdsSession session, final Host host, final String script)
+            throws MasterException, DataBaseException, IOException {
+        if (session == null || host == null || script == null) {
+            throw new MasterException("Invalid parameter(s) for execDirScript");
+        }
+        final var monitor = new MonitorCall(
+                "execDirScript(" + session.getWebUser().getName() + "," + host.getName() + ")");
+        return monitor.done(managementInterface.execDirScript(session, host, script));
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * Check whether an acquisition thread is currently running for the given Host.
      */
     @Override
