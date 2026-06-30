@@ -31,7 +31,9 @@ import java.util.Collection;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import ecmwf.ecpds.master.plugin.http.home.transfer.searches.SearchByDestinationName;
 import ecmwf.ecpds.master.plugin.http.home.transfer.searches.SearchByIncomingPolicy;
+import ecmwf.ecpds.master.plugin.http.model.transfer.Destination;
 import ecmwf.ecpds.master.plugin.http.model.transfer.IncomingPolicy;
 import ecmwf.ecpds.master.plugin.http.model.transfer.IncomingUser;
 import ecmwf.ecpds.master.plugin.http.model.transfer.IncomingUserException;
@@ -102,6 +104,22 @@ public class IncomingUserHome extends ModelHomeBase {
     public static final Collection<IncomingUser> findAssociatedToIncomingPolicy(final IncomingPolicy p)
             throws IncomingUserException {
         return find(new SearchByIncomingPolicy(p.getId()));
+    }
+
+    /**
+     * Find directly associated to destination (via INCOMING_ASSOCIATION).
+     *
+     * @param d
+     *            the destination
+     *
+     * @return the collection
+     *
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.IncomingUserException
+     *             the incoming user exception
+     */
+    public static final Collection<IncomingUser> findDirectlyAssociatedToDestination(final Destination d)
+            throws IncomingUserException {
+        return find(new SearchByDestinationName(d.getName()));
     }
 
     /**

@@ -11,11 +11,29 @@
     <tr>
         <th>
             <a title="${host.nickName} (${host.active ? 'Enabled' : 'Disabled'})"
-               href='<bean:message key="host.basepath"/>/${host.id}'>${host.nickName}</a>
+               href='<bean:message key="host.basepath"/>/${host.id}'>Host</a>
         </th>
     </tr>
     <tr><td></td></tr>
 
+    <%-- Create / Edit / Delete / Duplicate --%>
+    <auth:if basePathKey="host.basepath" paths="/edit/insert_form">
+    <auth:then>
+        <tr><td><auth:link basePathKey="host.basepath" href="/edit/insert_form"><i class="bi bi-plus-circle sidebar-icon"></i> Create</auth:link></td></tr>
+        <c:if test="${not empty host.id}">
+        <tr><td><auth:link basePathKey="host.basepath" href="/edit/update_form/${host.id}"><i class="bi bi-pencil sidebar-icon"></i> Edit</auth:link></td></tr>
+        <tr><td><auth:link basePathKey="host.basepath" href="/edit/delete_form/${host.id}"><i class="bi bi-trash sidebar-icon"></i> Delete</auth:link></td></tr>
+        <c:if test="${not empty host.destinations}">
+        <auth:if basePathKey="transferhistory.basepath" paths="/">
+        <auth:then>
+        <tr><td><a href="#" onclick="ecpdsHostDuplicate('${host.id}','${host.nickName}');return false;"><i class="bi bi-copy sidebar-icon"></i> Duplicate</a></td></tr>
+        </auth:then>
+        </auth:if>
+        </c:if>
+        </c:if>
+        <tr><td style="padding:1px 32px 1px 22px;"><hr style="margin:1px 0;opacity:0.15;border-top:1px solid currentColor;"/></td></tr>
+    </auth:then>
+    </auth:if>
 
     <auth:if basePathKey="transferhistory.basepath" paths="/">
         <auth:then>
@@ -42,6 +60,15 @@
     </auth:if>
 
     <tr><td><a href='<bean:message key="host.basepath"/>/edit/getReport/${host.id}'><i class="bi bi-wifi sidebar-icon"></i> Network Info</a></td></tr>
+
+    <c:choose>
+        <c:when test="${not empty moduleGuide}">
+            <tr><td><a href="#" onclick="var el=document.getElementById('moduleGuideOffcanvas');if(el)bootstrap.Offcanvas.getOrCreateInstance(el).show();return false;"><i class="bi bi-book sidebar-icon"></i> Configuration Guide</a></td></tr>
+        </c:when>
+        <c:otherwise>
+            <tr><td><span class="sidebar-disabled-item" title="No configuration guide available for this module"><i class="bi bi-book sidebar-icon"></i> Configuration Guide</span></td></tr>
+        </c:otherwise>
+    </c:choose>
     <c:if test="${host.type == 'Dissemination'}">
         <tr>
             <td style="border-top:none; padding-bottom:6px;">
@@ -60,6 +87,7 @@
 
     <auth:if basePathKey="transferhistory.basepath" paths="/">
         <auth:then>
+            <tr><td style="padding:1px 32px 1px 22px;"><hr style="margin:1px 0;opacity:0.15;border-top:1px solid currentColor;"/></td></tr>
             <tr>
                 <td><a href="#" onclick="confirmationDialog({
                     title: 'Clean Options',

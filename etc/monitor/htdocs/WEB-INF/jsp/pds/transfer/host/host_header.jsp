@@ -94,7 +94,7 @@
             </c:when>
             <c:otherwise>
             <a href="#" class="btn btn-sm btn-outline-secondary disabled" title="View Output (Acquisition hosts only)"
-               aria-disabled="true" tabindex="-1" onclick="return false;"><i class="bi bi-terminal"></i></a>
+               data-label="View Output" aria-disabled="true" tabindex="-1" onclick="return false;"><i class="bi bi-terminal"></i></a>
             </c:otherwise>
             </c:choose>
             </auth:then>
@@ -103,12 +103,12 @@
                class="btn btn-sm btn-outline-secondary" title="Network Info"><i class="bi bi-wifi"></i></a>
             <c:choose>
               <c:when test="${not empty moduleGuide}">
-                <a href="#" class="btn btn-sm btn-outline-info" title="Module Configuration Guide"
+                <a href="#" class="btn btn-sm btn-outline-info" title="Configuration Guide"
                    onclick="var el=document.getElementById('moduleGuideOffcanvas');if(el)bootstrap.Offcanvas.getOrCreateInstance(el).show();return false;"><i class="bi bi-book"></i></a>
               </c:when>
               <c:otherwise>
                 <a href="#" class="btn btn-sm btn-outline-secondary disabled" title="No configuration guide available for this module"
-                   aria-disabled="true" tabindex="-1" onclick="return false;"><i class="bi bi-book"></i></a>
+                   data-label="Configuration Guide" aria-disabled="true" tabindex="-1" onclick="return false;"><i class="bi bi-book"></i></a>
               </c:otherwise>
             </c:choose>
             <auth:if basePathKey="transferhistory.basepath" paths="/">
@@ -163,7 +163,7 @@
                         icon.className = ic.className + ' me-2';
                         item.appendChild(icon);
                     }
-                    item.appendChild(document.createTextNode(a.title || a.textContent.trim()));
+                    item.appendChild(document.createTextNode(a.getAttribute('data-label') || a.title || a.textContent.trim()));
                     li.appendChild(item);
                     menu.appendChild(li);
                 }

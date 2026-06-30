@@ -559,6 +559,31 @@ public final class ECpdsBase extends DataBase {
     }
 
     /**
+     * Gets the incoming users directly associated to a destination.
+     *
+     * @param destinationName
+     *            the destination name
+     *
+     * @return the incoming users
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public IncomingUser[] getIncomingUsersForDestination(final String destinationName) throws DataBaseException {
+        try (var it = ecpds.getIncomingUsersForDestination(destinationName, IncomingUser.class)) {
+            final List<IncomingUser> list = new ArrayList<>();
+            while (it.hasNext()) {
+                list.add(it.next());
+            }
+            logSqlRequest("getIncomingUsersForDestination", list.size());
+            return list.toArray(new IncomingUser[list.size()]);
+        } catch (SQLException | IOException e) {
+            _log.warn("getIncomingUsersForDestination", e);
+            throw new DataBaseException("getIncomingUsersForDestination", e);
+        }
+    }
+
+    /**
      * Gets the incoming policies for an incoming user.
      *
      * @param userId

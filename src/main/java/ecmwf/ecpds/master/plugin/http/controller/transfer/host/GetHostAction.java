@@ -182,7 +182,7 @@ public class GetHostAction extends PDSAction {
         try {
             final var ecmName = host.getTransferMethod().getEcTransModuleName();
             if (ecmName != null) {
-                request.setAttribute("moduleGuide", "/WEB-INF/jsp/pds/transfer/module/guide/" + ecmName + ".jsp");
+                setGuideIfPresent("/WEB-INF/jsp/pds/transfer/module/guide/" + ecmName + ".jsp", request);
             }
         } catch (final Exception ignored) {
         }

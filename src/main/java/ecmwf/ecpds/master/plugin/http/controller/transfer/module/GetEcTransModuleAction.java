@@ -81,9 +81,7 @@ public class GetEcTransModuleAction extends PDSAction {
         final var ecTransModule = EcTransModuleHome.findByPrimaryKey(parameters.get(0).toString());
         request.setAttribute("module", ecTransModule);
         final var guide = ecTransModule.getGuide();
-        if (guide != null) {
-            request.setAttribute("moduleGuide", guide);
-        }
+        setGuideIfPresent(guide, request);
         return mapping.findForward("success");
     }
 }

@@ -35,10 +35,21 @@
 <table class="spareBox2">
     <tr>
         <th>
-            <a title="${destination.id} (${destination.formattedStatus})" href='<bean:message key="destination.basepath"/>/${destination.id}'>${destination.id}</a>
+            <a title="${destination.id} (${destination.formattedStatus})" href='<bean:message key="destination.basepath"/>/${destination.id}'>Destination</a>
         </th>
     </tr>
     <tr><td></td></tr>
+
+    <%-- Create / Edit / Delete / Duplicate --%>
+    <auth:if basePathKey="destination.basepath" paths="/edit/insert_form">
+    <auth:then>
+        <tr><td><auth:link basePathKey="destination.basepath" href="/edit/insert_form"><i class="bi bi-plus-circle sidebar-icon"></i> Create</auth:link></td></tr>
+        <tr><td><auth:link basePathKey="destination.basepath" href="/edit/update_form/${destination.id}"><i class="bi bi-pencil sidebar-icon"></i> Edit</auth:link></td></tr>
+        <tr><td><auth:link basePathKey="destination.basepath" href="/edit/delete_form/${destination.id}"><i class="bi bi-trash sidebar-icon"></i> Delete</auth:link></td></tr>
+        <tr><td><auth:link basePathKey="destination.basepath" href="/edit/insert_form?fromDestination=${destination.name}"><i class="bi bi-copy sidebar-icon"></i> Duplicate</auth:link></td></tr>
+        <tr><td style="padding:1px 32px 1px 22px;"><hr style="margin:1px 0;opacity:0.15;border-top:1px solid currentColor;"/></td></tr>
+    </auth:then>
+    </auth:if>
 
     <auth:if basePathKey="transferhistory.basepath" paths="/">
         <auth:then>
@@ -46,19 +57,15 @@
         </auth:then>
     </auth:if>
 
+    <auth:if basePathKey="transferhistory.basepath" paths="/">
+        <auth:then>
+            <tr><td><a href='<bean:message key="destination.basepath"/>/${destination.id}?mode=datausers'><i class="bi bi-person-badge sidebar-icon"></i> Data Users<span id="_destDataUsersSidebarBadge"></span></a></td></tr>
+        </auth:then>
+    </auth:if>
+
     <tr><td><a href='<bean:message key="destination.basepath"/>/${destination.id}?mode=traffic'><i class="bi bi-graph-up sidebar-icon"></i> Data Rates</a></td></tr>
 
     <tr><td><a href='<bean:message key="destination.basepath"/>/${destination.id}?mode=changelog'><i class="bi bi-clock-history sidebar-icon"></i> Changes Log</a></td></tr>
-
-    <tr><td><a href='<bean:message key="destination.basepath"/>/${destination.id}?mode=aliasesfrom'><i class="bi bi-arrow-left sidebar-icon"></i> Aliased From</a></td></tr>
-
-    <tr><td><a href='<bean:message key="destination.basepath"/>/${destination.id}?mode=aliasesto'><i class="bi bi-arrow-right sidebar-icon"></i> Aliases To</a></td></tr>
-
-    <auth:if basePathKey="transferhistory.basepath" paths="/">
-        <auth:then>
-            <tr><td><a href='<bean:message key="destination.basepath"/>/${destination.id}?mode=datausers'><i class="bi bi-person-badge sidebar-icon"></i> Data Users</a></td></tr>
-        </auth:then>
-    </auth:if>
 
     <tr><td><a href='<bean:message key="monitoring.timeline.basepath"/>/${destination.id}?date=${date}'><i class="bi bi-calendar3 sidebar-icon"></i> Transfer Timeline</a></td></tr>
     <tr><td><a href='/do/monitoring/unsuccessful/${destination.id}'><i class="bi bi-hourglass-split sidebar-icon"></i> Outstanding</a></td></tr>
@@ -74,6 +81,12 @@
             <tr><td><a href='<bean:message key="destination.basepath"/>/metadata/${destination.id}'><i class="bi bi-paperclip sidebar-icon"></i> Metadata</a></td></tr>
         </auth:then>
     </auth:if>
+
+    <tr><td style="padding:1px 32px 1px 22px;"><hr style="margin:1px 0;opacity:0.15;border-top:1px solid currentColor;"/></td></tr>
+
+    <tr><td><a href='<bean:message key="destination.basepath"/>/${destination.id}?mode=aliasesfrom'><i class="bi bi-arrow-left sidebar-icon"></i> Aliased From</a></td></tr>
+
+    <tr><td><a href='<bean:message key="destination.basepath"/>/${destination.id}?mode=aliasesto'><i class="bi bi-arrow-right sidebar-icon"></i> Aliases To</a></td></tr>
 
     <c:if test="${destination.monitoringStatus.present}">
         <c:if test="${empty time}"><c:set var="time" value="00" /></c:if>

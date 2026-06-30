@@ -61,9 +61,7 @@ public class UpdateFormAction extends PDSAction {
             try {
                 final var guide = ecmwf.ecpds.master.plugin.http.home.transfer.TransferMethodHome
                         .findByPrimaryKey(haf.getTransferMethod()).getModuleGuide();
-                if (guide != null) {
-                    request.setAttribute("moduleGuide", guide);
-                }
+                setGuideIfPresent(guide, request);
             } catch (final Exception ignored) {
             }
             return mapping.findForward("success");

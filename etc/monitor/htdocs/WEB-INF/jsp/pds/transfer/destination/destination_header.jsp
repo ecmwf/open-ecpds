@@ -140,7 +140,7 @@
                         icon.className = ic.className + ' me-2';
                         item.appendChild(icon);
                     }
-                    item.appendChild(document.createTextNode(a.title || a.textContent.trim()));
+                    item.appendChild(document.createTextNode(a.getAttribute('data-label') || a.title || a.textContent.trim()));
                     li.appendChild(item);
                     menu.appendChild(li);
                 }
@@ -182,22 +182,49 @@
                 });
             });
         })();
-        // Async badge: fetch data-users count without blocking page load.
-        // Works on every page that includes this header (metadata, history, monitoring, etc.).
         (function() {
             var destName = '${destination.name}';
             if (!destName) return;
+            // Shared state so whichever runs last (fetch or DOMContentLoaded) can apply the badge.
+            var _duCount = 0;
+            function applyMobileBadge() {
+                if (!_duCount) return;
+                var menu = document.getElementById('_destActionsMenu');
+                if (!menu) return;
+                Array.from(menu.querySelectorAll('a.dropdown-item')).forEach(function(item) {
+                    if (item.href && item.href.indexOf('mode=datausers') !== -1
+                            && !item.querySelector('.du-mobile-badge')) {
+                        var b = document.createElement('span');
+                        b.className = 'badge rounded-pill bg-danger ms-auto du-mobile-badge';
+                        b.style.cssText = 'font-size:0.6rem;padding:2px 4px;line-height:1;';
+                        b.textContent = _duCount;
+                        item.style.display = 'flex';
+                        item.style.alignItems = 'center';
+                        item.appendChild(b);
+                    }
+                });
+            }
+            document.addEventListener('DOMContentLoaded', applyMobileBadge);
             fetch('/do/transfer/destination/' + encodeURIComponent(destName) + '?json=dataUsersCount')
                 .then(function(r) { return r.ok ? r.json() : null; })
                 .then(function(data) {
                     if (!data || !data.count) return;
+                    _duCount = data.count;
                     var btn = document.getElementById('_destDataUsersBtn');
-                    if (!btn) return;
-                    var badge = document.createElement('span');
-                    badge.className = 'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary';
-                    badge.style.cssText = 'font-size:0.6rem;padding:2px 4px;line-height:1;';
-                    badge.textContent = data.count;
-                    btn.appendChild(badge);
+                    if (btn) {
+                        var badge = document.createElement('span');
+                        badge.className = 'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger';
+                        badge.style.cssText = 'font-size:0.6rem;padding:2px 4px;line-height:1;';
+                        badge.textContent = _duCount;
+                        btn.appendChild(badge);
+                    }
+                    var sidebar = document.getElementById('_destDataUsersSidebarBadge');
+                    if (sidebar) {
+                        sidebar.className = 'badge rounded-pill bg-danger ms-1';
+                        sidebar.style.cssText = 'font-size:0.6rem;padding:2px 4px;line-height:1;vertical-align:middle;';
+                        sidebar.textContent = _duCount;
+                    }
+                    applyMobileBadge();
                 })
                 .catch(function() {});
         })();

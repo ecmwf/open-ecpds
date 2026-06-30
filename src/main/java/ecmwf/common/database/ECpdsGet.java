@@ -1481,6 +1481,29 @@ final class ECpdsGet {
     }
 
     /**
+     * Gets the incoming users directly associated to a destination (via INCOMING_ASSOCIATION).
+     *
+     * @param <T>
+     *            the generic type
+     * @param paramName
+     *            the destination name
+     * @param resultClass
+     *            the result class
+     *
+     * @return the incoming users
+     *
+     * @throws SQLException
+     *             the SQL exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     */
+    <T extends DataBaseObject> DBIterator<T> getIncomingUsersForDestination(final String paramName,
+            final Class<T> resultClass) throws SQLException, IOException {
+        return _database.executeQuery("ECpdsBase", "getIncomingUsersForDestination", resultClass,
+                new String[] { "name=" + paramName });
+    }
+
+    /**
      * Gets the incoming policies for an incoming user.
      *
      * @param <T>

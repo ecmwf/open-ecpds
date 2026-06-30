@@ -229,6 +229,21 @@ public interface DataBaseInterface extends Remote {
     IncomingUser[] getIncomingUsersForIncomingPolicy(String policyId) throws DataBaseException, RemoteException;
 
     /**
+     * Gets the incoming users directly associated to a destination.
+     *
+     * @param destinationName
+     *            the destination name
+     *
+     * @return the incoming users
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    IncomingUser[] getIncomingUsersForDestination(String destinationName) throws DataBaseException, RemoteException;
+
+    /**
      * Gets the incoming policies for an incoming user.
      *
      * @param userId

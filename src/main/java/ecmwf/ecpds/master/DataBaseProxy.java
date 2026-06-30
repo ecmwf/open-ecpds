@@ -314,6 +314,21 @@ final class DataBaseProxy implements DataBaseInterface {
     /**
      * {@inheritDoc}
      *
+     * Gets the incoming users for destination.
+     */
+    @Override
+    public IncomingUser[] getIncomingUsersForDestination(final String destinationName)
+            throws DataBaseException, RemoteException {
+        if (isEmpty(destinationName)) {
+            throw new DataBaseException("Invalid parameter(s) for getIncomingUsersForDestination");
+        }
+        final var monitor = new MonitorCall("getIncomingUsersForDestination(" + destinationName + ")");
+        return monitor.done(dataBaseInterface.getIncomingUsersForDestination(destinationName));
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * Gets the incoming policies for incoming user.
      */
     @Override

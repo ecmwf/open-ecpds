@@ -255,19 +255,11 @@ public class GetDestinationAction extends PDSAction {
             } catch (final Exception ignored) {
             }
         }
-        // Direct users: full scan (no DB-level destination→user index exists).
+        // Direct users: single DB query on INCOMING_ASSOCIATION for this destination.
         final List<IncomingUser> directUsers = new ArrayList<>();
-        for (final IncomingUser incoming : IncomingUserHome.findAll()) {
-            if (seen.contains(incoming.getId()))
-                continue; // already via policy
-            try {
-                for (final Destination dest : incoming.getAssociatedDestinations()) {
-                    if (dest.getName().equals(destination.getName())) {
-                        directUsers.add(incoming);
-                        break;
-                    }
-                }
-            } catch (final Exception ignored) {
+        for (final IncomingUser incoming : IncomingUserHome.findDirectlyAssociatedToDestination(destination)) {
+            if (seen.add(incoming.getId())) {
+                directUsers.add(incoming);
             }
         }
         final Map<String, List<IncomingUser>> result = new LinkedHashMap<>();

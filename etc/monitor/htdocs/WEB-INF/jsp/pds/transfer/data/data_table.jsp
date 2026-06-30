@@ -27,7 +27,7 @@
    class="btn btn-sm btn-outline-danger" title="Delete this Data Transfer"><i class="bi bi-trash"></i></a>
 </c:when>
 <c:otherwise>
-<button class="btn btn-sm btn-outline-danger" disabled title="Already deleted"><i class="bi bi-trash"></i></button>
+<button class="btn btn-sm btn-outline-danger" disabled title="Already deleted" data-label="Delete"><i class="bi bi-trash"></i></button>
 </c:otherwise>
 </c:choose>
 <c:choose>
@@ -36,7 +36,7 @@
    class="btn btn-sm btn-outline-primary" title="Download"><i class="bi bi-cloud-download"></i></a>
 </c:when>
 <c:otherwise>
-<button class="btn btn-sm btn-outline-primary" disabled title="Not available for download"><i class="bi bi-cloud-download"></i></button>
+<button class="btn btn-sm btn-outline-primary" disabled title="Not available for download" data-label="Download"><i class="bi bi-cloud-download"></i></button>
 </c:otherwise>
 </c:choose>
 <div class="d-flex gap-1 align-items-center" style="border-left:1px solid var(--bs-border-color);padding-left:0.5rem;">
@@ -46,7 +46,7 @@
    class="btn btn-sm btn-outline-secondary dt-op-btn" title="Schedule Now"><i class="bi bi-calendar-check"></i></a>
 </c:when>
 <c:otherwise>
-<button class="btn btn-sm btn-outline-secondary" disabled title="Schedule Now not available"><i class="bi bi-calendar-check"></i></button>
+<button class="btn btn-sm btn-outline-secondary" disabled title="Schedule Now not available" data-label="Schedule Now"><i class="bi bi-calendar-check"></i></button>
 </c:otherwise>
 </c:choose>
 <c:choose>
@@ -55,7 +55,7 @@
    class="btn btn-sm btn-outline-success dt-op-btn" title="Requeue"><i class="bi bi-arrow-repeat"></i></a>
 </c:when>
 <c:otherwise>
-<button class="btn btn-sm btn-outline-success" disabled title="Requeue not available"><i class="bi bi-arrow-repeat"></i></button>
+<button class="btn btn-sm btn-outline-success" disabled title="Requeue not available" data-label="Requeue"><i class="bi bi-arrow-repeat"></i></button>
 </c:otherwise>
 </c:choose>
 <c:choose>
@@ -64,7 +64,7 @@
    class="btn btn-sm btn-outline-warning dt-op-btn" title="Interrupt Retrieval"><i class="bi bi-stop-circle"></i></a>
 </c:when>
 <c:otherwise>
-<button class="btn btn-sm btn-outline-warning" disabled title="Interrupt not available"><i class="bi bi-stop-circle"></i></button>
+<button class="btn btn-sm btn-outline-warning" disabled title="Interrupt not available" data-label="Interrupt Retrieval"><i class="bi bi-stop-circle"></i></button>
 </c:otherwise>
 </c:choose>
 </div>
@@ -104,7 +104,7 @@
                 icon.className = ic.className + ' me-2';
                 item.appendChild(icon);
             }
-            item.appendChild(document.createTextNode(el.title || el.textContent.trim()));
+            item.appendChild(document.createTextNode(el.getAttribute('data-label') || el.title || el.textContent.trim()));
             li.appendChild(item);
             menu.appendChild(li);
         }

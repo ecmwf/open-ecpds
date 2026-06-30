@@ -2243,6 +2243,18 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
+     * Gets the incoming users for destination.
+     */
+    @Override
+    public IncomingUser[] getIncomingUsersForDestination(final String destinationName)
+            throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getIncomingUsersForDestination(" + destinationName + ")");
+        return monitor.done(ecpds.getIncomingUsersForDestination(destinationName));
+    }
+
+    /**
      * Gets the incoming policies for incoming user.
      *
      * @param userId

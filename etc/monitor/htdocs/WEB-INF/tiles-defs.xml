@@ -429,8 +429,7 @@
 			value="Show Transfer Host %{host.nickName}" />
 		<put name="content"
 			value="/WEB-INF/jsp/pds/transfer/host/detail.jsp" />
-		<put name="spare" value=".pds.transfer.host.spare.edit" />
-		<put name="spare2"
+		<put name="spare"
 			value="/WEB-INF/jsp/pds/transfer/host/spare.jsp" />
 		<put name="helpKey" value="help.host" />
 	</definition>
@@ -581,8 +580,7 @@
 			value="/WEB-INF/jsp/pds/transfer/destination/location.jsp" />
 		<put name="content"
 			value="/WEB-INF/jsp/pds/transfer/destination/detail.jsp" />
-		<put name="spare" value=".pds.transfer.destination.spare.edit" />
-		<put name="spare2" value=".pds.spare.monitoring" />
+		<put name="spare" value=".pds.spare.monitoring" />
 		<put name="helpKey" value="help.destination" />
 	</definition>
 

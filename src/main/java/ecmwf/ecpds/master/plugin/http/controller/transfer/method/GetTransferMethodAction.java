@@ -81,9 +81,7 @@ public class GetTransferMethodAction extends PDSAction {
         final var transferMethod = TransferMethodHome.findByPrimaryKey(parameters.get(0).toString());
         request.setAttribute("method", transferMethod);
         final var guide = transferMethod.getModuleGuide();
-        if (guide != null) {
-            request.setAttribute("moduleGuide", guide);
-        }
+        setGuideIfPresent(guide, request);
         return mapping.findForward("success");
     }
 }

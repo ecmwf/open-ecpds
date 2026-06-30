@@ -1269,7 +1269,7 @@ oninput="validateMailInput(this); toggleMailRows()" />
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
 <c:set var="_allGuideKeys" value="http,s3,ftp,sftp,gcs,azure"/>
 <c:forTokens var="_gKey" items="${_allGuideKeys}" delims=",">
-    <jsp:include page="/WEB-INF/jsp/pds/transfer/module/guide/${_gKey}.jsp">
+    <c:catch><jsp:include page="/WEB-INF/jsp/pds/transfer/module/guide/${_gKey}.jsp">
         <jsp:param name="guideId" value="mgocForm-${_gKey}"/>
-    </jsp:include>
+    </jsp:include></c:catch>
 </c:forTokens>

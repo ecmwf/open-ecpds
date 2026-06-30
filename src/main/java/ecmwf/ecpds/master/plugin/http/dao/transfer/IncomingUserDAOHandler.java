@@ -41,6 +41,7 @@ import ecmwf.common.database.PolicyUser;
 import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.dao.PDSDAOBase;
 import ecmwf.ecpds.master.plugin.http.dao.Util;
+import ecmwf.ecpds.master.plugin.http.home.transfer.searches.SearchByDestinationName;
 import ecmwf.ecpds.master.plugin.http.home.transfer.searches.SearchByIncomingPolicy;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Destination;
 import ecmwf.ecpds.master.plugin.http.model.transfer.IncomingPolicy;
@@ -94,6 +95,10 @@ public class IncomingUserDAOHandler extends PDSDAOBase implements DAOHandler {
             if (search instanceof final SearchByIncomingPolicy s) {
                 return convertArrayToModelBeanCollection(
                         MasterManager.getDB().getIncomingUsersForIncomingPolicy(s.getIncomingPolicyId()));
+            }
+            if (search instanceof final SearchByDestinationName s) {
+                return convertArrayToModelBeanCollection(
+                        MasterManager.getDB().getIncomingUsersForDestination(s.getDestinationName()));
             }
             if ("".equals(search.getQuery())) {
                 return convertArrayToModelBeanCollection(MasterManager.getDB().getIncomingUserArray());
