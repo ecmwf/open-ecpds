@@ -24,7 +24,7 @@
 <c:choose>
 <c:when test="${!datatransfer.deleted}">
 <a href='<bean:message key="destination.basepath"/>/deletions/${datatransfer.destinationName}/deleteTransferForm/${datatransfer.id}'
-   class="btn btn-sm btn-outline-danger" title="Delete this Data Transfer"><i class="bi bi-trash"></i></a>
+   class="btn btn-sm btn-outline-danger" title="Delete this Data Transfer" data-label="Delete"><i class="bi bi-trash"></i></a>
 </c:when>
 <c:otherwise>
 <button class="btn btn-sm btn-outline-danger" disabled title="Already deleted" data-label="Delete"><i class="bi bi-trash"></i></button>
