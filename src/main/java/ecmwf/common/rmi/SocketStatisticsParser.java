@@ -37,7 +37,7 @@ import ecmwf.common.database.TransferStatistics;
 public final class SocketStatisticsParser {
 
     private static final Pattern BPS_SUFFIX = Pattern.compile("(\\d+)bps$", Pattern.CASE_INSENSITIVE);
-    private static final Pattern ADDR_PATTERN = Pattern.compile("^\\[?[^\\]]*\\]?:\\d+$");
+    private static final Pattern ADDR_PATTERN = Pattern.compile("^\\[[^\\]]*\\]:\\d+$");
 
     private SocketStatisticsParser() {
     }
