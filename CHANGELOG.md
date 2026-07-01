@@ -7,7 +7,7 @@ This document summarizes the most significant changes in OpenECPDS across all ma
 ## open-ecpds 8.0.4-01072026 (2026-07-01)
 
 - Added support for Python formatting and testing in the Host editors. Placeholder values can now be provided during testing, either by selecting an existing data transfer for the Host (if available) or by entering values manually.
-- Added a badge and visual highlight to the Filter button to indicate active filters.
+- Added a badge and visual highlight to the Filter buttons to indicate active filters.
 - Acquisition Hosts now include an Acquisition Console that centralizes the Progress Console and listing output, providing better visibility into acquisition activities.
 - Added data collection to track and display Data Mover availability periods and overall availability statistics.
 - Added comprehensive configuration guides, directly accessible from the Hosts pages in the Monitoring Interface, providing detailed information on the various configuration options for listing, authentication, connection, registration, acquisition, and dissemination engines.
