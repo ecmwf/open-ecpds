@@ -4,7 +4,7 @@
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content" %>
 
 <tiles:insert page="/WEB-INF/jsp/pds/datafile/transfergroup/data.jsp"/>
-<div class="mt-2">
+<div class="mt-3">
 <a href="/do/datafile/transfergroup" class="btn btn-outline-primary">
     <i class="bi bi-arrow-left"></i> All Transfer Groups
 </a>

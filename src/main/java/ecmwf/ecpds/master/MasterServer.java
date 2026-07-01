@@ -351,6 +351,9 @@ public final class MasterServer extends ECaccessProvider
     /** The portal bytes scheduler. */
     private final transient PortalBytesScheduler thePortalBytesScheduler;
 
+    /** The mover availability scheduler. */
+    private final transient MoverAvailabilityScheduler theMoverAvailabilityScheduler;
+
     /** The data transfer check. */
     private final transient DataTransferCheck theDataTransferCheck;
 
@@ -413,6 +416,12 @@ public final class MasterServer extends ECaccessProvider
      * "destinationName|YYYY-MM-DDTHH:mm". Value: long[2] {uploadBytes, downloadBytes}.
      */
     static final ConcurrentHashMap<String, long[]> DESTINATION_BYTES_FLUSH_BUFFER = new ConcurrentHashMap<>();
+
+    /**
+     * In-memory heartbeat buffer for mover availability, drained to DB every minute by MoverAvailabilityScheduler. Key:
+     * "moverName|minuteEpochMs". Presence of a key means the mover was seen alive in that minute bucket.
+     */
+    static final ConcurrentHashMap<String, Boolean> MOVER_AVAILABILITY_BUFFER = new ConcurrentHashMap<>();
 
     /**
      * Per-DataMover volume usage cache, populated on every background polling cycle. Key: mover name; value:
@@ -679,6 +688,13 @@ public final class MasterServer extends ECaccessProvider
             thePortalBytesScheduler.start();
         } else {
             thePortalBytesScheduler = null;
+        }
+        if (Cnf.at("Server", "moverAvailabilityScheduler", true)) {
+            _log.debug("Starting MoverAvailabilityScheduler");
+            theMoverAvailabilityScheduler = new MoverAvailabilityScheduler("MoverAvailabilityScheduler");
+            theMoverAvailabilityScheduler.start();
+        } else {
+            theMoverAvailabilityScheduler = null;
         }
         _log.debug("Monitors to notify: {}", containersToNotify);
         _log.debug("Passwords allowed from: {}", allowedPasswordOn);
@@ -3639,6 +3655,22 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
+     * {@inheritDoc}
+     *
+     * Records a heartbeat for DataMover services in the in-memory availability buffer so the MoverAvailabilityScheduler
+     * can persist per-minute availability to the database.
+     */
+    @Override
+    public long isRegistred(final String root, final String service) {
+        final var result = super.isRegistred(root, service);
+        if (result > 0 && "DataMover".equals(service)) {
+            final var minute = (result / 60_000L) * 60_000L;
+            MOVER_AVAILABILITY_BUFFER.put(root + "|" + minute, Boolean.TRUE);
+        }
+        return result;
+    }
+
+    /**
      * Import EC user.
      *
      * @param uid
@@ -5988,6 +6020,9 @@ public final class MasterServer extends ECaccessProvider
         if (thePortalBytesScheduler != null) {
             thePortalBytesScheduler.shutdown();
         }
+        if (theMoverAvailabilityScheduler != null) {
+            theMoverAvailabilityScheduler.shutdown();
+        }
         if (theDissDownloadScheduler != null) {
             theDissDownloadScheduler.shutdown();
         }
@@ -7598,6 +7633,86 @@ public final class MasterServer extends ECaccessProvider
                     base.deleteOldDestinationBytesSnapshots(retentionHours);
                 } catch (final DataBaseException e) {
                     _log.warn("PortalBytesScheduler: failed to delete old bytes snapshots", e);
+                }
+            }
+            return NEXT_STEP_DELAY;
+        }
+    }
+
+    /**
+     * The Class MoverAvailabilityScheduler. Samples the in-memory heartbeat buffer every minute, writes one row per
+     * mover per minute (1=up, 0=down) to MOVER_AVAILABILITY_SNAPSHOT, and periodically purges old rows.
+     */
+    public final class MoverAvailabilityScheduler extends MBeanScheduler {
+
+        private static final long RETENTION_MS = 365 * 24 * 3600_000L; // 1 year
+
+        private int flushCount = 0;
+
+        private MoverAvailabilityScheduler(final String name) {
+            super(name);
+            setDelay(Cnf.durationAt("Scheduler", "moverAvailabilityScheduler", Timer.ONE_MINUTE));
+            setJammedTimeout(
+                    Cnf.durationAt("Scheduler", "moverAvailabilitySchedulerJammedTimeout", 5 * Timer.ONE_MINUTE));
+        }
+
+        @Override
+        public int nextStep() {
+            final var base = getECpdsBase();
+            if (base == null)
+                return NEXT_STEP_DELAY;
+            final var now = System.currentTimeMillis();
+            final var currentMinute = (now / 60_000L) * 60_000L;
+            final var prevMinute = currentMinute - 60_000L;
+            // Flush completed minute buckets and remember which movers were recorded as "up".
+            // We must track this BEFORE clearing the buffer so the "down" pass does not overwrite them.
+            final var upMovers = new java.util.HashSet<String>();
+            for (final var iter = MOVER_AVAILABILITY_BUFFER.entrySet().iterator(); iter.hasNext();) {
+                final var entry = iter.next();
+                final var key = entry.getKey();
+                final var sep = key.lastIndexOf('|');
+                if (sep <= 0)
+                    continue;
+                final long bucketMinute;
+                try {
+                    bucketMinute = Long.parseLong(key.substring(sep + 1));
+                } catch (final NumberFormatException ignored) {
+                    iter.remove();
+                    continue;
+                }
+                if (bucketMinute < currentMinute) {
+                    iter.remove();
+                    final var moverName = key.substring(0, sep);
+                    try {
+                        base.upsertMoverAvailabilitySnapshot(new java.sql.Timestamp(bucketMinute), moverName, true);
+                        // Track movers recorded as "up" for prevMinute so we do not overwrite them below
+                        if (bucketMinute == prevMinute) {
+                            upMovers.add(moverName);
+                        }
+                    } catch (final DataBaseException e) {
+                        _log.warn("MoverAvailabilityScheduler: failed to record up for mover={}", moverName, e);
+                    }
+                }
+            }
+            // Record "down" only for movers that had no heartbeat in the previous minute
+            // and were not already written as "up" by the flush pass above.
+            try {
+                for (final var mover : getECpdsBase().getTransferServerArray()) {
+                    final var moverName = mover.getName();
+                    if (!upMovers.contains(moverName)) {
+                        base.upsertMoverAvailabilitySnapshot(new java.sql.Timestamp(prevMinute), moverName, false);
+                    }
+                }
+            } catch (final Exception e) {
+                _log.warn("MoverAvailabilityScheduler: failed to record down movers", e);
+            }
+            // Periodic retention cleanup (~every 24 hours)
+            if (++flushCount % (24 * 60) == 0) {
+                final var retentionHours = (int) (RETENTION_MS / Timer.ONE_HOUR);
+                try {
+                    base.deleteOldMoverAvailabilitySnapshots(retentionHours);
+                } catch (final DataBaseException e) {
+                    _log.warn("MoverAvailabilityScheduler: failed to delete old availability snapshots", e);
                 }
             }
             return NEXT_STEP_DELAY;
@@ -12424,7 +12539,33 @@ public final class MasterServer extends ECaccessProvider
                                         .getBoolean(HOST_ACQUISITION_REQUEUE_ON_FAILURE)) {
                                     currentStatus = StatusFactory.SCHE;
                                 } else {
-                                    currentStatus = StatusFactory.RETR;
+                                    // For standby transfers, set FAIL directly instead of RETR.
+                                    // A RETR status on a standby-only destination (with no
+                                    // dissemination hosts) causes the TransferScheduler to throw
+                                    // NoHostException, which incorrectly puts the destination in
+                                    // the "NoHosts" failure state. Failing the transfer directly
+                                    // matches the behaviour of the success path: re-discovery by
+                                    // the Acquisition Scheduler will requeue it when appropriate.
+                                    final var target = transfer.getTarget();
+                                    final var destination = transfer.getDestination();
+                                    final var destSetup = DESTINATION_SCHEDULER.getECtransSetup(destination.getData());
+                                    final var forceOpts = destSetup.getOptions(DESTINATION_SCHEDULER_FORCE, target,
+                                            null);
+                                    final boolean standby;
+                                    if ("never".equalsIgnoreCase(destSetup.getString(DESTINATION_SCHEDULER_STANDBY))
+                                            || "never".equalsIgnoreCase(forceOpts.get("standby", ""))
+                                                    && forceOpts.matches("pattern", target, ".*")
+                                                    && !forceOpts.matches("ignore", target)) {
+                                        standby = false;
+                                    } else if (destSetup.getBoolean(DESTINATION_SCHEDULER_STANDBY)
+                                            || forceOpts.get("standby", false)
+                                                    && forceOpts.matches("pattern", target, ".*")
+                                                    && !forceOpts.matches("ignore", target)) {
+                                        standby = true;
+                                    } else {
+                                        standby = dataFile.getStandby();
+                                    }
+                                    currentStatus = standby ? StatusFactory.FAIL : StatusFactory.RETR;
                                 }
                             } else if (Cnf.at("Other", "dontRetryDownloads", false)) {
                                 // We don't want to retry the download of the

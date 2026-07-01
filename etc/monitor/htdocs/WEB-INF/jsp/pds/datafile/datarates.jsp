@@ -98,7 +98,7 @@ const tFiles    = _si.map(i=>_tFiles[i]);
 </script>
 
 <%-- Header bar: view toggle --%>
-<div class="d-flex justify-content-between align-items-center mb-3 mt-2 flex-wrap gap-2">
+<div class="d-flex justify-content-end align-items-center mb-3 mt-2 flex-wrap gap-2">
   <div class="btn-group btn-group-sm" role="group">
     <button type="button" class="btn btn-outline-secondary" id="btnTable" onclick="setView('table')">
       <i class="bi bi-table me-1"></i>Table

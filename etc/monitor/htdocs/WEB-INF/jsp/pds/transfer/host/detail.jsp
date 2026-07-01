@@ -16,12 +16,10 @@
 </td>
 </tr>
 
-<tr><td colspan="2"> &nbsp; </td></tr>
-
 <auth:if basePathKey="host.basepath" paths="">
 <auth:then>
 <tr>
-<td colspan="2" class="pt-2">
+<td colspan="2" class="pt-3">
 <a href="<bean:message key="host.basepath"/>" class="btn btn-outline-primary">
     <i class="bi bi-arrow-left"></i> All Transfer Hosts
 </a>

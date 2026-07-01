@@ -2843,6 +2843,22 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     /**
      * {@inheritDoc}
      *
+     * Returns availability snapshots for a DataMover from the database.
+     */
+    @Override
+    public java.util.List<long[]> getMoverAvailability(final String moverName, final int hours) {
+        final var monitor = new MonitorCall("getMoverAvailability(" + moverName + "," + hours + ")");
+        try {
+            return monitor.done(master.getECpdsBase().getMoverAvailabilitySnapshots(moverName, hours));
+        } catch (final Exception e) {
+            _log.warn("getMoverAvailability", e);
+            return monitor.done(java.util.Collections.emptyList());
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * Returns a snapshot of in-flight download counts for all data movers and volumes.
      */
     @Override

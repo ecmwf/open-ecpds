@@ -265,6 +265,10 @@
 			type="ecmwf.ecpds.master.plugin.http.controller.datafile.transferserver.GetMoverDiskUsageJsonAction">
 		</action>
 
+		<action path="/datafile/moveravailability/*" parameter="{1}"
+			type="ecmwf.ecpds.master.plugin.http.controller.datafile.transferserver.GetMoverAvailabilityJsonAction">
+		</action>
+
 		<action path="/datafile/transferserver"
 			type="ecmwf.ecpds.master.plugin.http.controller.datafile.transferserver.GetTransferServerAction">
 			<forward name="success" path=".pds.datafile.transferserver" />
@@ -452,6 +456,9 @@
 		</action>
 		<action path="/transfer/host/edit/testScript/*" parameter="{1}"
 			type="ecmwf.ecpds.master.plugin.http.controller.transfer.host.TestScriptAction">
+		</action>
+		<action path="/transfer/host/edit/recentTransfers/*" parameter="{1}"
+			type="ecmwf.ecpds.master.plugin.http.controller.transfer.host.GetRecentTransfersAction">
 		</action>
 		<action path="/transfer/host/edit/insert_form"
 			type="ecmwf.ecpds.master.plugin.http.controller.transfer.host.InsertFormAction"

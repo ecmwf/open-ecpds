@@ -1012,6 +1012,59 @@ public final class ECpdsBase extends DataBase {
     }
 
     /**
+     * Gets the last N data transfers for the given host, ordered by most recent first (no date filter).
+     *
+     * @param cache
+     *            the data transfer cache
+     * @param hostName
+     *            the host name
+     * @param limit
+     *            maximum number of rows to return
+     *
+     * @return collection of DataTransfer objects
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public Collection<DataTransfer> getLastDataTransfersByHostName(final DataTransferCache cache, final String hostName,
+            final int limit) throws DataBaseException {
+        try (var rs = ecpds.getLastDataTransfersByHostName(hostName, limit)) {
+            final var hosts = new HashMap<String, Host>();
+            final List<DataTransfer> array = new ArrayList<>();
+            while (rs.next()) {
+                final var file = new DataFile();
+                file.setId(rs.getLong("DAF_ID"));
+                file.setSize(rs.getLong("DAT_SIZE"));
+                file.setTimeStep(rs.getLong("DAT_TIME_STEP"));
+                final var transfer = new DataTransfer();
+                transfer.setId(rs.getLong("DAT_ID"));
+                transfer.setDataFileId(file.getId());
+                transfer.setDataFile(file);
+                transfer.setSize(rs.getLong("DAT_SIZE"));
+                transfer.setTimeStep(rs.getLong("DAT_TIME_STEP"));
+                transfer.setDestinationName(rs.getString("DES_NAME"));
+                transfer.setTransferServerName(rs.getString("TRS_NAME"));
+                transfer.setTarget(rs.getString("DAT_TARGET"));
+                transfer.setStatusCode(rs.getString("STA_CODE"));
+                transfer.setUserStatus(rs.getString("DAT_USER_STATUS"));
+                transfer.setSent(rs.getLong("DAT_SENT"));
+                transfer.setDuration(rs.getLong("DAT_DURATION"));
+                transfer.setPriority(rs.getInt("DAT_PRIORITY"));
+                transfer.setRetryTime(rs.getTimestamp("DAT_RETRY_TIME"));
+                transfer.setQueueTime(rs.getTimestamp("DAT_QUEUE_TIME"));
+                transfer.setScheduledTime(rs.getTimestamp("DAT_SCHEDULED_TIME"));
+                _setHost(this, transfer, rs.getString("HOS_NAME"), hosts);
+                array.add(cache.getFromCache(transfer));
+            }
+            logSqlRequest("getLastDataTransfersByHostName", array.size());
+            return array;
+        } catch (SQLException | IOException e) {
+            _log.warn("getLastDataTransfersByHostName", e);
+            throw new DataBaseException("getLastDataTransfersByHostName", e);
+        }
+    }
+
+    /**
      * Gets the data transfers by destination and meta data.
      *
      * @param from
@@ -4234,6 +4287,81 @@ public final class ECpdsBase extends DataBase {
         } catch (final Exception e) {
             _log.warn("deleteOldDestinationBytesSnapshots", e);
             throw new DataBaseException("deleteOldDestinationBytesSnapshots", e);
+        }
+    }
+
+    /**
+     * Upsert a mover availability snapshot for a given minute bucket.
+     *
+     * @param minute
+     *            the truncated-to-minute timestamp
+     * @param mover
+     *            the data mover name
+     * @param available
+     *            {@code true} if the mover sent a heartbeat during this minute
+     *
+     * @throws DataBaseException
+     *             on DB error
+     */
+    public void upsertMoverAvailabilitySnapshot(final Timestamp minute, final String mover, final boolean available)
+            throws DataBaseException {
+        try {
+            ecpds.upsertMoverAvailabilitySnapshot(minute, mover, available);
+        } catch (final Exception e) {
+            _log.warn("upsertMoverAvailabilitySnapshot", e);
+            throw new DataBaseException("upsertMoverAvailabilitySnapshot", e);
+        }
+    }
+
+    /**
+     * Load mover availability snapshots within the given retention window.
+     *
+     * @param mover
+     *            the data mover name
+     * @param retentionHours
+     *            how many hours back to fetch
+     *
+     * @return list of {@code long[2]} entries where {@code [0]} is the minute epoch-ms and {@code [1]} is 1 (up) or 0
+     *         (down)
+     *
+     * @throws DataBaseException
+     *             on DB error
+     */
+    public List<long[]> getMoverAvailabilitySnapshots(final String mover, final int retentionHours)
+            throws DataBaseException {
+        try (var rs = ecpds.getMoverAvailabilitySnapshots(mover, retentionHours)) {
+            final List<long[]> result = new ArrayList<>();
+            var rows = 0;
+            while (rs.next()) {
+                final var minuteTs = rs.getTimestamp("MAS_MINUTE");
+                if (minuteTs != null) {
+                    result.add(new long[] { minuteTs.getTime(), rs.getLong("MAS_AVAILABLE") });
+                    rows++;
+                }
+            }
+            logSqlRequest("getMoverAvailabilitySnapshots", rows);
+            return result;
+        } catch (final Exception e) {
+            _log.warn("getMoverAvailabilitySnapshots", e);
+            throw new DataBaseException("getMoverAvailabilitySnapshots", e);
+        }
+    }
+
+    /**
+     * Delete mover availability snapshots older than the configured retention window.
+     *
+     * @param retentionHours
+     *            number of hours to retain
+     *
+     * @throws DataBaseException
+     *             on DB error
+     */
+    public void deleteOldMoverAvailabilitySnapshots(final int retentionHours) throws DataBaseException {
+        try {
+            ecpds.deleteOldMoverAvailabilitySnapshots(retentionHours);
+        } catch (final Exception e) {
+            _log.warn("deleteOldMoverAvailabilitySnapshots", e);
+            throw new DataBaseException("deleteOldMoverAvailabilitySnapshots", e);
         }
     }
 

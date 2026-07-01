@@ -277,6 +277,23 @@ final class ECpdsGet {
                 new String[] { "retentionHours=" + retentionHours });
     }
 
+    void upsertMoverAvailabilitySnapshot(final java.sql.Timestamp minute, final String mover, final boolean available)
+            throws SQLException, IOException {
+        _database.executeUpdate("ECpdsBase", "upsertMoverAvailabilitySnapshot",
+                new String[] { "mover=" + mover, "minute=" + minute, "available=" + (available ? 1 : 0) });
+    }
+
+    DBResultSet getMoverAvailabilitySnapshots(final String mover, final int retentionHours)
+            throws SQLException, IOException {
+        return _database.executeSelect("ECpdsBase", "getMoverAvailabilitySnapshots",
+                new String[] { "mover=" + mover, "retentionHours=" + retentionHours });
+    }
+
+    void deleteOldMoverAvailabilitySnapshots(final int retentionHours) throws SQLException, IOException {
+        _database.executeUpdate("ECpdsBase", "deleteOldMoverAvailabilitySnapshots",
+                new String[] { "retentionHours=" + retentionHours });
+    }
+
     /**
      * Gets the destination count per host (all hosts, single query).
      *
@@ -1107,6 +1124,27 @@ final class ECpdsGet {
             final java.sql.Timestamp paramTo) throws SQLException, IOException {
         return _database.executeSelect("ECpdsBase", "getDataTransfersByHostName",
                 new String[] { "host=" + paramHost, "from=" + paramFrom.getTime(), "to=" + paramTo.getTime() });
+    }
+
+    /**
+     * Gets the last data transfers by host name.
+     *
+     * @param paramHost
+     *            the host name
+     * @param paramLimit
+     *            the maximum number of rows to return
+     *
+     * @return the result set
+     *
+     * @throws SQLException
+     *             the SQL exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     */
+    DBResultSet getLastDataTransfersByHostName(final String paramHost, final int paramLimit)
+            throws SQLException, IOException {
+        return _database.executeSelect("ECpdsBase", "getLastDataTransfersByHostName",
+                new String[] { "host=" + paramHost, "limit=" + paramLimit });
     }
 
     /**

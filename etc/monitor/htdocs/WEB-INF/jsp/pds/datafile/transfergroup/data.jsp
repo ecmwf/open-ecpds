@@ -113,8 +113,15 @@
 	</div>
 	</c:if>
 
-	<p class="fw-bold mb-1 mt-2">Data Movers</p>
-	<table id="tgServersTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
+	<%-- Card: Data Movers --%>
+	<div class="card border-0 shadow-sm mb-3">
+		<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+			<i class="bi bi-server text-primary"></i>
+			<span class="fw-semibold">Data Movers</span>
+		</div>
+		<div class="card-body p-0">
+		<div class="table-responsive">
+	<table id="tgServersTable" class="table table-sm table-hover table-striped align-middle mb-0" style="width:100%">
 		<thead class="table-primary">
 			<tr>
 				<th>Name</th>
@@ -146,6 +153,9 @@
 		</c:forEach>
 		</tbody>
 	</table>
+		</div>
+		</div>
+	</div>
 	<script>
 	$(document).ready(function() {
 		$('#tgServersTable').DataTable({
@@ -153,36 +163,46 @@
 			searching: false,
 			ordering:  true,
 			info:      false,
+			dom:       't',
 			order:     [[0, 'asc']]
 		});
 	});
 	</script>
 
-	<div class="d-flex align-items-center mb-1 mt-3">
-		<p class="fw-bold mb-0">Disk Usage</p>
-		<span id="tgDiskUsageAge" class="text-muted fw-normal small ms-2"></span>
-		<button class="btn btn-link btn-sm text-muted ms-1 p-0" type="button"
-			data-bs-toggle="collapse" data-bs-target="#tgDiskUsageLegend"
-			aria-expanded="false" title="About this chart">
-			<i class="bi bi-info-circle"></i>
-		</button>
-	</div>
-	<div class="collapse mb-2" id="tgDiskUsageLegend">
-		<div class="card card-body py-2 px-3" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd);">
-			<strong class="d-block mb-1">Two views are available:</strong>
-			<ul class="mb-0 ps-3">
-				<li><strong>Worst-case</strong> &mdash; per volume, shows the highest used bytes across all Data Movers compared to the smallest reported capacity. This is the binding constraint used by the load balancer to select volumes.</li>
-				<li><strong>Average</strong> &mdash; per volume, shows the mean used bytes and mean capacity across all Data Movers. This gives an overall utilisation picture when movers are heterogeneous.</li>
-			</ul>
-			<div class="mt-1 text-muted">When only one Data Mover is in the group, both views are identical.</div>
+	<%-- Card: Disk Usage --%>
+	<div class="card border-0 shadow-sm mb-3">
+		<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+			<i class="bi bi-hdd-fill text-primary"></i>
+			<span class="fw-semibold">Disk Usage</span>
+			<span id="tgDiskUsageAge" class="text-muted fw-normal small ms-1"></span>
+			<button class="btn btn-link btn-sm text-muted p-0 ms-1" type="button"
+				data-bs-toggle="collapse" data-bs-target="#tgDiskUsageLegend"
+				aria-expanded="false" title="About this chart">
+				<i class="bi bi-info-circle"></i>
+			</button>
+			<div class="ms-auto">
+				<div class="btn-group btn-group-sm" role="group" aria-label="Chart view">
+					<button type="button" class="btn btn-outline-secondary active" id="tgViewWorstBtn" onclick="tgSetView('worst')">Worst-case</button>
+					<button type="button" class="btn btn-outline-secondary" id="tgViewAvgBtn" onclick="tgSetView('average')">Average</button>
+				</div>
+			</div>
 		</div>
-	</div>
-	<div class="btn-group btn-group-sm mb-2" role="group" aria-label="Chart view">
-		<button type="button" class="btn btn-outline-secondary active" id="tgViewWorstBtn" onclick="tgSetView('worst')">Worst-case</button>
-		<button type="button" class="btn btn-outline-secondary" id="tgViewAvgBtn" onclick="tgSetView('average')">Average</button>
-	</div>
-	<div id="tgDiskUsageWrap">
-		<div class="text-muted small fst-italic">Loading&hellip;</div>
+		<div class="collapse" id="tgDiskUsageLegend">
+			<div class="card-body py-2 px-3 border-bottom" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
+				<strong class="d-block mb-1">Two views are available:</strong>
+				<ul class="mb-0 ps-3">
+					<li><strong>Worst-case</strong> &mdash; per volume, shows the highest used bytes across all Data Movers compared to the smallest reported capacity. This is the binding constraint used by the load balancer to select volumes.</li>
+					<li><strong>Average</strong> &mdash; per volume, shows the mean used bytes and mean capacity across all Data Movers. This gives an overall utilisation picture when movers are heterogeneous.</li>
+				</ul>
+				<div class="mt-1 text-muted">When only one Data Mover is in the group, both views are identical.</div>
+			</div>
+		</div>
+		<div class="card-body pb-2 pt-2">
+			<div id="tgDiskUsageSummary" class="d-flex flex-wrap gap-3 mb-2" style="font-size:0.82rem"></div>
+			<div id="tgDiskUsageWrap">
+				<div class="text-muted small fst-italic">Loading&hellip;</div>
+			</div>
+		</div>
 	</div>
 
 	<script src="/assets/js/chart.umd.min.js"></script>
@@ -205,6 +225,39 @@
 			var i = 0;
 			while (b >= 1024 && i < units.length - 1) { b /= 1024; i++; }
 			return b.toFixed(i > 0 ? 1 : 0) + ' ' + units[i];
+		}
+
+		function pctBadgeClass(pct) {
+			if (pct >= 90) return 'bg-danger-subtle text-danger-emphasis border-danger-subtle';
+			if (pct >= 75) return 'bg-warning-subtle text-warning-emphasis border-warning-subtle';
+			return 'bg-success-subtle text-success-emphasis border-success-subtle';
+		}
+
+		function renderSummary(vols) {
+			var el = document.getElementById('tgDiskUsageSummary');
+			if (!el) return;
+			if (!vols || vols.length === 0) { el.innerHTML = ''; return; }
+			var totalUsed = vols.reduce(function(s, v) { return s + v.used; }, 0);
+			var totalAll  = vols.reduce(function(s, v) { return s + v.total; }, 0);
+			var overallPct = totalAll > 0 ? Math.round(100 * totalUsed / totalAll) : 0;
+			var pctVals = vols.map(function(v) { return v.pct; });
+			var maxPct  = Math.max.apply(null, pctVals);
+			var minPct  = Math.min.apply(null, pctVals);
+			var maxVol  = pctVals.indexOf(maxPct);
+			var minVol  = pctVals.indexOf(minPct);
+
+			function badge(icon, label, val, cls) {
+				return '<span class="badge rounded-pill border fw-normal px-2 py-1 ' + cls + '">'
+					+ '<i class="bi ' + icon + ' me-1"></i>' + label + ': <strong>' + val + '</strong></span>';
+			}
+
+			var html = badge('bi-pie-chart-fill', 'Overall', overallPct + '%', pctBadgeClass(overallPct))
+				+ badge('bi-layers-fill', 'Volumes', vols.length, 'bg-secondary-subtle text-secondary-emphasis border-secondary-subtle')
+				+ (vols.length > 1
+					? badge('bi-arrow-up-circle-fill', 'Highest', 'Vol&nbsp;' + maxVol + '&nbsp;(' + maxPct + '%)', pctBadgeClass(maxPct))
+					  + badge('bi-arrow-down-circle-fill', 'Lowest', 'Vol&nbsp;' + minVol + '&nbsp;(' + minPct + '%)', pctBadgeClass(minPct))
+					: '');
+			el.innerHTML = html;
 		}
 
 		function pctColor(pct) {
@@ -282,9 +335,11 @@
 			currentVols = vols || [];
 			var wrap = document.getElementById('tgDiskUsageWrap');
 			if (!vols || vols.length === 0) {
-				wrap.innerHTML = '<div class="alert alert-info py-1 px-2 small">No disk usage data available yet - waiting for first polling cycle.</div>';
+				renderSummary([]);
+				wrap.innerHTML = '<div class="text-muted small fst-italic px-1">No disk usage data available yet &mdash; waiting for first polling cycle.</div>';
 				return;
 			}
+			renderSummary(vols);
 			var theme   = getThemeColors();
 			var pctVals = vols.map(function(v) { return v.pct; });
 			var gMin = vols.length > 1 ? Math.min.apply(null, pctVals) : null;
@@ -392,7 +447,9 @@
 			currentView = view;
 			document.getElementById('tgViewWorstBtn').classList.toggle('active', view === 'worst');
 			document.getElementById('tgViewAvgBtn').classList.toggle('active', view === 'average');
-			renderChart(view === 'worst' ? lastWorstVols : lastAvgVols);
+			var vols = view === 'worst' ? lastWorstVols : lastAvgVols;
+			renderSummary(vols);
+			renderChart(vols);
 		};
 
 		function updateAge() {

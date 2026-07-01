@@ -54,6 +54,7 @@ import ecmwf.ecpds.master.plugin.http.home.transfer.searches.SortedBadDataTransf
 import ecmwf.ecpds.master.plugin.http.home.transfer.searches.SortedBadDataTransfers;
 import ecmwf.ecpds.master.plugin.http.home.transfer.searches.DataTransfersByFilter;
 import ecmwf.ecpds.master.plugin.http.home.transfer.searches.DataTransfersByHost;
+import ecmwf.ecpds.master.plugin.http.home.transfer.searches.LastDataTransfersByHost;
 import ecmwf.ecpds.master.plugin.http.home.transfer.searches.DataTransfersByStatusCode;
 import ecmwf.ecpds.master.plugin.http.home.transfer.searches.DataTransfersByTransferServer;
 import ecmwf.ecpds.master.plugin.http.home.transfer.searches.DataTransfersCountByFilter;
@@ -108,6 +109,10 @@ public class DataTransferDAOHandler extends PDSDAOBase implements DAOHandler {
             if (search instanceof final DataTransfersByHost s) {
                 return convertToLightBeanCollection(MasterManager.getDB().getDataTransfersByHostName(
                         s.getHost().getName(), getBaseDate(s.getDate(), 0), getBaseDate(s.getDate(), 1)));
+            }
+            if (search instanceof final LastDataTransfersByHost s) {
+                return convertToLightBeanCollection(
+                        MasterManager.getDB().getLastDataTransfersByHostName(s.getHost().getName(), s.getLimit()));
             }
             if (search instanceof final DataTransfersByDestination s) {
                 beans = MasterManager.getDB().getDataTransfersByDestinationOnDate(s.getDestination().getName(),

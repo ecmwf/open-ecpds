@@ -494,6 +494,24 @@ public interface DataBaseInterface extends Remote {
             throws DataBaseException, RemoteException;
 
     /**
+     * Gets the last N data transfers by host name (no date filter, most recent first).
+     *
+     * @param name
+     *            the host name
+     * @param limit
+     *            maximum number of rows to return
+     *
+     * @return the data transfers
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    Collection<DataTransfer> getLastDataTransfersByHostName(String name, int limit)
+            throws DataBaseException, RemoteException;
+
+    /**
      * Gets the data transfers by transfer server name.
      *
      * @param name

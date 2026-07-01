@@ -478,6 +478,21 @@ final class DataBaseProxy implements DataBaseInterface {
     /**
      * {@inheritDoc}
      *
+     * Gets the last N data transfers by host name.
+     */
+    @Override
+    public Collection<DataTransfer> getLastDataTransfersByHostName(final String name, final int limit)
+            throws DataBaseException, RemoteException {
+        if (isEmpty(name) || limit <= 0) {
+            throw new DataBaseException("Invalid parameter(s) for getLastDataTransfersByHostName");
+        }
+        final var monitor = new MonitorCall("getLastDataTransfersByHostName(" + name + "," + limit + ")");
+        return monitor.done(dataBaseInterface.getLastDataTransfersByHostName(name, limit));
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * Gets the data transfers by transfer server name.
      */
     @Override

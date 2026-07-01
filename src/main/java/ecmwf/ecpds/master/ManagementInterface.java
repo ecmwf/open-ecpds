@@ -1299,6 +1299,28 @@ public interface ManagementInterface extends Remote {
     Map<String, long[][]> getMoverVolumeUsage(String moverName) throws MasterException, RemoteException;
 
     /**
+     * Returns availability snapshots for the given DataMover from the database.
+     *
+     * <p>
+     * Each element is a {@code long[2]} where {@code [0]} is the minute bucket in epoch-ms and {@code [1]} is {@code 1}
+     * (mover was up) or {@code 0} (mover was down) during that minute.
+     * </p>
+     *
+     * @param moverName
+     *            the data mover name
+     * @param hours
+     *            how many hours of history to return
+     *
+     * @return time-ordered list of minute-bucket availability entries; never {@code null}
+     *
+     * @throws ecmwf.ecpds.master.MasterException
+     *             the master exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    java.util.List<long[]> getMoverAvailability(String moverName, int hours) throws MasterException, RemoteException;
+
+    /**
      * Returns a snapshot of the current in-flight download counts for all data movers and all volumes.
      *
      * <p>

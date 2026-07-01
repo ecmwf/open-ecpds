@@ -830,6 +830,18 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
+     * Gets the last N data transfers by host name.
+     */
+    @Override
+    public Collection<DataTransfer> getLastDataTransfersByHostName(final String name, final int limit)
+            throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getLastDataTransfersByHostName(" + name + "," + limit + ")");
+        return monitor.done(ecpds.getLastDataTransfersByHostName(master.dataCache, name, limit));
+    }
+
+    /**
      * Gets the data transfers by transfer server name.
      *
      * @param name

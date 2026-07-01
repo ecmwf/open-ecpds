@@ -1215,6 +1215,18 @@ final class ManagementProxy implements ManagementInterface {
     /**
      * {@inheritDoc}
      *
+     * Returns availability snapshots for a DataMover.
+     */
+    @Override
+    public java.util.List<long[]> getMoverAvailability(final String moverName, final int hours)
+            throws MasterException, RemoteException {
+        final var monitor = new MonitorCall("getMoverAvailability(" + moverName + "," + hours + ")");
+        return monitor.done(managementInterface.getMoverAvailability(moverName, hours));
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * Gets the download metrics snapshot.
      */
     @Override

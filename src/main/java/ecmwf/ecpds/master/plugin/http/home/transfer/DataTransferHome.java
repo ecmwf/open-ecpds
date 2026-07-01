@@ -43,6 +43,7 @@ import ecmwf.ecpds.master.plugin.http.home.transfer.searches.DataTransfersByDest
 import ecmwf.ecpds.master.plugin.http.home.transfer.searches.DataTransfersByDestinationNameProductAndTime;
 import ecmwf.ecpds.master.plugin.http.home.transfer.searches.DataTransfersByFilter;
 import ecmwf.ecpds.master.plugin.http.home.transfer.searches.DataTransfersByHost;
+import ecmwf.ecpds.master.plugin.http.home.transfer.searches.LastDataTransfersByHost;
 import ecmwf.ecpds.master.plugin.http.home.transfer.searches.DataTransfersByStatusCode;
 import ecmwf.ecpds.master.plugin.http.home.transfer.searches.DataTransfersByTransferServer;
 import ecmwf.ecpds.master.plugin.http.home.transfer.searches.DataTransfersCountByFilter;
@@ -266,6 +267,24 @@ public class DataTransferHome extends ModelHomeBase {
     public static final Collection<DataTransferLightBean> findByHostAndDate(final Host h, final Date date)
             throws TransferException {
         return find(new DataTransfersByHost(h, date));
+    }
+
+    /**
+     * Find the last N DataTransfers for the given host, ordered by most recent first, with no date constraint.
+     *
+     * @param h
+     *            the host
+     * @param limit
+     *            maximum number of rows to return
+     *
+     * @return the collection
+     *
+     * @throws ecmwf.ecpds.master.plugin.http.model.transfer.TransferException
+     *             the transfer exception
+     */
+    public static final Collection<DataTransferLightBean> findLastByHost(final Host h, final int limit)
+            throws TransferException {
+        return find(new LastDataTransfersByHost(h, limit));
     }
 
     /**

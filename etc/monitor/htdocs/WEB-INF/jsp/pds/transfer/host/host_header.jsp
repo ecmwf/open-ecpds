@@ -179,7 +179,16 @@
                         addItem(child);
                     } else if (child.tagName === 'DIV' && child.querySelector('a')) {
                         addDivider();
-                        Array.from(child.querySelectorAll('a')).forEach(addItem);
+                        Array.from(child.children).forEach(function(gc) {
+                            if (gc.tagName === 'A') {
+                                addItem(gc);
+                            } else if (gc.tagName === 'DIV' && gc.querySelector('a')) {
+                                addDivider();
+                                Array.from(gc.querySelectorAll('a')).forEach(addItem);
+                            } else if (gc.tagName === 'DIV' && !gc.querySelector('a')) {
+                                addDivider();
+                            }
+                        });
                     }
                 });
                 // Mark the active page icon on both the desktop bar and mobile menu

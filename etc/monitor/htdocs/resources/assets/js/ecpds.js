@@ -475,24 +475,39 @@ function testSource(aceEditor) {
  * Execute a Directory script (JS or Python) on the DataMover via the server-side testScript
  * endpoint, then show the result in the shared testResultModal.
  *
- * @param {object} aceEditor - ACE editor instance containing the script
- * @param {string} hostId    - Host primary key (path param for the endpoint)
- * @param {string} lang      - "js" or "python"
+ * @param {object} aceEditor  - ACE editor instance containing the script
+ * @param {string} hostId     - Host primary key (path param for the endpoint)
+ * @param {string} lang       - "js" or "python"
+ * @param {string} [transferId] - Optional DataTransfer ID whose fields will be substituted
+ * @param {object} [manualValues] - Optional key→value map for manual placeholder substitution
  */
-function testSourceServer(aceEditor, hostId, lang) {
+/** True while a testSourceServer fetch is in flight — prevents double-clicks and annotation re-enables. */
+var _testDirRunning = false;
+
+function testSourceServer(aceEditor, hostId, lang, transferId, manualValues) {
+  if (_testDirRunning) return;
+  _testDirRunning = true;
   var script = aceEditor.getValue();
   var btn = document.getElementById('testDir');
-  var origLabel = btn ? btn.innerHTML : '';
+  // Use a data attribute for the true original label so we never capture a "Running…" state
+  if (btn && !btn.dataset.origLabel) btn.dataset.origLabel = btn.innerHTML;
+  var origLabel = btn ? btn.dataset.origLabel : '';
   if (btn) {
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span>Running\u2026';
   }
-  var params = new URLSearchParams({ lang: lang, script: script });
+  var paramObj = { lang: lang, script: script };
+  if (transferId) paramObj.transferId = transferId;
+  if (manualValues) paramObj.valuesJson = JSON.stringify(manualValues);
+  var params = new URLSearchParams(paramObj);
+  var controller = new AbortController();
+  var timeoutId = setTimeout(function() { controller.abort(); }, 120000);
   fetch('/do/transfer/host/edit/testScript/' + encodeURIComponent(hostId), {
     method: 'POST',
     credentials: 'same-origin',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: params.toString()
+    body: params.toString(),
+    signal: controller.signal
   })
   .then(function(r) { return r.json(); })
   .then(function(data) {
@@ -516,10 +531,162 @@ function testSourceServer(aceEditor, hostId, lang) {
     }
   })
   .catch(function(err) {
-    showToast('Test request failed: ' + err.message, 'danger');
+    var msg = err.name === 'AbortError'
+      ? 'Test timed out after 2 minutes — the server did not respond in time.'
+      : 'Test request failed: ' + err.message;
+    showToast(msg, 'danger');
   })
   .finally(function() {
+    clearTimeout(timeoutId);
+    _testDirRunning = false;
     if (btn) { btn.disabled = false; btn.innerHTML = origLabel; }
+  });
+}
+
+/** Placeholder families that require a live DataTransfer to resolve. */
+var _TRANSFER_PLACEHOLDER_RE = /\$(?:dataFile|dataTransfer|destination|country|transferGroup|transferServer)\[|\$moverName\b/;
+
+/**
+ * Extract all unique placeholder tokens from a script string, e.g. "$dataFile[original]".
+ * Returns an array of unique tokens like ["$dataFile[original]", "$dataTransfer[target]"].
+ */
+function _extractPlaceholders(script) {
+  var re = /\$(?:dataFile|dataTransfer|destination|country|transferGroup|transferServer)\[[^\]]+\]|\$moverName\b/g;
+  var seen = {}, result = [];
+  var m;
+  while ((m = re.exec(script)) !== null) {
+    if (!seen[m[0]]) { seen[m[0]] = true; result.push(m[0]); }
+  }
+  return result;
+}
+
+/**
+ * Pre-flight check before running a test script.
+ * For Dissemination/non-Acquisition hosts: detects transfer-specific placeholders and
+ * either presents a DataTransfer picker or a manual-values form before executing.
+ *
+ * @param {object} aceEditor - ACE editor instance
+ * @param {string} hostId    - Host primary key
+ * @param {string} lang      - "js" or "python"
+ */
+function testSourceServerPreflight(aceEditor, hostId, lang) {
+  if (_testDirRunning) return;
+  var script = aceEditor.getValue();
+  var hostTypeEl = document.getElementById('type');
+  var hostType = hostTypeEl ? hostTypeEl.value : '';
+  var isDissemination = hostType !== 'Acquisition' && hostType !== 'Source';
+
+  // Only intercept if the script has transfer-specific placeholders
+  if (!isDissemination || !_TRANSFER_PLACEHOLDER_RE.test(script)) {
+    testSourceServer(aceEditor, hostId, lang);
+    return;
+  }
+
+  var placeholders = _extractPlaceholders(script);
+
+  // Fetch today's transfers for this host
+  fetch('/do/transfer/host/edit/recentTransfers/' + encodeURIComponent(hostId), {
+    credentials: 'same-origin'
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(transfers) {
+    if (transfers && transfers.length > 0) {
+      _showPickTransferModal(aceEditor, hostId, lang, transfers, placeholders);
+    } else {
+      _showManualValuesModal(aceEditor, hostId, lang, placeholders);
+    }
+  })
+  .catch(function() {
+    // Network error fetching transfers — fall back to manual entry
+    _showManualValuesModal(aceEditor, hostId, lang, placeholders);
+  });
+}
+
+function _showPickTransferModal(aceEditor, hostId, lang, transfers, placeholders) {
+  var listEl = document.getElementById('testPickTransferList');
+  var runBtn  = document.getElementById('testPickRunBtn');
+  var manBtn  = document.getElementById('testPickManualBtn');
+  if (!listEl || !runBtn || !manBtn) { testSourceServer(aceEditor, hostId, lang); return; }
+
+  // Build list
+  listEl.innerHTML = '';
+  var selectedId = null;
+  transfers.forEach(function(t) {
+    var item = document.createElement('button');
+    item.type = 'button';
+    item.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-start py-2 px-3';
+    item.innerHTML = '<div class="me-auto"><div class="fw-semibold" style="font-size:0.85rem">'
+      + escapeHtml(t.target || t.dataFileName || t.id)
+      + '</div><div class="text-muted" style="font-size:0.75rem">'
+      + escapeHtml(t.destination) + ' &mdash; ' + escapeHtml(t.statusCode)
+      + '</div></div>'
+      + '<span class="badge bg-secondary-subtle text-secondary-emphasis border rounded-pill ms-2" style="font-size:0.7rem">#' + escapeHtml(t.id) + '</span>';
+    item.addEventListener('click', function() {
+      listEl.querySelectorAll('.list-group-item').forEach(function(el) {
+        el.classList.remove('active');
+        el.style.color = '';
+      });
+      item.classList.add('active');
+      selectedId = t.id;
+      runBtn.disabled = false;
+    });
+    listEl.appendChild(item);
+  });
+
+  runBtn.disabled = true;
+  runBtn.onclick = null;
+  runBtn.addEventListener('click', function handler() {
+    runBtn.removeEventListener('click', handler);
+    bootstrap.Modal.getInstance(document.getElementById('testPickTransferModal')).hide();
+    testSourceServer(aceEditor, hostId, lang, selectedId, null);
+  }, { once: true });
+
+  manBtn.onclick = null;
+  manBtn.addEventListener('click', function handler() {
+    manBtn.removeEventListener('click', handler);
+    bootstrap.Modal.getInstance(document.getElementById('testPickTransferModal')).hide();
+    _showManualValuesModal(aceEditor, hostId, lang, placeholders);
+  }, { once: true });
+
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('testPickTransferModal')).show();
+}
+
+function _showManualValuesModal(aceEditor, hostId, lang, placeholders) {
+  var listEl = document.getElementById('testManualValuesList');
+  var runBtn  = document.getElementById('testManualRunBtn');
+  if (!listEl || !runBtn) { testSourceServer(aceEditor, hostId, lang); return; }
+
+  listEl.innerHTML = '';
+  var inputs = {};
+  placeholders.forEach(function(ph) {
+    var id = 'mv_' + ph.replace(/[^a-zA-Z0-9]/g, '_');
+    var row = document.createElement('div');
+    row.className = 'mb-2';
+    row.innerHTML = '<label class="form-label mb-1" style="font-size:0.82rem;font-family:monospace">' + escapeHtml(ph) + '</label>'
+      + '<input type="text" class="form-control form-control-sm" id="' + id + '" placeholder="(leave blank to keep placeholder)">';
+    listEl.appendChild(row);
+    inputs[ph] = id;
+  });
+
+  runBtn.onclick = null;
+  runBtn.addEventListener('click', function handler() {
+    runBtn.removeEventListener('click', handler);
+    var values = {};
+    Object.keys(inputs).forEach(function(ph) {
+      var val = document.getElementById(inputs[ph]);
+      if (val && val.value.trim() !== '') values[ph] = val.value.trim();
+    });
+    bootstrap.Modal.getInstance(document.getElementById('testManualValuesModal')).hide();
+    testSourceServer(aceEditor, hostId, lang, null, Object.keys(values).length > 0 ? values : null);
+  }, { once: true });
+
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('testManualValuesModal')).show();
+}
+
+function escapeHtml(str) {
+  if (str == null) return '';
+  return String(str).replace(/[&<>"']/g, function(c) {
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c];
   });
 }
 
