@@ -413,16 +413,16 @@
 <c:forEach var="ts" items="${transferStatistics}" varStatus="loop">
 <tr>
   <td class="text-muted">${loop.index+1}</td>
-  <td><span class="val-code small">${empty ts.remoteAddress ? '—' : ts.remoteAddress}</span></td>
+  <td><span class="val-code small">${empty ts.remoteAddress ? '&#8212;' : ts.remoteAddress}</span></td>
   <td><span class="val-num">${ts.durationMs}</span> ms</td>
-  <td><span class="val-num">${empty ts.rttMs ? '—' : ts.rttMs}</span></td>
-  <td><span class="val-num">${empty ts.bytesSent ? '—' : ts.bytesSent}</span></td>
-  <td><span class="val-num">${empty ts.bytesReceived ? '—' : ts.bytesReceived}</span></td>
+  <td><span class="val-num">${empty ts.rttMs ? '&#8212;' : ts.rttMs}</span></td>
+  <td><span class="val-num">${empty ts.bytesSent ? '&#8212;' : ts.bytesSent}</span></td>
+  <td><span class="val-num">${empty ts.bytesReceived ? '&#8212;' : ts.bytesReceived}</span></td>
   <td><c:choose><c:when test="${not empty ts.deliveryRateBps}">
-    <span class="nst-rate" data-bps="${ts.deliveryRateBps}">${ts.deliveryRateBps}</span> bps
-  </c:when><c:otherwise>—</c:otherwise></c:choose></td>
-  <td>${empty ts.cwnd ? '—' : ts.cwnd}</td>
-  <td>${empty ts.segsOut ? '—' : ts.segsOut} / ${empty ts.segsIn ? '—' : ts.segsIn}</td>
+    <span class="nst-rate" data-bps="${ts.deliveryRateBps}">${ts.deliveryRateBps} bps</span>
+  </c:when><c:otherwise>&#8212;</c:otherwise></c:choose></td>
+  <td>${empty ts.cwnd ? '&#8212;' : ts.cwnd}</td>
+  <td>${empty ts.segsOut ? '&#8212;' : ts.segsOut} / ${empty ts.segsIn ? '&#8212;' : ts.segsIn}</td>
 </tr>
 </c:forEach>
 </tbody>

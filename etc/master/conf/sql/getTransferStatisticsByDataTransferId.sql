@@ -6,6 +6,11 @@
 #group "query"
 
 ##
+## Variable(s)
+##
+#prompt "datId;Data Transfer ID;%"
+
+##
 ## Request(s)
 ##
 SELECT TST_ID, DAT_ID, TST_START_TIME, TST_END_TIME, TST_LOCAL_ADDRESS, TST_REMOTE_ADDRESS,

@@ -219,7 +219,7 @@
 			var summary = document.getElementById('moverDiskUsageSummary');
 			if (!vols || vols.length === 0) {
 				if (summary) summary.innerHTML = '';
-				wrap.innerHTML = '<div class="text-muted small fst-italic py-1">No disk usage data available yet — waiting for first polling cycle.</div>';
+				wrap.innerHTML = '<div class="text-muted small fst-italic py-1">No disk usage data available yet \u2014 waiting for first polling cycle.</div>';
 				return;
 			}
 
@@ -424,7 +424,7 @@
 			var wrap = document.getElementById('moverAvailWrap');
 			if (!data || data.length === 0) {
 				wrap.style.height = '';
-				wrap.innerHTML = '<div class="text-muted small fst-italic py-1">No availability data yet — waiting for first polling cycle.</div>';
+				wrap.innerHTML = '<div class="text-muted small fst-italic py-1">No availability data yet \u2014 waiting for first polling cycle.</div>';
 				return;
 			}
 			var theme   = getThemeColors();
