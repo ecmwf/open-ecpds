@@ -48,11 +48,12 @@
                         </div>
                         <div class="col-auto d-flex gap-1">
                             <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i><span class="d-none d-sm-inline ms-1">Search</span></button>
-                            <button type="button" class="btn btn-outline-primary"
+                            <button type="button" class="btn btn-outline-primary position-relative"
                                     id="btnDestQB"
                                     onclick="toggleQBPanel('destQueryBuilder','btnDestQB')"
                                     title="Filter">
                                 <i class="bi bi-sliders2"></i><span class="d-none d-sm-inline ms-1">Filter</span>
+                                <span id="btnDestQB-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display:none;font-size:0.75rem;min-width:1.3em;padding:0.2em 0.4em;line-height:1.2"></span>
                             </button>
                             <button class="btn btn-link btn-sm text-muted p-0" type="button"
                                     data-bs-toggle="collapse" data-bs-target="#dstQBHelp"
@@ -157,7 +158,7 @@
                                 <div class="row g-1 mb-1">
                                     <div class="col-12 col-md-3">
                                         <label class="form-label mb-0 fw-semibold"><i class="bi bi-activity me-1 text-muted"></i>Status</label>
-                                        <select class="form-select form-select-sm" name="destinationStatus" id="destinationStatus" onchange="destsTableReload()" title="Filter by Status">
+                                        <select class="form-select form-select-sm" name="destinationStatus" id="destinationStatus" onchange="destsTableReload();dqbUpdateBadge();" title="Filter by Status">
                                             <c:forEach var="option" items="${statusOptions}">
                                                 <option value="${option}" <c:if test="${destinationStatus == option}">selected</c:if>>${option}</option>
                                             </c:forEach>
@@ -165,7 +166,7 @@
                                     </div>
                                     <div class="col-12 col-md-3">
                                         <label class="form-label mb-0 fw-semibold"><i class="bi bi-file-zip me-1 text-muted"></i>Compression</label>
-                                        <select class="form-select form-select-sm" name="destinationFilter" id="destinationFilter" onchange="destsTableReload()" title="Filter by Compression">
+                                        <select class="form-select form-select-sm" name="destinationFilter" id="destinationFilter" onchange="destsTableReload();dqbUpdateBadge();" title="Filter by Compression">
                                             <c:forEach var="option" items="${filterOptions}">
                                                 <option value="${option.name}" <c:if test="${destinationFilter == option.name}">selected</c:if>>${option.value}</option>
                                             </c:forEach>
@@ -173,7 +174,7 @@
                                     </div>
                                     <div class="col-12 col-md-3">
                                         <label class="form-label mb-0 fw-semibold"><i class="bi bi-diagram-2 me-1 text-muted"></i>Aliases</label>
-                                        <select class="form-select form-select-sm" name="aliases" id="aliases" onchange="destsTableReload()" title="Aliased From/To">
+                                        <select class="form-select form-select-sm" name="aliases" id="aliases" onchange="destsTableReload();dqbUpdateBadge();" title="Aliased From/To">
                                             <option value="all" <c:if test="${aliases == 'all'}">selected</c:if>>All Destinations</option>
                                             <option value="to"  <c:if test="${aliases == 'to'}">selected</c:if>>Aliased From ...</option>
                                             <option value="from" <c:if test="${aliases == 'from'}">selected</c:if>>Aliases To ...</option>
@@ -181,7 +182,7 @@
                                     </div>
                                     <div class="col-12 col-md-3">
                                         <label class="form-label mb-0 fw-semibold"><i class="bi bi-people me-1 text-muted"></i>Data Users</label>
-                                        <select class="form-select form-select-sm" id="datausers" onchange="destsTableReload()" title="Filter by Data User association">
+                                        <select class="form-select form-select-sm" id="datausers" onchange="destsTableReload();dqbUpdateBadge();" title="Filter by Data User association">
                                             <option value="any">Any</option>
                                             <option value="yes">With Data Users</option>
                                             <option value="no">Without Data Users</option>
@@ -209,6 +210,24 @@
         <script>
         function dqbVal(id) { return document.getElementById(id) ? document.getElementById(id).value.trim() : ''; }
         function dqbQuote(v) { var q=v.indexOf(' ')>=0||v.indexOf('=')>=0||v.indexOf('"')>=0; return q?'"'+v.replace(/"/g,'\\"')+'"':v; }
+        function dqbCountActive() {
+            var n = 0;
+            ['name','comment','email','country','options'].forEach(function(f) { if (dqbVal('dqb_'+f)) n++; });
+            ['enabled','monitor','backup','forceproxy'].forEach(function(f) { if (dqbVal('dqb_'+f)) n++; });
+            if (dqbVal('dqb_case') !== 's') n++;
+            var st = document.getElementById('destinationStatus'); if (st && st.selectedIndex > 0) n++;
+            var cf = document.getElementById('destinationFilter'); if (cf && cf.selectedIndex > 0) n++;
+            var al = document.getElementById('aliases'); if (al && al.value !== 'all') n++;
+            var du = document.getElementById('datausers'); if (du && du.value !== 'any') n++;
+            return n;
+        }
+        function dqbUpdateBadge() {
+            var n = dqbCountActive();
+            var b = document.getElementById('btnDestQB-badge');
+            if (b) { b.textContent = n; b.style.display = n > 0 ? '' : 'none'; }
+            var btn = document.getElementById('btnDestQB');
+            if (btn) { btn.classList.toggle('btn-outline-primary', n === 0); btn.classList.toggle('btn-warning', n > 0); }
+        }
         function dqbBuild() {
             var p = [];
             ['name','comment','email','country','options'].forEach(function(f) {
@@ -223,6 +242,7 @@
         function dqbPreview() {
             var q = dqbBuild();
             document.getElementById('dqb_preview').textContent = q || '-- fill in fields above --';
+            dqbUpdateBadge();
         }
         function dqbApply() {
             document.getElementById('destinationSearch').value = dqbBuild();
@@ -240,6 +260,9 @@
             document.getElementById('destinationStatus').selectedIndex = 0;
             document.getElementById('destinationFilter').selectedIndex = 0;
             document.getElementById('aliases').selectedIndex = 0;
+            document.getElementById('datausers').selectedIndex = 0;
+            document.getElementById('destinationSearch').value = '';
+            document.getElementById('destQueryBuilder').style.display = 'none';
             updateFlag();
             dqbPreview();
             destsTableReload();

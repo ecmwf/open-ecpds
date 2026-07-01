@@ -46,11 +46,12 @@
                         </div>
                         <div class="col-auto d-flex gap-1">
                             <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i><span class="d-none d-sm-inline ms-1">Search</span></button>
-                            <button type="button" class="btn btn-outline-primary"
+                            <button type="button" class="btn btn-outline-primary position-relative"
                                     id="btnHostQB"
                                     onclick="toggleQBPanel('hostQueryBuilder','btnHostQB')"
                                     title="Filter">
                                 <i class="bi bi-sliders2"></i><span class="d-none d-sm-inline ms-1">Filter</span>
+                                <span id="btnHostQB-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display:none;font-size:0.75rem;min-width:1.3em;padding:0.2em 0.4em;line-height:1.2"></span>
                             </button>
                             <button class="btn btn-link btn-sm text-muted p-0" type="button"
                                     data-bs-toggle="collapse" data-bs-target="#hstQBHelp"
@@ -161,7 +162,7 @@
                                 <div class="row g-1 mb-1">
                                     <div class="col-12 col-md-4">
                                         <label class="form-label mb-0 fw-semibold"><i class="bi bi-diagram-3 me-1 text-muted"></i>Group</label>
-                                        <select class="form-select form-select-sm" name="network" id="network" onchange="hostsTableReload()" title="Filter by Group">
+                                        <select class="form-select form-select-sm" name="network" id="network" onchange="hostsTableReload();hqbUpdateBadge();" title="Filter by Group">
                                             <c:forEach var="option" items="${networkOptions}">
                                                 <option value="${option.name}" <c:if test="${network == option.name}">selected</c:if>>${option.value}</option>
                                             </c:forEach>
@@ -169,7 +170,7 @@
                                     </div>
                                     <div class="col-12 col-md-4">
                                         <label class="form-label mb-0 fw-semibold"><i class="bi bi-bookmark me-1 text-muted"></i>Label</label>
-                                        <select class="form-select form-select-sm" name="label" id="label" onchange="hostsTableReload()" title="Filter by Label">
+                                        <select class="form-select form-select-sm" name="label" id="label" onchange="hostsTableReload();hqbUpdateBadge();" title="Filter by Label">
                                             <c:forEach var="option" items="${labelOptions}">
                                                 <option value="${option.name}" <c:if test="${label == option.name}">selected</c:if>>${option.value}</option>
                                             </c:forEach>
@@ -177,7 +178,7 @@
                                     </div>
                                     <div class="col-12 col-md-4">
                                         <label class="form-label mb-0 fw-semibold"><i class="bi bi-file-zip me-1 text-muted"></i>Compression</label>
-                                        <select class="form-select form-select-sm" name="hostFilter" id="hostFilter" onchange="hostsTableReload()" title="Filter by Compression">
+                                        <select class="form-select form-select-sm" name="hostFilter" id="hostFilter" onchange="hostsTableReload();hqbUpdateBadge();" title="Filter by Compression">
                                             <c:forEach var="option" items="${filterOptions}">
                                                 <option value="${option.name}" <c:if test="${hostFilter == option.name}">selected</c:if>>${option.value}</option>
                                             </c:forEach>
@@ -205,6 +206,23 @@
         <script>
         function hqbVal(id) { return document.getElementById(id) ? document.getElementById(id).value.trim() : ''; }
         function hqbQuote(v) { var q=v.indexOf(' ')>=0||v.indexOf('=')>=0||v.indexOf('"')>=0; return q?'"'+v.replace(/"/g,'\\"')+'"':v; }
+        function hqbCountActive() {
+            var n = 0;
+            ['nickname','hostname','method','comment','email','options','login','dir','id_val'].forEach(function(f) { if (hqbVal('hqb_'+f)) n++; });
+            if (hqbVal('hqb_enabled')) n++;
+            if (hqbVal('hqb_case') !== 's') n++;
+            var nw = document.getElementById('network'); if (nw && nw.selectedIndex > 0) n++;
+            var lb = document.getElementById('label'); if (lb && lb.selectedIndex > 0) n++;
+            var hf = document.getElementById('hostFilter'); if (hf && hf.selectedIndex > 0) n++;
+            return n;
+        }
+        function hqbUpdateBadge() {
+            var n = hqbCountActive();
+            var b = document.getElementById('btnHostQB-badge');
+            if (b) { b.textContent = n; b.style.display = n > 0 ? '' : 'none'; }
+            var btn = document.getElementById('btnHostQB');
+            if (btn) { btn.classList.toggle('btn-outline-primary', n === 0); btn.classList.toggle('btn-warning', n > 0); }
+        }
         function hqbBuild() {
             var p = [];
             var idVal = hqbVal('hqb_id_val');
@@ -219,6 +237,7 @@
         function hqbPreview() {
             var q = hqbBuild();
             document.getElementById('hqb_preview').textContent = q || '-- fill in fields above --';
+            hqbUpdateBadge();
         }
         function hqbApply() {
             document.getElementById('hostSearch').value = hqbBuild();
@@ -235,6 +254,8 @@
             document.getElementById('network').selectedIndex = 0;
             document.getElementById('label').selectedIndex = 0;
             document.getElementById('hostFilter').selectedIndex = 0;
+            document.getElementById('hostSearch').value = '';
+            document.getElementById('hostQueryBuilder').style.display = 'none';
             hqbPreview();
             hostsTableReload();
         }

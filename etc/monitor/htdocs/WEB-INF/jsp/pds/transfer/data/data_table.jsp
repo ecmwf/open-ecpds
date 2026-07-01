@@ -351,9 +351,17 @@
 <c:set var="_nstMaxRate" value="0"/>
 <c:set var="_nstMinStart" value="0"/>
 <c:set var="_nstMaxEnd" value="0"/>
+<c:set var="_nstHasSent" value="false"/>
+<c:set var="_nstHasRecv" value="false"/>
 <c:forEach var="ts" items="${transferStatistics}" varStatus="loop">
-  <c:set var="_nstTotalSent" value="${_nstTotalSent + (empty ts.bytesSent ? 0 : ts.bytesSent)}"/>
-  <c:set var="_nstTotalRecv" value="${_nstTotalRecv + (empty ts.bytesReceived ? 0 : ts.bytesReceived)}"/>
+  <c:if test="${not empty ts.bytesSent}">
+    <c:set var="_nstTotalSent" value="${_nstTotalSent + ts.bytesSent}"/>
+    <c:set var="_nstHasSent" value="true"/>
+  </c:if>
+  <c:if test="${not empty ts.bytesReceived}">
+    <c:set var="_nstTotalRecv" value="${_nstTotalRecv + ts.bytesReceived}"/>
+    <c:set var="_nstHasRecv" value="true"/>
+  </c:if>
   <c:if test="${not empty ts.deliveryRateBps and ts.deliveryRateBps > _nstMaxRate}">
     <c:set var="_nstMaxRate" value="${ts.deliveryRateBps}"/>
   </c:if>
@@ -367,9 +375,19 @@
 <c:set var="_nstSpan" value="${_nstMaxEnd - _nstMinStart}"/>
 <c:if test="${_nstSpan le 0}"><c:set var="_nstSpan" value="1"/></c:if>
 <div class="d-flex flex-wrap gap-3 mb-3 small text-muted">
-  <span><i class="bi bi-arrow-up-circle text-primary me-1"></i>Total sent: <strong class="text-body" id="nst-total-sent" data-bytes="${_nstTotalSent}">${_nstTotalSent}</strong> B</span>
-  <span><i class="bi bi-arrow-down-circle text-success me-1"></i>Total recv: <strong class="text-body" id="nst-total-recv" data-bytes="${_nstTotalRecv}">${_nstTotalRecv}</strong> B</span>
-  <span><i class="bi bi-speedometer2 text-warning me-1"></i>Peak delivery: <strong class="text-body" id="nst-max-rate" data-bps="${_nstMaxRate}">${_nstMaxRate}</strong> bps</span>
+  <span><i class="bi bi-arrow-up-circle text-primary me-1"></i>Total sent:
+    <c:choose>
+      <c:when test="${_nstHasSent}"><strong class="text-body" id="nst-total-sent" data-bytes="${_nstTotalSent}">${_nstTotalSent} B</strong></c:when>
+      <c:otherwise><strong class="text-body">&#8212;</strong></c:otherwise>
+    </c:choose>
+  </span>
+  <span><i class="bi bi-arrow-down-circle text-success me-1"></i>Total recv:
+    <c:choose>
+      <c:when test="${_nstHasRecv}"><strong class="text-body" id="nst-total-recv" data-bytes="${_nstTotalRecv}">${_nstTotalRecv} B</strong></c:when>
+      <c:otherwise><strong class="text-body">&#8212;</strong></c:otherwise>
+    </c:choose>
+  </span>
+  <span><i class="bi bi-speedometer2 text-warning me-1"></i>Peak delivery: <strong class="text-body" id="nst-max-rate" data-bps="${_nstMaxRate}">${_nstMaxRate} bps</strong></span>
   <span><i class="bi bi-clock text-secondary me-1"></i>Wall time: <strong class="text-body">${_nstMaxEnd - _nstMinStart} ms</strong></span>
 </div>
 <%-- Per-connection timeline bars --%>

@@ -186,11 +186,12 @@
                         </div>
                         <div class="col-auto d-flex gap-1">
                             <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i><span class="d-none d-sm-inline ms-1">Search</span></button>
-                            <button type="button" class="btn btn-outline-primary"
+                            <button type="button" class="btn btn-outline-primary position-relative"
                                     id="btnTransferQB"
                                     onclick="toggleQBPanel('queryBuilder','btnTransferQB')"
                                     title="Filter">
                                 <i class="bi bi-sliders2"></i><span class="d-none d-sm-inline ms-1">Filter</span>
+                                <span id="btnTransferQB-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display:none;font-size:0.75rem;min-width:1.3em;padding:0.2em 0.4em;line-height:1.2"></span>
                             </button>
                             <button class="btn btn-link btn-sm text-muted p-0" type="button"
                                     data-bs-toggle="collapse" data-bs-target="#tfrQBHelp"
@@ -381,6 +382,21 @@
         <script>
         function qbVal(id) { return document.getElementById(id) ? document.getElementById(id).value.trim() : ''; }
         function qbQuote(v) { var q=v.indexOf(' ')>=0||v.indexOf('=')>=0||v.indexOf('"')>=0; return q?'"'+v.replace(/"/g,'\\"')+'"':v; }
+        function qbCountActive() {
+            var n = 0;
+            ['target','source','mover','method','identity','checksum','groupby','priority'].forEach(function(f) { if (qbVal('qb_'+f)) n++; });
+            ['qb_ts_val1','qb_ts_val2','qb_size_val1','qb_size_val2'].forEach(function(id) { if (qbVal(id)) n++; });
+            ['asap','deleted','expired','replicated','proxy','event'].forEach(function(f) { if (qbVal('qb_'+f)) n++; });
+            if (qbVal('qb_case') !== 's') n++;
+            return n;
+        }
+        function qbUpdateBadge() {
+            var n = qbCountActive();
+            var b = document.getElementById('btnTransferQB-badge');
+            if (b) { b.textContent = n; b.style.display = n > 0 ? '' : 'none'; }
+            var btn = document.getElementById('btnTransferQB');
+            if (btn) { btn.classList.toggle('btn-outline-primary', n === 0); btn.classList.toggle('btn-warning', n > 0); }
+        }
         function qbBuild() {
             var p = [];
             ['target','source','mover','method','identity','checksum','groupby'].forEach(function(f) {
@@ -400,6 +416,7 @@
         function qbPreview() {
             var q = qbBuild();
             document.getElementById('qb_preview').textContent = q || '-- fill in fields above --';
+            qbUpdateBadge();
         }
         function qbApply() {
             document.getElementById('transferSearch').value = qbBuild();
@@ -417,7 +434,8 @@
                 document.getElementById('qb_' + f).value = '';
             });
             document.getElementById('qb_case').value = 's';
-            qbPreview();
+            document.getElementById('transferSearch').value = '';
+            document.getElementById('transferSearchForm').submit();
         }
         function parseQBQuery(q, prefix, pairFields, singleFields) {
             if (!q || !q.trim()) return;

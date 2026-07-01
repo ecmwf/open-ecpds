@@ -101,11 +101,12 @@
                        title="Default search is by target. Conduct extended searches using target, source, ts, priority, groupby, identity, checksum, size, replicated, asap, deleted, expired, proxy, mover and event rules. Wildcards: * (zero or more chars), ? (exactly one char)."
                        id="fileNameSearch" name="fileNameSearch" onkeypress="submitenter(this,event)">
             </div>
-            <button type="button" class="btn btn-outline-primary"
+            <button type="button" class="btn btn-outline-primary position-relative"
                     id="btnDftQB"
                     onclick="toggleQBPanel('dftQueryBuilder','btnDftQB')"
                     title="Filter">
                 <i class="bi bi-sliders2"></i><span class="d-none d-sm-inline ms-1">Filter</span>
+                <span id="btnDftQB-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display:none;font-size:0.75rem;min-width:1.3em;padding:0.2em 0.4em;line-height:1.2"></span>
             </button>
             <button class="btn btn-link text-muted p-0" type="button"
                     data-bs-toggle="collapse" data-bs-target="#dftQBHelp"
@@ -304,8 +305,24 @@ function dftBuild() {
     if (dftVal('dft_case') === 'i') p.push('case=i');
     return p.join(' ');
 }
+function dftCountActive() {
+    var n = 0;
+    ['target','source','mover','identity','checksum','groupby','priority'].forEach(function(f) { if (dftVal('dft_'+f)) n++; });
+    ['dft_ts_val1','dft_ts_val2','dft_size_val1','dft_size_val2'].forEach(function(id) { if (dftVal(id)) n++; });
+    ['asap','deleted','expired','replicated','proxy','event'].forEach(function(f) { if (dftVal('dft_'+f)) n++; });
+    if (dftVal('dft_case') !== 's') n++;
+    return n;
+}
+function dftUpdateBadge() {
+    var n = dftCountActive();
+    var b = document.getElementById('btnDftQB-badge');
+    if (b) { b.textContent = n; b.style.display = n > 0 ? '' : 'none'; }
+    var btn = document.getElementById('btnDftQB');
+    if (btn) { btn.classList.toggle('btn-outline-primary', n === 0); btn.classList.toggle('btn-warning', n > 0); }
+}
 function dftPreview() {
     document.getElementById('dft_preview').textContent = dftBuild() || '-- fill in fields above --';
+    dftUpdateBadge();
 }
 function dftApply() {
     document.getElementById('fileNameSearch').value = dftBuild();
@@ -323,7 +340,9 @@ function dftClear() {
         document.getElementById('dft_' + f).value = '';
     });
     document.getElementById('dft_case').value = 's';
-    dftPreview();
+    document.getElementById('fileNameSearch').value = '';
+    document.getElementById('dftQueryBuilder').style.display = 'none';
+    document.destinationDetailActionForm.submit();
 }
 function parseQBQuery(q, prefix, pairFields, singleFields) {
     if (!q || !q.trim()) return;
