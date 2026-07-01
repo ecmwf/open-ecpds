@@ -4,7 +4,7 @@ This document summarizes the most significant changes in OpenECPDS across all ma
 
 ---
 
-## open-ecpds 8.0.4-01072026 (2026-06-26)
+## open-ecpds 8.0.4-01072026 (2026-07-01)
 
 - Added support for Python formatting and testing in the Host editors. Placeholder values can now be provided during testing, either by selecting an existing data transfer for the Host (if available) or by entering values manually.
 - Added a badge and visual highlight to the Filter button to indicate active filters.
