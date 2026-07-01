@@ -4,8 +4,11 @@ This document summarizes the most significant changes in OpenECPDS across all ma
 
 ---
 
-## open-ecpds 8.0.3-26062026 (2026-06-26)
+## open-ecpds 8.0.4-01072026 (2026-06-26)
 
+- Added support for Python formatting and testing in the Host editors. Placeholder values can now be provided during testing, either by selecting an existing data transfer for the Host (if available) or by entering values manually.
+- Acquisition Hosts now include an Acquisition Console that centralizes the Progress Console and listing output, providing better visibility into acquisition activities.
+- Added data collection to track and display Data Mover availability periods and overall availability statistics.
 - Added comprehensive configuration guides, directly accessible from the Hosts pages in the Monitoring Interface, providing detailed information on the various configuration options for listing, authentication, connection, registration, acquisition, and dissemination engines.
 - Added a new authentication mechanism supporting static Bearer/API tokens as well as automatic refresh of expiring tokens. For tokens with limited lifetimes (OAuth 2, NASA Earthdata, etc.), define a function in the JavaScript editor; the engine automatically calls it when the cached token is approaching expiry.
 - Added support for single-file URL handling, allowing the Host Directory URL to point directly to a file to download. A HEAD (or GET) request is issued to retrieve the file size and last modification time, resulting in a single listing entry.
