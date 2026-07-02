@@ -63,6 +63,10 @@
               <i class="bi bi-chat-left-text" style="font-size:0.85rem;"></i>
             </button>
             <% } %>
+            <a class="btn btn-sm btn-outline-light p-1 lh-1 d-flex align-items-center justify-content-center" href="https://ecmwf.github.io/open-ecpds/" target="_blank" rel="noopener"
+               title="OpenECPDS Documentation" style="width:28px;height:28px;">
+              <i class="bi bi-book" style="font-size:0.85rem;"></i>
+            </a>
             <button class="btn btn-sm btn-outline-light p-1 lh-1" type="button"
                     data-bs-toggle="offcanvas" data-bs-target="#uiHelpOffcanvas" aria-controls="uiHelpOffcanvas"
                     title="Interface help" style="width:28px;height:28px;">
@@ -98,6 +102,12 @@
           <li><span class="badge bg-info bg-opacity-10 text-info fw-normal px-2">Connect with confidence</span></li>
           <li><span class="badge bg-info bg-opacity-10 text-info fw-normal px-2">Share without limits</span></li>
         </ul>
+        <div class="mt-3">
+          <a href="https://ecmwf.github.io/open-ecpds/" target="_blank" rel="noopener"
+             class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-book me-1"></i>OpenECPDS Documentation
+          </a>
+        </div>
       </div>
     </div>
   </div>

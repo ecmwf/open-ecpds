@@ -85,12 +85,18 @@ const tDuration = _si.map(i=>_tDuration[i]);
       <i class="bi bi-info-circle"></i>
     </button>
   </div>
-  <div class="btn-group btn-group-sm" role="group">
-    <button type="button" class="btn btn-outline-secondary" id="btnTable" onclick="setView('table')">
-      <i class="bi bi-table me-1"></i>Table
-    </button>
-    <button type="button" class="btn btn-outline-secondary active" id="btnChart" onclick="setView('chart')">
-      <i class="bi bi-bar-chart-fill me-1"></i>Chart
+  <div class="d-flex align-items-center gap-2">
+    <div class="btn-group btn-group-sm" role="group">
+      <button type="button" class="btn btn-outline-secondary" id="btnTable" onclick="setView('table')">
+        <i class="bi bi-table me-1"></i>Table
+      </button>
+      <button type="button" class="btn btn-outline-secondary active" id="btnChart" onclick="setView('chart')">
+        <i class="bi bi-bar-chart-fill me-1"></i>Chart
+      </button>
+    </div>
+    <button type="button" class="btn btn-outline-secondary btn-sm" id="btnReverse"
+        onclick="toggleOrder()" title="Showing earliest first — click to show latest first">
+      <i class="bi bi-sort-down-alt" id="btnReverseIcon"></i>
     </button>
   </div>
 </div>
@@ -231,10 +237,15 @@ function fmtBytes(b) {
 }
 
 // -- Table: state -------------------------------------------------------------
-var _sortedIdx = null, _page = 0, _pageSize = 25, _searchTerm = '';
+var _sortedIdx = null, _page = 0, _pageSize = 25, _searchTerm = '', _reversed = false;
+
+function getBaseOrder() {
+  var base = tLabels.map(function(_,i){return i;});
+  return _reversed ? base.reverse() : base;
+}
 
 function getFilteredTableRows() {
-  var base = _sortedIdx || tLabels.map(function(_,i){return i;});
+  var base = _sortedIdx || getBaseOrder();
   if (!_searchTerm) return base;
   var term = _searchTerm.toLowerCase();
   return base.filter(function(i) { return tLabels[i].toLowerCase().indexOf(term) !== -1; });
@@ -348,13 +359,22 @@ var _chartPeriod = 0, _chartBR = null, _chartF = null;
 
 function getChartData(days) {
   var start = (days > 0 && tLabels.length > days) ? tLabels.length - days : 0;
+  var labels   = tLabels.slice(start);
+  var bytes    = tBytes.slice(start);
+  var rates    = tRates.slice(start);
+  var files    = tFiles.slice(start);
+  var fmtBytes = tFmtBytes.slice(start);
+  var fmtRates = tFmtRates.slice(start);
+  if (_reversed) {
+    labels   = labels.slice().reverse();
+    bytes    = bytes.slice().reverse();
+    rates    = rates.slice().reverse();
+    files    = files.slice().reverse();
+    fmtBytes = fmtBytes.slice().reverse();
+    fmtRates = fmtRates.slice().reverse();
+  }
   return {
-    labels:   tLabels.slice(start),
-    bytes:    tBytes.slice(start),
-    rates:    tRates.slice(start),
-    files:    tFiles.slice(start),
-    fmtBytes: tFmtBytes.slice(start),
-    fmtRates: tFmtRates.slice(start)
+    labels: labels, bytes: bytes, rates: rates, files: files, fmtBytes: fmtBytes, fmtRates: fmtRates
   };
 }
 
@@ -496,6 +516,36 @@ function setView(v) {
   try { localStorage.setItem('trafficView', v); } catch(e) {}
 }
 
+// -- Order toggle (earliest-first ↔ latest-first) -----------------------------
+function toggleOrder() {
+  _reversed = !_reversed;
+  _sortedIdx = null;
+  _page = 0;
+  // reset column header icons to default
+  document.querySelectorAll('#trafficTable thead th').forEach(function(h) {
+    h.setAttribute('data-order', 'asc');
+    var icon = h.querySelector('i.bi');
+    if (icon) { icon.className = 'bi bi-arrow-down-up text-muted'; icon.style.fontSize = '0.6rem'; }
+  });
+  _applyReverseBtn();
+  buildTable();
+  if (document.getElementById('chartView').style.display !== 'none') buildCharts();
+  try { localStorage.setItem('trafficReversed', _reversed ? '1' : '0'); } catch(e) {}
+}
+
+function _applyReverseBtn() {
+  var btn  = document.getElementById('btnReverse');
+  var icon = document.getElementById('btnReverseIcon');
+  btn.classList.toggle('active', _reversed);
+  if (_reversed) {
+    icon.className = 'bi bi-sort-up-alt';
+    btn.title = 'Showing latest first — click to show earliest first';
+  } else {
+    icon.className = 'bi bi-sort-down-alt';
+    btn.title = 'Showing earliest first — click to show latest first';
+  }
+}
+
 // -- Stat cards (all-time totals) ----------------------------------------------
 function computeStats() {
   var totalBytes = 0, totalFiles = 0, maxRate = -Infinity, maxRateIdx = 0;
@@ -516,8 +566,10 @@ function computeStats() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+  try { if (localStorage.getItem('trafficReversed') === '1') _reversed = true; } catch(e) {}
   computeStats();
   buildTable();
+  _applyReverseBtn();
   var saved = 'chart';
   try { saved = localStorage.getItem('trafficView') || 'chart'; } catch(e) {}
   setView(saved);

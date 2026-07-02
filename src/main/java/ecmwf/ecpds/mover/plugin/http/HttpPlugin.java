@@ -72,6 +72,9 @@ import ecmwf.common.mbean.MBeanManager;
 import ecmwf.common.plugin.PluginThread;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.version.Version;
+import ecmwf.ecpds.mover.MoverServer;
+import ecmwf.common.ectrans.ECtransOptions;
+import ecmwf.common.ecaccess.StarterServer;
 
 /**
  * The Class HttpPlugin.
@@ -213,6 +216,13 @@ public final class HttpPlugin extends PluginThread {
                     "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob:; style-src 'self' 'unsafe-inline';"));
             rewrite.addRule(getRule("*", "X-Frame-Options", "SAMEORIGIN"));
             rewrite.addRule(getRule("*", "Strict-Transport-Security", "max-age=31536000;includeSubDomains"));
+            // Global CORS fallback for DNS-mapped paths. Per-user corsAllowOrigin in the
+            // IncomingUser's ECtrans properties (INU_DATA) takes precedence over this.
+            // Leave empty (default) to disable global CORS; set to * to enable for all users.
+            final var globalCorsAllowOrigin = Cnf.at("HttpPlugin", "corsAllowOrigin", "");
+            if (!globalCorsAllowOrigin.isEmpty()) {
+                _log.info("Global CORS fallback enabled: Access-Control-Allow-Origin: {}", globalCorsAllowOrigin);
+            }
             // Handling requests with a server name mapping to a data user
             final Handler dns = new AbstractHandler() {
                 @Override
@@ -222,10 +232,50 @@ public final class HttpPlugin extends PluginThread {
                         final var dnsAndPath = dnsPath.split("="); // e.g, opendata=forecasts
                         if (dnsAndPath.length == 2) {
                             final var dns = dnsAndPath[0]; // must map a data user!
-                            if (dns.equals(request.getServerName())) {
+                            // When behind a load balancer, the original public hostname is carried in
+                            // X-Forwarded-Host; fall back to the direct server name for plain connections.
+                            final var xForwardedHost = request.getHeader("X-Forwarded-Host");
+                            final var effectiveHost = xForwardedHost != null && !xForwardedHost.isBlank()
+                                    ? xForwardedHost.split(",")[0].trim() : request.getServerName();
+                            if (dns.equals(effectiveHost)) {
                                 final var path = dnsAndPath[1];
                                 final var url = "/".equals(target) ? "/" + path + "/" : target;
                                 if (url.startsWith("/" + path + "/")) {
+                                    // Resolve CORS allow-origin: per-user ECtrans property first,
+                                    // then fall back to the global corsAllowOrigin config value.
+                                    var corsAllowOrigin = globalCorsAllowOrigin;
+                                    try {
+                                        final var mover = StarterServer.getInstance(MoverServer.class);
+                                        if (mover != null) {
+                                            final var profile = mover.getMasterInterface()
+                                                    .getIncomingProfileNoAuth(dns);
+                                            if (profile != null) {
+                                                final var perUser = profile.getECtransSetup()
+                                                        .getString(ECtransOptions.USER_PORTAL_CORS_ALLOW_ORIGIN);
+                                                if (!perUser.isEmpty()) {
+                                                    corsAllowOrigin = perUser;
+                                                }
+                                            }
+                                        }
+                                    } catch (final Exception e) {
+                                        _log.debug("CORS: could not resolve IncomingUser {}: {}", dns, e.getMessage());
+                                    }
+                                    // Add CORS headers before the forward so they survive servlet dispatch.
+                                    // For OPTIONS preflight, short-circuit immediately with 204.
+                                    if (!corsAllowOrigin.isEmpty() && request.getHeader("Origin") != null) {
+                                        response.addHeader("Access-Control-Allow-Origin", corsAllowOrigin);
+                                        response.addHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+                                        response.addHeader("Access-Control-Allow-Headers",
+                                                "Range, Content-Type, Authorization");
+                                        response.addHeader("Access-Control-Expose-Headers",
+                                                "Content-Range, Content-Length, Accept-Ranges, ETag, Last-Modified");
+                                        if ("OPTIONS".equals(request.getMethod())) {
+                                            response.addHeader("Access-Control-Max-Age", "86400");
+                                            response.setStatus(HttpServletResponse.SC_NO_CONTENT);
+                                            jettyRequest.setHandled(true);
+                                            break;
+                                        }
+                                    }
                                     request.setAttribute("original-target", "/" + path);
                                     ecpds.getServletContext()
                                             .getRequestDispatcher(

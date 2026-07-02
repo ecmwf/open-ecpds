@@ -1675,6 +1675,9 @@ public enum ECtransOptions {
     /** The user portal header registry. */
     USER_PORTAL_HEADER_REGISTRY("headerRegistry", String.class, STRING_NONE),
 
+    /** The user portal CORS allow-origin header value for HTTP file serving (e.g. * for public datasets). */
+    USER_PORTAL_CORS_ALLOW_ORIGIN("corsAllowOrigin", String.class, STRING_NONE),
+
     /** The web monitor share feedback. */
     WEB_MONITOR_SHARE_FEEDBACK("shareFeedback", Boolean.class, true);
 

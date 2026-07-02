@@ -8,8 +8,9 @@
 <auth:if basePathKey="${beanName}.basepath" paths="/edit/insert_form">
 <auth:then>
 
+<c:set var="_beanBasepath"><bean:message key="${beanName}.basepath"/></c:set>
 <table class="editSpareBox">
-	<tr><th><bean:message key="ecpds.${beanName}"/></th></tr>
+	<tr><th><a href="${_beanBasepath}"><bean:message key="ecpds.${beanName}"/></a></th></tr>
 	<tr><td style="padding:1px 32px 1px 22px;"><hr style="margin:1px 0;opacity:0.15;border-top:1px solid currentColor;"/></td></tr>	
 	<tr><td><auth:link basePathKey="${beanName}.basepath" href="/edit/insert_form" imageKey="icon.small.insert">&nbsp;&nbsp;Create</auth:link></td></tr>
 	<c:set var="beanId" value="${requestScope[beanName].id}"/>

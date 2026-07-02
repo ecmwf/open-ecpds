@@ -918,8 +918,7 @@
 	</definition>
 
 	<definition name=".pds.user.incoming.spare.edit"
-		extends=".pds.spare.edit">
-		<put name="bean.name" value="incoming" />
+		path="/WEB-INF/jsp/pds/user/incoming/spare_edit.jsp">
 	</definition>
 
 	<definition name=".pds.user.incoming.detail"
