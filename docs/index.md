@@ -103,7 +103,7 @@ See [Additional Features](concepts/additional-features.md) for details.
 
 ## Support & resources
 
-- [Javadoc API documentation](https://ecmwf.github.io/open-ecpds/apidocs/)
+- [Javadoc API documentation](https://ecmwf.github.io/open-ecpds/javadoc/)
 - [Support Materials](support.md)
 - [Glossary](glossary.md) of key terms
 - [Contributing](contributing.md) and [Changelog](changelog.md)

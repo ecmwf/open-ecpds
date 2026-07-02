@@ -5,7 +5,7 @@ A range of resources is available to help you work with OpenECPDS.
 ## Javadoc API documentation
 
 You can access the Javadoc API documentation for OpenECPDS at the following link:
-[Javadocs](https://ecmwf.github.io/open-ecpds/apidocs/). This comprehensive documentation
+[Javadocs](https://ecmwf.github.io/open-ecpds/javadoc/). This comprehensive documentation
 provides detailed information about the classes, methods, and functionalities available,
 serving as a valuable resource for developers.
 
