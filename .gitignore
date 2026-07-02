@@ -4,3 +4,4 @@
 /etc/master/conf/GeoLite2-City.mmdb
 /lib/
 /target/
+/site/

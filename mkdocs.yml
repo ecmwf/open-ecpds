@@ -1,0 +1,139 @@
+site_name: OpenECPDS Documentation
+site_description: >-
+  Documentation for OpenECPDS — a multi-purpose data store for the acquisition,
+  dissemination, and portal-based exchange of data across diverse environments and
+  protocols.
+site_url: https://ecmwf.github.io/open-ecpds/
+site_author: ECMWF
+
+repo_name: ecmwf/open-ecpds
+repo_url: https://github.com/ecmwf/open-ecpds
+edit_uri: edit/master/docs/
+
+copyright: Copyright &copy; ECMWF — Licensed under the Apache License, Version 2.0
+
+theme:
+  name: material
+  language: en
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - navigation.instant
+    - navigation.tracking
+    - navigation.indexes
+    - toc.integrate
+    - search.highlight
+    - search.suggest
+    - search.share
+    - content.code.copy
+    - content.code.annotate
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: blue
+      accent: light blue
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: blue
+      accent: light blue
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  icon:
+    repo: fontawesome/brands/github
+
+plugins:
+  - search
+  - minify:
+      minify_html: true
+
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+  - attr_list
+  - md_in_html
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.details
+  - pymdownx.keys
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - System Requirements: getting-started/requirements.md
+      - Installation: getting-started/installation.md
+      - First Run: getting-started/first-run.md
+      - IDE Setup: getting-started/ide-setup.md
+  - Architecture:
+      - Overview: architecture/overview.md
+      - Components: architecture/components.md
+      - Failover Mechanism: architecture/failover.md
+      - Data Transfer Lifecycle: architecture/data-transfer-lifecycle.md
+      - Continental Data Movers: architecture/continental-data-movers.md
+  - Deployment:
+      - Kubernetes: deployment/kubernetes.md
+      - Physical Infrastructure: deployment/infrastructure.md
+      - Container Registry Release: deployment/release.md
+  - Concepts:
+      - OpenECPDS Entities: concepts/entities.md
+      - Protocols & Connections: concepts/protocols.md
+      - Object Storage: concepts/object-storage.md
+      - Additional Features: concepts/additional-features.md
+  - Use Cases:
+      - ECPDS Command-line Tool: use-cases/ecpds-cli.md
+      - Data Portal: use-cases/data-portal.md
+      - Acquisition: use-cases/acquisition.md
+      - Dissemination: use-cases/dissemination.md
+  - Transfer Modules:
+      - Overview: transfer-modules/index.md
+      - ECtrans Common Options: transfer-modules/ectrans.md
+      - FTP: transfer-modules/ftp.md
+      - FTPS: transfer-modules/ftps.md
+      - SFTP: transfer-modules/sftp.md
+      - HTTP / HTTPS: transfer-modules/http.md
+      - Amazon S3: transfer-modules/s3.md
+      - Google Cloud Storage: transfer-modules/gcs.md
+      - Azure Blob Storage: transfer-modules/azure.md
+      - ECauth (SSH/Telnet): transfer-modules/ecauth.md
+      - Portal: transfer-modules/portal.md
+      - Test: transfer-modules/test.md
+  - Host Directory:
+      - Overview: host-directory/index.md
+      - Acquisition Directory: host-directory/acquisition.md
+      - Dissemination Directory: host-directory/dissemination.md
+      - Replication / Source / Backup / Proxy: host-directory/replication.md
+  - Notifications (MQTT):
+      - MQTT Overview: notifications/mqtt-overview.md
+      - Real-Time Dissemination: notifications/mqtt-dissemination.md
+      - Automated Acquisition: notifications/mqtt-acquisition.md
+      - WMO WIS2 Integration: notifications/wmo-wis2.md
+      - Implementation Details: notifications/implementation.md
+  - Event Logging:
+      - Overview: event-logging/overview.md
+      - PRS (Product Status): event-logging/prs-fields.md
+      - RET (Retrieval): event-logging/ret-fields.md
+      - UPH (Upload History): event-logging/uph-fields.md
+      - INH (Incoming History): event-logging/inh-fields.md
+      - ERR (Error): event-logging/err-fields.md
+      - CPY (Copy / Replication): event-logging/cpy-fields.md
+      - DEA (Denied Access): event-logging/dea-fields.md
+  - Global Reach: global-reach.md
+  - Support: support.md
+  - Contributing: contributing.md
+  - Changelog: changelog.md
+  - Glossary: glossary.md
