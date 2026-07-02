@@ -48,8 +48,8 @@ and TCP-level tuning.
 
 ```properties
 # Example: a few SFTP options
-sftp.port=22
-sftp.cipher=aes128-ctr
+sftp.port = "22"
+sftp.cipher = "aes128-ctr"
 ```
 
 Values commonly accept human-friendly notation:

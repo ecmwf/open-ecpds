@@ -24,6 +24,8 @@ http.listMaxDirs = "50000"     # max sub-directories to visit
 http.maxSize = "10MB"          # reject HTTP responses larger than this
 http.useHead = "yes"           # HEAD per entry to get size & date (faster)
 http.ftpLike = "yes"           # parse response as FTP-style lines
+http.ftpuser = "myuser"        # owner user name in FTP-style listing entries
+http.ftpgroup = "mygroup"      # owner group name in FTP-style listing entries
 ```
 
 !!! info
@@ -112,6 +114,7 @@ Subscribes to an MQTT broker. The **Directory** field is the *topic filter* (e.g
 http.mqttMode = "yes"
 http.mqttScheme = "ssl"                    # ssl | tcp  (default: ssl)
 http.mqttPort = "8883"                     # broker port (default: 8883)
+http.mqttUrl = "ssl://broker.example.com:8883"  # alternative URL, overrides mqttScheme+mqttPort+hostname
 http.mqttAwait = "PT30M"                   # how long to listen per cycle
 http.mqttCleanStart = "yes"                # fresh session (no backlog on reconnect)
 http.mqttKeepAliveInterval = "PT30S"       # PING interval
@@ -346,6 +349,8 @@ retrieval.interruptSlow = "yes"         # enable the slow-transfer kill switch
 acquisition.useSymlink = "yes"         # record as symlink (typical for MQTT flows)
 acquisition.payloadExtension = ".json" # append extension to inline payload files
 http.mqttAddPayload = "yes"            # use MQTT message body as the file content
+http.isSymlink = "yes"                 # force the symlink detector to always return this value
+http.failOnEmptySymlink = "yes"        # fail listing if a symlink has no Content-Disposition filename
 ```
 
 ## Related

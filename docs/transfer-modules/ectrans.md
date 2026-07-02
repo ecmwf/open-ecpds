@@ -18,8 +18,8 @@
 ### Quick-start example
 
 ```properties
-ectrans.usednsname = yes
-ectrans.hostSelector = ($network == internal) 10.0.0.5
+ectrans.usednsname = "yes"
+ectrans.hostSelector = "($network == internal) 10.0.0.5"
 ```
 
 ## Retries
@@ -80,10 +80,10 @@ Use these to delegate file retrieval to an external process.
 ### Quick-start example
 
 ```properties
-ectrans.getHandler = yes
-ectrans.getHandlerCmd = /opt/scripts/fetch.sh $source $target
-ectrans.getHandlerExitCode = 0
-ectrans.getHandlerAck = DONE
+ectrans.getHandler = "yes"
+ectrans.getHandlerCmd = "/opt/scripts/fetch.sh $source $target"
+ectrans.getHandlerExitCode = "0"
+ectrans.getHandlerAck = "DONE"
 ```
 
 ## External Handlers — PUT
@@ -100,9 +100,9 @@ Use these to delegate file dissemination to an external process, or to use the m
 ### Quick-start example
 
 ```properties
-ectrans.putHandler = yes
-ectrans.putHandlerCmd = /opt/scripts/push.sh $source $target
-ectrans.putHandlerExitCode = 0
+ectrans.putHandler = "yes"
+ectrans.putHandlerCmd = "/opt/scripts/push.sh $source $target"
+ectrans.putHandlerExitCode = "0"
 ```
 
 ## Multi-stream Retrieval
@@ -138,8 +138,8 @@ connect → notifyPre (JS) → notifyAuth (MQTT connect)
 
 ```properties
 # Publish an MQTT notification after every successful PUT
-ectrans.notifyAuth = url=mqtt://broker.example.com:1883;name=ecpds;password=secret
-ectrans.notifyPublish = topic=ecpds/dissemination/$filename;payload=https://data.example.com/$filename;metadata=filename=$filename,version=$version;lifetime=86400000
+ectrans.notifyAuth = "url=mqtt://broker.example.com:1883;name=ecpds;password=secret"
+ectrans.notifyPublish = "topic=ecpds/dissemination/$filename;payload=https://data.example.com/$filename;metadata=filename=$filename,version=$version;lifetime=86400000"
 ```
 
 ## TCP Tuning
@@ -198,17 +198,17 @@ ectrans.notifyPublish = topic=ecpds/dissemination/$filename;payload=https://data
 
 ```properties
 # Optimise for high-latency WAN links
-ectrans.tcpKeepAlive = yes
-ectrans.tcpKeepAliveTime = 60
-ectrans.tcpKeepAliveInterval = 10
-ectrans.tcpKeepAliveProbes = 6
-ectrans.tcpCongestionControl = bbr
+ectrans.tcpKeepAlive = "yes"
+ectrans.tcpKeepAliveTime = "60"
+ectrans.tcpKeepAliveInterval = "10"
+ectrans.tcpKeepAliveProbes = "6"
+ectrans.tcpCongestionControl = "bbr"
 ```
 
 ```properties
 # Cap throughput and disable Nagle for interactive-style feeds
-ectrans.soMaxPacingRate = 100MB
-ectrans.tcpNoDelay = yes
+ectrans.soMaxPacingRate = "100MB"
+ectrans.tcpNoDelay = "yes"
 ```
 
 ## Related

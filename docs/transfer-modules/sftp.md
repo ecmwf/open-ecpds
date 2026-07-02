@@ -41,6 +41,16 @@
 | `sftp.options` | Raw JSch option string (key=value pairs, semicolon-separated) |
 | `sftp.properties` | Additional JSch properties as key=value pairs |
 
+### Dynamic host allocation
+
+These options delegate hostname resolution to an external web service, enabling load-balanced transfers where the target host is chosen per-file.
+
+| Option | Description |
+|---|---|
+| `sftp.allocate` | When enabled, the hostname from the host record is ignored and the target is resolved via an HTTP/S web service. Required parameters: `url` (service endpoint, supporting `$filename` and `$filesize` placeholders) and `req` (JSON path to extract the hostname from the response, e.g. `json.host[0]`). Example: `url=http://host/service?file=$filename&length=$filesize;req=json.host[0]` |
+| `sftp.commit` | Mandatory companion to `sftp.allocate`. Sends a POST notification to the web service after a successful transfer. Required parameters: `url` (notification endpoint) and `req` (expected HTTP status code). The request body is the original JSON response from `sftp.allocate`. If the status code does not match, the transfer is marked as failed and may be re-queued |
+| `sftp.properties` | JSch HTTP client properties for the web service calls used by `sftp.allocate` / `sftp.commit` (e.g. `wink.client.readTimeout=600000;wink.client.connectTimeout=60000`) |
+
 ### Quick-start examples
 
 ```properties

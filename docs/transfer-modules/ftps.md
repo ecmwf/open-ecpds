@@ -86,11 +86,11 @@ Each option accepts one or more raw FTP commands separated by newlines. Commands
 ### Example
 
 ```properties
-ftps.connectionType=FTPES
-ftps.passive=true
-ftps.usetmp=true
-ftps.mkdirs=true
-ftps.postConnectCmd=OPTS UTF8 ON
+ftps.connectionType = "FTPES"
+ftps.passive = "true"
+ftps.usetmp = "true"
+ftps.mkdirs = "true"
+ftps.postConnectCmd = "OPTS UTF8 ON"
 ```
 
 ## Related

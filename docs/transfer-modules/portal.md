@@ -18,10 +18,10 @@
 
 ## Configuration options
 
-This module has **no configurable options**. All behaviour is determined by the host
-record (type, directory, credentials) and the Data Portal configuration on the
-[Mover Server](../architecture/components.md). There are no `portal.*` properties to
-set.
+This module has **no options of its own**. The `portal.*` namespace is used for
+[Data User options](../use-cases/data-portal-user-options.md) — per-user settings
+configured in the Data User's Properties field that control portal behaviour such as
+authentication, quotas, CORS headers, branding, and operation permissions.
 
 ## Typical use
 

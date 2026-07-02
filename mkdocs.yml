@@ -94,10 +94,15 @@ nav:
       - Protocols & Connections: concepts/protocols.md
       - Object Storage: concepts/object-storage.md
       - Additional Features: concepts/additional-features.md
+      - Destination Options: concepts/destination-options.md
+      - Host Options: concepts/host-options.md
+      - Web User Options: concepts/web-user-options.md
   - Use Cases:
       - ECPDS Command-line Tool: use-cases/ecpds-cli.md
       - Data Portal: use-cases/data-portal.md
+      - Data User Options: use-cases/data-portal-user-options.md
       - Acquisition: use-cases/acquisition.md
+      - Acquisition Options: use-cases/acquisition-options.md
       - Dissemination: use-cases/dissemination.md
   - Transfer Modules:
       - Overview: transfer-modules/index.md

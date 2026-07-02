@@ -31,18 +31,18 @@ Simulate a slow 1 MB/s link with a 1-second connect delay:
 
 ```properties
 # Simulate a slow 1 MB/s link with a 1-second connect delay
-test.bytesPerSec=1MB
-test.delay=1s
-test.errorsFrequency=0
+test.bytesPerSec = "1MB"
+test.delay = "1s"
+test.errorsFrequency = "0"
 ```
 
 Fast throughput test with occasional errors (1 in every 50 ops):
 
 ```properties
 # Fast throughput test with occasional errors (1 in every 50 ops)
-test.bytesPerSec=500MB
-test.delay=0ms
-test.errorsFrequency=50
+test.bytesPerSec = "500MB"
+test.delay = "0ms"
+test.errorsFrequency = "50"
 ```
 
 ## Related

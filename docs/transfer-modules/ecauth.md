@@ -78,14 +78,14 @@ Only relevant when `ecauth.protocol=ssh`.
 ### Example
 
 ```properties
-ecauth.protocol=ssh
-ecauth.port=22
-ecauth.usetmp=true
-ecauth.mkdirs=true
-ecauth.ignoreCheck=false
-ecauth.serverAliveInterval=60s
-ecauth.serverAliveCountMax=3
-ecauth.chmodOnCopy=644
+ecauth.protocol = "ssh"
+ecauth.port = "22"
+ecauth.usetmp = "true"
+ecauth.mkdirs = "true"
+ecauth.ignoreCheck = "false"
+ecauth.serverAliveInterval = "60s"
+ecauth.serverAliveCountMax = "3"
+ecauth.chmodOnCopy = "644"
 ```
 
 ## Related

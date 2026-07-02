@@ -62,6 +62,7 @@ Workflow steps:
 ## Related
 
 - [ECPDS command-line Tool](ecpds-cli.md)
+- [Data User Options](data-portal-user-options.md) — per-user `portal.*` configuration
 - [Portal Transfer Module](../transfer-modules/portal.md)
 - [INH event fields](../event-logging/inh-fields.md) — incoming history records
 - [DEA event fields](../event-logging/dea-fields.md) — denied access records

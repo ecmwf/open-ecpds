@@ -93,7 +93,7 @@ ftp.useNoop = "30s"
 | Option | Default | Description |
 |---|---|---|
 | `ftp.usenlist` | `false` | Use NLST instead of LIST for directory listing |
-| `ftp.like` | `false` | When using NLST, reformat entries to look like LIST output |
+| `ftp.ftpLike` | `false` | When using NLST, reformat entries to look like LIST output |
 | `ftp.ftpuser` | *from host login* | Owner user shown in generated directory listings |
 | `ftp.ftpgroup` | *from host login* | Owner group shown in generated directory listings |
 
