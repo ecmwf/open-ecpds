@@ -5,7 +5,7 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
 
 ---
 
-## 8.0.4-01072026 (2026-07-01)
+## open-ecpds 8.0.4-01072026 (2026-07-01)
 
 - Added support for Python formatting and testing in the Host editors. Placeholder values can now be provided during testing, either by selecting an existing data transfer for the Host (if available) or by entering values manually.
 - Added a badge and visual highlight to the Filter buttons to indicate active filters.
@@ -18,7 +18,7 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
 - Added additional icons to improve workflow in the Monitoring Interface (e.g. Sync Now, Requeue, and Stop icons on the Data Transfer page).
 - Added access to TCP network statistics for completed data transfers. The new **Network Statistics** card on the Data Transfer page visualises connection activity and throughput, and exposes detailed per-connection metrics (RTT, congestion window, segment counts, etc.) to help troubleshoot transfer performance.
 
-## 8.0.1-19062026 (2026-06-19)
+## open-ecpds 8.0.1-19062026 (2026-06-19)
 
 - Added new dashboards to the Monitoring Interface for tracking Data Portal activity, including uploads and downloads, both globally and per data user.
 - Added activity statistics to the Data Portal, helping users identify less busy periods and optimise transfer performance.
@@ -39,12 +39,12 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
 - Added feedback form to collect user input and satisfaction.
 - Introduced properties for Web Users, similar to those available for Data Users.
 
-## 8.0.1-29052026 (2026-05-29)
+## open-ecpds 8.0.1-29052026 (2026-05-29)
 
 - Fixed packaging issue affecting the monitor RPM where the `ecpds.war` application was not included in the generated package.
 - Release `8.0.0-26052026` has been withdrawn and should no longer be used.
 
-## 8.0.0-26052026 (2026-05-26)
+## open-ecpds 8.0.0-26052026 (2026-05-26)
 
 - Introduction of the new **Aegis** release following the initial Genesis release.
 - Upgraded to the latest GraalVM release (25.0.3).
@@ -52,7 +52,7 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
 
 ---
 
-## 7.7.0-18052026 (2026-05-18)
+## open-ecpds 7.7.0-18052026 (2026-05-18)
 
 - Major UI improvements designed to enhance usability, accessibility, and overall user experience, based on end-user feedback.
 - Introduced a fully **responsive interface** with improved support for mobile phones, tablets, and different screen sizes. Tables and layouts now adapt automatically to the available screen space.
@@ -60,11 +60,11 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
 - Added new visual graphs to monitor disk usage at both data mover and transfer group levels.
 - Added a new **download monitoring page**, allowing administrators to track retrieval activity live at both the data mover and disk levels.
 
-## 7.5.0-05042026 (2026-04-05)
+## open-ecpds 7.5.0-05042026 (2026-04-05)
 
 - Major new release of the web interface. The previous stack (JSP + Apache Struts 1.x + jQuery) was fully modernised to incorporate **Bootstrap 5**, Bootstrap Icons, and DataTables.js. These upgrades deliver a sleeker, more responsive interface with significantly improved performance across all pages.
 
-## 7.3.7-27022026 (2026-02-27)
+## open-ecpds 7.3.7-27022026 (2026-02-27)
 
 - Improved DNF resilience in the Java container: added timeouts and retries.
 - Allowed manual host latitude/longitude updates and display of location name.
@@ -73,7 +73,7 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
 - Improved download error handling in browser (popup on failure) and hidden the download link when the file is not available.
 - Improved compatibility in the HTTP transfer module with encoded and non-encoded URIs.
 
-## 7.3.6-17022026 (2026-02-05)
+## open-ecpds 7.3.6-17022026 (2026-02-05)
 
 - Added `ErrorMessage` field to the PRS Splunk event to report product status processing errors.
 - Added `NetworkCode` field to the ERR Splunk event to allow tracking of dissemination failures per network type.
@@ -88,7 +88,7 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
 - Allowed defining how directory listings are displayed in the ECAUTH module.
 - Fixed incorrect load balancing in transfer group allocation when new files are registered.
 
-## 7.3.5-20012026 (2026-01-20)
+## open-ecpds 7.3.5-20012026 (2026-01-20)
 
 - Deferred transfer group and filesystem allocation until push/pull for new data files.
 - Consolidated all transfer-server methods for data file allocation and processing into a common class.
@@ -104,25 +104,25 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
 
 ---
 
-## 7.3.4-09122025 (2025-12-09)
+## open-ecpds 7.3.4-09122025 (2025-12-09)
 
 - Refactored SQL queries for data-retrieval, replication, and filtering schedulers.
 - Enabled filtering of data transfers by allocated data mover (`mover`) in the search box.
 - Fixed replication issue where the original data mover could not always be found.
 
-## 7.3.3-02122025 (2025-12-02)
+## open-ecpds 7.3.3-02122025 (2025-12-02)
 
 - Retrieved total/free space and filesystem identifiers from movers for weighted allocation based on disk usage.
 - Accounted for replication when disks are replaced, allowing empty volumes to grow gradually.
 
-## 7.3.1-11112025 (2025-11-11)
+## open-ecpds 7.3.1-11112025 (2025-11-11)
 
 - Added explanatory comments for certain entries in the destination form.
 - Added REST endpoint to update host options, enabling automated token rotation for HTTPS authentication.
 - Replaced `incoming.tmp` with `incoming.tmpDetect` and `incoming.tmpPattern` for simpler temporary file handling.
 - Applied filter patterns to original filenames rather than target names via `ectrans.filterpattern`.
 
-## 7.3.0-05112025 (2025-11-05)
+## open-ecpds 7.3.0-05112025 (2025-11-05)
 
 - Clearly identified anonymous users in data user listings.
 - Secured `s3.externalId` for cross-account trust.
@@ -136,14 +136,14 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
 - Added `$dataTransfer[asap]` as a target directory option.
 - Enabled file downloads with special characters across most browsers.
 
-## 7.2.5-15102025 (2025-10-15)
+## open-ecpds 7.2.5-15102025 (2025-10-15)
 
 - Enhanced SMTP, POP, and IMAP support with default ports and simplified configuration.
 - Added `proxy.useDestinationFilter` to enforce destination-level compression.
 - Fixed broken links to the Data Mover page in Transfer History events.
 - Added warning prompt when updating a Proxy Host.
 
-## 7.2.5-09102025 (2025-10-09)
+## open-ecpds 7.2.5-09102025 (2025-10-09)
 
 - Adjusted ECPDS product submission to the ecChart data layer.
 - Reduced retention periods for obsolete statistics tables.
@@ -152,18 +152,18 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
 - Reported error if no destination name is specified in the `ecpds` CLI.
 - Added chunk size option in the Azure transfer module for memory-limited movers.
 
-## 7.2.5-30092025 (2025-09-30)
+## open-ecpds 7.2.5-30092025 (2025-09-30)
 
 - Explicitly closed multipart output before calling `complete()` on S3 uploads.
 - Removed deprecated tables: `Q2DISS_REPORT`, `STATISTICS`, `DISK_USAGE`.
 - Introduced `forceproxy` search criterion for Destinations.
 - Ensured Destination is not stopped before starting an Acquisition Thread.
 
-## 7.2.4-26092025 (2025-09-26)
+## open-ecpds 7.2.4-26092025 (2025-09-26)
 
 - Removed `CloseableClientResponse` for WAR context compatibility.
 
-## 7.2.1-23092025 (2025-09-23)
+## open-ecpds 7.2.1-23092025 (2025-09-23)
 
 - Restricted users can now view the full transfer history of pre-scheduled files.
 - Transfer scheduler delays transmission when no server is available.
@@ -175,7 +175,7 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
     - **S3**: improved role assumption and error extraction.
 - Dependency upgrades: GraalVM 24.2.1 → 25.0.0, JDK 24.0.1 → 25.0.0, jsch 0.2.24 → 2.27.3, s3-stream-upload 2.0.3 → 2.2.4, httpclient5 5.3 → 5.3.1.
 
-## 7.2.0-02092025 (2025-09-02)
+## open-ecpds 7.2.0-02092025 (2025-09-02)
 
 - Improved HTTP headers and response handling for portal compliance (GitHub issues #1–#5).
 - Used try-with-resources to ensure proper closure of HTTP/S connections.
@@ -183,14 +183,14 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
 - Upgraded base image to `rockylinux/rockylinux:9.6`.
 - Dependency upgrades: GraalVM 24.2.1 → 24.2.2, JDK 24.0.1 → 24.0.2.
 
-## 7.1.7 (2025-08-06 — 2025-08-20)
+## open-ecpds 7.1.7-20082025 (2025-08-20)
 
 - Ensured RMI stream objects are properly unexported when streams close.
 - Fixed long-term memory leak for expired RMI scheduled tasks.
 - Cached RestClient to reduce object creation overhead for Opsview notifications.
 - Fixed batch file selection and race conditions causing stuck transfers.
 
-## 7.1.0-21072025 (2025-07-21)
+## open-ecpds 7.1.0-21072025 (2025-07-21)
 
 - Major release with dependency updates, bug fixes, and new features.
 - Scripts now require explicit return statements to avoid global context pollution.
@@ -201,7 +201,7 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
 
 ---
 
-## 6.8.8 — 6.8.0 (2025-06-06 — 2025-03-01)
+## open-ecpds 6.8.8-06062025 (2025-06-06)
 
 - Removed deprecated `finalize()` and replaced with `java.lang.ref.Cleaner`.
 - Cleaned thread-locals, MDC, and context class loader to prevent leaks.
@@ -212,7 +212,7 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
 - Deactivated Hibernate statistics.
 - Dependency upgrades: GraalVM 24.2.0 → 24.2.1, JDK 24.0.0 → 24.0.1, Azure 1.24.1 → 1.53.0, HiveMQ MQTT 2024.7 → 2025.3, Jetty 10.0.18 → 10.0.25, Log4j 2.20.0 → 2.24.0, Disruptor 3.4.2 → 4.0.0, and others.
 
-## 6.8.2 — 6.8.0 (2025-04-28 — 2025-02-16)
+## open-ecpds 6.8.2-16022025 (2025-02-16)
 
 - Enabled native access for Polyglot JDK support.
 - Activated virtual threads within Polyglot context.
@@ -223,14 +223,14 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
 - Allowed custom `User-Agent` and `Accept` headers in the HTTP/S transfer module.
 - Increased concurrent data transfer deletions to 50.
 
-## 6.8.0 (2025-02-10 — 2025-03-01)
+## open-ecpds 6.8.0-01032025 (2025-03-01)
 
 - Added `libsocketoption.so` to timeout `ss` processes after 2 s (Java-native implementation).
 - Introduced new Splunk events for denial monitoring.
 - Default sorting for product page; search by email and quick access to destination type.
 - Displayed retrieval progress on transfer pages.
 
-## 6.7.9-09112024 (2024-11-09)
+## open-ecpds 6.7.9-09112024 (2024-11-09)
 
 - Added additional fields for improved Splunk monitoring.
 - Configured data portal for RFC 3986 compliance (allow ambiguous URIs).
