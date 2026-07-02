@@ -49,6 +49,7 @@
 									<input id="name" name="name" type="text" class="form-control form-control-sm"
 										pattern="[a-zA-Z0-9]+([_-][a-zA-Z0-9]+)*"
 										title="Must start and end with a letter or digit; '_' or '-' allowed as single separators (e.g. admin-users)"
+										required
 										oninput="validatePatternInput(this, 'name-feedback'); _checkCategoryExists(this.value)">
 									<span id="name-feedback"></span>
 								</div>

@@ -43,6 +43,7 @@ function validate(path, message) {
 <input id="id" name="id" type="text" class="form-control form-control-sm"
     pattern="[a-zA-Z0-9]+([_.][a-zA-Z0-9]+)*"
     title="Must start and end with a letter or digit; '_' or '.' allowed as single separators (e.g. policy.read)"
+    required
     oninput="validatePatternInput(this, 'id-feedback'); _checkPolicyIdExists(this.value)">
 <span id="id-feedback"></span>
 </div>

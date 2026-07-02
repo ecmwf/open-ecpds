@@ -93,11 +93,11 @@ const tDuration = _si.map(i=>_tDuration[i]);
       <button type="button" class="btn btn-outline-secondary active" id="btnChart" onclick="setView('chart')">
         <i class="bi bi-bar-chart-fill me-1"></i>Chart
       </button>
+      <button type="button" class="btn btn-outline-secondary" id="btnReverse"
+          onclick="toggleOrder()" title="Showing earliest first — click to show latest first">
+        <i class="bi bi-sort-down-alt" id="btnReverseIcon"></i>
+      </button>
     </div>
-    <button type="button" class="btn btn-outline-secondary btn-sm" id="btnReverse"
-        onclick="toggleOrder()" title="Showing earliest first — click to show latest first">
-      <i class="bi bi-sort-down-alt" id="btnReverseIcon"></i>
-    </button>
   </div>
 </div>
 
