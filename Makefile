@@ -22,6 +22,8 @@ CONTAINER_NAME := running-$(PROJECT_NAME)-dev
 WORKDIR := /workspaces/$(PROJECT_NAME)
 DB_DATA_DIR := run/var/lib/ecpds/database
 AI_DATA_DIR := run/var/lib/ecpds/ia
+DOCS_HOST ?= 0.0.0.0
+DOCS_PORT ?= 8000
 
 # Extract the tag number from the Maven file
 VERSION=$(shell grep '<version>' pom.xml | head -n 1 | sed 's/.*>\(.*\)<.*/\1/')
@@ -75,7 +77,7 @@ dev-container-exists = \
   fi
 
 # Conditional targets based on the environment
-.PHONY: dev .dev-cntnr .run login rm-dev get-geodb get-licenses build start-db stop-db start-ai stop-ai start-backend stop-backend clean info
+.PHONY: dev .dev-cntnr .run login rm-dev get-geodb get-licenses build start-db stop-db start-ai stop-ai start-backend stop-backend clean info docs-serve docs-build docs-deploy
 dev: .dev-cntnr .run login ## Build, run and login into the development container (*)
 
 .dev-cntnr: ## Build the development container (*)
@@ -89,11 +91,13 @@ dev: .dev-cntnr .run login ## Build, run and login into the development containe
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v $(HOME)/.kube:/root/.kube \
 		-v $(HOME)/.copilot:/root/.copilot \
+		-v $(HOME)/.ssh:/root/.ssh \
 		-v $(WORKSPACE):/workspaces \
 		-e DOCKER_HOST_WORKSPACE=$(DOCKER_HOST_WORKSPACE) \
 		-e DOCKER_HOST_OS=$(DOCKER_HOST_OS) \
 		--name $(CONTAINER_NAME) \
 		--add-host=ecpds-mover:host-gateway \
+		-p $(DOCS_PORT):$(DOCS_PORT) \
 		$(IMAGE_NAME) \
 		sleep infinity
 
@@ -128,6 +132,23 @@ build: ## Compile java sources into JARs, create RPMs and Docker images (**)
 	@echo -n "$(TAG)" > VERSION
 	@mvn package
 	@cd docker && $(MAKE) all
+
+docs-serve: ## Serve the MkDocs site locally, accessible from the Docker host (**)
+	@echo "Starting MkDocs on http://$(DOCS_HOST):$(DOCS_PORT) ..."
+	@mkdocs serve --dev-addr $(DOCS_HOST):$(DOCS_PORT)
+
+docs-build: ## Build the MkDocs static site into site/ (**)
+	@echo "Building MkDocs static site..."
+	@mkdocs build --strict
+	@echo "Static site written to: $(CURDIR)/site/"
+
+docs-deploy: ## Build and deploy the MkDocs site to GitHub Pages (**)
+	@echo "Deploying MkDocs site to GitHub Pages..."
+	@mkdocs gh-deploy --force
+	@echo "Deployed. Check https://ecmwf.github.io/open-ecpds/"
+
+docs-clean: ## Remove the generated MkDocs site
+	@rm -rf site
 
 start-db: ## Build and run the database service for VS Code and Eclipse debugging/running
 	@if [ -d "$(DB_DATA_DIR)/mysql" ] && [ -d "$(DB_DATA_DIR)/ecpds" ]; then \
@@ -180,6 +201,7 @@ clean: ## Stop containers, remove images, JARs, RPMs and dependencies (**)
 	@cd docker && $(MAKE) clean  || exit 1
 	@mvn clean  || exit 1
 	@rm -f lib/*.jar lib/*.pom || exit 1
+	@$(MAKE) -s docs-clean
 
 info: ## Output the configuration
 	@if [ -n "$(IN_DEV_CONTAINER)" ]; then \
