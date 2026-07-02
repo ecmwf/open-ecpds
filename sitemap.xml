@@ -53,7 +53,15 @@
          <lastmod>2026-07-02</lastmod>
     </url>
     <url>
+         <loc>https://ecmwf.github.io/open-ecpds/concepts/destination-options/</loc>
+         <lastmod>2026-07-02</lastmod>
+    </url>
+    <url>
          <loc>https://ecmwf.github.io/open-ecpds/concepts/entities/</loc>
+         <lastmod>2026-07-02</lastmod>
+    </url>
+    <url>
+         <loc>https://ecmwf.github.io/open-ecpds/concepts/host-options/</loc>
          <lastmod>2026-07-02</lastmod>
     </url>
     <url>
@@ -62,6 +70,10 @@
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/concepts/protocols/</loc>
+         <lastmod>2026-07-02</lastmod>
+    </url>
+    <url>
+         <loc>https://ecmwf.github.io/open-ecpds/concepts/web-user-options/</loc>
          <lastmod>2026-07-02</lastmod>
     </url>
     <url>
@@ -209,7 +221,15 @@
          <lastmod>2026-07-02</lastmod>
     </url>
     <url>
+         <loc>https://ecmwf.github.io/open-ecpds/use-cases/acquisition-options/</loc>
+         <lastmod>2026-07-02</lastmod>
+    </url>
+    <url>
          <loc>https://ecmwf.github.io/open-ecpds/use-cases/acquisition/</loc>
+         <lastmod>2026-07-02</lastmod>
+    </url>
+    <url>
+         <loc>https://ecmwf.github.io/open-ecpds/use-cases/data-portal-user-options/</loc>
          <lastmod>2026-07-02</lastmod>
     </url>
     <url>
