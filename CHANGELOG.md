@@ -211,7 +211,7 @@ This document summarizes the most significant changes in OpenECPDS across all ma
 
 ---
 
-## open-ecpds 7.1.7 (2025-08-06 → 2025-08-20)
+## open-ecpds 7.1.7-20082025 (2025-08-20)
 
 - Ensure RMI stream objects are properly unexported when streams close.
 - Fix long-term memory leak for expired RMI scheduled tasks.
@@ -231,7 +231,7 @@ This document summarizes the most significant changes in OpenECPDS across all ma
 
 ---
 
-## open-ecpds 6.8.8 → 6.8.0 (2025-06-06 → 2025-03-01)
+## open-ecpds 6.8.8-06062025 (2025-06-06)
 
 - Remove deprecated `finalize()` and replace with `java.lang.ref.Cleaner`.
 - Clean thread-locals, MDC, and context class loader to prevent leaks.
@@ -256,7 +256,7 @@ This document summarizes the most significant changes in OpenECPDS across all ma
 
 ---
 
-## open-ecpds 6.8.2 → 6.8.0 (2025-04-28 → 2025-02-16)
+## open-ecpds 6.8.2-16022025 (2025-02-16)
 
 - Enable native access for Polyglot JDK support.
 - Activate virtual threads within Polyglot context.
@@ -269,7 +269,7 @@ This document summarizes the most significant changes in OpenECPDS across all ma
 
 ---
 
-## open-ecpds 6.8.0-10022025 → 6.8.0-01032025
+## open-ecpds 6.8.0-01032025 (2025-03-01)
 
 - Add libsocketoption.so to timeout `ss` processes after 2s (Java-native implementation).
 - Introduce new Splunk events for denial monitoring.
@@ -278,7 +278,7 @@ This document summarizes the most significant changes in OpenECPDS across all ma
 
 ---
 
-## open-ecpds 6.7.9-09112024
+## open-ecpds 6.7.9-09112024 (2024-11-09)
 
 - Add additional fields for improved Splunk monitoring.
 - Configure data portal for RFC3986 compliance (allow ambiguous URIs).
