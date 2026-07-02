@@ -24,6 +24,8 @@ DB_DATA_DIR := run/var/lib/ecpds/database
 AI_DATA_DIR := run/var/lib/ecpds/ia
 DOCS_HOST ?= 0.0.0.0
 DOCS_PORT ?= 8000
+JAVADOC_SRC := target/site/apidocs
+SITE_DIR    := site
 
 # Extract the tag number from the Maven file
 VERSION=$(shell grep '<version>' pom.xml | head -n 1 | sed 's/.*>\(.*\)<.*/\1/')
@@ -77,7 +79,7 @@ dev-container-exists = \
   fi
 
 # Conditional targets based on the environment
-.PHONY: dev .dev-cntnr .run login rm-dev get-geodb get-licenses build start-db stop-db start-ai stop-ai start-backend stop-backend clean info docs-serve docs-build docs-deploy
+.PHONY: dev .dev-cntnr .run login rm-dev get-geodb get-licenses build start-db stop-db start-ai stop-ai start-backend stop-backend clean info docs-serve docs-serve-full docs-build docs-javadoc docs-build-full docs-deploy docs-clean
 dev: .dev-cntnr .run login ## Build, run and login into the development container (*)
 
 .dev-cntnr: ## Build the development container (*)
@@ -137,14 +139,35 @@ docs-serve: ## Serve the MkDocs site locally, accessible from the Docker host (*
 	@echo "Starting MkDocs on http://$(DOCS_HOST):$(DOCS_PORT) ..."
 	@mkdocs serve --dev-addr $(DOCS_HOST):$(DOCS_PORT)
 
+docs-serve-full: docs-javadoc ## Generate JavaDocs then serve MkDocs + JavaDocs locally (**)
+	@echo "Copying JavaDocs into docs/javadoc/ for local preview..."
+	@mkdir -p docs/javadoc
+	@cp -r $(JAVADOC_SRC)/. docs/javadoc/
+	@trap 'echo "Cleaning up docs/javadoc/..."; rm -rf docs/javadoc' EXIT INT TERM; \
+	 echo "Starting MkDocs on http://$(DOCS_HOST):$(DOCS_PORT) ..."; \
+	 mkdocs serve --dev-addr $(DOCS_HOST):$(DOCS_PORT)
+
 docs-build: ## Build the MkDocs static site into site/ (**)
 	@echo "Building MkDocs static site..."
 	@mkdocs build --strict
-	@echo "Static site written to: $(CURDIR)/site/"
+	@echo "Static site written to: $(CURDIR)/$(SITE_DIR)/"
 
-docs-deploy: ## Build and deploy the MkDocs site to GitHub Pages (**)
-	@echo "Deploying MkDocs site to GitHub Pages..."
-	@mkdocs gh-deploy --force
+docs-javadoc: ## Generate JavaDocs into target/site/apidocs/ (**)
+	@echo "Generating JavaDocs..."
+	@mvn javadoc:javadoc -Dcheckstyle.skip=true -Dspotbugs.skip=true -Dmaven.javadoc.failOnError=false -q
+	@echo "JavaDocs written to: $(CURDIR)/$(JAVADOC_SRC)/"
+
+docs-build-full: docs-build docs-javadoc ## Build MkDocs site + JavaDocs into site/javadoc/ (**)
+	@echo "Copying JavaDocs into $(SITE_DIR)/javadoc/ ..."
+	@mkdir -p $(SITE_DIR)/javadoc
+	@cp -r $(JAVADOC_SRC)/. $(SITE_DIR)/javadoc/
+	@echo "Full site with JavaDocs written to: $(CURDIR)/$(SITE_DIR)/"
+
+docs-deploy: ## Build and deploy MkDocs site + JavaDocs to GitHub Pages (**)
+	@echo "Building full site (MkDocs + JavaDocs)..."
+	@$(MAKE) docs-build-full
+	@echo "Deploying to GitHub Pages (gh-pages branch)..."
+	@ghp-import -n -p -f $(SITE_DIR)
 	@echo "Deployed. Check https://ecmwf.github.io/open-ecpds/"
 
 docs-clean: ## Remove the generated MkDocs site
