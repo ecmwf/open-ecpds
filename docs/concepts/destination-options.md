@@ -66,10 +66,11 @@ scheduler.requeueignore = "(.*)\.tmp"
 ### Quick-start example — force rules per filename
 
 ```properties
-scheduler.force =
+scheduler.force = "
   (== {avhrr_n.*}) standby=never;delay=2h
   (.= E1) asap=yes;transfergroup=internet
   (=. .tmp) standby=always
+"
 ```
 
 ## `incoming.*` — Destination Portal Options
@@ -177,9 +178,10 @@ alias.pattern = "pattern=(.*)\.grib,ignore=(.*)\.tmp,lifetime=P2D,priority=80,as
 ### Quick-start example — rewrite targets per pattern
 
 ```properties
-alias.pattern =
+alias.pattern = "
   (== {(.*)\.dat}) lifetime=P2D,priority=80,asap=yes,event=no,delay=PT15M,target=/archive/$target
   (.= M) target=/mirror/$date/$target,dateformat=MMdd,datedelta=-1,datesource=$target[2..12],datepattern=yyyyMMddHH
+"
 ```
 
 ## `mqtt.*` — MQTT Publishing Options

@@ -25,12 +25,14 @@ Supported operators are `==`, `!=`, `.=` and `=.`.
 ### Quick-start example
 
 ```properties
-ecpds.moverListForSource =
+ecpds.moverListForSource = "
   (== internet) ecpds-dm1,ecpds-dm2
   (== rmdcn) ecpds-dm3
+"
 
-ecpds.moverListForProcessing =
+ecpds.moverListForProcessing = "
   (.= prod) ecpds-dm4,ecpds-dm5
+"
 ```
 
 ## `master.*` — Virtual FTP Access

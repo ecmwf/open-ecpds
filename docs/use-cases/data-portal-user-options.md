@@ -82,10 +82,11 @@ portal.corsAllowOrigin = "*"
 ### Quick-start example — custom MIME types
 
 ```properties
-portal.headerRegistry =
+portal.headerRegistry = "
   (== {*.grib}) Content-Type=application/grib
   (== {*.nc}) Content-Type=application/x-netcdf
   (.= {*.zarr}) Content-Type=application/octet-stream
+"
 ```
 
 ## Operation Permissions
