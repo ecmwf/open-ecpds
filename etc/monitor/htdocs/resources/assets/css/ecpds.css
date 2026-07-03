@@ -2147,17 +2147,24 @@ html[data-bs-theme=dark] .custom-ace-marker-warning {
     }
 }
 
-/* destTransferTable — Target column: wrap long filenames (no spaces) when page is narrow */
-#destTransferTable td.col-target {
+/* destTransferTable / validateTable — Target column: wrap long filenames (no spaces) when page is narrow */
+#destTransferTable,
+#validateTable {
+    table-layout: fixed;
+}
+#destTransferTable td.col-target,
+#validateTable td.col-target {
     word-break: break-all;
     overflow-wrap: anywhere;
 }
-/* destTransferTable — Host column: allow long hostnames to wrap across multiple lines */
-#destTransferTable td:nth-child(2) {
+/* destTransferTable / validateTable — Host column: allow long hostnames to wrap across multiple lines */
+#destTransferTable td:nth-child(2),
+#validateTable td:nth-child(2) {
     word-break: break-word;
     overflow-wrap: anywhere;
 }
-#destTransferTable thead th {
+#destTransferTable thead th,
+#validateTable thead th {
     text-align: left !important;
 }
 /* transferTable — keep Transfer Host header left-aligned; prevents DataTables' type

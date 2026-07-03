@@ -367,6 +367,7 @@
         lengthChange: false,
         searching: true,
         dom: 'rt<"d-flex justify-content-between align-items-center mt-2"ip>',
+        autoWidth: false,
         ordering: true,
         order: [],
         ajax: {
@@ -377,14 +378,28 @@
             }
         },
         columns: [
-            { data: 0 }, { data: 1 }, { data: 2 }, { data: 3 }, { data: 4 },
-            { data: 5 }, { data: 6 }, { data: 7 }, { data: 8 }, { data: 9 },
-            { data: 10 }, { data: 11 }, { data: 12 }, { data: 13 }
+            { data: 0,  width: '40px'  },
+            { data: 1,  width: '110px' },
+            { data: 2,  width: '130px' },
+            { data: 3,  width: '130px' },
+            { data: 4,  width: '130px' },
+            { data: 5 },
+            { data: 6,  width: '55px'  },
+            { data: 7,  width: '45px'  },
+            { data: 8,  width: '70px'  },
+            { data: 9,  width: '80px'  },
+            { data: 10, width: '95px'  },
+            { data: 11, width: '45px'  },
+            { data: 12, width: '95px'  },
+            { data: 13, width: '55px'  }
         ],
         columnDefs: [
-            { targets: [12,13], orderable: false },
-            { targets: [9], visible: false },
-            { targets: [12], visible: canQueue }
+            { targets: 5,                              className: 'col-target' },
+            { targets: [0, 6, 7, 8, 9, 10, 11, 12, 13], className: 'text-nowrap' },
+            { targets: [12, 13], orderable: false },
+            { targets: 9,  visible: false },
+            { targets: 12, orderable: false, visible: canQueue },
+            { targets: 13, orderable: false }
         ],
         drawCallback: function (settings) {
             var json = settings.json;
@@ -452,6 +467,9 @@
     })();
     var _VL_MED = [0, 1, 2, 6, 7, 8, 11];
     var _VL_SM  = [3, 4];
+    var _VL_AUTO_ALWAYS_HIDE = [9];
+    var _VL_COMPACT_HIDE = [0].concat(_VL_MED.filter(function(c){return c!==0;}));
+    var _VL_SMALL_HIDE   = _VL_COMPACT_HIDE.concat(_VL_SM);
 
     function _vlShowCols(hideCols) {
         table.columns().every(function (i) {
@@ -472,6 +490,14 @@
         table.columns.adjust();
     }
 
+    function _vlApplyAuto() {
+        if (_vlColMode !== 'auto') return;
+        var w = window.innerWidth;
+        if (w < 768)      _vlShowCols(_VL_AUTO_ALWAYS_HIDE.concat(_VL_MED).concat(_VL_SM));
+        else if (w < 992) _vlShowCols(_VL_AUTO_ALWAYS_HIDE.concat(_VL_MED));
+        else              _vlShowCols(_VL_AUTO_ALWAYS_HIDE);
+    }
+
     function _vlSyncCustomChkBoxes() {
         document.querySelectorAll('.vl-custom-col-chk').forEach(function(chk) {
             chk.checked = _vlCustomCols.indexOf(+chk.dataset.col) !== -1;
@@ -489,14 +515,6 @@
         });
     });
 
-    function _vlApplyAuto() {
-        if (_vlColMode !== 'auto') return;
-        var w = window.innerWidth;
-        if (w < 768)      _vlShowCols(_VL_MED.concat(_VL_SM));
-        else if (w < 992) _vlShowCols(_VL_MED);
-        else              _vlShowCols([]);
-    }
-
     function _vlApplyMode(mode) {
         var label = mode.charAt(0).toUpperCase() + mode.slice(1);
         $('#vlColModeBtn').html('<i class="bi bi-layout-three-columns me-1"></i>' + label);
@@ -512,8 +530,8 @@
         });
         if (mode === 'auto')         _vlApplyAuto();
         else if (mode === 'all')     _vlShowCols([]);
-        else if (mode === 'compact') _vlShowCols(_VL_MED);
-        else if (mode === 'small')   _vlShowCols(_VL_MED.concat(_VL_SM));
+        else if (mode === 'compact') _vlShowCols(_VL_COMPACT_HIDE);
+        else if (mode === 'small')   _vlShowCols(_VL_SMALL_HIDE);
         else if (mode === 'custom')  { _vlSyncCustomChkBoxes(); _vlApplyCustomCols(); }
     }
 

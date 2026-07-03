@@ -125,7 +125,7 @@ var _dthColMode = (function() { try { return localStorage.getItem('dtHistColMode
 var _dthCustomCols = (function() { try { var s = localStorage.getItem('dtHistCustomCols'); return s ? JSON.parse(s) : [0,1,2,3,4]; } catch(e) { return [0,1,2,3,4]; } })();
 function _dthShowCols(hide) { dtHist.columns().every(function(i) { dtHist.column(i).visible(hide.indexOf(i) === -1, false); }); dtHist.columns.adjust(); }
 function _dthApplyCustom() { dtHist.columns().every(function(i) { var v = _dthCustomCols.indexOf(i) !== -1; if (i === 1 || i === 2) v = true; dtHist.column(i).visible(v, false); }); dtHist.columns.adjust(); }
-function _dthApplyAuto() { if (_dthColMode !== 'auto') return; var w = window.innerWidth; if (w < 768) _dthShowCols([0,2,3]); else if (w < 992) _dthShowCols([0]); else _dthShowCols([]); }
+function _dthApplyAuto() { if (_dthColMode !== 'auto') return; var w = window.innerWidth; if (w < 768) _dthShowCols([0,3,4]); else if (w < 992) _dthShowCols([0]); else _dthShowCols([]); }
 function _dthApplyMode(mode) {
     var label = mode.charAt(0).toUpperCase() + mode.slice(1);
     $('#dtHistColModeBtn').html('<i class="bi bi-layout-three-columns me-1"></i>' + label);
@@ -321,7 +321,7 @@ $('#dtOlderPageLen').on('change', function() {
 var _dtoColMode = (function() { try { return localStorage.getItem('dtOlderColMode') || 'auto'; } catch(e) { return 'auto'; } })();
 var _dtoCustomCols = (function() { try { var s = localStorage.getItem('dtOlderCustomCols'); return s ? JSON.parse(s) : [0,1,2,3,4,5,6,7,8,9,10]; } catch(e) { return [0,1,2,3,4,5,6,7,8,9,10]; } })();
 var _DTO_MD = [3,4,6,7,8,10];
-var _DTO_SM = [1,2,9];
+var _DTO_SM = [1,2];
 function _dtoShowCols(hide) { dtOlder.columns().every(function(i) { dtOlder.column(i).visible(hide.indexOf(i) === -1, false); }); dtOlder.columns.adjust(); }
 function _dtoApplyCustom() { dtOlder.columns().every(function(i) { var v = _dtoCustomCols.indexOf(i) !== -1; if (i === 0 || i === 5) v = true; dtOlder.column(i).visible(v, false); }); dtOlder.columns.adjust(); }
 function _dtoApplyAuto() { if (_dtoColMode !== 'auto') return; var w = window.innerWidth; if (w < 768) _dtoShowCols(_DTO_MD.concat(_DTO_SM)); else if (w < 992) _dtoShowCols(_DTO_MD); else _dtoShowCols([]); }

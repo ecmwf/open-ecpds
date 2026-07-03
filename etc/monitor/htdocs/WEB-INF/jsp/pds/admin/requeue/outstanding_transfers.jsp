@@ -225,7 +225,10 @@ document.querySelectorAll('.rq-col-chk').forEach(function(chk) {
 });
 function _rqApplyResponsive() {
     if (_rqColMode !== 'auto') return;
-    _rqShowCols(window.innerWidth < 992 ? [1, 4, 5, 6] : []);
+    var w = window.innerWidth;
+    if (w < 768)      _rqShowCols([1, 4, 5, 6, 7]);
+    else if (w < 992) _rqShowCols([1, 4, 5, 6]);
+    else              _rqShowCols([]);
 }
 function _rqApplyMode(mode) {
     var label = mode.charAt(0).toUpperCase() + mode.slice(1);

@@ -353,12 +353,12 @@
                                 </div>
                             </div>
                             <div class="row g-1 mb-1">
-                                <div class="col-6 col-md-4">
+                                <div class="col-12 col-md-4">
                                     <label class="form-label mb-0 fw-semibold"><code>groupby=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
                                     <input type="text" class="form-control form-control-sm" id="qb_groupby" oninput="qbPreview()">
                                 </div>
-                                <div class="col-6 col-md-4">
-                                    <label class="form-label mb-0 fw-semibold"><code>checksum=</code></label>
+                                <div class="col-12 col-md-8">
+                                    <label class="form-label mb-0 fw-semibold"><code>checksum=</code> <span class="text-muted fw-normal">exact match</span></label>
                                     <input type="text" class="form-control form-control-sm" id="qb_checksum" oninput="qbPreview()">
                                 </div>
                             </div>
@@ -472,34 +472,50 @@
             parseQBQuery(document.getElementById('transferSearch').value, 'qb_', ['ts','size'], []);
             qbPreview();
         });
-        function toggleQBPanel(panelId, btnId) {
-            var panel = document.getElementById(panelId);
-            var btn = document.getElementById(btnId);
-            if (panel.style.display === 'block') { panel.style.display = 'none'; return; }
-            if (panel.parentElement !== document.body) { document.body.appendChild(panel); }
+        function _qbRepos(panel, btn, pw) {
             var r = btn.getBoundingClientRect();
             var sy = window.pageYOffset || document.documentElement.scrollTop;
             var sx = window.pageXOffset || document.documentElement.scrollLeft;
             var vw = window.innerWidth || document.documentElement.clientWidth;
             var margin = 8;
-            var pw = Math.min(740, vw - 2 * margin);
             var left = Math.max(sx + margin, Math.min(r.right + sx - pw, sx + vw - pw - margin));
-            panel.style.top = (r.bottom + sy + 4) + 'px';
+            panel.style.top  = (r.bottom + sy + 4) + 'px';
             panel.style.left = left + 'px';
+        }
+        function toggleQBPanel(panelId, btnId) {
+            var panel = document.getElementById(panelId);
+            var btn = document.getElementById(btnId);
+            if (panel.style.display === 'block') {
+                panel.style.display = 'none';
+                if (panel._qbScrollFn) { window.removeEventListener('scroll', panel._qbScrollFn); panel._qbScrollFn = null; }
+                return;
+            }
+            if (panel.parentElement !== document.body) { document.body.appendChild(panel); }
+            var vw = window.innerWidth || document.documentElement.clientWidth;
+            var pw = Math.min(740, vw - 16);
             panel.style.width = pw + 'px';
             panel.style.right = 'auto';
             panel.style.overflowX = 'auto';
+            _qbRepos(panel, btn, pw);
             parseQBQuery(document.getElementById('transferSearch').value, 'qb_', ['ts','size'], []);
             qbPreview();
             panel.style.display = 'block';
+            panel._qbScrollFn = function() { _qbRepos(panel, btn, pw); };
+            window.addEventListener('scroll', panel._qbScrollFn, { passive: true });
         }
         document.addEventListener('click', function(e) {
             var panel = document.getElementById('queryBuilder');
             var btn = document.getElementById('btnTransferQB');
-            if (panel && panel.style.display === 'block' && !panel.contains(e.target) && btn && !btn.contains(e.target))
+            if (panel && panel.style.display === 'block' && !panel.contains(e.target) && btn && !btn.contains(e.target)) {
                 panel.style.display = 'none';
+                if (panel._qbScrollFn) { window.removeEventListener('scroll', panel._qbScrollFn); panel._qbScrollFn = null; }
+            }
         });
+        var _tQBLastW = window.innerWidth;
         window.addEventListener('resize', function() {
+            var w = window.innerWidth;
+            if (w === _tQBLastW) return;
+            _tQBLastW = w;
             var panel = document.getElementById('queryBuilder');
             if (panel) panel.style.display = 'none';
         });

@@ -27,10 +27,11 @@
         </c:if>
 
         <a class="navbar-brand p-0 me-0 flex-shrink-0" href="/">
-            <img src="/assets/images/logo.production.png" alt="Home page" width="140" height="24" style="display:block;">
+            <img src="/assets/images/logo.production.png" alt="Home page" width="140" height="24" id="navLogoFull">
+            <img src="/assets/images/logo.icon.png"       alt="Home page" width="34"  height="24" id="navLogoIcon" style="display:none;">
         </a>
 
-        <span class="header_simple_title d-none d-sm-inline ms-2">
+        <span class="header_simple_title ms-2" id="navTitle">
             <tiles:getAsString name="title" />
         </span>
 
@@ -41,7 +42,7 @@
                 <div class="dropdown">
                     <a class="dropdown-toggle text-white text-decoration-none fw-semibold small"
                        href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="bi bi-person-circle me-1"></i><span class="d-none d-sm-inline"><auth:info property="commonName" /><span class="text-white-50"> (<auth:info property="uid" />)</span></span><span class="d-inline d-sm-none"><auth:info property="uid" /></span>
+                        <i class="bi bi-person-circle me-1"></i><span id="navUserFull"><auth:info property="commonName" /><span class="text-white-50"> (<auth:info property="uid" />)</span></span><span id="navUserShort" style="display:none;"><auth:info property="uid" /></span>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end shadow">
                         <li><a class="dropdown-item" href="/do/logout">
@@ -70,7 +71,7 @@
             <button class="btn btn-sm btn-outline-light p-1 lh-1" type="button"
                     data-bs-toggle="offcanvas" data-bs-target="#uiHelpOffcanvas" aria-controls="uiHelpOffcanvas"
                     title="Interface help" style="width:28px;height:28px;">
-              <i class="bi bi-question-circle" style="font-size:0.85rem;"></i>
+              <i class="bi bi-question-lg" style="font-size:1rem;"></i>
             </button>
             </logic:present>
         </div>
@@ -125,6 +126,39 @@ function ecpdsToggleTheme() {
   var t = document.documentElement.getAttribute('data-bs-theme') || 'light';
   var ic = document.getElementById('themeIcon');
   if (ic) ic.className = t === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-fill';
+}());
+(function() {
+  var titleEl    = document.getElementById('navTitle');
+  var logoFull   = document.getElementById('navLogoFull');
+  var logoIcon   = document.getElementById('navLogoIcon');
+  var userFull   = document.getElementById('navUserFull');
+  var userShort  = document.getElementById('navUserShort');
+  if (!titleEl || !logoFull || !logoIcon) return;
+  function adapt() {
+    // Step 1: reset everything to full state
+    logoFull.style.display  = '';
+    logoIcon.style.display  = 'none';
+    if (userFull)  userFull.style.display  = '';
+    if (userShort) userShort.style.display = 'none';
+    titleEl.style.display   = '';
+    // Step 2: title clipping → switch to icon-only logo
+    if (titleEl.scrollWidth > titleEl.clientWidth + 1) {
+      logoFull.style.display = 'none';
+      logoIcon.style.display = '';
+      // Step 3: still clipping → shorten username
+      if (titleEl.scrollWidth > titleEl.clientWidth + 1) {
+        if (userFull)  userFull.style.display  = 'none';
+        if (userShort) userShort.style.display = '';
+        // Step 4: still clipping → hide title entirely
+        if (titleEl.scrollWidth > titleEl.clientWidth + 1) {
+          titleEl.style.display = 'none';
+        }
+      }
+    }
+  }
+  var ro = new ResizeObserver(function() { adapt(); });
+  ro.observe(document.getElementById('topheader') || document.body);
+  adapt();
 }());
 </script>
 
