@@ -147,6 +147,11 @@ labelProperty="name" />
 <div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
 <i class="bi bi-ethernet text-primary"></i>
 <span class="fw-semibold">Connection</span>
+<button id="formGuideBtn" type="button"
+        class="btn btn-sm btn-outline-secondary ms-1 flex-shrink-0 disabled"
+        title="No configuration guide available" disabled>
+  <i class="bi bi-book me-1"></i><span class="d-none d-sm-inline">Configuration </span>Guide
+</button>
 </div>
 <div class="card-body">
 <div class="row g-3">
@@ -154,12 +159,6 @@ labelProperty="name" />
 <label for="transferMethod" class="form-label mb-1 d-flex align-items-center gap-1">
   Transfer Protocol
   <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Select the Transfer Protocol to connect to the remote site" tabindex="0"></i>
-  <button id="formGuideBtn" type="button"
-          class="btn btn-sm btn-outline-secondary p-0 px-1 disabled"
-          style="font-size:0.75rem;line-height:1.2;"
-          title="No configuration guide available" disabled>
-    <i class="bi bi-book"></i>
-  </button>
 </label>
 <select id="transferMethod" name="transferMethod" class="form-select form-select-sm">
 <c:forEach var="method"
@@ -646,7 +645,7 @@ oninput="validateMailInput(this); toggleMailRows()" />
 
 <%-- Help offcanvas panel --%>
 <div class="offcanvas offcanvas-end" tabindex="-1" id="hostEditHelpOffcanvas"
-     aria-labelledby="hostEditHelpOffcanvasLabel" style="width:min(480px,42vw);">
+     aria-labelledby="hostEditHelpOffcanvasLabel" style="width:480px;max-width:95vw;">
     <div class="offcanvas-header border-bottom py-2 px-3">
         <h6 class="offcanvas-title mb-0 fw-semibold" id="hostEditHelpOffcanvasLabel">
             <i class="bi bi-book me-2 text-primary"></i>Properties Reference

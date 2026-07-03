@@ -1147,7 +1147,7 @@
 
 <%-- Help offcanvas panel --%>
 <div class="offcanvas offcanvas-end" tabindex="-1" id="destHelpOffcanvas"
-     aria-labelledby="destHelpOffcanvasLabel" style="width:min(480px,42vw);">
+     aria-labelledby="destHelpOffcanvasLabel" style="width:480px;max-width:95vw;">
 	<div class="offcanvas-header border-bottom py-2 px-3">
 		<h6 class="offcanvas-title mb-0 fw-semibold" id="destHelpOffcanvasLabel">
 			<i class="bi bi-book me-2 text-primary"></i>Properties Reference

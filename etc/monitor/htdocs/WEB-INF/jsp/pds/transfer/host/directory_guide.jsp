@@ -5,7 +5,7 @@
 
 <%-- Directory field guide offcanvas — content is specific to the host type --%>
 <div class="offcanvas offcanvas-end" tabindex="-1" id="directoryGuideOffcanvas"
-     aria-labelledby="directoryGuideLabel" style="width:min(760px,72vw);">
+     aria-labelledby="directoryGuideLabel" style="width:760px;max-width:95vw;">
   <div class="offcanvas-header border-bottom py-2 px-3">
     <h6 class="offcanvas-title mb-0 fw-semibold" id="directoryGuideLabel">
       <i class="bi bi-folder2-open me-2 text-info"></i>Directory &mdash; Guide

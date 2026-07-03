@@ -3,7 +3,7 @@
 
 <%-- Acquisition Console - How-it-works & options guide --%>
 <div class="offcanvas offcanvas-end" tabindex="-1" id="acquisitionGuideOffcanvas"
-     aria-labelledby="acquisitionGuideLabel" style="width:min(760px,72vw);">
+     aria-labelledby="acquisitionGuideLabel" style="width:760px;max-width:95vw;">
   <div class="offcanvas-header border-bottom py-2 px-3">
     <h6 class="offcanvas-title mb-0 fw-semibold" id="acquisitionGuideLabel">
       <i class="bi bi-book me-2 text-info"></i>Acquisition Host &mdash; Guide

@@ -932,7 +932,7 @@ function _updateHostSearchBanner(queryError, total, hasSearch) {
 </script>
 
 <%-- Host detail offcanvas (shared between list and map view) --%>
-<div class="offcanvas offcanvas-end" tabindex="-1" id="hostDetailPanel" style="width:360px;">
+<div class="offcanvas offcanvas-end" tabindex="-1" id="hostDetailPanel" style="width:360px;max-width:95vw;">
     <div class="offcanvas-header border-bottom py-2 px-3">
         <h6 class="offcanvas-title mb-0" id="hostDetailTitle">Host Details</h6>
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>

@@ -266,7 +266,7 @@
 
 <%-- Help offcanvas panel --%>
 <div class="offcanvas offcanvas-end" tabindex="-1" id="webUserHelpOffcanvas"
-     aria-labelledby="webUserHelpOffcanvasLabel" style="width:min(480px,42vw);">
+     aria-labelledby="webUserHelpOffcanvasLabel" style="width:480px;max-width:95vw;">
 	<div class="offcanvas-header border-bottom py-2 px-3">
 		<h6 class="offcanvas-title mb-0 fw-semibold" id="webUserHelpOffcanvasLabel">
 			<i class="bi bi-book me-2 text-warning"></i>Properties Reference

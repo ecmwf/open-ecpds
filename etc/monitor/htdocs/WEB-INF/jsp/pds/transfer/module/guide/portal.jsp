@@ -4,7 +4,7 @@
 
 <%-- Portal Module Configuration Guide - offcanvas panel --%>
 <div class="offcanvas offcanvas-end" tabindex="-1" id="${_guideId}"
-     aria-labelledby="${_guideId}-label" style="width:min(720px,68vw);">
+     aria-labelledby="${_guideId}-label" style="width:720px;max-width:95vw;">
   <div class="offcanvas-header border-bottom py-2 px-3">
     <h6 class="offcanvas-title mb-0 fw-semibold" id="${_guideId}-label">
       <i class="bi bi-book me-2 text-info"></i>Portal Module &mdash; Configuration Guide

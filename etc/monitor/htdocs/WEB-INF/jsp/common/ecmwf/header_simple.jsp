@@ -164,7 +164,7 @@ function ecpdsToggleTheme() {
 
 <!-- Feedback offcanvas -->
 <logic:present name="<%=ecmwf.web.model.users.User.SESSION_KEY%>">
-<div class="offcanvas offcanvas-end" tabindex="-1" id="feedbackOffcanvas" aria-labelledby="feedbackOffcanvasLabel" style="width:380px;">
+<div class="offcanvas offcanvas-end" tabindex="-1" id="feedbackOffcanvas" aria-labelledby="feedbackOffcanvasLabel" style="width:380px;max-width:95vw;">
   <div class="offcanvas-header border-bottom">
     <h6 class="offcanvas-title fw-semibold" id="feedbackOffcanvasLabel">
       <i class="bi bi-chat-left-text me-2 text-primary"></i>Share Feedback
