@@ -1940,6 +1940,50 @@ public final class TransferScheduler extends MBeanScheduler {
     }
 
     /**
+     * Fetch the raw content of a remote URL/path via the host's configured ECtrans module on a DataMover. Uses the same
+     * DataMover selection logic as {@link #execution}.
+     *
+     * @param host
+     *            the host whose ECtrans module is used for retrieval
+     * @param source
+     *            the remote URL or path to retrieve
+     * @param maxBytes
+     *            maximum number of bytes to return
+     *
+     * @return GZIPped InputStream of the content
+     *
+     * @throws TransferServerException
+     *             the transfer server exception
+     * @throws DataBaseException
+     *             the data base exception
+     * @throws IOException
+     *             if no DataMover available or retrieval fails
+     */
+    public static String fetchContent(final Host host, final String source, final int maxBytes)
+            throws TransferServerException, DataBaseException, IOException {
+        String lastMessage = null;
+        final var provider = new TransferServerProvider("fetchContent", host.getTransferGroupName(), "");
+        for (final TransferServer current : provider.getTransferServersByLeastActivity()) {
+            final var getHost = current.getName();
+            MoverInterface mover;
+            if ((mover = MASTER.getDataMoverInterface(getHost)) == null) {
+                lastMessage = "DataMover " + getHost + " NOT available for fetchContent";
+                _log.warn(lastMessage);
+                continue;
+            }
+            try {
+                _log.debug("Starting fetchContent from DataMover={} for source={}", getHost, source);
+                return mover.fetchUrlContent(host, source, maxBytes);
+            } catch (final Throwable t) {
+                lastMessage = Format.getMessage(t);
+                _log.warn("fetchContent failed on DataMover={}: {}", getHost, lastMessage);
+            }
+        }
+        throw new IOException(lastMessage != null ? lastMessage
+                : "No DataMover available in transfer group '" + host.getTransferGroupName() + "'");
+    }
+
+    /**
      * The Class DownloadResult.
      */
     public static final class DownloadResult {

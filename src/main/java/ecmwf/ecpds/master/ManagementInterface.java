@@ -791,6 +791,52 @@ public interface ManagementInterface extends Remote {
             throws MasterException, DataBaseException, IOException;
 
     /**
+     * Resolve all static placeholder tokens in a plain-text Directory field and return the resolved text. Substitutes
+     * $host[...], $transferMethod[...], $ectransModule[...] and $date/$dirdate tokens using the current date. Does not
+     * require a DataMover — runs entirely on the MasterServer.
+     *
+     * @param session
+     *            the session
+     * @param host
+     *            the host whose fields are used for substitution
+     * @param text
+     *            the plain-text directory content
+     *
+     * @return the resolved text
+     *
+     * @throws MasterException
+     *             the master exception
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    String resolveDirText(ECpdsSession session, Host host, String text)
+            throws MasterException, DataBaseException, IOException;
+
+    /**
+     * Fetch the raw content of a remote URL/path via the host's configured ECtrans module on the DataMover.
+     *
+     * @param session
+     *            the session
+     * @param host
+     *            the host whose ECtrans module is used
+     * @param source
+     *            the remote URL or path to retrieve
+     * @param maxBytes
+     *            maximum number of bytes to return
+     *
+     * @return the content as a UTF-8 string (truncated if needed)
+     *
+     * @throws MasterException
+     *             the master exception
+     * @throws DataBaseException
+     *             the data base exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     */
+    String fetchUrlContent(ECpdsSession session, Host host, String source, int maxBytes)
+            throws MasterException, DataBaseException, IOException;
+
+    /**
      * Interrupt a running acquisition thread for the given Host and immediately restart it. If no acquisition is
      * running the host output is still reset, triggering a fresh run on the next scheduler cycle.
      *

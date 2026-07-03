@@ -81,6 +81,7 @@ PROCEED ONLY IF YOU ARE CERTAIN OF THE IMPACT!!!!</b>
 <div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
 <i class="bi bi-tag text-primary"></i>
 <span class="fw-semibold">Identity</span>
+<span id="hostTypeIconBadge" class="ms-1"></span>
 </div>
 <div class="card-body">
 <div class="row g-3">
@@ -278,6 +279,11 @@ labelProperty="name" />
   title="Open Directory Guide" type="button">
   <i class="bi bi-book me-1"></i><span class="d-none d-sm-inline">Directory </span>Guide
 </button>
+<span class="ms-auto" style="position:relative;display:inline-block">
+<button type="button" id="testDir" name="testDir" class="btn btn-sm btn-outline-secondary">Test on Server</button>
+<span id="testDirOverlay" style="display:none;position:absolute;inset:0;cursor:not-allowed"
+  data-bs-toggle="tooltip" data-bs-title="Fix the errors in the editor before testing"></span>
+</span>
 </div>
 <div class="card-body">
 <div class="row g-3">
@@ -388,11 +394,6 @@ type='radio' id='ispython' name='dirType' />Python
 <div class="d-flex align-items-center gap-2 flex-wrap">
 <button type="button" id="formatDir" name="formatDir" class="btn btn-sm btn-outline-secondary"
 onclick="formatSource(editorDir); return false">Format</button>
-<span style="position:relative;display:inline-block">
-<button type="button" id="testDir" name="testDir" class="btn btn-sm btn-outline-secondary">Test on Server</button>
-<span id="testDirOverlay" style="display:none;position:absolute;inset:0;cursor:not-allowed"
-  data-bs-toggle="tooltip" data-bs-title="Fix the errors in the editor before testing"></span>
-</span>
 </div>
 </div>
 </div>
@@ -999,13 +1000,28 @@ oninput="validateMailInput(this); toggleMailRows()" />
 		editorJavascript.resize(true);
 	});
 
+	// Type icon in Identity card header
+	var _typeIconMap = {
+		'Dissemination': '<span class="badge bg-primary" style="font-size:0.7rem;"><i class="bi bi-send-fill"></i> Dissemination</span>',
+		'Acquisition':   '<span class="badge bg-success" style="font-size:0.7rem;"><i class="bi bi-cloud-download-fill"></i> Acquisition</span>',
+		'Source':        '<span class="badge bg-secondary" style="font-size:0.7rem;"><i class="bi bi-database-fill"></i> Source</span>',
+		'Replication':   '<span class="badge bg-secondary" style="font-size:0.7rem;"><i class="bi bi-copy"></i> Replication</span>',
+		'Backup':        '<span class="badge bg-secondary" style="font-size:0.7rem;"><i class="bi bi-archive-fill"></i> Backup</span>',
+		'Proxy':         '<span class="badge bg-secondary" style="font-size:0.7rem;"><i class="bi bi-arrow-left-right"></i> Proxy</span>'
+	};
+	function _updateHostTypeIcon(t) {
+		document.getElementById('hostTypeIconBadge').innerHTML = _typeIconMap[t] || '';
+	}
+
 	$('select[name="type"]').on(
 			'change',
 			function() {
 				var str = $(this).find(":selected").val();
 				$('#dirParametersDiss').toggle(str === "" || str === "Dissemination");
 				$('#dirParametersAcq').toggle(str === "Acquisition");
+				_updateHostTypeIcon(str);
 			});
+	_updateHostTypeIcon($('select[name="type"]').find(":selected").val());
 
 	$('#is' + getEditorType(editorDir)).prop('checked', true);
 
@@ -1025,8 +1041,12 @@ oninput="validateMailInput(this); toggleMailRows()" />
 		btn.addEventListener('click', function(e) {
 			e.preventDefault();
 			try {
-				var lang = document.getElementById('ispython') && document.getElementById('ispython').checked ? 'python' : 'js';
-				testSourceServerPreflight(editorDir, _testDirHostId, lang);
+				if (document.getElementById('istext') && document.getElementById('istext').checked) {
+					testDirTextOnServer(editorDir, _testDirHostId);
+				} else {
+					var lang = document.getElementById('ispython') && document.getElementById('ispython').checked ? 'python' : 'js';
+					testSourceServerPreflight(editorDir, _testDirHostId, lang);
+				}
 			} catch(err) {
 				showToast('Test error: ' + err.message, 'danger');
 			}
@@ -1064,7 +1084,7 @@ oninput="validateMailInput(this); toggleMailRows()" />
 			applyAnnotationMarkers(editorDir, 'hostDirCardHeader');
 			updateDirTypeMismatchWarning('dirTypeMismatchWarning', 'dirTypeMismatchText', editorDir, 'text');
 			$('#formatDir').prop('style', "display: none;");
-			$('#testDir').prop('style', "display: none;");
+			$('#testDir').prop('style', "");
 		} else if ($("#ispython").is(":checked")) {
 			editorDir.session.setMode("ace/mode/python");
 			editorDir.session.clearAnnotations();

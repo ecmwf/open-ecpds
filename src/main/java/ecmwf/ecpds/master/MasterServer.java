@@ -2341,6 +2341,117 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
+     * Resolve all static placeholder tokens in a plain-text Directory field and return the resolved text. Substitutes
+     * $host[...], $transferMethod[...], $ectransModule[...] and $date/$dirdate date tokens using the current date. Does
+     * not require a DataMover — runs entirely on the MasterServer.
+     *
+     * @param host
+     *            the host whose fields are used for substitution
+     * @param text
+     *            the plain-text directory content
+     *
+     * @return the resolved text
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public String resolveDirText(final Host host, final String text) throws DataBaseException {
+        final var sb = new StringBuilder(text);
+        Format.replaceAll(sb, "$host[name]", host.getName());
+        Format.replaceAll(sb, "$host[comment]", host.getComment());
+        Format.replaceAll(sb, "$host[data]", host.getData());
+        Format.replaceAll(sb, "$host[checkFilename]", host.getCheckFilename());
+        Format.replaceAll(sb, "$host[host]", host.getHost());
+        Format.replaceAll(sb, "$host[login]", host.getLogin());
+        Format.replaceAll(sb, "$host[passwd]", host.getPasswd());
+        Format.replaceAll(sb, "$host[userMail]", host.getUserMail());
+        Format.replaceAll(sb, "$host[networkCode]", host.getNetworkCode());
+        Format.replaceAll(sb, "$host[networkName]", host.getNetworkName());
+        Format.replaceAll(sb, "$host[nickname]", host.getNickname());
+        final var method = host.getTransferMethod();
+        Format.replaceAll(sb, "$transferMethod[name]", method.getName());
+        Format.replaceAll(sb, "$transferMethod[comment]", method.getComment());
+        Format.replaceAll(sb, "$transferMethod[value]", method.getValue());
+        final var module = method.getECtransModule();
+        Format.replaceAll(sb, "$ectransModule[name]", module.getName());
+        Format.replaceAll(sb, "$ectransModule[classe]", module.getClasse());
+        Format.replaceAll(sb, "$ectransModule[archive]", module.getArchive());
+        return _replaceDateTokens(sb.toString());
+    }
+
+    /**
+     * Replace $date[...] and $dirdate[...] tokens in a text string using the current date. Supports dateformat and
+     * datedelta parameters inside the brackets. $dirdate uses the same logic as $date in this preview context.
+     *
+     * @param text
+     *            the text containing $date/$dirdate tokens
+     *
+     * @return the text with date tokens replaced
+     */
+    private static String _replaceDateTokens(final String text) {
+        // Matches $date[...] or $date and $dirdate[...] or $dirdate (case-insensitive on the token)
+        final var pattern = Pattern.compile("\\$(date|dirdate)(?:\\[([^\\]]*)\\])?", Pattern.CASE_INSENSITIVE);
+        final var matcher = pattern.matcher(text);
+        final var result = new StringBuilder();
+        while (matcher.find()) {
+            final var params = matcher.group(2); // null if no [...] block
+            var dateformat = "yyyyMMdd"; // HOST_ACQUISITION_DATEFORMAT default
+            var datedelta = "";
+            if (params != null && !params.isBlank()) {
+                for (final var part : params.split("[,;]")) {
+                    final var eq = part.indexOf('=');
+                    if (eq > 0) {
+                        final var key = part.substring(0, eq).trim().toLowerCase();
+                        final var val = part.substring(eq + 1).trim().replaceAll("^\"|\"$", "");
+                        if ("dateformat".equals(key)) {
+                            dateformat = val;
+                        } else if ("datedelta".equals(key)) {
+                            datedelta = val;
+                        }
+                    }
+                }
+            }
+            long delta = 0;
+            try {
+                if (!datedelta.isBlank()) {
+                    delta = Format.getDuration(datedelta);
+                }
+            } catch (final Exception ignored) {
+                // leave delta=0
+            }
+            final var formatted = Format.formatTime(dateformat, System.currentTimeMillis() + delta);
+            matcher.appendReplacement(result, java.util.regex.Matcher.quoteReplacement(formatted));
+        }
+        matcher.appendTail(result);
+        return result.toString();
+    }
+
+    /**
+     * Fetch the raw content of a remote URL/path via the host's configured ECtrans module on a DataMover. Routes
+     * through TransferScheduler to pick a DataMover from the host's transfer group — same path as production retrieval.
+     *
+     * @param host
+     *            the host whose ECtrans module is used for retrieval
+     * @param source
+     *            the remote URL or path to retrieve
+     * @param maxBytes
+     *            maximum number of bytes to return
+     *
+     * @return the content as a UTF-8 string (truncated if needed)
+     *
+     * @throws IOException
+     *             if no DataMover is available or retrieval fails
+     * @throws TransferServerException
+     *             the transfer server exception
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public String fetchUrlContent(final Host host, final String source, final int maxBytes)
+            throws IOException, TransferServerException, DataBaseException {
+        return TransferScheduler.fetchContent(host, source, maxBytes);
+    }
+
+    /**
      * Get a report for the specified TransferServer.
      *
      * @param server

@@ -733,8 +733,35 @@ final class ManagementProxy implements ManagementInterface {
     /**
      * {@inheritDoc}
      *
-     * Check whether an acquisition thread is currently running for the given Host.
+     * Resolve all static placeholder tokens in a plain-text Directory field.
      */
+    @Override
+    public String resolveDirText(final ECpdsSession session, final Host host, final String text)
+            throws MasterException, DataBaseException, IOException {
+        if (session == null || host == null || text == null) {
+            throw new MasterException("Invalid parameter(s) for resolveDirText");
+        }
+        final var monitor = new MonitorCall(
+                "resolveDirText(" + session.getWebUser().getName() + "," + host.getName() + ")");
+        return monitor.done(managementInterface.resolveDirText(session, host, text));
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Fetch the raw content of a remote URL/path via the host's configured ECtrans module on the DataMover.
+     */
+    @Override
+    public String fetchUrlContent(final ECpdsSession session, final Host host, final String source, final int maxBytes)
+            throws MasterException, DataBaseException, IOException {
+        if (session == null || host == null || source == null || source.isBlank()) {
+            throw new MasterException("Invalid parameter(s) for fetchUrlContent");
+        }
+        final var monitor = new MonitorCall(
+                "fetchUrlContent(" + session.getWebUser().getName() + "," + host.getName() + ")");
+        return monitor.done(managementInterface.fetchUrlContent(session, host, source, maxBytes));
+    }
+
     @Override
     public boolean isAcquisitionRunning(final ECpdsSession session, final Host host) {
         if (session == null || host == null) {

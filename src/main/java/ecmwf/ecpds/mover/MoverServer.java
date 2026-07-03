@@ -59,6 +59,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.rmi.RemoteException;
 import java.sql.Timestamp;
 import java.time.Duration;
@@ -2934,6 +2935,55 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             gzip.write(value.getBytes());
             gzip.close();
             return new RemoteInputStreamImp(new ByteArrayInputStream(out.toByteArray()));
+        } catch (final Throwable t) {
+            throw Format.getRemoteException("DataMover=" + getRoot(), t);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Fetch the raw content of a remote URL/path via the host's configured ECtrans module. Uses the same
+     * ECtransContainer/StreamRepository path as production file retrieval.
+     */
+    @Override
+    public String fetchUrlContent(final Host host, final String source, final int maxBytes) throws RemoteException {
+        try {
+            final var rawOut = new ByteArrayOutputStream();
+            final var limitedOut = new OutputStream() {
+                private int _written = 0;
+                private boolean _truncated = false;
+
+                @Override
+                public void write(final int b) throws IOException {
+                    if (_written < maxBytes) {
+                        rawOut.write(b);
+                        _written++;
+                    } else if (!_truncated) {
+                        rawOut.write("\n[... truncated ...]".getBytes(StandardCharsets.UTF_8));
+                        _truncated = true;
+                    }
+                }
+
+                @Override
+                public void write(final byte[] b, final int off, final int len) throws IOException {
+                    if (_truncated)
+                        return;
+                    final var canWrite = Math.min(len, maxBytes - _written);
+                    if (canWrite > 0) {
+                        rawOut.write(b, off, canWrite);
+                        _written += canWrite;
+                    }
+                    if (_written >= maxBytes && !_truncated) {
+                        rawOut.write("\n[... truncated ...]".getBytes(StandardCharsets.UTF_8));
+                        _truncated = true;
+                    }
+                }
+            };
+            new ECtransContainer(new MoverProvider(new StreamRepository(host, limitedOut)), false).syncExec(
+                    new ECtransGet(source, null, 0L, false), null, host.getECUserName(),
+                    host.getName() + "@" + host.getTransferMethodName(), null, true);
+            return rawOut.toString(StandardCharsets.UTF_8);
         } catch (final Throwable t) {
             throw Format.getRemoteException("DataMover=" + getRoot(), t);
         }

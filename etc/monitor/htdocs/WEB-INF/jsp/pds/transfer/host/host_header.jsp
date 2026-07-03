@@ -26,10 +26,22 @@
         </c:if>
         <c:choose>
             <c:when test="${host.type == 'Dissemination'}">
-                <a href="/do/transfer/host?hostType=${host.type}&amp;hostSearch=" class="dest-type-link" title="Show all ${host.type} hosts"><span class="badge bg-secondary fs-status"><i class="bi bi-send-fill"></i> ${host.type}</span></a>
+                <a href="/do/transfer/host?hostType=${host.type}&amp;hostSearch=" class="dest-type-link" title="Show all ${host.type} hosts"><span class="badge bg-primary fs-status"><i class="bi bi-send-fill"></i> ${host.type}</span></a>
             </c:when>
             <c:when test="${host.type == 'Acquisition'}">
-                <a href="/do/transfer/host?hostType=${host.type}&amp;hostSearch=" class="dest-type-link" title="Show all ${host.type} hosts"><span class="badge bg-secondary fs-status"><i class="bi bi-cloud-download-fill"></i> ${host.type}</span></a>
+                <a href="/do/transfer/host?hostType=${host.type}&amp;hostSearch=" class="dest-type-link" title="Show all ${host.type} hosts"><span class="badge bg-success fs-status"><i class="bi bi-cloud-download-fill"></i> ${host.type}</span></a>
+            </c:when>
+            <c:when test="${host.type == 'Source'}">
+                <a href="/do/transfer/host?hostType=${host.type}&amp;hostSearch=" class="dest-type-link" title="Show all ${host.type} hosts"><span class="badge bg-secondary fs-status"><i class="bi bi-database-fill"></i> ${host.type}</span></a>
+            </c:when>
+            <c:when test="${host.type == 'Replication'}">
+                <a href="/do/transfer/host?hostType=${host.type}&amp;hostSearch=" class="dest-type-link" title="Show all ${host.type} hosts"><span class="badge bg-secondary fs-status"><i class="bi bi-copy"></i> ${host.type}</span></a>
+            </c:when>
+            <c:when test="${host.type == 'Backup'}">
+                <a href="/do/transfer/host?hostType=${host.type}&amp;hostSearch=" class="dest-type-link" title="Show all ${host.type} hosts"><span class="badge bg-secondary fs-status"><i class="bi bi-archive-fill"></i> ${host.type}</span></a>
+            </c:when>
+            <c:when test="${host.type == 'Proxy'}">
+                <a href="/do/transfer/host?hostType=${host.type}&amp;hostSearch=" class="dest-type-link" title="Show all ${host.type} hosts"><span class="badge bg-secondary fs-status"><i class="bi bi-arrow-left-right"></i> ${host.type}</span></a>
             </c:when>
             <c:otherwise>
                 <a href="/do/transfer/host?hostType=${host.type}&amp;hostSearch=" class="dest-type-link" title="Show all ${host.type} hosts"><span class="badge bg-secondary fs-status">${host.type}</span></a>

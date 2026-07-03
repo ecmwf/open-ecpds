@@ -156,6 +156,19 @@ public class GetHostAction extends PDSAction {
             return null;
         }
         // Trigger acquisition immediately by resetting the acquisition time so the scheduler picks it up.
+        if ("interruptAcquisition".equals(request.getParameter("json"))) {
+            final var wasRunning = host.isAcquisitionRunning(user);
+            if (wasRunning) {
+                host.interruptAcquisition(user);
+            }
+            try {
+                response.setContentType("application/json; charset=UTF-8");
+                response.getWriter().write("{\"interrupted\":" + wasRunning + "}");
+                response.getWriter().flush();
+            } catch (final java.io.IOException ignored) {
+            }
+            return null;
+        }
         if ("triggerAcquisition".equals(request.getParameter("json"))) {
             final var force = "true".equals(request.getParameter("force"));
             final var alreadyRunning = host.isAcquisitionRunning(user);

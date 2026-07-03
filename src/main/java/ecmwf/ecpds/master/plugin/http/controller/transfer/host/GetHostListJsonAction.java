@@ -247,10 +247,22 @@ public class GetHostListJsonAction extends PDSAction {
         final var type = host.getType();
         if ("Dissemination".equals(type)) {
             sb.append(
-                    "<span class=\"badge bg-secondary ms-1\" style=\"font-size:0.7rem;\" title=\"Dissemination\"><i class=\"bi bi-send-fill\"></i></span>");
+                    "<span class=\"ms-1 text-primary\" style=\"font-size:0.85rem;\" title=\"Dissemination\"><i class=\"bi bi-send-fill\"></i></span>");
         } else if ("Acquisition".equals(type)) {
             sb.append(
-                    "<span class=\"badge bg-secondary ms-1\" style=\"font-size:0.7rem;\" title=\"Acquisition\"><i class=\"bi bi-cloud-download-fill\"></i></span>");
+                    "<span class=\"ms-1 text-success\" style=\"font-size:0.85rem;\" title=\"Acquisition\"><i class=\"bi bi-cloud-download-fill\"></i></span>");
+        } else if ("Source".equals(type)) {
+            sb.append(
+                    "<span class=\"ms-1 text-secondary\" style=\"font-size:0.85rem;\" title=\"Source\"><i class=\"bi bi-database-fill\"></i></span>");
+        } else if ("Replication".equals(type)) {
+            sb.append(
+                    "<span class=\"ms-1 text-secondary\" style=\"font-size:0.85rem;\" title=\"Replication\"><i class=\"bi bi-copy\"></i></span>");
+        } else if ("Backup".equals(type)) {
+            sb.append(
+                    "<span class=\"ms-1 text-secondary\" style=\"font-size:0.85rem;\" title=\"Backup\"><i class=\"bi bi-archive-fill\"></i></span>");
+        } else if ("Proxy".equals(type)) {
+            sb.append(
+                    "<span class=\"ms-1 text-secondary\" style=\"font-size:0.85rem;\" title=\"Proxy\"><i class=\"bi bi-arrow-left-right\"></i></span>");
         } else if (type != null && !type.isBlank()) {
             sb.append("<span class=\"badge bg-secondary ms-1\" style=\"font-size:0.7rem;\">").append(escapeHtml(type))
                     .append("</span>");

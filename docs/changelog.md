@@ -5,6 +5,14 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
 
 ---
 
+## open-ecpds 8.0.4-03072026 (2026-07-03)
+
+- The *Test on Server* panel now includes a **File Content Preview**: fetches live file content directly from a remote acquisition host via the DataMover/ECtrans stack, making it straightforward to inspect file formats and tune CSV, JSON, or other parser configurations without leaving the UI.
+- URLs detected in the directory output are shown in an **editable textarea**, so individual paths can be modified and re-fetched on the fly — no need to re-run the full acquisition cycle.
+- A **line count selector** (default: 5) limits how much of each file is retrieved, keeping previews fast during iterative testing.
+- The *Test on Server* button is now also available in **view mode** (read-only host page), restricted to users with edit permissions.
+- On the destination *Hosts & Users* tab, each acquisition host now shows a live **running indicator**: a ▶ play button when idle (triggers an immediate acquisition run), and an animated ⏹ interrupt button when active — giving operators direct control without navigating to the host page.
+
 ## open-ecpds 8.0.4-01072026 (2026-07-01)
 
 - Added support for Python formatting and testing in the Host editors. Placeholder values can now be provided during testing, either by selecting an existing data transfer for the Host (if available) or by entering values manually.
@@ -143,7 +151,7 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
 - Fixed broken links to the Data Mover page in Transfer History events.
 - Added warning prompt when updating a Proxy Host.
 
-## open-ecpds 7.2.5-09102025 (2025-10-09)
+## open-ecpds 7.2.5-09102025 (2025-09-10)
 
 - Adjusted ECPDS product submission to the ecChart data layer.
 - Reduced retention periods for obsolete statistics tables.

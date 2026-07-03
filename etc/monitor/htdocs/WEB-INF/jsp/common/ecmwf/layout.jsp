@@ -365,13 +365,42 @@ $(document).ready(function() {
         <h5 class="modal-title fw-semibold" id="testResultModalLabel"><i class="bi bi-terminal me-2"></i>Test Result</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <div class="modal-body p-0">
+      <div class="modal-body p-0" id="testResultBody">
+        <div class="px-3 pt-2 pb-0" style="border-bottom:1px solid var(--bs-border-color);">
+          <span class="text-muted" style="font-size:0.7rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;">
+            <i class="bi bi-terminal me-1"></i>Output
+          </span>
+        </div>
         <pre id="testResultContent" class="m-0 p-3"
-             style="max-height:60vh;overflow:auto;white-space:pre-wrap;word-break:break-word;font-size:0.85rem;border-radius:0;"></pre>
+             style="max-height:50vh;overflow:auto;white-space:pre-wrap;word-break:break-word;font-size:0.85rem;border-radius:0;"></pre>
+        <div id="testResultFileContent" style="display:none;max-height:50vh;overflow:auto;font-size:0.85rem;"></div>
+      </div>
+      <div id="testResultUrlArea" style="display:none;background:var(--bs-tertiary-bg);" class="px-3 pt-2 pb-2 border-top">
+        <label for="testResultUrlEdit" class="form-label mb-1" style="font-size:0.7rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--bs-info);">
+          <i class="bi bi-pencil-square me-1"></i>URLs to fetch <span style="font-weight:400;text-transform:none;letter-spacing:0;" class="text-muted">(one per line &mdash; edit before fetching)</span>
+        </label>
+        <textarea id="testResultUrlEdit" class="form-control form-control-sm font-monospace"
+                  rows="3" spellcheck="false"
+                  style="font-size:0.8rem;resize:vertical;border-color:var(--bs-info-border-subtle);"></textarea>
       </div>
       <div class="modal-footer py-2">
+        <div class="d-flex align-items-center gap-2 me-auto">
+          <button type="button" class="btn btn-outline-info btn-sm" id="testResultFetchBtn" style="display:none;">
+            <i class="bi bi-file-text me-1"></i>Preview File Content
+          </button>
+          <select id="testResultMaxLines" class="form-select form-select-sm" style="display:none;width:auto;"
+                  title="Max lines to retrieve">
+            <option value="5" selected>5 lines</option>
+            <option value="10">10 lines</option>
+            <option value="25">25 lines</option>
+            <option value="50">50 lines</option>
+            <option value="100">100 lines</option>
+            <option value="250">250 lines</option>
+            <option value="500">500 lines</option>
+          </select>
+        </div>
         <button type="button" class="btn btn-outline-secondary btn-sm" id="testResultCopyBtn"
-                onclick="var t=document.getElementById('testResultContent').textContent;navigator.clipboard.writeText(t).then(function(){var b=document.getElementById('testResultCopyBtn');var o=b.innerHTML;b.innerHTML='<i class=\'bi bi-check2 me-1\'></i>Copied!';setTimeout(function(){b.innerHTML=o;},1500);});">
+                onclick="(function(){var fc=document.getElementById('testResultFileContent');var pre=document.getElementById('testResultContent');var t=fc&&fc.style.display!=='none'?fc.innerText:pre?pre.textContent:'';navigator.clipboard.writeText(t).then(function(){var b=document.getElementById('testResultCopyBtn');var o=b.innerHTML;b.innerHTML='<i class=\'bi bi-check2 me-1\'></i>Copied!';setTimeout(function(){b.innerHTML=o;},1500);});})()">>
           <i class="bi bi-clipboard me-1"></i>Copy
         </button>
         <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>

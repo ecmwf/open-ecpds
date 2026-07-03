@@ -484,6 +484,80 @@ function testSource(aceEditor) {
 /** True while a testSourceServer fetch is in flight — prevents double-clicks and annotation re-enables. */
 var _testDirRunning = false;
 
+/**
+ * Resolve placeholder tokens in a plain-text Directory field on the server and show the result.
+ * Calls /do/transfer/host/edit/resolveDirText/{hostId} — no DataMover required.
+ *
+ * @param {object} aceEditor - ACE editor instance containing the plain-text directory content
+ * @param {string} hostId    - Host primary key
+ */
+function testDirTextOnServer(aceEditor, hostId) {
+  if (_testDirRunning) return;
+  _testDirRunning = true;
+  var text = aceEditor.getValue();
+  var btn = document.getElementById('testDir');
+  if (btn && !btn.dataset.origLabel) btn.dataset.origLabel = btn.innerHTML;
+  var origLabel = btn ? btn.dataset.origLabel : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span>Resolving\u2026';
+  }
+  var params = new URLSearchParams({ text: text });
+  var controller = new AbortController();
+  var timeoutId = setTimeout(function() { controller.abort(); }, 30000);
+  fetch('/do/transfer/host/edit/resolveDirText/' + encodeURIComponent(hostId), {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: params.toString(),
+    signal: controller.signal
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    var el = document.getElementById('testResultContent');
+    var fc = document.getElementById('testResultFileContent');
+    var modal = document.getElementById('testResultModal');
+    var label = document.getElementById('testResultModalLabel');
+    var fetchBtn = document.getElementById('testResultFetchBtn');
+    // Switch to plain-text pre view
+    if (el) { el.style.display = ''; el.style.color = 'var(--bs-body-color)'; }
+    if (fc) fc.style.display = 'none';
+    if (el && modal) {
+      if (label) label.innerHTML = '<i class="bi bi-terminal me-2"></i>Test Result (Plain Text &mdash; resolved)';
+      if (data.error) {
+        el.textContent = 'Error: ' + data.error;
+        el.style.color = 'var(--bs-danger)';
+        _showFetchBtn(false);
+      } else {
+        var output = data.output && data.output.length > 0 ? data.output : '(empty output)';
+        el.textContent = output;
+        var urls = _extractPathsFromOutput(output);
+        if (urls.length > 0) {
+          _showFetchBtn(true);
+          if (fetchBtn) { fetchBtn._fetchUrls = urls; fetchBtn._fetchHostId = hostId; }
+          var ta = document.getElementById('testResultUrlEdit');
+          if (ta) ta.value = urls.join('\n');
+        } else {
+          _showFetchBtn(false);
+        }
+      }
+      bootstrap.Modal.getOrCreateInstance(modal).show();
+    } else {
+      showToast(data.error ? 'Error: ' + data.error : (data.output || '(empty output)'),
+                data.error ? 'danger' : 'info');
+    }
+  })
+  .catch(function(err) {
+    showToast(err.name === 'AbortError' ? 'Resolve timed out.' : 'Resolve failed: ' + err.message, 'danger');
+  })
+  .finally(function() {
+    clearTimeout(timeoutId);
+    _testDirRunning = false;
+    if (btn) { btn.disabled = false; btn.innerHTML = origLabel; }
+  });
+}
+
+
 function testSourceServer(aceEditor, hostId, lang, transferId, manualValues) {
   if (_testDirRunning) return;
   _testDirRunning = true;
@@ -512,17 +586,33 @@ function testSourceServer(aceEditor, hostId, lang, transferId, manualValues) {
   .then(function(r) { return r.json(); })
   .then(function(data) {
     var el = document.getElementById('testResultContent');
+    var fc = document.getElementById('testResultFileContent');
     var modal = document.getElementById('testResultModal');
     var label = document.getElementById('testResultModalLabel');
+    var fetchBtn = document.getElementById('testResultFetchBtn');
+    // Switch to the plain-text pre view (not structured file view)
+    if (el) { el.style.display = ''; el.style.color = 'var(--bs-body-color)'; }
+    if (fc) fc.style.display = 'none';
     if (el && modal) {
-      var mover = data.mover ? ' \u2014 DataMover: ' + data.mover : '';
+      var mover = data.mover ? ' &mdash; DataMover: ' + data.mover : '';
       if (label) label.innerHTML = '<i class="bi bi-terminal me-2"></i>Test Result (' + lang.toUpperCase() + mover + ')';
       if (data.error) {
         el.textContent = 'Error: ' + data.error;
         el.style.color = 'var(--bs-danger)';
+        _showFetchBtn(false);
       } else {
-        el.textContent = data.output && data.output.length > 0 ? data.output : '(empty output)';
-        el.style.color = 'var(--bs-body-color)';
+        var output = data.output && data.output.length > 0 ? data.output : '(empty output)';
+        el.textContent = output;
+        // Detect HTTP URLs in the output and show Fetch Content button if found
+        var urls = _extractPathsFromOutput(output);
+        if (urls.length > 0) {
+          _showFetchBtn(true);
+          if (fetchBtn) { fetchBtn._fetchUrls = urls; fetchBtn._fetchHostId = hostId; }
+          var ta = document.getElementById('testResultUrlEdit');
+          if (ta) ta.value = urls.join('\n');
+        } else {
+          _showFetchBtn(false);
+        }
       }
       bootstrap.Modal.getOrCreateInstance(modal).show();
     } else {
@@ -542,6 +632,142 @@ function testSourceServer(aceEditor, hostId, lang, transferId, manualValues) {
     if (btn) { btn.disabled = false; btn.innerHTML = origLabel; }
   });
 }
+
+/** Extract file paths or URIs from test output — one candidate per line.
+ *  Matches any URI scheme (http/ftp/s3/sftp/…) or absolute paths starting with '/'.
+ *  Each non-empty line that looks like a single path/URI (no whitespace, no obvious error text) is a candidate.
+ */
+function _extractPathsFromOutput(text) {
+  var seen = {}, paths = [];
+  // Match full URIs with any scheme or absolute paths
+  var re = /^([a-zA-Z][a-zA-Z0-9+\-.]*:\/\/[^\s"'<>]+|\/[^\s"'<>]+)$/;
+  var lines = text.split('\n');
+  lines.forEach(function(line) {
+    var t = line.trim();
+    if (!t || t.startsWith('#') || t.startsWith('Error') || t.startsWith('[')) return;
+    var m = re.exec(t);
+    if (m) {
+      var p = m[0].replace(/[.,;)]+$/, '');
+      if (!seen[p]) { seen[p] = true; paths.push(p); }
+    }
+  });
+  return paths;
+}
+
+/**
+ * Fetch the raw content of remote paths/URLs via the DataMover's ECtrans module.
+ * POSTs to the dedicated fetchContent endpoint — works for HTTP, FTP, SFTP, S3, etc.
+ */
+function _fetchUrlContentViaMover(paths, hostId) {
+  var fetchBtn = document.getElementById('testResultFetchBtn');
+  var maxLinesSel = document.getElementById('testResultMaxLines');
+  var maxLines = maxLinesSel ? parseInt(maxLinesSel.value, 10) || 100 : 100;
+  var origLabel = fetchBtn ? fetchBtn.innerHTML : '';
+  if (fetchBtn) {
+    fetchBtn.disabled = true;
+    fetchBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span>Fetching\u2026';
+  }
+
+  var params = new URLSearchParams({ sources: paths.slice(0, 5).join('\n'), maxBytes: 262144, maxLines: maxLines });
+  var controller = new AbortController();
+  var timeoutId = setTimeout(function() { controller.abort(); }, 120000);
+
+  fetch('/do/transfer/host/edit/fetchContent/' + encodeURIComponent(hostId), {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: params.toString(),
+    signal: controller.signal
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    var pre   = document.getElementById('testResultContent');
+    var fc    = document.getElementById('testResultFileContent');
+    var label = document.getElementById('testResultModalLabel');
+    var mover = data.mover ? ' &mdash; DataMover: ' + data.mover : '';
+    var count = data.files ? data.files.length : paths.length;
+    if (label) label.innerHTML = '<i class="bi bi-file-text me-2 text-info"></i>File Content Preview ('
+        + count + ' file' + (count !== 1 ? 's' : '') + mover + ')';
+
+    if (data.error) {
+      // Top-level error (no files fetched at all) — show in pre
+      if (pre) { pre.textContent = 'Error: ' + data.error; pre.style.color = 'var(--bs-danger)'; pre.style.display = ''; }
+      if (fc)  { fc.style.display = 'none'; }
+    } else if (data.files && data.files.length > 0) {
+      // Structured per-file results — render as styled blocks
+      if (pre) pre.style.display = 'none';
+      if (fc)  {
+        fc.style.display = '';
+        var html = '';
+        data.files.forEach(function(f) {
+          var hasError = !!f.error;
+          var borderCls = hasError ? 'border-danger' : 'border';
+          var headerBg  = hasError ? 'bg-danger-subtle' : 'bg-body-tertiary';
+          var icon      = hasError ? 'bi-exclamation-triangle-fill text-danger' : 'bi-link-45deg text-info';
+          html += '<div class="' + borderCls + ' rounded mx-2 mb-3 mt-2 overflow-hidden">'
+                + '<div class="' + headerBg + ' px-3 py-2 border-bottom d-flex align-items-start gap-2">'
+                + '<i class="bi ' + icon + ' flex-shrink-0 mt-1" style="font-size:0.9rem"></i>'
+                + '<code class="small text-break flex-grow-1 user-select-all">' + _escHtml(f.source) + '</code>'
+                + '</div>'
+                + '<div style="font-family:monospace;font-size:0.82rem;">';
+          if (hasError) {
+            html += '<div class="px-3 py-1 text-danger">' + _escHtml('Error: ' + f.error) + '</div>';
+          } else {
+            var lines = (f.content || '(empty)').split('\n');
+            // Remove a single trailing empty line that split() adds for content ending with \n
+            if (lines.length > 1 && lines[lines.length - 1] === '') lines.pop();
+            lines.forEach(function(line, i) {
+              html += '<div class="px-3 py-0" style="white-space:pre-wrap;word-break:break-word;line-height:1.6;'
+                    + (i % 2 === 0 ? '' : 'background:rgba(128,128,128,0.15)') + '">'
+                    + _escHtml(line) + '</div>';
+            });
+          }
+          html += '</div></div>';
+        });
+        fc.innerHTML = html;
+      }
+    }
+  })
+  .catch(function(err) {
+    showToast(err.name === 'AbortError' ? 'Fetch timed out.' : 'Fetch failed: ' + err.message, 'danger');
+  })
+  .finally(function() {
+    clearTimeout(timeoutId);
+    if (fetchBtn) { fetchBtn.disabled = false; fetchBtn.innerHTML = origLabel; }
+  });
+}
+
+/** Escape a string for safe insertion into HTML. */
+function _escHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/** Show or hide the Preview File Content button + line count selector together. */
+function _showFetchBtn(show) {
+  var btn = document.getElementById('testResultFetchBtn');
+  var sel = document.getElementById('testResultMaxLines');
+  var area = document.getElementById('testResultUrlArea');
+  if (btn)  btn.style.display  = show ? '' : 'none';
+  if (sel)  sel.style.display  = show ? '' : 'none';
+  if (area) area.style.display = show ? '' : 'none';
+}
+
+
+(function() {
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('#testResultFetchBtn');
+    if (!btn) return;
+    // Read URLs from the editable textarea (user may have modified them)
+    var ta = document.getElementById('testResultUrlEdit');
+    var urls = ta
+      ? ta.value.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; })
+      : (btn._fetchUrls || []);
+    if (urls.length === 0) return;
+    _fetchUrlContentViaMover(urls, btn._fetchHostId);
+  });
+})();
+
 
 /** Placeholder families that require a live DataTransfer to resolve. */
 var _TRANSFER_PLACEHOLDER_RE = /\$(?:dataFile|dataTransfer|destination|country|transferGroup|transferServer)\[|\$moverName\b/;

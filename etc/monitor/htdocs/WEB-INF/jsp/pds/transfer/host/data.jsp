@@ -152,6 +152,11 @@ table.fields > tbody > tr > th {
 <div class="card-header d-flex align-items-center gap-2" id="hostViewDirCardHeader" style="background:var(--bs-secondary-bg)">
 <i class="bi bi-folder2-open text-primary"></i>
 <span class="fw-semibold">Directory</span>
+<auth:if basePathKey="host.basepath" paths="/edit/update_form">
+<span class="ms-auto" style="position:relative;display:inline-block">
+<button type="button" id="testDir" name="testDir" class="btn btn-sm btn-outline-secondary">Test on Server</button>
+</span>
+</auth:if>
 </div>
 <div class="card-body">
 <div id='dirType'>
@@ -559,6 +564,26 @@ JavaScript
 			editorDir.session.clearAnnotations();
 			applyAnnotationMarkers(editorDir, 'hostViewDirCardHeader');
 		}
+
+		// Wire up the Test on Server button in view mode
+		(function() {
+			var btn = document.getElementById('testDir');
+			if (!btn) return;
+			var hostId = '<c:out value="${host.id}"/>';
+			btn.addEventListener('click', function(e) {
+				e.preventDefault();
+				try {
+					if (document.getElementById('istext') && document.getElementById('istext').checked) {
+						testDirTextOnServer(editorDir, hostId);
+					} else {
+						var lang = document.getElementById('ispython') && document.getElementById('ispython').checked ? 'python' : 'js';
+						testSourceServerPreflight(editorDir, hostId, lang);
+					}
+				} catch(err) {
+					showToast('Test error: ' + err.message, 'danger');
+				}
+			});
+		})();
 
 	</script>
 

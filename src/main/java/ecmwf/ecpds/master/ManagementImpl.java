@@ -2326,6 +2326,56 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     /**
      * {@inheritDoc}
      *
+     * Resolve all static placeholder tokens in a plain-text Directory field.
+     */
+    @Override
+    public String resolveDirText(final ECpdsSession session, final Host host, final String text)
+            throws MasterException, DataBaseException, IOException {
+        final var monitor = new MonitorCall(
+                "resolveDirText(" + session.getWebUser().getName() + "," + host.getName() + ")");
+        final var action = master.startECpdsAction(session, "resolveDirText", host);
+        Exception exception = null;
+        try {
+            return monitor.done(master.resolveDirText(host, text));
+        } catch (final Exception e) {
+            exception = e;
+            _log.warn(e);
+            throw new MasterException(e.getMessage());
+        } finally {
+            master.logECpdsAction(action, null, exception);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Fetch the raw content of a remote URL/path via the host's configured ECtrans module on the DataMover.
+     */
+    @Override
+    public String fetchUrlContent(final ECpdsSession session, final Host host, final String source, final int maxBytes)
+            throws MasterException, DataBaseException, IOException {
+        final var monitor = new MonitorCall(
+                "fetchUrlContent(" + session.getWebUser().getName() + "," + host.getName() + ")");
+        final var action = master.startECpdsAction(session, "fetchUrlContent", host);
+        Exception exception = null;
+        try {
+            return monitor.done(master.fetchUrlContent(host, source, maxBytes));
+        } catch (final IOException e) {
+            exception = e;
+            _log.warn(e);
+            throw e;
+        } catch (final Exception e) {
+            exception = e;
+            _log.warn(e);
+            throw new MasterException(e.getMessage());
+        } finally {
+            master.logECpdsAction(action, null, exception);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * Check whether an acquisition thread is currently running for the given Host.
      */
     @Override

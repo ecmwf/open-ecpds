@@ -457,6 +457,12 @@
 		<action path="/transfer/host/edit/testScript/*" parameter="{1}"
 			type="ecmwf.ecpds.master.plugin.http.controller.transfer.host.TestScriptAction">
 		</action>
+		<action path="/transfer/host/edit/fetchContent/*" parameter="{1}"
+			type="ecmwf.ecpds.master.plugin.http.controller.transfer.host.FetchContentAction">
+		</action>
+		<action path="/transfer/host/edit/resolveDirText/*" parameter="{1}"
+			type="ecmwf.ecpds.master.plugin.http.controller.transfer.host.ResolveDirTextAction">
+		</action>
 		<action path="/transfer/host/edit/recentTransfers/*" parameter="{1}"
 			type="ecmwf.ecpds.master.plugin.http.controller.transfer.host.GetRecentTransfersAction">
 		</action>

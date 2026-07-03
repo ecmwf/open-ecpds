@@ -347,6 +347,24 @@ public interface MoverInterface extends ClientInterface {
     RemoteInputStream execute(String script) throws RemoteException;
 
     /**
+     * Fetch the raw content of a remote URL/path via the host's configured ECtrans module. Returns the content as a
+     * plain String (truncated to maxBytes if needed).
+     *
+     * @param host
+     *            the host whose ECtrans module is used for retrieval
+     * @param source
+     *            the remote URL or path to retrieve
+     * @param maxBytes
+     *            maximum number of bytes to return
+     *
+     * @return the content as a String
+     *
+     * @throws RemoteException
+     *             the remote exception
+     */
+    String fetchUrlContent(Host host, String source, int maxBytes) throws RemoteException;
+
+    /**
      * Move.
      *
      * @param host

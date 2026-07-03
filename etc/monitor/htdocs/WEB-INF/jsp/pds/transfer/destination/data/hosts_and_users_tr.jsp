@@ -139,17 +139,37 @@
 					<c:if test="${acquisitionHostname eq ' ()'}">
 						<c:set var="acquisitionHostname" value="" scope="page" />
 					</c:if>
-					<tr>
+					<tr data-acq-host-id="${acquisitionHost.name.id}">
 						<td>
 							<c:if test="${acquisitionHost.name.active}">
-								<a title="This Host is Activated (id=${acquisitionHost.name.name})"
-									href="/do/transfer/host/${acquisitionHost.name.name}">${acquisitionHost.name.nickName}</a>${acquisitionHostname}
+								<span class="d-inline-flex align-items-center gap-1">
+									<a title="This Host is Activated (id=${acquisitionHost.name.name})"
+										href="/do/transfer/host/${acquisitionHost.name.name}">${acquisitionHost.name.nickName}</a>
+									<span class="acq-state-indicator" style="display:inline-flex;align-items:center;width:1.2rem;justify-content:center;">
+										<span class="acq-running-indicator" style="display:none;" title="Acquisition is currently running">
+										<c:choose>
+											<c:when test="${not empty ecpdsCanHandleHosts}">
+												<button class="acq-interrupt-btn btn btn-link btn-sm p-0 border-0 text-warning" style="line-height:1;font-size:0.95rem;animation:_acqRunPulse 1.2s ease-in-out infinite;" title="Acquisition is running &mdash; click to interrupt" data-interrupt-host-id="${acquisitionHost.name.id}" onclick="_acqInterrupt(this)"><i class="bi bi-stop-fill"></i></button>
+											</c:when>
+											<c:otherwise>
+												<span class="spinner-grow text-success" style="width:0.75rem;height:0.75rem;vertical-align:middle;" title="Acquisition is currently running"></span>
+											</c:otherwise>
+										</c:choose>
+									</span>
+										<c:if test="${not empty ecpdsCanHandleHosts}"><button class="acq-run-btn btn btn-link btn-sm p-0 border-0 text-success" style="display:none;line-height:1;font-size:0.95rem;" title="Trigger acquisition now" data-run-host-id="${acquisitionHost.name.id}" onclick="_acqTrigger(this)"><i class="bi bi-play-fill"></i></button></c:if>
+									</span>
+								</span>${acquisitionHostname}
 							</c:if>
 							<c:if test="${!acquisitionHost.name.active}">
-								<i class="bi bi-slash-circle-fill text-danger me-1" title="Host is disabled" style="font-size:0.85rem;"></i><a
-									title="This Host is NOT Activated (id=${acquisitionHost.name.name})"
-									href="/do/transfer/host/${acquisitionHost.name.name}"
-									style="text-decoration:line-through;color:var(--bs-secondary-color)">${acquisitionHost.name.nickName}</a>${acquisitionHostname}
+								<span class="d-inline-flex align-items-center gap-1">
+									<i class="bi bi-slash-circle-fill text-danger me-1" title="Host is disabled" style="font-size:0.85rem;"></i><a
+										title="This Host is NOT Activated (id=${acquisitionHost.name.name})"
+										href="/do/transfer/host/${acquisitionHost.name.name}"
+										style="text-decoration:line-through;color:var(--bs-secondary-color)">${acquisitionHost.name.nickName}</a>
+									<span style="display:inline-flex;align-items:center;width:1.2rem;justify-content:center;">
+										<i class="bi bi-play-fill" style="font-size:0.95rem;opacity:0.25;color:var(--bs-secondary-color);" title="Host is disabled"></i>
+									</span>
+								</span>${acquisitionHostname}
 							</c:if>
 						</td>
 						<td>${acquisitionHost.value}</td>
@@ -161,7 +181,7 @@
 									</a>
 								</c:if>
 								<c:if test="${acquisitionHost.name.active}">
-									<a href="javascript:hostChange('deactivateHost','${acquisitionHost.name.id}')">
+									<a class="acq-stop-link" href="javascript:hostChange('deactivateHost','${acquisitionHost.name.id}')">
 										<content:icon key="icon.small.stop" titleKey="ecpds.destination.deactivateHost" altKey="ecpds.destination.deactivateHost" writeFullTag="true" height="9" width="9" />
 									</a>
 								</c:if>
@@ -184,6 +204,12 @@
 				</c:forEach>
 				</tbody>
 			</table>
+			<style>
+			@keyframes _acqRunPulse {
+				0%,100% { opacity:1; }
+				50%      { opacity:0.35; }
+			}
+			</style>
 			<script>
 			$(document).ready(function() {
 				$('#acquisitionHostsTable').DataTable({
@@ -198,10 +224,76 @@
 					columnDefs:   [{ type: 'num', targets: 1 }<c:if test="${not empty ecpdsCanHandleHosts}">, { orderable: false, targets: -1 }</c:if>],
 					language:     { emptyTable: 'No hosts assigned' }
 				});
+
+				function _applyAcqRunning(hostId, running) {
+					var row = $('#acquisitionHostsTable tr[data-acq-host-id="' + hostId + '"]');
+					row.find('.acq-running-indicator').toggle(running);
+					row.find('.acq-run-btn').toggle(!running);
+				}
+				function _pollAcqHosts() {
+					$('#acquisitionHostsTable tr[data-acq-host-id]').each(function() {
+						var hostId = $(this).data('acq-host-id');
+						if (!hostId) return;
+						fetch('/do/transfer/host/' + encodeURIComponent(hostId) + '?json=acquisitionRunning')
+							.then(function(r) { return r.ok ? r.json() : null; })
+							.then(function(data) { _applyAcqRunning(hostId, !!(data && data.running)); })
+							.catch(function() {});
+					});
+				}
+				_pollAcqHosts();
+				var _acqPollTimer;
+				function _schedulePoll() {
+					_acqPollTimer = setTimeout(function() {
+						if (document.visibilityState !== 'hidden') _pollAcqHosts();
+						_schedulePoll();
+					}, 4000);
+				}
+				_schedulePoll();
+				document.addEventListener('visibilitychange', function() {
+					if (document.visibilityState === 'visible') _pollAcqHosts();
+				});
+
+				window._acqInterrupt = function(btn) {
+				var hostId = btn.getAttribute('data-interrupt-host-id');
+				if (!hostId) return;
+				var orig = btn.innerHTML;
+				btn.disabled = true;
+				btn.style.animation = 'none';
+				btn.innerHTML = '<span class="spinner-border spinner-border-sm" style="width:0.65rem;height:0.65rem"></span>';
+				fetch('/do/transfer/host/' + encodeURIComponent(hostId) + '?json=interruptAcquisition')
+					.then(function(r) { return r.ok ? r.json() : null; })
+					.then(function(data) {
+						btn.innerHTML = orig;
+						btn.disabled = false;
+						btn.style.animation = '';
+						if (data && data.interrupted) {
+							_applyAcqRunning(hostId, false);
+						}
+					})
+					.catch(function() { btn.innerHTML = orig; btn.disabled = false; btn.style.animation = ''; });
+			};
+
+			window._acqTrigger = function(btn) {
+					var hostId = btn.getAttribute('data-run-host-id');
+					if (!hostId) return;
+					var orig = btn.innerHTML;
+					btn.disabled = true;
+					btn.innerHTML = '<span class="spinner-border spinner-border-sm" style="width:0.65rem;height:0.65rem"></span>';
+					fetch('/do/transfer/host/' + encodeURIComponent(hostId) + '?json=triggerAcquisition')
+						.then(function(r) { return r.ok ? r.json() : null; })
+						.then(function(data) {
+							btn.innerHTML = orig;
+							btn.disabled = false;
+							if (data && data.triggered) {
+								_applyAcqRunning(hostId, true);
+							}
+						})
+						.catch(function() { btn.innerHTML = orig; btn.disabled = false; });
+				};
 			});
 			</script>
 		</div>
-	</c:if>
+		</c:if>
 
 </div>
 
