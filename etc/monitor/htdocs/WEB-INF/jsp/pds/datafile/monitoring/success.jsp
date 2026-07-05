@@ -133,10 +133,11 @@ function tableColumnCount() {
   return _mode === 'ratesPerTransferServer' ? 7 : 6;
 }
 
-var _sortedIdx = null, _page = 0, _pageSize = 25, _searchTerm = '';
+var _reversed = false, _sortedIdx = null, _page = 0, _pageSize = 25, _searchTerm = '';
 
 function getFilteredTableRows() {
   var base = _sortedIdx || getBaseRows();
+  if (_reversed && !_sortedIdx) base = base.slice().reverse();
   if (!_searchTerm) return base;
   var term = _searchTerm.toLowerCase();
   return base.filter(function(i) {
@@ -420,6 +421,35 @@ function buildCharts() {
   });
 }
 
+// -- Order toggle (earliest-first ↔ latest-first) -----------------------------
+function toggleOrder() {
+  _reversed = !_reversed;
+  _sortedIdx = null;
+  _page = 0;
+  document.querySelectorAll('#ratesTable thead th').forEach(function(h) {
+    h.setAttribute('data-order', 'asc');
+    var icon = h.querySelector('i.bi');
+    if (icon) { icon.className = 'bi bi-arrow-down-up text-muted'; icon.style.fontSize = '0.6rem'; }
+  });
+  _applyReverseBtn();
+  buildTable();
+  try { localStorage.setItem('ratesReversed', _reversed ? '1' : '0'); } catch(e) {}
+}
+
+function _applyReverseBtn() {
+  var btn  = document.getElementById('btnReverse');
+  var icon = document.getElementById('btnReverseIcon');
+  if (!btn) return;
+  btn.classList.toggle('active', _reversed);
+  if (_reversed) {
+    icon.className = 'bi bi-sort-up-alt';
+    btn.title = 'Showing latest first \u2014 click to show earliest first';
+  } else {
+    icon.className = 'bi bi-sort-down-alt';
+    btn.title = 'Showing earliest first \u2014 click to show latest first';
+  }
+}
+
 function setView(v) {
   document.getElementById('tableView').style.display = (v === 'table') ? '' : 'none';
   document.getElementById('chartView').style.display = (v === 'chart') ? '' : 'none';
@@ -455,8 +485,10 @@ function computeStats() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+  try { if (localStorage.getItem('ratesReversed') === '1') _reversed = true; } catch(e) {}
   computeStats();
   buildTable();
+  _applyReverseBtn();
   var saved = 'table';
   try { saved = localStorage.getItem('ratesView') || 'table'; } catch (e) {}
   setView(saved);
@@ -491,6 +523,10 @@ new MutationObserver(function() {
     </button>
     <button type="button" class="btn btn-outline-secondary" id="btnChart" onclick="setView('chart')">
       <i class="bi bi-bar-chart-fill me-1"></i>Chart
+    </button>
+    <button type="button" class="btn btn-outline-secondary" id="btnReverse"
+        onclick="toggleOrder()" title="Showing earliest first — click to show latest first">
+      <i class="bi bi-sort-down-alt" id="btnReverseIcon"></i>
     </button>
   </div>
 </div>

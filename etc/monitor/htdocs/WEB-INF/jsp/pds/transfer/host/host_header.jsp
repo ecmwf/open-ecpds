@@ -89,8 +89,6 @@
         </div>
         </auth:then>
         </auth:if>
-        <auth:if basePathKey="host.basepath" paths="/edit/resetStats/">
-        <auth:then>
         <c:if test="${not empty host.id}">
         <div class="d-flex gap-1 align-items-center"<c:if test="${_hostHasEditGroup}"> style="border-left:1px solid var(--bs-border-color);padding-left:0.5rem;"</c:if>>
             <c:if test="${!(isRestrictedUser == 'true' && host.type == 'Proxy')}">
@@ -135,8 +133,6 @@
             </auth:if>
         </div>
         </c:if>
-        </auth:then>
-        </auth:if>
         </div><%-- end #_hostIconBar --%>
 
         <%-- Mobile: ⋯ dropdown, hidden on sm+ --%>

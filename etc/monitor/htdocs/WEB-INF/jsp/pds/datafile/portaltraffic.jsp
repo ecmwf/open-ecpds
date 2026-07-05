@@ -68,8 +68,7 @@ ptBytesOut.push(${pt.bytesOut});
 ptDurationIn.push(${pt.durationIn});
 ptDurationOut.push(${pt.durationOut});
 </c:forEach>
-ptTimes.reverse(); ptConnections.reverse(); ptBytesIn.reverse(); ptBytesOut.reverse();
-ptDurationIn.reverse(); ptDurationOut.reverse();
+// Arrays remain in ascending (earliest-first) order; _ptReversed controls table display
 
 function ptRate(bytes, ms) { return ms > 0 ? (bytes * 8 / ms / 1000) : 0; }
 function ptFmtBytes(b) {
@@ -141,6 +140,8 @@ function ptSetView(v) {
 }
 
   document.addEventListener('DOMContentLoaded', function() {
+  // Restore reversed preference (default: true = latest first)
+  try { var r = localStorage.getItem('ptReversed'); if (r !== null) _ptReversed = (r === '1'); } catch(e) {}
   // Populate summary cards
   document.getElementById('ptStatConn').textContent    = ptTotalConn.toLocaleString();
   document.getElementById('ptStatIn').textContent      = ptFmtBytes(ptTotalIn);
@@ -155,6 +156,7 @@ function ptSetView(v) {
   var saved = 'chart';
   try { saved = (localStorage.getItem('ptView')||'').replace('portalTraffic_','')||'chart'; } catch(e){}
   ptSetView(saved);
+  ptApplyReverseBtn();
 
   // Rebuild charts on theme toggle
   new MutationObserver(function() {
@@ -174,6 +176,10 @@ function ptSetView(v) {
     </button>
     <button type="button" class="btn btn-outline-secondary" id="ptBtnChart" onclick="ptSetView('chart')">
       <i class="bi bi-bar-chart-fill me-1"></i>Chart
+    </button>
+    <button type="button" class="btn btn-outline-secondary active" id="ptBtnReverse"
+        onclick="ptToggleOrder()" title="Showing latest first — click to show earliest first">
+      <i class="bi bi-sort-up-alt" id="ptBtnReverseIcon"></i>
     </button>
   </div>
 </div>
@@ -272,10 +278,11 @@ function ptSetView(v) {
 </div>
 
 <script>
-var _ptSortedIdx = null, _ptPage = 0, _ptPageSize = 25, _ptSearch = '';
+var _ptSortedIdx = null, _ptPage = 0, _ptPageSize = 25, _ptSearch = '', _ptReversed = true;
 
 function ptGetFiltered() {
   var base = _ptSortedIdx || ptTimes.map(function(_,i){return i;});
+  if (_ptReversed && !_ptSortedIdx) base = base.slice().reverse();
   if (!_ptSearch) return base;
   var t = _ptSearch.toLowerCase();
   return base.filter(function(i){ return ptTimes[i].indexOf(t) !== -1; });
@@ -349,6 +356,34 @@ function ptSetPageSize(v) {
 }
 
 function ptSetSearch(v) { _ptSearch = v.trim().toLowerCase(); _ptPage = 0; ptBuildTable(); }
+
+function ptToggleOrder() {
+  _ptReversed = !_ptReversed;
+  _ptSortedIdx = null;
+  _ptPage = 0;
+  document.querySelectorAll('#ptDataTable thead th').forEach(function(h) {
+    h.setAttribute('data-order', 'asc');
+    var icon = h.querySelector('i.bi');
+    if (icon) { icon.className = 'bi bi-arrow-down-up text-muted'; icon.style.fontSize = '0.6rem'; }
+  });
+  ptApplyReverseBtn();
+  ptBuildTable();
+  try { localStorage.setItem('ptReversed', _ptReversed ? '1' : '0'); } catch(e) {}
+}
+
+function ptApplyReverseBtn() {
+  var btn  = document.getElementById('ptBtnReverse');
+  var icon = document.getElementById('ptBtnReverseIcon');
+  if (!btn) return;
+  btn.classList.toggle('active', _ptReversed);
+  if (_ptReversed) {
+    icon.className = 'bi bi-sort-up-alt';
+    btn.title = 'Showing latest first \u2014 click to show earliest first';
+  } else {
+    icon.className = 'bi bi-sort-down-alt';
+    btn.title = 'Showing earliest first \u2014 click to show latest first';
+  }
+}
 
 function ptSortTable(col) {
   var th = document.querySelector('#ptDataTable thead tr').cells[col];

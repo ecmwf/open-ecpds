@@ -5,8 +5,9 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
 
 ---
 
-## open-ecpds 8.0.4-03072026 (2026-07-03)
+## open-ecpds 8.0.4-05072026 (2026-07-05)
 
+- Added a new configurable CORS option at the Data User level, allowing specific origins (or *) to be defined for browser access to download endpoints, with support for preflight requests and ranged downloads.
 - The *Test on Server* panel now includes a **File Content Preview**: fetches live file content directly from a remote acquisition host via the DataMover/ECtrans stack, making it straightforward to inspect file formats and tune CSV, JSON, or other parser configurations without leaving the UI.
 - URLs detected in the directory output are shown in an **editable textarea**, so individual paths can be modified and re-fetched on the fly — no need to re-run the full acquisition cycle.
 - A **line count selector** (default: 5) limits how much of each file is retrieved, keeping previews fast during iterative testing.

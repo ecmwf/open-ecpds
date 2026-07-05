@@ -193,10 +193,8 @@ public class GetHostAction extends PDSAction {
         final var mode = request.getParameter("mode");
         // Resolve the module documentation guide key for the host's ECtrans module.
         try {
-            final var ecmName = host.getTransferMethod().getEcTransModuleName();
-            if (ecmName != null) {
-                setGuideIfPresent("/WEB-INF/jsp/pds/transfer/module/guide/" + ecmName + ".jsp", request);
-            }
+            final var guide = host.getTransferMethod().getModuleGuide();
+            setGuideIfPresent(guide, request);
         } catch (final Exception ignored) {
         }
         // For Acquisition hosts, check whether at least one associated destination is

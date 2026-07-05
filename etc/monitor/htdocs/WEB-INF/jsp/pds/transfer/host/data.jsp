@@ -152,10 +152,12 @@ table.fields > tbody > tr > th {
 <div class="card-header d-flex align-items-center gap-2" id="hostViewDirCardHeader" style="background:var(--bs-secondary-bg)">
 <i class="bi bi-folder2-open text-primary"></i>
 <span class="fw-semibold">Directory</span>
-<auth:if basePathKey="host.basepath" paths="/edit/update_form">
+<auth:if basePathKey="host.basepath" paths="/edit/insert_form">
+<auth:then>
 <span class="ms-auto" style="position:relative;display:inline-block">
 <button type="button" id="testDir" name="testDir" class="btn btn-sm btn-outline-secondary">Test on Server</button>
 </span>
+</auth:then>
 </auth:if>
 </div>
 <div class="card-body">

@@ -561,6 +561,7 @@ window.addEventListener('pageshow', function(event) {
     <div class="mb-3">
       <div class="fw-semibold mb-1 d-flex align-items-center gap-2"><i class="bi bi-graph-up text-secondary"></i> Charts &amp; Tables</div>
       <p class="mb-1 text-muted">Pages with both a <strong>chart</strong> and a <strong>table</strong> view have a toggle button to switch between them. The search box and row count selector apply to the table view only.</p>
+      <p class="mb-1 text-muted">On timeline pages, a <i class="bi bi-sort-up"></i>/<i class="bi bi-sort-down"></i> <strong>Order</strong> button lets you toggle between showing the <em>earliest</em> or <em>latest</em> entries first. Your preference is saved per page.</p>
     </div>
 
   </div>

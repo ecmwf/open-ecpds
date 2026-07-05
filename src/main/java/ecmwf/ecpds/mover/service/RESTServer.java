@@ -58,6 +58,7 @@ import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.HEAD;
 import javax.ws.rs.HeaderParam;
+import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -924,12 +925,16 @@ public final class RESTServer {
         _log.debug("REST received request: fileGet({})", filename);
         checkIsControlChannel(ui);
         final var session = getUserSession(authString, request, response);
+        // When file-serving is delegated, serveDataFile takes full ownership of the session
+        // (closes on failure, transfers to streamer on success) — do not close here.
+        var sessionTransferred = false;
         try {
             final var path = getFilename(session, filename);
             // Check if this is a list or get request?
             final var list = session.getFileListElement(path);
             if (!list.isDirectory()) {
-                return dataFileGet(ui, authString, range, request, response, filename);
+                sessionTransferred = true;
+                return serveDataFile(session, request, filename);
             }
             // Let's treat it as a list request!
             final var setup = session.getECtransSetup();
@@ -965,6 +970,39 @@ public final class RESTServer {
         } catch (final Throwable t) {
             _log.warn("fileGet", t);
             throw newException(t, 500, "Internal server error");
+        } finally {
+            if (!sessionTransferred && session != null) {
+                session.close(true);
+            }
+        }
+    }
+
+    /**
+     * Data file options (CORS preflight).
+     *
+     * @param authString
+     *            the auth string
+     * @param request
+     *            the request
+     * @param response
+     *            the response
+     * @param filename
+     *            the filename
+     *
+     * @return the response
+     */
+    @OPTIONS
+    @Path("data/file/{filename: .*}")
+    public Response dataFileOptions(@HeaderParam("authorization") final String authString,
+            @Context final HttpServletRequest request, @Context final HttpServletResponse response,
+            @PathParam("filename") final String filename) {
+        _log.debug("REST received request: dataFileOptions({})", filename);
+        final var session = getUserSession(authString, request, response);
+        try {
+            final var builder = Response.noContent();
+            addCorsHeaders(session, request, builder);
+            builder.header("Access-Control-Max-Age", "86400");
+            return builder.build();
         } finally {
             if (session != null) {
                 session.close(true);
@@ -1002,6 +1040,7 @@ public final class RESTServer {
             checkParameter("filename", filename);
             final var builder = Response.ok();
             final var mediaRequest = processGet(session, request, builder, filename);
+            addCorsHeaders(session, request, builder);
             return builder.header(CONTENT_LENGTH, mediaRequest.size).build();
         } catch (final WebApplicationException w) {
             _log.warn("dataFileHead - {}", describe(w));
@@ -1104,71 +1143,8 @@ public final class RESTServer {
         _log.debug("REST received request: dataFileGet({})", filename);
         checkIsControlChannel(ui);
         final var session = getUserSession(authString, request, response);
-        var success = false;
-        try {
-            checkParameter("filename", filename);
-            final var builder = Response.ok();
-            final var mediaRequest = processGet(session, request, builder, filename);
-            final var fullRange = new Range(0, mediaRequest.size - 1, mediaRequest.size);
-            // Is it a bytes range request?
-            final var rangeHeader = request.getHeader(RANGE);
-            final StreamingOutput streamer;
-            if (rangeHeader == null) {
-                // Return full file
-                builder.header(CONTENT_LENGTH, fullRange.length);
-                streamer = new SingleStreamer(session, mediaRequest, 0, -1);
-            } else {
-                // Found a Range request, returning HTTP 206 Partial Content
-                builder.status(206);
-                final var ranges = getRanges(rangeHeader, fullRange, filename, mediaRequest.size, request);
-                if (ranges.isEmpty() || ranges.get(0) == fullRange) {
-                    // Return full file
-                    builder.header(CONTENT_RANGE,
-                            "bytes " + fullRange.start + "-" + fullRange.end + "/" + fullRange.total);
-                    builder.header(CONTENT_LENGTH, fullRange.length);
-                    streamer = new SingleStreamer(session, mediaRequest, 0, -1);
-                } else if (ranges.size() == 1) {
-                    // Only one range requested
-                    final var singleRange = ranges.get(0);
-                    builder.header(CONTENT_RANGE,
-                            "bytes " + singleRange.start + "-" + singleRange.end + "/" + singleRange.total);
-                    builder.header(CONTENT_LENGTH, singleRange.length);
-                    streamer = new SingleStreamer(session, mediaRequest, singleRange.start, singleRange.length);
-                } else {
-                    // Multiple ranges requested
-                    final var rangeSize = ranges.size();
-                    final var setup = session.getECtransSetup();
-                    if (setup != null
-                            && rangeSize > setup.getByteSize(ECtransOptions.USER_PORTAL_MAX_RANGES_ALLOWED).size()) {
-                        throw newException(429, "Too Many Requests: Max ranges allowed exceeded (" + rangeSize + ")");
-                    }
-                    builder.header(CONTENT_TYPE, "multipart/byteranges; boundary=" + MULTIPART_BOUNDARY);
-                    streamer = new MultiStreamer(session, mediaRequest, ranges);
-                }
-            }
-            success = true;
-            return builder.entity(streamer).build();
-        } catch (final WebApplicationException w) {
-            _log.warn("dataFileGet - {}", describe(w));
-            throw w;
-        } catch (final FileNotFoundException e) {
-            _log.warn("dataFileGet", e);
-            throw newException(e, 404, "Not Found: " + e.getMessage());
-        } catch (final EccmdException e) {
-            _log.warn("dataFileGet", e);
-            final var message = e.getMessage();
-            if (message.contains("File not found") || message.contains("Destination not found")) {
-                throw newException(e, 404, "Not Found: " + message);
-            }
-            throw newException(e, 500, message);
-        } catch (final Throwable t) {
-            _log.warn("dataFileGet", t);
-            throw newException(t, 500, Format.getMessage(t));
-        } finally {
-            if (!success && session != null) {
-                session.close(true);
-            }
-        }
+        // serveDataFile owns the session lifecycle: closes on failure, transfers to streamer on success.
+        return serveDataFile(session, request, filename);
     }
 
     /**
@@ -2018,6 +1994,125 @@ public final class RESTServer {
     }
 
     /**
+     * Serves a data file download using an already-authenticated session. This is the shared core of
+     * {@link #dataFileGet} and the file branch of {@link #fileGet}, avoiding double session creation.
+     * <p>
+     * Session lifecycle: on failure the session is closed here; on success it is transferred to the
+     * {@link SingleStreamer}/{@link MultiStreamer} which closes it after streaming completes.
+     *
+     * @param session
+     *            the authenticated user session
+     * @param request
+     *            the HTTP servlet request
+     * @param filename
+     *            the file path (relative, will be resolved via {@link #getFilename})
+     *
+     * @return the JAX-RS streaming response
+     */
+    private Response serveDataFile(final UserSession session, final HttpServletRequest request, final String filename) {
+        var success = false;
+        try {
+            checkParameter("filename", filename);
+            final var builder = Response.ok();
+            final var mediaRequest = processGet(session, request, builder, filename);
+            final var fullRange = new Range(0, mediaRequest.size - 1, mediaRequest.size);
+            // Is it a bytes range request?
+            final var rangeHeader = request.getHeader(RANGE);
+            final StreamingOutput streamer;
+            if (rangeHeader == null) {
+                // Return full file
+                builder.header(CONTENT_LENGTH, fullRange.length);
+                streamer = new SingleStreamer(session, mediaRequest, 0, -1);
+            } else {
+                // Found a Range request, returning HTTP 206 Partial Content
+                builder.status(206);
+                final var ranges = getRanges(rangeHeader, fullRange, filename, mediaRequest.size, request);
+                if (ranges.isEmpty() || ranges.get(0) == fullRange) {
+                    // Return full file
+                    builder.header(CONTENT_RANGE,
+                            "bytes " + fullRange.start + "-" + fullRange.end + "/" + fullRange.total);
+                    builder.header(CONTENT_LENGTH, fullRange.length);
+                    streamer = new SingleStreamer(session, mediaRequest, 0, -1);
+                } else if (ranges.size() == 1) {
+                    // Only one range requested
+                    final var singleRange = ranges.get(0);
+                    builder.header(CONTENT_RANGE,
+                            "bytes " + singleRange.start + "-" + singleRange.end + "/" + singleRange.total);
+                    builder.header(CONTENT_LENGTH, singleRange.length);
+                    streamer = new SingleStreamer(session, mediaRequest, singleRange.start, singleRange.length);
+                } else {
+                    // Multiple ranges requested
+                    final var rangeSize = ranges.size();
+                    final var setup = session.getECtransSetup();
+                    if (setup != null
+                            && rangeSize > setup.getByteSize(ECtransOptions.USER_PORTAL_MAX_RANGES_ALLOWED).size()) {
+                        throw newException(429, "Too Many Requests: Max ranges allowed exceeded (" + rangeSize + ")");
+                    }
+                    builder.header(CONTENT_TYPE, "multipart/byteranges; boundary=" + MULTIPART_BOUNDARY);
+                    streamer = new MultiStreamer(session, mediaRequest, ranges);
+                }
+            }
+            success = true;
+            addCorsHeaders(session, request, builder);
+            return builder.entity(streamer).build();
+        } catch (final WebApplicationException w) {
+            _log.warn("serveDataFile - {}", describe(w));
+            throw w;
+        } catch (final FileNotFoundException e) {
+            _log.warn("serveDataFile", e);
+            throw newException(e, 404, "Not Found: " + e.getMessage());
+        } catch (final EccmdException e) {
+            _log.warn("serveDataFile", e);
+            final var message = e.getMessage();
+            if (message.contains("File not found") || message.contains("Destination not found")) {
+                throw newException(e, 404, "Not Found: " + message);
+            }
+            throw newException(e, 500, message);
+        } catch (final Throwable t) {
+            _log.warn("serveDataFile", t);
+            throw newException(t, 500, Format.getMessage(t));
+        } finally {
+            if (!success && session != null) {
+                session.close(true);
+            }
+        }
+    }
+
+    /**
+     * Adds CORS response headers derived from the user's {@code portal.corsAllowOrigin} ECtrans option. Does nothing if
+     * the request has no {@code Origin} header or the option is not set for the user.
+     *
+     * @param session
+     *            the user session (may be null)
+     * @param request
+     *            the HTTP servlet request
+     * @param builder
+     *            the JAX-RS response builder to add headers to
+     */
+    private static void addCorsHeaders(final UserSession session, final HttpServletRequest request,
+            final ResponseBuilder builder) {
+        if (session == null || request.getHeader("Origin") == null) {
+            return;
+        }
+        try {
+            final var setup = session.getECtransSetup();
+            if (setup == null) {
+                return;
+            }
+            final var corsAllowOrigin = setup.getString(ECtransOptions.USER_PORTAL_CORS_ALLOW_ORIGIN);
+            if (!corsAllowOrigin.isEmpty()) {
+                builder.header("Access-Control-Allow-Origin", corsAllowOrigin)
+                        .header("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS")
+                        .header("Access-Control-Allow-Headers", "Range, Content-Type, Authorization")
+                        .header("Access-Control-Expose-Headers",
+                                "Content-Range, Content-Length, Accept-Ranges, ETag, Last-Modified");
+            }
+        } catch (final Exception e) {
+            _log.debug("CORS: could not read corsAllowOrigin for user: {}", e.getMessage());
+        }
+    }
+
+    /**
      * Gets the user session.
      *
      * @param authString
@@ -2049,7 +2144,12 @@ public final class RESTServer {
                                         } catch (IOException ignored) {
                                         }
                                     });
-                            setPortalSessionCookie(response, session.getToken());
+                            // Refresh the cookie only for non-anonymous users — anonymous users have no
+                            // TOTP to cache and issuing cookies would waste server memory.
+                            final var setup = session.getECtransSetup();
+                            if (setup == null || !setup.getBoolean(ECtransOptions.USER_PORTAL_ANONYMOUS)) {
+                                setPortalSessionCookie(response, session.getToken());
+                            }
                             return session;
                         } catch (final Throwable t) {
                             _log.debug("Portal session cookie invalid, falling back to Basic Auth", t);
@@ -2071,8 +2171,13 @@ public final class RESTServer {
                             request.getRemoteAddr(), credentials[0], credentials[1], "https",
                             (Closeable) () -> response.sendError(-1));
                     // Successful auth — issue/refresh the portal session cookie so the browser
-                    // doesn't need to re-validate TOTP on every subsequent request
-                    setPortalSessionCookie(response, session.getToken());
+                    // doesn't need to re-validate TOTP on every subsequent request.
+                    // Skip for anonymous users — they have no TOTP and issuing cookies would
+                    // create unnecessary server-side session entries under high load.
+                    final var setup = session.getECtransSetup();
+                    if (setup == null || !setup.getBoolean(ECtransOptions.USER_PORTAL_ANONYMOUS)) {
+                        setPortalSessionCookie(response, session.getToken());
+                    }
                     // Log headers if asked to do so?
                     if (Cnf.at("HttpPlugin", "logHeadersAndUri", false)) {
                         final var headerNames = request.getHeaderNames();
