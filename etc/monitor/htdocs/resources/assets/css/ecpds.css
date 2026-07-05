@@ -1372,14 +1372,14 @@ table.spareBox2 td, table.spareBox td {
     margin-bottom: 0.5rem;
 }
 
-/* Section header — plain label, no filled background */
+/* Section header — same size and weight whether plain text or a link */
 #sidebarMenu table.spareBox2 th,
 #sidebarMenu table.editSpareBox th,
 #sidebarMenu table.spareBox th {
     background: none;
-    color: #57606a;
+    color: #24292f;
     padding: 10px 16px 4px;
-    font-size: 0.75rem;
+    font-size: 1rem;
     font-weight: 600;
     text-transform: none;
     letter-spacing: 0;
@@ -1389,13 +1389,13 @@ table.spareBox2 td, table.spareBox td {
     max-width: 0;
 }
 
-/* Section header links (e.g. destination name, "Transmission") */
+/* Section header links — inherit size/weight, just ensure colour and no underline */
 #sidebarMenu table.spareBox2 th a,
 #sidebarMenu table.editSpareBox th a,
 #sidebarMenu table.spareBox th a {
     color: #24292f !important;
-    font-size: 1rem;
-    font-weight: 600;
+    font-size: inherit;
+    font-weight: inherit;
     text-decoration: none;
     display: block;
     white-space: nowrap;
