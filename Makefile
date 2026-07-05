@@ -79,7 +79,7 @@ dev-container-exists = \
   fi
 
 # Conditional targets based on the environment
-.PHONY: dev .dev-cntnr .run login rm-dev get-geodb get-licenses build start-db stop-db start-ai stop-ai start-backend stop-backend clean info docs-serve docs-serve-full docs-build docs-javadoc docs-build-full docs-deploy docs-clean
+.PHONY: dev .dev-cntnr .run login rm-dev get-geodb get-licenses build start-db stop-db start-ai stop-ai start-backend stop-backend clean info docs docs-preview docs-publish
 dev: .dev-cntnr .run login ## Build, run and login into the development container (*)
 
 .dev-cntnr: ## Build the development container (*)
@@ -135,11 +135,21 @@ build: ## Compile java sources into JARs, create RPMs and Docker images (**)
 	@mvn package
 	@cd docker && $(MAKE) all
 
-docs-serve: ## Serve the MkDocs site locally, accessible from the Docker host (**)
-	@echo "Starting MkDocs on http://$(DOCS_HOST):$(DOCS_PORT) ..."
-	@mkdocs serve --dev-addr $(DOCS_HOST):$(DOCS_PORT)
+docs: ## Build the documentation site (MkDocs + JavaDocs) into site/ (**)
+	@$(call is-dev-container,"",inside)
+	@echo "Generating JavaDocs..."
+	@mvn javadoc:javadoc -Dcheckstyle.skip=true -Dspotbugs.skip=true -Dmaven.javadoc.failOnError=false -q
+	@echo "Building MkDocs static site..."
+	@mkdocs build --strict
+	@echo "Copying JavaDocs into $(SITE_DIR)/javadoc/ ..."
+	@mkdir -p $(SITE_DIR)/javadoc
+	@cp -r $(JAVADOC_SRC)/. $(SITE_DIR)/javadoc/
+	@echo "Site ready at: $(CURDIR)/$(SITE_DIR)/"
 
-docs-serve-full: docs-javadoc ## Generate JavaDocs then serve MkDocs + JavaDocs locally (**)
+docs-preview: ## Serve the documentation locally for testing, accessible from the Docker host (**)
+	@$(call is-dev-container,"",inside)
+	@echo "Generating JavaDocs..."
+	@mvn javadoc:javadoc -Dcheckstyle.skip=true -Dspotbugs.skip=true -Dmaven.javadoc.failOnError=false -q
 	@echo "Copying JavaDocs into docs/javadoc/ for local preview..."
 	@mkdir -p docs/javadoc
 	@cp -r $(JAVADOC_SRC)/. docs/javadoc/
@@ -147,31 +157,11 @@ docs-serve-full: docs-javadoc ## Generate JavaDocs then serve MkDocs + JavaDocs 
 	 echo "Starting MkDocs on http://$(DOCS_HOST):$(DOCS_PORT) ..."; \
 	 mkdocs serve --dev-addr $(DOCS_HOST):$(DOCS_PORT)
 
-docs-build: ## Build the MkDocs static site into site/ (**)
-	@echo "Building MkDocs static site..."
-	@mkdocs build --strict
-	@echo "Static site written to: $(CURDIR)/$(SITE_DIR)/"
-
-docs-javadoc: ## Generate JavaDocs into target/site/apidocs/ (**)
-	@echo "Generating JavaDocs..."
-	@mvn javadoc:javadoc -Dcheckstyle.skip=true -Dspotbugs.skip=true -Dmaven.javadoc.failOnError=false -q
-	@echo "JavaDocs written to: $(CURDIR)/$(JAVADOC_SRC)/"
-
-docs-build-full: docs-build docs-javadoc ## Build MkDocs site + JavaDocs into site/javadoc/ (**)
-	@echo "Copying JavaDocs into $(SITE_DIR)/javadoc/ ..."
-	@mkdir -p $(SITE_DIR)/javadoc
-	@cp -r $(JAVADOC_SRC)/. $(SITE_DIR)/javadoc/
-	@echo "Full site with JavaDocs written to: $(CURDIR)/$(SITE_DIR)/"
-
-docs-deploy: ## Build and deploy MkDocs site + JavaDocs to GitHub Pages (**)
-	@echo "Building full site (MkDocs + JavaDocs)..."
-	@$(MAKE) docs-build-full
+docs-publish: docs ## Build and publish the documentation to GitHub Pages (**)
 	@echo "Deploying to GitHub Pages (gh-pages branch)..."
 	@ghp-import -n -p -f $(SITE_DIR)
-	@echo "Deployed. Check https://ecmwf.github.io/open-ecpds/"
-
-docs-clean: ## Remove the generated MkDocs site
-	@rm -rf site
+	@echo "Published at https://ecmwf.github.io/open-ecpds/"
+	@rm -rf $(SITE_DIR)
 
 start-db: ## Build and run the database service for VS Code and Eclipse debugging/running
 	@if [ -d "$(DB_DATA_DIR)/mysql" ] && [ -d "$(DB_DATA_DIR)/ecpds" ]; then \
@@ -224,7 +214,7 @@ clean: ## Stop containers, remove images, JARs, RPMs and dependencies (**)
 	@cd docker && $(MAKE) clean  || exit 1
 	@mvn clean  || exit 1
 	@rm -f lib/*.jar lib/*.pom || exit 1
-	@$(MAKE) -s docs-clean
+	@rm -rf $(SITE_DIR)
 
 info: ## Output the configuration
 	@if [ -n "$(IN_DEV_CONTAINER)" ]; then \
