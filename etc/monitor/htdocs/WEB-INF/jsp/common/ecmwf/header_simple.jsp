@@ -135,8 +135,8 @@ function ecpdsToggleTheme() {
   var userShort  = document.getElementById('navUserShort');
   if (!titleEl || !logoFull || !logoIcon) return;
   function adapt() {
-    // On the login page (no submenu title) never collapse the full logo
-    var isLoginPage = !titleEl.textContent.trim();
+    // On the login page the user menu is absent (not logged in) — never collapse the full logo
+    var isLoginPage = !userFull;
     if (isLoginPage) {
       logoFull.style.display  = '';
       logoIcon.style.display  = 'none';
