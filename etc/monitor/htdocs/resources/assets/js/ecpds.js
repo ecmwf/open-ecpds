@@ -651,6 +651,146 @@ function _renderWithLineNumbers(el, text) {
   el.innerHTML = html;
 }
 
+/**
+ * Detect the format of fetched file content.
+ * Returns { format, label, color, stats, canPretty } where color is a Bootstrap theme colour name.
+ */
+function _detectContentFormat(content) {
+  var trimmed = (content || '').trim();
+  if (!trimmed) return { format: 'empty', label: 'Empty', color: 'secondary', stats: '', canPretty: false };
+
+  var nonEmptyLines = trimmed.split('\n').filter(function(l) { return l.trim().length > 0; });
+  var lineCount = nonEmptyLines.length;
+
+  // JSON object or array
+  var fc = trimmed.charAt(0);
+  if (fc === '{' || fc === '[') {
+    try {
+      var parsed = JSON.parse(trimmed);
+      var stats = Array.isArray(parsed)
+        ? lineCount + ' lines \u00B7 ' + parsed.length + ' items'
+        : lineCount + ' lines \u00B7 ' + Object.keys(parsed).length + ' keys';
+      return { format: 'json', label: 'JSON', color: 'success', stats: stats, canPretty: true };
+    } catch(e) {}
+  }
+
+  // NDJSON / JSON Lines — each non-empty line is valid JSON
+  if (lineCount >= 2) {
+    var allJson = nonEmptyLines.every(function(l) {
+      try { JSON.parse(l); return true; } catch(e) { return false; }
+    });
+    if (allJson) return { format: 'ndjson', label: 'NDJSON', color: 'success',
+      stats: lineCount + ' records', canPretty: false };
+  }
+
+  // HTML
+  if (/<!doctype\s+html/i.test(trimmed) || /<html[\s>]/i.test(trimmed)) {
+    return { format: 'html', label: 'HTML', color: 'warning', stats: lineCount + ' lines', canPretty: true };
+  }
+
+  // XML (<?xml … or root element)
+  if (trimmed.startsWith('<?xml') || /^<[a-zA-Z][^>]*>/.test(trimmed)) {
+    return { format: 'xml', label: 'XML', color: 'warning', stats: lineCount + ' lines', canPretty: true };
+  }
+
+  // TSV — check first 8 lines for consistent tab counts
+  var sample = nonEmptyLines.slice(0, 8);
+  if (sample.length >= 2) {
+    var tabCounts = sample.map(function(l) { return (l.match(/\t/g) || []).length; });
+    if (tabCounts[0] > 0 && tabCounts.slice(1).every(function(c) { return Math.abs(c - tabCounts[0]) <= 1; })) {
+      var cols = tabCounts[0] + 1;
+      return { format: 'tsv', label: 'TSV', color: 'info',
+        stats: lineCount + ' rows \u00B7 ' + cols + ' columns', canPretty: false };
+    }
+  }
+
+  // CSV — comma or semicolon
+  if (sample.length >= 2) {
+    var seps = [',', ';'];
+    for (var si = 0; si < seps.length; si++) {
+      var sep = seps[si];
+      var re = new RegExp(sep.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+      var counts = sample.map(function(l) { return (l.match(re) || []).length; });
+      if (counts[0] > 0 && counts.slice(1).every(function(c) { return Math.abs(c - counts[0]) <= 1; })) {
+        var csvCols = counts[0] + 1;
+        return { format: 'csv', label: sep === ',' ? 'CSV' : 'CSV (;)', color: 'info',
+          stats: lineCount + ' rows \u00B7 ' + csvCols + ' columns', canPretty: false };
+      }
+    }
+  }
+
+  return { format: 'text', label: 'Plain Text', color: 'secondary', stats: lineCount + ' lines', canPretty: false };
+}
+
+/** Toggle pretty-printing for a file content block. Called via inline onclick. */
+function _prettyPrintToggle(btn, blockId) {
+  var block = document.getElementById(blockId);
+  if (!block) return;
+  var isPretty = block.dataset.pretty === '1';
+  if (isPretty) {
+    // Restore original line-by-line view
+    block.innerHTML = block.dataset.rawHtml || '';
+    block.dataset.pretty = '0';
+    btn.innerHTML = '<i class="bi bi-braces me-1"></i>Pretty';
+  } else {
+    // Store the current line HTML and replace with formatted content
+    if (!block.dataset.rawHtml) block.dataset.rawHtml = block.innerHTML;
+    var raw = block.dataset.rawContent || '';
+    var fmt = raw, fmt2 = '';
+    try {
+      // JSON pretty-print
+      fmt2 = JSON.stringify(JSON.parse(raw), null, 2);
+      fmt = fmt2;
+    } catch(e) {
+      // XML / HTML — simple indent via DOMParser if available
+      try {
+        var parser = new DOMParser();
+        var xmlDoc = parser.parseFromString(raw, 'text/xml');
+        if (!xmlDoc.querySelector('parsererror')) {
+          fmt = _xmlSerialize(xmlDoc.documentElement, 0);
+        }
+      } catch(e2) { fmt = raw; }
+    }
+    var fmtLines = fmt.split('\n');
+    var width = String(fmtLines.length).length;
+    var html = fmtLines.map(function(line, i) {
+      var num = String(i + 1).padStart(width, ' ');
+      return '<div class="d-flex px-3 py-0" style="white-space:pre;line-height:1.6;'
+           + (i % 2 === 0 ? '' : 'background:rgba(128,128,128,0.15)') + '">'
+           + '<span style="color:var(--bs-secondary-color);opacity:0.55;user-select:none;'
+           + 'border-right:1px solid var(--bs-border-color);padding-right:0.6em;margin-right:0.7em;'
+           + 'flex-shrink:0;font-variant-numeric:tabular-nums;">' + _escHtml(num) + '</span>'
+           + '<span style="white-space:pre-wrap;word-break:break-word;">' + _escHtml(line) + '</span>'
+           + '</div>';
+    }).join('');
+    block.innerHTML = html;
+    block.dataset.pretty = '1';
+    btn.innerHTML = '<i class="bi bi-code-slash me-1"></i>Raw';
+  }
+}
+
+/** Minimal XML serialiser for pretty-printing — indent elements, preserve text nodes. */
+function _xmlSerialize(node, depth) {
+  var indent = '  '.repeat(depth);
+  if (node.nodeType === 3) { // text
+    var t = node.textContent.trim();
+    return t ? indent + t : '';
+  }
+  if (node.nodeType !== 1) return ''; // skip non-element non-text
+  var tag = node.tagName;
+  var attrs = Array.prototype.slice.call(node.attributes || []).map(function(a) {
+    return ' ' + a.name + '="' + a.value.replace(/"/g, '&quot;') + '"';
+  }).join('');
+  var children = Array.prototype.slice.call(node.childNodes);
+  var inner = children.map(function(c) { return _xmlSerialize(c, depth + 1); })
+                      .filter(function(s) { return s.length > 0; });
+  if (inner.length === 0) return indent + '<' + tag + attrs + '/>';
+  if (inner.length === 1 && inner[0].indexOf('\n') === -1) {
+    return indent + '<' + tag + attrs + '>' + inner[0].trim() + '</' + tag + '>';
+  }
+  return indent + '<' + tag + attrs + '>\n' + inner.join('\n') + '\n' + indent + '</' + tag + '>';
+}
+
 /** Extract file paths or URIs from test output — one candidate per line.
  *  Matches any URI scheme (http/ftp/s3/sftp/…) or absolute paths starting with '/'.
  *  Each non-empty line that looks like a single path/URI (no whitespace, no obvious error text) is a candidate.
@@ -722,12 +862,39 @@ function _fetchUrlContentViaMover(paths, hostId) {
           var borderCls = hasError ? 'border-danger' : 'border';
           var headerBg  = hasError ? 'bg-danger-subtle' : 'bg-body-tertiary';
           var icon      = hasError ? 'bi-exclamation-triangle-fill text-danger' : 'bi-link-45deg text-info';
-          html += '<div class="' + borderCls + ' rounded mx-2 mb-3 mt-2 overflow-hidden">'
-                + '<div class="' + headerBg + ' px-3 py-2 border-bottom d-flex align-items-start gap-2">'
-                + '<i class="bi ' + icon + ' flex-shrink-0 mt-1" style="font-size:0.9rem"></i>'
-                + '<code class="small text-break flex-grow-1 user-select-all">' + _escHtml(f.source) + '</code>'
-                + '</div>'
-                + '<div style="font-family:monospace;font-size:0.82rem;">';
+          html += '<div class="' + borderCls + ' rounded mx-2 mb-3 mt-2 overflow-hidden">';
+
+          if (!hasError) {
+            // Detect format and build header extras (badge + stats + optional pretty-print button)
+            var content = f.content || '';
+            var det = _detectContentFormat(content);
+            var blockId = 'fcBlock_' + Math.random().toString(36).slice(2);
+            var badgeHtml = '<span class="badge rounded-pill ms-1 bg-' + det.color + '-subtle '
+              + 'border border-' + det.color + '-subtle text-' + det.color
+              + '" style="font-size:0.68rem;font-weight:600;letter-spacing:0.04em;">'
+              + _escHtml(det.label) + '</span>';
+            var statsHtml = det.stats
+              ? '<span class="text-muted ms-2" style="font-size:0.7rem;white-space:nowrap;">' + _escHtml(det.stats) + '</span>'
+              : '';
+            var prettyHtml = det.canPretty
+              ? '<button type="button" class="btn btn-outline-secondary btn-sm ms-auto py-0 px-2 flex-shrink-0"'
+                + ' style="font-size:0.7rem;" onclick="_prettyPrintToggle(this,\'' + blockId + '\')">'
+                + '<i class="bi bi-braces me-1"></i>Pretty</button>'
+              : '';
+            html += '<div class="' + headerBg + ' px-3 py-2 border-bottom d-flex align-items-center gap-1 flex-wrap">'
+                  + '<i class="bi ' + icon + ' flex-shrink-0" style="font-size:0.9rem"></i>'
+                  + '<code class="small text-break user-select-all" style="flex:1 1 auto;min-width:0;">' + _escHtml(f.source) + '</code>'
+                  + badgeHtml + statsHtml + prettyHtml
+                  + '</div>'
+                  + '<div id="' + blockId + '" data-raw-content="' + _escHtml(content) + '" style="font-family:monospace;font-size:0.82rem;">';
+          } else {
+            html += '<div class="' + headerBg + ' px-3 py-2 border-bottom d-flex align-items-start gap-2">'
+                  + '<i class="bi ' + icon + ' flex-shrink-0 mt-1" style="font-size:0.9rem"></i>'
+                  + '<code class="small text-break flex-grow-1 user-select-all">' + _escHtml(f.source) + '</code>'
+                  + '</div>'
+                  + '<div style="font-family:monospace;font-size:0.82rem;">';
+          }
+
           if (hasError) {
             html += '<div class="px-3 py-1 text-danger">' + _escHtml('Error: ' + f.error) + '</div>';
           } else {
