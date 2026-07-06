@@ -53,6 +53,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import ecmwf.common.text.Format;
 import ecmwf.ecpds.master.MasterManager;
+import ecmwf.ecpds.master.MasterServer;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.ecpds.master.plugin.http.dao.Util;
 import ecmwf.ecpds.master.plugin.http.home.transfer.DataTransferHome;
@@ -136,7 +137,10 @@ public class TestScriptAction extends PDSAction {
 
             // Route execution through MasterServer → DataMover via RMI (same as production).
             final var session = Util.getECpdsSessionFromObject(user);
-            result.put("output", MasterManager.getMI().execDirScript(session, host, scriptToRun));
+            // Resolve acquisition-format lines in the output: strip [options] prefix,
+            // resolve $date/$dirdate, strip {regex} suffix — ready for the Preview mechanism.
+            result.put("output",
+                    MasterServer.resolveAcqOutput(MasterManager.getMI().execDirScript(session, host, scriptToRun)));
 
         } catch (final Exception e) {
             _log.warn("TestScript execution error", e);

@@ -397,10 +397,13 @@ $(document).ready(function() {
             <option value="100">100 lines</option>
             <option value="250">250 lines</option>
             <option value="500">500 lines</option>
+            <option value="1000">1000 lines</option>
+            <option value="2500">2500 lines</option>
+            <option value="5000">5000 lines</option>
           </select>
         </div>
         <button type="button" class="btn btn-outline-secondary btn-sm" id="testResultCopyBtn"
-                onclick="(function(){var fc=document.getElementById('testResultFileContent');var pre=document.getElementById('testResultContent');var t=fc&&fc.style.display!=='none'?fc.innerText:pre?pre.textContent:'';navigator.clipboard.writeText(t).then(function(){var b=document.getElementById('testResultCopyBtn');var o=b.innerHTML;b.innerHTML='<i class=\'bi bi-check2 me-1\'></i>Copied!';setTimeout(function(){b.innerHTML=o;},1500);});})()">>
+                onclick="(function(){var fc=document.getElementById('testResultFileContent');var pre=document.getElementById('testResultContent');var t;if(fc&&fc.style.display!=='none'){t=fc.innerText;}else if(pre){t=pre.dataset.rawText||pre.textContent;}else{t='';}navigator.clipboard.writeText(t).then(function(){var b=document.getElementById('testResultCopyBtn');var o=b.innerHTML;b.innerHTML='<i class=\'bi bi-check2 me-1\'></i>Copied!';setTimeout(function(){b.innerHTML=o;},1500);});})()">
           <i class="bi bi-clipboard me-1"></i>Copy
         </button>
         <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>

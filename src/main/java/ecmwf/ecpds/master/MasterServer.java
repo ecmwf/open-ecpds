@@ -2376,27 +2376,116 @@ public final class MasterServer extends ECaccessProvider
         Format.replaceAll(sb, "$ectransModule[name]", module.getName());
         Format.replaceAll(sb, "$ectransModule[classe]", module.getClasse());
         Format.replaceAll(sb, "$ectransModule[archive]", module.getArchive());
-        return _replaceDateTokens(sb.toString());
+        // Strip [options] prefix, resolve $date/$dirdate, strip {regex} suffix per line.
+        return resolveAcqOutput(sb.toString());
     }
 
     /**
-     * Replace $date[...] and $dirdate[...] tokens in a text string using the current date. Supports dateformat and
-     * datedelta parameters inside the brackets. $dirdate uses the same logic as $date in this preview context.
+     * Resolve acquisition-format output for preview. Processes each line by:
+     * <ol>
+     * <li>Stripping a leading {@code [key=value;...]} options block and extracting {@code dateformat} /
+     * {@code datedelta} from it.</li>
+     * <li>Resolving {@code $date} / {@code $dirdate} tokens using those per-line options (with token-level inline
+     * params taking precedence).</li>
+     * <li>Stripping a trailing {@code {regex}} filter suffix — it is the filename filter used by the
+     * AcquisitionScheduler and is not part of the path.</li>
+     * </ol>
+     * Called by {@code resolveDirText} (Directory field preview) and by {@code TestScriptAction} (Python/JS script
+     * output preview).
+     *
+     * @param text
+     *            the raw multi-line acquisition output
+     *
+     * @return the cleaned, date-resolved text ready for the Preview mechanism
+     */
+    public static String resolveAcqOutput(final String text) {
+        if (text == null || text.isEmpty())
+            return text;
+        final var lines = text.split("\n", -1);
+        final var out = new StringBuilder();
+        for (var i = 0; i < lines.length; i++) {
+            out.append(_resolveAcqLine(lines[i]));
+            if (i < lines.length - 1)
+                out.append('\n');
+        }
+        return out.toString();
+    }
+
+    /**
+     * Resolve a single acquisition-format line: strip {@code [options]} prefix, resolve {@code $date}/{@code $dirdate},
+     * strip {@code {regex}} suffix.
+     */
+    private static String _resolveAcqLine(final String line) {
+        var path = line.trim();
+        String lineOpts = null;
+        // 1. Strip leading [options] block and capture its content
+        if (!path.isEmpty() && path.charAt(0) == '[') {
+            var depth = 0;
+            var closePos = -1;
+            for (var i = 0; i < path.length(); i++) {
+                final var c = path.charAt(i);
+                if (c == '[')
+                    depth++;
+                else if (c == ']' && --depth == 0) {
+                    closePos = i;
+                    break;
+                }
+            }
+            if (closePos != -1) {
+                lineOpts = path.substring(1, closePos);
+                path = path.substring(closePos + 1).trim();
+            }
+        }
+        // 2. Strip trailing {filename-regex} suffix — just a filter, not part of the path
+        if (!path.isEmpty() && path.charAt(path.length() - 1) == '}') {
+            final var openBrace = path.lastIndexOf('{');
+            if (openBrace != -1)
+                path = path.substring(0, openBrace).trim();
+        }
+        // 3. Resolve $date/$dirdate using dateformat/datedelta from the [options] block
+        return _replaceDateTokens(path, lineOpts);
+    }
+
+    /**
+     * Replace $date/$dirdate tokens, using {@code lineOptions} as a fallback source for dateformat/datedelta when the
+     * token itself has no inline parameters. This allows per-line {@code [dateformat=...;datedelta=...]} prefixes (as
+     * used by the AcquisitionScheduler) to influence date resolution for that line.
      *
      * @param text
      *            the text containing $date/$dirdate tokens
+     * @param lineOptions
+     *            semicolon/comma-separated key=value pairs extracted from the leading {@code [...]} block of the line,
+     *            or {@code null} if not present
      *
      * @return the text with date tokens replaced
      */
-    private static String _replaceDateTokens(final String text) {
+    private static String _replaceDateTokens(final String text, final String lineOptions) {
+        // Parse lineOptions once for the whole line
+        var lineFormat = "";
+        var lineDelta = "";
+        if (lineOptions != null && !lineOptions.isBlank()) {
+            for (final var part : lineOptions.split("[,;]")) {
+                final var eq = part.indexOf('=');
+                if (eq > 0) {
+                    final var key = part.substring(0, eq).trim().toLowerCase();
+                    final var val = part.substring(eq + 1).trim().replaceAll("^\"|\"$", "");
+                    if ("dateformat".equals(key)) {
+                        lineFormat = val;
+                    } else if ("datedelta".equals(key)) {
+                        lineDelta = val;
+                    }
+                }
+            }
+        }
         // Matches $date[...] or $date and $dirdate[...] or $dirdate (case-insensitive on the token)
         final var pattern = Pattern.compile("\\$(date|dirdate)(?:\\[([^\\]]*)\\])?", Pattern.CASE_INSENSITIVE);
         final var matcher = pattern.matcher(text);
         final var result = new StringBuilder();
         while (matcher.find()) {
             final var params = matcher.group(2); // null if no [...] block
-            var dateformat = "yyyyMMdd"; // HOST_ACQUISITION_DATEFORMAT default
-            var datedelta = "";
+            // Start with defaults from per-line [options], then let token-level params override
+            var dateformat = lineFormat.isEmpty() ? "yyyyMMdd" : lineFormat;
+            var datedelta = lineDelta;
             if (params != null && !params.isBlank()) {
                 for (final var part : params.split("[,;]")) {
                     final var eq = part.indexOf('=');

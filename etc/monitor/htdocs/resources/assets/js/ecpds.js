@@ -530,7 +530,7 @@ function testDirTextOnServer(aceEditor, hostId) {
         _showFetchBtn(false);
       } else {
         var output = data.output && data.output.length > 0 ? data.output : '(empty output)';
-        el.textContent = output;
+        _renderWithLineNumbers(el, output);
         var urls = _extractPathsFromOutput(output);
         if (urls.length > 0) {
           _showFetchBtn(true);
@@ -602,7 +602,7 @@ function testSourceServer(aceEditor, hostId, lang, transferId, manualValues) {
         _showFetchBtn(false);
       } else {
         var output = data.output && data.output.length > 0 ? data.output : '(empty output)';
-        el.textContent = output;
+        _renderWithLineNumbers(el, output);
         // Detect HTTP URLs in the output and show Fetch Content button if found
         var urls = _extractPathsFromOutput(output);
         if (urls.length > 0) {
@@ -633,6 +633,24 @@ function testSourceServer(aceEditor, hostId, lang, transferId, manualValues) {
   });
 }
 
+
+/** Render output text into the <pre> element with styled, non-selectable line numbers. */
+function _renderWithLineNumbers(el, text) {
+  el.dataset.rawText = text; // stored for the Copy button (line numbers are excluded)
+  var lines = text.split('\n');
+  var last = lines.length > 1 && lines[lines.length - 1] === '' ? lines.length - 1 : lines.length;
+  var width = String(last).length;
+  var html = lines.map(function(line, i) {
+    if (i >= last) return ''; // drop trailing empty line
+    var num = String(i + 1).padStart(width, ' ');
+    return '<span style="color:var(--bs-secondary-color);opacity:0.55;user-select:none;'
+         + 'border-right:1px solid var(--bs-border-color);padding-right:0.6em;margin-right:0.7em;'
+         + 'font-variant-numeric:tabular-nums;">' + num + '</span>'
+         + _escHtml(line);
+  }).join('\n');
+  el.innerHTML = html;
+}
+
 /** Extract file paths or URIs from test output — one candidate per line.
  *  Matches any URI scheme (http/ftp/s3/sftp/…) or absolute paths starting with '/'.
  *  Each non-empty line that looks like a single path/URI (no whitespace, no obvious error text) is a candidate.
@@ -644,7 +662,7 @@ function _extractPathsFromOutput(text) {
   var lines = text.split('\n');
   lines.forEach(function(line) {
     var t = line.trim();
-    if (!t || t.startsWith('#') || t.startsWith('Error') || t.startsWith('[')) return;
+    if (!t || t.startsWith('#') || t.startsWith('Error')) return;
     var m = re.exec(t);
     if (m) {
       var p = m[0].replace(/[.,;)]+$/, '');
@@ -717,9 +735,14 @@ function _fetchUrlContentViaMover(paths, hostId) {
             // Remove a single trailing empty line that split() adds for content ending with \n
             if (lines.length > 1 && lines[lines.length - 1] === '') lines.pop();
             lines.forEach(function(line, i) {
-              html += '<div class="px-3 py-0" style="white-space:pre-wrap;word-break:break-word;line-height:1.6;'
+              var num = String(i + 1).padStart(String(lines.length).length, ' ');
+              html += '<div class="d-flex px-3 py-0" style="white-space:pre;line-height:1.6;'
                     + (i % 2 === 0 ? '' : 'background:rgba(128,128,128,0.15)') + '">'
-                    + _escHtml(line) + '</div>';
+                    + '<span style="color:var(--bs-secondary-color);opacity:0.55;user-select:none;'
+                    + 'border-right:1px solid var(--bs-border-color);padding-right:0.6em;margin-right:0.7em;'
+                    + 'flex-shrink:0;font-variant-numeric:tabular-nums;">' + _escHtml(num) + '</span>'
+                    + '<span style="white-space:pre-wrap;word-break:break-word;">' + _escHtml(line) + '</span>'
+                    + '</div>';
             });
           }
           html += '</div></div>';
