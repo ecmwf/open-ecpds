@@ -135,6 +135,13 @@ function ecpdsToggleTheme() {
   var userShort  = document.getElementById('navUserShort');
   if (!titleEl || !logoFull || !logoIcon) return;
   function adapt() {
+    // On the login page (no submenu title) never collapse the full logo
+    var isLoginPage = !titleEl.textContent.trim();
+    if (isLoginPage) {
+      logoFull.style.display  = '';
+      logoIcon.style.display  = 'none';
+      return;
+    }
     // Step 1: reset everything to full state
     logoFull.style.display  = '';
     logoIcon.style.display  = 'none';

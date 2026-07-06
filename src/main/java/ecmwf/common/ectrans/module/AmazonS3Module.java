@@ -292,10 +292,10 @@ public final class AmazonS3Module extends TransferModule {
                     setup.getBoolean(HOST_S3_STRICT), setup.getBoolean(HOST_S3_ACCELERATION),
                     setup.getBoolean(HOST_S3_DUALSTACK), setup.getBoolean(HOST_S3_DISABLE_CHUNKED_ENCODING),
                     setup.getBoolean(HOST_S3_ENABLE_PATH_STYLE_ACCESS), setup.getBoolean(HOST_S3_CROSS_REGION_ACCESS),
-                    bucketName, url, isNotEmpty(region) ? region : Region.US_EAST_1.id(),
-                    setup.getBoolean(HOST_S3_MK_BUCKET), setup.getString(HOST_S3_ROLE_ARN),
-                    setup.getString(HOST_S3_ROLE_SESSION_NAME), setup.getInteger(HOST_S3_DURATION_SECONDS),
-                    setup.getString(HOST_S3_EXTERNAL_ID), setup.getString(HOST_S3_REQUEST_CHECKSUM_CALCULATION),
+                    bucketName, url, isNotEmpty(region) ? region : "", setup.getBoolean(HOST_S3_MK_BUCKET),
+                    setup.getString(HOST_S3_ROLE_ARN), setup.getString(HOST_S3_ROLE_SESSION_NAME),
+                    setup.getInteger(HOST_S3_DURATION_SECONDS), setup.getString(HOST_S3_EXTERNAL_ID),
+                    setup.getString(HOST_S3_REQUEST_CHECKSUM_CALCULATION),
                     setup.getString(HOST_S3_RESPONSE_CHECKSUM_VALIDATION), getDebug());
             connected = true;
         } catch (final S3Exception e) {
@@ -1157,7 +1157,9 @@ public final class AmazonS3Module extends TransferModule {
                     .pathStyleAccessEnabled(enablePathStyleAccess).chunkedEncodingEnabled(!disableChunkedEncoding)
                     .build();
             // Build the S3 client.
-            final var creds = loadCredentials(user, password, region, sslContext, roleArn, roleSessionName,
+            // STS uses the global us-east-1 endpoint — region only matters for service-specific STS endpoints.
+            final var stsRegion = isNotEmpty(region) ? region : Region.US_EAST_1.id();
+            final var creds = loadCredentials(user, password, stsRegion, sslContext, roleArn, roleSessionName,
                     durationSeconds, externalId);
             final var clientBuilder = S3Client.builder().credentialsProvider(creds).serviceConfiguration(s3Config)
                     .dualstackEnabled(dualstack).httpClientBuilder(httpClientBuilder);
@@ -1169,20 +1171,28 @@ public final class AmazonS3Module extends TransferModule {
                 clientBuilder
                         .responseChecksumValidation(ResponseChecksumValidation.fromValue(responseChecksumValidation));
             }
-            if (crossRegionAccess) {
-                // Pre-discover the bucket's actual region to avoid stream-replay errors on the
-                // first upload caused by an SDK retry after a 301 redirect.
-                var resolvedRegion = isNotEmpty(bucketName) ? discoverBucketRegion(creds, bucketName) : null;
-                if (resolvedRegion == null) {
-                    resolvedRegion = region;
+            // Resolve the effective region: explicit config wins; otherwise auto-discover from bucket.
+            var resolvedRegion = isNotEmpty(region) ? region : null;
+            if (resolvedRegion == null && isNotEmpty(bucketName)) {
+                resolvedRegion = discoverBucketRegion(creds, bucketName);
+                if (resolvedRegion != null) {
+                    _log.info("Auto-discovered region '{}' for bucket '{}'", resolvedRegion, bucketName);
                 }
+            }
+            if (resolvedRegion == null) {
+                resolvedRegion = Region.US_EAST_1.id();
+                _log.warn("Could not determine region for bucket '{}'; falling back to '{}'", bucketName,
+                        resolvedRegion);
+            }
+            if (crossRegionAccess) {
                 clientBuilder.region(Region.of(resolvedRegion));
-                _log.debug("Cross-region access: bucket '{}' resolved to region '{}'", bucketName, resolvedRegion);
+                _log.debug("Cross-region access enabled: using region '{}' for bucket '{}'", resolvedRegion,
+                        bucketName);
             } else if (acceleration || isEmpty(url)) {
-                clientBuilder.region(Region.of(region));
+                clientBuilder.region(Region.of(resolvedRegion));
             } else {
-                clientBuilder.endpointOverride(URI.create(url)).region(Region.of(region));
-                _log.debug("EndPoint: {} - region: {}", url, region);
+                clientBuilder.endpointOverride(URI.create(url)).region(Region.of(resolvedRegion));
+                _log.debug("EndPoint: {} - region: {}", url, resolvedRegion);
             }
             if (debug) {
                 clientBuilder.overrideConfiguration(c -> c.addExecutionInterceptor(new ExecutionInterceptor() {

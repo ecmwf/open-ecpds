@@ -2280,11 +2280,9 @@ public class S3ProxyHandler {
     /** Simple holder for a parsed part entry from a CompleteMultipartUpload body. */
     private static final class PartEntry {
         final int partNumber;
-        final String etag;
 
         PartEntry(final int partNumber, final String etag) {
             this.partNumber = partNumber;
-            this.etag = etag;
         }
     }
 }

@@ -20,7 +20,11 @@ package ecmwf.ecpds.master.plugin.http.controller.user.user;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -32,6 +36,8 @@ import org.apache.struts.action.ActionMapping;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import ecmwf.common.ectrans.ECtransGroups;
+import ecmwf.common.ectrans.ECtransOptions;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.ecpds.master.plugin.http.home.ecuser.EcUserHome;
 import ecmwf.ecpds.master.plugin.http.model.ecuser.WebUser;
@@ -57,6 +63,27 @@ public class GetWebUserListJsonAction extends PDSAction {
     private static final int STATUS_NOT_MONITOR = 0;
     private static final int STATUS_MONITOR_OK = 1;
     private static final int STATUS_MONITOR_NO_DEST = 2;
+
+    /** Pattern for property lines: module.optionName = value */
+    private static final Pattern PROP_LINE = Pattern.compile("^\\s*([^#\\s][^\\s=]*)\\s*=");
+
+    /** Pattern to extract a quoted value: option = "value" */
+    private static final Pattern QUOTED_VALUE = Pattern.compile("\"([^\"]*)\"");
+
+    private record OptionMeta(Class<?> type, List<String> choices) {
+    }
+
+    /** Map from lowercase module.option → OptionMeta, built once at startup from the WEB group. */
+    private static final Map<String, OptionMeta> OPTION_MAP;
+    static {
+        final var map = new HashMap<String, OptionMeta>();
+        for (final var opt : ECtransOptions.get(ECtransGroups.WEB)) {
+            if (opt.isVisible()) {
+                map.put(opt.getParameter().toLowerCase(), new OptionMeta(opt.getClazz(), opt.getChoicesAsStrings()));
+            }
+        }
+        OPTION_MAP = java.util.Collections.unmodifiableMap(map);
+    }
 
     @Override
     public ActionForward safeAuthorizedPerform(final ActionMapping mapping, final ActionForm form,
@@ -94,6 +121,9 @@ public class GetWebUserListJsonAction extends PDSAction {
 
         final var root = MAPPER.createObjectNode();
         final var data = root.putArray("data");
+        final var enabledFilter = request.getParameter("enabled"); // "yes" | "no" | null
+        final var monitorFilter = request.getParameter("monitor"); // "not-monitor" | "ok" | "no-dest" | null
+        final var propErrorsFilter = "yes".equals(request.getParameter("propErrors"));
         var total = 0;
         var filtered = 0;
         for (final Object obj : users) {
@@ -107,9 +137,38 @@ public class GetWebUserListJsonAction extends PDSAction {
             if (monitorNoDestOnly && monitorStatus != STATUS_MONITOR_NO_DEST) {
                 continue;
             }
+            if (enabledFilter != null && !enabledFilter.isBlank()) {
+                final boolean wantActive = "yes".equalsIgnoreCase(enabledFilter);
+                if (u.getActive() != wantActive) {
+                    continue;
+                }
+            }
+            if (monitorFilter != null && !monitorFilter.isBlank()) {
+                switch (monitorFilter) {
+                case "not-monitor" -> {
+                    if (monitorStatus != STATUS_NOT_MONITOR) {
+                        continue;
+                    }
+                }
+                case "ok" -> {
+                    if (monitorStatus != STATUS_MONITOR_OK) {
+                        continue;
+                    }
+                }
+                case "no-dest" -> {
+                    if (monitorStatus != STATUS_MONITOR_NO_DEST) {
+                        continue;
+                    }
+                }
+                }
+            }
+            if (propErrorsFilter && !hasPropertyErrors(u)) {
+                continue;
+            }
             filtered++;
+            final var propErrors = hasPropertyErrors(u);
             final var row = data.addArray();
-            row.add(buildIdLink(u.getId()));
+            row.add(buildIdLink(u.getId(), propErrors));
             row.add(escapeHtml(u.getCommonName()));
             row.add(buildBadge(u.getActive()));
             row.add(buildCategoriesHtml(cats));
@@ -187,9 +246,12 @@ public class GetWebUserListJsonAction extends PDSAction {
         return hasDestination ? STATUS_MONITOR_OK : STATUS_MONITOR_NO_DEST;
     }
 
-    private static String buildIdLink(final String id) {
+    private static String buildIdLink(final String id, final boolean propErrors) {
         final var escaped = escapeHtml(id);
-        return "<a href=\"" + USER_BASE_PATH + "/" + escaped + "\">" + escaped + "</a>";
+        final var warning = propErrors
+                ? " <span title=\"Properties editor has errors\" style=\"color:#dc3545;font-size:0.85em\">&#9888;</span>"
+                : "";
+        return "<a href=\"" + USER_BASE_PATH + "/" + escaped + "\">" + escaped + "</a>" + warning;
     }
 
     private static String buildBadge(final boolean active) {
@@ -234,6 +296,52 @@ public class GetWebUserListJsonAction extends PDSAction {
                 + "\" title=\"Edit\"><i class=\"bi bi-pencil-square text-primary\" style=\"font-size:1rem\"></i></a>"
                 + "&nbsp;<a href=\"" + USER_BASE_PATH + "/edit/delete_form/" + escaped
                 + "\" title=\"Delete\"><i class=\"bi bi-trash text-danger\" style=\"font-size:1rem\"></i></a>";
+    }
+
+    private static boolean hasPropertyErrors(final WebUser u) {
+        try {
+            final var userData = u.getUserData();
+            final var props = userData != null ? userData.toString() : null;
+            if (props == null || props.isBlank())
+                return false;
+            for (final var line : props.split("\n")) {
+                if (checkLineHasError(line))
+                    return true;
+            }
+        } catch (final Exception ignored) {
+        }
+        return false;
+    }
+
+    private static boolean checkLineHasError(final String line) {
+        final var m = PROP_LINE.matcher(line);
+        if (!m.find())
+            return false;
+        final var key = m.group(1);
+        if (key.indexOf('.') < 0)
+            return false;
+        final var meta = OPTION_MAP.get(key.toLowerCase());
+        if (meta == null)
+            return true; // Unrecognized option → error
+        final var vm = QUOTED_VALUE.matcher(line);
+        if (!vm.find())
+            return false;
+        final var value = vm.group(1);
+        if (!meta.choices().isEmpty() && !meta.choices().contains(value))
+            return true;
+        return isTypeError(meta.type(), value);
+    }
+
+    private static boolean isTypeError(final Class<?> type, final String value) {
+        if (type == Boolean.class)
+            return !List.of("yes", "no", "true", "false").contains(value.toLowerCase());
+        if (type == Integer.class)
+            return !"max-integer".equals(value) && !value.matches("-?\\d+");
+        if (type == Long.class)
+            return !"max-long".equals(value) && !value.matches("-?\\d+");
+        if (type == Double.class || type == Float.class)
+            return !"max-double".equals(value) && !value.matches("-?\\d+(\\.\\d+)?");
+        return false; // String and other types accept any value
     }
 
     private static String escapeHtml(final String s) {

@@ -33,16 +33,18 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.ecpds.master.plugin.http.dao.Util;
+import ecmwf.ecpds.master.plugin.http.home.transfer.CountryHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.DestinationHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.IncomingPolicyHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.IncomingUserHome;
-import ecmwf.ecpds.master.plugin.http.model.transfer.Destination;
 import ecmwf.ecpds.master.plugin.http.model.transfer.IncomingPolicy;
 import ecmwf.ecpds.master.plugin.http.model.transfer.IncomingUser;
 import ecmwf.web.ECMWFException;
@@ -55,6 +57,9 @@ import ecmwf.web.util.bean.Pair;
  * The Class GetIncomingUserAction.
  */
 public class GetIncomingUserAction extends PDSAction {
+
+    /** The Constant log. */
+    private static final Logger log = LogManager.getLogger(GetIncomingUserAction.class);
 
     /**
      * {@inheritDoc}
@@ -102,6 +107,11 @@ public class GetIncomingUserAction extends PDSAction {
             users = search(users, search);
         }
         request.setAttribute("users", users);
+        try {
+            request.setAttribute("countryOptions", CountryHome.findAll());
+        } catch (final Exception e) {
+            log.warn("Could not load country options for QB", e);
+        }
         return mapping.findForward("success");
     }
 
@@ -114,39 +124,5 @@ public class GetIncomingUserAction extends PDSAction {
     public boolean match(final ModelBean b, final String what) {
         final var u = (IncomingUser) b;
         return u.getId().toLowerCase().contains(what.toLowerCase());
-    }
-
-    /**
-     * Associated to.
-     *
-     * @param c
-     *            the c
-     * @param detinationName
-     *            the detination name
-     *
-     * @return the collection
-     */
-    private static Collection<ModelBean> associatedTo(final Collection<? extends ModelBean> c,
-            final String detinationName) {
-        final List<ModelBean> filtered = new ArrayList<>();
-        var match = false;
-        for (final ModelBean b : c) {
-            match = false;
-            try {
-                final var incoming = (IncomingUser) b;
-                // Look into the list of associated destinations
-                for (final Destination destination : incoming.getAssociatedDestinations()) {
-                    if (destination.getName().equals(detinationName)) {
-                        match = true;
-                        break;
-                    }
-                }
-            } catch (final Exception ignored) {
-            }
-            if (match) {
-                filtered.add(b);
-            }
-        }
-        return filtered;
     }
 }

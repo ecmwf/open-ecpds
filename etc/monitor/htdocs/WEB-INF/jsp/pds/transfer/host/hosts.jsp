@@ -185,6 +185,30 @@
                                         </select>
                                     </div>
                                 </div>
+                                <%-- Editor warning filters --%>
+                                <div class="row g-1 mb-1">
+                                    <div class="col-12 col-md-4">
+                                        <label class="form-label mb-0 fw-semibold"><i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>Properties editor</label>
+                                        <select class="form-select form-select-sm" id="hqb_propErrors" onchange="hostsTableReload();hqbUpdateBadge();" title="Filter by Properties editor warnings">
+                                            <option value="">Any</option>
+                                            <option value="yes">Has errors</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12 col-md-4">
+                                        <label class="form-label mb-0 fw-semibold"><i class="bi bi-folder-fill text-info me-1"></i>Directory editor</label>
+                                        <select class="form-select form-select-sm" id="hqb_dirNonEmpty" onchange="hostsTableReload();hqbUpdateBadge();" title="Filter by Directory pattern">
+                                            <option value="">Any</option>
+                                            <option value="yes">Is set</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12 col-md-4">
+                                        <label class="form-label mb-0 fw-semibold"><i class="bi bi-braces text-secondary me-1"></i>JavaScript editor</label>
+                                        <select class="form-select form-select-sm" id="hqb_jsNonEmpty" onchange="hostsTableReload();hqbUpdateBadge();" title="Filter by JavaScript">
+                                            <option value="">Any</option>
+                                            <option value="yes">Is configured</option>
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
                             <%-- Live preview + action buttons --%>
                             <div class="d-flex align-items-start gap-1 pt-1 border-top mt-1 flex-wrap">
@@ -214,6 +238,9 @@
             var nw = document.getElementById('network'); if (nw && nw.selectedIndex > 0) n++;
             var lb = document.getElementById('label'); if (lb && lb.selectedIndex > 0) n++;
             var hf = document.getElementById('hostFilter'); if (hf && hf.selectedIndex > 0) n++;
+            if (hqbVal('hqb_propErrors')) n++;
+            if (hqbVal('hqb_dirNonEmpty')) n++;
+            if (hqbVal('hqb_jsNonEmpty')) n++;
             return n;
         }
         function hqbUpdateBadge() {
@@ -254,6 +281,9 @@
             document.getElementById('network').selectedIndex = 0;
             document.getElementById('label').selectedIndex = 0;
             document.getElementById('hostFilter').selectedIndex = 0;
+            document.getElementById('hqb_propErrors').selectedIndex = 0;
+            document.getElementById('hqb_dirNonEmpty').selectedIndex = 0;
+            document.getElementById('hqb_jsNonEmpty').selectedIndex = 0;
             document.getElementById('hostSearch').value = '';
             document.getElementById('hostQueryBuilder').style.display = 'none';
             hqbPreview();
@@ -462,6 +492,9 @@ function _updateHostSearchBanner(queryError, total, hasSearch) {
                     d.network    = $('#network').val() || 'All';
                     d.hostType   = $('#hostType').val() || 'All';
                     d.hostSearch = $('#hostSearch').val() || '';
+                    d.propErrors  = $('#hqb_propErrors').val() || '';
+                    d.dirNonEmpty = $('#hqb_dirNonEmpty').val() || '';
+                    d.jsNonEmpty  = $('#hqb_jsNonEmpty').val() || '';
                 }
             },
             pageLength: (function() { try { var v = parseInt(localStorage.getItem('hostsPageLen'), 10); return [10,25,50,100,250].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })(),

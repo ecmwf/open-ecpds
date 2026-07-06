@@ -12,6 +12,11 @@
         aria-expanded="false" title="About this page">
         <i class="bi bi-info-circle"></i>
     </button>
+    <button id="btnWebUsrQB" type="button" class="btn btn-sm btn-outline-primary position-relative"
+            onclick="toggleQBPanel('webUsrQueryBuilder','btnWebUsrQB')" title="Open query builder to filter Web Users">
+        <i class="bi bi-sliders2"></i> Filter
+        <span id="btnWebUsrQB-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display:none;font-size:0.65rem"></span>
+    </button>
     <button id="webUserMonitorNoDestBtn" type="button"
             class="btn btn-sm btn-outline-secondary"
             title="Show only Monitor users with no destination category assigned">
@@ -20,7 +25,7 @@
     <div class="ms-auto d-flex flex-wrap align-items-center gap-2">
         <div class="input-group input-group-sm" style="width:auto">
             <span class="input-group-text"><i class="bi bi-search"></i></span>
-            <input type="text" id="usersWebSearch" class="form-control" placeholder="Search users..." style="min-width:180px">
+            <input type="text" id="usersWebSearch" class="form-control" placeholder="Search web login..." style="min-width:180px">
         </div>
         <div class="input-group flex-nowrap" style="width:auto" title="Page size">
             <span class="input-group-text px-2"><i class="bi bi-list-ol"></i></span>
@@ -56,6 +61,45 @@
                     </ul>
                 </div>
         <a href="<bean:message key="user.basepath"/>/edit/insert_form" class="btn btn-sm btn-outline-success"><i class="bi bi-plus-circle"></i> Create</a>
+    </div>
+</div>
+
+<%-- Web Users Query Builder floating panel --%>
+<div id="webUsrQueryBuilder" class="border rounded p-2"
+     style="display:none; position:absolute; z-index:9999; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd) !important; box-shadow:0 8px 28px rgba(0,0,0,0.18),0 2px 6px rgba(0,0,0,0.10); font-size:0.85rem">
+    <div class="row g-1 mb-1">
+        <div class="col-6">
+            <label class="form-label mb-0 fw-semibold"><i class="bi bi-toggle-on me-1 text-muted"></i>Enabled</label>
+            <select class="form-select form-select-sm" id="wuqb_enabled">
+                <option value="">Any</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+            </select>
+        </div>
+        <div class="col-6">
+            <label class="form-label mb-0 fw-semibold"><i class="bi bi-sliders me-1 text-muted"></i>Properties editor</label>
+            <select class="form-select form-select-sm" id="wuqb_propErrors">
+                <option value="">Any</option>
+                <option value="yes">Has errors</option>
+            </select>
+        </div>
+        <div class="col-12">
+            <label class="form-label mb-0 fw-semibold"><i class="bi bi-display me-1 text-muted"></i>Monitor status</label>
+            <select class="form-select form-select-sm" id="wuqb_monitor">
+                <option value="">Any</option>
+                <option value="not-monitor">Not a monitor user</option>
+                <option value="ok">Monitor &mdash; OK</option>
+                <option value="no-dest">Monitor &mdash; no destination</option>
+            </select>
+        </div>
+    </div>
+    <div class="d-flex gap-1 pt-1 border-top mt-1 justify-content-end">
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="wuqbClear()">
+            <i class="bi bi-x-circle me-1"></i>Clear
+        </button>
+        <button type="button" class="btn btn-sm btn-primary" onclick="wuqbApply()">
+            <i class="bi bi-check-lg me-1"></i>Apply &amp; Search
+        </button>
     </div>
 </div>
 
@@ -98,11 +142,68 @@
     </button>
 </div>
 <script>
-$(document).ready(function() {
-    var _monitorNoDestOnly = false;
-    function _buildAjaxUrl() {
-        return '/do/user/user/list' + (_monitorNoDestOnly ? '?monitorNoDestination=true' : '');
+// ---- QB helpers in global scope so onclick attributes can call them ----
+var _monitorNoDestOnly = false;
+var _webUsrTable = null;
+function wuqbVal(id) { var el = document.getElementById(id); return el ? el.value : ''; }
+function _buildAjaxUrl() {
+    var params = [];
+    if (_monitorNoDestOnly) params.push('monitorNoDestination=true');
+    var en = wuqbVal('wuqb_enabled');    if (en) params.push('enabled='    + encodeURIComponent(en));
+    var mo = wuqbVal('wuqb_monitor');    if (mo) params.push('monitor='    + encodeURIComponent(mo));
+    var pe = wuqbVal('wuqb_propErrors'); if (pe) params.push('propErrors=' + encodeURIComponent(pe));
+    return '/do/user/user/list' + (params.length ? '?' + params.join('&') : '');
+}
+function wuqbCountActive() {
+    var n = 0;
+    if (wuqbVal('wuqb_enabled'))    n++;
+    if (wuqbVal('wuqb_monitor'))    n++;
+    if (wuqbVal('wuqb_propErrors')) n++;
+    return n;
+}
+function wuqbUpdateBadge() {
+    var n = wuqbCountActive();
+    var b = document.getElementById('btnWebUsrQB-badge');
+    if (b) { b.textContent = n; b.style.display = n > 0 ? '' : 'none'; }
+    var btn = document.getElementById('btnWebUsrQB');
+    if (btn) { btn.classList.toggle('btn-outline-primary', n === 0); btn.classList.toggle('btn-warning', n > 0); }
+}
+function wuqbApply() {
+    wuqbUpdateBadge();
+    var p = document.getElementById('webUsrQueryBuilder'); if (p) p.style.display = 'none';
+    if (_webUsrTable) _webUsrTable.ajax.url(_buildAjaxUrl()).load();
+}
+function wuqbReload() { wuqbUpdateBadge(); if (_webUsrTable) _webUsrTable.ajax.url(_buildAjaxUrl()).load(); }
+function wuqbClear() {
+    ['wuqb_enabled','wuqb_monitor','wuqb_propErrors'].forEach(function(id) { var el=document.getElementById(id); if(el) el.value=''; });
+    var p = document.getElementById('webUsrQueryBuilder'); if (p) p.style.display = 'none';
+    wuqbUpdateBadge();
+    if (_webUsrTable) _webUsrTable.ajax.url(_buildAjaxUrl()).load();
+}
+function toggleQBPanel(panelId, btnId) {
+    var panel = document.getElementById(panelId);
+    var btn = document.getElementById(btnId);
+    if (!panel || !btn) return;
+    if (panel.style.display === 'block') { panel.style.display = 'none'; return; }
+    if (panel.parentElement !== document.body) { document.body.appendChild(panel); }
+    var vw = window.innerWidth || document.documentElement.clientWidth;
+    var pw = Math.min(400, vw - 16);
+    panel.style.width = pw + 'px';
+    var r = btn.getBoundingClientRect();
+    var sy = window.pageYOffset || document.documentElement.scrollTop;
+    panel.style.top = (r.bottom + sy + 4) + 'px';
+    panel.style.left = Math.max(8, r.right - pw + window.pageXOffset) + 'px';
+    panel.style.display = 'block';
+}
+document.addEventListener('click', function(e) {
+    var panel = document.getElementById('webUsrQueryBuilder');
+    var btn = document.getElementById('btnWebUsrQB');
+    if (panel && panel.style.display === 'block' && !panel.contains(e.target) && btn && !btn.contains(e.target)) {
+        panel.style.display = 'none';
     }
+});
+
+$(document).ready(function() {
     var _canDelete = false;
     var _filteredCount = 0;
     var table = $('#usersWebTable').DataTable({
@@ -129,11 +230,12 @@ $(document).ready(function() {
         drawCallback: function() { _updateDeleteAllBtn(); _setFilterLoading($('#webUserMonitorNoDestBtn'), false); },
         dom: 't<"d-flex align-items-start mt-2 px-3 pb-2"i<"ms-auto"p>>'
     });
+    _webUsrTable = table;
     var _len = (function() { try { var v = parseInt(localStorage.getItem('usersWebPageLen'), 10); return [10,25,50,100,250].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })();
     table.page.len(_len).draw(false);
     $('#usersWebPageLen').val(_len);
     $('#usersWebPageLen').on('change', function() { var len = +this.value; try { localStorage.setItem('usersWebPageLen', len); } catch(e) {} table.page.len(len).draw(); });
-    $('#usersWebSearch').on('keyup', function() { table.search(this.value).draw(); });
+    $('#usersWebSearch').on('keyup', function() { table.column(0).search(this.value).draw(); });
 
     function _setFilterLoading($btn, loading) {
         if (loading) {
@@ -270,4 +372,3 @@ $(document).ready(function() {
         });
 });
 </script>
-

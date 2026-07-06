@@ -29,13 +29,17 @@ package ecmwf.ecpds.master.plugin.http.controller.transfer.host;
  * @since 2024-07-01
  */
 
+import java.time.Duration;
+import java.time.Period;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -50,6 +54,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import ecmwf.common.database.DataBaseCursor;
+import ecmwf.common.ectrans.ECtransGroups;
+import ecmwf.common.ectrans.ECtransOptions;
+import ecmwf.common.ectrans.ECtransSetup;
+import ecmwf.common.technical.ByteSize;
+import ecmwf.common.technical.TimeRange;
 import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.ecpds.master.plugin.http.dao.Util;
@@ -80,6 +89,120 @@ public class GetHostListJsonAction extends PDSAction {
     /** Shared Jackson mapper. */
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
+    /** Pattern for property lines: module.optionName = value */
+    private static final Pattern PROP_LINE = Pattern.compile("^\\s*([^#\\s][^\\s=]*)\\s*=");
+
+    /** Pattern to extract a quoted value from a property line: option = "value" */
+    private static final Pattern QUOTED_VALUE = Pattern.compile("\"([^\"]*)\"");
+
+    /** Metadata about a recognized option: its Java type and allowed choices. */
+    private record OptionMeta(Class<?> type, List<String> choices) {
+    }
+
+    /** Map from lowercase module.option name → OptionMeta, built once at startup. */
+    private static final Map<String, OptionMeta> OPTION_MAP = buildOptionMap();
+
+    private static Map<String, OptionMeta> buildOptionMap() {
+        final var map = new HashMap<String, OptionMeta>();
+        for (final var opt : ECtransOptions.get(ECtransGroups.HOST)) {
+            if (opt.isVisible()) {
+                map.put(opt.getParameter().toLowerCase(), new OptionMeta(opt.getClazz(), opt.getChoicesAsStrings()));
+            }
+        }
+        return map;
+    }
+
+    /**
+     * Returns true if the host's properties text contains at least one error, mirroring the validation logic in the
+     * Ace-based Properties editor (fields.jsp / ecpds.js checkValueForType):
+     * <ul>
+     * <li>Unrecognized module.option key → "not recognized" error</li>
+     * <li>Quoted value whose type doesn't match the option's declared type → type error</li>
+     * <li>Quoted value not in the option's choices list (when choices are defined) → choices error</li>
+     * </ul>
+     */
+    private static boolean hasPropertyErrors(final Host host) {
+        try {
+            final var data = host.getData();
+            if (data == null || data.isBlank()) {
+                return false;
+            }
+            // Only look at the properties section (before the separator)
+            final var sepIdx = data.indexOf(ECtransSetup.SEPARATOR);
+            final var propsText = sepIdx >= 0 ? data.substring(0, sepIdx) : data;
+            for (final var line : propsText.split("\n")) {
+                if (checkLineHasError(line)) {
+                    return true;
+                }
+            }
+        } catch (final Exception ignored) {
+        }
+        return false;
+    }
+
+    private static boolean checkLineHasError(final String line) {
+        final var m = PROP_LINE.matcher(line);
+        if (!m.find()) {
+            return false;
+        }
+        final var key = m.group(1);
+        // Only validate keys that look like module.option (contain a dot)
+        if (key.indexOf('.') < 0) {
+            return false;
+        }
+        final var meta = OPTION_MAP.get(key.toLowerCase());
+        if (meta == null) {
+            // Unrecognized option name → error
+            return true;
+        }
+        // Check value type (only when the value is quoted, matching JS editor behaviour)
+        final var vm = QUOTED_VALUE.matcher(line);
+        if (!vm.find()) {
+            return false;
+        }
+        final var value = vm.group(1);
+        // Choices validation (takes precedence for type errors when choices are defined)
+        if (!meta.choices().isEmpty() && !meta.choices().contains(value)) {
+            return true;
+        }
+        // Type validation
+        return isTypeError(meta.type(), value);
+    }
+
+    private static boolean isTypeError(final Class<?> type, final String value) {
+        if (type == Boolean.class) {
+            return !List.of("yes", "no", "true", "false").contains(value.toLowerCase());
+        }
+        if (type == Integer.class) {
+            return !"max-integer".equals(value) && !value.matches("-?\\d+");
+        }
+        if (type == Long.class) {
+            return !"max-long".equals(value) && !value.matches("-?\\d+");
+        }
+        if (type == Double.class) {
+            return !"max-double".equals(value) && !value.matches("-?\\d+(\\.\\d+)?");
+        }
+        if (type == ByteSize.class) {
+            return !"max-size".equals(value) && !value.matches("(?i)\\d+(b|kb|mb|gb|pb|tb|eb)?");
+        }
+        if (type == Duration.class) {
+            // ISO-8601 duration or plain integer
+            return !value.matches("-?\\d+")
+                    && !value.matches("[-+]?P(?:\\d+D)?(?:T(?:\\d+H)?(?:\\d+M)?(?:\\d+(?:[.,]\\d{0,9})?S)?)?");
+        }
+        if (type == Period.class) {
+            // ISO-8601 period or plain integer
+            return !value.matches("-?\\d+") && !value.matches("[-+]?P(?:\\d+Y)?(?:\\d+M)?(?:\\d+W)?(?:\\d+D)?");
+        }
+        if (type == TimeRange.class) {
+            // One or more HH:mm[-ss]-HH:mm[-ss] ranges separated by commas
+            final var timeRe = "(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d{1,9})?)?";
+            final var rangeRe = timeRe + "-" + timeRe;
+            return !value.matches(rangeRe + "(?:," + rangeRe + ")*");
+        }
+        return false;
+    }
+
     /**
      * {@inheritDoc}
      *
@@ -95,13 +218,20 @@ public class GetHostListJsonAction extends PDSAction {
         final var network = Util.getValue(request, "network", "All");
         final var hostType = Util.getValue(request, "hostType", "All");
         final var hostSearch = Util.getValue(request, "hostSearch", "");
+        // propErrors=yes: filter hosts that have unrecognized options in the Properties editor.
+        // dirNonEmpty=yes: filter hosts that have a non-empty Directory pattern.
+        // jsNonEmpty=yes: filter hosts that have non-empty JavaScript.
+        final var propErrorsFilter = "yes".equalsIgnoreCase(Util.getValue(request, "propErrors", ""));
+        final var dirNonEmptyFilter = "yes".equalsIgnoreCase(Util.getValue(request, "dirNonEmpty", ""));
+        final var jsNonEmptyFilter = "yes".equalsIgnoreCase(Util.getValue(request, "jsNonEmpty", ""));
+        final var needsJavaFilter = propErrorsFilter || dirNonEmptyFilter || jsNonEmptyFilter;
         final var orderCol = parseSafeInt(request.getParameter("order[0][column]"), 1);
         final var orderDir = request.getParameter("order[0][dir]");
         final var sortAsc = "asc".equalsIgnoreCase(orderDir);
         final var sortByDest = (orderCol == 5);
-        // For destination-count sort, load all rows and paginate in Java.
+        // For destination-count sort or Java-side filtering, load all rows and paginate in Java.
         // For other columns, delegate pagination to the DB cursor as before.
-        final var cursor = sortByDest ? new DataBaseCursor("0", "1", 0, Integer.MAX_VALUE)
+        final var cursor = (sortByDest || needsJavaFilter) ? new DataBaseCursor("0", "1", 0, Integer.MAX_VALUE)
                 : Util.getDataBaseCursorForDataTables(0, true, request);
         Collection<Host> hosts;
         String queryError = null;
@@ -148,14 +278,42 @@ public class GetHostListJsonAction extends PDSAction {
         } catch (final Exception e) {
             destNames = Collections.emptyMap();
         }
-        final var recordsTotal = fullAccess ? Util.getCollectionSizeFrom(hosts) : hosts.size();
-        // When sorting by destination count: sort in-memory and paginate here
+        // When sorting by destination count or applying Java-side filters: sort/filter in-memory and paginate here.
         final var destNamesRef = destNames;
         List<Host> hostList = new ArrayList<>(hosts);
         if (sortByDest) {
             final Comparator<Host> byDestCount = Comparator
                     .comparingInt(h -> destNamesRef.getOrDefault(h.getName(), Collections.emptyList()).size());
             hostList.sort(sortAsc ? byDestCount : byDestCount.reversed());
+        }
+        if (needsJavaFilter) {
+            hostList = hostList.stream().filter(h -> {
+                if (propErrorsFilter && !hasPropertyErrors(h)) {
+                    return false;
+                }
+                if (dirNonEmptyFilter) {
+                    final var dir = h.getDir();
+                    if (dir == null || dir.isBlank()) {
+                        return false;
+                    }
+                }
+                if (jsNonEmptyFilter) {
+                    final var data = h.getData();
+                    if (data == null) {
+                        return false;
+                    }
+                    final var sepIdx = data.indexOf(ECtransSetup.SEPARATOR);
+                    final var js = sepIdx >= 0 ? data.substring(sepIdx + ECtransSetup.SEPARATOR.length()).trim() : "";
+                    if (js.isEmpty()) {
+                        return false;
+                    }
+                }
+                return true;
+            }).collect(java.util.stream.Collectors.toList());
+        }
+        final var recordsTotal = fullAccess && !needsJavaFilter ? Util.getCollectionSizeFrom(hosts) : hostList.size();
+        // Paginate in Java when sorting by dest count or filtering in Java
+        if (sortByDest || needsJavaFilter) {
             final int pageStart = parseSafeInt(request.getParameter("start"), 0);
             final int pageLen = Math.max(parseSafeInt(request.getParameter("length"), 25), 1);
             final int from = Math.min(pageStart, hostList.size());
@@ -171,9 +329,16 @@ public class GetHostListJsonAction extends PDSAction {
         }
         final var data = root.putArray("data");
         for (final Host host : hostList) {
+            final var propErr = hasPropertyErrors(host);
+            final var dirNonEmpty = host.getDir() != null && !host.getDir().isBlank();
+            final var jsData = host.getData();
+            final var jsSepIdx = jsData != null ? jsData.indexOf(ECtransSetup.SEPARATOR) : -1;
+            final var jsContent = jsSepIdx >= 0 ? jsData.substring(jsSepIdx + ECtransSetup.SEPARATOR.length()).trim()
+                    : "";
+            final var jsNonEmpty = !jsContent.isEmpty();
             final var row = data.addArray();
             row.add(buildFlagHtml(host));
-            row.add(buildNameHtml(host));
+            row.add(buildNameHtml(host, propErr, dirNonEmpty, jsNonEmpty));
             row.add(escapeHtml(host.getHost()));
             row.add(escapeHtml(host.getTransferGroupName()));
             row.add(escapeHtml(host.getNetworkName()));
@@ -219,7 +384,8 @@ public class GetHostListJsonAction extends PDSAction {
                 + "\" style=\"font-size:1.1em;display:block\"></span>";
     }
 
-    private static String buildNameHtml(final Host host) {
+    private static String buildNameHtml(final Host host, final boolean propErr, final boolean dirNonEmpty,
+            final boolean jsNonEmpty) {
         final var sb = new StringBuilder();
         final var active = host.getActive();
         final var nickName = escapeHtml(host.getNickName());
@@ -273,6 +439,19 @@ public class GetHostListJsonAction extends PDSAction {
             sb.append(
                     "<span class=\"badge bg-info text-dark ms-1\" style=\"font-size:0.7rem;\"><i class=\"bi bi-hdd-network me-1\"></i>")
                     .append(escapeHtml(method)).append("</span>");
+        }
+        // Editor warning badges
+        if (propErr) {
+            sb.append(
+                    "<span class=\"ms-1 text-warning\" style=\"font-size:0.85rem;\" title=\"Properties editor has unrecognized options\"><i class=\"bi bi-exclamation-triangle-fill\"></i></span>");
+        }
+        if (dirNonEmpty) {
+            sb.append(
+                    "<span class=\"ms-1 text-info\" style=\"font-size:0.85rem;\" title=\"Directory pattern is set\"><i class=\"bi bi-folder-fill\"></i></span>");
+        }
+        if (jsNonEmpty) {
+            sb.append(
+                    "<span class=\"ms-1 text-secondary\" style=\"font-size:0.85rem;\" title=\"JavaScript is configured\"><i class=\"bi bi-braces\"></i></span>");
         }
         sb.append("</span>");
         // Comment below

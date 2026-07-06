@@ -51,6 +51,9 @@ public class InsertFormAction extends PDSAction {
     public ActionForward safeAuthorizedPerform(final ActionMapping mapping, final ActionForm form,
             final HttpServletRequest request, final HttpServletResponse response, final User user)
             throws ECMWFException, ClassCastException {
+        // Clear the id so the Data Login field is never pre-filled on the create form,
+        // regardless of any id value Struts may have populated from the request context.
+        ((IncomingUserActionForm) form).setId("");
         return mapping.findForward("success");
     }
 }

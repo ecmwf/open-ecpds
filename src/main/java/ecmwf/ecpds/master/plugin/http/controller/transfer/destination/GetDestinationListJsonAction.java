@@ -32,11 +32,16 @@ package ecmwf.ecpds.master.plugin.http.controller.transfer.destination;
  * @since 2024-07-01
  */
 
+import java.time.Duration;
+import java.time.Period;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -56,6 +61,11 @@ import ecmwf.ecpds.master.plugin.http.home.transfer.IncomingUserHome;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Destination;
 import ecmwf.ecpds.master.plugin.http.model.transfer.TransferException;
 import ecmwf.ecpds.master.transfer.StatusFactory;
+import ecmwf.common.ectrans.ECtransGroups;
+import ecmwf.common.ectrans.ECtransOptions;
+import ecmwf.common.ectrans.ECtransSetup;
+import ecmwf.common.technical.ByteSize;
+import ecmwf.common.technical.TimeRange;
 import ecmwf.web.controller.ECMWFActionFormException;
 import ecmwf.web.model.users.User;
 
@@ -71,6 +81,115 @@ public class GetDestinationListJsonAction extends PDSAction {
 
     /** Shared Jackson mapper. */
     private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    /** Pattern for property lines: module.optionName = value */
+    private static final Pattern PROP_LINE = Pattern.compile("^\\s*([^#\\s][^\\s=]*)\\s*=");
+
+    /** Pattern to extract a quoted value from a property line. */
+    private static final Pattern QUOTED_VALUE = Pattern.compile("\"([^\"]*)\"");
+
+    /** Metadata about a recognized option: its Java type and allowed choices. */
+    private record OptionMeta(Class<?> type, List<String> choices) {
+    }
+
+    /** Map from lowercase module.option name → OptionMeta for the DESTINATION group. */
+    private static final Map<String, OptionMeta> OPTION_MAP = buildOptionMap();
+
+    private static Map<String, OptionMeta> buildOptionMap() {
+        final var map = new HashMap<String, OptionMeta>();
+        for (final var opt : ECtransOptions.get(ECtransGroups.DESTINATION)) {
+            if (opt.isVisible()) {
+                map.put(opt.getParameter().toLowerCase(), new OptionMeta(opt.getClazz(), opt.getChoicesAsStrings()));
+            }
+        }
+        return map;
+    }
+
+    private static boolean hasPropertyErrors(final Destination dest) {
+        try {
+            final var data = dest.getData();
+            if (data == null || data.isBlank()) {
+                return false;
+            }
+            final var sepIdx = data.indexOf(ECtransSetup.SEPARATOR);
+            final var propsText = sepIdx >= 0 ? data.substring(0, sepIdx) : data;
+            for (final var line : propsText.split("\n")) {
+                if (checkLineHasError(line)) {
+                    return true;
+                }
+            }
+        } catch (final Exception ignored) {
+        }
+        return false;
+    }
+
+    private static boolean hasJavascript(final Destination dest) {
+        try {
+            final var data = dest.getData();
+            if (data == null) {
+                return false;
+            }
+            final var sepIdx = data.indexOf(ECtransSetup.SEPARATOR);
+            return sepIdx >= 0 && !data.substring(sepIdx + ECtransSetup.SEPARATOR.length()).trim().isEmpty();
+        } catch (final Exception ignored) {
+        }
+        return false;
+    }
+
+    private static boolean checkLineHasError(final String line) {
+        final var m = PROP_LINE.matcher(line);
+        if (!m.find()) {
+            return false;
+        }
+        final var key = m.group(1);
+        if (key.indexOf('.') < 0) {
+            return false;
+        }
+        final var meta = OPTION_MAP.get(key.toLowerCase());
+        if (meta == null) {
+            return true;
+        }
+        final var vm = QUOTED_VALUE.matcher(line);
+        if (!vm.find()) {
+            return false;
+        }
+        final var value = vm.group(1);
+        if (!meta.choices().isEmpty() && !meta.choices().contains(value)) {
+            return true;
+        }
+        return isTypeError(meta.type(), value);
+    }
+
+    private static boolean isTypeError(final Class<?> type, final String value) {
+        if (type == Boolean.class) {
+            return !List.of("yes", "no", "true", "false").contains(value.toLowerCase());
+        }
+        if (type == Integer.class) {
+            return !"max-integer".equals(value) && !value.matches("-?\\d+");
+        }
+        if (type == Long.class) {
+            return !"max-long".equals(value) && !value.matches("-?\\d+");
+        }
+        if (type == Double.class) {
+            return !"max-double".equals(value) && !value.matches("-?\\d+(\\.\\d+)?");
+        }
+        if (type == ByteSize.class) {
+            return !"max-size".equals(value) && !value.matches("(?i)\\d+(b|kb|mb|gb|pb|tb|eb)?");
+        }
+        if (type == Duration.class) {
+            return !value.matches("-?\\d+")
+                    && !value.matches("[-+]?P(?:\\d+D)?(?:T(?:\\d+H)?(?:\\d+M)?(?:\\d+(?:[.,]\\d{0,9})?S)?)?");
+        }
+        if (type == Period.class) {
+            return !value.matches("-?\\d+") && !value.matches("[-+]?P(?:\\d+Y)?(?:\\d+M)?(?:\\d+W)?(?:\\d+D)?");
+        }
+        if (type == TimeRange.class) {
+            final var timeRe = "(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d{1,9})?)?";
+            final var rangeRe = timeRe + "-" + timeRe;
+            return !value.matches(rangeRe + "(?:," + rangeRe + ")*");
+        }
+        return false;
+    }
 
     /**
      * {@inheritDoc}
@@ -111,6 +230,8 @@ public class GetDestinationListJsonAction extends PDSAction {
         final var type = Util.getValue(request, "destinationType", "-1");
         final var filter = Util.getValue(request, "destinationFilter", "All");
         final var dataUsersFilter = Util.getValue(request, "datausers", "any"); // "any" | "yes" | "no"
+        final var propErrorsFilter = "yes".equalsIgnoreCase(Util.getValue(request, "propErrors", ""));
+        final var jsNonEmptyFilter = "yes".equalsIgnoreCase(Util.getValue(request, "jsNonEmpty", ""));
 
         // DataTables server-side sort params take priority over legacy sortDirection
         final var orderColParam = request.getParameter("order[0][column]");
@@ -119,6 +240,7 @@ public class GetDestinationListJsonAction extends PDSAction {
         final boolean ascending = orderDirParam != null ? "asc".equals(orderDirParam) : "asc".equals(sortDirection);
 
         final boolean filterByDataUsers = "yes".equals(dataUsersFilter) || "no".equals(dataUsersFilter);
+        final boolean needsJavaFilter = filterByDataUsers || propErrorsFilter || jsNonEmptyFilter;
 
         Collection<Destination> page;
         int recordsTotal = 0;
@@ -126,21 +248,29 @@ public class GetDestinationListJsonAction extends PDSAction {
         String queryError = null;
         Set<String> proxyDestNames;
         try {
-            if (filterByDataUsers) {
-                // Fetch all matching destinations (ignoring pagination), then post-filter by
-                // data-user association and paginate in memory — same pattern as unassigned filter.
+            if (needsJavaFilter) {
+                // Fetch all matching destinations (ignoring pagination), then post-filter and paginate in memory.
                 final var all = DestinationHome.findByUser(user, search, aliases, orderCol, ascending, 0, -1,
                         StatusFactory.getDestinationStatusCode(status),
                         GetDestinationAction.getDestinationTypeIds(type), filter);
                 recordsTotal = DestinationHome.countByUser(user, search, aliases,
                         StatusFactory.getDestinationStatusCode(status),
                         GetDestinationAction.getDestinationTypeIds(type), filter);
-                final var destsWithUsers = buildDestinationsWithDataUsers();
+                final var destsWithUsers = filterByDataUsers ? buildDestinationsWithDataUsers()
+                        : java.util.Collections.<String> emptySet();
                 final boolean wantWith = "yes".equals(dataUsersFilter);
                 final List<Destination> filtered = new ArrayList<>();
                 for (final Destination d : all) {
-                    if (wantWith == destsWithUsers.contains(d.getName()))
-                        filtered.add(d);
+                    if (filterByDataUsers && wantWith != destsWithUsers.contains(d.getName())) {
+                        continue;
+                    }
+                    if (propErrorsFilter && !hasPropertyErrors(d)) {
+                        continue;
+                    }
+                    if (jsNonEmptyFilter && !hasJavascript(d)) {
+                        continue;
+                    }
+                    filtered.add(d);
                 }
                 recordsFiltered = filtered.size();
                 final int end = Math.min(start + (lengthParam < 0 ? filtered.size() : lengthParam), filtered.size());
@@ -172,9 +302,11 @@ public class GetDestinationListJsonAction extends PDSAction {
         }
         final var data = root.putArray("data");
         for (final Destination d : page) {
+            final var propErr = hasPropertyErrors(d);
+            final var jsNonEmpty = hasJavascript(d);
             final var row = data.addArray();
             row.add(buildFlagHtml(d));
-            row.add(buildNameHtml(d, proxyDestNames));
+            row.add(buildNameHtml(d, proxyDestNames, propErr, jsNonEmpty));
             row.add(escapeHtml(d.getId()));
             row.add(buildStatusHtml(d));
             row.add(buildAliasesHtml(d));
@@ -221,7 +353,8 @@ public class GetDestinationListJsonAction extends PDSAction {
                 + countryName + "\" style=\"font-size:1.1em;display:block\"></span>";
     }
 
-    private static String buildNameHtml(final Destination d, final Set<String> proxyDestNames) {
+    private static String buildNameHtml(final Destination d, final Set<String> proxyDestNames, final boolean propErr,
+            final boolean jsNonEmpty) {
         final var sb = new StringBuilder();
         final var active = d.getActive();
         final var id = escapeHtml(d.getId());
@@ -278,6 +411,15 @@ public class GetDestinationListJsonAction extends PDSAction {
         if (proxyDestNames.contains(d.getId())) {
             sb.append(
                     "<i class=\"bi bi-hdd-network text-secondary ms-1\" title=\"Uses a Proxy Host\" style=\"font-size:0.78rem;\"></i>");
+        }
+        // Editor warning badges
+        if (propErr) {
+            sb.append(
+                    "<span class=\"ms-1 text-warning\" style=\"font-size:0.85rem;\" title=\"Properties editor has errors\"><i class=\"bi bi-exclamation-triangle-fill\"></i></span>");
+        }
+        if (jsNonEmpty) {
+            sb.append(
+                    "<span class=\"ms-1 text-secondary\" style=\"font-size:0.85rem;\" title=\"JavaScript is configured\"><i class=\"bi bi-braces\"></i></span>");
         }
         sb.append("</span>");
         // Comment

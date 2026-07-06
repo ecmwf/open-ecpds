@@ -2165,6 +2165,15 @@ public enum ECtransOptions {
     }
 
     /**
+     * Gets the choices as strings.
+     *
+     * @return the choices as strings (string representation of each allowed value)
+     */
+    public List<String> getChoicesAsStrings() {
+        return option.getChoices().stream().map(Object::toString).collect(Collectors.toList());
+    }
+
+    /**
      * Gets the all.
      *
      * @return the all

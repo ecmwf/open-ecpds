@@ -28,9 +28,6 @@ package ecmwf.ecpds.master.plugin.http.dao.transfer;
 
 import java.util.Collection;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import ecmwf.common.database.DataBaseObject;
 import ecmwf.ecpds.master.plugin.http.dao.OjbImplementedBean;
 import ecmwf.ecpds.master.plugin.http.home.transfer.TransferMethodHome;
@@ -43,9 +40,6 @@ import ecmwf.web.dao.ModelBeanBase;
  * The Class EcTransModuleBean.
  */
 public class EcTransModuleBean extends ModelBeanBase implements EcTransModule, OjbImplementedBean {
-
-    /** The Constant _log. */
-    private static final Logger _log = LogManager.getLogger(EcTransModuleBean.class);
 
     /** The module. */
     private final ecmwf.common.database.ECtransModule module;

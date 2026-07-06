@@ -189,6 +189,23 @@
                                         </select>
                                     </div>
                                 </div>
+                                <%-- Editor warning filters --%>
+                                <div class="row g-1 mb-1">
+                                    <div class="col-12 col-md-6">
+                                        <label class="form-label mb-0 fw-semibold"><i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>Properties editor</label>
+                                        <select class="form-select form-select-sm" id="dqb_propErrors" onchange="destsTableReload();dqbUpdateBadge();" title="Filter by Properties editor errors">
+                                            <option value="">Any</option>
+                                            <option value="yes">Has errors</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12 col-md-6">
+                                        <label class="form-label mb-0 fw-semibold"><i class="bi bi-braces text-secondary me-1"></i>JavaScript editor</label>
+                                        <select class="form-select form-select-sm" id="dqb_jsNonEmpty" onchange="destsTableReload();dqbUpdateBadge();" title="Filter by JavaScript">
+                                            <option value="">Any</option>
+                                            <option value="yes">Is configured</option>
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
                             <%-- Live preview + action buttons --%>
                             <div class="d-flex align-items-start gap-1 pt-1 border-top mt-1 flex-wrap">
@@ -219,6 +236,8 @@
             var cf = document.getElementById('destinationFilter'); if (cf && cf.selectedIndex > 0) n++;
             var al = document.getElementById('aliases'); if (al && al.value !== 'all') n++;
             var du = document.getElementById('datausers'); if (du && du.value !== 'any') n++;
+            if (dqbVal('dqb_propErrors')) n++;
+            if (dqbVal('dqb_jsNonEmpty')) n++;
             return n;
         }
         function dqbUpdateBadge() {
@@ -261,6 +280,8 @@
             document.getElementById('destinationFilter').selectedIndex = 0;
             document.getElementById('aliases').selectedIndex = 0;
             document.getElementById('datausers').selectedIndex = 0;
+            document.getElementById('dqb_propErrors').selectedIndex = 0;
+            document.getElementById('dqb_jsNonEmpty').selectedIndex = 0;
             document.getElementById('destinationSearch').value = '';
             document.getElementById('destQueryBuilder').style.display = 'none';
             updateFlag();
@@ -486,6 +507,8 @@ function _updateDestSearchBanner(queryError, total, hasSearch) {
                 d.destinationType    = $('#destinationType').val() || '-1';
                 d.destinationFilter  = $('#destinationFilter').val() || 'All';
                 d.datausers          = $('#datausers').val() || 'any';
+                d.propErrors         = $('#dqb_propErrors').val() || '';
+                d.jsNonEmpty         = $('#dqb_jsNonEmpty').val() || '';
             }
         },
         paging: true, pageLength: 25, lengthChange: false, searching: false, autoWidth: false, order: [],

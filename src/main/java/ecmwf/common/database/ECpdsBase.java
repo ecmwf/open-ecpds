@@ -2982,6 +2982,8 @@ public final class ECpdsBase extends DataBase {
                     host.setNetworkName(rs.getString("HOS_NETWORK_NAME"));
                     host.setNickname(rs.getString("HOS_NICKNAME"));
                     host.setComment(rs.getString("HOS_COMMENT"));
+                    host.setData(rs.getString("HOS_DATA"));
+                    host.setDir(rs.getString("HOS_DIR"));
                     array.add(host);
                 }
                 // Let's set the full size of the Collection in the first

@@ -81,6 +81,7 @@
     window.destHover = function(el) { setActive(parseInt(el.dataset.idx, 10)); };
     window.destGo = function(idx) {
         if (filtered[idx]) {
+            if (window.onDestSelected) { window.onDestSelected(filtered[idx].n); return; }
             var url = new URL(window.location.href);
             url.searchParams.set(_dp, filtered[idx].n);
             window.location.href = url.toString();

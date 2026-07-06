@@ -69,6 +69,14 @@
         <i class="bi bi-box-arrow-in-right"></i> Sign in
       </button>
 
+      <div style="text-align:center;margin-top:1rem;">
+        <a href="https://ecmwf.github.io/open-ecpds/" target="_blank" rel="noopener"
+           style="font-size:0.78rem;color:#6c757d;text-decoration:none;display:inline-flex;align-items:center;gap:0.3rem;"
+           title="OpenECPDS Documentation">
+          <i class="bi bi-book"></i> OpenECPDS Documentation
+        </a>
+      </div>
+
     </form>
 
   </div>

@@ -3,6 +3,7 @@
 <%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean" %>
 <%@ taglib uri="/WEB-INF/tld/struts-tiles.tld" prefix="tiles" %>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
+<%@ taglib uri="/WEB-INF/tld/fn.tld" prefix="fn"%>
 
 <div class="card border-0 shadow-sm mt-3">
 <div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)">
@@ -13,18 +14,20 @@
         aria-expanded="false" title="About this page">
         <i class="bi bi-info-circle"></i>
     </button>
+    <button id="btnIncUsrQB" type="button" class="btn btn-sm btn-outline-primary position-relative"
+            onclick="toggleIQBPanel('incUsrQueryBuilder','btnIncUsrQB')" title="Open query builder to filter Data Users">
+        <i class="bi bi-sliders2"></i> Filter
+        <span id="btnIncUsrQB-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display:none;font-size:0.65rem"></span>
+    </button>
     <button id="incomingUnassignedBtn" type="button"
             class="btn btn-sm btn-outline-secondary"
             title="Show only Data Users with no destinations (direct or via policy)">
         <i class="bi bi-exclamation-triangle-fill me-1"></i>Unassigned only
     </button>
     <div class="ms-auto d-flex flex-wrap align-items-center gap-2">
-        <c:set var="destParam" value="destinationNameForSearch" scope="request"/>
-        <tiles:insert name="destination.select" />
-        <jsp:include page="/WEB-INF/jsp/pds/common/policy_select.jsp" />
         <div class="input-group input-group-sm" style="width:auto">
             <span class="input-group-text"><i class="bi bi-search"></i></span>
-            <input type="text" id="incomingSearch" class="form-control" placeholder="Search login..."
+            <input type="text" id="incomingSearch" class="form-control" placeholder="Search data login..."
                    autocomplete="off" style="min-width:120px">
         </div>
         <div class="input-group input-group-sm flex-nowrap" style="width:auto" title="Page size">
@@ -67,15 +70,85 @@
     </div>
 </div>
 
+<%-- Data Users Query Builder floating panel --%>
+<div id="incUsrQueryBuilder" class="border rounded p-2"
+     style="display:none; position:absolute; z-index:9999; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd) !important; box-shadow:0 8px 28px rgba(0,0,0,0.18),0 2px 6px rgba(0,0,0,0.10); font-size:0.85rem">
+    <div class="row g-1 mb-1">
+        <div class="col-12">
+            <label class="form-label mb-0 fw-semibold"><i class="bi bi-arrow-left-right me-1 text-muted"></i>Destination</label>
+            <c:set var="destParam" value="destinationNameForSearch" scope="request"/>
+            <tiles:insert name="destination.select" />
+        </div>
+        <div class="col-12">
+            <label class="form-label mb-0 fw-semibold"><i class="bi bi-shield-check me-1 text-muted"></i>Policy</label>
+            <jsp:include page="/WEB-INF/jsp/pds/common/policy_select.jsp" />
+        </div>
+        <div class="col-6">
+            <label class="form-label mb-0 fw-semibold"><i class="bi bi-chat-left-text me-1 text-muted"></i>Comment <span class="text-muted fw-normal" style="font-size:0.8em">wildcards * ?</span></label>
+            <input type="text" class="form-control form-control-sm" id="iqb_comment" placeholder="e.g. *test*">
+        </div>
+        <div class="col-6">
+            <label class="form-label mb-0 fw-semibold"><i class="bi bi-globe me-1 text-muted"></i>Country</label>
+            <div class="d-flex align-items-center gap-1" style="min-width:0">
+                <select class="form-select form-select-sm flex-grow-1" style="min-width:0" id="iqb_country">
+                    <option value="">Any</option>
+                    <c:forEach var="c" items="${countryOptions}">
+                        <option value="${fn:toLowerCase(c.iso)}"<c:if test="${param.country == fn:toLowerCase(c.iso)}"> selected</c:if>>${c.name}</option>
+                    </c:forEach>
+                </select>
+                <span id="iqb_country_flag" class="fi" style="font-size:1.4em;display:none;flex-shrink:0"></span>
+            </div>
+        </div>
+        <div class="col-6">
+            <label class="form-label mb-0 fw-semibold"><i class="bi bi-toggle-on me-1 text-muted"></i>Enabled</label>
+            <select class="form-select form-select-sm" id="iqb_enabled">
+                <option value="">Any</option>
+                <option value="yes"<c:if test="${param.enabled == 'yes'}"> selected</c:if>>Yes</option>
+                <option value="no"<c:if test="${param.enabled == 'no'}"> selected</c:if>>No</option>
+            </select>
+        </div>
+        <div class="col-6">
+            <label class="form-label mb-0 fw-semibold"><i class="bi bi-incognito me-1 text-muted"></i>Anonymous</label>
+            <select class="form-select form-select-sm" id="iqb_anonymous">
+                <option value="">Any</option>
+                <option value="yes"<c:if test="${param.anonymous == 'yes'}"> selected</c:if>>Yes</option>
+                <option value="no"<c:if test="${param.anonymous == 'no'}"> selected</c:if>>No</option>
+            </select>
+        </div>
+        <div class="col-6">
+            <label class="form-label mb-0 fw-semibold"><i class="bi bi-shield-lock me-1 text-muted"></i>TOTP</label>
+            <select class="form-select form-select-sm" id="iqb_totp">
+                <option value="">Any</option>
+                <option value="yes"<c:if test="${param.totp == 'yes'}"> selected</c:if>>Enabled</option>
+                <option value="no"<c:if test="${param.totp == 'no'}"> selected</c:if>>Disabled</option>
+            </select>
+        </div>
+        <div class="col-6">
+            <label class="form-label mb-0 fw-semibold"><i class="bi bi-sliders me-1 text-muted"></i>Properties editor</label>
+            <select class="form-select form-select-sm" id="iqb_propErrors">
+                <option value="">Any</option>
+                <option value="yes"<c:if test="${param.propErrors == 'yes'}"> selected</c:if>>Has errors</option>
+            </select>
+        </div>
+    </div>
+    <div class="d-flex gap-1 pt-1 border-top mt-1 justify-content-end">
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="iqbClear()">
+            <i class="bi bi-x-circle me-1"></i>Clear
+        </button>
+        <button type="button" class="btn btn-sm btn-primary" onclick="iqbApply()">
+            <i class="bi bi-check-lg me-1"></i>Apply &amp; Search
+        </button>
+    </div>
+</div>
+
 <div class="collapse" id="incomingUsersInfo">
     <div class="card-body py-2 px-3 border-bottom" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
         <strong class="d-block mb-1">Data Users &mdash; search and filter</strong>
         <p class="mb-1">This page lists all Data Portal users (incoming users). Use the controls in the header to narrow the list:</p>
         <ul class="mb-1 ps-3">
-            <li><strong>Search Destination</strong> &mdash; shows only users who have access to the selected destination, either directly or indirectly via a Data Policy.</li>
-            <li><strong>Search Policy</strong> &mdash; shows only users attached to the selected Data Policy.</li>
             <li><strong>Unassigned only</strong> &mdash; shows only users with no reachable destinations (neither direct nor via a Data Policy).</li>
-            <li><strong>Search login</strong> &mdash; client-side text filter on the login name, applied on top of the other filters.</li>
+            <li><strong>Filter</strong> &mdash; query builder with Destination, Policy, Comment, Country, Enabled, Anonymous, TOTP, and Properties editor filters. A <span style="color:#dc3545">&#9888;</span> icon in the Data Login column marks users with properties errors.</li>
+            <li><strong>Search data login</strong> &mdash; client-side text filter on the login name, applied on top of the other filters.</li>
         </ul>
         <div class="text-muted">Use the <strong>Unassigned only</strong> button to filter just the problematic users (no reachable Destinations neither direct nor via a Data Policy).</div>
     </div>
@@ -110,20 +183,121 @@
     </button>
 </div>
 <script>
-$(document).ready(function() {
-    var _destFilter     = '<c:out value="${destinationNameForSearch}"/>';
-    var _policyFilter   = '<c:out value="${policyNameForSearch}"/>';
-    var _unassignedOnly = false;
-    function _buildAjaxUrl() {
-        var params = [];
-        if (_destFilter && _destFilter !== 'Any Destination')
-            params.push('destinationNameForSearch=' + encodeURIComponent(_destFilter));
-        if (_policyFilter && _policyFilter !== 'Any Policy')
-            params.push('policyNameForSearch=' + encodeURIComponent(_policyFilter));
-        if (_unassignedOnly)
-            params.push('unassigned=true');
-        return '/do/user/incoming/list' + (params.length ? '?' + params.join('&') : '');
+// ---- QB helpers in global scope so onclick attributes can call them ----
+// Read initial filter values from URL (not JSP expressions), so browser reload
+// after iqbClear() (which does history.replaceState to clean the URL) gives no filters.
+var _iqbParams    = new URLSearchParams(window.location.search);
+var _destFilter   = _iqbParams.get('destinationNameForSearch') || '';
+var _policyFilter = _iqbParams.get('policyNameForSearch') || '';
+var _unassignedOnly = false;
+var _incUsrTable = null;
+// Picker callbacks — intercept destGo/policyGo to update in-memory filter instead of navigating
+window.onDestSelected = function(name) {
+    _destFilter = (name && name !== 'Any Destination') ? name : '';
+    var inp = document.getElementById('destPickerInput'); if (inp) inp.value = _destFilter;
+    window.destPickerClose && window.destPickerClose();
+    iqbUpdateBadge();
+};
+window.onPolicySelected = function(name) {
+    _policyFilter = (name && name !== 'Any Policy') ? name : '';
+    var inp = document.getElementById('policyPickerInput'); if (inp) inp.value = _policyFilter;
+    window.policyPickerClose && window.policyPickerClose();
+    iqbUpdateBadge();
+};
+function iqbVal(id) { var el = document.getElementById(id); return el ? el.value : ''; }
+function _buildAjaxUrl() {
+    var params = [];
+    if (_destFilter)   params.push('destinationNameForSearch=' + encodeURIComponent(_destFilter));
+    if (_policyFilter) params.push('policyNameForSearch='      + encodeURIComponent(_policyFilter));
+    if (_unassignedOnly)
+        params.push('unassigned=true');
+    var en = iqbVal('iqb_enabled');    if (en) params.push('enabled='    + encodeURIComponent(en));
+    var an = iqbVal('iqb_anonymous');  if (an) params.push('anonymous='  + encodeURIComponent(an));
+    var tp = iqbVal('iqb_totp');       if (tp) params.push('totp='       + encodeURIComponent(tp));
+    var pe = iqbVal('iqb_propErrors'); if (pe) params.push('propErrors=' + encodeURIComponent(pe));
+    var co = iqbVal('iqb_country');    if (co) params.push('country='    + encodeURIComponent(co));
+    var cm = iqbVal('iqb_comment');    if (cm) params.push('comment='    + encodeURIComponent(cm));
+    return '/do/user/incoming/list' + (params.length ? '?' + params.join('&') : '');
+}
+function iqbCountActive() {
+    var n = 0;
+    if (_destFilter)              n++;
+    if (_policyFilter)            n++;
+    if (iqbVal('iqb_enabled'))    n++;
+    if (iqbVal('iqb_anonymous'))  n++;
+    if (iqbVal('iqb_totp'))       n++;
+    if (iqbVal('iqb_propErrors')) n++;
+    if (iqbVal('iqb_country'))    n++;
+    if (iqbVal('iqb_comment'))    n++;
+    return n;
+}
+function iqbUpdateBadge() {
+    var n = iqbCountActive();
+    var b = document.getElementById('btnIncUsrQB-badge');
+    if (b) { b.textContent = n; b.style.display = n > 0 ? '' : 'none'; }
+    var btn = document.getElementById('btnIncUsrQB');
+    if (btn) { btn.classList.toggle('btn-outline-primary', n === 0); btn.classList.toggle('btn-warning', n > 0); }
+}
+function _syncUrl() {
+    var url = new URL(window.location.href);
+    ['destinationNameForSearch','policyNameForSearch','enabled','anonymous','totp','propErrors','country','comment'].forEach(function(k) {
+        url.searchParams.delete(k);
+    });
+    if (_destFilter)   url.searchParams.set('destinationNameForSearch', _destFilter);
+    if (_policyFilter) url.searchParams.set('policyNameForSearch', _policyFilter);
+    var en = iqbVal('iqb_enabled');    if (en) url.searchParams.set('enabled', en);
+    var an = iqbVal('iqb_anonymous');  if (an) url.searchParams.set('anonymous', an);
+    var tp = iqbVal('iqb_totp');       if (tp) url.searchParams.set('totp', tp);
+    var pe = iqbVal('iqb_propErrors'); if (pe) url.searchParams.set('propErrors', pe);
+    var co = iqbVal('iqb_country');    if (co) url.searchParams.set('country', co);
+    var cm = iqbVal('iqb_comment');    if (cm) url.searchParams.set('comment', cm);
+    history.replaceState(null, '', url.toString());
+}
+function iqbApply() {
+    iqbUpdateBadge();
+    _syncUrl();
+    var p = document.getElementById('incUsrQueryBuilder'); if (p) p.style.display = 'none';
+    if (_incUsrTable) _incUsrTable.ajax.url(_buildAjaxUrl()).load();
+}
+function iqbReload() { iqbUpdateBadge(); if (_incUsrTable) _incUsrTable.ajax.url(_buildAjaxUrl()).load(); }
+function iqbClear() {
+    _destFilter = ''; _policyFilter = '';
+    var di = document.getElementById('destPickerInput');   if (di) di.value = '';
+    var pi = document.getElementById('policyPickerInput'); if (pi) pi.value = '';
+    ['iqb_enabled','iqb_anonymous','iqb_totp','iqb_propErrors','iqb_country','iqb_comment'].forEach(function(id) {
+        var el = document.getElementById(id); if (el) el.value = '';
+    });
+    // Clear country flag
+    var flag = document.getElementById('iqb_country_flag'); if (flag) flag.style.display = 'none';
+    _syncUrl();
+    var p = document.getElementById('incUsrQueryBuilder'); if (p) p.style.display = 'none';
+    iqbUpdateBadge();
+    if (_incUsrTable) _incUsrTable.ajax.url(_buildAjaxUrl()).load();
+}
+function toggleIQBPanel(panelId, btnId) {
+    var panel = document.getElementById(panelId);
+    var btn = document.getElementById(btnId);
+    if (!panel || !btn) return;
+    if (panel.style.display === 'block') { panel.style.display = 'none'; return; }
+    if (panel.parentElement !== document.body) { document.body.appendChild(panel); }
+    var vw = window.innerWidth || document.documentElement.clientWidth;
+    var pw = Math.min(420, vw - 16);
+    panel.style.width = pw + 'px';
+    var r = btn.getBoundingClientRect();
+    var sy = window.pageYOffset || document.documentElement.scrollTop;
+    panel.style.top = (r.bottom + sy + 4) + 'px';
+    panel.style.left = Math.max(8, r.right - pw + window.pageXOffset) + 'px';
+    panel.style.display = 'block';
+}
+document.addEventListener('click', function(e) {
+    var panel = document.getElementById('incUsrQueryBuilder');
+    var btn = document.getElementById('btnIncUsrQB');
+    if (panel && panel.style.display === 'block' && !panel.contains(e.target) && btn && !btn.contains(e.target)) {
+        panel.style.display = 'none';
     }
+});
+
+$(document).ready(function() {
     var _canDelete = false;
     var _filteredCount = 0;
     var table = $('#usersTable').DataTable({
@@ -151,13 +325,31 @@ $(document).ready(function() {
         drawCallback: function() { _updateDeleteAllBtn(); _setFilterLoading($('#incomingUnassignedBtn'), false); },
         dom: 't<"d-flex align-items-start mt-2 px-3 pb-2"i<"ms-auto"p>>'
     });
+    _incUsrTable = table;
+    iqbUpdateBadge(); // initialise badge in case dest/policy are pre-selected from URL
+    // Restore comment from URL and init country flag
+    (function() {
+        var p = new URLSearchParams(window.location.search);
+        var cm = p.get('comment'); if (cm) { var el = document.getElementById('iqb_comment'); if (el) el.value = cm; }
+        // country flag
+        var sel = document.getElementById('iqb_country');
+        var flag = document.getElementById('iqb_country_flag');
+        function updateFlag() {
+            if (!sel || !flag) return;
+            var iso = sel.value;
+            if (iso) { flag.className = 'fi fi-' + iso; flag.style.display = ''; }
+            else { flag.style.display = 'none'; }
+        }
+        updateFlag();
+        if (sel) sel.addEventListener('change', updateFlag);
+    })();
     $('#incomingPageLen').val((function() { try { var v = parseInt(localStorage.getItem('incomingPageLen'), 10); return [10,25,50,100,250].indexOf(v) >= 0 ? String(v) : '25'; } catch(e) { return '25'; } })());
     $('#incomingPageLen').on('change', function() {
         var len = parseInt(this.value);
         try { localStorage.setItem('incomingPageLen', len); } catch(e) {}
         table.page.len(len).draw();
     });
-    $('#incomingSearch').on('input', function() { table.search(this.value).draw(); });
+    $('#incomingSearch').on('input', function() { table.column(0).search(this.value).draw(); });
 
     function _setFilterLoading($btn, loading) {
         if (loading) {

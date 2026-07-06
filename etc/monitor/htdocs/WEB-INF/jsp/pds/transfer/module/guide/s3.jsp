@@ -57,12 +57,19 @@
 
         <div class="mb-3">
           <p class="small fw-semibold mb-1"><i class="bi bi-cloud text-primary me-1"></i>AWS endpoint</p>
-          <p class="small text-muted mb-1">By default the module connects to standard AWS endpoints using the region.
+          <p class="small text-muted mb-1">The module connects to standard AWS endpoints.
           Use <code>s3.url</code> for S3-compatible services (MinIO, Ceph, etc.) or private endpoints.</p>
-<pre class="bg-body-secondary rounded p-2 mb-2" style="font-size:0.75rem;white-space:pre-wrap">s3.region = "eu-west-1"          # AWS region (required for standard AWS)
+<pre class="bg-body-secondary rounded p-2 mb-2" style="font-size:0.75rem;white-space:pre-wrap">s3.region = "eu-west-1"          # AWS region (optional — auto-discovered if omitted)
 s3.url = "https://minio.example.com:9000"  # custom endpoint (S3-compatible)
 s3.scheme = "https"              # http | https  (default: http, ignored when url is set)
 s3.port = "443"                  # port (default: 80, ignored when url is set)</pre>
+          <div class="alert alert-success py-1 px-2 mb-1 small d-flex align-items-start gap-2">
+            <i class="bi bi-lightbulb flex-shrink-0 mt-1"></i>
+            <div><strong>Region is optional.</strong> If <code>s3.region</code> is not set and
+            <code>s3.bucketName</code> is configured, the module automatically discovers the bucket's
+            region at connect time using <code>GetBucketLocation</code>. The discovered region is logged
+            at <code>INFO</code> level. If discovery fails, <code>us-east-1</code> is used as a fallback.</div>
+          </div>
           <div class="alert alert-light border py-1 px-2 mb-0 small">
             When <code>s3.url</code> is set, <code>s3.scheme</code> and <code>s3.port</code>
             are ignored. The URL is used as-is as the endpoint override.
@@ -92,10 +99,17 @@ s3.acceleration = "yes"            # S3 Transfer Acceleration (default: no)
 
         <div class="mb-3">
           <p class="small fw-semibold mb-1"><i class="bi bi-arrow-repeat text-info me-1"></i>Cross-region access</p>
-<pre class="bg-body-secondary rounded p-2 mb-1" style="font-size:0.75rem;white-space:pre-wrap">s3.crossRegionAccess = "yes"   # auto-discover the bucket's true region (default: no)
-                               # When enabled: s3.url is ignored; region is resolved
-                               # by probing s3.region (default us-east-1) first.
-                               # Set s3.bucketName so discovery works at connect time.</pre>
+<pre class="bg-body-secondary rounded p-2 mb-1" style="font-size:0.75rem;white-space:pre-wrap">s3.crossRegionAccess = "yes"   # enable cross-region redirect following (default: no)
+                               # When enabled: the SDK follows 301 redirects to the
+                               # bucket's actual region transparently.
+                               # Region is still auto-discovered at connect time
+                               # (same as when s3.region is omitted).</pre>
+          <div class="alert alert-light border py-1 px-2 mb-1 small">
+            Region auto-discovery (via <code>GetBucketLocation</code>) is independent of
+            <code>s3.crossRegionAccess</code> and runs whenever <code>s3.region</code> is blank and
+            <code>s3.bucketName</code> is set. <code>s3.crossRegionAccess</code> additionally tells
+            the SDK to follow cross-region 301 redirects at the HTTP layer.
+          </div>
           <div class="alert alert-warning py-1 px-2 mb-0 small d-flex align-items-start gap-2">
             <i class="bi bi-exclamation-triangle flex-shrink-0 mt-1"></i>
             <div><code>s3.crossRegionAccess</code> is incompatible with <code>s3.url</code> (custom endpoint).
@@ -134,8 +148,9 @@ s3.roleSessionName = "ecpds-session"   # session name tag (default: none)
 s3.durationSeconds = "3600"            # STS session lifetime in seconds (default: 3600)
 s3.externalId = "my-external-id"       # ExternalId condition (if required by the role trust policy)</pre>
           <div class="alert alert-light border py-1 px-2 mb-0 small">
-            The base credentials (Login / Password) must have <code>sts:AssumeRole</code> permission
-            on the target role ARN.
+            The STS call always uses the global <code>us-east-1</code> endpoint, so <code>s3.region</code>
+            does not need to be set solely for role assumption. The base credentials (Login / Password)
+            must have <code>sts:AssumeRole</code> permission on the target role ARN.
           </div>
         </div>
 
@@ -247,35 +262,39 @@ s3.responseChecksumValidation = "WHEN_REQUIRED"   # WHEN_SUPPORTED | WHEN_REQUIR
       <p class="fw-semibold mb-1"><i class="bi bi-info-circle text-info me-1"></i>Typical setups</p>
       <div class="row g-2">
         <div class="col-12 col-md-6">
-          <p class="small fw-semibold mb-1">Standard AWS S3</p>
-<pre class="bg-body-secondary rounded p-2 mb-0" style="font-size:0.72rem;white-space:pre-wrap">s3.region = "eu-west-1"
-s3.bucketName = "my-bucket"
+        <p class="small fw-semibold mb-1">Standard AWS S3 (minimal)</p>
+<pre class="bg-body-secondary rounded p-2 mb-0" style="font-size:0.72rem;white-space:pre-wrap">s3.bucketName = "my-bucket"
 s3.sslValidation = "yes"
-# Login = Access Key ID
-# Password = Secret Key</pre>
-        </div>
-        <div class="col-12 col-md-6">
-          <p class="small fw-semibold mb-1">MinIO / S3-compatible</p>
+# Login = Access Key ID, Password = Secret Key
+# Region auto-discovered at connect time</pre>
+      </div>
+      <div class="col-12 col-md-6">
+        <p class="small fw-semibold mb-1">MinIO / S3-compatible</p>
 <pre class="bg-body-secondary rounded p-2 mb-0" style="font-size:0.72rem;white-space:pre-wrap">s3.url = "https://minio.example.com"
 s3.region = "us-east-1"
 s3.enablePathStyleAccess = "yes"
 s3.bucketName = "my-bucket"
 s3.sslValidation = "yes"</pre>
-        </div>
-        <div class="col-12 col-md-6 mt-2">
-          <p class="small fw-semibold mb-1">Cross-region bucket</p>
-<pre class="bg-body-secondary rounded p-2 mb-0" style="font-size:0.72rem;white-space:pre-wrap">s3.bucketName = "bucket-in-eu-south-1"
-s3.crossRegionAccess = "yes"
-s3.sslValidation = "yes"
-# Region auto-discovered from bucket</pre>
-        </div>
-        <div class="col-12 col-md-6 mt-2">
-          <p class="small fw-semibold mb-1">IAM Role assumption</p>
-<pre class="bg-body-secondary rounded p-2 mb-0" style="font-size:0.72rem;white-space:pre-wrap">s3.region = "us-east-1"
+      </div>
+      <div class="col-12 col-md-6 mt-2">
+        <p class="small fw-semibold mb-1">IAM Role assumption</p>
+<pre class="bg-body-secondary rounded p-2 mb-0" style="font-size:0.72rem;white-space:pre-wrap">s3.bucketName = "my-bucket"
 s3.roleArn = "arn:aws:iam::123:role/R"
 s3.roleSessionName = "ecpds"
-s3.bucketName = "my-bucket"</pre>
-        </div>
+s3.externalId = "my-external-id"
+s3.sslValidation = "yes"
+# s3.region omitted — auto-discovered</pre>
+      </div>
+      <div class="col-12 col-md-6 mt-2">
+        <p class="small fw-semibold mb-1">Large multipart + role</p>
+<pre class="bg-body-secondary rounded p-2 mb-0" style="font-size:0.72rem;white-space:pre-wrap">s3.bucketName = "my-weather-bucket"
+s3.roleArn = "arn:aws:iam::123:role/R"
+s3.roleSessionName = "ECPDS-Session"
+s3.externalId = "my-external-id"
+s3.multipartSize = "5000000000"
+s3.partSize = "25"
+s3.sslValidation = "yes"</pre>
+      </div>
       </div>
     </div>
 

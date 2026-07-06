@@ -73,6 +73,7 @@
     window.policyHover = function(el) { setActive(parseInt(el.dataset.idx, 10)); };
     window.policyGo = function(idx) {
         if (filtered[idx]) {
+            if (window.onPolicySelected) { window.onPolicySelected(filtered[idx]); return; }
             var url = new URL(window.location.href);
             if (filtered[idx] === 'Any Policy') url.searchParams.delete('policyNameForSearch');
             else url.searchParams.set('policyNameForSearch', filtered[idx]);
@@ -100,6 +101,7 @@
     // Clear button: pressing × on input (Escape key handled above; also clear on empty+Enter)
     document.getElementById('policyPickerInput').addEventListener('keyup', function(e) {
         if (e.key === 'Escape' || (e.key === 'Enter' && this.value === '')) {
+            if (window.onPolicySelected) { window.onPolicySelected(''); return; }
             var url = new URL(window.location.href);
             url.searchParams.delete('policyNameForSearch');
             window.location.href = url.toString();
