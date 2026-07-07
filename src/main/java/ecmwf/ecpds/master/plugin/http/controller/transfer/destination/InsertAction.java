@@ -91,8 +91,10 @@ public class InsertAction extends PDSAction {
                 mi.exportDestination(session, daf.getMaster(), daf.getSourceDestination(), daf.getExportToName(),
                         "on".equalsIgnoreCase(daf.getCopySourceSharedHost())
                                 || "true".equalsIgnoreCase(daf.getCopySourceSharedHost()));
+                // Redirect back to the source destination (the exported-to name exists on the remote
+                // server, not locally, so redirecting to it would cause a "not found" error)
                 response.sendRedirect(request.getContextPath() + "/do/transfer/destination/edit/update_form/"
-                        + daf.getExportToName());
+                        + daf.getSourceDestination());
                 return null;
             } else {
                 // Check if the Destination Name is a valid name?
