@@ -1470,7 +1470,7 @@ table.spareBox2 td, table.spareBox td {
     align-items: center;
     gap: 0.5rem;
     padding: 5px 12px 5px 16px;
-    font-size: 0.8125rem;
+    font-size: 1rem;
     font-weight: 400;
     opacity: 0.4;
     cursor: not-allowed;

@@ -634,6 +634,69 @@ function testSourceServer(aceEditor, hostId, lang, transferId, manualValues) {
 }
 
 
+/** Raw content store for file preview blocks — avoids HTML-attribute quote-escaping issues. */
+var _fcRawStore = {};
+
+/** Ordered list of {id, source} for the current file preview — used by the global copy. */
+var _fcBlockIds = [];
+
+/** Assemble all file blocks into a single clean text blob and copy to clipboard.
+ *  mode = 'raw' | 'pretty'
+ *  Line numbers are omitted; blocks are separated by a text banner.
+ */
+function _fcGlobalCopy(mode) {
+  var parts = [];
+  _fcBlockIds.forEach(function(b, idx) {
+    var block = document.getElementById(b.id);
+    var content;
+    if (b.error) {
+      content = block ? block.innerText : '';
+    } else {
+      var raw = _fcRawStore[b.id] || '';
+      if (mode === 'pretty') {
+        content = (block && block.dataset.pretty === '1' && block.dataset.prettyText)
+          ? block.dataset.prettyText
+          : _fcFormatContent(raw, b.format || '');
+      } else {
+        content = raw;
+      }
+    }
+    var lineCount = content ? content.trimEnd().split('\n').length : 0;
+    var modeLabel = (mode === 'pretty' && b.canPretty) ? 'Pretty' : 'Raw';
+    var sep = '='.repeat(72) + '\n'
+            + '  [' + (idx + 1) + '/' + _fcBlockIds.length + '] '
+            + (b.label ? '[' + b.label + '] ' : '')
+            + '[' + modeLabel + '] '
+            + lineCount + ' lines  ' + b.source + '\n'
+            + '='.repeat(72);
+    parts.push(sep + '\n' + content);
+  });
+  var text = parts.join('\n\n');
+  var btn = document.getElementById('testResultCopyBtn');
+  navigator.clipboard.writeText(text).then(function() {
+    if (btn) {
+      var orig = btn.innerHTML;
+      btn.innerHTML = '<i class="bi bi-check2 me-1"></i>Copied!';
+      setTimeout(function() { btn.innerHTML = orig; }, 1500);
+    }
+  });
+}
+
+/** Format raw content for a given format type — shared by Pretty toggle and global copy. */
+function _fcFormatContent(raw, format) {
+  if (!raw) return raw;
+  try {
+    if (format === 'json') return JSON.stringify(JSON.parse(raw), null, 2);
+    if (format === 'html') return _indentHtml(raw);
+    if (format === 'xml') {
+      var parser = new DOMParser();
+      var xmlDoc = parser.parseFromString(raw, 'text/xml');
+      if (!xmlDoc.querySelector('parsererror')) return _xmlSerialize(xmlDoc.documentElement, 0);
+    }
+  } catch(e) {}
+  return raw;
+}
+
 /** Render output text into the <pre> element with styled, non-selectable line numbers. */
 function _renderWithLineNumbers(el, text) {
   el.dataset.rawText = text; // stored for the Copy button (line numbers are excluded)
@@ -659,7 +722,9 @@ function _detectContentFormat(content) {
   var trimmed = (content || '').trim();
   if (!trimmed) return { format: 'empty', label: 'Empty', color: 'secondary', stats: '', canPretty: false };
 
-  var nonEmptyLines = trimmed.split('\n').filter(function(l) { return l.trim().length > 0; });
+  var lines = trimmed.split('\n');
+  var totalLines = lines.length;
+  var nonEmptyLines = lines.filter(function(l) { return l.trim().length > 0; });
   var lineCount = nonEmptyLines.length;
 
   // JSON object or array
@@ -668,8 +733,8 @@ function _detectContentFormat(content) {
     try {
       var parsed = JSON.parse(trimmed);
       var stats = Array.isArray(parsed)
-        ? lineCount + ' lines \u00B7 ' + parsed.length + ' items'
-        : lineCount + ' lines \u00B7 ' + Object.keys(parsed).length + ' keys';
+        ? totalLines + ' lines \u00B7 ' + parsed.length + ' items'
+        : totalLines + ' lines \u00B7 ' + Object.keys(parsed).length + ' keys';
       return { format: 'json', label: 'JSON', color: 'success', stats: stats, canPretty: true };
     } catch(e) {}
   }
@@ -685,12 +750,12 @@ function _detectContentFormat(content) {
 
   // HTML
   if (/<!doctype\s+html/i.test(trimmed) || /<html[\s>]/i.test(trimmed)) {
-    return { format: 'html', label: 'HTML', color: 'warning', stats: lineCount + ' lines', canPretty: true };
+    return { format: 'html', label: 'HTML', color: 'warning', stats: totalLines + ' lines', canPretty: true };
   }
 
   // XML (<?xml … or root element)
   if (trimmed.startsWith('<?xml') || /^<[a-zA-Z][^>]*>/.test(trimmed)) {
-    return { format: 'xml', label: 'XML', color: 'warning', stats: lineCount + ' lines', canPretty: true };
+    return { format: 'xml', label: 'XML', color: 'warning', stats: totalLines + ' lines', canPretty: true };
   }
 
   // TSV — check first 8 lines for consistent tab counts
@@ -719,7 +784,7 @@ function _detectContentFormat(content) {
     }
   }
 
-  return { format: 'text', label: 'Plain Text', color: 'secondary', stats: lineCount + ' lines', canPretty: false };
+  return { format: 'text', label: 'Plain Text', color: 'secondary', stats: totalLines + ' lines', canPretty: false };
 }
 
 /** Toggle pretty-printing for a file content block. Called via inline onclick. */
@@ -732,26 +797,14 @@ function _prettyPrintToggle(btn, blockId) {
     block.innerHTML = block.dataset.rawHtml || '';
     block.dataset.pretty = '0';
     btn.innerHTML = '<i class="bi bi-braces me-1"></i>Pretty';
+    var rawStats = document.getElementById(blockId + '_stats');
+    if (rawStats && block.dataset.rawStats) rawStats.textContent = block.dataset.rawStats;
   } else {
-    // Store the current line HTML and replace with formatted content
     if (!block.dataset.rawHtml) block.dataset.rawHtml = block.innerHTML;
-    var raw = block.dataset.rawContent || '';
-    var fmt = raw, fmt2 = '';
-    try {
-      // JSON pretty-print
-      fmt2 = JSON.stringify(JSON.parse(raw), null, 2);
-      fmt = fmt2;
-    } catch(e) {
-      // XML / HTML — simple indent via DOMParser if available
-      try {
-        var parser = new DOMParser();
-        var xmlDoc = parser.parseFromString(raw, 'text/xml');
-        if (!xmlDoc.querySelector('parsererror')) {
-          fmt = _xmlSerialize(xmlDoc.documentElement, 0);
-        }
-      } catch(e2) { fmt = raw; }
-    }
+    var raw = _fcRawStore[blockId] || '';
+    var fmt = _fcFormatContent(raw, block.dataset.format || '');
     var fmtLines = fmt.split('\n');
+    var prettyLineCount = fmtLines.length;
     var width = String(fmtLines.length).length;
     var html = fmtLines.map(function(line, i) {
       var num = String(i + 1).padStart(width, ' ');
@@ -765,11 +818,128 @@ function _prettyPrintToggle(btn, blockId) {
     }).join('');
     block.innerHTML = html;
     block.dataset.pretty = '1';
+    block.dataset.prettyText = fmt;
+    // Update stats span to show pretty line count
+    var statsSpan = document.getElementById(blockId + '_stats');
+    if (statsSpan) {
+      if (!block.dataset.rawStats) block.dataset.rawStats = statsSpan.textContent;
+      statsSpan.textContent = prettyLineCount + ' lines (pretty)';
+    }
     btn.innerHTML = '<i class="bi bi-code-slash me-1"></i>Raw';
   }
 }
 
-/** Minimal XML serialiser for pretty-printing — indent elements, preserve text nodes. */
+/** Copy the current content of a file block (pretty or raw) to the clipboard. */
+function _fcCopyBlock(btn, blockId) {
+  var block = document.getElementById(blockId);
+  var text = block && block.dataset.pretty === '1'
+    ? (block.dataset.prettyText || '')
+    : (_fcRawStore[blockId] || '');
+  navigator.clipboard.writeText(text).then(function() {
+    var orig = btn.innerHTML;
+    btn.innerHTML = '<i class="bi bi-check2 me-1"></i>Copied!';
+    setTimeout(function() { btn.innerHTML = orig; }, 1500);
+  });
+}
+
+/**
+ * String-based HTML indenter — works on raw text so <script>, <style>, comments
+ * and all content are preserved exactly.  Never touches the DOM.
+ */
+function _indentHtml(html) {
+  // Void elements that must not increase indent
+  var VOID = /^(area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)$/i;
+  // Raw-text elements whose content must be kept verbatim (not re-indented)
+  var RAW  = /^(script|style|textarea|pre)$/i;
+  var result = [];
+  var depth = 0;
+
+  // Tokenise: alternate between text runs and tags/comments/doctype
+  var re = /(<(?:!--[\s\S]*?-->|![^>]*>|[^>]*>))/g;
+  var last = 0, match;
+  var tokens = [];
+  while ((match = re.exec(html)) !== null) {
+    if (match.index > last) tokens.push({ text: html.slice(last, match.index) });
+    tokens.push({ tag: match[1] });
+    last = re.lastIndex;
+  }
+  if (last < html.length) tokens.push({ text: html.slice(last) });
+
+  var insideRaw = null; // tag name of current raw-text element, or null
+  var rawBuffer = [];
+
+  tokens.forEach(function(tok) {
+    if (tok.text !== undefined) {
+      var t = tok.text;
+      if (insideRaw) { rawBuffer.push(t); return; }
+      // Indent non-empty text lines
+      t.split('\n').forEach(function(line) {
+        var l = line.trim();
+        if (l) result.push('  '.repeat(depth) + l);
+      });
+      return;
+    }
+
+    var tag = tok.tag;
+
+    // Comments / DOCTYPE — emit as-is at current indent
+    if (tag.startsWith('<!--') || tag.startsWith('<!')) {
+      if (!insideRaw) {
+        tag.split('\n').forEach(function(line, i) {
+          result.push((i === 0 ? '  '.repeat(depth) : '  '.repeat(depth + 1)) + line.trim());
+        });
+      } else {
+        rawBuffer.push(tag);
+      }
+      return;
+    }
+
+    // Closing tag
+    var closeMatch = tag.match(/^<\/([a-zA-Z][^\s>]*)/);
+    if (closeMatch) {
+      var closeName = closeMatch[1];
+      if (insideRaw && closeName.toLowerCase() === insideRaw) {
+        // Flush raw buffer, then emit closing tag
+        var rawContent = rawBuffer.join('');
+        rawBuffer = [];
+        // Indent each line of raw content one level deeper
+        rawContent.split('\n').forEach(function(line) {
+          if (line.trim()) result.push('  '.repeat(depth + 1) + line.trimEnd());
+        });
+        insideRaw = null;
+        result.push('  '.repeat(depth) + tag);
+      } else if (!insideRaw) {
+        depth = Math.max(0, depth - 1);
+        result.push('  '.repeat(depth) + tag);
+      } else {
+        rawBuffer.push(tag);
+      }
+      return;
+    }
+
+    // Opening or self-closing tag
+    var openMatch = tag.match(/^<([a-zA-Z][^\s/>]*)/);
+    if (!openMatch) { result.push('  '.repeat(depth) + tag); return; }
+    var tagName = openMatch[1].toLowerCase();
+    var isSelfClose = tag.endsWith('/>') || VOID.test(tagName);
+
+    if (insideRaw) { rawBuffer.push(tag); return; }
+
+    result.push('  '.repeat(depth) + tag);
+    if (!isSelfClose) {
+      if (RAW.test(tagName)) {
+        insideRaw = tagName;
+        rawBuffer = [];
+      } else {
+        depth++;
+      }
+    }
+  });
+
+  return result.join('\n');
+}
+
+/** Minimal XML serialiser for pretty-printing strict XML (not HTML). */
 function _xmlSerialize(node, depth) {
   var indent = '  '.repeat(depth);
   if (node.nodeType === 3) { // text
@@ -818,15 +988,13 @@ function _extractPathsFromOutput(text) {
  */
 function _fetchUrlContentViaMover(paths, hostId) {
   var fetchBtn = document.getElementById('testResultFetchBtn');
-  var maxLinesSel = document.getElementById('testResultMaxLines');
-  var maxLines = maxLinesSel ? parseInt(maxLinesSel.value, 10) || 100 : 100;
   var origLabel = fetchBtn ? fetchBtn.innerHTML : '';
   if (fetchBtn) {
     fetchBtn.disabled = true;
     fetchBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span>Fetching\u2026';
   }
 
-  var params = new URLSearchParams({ sources: paths.slice(0, 5).join('\n'), maxBytes: 262144, maxLines: maxLines });
+  var params = new URLSearchParams({ sources: paths.slice(0, 5).join('\n'), maxBytes: 1048576 });
   var controller = new AbortController();
   var timeoutId = setTimeout(function() { controller.abort(); }, 120000);
 
@@ -851,12 +1019,15 @@ function _fetchUrlContentViaMover(paths, hostId) {
       // Top-level error (no files fetched at all) — show in pre
       if (pre) { pre.textContent = 'Error: ' + data.error; pre.style.color = 'var(--bs-danger)'; pre.style.display = ''; }
       if (fc)  { fc.style.display = 'none'; }
+      _showFetchBtn(false);
     } else if (data.files && data.files.length > 0) {
       // Structured per-file results — render as styled blocks
       if (pre) pre.style.display = 'none';
       if (fc)  {
         fc.style.display = '';
+        _fcBlockIds = []; // reset for this fetch
         var html = '';
+
         data.files.forEach(function(f) {
           var hasError = !!f.error;
           var borderCls = hasError ? 'border-danger' : 'border';
@@ -869,26 +1040,35 @@ function _fetchUrlContentViaMover(paths, hostId) {
             var content = f.content || '';
             var det = _detectContentFormat(content);
             var blockId = 'fcBlock_' + Math.random().toString(36).slice(2);
+            _fcBlockIds.push({ id: blockId, source: f.source, label: det.label, format: det.format, canPretty: det.canPretty });
             var badgeHtml = '<span class="badge rounded-pill ms-1 bg-' + det.color + '-subtle '
               + 'border border-' + det.color + '-subtle text-' + det.color
               + '" style="font-size:0.68rem;font-weight:600;letter-spacing:0.04em;">'
               + _escHtml(det.label) + '</span>';
+            var statsId = blockId + '_stats';
             var statsHtml = det.stats
-              ? '<span class="text-muted ms-2" style="font-size:0.7rem;white-space:nowrap;">' + _escHtml(det.stats) + '</span>'
+              ? '<span id="' + statsId + '" class="text-muted ms-2" style="font-size:0.7rem;white-space:nowrap;">' + _escHtml(det.stats) + '</span>'
               : '';
             var prettyHtml = det.canPretty
               ? '<button type="button" class="btn btn-outline-secondary btn-sm ms-auto py-0 px-2 flex-shrink-0"'
                 + ' style="font-size:0.7rem;" onclick="_prettyPrintToggle(this,\'' + blockId + '\')">'
                 + '<i class="bi bi-braces me-1"></i>Pretty</button>'
               : '';
+            var copyHtml = '<button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2 flex-shrink-0'
+              + (det.canPretty ? '' : ' ms-auto') + '"'
+              + ' style="font-size:0.7rem;" onclick="_fcCopyBlock(this,\'' + blockId + '\')">'
+              + '<i class="bi bi-clipboard me-1"></i>Copy</button>';
             html += '<div class="' + headerBg + ' px-3 py-2 border-bottom d-flex align-items-center gap-1 flex-wrap">'
                   + '<i class="bi ' + icon + ' flex-shrink-0" style="font-size:0.9rem"></i>'
                   + '<code class="small text-break user-select-all" style="flex:1 1 auto;min-width:0;">' + _escHtml(f.source) + '</code>'
-                  + badgeHtml + statsHtml + prettyHtml
+                  + badgeHtml + statsHtml + prettyHtml + copyHtml
                   + '</div>'
-                  + '<div id="' + blockId + '" data-raw-content="' + _escHtml(content) + '" style="font-family:monospace;font-size:0.82rem;">';
+                  + '<div id="' + blockId + '" data-format="' + det.format + '" style="font-family:monospace;font-size:0.82rem;">';
+            _fcRawStore[blockId] = content;
           } else {
-            html += '<div class="' + headerBg + ' px-3 py-2 border-bottom d-flex align-items-start gap-2">'
+            var errBlockId = 'fcBlock_' + Math.random().toString(36).slice(2);
+            _fcBlockIds.push({ id: errBlockId, source: f.source, error: true });
+            html += '<div id="' + errBlockId + '" class="' + headerBg + ' px-3 py-2 border-bottom d-flex align-items-start gap-2">'
                   + '<i class="bi ' + icon + ' flex-shrink-0 mt-1" style="font-size:0.9rem"></i>'
                   + '<code class="small text-break flex-grow-1 user-select-all">' + _escHtml(f.source) + '</code>'
                   + '</div>'
@@ -914,7 +1094,51 @@ function _fetchUrlContentViaMover(paths, hostId) {
           }
           html += '</div></div>';
         });
-        fc.innerHTML = html;
+
+        // Sticky nav bar — only shown when there are 2+ files
+        var navHtml = '';
+        if (_fcBlockIds.length > 1) {
+          navHtml = '<div id="fcNavBar" style="position:sticky;top:0;z-index:10;background:var(--bs-body-bg);'
+            + 'border-bottom:1px solid var(--bs-border-color);padding:4px 8px;display:flex;flex-wrap:wrap;gap:4px;">';
+          _fcBlockIds.forEach(function(b, idx) {
+            // Show just the filename (last path segment) or first 30 chars of URL as label
+            var label = b.source.replace(/[?#].*$/, '').split('/').filter(Boolean).pop() || b.source;
+            if (label.length > 32) label = label.slice(0, 30) + '\u2026';
+            var color = b.error ? 'var(--bs-danger)' : 'var(--bs-info)';
+            navHtml += '<button type="button" onclick="(function(){'
+              + 'var el=document.getElementById(\'' + b.id + '\');'
+              + 'if(el){var fc=el.closest(\'#testResultFileContent\');'
+              + 'if(fc){var nav=fc.querySelector(\'#fcNavBar\');var navH=nav?nav.offsetHeight:0;'
+              + 'fc.scrollTop=el.closest(\'.border,.border-danger\').offsetTop-fc.offsetTop-navH-4;}}'
+              + '})()" style="font-size:0.7rem;padding:1px 8px;border-radius:10px;border:1px solid '
+              + color + ';background:transparent;color:' + color + ';cursor:pointer;white-space:nowrap;" '
+              + 'title="' + _escHtml(b.source) + '">'
+              + (idx + 1) + ' &mdash; ' + _escHtml(label)
+              + '</button>';
+          });
+          navHtml += '</div>';
+        }
+
+        // Mixed-format warning: if multiple distinct content types detected across files,
+        // warn that an Acquisition host processes one document type at a time.
+        var uniqueFormats = _fcBlockIds
+          .filter(function(b) { return !b.error && b.label && b.label !== 'Empty'; })
+          .map(function(b) { return b.label; })
+          .filter(function(v, i, a) { return a.indexOf(v) === i; });
+        var warnHtml = '';
+        if (uniqueFormats.length > 1) {
+          warnHtml = '<div class="mx-2 mt-2 mb-1 alert alert-warning d-flex gap-2 py-2 px-3 mb-0" role="alert" style="font-size:0.8rem;">'
+            + '<i class="bi bi-exclamation-triangle-fill flex-shrink-0 mt-1"></i>'
+            + '<div><strong>Mixed content types detected: ' + uniqueFormats.map(_escHtml).join(', ') + '.</strong>'
+            + ' An Acquisition host uses a single parser configured for one document type. '
+            + 'To handle different formats, create a dedicated Acquisition host for each type '
+            + 'and assign the appropriate parser to each one.</div>'
+            + '</div>';
+        }
+
+        fc.innerHTML = navHtml + warnHtml + html;
+        // Switch to rich copy controls (Raw/Pretty toggle + Copy All)
+        _showFetchBtn(true);
       }
     }
   })
@@ -933,14 +1157,17 @@ function _escHtml(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-/** Show or hide the Preview File Content button + line count selector together. */
+/** Show or hide the Preview File Content button and URL edit area. */
 function _showFetchBtn(show) {
-  var btn = document.getElementById('testResultFetchBtn');
-  var sel = document.getElementById('testResultMaxLines');
-  var area = document.getElementById('testResultUrlArea');
-  if (btn)  btn.style.display  = show ? '' : 'none';
-  if (sel)  sel.style.display  = show ? '' : 'none';
-  if (area) area.style.display = show ? '' : 'none';
+  var btn      = document.getElementById('testResultFetchBtn');
+  var area     = document.getElementById('testResultUrlArea');
+  var copyFC   = document.getElementById('testResultCopyControls');
+  var copySimp = document.getElementById('testResultCopySimpleBtn');
+  if (btn)      btn.style.display      = show ? '' : 'none';
+  if (area)     area.style.display     = show ? '' : 'none';
+  // When file-content view is active the rich copy controls replace the simple one
+  if (copyFC)   copyFC.style.display   = show ? '' : 'none';
+  if (copySimp) copySimp.style.display = show ? 'none' : '';
 }
 
 
@@ -956,6 +1183,11 @@ function _showFetchBtn(show) {
     if (urls.length === 0) return;
     _fetchUrlContentViaMover(urls, btn._fetchHostId);
   });
+  // Clear raw content store when the test result modal closes (memory hygiene)
+  var modal = document.getElementById('testResultModal');
+  if (modal) {
+    modal.addEventListener('hidden.bs.modal', function() { _fcRawStore = {}; _fcBlockIds = []; });
+  }
 })();
 
 

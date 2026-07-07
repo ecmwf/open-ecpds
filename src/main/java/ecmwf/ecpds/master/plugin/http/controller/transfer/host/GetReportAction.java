@@ -97,6 +97,14 @@ public class GetReportAction extends PDSAction {
                 var host = HostHome.findByPrimaryKey(hostId);
                 request.setAttribute("host", host);
                 request.setAttribute("reportDataUrl", "/do/transfer/host/edit/getReport/" + hostId + "?format=data");
+                try {
+                    setGuideIfPresent(host.getTransferMethod().getModuleGuide(), request);
+                } catch (final Exception ignored) {
+                }
+                try {
+                    request.setAttribute("hostPropErrors", GetHostListJsonAction.hasPropertyErrors(host));
+                } catch (final Exception ignored) {
+                }
                 return mapping.findForward("success");
             }
 
@@ -109,6 +117,14 @@ public class GetReportAction extends PDSAction {
                 request.setAttribute("proxy", proxy);
                 request.setAttribute("reportDataUrl",
                         "/do/transfer/host/edit/getReport/" + hostId + "/" + proxyId + "?format=data");
+                try {
+                    setGuideIfPresent(host.getTransferMethod().getModuleGuide(), request);
+                } catch (final Exception ignored) {
+                }
+                try {
+                    request.setAttribute("hostPropErrors", GetHostListJsonAction.hasPropertyErrors(host));
+                } catch (final Exception ignored) {
+                }
                 return mapping.findForward("success");
             }
 

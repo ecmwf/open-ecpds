@@ -1,7 +1,9 @@
 <%@ page pageEncoding="UTF-8" %>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
 
-<%-- actionFormName is passed as a jsp:param by the including page --%>
+<%-- actionFormName is passed as a jsp:param by the including page;
+     falls back to the host attribute (available on the view page) --%>
+<c:set var="_dirGuideType" value="${not empty param.actionFormName ? requestScope[param.actionFormName].type : host.type}"/>
 
 <%-- Directory field guide offcanvas — content is specific to the host type --%>
 <div class="offcanvas offcanvas-end" tabindex="-1" id="directoryGuideOffcanvas"
@@ -9,7 +11,7 @@
   <div class="offcanvas-header border-bottom py-2 px-3">
     <h6 class="offcanvas-title mb-0 fw-semibold" id="directoryGuideLabel">
       <i class="bi bi-folder2-open me-2 text-info"></i>Directory &mdash; Guide
-      <small class="text-muted fw-normal ms-1">(${requestScope[param.actionFormName].type})</small>
+      <small class="text-muted fw-normal ms-1">(${_dirGuideType})</small>
     </h6>
     <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
   </div>
@@ -20,7 +22,7 @@
       <%-- ================================================================
            ACQUISITION
            ================================================================ --%>
-      <c:when test="${requestScope[param.actionFormName].type == 'Acquisition'}">
+      <c:when test="${_dirGuideType == 'Acquisition'}">
 
         <div class="alert alert-info py-2 px-3 mb-3 small d-flex align-items-start gap-2">
           <i class="bi bi-info-circle flex-shrink-0 mt-1"></i>
@@ -128,7 +130,7 @@ for delta in range(3):  # today and 2 previous days
       <%-- ================================================================
            DISSEMINATION
            ================================================================ --%>
-      <c:when test="${requestScope[param.actionFormName].type == 'Dissemination'}">
+      <c:when test="${_dirGuideType == 'Dissemination'}">
 
         <div class="alert alert-info py-2 px-3 mb-3 small d-flex align-items-start gap-2">
           <i class="bi bi-info-circle flex-shrink-0 mt-1"></i>
@@ -227,7 +229,7 @@ print("/outgoing/" + host + "/" + stream + "/")</pre>
 
         <div class="alert alert-info py-2 px-3 mb-3 small d-flex align-items-start gap-2">
           <i class="bi bi-info-circle flex-shrink-0 mt-1"></i>
-          <div>For <strong>${requestScope[param.actionFormName].type}</strong> hosts the Directory field
+          <div>For <strong>${_dirGuideType}</strong> hosts the Directory field
           specifies the <strong>base path</strong> used on the DataMover (or remote server) when
           setting up the ECtrans destination. Only the <strong>first line</strong> is used; the
           path is truncated at the first <code>$</code> character. Script mode is not supported

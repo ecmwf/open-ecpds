@@ -201,7 +201,7 @@
         <c:choose>
           <c:when test="${empty incomingUserActionForm.operations}">
             <div class="alert alert-warning d-flex align-items-start gap-2 py-2 px-3 mb-2 small" role="alert">
-              <i class="bi bi-exclamation-triangle-fill flex-shrink-0 mt-1"></i>
+              <i class="bi bi-exclamation-triangle-fill flex-shrink-0" style="margin-top:0.1em"></i>
               <span><strong>No permissions assigned.</strong> All login attempts for this user will be denied until at least one permission is added. Use the <i class="bi bi-chevron-down"></i> preset dropdown above to quickly assign <strong>Add All</strong> or <strong>Read Only</strong> permissions.</span>
             </div>
           </c:when>
@@ -264,7 +264,7 @@
         <c:choose>
           <c:when test="${empty incomingUserActionForm.destinations and not policyHasDestinations}">
             <div class="alert alert-warning d-flex align-items-start gap-2 py-2 px-3 mb-2 small" role="alert">
-              <i class="bi bi-exclamation-triangle-fill flex-shrink-0 mt-1"></i>
+              <i class="bi bi-exclamation-triangle-fill flex-shrink-0" style="margin-top:0.1em"></i>
               <span><strong>No destinations assigned.</strong> All login attempts for this user will be denied until at least one destination is added here or via an associated Data Policy.</span>
             </div>
           </c:when>

@@ -304,10 +304,26 @@ public class GetWebUserListJsonAction extends PDSAction {
             final var props = userData != null ? userData.toString() : null;
             if (props == null || props.isBlank())
                 return false;
-            for (final var line : props.split("\n")) {
-                if (checkLineHasError(line))
-                    return true;
+            final var sb = new StringBuilder();
+            for (final var rawLine : props.split("\n")) {
+                if (sb.length() == 0) {
+                    sb.append(rawLine);
+                } else {
+                    sb.append(' ').append(rawLine.trim());
+                }
+                var quoteCount = 0;
+                for (var i = 0; i < sb.length(); i++) {
+                    if (sb.charAt(i) == '"')
+                        quoteCount++;
+                }
+                if (quoteCount % 2 == 0) {
+                    if (checkLineHasError(sb.toString()))
+                        return true;
+                    sb.setLength(0);
+                }
             }
+            if (!sb.isEmpty() && checkLineHasError(sb.toString()))
+                return true;
         } catch (final Exception ignored) {
         }
         return false;

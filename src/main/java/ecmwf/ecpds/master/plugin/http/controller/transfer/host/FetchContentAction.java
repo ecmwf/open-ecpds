@@ -46,11 +46,8 @@ public class FetchContentAction extends PDSAction {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    /** Maximum number of bytes returned per source file (256 KB — generous since line limit kicks in first). */
-    private static final int DEFAULT_MAX_BYTES = 262144;
-
-    /** Maximum number of lines returned per source file. */
-    private static final int DEFAULT_MAX_LINES = 100;
+    /** Maximum number of bytes returned per source file (1 MB). */
+    private static final int DEFAULT_MAX_BYTES = 1048576;
 
     /** Maximum number of source files accepted per request. */
     private static final int MAX_SOURCES = 5;
@@ -69,7 +66,6 @@ public class FetchContentAction extends PDSAction {
             final var hostId = ECMWFActionForm.getPathParameter(mapping, request, 0);
             final var sourcesParam = request.getParameter("sources");
             final var maxBytesParam = request.getParameter("maxBytes");
-            final var maxLinesParam = request.getParameter("maxLines");
 
             if (hostId == null || hostId.isBlank()) {
                 writeError(response, result, "Missing host ID");
@@ -95,15 +91,6 @@ public class FetchContentAction extends PDSAction {
                 maxBytes = DEFAULT_MAX_BYTES;
             }
 
-            int maxLines;
-            try {
-                maxLines = maxLinesParam != null ? Integer.parseInt(maxLinesParam) : DEFAULT_MAX_LINES;
-                if (maxLines <= 0 || maxLines > 10000)
-                    maxLines = DEFAULT_MAX_LINES;
-            } catch (final NumberFormatException ignored) {
-                maxLines = DEFAULT_MAX_LINES;
-            }
-
             final var sources = sourcesParam.lines().map(String::trim).filter(s -> !s.isBlank()).limit(MAX_SOURCES)
                     .toArray(String[]::new);
 
@@ -114,7 +101,7 @@ public class FetchContentAction extends PDSAction {
                 fileNode.put("source", source);
                 try {
                     final var content = MasterManager.getMI().fetchUrlContent(session, host, source, maxBytes);
-                    fileNode.put("content", truncateLines(content, maxLines));
+                    fileNode.put("content", content);
                 } catch (final Exception e) {
                     fileNode.put("error", Format.getMessage(e));
                 }
@@ -135,23 +122,6 @@ public class FetchContentAction extends PDSAction {
             _log.error("Failed to write FetchContent JSON response", e);
         }
         return null;
-    }
-
-    /**
-     * Truncate lines.
-     */
-    private static String truncateLines(final String content, final int maxLines) {
-        if (content == null || content.isEmpty())
-            return content;
-        final var lines = content.split("\n", -1);
-        if (lines.length <= maxLines)
-            return content;
-        final var sb = new StringBuilder();
-        for (var i = 0; i < maxLines; i++) {
-            sb.append(lines[i]).append('\n');
-        }
-        sb.append("[... ").append(lines.length - maxLines).append(" more line(s) truncated ...]");
-        return sb.toString();
     }
 
     /**

@@ -265,11 +265,26 @@ public class GetIncomingUserListJsonAction extends PDSAction {
             if (data == null || data.isBlank()) {
                 return false;
             }
-            for (final var line : data.split("\n")) {
-                if (checkLineHasError(line)) {
-                    return true;
+            final var sb = new StringBuilder();
+            for (final var rawLine : data.split("\n")) {
+                if (sb.length() == 0) {
+                    sb.append(rawLine);
+                } else {
+                    sb.append(' ').append(rawLine.trim());
+                }
+                var quoteCount = 0;
+                for (var i = 0; i < sb.length(); i++) {
+                    if (sb.charAt(i) == '"')
+                        quoteCount++;
+                }
+                if (quoteCount % 2 == 0) {
+                    if (checkLineHasError(sb.toString()))
+                        return true;
+                    sb.setLength(0);
                 }
             }
+            if (!sb.isEmpty() && checkLineHasError(sb.toString()))
+                return true;
         } catch (final Exception ignored) {
         }
         return false;

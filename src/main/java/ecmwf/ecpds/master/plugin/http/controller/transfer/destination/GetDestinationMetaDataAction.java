@@ -58,6 +58,10 @@ public class GetDestinationMetaDataAction extends PDSAction {
             final var id = params.get(0).toString();
             final var destination = DestinationHome.findByPrimaryKey(id);
             request.setAttribute("destination", destination);
+            try {
+                request.setAttribute("destPropErrors", GetDestinationListJsonAction.hasPropertyErrors(destination));
+            } catch (final Exception ignored) {
+            }
             final var metadata = destination.getMetaData();
             request.setAttribute("metaData", metadata);
             request.setAttribute("metaDataSize", metadata.size());
@@ -69,6 +73,10 @@ public class GetDestinationMetaDataAction extends PDSAction {
             final var id = params.get(0).toString();
             final var destination = DestinationHome.findByPrimaryKey(id);
             request.setAttribute("destination", destination);
+            try {
+                request.setAttribute("destPropErrors", GetDestinationListJsonAction.hasPropertyErrors(destination));
+            } catch (final Exception ignored) {
+            }
             final var file = params.get(1).toString();
             final var c = destination.getMetaData();
             for (DestinationMetaData m : c) {

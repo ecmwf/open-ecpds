@@ -60,7 +60,7 @@
         <auth:then>
         <a href='<bean:message key="host.basepath"/>' class="btn btn-sm btn-outline-secondary" title="All Transfer Hosts"><i class="bi bi-arrow-left"></i></a>
         <c:if test="${not empty host.name}">
-        <a href='<bean:message key="host.basepath"/>/${host.name}' class="btn btn-sm btn-outline-secondary" title="Host Main Page"><i class="bi bi-house"></i></a>
+        <a id="_hostMainPageBtn" href='<bean:message key="host.basepath"/>/${host.name}' class="btn btn-sm btn-outline-secondary position-relative" title="Host Main Page"<c:if test="${hostPropErrors}"> data-prop-errors="true"</c:if>><i class="bi bi-house"></i><c:if test="${hostPropErrors}"><span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:0.5rem;padding:2px 3px;line-height:1;min-width:0;" title="Properties contain errors"><i class="bi bi-exclamation-circle-fill"></i></span></c:if></a>
         </c:if>
         <div style="border-left:1px solid var(--bs-border-color);height:1.5rem;"></div>
         </auth:then>
@@ -157,9 +157,12 @@
                     var isDisabled = a.classList.contains('disabled') || a.getAttribute('aria-disabled') === 'true';
                     var item;
                     if (isDisabled) {
-                        item = document.createElement('span');
+                        item = document.createElement('a');
                         item.className = 'dropdown-item disabled';
+                        item.href = '#';
                         item.setAttribute('aria-disabled', 'true');
+                        item.setAttribute('tabindex', '-1');
+                        item.setAttribute('onclick', 'return false;');
                     } else {
                         item = document.createElement('a');
                         item.className = 'dropdown-item';
@@ -173,6 +176,17 @@
                         item.appendChild(icon);
                     }
                     item.appendChild(document.createTextNode(a.getAttribute('data-label') || a.title || a.textContent.trim()));
+                    if (a.getAttribute('data-prop-errors') === 'true') {
+                        item.style.display = 'flex';
+                        item.style.alignItems = 'center';
+                        item.style.gap = '0.5rem';
+                        var eb = document.createElement('span');
+                        eb.className = 'badge rounded-pill bg-danger ms-auto';
+                        eb.style.cssText = 'font-size:0.55rem;padding:3px 4px;line-height:1;';
+                        eb.innerHTML = '<i class="bi bi-exclamation-circle-fill"></i>';
+                        eb.title = 'Properties contain errors';
+                        item.appendChild(eb);
+                    }
                     li.appendChild(item);
                     menu.appendChild(li);
                 }

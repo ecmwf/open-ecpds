@@ -121,7 +121,7 @@ public class GetHostListJsonAction extends PDSAction {
      * <li>Quoted value not in the option's choices list (when choices are defined) → choices error</li>
      * </ul>
      */
-    private static boolean hasPropertyErrors(final Host host) {
+    static boolean hasPropertyErrors(final Host host) {
         try {
             final var data = host.getData();
             if (data == null || data.isBlank()) {
@@ -130,10 +130,35 @@ public class GetHostListJsonAction extends PDSAction {
             // Only look at the properties section (before the separator)
             final var sepIdx = data.indexOf(ECtransSetup.SEPARATOR);
             final var propsText = sepIdx >= 0 ? data.substring(0, sepIdx) : data;
-            for (final var line : propsText.split("\n")) {
-                if (checkLineHasError(line)) {
-                    return true;
+            // Reassemble logical lines: a value spanning multiple lines (multi-line quoted string)
+            // must be joined before validation so continuation lines are not mistaken for keys.
+            final var sb = new StringBuilder();
+            for (final var rawLine : propsText.split("\n")) {
+                if (sb.length() == 0) {
+                    sb.append(rawLine);
+                } else {
+                    // We are inside an open quoted value — append continuation
+                    sb.append(' ').append(rawLine.trim());
                 }
+                // Count unescaped quotes to decide if the logical line is complete
+                var quoteCount = 0;
+                for (var i = 0; i < sb.length(); i++) {
+                    if (sb.charAt(i) == '"') {
+                        quoteCount++;
+                    }
+                }
+                if (quoteCount % 2 == 0) {
+                    // Balanced quotes → logical line is complete
+                    if (checkLineHasError(sb.toString())) {
+                        return true;
+                    }
+                    sb.setLength(0);
+                }
+                // Odd quote count → multi-line value, keep accumulating
+            }
+            // Handle any unterminated trailing line
+            if (!sb.isEmpty() && checkLineHasError(sb.toString())) {
+                return true;
             }
         } catch (final Exception ignored) {
         }

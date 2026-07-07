@@ -388,22 +388,21 @@ $(document).ready(function() {
           <button type="button" class="btn btn-outline-info btn-sm" id="testResultFetchBtn" style="display:none;">
             <i class="bi bi-file-text me-1"></i>Preview File Content
           </button>
-          <select id="testResultMaxLines" class="form-select form-select-sm" style="display:none;width:auto;"
-                  title="Max lines to retrieve">
-            <option value="5" selected>5 lines</option>
-            <option value="10">10 lines</option>
-            <option value="25">25 lines</option>
-            <option value="50">50 lines</option>
-            <option value="100">100 lines</option>
-            <option value="250">250 lines</option>
-            <option value="500">500 lines</option>
-            <option value="1000">1000 lines</option>
-            <option value="2500">2500 lines</option>
-            <option value="5000">5000 lines</option>
-          </select>
         </div>
-        <button type="button" class="btn btn-outline-secondary btn-sm" id="testResultCopyBtn"
-                onclick="(function(){var fc=document.getElementById('testResultFileContent');var pre=document.getElementById('testResultContent');var t;if(fc&&fc.style.display!=='none'){t=fc.innerText;}else if(pre){t=pre.dataset.rawText||pre.textContent;}else{t='';}navigator.clipboard.writeText(t).then(function(){var b=document.getElementById('testResultCopyBtn');var o=b.innerHTML;b.innerHTML='<i class=\'bi bi-check2 me-1\'></i>Copied!';setTimeout(function(){b.innerHTML=o;},1500);});})()">
+        <div id="testResultCopyControls" class="d-flex align-items-center gap-1" style="display:none!important;">
+          <div class="btn-group btn-group-sm" role="group" aria-label="Copy mode">
+            <input type="radio" class="btn-check" name="fcCopyMode" id="fcCopyRaw" value="raw" autocomplete="off" checked>
+            <label class="btn btn-outline-secondary" for="fcCopyRaw" style="font-size:0.75rem;">Raw</label>
+            <input type="radio" class="btn-check" name="fcCopyMode" id="fcCopyPretty" value="pretty" autocomplete="off">
+            <label class="btn btn-outline-secondary" for="fcCopyPretty" style="font-size:0.75rem;">Pretty</label>
+          </div>
+          <button type="button" class="btn btn-outline-secondary btn-sm" id="testResultCopyBtn"
+                  onclick="_fcGlobalCopy(document.querySelector('input[name=fcCopyMode]:checked').value)">
+            <i class="bi bi-clipboard me-1"></i>Copy All
+          </button>
+        </div>
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="testResultCopySimpleBtn"
+                onclick="(function(){var pre=document.getElementById('testResultContent');var t=pre?pre.dataset.rawText||pre.textContent:'';navigator.clipboard.writeText(t).then(function(){var b=document.getElementById('testResultCopySimpleBtn');var o=b.innerHTML;b.innerHTML='<i class=\'bi bi-check2 me-1\'></i>Copied!';setTimeout(function(){b.innerHTML=o;},1500);});})()">
           <i class="bi bi-clipboard me-1"></i>Copy
         </button>
         <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>

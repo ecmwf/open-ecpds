@@ -170,14 +170,14 @@ function ptSetView(v) {
 
 <%-- Table|Chart toggle --%>
 <div class="d-flex justify-content-end align-items-center mb-3 flex-wrap gap-2">
-  <div class="btn-group btn-group-sm" role="group">
-    <button type="button" class="btn btn-outline-secondary" id="ptBtnTable" onclick="ptSetView('table')">
+  <div class="d-flex align-items-center gap-1">
+    <button type="button" class="btn btn-sm btn-outline-secondary" id="ptBtnTable" onclick="ptSetView('table')">
       <i class="bi bi-table me-1"></i>Table
     </button>
-    <button type="button" class="btn btn-outline-secondary" id="ptBtnChart" onclick="ptSetView('chart')">
+    <button type="button" class="btn btn-sm btn-outline-secondary" id="ptBtnChart" onclick="ptSetView('chart')">
       <i class="bi bi-bar-chart-fill me-1"></i>Chart
     </button>
-    <button type="button" class="btn btn-outline-secondary active" id="ptBtnReverse"
+    <button type="button" class="btn btn-sm btn-outline-secondary active" id="ptBtnReverse"
         onclick="ptToggleOrder()" title="Showing latest first — click to show earliest first">
       <i class="bi bi-sort-up-alt" id="ptBtnReverseIcon"></i>
     </button>

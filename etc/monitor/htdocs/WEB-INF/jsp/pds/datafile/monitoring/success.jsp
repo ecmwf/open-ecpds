@@ -281,14 +281,21 @@ var _chartPeriod = 0, _chartBR = null, _chartF = null;
 
 function getChartData(days) {
   var start = (days > 0 && tLabels.length > days) ? tLabels.length - days : 0;
-  return {
-    labels: tLabels.slice(start),
-    bytes: tBytes.slice(start),
-    rates: tRates.slice(start),
-    files: tFiles.slice(start),
-    fmtBytes: tFmtBytes.slice(start),
-    fmtRates: tFmtRates.slice(start)
-  };
+  var labels   = tLabels.slice(start);
+  var bytes    = tBytes.slice(start);
+  var rates    = tRates.slice(start);
+  var files    = tFiles.slice(start);
+  var fmtBytes = tFmtBytes.slice(start);
+  var fmtRates = tFmtRates.slice(start);
+  if (_reversed) {
+    labels   = labels.slice().reverse();
+    bytes    = bytes.slice().reverse();
+    rates    = rates.slice().reverse();
+    files    = files.slice().reverse();
+    fmtBytes = fmtBytes.slice().reverse();
+    fmtRates = fmtRates.slice().reverse();
+  }
+  return { labels: labels, bytes: bytes, rates: rates, files: files, fmtBytes: fmtBytes, fmtRates: fmtRates };
 }
 
 function setChartPeriod(days) {
@@ -433,6 +440,7 @@ function toggleOrder() {
   });
   _applyReverseBtn();
   buildTable();
+  if (_chartBR || _chartF) buildCharts();
   try { localStorage.setItem('ratesReversed', _reversed ? '1' : '0'); } catch(e) {}
 }
 
@@ -517,14 +525,14 @@ new MutationObserver(function() {
       </c:otherwise>
     </c:choose>
   </h6>
-  <div class="btn-group btn-group-sm" role="group">
-    <button type="button" class="btn btn-outline-secondary active" id="btnTable" onclick="setView('table')">
+  <div class="d-flex align-items-center gap-1">
+    <button type="button" class="btn btn-sm btn-outline-secondary active" id="btnTable" onclick="setView('table')">
       <i class="bi bi-table me-1"></i>Table
     </button>
-    <button type="button" class="btn btn-outline-secondary" id="btnChart" onclick="setView('chart')">
+    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnChart" onclick="setView('chart')">
       <i class="bi bi-bar-chart-fill me-1"></i>Chart
     </button>
-    <button type="button" class="btn btn-outline-secondary" id="btnReverse"
+    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnReverse"
         onclick="toggleOrder()" title="Showing earliest first — click to show latest first">
       <i class="bi bi-sort-down-alt" id="btnReverseIcon"></i>
     </button>
@@ -579,8 +587,8 @@ new MutationObserver(function() {
            id="ratesTable" style="font-size:0.82rem; white-space:nowrap;">
       <thead class="table-primary">
         <tr>
-          <th onclick="sortRatesTable(0)" style="cursor:pointer;" data-order="asc">
-            Date <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i>
+          <th style="cursor:default;">
+            Date
           </th>
           <c:choose>
             <c:when test="${option == 'ratesPerFileSystem'}">

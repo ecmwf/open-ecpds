@@ -38,8 +38,8 @@
                         </div>
                         <div class="col-12 col-sm-3">
                             <div class="input-group">
-                                <span class="input-group-text text-muted"><i class="bi bi-tag"></i></span>
-                                <select class="form-select" name="destinationType" id="destinationType" onchange="destsTableReload()" title="Filter by Type">
+                                <span class="input-group-text text-muted" id="destTypeIcon"><i class="bi bi-tag"></i></span>
+                                <select class="form-select" name="destinationType" id="destinationType" onchange="destsTableReload(); _updateDestTypeStyle(); this.blur();" title="Filter by Type">
                                     <c:forEach var="option" items="${typeOptions}">
                                         <option value="${option.name}" <c:if test="${destinationType == option.name}">selected</c:if>>${option.value}</option>
                                     </c:forEach>
@@ -565,6 +565,26 @@ function _updateDestSearchBanner(queryError, total, hasSearch) {
         }
     };
 
+    window._updateDestTypeStyle = function _updateDestTypeStyle() {
+        var sel = document.getElementById('destinationType');
+        var icon = document.getElementById('destTypeIcon');
+        if (!sel || !icon) return;
+        var active = sel.value && sel.value !== '-1';
+        if (active) {
+            icon.style.setProperty('background-color', 'var(--bs-primary)', 'important');
+            icon.style.setProperty('color', '#fff', 'important');
+            icon.style.setProperty('border-color', 'var(--bs-primary)', 'important');
+            sel.style.setProperty('border-color', 'var(--bs-primary)', 'important');
+            sel.style.setProperty('background-color', 'var(--bs-primary-bg-subtle)', 'important');
+        } else {
+            icon.style.removeProperty('background-color');
+            icon.style.removeProperty('color');
+            icon.style.removeProperty('border-color');
+            sel.style.removeProperty('border-color');
+            sel.style.removeProperty('background-color');
+        }
+    }
+
     function _currentFilters() {
         return {
             destinationSearch:  $('#destinationSearch').val() || '',
@@ -779,6 +799,7 @@ function _updateDestSearchBanner(queryError, total, hasSearch) {
     });
 
     $(function() {
+        _updateDestTypeStyle();
         _destsTable = $('#destinationsTable').DataTable($.extend({}, _opts, { pageLength: _pageLen }));
         $('#destPageLen').val(_pageLen);
         $('#destPageLen').on('change', function() {

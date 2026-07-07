@@ -136,6 +136,20 @@ table.fields > tbody > tr > th {
 <div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
 <i class="bi bi-geo-alt text-primary"></i>
 <span class="fw-semibold">Location</span>
+<button type="button" class="btn btn-link btn-sm text-muted p-0 flex-shrink-0"
+  data-bs-toggle="collapse" data-bs-target="#viewLocationInfoPanel"
+  aria-expanded="false" title="About the Location">
+  <i class="bi bi-info-circle"></i>
+</button>
+</div>
+<div class="collapse" id="viewLocationInfoPanel">
+<div class="alert alert-info rounded-0 border-0 border-bottom mb-0 py-2 px-3" style="font-size:0.85em">
+  <strong><i class="bi bi-geo-alt me-1"></i>Host Location</strong><br>
+  The location (latitude &amp; longitude) is used to render this host as a pin on the world map, giving a quick visual overview of where your remote servers are geographically situated.<br><br>
+  <strong>Automatic mode</strong> &mdash; when enabled, OpenECPDS attempts to resolve the host&rsquo;s coordinates automatically by performing a GeoIP lookup against the host&rsquo;s hostname or IP address. The result is shown as the <em>Estimated Location</em> and the country flag. This lookup is best-effort and may not be available for private/internal IP ranges.<br><br>
+  <strong>Manual mode</strong> &mdash; when automatic mode is disabled you can supply an exact latitude and longitude (or pick a point on the map in the edit form). Manual coordinates take precedence and are always used as-is.<br><br>
+  <strong>Network Info page</strong> &mdash; the location is also used in the <em>Network Info</em> page when displaying MTR (My Traceroute) results on the map, allowing you to visualise the network path from the ECPDS server to this host and identify where latency or packet loss occurs along the route.
+</div>
 </div>
 <div class="card-body py-0">
 <div class="field-grid">
@@ -152,6 +166,14 @@ table.fields > tbody > tr > th {
 <div class="card-header d-flex align-items-center gap-2" id="hostViewDirCardHeader" style="background:var(--bs-secondary-bg)">
 <i class="bi bi-folder2-open text-primary"></i>
 <span class="fw-semibold">Directory</span>
+<button type="button" class="btn btn-link btn-sm text-muted p-0 flex-shrink-0"
+  data-bs-toggle="collapse" data-bs-target="#viewTestDirInfoPanel"
+  aria-expanded="false" title="About the Directory field">
+  <i class="bi bi-info-circle"></i>
+</button>
+<a href="#" class="btn btn-sm btn-outline-info ms-1 flex-shrink-0"
+   onclick="var el=document.getElementById('directoryGuideOffcanvas');if(el)bootstrap.Offcanvas.getOrCreateInstance(el).show();return false;"
+   title="Open Directory Guide"><i class="bi bi-book me-1"></i><span class="d-none d-sm-inline">Directory </span>Guide</a>
 <auth:if basePathKey="host.basepath" paths="/edit/insert_form">
 <auth:then>
 <span class="ms-auto" style="position:relative;display:inline-block">
@@ -159,6 +181,22 @@ table.fields > tbody > tr > th {
 </span>
 </auth:then>
 </auth:if>
+</div>
+<div class="collapse" id="viewTestDirInfoPanel">
+  <div class="alert alert-info border-0 rounded-0 mb-0 py-2 px-3" style="font-size:0.85rem;">
+    <i class="bi bi-info-circle-fill me-1"></i>
+    The <strong>Directory</strong> field controls where files are read from or written to on the remote server.
+    Its meaning depends on the host type: for <strong>Acquisition</strong> hosts it is a listing specification
+    (one remote path per line, optionally a JavaScript or Python script); for <strong>Dissemination</strong>
+    hosts it is a target-path template with variable substitution; for other types it is a simple base path.
+    Use the <em>Directory Guide</em> button for full details.
+    <auth:if basePathKey="host.basepath" paths="/edit/insert_form">
+    <auth:then>
+    The <strong>Test on Server</strong> button sends the current content to the host server and runs it in
+    the same environment as a real transfer &mdash; the result is displayed in a panel below the editor.
+    </auth:then>
+    </auth:if>
+  </div>
 </div>
 <div class="card-body">
 <div id='dirType'>
@@ -180,6 +218,26 @@ type='radio' id='ispython' name='dirType' />Python
 <div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
 <i class="bi bi-sliders text-primary"></i>
 <span class="fw-semibold">Options</span>
+<button type="button" class="btn btn-link btn-sm text-muted p-0 flex-shrink-0"
+  data-bs-toggle="collapse" data-bs-target="#viewOptionsInfoPanel"
+  aria-expanded="false" title="About Options">
+  <i class="bi bi-info-circle"></i>
+</button>
+<c:if test="${not empty moduleGuide}">
+<a href="#" class="btn btn-sm btn-outline-info ms-1 flex-shrink-0"
+   onclick="var el=document.getElementById('moduleGuideOffcanvas');if(el)bootstrap.Offcanvas.getOrCreateInstance(el).show();return false;"
+   title="Configuration Guide"><i class="bi bi-book me-1"></i><span class="d-none d-sm-inline">Configuration </span>Guide</a>
+</c:if>
+</div>
+<div class="collapse" id="viewOptionsInfoPanel">
+  <div class="alert alert-info border-0 rounded-0 mb-0 py-2 px-3" style="font-size:0.85rem;">
+    <i class="bi bi-info-circle-fill me-1"></i>
+    The <strong>Options</strong> section contains module-specific parameters that control advanced
+    transfer behaviour. <strong>Properties</strong> are key=value pairs passed to the ECtrans transfer
+    module (e.g. timeouts, retries, encryption). The <strong>JavaScript</strong> panel lets you inject
+    custom logic that runs at transfer time. Use the <em>Configuration Guide</em> button for a full
+    reference of all available options for the selected transfer protocol.
+  </div>
 </div>
 <div class="card-body">
 <div class="accordion" id="hostViewOptionsAccordion">
@@ -230,6 +288,11 @@ JavaScript
 <div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
 <i class="bi bi-terminal text-primary"></i>
 <span class="fw-semibold">Acquisition Console</span>
+<button type="button" class="btn btn-link btn-sm text-muted p-0 flex-shrink-0"
+  data-bs-toggle="collapse" data-bs-target="#acqConsoleInfoPanel"
+  aria-expanded="false" title="About Acquisition Console">
+  <i class="bi bi-info-circle"></i>
+</button>
 <span id="acqStatusBadge" class="ms-1"></span>
 <div class="ms-auto">
 <a href='<bean:message key="host.basepath"/>/edit/getOutput/view/${host.id}'
@@ -239,9 +302,25 @@ JavaScript
 </a>
 </div>
 </div>
+<div class="collapse" id="acqConsoleInfoPanel">
+  <div class="alert alert-info border-0 rounded-0 mb-0 py-2 px-3" style="font-size:0.85rem;">
+    <i class="bi bi-info-circle-fill me-1"></i>
+    The <strong>Acquisition Console</strong> shows a live preview of the most recent acquisition
+    run for this host. It displays the output from the listing script or directory scan as it
+    executes on the DataMover &mdash; including discovered files, applied filters, and any errors.
+    The badge next to the title shows whether an acquisition thread is currently
+    <strong>Running</strong> or <strong>Idle</strong>. Click <strong>Open Console</strong> to open
+    the full interactive console where you can monitor progress in real time, trigger a new run
+    with <em>Run Now</em>, or cancel a running acquisition. The full console shows two separate
+    outputs: the <strong>process output</strong> (the raw stdout/stderr of the listing script or
+    transfer module as it runs on the DataMover) and the <strong>listing output</strong> (the
+    parsed result &mdash; each file entry that was discovered, matched, and queued for transfer),
+    giving a complete view of both what the script produced and what the scheduler actually acted on.
+  </div>
+</div>
 <c:if test="${not empty acquisitionNote}">
 <div class="d-flex align-items-start gap-2 px-3 py-2" style="background:rgba(255,193,7,0.12);border-bottom:1px solid rgba(255,193,7,0.3);font-size:0.82rem;color:var(--bs-warning-text-emphasis,#664d03)">
-  <i class="bi bi-exclamation-triangle-fill mt-1" style="flex-shrink:0;color:#f0ad4e"></i>
+  <i class="bi bi-exclamation-triangle-fill" style="flex-shrink:0;color:#f0ad4e;margin-top:0.1em"></i>
   <span><strong>Run Now is disabled:</strong> <c:out value="${acquisitionNote}" escapeXml="false"/>. The Acquisition Scheduler requires at least one associated destination to be active and running.</span>
 </div>
 </c:if>
@@ -374,6 +453,9 @@ JavaScript
 
 	<%-- HTTP/MQTT Module Configuration Guide (Acquisition hosts only) --%>
 	<c:if test="${not empty moduleGuide}"><jsp:include page="${moduleGuide}"/></c:if>
+
+	<%-- Directory Guide offcanvas --%>
+	<jsp:include page="/WEB-INF/jsp/pds/transfer/host/directory_guide.jsp"/>
 
 	<%-- Help offcanvas panel --%>
 	<div class="offcanvas offcanvas-end" tabindex="-1" id="hostHelpOffcanvas"

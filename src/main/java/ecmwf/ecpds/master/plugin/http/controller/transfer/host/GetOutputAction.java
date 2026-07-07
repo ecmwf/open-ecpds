@@ -74,6 +74,10 @@ public class GetOutputAction extends PDSAction {
             if ("view".equalsIgnoreCase(operation)) {
                 request.setAttribute("host", host);
                 try {
+                    request.setAttribute("hostPropErrors", GetHostListJsonAction.hasPropertyErrors(host));
+                } catch (final Exception ignored) {
+                }
+                try {
                     final var ecmName = host.getTransferMethod().getEcTransModuleName();
                     if (ecmName != null) {
                         setGuideIfPresent("/WEB-INF/jsp/pds/transfer/module/guide/" + ecmName + ".jsp", request);

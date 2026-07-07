@@ -11,7 +11,7 @@
     <tr>
         <th>
             <a title="${host.nickName} (${host.active ? 'Enabled' : 'Disabled'})"
-               href='<bean:message key="host.basepath"/>/${host.id}'>Host</a>
+               href='<bean:message key="host.basepath"/>/${host.id}' style="display:inline-flex;align-items:center;gap:0.3rem;">Host<c:if test="${hostPropErrors}"><span class="badge bg-danger" style="font-size:0.6rem;padding:2px 4px;line-height:1;" title="Properties contain errors"><i class="bi bi-exclamation-circle-fill"></i></span></c:if></a>
         </th>
     </tr>
     <tr><td style="padding:1px 32px 1px 22px;"><hr style="margin:1px 0;opacity:0.15;border-top:1px solid currentColor;"/></td></tr>

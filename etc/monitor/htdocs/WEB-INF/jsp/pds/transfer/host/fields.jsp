@@ -148,11 +148,24 @@ labelProperty="name" />
 <div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
 <i class="bi bi-ethernet text-primary"></i>
 <span class="fw-semibold">Connection</span>
-<button id="formGuideBtn" type="button"
-        class="btn btn-sm btn-outline-secondary ms-1 flex-shrink-0 disabled"
-        title="No configuration guide available" disabled>
-  <i class="bi bi-book me-1"></i><span class="d-none d-sm-inline">Configuration </span>Guide
+<button type="button" class="btn btn-link btn-sm text-muted p-0 flex-shrink-0"
+  data-bs-toggle="collapse" data-bs-target="#connectionInfoPanel"
+  aria-expanded="false" title="About Connection settings">
+  <i class="bi bi-info-circle"></i>
 </button>
+</div>
+<div class="collapse" id="connectionInfoPanel">
+  <div class="alert alert-info border-0 rounded-0 mb-0 py-2 px-3" style="font-size:0.85rem;">
+    <i class="bi bi-info-circle-fill me-1"></i>
+    The <strong>Connection</strong> settings define how OpenECPDS connects to the remote server for
+    both data transfers and directory operations. The <strong>Transfer Protocol</strong> selects the
+    ECtrans module (e.g. FTP, SFTP, S3) &mdash; use the <em>Configuration Guide</em> button for
+    module-specific options. The <strong>Hostname/IP</strong>, <strong>Login</strong>, and
+    <strong>Password</strong> are passed directly to the transfer module when opening a connection.
+    The <strong>Nickname</strong> is the human-readable label shown in the monitoring UI.
+    These same credentials and protocol are also used when running <strong>Test on Server</strong>
+    in the Directory panel, so the test executes in the exact same environment as a real transfer.
+  </div>
 </div>
 <div class="card-body">
 <div class="row g-3">
@@ -274,16 +287,33 @@ labelProperty="name" />
 <div class="card-header d-flex align-items-center gap-2" id="hostDirCardHeader" style="background:var(--bs-secondary-bg)">
 <i class="bi bi-folder2-open text-primary"></i>
 <span class="fw-semibold">Directory</span>
-<button class="btn btn-sm btn-outline-secondary ms-1 flex-shrink-0"
+<button type="button" class="btn btn-link btn-sm text-muted p-0 flex-shrink-0"
+  data-bs-toggle="collapse" data-bs-target="#testDirInfoPanel"
+  aria-expanded="false" title="About Test on Server">
+  <i class="bi bi-info-circle"></i>
+</button>
+<button class="btn btn-sm btn-outline-info ms-1 flex-shrink-0"
   data-bs-toggle="offcanvas" data-bs-target="#directoryGuideOffcanvas"
   title="Open Directory Guide" type="button">
   <i class="bi bi-book me-1"></i><span class="d-none d-sm-inline">Directory </span>Guide
 </button>
-<span class="ms-auto" style="position:relative;display:inline-block">
+<span class="ms-auto d-flex align-items-center gap-1">
+<span style="position:relative;display:inline-block">
 <button type="button" id="testDir" name="testDir" class="btn btn-sm btn-outline-secondary">Test on Server</button>
 <span id="testDirOverlay" style="display:none;position:absolute;inset:0;cursor:not-allowed"
   data-bs-toggle="tooltip" data-bs-title="Fix the errors in the editor before testing"></span>
 </span>
+</span>
+</div>
+<div class="collapse" id="testDirInfoPanel">
+  <div class="alert alert-info border-0 rounded-0 mb-0 py-2 px-3" style="font-size:0.85rem;">
+    <i class="bi bi-info-circle-fill me-1"></i>
+    <strong>Test on Server</strong> sends the current Directory script to the host server and runs it
+    in the same environment used during real transfers. The result &mdash; the resolved directory path &mdash;
+    is displayed in a panel below the editor. Use this to verify that your Plain Text, JavaScript,
+    or Python expression returns the expected path before saving. The button is disabled while the
+    editor contains errors.
+  </div>
 </div>
 <div class="card-body">
 <div class="row g-3">
@@ -405,6 +435,11 @@ onclick="formatSource(editorDir); return false">Format</button>
 <div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
 <i class="bi bi-sliders text-primary"></i>
 <span class="fw-semibold">Options</span>
+<button id="formGuideBtn" type="button"
+        class="btn btn-sm btn-outline-info ms-1 flex-shrink-0"
+        title="Configuration Guide">
+  <i class="bi bi-book me-1"></i><span class="d-none d-sm-inline">Configuration </span>Guide
+</button>
 </div>
 <div class="card-body">
 <div class="row g-3">
@@ -468,6 +503,20 @@ JavaScript
 <div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
 <i class="bi bi-geo-alt text-primary"></i>
 <span class="fw-semibold">Location</span>
+<button type="button" class="btn btn-link btn-sm text-muted p-0 flex-shrink-0"
+  data-bs-toggle="collapse" data-bs-target="#editLocationInfoPanel"
+  aria-expanded="false" title="About the Location">
+  <i class="bi bi-info-circle"></i>
+</button>
+</div>
+<div class="collapse" id="editLocationInfoPanel">
+<div class="alert alert-info rounded-0 border-0 border-bottom mb-0 py-2 px-3" style="font-size:0.85em">
+  <strong><i class="bi bi-geo-alt me-1"></i>Host Location</strong><br>
+  The location (latitude &amp; longitude) is used to render this host as a pin on the world map, giving a quick visual overview of where your remote servers are geographically situated.<br><br>
+  <strong>Automatic mode</strong> &mdash; when enabled, OpenECPDS attempts to resolve the host&rsquo;s coordinates automatically by performing a GeoIP lookup against the host&rsquo;s hostname or IP address. The result is shown as the <em>Estimated Location</em> in the host view. This lookup is best-effort and may not be available for private/internal IP ranges.<br><br>
+  <strong>Manual mode</strong> &mdash; uncheck <em>Automatic Location</em> to supply exact coordinates. You can type the latitude and longitude directly, or click <em>Pick on map</em> to select a point interactively on the world map.<br><br>
+  <strong>Network Info page</strong> &mdash; the location is also used in the <em>Network Info</em> page when displaying MTR (My Traceroute) results on the map, allowing you to visualise the network path from the ECPDS server to this host and identify where latency or packet loss occurs along the route.
+</div>
 </div>
 <div class="card-body">
 <div class="row g-3 align-items-end">

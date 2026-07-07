@@ -182,7 +182,7 @@
 	aria-expanded="false" title="About this panel">
 	<i class="bi bi-info-circle"></i>
 </button>
-<button class="btn btn-sm btn-outline-secondary ms-1 flex-shrink-0"
+<button class="btn btn-sm btn-outline-info ms-1 flex-shrink-0"
 data-bs-toggle="offcanvas" data-bs-target="#acquisitionGuideOffcanvas"
 title="Open Acquisition Guide">
 <i class="bi bi-book me-1"></i><span class="d-none d-sm-inline">Acquisition </span>Guide
@@ -228,7 +228,7 @@ onclick="progressCopy(this)">
 <div class="progress-terminal" style="width:100%;border-radius:0 0 var(--bs-card-border-radius) var(--bs-card-border-radius)">
 <c:if test="${not empty acquisitionNote}">
 <div class="d-flex align-items-start gap-2 px-3 py-2" style="background:rgba(255,193,7,0.12);border-bottom:1px solid rgba(255,193,7,0.3);font-size:0.82rem;color:var(--bs-warning-text-emphasis,#664d03)">
-  <i class="bi bi-exclamation-triangle-fill mt-1" style="flex-shrink:0;color:#f0ad4e"></i>
+  <i class="bi bi-exclamation-triangle-fill" style="margin-top:0.1em;flex-shrink:0;color:#f0ad4e"></i>
   <span><strong>Run Now is disabled:</strong> <c:out value="${acquisitionNote}" escapeXml="false"/>. The Acquisition Scheduler requires at least one associated destination to be active and running.</span>
 </div>
 </c:if>

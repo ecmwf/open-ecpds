@@ -243,7 +243,7 @@ ftp.cwd = "/data/incoming"</pre>
       <div class="tab-pane fade" id="ftpgt-hooks" role="tabpanel">
 
         <div class="alert alert-warning py-2 px-3 mb-3 small d-flex align-items-start gap-2">
-          <i class="bi bi-exclamation-triangle flex-shrink-0 mt-1"></i>
+          <i class="bi bi-exclamation-triangle flex-shrink-0" style="margin-top:0.1em"></i>
           <div>Hook commands are sent as raw FTP commands. Syntax errors may abort the transfer.</div>
         </div>
 

@@ -111,7 +111,7 @@ s3.acceleration = "yes"            # S3 Transfer Acceleration (default: no)
             the SDK to follow cross-region 301 redirects at the HTTP layer.
           </div>
           <div class="alert alert-warning py-1 px-2 mb-0 small d-flex align-items-start gap-2">
-            <i class="bi bi-exclamation-triangle flex-shrink-0 mt-1"></i>
+            <i class="bi bi-exclamation-triangle flex-shrink-0" style="margin-top:0.1em"></i>
             <div><code>s3.crossRegionAccess</code> is incompatible with <code>s3.url</code> (custom endpoint).
             Use it only with standard AWS endpoints.</div>
           </div>
@@ -228,7 +228,7 @@ s3.singlepartSize = "9223372036854775807"  # max size for single-part streaming 
                                     # Useful when the stream size is unknown; enables retries.
                                     # Only applied when file size &lt; s3.singlepartSize.</pre>
           <div class="alert alert-warning py-1 px-2 mb-0 small d-flex align-items-start gap-2">
-            <i class="bi bi-exclamation-triangle flex-shrink-0 mt-1"></i>
+            <i class="bi bi-exclamation-triangle flex-shrink-0" style="margin-top:0.1em"></i>
             <div>Enabling <code>s3.useByteArrayInputStream</code> for large files may exhaust heap memory.
             Use in combination with a low <code>s3.singlepartSize</code>.</div>
           </div>

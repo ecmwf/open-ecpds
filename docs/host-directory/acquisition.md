@@ -131,6 +131,22 @@ for delta in range(3):  # today and 2 previous days
 
 Use the **Test on Server** button to execute the script and inspect its output before saving.
 
+### Test on Server
+
+The **Test on Server** button in the Directory card header sends the current editor content to the host server and runs it in the same environment used during real transfers — including the correct DataMover, transfer method credentials, and variable substitution. The result is displayed in a panel below the editor.
+
+**How it works:**
+
+- For **Plain Text** mode: the listing spec lines are evaluated as-is against the remote host. Each line is resolved and the resulting remote paths are returned.
+- For **JavaScript** and **Python** modes: the script is executed on an allocated DataMover; its standard output is returned and displayed exactly as the scheduler would see it at runtime.
+
+**Tips:**
+
+- All `$host[…]`, `$transferMethod[…]`, and `$date` variables are substituted before execution, so the output reflects real runtime values.
+- The button is **disabled** while the editor contains validation errors (unrecognised options or type mismatches) — fix those first.
+- A running test can be cancelled; the result panel shows success, error, or timeout status.
+- Use this to verify path patterns, debug regex filters, and check that date-based expressions produce the expected directory lines before committing a change.
+
 ### Wildcard filter
 
 The `acquisition.wildcardFilter` option appends a glob-style wildcard to the path sent to the remote server before listing. This lets the transfer module filter server-side, reducing the number of entries returned. The `acquisition.regexPattern` option applies an additional server-side regex filter at the listing call level.

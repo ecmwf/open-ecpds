@@ -272,7 +272,7 @@ http.credentials = "no"   # disable credential provider
 # Multiple headers - use \n as the line separator:
 http.headers = "Authorization: Bearer &lt;token&gt;\nX-Api-Key: &lt;key&gt;"</pre>
           <div class="alert alert-warning py-1 px-2 mb-0 small d-flex align-items-start gap-2">
-            <i class="bi bi-exclamation-triangle flex-shrink-0 mt-1"></i>
+            <i class="bi bi-exclamation-triangle flex-shrink-0" style="margin-top:0.1em"></i>
             <div>Tokens stored here persist in the database.
             Use <strong>dynamic token refresh</strong> (below) for tokens that expire.</div>
           </div>

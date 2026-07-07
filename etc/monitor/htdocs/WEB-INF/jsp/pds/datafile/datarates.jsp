@@ -99,14 +99,14 @@ const tFiles    = _si.map(i=>_tFiles[i]);
 
 <%-- Header bar: view toggle --%>
 <div class="d-flex justify-content-end align-items-center mb-3 mt-2 flex-wrap gap-2">
-  <div class="btn-group btn-group-sm" role="group">
-    <button type="button" class="btn btn-outline-secondary" id="btnTable" onclick="setView('table')">
+  <div class="d-flex align-items-center gap-1">
+    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnTable" onclick="setView('table')">
       <i class="bi bi-table me-1"></i>Table
     </button>
-    <button type="button" class="btn btn-outline-secondary active" id="btnChart" onclick="setView('chart')">
+    <button type="button" class="btn btn-sm btn-outline-secondary active" id="btnChart" onclick="setView('chart')">
       <i class="bi bi-bar-chart-fill me-1"></i>Chart
     </button>
-    <button type="button" class="btn btn-outline-secondary" id="btnReverse"
+    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnReverse"
         onclick="toggleOrder()" title="Showing earliest first — click to show latest first">
       <i class="bi bi-sort-down-alt" id="btnReverseIcon"></i>
     </button>
@@ -168,8 +168,8 @@ const tFiles    = _si.map(i=>_tFiles[i]);
                id="trafficTable" style="font-size:0.82rem; white-space:nowrap;">
           <thead class="table-primary">
             <tr>
-              <th onclick="sortTrafficTable(0)" style="cursor:pointer;" data-order="asc">
-                Date <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i>
+              <th style="cursor:default;">
+                Date
               </th>
               <th onclick="sortTrafficTable(1)" style="cursor:pointer;" data-order="asc">
                 Volume <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i>
@@ -379,12 +379,17 @@ var _chartPeriod = 0, _chartBR = null, _chartF = null;
 
 function getChartData(days) {
   var start = (days > 0 && tLabels.length > days) ? tLabels.length - days : 0;
-  return {
-    labels:   tLabels.slice(start),
-    bytes:    tBytes.slice(start),
-    rates:    tRates.slice(start),
-    files:    tFiles.slice(start)
-  };
+  var labels = tLabels.slice(start);
+  var bytes  = tBytes.slice(start);
+  var rates  = tRates.slice(start);
+  var files  = tFiles.slice(start);
+  if (_reversed) {
+    labels = labels.slice().reverse();
+    bytes  = bytes.slice().reverse();
+    rates  = rates.slice().reverse();
+    files  = files.slice().reverse();
+  }
+  return { labels: labels, bytes: bytes, rates: rates, files: files };
 }
 
 function setChartPeriod(days) {
@@ -527,6 +532,7 @@ function toggleOrder() {
   });
   _applyReverseBtn();
   buildTable();
+  if (_chartBR || _chartF) buildCharts();
   try { localStorage.setItem('dataRatesReversed', _reversed ? '1' : '0'); } catch(e) {}
 }
 
@@ -537,10 +543,10 @@ function _applyReverseBtn() {
   btn.classList.toggle('active', _reversed);
   if (_reversed) {
     icon.className = 'bi bi-sort-up-alt';
-    btn.title = 'Showing latest first &mdash; click to show earliest first';
+    btn.title = 'Showing latest first \u2014 click to show earliest first';
   } else {
     icon.className = 'bi bi-sort-down-alt';
-    btn.title = 'Showing earliest first &mdash; click to show latest first';
+    btn.title = 'Showing earliest first \u2014 click to show latest first';
   }
 }
 

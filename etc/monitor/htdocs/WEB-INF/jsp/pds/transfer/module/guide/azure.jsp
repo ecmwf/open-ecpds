@@ -119,7 +119,7 @@ azure.scheme = "http"</pre>
             </tbody>
           </table>
           <div class="alert alert-warning py-2 px-3 mt-2 small d-flex align-items-start gap-2">
-            <i class="bi bi-exclamation-triangle flex-shrink-0 mt-1"></i>
+            <i class="bi bi-exclamation-triangle flex-shrink-0" style="margin-top:0.1em"></i>
             <div>Both <code>azure.sasUrl</code> and <code>azure.sasSubscriptionKey</code> must be
             set together. If either is empty, the module falls through to Shared Key or Managed Identity.</div>
           </div>

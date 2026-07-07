@@ -1691,6 +1691,54 @@ public class DestinationActionForm extends ECMWFActionForm {
     }
 
     /**
+     * /** Remove alias.* lines from properties text whose destination name is not in the current alias list. Lines
+     * belonging to a multi-line quoted value are kept or removed together with their key line.
+     */
+    private static String stripOrphanedAliasLines(final String props, final Destination destination) {
+        java.util.Set<String> validAliasNames;
+        try {
+            validAliasNames = destination.getAliases().stream().map(Destination::getName)
+                    .collect(java.util.stream.Collectors.toSet());
+        } catch (final Exception e) {
+            log.warn("Could not load aliases for destination {}", destination.getId(), e);
+            return props;
+        }
+        final var result = new StringBuilder();
+        final var lines = props.split("\n", -1);
+        var skip = false;
+        var openQuotes = false;
+        for (final var line : lines) {
+            if (!openQuotes) {
+                // New logical line: decide whether to include or skip it
+                final var stripped = line.stripLeading();
+                if (stripped.matches("alias\\.[^\\s=]+=.*")) {
+                    // Extract the destination name between 'alias.' and the first '='
+                    final var dotIdx = stripped.indexOf('.');
+                    final var eqIdx = stripped.indexOf('=');
+                    final var destName = stripped.substring(dotIdx + 1, eqIdx).strip();
+                    skip = !validAliasNames.contains(destName);
+                } else {
+                    skip = false;
+                }
+            }
+            if (!skip) {
+                if (result.length() > 0)
+                    result.append('\n');
+                result.append(line);
+            }
+            // Track whether this logical line's quoted value is still open
+            var quoteCount = 0;
+            for (var i = 0; i < line.length(); i++) {
+                if (line.charAt(i) == '"')
+                    quoteCount++;
+            }
+            if (quoteCount % 2 != 0)
+                openQuotes = !openQuotes;
+        }
+        return result.toString();
+    }
+
+    /**
      * Populate from destination.
      *
      * @param destination
@@ -1720,7 +1768,7 @@ public class DestinationActionForm extends ECMWFActionForm {
         setShowInMonitors(destination.getShowInMonitors() ? "on" : "off");
         setGroupByDate(destination.getGroupByDate() ? "on" : "off");
         setTransferGroup(destination.getTransferGroupName());
-        setProperties(getProperties(destination.getData()));
+        setProperties(stripOrphanedAliasLines(getProperties(destination.getData()), destination));
         setJavascript(getJavascript(destination.getData()));
         setDateFormat(destination.getDateFormat());
         setEcUserName(destination.getEcUserName());

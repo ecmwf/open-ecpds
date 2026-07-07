@@ -36,8 +36,8 @@
                         </div>
                         <div class="col-12 col-sm-3">
                             <div class="input-group">
-                                <span class="input-group-text text-muted"><i class="bi bi-tag"></i></span>
-                                <select class="form-select" name="hostType" id="hostType" onchange="hostsTableReload()" title="Filter by Type">
+                                <span class="input-group-text" id="hostTypeIcon"><i class="bi bi-tag"></i></span>
+                                <select class="form-select" name="hostType" id="hostType" onchange="hostsTableReload(); _updateHostTypeStyle(); this.blur();" title="Filter by Type">
                                     <c:forEach var="option" items="${typeOptions}">
                                         <option value="${option.name}" <c:if test="${hostType == option.name}">selected</c:if>>${option.value}</option>
                                     </c:forEach>
@@ -477,7 +477,27 @@ function _updateHostSearchBanner(queryError, total, hasSearch) {
             _hostsTable.ajax.reload();
         }
     }
+    function _updateHostTypeStyle() {
+        var sel = document.getElementById('hostType');
+        var icon = document.getElementById('hostTypeIcon');
+        if (!sel || !icon) return;
+        var active = sel.value && sel.value !== 'All';
+        if (active) {
+            icon.style.setProperty('background-color', 'var(--bs-primary)', 'important');
+            icon.style.setProperty('color', '#fff', 'important');
+            icon.style.setProperty('border-color', 'var(--bs-primary)', 'important');
+            sel.style.setProperty('border-color', 'var(--bs-primary)', 'important');
+            sel.style.setProperty('background-color', 'var(--bs-primary-bg-subtle)', 'important');
+        } else {
+            icon.style.removeProperty('background-color');
+            icon.style.removeProperty('color');
+            icon.style.removeProperty('border-color');
+            sel.style.removeProperty('border-color');
+            sel.style.removeProperty('background-color');
+        }
+    }
     $(function() {
+        _updateHostTypeStyle();
         // Suppress DataTables' native alert() for server errors; drawCallback shows them inline.
         $.fn.dataTable.ext.errMode = function () {};
         _hostsTable = $('#hostsTable').DataTable({

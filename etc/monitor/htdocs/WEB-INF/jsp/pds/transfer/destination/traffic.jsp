@@ -86,14 +86,14 @@ const tDuration = _si.map(i=>_tDuration[i]);
     </button>
   </div>
   <div class="d-flex align-items-center gap-2">
-    <div class="btn-group btn-group-sm" role="group">
-      <button type="button" class="btn btn-outline-secondary" id="btnTable" onclick="setView('table')">
+    <div class="d-flex align-items-center gap-1">
+      <button type="button" class="btn btn-sm btn-outline-secondary" id="btnTable" onclick="setView('table')">
         <i class="bi bi-table me-1"></i>Table
       </button>
-      <button type="button" class="btn btn-outline-secondary active" id="btnChart" onclick="setView('chart')">
+      <button type="button" class="btn btn-sm btn-outline-secondary active" id="btnChart" onclick="setView('chart')">
         <i class="bi bi-bar-chart-fill me-1"></i>Chart
       </button>
-      <button type="button" class="btn btn-outline-secondary" id="btnReverse"
+      <button type="button" class="btn btn-sm btn-outline-secondary" id="btnReverse"
           onclick="toggleOrder()" title="Showing earliest first — click to show latest first">
         <i class="bi bi-sort-down-alt" id="btnReverseIcon"></i>
       </button>
@@ -166,8 +166,8 @@ const tDuration = _si.map(i=>_tDuration[i]);
                id="trafficTable" style="font-size:0.82rem; white-space:nowrap;">
           <thead class="table-light">
             <tr>
-              <th onclick="sortTrafficTable(0)" style="cursor:pointer;" data-order="asc">
-                Date <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i>
+              <th style="cursor:default;">
+                Date
               </th>
               <th onclick="sortTrafficTable(1)" style="cursor:pointer;" data-order="asc">
                 Volume <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i>

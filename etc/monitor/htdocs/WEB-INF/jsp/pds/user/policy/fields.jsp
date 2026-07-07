@@ -94,7 +94,7 @@ function validate(path, message) {
       <c:when test="${empty incomingPolicyActionForm.destinations}">
         <div class="alert alert-warning py-2 px-3 mb-2 small" role="alert">
           <div class="d-flex align-items-start gap-2 mb-1">
-            <i class="bi bi-exclamation-triangle-fill flex-shrink-0 mt-1"></i>
+            <i class="bi bi-exclamation-triangle-fill flex-shrink-0" style="margin-top:0.1em"></i>
             <strong>No destinations assigned.</strong>
           </div>
           <div class="text-muted mb-2">Data users relying solely on this policy for destination access will be denied. Select one or more destinations below and click <em>Add Selected</em>.</div>

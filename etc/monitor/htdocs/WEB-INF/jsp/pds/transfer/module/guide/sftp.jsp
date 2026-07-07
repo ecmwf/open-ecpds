@@ -152,7 +152,7 @@ sftp.mac = "hmac-sha2-256"</pre>
             </tbody>
           </table>
           <div class="alert alert-warning py-2 px-3 mt-2 small d-flex align-items-start gap-2">
-            <i class="bi bi-exclamation-triangle flex-shrink-0 mt-1"></i>
+            <i class="bi bi-exclamation-triangle flex-shrink-0" style="margin-top:0.1em"></i>
             <div>If <code>sftp.fingerPrint</code> is not set, host key checking depends on the
             JSch <code>StrictHostKeyChecking</code> property. Default is <code>no</code> (accept any host key).
             Set it via <code>sftp.options</code> for production environments.</div>

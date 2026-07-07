@@ -71,7 +71,7 @@
           </table>
         </div>
         <div class="alert alert-warning py-2 px-3 small d-flex align-items-start gap-2 mb-0">
-          <i class="bi bi-exclamation-triangle-fill flex-shrink-0 mt-1"></i>
+          <i class="bi bi-exclamation-triangle-fill flex-shrink-0" style="margin-top:0.1em"></i>
           <div>Leaving <code>ftps.strict=false</code> (the default) disables certificate validation. Use <code>true</code> in production environments to prevent man-in-the-middle attacks.</div>
         </div>
       </div>

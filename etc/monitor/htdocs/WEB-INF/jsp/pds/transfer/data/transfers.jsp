@@ -176,8 +176,8 @@
                         </div>
                         <div class="col-12 col-sm-3">
                             <div class="input-group">
-                                <span class="input-group-text text-muted"><i class="bi bi-tag"></i></span>
-                                <select class="form-select" name="transferType" onchange="form.submit()" title="Filter by Type">
+                                <span class="input-group-text text-muted" id="transferTypeIcon"><i class="bi bi-tag"></i></span>
+                                <select class="form-select" name="transferType" id="transferType" onchange="_updateTransferTypeStyle(); this.blur(); form.submit();" title="Filter by Type">
                                     <c:forEach var="option" items="${transferTypeOptions}">
                                         <option value="${option.name}" <c:if test="${transferType == option.name}">selected</c:if>>${option.value}</option>
                                     </c:forEach>
@@ -576,6 +576,27 @@ function _updateTransferSearchBanner(queryError, total, hasSearch) {
 
 <script>
 (function () {
+    window._updateTransferTypeStyle = function() {
+        var sel = document.getElementById('transferType');
+        var icon = document.getElementById('transferTypeIcon');
+        if (!sel || !icon) return;
+        var active = sel.value && sel.value !== '-1';
+        if (active) {
+            icon.style.setProperty('background-color', 'var(--bs-primary)', 'important');
+            icon.style.setProperty('color', '#fff', 'important');
+            icon.style.setProperty('border-color', 'var(--bs-primary)', 'important');
+            sel.style.setProperty('border-color', 'var(--bs-primary)', 'important');
+            sel.style.setProperty('background-color', 'var(--bs-primary-bg-subtle)', 'important');
+        } else {
+            icon.style.removeProperty('background-color');
+            icon.style.removeProperty('color');
+            icon.style.removeProperty('border-color');
+            sel.style.removeProperty('border-color');
+            sel.style.removeProperty('background-color');
+        }
+    };
+    $(function() { _updateTransferTypeStyle(); });
+
     var date   = document.getElementById('dt-date').value;
     var status = document.getElementById('dt-status').value;
     var search = document.getElementById('dt-search').value;

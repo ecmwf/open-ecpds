@@ -143,6 +143,10 @@ public class GetHostAction extends PDSAction {
         // Let's pass the user for the getLastOutput links!
         host.setUser(user);
         request.setAttribute("host", host);
+        try {
+            request.setAttribute("hostPropErrors", GetHostListJsonAction.hasPropertyErrors(host));
+        } catch (final Exception ignored) {
+        }
         // Lightweight JSON endpoint: returns whether an acquisition thread is running for this host.
         // Called asynchronously by data.jsp to control the Run Now / polling behaviour.
         if ("acquisitionRunning".equals(request.getParameter("json"))) {

@@ -69,7 +69,7 @@
             </tbody>
           </table>
           <div class="alert alert-warning py-2 px-3 mt-2 small d-flex align-items-start gap-2">
-            <i class="bi bi-exclamation-triangle flex-shrink-0 mt-1"></i>
+            <i class="bi bi-exclamation-triangle flex-shrink-0" style="margin-top:0.1em"></i>
             <div>For standard GCS usage, leave <code>gcs.url</code> unset. The SDK routes
             to <code>storage.googleapis.com</code> automatically using the project credentials.</div>
           </div>
@@ -125,7 +125,7 @@ gcs.sslValidation = "no"</pre>
             </tbody>
           </table>
           <div class="alert alert-warning py-2 px-3 mt-2 small d-flex align-items-start gap-2">
-            <i class="bi bi-exclamation-triangle flex-shrink-0 mt-1"></i>
+            <i class="bi bi-exclamation-triangle flex-shrink-0" style="margin-top:0.1em"></i>
             <div>The <code>gcs.privateKey</code> value contains the full PEM block including
             newlines. Paste it exactly as it appears in the service account JSON file, replacing
             literal <code>\n</code> sequences with actual newlines.</div>
@@ -228,7 +228,7 @@ gcs.bucketLocation = "EU"</pre>
             </tbody>
           </table>
           <div class="alert alert-warning py-2 px-3 mt-2 small d-flex align-items-start gap-2">
-            <i class="bi bi-exclamation-triangle flex-shrink-0 mt-1"></i>
+            <i class="bi bi-exclamation-triangle flex-shrink-0" style="margin-top:0.1em"></i>
             <div>If the provided <code>gcs.chunkSize</code> is not a multiple of 256&nbsp;KiB,
             it is automatically rounded down. A value below 256&nbsp;KiB is rejected with an error.</div>
           </div>

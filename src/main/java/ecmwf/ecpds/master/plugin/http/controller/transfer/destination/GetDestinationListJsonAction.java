@@ -105,7 +105,7 @@ public class GetDestinationListJsonAction extends PDSAction {
         return map;
     }
 
-    private static boolean hasPropertyErrors(final Destination dest) {
+    static boolean hasPropertyErrors(final Destination dest) {
         try {
             final var data = dest.getData();
             if (data == null || data.isBlank()) {
@@ -113,11 +113,26 @@ public class GetDestinationListJsonAction extends PDSAction {
             }
             final var sepIdx = data.indexOf(ECtransSetup.SEPARATOR);
             final var propsText = sepIdx >= 0 ? data.substring(0, sepIdx) : data;
-            for (final var line : propsText.split("\n")) {
-                if (checkLineHasError(line)) {
-                    return true;
+            final var sb = new StringBuilder();
+            for (final var rawLine : propsText.split("\n")) {
+                if (sb.length() == 0) {
+                    sb.append(rawLine);
+                } else {
+                    sb.append(' ').append(rawLine.trim());
+                }
+                var quoteCount = 0;
+                for (var i = 0; i < sb.length(); i++) {
+                    if (sb.charAt(i) == '"')
+                        quoteCount++;
+                }
+                if (quoteCount % 2 == 0) {
+                    if (checkLineHasError(sb.toString()))
+                        return true;
+                    sb.setLength(0);
                 }
             }
+            if (!sb.isEmpty() && checkLineHasError(sb.toString()))
+                return true;
         } catch (final Exception ignored) {
         }
         return false;
@@ -142,7 +157,15 @@ public class GetDestinationListJsonAction extends PDSAction {
             return false;
         }
         final var key = m.group(1);
-        if (key.indexOf('.') < 0) {
+        final var dotIdx = key.indexOf('.');
+        if (dotIdx < 0) {
+            return false;
+        }
+        // alias.<destName> keys are dynamic (one per associated destination) — the option name
+        // is an arbitrary destination name, not a static parameter. Accept any alias.* key
+        // and only flag a value error if the quoted value is completely absent.
+        final var modulePrefix = key.substring(0, dotIdx).toLowerCase();
+        if ("alias".equals(modulePrefix)) {
             return false;
         }
         final var meta = OPTION_MAP.get(key.toLowerCase());

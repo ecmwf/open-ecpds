@@ -233,7 +233,18 @@
 <div class="field-grid">
 <div class="field-row"><div class="field-label">Transfer ID</div><div class="field-value"><span class="val-code">${datatransfer.id}</span></div></div>
 <div class="field-row"><div class="field-label">Data File ID</div><div class="field-value"><auth:if basePathKey="datafile.basepath" paths="/${datatransfer.dataFileId}"><auth:then><a href="<bean:message key="datafile.basepath"/>/${datatransfer.dataFileId}"><span class="val-code">${datatransfer.dataFileId}</span></a></auth:then><auth:else><span class="val-code">${datatransfer.dataFileId}</span></auth:else></auth:if></div></div>
-<div class="field-row"><div class="field-label"><c:out value="${datatransfer.destination.typeText}"/> Destination</div><div class="field-value"><a href="<bean:message key="destination.basepath"/>/<c:out value="${datatransfer.destination.name}"/>"><c:out value="${datatransfer.destination.name}"/></a><span class="text-muted small ms-1">(<c:out value="${datatransfer.destination.formattedStatus}"/>)</span></div></div>
+<div class="field-row"><div class="field-label"><c:out value="${datatransfer.destination.typeText}"/> Destination</div><div class="field-value">
+<a href="<bean:message key="destination.basepath"/>/<c:out value="${datatransfer.destination.name}"/>"><c:out value="${datatransfer.destination.name}"/></a>
+<c:set var="_dts" value="${datatransfer.destination.formattedStatus}"/>
+<c:set var="_dtsb" value="${fn:contains(_dts, '-') ? fn:substringBefore(_dts, '-') : _dts}"/>
+<c:choose>
+  <c:when test="${_dtsb == 'Running'}"><span class="badge bg-success ms-1 fs-status">${_dts}</span></c:when>
+  <c:when test="${_dtsb == 'Restarting' or _dtsb == 'Resending'}"><span class="badge bg-info text-dark ms-1 fs-status">${_dts}</span></c:when>
+  <c:when test="${_dtsb == 'Waiting' or _dtsb == 'Retrying' or _dtsb == 'Interrupted'}"><span class="badge bg-warning text-dark ms-1 fs-status">${_dts}</span></c:when>
+  <c:when test="${_dtsb == 'Initialized' or _dtsb == 'Stopped' or _dtsb == 'NoHosts' or _dtsb == 'Failed'}"><span class="badge bg-danger ms-1 fs-status">${_dts}</span></c:when>
+  <c:otherwise><span class="badge bg-secondary ms-1 fs-status">${_dts}</span></c:otherwise>
+</c:choose>
+</div></div>
 <div class="field-row"><div class="field-label">Status</div><div id="dt-status-val" class="field-value">
 <auth:if basePathKey="nonmemberstate.basepath" paths="">
 <auth:then><c:set var="_dtStatus" value="${datatransfer.detailedStatus}"/></auth:then>

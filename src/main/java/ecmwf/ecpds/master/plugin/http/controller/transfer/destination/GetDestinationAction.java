@@ -130,6 +130,10 @@ public class GetDestinationAction extends PDSAction {
             // Let's get the Destination!
             final var destination = DestinationHome.findByPrimaryKey(id);
             request.setAttribute("destination", destination);
+            try {
+                request.setAttribute("destPropErrors", GetDestinationListJsonAction.hasPropertyErrors(destination));
+            } catch (final Exception ignored) {
+            }
             // Lightweight JSON endpoint: returns the data-users count for the header badge.
             // Called asynchronously by destination_header.jsp so it works on every page
             // that embeds the header (including metadata, history, monitoring pages).

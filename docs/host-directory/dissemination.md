@@ -54,7 +54,22 @@ stream = "$dataFile[metaStream]"
 print("/outgoing/" + host + "/" + stream + "/")
 ```
 
-## Variables
+### Test on Server
+
+The **Test on Server** button in the Directory card header sends the current editor content to the host server and runs it in the same environment used during real transfers — including variable substitution and the host's transfer method context. The resolved target path is displayed in a panel below the editor.
+
+**How it works:**
+
+- For **Plain Text** and selector-syntax modes: the template is evaluated with a representative set of runtime variables and the resulting path is returned.
+- For **JavaScript** and **Python** modes: the script is executed on an allocated DataMover; the return value or printed output is used as the resolved path, exactly as at transfer time.
+
+**Tips:**
+
+- All `$host[…]`, `$dataFile[…]`, `$dataTransfer[…]`, and `$destination[…]` variables are substituted before execution, so the output reflects real runtime values.
+- The button is **disabled** while the editor contains validation errors — fix those first.
+- Use this to verify that your path template or script produces the correct target directory before saving.
+
+
 
 All tokens below are substituted before the path is used or the script runs.
 
