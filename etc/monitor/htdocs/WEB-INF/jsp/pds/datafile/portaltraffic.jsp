@@ -103,11 +103,15 @@ function ptGetThemeColors() {
 function ptBuildCharts() {
   if (_ptChartConn) { _ptChartConn.destroy(); _ptChartConn = null; }
   if (_ptChartBw)   { _ptChartBw.destroy();   _ptChartBw   = null; }
+  var labels = _ptReversed ? ptTimes.slice().reverse()       : ptTimes;
+  var conn   = _ptReversed ? ptConnections.slice().reverse() : ptConnections;
+  var rIn    = _ptReversed ? ptRateIn.slice().reverse()      : ptRateIn;
+  var rOut   = _ptReversed ? ptRateOut.slice().reverse()     : ptRateOut;
   var theme = ptGetThemeColors();
   _ptChartConn = new Chart(document.getElementById('ptConnChart'), {
     type: 'bar',
-    data: { labels: ptTimes, datasets: [{
-      label: 'Connections', data: ptConnections,
+    data: { labels: labels, datasets: [{
+      label: 'Connections', data: conn,
       backgroundColor: 'rgba(13,110,253,0.55)', borderColor: '#0d6efd', borderWidth: 1
     }]},
     options: { responsive:true, maintainAspectRatio:false,
@@ -117,9 +121,9 @@ function ptBuildCharts() {
   });
   _ptChartBw = new Chart(document.getElementById('ptBwChart'), {
     type: 'line',
-    data: { labels: ptTimes, datasets: [
-      { label:'Upload (Mbps)',  data:ptRateIn,  borderColor:'#fd7e14', backgroundColor:'rgba(253,126,20,0.08)', tension:0.25, pointRadius:2, fill:true },
-      { label:'Download (Mbps)',data:ptRateOut, borderColor:'#198754', backgroundColor:'rgba(25,135,84,0.08)',  tension:0.25, pointRadius:2, fill:true }
+    data: { labels: labels, datasets: [
+      { label:'Upload (Mbps)',  data:rIn,  borderColor:'#fd7e14', backgroundColor:'rgba(253,126,20,0.08)', tension:0.25, pointRadius:2, fill:true },
+      { label:'Download (Mbps)',data:rOut, borderColor:'#198754', backgroundColor:'rgba(25,135,84,0.08)',  tension:0.25, pointRadius:2, fill:true }
     ]},
     options: { responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
       plugins:{ legend:{labels:{color:theme.bodyColor}} },
@@ -359,9 +363,11 @@ function ptSetSearch(v) { _ptSearch = v.trim().toLowerCase(); _ptPage = 0; ptBui
 
 function ptToggleOrder() {
   _ptReversed = !_ptReversed;
+  if (_ptSortedIdx) _ptSortedIdx = _ptSortedIdx.slice().reverse();
   _ptPage = 0;
   ptApplyReverseBtn();
   ptBuildTable();
+  if (document.getElementById('ptChartView').style.display !== 'none') ptBuildCharts();
   try { localStorage.setItem('ptReversed', _ptReversed ? '1' : '0'); } catch(e) {}
 }
 
@@ -395,6 +401,7 @@ function ptSortTable(col) {
   });
   th.setAttribute('data-order', asc ? 'desc' : 'asc');
   _ptSortedIdx = idx;
+  if (col === 0) { _ptReversed = !asc; ptApplyReverseBtn(); }
   _ptPage = 0;
   ptBuildTable();
 }

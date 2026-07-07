@@ -285,7 +285,16 @@
         <%-- Global actions --%>
         <c:if test="${not empty ecpdsCanHandleQueue}">
             <div class="vr"></div>
-            <button type="button" class="btn btn-outline-primary btn-sm batch-action-btn" onclick="transferChange('requeue')" title="Requeue batch-selected"><i class="bi bi-arrow-repeat me-1"></i>Requeue</button>
+            <c:choose>
+              <c:when test="${not empty destination and not destination.hasActiveDisseminationHosts}">
+                <span data-bs-toggle="tooltip" title="Requeue unavailable: no active dissemination hosts for this destination" class="d-inline-block">
+                  <button type="button" class="btn btn-outline-secondary btn-sm" disabled style="pointer-events:none;"><i class="bi bi-arrow-repeat me-1"></i>Requeue</button>
+                </span>
+              </c:when>
+              <c:otherwise>
+                <button type="button" class="btn btn-outline-primary btn-sm batch-action-btn" onclick="transferChange('requeue')" title="Requeue batch-selected"><i class="bi bi-arrow-repeat me-1"></i>Requeue</button>
+              </c:otherwise>
+            </c:choose>
             <button type="button" class="btn btn-outline-danger btn-sm batch-action-btn"  onclick="transferChange('stop')"    title="Stop batch-selected"><i class="bi bi-stop-circle me-1"></i>Stop</button>
             <auth:if basePathKey="destination.basepath" paths="/deletions/${destinationDetailActionForm.id}/delete">
                 <auth:then>

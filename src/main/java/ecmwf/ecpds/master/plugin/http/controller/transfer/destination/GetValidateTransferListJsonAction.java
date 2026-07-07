@@ -45,6 +45,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import ecmwf.common.text.Format;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
+import ecmwf.ecpds.master.plugin.http.home.transfer.DestinationHome;
 import ecmwf.ecpds.master.plugin.http.model.transfer.DataTransfer;
 import ecmwf.ecpds.master.transfer.StatusFactory;
 import ecmwf.web.controller.ECMWFActionFormException;
@@ -137,6 +138,14 @@ public class GetValidateTransferListJsonAction extends PDSAction {
         final var selectedIdsNode = root.putArray("selectedIds");
         final var data = root.putArray("data");
         final var safeDest = destinationName != null ? destinationName : "";
+        var hasActiveDissHosts = true;
+        try {
+            if (!safeDest.isEmpty()) {
+                hasActiveDissHosts = DestinationHome.findByPrimaryKey(safeDest).getHasActiveDisseminationHosts();
+            }
+        } catch (final Exception _) {
+            // fail open
+        }
         for (final DataTransfer dt : transfers) {
             selectedIdsNode.add(dt.getId());
             final var row = data.addArray();
@@ -152,7 +161,7 @@ public class GetValidateTransferListJsonAction extends PDSAction {
             row.add(buildSizeHtml(dt));
             row.add(buildStatusHtml(dt, memberState));
             row.add(String.valueOf(dt.getPriority()));
-            row.add(buildActionsHtml(dt));
+            row.add(buildActionsHtml(dt, hasActiveDissHosts));
             row.add(buildValidateSelectHtml(dt, safeDest));
         }
         try {
@@ -456,7 +465,7 @@ public class GetValidateTransferListJsonAction extends PDSAction {
         }
     }
 
-    private static String buildActionsHtml(final DataTransfer dt) {
+    private static String buildActionsHtml(final DataTransfer dt, final boolean hasActiveDissHosts) {
         final var id = escapeHtml(dt.getId());
         if (dt.getDeleted()) {
             return "<span class=\"text-muted fst-italic\" title=\"Data Transfer deleted\">[deleted]</span>";
@@ -475,8 +484,14 @@ public class GetValidateTransferListJsonAction extends PDSAction {
                     .append(escapeHtml(dt.getTarget())).append("\">").append("<i class=\"bi bi-download\"></i></a>");
         }
         if (dt.getCanBeRequeued()) {
-            sb.append("<a href=\"javascript:transferChange('requeue','").append(id).append("')\" title=\"Requeue\">")
-                    .append("<i class=\"bi bi-arrow-repeat\"></i></a>");
+            if (hasActiveDissHosts) {
+                sb.append("<a href=\"javascript:transferChange('requeue','").append(id)
+                        .append("')\" title=\"Requeue\">").append("<i class=\"bi bi-arrow-repeat\"></i></a>");
+            } else {
+                sb.append(
+                        "<span class=\"text-muted\" data-bs-toggle=\"tooltip\" title=\"Requeue unavailable: no active dissemination hosts\">")
+                        .append("<i class=\"bi bi-arrow-repeat\"></i></span>");
+            }
         }
         if (dt.getCanBeStopped()) {
             sb.append("<a href=\"javascript:transferChange('stop','").append(id).append("')\" title=\"Stop\">")

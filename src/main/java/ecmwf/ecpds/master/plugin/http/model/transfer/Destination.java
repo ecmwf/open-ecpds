@@ -582,6 +582,14 @@ public interface Destination extends ModelBean {
     Collection<Pair> getDisseminationHostsAndPriorities() throws TransferException;
 
     /**
+     * Returns true if at least one active dissemination host is associated with this destination. Returns false when
+     * all dissemination hosts are inactive or when none are configured.
+     *
+     * @return true if at least one active dissemination host exists
+     */
+    boolean getHasActiveDisseminationHosts();
+
+    /**
      * Gets the acquisition hosts and priorities.
      *
      * @return the acquisition hosts and priorities
@@ -592,7 +600,6 @@ public interface Destination extends ModelBean {
     Collection<Pair> getAcquisitionHostsAndPriorities() throws TransferException;
 
     /**
-     * The Destinations that are aliases of this one.
      *
      * @return the aliases
      *

@@ -826,6 +826,26 @@ public class DestinationBean extends ModelBeanBase implements Destination, OjbIm
     /**
      * {@inheritDoc}
      *
+     * Returns true if at least one active dissemination host is associated with this destination.
+     */
+    @Override
+    public boolean getHasActiveDisseminationHosts() {
+        try {
+            for (final Pair pair : getDisseminationHostsAndPriorities()) {
+                if (((Host) pair.getName()).getActive()) {
+                    return true;
+                }
+            }
+        } catch (final TransferException e) {
+            log.warn("Could not check dissemination hosts for destination '" + getName() + "'", e);
+            return true; // fail open: do not disable requeue when the check itself fails
+        }
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * Gets the acquisition hosts and priorities.
      */
     @Override

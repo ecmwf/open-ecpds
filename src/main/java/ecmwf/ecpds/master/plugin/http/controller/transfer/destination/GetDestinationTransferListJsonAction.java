@@ -50,6 +50,7 @@ import ecmwf.common.text.Format;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.ecpds.master.plugin.http.dao.Util;
 import ecmwf.ecpds.master.plugin.http.home.transfer.DataTransferHome;
+import ecmwf.ecpds.master.plugin.http.home.transfer.DestinationHome;
 import ecmwf.ecpds.master.plugin.http.model.transfer.DataTransfer;
 import ecmwf.web.controller.ECMWFActionFormException;
 import ecmwf.web.model.users.User;
@@ -175,6 +176,14 @@ public class GetDestinationTransferListJsonAction extends PDSAction {
         } catch (final Exception _) {
         }
         root.put("totalSelected", daf != null ? daf.getSelectedTransfersCount() : 0);
+        // Check once whether this destination has at least one active dissemination host.
+        // If not, the per-row Requeue action is disabled to prevent NoHosts failures.
+        var hasActiveDissHosts = true;
+        try {
+            hasActiveDissHosts = DestinationHome.findByPrimaryKey(destinationName).getHasActiveDisseminationHosts();
+        } catch (final Exception _) {
+            // fail open: if we cannot determine host availability, leave requeue enabled
+        }
         final var data = root.putArray("data");
         for (final DataTransfer dt : transfers) {
             final var id = dt.getId();
@@ -194,7 +203,7 @@ public class GetDestinationTransferListJsonAction extends PDSAction {
             row.add(buildSizeHtml(dt));
             row.add(buildStatusHtml(dt, memberState));
             row.add(String.valueOf(dt.getPriority()));
-            row.add(buildActionsHtml(dt));
+            row.add(buildActionsHtml(dt, hasActiveDissHosts));
             row.add(buildSelectHtml(dt));
         }
         try {
@@ -349,7 +358,7 @@ public class GetDestinationTransferListJsonAction extends PDSAction {
         return "<span class=\"" + cls + "\" title=\"" + escaped + "\">" + baseEscaped + "</span>";
     }
 
-    private static String buildActionsHtml(final DataTransfer dt) {
+    private static String buildActionsHtml(final DataTransfer dt, final boolean hasActiveDissHosts) {
         final var id = escapeHtml(dt.getId());
         if (dt.getDeleted()) {
             return "<span class=\"text-muted fst-italic\" title=\"Data Transfer deleted\">[deleted]</span>";
@@ -368,8 +377,14 @@ public class GetDestinationTransferListJsonAction extends PDSAction {
                     .append(escapeHtml(dt.getTarget())).append("\">").append("<i class=\"bi bi-download\"></i></a>");
         }
         if (dt.getCanBeRequeued()) {
-            sb.append("<a href=\"javascript:transferChange('requeue','").append(id).append("')\" title=\"Requeue\">")
-                    .append("<i class=\"bi bi-arrow-repeat\"></i></a>");
+            if (hasActiveDissHosts) {
+                sb.append("<a href=\"javascript:transferChange('requeue','").append(id)
+                        .append("')\" title=\"Requeue\">").append("<i class=\"bi bi-arrow-repeat\"></i></a>");
+            } else {
+                sb.append(
+                        "<span class=\"text-muted\" data-bs-toggle=\"tooltip\" title=\"Requeue unavailable: no active dissemination hosts\">")
+                        .append("<i class=\"bi bi-arrow-repeat\"></i></span>");
+            }
         }
         if (dt.getCanBeStopped()) {
             sb.append("<a href=\"javascript:transferChange('stop','").append(id).append("')\" title=\"Stop\">")

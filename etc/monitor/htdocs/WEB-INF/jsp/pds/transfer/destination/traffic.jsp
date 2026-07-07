@@ -519,6 +519,7 @@ function setView(v) {
 // -- Order toggle (earliest-first ↔ latest-first) -----------------------------
 function toggleOrder() {
   _reversed = !_reversed;
+  if (_sortedIdx) _sortedIdx = _sortedIdx.slice().reverse();
   _page = 0;
   _applyReverseBtn();
   buildTable();
