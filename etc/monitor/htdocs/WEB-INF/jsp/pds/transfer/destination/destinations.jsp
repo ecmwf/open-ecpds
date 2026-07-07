@@ -883,8 +883,16 @@ function _updateDestSearchBanner(queryError, total, hasSearch) {
         function _dApplyResponsiveCols() {
             if (_dColMode !== 'auto') return;
             if (!_destsTable && !_isSplit) return;
-            // In split mode each table occupies roughly half the viewport width
-            var w = _isSplit ? Math.floor(window.innerWidth / 2) : window.innerWidth;
+            var w;
+            if (_isSplit) {
+                // Measure the actual rendered width of the split wrapper so the
+                // sidebar, page padding and inter-table gap are automatically
+                // accounted for.  Fall back to half the viewport if not yet in DOM.
+                var wrap = document.getElementById('destSplitWrap');
+                w = wrap ? Math.floor(wrap.offsetWidth / 2) : Math.floor(window.innerWidth / 2);
+            } else {
+                w = window.innerWidth;
+            }
             if (w < 768) {
                 _dShowCols(_dSMALL_HIDE);
             } else if (w < 992) {
