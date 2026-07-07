@@ -85,6 +85,7 @@ nav:
       - Failover Mechanism: architecture/failover.md
       - Data Transfer Lifecycle: architecture/data-transfer-lifecycle.md
       - Continental Data Movers: architecture/continental-data-movers.md
+      - DataMover Allocation & Load Balancing: architecture/datamover-allocation.md
   - Deployment:
       - Kubernetes: deployment/kubernetes.md
       - Physical Infrastructure: deployment/infrastructure.md
