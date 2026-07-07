@@ -14,6 +14,22 @@
 
 <div class="card border-0 shadow-sm mb-3">
 	<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+		<i class="bi bi-geo-alt text-primary"></i>
+		<span class="fw-semibold">Identity</span>
+	</div>
+	<div class="card-body py-2">
+		<div class="field-row"><div class="field-label">Type</div><div class="field-value"><jsp:include page="/WEB-INF/jsp/pds/transfer/destination/destination_type_badge.jsp"/></div></div>
+		<c:if test="${not empty destination.comment}">
+		<div class="field-row"><div class="field-label">Comment</div><div class="field-value"><span class="val-code">${destination.comment}</span></div></div>
+		</c:if>
+		<div class="field-row"><div class="field-label">Transfer Group <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="If no Dissemination Host is active then this field specifies in which Transfer Group the queued files should be stored" tabindex="0"></i></div><div class="field-value"><c:choose><c:when test="${not empty destination.transferGroupName}"><span class="val-code">${destination.transferGroupName}</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
+		<div class="field-row"><div class="field-label">Country</div><div class="field-value"><c:choose><c:when test="${not empty destination.country}"><span><c:if test="${not empty destination.countryIso}"><img src="https://flagcdn.com/16x12/${fn:toLowerCase(destination.countryIso)}.png" alt="${destination.countryIso}" title="${destination.countryIso}" class="me-1" onerror="this.style.display='none'"/></c:if>${destination.country.name}</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
+		<div class="field-row"><div class="field-label">Owner <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Only for the record" tabindex="0"></i></div><div class="field-value"><c:choose><c:when test="${not empty destination.ecUserName}"><span class="val-code">${destination.ecUserName}</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
+	</div>
+</div>
+
+<div class="card border-0 shadow-sm mb-3">
+	<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
 		<i class="bi bi-send text-primary"></i>
 		<span class="fw-semibold d-inline-flex align-items-center gap-1">Delivery
 			<button class="btn btn-sm p-0 border-0 text-secondary" style="line-height:1;font-size:0.85rem"
