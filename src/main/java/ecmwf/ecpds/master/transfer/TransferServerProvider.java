@@ -1119,6 +1119,26 @@ public final class TransferServerProvider {
             _log.debug("Force cluster checking for {}", group.getName());
             group = tryClusterFallback(group);
         }
+        // If the explicitly-requested group (e.g. from scheduler.transfergroup) is still
+        // unavailable and a destination name is known, try the destination's own
+        // transferGroupName FK as a graceful fallback. This covers the case where an
+        // operator has updated the destination's Transfer Group dropdown in the UI but
+        // has not yet updated the scheduler.transfergroup option in the properties text.
+        if (!groupIsAvailable(group) && isNotEmpty(groupName) && isNotEmpty(destinationName)) {
+            try {
+                final var fallback = resolveTransferGroup(null, destinationName);
+                if (!fallback.getName().equals(group.getName()) && groupIsAvailable(fallback)) {
+                    _log.warn(
+                            "TransferGroup {} not available for destination {}; falling back to destination's "
+                                    + "configured TransferGroup {} — update scheduler.transfergroup in the Destination "
+                                    + "properties to remove this warning",
+                            group.getName(), destinationName, fallback.getName());
+                    group = fallback;
+                }
+            } catch (final Exception e) {
+                _log.debug("Fallback group lookup failed for destination {}", destinationName, e);
+            }
+        }
         if (!groupIsAvailable(group)) {
             throw new TransferServerException("TransferGroup " + group.getName() + " not available");
         }
