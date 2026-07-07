@@ -523,13 +523,7 @@ function buildCharts() {
 // -- Order toggle (earliest-first ↔ latest-first) -----------------------------
 function toggleOrder() {
   _reversed = !_reversed;
-  _sortedIdx = null;
   _page = 0;
-  document.querySelectorAll('#trafficTable thead th').forEach(function(h) {
-    h.setAttribute('data-order', 'asc');
-    var icon = h.querySelector('i.bi');
-    if (icon) { icon.className = 'bi bi-arrow-down-up text-muted'; icon.style.fontSize = '0.6rem'; }
-  });
   _applyReverseBtn();
   buildTable();
   if (_chartBR || _chartF) buildCharts();

@@ -359,13 +359,7 @@ function ptSetSearch(v) { _ptSearch = v.trim().toLowerCase(); _ptPage = 0; ptBui
 
 function ptToggleOrder() {
   _ptReversed = !_ptReversed;
-  _ptSortedIdx = null;
   _ptPage = 0;
-  document.querySelectorAll('#ptDataTable thead th').forEach(function(h) {
-    h.setAttribute('data-order', 'asc');
-    var icon = h.querySelector('i.bi');
-    if (icon) { icon.className = 'bi bi-arrow-down-up text-muted'; icon.style.fontSize = '0.6rem'; }
-  });
   ptApplyReverseBtn();
   ptBuildTable();
   try { localStorage.setItem('ptReversed', _ptReversed ? '1' : '0'); } catch(e) {}
