@@ -1007,6 +1007,9 @@ public enum ECtransOptions {
     /** The host s3 part size. */
     HOST_S3_PART_SIZE("partSize", Integer.class, 10),
 
+    /** The host s3 num upload threads. */
+    HOST_S3_NUM_UPLOAD_THREADS("numUploadThreads", Integer.class, 2),
+
     /** The host s3 region. */
     HOST_S3_REGION("region", String.class, ""),
 

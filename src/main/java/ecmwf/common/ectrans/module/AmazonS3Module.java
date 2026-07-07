@@ -55,6 +55,7 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_FTPUSER;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_LISTEN_ADDRESS;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_MK_BUCKET;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_MULTIPART_SIZE;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_NUM_UPLOAD_THREADS;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_PART_SIZE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_PORT;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_PREFIX;
@@ -74,7 +75,6 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_USE_BYTE_ARRAY_INPUT_S
 import static ecmwf.common.text.Util.isEmpty;
 import static ecmwf.common.text.Util.isNotEmpty;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FilterOutputStream;
 import java.io.IOException;
@@ -87,10 +87,16 @@ import java.net.UnknownHostException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Queue;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.Deflater;
 import java.util.zip.GZIPOutputStream;
@@ -177,6 +183,9 @@ public final class AmazonS3Module extends TransferModule {
     /** The partSize in MB (minimum part size for S3 multipart is 5 MB except for the last part). */
     private int partSize = 10;
 
+    /** The number of threads used to upload parts in parallel during multipart uploads. */
+    private int numUploadThreads = 2;
+
     /** The closed. */
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
@@ -252,6 +261,7 @@ public final class AmazonS3Module extends TransferModule {
         bucketName = setup.getString(HOST_S3_BUCKET_NAME);
         s3prefix = setup.getString(HOST_S3_PREFIX).trim();
         partSize = setup.getInteger(HOST_S3_PART_SIZE);
+        numUploadThreads = Math.max(1, setup.getInteger(HOST_S3_NUM_UPLOAD_THREADS));
         if (isNotEmpty(s3prefix) && !s3prefix.endsWith("/")) {
             s3prefix += "/";
         }
@@ -1331,9 +1341,11 @@ public final class AmazonS3Module extends TransferModule {
     }
 
     /**
-     * An OutputStream that accumulates data into fixed-size parts and uploads them via the S3 multipart upload API.
-     * Parts are uploaded as they fill (each must be at least 5 MB except the last). The upload is completed when
-     * {@link #close()} is called. On error, {@link #abort()} cancels the in-progress upload on S3.
+     * An OutputStream that accumulates data into fixed-size parts and uploads them concurrently via the S3 multipart
+     * upload API. Parts are submitted to a thread pool as they fill, allowing the next part to be buffered from the
+     * source while prior parts are in-flight to S3 (pipelining). The upload is completed when {@link #close()} is
+     * called, which waits for all in-flight parts before issuing the final CompleteMultipartUpload. On error,
+     * {@link #abort()} cancels pending work and aborts the in-progress upload on S3.
      */
     private final class MultipartUploadOutputStream extends FilterOutputStream {
 
@@ -1349,16 +1361,19 @@ public final class AmazonS3Module extends TransferModule {
         /** The upload id. */
         private final String uploadId;
 
-        /** The completed parts. */
-        private final List<CompletedPart> completedParts = new ArrayList<>();
+        /** Executor for concurrent part uploads. */
+        private final ExecutorService uploadExecutor;
 
-        /** The part buffer. */
-        private final byte[] partBuffer;
+        /** Futures for in-flight part uploads, in submission order. */
+        private final List<Future<CompletedPart>> pendingParts = new ArrayList<>();
+
+        /** The part buffer (filled by the write thread; copied before async submission). */
+        private byte[] partBuffer;
 
         /** The buffer position. */
         private int bufferPos = 0;
 
-        /** The part number (1-based). */
+        /** The part number (1-based), incremented synchronously before each async submission. */
         private int partNumber = 1;
 
         /** Whether close() has already been called. */
@@ -1383,13 +1398,16 @@ public final class AmazonS3Module extends TransferModule {
             this.key = key;
             this.partSizeBytes = partSizeMB * 1024 * 1024;
             this.partBuffer = new byte[this.partSizeBytes];
+            this.uploadExecutor = Executors.newFixedThreadPool(numUploadThreads);
             try {
                 uploadId = s3.getS3Client()
                         .createMultipartUpload(CreateMultipartUploadRequest.builder().bucket(bucket).key(key).build())
                         .uploadId();
             } catch (final S3Exception e) {
+                uploadExecutor.shutdownNow();
                 throw new IOException("Initiating multipart upload for " + key + ": " + formatS3Exception(e));
             } catch (final Exception e) {
+                uploadExecutor.shutdownNow();
                 throw new IOException("Initiating multipart upload for " + key + ": " + Format.getMessage(e, "", 0));
             }
         }
@@ -1398,7 +1416,7 @@ public final class AmazonS3Module extends TransferModule {
         public void write(final int b) throws IOException {
             partBuffer[bufferPos++] = (byte) b;
             if (bufferPos == partSizeBytes) {
-                uploadCurrentPart();
+                submitCurrentPart();
             }
         }
 
@@ -1414,36 +1432,42 @@ public final class AmazonS3Module extends TransferModule {
                 offset += toWrite;
                 remaining -= toWrite;
                 if (bufferPos == partSizeBytes) {
-                    uploadCurrentPart();
+                    submitCurrentPart();
                 }
             }
         }
 
         /**
-         * Uploads the current buffer content as the next part.
+         * Copies the current buffer and submits an async upload task, then immediately resets the buffer so the caller
+         * can continue filling the next part without waiting for the S3 upload to complete.
          */
-        private void uploadCurrentPart() throws IOException {
+        private void submitCurrentPart() throws IOException {
             if (bufferPos == 0) {
                 return;
             }
+            // Snapshot the filled bytes and assign the part number synchronously
+            final var data = Arrays.copyOf(partBuffer, bufferPos);
+            final int currentPartNumber = partNumber++;
+            bufferPos = 0;
+            // Submit the upload asynchronously; the write thread is free to fill the next part immediately
             try {
-                final var response = s3.getS3Client().uploadPart(
-                        UploadPartRequest.builder().bucket(bucket).key(key).uploadId(uploadId).partNumber(partNumber)
-                                .contentLength((long) bufferPos).build(),
-                        RequestBody.fromInputStream(new ByteArrayInputStream(partBuffer, 0, bufferPos), bufferPos));
-                completedParts.add(CompletedPart.builder().partNumber(partNumber).eTag(response.eTag()).build());
-                partNumber++;
-                bufferPos = 0;
-            } catch (final S3Exception e) {
-                throw new IOException("Uploading part " + partNumber + " for " + key + ": " + formatS3Exception(e));
-            } catch (final Exception e) {
+                pendingParts.add(uploadExecutor.submit(() -> {
+                    final var response = s3.getS3Client().uploadPart(
+                            UploadPartRequest.builder().bucket(bucket).key(key).uploadId(uploadId)
+                                    .partNumber(currentPartNumber).contentLength((long) data.length).build(),
+                            RequestBody.fromBytes(data));
+                    return CompletedPart.builder().partNumber(currentPartNumber).eTag(response.eTag()).build();
+                }));
+            } catch (final RejectedExecutionException e) {
                 throw new IOException(
-                        "Uploading part " + partNumber + " for " + key + ": " + Format.getMessage(e, "", 0));
+                        "Upload executor rejected part " + currentPartNumber + " for " + key + ": executor shut down",
+                        e);
             }
         }
 
         /**
-         * Completes the multipart upload. If completion fails, the upload is aborted before rethrowing.
+         * Completes the multipart upload. Submits the final (partial) part, waits for all in-flight parts to finish,
+         * then issues CompleteMultipartUpload. On any error, aborts the upload before rethrowing.
          */
         @Override
         public void close() throws IOException {
@@ -1451,30 +1475,49 @@ public final class AmazonS3Module extends TransferModule {
                 return;
             }
             uploadClosed = true;
-            IOException failure = null;
             try {
-                uploadCurrentPart();
+                // Submit the last (possibly partial) part, then stop accepting new tasks
+                submitCurrentPart();
+                uploadExecutor.shutdown();
+                // Collect completed parts in submission (part-number) order
+                final List<CompletedPart> completedParts = new ArrayList<>(pendingParts.size());
+                for (final var future : pendingParts) {
+                    try {
+                        completedParts.add(future.get());
+                    } catch (final InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new IOException("Interrupted waiting for part upload for " + key, e);
+                    } catch (final ExecutionException e) {
+                        final var cause = e.getCause();
+                        if (cause instanceof final S3Exception s3e) {
+                            throw new IOException("Uploading part for " + key + ": " + formatS3Exception(s3e));
+                        }
+                        throw new IOException("Uploading part for " + key + ": " + Format.getMessage(cause, "", 0));
+                    }
+                }
                 s3.getS3Client().completeMultipartUpload(CompleteMultipartUploadRequest.builder().bucket(bucket)
                         .key(key).uploadId(uploadId)
                         .multipartUpload(CompletedMultipartUpload.builder().parts(completedParts).build()).build());
             } catch (final IOException e) {
-                failure = e;
-            } catch (final S3Exception e) {
-                failure = new IOException("Completing multipart upload for " + key + ": " + formatS3Exception(e));
-            } catch (final Exception e) {
-                failure = new IOException(
-                        "Completing multipart upload for " + key + ": " + Format.getMessage(e, "", 0));
-            }
-            if (failure != null) {
                 abort();
-                throw failure;
+                throw e;
+            } catch (final S3Exception e) {
+                abort();
+                throw new IOException("Completing multipart upload for " + key + ": " + formatS3Exception(e));
+            } catch (final Exception e) {
+                abort();
+                throw new IOException("Completing multipart upload for " + key + ": " + Format.getMessage(e, "", 0));
             }
         }
 
         /**
-         * Aborts the in-progress multipart upload, cleaning up any already-uploaded parts on S3.
+         * Cancels pending part uploads and aborts the in-progress multipart upload on S3.
          */
         void abort() {
+            uploadExecutor.shutdownNow();
+            for (final var future : pendingParts) {
+                future.cancel(true);
+            }
             try {
                 s3.getS3Client().abortMultipartUpload(
                         AbortMultipartUploadRequest.builder().bucket(bucket).key(key).uploadId(uploadId).build());
