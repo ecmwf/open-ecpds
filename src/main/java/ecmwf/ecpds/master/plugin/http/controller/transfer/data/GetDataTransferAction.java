@@ -48,6 +48,7 @@ import ecmwf.ecpds.master.plugin.http.dao.Util;
 import ecmwf.ecpds.master.plugin.http.dao.transfer.StatusBean;
 import ecmwf.ecpds.master.plugin.http.home.datafile.TransferServerHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.DataTransferHome;
+import ecmwf.ecpds.master.plugin.http.home.transfer.DestinationHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.TransferMethodHome;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Status;
 import ecmwf.ecpds.master.transfer.DestinationOption;
@@ -154,13 +155,38 @@ public class GetDataTransferAction extends PDSAction {
             request.setAttribute("datatransfer", transfer);
             request.setAttribute("datafile", transfer.getDataFile());
             try {
-                request.setAttribute("transferStatistics",
-                        MasterManager.getDB().getTransferStatisticsByDataTransferId(Long.parseLong(transfer.getId())));
+                request.setAttribute("destination", DestinationHome.findByPrimaryKey(transfer.getDestinationName()));
+            } catch (final Exception e) {
+                log.warn("Could not load destination '{}' for transfer {}", transfer.getDestinationName(),
+                        transfer.getId(), e);
+            }
+            try {
+                final var stats = MasterManager.getDB()
+                        .getTransferStatisticsByDataTransferId(Long.parseLong(transfer.getId()));
+                request.setAttribute("transferStatistics", stats);
+                request.setAttribute("transferStatisticsGroups", groupStatsByAttempt(stats));
             } catch (final Exception e) {
                 log.warn("Could not load transfer statistics for {}", transfer.getId(), e);
             }
         }
         return mapping.findForward("success");
+    }
+
+    /**
+     * Groups a list of TransferStatistics by their recorded requeueHistory value. Each distinct value represents one
+     * sending attempt, so grouping is exact with no time-gap heuristics. Results are ordered by ascending
+     * requeueHistory (i.e. attempt 1 first). Records pre-dating this field (requeueHistory == 0) all fall into the
+     * first group, which is the correct backward-compatible behaviour for transfers that were never requeued.
+     */
+    private static List<List<ecmwf.common.database.TransferStatistics>> groupStatsByAttempt(
+            final List<ecmwf.common.database.TransferStatistics> stats) {
+        final var groups = new java.util.LinkedHashMap<Integer, List<ecmwf.common.database.TransferStatistics>>();
+        if (stats != null) {
+            for (final var ts : stats) {
+                groups.computeIfAbsent(ts.getRequeueHistory(), k -> new ArrayList<>()).add(ts);
+            }
+        }
+        return new ArrayList<>(groups.values());
     }
 
     /**

@@ -99,7 +99,8 @@
 </div>
 
 <%-- DataTable: 14 columns (Actions hidden when user lacks queue access; Size hidden by default) --%>
-<table id="destTransferTable" class="table table-striped table-sm table-hover w-100">
+<div style="overflow-x: auto">
+<table id="destTransferTable" class="table table-striped table-sm table-hover">
   <thead class="table-light">
     <tr>
       <th>Err</th>
@@ -107,19 +108,20 @@
       <th title="Scheduled Time (UTC)">Sched. Time</th>
       <th title="Start Time (UTC)">Start Time</th>
       <th title="Finish Time (UTC)">Finish Time</th>
-      <th>Target</th>
+      <th style="min-width:120px;">Target</th>
       <th>TS</th>
       <th>%</th>
       <th>Mbits/s</th>
       <th>Size</th>
       <th>Status</th>
-      <th>Prior</th>
+      <th title="Priority">P</th>
       <th>Actions</th>
       <th style="cursor:pointer;white-space:nowrap" title="Click to select/unselect all transfers on this page" onclick="togglePageSelection()"><i id="hdr-star-icon" class="bi bi-star"></i></th>
     </tr>
   </thead>
   <tbody></tbody>
 </table>
+</div>
 
 
 <script>
@@ -177,7 +179,7 @@ var _dftSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search us
             { data: 7, width: '45px' },
             { data: 8, width: '70px' },
             { data: 9, width: '80px' },
-            { data: 10, width: '95px' },
+            { data: 10, width: '130px' },
             { data: 11, width: '45px' },
             { data: 12, width: '95px' },
             { data: 13, width: '40px' }
@@ -305,7 +307,8 @@ var _dftSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search us
             if (i === 12 && !canQueue) visible = false;
             _destTable.column(i).visible(visible, false);
         }
-        _destTable.columns.adjust();
+        _applyTableMinWidth();
+        _destTable.columns.adjust().draw(false);
     }
 
     function _syncCustomChkBoxes() {
@@ -328,6 +331,8 @@ var _dftSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search us
     var _colMode = (function() {
         try { return localStorage.getItem(COL_MODE_KEY) || 'auto'; } catch(e) { return 'auto'; }
     })();
+    // Columns hidden at large width (<1350px) in auto mode: TS(6), %(7), Mbits/s(8)
+    var _LG_COLS = [6, 7, 8];
     // Columns hidden at medium width (<992px) in auto mode: Err(0), Host(1), Scheduled(2), TS(6), %(7), Mbits/s(8), Prior(11)
     var _MED_COLS = [0, 1, 2, 6, 7, 8, 11];
     // Additional columns hidden at small width (<768px): Start(3), Finish(4)
@@ -340,6 +345,11 @@ var _dftSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search us
     var _SMALL_HIDE = _COMPACT_HIDE.concat(_SM_COLS);
 
     var _destTable = table;
+    var _tableNode = table.table().node();
+
+    function _applyTableMinWidth() {
+        _tableNode.style.minWidth = (_colMode === 'all') ? '1320px' : '';
+    }
 
     function _showCols(hideCols) {
         var total = _destTable.columns().count();
@@ -350,7 +360,8 @@ var _dftSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search us
             }
             _destTable.column(i).visible(visible, false);
         }
-        _destTable.columns.adjust();
+        _applyTableMinWidth();
+        _destTable.columns.adjust().draw(false);
     }
 
     function _applyResponsiveCols() {
@@ -360,12 +371,18 @@ var _dftSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search us
             _showCols(_AUTO_ALWAYS_HIDE.concat(_MED_COLS).concat(_SM_COLS));
         } else if (w < 992) {
             _showCols(_AUTO_ALWAYS_HIDE.concat(_MED_COLS));
+        } else if (w < 1350) {
+            _showCols(_AUTO_ALWAYS_HIDE.concat(_LG_COLS));
         } else {
             _showCols(_AUTO_ALWAYS_HIDE);
         }
     }
 
-    $(window).on('resize', function(){ _applyResponsiveCols(); });
+    var _resizeTimer;
+    $(window).on('resize', function() {
+        clearTimeout(_resizeTimer);
+        _resizeTimer = setTimeout(_applyResponsiveCols, 150);
+    });
 
     // Restore persisted mode on load
     (function() {

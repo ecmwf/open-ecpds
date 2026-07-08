@@ -128,6 +128,13 @@ public interface TransferHistory extends CollectionSizeBean, ModelBean {
     String getFormattedComment();
 
     /**
+     * Gets the user status (uid of the user who triggered this history entry).
+     *
+     * @return the user status
+     */
+    String getUserStatus();
+
+    /**
      * Gets the error.
      *
      * @return the error

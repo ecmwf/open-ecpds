@@ -19,6 +19,7 @@
 SELECT 
     dat.DAT_ID,
     dat.STA_CODE,
+    dat.DAT_USER_STATUS,
     dat.DAT_RETRY_TIME,
     dat.DAT_QUEUE_TIME
 FROM DATA_TRANSFER AS dat

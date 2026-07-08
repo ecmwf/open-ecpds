@@ -2157,6 +2157,10 @@ html[data-bs-theme=dark] .custom-ace-marker-warning {
     word-break: break-all;
     overflow-wrap: anywhere;
 }
+#destTransferTable th:nth-child(6),
+#validateTable th:nth-child(6) {
+    min-width: 200px;
+}
 /* destTransferTable / validateTable — Host column: allow long hostnames to wrap across multiple lines */
 #destTransferTable td:nth-child(2),
 #validateTable td:nth-child(2) {

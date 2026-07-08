@@ -138,11 +138,14 @@ public class GetDataTransferProgressJsonAction extends PDSAction {
             root.put("formattedTransferRateInMBitsPerSeconds", rateMbits);
 
             String formattedStatus = "";
+            String detailedStatus = "";
             try {
                 formattedStatus = transfer.getFormattedStatus();
+                detailedStatus = transfer.getDetailedStatus();
             } catch (final Exception ignored) {
             }
             root.put("formattedStatus", formattedStatus != null ? formattedStatus : "");
+            root.put("detailedStatus", detailedStatus != null ? detailedStatus : "");
 
             response.setContentType("application/json; charset=UTF-8");
             response.setCharacterEncoding("UTF-8");

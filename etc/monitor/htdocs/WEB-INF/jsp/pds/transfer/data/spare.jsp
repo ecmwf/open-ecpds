@@ -41,12 +41,12 @@
     </c:choose>
 
     <c:choose>
-    <c:when test="${datatransfer.canBeRequeued}">
+    <c:when test="${datatransfer.canBeRequeued and (empty destination or destination.hasActiveDisseminationHosts)}">
     <tr><td><a href='<bean:message key="destination.basepath"/>/operations/${datatransfer.destinationName}/requeue/${datatransfer.id}'>
         <i class="bi bi-arrow-repeat sidebar-icon"></i> Requeue</a></td></tr>
     </c:when>
     <c:otherwise>
-    <tr><td><span class="sidebar-disabled-item" title="Requeue not available">
+    <tr><td><span class="sidebar-disabled-item" title="${datatransfer.canBeRequeued ? 'Requeue unavailable: no active dissemination hosts' : 'Requeue not available'}">
         <i class="bi bi-arrow-repeat sidebar-icon"></i> Requeue</span></td></tr>
     </c:otherwise>
     </c:choose>

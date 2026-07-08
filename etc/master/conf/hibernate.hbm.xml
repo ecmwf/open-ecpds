@@ -1246,6 +1246,9 @@
 		<property name="TRH_COMMENT" type="java.lang.String">
 			<column name="TRH_COMMENT" />
 		</property>
+		<property name="TRH_USER_STATUS" type="java.lang.String">
+			<column name="TRH_USER_STATUS" />
+		</property>
 		<property name="DES_NAME" type="java.lang.String">
 			<column name="DES_NAME" />
 		</property>

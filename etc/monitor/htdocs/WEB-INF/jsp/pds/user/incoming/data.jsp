@@ -165,13 +165,14 @@
 
 <div class="mt-3">
 	<div class="card assoc-card">
+		<c:set var="sessionCount" value="${fn:length(incoming.incomingConnections)}"/>
 		<div class="card-header d-flex align-items-center gap-2">
 			<i class="bi bi-plug text-secondary"></i>
 			<strong>Current Sessions</strong>
+			<span class="badge rounded-pill ${sessionCount > 0 ? 'bg-success' : 'bg-secondary'}" title="${sessionCount} active session${sessionCount != 1 ? 's' : ''}">${sessionCount}</span>
 			<auth:if basePathKey="incoming.basepath" paths="/edit/update">
 			<auth:then>
 			<c:if test="${not empty incoming.incomingConnections}">
-			<c:set var="sessionCount" value="${fn:length(incoming.incomingConnections)}"/>
 			<button type="button" class="btn btn-sm btn-outline-danger ms-auto"
 			        onclick="confirmCloseAll('<bean:message key="incoming.basepath"/>/edit/update/<c:out value="${incoming.id}"/>/closeAllSessions/all', ${sessionCount})">
 			  <i class="bi bi-x-circle"></i> Close All

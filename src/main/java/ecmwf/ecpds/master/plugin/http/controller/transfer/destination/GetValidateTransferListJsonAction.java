@@ -256,7 +256,7 @@ public class GetValidateTransferListJsonAction extends PDSAction {
 
     private static String buildSizeHtml(final DataTransfer dt) {
         try {
-            return escapeHtml(dt.getFormattedSize());
+            return escapeHtml(Format.formatShortSize(dt.getSize()));
         } catch (final Exception _) {
             return "";
         }
@@ -313,7 +313,13 @@ public class GetValidateTransferListJsonAction extends PDSAction {
             break;
         }
         // Show only base status in badge; full text (including any "-username" suffix) in tooltip
-        return "<span class=\"" + cls + "\" title=\"" + escaped + "\">" + baseEscaped + "</span>";
+        final boolean hasUid = statusText.contains("-");
+        final String uid = hasUid ? statusText.substring(statusText.indexOf('-') + 1).trim() : null;
+        final String tooltip = hasUid ? escapeHtml(base + " \u00b7 by " + uid) : escaped;
+        final String userIcon = hasUid ? " <i class=\"bi bi-person-fill\" style=\"font-size:0.75em;\"></i>" : "";
+        final String style = hasUid ? " style=\"display:inline-flex;align-items:center;gap:3px;\"" : "";
+        return "<span class=\"" + cls + "\"" + style + " title=\"" + tooltip + "\">" + baseEscaped + userIcon
+                + "</span>";
     }
 
     /** Returns a sort key for a raw status code, mapping it to its display name for consistent A-Z ordering. */

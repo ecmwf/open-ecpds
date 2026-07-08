@@ -348,7 +348,7 @@ $('#dfMetaPageLen').on('change', function() {
 </c:if>
 </c:if>
 </td>
-<td><content:content name="transfer.scheduledTime" dateFormatKey="date.format.transfer" ignoreNull="true"/></td>
+<td data-order="${transfer.scheduledTime.time}"><content:content name="transfer.scheduledTime" dateFormatKey="date.format.transfer" ignoreNull="true"/></td>
 <td><a title="Size: ${transfer.formattedSize}" href="/do/transfer/data/${transfer.id}"><c:if test="${transfer.deleted}"><span class="text-danger"></c:if>${transfer.target}<c:if test="${transfer.deleted}"></span></c:if></a></td>
 <td><c:choose><c:when test="${not empty transfer.progress}">${transfer.progress}</c:when><c:otherwise><span class="text-muted">&ndash;</span></c:otherwise></c:choose></td>
 <td>

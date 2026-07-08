@@ -46,6 +46,7 @@ public final class TransferStatistics extends DataBaseObject {
     protected Integer TST_SEGS_OUT;
     protected Integer TST_SEGS_IN;
     protected String TST_RAW;
+    protected int TST_REQUEUE_HISTORY;
 
     public long getId() {
         return TST_ID != null ? TST_ID : 0;
@@ -169,5 +170,13 @@ public final class TransferStatistics extends DataBaseObject {
 
     public void setRaw(final String v) {
         TST_RAW = v;
+    }
+
+    public int getRequeueHistory() {
+        return TST_REQUEUE_HISTORY;
+    }
+
+    public void setRequeueHistory(final int v) {
+        TST_REQUEUE_HISTORY = v;
     }
 }

@@ -114,6 +114,9 @@ WHERE
 #if ('$sort' == '10')
 	ORDER BY (DAT_PRIORITY IS NULL), DAT_PRIORITY
 #fi
+#if ('$sort' == '11')
+	ORDER BY (DAT_SIZE IS NULL), DAT_SIZE
+#fi
 #if ('$order' == '1')
 	ASC
 #fi

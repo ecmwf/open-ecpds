@@ -47,6 +47,9 @@ public class TransferHistory extends DataBaseObject {
     /** The trh comment. */
     protected String TRH_COMMENT;
 
+    /** The trh user status. */
+    protected String TRH_USER_STATUS;
+
     /** The des name. */
     protected String DES_NAME;
 
@@ -177,6 +180,25 @@ public class TransferHistory extends DataBaseObject {
      */
     public void setComment(final String param) {
         TRH_COMMENT = strim(param, 255);
+    }
+
+    /**
+     * Gets the user status.
+     *
+     * @return the user status
+     */
+    public String getUserStatus() {
+        return TRH_USER_STATUS;
+    }
+
+    /**
+     * Sets the user status.
+     *
+     * @param param
+     *            the new user status
+     */
+    public void setUserStatus(final String param) {
+        TRH_USER_STATUS = strim(param, 64);
     }
 
     /**

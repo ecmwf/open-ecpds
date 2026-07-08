@@ -56,6 +56,10 @@
             <button id="btnTheme" class="btn btn-sm btn-outline-light p-1 lh-1" onclick="ecpdsToggleTheme()" title="Toggle light/dark theme" style="width:28px;height:28px;">
               <i id="themeIcon" class="bi bi-moon-fill" style="font-size:0.8rem;"></i>
             </button>
+            <a class="btn btn-sm btn-outline-light p-1 lh-1 d-flex align-items-center justify-content-center" href="https://ecmwf.github.io/open-ecpds/" target="_blank" rel="noopener"
+               title="OpenECPDS Documentation" style="width:28px;height:28px;">
+              <i class="bi bi-book" style="font-size:0.85rem;"></i>
+            </a>
             <logic:present name="<%=ecmwf.web.model.users.User.SESSION_KEY%>">
             <% if (_showFeedbackBtn) { %>
             <button class="btn btn-sm btn-outline-light p-1 lh-1" type="button"
@@ -64,10 +68,6 @@
               <i class="bi bi-chat-left-text" style="font-size:0.85rem;"></i>
             </button>
             <% } %>
-            <a class="btn btn-sm btn-outline-light p-1 lh-1 d-flex align-items-center justify-content-center" href="https://ecmwf.github.io/open-ecpds/" target="_blank" rel="noopener"
-               title="OpenECPDS Documentation" style="width:28px;height:28px;">
-              <i class="bi bi-book" style="font-size:0.85rem;"></i>
-            </a>
             <button class="btn btn-sm btn-outline-light p-1 lh-1" type="button"
                     data-bs-toggle="offcanvas" data-bs-target="#uiHelpOffcanvas" aria-controls="uiHelpOffcanvas"
                     title="Interface help" style="width:28px;height:28px;">

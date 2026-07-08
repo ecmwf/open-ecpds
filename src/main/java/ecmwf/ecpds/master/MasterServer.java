@@ -4404,6 +4404,11 @@ public final class MasterServer extends ECaccessProvider
         final var local = getDataTransfer(id);
         if (local != null) {
             transfer.setPriority(local.getPriority());
+            // Preserve userStatus from the cached object — the data mover does not know about
+            // user-initiated actions (e.g. manual requeue) and always sends userStatus=null.
+            if (transfer.getUserStatus() == null) {
+                transfer.setUserStatus(local.getUserStatus());
+            }
         }
         final var code = transfer.getStatusCode();
         final var done = StatusFactory.DONE.equals(code);
@@ -4572,6 +4577,7 @@ public final class MasterServer extends ECaccessProvider
         } else {
             history.setComment(comment);
         }
+        history.setUserStatus(transfer.getUserStatus());
         final var message = history.getComment();
         if (isNotEmpty(message)) {
             _log.debug("Add TransferHistory " + transfer.getId() + "=" + code + ": " + message);
@@ -6859,8 +6865,10 @@ public final class MasterServer extends ECaccessProvider
                     // Persist per-connection TCP statistics
                     if (!"none".equals(socketStatistics)) {
                         final var ecpdsBase = getDataBase(ECpdsBase.class);
+                        final var requeueHistory = transfer.getRequeueHistory();
                         for (final var stats : SocketStatisticsParser.parse(transfer.getId(),
                                 transfer.getStatistics())) {
+                            stats.setRequeueHistory(requeueHistory);
                             ecpdsBase.tryInsertTransferStatistics(stats);
                         }
                     }

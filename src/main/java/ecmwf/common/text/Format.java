@@ -266,6 +266,32 @@ public final class Format {
     }
 
     /**
+     * Format a byte count as a short human-readable size string (e.g. "1.23 GB", "456.78 MB") for compact display in
+     * table columns. Does not affect the standard {@link #formatSize(long)} output used elsewhere.
+     *
+     * @param bytes
+     *            the byte count
+     *
+     * @return compact size string
+     */
+    public static String formatShortSize(final long bytes) {
+        final var absBytes = Math.abs(bytes);
+        if (absBytes >= 1152921504606846976d)
+            return formatNumber(bytes / 1152921504606846976d) + " EB";
+        if (absBytes >= 1125899906842624d)
+            return formatNumber(bytes / 1125899906842624d) + " PB";
+        if (absBytes >= 1099511627776d)
+            return formatNumber(bytes / 1099511627776d) + " TB";
+        if (absBytes >= 1073741824)
+            return formatNumber(bytes / 1073741824d) + " GB";
+        if (absBytes >= 1048576)
+            return formatNumber(bytes / 1048576d) + " MB";
+        if (absBytes >= 1024)
+            return formatNumber(bytes / 1024d) + " KB";
+        return bytes + " B";
+    }
+
+    /**
      * Convert Bytes in Mbits.
      *
      * @param bytes

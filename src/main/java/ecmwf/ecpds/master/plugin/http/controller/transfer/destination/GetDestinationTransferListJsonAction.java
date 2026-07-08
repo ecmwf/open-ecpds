@@ -74,11 +74,10 @@ public class GetDestinationTransferListJsonAction extends PDSAction {
     /**
      * Maps DataTables column index (0-based) to the DB sort column. SQL sort values defined in
      * getSortedDataTransfersByFilter.sql: 0=failed_time, 1=host, 2=sched_time, 3=start_time, 4=finish_time, 5=target,
-     * 6=ts, 7=% (non-sortable — live value from TransferScheduler, not DB), 8=mbits, 9=size (maps to target for
-     * ordering), 10=status, 11=priority. Columns 12 (Actions) and 13 (Select) are non-sortable, defaulting to column 2
-     * (scheduled time).
+     * 6=ts, 7=% (non-sortable — live value from TransferScheduler, not DB), 8=mbits, 9=size, 10=status, 11=priority.
+     * Columns 12 (Actions) and 13 (Select) are non-sortable, defaulting to column 2 (scheduled time).
      */
-    private static final int[] SORT_COLS = { 0, 1, 2, 3, 4, 5, 6, 2, 8, 5, 9, 10, 2, 2 };
+    private static final int[] SORT_COLS = { 0, 1, 2, 3, 4, 5, 6, 2, 8, 11, 9, 10, 2, 2 };
 
     /**
      * {@inheritDoc}
@@ -298,7 +297,7 @@ public class GetDestinationTransferListJsonAction extends PDSAction {
 
     private static String buildSizeHtml(final DataTransfer dt) {
         try {
-            return escapeHtml(dt.getFormattedSize());
+            return escapeHtml(Format.formatShortSize(dt.getSize()));
         } catch (final Exception _) {
             return "";
         }
@@ -355,7 +354,32 @@ public class GetDestinationTransferListJsonAction extends PDSAction {
             break;
         }
         // Show only base status in badge; full text (including any "-username" suffix) in tooltip
-        return "<span class=\"" + cls + "\" title=\"" + escaped + "\">" + baseEscaped + "</span>";
+        final boolean hasUid = statusText.contains("-");
+        final String uid = hasUid ? statusText.substring(statusText.indexOf('-') + 1).trim() : null;
+        final String tooltip = hasUid ? escapeHtml(base + " \u00b7 " + uidRelation(dt.getStatusCode()) + uid) : escaped;
+        final String userIcon = hasUid ? " <i class=\"bi bi-person-fill\" style=\"font-size:0.75em;\"></i>" : "";
+        final String style = hasUid ? " style=\"display:inline-flex;align-items:center;gap:3px;\"" : "";
+        return "<span class=\"" + cls + "\"" + style + " title=\"" + tooltip + "\">" + baseEscaped + userIcon
+                + "</span>";
+    }
+
+    /**
+     * Returns the appropriate preposition for the uid tooltip depending on whether the status represents a direct user
+     * action ("by") or an outcome triggered by a prior user action ("initiated by").
+     */
+    private static String uidRelation(final String statusCode) {
+        if (statusCode == null) {
+            return "by ";
+        }
+        switch (statusCode) {
+        case "RETR": // ReQueued
+        case "HOLD": // Standby
+        case "STOP": // Stopped
+        case "SCHE": // Scheduled
+            return "by ";
+        default: // EXEC, DONE, FAIL, WAIT, INTR, FETC, INIT …
+            return "initiated by ";
+        }
     }
 
     private static String buildActionsHtml(final DataTransfer dt, final boolean hasActiveDissHosts) {

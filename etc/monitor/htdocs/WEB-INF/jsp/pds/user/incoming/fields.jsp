@@ -320,12 +320,13 @@
 
 <c:if test="${isInsert != 'true'}">
 <div class="mt-3">
+	<c:set var="sessionCount" value="${fn:length(incomingUserActionForm.incomingUser.incomingConnections)}"/>
 	<div class="card assoc-card">
-		<div class="card-header">
+		<div class="card-header d-flex align-items-center gap-2">
 			<i class="bi bi-plug text-secondary"></i>
 			<strong>Current Sessions</strong>
+			<span class="badge rounded-pill ${sessionCount > 0 ? 'bg-success' : 'bg-secondary'}" title="${sessionCount} active session${sessionCount != 1 ? 's' : ''}">${sessionCount}</span>
 			<c:if test="${not empty incomingUserActionForm.incomingUser.incomingConnections}">
-			<c:set var="sessionCount" value="${fn:length(incomingUserActionForm.incomingUser.incomingConnections)}"/>
 			<button type="button" class="btn btn-sm btn-outline-danger ms-auto"
 			        onclick="confirmCloseAll('<bean:message key="incoming.basepath"/>/edit/update/<c:out value="${incomingUserActionForm.id}"/>/closeAllSessions/all', ${sessionCount})">
 			  <i class="bi bi-x-circle"></i> Close All

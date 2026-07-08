@@ -26,7 +26,7 @@
     border-radius: 16px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
     width: 100%;
-    max-width: 400px;
+    max-width: 420px;
     padding: 0;
     overflow: hidden;
 }
@@ -167,6 +167,12 @@
 #login-btn:hover  { background: #0b5ed7; box-shadow: 0 4px 12px rgba(13,110,253,0.35); }
 #login-btn:active { background: #0a58ca; }
 #login-btn:focus  { outline: none; box-shadow: 0 0 0 3px rgba(13,110,253,0.35); }
+#login-btn:disabled {
+    background: #a0bcf8;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+[data-bs-theme=dark] #login-btn:disabled { background: #1a3a6a; }
 
 /* Live password/OTP hint */
 .login-pass-hint {
@@ -179,3 +185,233 @@
 }
 .login-pass-hint-otp { color: #198754; }
 .login-pass-hint-pwd { color: #6c757d; }
+
+/* ============================================================
+   OTP Numpad
+   ============================================================ */
+
+/* Input styled for numpad mode */
+#login-pass.numpad-input {
+    text-align: center;
+    font-size: 1.45rem;
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: 700;
+    letter-spacing: 0.55em;
+    padding-left: 1.4em;   /* compensate letter-spacing so digits centre visually */
+    color: #0d6efd;
+    background: #f0f6ff;
+    border-color: #b6d0ff;
+    caret-color: transparent;
+    cursor: default;
+}
+#login-pass.numpad-input:focus {
+    box-shadow: none;
+    border-color: #b6d0ff;
+}
+
+/* Digit counter badge */
+.otp-count {
+    float: right;
+    font-size: 0.72rem;
+    font-weight: 400;
+    color: #6c757d;
+}
+
+/* Numpad wrapper */
+#otp-numpad {
+    margin-bottom: 0.85rem;
+}
+
+/* 3-column grid */
+.numpad-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 7px;
+    margin-bottom: 0;
+}
+
+/* Individual buttons */
+.numpad-btn {
+    height: 56px;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #212529;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.1s, transform 0.07s, box-shadow 0.1s;
+    user-select: none;
+    -webkit-user-select: none;
+}
+.numpad-btn:hover {
+    background: #e9ecef;
+    border-color: #adb5bd;
+}
+.numpad-btn:active {
+    background: #dee2e6;
+    transform: scale(0.94);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Backspace button */
+.numpad-back {
+    font-size: 1.25rem;
+    color: #dc3545;
+    background: #fff5f5;
+    border-color: #f5c2c7;
+}
+.numpad-back:hover { background: #fce8ea; }
+
+/* Sign-in / go button */
+.numpad-go {
+    background: #e9ecef;
+    color: #adb5bd;
+    border-color: #dee2e6;
+    font-size: 1.2rem;
+}
+.numpad-go.numpad-go-ready {
+    background: #0d6efd;
+    color: #fff;
+    border-color: #0d6efd;
+    box-shadow: 0 3px 10px rgba(13,110,253,0.35);
+    animation: numpad-pulse 0.4s ease;
+}
+.numpad-go.numpad-go-ready:hover {
+    background: #0b5ed7;
+}
+
+@keyframes numpad-pulse {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.07); }
+    100% { transform: scale(1); }
+}
+
+/* Toggle link (bottom of card, OTP mode only) */
+.numpad-switch-btn {
+    background: none;
+    border: none;
+    font-size: 0.72rem;
+    color: #adb5bd;
+    cursor: pointer;
+    padding: 0.1rem 0;
+    border-radius: 0;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-underline-offset: 2px;
+    transition: color 0.15s, text-decoration-color 0.15s;
+}
+.numpad-switch-btn:hover {
+    color: #0d6efd;
+    text-decoration-color: #0d6efd;
+}
+
+/* Disabled digit buttons (shown after 6 digits entered) */
+.numpad-btn:disabled {
+    opacity: 0.28;
+    cursor: not-allowed;
+    pointer-events: none;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* ============================================================
+   Dark mode
+   ============================================================ */
+[data-bs-theme=dark] #login-card {
+    background: #1a2535;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+[data-bs-theme=dark] #login-header {
+    background: linear-gradient(135deg, #0a3860, #0c4d85);
+}
+[data-bs-theme=dark] #login-form {
+    background: #1a2535;
+}
+[data-bs-theme=dark] .login-field label {
+    color: #8fa8c8;
+}
+[data-bs-theme=dark] .login-field input {
+    background: #243044;
+    border-color: #3a5272;
+    color: #d0daea;
+}
+[data-bs-theme=dark] .login-field input::placeholder {
+    color: #5a7090;
+}
+[data-bs-theme=dark] .login-field input:focus {
+    background: #2a3a54;
+    border-color: #4d7ab5;
+    box-shadow: 0 0 0 3px rgba(77, 122, 181, 0.2);
+}
+[data-bs-theme=dark] .login-error {
+    background: #3a1520;
+    border-color: #7d2535;
+    border-left-color: #dc3545;
+    color: #f0a0aa;
+}
+[data-bs-theme=dark] #login-btn {
+    background: #1a5fd4;
+}
+[data-bs-theme=dark] #login-btn:hover {
+    background: #1d6cf0;
+    box-shadow: 0 4px 12px rgba(29, 108, 240, 0.4);
+}
+[data-bs-theme=dark] #login-toggle-pass {
+    color: #6a8aaa;
+}
+[data-bs-theme=dark] #login-toggle-pass:hover {
+    color: #6ea8fe;
+}
+
+/* Dark numpad */
+[data-bs-theme=dark] #login-pass.numpad-input {
+    background: #1a2d4a;
+    border-color: #2a4570;
+    color: #6ea8fe;
+}
+[data-bs-theme=dark] .numpad-btn {
+    background: #243044;
+    border-color: #3a5272;
+    color: #d0daea;
+}
+[data-bs-theme=dark] .numpad-btn:hover {
+    background: #2e3e58;
+    border-color: #4a6282;
+}
+[data-bs-theme=dark] .numpad-btn:active {
+    background: #354a6a;
+}
+[data-bs-theme=dark] .numpad-back {
+    background: #3a1520;
+    border-color: #7d2535;
+    color: #f87171;
+}
+[data-bs-theme=dark] .numpad-back:hover {
+    background: #4a1d28;
+}
+[data-bs-theme=dark] .numpad-go {
+    background: #2a3a54;
+    color: #5a7090;
+    border-color: #3a5272;
+}
+[data-bs-theme=dark] .numpad-go.numpad-go-ready {
+    background: #1a5fd4;
+    color: #fff;
+    border-color: #1a5fd4;
+}
+[data-bs-theme=dark] .numpad-go.numpad-go-ready:hover {
+    background: #1d6cf0;
+}
+[data-bs-theme=dark] .numpad-switch-btn {
+    color: #4a6272;
+}
+[data-bs-theme=dark] .numpad-switch-btn:hover {
+    color: #6ea8fe;
+    text-decoration-color: #6ea8fe;
+}
+[data-bs-theme=dark] .login-pass-hint-otp { color: #5ab88a; }
+[data-bs-theme=dark] .login-pass-hint-pwd { color: #6a8aaa; }

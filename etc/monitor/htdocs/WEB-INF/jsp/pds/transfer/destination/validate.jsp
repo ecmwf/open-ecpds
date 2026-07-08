@@ -252,7 +252,8 @@
     </div>
 
     <%-- DataTable --%>
-    <table id="validateTable" class="table table-sm table-hover w-100">
+    <div style="overflow-x: auto">
+    <table id="validateTable" class="table table-sm table-hover">
         <thead class="table-light">
             <tr>
                 <th>Err</th>
@@ -266,12 +267,13 @@
                 <th>Mbits/s</th>
                 <th>Size</th>
                 <th>Status</th>
-                <th>Prior</th>
+                <th title="Priority">P</th>
                 <th>Actions</th>
                 <th style="cursor:pointer;white-space:nowrap" title="Click to select/unselect all transfers on this page" onclick="_vlTogglePageSelection()"><i id="vl-hdr-star-icon" class="bi bi-star"></i></th>
             </tr>
         </thead>
     </table>
+    </div>
 
     <%-- A/N/R controls --%>
     <div class="d-flex flex-wrap align-items-center gap-2 mt-2 mb-1">
@@ -397,7 +399,7 @@
             { data: 7,  width: '45px'  },
             { data: 8,  width: '70px'  },
             { data: 9,  width: '80px'  },
-            { data: 10, width: '95px'  },
+            { data: 10, width: '130px'  },
             { data: 11, width: '45px'  },
             { data: 12, width: '95px'  },
             { data: 13, width: '55px'  }
@@ -474,11 +476,18 @@
     var _vlColMode = (function() {
         try { return localStorage.getItem(VL_COL_MODE_KEY) || 'auto'; } catch(e) { return 'auto'; }
     })();
+    var _VL_LG  = [6, 7, 8];
     var _VL_MED = [0, 1, 2, 6, 7, 8, 11];
     var _VL_SM  = [3, 4];
     var _VL_AUTO_ALWAYS_HIDE = [9];
     var _VL_COMPACT_HIDE = [0].concat(_VL_MED.filter(function(c){return c!==0;}));
     var _VL_SMALL_HIDE   = _VL_COMPACT_HIDE.concat(_VL_SM);
+
+    var _vlTableNode = table.table().node();
+
+    function _vlApplyTableMinWidth() {
+        _vlTableNode.style.minWidth = (_vlColMode === 'all') ? '1320px' : '';
+    }
 
     function _vlShowCols(hideCols) {
         table.columns().every(function (i) {
@@ -486,7 +495,8 @@
             if (i === 12 && !canQueue) vis = false;
             table.column(i).visible(vis, false);
         });
-        table.columns.adjust();
+        _vlApplyTableMinWidth();
+        table.columns.adjust().draw(false);
     }
 
     function _vlApplyCustomCols() {
@@ -496,15 +506,17 @@
             if (i === 12) vis = canQueue;           // Actions: mandatory if canQueue
             table.column(i).visible(vis, false);
         });
-        table.columns.adjust();
+        _vlApplyTableMinWidth();
+        table.columns.adjust().draw(false);
     }
 
     function _vlApplyAuto() {
         if (_vlColMode !== 'auto') return;
         var w = window.innerWidth;
-        if (w < 768)      _vlShowCols(_VL_AUTO_ALWAYS_HIDE.concat(_VL_MED).concat(_VL_SM));
-        else if (w < 992) _vlShowCols(_VL_AUTO_ALWAYS_HIDE.concat(_VL_MED));
-        else              _vlShowCols(_VL_AUTO_ALWAYS_HIDE);
+        if (w < 768)       _vlShowCols(_VL_AUTO_ALWAYS_HIDE.concat(_VL_MED).concat(_VL_SM));
+        else if (w < 992)  _vlShowCols(_VL_AUTO_ALWAYS_HIDE.concat(_VL_MED));
+        else if (w < 1350) _vlShowCols(_VL_AUTO_ALWAYS_HIDE.concat(_VL_LG));
+        else               _vlShowCols(_VL_AUTO_ALWAYS_HIDE);
     }
 
     function _vlSyncCustomChkBoxes() {
@@ -544,7 +556,11 @@
         else if (mode === 'custom')  { _vlSyncCustomChkBoxes(); _vlApplyCustomCols(); }
     }
 
-    $(window).on('resize', _vlApplyAuto);
+    var _vlResizeTimer;
+    $(window).on('resize', function() {
+        clearTimeout(_vlResizeTimer);
+        _vlResizeTimer = setTimeout(_vlApplyAuto, 150);
+    });
     _vlApplyMode(_vlColMode);
 
     $('#vlColModeBtn').closest('.dropdown').find('.dropdown-item').on('click', function (e) {

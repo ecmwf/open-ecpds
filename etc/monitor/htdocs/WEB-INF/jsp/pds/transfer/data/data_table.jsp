@@ -50,12 +50,12 @@
 </c:otherwise>
 </c:choose>
 <c:choose>
-<c:when test="${datatransfer.canBeRequeued}">
+<c:when test="${datatransfer.canBeRequeued and (empty destination or destination.hasActiveDisseminationHosts)}">
 <a href='<bean:message key="destination.basepath"/>/operations/${datatransfer.destinationName}/requeue/${datatransfer.id}'
    class="btn btn-sm btn-outline-success dt-op-btn" title="Requeue"><i class="bi bi-arrow-repeat"></i></a>
 </c:when>
 <c:otherwise>
-<button class="btn btn-sm btn-outline-success" disabled title="Requeue not available" data-label="Requeue"><i class="bi bi-arrow-repeat"></i></button>
+<button class="btn btn-sm btn-outline-success" disabled title="${datatransfer.canBeRequeued ? 'Requeue unavailable: no active dissemination hosts' : 'Requeue not available'}" data-label="Requeue"><i class="bi bi-arrow-repeat"></i></button>
 </c:otherwise>
 </c:choose>
 <c:choose>
@@ -114,12 +114,22 @@
             li.innerHTML = '<hr class="dropdown-divider m-1">';
             menu.appendChild(li);
         }
+        function walkGroup(container) {
+            Array.from(container.children).forEach(function(child) {
+                if (child.tagName === 'A' || child.tagName === 'BUTTON') {
+                    addItem(child);
+                } else if (child.tagName === 'DIV') {
+                    addDivider();
+                    walkGroup(child);
+                }
+            });
+        }
         Array.from(bar.children).forEach(function(child) {
             if (child.tagName === 'A' || child.tagName === 'BUTTON') {
                 addItem(child);
             } else if (child.tagName === 'DIV' && child.querySelector('a, button')) {
                 addDivider();
-                Array.from(child.querySelectorAll('a, button')).forEach(addItem);
+                walkGroup(child);
             }
         });
     });
@@ -342,13 +352,16 @@
 </div>
 </div>
 
-<%-- Card: Network Statistics (TCP socket statistics per connection) --%>
+<%-- Card: Network Statistics (TCP socket statistics per connection, grouped by attempt) --%>
 <c:if test="${not empty transferStatistics}">
 <div class="card border-0 shadow-sm mb-3">
 <div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
 <i class="bi bi-diagram-3 text-primary"></i>
 <span class="fw-semibold">Network Statistics</span>
 <span class="badge rounded-pill bg-secondary ms-1">${fn:length(transferStatistics)}</span>
+<c:if test="${fn:length(transferStatisticsGroups) > 1}">
+  <span class="badge rounded-pill bg-warning text-dark ms-1" title="Statistics from ${fn:length(transferStatisticsGroups)} separate sending attempts">${fn:length(transferStatisticsGroups)} attempts</span>
+</c:if>
 <button class="btn btn-link btn-sm ms-auto p-0 text-secondary" type="button"
         data-bs-toggle="collapse" data-bs-target="#nst-collapse" aria-expanded="true">
   <i class="bi bi-chevron-up" id="nst-chevron"></i>
@@ -356,15 +369,32 @@
 </div>
 <div id="nst-collapse" class="collapse show">
 <div class="card-body pt-2 pb-1">
-<%-- Summary row --%>
+
+<%-- Iterate over attempt groups --%>
+<c:forEach var="grp" items="${transferStatisticsGroups}" varStatus="grpStatus">
+
+<%-- Per-group header (only shown when more than one group) --%>
+<c:if test="${fn:length(transferStatisticsGroups) > 1}">
+<c:set var="_grpRequeue" value="${grp[0].requeueHistory}"/>
+<div class="d-flex align-items-center gap-2 mb-2 ${not grpStatus.first ? 'mt-3 pt-2' : ''}"
+     style="${not grpStatus.first ? 'border-top:1px solid var(--bs-border-color);' : ''}">
+  <span class="badge bg-primary rounded-pill">Attempt ${_grpRequeue + 1}</span>
+  <span class="text-muted small">${fn:length(grp)} connection${fn:length(grp) > 1 ? 's' : ''}</span>
+  <c:if test="${_grpRequeue > 0}">
+    <span class="text-muted small">&mdash; after ${_grpRequeue} requeue${_grpRequeue > 1 ? 's' : ''}</span>
+  </c:if>
+</div>
+</c:if>
+
+<%-- Per-group summary --%>
 <c:set var="_nstTotalSent" value="0"/>
 <c:set var="_nstTotalRecv" value="0"/>
-<c:set var="_nstMaxRate" value="0"/>
-<c:set var="_nstMinStart" value="0"/>
-<c:set var="_nstMaxEnd" value="0"/>
-<c:set var="_nstHasSent" value="false"/>
-<c:set var="_nstHasRecv" value="false"/>
-<c:forEach var="ts" items="${transferStatistics}" varStatus="loop">
+<c:set var="_nstMaxRate"   value="0"/>
+<c:set var="_nstMinStart"  value="0"/>
+<c:set var="_nstMaxEnd"    value="0"/>
+<c:set var="_nstHasSent"   value="false"/>
+<c:set var="_nstHasRecv"   value="false"/>
+<c:forEach var="ts" items="${grp}" varStatus="loop">
   <c:if test="${not empty ts.bytesSent}">
     <c:set var="_nstTotalSent" value="${_nstTotalSent + ts.bytesSent}"/>
     <c:set var="_nstHasSent" value="true"/>
@@ -385,26 +415,27 @@
 </c:forEach>
 <c:set var="_nstSpan" value="${_nstMaxEnd - _nstMinStart}"/>
 <c:if test="${_nstSpan le 0}"><c:set var="_nstSpan" value="1"/></c:if>
-<div class="d-flex flex-wrap gap-3 mb-3 small text-muted">
+<div class="d-flex flex-wrap gap-3 mb-2 small text-muted">
   <span><i class="bi bi-arrow-up-circle text-primary me-1"></i>Total sent:
     <c:choose>
-      <c:when test="${_nstHasSent}"><strong class="text-body" id="nst-total-sent" data-bytes="${_nstTotalSent}">${_nstTotalSent} B</strong></c:when>
+      <c:when test="${_nstHasSent}"><strong class="text-body nst-bytes" data-bytes="${_nstTotalSent}">${_nstTotalSent} B</strong></c:when>
       <c:otherwise><strong class="text-body">&#8212;</strong></c:otherwise>
     </c:choose>
   </span>
   <span><i class="bi bi-arrow-down-circle text-success me-1"></i>Total recv:
     <c:choose>
-      <c:when test="${_nstHasRecv}"><strong class="text-body" id="nst-total-recv" data-bytes="${_nstTotalRecv}">${_nstTotalRecv} B</strong></c:when>
+      <c:when test="${_nstHasRecv}"><strong class="text-body nst-bytes" data-bytes="${_nstTotalRecv}">${_nstTotalRecv} B</strong></c:when>
       <c:otherwise><strong class="text-body">&#8212;</strong></c:otherwise>
     </c:choose>
   </span>
-  <span><i class="bi bi-speedometer2 text-warning me-1"></i>Peak delivery: <strong class="text-body" id="nst-max-rate" data-bps="${_nstMaxRate}">${_nstMaxRate} bps</strong></span>
+  <span><i class="bi bi-speedometer2 text-warning me-1"></i>Peak delivery: <strong class="text-body nst-rate" data-bps="${_nstMaxRate}">${_nstMaxRate} bps</strong></span>
   <span><i class="bi bi-clock text-secondary me-1"></i>Wall time: <strong class="text-body">${_nstMaxEnd - _nstMinStart} ms</strong></span>
 </div>
+
 <%-- Per-connection timeline bars --%>
 <div class="nst-timeline mb-2" style="position:relative;overflow-x:auto;">
-<c:forEach var="ts" items="${transferStatistics}" varStatus="loop">
-<c:set var="_nstLeft" value="${(ts.startTime - _nstMinStart) * 100 / _nstSpan}"/>
+<c:forEach var="ts" items="${grp}" varStatus="loop">
+<c:set var="_nstLeft"  value="${(ts.startTime - _nstMinStart) * 100 / _nstSpan}"/>
 <c:set var="_nstWidth" value="${(ts.endTime - ts.startTime) * 100 / _nstSpan}"/>
 <c:if test="${_nstWidth lt 1}"><c:set var="_nstWidth" value="1"/></c:if>
 <c:set var="_nstRateRel" value="0"/>
@@ -418,8 +449,7 @@
 </c:choose>
 <div style="position:relative;height:28px;background:var(--bs-tertiary-bg);border-radius:4px;margin-bottom:4px;overflow:hidden;"
      title="Conn ${loop.index+1}: ${ts.remoteAddress} | ${ts.durationMs}ms | RTT: ${ts.rttMs}ms | Sent: ${ts.bytesSent}B | Rate: ${ts.deliveryRateBps}bps">
-  <div style="position:absolute;left:${_nstLeft}%;width:${_nstWidth}%;height:100%;background:${_nstBarColor};opacity:0.8;border-radius:3px;">
-  </div>
+  <div style="position:absolute;left:${_nstLeft}%;width:${_nstWidth}%;height:100%;background:${_nstBarColor};opacity:0.8;border-radius:3px;"></div>
   <div style="position:absolute;left:${_nstLeft}%;padding:0 6px;line-height:28px;font-size:11px;color:#fff;white-space:nowrap;overflow:hidden;max-width:${_nstWidth}%;">
     <c:out value="${ts.remoteAddress}"/>
   </div>
@@ -429,27 +459,26 @@
   <span>0 ms</span><span>${_nstMaxEnd - _nstMinStart} ms</span>
 </div>
 </div>
+
 <%-- Per-connection detail table --%>
 <div class="table-responsive">
 <table class="table table-sm table-hover mb-0" style="font-size:0.8rem;">
 <thead class="table-light">
 <tr>
   <th>#</th><th>Remote</th><th>Duration</th><th>RTT (ms)</th>
-  <th>Sent (B)</th><th>Rcvd (B)</th><th>Delivery Rate</th><th>cwnd</th><th>Segs out/in</th>
+  <th>Sent</th><th>Rcvd</th><th>Delivery Rate</th><th>cwnd</th><th>Segs out/in</th>
 </tr>
 </thead>
 <tbody>
-<c:forEach var="ts" items="${transferStatistics}" varStatus="loop">
+<c:forEach var="ts" items="${grp}" varStatus="loop">
 <tr>
   <td class="text-muted">${loop.index+1}</td>
   <td><span class="val-code small">${empty ts.remoteAddress ? '&#8212;' : ts.remoteAddress}</span></td>
   <td><span class="val-num">${ts.durationMs}</span> ms</td>
   <td><span class="val-num">${empty ts.rttMs ? '&#8212;' : ts.rttMs}</span></td>
-  <td><span class="val-num">${empty ts.bytesSent ? '&#8212;' : ts.bytesSent}</span></td>
-  <td><span class="val-num">${empty ts.bytesReceived ? '&#8212;' : ts.bytesReceived}</span></td>
-  <td><c:choose><c:when test="${not empty ts.deliveryRateBps}">
-    <span class="nst-rate" data-bps="${ts.deliveryRateBps}">${ts.deliveryRateBps} bps</span>
-  </c:when><c:otherwise>&#8212;</c:otherwise></c:choose></td>
+  <td><c:choose><c:when test="${not empty ts.bytesSent}"><span class="nst-bytes" data-bytes="${ts.bytesSent}">${ts.bytesSent} B</span></c:when><c:otherwise>&#8212;</c:otherwise></c:choose></td>
+  <td><c:choose><c:when test="${not empty ts.bytesReceived}"><span class="nst-bytes" data-bytes="${ts.bytesReceived}">${ts.bytesReceived} B</span></c:when><c:otherwise>&#8212;</c:otherwise></c:choose></td>
+  <td><c:choose><c:when test="${not empty ts.deliveryRateBps}"><span class="nst-rate" data-bps="${ts.deliveryRateBps}">${ts.deliveryRateBps} bps</span></c:when><c:otherwise>&#8212;</c:otherwise></c:choose></td>
   <td>${empty ts.cwnd ? '&#8212;' : ts.cwnd}</td>
   <td>${empty ts.segsOut ? '&#8212;' : ts.segsOut} / ${empty ts.segsIn ? '&#8212;' : ts.segsIn}</td>
 </tr>
@@ -457,6 +486,9 @@
 </tbody>
 </table>
 </div>
+
+</c:forEach><%-- end groups --%>
+
 </div>
 </div>
 </div>
@@ -467,27 +499,22 @@
 (function() {
     function fmtBytes(b) {
         if (b >= 1073741824) return (b/1073741824).toFixed(2) + ' GiB';
-        if (b >= 1048576) return (b/1048576).toFixed(2) + ' MiB';
-        if (b >= 1024) return (b/1024).toFixed(1) + ' KiB';
+        if (b >= 1048576)    return (b/1048576).toFixed(2) + ' MiB';
+        if (b >= 1024)       return (b/1024).toFixed(1) + ' KiB';
         return b + ' B';
     }
     function fmtBps(b) {
         if (b >= 1000000000) return (b/1000000000).toFixed(2) + ' Gbps';
-        if (b >= 1000000) return (b/1000000).toFixed(2) + ' Mbps';
-        if (b >= 1000) return (b/1000).toFixed(1) + ' Kbps';
+        if (b >= 1000000)    return (b/1000000).toFixed(2) + ' Mbps';
+        if (b >= 1000)       return (b/1000).toFixed(1) + ' Kbps';
         return b + ' bps';
     }
-    var el;
-    el = document.getElementById('nst-total-sent');
-    if (el) { var b=parseInt(el.dataset.bytes); if(!isNaN(b)) el.textContent=fmtBytes(b); }
-    el = document.getElementById('nst-total-recv');
-    if (el) { var b=parseInt(el.dataset.bytes); if(!isNaN(b)) el.textContent=fmtBytes(b); }
-    el = document.getElementById('nst-max-rate');
-    if (el) { var b=parseInt(el.dataset.bps); if(!isNaN(b)) el.textContent=fmtBps(b); }
-    document.querySelectorAll('.nst-rate').forEach(function(s) {
-        var b=parseInt(s.dataset.bps); if(!isNaN(b)) s.textContent=fmtBps(b);
+    document.querySelectorAll('.nst-bytes').forEach(function(s) {
+        var b = parseInt(s.dataset.bytes); if (!isNaN(b)) s.textContent = fmtBytes(b);
     });
-    // Collapse chevron toggle
+    document.querySelectorAll('.nst-rate').forEach(function(s) {
+        var b = parseInt(s.dataset.bps); if (!isNaN(b)) s.textContent = fmtBps(b);
+    });
     var col = document.getElementById('nst-collapse');
     if (col) col.addEventListener('hidden.bs.collapse', function() {
         var ch = document.getElementById('nst-chevron');
@@ -584,15 +611,21 @@
 
              // Update status badge (always, not just when stopped)
              var $statusVal = $('#dt-status-val');
-             if ($statusVal.length && data.formattedStatus) {
-                 var label = data.formattedStatus;
-                 var sc    = data.statusCode;
-                 var cls   = 'bg-secondary';
+             if ($statusVal.length && data.detailedStatus) {
+                 var detailed = data.detailedStatus;
+                 var sc       = data.statusCode;
+                 var dashIdx  = detailed.indexOf('-');
+                 var base     = dashIdx !== -1 ? detailed.substring(0, dashIdx) : detailed;
+                 var uid      = dashIdx !== -1 ? detailed.substring(dashIdx + 1) : null;
+                 var tooltip  = uid ? (base + ' \u00b7 by ' + uid) : detailed;
+                 var icon     = uid ? ' <i class="bi bi-person-fill" style="font-size:0.75em;"></i>' : '';
+                 var style    = uid ? ' style="display:inline-flex;align-items:center;gap:3px;"' : '';
+                 var cls = 'bg-secondary';
                  if (sc === 'DONE') cls = 'bg-success';
                  else if (sc === 'EXEC' || sc === 'FETC' || sc === 'INIT') cls = 'bg-primary';
                  else if (sc === 'RETR' || sc === 'WAIT' || sc === 'SCHE' || sc === 'HOLD') cls = 'bg-warning text-dark';
                  else if (sc === 'FAIL') cls = 'bg-danger';
-                 $statusVal.html('<span class="badge ' + cls + '" title="' + label + '">' + label + '</span>');
+                 $statusVal.html('<span class="badge ' + cls + '"' + style + ' title="' + tooltip + '">' + base + icon + '</span>');
              }
          })
          .fail(function(jqXHR) {

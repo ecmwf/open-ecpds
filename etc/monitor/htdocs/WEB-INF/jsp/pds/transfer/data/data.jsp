@@ -242,8 +242,8 @@ _dthApplyMode(_dthColMode);
 </c:if>
 </c:if>
 </td>
-<td><content:content name="transfer.scheduledTime" dateFormatKey="date.format.transfer" ignoreNull="true"/></td>
-<td>
+<td data-order="${transfer.scheduledTime.time}"><content:content name="transfer.scheduledTime" dateFormatKey="date.format.transfer" ignoreNull="true"/></td>
+<td data-order="${transfer.startTime != null ? transfer.startTime.time : 0}">
 <c:if test="${transfer.startTime != null}">
 <content:content name="transfer.startTime" dateFormatKey="date.format.transfer" ignoreNull="true"/>
 </c:if>
@@ -251,7 +251,7 @@ _dthApplyMode(_dthColMode);
 <i class="bi bi-dash text-muted" title="Not applicable"></i>
 </c:if>
 </td>
-<td>
+<td data-order="${transfer.realFinishTime != null ? transfer.realFinishTime.time : 0}">
 <c:if test="${transfer.realFinishTime != null}">
 <content:content name="transfer.realFinishTime" dateFormatKey="date.format.transfer" ignoreNull="true"/>
 </c:if>
@@ -282,13 +282,19 @@ _dthApplyMode(_dthColMode);
 </c:if>
 </td>
 <td>
+<c:set var="_fs" value="${transfer.formattedStatus}"/>
+<c:set var="_ds" value="${transfer.detailedStatus}"/>
+<c:set var="_ui" value="${_fs != _ds}"/>
+<c:set var="_tip" value="${_ui ? transfer.detailedStatus : _fs}"/>
+<c:set var="_ico"><c:if test="${_ui}"> <i class="bi bi-person-fill" style="font-size:0.75em;"></i></c:if></c:set>
+<c:set var="_sty"><c:if test="${_ui}"> style="display:inline-flex;align-items:center;gap:3px;"</c:if></c:set>
 <c:choose>
-  <c:when test="${transfer.deleted}"><span class="badge bg-danger" title="Deleted">${transfer.formattedStatus}</span></c:when>
-  <c:when test="${transfer.statusCode == 'DONE'}"><span class="badge bg-success" title="${transfer.formattedStatus}">${transfer.formattedStatus}</span></c:when>
-  <c:when test="${transfer.statusCode == 'EXEC' or transfer.statusCode == 'FETC' or transfer.statusCode == 'INIT'}"><span class="badge bg-primary" title="${transfer.formattedStatus}">${transfer.formattedStatus}</span></c:when>
-  <c:when test="${transfer.statusCode == 'RETR' or transfer.statusCode == 'WAIT' or transfer.statusCode == 'SCHE' or transfer.statusCode == 'HOLD'}"><span class="badge bg-warning text-dark" title="${transfer.formattedStatus}">${transfer.formattedStatus}</span></c:when>
-  <c:when test="${transfer.statusCode == 'FAIL'}"><span class="badge bg-danger" title="${transfer.formattedStatus}">${transfer.formattedStatus}</span></c:when>
-  <c:otherwise><span class="badge bg-secondary" title="${transfer.formattedStatus}">${transfer.formattedStatus}</span></c:otherwise>
+  <c:when test="${transfer.deleted}"><span class="badge bg-danger"${_sty} title="Deleted">${_fs}${_ico}</span></c:when>
+  <c:when test="${transfer.statusCode == 'DONE'}"><span class="badge bg-success"${_sty} title="${_tip}">${_fs}${_ico}</span></c:when>
+  <c:when test="${transfer.statusCode == 'EXEC' or transfer.statusCode == 'FETC' or transfer.statusCode == 'INIT'}"><span class="badge bg-primary"${_sty} title="${_tip}">${_fs}${_ico}</span></c:when>
+  <c:when test="${transfer.statusCode == 'RETR' or transfer.statusCode == 'WAIT' or transfer.statusCode == 'SCHE' or transfer.statusCode == 'HOLD'}"><span class="badge bg-warning text-dark"${_sty} title="${_tip}">${_fs}${_ico}</span></c:when>
+  <c:when test="${transfer.statusCode == 'FAIL'}"><span class="badge bg-danger"${_sty} title="${_tip}">${_fs}${_ico}</span></c:when>
+  <c:otherwise><span class="badge bg-secondary"${_sty} title="${_tip}">${_fs}${_ico}</span></c:otherwise>
 </c:choose>
 </td>
 <td>${transfer.priority}</td>

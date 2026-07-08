@@ -134,7 +134,12 @@ public class GetTransferHistoryForDataTransferJsonAction extends PDSAction {
 
     private static String buildStatusHtml(final TransferHistory history) {
         final var code = history.getStatus();
-        final var label = escapeHtml(history.getFormattedStatus());
+        final var base = escapeHtml(history.getFormattedStatus());
+        // Prefer the dedicated field; fall back to parsing the comment for legacy rows.
+        String uid = history.getUserStatus();
+        if (uid == null || uid.isEmpty()) {
+            uid = extractWebUser(history.getComment());
+        }
         final String cls;
         if (code == null) {
             cls = "badge bg-secondary";
@@ -162,7 +167,51 @@ public class GetTransferHistoryForDataTransferJsonAction extends PDSAction {
                 break;
             }
         }
-        return "<span class=\"" + cls + "\">" + label + "</span>";
+        if (uid != null) {
+            final String tooltip = escapeHtml(history.getFormattedStatus() + " \u00b7 " + uidRelation(code) + uid);
+            return "<span class=\"" + cls + "\" style=\"display:inline-flex;align-items:center;gap:3px;\"" + " title=\""
+                    + tooltip + "\">" + base
+                    + " <i class=\"bi bi-person-fill\" style=\"font-size:0.75em;\"></i></span>";
+        }
+        return "<span class=\"" + cls + "\">" + base + "</span>";
+    }
+
+    /**
+     * Returns the appropriate preposition for the uid tooltip depending on whether the status represents a direct user
+     * action ("by") or an outcome triggered by a prior user action ("initiated by").
+     */
+    private static String uidRelation(final String statusCode) {
+        if (statusCode == null) {
+            return "by ";
+        }
+        switch (statusCode) {
+        case "RETR": // ReQueued
+        case "HOLD": // Standby
+        case "STOP": // Stopped
+        case "SCHE": // Scheduled
+            return "by ";
+        default: // EXEC, DONE, FAIL, WAIT, INTR, FETC, INIT …
+            return "initiated by ";
+        }
+    }
+
+    /** Extracts the WebUser name from a comment containing "WebUser=&lt;name&gt;". */
+    private static String extractWebUser(final String comment) {
+        if (comment == null) {
+            return null;
+        }
+        final int idx = comment.indexOf("WebUser=");
+        if (idx < 0) {
+            return null;
+        }
+        final int start = idx + "WebUser=".length();
+        // uid ends at first space, '(' or end of string
+        int end = start;
+        while (end < comment.length() && comment.charAt(end) != ' ' && comment.charAt(end) != '(') {
+            end++;
+        }
+        final var uid = comment.substring(start, end).trim();
+        return uid.isEmpty() ? null : uid;
     }
 
     private static String buildHostHtml(final TransferHistory history) {

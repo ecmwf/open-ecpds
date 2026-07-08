@@ -1705,6 +1705,7 @@ public final class ECpdsBase extends DataBase {
             while (rs.next()) {
                 final var transfer = new DataTransfer(rs.getLong("DAT_ID"));
                 transfer.setStatusCode(rs.getString("STA_CODE"));
+                transfer.setUserStatus(rs.getString("DAT_USER_STATUS"));
                 transfer.setRetryTime(rs.getTimestamp("DAT_RETRY_TIME"));
                 transfer.setQueueTime(rs.getTimestamp("DAT_QUEUE_TIME"));
                 list.add(transfer);
@@ -1993,6 +1994,7 @@ public final class ECpdsBase extends DataBase {
                 history.setSent(rs.getLong("TRH_SENT"));
                 history.setTime(rs.getTimestamp("TRH_TIME"));
                 history.setStatusCode(rs.getString("STA_CODE"));
+                history.setUserStatus(rs.getString("TRH_USER_STATUS"));
                 _setHost(this, history, rs.getString("HOS_NAME"), hosts);
                 list.add(history);
             }

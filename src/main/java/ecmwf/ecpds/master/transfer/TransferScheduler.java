@@ -3532,11 +3532,9 @@ public final class TransferScheduler extends MBeanScheduler {
                     return NEXT_STEP_CONTINUE;
                 }
                 _log.info("Retrying DataTransfer " + _currentTransfer.getId());
-                if (isNotEmpty(userStatus) && acquisition)
-                    // The retry was triggered by a user action (e.g. re-queue)
-                    // Make sure it will not be triggered again unless the file
-                    // is already on the data movers!
-                    _currentTransfer.setUserStatus(null);
+                // Note: userStatus is intentionally preserved here so the uid of the user who
+                // triggered the retry (e.g. manual requeue) remains visible in the status badge
+                // during the EXEC (Transferring) phase and on subsequent retries.
                 _currentTransfer.setStatusCode(StatusFactory.WAIT);
                 _currentTransfer.setFinishTime(null);
                 _currentTransfer.setComment(null);

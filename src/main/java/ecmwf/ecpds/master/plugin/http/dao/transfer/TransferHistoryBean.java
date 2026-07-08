@@ -145,6 +145,16 @@ public class TransferHistoryBean extends ModelBeanBase implements TransferHistor
     /**
      * {@inheritDoc}
      *
+     * Gets the user status.
+     */
+    @Override
+    public String getUserStatus() {
+        return item.getUserStatus();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * Gets the data transfer.
      */
     @Override
