@@ -190,22 +190,22 @@
                                     <div class="col-12 col-md-4">
                                         <label class="form-label mb-0 fw-semibold"><i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>Properties editor</label>
                                         <select class="form-select form-select-sm" id="hqb_propErrors" onchange="hostsTableReload();hqbUpdateBadge();" title="Filter by Properties editor warnings">
-                                            <option value="">Any</option>
-                                            <option value="yes">Has errors</option>
+                                            <option value=""    <c:if test="${empty propErrors}">selected</c:if>>Any</option>
+                                            <option value="yes" <c:if test="${propErrors == 'yes'}">selected</c:if>>Has errors</option>
                                         </select>
                                     </div>
                                     <div class="col-12 col-md-4">
                                         <label class="form-label mb-0 fw-semibold"><i class="bi bi-folder-fill text-info me-1"></i>Directory editor</label>
                                         <select class="form-select form-select-sm" id="hqb_dirNonEmpty" onchange="hostsTableReload();hqbUpdateBadge();" title="Filter by Directory pattern">
-                                            <option value="">Any</option>
-                                            <option value="yes">Is set</option>
+                                            <option value=""    <c:if test="${empty dirNonEmpty}">selected</c:if>>Any</option>
+                                            <option value="yes" <c:if test="${dirNonEmpty == 'yes'}">selected</c:if>>Is set</option>
                                         </select>
                                     </div>
                                     <div class="col-12 col-md-4">
                                         <label class="form-label mb-0 fw-semibold"><i class="bi bi-braces text-secondary me-1"></i>JavaScript editor</label>
                                         <select class="form-select form-select-sm" id="hqb_jsNonEmpty" onchange="hostsTableReload();hqbUpdateBadge();" title="Filter by JavaScript">
-                                            <option value="">Any</option>
-                                            <option value="yes">Is configured</option>
+                                            <option value=""    <c:if test="${empty jsNonEmpty}">selected</c:if>>Any</option>
+                                            <option value="yes" <c:if test="${jsNonEmpty == 'yes'}">selected</c:if>>Is configured</option>
                                         </select>
                                     </div>
                                 </div>

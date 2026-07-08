@@ -86,6 +86,9 @@ public class GetHostAction extends PDSAction {
                 final var network = Util.getValue(request, "network", "All");
                 final var hostType = Util.getValue(request, "hostType", "All");
                 final var hostSearch = Util.getValue(request, "hostSearch", "");
+                Util.getValue(request, "propErrors", "");
+                Util.getValue(request, "dirNonEmpty", "");
+                Util.getValue(request, "jsNonEmpty", "");
                 final var cursor = Util.getDataBaseCursor("host", 25, 0, true, request);
                 try {
                     hosts = HostHome.findByCriteria(label, filter, network, hostType, hostSearch, cursor);

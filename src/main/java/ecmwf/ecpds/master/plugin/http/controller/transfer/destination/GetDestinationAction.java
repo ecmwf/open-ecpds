@@ -97,6 +97,9 @@ public class GetDestinationAction extends PDSAction {
             final var status = Util.getValue(request, "destinationStatus", "All Status");
             final var type = Util.getValue(request, "destinationType", "-1");
             final var filter = Util.getValue(request, "destinationFilter", "All");
+            Util.getValue(request, "datausers", "any");
+            Util.getValue(request, "propErrors", "");
+            Util.getValue(request, "jsNonEmpty", "");
             Collection<Destination> destinationList;
             try {
                 destinationList = DestinationHome.findByUser(user, search, aliases, "asc".equals(sortDirection),

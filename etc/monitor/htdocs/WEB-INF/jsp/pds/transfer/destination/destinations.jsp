@@ -183,9 +183,9 @@
                                     <div class="col-12 col-md-3">
                                         <label class="form-label mb-0 fw-semibold"><i class="bi bi-people me-1 text-muted"></i>Data Users</label>
                                         <select class="form-select form-select-sm" id="datausers" onchange="destsTableReload();dqbUpdateBadge();" title="Filter by Data User association">
-                                            <option value="any">Any</option>
-                                            <option value="yes">With Data Users</option>
-                                            <option value="no">Without Data Users</option>
+                                            <option value="any" <c:if test="${datausers == 'any' || empty datausers}">selected</c:if>>Any</option>
+                                            <option value="yes" <c:if test="${datausers == 'yes'}">selected</c:if>>With Data Users</option>
+                                            <option value="no"  <c:if test="${datausers == 'no'}">selected</c:if>>Without Data Users</option>
                                         </select>
                                     </div>
                                 </div>
@@ -194,15 +194,15 @@
                                     <div class="col-12 col-md-6">
                                         <label class="form-label mb-0 fw-semibold"><i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>Properties editor</label>
                                         <select class="form-select form-select-sm" id="dqb_propErrors" onchange="destsTableReload();dqbUpdateBadge();" title="Filter by Properties editor errors">
-                                            <option value="">Any</option>
-                                            <option value="yes">Has errors</option>
+                                            <option value=""    <c:if test="${empty propErrors}">selected</c:if>>Any</option>
+                                            <option value="yes" <c:if test="${propErrors == 'yes'}">selected</c:if>>Has errors</option>
                                         </select>
                                     </div>
                                     <div class="col-12 col-md-6">
                                         <label class="form-label mb-0 fw-semibold"><i class="bi bi-braces text-secondary me-1"></i>JavaScript editor</label>
                                         <select class="form-select form-select-sm" id="dqb_jsNonEmpty" onchange="destsTableReload();dqbUpdateBadge();" title="Filter by JavaScript">
-                                            <option value="">Any</option>
-                                            <option value="yes">Is configured</option>
+                                            <option value=""    <c:if test="${empty jsNonEmpty}">selected</c:if>>Any</option>
+                                            <option value="yes" <c:if test="${jsNonEmpty == 'yes'}">selected</c:if>>Is configured</option>
                                         </select>
                                     </div>
                                 </div>

@@ -168,8 +168,8 @@ const tFiles    = _si.map(i=>_tFiles[i]);
                id="trafficTable" style="font-size:0.82rem; white-space:nowrap;">
           <thead class="table-primary">
             <tr>
-              <th style="cursor:default;">
-                Date
+              <th onclick="sortTrafficTable(0)" style="cursor:pointer;" data-order="asc">
+                Date <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i>
               </th>
               <th onclick="sortTrafficTable(1)" style="cursor:pointer;" data-order="asc">
                 Volume <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i>
@@ -349,19 +349,28 @@ function setSearchTerm(v) {
 function sortTrafficTable(col) {
   var th  = document.querySelector('#trafficTable thead tr').cells[col];
   var asc = th.getAttribute('data-order') === 'asc';
-  var idx = tLabels.map(function(_,i){return i;});
-  idx.sort(function(a, b) {
-    if (col===0) return asc ? tLabels[a].localeCompare(tLabels[b])   : tLabels[b].localeCompare(tLabels[a]);
-    if (col===1) return asc ? tBytes[a]    - tBytes[b]    : tBytes[b]    - tBytes[a];
-    if (col===2) return asc ? tDuration[a] - tDuration[b] : tDuration[b] - tDuration[a];
-    if (col===3) return asc ? tRates[a]    - tRates[b]    : tRates[b]    - tRates[a];
-    if (col===4) return asc ? tFiles[a]    - tFiles[b]    : tFiles[b]    - tFiles[a];
-    return 0;
-  });
-  _sortedIdx = idx;
   _page = 0;
+
+  if (col === 0) {
+    // Date column: drive via _reversed so it stays in sync with the toggle button
+    _reversed = !asc;
+    _sortedIdx = null;
+    _applyReverseBtn();
+  } else {
+    var idx = tLabels.map(function(_,i){return i;});
+    idx.sort(function(a, b) {
+      if (col===1) return asc ? tBytes[a]    - tBytes[b]    : tBytes[b]    - tBytes[a];
+      if (col===2) return asc ? tDuration[a] - tDuration[b] : tDuration[b] - tDuration[a];
+      if (col===3) return asc ? tRates[a]    - tRates[b]    : tRates[b]    - tRates[a];
+      if (col===4) return asc ? tFiles[a]    - tFiles[b]    : tFiles[b]    - tFiles[a];
+      return 0;
+    });
+    _sortedIdx = idx;
+  }
+
   document.querySelectorAll('#trafficTable thead th').forEach(function(h, i) {
     var icon = h.querySelector('i.bi');
+    if (!icon) return;
     if (i === col) {
       h.setAttribute('data-order', asc ? 'desc' : 'asc');
       icon.className = 'bi ' + (asc ? 'bi-arrow-up' : 'bi-arrow-down') + ' text-primary';

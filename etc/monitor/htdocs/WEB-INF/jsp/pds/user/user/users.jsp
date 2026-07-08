@@ -145,6 +145,9 @@
 // ---- QB helpers in global scope so onclick attributes can call them ----
 var _monitorNoDestOnly = false;
 var _webUsrTable = null;
+var _WU_QB_KEY = 'webUsrQB';
+function _wuqbSave() { try { localStorage.setItem(_WU_QB_KEY, JSON.stringify({en:wuqbVal('wuqb_enabled'),mo:wuqbVal('wuqb_monitor'),pe:wuqbVal('wuqb_propErrors')})); } catch(e) {} }
+function _wuqbRestore() { try { var s=localStorage.getItem(_WU_QB_KEY); if(!s) return; var q=JSON.parse(s); ['wuqb_enabled','wuqb_monitor','wuqb_propErrors'].forEach(function(id,i){ var v=[q.en,q.mo,q.pe][i]; var el=document.getElementById(id); if(el&&v) el.value=v; }); } catch(e) {} }
 function wuqbVal(id) { var el = document.getElementById(id); return el ? el.value : ''; }
 function _buildAjaxUrl() {
     var params = [];
@@ -170,6 +173,7 @@ function wuqbUpdateBadge() {
 }
 function wuqbApply() {
     wuqbUpdateBadge();
+    _wuqbSave();
     var p = document.getElementById('webUsrQueryBuilder'); if (p) p.style.display = 'none';
     if (_webUsrTable) _webUsrTable.ajax.url(_buildAjaxUrl()).load();
 }
@@ -177,6 +181,7 @@ function wuqbReload() { wuqbUpdateBadge(); if (_webUsrTable) _webUsrTable.ajax.u
 function wuqbClear() {
     ['wuqb_enabled','wuqb_monitor','wuqb_propErrors'].forEach(function(id) { var el=document.getElementById(id); if(el) el.value=''; });
     var p = document.getElementById('webUsrQueryBuilder'); if (p) p.style.display = 'none';
+    try { localStorage.removeItem(_WU_QB_KEY); } catch(e) {}
     wuqbUpdateBadge();
     if (_webUsrTable) _webUsrTable.ajax.url(_buildAjaxUrl()).load();
 }
@@ -204,6 +209,8 @@ document.addEventListener('click', function(e) {
 });
 
 $(document).ready(function() {
+    _wuqbRestore();
+    wuqbUpdateBadge();
     var _canDelete = false;
     var _filteredCount = 0;
     var table = $('#usersWebTable').DataTable({

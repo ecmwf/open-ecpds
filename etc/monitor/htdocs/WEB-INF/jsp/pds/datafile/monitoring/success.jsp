@@ -265,6 +265,7 @@ function sortRatesTable(col) {
   _page = 0;
   document.querySelectorAll('#ratesTable thead th').forEach(function(h, i) {
     var icon = h.querySelector('i.bi');
+    if (!icon) return;
     if (i === col) {
       h.setAttribute('data-order', asc ? 'desc' : 'asc');
       icon.className = 'bi ' + (asc ? 'bi-arrow-up' : 'bi-arrow-down') + ' text-primary';
@@ -582,8 +583,8 @@ new MutationObserver(function() {
            id="ratesTable" style="font-size:0.82rem; white-space:nowrap;">
       <thead class="table-primary">
         <tr>
-          <th style="cursor:default;">
-            Date
+          <th onclick="sortRatesTable(0)" style="cursor:pointer;" data-order="asc">
+            Date <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i>
           </th>
           <c:choose>
             <c:when test="${option == 'ratesPerFileSystem'}">
