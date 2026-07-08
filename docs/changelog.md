@@ -7,6 +7,7 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
 
 ## open-ecpds 8.0.5-08072026 (2026-07-05)
 
+- Added two OPTIONS endpoints to the data portal to support CORS preflight requests. When CORS is configured at the data user level, the appropriate CORS headers are now returned in the preflight OPTIONS response.
 - Enhanced the login page with an on-screen numeric keypad for OTP authentication. When OTP is the only available authentication method, users can now enter their one-time password using either the keyboard or the on-screen keypad.
 - Improved the transfer status display by introducing a user icon to identify status changes initiated by end users (e.g. Stop or Requeue actions). The icon is displayed in both the Destination Transfers table and the Transfer History view, making it easier to distinguish user-initiated actions from scheduler-driven status changes.
 

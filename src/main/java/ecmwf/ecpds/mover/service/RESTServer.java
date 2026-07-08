@@ -730,6 +730,68 @@ public final class RESTServer {
     }
 
     /**
+     * CORS preflight for home directory listing.
+     *
+     * @param user
+     *            the user
+     * @param request
+     *            the request
+     * @param response
+     *            the response
+     *
+     * @return the response
+     */
+    @OPTIONS
+    @Path("home/{user}")
+    public Response homeOptions(@PathParam("user") final String user, @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response) {
+        _log.debug("REST received request: homeOptions({})", user);
+        final var session = getUserSession(getBasicAuth(user + ":" + user), request, response);
+        try {
+            final var builder = Response.noContent();
+            addCorsHeaders(session, request, builder);
+            builder.header("Access-Control-Max-Age", "86400");
+            return builder.build();
+        } finally {
+            if (session != null) {
+                session.close(true);
+            }
+        }
+    }
+
+    /**
+     * CORS preflight for home file download.
+     *
+     * @param user
+     *            the user
+     * @param request
+     *            the request
+     * @param response
+     *            the response
+     * @param filename
+     *            the filename
+     *
+     * @return the response
+     */
+    @OPTIONS
+    @Path("home/{user}/{filename: .*}")
+    public Response homeOptions(@PathParam("user") final String user, @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response, @PathParam("filename") final String filename) {
+        _log.debug("REST received request: homeOptions({}/{})", user, filename);
+        final var session = getUserSession(getBasicAuth(user + ":" + user), request, response);
+        try {
+            final var builder = Response.noContent();
+            addCorsHeaders(session, request, builder);
+            builder.header("Access-Control-Max-Age", "86400");
+            return builder.build();
+        } finally {
+            if (session != null) {
+                session.close(true);
+            }
+        }
+    }
+
+    /**
      * File get (if directory then list otherwise download).
      *
      * @param ui
