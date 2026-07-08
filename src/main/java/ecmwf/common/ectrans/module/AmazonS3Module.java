@@ -266,8 +266,21 @@ public final class AmazonS3Module extends TransferModule {
             s3prefix += "/";
         }
         final var region = setup.getString(HOST_S3_REGION);
-        final var url = setup.get(HOST_S3_URL, scheme + "://" + host + (port != 80 ? ":" + port : ""));
-        _log.debug("AmazonS3 connection on {} ({})", url, user);
+        // Resolve the S3 endpoint URL:
+        // 1. Explicit s3.url in config — always used as-is.
+        // 2. Destination host looks like a native AWS endpoint (*.amazonaws.com) — pass empty
+        // so the SDK constructs the correct regional endpoint from s3.region alone.
+        // 3. Destination host is an IP address (happens when ectrans.usednsname=no resolves the
+        // hostname before passing it here) AND s3.region is explicitly set — also pass empty,
+        // since an IP cannot be used as a virtual-hosted S3 endpoint and s3.region is authoritative.
+        // 4. Any other hostname (MinIO, Ceph, custom S3-compatible service) — auto-use as override.
+        final var resolvedHost = host; // capture final copy (host is reassigned above)
+        final var defaultUrl = scheme + "://" + resolvedHost + (port != 80 ? ":" + port : "");
+        final boolean isAwsHost = resolvedHost.endsWith(".amazonaws.com") || resolvedHost.equals("amazonaws.com");
+        final boolean isIpAddress = resolvedHost.matches("\\d{1,3}(\\.\\d{1,3}){3}") || resolvedHost.contains(":");
+        final var url = setup.getOptionalString(HOST_S3_URL)
+                .orElseGet(() -> isAwsHost || (isIpAddress && isNotEmpty(region)) ? "" : defaultUrl);
+        _log.debug("AmazonS3 connection on {} ({})", isNotEmpty(url) ? url : "default-regional-endpoint", user);
         var connected = false;
         setAttribute("remote.hostName", host);
         final ClientSocketStatistics statistics;
@@ -1195,7 +1208,7 @@ public final class AmazonS3Module extends TransferModule {
                         resolvedRegion);
             }
             if (crossRegionAccess) {
-                clientBuilder.region(Region.of(resolvedRegion));
+                clientBuilder.region(Region.of(resolvedRegion)).crossRegionAccessEnabled(true);
                 _log.debug("Cross-region access enabled: using region '{}' for bucket '{}'", resolvedRegion,
                         bucketName);
             } else if (acceleration || isEmpty(url)) {

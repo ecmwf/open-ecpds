@@ -57,18 +57,35 @@
 
         <div class="mb-3">
           <p class="small fw-semibold mb-1"><i class="bi bi-cloud text-primary me-1"></i>AWS endpoint</p>
-          <p class="small text-muted mb-1">The module connects to standard AWS endpoints.
-          Use <code>s3.url</code> for S3-compatible services (MinIO, Ceph, etc.) or private endpoints.</p>
+          <p class="small text-muted mb-1">The endpoint is resolved automatically — no manual configuration
+          needed in most cases. Use <code>s3.url</code> only to override to a different URL.</p>
 <pre class="bg-body-secondary rounded p-2 mb-2" style="font-size:0.75rem;white-space:pre-wrap">s3.region = "eu-west-1"          # AWS region (optional — auto-discovered if omitted)
-s3.url = "https://minio.example.com:9000"  # custom endpoint (S3-compatible)
+s3.url = "https://custom.example.com:9000"  # explicit endpoint override (optional)
 s3.scheme = "https"              # http | https  (default: http, ignored when url is set)
 s3.port = "443"                  # port (default: 80, ignored when url is set)</pre>
           <div class="alert alert-success py-1 px-2 mb-1 small d-flex align-items-start gap-2">
             <i class="bi bi-lightbulb flex-shrink-0 mt-1"></i>
-            <div><strong>Region is optional.</strong> If <code>s3.region</code> is not set and
-            <code>s3.bucketName</code> is configured, the module automatically discovers the bucket's
-            region at connect time using <code>GetBucketLocation</code>. The discovered region is logged
-            at <code>INFO</code> level. If discovery fails, <code>us-east-1</code> is used as a fallback.</div>
+            <div><strong>Endpoint auto-detection.</strong> The module inspects the ECtrans destination host:
+            <ul class="mb-0 mt-1 ps-3">
+              <li><strong>AWS host</strong> (<code>*.amazonaws.com</code>): the SDK constructs the correct regional endpoint from <code>s3.region</code> automatically.</li>
+              <li><strong>Non-AWS host</strong> (MinIO, Ceph, private S3): the destination host is automatically used as the endpoint override — no <code>s3.url</code> needed.</li>
+              <li><strong>Explicit <code>s3.url</code></strong>: always takes precedence.</li>
+            </ul>
+            </div>
+          </div>
+          <div class="alert alert-success py-1 px-2 mb-1 small d-flex align-items-start gap-2">
+            <i class="bi bi-lightbulb flex-shrink-0 mt-1"></i>
+            <div><strong>Region is optional for standard AWS regions.</strong> If <code>s3.region</code> is not set
+            and <code>s3.bucketName</code> is configured, the module auto-discovers the bucket's region
+            via <code>GetBucketLocation</code> at connect time (logged at <code>INFO</code>).
+            Falls back to <code>us-east-1</code> with a <code>WARN</code> if discovery fails.</div>
+          </div>
+          <div class="alert alert-warning py-1 px-2 mb-1 small d-flex align-items-start gap-2">
+            <i class="bi bi-exclamation-triangle flex-shrink-0" style="margin-top:0.1em"></i>
+            <div><strong>Opt-in AWS regions</strong> (<code>eu-south-1</code>, <code>eu-south-2</code>,
+            <code>ap-east-1</code>, <code>me-south-1</code>, etc.): auto-discovery may fail because the
+            account must have explicitly enabled the region. Set <code>s3.region</code> explicitly:
+            <code>s3.region = "eu-south-1"</code></div>
           </div>
           <div class="alert alert-light border py-1 px-2 mb-0 small">
             When <code>s3.url</code> is set, <code>s3.scheme</code> and <code>s3.port</code>
@@ -269,12 +286,21 @@ s3.sslValidation = "yes"
 # Region auto-discovered at connect time</pre>
       </div>
       <div class="col-12 col-md-6">
+        <p class="small fw-semibold mb-1">AWS opt-in region (e.g. eu-south-1)</p>
+<pre class="bg-body-secondary rounded p-2 mb-0" style="font-size:0.72rem;white-space:pre-wrap">s3.region = "eu-south-1"
+s3.bucketName = "my-bucket"
+s3.sslValidation = "yes"
+# Opt-in regions need explicit s3.region
+# (auto-discovery may fail for opt-in regions)</pre>
+      </div>
+      <div class="col-12 col-md-6 mt-2">
         <p class="small fw-semibold mb-1">MinIO / S3-compatible</p>
-<pre class="bg-body-secondary rounded p-2 mb-0" style="font-size:0.72rem;white-space:pre-wrap">s3.url = "https://minio.example.com"
-s3.region = "us-east-1"
+<pre class="bg-body-secondary rounded p-2 mb-0" style="font-size:0.72rem;white-space:pre-wrap">s3.region = "us-east-1"
 s3.enablePathStyleAccess = "yes"
 s3.bucketName = "my-bucket"
-s3.sslValidation = "yes"</pre>
+s3.sslValidation = "yes"
+# Destination host auto-used as endpoint
+# (s3.url only needed to override it)</pre>
       </div>
       <div class="col-12 col-md-6 mt-2">
         <p class="small fw-semibold mb-1">IAM Role assumption</p>
@@ -285,15 +311,17 @@ s3.externalId = "my-external-id"
 s3.sslValidation = "yes"
 # s3.region omitted — auto-discovered</pre>
       </div>
-      <div class="col-12 col-md-6 mt-2">
+      <div class="col-12 mt-2">
         <p class="small fw-semibold mb-1">Large multipart + role</p>
 <pre class="bg-body-secondary rounded p-2 mb-0" style="font-size:0.72rem;white-space:pre-wrap">s3.bucketName = "my-weather-bucket"
 s3.roleArn = "arn:aws:iam::123:role/R"
 s3.roleSessionName = "ECPDS-Session"
 s3.externalId = "my-external-id"
-s3.multipartSize = "5000000000"
+s3.multipartSize = "100MB"
 s3.partSize = "25"
-s3.sslValidation = "yes"</pre>
+s3.numUploadThreads = "4"
+s3.sslValidation = "yes"
+# s3.region omitted — auto-discovered</pre>
       </div>
       </div>
     </div>
