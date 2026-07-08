@@ -5,6 +5,11 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
 
 ---
 
+## open-ecpds 8.0.5-08072026 (2026-07-05)
+
+- Enhanced the login page with an on-screen numeric keypad for OTP authentication. When OTP is the only available authentication method, users can now enter their one-time password using either the keyboard or the on-screen keypad.
+- Improved the transfer status display by introducing a user icon to identify status changes initiated by end users (e.g. Stop or Requeue actions). The icon is displayed in both the Destination Transfers table and the Transfer History view, making it easier to distinguish user-initiated actions from scheduler-driven status changes.
+
 ## open-ecpds 8.0.4-05072026 (2026-07-05)
 
 - Added a new configurable CORS option at the Data User level, allowing specific origins (or *) to be defined for browser access to download endpoints, with support for preflight requests and ranged downloads.
