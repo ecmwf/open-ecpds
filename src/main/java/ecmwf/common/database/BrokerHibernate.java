@@ -252,7 +252,13 @@ final class BrokerHibernate implements Broker {
      */
     @Override
     public void clearCache(final String tableName, final String columnName, final List<Object> primaryKeys) {
-        final var persistentClass = HibernateSessionFactory.getPersistenClass(tableName);
+        final PersistentClass persistentClass;
+        try {
+            persistentClass = HibernateSessionFactory.getPersistenClass(tableName);
+        } catch (final HibernateException e) {
+            // Table is not a Hibernate-mapped entity — no second-level cache to clear.
+            return;
+        }
         final var columns = persistentClass.getTable().getPrimaryKey().getColumns();
         if (columns.size() == 1 && columns.get(0).getName().equals(columnName)) {
             clearCache(persistentClass, primaryKeys);
