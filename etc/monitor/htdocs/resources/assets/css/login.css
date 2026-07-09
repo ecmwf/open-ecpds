@@ -17,8 +17,8 @@ body:has(#login-wrap) .content {
 #login-backdrop {
     position: fixed;
     inset: 0;
-    background: linear-gradient(135deg, #0d1b2a 0%, #1a3a5c 50%, #0d6efd22 100%);
     z-index: 0;
+    display: block;
 }
 
 /* Login wrap — fills visible area; card uses auto margins for centering */
