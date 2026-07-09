@@ -90,7 +90,8 @@ public class LoginAction extends ECMWFAction {
                 final var showOtp = Boolean.TRUE.equals(request.getAttribute("showOtp"));
                 final var errorKey = showPassword && !showOtp ? "errors.loginFailedPasswordOnly"
                         : !showPassword && showOtp ? "errors.loginFailedOtpOnly" : "errors.loginFailed";
-                request.setAttribute(Globals.ERROR_KEY, ECMWFActionForm.newErrors(errorKey, ""));
+                request.getSession().setAttribute(Globals.ERROR_KEY, ECMWFActionForm.newErrors(errorKey, ""));
+                return new ActionForward("/do/login", true);
             }
             return mapping.findForward("failure");
         }
