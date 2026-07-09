@@ -139,6 +139,8 @@ nav:
       - CPY (Copy / Replication): event-logging/cpy-fields.md
       - DEA (Denied Access): event-logging/dea-fields.md
   - Global Reach: global-reach.md
+  - Monitoring:
+      - Transfer Network Statistics: monitoring/transfer-statistics.md
   - API Reference (JavaDocs): api-reference.md
   - Support: support.md
   - Contributing: contributing.md

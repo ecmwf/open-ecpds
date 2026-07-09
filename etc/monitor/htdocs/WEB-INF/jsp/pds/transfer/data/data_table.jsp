@@ -362,10 +362,48 @@
 <c:if test="${fn:length(transferStatisticsGroups) > 1}">
   <span class="badge rounded-pill bg-warning text-dark ms-1" title="Statistics from ${fn:length(transferStatisticsGroups)} separate sending attempts">${fn:length(transferStatisticsGroups)} attempts</span>
 </c:if>
+<button class="btn btn-link btn-sm p-0 text-info ms-1" type="button"
+        data-bs-toggle="collapse" data-bs-target="#nst-info" aria-expanded="false"
+        title="About these statistics">
+  <i class="bi bi-info-circle"></i>
+</button>
 <button class="btn btn-link btn-sm ms-auto p-0 text-secondary" type="button"
         data-bs-toggle="collapse" data-bs-target="#nst-collapse" aria-expanded="true">
   <i class="bi bi-chevron-up" id="nst-chevron"></i>
 </button>
+</div>
+<%-- Info panel --%>
+<div id="nst-info" class="collapse">
+<div class="px-3 py-3 border-bottom small text-muted" style="background:var(--bs-tertiary-bg,#f8f9fa);line-height:1.6">
+  <p class="mb-2"><strong class="text-body">How are these statistics collected?</strong><br>
+  Each row represents one TCP socket connection opened during the transfer. Statistics are captured
+  at the end of every connection using OS-level socket diagnostics (equivalent to <code>tcp_info</code>)
+  and stored in the <code>TRANSFER_STATISTICS</code> table. A single file transfer may open several
+  connections — for example when the protocol uses parallel streams, or when a connection drops and is retried.</p>
+
+  <p class="mb-2"><strong class="text-body">Multiple attempts vs. multiple connections</strong><br>
+  Connections are grouped by <em>sending attempt</em> (requeue count). If the transfer was requeued
+  and restarted, each restart appears as a separate attempt group labelled <em>Attempt 1, Attempt 2…</em>.
+  Within a single attempt, multiple connections indicate that the transfer module opened parallel or
+  sequential TCP sessions — common with FTP, SFTP or S3 multi-part uploads.</p>
+
+  <p class="mb-2"><strong class="text-body">How to interpret the metrics</strong><br>
+  <strong>Bytes sent / received</strong> — cumulative TCP payload bytes on that socket, including protocol overhead.
+  This is typically larger than the raw file size.<br>
+  <strong>Delivery rate</strong> — the peak TCP goodput measured by the kernel on that socket, in bytes/sec.
+  It reflects the sustained throughput seen by the network stack, not application-level speed.<br>
+  <strong>RTT</strong> — smoothed round-trip time reported by the kernel. High RTT indicates distant or congested paths.<br>
+  <strong>Retransmits</strong> — number of TCP segments retransmitted due to loss or timeout. Any non-zero value suggests
+  network congestion or packet loss on the path.</p>
+
+  <p class="mb-0"><strong class="text-body">How does this differ from the global transfer rate?</strong><br>
+  The <em>global transfer rate</em> shown in the main transfer card (<em>Duration / Size / Rate</em>) is
+  computed end-to-end by ECpds: it divides the acknowledged file size by the wall-clock time from first byte
+  sent to transfer completion, including connection setup, protocol handshakes, and any gaps between connections.
+  Socket statistics report per-connection kernel metrics only for the time each socket was active.
+  The global rate will therefore generally be <em>lower</em> than the peak per-socket delivery rate,
+  and may cover a longer time window than any individual connection.</p>
+</div>
 </div>
 <div id="nst-collapse" class="collapse show">
 <div class="card-body pt-2 pb-1">
