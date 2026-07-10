@@ -63,6 +63,7 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_PREFIX;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_PROTOCOL;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_RECURSIVE_LEVEL;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_REGION;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_DISABLE_SDK_RETRIES;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_REQUEST_CHECKSUM_CALCULATION;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_RESPONSE_CHECKSUM_VALIDATION;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_ROLE_ARN;
@@ -145,9 +146,11 @@ import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.checksums.RequestChecksumCalculation;
 import software.amazon.awssdk.core.checksums.ResponseChecksumValidation;
+import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.interceptor.Context;
 import software.amazon.awssdk.core.interceptor.ExecutionAttributes;
 import software.amazon.awssdk.core.interceptor.ExecutionInterceptor;
+import software.amazon.awssdk.core.retry.RetryPolicy;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.regions.Region;
@@ -304,15 +307,21 @@ public final class AmazonS3Module extends TransferModule {
         // 1. Explicit s3.url in config — always used as-is.
         // 2. Destination host looks like a native AWS endpoint (*.amazonaws.com) — pass empty
         // so the SDK constructs the correct regional endpoint from s3.region alone.
-        // 3. Destination host is an IP address (happens when ectrans.usednsname=no resolves the
-        // hostname before passing it here) AND s3.region is explicitly set — also pass empty,
-        // since an IP cannot be used as a virtual-hosted S3 endpoint and s3.region is authoritative.
-        // 4. Any other hostname (MinIO, Ceph, custom S3-compatible service) — auto-use as override.
+        // 3. Destination host is an IP address (IPv4 or IPv6 — happens when ectrans.usednsname=no
+        // resolves the hostname before passing it here) AND s3.region is explicitly set — also
+        // pass empty, so the SDK uses the correct regional endpoint rather than the bare IP.
+        // Note: set s3.enablePathStyleAccess=yes if the IP must be used directly.
+        // 4. Any other hostname (MinIO, Ceph, NIRD, custom S3-compatible service) — auto-use as override.
+        //
+        // IPv6 detection: a bare IPv6 address has more than one colon (e.g. 2001:db8::1), or is
+        // wrapped in brackets ([::1]). A single colon means host:port — NOT an IPv6 address.
         final var resolvedHost = host; // capture final copy (host is reassigned above)
         final var defaultUrl = scheme + "://" + resolvedHost
                 + (port != ("https".equals(scheme) ? 443 : 80) ? ":" + port : "");
         final boolean isAwsHost = resolvedHost.endsWith(".amazonaws.com") || resolvedHost.equals("amazonaws.com");
-        final boolean isIpAddress = resolvedHost.matches("\\d{1,3}(\\.\\d{1,3}){3}") || resolvedHost.contains(":");
+        final boolean isIpAddress = resolvedHost.matches("\\d{1,3}(\\.\\d{1,3}){3}") // IPv4
+                || resolvedHost.startsWith("[") // bracketed IPv6: [2001:db8::1]
+                || resolvedHost.indexOf(':') != resolvedHost.lastIndexOf(':'); // bare IPv6: multiple colons
         final var url = setup.getOptionalString(HOST_S3_URL)
                 .orElseGet(() -> isAwsHost || (isIpAddress && isNotEmpty(region)) ? "" : defaultUrl);
         _log.debug("AmazonS3 connection on {} ({})", isNotEmpty(url) ? url : "default-regional-endpoint", user);
@@ -354,7 +363,8 @@ public final class AmazonS3Module extends TransferModule {
                     setup.getString(HOST_S3_ROLE_ARN), setup.getString(HOST_S3_ROLE_SESSION_NAME),
                     setup.getInteger(HOST_S3_DURATION_SECONDS), setup.getString(HOST_S3_EXTERNAL_ID),
                     setup.getString(HOST_S3_REQUEST_CHECKSUM_CALCULATION),
-                    setup.getString(HOST_S3_RESPONSE_CHECKSUM_VALIDATION), getDebug());
+                    setup.getString(HOST_S3_RESPONSE_CHECKSUM_VALIDATION),
+                    setup.getBoolean(HOST_S3_DISABLE_SDK_RETRIES), getDebug());
             connected = true;
         } catch (final S3Exception e) {
             _log.error("Connection failed to {}", url, e);
@@ -1344,7 +1354,8 @@ public final class AmazonS3Module extends TransferModule {
                 final boolean enablePathStyleAccess, final boolean crossRegionAccess, final String bucketName,
                 final String url, final String region, final boolean mkBucket, final String roleArn,
                 final String roleSessionName, final int durationSeconds, final String externalId,
-                final String requestChecksumCalculation, final String responseChecksumValidation, final boolean debug)
+                final String requestChecksumCalculation, final String responseChecksumValidation,
+                final boolean disableSdkRetries, final boolean debug)
                 throws NoSuchAlgorithmException, KeyManagementException {
             // Build socket factories for both schemes.
             // TcpTunedSslSocketFactory hooks into prepareSocket() to apply TCP options + track HTTPS sockets.
@@ -1415,8 +1426,21 @@ public final class AmazonS3Module extends TransferModule {
                 clientBuilder.endpointOverride(URI.create(url)).region(Region.of(resolvedRegion));
                 _log.debug("EndPoint: {} - region: {}", url, resolvedRegion);
             }
+            // When disableSdkRetries is set, suppress SDK-level retries.
+            // Background: TrackingApacheSdkHttpClient feeds the raw ECpds InputStream directly
+            // into an InputStreamEntity which is non-resettable. If the SDK retried (e.g. on a
+            // 5xx or throttle response) it would call ContentStreamProvider.newStream() a second
+            // time and throw "Content input stream does not support mark/reset, and was already
+            // read once". ECpds handles retries at a higher level so disabling SDK retries is safe.
+            // This is particularly needed for non-Amazon S3-compatible endpoints (e.g. NIRD/Sigma2)
+            // that may return responses the SDK considers retryable.
+            final var overrideCfgBuilder = ClientOverrideConfiguration.builder();
+            if (disableSdkRetries) {
+                overrideCfgBuilder.retryPolicy(RetryPolicy.none());
+                _log.debug("SDK-level retries disabled (s3.disableSdkRetries=yes)");
+            }
             if (debug) {
-                clientBuilder.overrideConfiguration(c -> c.addExecutionInterceptor(new ExecutionInterceptor() {
+                overrideCfgBuilder.addExecutionInterceptor(new ExecutionInterceptor() {
                     @Override
                     public void beforeTransmission(final Context.BeforeTransmission context,
                             final ExecutionAttributes attributes) {
@@ -1428,8 +1452,9 @@ public final class AmazonS3Module extends TransferModule {
                             final ExecutionAttributes attributes) {
                         context.httpResponse().headers().forEach((k, v) -> _log.debug("Response Header: {}={}", k, v));
                     }
-                }));
+                });
             }
+            clientBuilder.overrideConfiguration(overrideCfgBuilder.build());
             var connected = false;
             S3Client s3 = null;
             try {

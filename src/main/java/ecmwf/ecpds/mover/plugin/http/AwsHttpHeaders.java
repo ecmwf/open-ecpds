@@ -69,6 +69,9 @@ final class AwsHttpHeaders {
     /** The Constant CHECKSUM_CRC32C. */
     static final String CHECKSUM_CRC32C = "x-amz-checksum-crc32c";
 
+    /** The Constant CHECKSUM_CRC64NVME. */
+    static final String CHECKSUM_CRC64NVME = "x-amz-checksum-crc64nvme";
+
     /** The Constant CHECKSUM_SHA1. */
     static final String CHECKSUM_SHA1 = "x-amz-checksum-sha1";
 

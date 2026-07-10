@@ -68,7 +68,8 @@ s3.port = "443"                  # port (default: 443, ignored when url is set)<
             <div><strong>Endpoint auto-detection.</strong> The module inspects the ECtrans destination host:
             <ul class="mb-0 mt-1 ps-3">
               <li><strong>AWS host</strong> (<code>*.amazonaws.com</code>): the SDK constructs the correct regional endpoint from <code>s3.region</code> automatically.</li>
-              <li><strong>Non-AWS host</strong> (MinIO, Ceph, private S3): the destination host is automatically used as the endpoint override — no <code>s3.url</code> needed.</li>
+              <li><strong>IP address</strong> (IPv4 or IPv6, from <code>ectrans.usednsname=no</code>) and <code>s3.region</code> set: treated as AWS-style — SDK uses <code>s3.region</code>. For non-AWS IPs, set <code>s3.url</code> explicitly.</li>
+              <li><strong>Non-AWS hostname</strong> (MinIO, Ceph, NIRD, private S3): the destination host is automatically used as the endpoint override — no <code>s3.url</code> needed.</li>
               <li><strong>Explicit <code>s3.url</code></strong>: always takes precedence.</li>
             </ul>
             </div>
@@ -281,6 +282,20 @@ s3.responseChecksumValidation = "WHEN_REQUIRED"   # WHEN_SUPPORTED | WHEN_REQUIR
                                    # support chunked encoding (e.g. older MinIO versions).</pre>
         </div>
 
+        <hr class="my-2">
+
+        <div class="mb-3">
+          <p class="small fw-semibold mb-1"><i class="bi bi-arrow-repeat text-muted me-1"></i>SDK retry behaviour</p>
+          <p class="small text-muted mb-1">The AWS SDK normally retries on transient errors (5xx, throttling) by
+          replaying the request stream. Because ECpds feeds a non-resettable pipeline stream this causes a
+          <em>&ldquo;Content input stream does not support mark/reset&rdquo;</em> error on some
+          S3-compatible endpoints. Enable this option to disable SDK-level retries;
+          ECpds handles its own retry logic at a higher level.</p>
+<pre class="bg-body-secondary rounded p-2 mb-0" style="font-size:0.75rem;white-space:pre-wrap">s3.disableSdkRetries = "yes"   # disable AWS SDK retry logic (default: no)
+                               # Recommended for non-Amazon S3-compatible endpoints
+                               # (NIRD/Sigma2, MinIO, Ceph, etc.)</pre>
+        </div>
+
       </div><%-- end transfer tab --%>
 
     </div><%-- end tab-content --%>
@@ -320,6 +335,17 @@ s3.roleSessionName = "ecpds"
 s3.externalId = "my-external-id"
 s3.sslValidation = "yes"
 # s3.region omitted — auto-discovered</pre>
+      </div>
+      <div class="col-12 col-md-6 mt-2">
+        <p class="small fw-semibold mb-1">NIRD / Sigma2 (research storage)</p>
+<pre class="bg-body-secondary rounded p-2 mb-0" style="font-size:0.72rem;white-space:pre-wrap">s3.region = "us-east-1"
+s3.bucketName = "my-project-bucket"
+s3.enablePathStyleAccess = "yes"
+s3.disableSdkRetries = "yes"
+s3.disableChunkedEncoding = "yes"
+s3.useByteArrayInputStream = "yes"
+# Destination host: s3.nird.sigma2.no
+# Host auto-used as endpoint override</pre>
       </div>
       <div class="col-12 mt-2">
         <p class="small fw-semibold mb-1">Large multipart + role</p>

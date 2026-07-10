@@ -397,7 +397,7 @@
             { data: 5 },
             { data: 6,  width: '55px'  },
             { data: 7,  width: '45px'  },
-            { data: 8,  width: '70px'  },
+            { data: 8,  width: '85px'  },
             { data: 9,  width: '80px'  },
             { data: 10, width: '130px'  },
             { data: 11, width: '45px'  },

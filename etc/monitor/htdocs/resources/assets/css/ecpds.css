@@ -2161,6 +2161,13 @@ html[data-bs-theme=dark] .custom-ace-marker-warning {
 #validateTable th:nth-child(6) {
     min-width: 200px;
 }
+/* destTransferTable / validateTable — Mbits/s column: clip overflowing values (e.g. 10234.567)
+   with an ellipsis; the full value is accessible via the title attribute on the cell span */
+#destTransferTable td:nth-child(9),
+#validateTable td:nth-child(9) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 /* destTransferTable / validateTable — Host column: allow long hostnames to wrap across multiple lines */
 #destTransferTable td:nth-child(2),
 #validateTable td:nth-child(2) {

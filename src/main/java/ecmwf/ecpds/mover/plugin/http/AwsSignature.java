@@ -357,6 +357,11 @@ final class AwsSignature {
             digest = "STREAMING-AWS4-HMAC-SHA256-PAYLOAD";
         } else if ("UNSIGNED-PAYLOAD".equals(xAmzContentSha256)) {
             digest = "UNSIGNED-PAYLOAD";
+        } else if (xAmzContentSha256 != null && xAmzContentSha256.startsWith("STREAMING-UNSIGNED-")) {
+            // AWS SigV4 spec: the canonical payload hash is the literal x-amz-content-sha256
+            // value itself for all STREAMING-UNSIGNED-* variants (e.g. STREAMING-UNSIGNED-PAYLOAD-TRAILER
+            // used by aws-cli v2 with awscrt when sending CRC64NVME trailer checksums).
+            digest = xAmzContentSha256;
         } else {
             digest = getMessageDigest(payload, hashAlgorithm);
         }

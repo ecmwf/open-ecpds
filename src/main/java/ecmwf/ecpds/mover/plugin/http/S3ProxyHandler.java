@@ -113,8 +113,8 @@ public class S3ProxyHandler {
             AwsHttpHeaders.DECODED_CONTENT_LENGTH, AwsHttpHeaders.METADATA_DIRECTIVE, AwsHttpHeaders.STORAGE_CLASS,
             // SDK v2 checksum / integrity headers — accept but do not verify (we rely on ECPDS checksums)
             AwsHttpHeaders.CHECKSUM_ALGORITHM, AwsHttpHeaders.CHECKSUM_CRC32, AwsHttpHeaders.CHECKSUM_CRC32C,
-            AwsHttpHeaders.CHECKSUM_SHA1, AwsHttpHeaders.CHECKSUM_SHA256, AwsHttpHeaders.TRAILER, AwsHttpHeaders.TE,
-            AwsHttpHeaders.EXPECTED_BUCKET_OWNER);
+            AwsHttpHeaders.CHECKSUM_CRC64NVME, AwsHttpHeaders.CHECKSUM_SHA1, AwsHttpHeaders.CHECKSUM_SHA256,
+            AwsHttpHeaders.TRAILER, AwsHttpHeaders.TE, AwsHttpHeaders.EXPECTED_BUCKET_OWNER);
 
     /** The Constant XML_CONTENT_TYPE. */
     private static final String XML_CONTENT_TYPE = "application/xml";
@@ -488,6 +488,13 @@ public class S3ProxyHandler {
                             is = new ChunkedInputStream(is);
                         } else if ("UNSIGNED-PAYLOAD".equals(contentSha256)) {
                             payload = new byte[0];
+                        } else if (contentSha256 != null && contentSha256.startsWith("STREAMING-UNSIGNED-")) {
+                            // AWS CLI v2 (awscrt) sends STREAMING-UNSIGNED-PAYLOAD-TRAILER when using
+                            // unsigned chunked uploads with a trailer checksum (e.g. CRC64NVME).
+                            // The body is aws-chunked encoded but the SHA256 is not computed.
+                            // Decode the chunked envelope; skip SHA256 verification (unsigned).
+                            payload = new byte[0];
+                            is = new ChunkedInputStream(is);
                         } else {
                             // buffer the entire stream to calculate digest
                             // why input stream read contentlength of header?

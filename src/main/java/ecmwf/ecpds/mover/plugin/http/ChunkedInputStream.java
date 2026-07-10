@@ -64,16 +64,26 @@ final class ChunkedInputStream extends FilterInputStream {
                 return -1;
             }
             final var parts = line.split(";", 2);
-            currentLength = Integer.parseInt(parts[0], 16);
-            currentSignature = parts[1];
+            currentLength = Integer.parseInt(parts[0].trim(), 16);
+            // Signed format: "{hex};chunk-signature={sig}" — parts[1] has the signature.
+            // Unsigned format: "{hex}" — no semicolon, parts.length == 1.
+            currentSignature = parts.length > 1 ? parts[1] : null;
             chunk = new byte[currentLength];
             currentIndex = 0;
-            ByteStreams.readFully(in, chunk);
-            // TODO: check currentSignature
             if (currentLength == 0) {
+                // Terminal chunk. For STREAMING-UNSIGNED-PAYLOAD-TRAILER the trailer headers
+                // (e.g. "x-amz-checksum-crc64nvme:…") follow before the blank line.
+                // Drain them so the HTTP layer sees a clean end-of-stream.
+                String trailer;
+                while (!(trailer = readLine(in)).isEmpty()) {
+                    // discard trailer header line (checksum etc.) — not verified here
+                    currentSignature = trailer;
+                }
                 return -1;
             }
-            readLine(in);
+            ByteStreams.readFully(in, chunk);
+            // TODO: check currentSignature for signed payloads
+            readLine(in); // consume trailing \r\n after chunk data
         }
         return chunk[currentIndex++] & 0xFF;
     }

@@ -1085,6 +1085,9 @@ public enum ECtransOptions {
     /** The host s3 response checksum validation. */
     HOST_S3_RESPONSE_CHECKSUM_VALIDATION("responseChecksumValidation", String.class, STRING_NONE),
 
+    /** Disable SDK-level retries for the S3 client. */
+    HOST_S3_DISABLE_SDK_RETRIES("disableSdkRetries", Boolean.class, false),
+
     /** The host gcs allow empty bucket name. */
     HOST_GCS_ALLOW_EMPTY_BUCKET_NAME("allowEmptyBucketName", Boolean.class, false),
 
