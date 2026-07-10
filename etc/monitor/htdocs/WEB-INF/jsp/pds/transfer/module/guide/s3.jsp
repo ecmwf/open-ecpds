@@ -61,8 +61,8 @@
           needed in most cases. Use <code>s3.url</code> only to override to a different URL.</p>
 <pre class="bg-body-secondary rounded p-2 mb-2" style="font-size:0.75rem;white-space:pre-wrap">s3.region = "eu-west-1"          # AWS region (optional — auto-discovered if omitted)
 s3.url = "https://custom.example.com:9000"  # explicit endpoint override (optional)
-s3.scheme = "https"              # http | https  (default: http, ignored when url is set)
-s3.port = "443"                  # port (default: 80, ignored when url is set)</pre>
+s3.scheme = "https"              # http | https  (default: https, ignored when url is set)
+s3.port = "443"                  # port (default: 443, ignored when url is set)</pre>
           <div class="alert alert-success py-1 px-2 mb-1 small d-flex align-items-start gap-2">
             <i class="bi bi-lightbulb flex-shrink-0 mt-1"></i>
             <div><strong>Endpoint auto-detection.</strong> The module inspects the ECtrans destination host:

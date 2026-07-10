@@ -109,10 +109,34 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
 
 import org.apache.commons.io.filefilter.WildcardFileFilter;
+import org.apache.http.HttpHost;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.HttpDelete;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpHead;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.entity.InputStreamEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.protocol.HttpContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import software.amazon.awssdk.http.AbortableInputStream;
+import software.amazon.awssdk.http.ExecutableHttpRequest;
+import software.amazon.awssdk.http.HttpExecuteRequest;
+import software.amazon.awssdk.http.HttpExecuteResponse;
+import software.amazon.awssdk.http.SdkHttpClient;
+import software.amazon.awssdk.http.SdkHttpResponse;
 
 import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
@@ -285,7 +309,8 @@ public final class AmazonS3Module extends TransferModule {
         // since an IP cannot be used as a virtual-hosted S3 endpoint and s3.region is authoritative.
         // 4. Any other hostname (MinIO, Ceph, custom S3-compatible service) — auto-use as override.
         final var resolvedHost = host; // capture final copy (host is reassigned above)
-        final var defaultUrl = scheme + "://" + resolvedHost + (port != 80 ? ":" + port : "");
+        final var defaultUrl = scheme + "://" + resolvedHost
+                + (port != ("https".equals(scheme) ? 443 : 80) ? ":" + port : "");
         final boolean isAwsHost = resolvedHost.endsWith(".amazonaws.com") || resolvedHost.equals("amazonaws.com");
         final boolean isIpAddress = resolvedHost.matches("\\d{1,3}(\\.\\d{1,3}){3}") || resolvedHost.contains(":");
         final var url = setup.getOptionalString(HOST_S3_URL)
@@ -948,7 +973,7 @@ public final class AmazonS3Module extends TransferModule {
             currentStatus = "CLOSE";
             StreamPlugThread.closeQuietly(s3input);
             if (s3 != null)
-                s3.getS3Client().close();
+                s3.close();
             _log.debug("Close completed");
         } else {
             _log.debug("Already closed");
@@ -1044,9 +1069,149 @@ public final class AmazonS3Module extends TransferModule {
             }
             return sslSocket;
         }
+    }
 
-        private record SocketEntry(Socket socket, long startTime) {
+    /**
+     * A {@link PlainConnectionSocketFactory} subclass that applies all {@link SocketConfig} TCP options and tracks each
+     * connected plain (HTTP) socket for statistics collection, mirroring what {@link TcpTunedSslSocketFactory} does for
+     * HTTPS connections.
+     */
+    private static final class TcpTunedPlainSocketFactory extends PlainConnectionSocketFactory {
+
+        private final SocketConfig tcpConfig;
+        private final ClientSocketStatistics statistics;
+        private final Queue<SocketEntry> tracked = new ConcurrentLinkedQueue<>();
+
+        TcpTunedPlainSocketFactory(final SocketConfig cfg) {
+            tcpConfig = cfg;
+            statistics = cfg.getStatistics();
         }
+
+        @Override
+        public Socket connectSocket(final int connectTimeout, final Socket socket, final HttpHost host,
+                final java.net.InetSocketAddress remoteAddress, final java.net.InetSocketAddress localAddress,
+                final HttpContext context) throws IOException {
+            final var connected = super.connectSocket(connectTimeout, socket, host, remoteAddress, localAddress,
+                    context);
+            tcpConfig.configureSocket(connected);
+            if (statistics != null) {
+                tracked.add(new SocketEntry(connected, System.currentTimeMillis()));
+            }
+            return connected;
+        }
+
+        void updateStatistics() throws IOException {
+            if (statistics == null) {
+                return;
+            }
+            tracked.removeIf(e -> e.socket().isClosed() || !e.socket().isConnected());
+            for (final var entry : tracked) {
+                statistics.add(entry.socket(), entry.startTime());
+            }
+        }
+    }
+
+    /**
+     * A thin {@link SdkHttpClient} adapter backed by a pre-built Apache {@link CloseableHttpClient} with custom
+     * TCP-tuned socket factories registered for both "http" and "https" schemes. This replaces the
+     * {@code ApacheHttpClient.builder().socketFactory(...)} approach, which only hooks into HTTPS connections, so that
+     * plain-HTTP S3 endpoints also contribute socket statistics.
+     *
+     * <p>
+     * Headers managed by Apache via the request entity (Content-Length, Transfer-Encoding) are excluded from the
+     * forwarded headers to avoid duplicates; Content-Length is read from the SDK request and applied to the entity
+     * directly.
+     */
+    private static final class TrackingApacheSdkHttpClient implements SdkHttpClient {
+
+        private final CloseableHttpClient httpClient;
+
+        TrackingApacheSdkHttpClient(final CloseableHttpClient client) {
+            httpClient = client;
+        }
+
+        @Override
+        public ExecutableHttpRequest prepareRequest(final HttpExecuteRequest sdkRequest) {
+            final var request = sdkRequest.httpRequest();
+            final var uri = request.getUri();
+            final var body = sdkRequest.contentStreamProvider().orElse(null);
+            // Build Apache request based on method
+            final HttpUriRequest apacheRequest;
+            switch (request.method().name().toUpperCase(java.util.Locale.ROOT)) {
+            case "GET" -> apacheRequest = new HttpGet(uri);
+            case "HEAD" -> apacheRequest = new HttpHead(uri);
+            case "DELETE" -> apacheRequest = new HttpDelete(uri);
+            case "PUT" -> {
+                final var put = new HttpPut(uri);
+                if (body != null) {
+                    final var contentLength = request.firstMatchingHeader("Content-Length").map(Long::parseLong)
+                            .orElse(-1L);
+                    put.setEntity(new InputStreamEntity(body.newStream(), contentLength));
+                }
+                apacheRequest = put;
+            }
+            case "POST" -> {
+                final var post = new HttpPost(uri);
+                if (body != null) {
+                    final var contentLength = request.firstMatchingHeader("Content-Length").map(Long::parseLong)
+                            .orElse(-1L);
+                    post.setEntity(new InputStreamEntity(body.newStream(), contentLength));
+                }
+                apacheRequest = post;
+            }
+            default -> throw new UnsupportedOperationException("Unsupported HTTP method: " + request.method());
+            }
+            // Forward headers; skip entity-managed headers to avoid duplicates
+            request.headers().forEach((name, values) -> {
+                if (!"Content-Length".equalsIgnoreCase(name) && !"Transfer-Encoding".equalsIgnoreCase(name)) {
+                    values.forEach(v -> apacheRequest.addHeader(name, v));
+                }
+            });
+            return new ExecutableHttpRequest() {
+                @Override
+                public HttpExecuteResponse call() throws IOException {
+                    final var apacheResponse = httpClient.execute(apacheRequest);
+                    final var statusLine = apacheResponse.getStatusLine();
+                    final var sdkResponseBuilder = SdkHttpResponse.builder().statusCode(statusLine.getStatusCode())
+                            .statusText(statusLine.getReasonPhrase());
+                    for (final var header : apacheResponse.getAllHeaders()) {
+                        sdkResponseBuilder.appendHeader(header.getName(), header.getValue());
+                    }
+                    final var entity = apacheResponse.getEntity();
+                    final AbortableInputStream bodyStream = entity != null
+                            ? AbortableInputStream.create(entity.getContent(), () -> {
+                                try {
+                                    apacheResponse.close();
+                                } catch (final IOException ignored) {
+                                }
+                            }) : null;
+                    return HttpExecuteResponse.builder().response(sdkResponseBuilder.build()).responseBody(bodyStream)
+                            .build();
+                }
+
+                @Override
+                public void abort() {
+                    apacheRequest.abort();
+                }
+            };
+        }
+
+        @Override
+        public String clientName() {
+            return "TrackingApacheSdkHttpClient";
+        }
+
+        @Override
+        public void close() {
+            try {
+                httpClient.close();
+            } catch (final IOException ignored) {
+            }
+        }
+    }
+
+    /** Shared socket-tracking entry used by both TCP-tuned socket factories. */
+    private record SocketEntry(Socket socket, long startTime) {
     }
 
     /**
@@ -1057,20 +1222,33 @@ public final class AmazonS3Module extends TransferModule {
         /** The S3 client. */
         private final S3Client s3Client;
 
-        /** The socket factory — tracks live sockets for statistics collection. */
-        private final TcpTunedSslSocketFactory socketFactory;
+        /** Tracks live HTTPS sockets for statistics collection. */
+        private final TcpTunedSslSocketFactory sslSocketFactory;
+
+        /** Tracks live plain-HTTP sockets for statistics collection. */
+        private final TcpTunedPlainSocketFactory plainSocketFactory;
+
+        /** The custom HTTP client — must be closed alongside the S3 client. */
+        private final TrackingApacheSdkHttpClient httpClient;
 
         /**
          * Instantiates a new Session.
          *
          * @param client
          *            the S3 client
-         * @param factory
-         *            the socket factory (may be null if statistics are disabled)
+         * @param sslFactory
+         *            the SSL socket factory
+         * @param plainFactory
+         *            the plain socket factory
+         * @param trackingClient
+         *            the custom HTTP client backing the S3 client
          */
-        Session(final S3Client client, final TcpTunedSslSocketFactory factory) {
+        Session(final S3Client client, final TcpTunedSslSocketFactory sslFactory,
+                final TcpTunedPlainSocketFactory plainFactory, final TrackingApacheSdkHttpClient trackingClient) {
             s3Client = client;
-            socketFactory = factory;
+            sslSocketFactory = sslFactory;
+            plainSocketFactory = plainFactory;
+            httpClient = trackingClient;
         }
 
         /**
@@ -1168,23 +1346,33 @@ public final class AmazonS3Module extends TransferModule {
                 final String roleSessionName, final int durationSeconds, final String externalId,
                 final String requestChecksumCalculation, final String responseChecksumValidation, final boolean debug)
                 throws NoSuchAlgorithmException, KeyManagementException {
-            // Build the SSL socket factory controlling both certificate and hostname validation.
-            // TcpTunedSslSocketFactory hooks into prepareSocket() to apply all SocketConfig TCP
-            // options (TCP_NODELAY, QUICK_ACK, congestion, keepalive tuning, etc.) to the
-            // underlying TCP socket immediately after connection and before the SSL handshake.
+            // Build socket factories for both schemes.
+            // TcpTunedSslSocketFactory hooks into prepareSocket() to apply TCP options + track HTTPS sockets.
+            // TcpTunedPlainSocketFactory hooks into connectSocket() to apply TCP options + track HTTP sockets.
             final var sslContext = sslValidation ? getSslContext(protocol)
                     : SocketConfig.getBlindlyTrustingSSLContext(protocol);
             final var sslSocketFactory = strict ? new TcpTunedSslSocketFactory(sslContext, tcpConfig)
                     : new TcpTunedSslSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE, tcpConfig);
-            // Build the Apache HTTP client for the SDK.
-            final var httpClientBuilder = ApacheHttpClient.builder().socketFactory(sslSocketFactory);
+            final var plainSocketFactory = new TcpTunedPlainSocketFactory(tcpConfig);
+            // Build a unified Apache HTTP client with custom factories for both "http" and "https".
+            // This replaces ApacheHttpClient.builder().socketFactory() which only hooks into HTTPS,
+            // so that plain-HTTP S3 endpoints also produce socket statistics.
+            final Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder
+                    .<ConnectionSocketFactory> create().register("http", plainSocketFactory)
+                    .register("https", sslSocketFactory).build();
+            final var connectionManager = new PoolingHttpClientConnectionManager(socketFactoryRegistry);
+            connectionManager.setMaxTotal(50);
+            connectionManager.setDefaultMaxPerRoute(50);
+            final var hcBuilder = HttpClients.custom().setConnectionManager(connectionManager);
             if (isNotEmpty(listenAddress)) {
                 try {
-                    httpClientBuilder.localAddress(InetAddress.getByName(listenAddress));
+                    hcBuilder.setDefaultRequestConfig(
+                            RequestConfig.custom().setLocalAddress(InetAddress.getByName(listenAddress)).build());
                 } catch (final UnknownHostException e) {
                     _log.warn("Cannot set listen address: {}", listenAddress, e);
                 }
             }
+            final var trackingHttpClient = new TrackingApacheSdkHttpClient(hcBuilder.build());
             // S3-specific service configuration.
             final var s3Config = S3Configuration.builder().accelerateModeEnabled(acceleration)
                     .pathStyleAccessEnabled(enablePathStyleAccess).chunkedEncodingEnabled(!disableChunkedEncoding)
@@ -1195,7 +1383,7 @@ public final class AmazonS3Module extends TransferModule {
             final var creds = loadCredentials(user, password, stsRegion, sslContext, roleArn, roleSessionName,
                     durationSeconds, externalId);
             final var clientBuilder = S3Client.builder().credentialsProvider(creds).serviceConfiguration(s3Config)
-                    .dualstackEnabled(dualstack).httpClientBuilder(httpClientBuilder);
+                    .dualstackEnabled(dualstack).httpClient(trackingHttpClient);
             if (isNotEmpty(requestChecksumCalculation)) {
                 clientBuilder
                         .requestChecksumCalculation(RequestChecksumCalculation.fromValue(requestChecksumCalculation));
@@ -1266,9 +1454,10 @@ public final class AmazonS3Module extends TransferModule {
                     } catch (final Throwable t) {
                         // Ignore
                     }
+                    trackingHttpClient.close();
                 }
             }
-            return new Session(s3, sslSocketFactory);
+            return new Session(s3, sslSocketFactory, plainSocketFactory, trackingHttpClient);
         }
 
         /**
@@ -1281,15 +1470,25 @@ public final class AmazonS3Module extends TransferModule {
         }
 
         /**
-         * Update statistics. Snapshots OS-level TCP statistics for all live sockets tracked by the SSL socket factory.
+         * Closes the S3 client and the backing Apache HTTP client. When using a pre-built {@link SdkHttpClient} via
+         * {@code .httpClient()}, the SDK does not close it on {@code S3Client.close()}, so we do it explicitly.
+         */
+        void close() {
+            s3Client.close();
+            if (httpClient != null) {
+                httpClient.close();
+            }
+        }
+
+        /**
+         * Snapshots OS-level TCP statistics for all live sockets tracked by both the SSL and plain socket factories.
          *
          * @throws IOException
          *             Signals that an I/O exception has occurred.
          */
         void updateStatistics() throws IOException {
-            if (socketFactory != null) {
-                socketFactory.updateStatistics();
-            }
+            sslSocketFactory.updateStatistics();
+            plainSocketFactory.updateStatistics();
         }
 
         /**

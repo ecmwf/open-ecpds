@@ -990,10 +990,10 @@ public enum ECtransOptions {
     HOST_SFTP_LIST_MAX_DIRS("listMaxDirs", Integer.class, 50000),
 
     /** The host s3 port. */
-    HOST_S3_PORT("port", Integer.class, 80),
+    HOST_S3_PORT("port", Integer.class, 443),
 
     /** The host s3 scheme. */
-    HOST_S3_SCHEME("scheme", String.class, "http"),
+    HOST_S3_SCHEME("scheme", String.class, "https"),
 
     /** The host s3 bucket name. */
     HOST_S3_BUCKET_NAME("bucketName", String.class, STRING_NONE),
