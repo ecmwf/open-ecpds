@@ -1010,6 +1010,9 @@ public enum ECtransOptions {
     /** The host s3 num upload threads. */
     HOST_S3_NUM_UPLOAD_THREADS("numUploadThreads", Integer.class, 2),
 
+    /** The host s3 upload queue capacity (max parts queued waiting for an upload thread; bounds memory use). */
+    HOST_S3_QUEUE_CAPACITY("queueCapacity", Integer.class, 4),
+
     /** The host s3 region. */
     HOST_S3_REGION("region", String.class, ""),
 

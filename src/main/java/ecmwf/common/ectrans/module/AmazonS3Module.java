@@ -57,6 +57,7 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_MK_BUCKET;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_MULTIPART_SIZE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_NUM_UPLOAD_THREADS;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_PART_SIZE;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_QUEUE_CAPACITY;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_PORT;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_PREFIX;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_PROTOCOL;
@@ -91,12 +92,16 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Queue;
 import java.util.StringTokenizer;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.Deflater;
 import java.util.zip.GZIPOutputStream;
@@ -186,6 +191,12 @@ public final class AmazonS3Module extends TransferModule {
     /** The number of threads used to upload parts in parallel during multipart uploads. */
     private int numUploadThreads = 2;
 
+    /**
+     * Maximum number of part buffers that may be queued waiting for an upload thread. Bounds peak memory use to
+     * approximately (numUploadThreads + queueCapacity) × partSize MB.
+     */
+    private int queueCapacity = 4;
+
     /** The closed. */
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
@@ -262,6 +273,7 @@ public final class AmazonS3Module extends TransferModule {
         s3prefix = setup.getString(HOST_S3_PREFIX).trim();
         partSize = setup.getInteger(HOST_S3_PART_SIZE);
         numUploadThreads = Math.max(1, setup.getInteger(HOST_S3_NUM_UPLOAD_THREADS));
+        queueCapacity = Math.max(1, setup.getInteger(HOST_S3_QUEUE_CAPACITY));
         if (isNotEmpty(s3prefix) && !s3prefix.endsWith("/")) {
             s3prefix += "/";
         }
@@ -1377,6 +1389,13 @@ public final class AmazonS3Module extends TransferModule {
         /** Executor for concurrent part uploads. */
         private final ExecutorService uploadExecutor;
 
+        /**
+         * Semaphore that limits the number of part buffers allocated at any time to (numUploadThreads + queueCapacity).
+         * When all permits are taken the write thread blocks here instead of allocating another buffer, providing
+         * back-pressure and bounding peak heap usage to roughly (numUploadThreads + queueCapacity) × partSize MB.
+         */
+        private final Semaphore partSlots;
+
         /** Futures for in-flight part uploads, in submission order. */
         private final List<Future<CompletedPart>> pendingParts = new ArrayList<>();
 
@@ -1411,7 +1430,13 @@ public final class AmazonS3Module extends TransferModule {
             this.key = key;
             this.partSizeBytes = partSizeMB * 1024 * 1024;
             this.partBuffer = new byte[this.partSizeBytes];
-            this.uploadExecutor = Executors.newFixedThreadPool(numUploadThreads);
+            // Bounded executor: at most numUploadThreads active uploads + queueCapacity queued.
+            // The queue is bounded so the executor rejects when full; the semaphore (acquired
+            // before each buffer copy) blocks the write thread instead of allowing unlimited
+            // heap allocation.
+            this.uploadExecutor = new ThreadPoolExecutor(numUploadThreads, numUploadThreads, 0L, TimeUnit.MILLISECONDS,
+                    new ArrayBlockingQueue<>(queueCapacity), new ThreadPoolExecutor.AbortPolicy());
+            this.partSlots = new Semaphore(numUploadThreads + queueCapacity);
             try {
                 uploadId = s3.getS3Client()
                         .createMultipartUpload(CreateMultipartUploadRequest.builder().bucket(bucket).key(key).build())
@@ -1451,12 +1476,20 @@ public final class AmazonS3Module extends TransferModule {
         }
 
         /**
-         * Copies the current buffer and submits an async upload task, then immediately resets the buffer so the caller
-         * can continue filling the next part without waiting for the S3 upload to complete.
+         * Acquires a slot permit (blocking if the queue is full), copies the current buffer, and submits an async
+         * upload task. The permit is released when the upload task completes, allowing the write thread to proceed.
+         * This bounds peak memory to (numUploadThreads + queueCapacity) × partSize MB.
          */
         private void submitCurrentPart() throws IOException {
             if (bufferPos == 0) {
                 return;
+            }
+            // Block here if all slots are occupied — this is the back-pressure point.
+            try {
+                partSlots.acquire();
+            } catch (final InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IOException("Interrupted waiting for upload slot for part " + partNumber + " of " + key, e);
             }
             // Snapshot the filled bytes and assign the part number synchronously
             final var data = Arrays.copyOf(partBuffer, bufferPos);
@@ -1465,13 +1498,18 @@ public final class AmazonS3Module extends TransferModule {
             // Submit the upload asynchronously; the write thread is free to fill the next part immediately
             try {
                 pendingParts.add(uploadExecutor.submit(() -> {
-                    final var response = s3.getS3Client().uploadPart(
-                            UploadPartRequest.builder().bucket(bucket).key(key).uploadId(uploadId)
-                                    .partNumber(currentPartNumber).contentLength((long) data.length).build(),
-                            RequestBody.fromBytes(data));
-                    return CompletedPart.builder().partNumber(currentPartNumber).eTag(response.eTag()).build();
+                    try {
+                        final var response = s3.getS3Client()
+                                .uploadPart(UploadPartRequest.builder().bucket(bucket).key(key).uploadId(uploadId)
+                                        .partNumber(currentPartNumber).contentLength((long) data.length).build(),
+                                        RequestBody.fromBytes(data));
+                        return CompletedPart.builder().partNumber(currentPartNumber).eTag(response.eTag()).build();
+                    } finally {
+                        partSlots.release();
+                    }
                 }));
             } catch (final RejectedExecutionException e) {
+                partSlots.release();
                 throw new IOException(
                         "Upload executor rejected part " + currentPartNumber + " for " + key + ": executor shut down",
                         e);

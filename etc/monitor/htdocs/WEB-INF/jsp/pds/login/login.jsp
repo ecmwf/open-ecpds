@@ -13,6 +13,8 @@
 
 <link href="/assets/css/login.css?v=2026070933" rel="stylesheet" type="text/css"/>
 
+<c:choose>
+<c:when test="${loginAnimatedBackground}">
 <canvas id="login-backdrop"></canvas>
 <script>
 (function() {
@@ -231,6 +233,11 @@
   draw();
 })();
 </script>
+</c:when>
+<c:otherwise>
+<div id="login-backdrop"></div>
+</c:otherwise>
+</c:choose>
 
 <div id="login-wrap">
 

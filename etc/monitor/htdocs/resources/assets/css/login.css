@@ -19,6 +19,8 @@ body:has(#login-wrap) .content {
     inset: 0;
     z-index: 0;
     display: block;
+    /* Fallback gradient when animation is disabled (canvas overrides via JS) */
+    background: linear-gradient(135deg, #0d1b2a 0%, #1a3a5c 50%, #0d1e3a 100%);
 }
 
 /* Login wrap — fills visible area; card uses auto margins for centering */
