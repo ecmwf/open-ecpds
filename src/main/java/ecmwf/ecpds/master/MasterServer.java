@@ -6865,11 +6865,26 @@ public final class MasterServer extends ECaccessProvider
                     // Persist per-connection TCP statistics
                     if (!"none".equals(socketStatistics)) {
                         final var ecpdsBase = getDataBase(ECpdsBase.class);
-                        final var requeueHistory = transfer.getRequeueHistory();
+                        // Use a sending index that always increments across retries and requeues.
+                        // transfer.getRequeueHistory() only increments on a requeue (maxStart hit),
+                        // not on plain retries, so multiple sendings within the same requeue cycle
+                        // would otherwise all get index 0 and end up in one group in the UI.
+                        final var existing = ecpdsBase.getTransferStatisticsByDataTransferId(transfer.getId());
+                        final var maxExisting = existing.stream().mapToInt(s -> s.getRequeueHistory()).max().orElse(-1);
+                        final var sendingIndex = existing.isEmpty() ? transfer.getRequeueHistory()
+                                : Math.max(transfer.getRequeueHistory(), maxExisting + 1);
+                        _log.info(
+                                "TransferStatistics for DataTransfer {}: existing={}, maxExisting={}, "
+                                        + "transfer.requeueHistory={}, sendingIndex={}",
+                                transfer.getId(), existing.size(), maxExisting, transfer.getRequeueHistory(),
+                                sendingIndex);
                         for (final var stats : SocketStatisticsParser.parse(transfer.getId(),
                                 transfer.getStatistics())) {
-                            stats.setRequeueHistory(requeueHistory);
-                            ecpdsBase.tryInsertTransferStatistics(stats);
+                            stats.setRequeueHistory(sendingIndex);
+                            if (!ecpdsBase.tryInsertTransferStatistics(stats)) {
+                                _log.warn("TransferStatistics NOT inserted for DataTransfer {} (sendingIndex={})",
+                                        transfer.getId(), sendingIndex);
+                            }
                         }
                     }
                 } catch (final Throwable t) {
