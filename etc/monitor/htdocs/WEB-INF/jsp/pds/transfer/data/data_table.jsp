@@ -354,24 +354,42 @@
 
 <%-- Card: Network Statistics (TCP socket statistics per connection, grouped by attempt) --%>
 <c:if test="${not empty transferStatistics}">
+
+<%-- Pre-compute global timeline bounds across all groups --%>
+<c:set var="_globalMin" value="0"/>
+<c:set var="_globalMax" value="0"/>
+<c:forEach var="_pg" items="${transferStatisticsGroups}" varStatus="_pgs">
+  <c:forEach var="_pt" items="${_pg}" varStatus="_ptl">
+    <c:if test="${_pgs.first and _ptl.first}">
+      <c:set var="_globalMin" value="${_pt.startTime}"/>
+      <c:set var="_globalMax" value="${_pt.endTime}"/>
+    </c:if>
+    <c:if test="${_pt.startTime lt _globalMin}"><c:set var="_globalMin" value="${_pt.startTime}"/></c:if>
+    <c:if test="${_pt.endTime gt _globalMax}"><c:set var="_globalMax" value="${_pt.endTime}"/></c:if>
+  </c:forEach>
+</c:forEach>
+<c:set var="_globalSpan" value="${_globalMax - _globalMin}"/>
+<c:if test="${_globalSpan le 0}"><c:set var="_globalSpan" value="1"/></c:if>
+
 <div class="card border-0 shadow-sm mb-3">
 <div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
-<i class="bi bi-diagram-3 text-primary"></i>
-<span class="fw-semibold">Network Statistics</span>
-<span class="badge rounded-pill bg-secondary ms-1">${fn:length(transferStatistics)}</span>
-<c:if test="${fn:length(transferStatisticsGroups) > 1}">
-  <span class="badge rounded-pill bg-warning text-dark ms-1" title="Statistics from ${fn:length(transferStatisticsGroups)} separate sending attempts">${fn:length(transferStatisticsGroups)} attempts</span>
-</c:if>
-<button class="btn btn-link btn-sm p-0 text-info ms-1" type="button"
-        data-bs-toggle="collapse" data-bs-target="#nst-info" aria-expanded="false"
-        title="About these statistics">
-  <i class="bi bi-info-circle"></i>
-</button>
-<button class="btn btn-link btn-sm ms-auto p-0 text-secondary" type="button"
-        data-bs-toggle="collapse" data-bs-target="#nst-collapse" aria-expanded="true">
-  <i class="bi bi-chevron-up" id="nst-chevron"></i>
-</button>
+  <i class="bi bi-diagram-3 text-primary"></i>
+  <span class="fw-semibold">Network Statistics</span>
+  <span class="badge rounded-pill bg-secondary ms-1">${fn:length(transferStatistics)}</span>
+  <c:if test="${fn:length(transferStatisticsGroups) > 1}">
+    <span class="badge rounded-pill bg-warning text-dark ms-1" title="Statistics from ${fn:length(transferStatisticsGroups)} separate sending attempts">${fn:length(transferStatisticsGroups)} attempts</span>
+  </c:if>
+  <button class="btn btn-link btn-sm p-0 text-info ms-1" type="button"
+          data-bs-toggle="collapse" data-bs-target="#nst-info" aria-expanded="false"
+          title="About these statistics">
+    <i class="bi bi-info-circle"></i>
+  </button>
+  <button class="btn btn-link btn-sm ms-auto p-0 text-secondary" type="button"
+          data-bs-toggle="collapse" data-bs-target="#nst-collapse" aria-expanded="true">
+    <i class="bi bi-chevron-up" id="nst-chevron"></i>
+  </button>
 </div>
+
 <%-- Info panel --%>
 <div id="nst-info" class="collapse">
 <div class="px-3 py-3 border-bottom small text-muted" style="background:var(--bs-tertiary-bg,#f8f9fa);line-height:1.6">
@@ -405,26 +423,64 @@
   and may cover a longer time window than any individual connection.</p>
 </div>
 </div>
+
 <div id="nst-collapse" class="collapse show">
 <div class="card-body pt-2 pb-1">
 
-<%-- Iterate over attempt groups --%>
-<c:forEach var="grp" items="${transferStatisticsGroups}" varStatus="grpStatus">
-
-<%-- Per-group header (only shown when more than one group) --%>
+<%-- Multi-attempt navigation (only when more than one group) --%>
 <c:if test="${fn:length(transferStatisticsGroups) > 1}">
-<c:set var="_grpRequeue" value="${grp[0].requeueHistory}"/>
-<div class="d-flex align-items-center gap-2 mb-2 ${not grpStatus.first ? 'mt-3 pt-2' : ''}"
-     style="${not grpStatus.first ? 'border-top:1px solid var(--bs-border-color);' : ''}">
-  <span class="badge bg-primary rounded-pill">Attempt ${_grpRequeue + 1}</span>
-  <span class="text-muted small">${fn:length(grp)} connection${fn:length(grp) > 1 ? 's' : ''}</span>
-  <c:if test="${_grpRequeue > 0}">
-    <span class="text-muted small">&mdash; after ${_grpRequeue} requeue${_grpRequeue > 1 ? 's' : ''}</span>
-  </c:if>
-</div>
-</c:if>
 
-<%-- Per-group summary --%>
+<%-- Emit group timing data for JS to render the cross-attempt timeline --%>
+<script>
+var _nstGroups = [
+<c:forEach var="grp" items="${transferStatisticsGroups}" varStatus="grpStatus">
+  <%-- Compute per-group time bounds --%>
+  <c:set var="_grpMinT" value="0"/>
+  <c:set var="_grpMaxT" value="0"/>
+  <c:set var="_grpTotalSentJ" value="0"/>
+  <c:set var="_grpHasSentJ" value="false"/>
+  <c:forEach var="ts" items="${grp}" varStatus="loop">
+    <c:if test="${loop.first}">
+      <c:set var="_grpMinT" value="${ts.startTime}"/>
+      <c:set var="_grpMaxT" value="${ts.endTime}"/>
+    </c:if>
+    <c:if test="${ts.startTime lt _grpMinT}"><c:set var="_grpMinT" value="${ts.startTime}"/></c:if>
+    <c:if test="${ts.endTime gt _grpMaxT}"><c:set var="_grpMaxT" value="${ts.endTime}"/></c:if>
+    <c:if test="${not empty ts.bytesSent}">
+      <c:set var="_grpTotalSentJ" value="${_grpTotalSentJ + ts.bytesSent}"/>
+      <c:set var="_grpHasSentJ" value="true"/>
+    </c:if>
+  </c:forEach>
+  {idx:${grpStatus.index},label:"Attempt ${grp[0].requeueHistory + 1}",start:${_grpMinT},end:${_grpMaxT},conns:${fn:length(grp)},sent:${_grpHasSentJ ? _grpTotalSentJ : -1}}${grpStatus.last ? '' : ','}
+</c:forEach>
+];
+var _nstGlobalMin = ${_globalMin}, _nstGlobalMax = ${_globalMax};
+</script>
+
+<%-- Badge navigation row --%>
+<div class="d-flex flex-wrap align-items-center gap-2 mb-3 pt-1">
+  <span class="small text-muted fw-semibold me-1"><i class="bi bi-layers me-1"></i>Attempts:</span>
+  <c:forEach var="grp" items="${transferStatisticsGroups}" varStatus="grpStatus">
+    <button class="btn btn-sm nst-attempt-btn ${grpStatus.last ? 'btn-primary' : 'btn-outline-secondary'}"
+            data-grp="${grpStatus.index}"
+            title="${fn:length(grp)} connection${fn:length(grp) > 1 ? 's' : ''}">
+      Attempt ${grp[0].requeueHistory + 1}
+      <span class="badge ${grpStatus.last ? 'bg-light text-dark' : 'bg-secondary'} ms-1" style="font-size:0.7em">${fn:length(grp)}</span>
+    </button>
+  </c:forEach>
+</div>
+
+<%-- Cross-attempt timeline bar (rendered by JS) --%>
+<div id="nst-global-timeline" class="mb-1" style="position:relative;min-height:52px;"></div>
+
+<hr class="my-2">
+</c:if><%-- end multi-group nav --%>
+
+<%-- Per-attempt panels — one visible at a time (all shown for single group) --%>
+<c:forEach var="grp" items="${transferStatisticsGroups}" varStatus="grpStatus">
+<c:set var="_grpId" value="nst-grp-${grpStatus.index}"/>
+
+<%-- Per-group aggregates --%>
 <c:set var="_nstTotalSent" value="0"/>
 <c:set var="_nstTotalRecv" value="0"/>
 <c:set var="_nstMaxRate"   value="0"/>
@@ -453,6 +509,28 @@
 </c:forEach>
 <c:set var="_nstSpan" value="${_nstMaxEnd - _nstMinStart}"/>
 <c:if test="${_nstSpan le 0}"><c:set var="_nstSpan" value="1"/></c:if>
+
+<%-- Panel: hidden for all but the last attempt; single-group always visible --%>
+<div id="${_grpId}" class="nst-panel" style="${fn:length(transferStatisticsGroups) == 1 || grpStatus.last ? '' : 'display:none;'}">
+
+<%-- Panel header (only for multi-group) --%>
+<c:if test="${fn:length(transferStatisticsGroups) > 1}">
+<div class="d-flex align-items-center gap-2 mb-2">
+  <span class="badge bg-primary rounded-pill fs-6">Attempt ${grp[0].requeueHistory + 1}</span>
+  <span class="text-muted small">${fn:length(grp)} connection${fn:length(grp) > 1 ? 's' : ''}</span>
+  <c:if test="${grp[0].requeueHistory > 0}">
+    <span class="text-muted small">&mdash; after ${grp[0].requeueHistory} requeue${grp[0].requeueHistory > 1 ? 's' : ''}</span>
+  </c:if>
+  <span class="text-muted small ms-2">
+    <i class="bi bi-clock me-1"></i><span class="nst-abs-time" data-ts="${_nstMinStart}"></span>
+    &ndash;
+    <span class="nst-abs-time" data-ts="${_nstMaxEnd}"></span>
+    (${_nstMaxEnd - _nstMinStart}&nbsp;ms)
+  </span>
+</div>
+</c:if>
+
+<%-- Summary stats row --%>
 <div class="d-flex flex-wrap gap-3 mb-2 small text-muted">
   <span><i class="bi bi-arrow-up-circle text-primary me-1"></i>Total sent:
     <c:choose>
@@ -525,6 +603,7 @@
 </table>
 </div>
 
+</div><%-- end nst-panel --%>
 </c:forEach><%-- end groups --%>
 
 </div>
@@ -535,6 +614,7 @@
 <c:if test="${not empty transferStatistics}">
 <script>
 (function() {
+    var ATTEMPT_COLORS = ['#0d6efd','#198754','#dc3545','#fd7e14','#6f42c1','#20c997','#d63384','#0dcaf0'];
     function fmtBytes(b) {
         if (b >= 1073741824) return (b/1073741824).toFixed(2) + ' GiB';
         if (b >= 1048576)    return (b/1048576).toFixed(2) + ' MiB';
@@ -547,21 +627,109 @@
         if (b >= 1000)       return (b/1000).toFixed(1) + ' Kbps';
         return b + ' bps';
     }
+    function fmtTime(ms) {
+        if (!ms) return '';
+        try { return new Date(ms).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
+        catch(e) { return ''; }
+    }
     document.querySelectorAll('.nst-bytes').forEach(function(s) {
         var b = parseInt(s.dataset.bytes); if (!isNaN(b)) s.textContent = fmtBytes(b);
     });
     document.querySelectorAll('.nst-rate').forEach(function(s) {
         var b = parseInt(s.dataset.bps); if (!isNaN(b)) s.textContent = fmtBps(b);
     });
+    document.querySelectorAll('.nst-abs-time').forEach(function(s) {
+        var t = parseInt(s.dataset.ts); if (!isNaN(t) && t > 0) s.textContent = fmtTime(t);
+    });
+
+    // Card-level collapse chevron
     var col = document.getElementById('nst-collapse');
-    if (col) col.addEventListener('hidden.bs.collapse', function() {
-        var ch = document.getElementById('nst-chevron');
-        if (ch) { ch.classList.remove('bi-chevron-up'); ch.classList.add('bi-chevron-down'); }
+    if (col) {
+        col.addEventListener('hidden.bs.collapse', function() {
+            var ch = document.getElementById('nst-chevron');
+            if (ch) { ch.classList.replace('bi-chevron-up','bi-chevron-down'); }
+        });
+        col.addEventListener('shown.bs.collapse', function() {
+            var ch = document.getElementById('nst-chevron');
+            if (ch) { ch.classList.replace('bi-chevron-down','bi-chevron-up'); }
+        });
+    }
+
+    // Multi-attempt navigation
+    var groups = (typeof _nstGroups !== 'undefined') ? _nstGroups : null;
+    if (!groups || groups.length < 2) return;
+
+    var globalMin = _nstGlobalMin, globalMax = _nstGlobalMax;
+    var globalSpan = Math.max(globalMax - globalMin, 1);
+
+    // Panel switcher
+    function showAttempt(idx) {
+        document.querySelectorAll('.nst-panel').forEach(function(p) { p.style.display = 'none'; });
+        var panel = document.getElementById('nst-grp-' + idx);
+        if (panel) panel.style.display = '';
+        document.querySelectorAll('.nst-attempt-btn').forEach(function(b) {
+            var active = parseInt(b.dataset.grp) === idx;
+            b.className = b.className.replace(/btn-(primary|outline-secondary)/g, active ? 'btn-primary' : 'btn-outline-secondary');
+            // update inner badge contrast
+            var badge = b.querySelector('.badge');
+            if (badge) {
+                badge.className = badge.className.replace(/bg-(light|secondary)/g, active ? 'bg-light' : 'bg-secondary');
+                badge.className = badge.className.replace(/text-(dark|white|[a-z]+)/g, active ? 'text-dark' : '');
+                if (active && badge.className.indexOf('text-dark') === -1) badge.className += ' text-dark';
+            }
+        });
+        // Highlight selected band in timeline
+        document.querySelectorAll('.nst-tl-band').forEach(function(band) {
+            var active = parseInt(band.dataset.grp) === idx;
+            band.style.opacity = active ? '1' : '0.35';
+            band.style.outline = active ? '2px solid #fff' : 'none';
+        });
+    }
+
+    // Badge click handlers
+    document.querySelectorAll('.nst-attempt-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() { showAttempt(parseInt(this.dataset.grp)); });
     });
-    if (col) col.addEventListener('shown.bs.collapse', function() {
-        var ch = document.getElementById('nst-chevron');
-        if (ch) { ch.classList.remove('bi-chevron-down'); ch.classList.add('bi-chevron-up'); }
+
+    // Build cross-attempt timeline
+    var tlContainer = document.getElementById('nst-global-timeline');
+    if (!tlContainer) return;
+
+    var trackH = 32, labelH = 14, totalH = trackH + labelH + 6;
+    var html = '<div style="position:relative;height:' + totalH + 'px;background:var(--bs-tertiary-bg);border-radius:6px;overflow:visible;">';
+    // Background track
+    html += '<div style="position:absolute;top:0;left:0;right:0;height:' + trackH + 'px;background:var(--bs-tertiary-bg);border-radius:6px;border:1px solid var(--bs-border-color);"></div>';
+
+    groups.forEach(function(g) {
+        var leftPct  = (g.start - globalMin) / globalSpan * 100;
+        var widthPct = Math.max((g.end - g.start) / globalSpan * 100, 0.5);
+        var color = ATTEMPT_COLORS[(g.idx) % ATTEMPT_COLORS.length];
+        var tip = g.label + ' | ' + g.conns + ' conn' + (g.conns !== 1 ? 's' : '') +
+                  ' | ' + fmtTime(g.start) + ' \u2013 ' + fmtTime(g.end) +
+                  ' (' + Math.round(g.end - g.start) + ' ms)' +
+                  (g.sent >= 0 ? ' | Sent: ' + fmtBytes(g.sent) : '');
+        html += '<div class="nst-tl-band" data-grp="' + g.idx + '"' +
+                ' style="position:absolute;top:4px;left:' + leftPct.toFixed(2) + '%;width:' + widthPct.toFixed(2) + '%;' +
+                'height:' + (trackH - 8) + 'px;background:' + color + ';border-radius:4px;cursor:pointer;' +
+                'box-sizing:border-box;transition:opacity 0.15s;"' +
+                ' title="' + tip.replace(/"/g,'&quot;') + '"' +
+                ' onclick="(function(){nstShowAttempt(' + g.idx + ');document.getElementById(\'nst-grp-' + g.idx + '\').scrollIntoView({behavior:\'smooth\',block:\'nearest\'});})();">' +
+                '<span style="position:absolute;left:4px;right:4px;top:50%;transform:translateY(-50%);' +
+                'font-size:10px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' +
+                g.label + '</span></div>';
+        // Tick label below
+        html += '<span style="position:absolute;top:' + (trackH + 2) + 'px;left:' + leftPct.toFixed(2) + '%;' +
+                'font-size:9px;color:var(--bs-secondary-color);white-space:nowrap;transform:translateX(-0%);">' +
+                fmtTime(g.start) + '</span>';
     });
+    // End-time label
+    html += '<span style="position:absolute;top:' + (trackH + 2) + 'px;right:0;font-size:9px;color:var(--bs-secondary-color);">' +
+            fmtTime(globalMax) + '</span>';
+    html += '</div>';
+    tlContainer.innerHTML = html;
+
+    // Expose switcher globally so onclick attributes work
+    window.nstShowAttempt = showAttempt;
 })();
 </script>
 </c:if>
