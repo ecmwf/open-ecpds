@@ -1,4 +1,4 @@
-<%@ page session="true" %>
+<%@ page session="true" pageEncoding="UTF-8" %>
 
 <%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean" %>
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content" %>
@@ -73,7 +73,7 @@
 </auth:if>
 </div><%-- end #_dtIconBar --%>
 
-<%-- Mobile: ⋯ dropdown, hidden on sm+ --%>
+<%-- Mobile: &ctdot; dropdown, hidden on sm+ --%>
 <div class="d-sm-none ms-auto">
     <div class="dropdown">
         <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
@@ -377,23 +377,23 @@
 <div class="px-3 py-3 border-bottom small text-muted" style="background:var(--bs-tertiary-bg,#f8f9fa);line-height:1.6">
   <p class="mb-2"><strong class="text-body">How are these statistics collected?</strong><br>
   Each row represents one TCP socket connection opened during the transfer. Statistics are captured
-  at the end of every connection using OS-level socket diagnostics (equivalent to <code>tcp_info</code>)
-  and stored in the <code>TRANSFER_STATISTICS</code> table. A single file transfer may open several
-  connections — for example when the protocol uses parallel streams, or when a connection drops and is retried.</p>
+  at the end of every connection using OS-level socket diagnostics (equivalent to <code>tcp_info</code>).
+  A single file transfer may open several connections &mdash; for example when the protocol uses
+  parallel streams, or when a connection drops and is retried.</p>
 
   <p class="mb-2"><strong class="text-body">Multiple attempts vs. multiple connections</strong><br>
   Connections are grouped by <em>sending attempt</em> (requeue count). If the transfer was requeued
-  and restarted, each restart appears as a separate attempt group labelled <em>Attempt 1, Attempt 2…</em>.
-  Within a single attempt, multiple connections indicate that the transfer module opened parallel or
-  sequential TCP sessions — common with FTP, SFTP or S3 multi-part uploads.</p>
+  and restarted, each restart appears as a separate attempt group labelled <em>Attempt 1, Attempt 2&hellip;</em>.
+  Within a single attempt, multiple connections indicate that the transfer module opened parallel
+  TCP sessions &mdash; common with S3 or Azure multi-part uploads.</p>
 
   <p class="mb-2"><strong class="text-body">How to interpret the metrics</strong><br>
-  <strong>Bytes sent / received</strong> — cumulative TCP payload bytes on that socket, including protocol overhead.
+  <strong>Bytes sent / received</strong> &mdash; cumulative TCP payload bytes on that socket, including protocol overhead.
   This is typically larger than the raw file size.<br>
-  <strong>Delivery rate</strong> — the peak TCP goodput measured by the kernel on that socket, in bytes/sec.
+  <strong>Delivery rate</strong> &mdash; the peak TCP goodput measured by the kernel on that socket, in bytes/sec.
   It reflects the sustained throughput seen by the network stack, not application-level speed.<br>
-  <strong>RTT</strong> — smoothed round-trip time reported by the kernel. High RTT indicates distant or congested paths.<br>
-  <strong>Retransmits</strong> — number of TCP segments retransmitted due to loss or timeout. Any non-zero value suggests
+  <strong>RTT</strong> &mdash; smoothed round-trip time reported by the kernel. High RTT indicates distant or congested paths.<br>
+  <strong>Retransmits</strong> &mdash; number of TCP segments retransmitted due to loss or timeout. Any non-zero value suggests
   network congestion or packet loss on the path.</p>
 
   <p class="mb-0"><strong class="text-body">How does this differ from the global transfer rate?</strong><br>
@@ -674,7 +674,7 @@
                  $dot.find('.badge')
                      .removeClass('bg-primary')
                      .addClass('bg-warning text-dark')
-                     .html('<i class="bi bi-exclamation-triangle-fill me-1"></i>Retrying…');
+                     .html('<i class="bi bi-exclamation-triangle-fill me-1"></i>Retrying&hellip;');
              }
              if (_dtPollFailures >= _dtMaxFailures) {
                  clearInterval(_dtInterval);

@@ -5041,6 +5041,10 @@ public final class MasterServer extends ECaccessProvider
      */
     private void updateLocation(final Host host, final boolean force) {
         final var hostLocation = host.getHostLocation();
+        if (hostLocation == null) {
+            _log.debug("No HostLocation record for Host-{}, skipping location update", host.getName());
+            return;
+        }
         final var hostId = host.getName();
         try (final var mutex = hostLocationMutexProvider.getMutex(hostId)) {
             synchronized (mutex.lock()) {
