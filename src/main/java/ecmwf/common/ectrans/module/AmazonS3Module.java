@@ -96,10 +96,8 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -1368,9 +1366,20 @@ public final class AmazonS3Module extends TransferModule {
     /**
      * An OutputStream that accumulates data into fixed-size parts and uploads them concurrently via the S3 multipart
      * upload API. Parts are submitted to a thread pool as they fill, allowing the next part to be buffered from the
-     * source while prior parts are in-flight to S3 (pipelining). The upload is completed when {@link #close()} is
-     * called, which waits for all in-flight parts before issuing the final CompleteMultipartUpload. On error,
-     * {@link #abort()} cancels pending work and aborts the in-progress upload on S3.
+     * source while prior parts are in-flight to S3 (pipelining).
+     *
+     * <p>
+     * Memory is bounded and deterministic: a pool of {@code (numUploadThreads + queueCapacity)} byte arrays of
+     * {@code partSize} MB each is allocated once at construction time. The write thread takes a buffer from the pool,
+     * fills it, and hands it <em>directly</em> to the upload task — no {@code Arrays.copyOf} is performed. When the
+     * upload completes the buffer is returned to the pool. If the pool is empty the write thread blocks (back-pressure)
+     * instead of allocating new heap. Peak memory = {@code (numUploadThreads + queueCapacity) × partSize} MB, allocated
+     * once, reused indefinitely.
+     *
+     * <p>
+     * The upload is completed when {@link #close()} is called, which waits for all in-flight parts before issuing the
+     * final {@code CompleteMultipartUpload}. On error, {@link #abort()} cancels pending work and aborts the in-progress
+     * upload on S3.
      */
     private final class MultipartUploadOutputStream extends FilterOutputStream {
 
@@ -1390,16 +1399,16 @@ public final class AmazonS3Module extends TransferModule {
         private final ExecutorService uploadExecutor;
 
         /**
-         * Semaphore that limits the number of part buffers allocated at any time to (numUploadThreads + queueCapacity).
-         * When all permits are taken the write thread blocks here instead of allocating another buffer, providing
-         * back-pressure and bounding peak heap usage to roughly (numUploadThreads + queueCapacity) × partSize MB.
+         * Pool of pre-allocated part buffers. The write thread acquires a buffer (blocking when the pool is empty),
+         * fills it, submits it to the upload task, and the upload task returns it when done. This eliminates per-part
+         * heap allocations and GC pressure while providing the same back-pressure as the semaphore approach.
          */
-        private final Semaphore partSlots;
+        private final ArrayBlockingQueue<byte[]> bufferPool;
 
         /** Futures for in-flight part uploads, in submission order. */
         private final List<Future<CompletedPart>> pendingParts = new ArrayList<>();
 
-        /** The part buffer (filled by the write thread; copied before async submission). */
+        /** The current write buffer (taken from the pool; replaced after each part submission). */
         private byte[] partBuffer;
 
         /** The buffer position. */
@@ -1429,14 +1438,18 @@ public final class AmazonS3Module extends TransferModule {
             this.bucket = bucket;
             this.key = key;
             this.partSizeBytes = partSizeMB * 1024 * 1024;
-            this.partBuffer = new byte[this.partSizeBytes];
-            // Bounded executor: at most numUploadThreads active uploads + queueCapacity queued.
-            // The queue is bounded so the executor rejects when full; the semaphore (acquired
-            // before each buffer copy) blocks the write thread instead of allowing unlimited
-            // heap allocation.
+            // Pre-allocate the buffer pool. Total buffers = numUploadThreads (active uploads) +
+            // queueCapacity (queued) + 1 (current write buffer). Each buffer is partSizeBytes.
+            // This is the only heap allocation for part data for the lifetime of the upload.
+            final var poolSize = numUploadThreads + queueCapacity;
+            this.bufferPool = new ArrayBlockingQueue<>(poolSize);
+            for (var i = 0; i < poolSize; i++) {
+                bufferPool.add(new byte[this.partSizeBytes]);
+            }
+            // Take the first write buffer from the pool
+            this.partBuffer = bufferPool.poll();
             this.uploadExecutor = new ThreadPoolExecutor(numUploadThreads, numUploadThreads, 0L, TimeUnit.MILLISECONDS,
                     new ArrayBlockingQueue<>(queueCapacity), new ThreadPoolExecutor.AbortPolicy());
-            this.partSlots = new Semaphore(numUploadThreads + queueCapacity);
             try {
                 uploadId = s3.getS3Client()
                         .createMultipartUpload(CreateMultipartUploadRequest.builder().bucket(bucket).key(key).build())
@@ -1476,40 +1489,46 @@ public final class AmazonS3Module extends TransferModule {
         }
 
         /**
-         * Acquires a slot permit (blocking if the queue is full), copies the current buffer, and submits an async
-         * upload task. The permit is released when the upload task completes, allowing the write thread to proceed.
-         * This bounds peak memory to (numUploadThreads + queueCapacity) × partSize MB.
+         * Hands the current buffer directly to an async upload task (zero-copy), then acquires a fresh buffer from the
+         * pool — blocking if all buffers are in use (back-pressure). Peak heap usage is bounded to
+         * {@code (numUploadThreads + queueCapacity) × partSize} MB, allocated once at construction.
          */
         private void submitCurrentPart() throws IOException {
             if (bufferPos == 0) {
                 return;
             }
-            // Block here if all slots are occupied — this is the back-pressure point.
-            try {
-                partSlots.acquire();
-            } catch (final InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new IOException("Interrupted waiting for upload slot for part " + partNumber + " of " + key, e);
-            }
-            // Snapshot the filled bytes and assign the part number synchronously
-            final var data = Arrays.copyOf(partBuffer, bufferPos);
+            // Hand off the current buffer directly — no copy needed.
+            final var data = partBuffer;
+            final var dataLen = bufferPos;
             final int currentPartNumber = partNumber++;
             bufferPos = 0;
-            // Submit the upload asynchronously; the write thread is free to fill the next part immediately
+            // Acquire the next write buffer from the pool BEFORE submitting, so the executor
+            // queue never holds more tasks than there are pool buffers (prevents RejectedExecution).
+            try {
+                partBuffer = bufferPool.take();
+            } catch (final InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IOException(
+                        "Interrupted waiting for buffer pool slot for part " + currentPartNumber + " of " + key, e);
+            }
+            // Submit upload; the upload task returns its buffer to the pool when done.
             try {
                 pendingParts.add(uploadExecutor.submit(() -> {
                     try {
-                        final var response = s3.getS3Client()
-                                .uploadPart(UploadPartRequest.builder().bucket(bucket).key(key).uploadId(uploadId)
-                                        .partNumber(currentPartNumber).contentLength((long) data.length).build(),
-                                        RequestBody.fromBytes(data));
+                        // Full parts hand off the buffer directly (zero-copy).
+                        // Partial final parts need a trim — only one copy per upload, not per part.
+                        final var body = dataLen == data.length ? data : Arrays.copyOf(data, dataLen);
+                        final var response = s3.getS3Client().uploadPart(
+                                UploadPartRequest.builder().bucket(bucket).key(key).uploadId(uploadId)
+                                        .partNumber(currentPartNumber).contentLength((long) dataLen).build(),
+                                RequestBody.fromBytes(body));
                         return CompletedPart.builder().partNumber(currentPartNumber).eTag(response.eTag()).build();
                     } finally {
-                        partSlots.release();
+                        bufferPool.offer(data);
                     }
                 }));
             } catch (final RejectedExecutionException e) {
-                partSlots.release();
+                bufferPool.offer(data);
                 throw new IOException(
                         "Upload executor rejected part " + currentPartNumber + " for " + key + ": executor shut down",
                         e);

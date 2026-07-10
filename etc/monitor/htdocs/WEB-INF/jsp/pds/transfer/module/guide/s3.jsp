@@ -233,8 +233,18 @@ s3.ftpgroup = "mygroup"  # group name shown in directory listings (default: logi
 <pre class="bg-body-secondary rounded p-2 mb-2" style="font-size:0.75rem;white-space:pre-wrap">s3.partSize = "10"              # part size in MB for multipart uploads (default: 10)
 s3.multipartSize = "5GB"        # threshold above which multipart is used (default: disabled/MAX)
                                 # Example: "100MB" triggers multipart for files over 100 MB
+s3.numUploadThreads = "2"       # number of threads sending parts to S3 simultaneously (default: 2)
+s3.queueCapacity = "4"          # max part buffers queued for upload (default: 4)
+                                # peak heap per transfer = (numUploadThreads + queueCapacity) × partSize MB
+                                # buffers are pre-allocated once and reused (no per-part GC pressure)
 s3.singlepartSize = "9223372036854775807"  # max size for single-part streaming (default: Long.MAX)
                                            # Lower this to force in-memory buffering for small files</pre>
+          <div class="alert alert-info py-1 px-2 mb-0 small d-flex align-items-start gap-2">
+            <i class="bi bi-info-circle flex-shrink-0" style="margin-top:0.1em"></i>
+            <div>Peak memory per transfer = <code>(numUploadThreads + queueCapacity) × partSize</code> MB.
+            With N concurrent S3 transfers this multiplies: 10 transfers at defaults = 10 × (2+4) × 10 = <strong>600 MB</strong>.
+            Reduce <code>s3.partSize</code> or thread counts if memory is constrained.</div>
+          </div>
         </div>
 
         <hr class="my-2">
@@ -320,6 +330,7 @@ s3.externalId = "my-external-id"
 s3.multipartSize = "100MB"
 s3.partSize = "25"
 s3.numUploadThreads = "4"
+s3.queueCapacity = "4"          # peak = (4+4)×25 = 200 MB/transfer
 s3.sslValidation = "yes"
 # s3.region omitted — auto-discovered</pre>
       </div>

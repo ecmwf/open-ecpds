@@ -10,8 +10,8 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
 - Added two OPTIONS endpoints to the data portal to support CORS preflight requests. When CORS is configured at the data user level, the appropriate CORS headers are now returned in the preflight OPTIONS response.
 - Enhanced the login page with an on-screen numeric keypad for OTP authentication. When OTP is the only available authentication method, users can now enter their one-time password using either the keyboard or the on-screen keypad.
 - Improved the transfer status display by introducing a user icon to identify status changes initiated by end users (e.g. Stop or Requeue actions). The icon is displayed in both the Destination Transfers table and the Transfer History view, making it easier to distinguish user-initiated actions from scheduler-driven status changes.
-- Improved the login page with keyboard/numpad input, a show/hide password toggle, a clear button, and an animated global network background.
-- Reintroduced the queueCapacity option for S3 to bound memory usage.
+- Improved the login page with keyboard/numpad input, a show/hide password toggle, a clear button, and an animated global network background (opt-in via `loginAnimatedBackground` in `ecmwf.properties`).
+- Fixed and improved S3 multipart upload memory management: the `s3.queueCapacity` option (default: 4) is now correctly honoured. Part buffers are pre-allocated once as a fixed pool and handed off to upload threads without copying (zero-copy for full parts), bounding peak heap usage to `(numUploadThreads + queueCapacity) × partSize` MB per concurrent transfer and eliminating GC pressure from per-part allocations.
 
 ## open-ecpds 8.0.4-05072026 (2026-07-05)
 
