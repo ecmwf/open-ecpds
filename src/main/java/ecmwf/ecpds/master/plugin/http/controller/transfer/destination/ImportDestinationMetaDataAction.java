@@ -18,26 +18,20 @@
 
 package ecmwf.ecpds.master.plugin.http.controller.transfer.destination;
 
-import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
-import org.w3c.dom.Element;
 
-import ecmwf.common.database.DestinationMetaField;
 import ecmwf.common.database.DestinationMetaValue;
-import ecmwf.common.technical.Cnf;
 import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.ecpds.master.plugin.http.home.transfer.DestinationHome;
@@ -46,37 +40,20 @@ import ecmwf.web.controller.ECMWFActionFormException;
 import ecmwf.web.model.users.User;
 
 /**
- * Import XML metadata files into the destination metadata DB. GET: shows preview/import form GET with confirm=true:
- * commits import
+ * Import XML metadata files into the destination metadata DB.
+ *
+ * <p>
+ * File scanning and XML parsing are delegated to the MasterServer (via
+ * {@code MasterManager.getDB().scanMetadataAttachments(destinationName)}) so they always run on the machine that owns
+ * the attachment directories.
+ *
+ * <p>
+ * GET: shows preview/import form. GET with {@code confirm=true}: commits import.
  */
 public class ImportDestinationMetaDataAction extends PDSAction {
 
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(ImportDestinationMetaDataAction.class);
-
-    /** Map from XML element/tag name to DMF_NAME. */
-    private static final Map<String, String> TAG_TO_FIELD;
-
-    static {
-        TAG_TO_FIELD = new HashMap<>();
-        TAG_TO_FIELD.put("organisationWebPage", "organisationWebPage");
-        TAG_TO_FIELD.put("SADNumber", "SADNumber");
-        TAG_TO_FIELD.put("contractId", "contractId");
-        TAG_TO_FIELD.put("generalComments", "generalComments");
-        TAG_TO_FIELD.put("disseminationChartsComments", "disseminationChartsComments");
-        TAG_TO_FIELD.put("agency", "agency");
-        TAG_TO_FIELD.put("centreOfOrigin", "centreOfOrigin");
-        TAG_TO_FIELD.put("agencyWebPage", "agencyWebPage");
-        TAG_TO_FIELD.put("sadNumber", "sadNumber");
-        TAG_TO_FIELD.put("dataFormat", "dataFormat");
-        TAG_TO_FIELD.put("typeOfObservation", "typeOfObservation");
-        TAG_TO_FIELD.put("importanceOfDataTypeForAssimilation", "importanceForAssimilation");
-        TAG_TO_FIELD.put("ECFSPath", "ecfsPath");
-        TAG_TO_FIELD.put("OnLineBackup", "onLineBackup");
-        TAG_TO_FIELD.put("warningInfo", "warningInfo");
-        TAG_TO_FIELD.put("WarningInfo", "warningInfo");
-        TAG_TO_FIELD.put("comments", "comments");
-    }
 
     /**
      * {@inheritDoc}
@@ -96,36 +73,13 @@ public class ImportDestinationMetaDataAction extends PDSAction {
         request.setAttribute("destination", destination);
 
         final var confirm = "true".equalsIgnoreCase(request.getParameter("confirm"));
-        final var attachmentsDir = Cnf.at("Server", "attachments", "/tmp/ecpds-attachments");
-        final var dir = new File(attachmentsDir + File.separator + destinationName);
 
-        final List<Map<String, Object>> preview = new ArrayList<>();
         try {
             final var db = MasterManager.getDB();
-            // Build field name -> id map
-            final var fieldMap = new HashMap<String, Integer>();
-            for (final DestinationMetaField f : db.getDestinationMetaFields()) {
-                fieldMap.put(f.getName(), f.getId());
-            }
 
-            if (dir.exists()) {
-                final var xmlFiles = dir.listFiles(f -> f.getName().endsWith(".xml"));
-                if (xmlFiles != null) {
-                    for (final File xmlFile : xmlFiles) {
-                        try {
-                            final var doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(xmlFile);
-                            doc.getDocumentElement().normalize();
-                            extractValues(doc.getDocumentElement(), fieldMap, preview);
-                        } catch (final Exception e) {
-                            _log.warn("Failed to parse {}", xmlFile, e);
-                            final var entry = new HashMap<String, Object>();
-                            entry.put("file", xmlFile.getName());
-                            entry.put("error", e.getMessage() != null ? e.getMessage() : "parse error");
-                            preview.add(entry);
-                        }
-                    }
-                }
-            }
+            // Scanning happens on the MasterServer side — only for this destination
+            final var scanned = db.scanMetadataAttachments(destinationName);
+            final List<Map<String, Object>> preview = scanned.getOrDefault(destinationName, List.of());
 
             if (confirm && !preview.isEmpty()) {
                 final var values = new ArrayList<DestinationMetaValue>();
@@ -137,8 +91,8 @@ public class ImportDestinationMetaDataAction extends PDSAction {
                     v.setFieldId((Integer) entry.get("fieldId"));
                     v.setValue((String) entry.get("value"));
                     final var pos = entry.get("position");
-                    if (pos instanceof Integer) {
-                        v.setPosition((Integer) pos);
+                    if (pos instanceof Integer p) {
+                        v.setPosition(p);
                     }
                     v.setBy(user.getName());
                     values.add(v);
@@ -154,31 +108,5 @@ public class ImportDestinationMetaDataAction extends PDSAction {
             request.setAttribute("importError", e.getMessage());
         }
         return mapping.findForward("success");
-    }
-
-    private void extractValues(final Element element, final Map<String, Integer> fieldMap,
-            final List<Map<String, Object>> preview) {
-        final var children = element.getChildNodes();
-        for (var i = 0; i < children.getLength(); i++) {
-            if (!(children.item(i) instanceof Element child)) {
-                continue;
-            }
-            final var tagName = child.getLocalName() != null ? child.getLocalName() : child.getTagName();
-            final var fieldName = TAG_TO_FIELD.get(tagName);
-            if (fieldName != null && fieldMap.containsKey(fieldName)) {
-                final var text = child.getTextContent();
-                if (text != null && !text.isBlank()) {
-                    final var entry = new HashMap<String, Object>();
-                    entry.put("fieldName", fieldName);
-                    entry.put("fieldId", fieldMap.get(fieldName));
-                    entry.put("value", text.trim());
-                    entry.put("position", 0);
-                    preview.add(entry);
-                }
-            } else {
-                // Recurse for complex types
-                extractValues(child, fieldMap, preview);
-            }
-        }
     }
 }

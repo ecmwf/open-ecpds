@@ -1581,6 +1581,16 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
      * {@inheritDoc}
      */
     @Override
+    public java.util.Map<String, java.util.List<java.util.Map<String, Object>>> scanMetadataAttachments(
+            final String destinationName) throws DataBaseException {
+        final var monitor = new MonitorCall("scanMetadataAttachments(" + destinationName + ")");
+        return monitor.done(ecpds.scanMetadataAttachments(destinationName));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public java.util.Map<Integer, java.util.Set<Integer>> getDestinationMetaFieldTypeMap() throws DataBaseException {
         final var monitor = new MonitorCall("getDestinationMetaFieldTypeMap()");
         return monitor.done(ecpds.getDestinationMetaFieldTypeMap());

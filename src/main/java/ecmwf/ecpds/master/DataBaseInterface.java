@@ -1150,6 +1150,26 @@ public interface DataBaseInterface extends Remote {
     java.util.Set<Integer> getUsedMetaFieldIds() throws DataBaseException, RemoteException;
 
     /**
+     * Scans the attachment directories on the MasterServer for XML metadata files. If {@code destinationName} is
+     * {@code null}, all destination sub-directories are scanned; otherwise only the sub-directory for the given
+     * destination. Returns a map of destination name to list of field-entry maps. Each entry map either contains
+     * {@code fieldName}, {@code fieldId}, {@code value}, {@code position} (success), or {@code file} and {@code error}
+     * (parse failure).
+     *
+     * @param destinationName
+     *            the destination to scan, or {@code null} for all destinations
+     *
+     * @return destination name to entry list
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    java.util.Map<String, java.util.List<java.util.Map<String, Object>>> scanMetadataAttachments(String destinationName)
+            throws DataBaseException, RemoteException;
+
+    /**
      * Gets the map of fieldId → allowed DES_TYPE set (empty set = all types).
      *
      * @return the field type map

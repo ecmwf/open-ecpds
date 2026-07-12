@@ -3407,6 +3407,122 @@ public final class ECpdsBase extends DataBase {
     }
 
     /**
+     * Scans the attachments directory on the server for XML metadata files for a given destination (or all destinations
+     * if {@code destinationName} is {@code null}). Parsing is done using the standard tag-to-field mapping. The
+     * returned map is keyed by destination name; each value is a list of entry maps, where a successful entry contains
+     * {@code fieldName}, {@code fieldId}, {@code value}, and {@code position}, and a parse-error entry contains
+     * {@code file} and {@code error}.
+     *
+     * @param destinationName
+     *            the destination to scan, or {@code null} to scan all destinations
+     *
+     * @return destination name → list of field-entry maps
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public java.util.Map<String, java.util.List<java.util.Map<String, Object>>> scanMetadataAttachments(
+            final String destinationName) throws DataBaseException {
+        final var result = new java.util.LinkedHashMap<String, java.util.List<java.util.Map<String, Object>>>();
+        final var attachmentsDir = Cnf.at("Server", "attachments", "/tmp/ecpds-attachments");
+        final var root = new java.io.File(attachmentsDir);
+        if (!root.exists() || !root.isDirectory()) {
+            return result;
+        }
+        // Build field name → id map
+        final var fieldMap = new java.util.HashMap<String, Integer>();
+        for (final DestinationMetaField f : getDestinationMetaFields()) {
+            fieldMap.put(f.getName(), f.getId());
+        }
+        final java.io.File[] dirsToScan;
+        if (destinationName != null) {
+            final var single = new java.io.File(root, destinationName);
+            dirsToScan = single.isDirectory() ? new java.io.File[] { single } : new java.io.File[0];
+        } else {
+            dirsToScan = root.listFiles(java.io.File::isDirectory);
+        }
+        if (dirsToScan == null) {
+            return result;
+        }
+        for (final java.io.File destDir : dirsToScan) {
+            final var destName = destDir.getName();
+            final var xmlFiles = destDir.listFiles(f -> f.getName().endsWith(".xml"));
+            if (xmlFiles == null || xmlFiles.length == 0) {
+                continue;
+            }
+            final var entries = new java.util.ArrayList<java.util.Map<String, Object>>();
+            for (final java.io.File xmlFile : xmlFiles) {
+                try {
+                    final var doc = javax.xml.parsers.DocumentBuilderFactory.newInstance().newDocumentBuilder()
+                            .parse(xmlFile);
+                    doc.getDocumentElement().normalize();
+                    _extractMetaXmlValues(doc.getDocumentElement(), fieldMap, entries);
+                } catch (final Exception e) {
+                    _log.warn("scanMetadataAttachments: failed to parse {} for {}", xmlFile, destName, e);
+                    final var err = new java.util.HashMap<String, Object>();
+                    err.put("file", xmlFile.getName());
+                    err.put("error", e.getMessage() != null ? e.getMessage() : "parse error");
+                    entries.add(err);
+                }
+            }
+            if (!entries.isEmpty()) {
+                result.put(destName, entries);
+            }
+        }
+        return result;
+    }
+
+    /** Tag-to-field mapping shared by {@link #scanMetadataAttachments}. */
+    private static final java.util.Map<String, String> _META_TAG_TO_FIELD;
+
+    static {
+        _META_TAG_TO_FIELD = new java.util.HashMap<>();
+        _META_TAG_TO_FIELD.put("organisationWebPage", "organisationWebPage");
+        _META_TAG_TO_FIELD.put("SADNumber", "SADNumber");
+        _META_TAG_TO_FIELD.put("contractId", "contractId");
+        _META_TAG_TO_FIELD.put("generalComments", "generalComments");
+        _META_TAG_TO_FIELD.put("disseminationChartsComments", "disseminationChartsComments");
+        _META_TAG_TO_FIELD.put("agency", "agency");
+        _META_TAG_TO_FIELD.put("centreOfOrigin", "centreOfOrigin");
+        _META_TAG_TO_FIELD.put("agencyWebPage", "agencyWebPage");
+        _META_TAG_TO_FIELD.put("sadNumber", "sadNumber");
+        _META_TAG_TO_FIELD.put("dataFormat", "dataFormat");
+        _META_TAG_TO_FIELD.put("typeOfObservation", "typeOfObservation");
+        _META_TAG_TO_FIELD.put("importanceOfDataTypeForAssimilation", "importanceForAssimilation");
+        _META_TAG_TO_FIELD.put("ECFSPath", "ecfsPath");
+        _META_TAG_TO_FIELD.put("OnLineBackup", "onLineBackup");
+        _META_TAG_TO_FIELD.put("warningInfo", "warningInfo");
+        _META_TAG_TO_FIELD.put("WarningInfo", "warningInfo");
+        _META_TAG_TO_FIELD.put("comments", "comments");
+    }
+
+    private static void _extractMetaXmlValues(final org.w3c.dom.Element element,
+            final java.util.Map<String, Integer> fieldMap,
+            final java.util.List<java.util.Map<String, Object>> entries) {
+        final var children = element.getChildNodes();
+        for (var i = 0; i < children.getLength(); i++) {
+            if (!(children.item(i) instanceof org.w3c.dom.Element child)) {
+                continue;
+            }
+            final var tagName = child.getLocalName() != null ? child.getLocalName() : child.getTagName();
+            final var fieldName = _META_TAG_TO_FIELD.get(tagName);
+            if (fieldName != null && fieldMap.containsKey(fieldName)) {
+                final var text = child.getTextContent();
+                if (text != null && !text.isBlank()) {
+                    final var entry = new java.util.HashMap<String, Object>();
+                    entry.put("fieldName", fieldName);
+                    entry.put("fieldId", fieldMap.get(fieldName));
+                    entry.put("value", text.trim());
+                    entry.put("position", 0);
+                    entries.add(entry);
+                }
+            } else {
+                _extractMetaXmlValues(child, fieldMap, entries);
+            }
+        }
+    }
+
+    /**
      * Gets the meta data by attribute name.
      *
      * @param id
