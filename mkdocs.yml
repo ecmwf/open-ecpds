@@ -142,6 +142,7 @@ nav:
   - Monitoring:
       - Transfer Network Statistics: monitoring/transfer-statistics.md
   - API Reference (JavaDocs): api-reference.md
+  - REST API: rest-api.md
   - Support: support.md
   - Contributing: contributing.md
   - Changelog: changelog.md
