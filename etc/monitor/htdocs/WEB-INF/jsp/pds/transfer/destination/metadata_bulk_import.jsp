@@ -18,9 +18,6 @@
     Successfully imported <strong>${importedValues}</strong> metadata value(s) across
     <strong>${importedDests}</strong> destination(s).
   </div>
-  <a href="<c:url value='/do/admin/metafields'/>" class="btn btn-outline-secondary btn-sm">
-    <i class="bi bi-arrow-left me-1"></i>Back to Metadata Fields
-  </a>
 </c:if>
 
 <c:if test="${not importDone and empty importError}">
@@ -41,65 +38,50 @@
     </div>
   </c:if>
 
-  <c:if test="${not empty byDestination}">
+  <c:if test="${not empty destSummary}">
     <p class="text-muted small mb-2">
       Found <strong>${totalValues}</strong> value(s)
       <c:if test="${totalErrors > 0}">
         and <strong class="text-danger">${totalErrors}</strong> parse error(s)
       </c:if>
-      across <strong>${byDestination.size()}</strong> destination(s).
-      Review the preview below, then click <strong>Confirm Bulk Import</strong> to save.
+      across <strong>${totalDests}</strong> destination(s).
+      Click <strong>Confirm Bulk Import</strong> to save all values.
     </p>
 
-    <%-- Per-destination accordion --%>
-    <div class="accordion mb-3" id="bulkImportAccordion">
-      <c:forEach var="destEntry" items="${byDestination}" varStatus="st">
-        <c:set var="destEntries" value="${byDestination[destEntry.key]}"/>
-        <div class="accordion-item">
-          <h2 class="accordion-header" id="bih-${st.index}">
-            <button class="accordion-button collapsed py-2" type="button"
-                    data-bs-toggle="collapse" data-bs-target="#bic-${st.index}"
-                    aria-expanded="false" aria-controls="bic-${st.index}">
-              <i class="bi bi-hdd-network me-2 text-secondary"></i>
-              <strong>${destEntry.key}</strong>
-              <span class="badge bg-primary ms-2">${destEntries.size()} value(s)</span>
-            </button>
-          </h2>
-          <div id="bic-${st.index}" class="accordion-collapse collapse"
-               aria-labelledby="bih-${st.index}" data-bs-parent="#bulkImportAccordion">
-            <div class="accordion-body p-0">
-              <table class="table table-sm table-bordered mb-0">
-                <thead class="table-dark">
-                  <tr><th>Field Name</th><th>Value</th></tr>
-                </thead>
-                <tbody>
-                  <c:forEach var="row" items="${destEntries}">
-                    <tr>
-                      <c:choose>
-                        <c:when test="${not empty row['error']}">
-                          <td colspan="2" class="text-danger small">
-                            <i class="bi bi-exclamation-triangle me-1"></i>${row['file']}: ${row['error']}
-                          </td>
-                        </c:when>
-                        <c:otherwise>
-                          <td><code>${row['fieldName']}</code></td>
-                          <td class="text-truncate" style="max-width:420px" title="${row['value']}">${row['value']}</td>
-                        </c:otherwise>
-                      </c:choose>
-                    </tr>
-                  </c:forEach>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </c:forEach>
+    <div class="table-responsive mb-3" style="max-height:480px;overflow-y:auto;">
+      <table class="table table-sm table-bordered table-hover mb-0 align-middle">
+        <thead class="table-dark sticky-top">
+          <tr>
+            <th>Destination</th>
+            <th class="text-center">Values</th>
+            <th class="text-center">Errors</th>
+          </tr>
+        </thead>
+        <tbody>
+          <c:forEach var="row" items="${destSummary}">
+            <tr>
+              <td><code>${row['name']}</code></td>
+              <td class="text-center">
+                <span class="badge bg-primary">${row['values']}</span>
+              </td>
+              <td class="text-center">
+                <c:choose>
+                  <c:when test="${row['errors'] > 0}">
+                    <span class="badge bg-danger">${row['errors']}</span>
+                  </c:when>
+                  <c:otherwise><span class="text-muted">—</span></c:otherwise>
+                </c:choose>
+              </td>
+            </tr>
+          </c:forEach>
+        </tbody>
+      </table>
     </div>
 
     <form action="<c:url value='/do/transfer/destination/metadata/bulkimport'/>" method="get">
       <input type="hidden" name="confirm" value="true"/>
       <button type="submit" class="btn btn-primary">
-        <i class="bi bi-check-circle me-1"></i>Confirm Bulk Import (${totalValues} value(s) / ${byDestination.size()} destination(s))
+        <i class="bi bi-check-circle me-1"></i>Confirm Bulk Import (${totalValues} value(s) / ${totalDests} destination(s))
       </button>
       <a href="<c:url value='/do/admin/metafields'/>" class="btn btn-outline-secondary ms-2">Cancel</a>
     </form>

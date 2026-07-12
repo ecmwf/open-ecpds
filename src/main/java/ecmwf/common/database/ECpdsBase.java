@@ -3477,7 +3477,7 @@ public final class ECpdsBase extends DataBase {
                     final var doc = javax.xml.parsers.DocumentBuilderFactory.newInstance().newDocumentBuilder()
                             .parse(xmlFile);
                     doc.getDocumentElement().normalize();
-                    _extractMetaXmlValues(doc.getDocumentElement(), fieldMap, entries);
+                    _extractMetaXmlValues(doc.getDocumentElement(), fieldMap, new java.util.HashMap<>(), entries);
                 } catch (final Exception e) {
                     _log.warn("scanMetadataAttachments: failed to parse {} for {}", xmlFile, destName, e);
                     final var err = new java.util.HashMap<String, Object>();
@@ -3498,8 +3498,15 @@ public final class ECpdsBase extends DataBase {
     /** Tag-to-field mapping shared by {@link #scanMetadataAttachments}. */
     private static final java.util.Map<String, String> _META_TAG_TO_FIELD;
 
+    // Tags whose content should be serialised as a JSON contact object {"name","email","phone","fax"}
+    // rather than plain text. These are the XML element names that may contain sub-elements.
+    private static final java.util.Set<String> _META_CONTACT_TAGS = java.util.Set.of("computerOperations",
+            "mainOperationalContact", "telecomOperators", "meteorologists", "ecpdsContact", "ecmwfContact",
+            "technicalContact", "meteorologicalContact", "contactInformation", "switchboard", "mailGroup");
+
     static {
         _META_TAG_TO_FIELD = new java.util.HashMap<>();
+        // General / scalar fields
         _META_TAG_TO_FIELD.put("organisationWebPage", "organisationWebPage");
         _META_TAG_TO_FIELD.put("SADNumber", "SADNumber");
         _META_TAG_TO_FIELD.put("contractId", "contractId");
@@ -3510,17 +3517,119 @@ public final class ECpdsBase extends DataBase {
         _META_TAG_TO_FIELD.put("agencyWebPage", "agencyWebPage");
         _META_TAG_TO_FIELD.put("sadNumber", "sadNumber");
         _META_TAG_TO_FIELD.put("dataFormat", "dataFormat");
+        _META_TAG_TO_FIELD.put("dataDescription", "dataDescription");
         _META_TAG_TO_FIELD.put("typeOfObservation", "typeOfObservation");
         _META_TAG_TO_FIELD.put("importanceOfDataTypeForAssimilation", "importanceForAssimilation");
+        _META_TAG_TO_FIELD.put("importanceForAssimilation", "importanceForAssimilation");
+        _META_TAG_TO_FIELD.put("instrument", "instrument");
+        _META_TAG_TO_FIELD.put("instrumentChannels", "instrumentChannels");
         _META_TAG_TO_FIELD.put("ECFSPath", "ecfsPath");
+        _META_TAG_TO_FIELD.put("ecfsPath", "ecfsPath");
         _META_TAG_TO_FIELD.put("OnLineBackup", "onLineBackup");
+        _META_TAG_TO_FIELD.put("onLineBackup", "onLineBackup");
         _META_TAG_TO_FIELD.put("warningInfo", "warningInfo");
         _META_TAG_TO_FIELD.put("WarningInfo", "warningInfo");
+        _META_TAG_TO_FIELD.put("metappsSystemChange", "metappsSystemChange");
+        _META_TAG_TO_FIELD.put("shiftProcedure", "shiftProcedure");
+        _META_TAG_TO_FIELD.put("analystProcedure", "analystProcedure");
+        _META_TAG_TO_FIELD.put("opsProcedure", "shiftProcedure"); // legacy XML tag → shiftProcedure
+        _META_TAG_TO_FIELD.put("documentationUrl", "documentationUrl");
+        _META_TAG_TO_FIELD.put("documentationTechDoc", "documentationTechDoc");
+        _META_TAG_TO_FIELD.put("phoneNumber", "phoneNumber");
         _META_TAG_TO_FIELD.put("comments", "comments");
+        // Contact / structured fields (values stored as JSON by _buildContactJson)
+        _META_TAG_TO_FIELD.put("computingRepresentative", "computingRepresentative");
+        _META_TAG_TO_FIELD.put("mainOperationalContact", "mainOperationalContact");
+        _META_TAG_TO_FIELD.put("computerOperations", "computerOperations");
+        _META_TAG_TO_FIELD.put("telecomOperators", "telecomOperators");
+        _META_TAG_TO_FIELD.put("meteorologists", "meteorologists");
+        _META_TAG_TO_FIELD.put("ecpdsContact", "ecpdsContact");
+        _META_TAG_TO_FIELD.put("ecmwfContact", "ecmwfContact");
+        _META_TAG_TO_FIELD.put("technicalContact", "technicalContact");
+        _META_TAG_TO_FIELD.put("meteorologicalContact", "meteorologicalContact");
+        _META_TAG_TO_FIELD.put("switchboard", "switchboard");
+        _META_TAG_TO_FIELD.put("mailGroup", "mailGroup");
+        _META_TAG_TO_FIELD.put("contactInformation", "contactInformation");
+    }
+
+    /**
+     * Build a JSON string from the child elements of a contact/structured XML element. Recognises: name, email,
+     * telephoneNumber (→phone), faxNumber (→fax). Returns null when no recognised sub-fields are found and the text
+     * content is also blank.
+     */
+    private static String _buildContactJson(final org.w3c.dom.Element el) {
+        final var children = el.getChildNodes();
+        final var obj = new java.util.LinkedHashMap<String, String>();
+        for (var i = 0; i < children.getLength(); i++) {
+            if (!(children.item(i) instanceof org.w3c.dom.Element sub)) {
+                continue;
+            }
+            final var tag = sub.getLocalName() != null ? sub.getLocalName() : sub.getTagName();
+            final var text = sub.getTextContent();
+            if (text == null || text.isBlank()) {
+                continue;
+            }
+            final var val = text.trim();
+            switch (tag) {
+            case "name" -> obj.put("name", val);
+            case "email" -> obj.put("email", val);
+            case "telephoneNumber" -> obj.put("phone", val);
+            case "faxNumber" -> obj.put("fax", val);
+            default -> {
+                /* ignore unknown sub-tags */ }
+            }
+        }
+        if (obj.isEmpty()) {
+            // Fall back to plain text wrapped as name (e.g. computingRepresentative)
+            final var text = el.getTextContent();
+            if (text == null || text.isBlank()) {
+                return null;
+            }
+            final var trimmed = text.trim();
+            if (trimmed.isEmpty()) {
+                return null;
+            }
+            return "{\"name\":" + _jsonQuote(trimmed) + "}";
+        }
+        final var sb = new StringBuilder("{");
+        var first = true;
+        for (final var kv : obj.entrySet()) {
+            if (!first) {
+                sb.append(',');
+            }
+            first = false;
+            sb.append('"').append(kv.getKey()).append("\":").append(_jsonQuote(kv.getValue()));
+        }
+        sb.append('}');
+        return sb.toString();
+    }
+
+    /** Minimal JSON string quoting (escapes backslash, double-quote, and control characters). */
+    private static String _jsonQuote(final String s) {
+        final var sb = new StringBuilder("\"");
+        for (var i = 0; i < s.length(); i++) {
+            final var c = s.charAt(i);
+            switch (c) {
+            case '"' -> sb.append("\\\"");
+            case '\\' -> sb.append("\\\\");
+            case '\n' -> sb.append("\\n");
+            case '\r' -> sb.append("\\r");
+            case '\t' -> sb.append("\\t");
+            default -> {
+                if (c < 0x20) {
+                    sb.append(String.format("\\u%04x", (int) c));
+                } else {
+                    sb.append(c);
+                }
+            }
+            }
+        }
+        sb.append('"');
+        return sb.toString();
     }
 
     private static void _extractMetaXmlValues(final org.w3c.dom.Element element,
-            final java.util.Map<String, Integer> fieldMap,
+            final java.util.Map<String, Integer> fieldMap, final java.util.Map<String, Integer> posCounters,
             final java.util.List<java.util.Map<String, Object>> entries) {
         final var children = element.getChildNodes();
         for (var i = 0; i < children.getLength(); i++) {
@@ -3530,17 +3639,25 @@ public final class ECpdsBase extends DataBase {
             final var tagName = child.getLocalName() != null ? child.getLocalName() : child.getTagName();
             final var fieldName = _META_TAG_TO_FIELD.get(tagName);
             if (fieldName != null && fieldMap.containsKey(fieldName)) {
-                final var text = child.getTextContent();
-                if (text != null && !text.isBlank()) {
+                final String value;
+                if (_META_CONTACT_TAGS.contains(tagName)) {
+                    value = _buildContactJson(child);
+                } else {
+                    final var text = child.getTextContent();
+                    value = (text != null && !text.isBlank()) ? text.trim() : null;
+                }
+                if (value != null) {
+                    final int pos = posCounters.getOrDefault(fieldName, 0);
+                    posCounters.put(fieldName, pos + 1);
                     final var entry = new java.util.HashMap<String, Object>();
                     entry.put("fieldName", fieldName);
                     entry.put("fieldId", fieldMap.get(fieldName));
-                    entry.put("value", text.trim());
-                    entry.put("position", 0);
+                    entry.put("value", value);
+                    entry.put("position", pos);
                     entries.add(entry);
                 }
             } else {
-                _extractMetaXmlValues(child, fieldMap, entries);
+                _extractMetaXmlValues(child, fieldMap, posCounters, entries);
             }
         }
     }

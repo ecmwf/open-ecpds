@@ -109,9 +109,29 @@ public class BulkImportDestinationMetaDataAction extends PDSAction {
                 request.setAttribute("importedDests", importedDests);
                 request.setAttribute("importedValues", importedValues);
             } else {
-                request.setAttribute("byDestination", byDestination);
+                // Build a lightweight summary list for the preview (no raw values sent to JSP)
+                final var destSummary = new ArrayList<java.util.Map<String, Object>>();
+                for (final var entry : byDestination.entrySet()) {
+                    var valCount = 0;
+                    var errCount = 0;
+                    for (final var e : entry.getValue()) {
+                        if (e.containsKey("error")) {
+                            errCount++;
+                        } else {
+                            valCount++;
+                        }
+                    }
+                    final var row = new java.util.HashMap<String, Object>();
+                    row.put("name", entry.getKey());
+                    row.put("values", valCount);
+                    row.put("errors", errCount);
+                    destSummary.add(row);
+                }
+                destSummary.sort(java.util.Comparator.comparing(r -> (String) r.get("name")));
+                request.setAttribute("destSummary", destSummary);
                 request.setAttribute("totalValues", totalValues);
                 request.setAttribute("totalErrors", totalErrors);
+                request.setAttribute("totalDests", byDestination.size());
             }
         } catch (final Exception e) {
             _log.warn("BulkImportDestinationMetaDataAction", e);
