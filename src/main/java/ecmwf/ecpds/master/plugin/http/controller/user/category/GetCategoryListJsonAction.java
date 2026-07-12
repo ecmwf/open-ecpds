@@ -115,30 +115,32 @@ public class GetCategoryListJsonAction extends PDSAction {
         if (resources == null || resources.isEmpty()) {
             return "<span class=\"text-muted\">—</span>";
         }
-        final var sb = new StringBuilder();
+        final var sb = new StringBuilder("<div class=\"d-flex flex-wrap gap-1\">");
         int count = 0;
         for (final Object obj : resources) {
             if (count >= MAX_RESOURCES_SHOWN) {
-                sb.append("&nbsp;<span class=\"text-muted\">…</span>");
+                sb.append("<span class=\"text-muted\">…</span>");
                 break;
             }
             if (obj instanceof final Resource r) {
                 final var id = escapeHtml(r.getId());
                 final var path = escapeHtml(r.getPath());
-                sb.append("<a href=\"").append(RESOURCE_BASE_PATH).append("/").append(id).append("\">").append(path)
-                        .append("</a>&nbsp;");
+                sb.append("<a href=\"").append(RESOURCE_BASE_PATH).append("/").append(id).append(
+                        "\" class=\"badge rounded-pill border fw-normal bg-body-tertiary text-body text-decoration-none\">")
+                        .append(path).append("</a>");
                 count++;
             }
         }
+        sb.append("</div>");
         return sb.toString();
     }
 
     private static String buildActions(final Category cat) {
         final var id = escapeHtml(cat.getId());
         return "<a href=\"" + CATEGORY_BASE_PATH + "/edit/update_form/" + id
-                + "\" title=\"Edit\"><i class=\"bi bi-pencil-square text-primary\"></i></a>" + "&nbsp;<a href=\""
-                + CATEGORY_BASE_PATH + "/edit/delete_form/" + id
-                + "\" title=\"Delete\"><i class=\"bi bi-trash text-danger\"></i></a>";
+                + "\" class=\"btn btn-sm btn-outline-primary me-1\" title=\"Edit\"><i class=\"bi bi-pencil\"></i></a>"
+                + "<a href=\"" + CATEGORY_BASE_PATH + "/edit/delete_form/" + id
+                + "\" class=\"btn btn-sm btn-outline-danger\" title=\"Delete\"><i class=\"bi bi-trash\"></i></a>";
     }
 
     private static String escapeHtml(final String s) {

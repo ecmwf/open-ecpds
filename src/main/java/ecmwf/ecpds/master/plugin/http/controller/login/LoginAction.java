@@ -66,7 +66,7 @@ public class LoginAction extends ECMWFAction {
             final HttpServletRequest request, final HttpServletResponse response)
             throws ECMWFException, ClassCastException {
         request.setAttribute("title", System.getProperty("monitor.title"));
-        request.setAttribute("loginAnimatedBackground", Cnf.at("MonitorPlugin", "loginAnimatedBackground", false));
+        request.setAttribute("loginAnimatedBackground", Cnf.at("MonitorPlugin", "loginAnimatedBackground", true));
         setAuthModeAttributes(request);
         final UserAuthStrategy strategy = new EcPdsUserAuthStrategy();
         try {

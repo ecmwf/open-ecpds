@@ -293,9 +293,9 @@ public class GetWebUserListJsonAction extends PDSAction {
     private static String buildActions(final String id) {
         final var escaped = escapeHtml(id);
         return "<a href=\"" + USER_BASE_PATH + "/edit/update_form/" + escaped
-                + "\" title=\"Edit\"><i class=\"bi bi-pencil-square text-primary\" style=\"font-size:1rem\"></i></a>"
-                + "&nbsp;<a href=\"" + USER_BASE_PATH + "/edit/delete_form/" + escaped
-                + "\" title=\"Delete\"><i class=\"bi bi-trash text-danger\" style=\"font-size:1rem\"></i></a>";
+                + "\" class=\"btn btn-sm btn-outline-primary me-1\" title=\"Edit\"><i class=\"bi bi-pencil\"></i></a>"
+                + "<a href=\"" + USER_BASE_PATH + "/edit/delete_form/" + escaped
+                + "\" class=\"btn btn-sm btn-outline-danger\" title=\"Delete\"><i class=\"bi bi-trash\"></i></a>";
     }
 
     private static boolean hasPropertyErrors(final WebUser u) {

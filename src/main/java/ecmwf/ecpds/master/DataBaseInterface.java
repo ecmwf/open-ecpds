@@ -62,6 +62,8 @@ import ecmwf.common.database.IncomingPolicy;
 import ecmwf.common.database.IncomingUser;
 import ecmwf.common.database.MetadataAttribute;
 import ecmwf.common.database.MetadataValue;
+import ecmwf.common.database.DestinationMetaField;
+import ecmwf.common.database.DestinationMetaValue;
 import ecmwf.common.database.Operation;
 import ecmwf.common.database.PolicyAssociation;
 import ecmwf.common.database.ProductStatus;
@@ -1069,6 +1071,142 @@ public interface DataBaseInterface extends Remote {
      *             the remote exception
      */
     Collection<MetadataValue> getMetaDataByDataFileId(long dataFileId) throws DataBaseException, RemoteException;
+
+    /**
+     * Gets all active destination metadata field definitions.
+     *
+     * @return the destination meta fields
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    Collection<DestinationMetaField> getDestinationMetaFields() throws DataBaseException, RemoteException;
+
+    /**
+     * Gets ALL destination metadata field definitions including inactive fields.
+     *
+     * @return all fields (active and inactive)
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    Collection<DestinationMetaField> getAllDestinationMetaFields() throws DataBaseException, RemoteException;
+
+    /**
+     * Saves (insert or update) a destination metadata field definition.
+     *
+     * @param field
+     *            the field definition
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    void saveDestinationMetaField(DestinationMetaField field) throws DataBaseException, RemoteException;
+
+    /**
+     * Deletes a destination metadata field definition.
+     *
+     * @param field
+     *            the field to delete
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    void deleteDestinationMetaField(DestinationMetaField field) throws DataBaseException, RemoteException;
+
+    /**
+     * Gets the map of fieldId → allowed DES_TYPE set (empty set = all types).
+     *
+     * @return the field type map
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    java.util.Map<Integer, java.util.Set<Integer>> getDestinationMetaFieldTypeMap()
+            throws DataBaseException, RemoteException;
+
+    /**
+     * Replaces the DES_TYPE restrictions for a single field.
+     *
+     * @param fieldId
+     *            the field id
+     * @param types
+     *            the allowed DES_TYPE values (empty/null = all types)
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    void setDestinationMetaFieldTypes(int fieldId, Collection<Integer> types) throws DataBaseException, RemoteException;
+
+    /**
+     * Gets all metadata values for a destination.
+     *
+     * @param destinationName
+     *            the destination name
+     *
+     * @return the destination meta values by destination
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    Collection<DestinationMetaValue> getDestinationMetaValuesByDestination(String destinationName)
+            throws DataBaseException, RemoteException;
+
+    /**
+     * Saves (insert or update) a destination metadata value.
+     *
+     * @param value
+     *            the destination meta value
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    void saveDestinationMetaValue(DestinationMetaValue value) throws DataBaseException, RemoteException;
+
+    /**
+     * Deletes a destination metadata value by its PK.
+     *
+     * @param dmvId
+     *            the dmv id
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    void deleteDestinationMetaValue(long dmvId) throws DataBaseException, RemoteException;
+
+    /**
+     * Replaces all metadata values for a destination.
+     *
+     * @param destinationName
+     *            the destination name
+     * @param values
+     *            the new values
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    void setDestinationMetaValues(String destinationName, Collection<DestinationMetaValue> values)
+            throws DataBaseException, RemoteException;
 
     /**
      * Gets the meta data by attribute name.

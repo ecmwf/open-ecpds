@@ -1665,4 +1665,38 @@
 		</property>
 	</class>
 
+	<class name="DestinationMetaField" table="DESTINATION_META_FIELD">
+		<cache usage="read-write" />
+		<id name="DMF_ID" type="java.lang.Integer">
+			<column name="DMF_ID" />
+			<generator class="increment" />
+		</id>
+		<property name="DMF_NAME"       type="java.lang.String">  <column name="DMF_NAME"       length="64"  /> </property>
+		<property name="DMF_LABEL"      type="java.lang.String">  <column name="DMF_LABEL"      length="128" /> </property>
+		<property name="DMF_TYPE"       type="java.lang.String">  <column name="DMF_TYPE"       length="32"  /> </property>
+		<property name="DMF_CATEGORY"   type="java.lang.String">  <column name="DMF_CATEGORY"   length="64"  /> </property>
+		<property name="DMF_TOOLTIP"    type="java.lang.String">  <column name="DMF_TOOLTIP"    length="512" /> </property>
+		<property name="DMF_MAX_OCCURS" type="int">               <column name="DMF_MAX_OCCURS" />              </property>
+		<property name="DMF_POSITION"   type="int">               <column name="DMF_POSITION"   />              </property>
+		<property name="DMF_ACTIVE"     type="boolean">           <column name="DMF_ACTIVE"     />              </property>
+	</class>
+
+	<class name="DestinationMetaValue" table="DESTINATION_META_VALUE">
+		<cache usage="read-write" />
+		<id name="DMV_ID" type="java.lang.Long">
+			<column name="DMV_ID" />
+			<generator class="increment" />
+		</id>
+		<property name="DES_NAME"     type="java.lang.String">            <column name="DES_NAME"     length="32" />  </property>
+		<property name="DMF_ID"       type="java.lang.Integer">           <column name="DMF_ID"       />              </property>
+		<property name="DMV_VALUE"    type="java.lang.String">            <column name="DMV_VALUE"    length="65535" /> </property>
+		<property name="DMV_POSITION" type="int">                         <column name="DMV_POSITION" />              </property>
+		<property name="DMV_UPDATED"  type="java.sql.Timestamp">          <column name="DMV_UPDATED"  />              </property>
+		<property name="DMV_BY"       type="java.lang.String">            <column name="DMV_BY"       length="64" />  </property>
+		<many-to-one name="destinationMetaField" class="DestinationMetaField"
+			not-found="ignore" update="false" insert="false">
+			<column name="DMF_ID" />
+		</many-to-one>
+	</class>
+
 </hibernate-mapping>

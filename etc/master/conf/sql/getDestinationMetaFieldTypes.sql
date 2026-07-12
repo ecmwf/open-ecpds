@@ -1,0 +1,8 @@
+##
+#menu "ECpdsBase"
+#name "getDestinationMetaFieldTypes"
+#group "select"
+
+SELECT DMFT.DMF_ID, DMFT.DES_TYPE
+FROM DESTINATION_META_FIELD_TYPE DMFT
+ORDER BY DMFT.DMF_ID, DMFT.DES_TYPE

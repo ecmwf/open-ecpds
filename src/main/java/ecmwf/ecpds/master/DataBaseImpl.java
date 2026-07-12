@@ -91,6 +91,8 @@ import ecmwf.common.database.IncomingPolicy;
 import ecmwf.common.database.IncomingUser;
 import ecmwf.common.database.MetadataAttribute;
 import ecmwf.common.database.MetadataValue;
+import ecmwf.common.database.DestinationMetaField;
+import ecmwf.common.database.DestinationMetaValue;
 import ecmwf.common.database.Operation;
 import ecmwf.common.database.PolicyAssociation;
 import ecmwf.common.database.PolicyUser;
@@ -1517,6 +1519,105 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
             throws DataBaseException, RemoteException {
         final var monitor = new MonitorCall("getMetaDataByDataFileId(" + dataFileId + ")");
         return monitor.done(ecpds.getMetaDataByDataFileId(dataFileId));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Collection<DestinationMetaField> getDestinationMetaFields() throws DataBaseException {
+        final var monitor = new MonitorCall("getDestinationMetaFields()");
+        return monitor.done(ecpds.getDestinationMetaFields());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Collection<DestinationMetaField> getAllDestinationMetaFields() throws DataBaseException {
+        final var monitor = new MonitorCall("getAllDestinationMetaFields()");
+        return monitor.done(ecpds.getAllDestinationMetaFields());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void saveDestinationMetaField(final DestinationMetaField field) throws DataBaseException {
+        final var monitor = new MonitorCall("saveDestinationMetaField()");
+        ecpds.saveDestinationMetaField(field);
+        monitor.done();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void deleteDestinationMetaField(final DestinationMetaField field) throws DataBaseException {
+        final var monitor = new MonitorCall("deleteDestinationMetaField()");
+        ecpds.deleteDestinationMetaField(field);
+        monitor.done();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public java.util.Map<Integer, java.util.Set<Integer>> getDestinationMetaFieldTypeMap() throws DataBaseException {
+        final var monitor = new MonitorCall("getDestinationMetaFieldTypeMap()");
+        return monitor.done(ecpds.getDestinationMetaFieldTypeMap());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setDestinationMetaFieldTypes(final int fieldId, final Collection<Integer> types)
+            throws DataBaseException {
+        final var monitor = new MonitorCall("setDestinationMetaFieldTypes(" + fieldId + ")");
+        ecpds.setDestinationMetaFieldTypes(fieldId, types);
+        monitor.done();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Collection<DestinationMetaValue> getDestinationMetaValuesByDestination(final String destinationName)
+            throws DataBaseException {
+        final var monitor = new MonitorCall("getDestinationMetaValuesByDestination(" + destinationName + ")");
+        return monitor.done(ecpds.getDestinationMetaValuesByDestination(destinationName));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void saveDestinationMetaValue(final DestinationMetaValue value) throws DataBaseException {
+        final var monitor = new MonitorCall("saveDestinationMetaValue()");
+        ecpds.saveDestinationMetaValue(value);
+        monitor.done();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void deleteDestinationMetaValue(final long dmvId) throws DataBaseException {
+        final var monitor = new MonitorCall("deleteDestinationMetaValue(" + dmvId + ")");
+        ecpds.deleteDestinationMetaValue(dmvId);
+        monitor.done();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setDestinationMetaValues(final String destinationName, final Collection<DestinationMetaValue> values)
+            throws DataBaseException {
+        final var monitor = new MonitorCall("setDestinationMetaValues(" + destinationName + ")");
+        ecpds.setDestinationMetaValues(destinationName, values);
+        monitor.done();
     }
 
     /**

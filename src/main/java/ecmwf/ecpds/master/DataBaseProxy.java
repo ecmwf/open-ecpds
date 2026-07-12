@@ -74,6 +74,8 @@ import ecmwf.common.database.IncomingPolicy;
 import ecmwf.common.database.IncomingUser;
 import ecmwf.common.database.MetadataAttribute;
 import ecmwf.common.database.MetadataValue;
+import ecmwf.common.database.DestinationMetaField;
+import ecmwf.common.database.DestinationMetaValue;
 import ecmwf.common.database.Operation;
 import ecmwf.common.database.PolicyAssociation;
 import ecmwf.common.database.PortalTraffic;
@@ -972,6 +974,127 @@ final class DataBaseProxy implements DataBaseInterface {
         }
         final var monitor = new MonitorCall("getMetaDataByDataFileId(" + dataFileId + ")");
         return monitor.done(dataBaseInterface.getMetaDataByDataFileId(dataFileId));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Collection<DestinationMetaField> getDestinationMetaFields() throws DataBaseException, RemoteException {
+        if (dataBaseInterface == null) {
+            throw new DataBaseException("Invalid parameter(s) for getDestinationMetaFields");
+        }
+        final var monitor = new MonitorCall("getDestinationMetaFields()");
+        return monitor.done(dataBaseInterface.getDestinationMetaFields());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Collection<DestinationMetaField> getAllDestinationMetaFields() throws DataBaseException, RemoteException {
+        if (dataBaseInterface == null) {
+            throw new DataBaseException("Invalid parameter(s) for getAllDestinationMetaFields");
+        }
+        final var monitor = new MonitorCall("getAllDestinationMetaFields()");
+        return monitor.done(dataBaseInterface.getAllDestinationMetaFields());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void saveDestinationMetaField(final DestinationMetaField field) throws DataBaseException, RemoteException {
+        if (field == null) {
+            throw new DataBaseException("Invalid parameter(s) for saveDestinationMetaField");
+        }
+        final var monitor = new MonitorCall("saveDestinationMetaField()");
+        dataBaseInterface.saveDestinationMetaField(field);
+        monitor.done();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void deleteDestinationMetaField(final DestinationMetaField field) throws DataBaseException, RemoteException {
+        if (field == null) {
+            throw new DataBaseException("Invalid parameter(s) for deleteDestinationMetaField");
+        }
+        final var monitor = new MonitorCall("deleteDestinationMetaField()");
+        dataBaseInterface.deleteDestinationMetaField(field);
+        monitor.done();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public java.util.Map<Integer, java.util.Set<Integer>> getDestinationMetaFieldTypeMap()
+            throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getDestinationMetaFieldTypeMap()");
+        return monitor.done(dataBaseInterface.getDestinationMetaFieldTypeMap());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setDestinationMetaFieldTypes(final int fieldId, final Collection<Integer> types)
+            throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("setDestinationMetaFieldTypes(" + fieldId + ")");
+        dataBaseInterface.setDestinationMetaFieldTypes(fieldId, types);
+        monitor.done();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Collection<DestinationMetaValue> getDestinationMetaValuesByDestination(final String destinationName)
+            throws DataBaseException, RemoteException {
+        if (destinationName == null) {
+            throw new DataBaseException("Invalid parameter(s) for getDestinationMetaValuesByDestination");
+        }
+        final var monitor = new MonitorCall("getDestinationMetaValuesByDestination(" + destinationName + ")");
+        return monitor.done(dataBaseInterface.getDestinationMetaValuesByDestination(destinationName));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void saveDestinationMetaValue(final DestinationMetaValue value) throws DataBaseException, RemoteException {
+        if (value == null) {
+            throw new DataBaseException("Invalid parameter(s) for saveDestinationMetaValue");
+        }
+        final var monitor = new MonitorCall("saveDestinationMetaValue()");
+        dataBaseInterface.saveDestinationMetaValue(value);
+        monitor.done();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void deleteDestinationMetaValue(final long dmvId) throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("deleteDestinationMetaValue(" + dmvId + ")");
+        dataBaseInterface.deleteDestinationMetaValue(dmvId);
+        monitor.done();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setDestinationMetaValues(final String destinationName, final Collection<DestinationMetaValue> values)
+            throws DataBaseException, RemoteException {
+        if (destinationName == null) {
+            throw new DataBaseException("Invalid parameter(s) for setDestinationMetaValues");
+        }
+        final var monitor = new MonitorCall("setDestinationMetaValues(" + destinationName + ")");
+        dataBaseInterface.setDestinationMetaValues(destinationName, values);
+        monitor.done();
     }
 
     /**

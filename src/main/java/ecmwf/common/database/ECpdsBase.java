@@ -3166,6 +3166,227 @@ public final class ECpdsBase extends DataBase {
     }
 
     /**
+     * Gets all active destination metadata field definitions.
+     *
+     * @return the destination meta fields
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public Collection<DestinationMetaField> getDestinationMetaFields() throws DataBaseException {
+        try (var it = ecpds.getDestinationMetaFields(DestinationMetaField.class)) {
+            final List<DestinationMetaField> list = new ArrayList<>();
+            while (it.hasNext()) {
+                list.add(it.next());
+            }
+            _log.debug("getDestinationMetaFields: {} field(s)", list.size());
+            return list;
+        } catch (final Exception e) {
+            throw new DataBaseException(e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Gets ALL destination metadata field definitions including inactive fields.
+     *
+     * @return all fields
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public Collection<DestinationMetaField> getAllDestinationMetaFields() throws DataBaseException {
+        try (var it = ecpds.getAllDestinationMetaFields(DestinationMetaField.class)) {
+            final List<DestinationMetaField> list = new ArrayList<>();
+            while (it.hasNext()) {
+                list.add(it.next());
+            }
+            _log.debug("getAllDestinationMetaFields: {} field(s)", list.size());
+            return list;
+        } catch (final Exception e) {
+            throw new DataBaseException(e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Inserts or updates a destination metadata field definition. If DMF_ID > 0 it updates; otherwise it inserts (ID
+     * auto-generated).
+     *
+     * @param field
+     *            the field definition
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public void saveDestinationMetaField(final DestinationMetaField field) throws DataBaseException {
+        if (field.DMF_ID != null && field.DMF_ID > 0) {
+            update(field);
+        } else {
+            insert(field, true);
+        }
+    }
+
+    /**
+     * Deletes a destination metadata field definition (and cascades to values and type rows via DB FK).
+     *
+     * @param field
+     *            the field to delete
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public void deleteDestinationMetaField(final DestinationMetaField field) throws DataBaseException {
+        try {
+            remove(field);
+        } catch (final Exception e) {
+            throw new DataBaseException(e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Gets a map of fieldId → set of allowed DES_TYPE values. An empty set for a given fieldId means "applies to all
+     * types".
+     *
+     * @return the field type map
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public java.util.Map<Integer, java.util.Set<Integer>> getDestinationMetaFieldTypeMap() throws DataBaseException {
+        final var map = new java.util.HashMap<Integer, java.util.Set<Integer>>();
+        try (var rs = executeSelect("ECpdsBase", "getDestinationMetaFieldTypes")) {
+            while (rs.next()) {
+                final int fieldId = rs.getInt("DMF_ID");
+                final int desType = rs.getInt("DES_TYPE");
+                map.computeIfAbsent(fieldId, _ -> new java.util.HashSet<>()).add(desType);
+            }
+        } catch (final Exception e) {
+            throw new DataBaseException(e.getMessage(), e);
+        }
+        _log.debug("getDestinationMetaFieldTypeMap: {} field(s) with type restrictions", map.size());
+        return map;
+    }
+
+    /**
+     * Replaces the DES_TYPE restrictions for a single field. An empty/null collection means "applies to all types"
+     * (removes all rows for this field).
+     *
+     * @param fieldId
+     *            the field id
+     * @param types
+     *            the allowed DES_TYPE values (empty = all)
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public void setDestinationMetaFieldTypes(final int fieldId, final java.util.Collection<Integer> types)
+            throws DataBaseException {
+        try {
+            executeUpdate("ECpdsBase", "deleteDestinationMetaFieldTypes", new String[] { "fieldId=" + fieldId });
+            if (types != null) {
+                for (final int desType : types) {
+                    executeUpdate("ECpdsBase", "insertDestinationMetaFieldType",
+                            new String[] { "fieldId=" + fieldId, "desType=" + desType });
+                }
+            }
+        } catch (final Exception e) {
+            throw new DataBaseException(e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Gets all metadata values for a destination.
+     *
+     * @param destinationName
+     *            the destination name
+     *
+     * @return the destination meta values by destination
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public Collection<DestinationMetaValue> getDestinationMetaValuesByDestination(final String destinationName)
+            throws DataBaseException {
+        try (var it = ecpds.getDestinationMetaValuesByDestination(destinationName, DestinationMetaValue.class)) {
+            final List<DestinationMetaValue> list = new ArrayList<>();
+            while (it.hasNext()) {
+                list.add(it.next());
+            }
+            _log.debug("getDestinationMetaValuesByDestination({}): {} value(s)", destinationName, list.size());
+            return list;
+        } catch (final Exception e) {
+            throw new DataBaseException(e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Inserts or updates a destination metadata value. If DMV_ID > 0 it updates; otherwise it inserts (ID
+     * auto-generated).
+     *
+     * @param value
+     *            the destination meta value
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public void saveDestinationMetaValue(final DestinationMetaValue value) throws DataBaseException {
+        value.setUpdated(new java.sql.Timestamp(System.currentTimeMillis()));
+        if (value.DMV_ID != null && value.DMV_ID > 0) {
+            update(value);
+        } else {
+            insert(value, true);
+        }
+    }
+
+    /**
+     * Deletes a destination metadata value by its PK.
+     *
+     * @param dmvId
+     *            the dmv id
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public void deleteDestinationMetaValue(final long dmvId) throws DataBaseException {
+        final var v = new DestinationMetaValue();
+        v.setId(dmvId);
+        remove(v);
+    }
+
+    /**
+     * Replaces ALL metadata values for a destination with the given list. Deletes old values not present in the new
+     * list, inserts/updates the rest.
+     *
+     * @param destinationName
+     *            the destination name
+     * @param values
+     *            the new values
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public void setDestinationMetaValues(final String destinationName, final Collection<DestinationMetaValue> values)
+            throws DataBaseException {
+        // Delete all existing values for this destination
+        try (var it = ecpds.getDestinationMetaValuesByDestination(destinationName, DestinationMetaValue.class)) {
+            while (it.hasNext()) {
+                remove(it.next());
+            }
+        } catch (final Exception e) {
+            throw new DataBaseException(e.getMessage(), e);
+        }
+        // Insert new values
+        final var now = new java.sql.Timestamp(System.currentTimeMillis());
+        for (final DestinationMetaValue v : values) {
+            v.DMV_ID = null; // null = new entity; 0L would be mistaken for a detached entity by Hibernate
+            v.setDestinationName(destinationName);
+            if (v.DMV_UPDATED == null) {
+                v.setUpdated(now);
+            }
+            insert(v, true);
+        }
+    }
+
+    /**
      * Gets the meta data by attribute name.
      *
      * @param id

@@ -632,6 +632,12 @@
 			value="/WEB-INF/jsp/pds/transfer/destination/metadata.jsp" />
 	</definition>
 
+	<definition name=".pds.transfer.destination.metadata.import"
+		extends=".pds.transfer.destination.detail">
+		<put name="content"
+			value="/WEB-INF/jsp/pds/transfer/destination/metadata_import.jsp" />
+	</definition>
+
 	<definition name=".pds.transfer.destination.insert.content"
 		extends=".pds.form.content">
 		<put name="action" value="/transfer/destination/edit/insert" />
@@ -1278,6 +1284,11 @@
 
 	<definition name=".pds.admin.index" extends=".pds.admin">
 		<put name="content" value="/WEB-INF/jsp/pds/admin/index.jsp" />
+	</definition>
+
+	<definition name=".pds.admin.metafields" extends=".pds.admin">
+		<put name="title" value="Metadata Field Definitions" />
+		<put name="content" value="/WEB-INF/jsp/pds/admin/metadata_fields.jsp" />
 	</definition>
 
 	<definition name=".pds.admin.requeue.list"

@@ -56,4 +56,15 @@
     </div>
     </auth:link>
 
+    <auth:link basePathKey="admin.basepath" href="/metafields">
+    <div class="admin-tool p-3 d-flex align-items-start gap-3">
+        <i class="bi bi-list-check text-secondary flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
+        <div>
+            <span class="tool-title">Metadata Fields</span>
+            <p class="tool-desc">Define, edit, and activate destination metadata fields. These definitions drive the
+            auto-generated metadata forms on each destination page. Add new fields without any code changes.</p>
+        </div>
+    </div>
+    </auth:link>
+
 </div>

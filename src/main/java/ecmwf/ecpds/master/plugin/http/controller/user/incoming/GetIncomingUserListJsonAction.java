@@ -442,9 +442,9 @@ public class GetIncomingUserListJsonAction extends PDSAction {
         final var escaped = escapeHtml(id);
         final var sb = new StringBuilder();
         sb.append("<a href=\"").append(INCOMING_BASE_PATH).append("/edit/update_form/").append(escaped).append(
-                "\" title=\"Edit\"><i class=\"bi bi-pencil-square text-primary\" style=\"font-size:1rem\"></i></a>")
-                .append("&nbsp;<a href=\"").append(INCOMING_BASE_PATH).append("/edit/delete_form/").append(escaped)
-                .append("\" title=\"Delete\"><i class=\"bi bi-trash text-danger\" style=\"font-size:1rem\"></i></a>");
+                "\" class=\"btn btn-sm btn-outline-primary me-1\" title=\"Edit\"><i class=\"bi bi-pencil\"></i></a>")
+                .append("<a href=\"").append(INCOMING_BASE_PATH).append("/edit/delete_form/").append(escaped)
+                .append("\" class=\"btn btn-sm btn-outline-danger me-1\" title=\"Delete\"><i class=\"bi bi-trash\"></i></a>");
         if (canEdit && connectionCount > 0) {
             final var closeUrl = INCOMING_BASE_PATH + "/edit/update/" + escaped + "/closeAllSessions/all";
             sb.append("&nbsp;<a href=\"javascript:confirmCloseAll('").append(closeUrl).append("',")

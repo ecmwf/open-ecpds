@@ -1,0 +1,9 @@
+##
+#menu "ECpdsBase"
+#name "getDestinationMetaFields"
+#group "query"
+
+SELECT DMF.*
+FROM DESTINATION_META_FIELD DMF
+WHERE DMF.DMF_ACTIVE=1
+ORDER BY DMF.DMF_POSITION, DMF.DMF_ID

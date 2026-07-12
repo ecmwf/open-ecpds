@@ -82,6 +82,7 @@ import ecmwf.common.database.TransferMethod;
 import ecmwf.common.database.TransferServer;
 import ecmwf.common.database.Url;
 import ecmwf.common.database.WebUser;
+import ecmwf.common.database.DestinationMetaValue;
 import ecmwf.common.monitor.MonitorException;
 import ecmwf.common.monitor.MonitorManager;
 import ecmwf.common.plugin.PluginEvent;
@@ -135,6 +136,10 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     /** The Constant METADATA_TAGS. */
     private static final transient String[] METADATA_TAGS = Cnf.stringListAt("MetaData", "tags", "mailGroup:email",
             "ContactInformations:email");
+
+    /** Whether to use DB for contact lookups (fallback to XML files if false). */
+    private static final transient boolean METADATA_USE_DB = Cnf.at("MetaData", "useDB", "true")
+            .equalsIgnoreCase("true");
 
     /** The Constant METADATA_MISSING_CONTACTS. */
     private static final transient String METADATA_MISSING_CONTACTS = Cnf.at("MetaData", "missingContactsMail", "");
@@ -191,7 +196,8 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
             final boolean caseSensitive) throws IOException {
         final var names = new ArrayList<String>();
         for (final Map.Entry<String, String> rule : rules) {
-            for (final Map.Entry<String, String> entries : loadContacts(".*:email").entrySet()) {
+            for (final Map.Entry<String, String> entries : (METADATA_USE_DB ? loadContactsFromDB()
+                    : loadContacts(".*:email")).entrySet()) {
                 for (final String value : entries.getValue().split(",")) {
                     if (matchesRule(rule, value, caseSensitive)) {
                         names.add(entries.getKey());
@@ -372,6 +378,71 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * Loads contact email addresses from the destination metadata DB. Falls back to XML file loading if an error
+     * occurs.
+     *
+     * @return the hash map of destination name to comma-separated email addresses
+     */
+    private HashMap<String, String> loadContactsFromDB() {
+        final var contacts = new HashMap<String, String>();
+        try {
+            // Find all email-type fields
+            final var emailFieldIds = new java.util.HashSet<Integer>();
+            for (final var field : base.getDestinationMetaFields()) {
+                final var type = field.getType();
+                if ("email".equals(type) || "contact".equals(type) || "mail-group".equals(type)) {
+                    emailFieldIds.add(field.getId());
+                }
+            }
+            if (emailFieldIds.isEmpty()) {
+                return contacts;
+            }
+            // For each destination, collect all email-type values
+            for (final Destination d : base.getDestinationArray()) {
+                if (!d.getActive()) {
+                    continue;
+                }
+                final var name = d.getName();
+                final var emails = new java.util.LinkedHashSet<String>();
+                for (final var val : base.getDestinationMetaValuesByDestination(name)) {
+                    if (!emailFieldIds.contains(val.getFieldId())) {
+                        continue;
+                    }
+                    final var raw = val.getValue();
+                    if (raw == null || raw.isBlank()) {
+                        continue;
+                    }
+                    // Try JSON first
+                    try {
+                        final var node = new com.fasterxml.jackson.databind.ObjectMapper().readTree(raw);
+                        final var emailNode = node.get("email");
+                        if (emailNode != null && !emailNode.isNull()) {
+                            final var e = emailNode.asText().trim();
+                            if (!e.isEmpty()) {
+                                emails.add(e);
+                            }
+                        }
+                    } catch (final Exception ignored) {
+                        // Plain email
+                        final var trimmed = raw.trim();
+                        if (trimmed.contains("@")) {
+                            emails.add(trimmed);
+                        }
+                    }
+                }
+                if (!emails.isEmpty()) {
+                    contacts.put(name, String.join(",", emails));
+                }
+            }
+            _log.debug("loadContactsFromDB: contacts updated for {} Destination(s)", contacts.size());
+        } catch (final Exception e) {
+            _log.warn("loadContactsFromDB failed, falling back to XML", e);
+            return loadContacts(METADATA_TAGS);
+        }
+        return contacts;
+    }
+
+    /**
      * Gets the contacts.
      *
      * Retrieve the contacts. If reload is true or the cache is expired then get it from the configuration files.
@@ -389,7 +460,7 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
                     || System.currentTimeMillis() - contactsCacheLastUpdate > METADATA_RELOAD) {
                 contactsCacheLastUpdate = System.currentTimeMillis();
                 contactsCache.clear();
-                contactsCache.putAll(loadContacts(METADATA_TAGS));
+                contactsCache.putAll(METADATA_USE_DB ? loadContactsFromDB() : loadContacts(METADATA_TAGS));
                 if (METADATA_MISSING_CONTACTS.length() > 0) {
                     // Let's build the list of missing contacts per type of Destination for the
                     // sending of the email!

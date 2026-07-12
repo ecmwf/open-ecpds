@@ -18,6 +18,8 @@
 
 package ecmwf.ecpds.master.plugin.http.controller.transfer.destination;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 
 import javax.servlet.http.HttpServletRequest;
@@ -27,6 +29,8 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
+import ecmwf.common.database.DestinationMetaField;
+import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.ecpds.master.plugin.http.home.monitoring.ProductStatusHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.DestinationHome;
@@ -62,9 +66,26 @@ public class GetDestinationMetaDataAction extends PDSAction {
                 request.setAttribute("destPropErrors", GetDestinationListJsonAction.hasPropertyErrors(destination));
             } catch (final Exception ignored) {
             }
-            final var metadata = destination.getMetaData();
-            request.setAttribute("metaData", metadata);
-            request.setAttribute("metaDataSize", metadata.size());
+            // Load metadata fields (filter by destination DES_TYPE via junction table) and existing values
+            try {
+                final var db = MasterManager.getDB();
+                final var allFields = db.getDestinationMetaFields();
+                final var typeMap = db.getDestinationMetaFieldTypeMap();
+                final int desType = destination.getType();
+                final var fields = new ArrayList<ecmwf.common.database.DestinationMetaField>();
+                for (final var f : allFields) {
+                    final var allowed = typeMap.get(f.getId());
+                    // No rows in junction table → applies to all types
+                    if (allowed == null || allowed.isEmpty() || allowed.contains(desType)) {
+                        fields.add(f);
+                    }
+                }
+                request.setAttribute("metaFields", fields);
+                request.setAttribute("metaValues", db.getDestinationMetaValuesByDestination(id));
+            } catch (final Exception e) {
+                request.setAttribute("metaFields", Collections.emptyList());
+                request.setAttribute("metaValues", Collections.emptyList());
+            }
             request.setAttribute("products", ProductStatusHome.findAllProductNameTimePairs());
             request.setAttribute("currentDate", new Date());
             return mapping.findForward("success");

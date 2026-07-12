@@ -2124,4 +2124,107 @@ UNLOCK TABLES;
 
 -- Dump completed on 2025-09-29 15:23:59
 
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- ---------------------------------------------------------------
+-- DESTINATION_META_FIELD: Metadata field definitions
+-- ---------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `DESTINATION_META_FIELD` (
+  `DMF_ID`         INT            NOT NULL AUTO_INCREMENT,
+  `DMF_NAME`       VARCHAR(64)    NOT NULL,
+  `DMF_LABEL`      VARCHAR(128)   NOT NULL,
+  `DMF_TYPE`       VARCHAR(32)    NOT NULL DEFAULT 'text',
+  `DMF_CATEGORY`   VARCHAR(64)    NOT NULL DEFAULT 'General',
+  `DMF_TOOLTIP`    VARCHAR(512)   DEFAULT NULL,
+  `DMF_MAX_OCCURS` INT            NOT NULL DEFAULT 1,
+  `DMF_POSITION`   INT            NOT NULL DEFAULT 0,
+  `DMF_ACTIVE`     TINYINT(1)     NOT NULL DEFAULT 1,
+  PRIMARY KEY (`DMF_ID`),
+  UNIQUE KEY `DMF_NAME_UQ` (`DMF_NAME`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ---------------------------------------------------------------
+-- DESTINATION_META_VALUE: Metadata values per destination
+-- ---------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `DESTINATION_META_VALUE` (
+  `DMV_ID`       BIGINT         NOT NULL AUTO_INCREMENT,
+  `DES_NAME`     VARCHAR(32)    CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
+  `DMF_ID`       INT            NOT NULL,
+  `DMV_VALUE`    TEXT           DEFAULT NULL,
+  `DMV_POSITION` INT            NOT NULL DEFAULT 0,
+  `DMV_UPDATED`  DATETIME       DEFAULT NULL,
+  `DMV_BY`       VARCHAR(64)    DEFAULT NULL,
+  PRIMARY KEY (`DMV_ID`),
+  KEY `DMV_DES_NAME_IDX` (`DES_NAME`),
+  KEY `DMV_DMF_ID_IDX`   (`DMF_ID`),
+  CONSTRAINT `DMV_DES_FK` FOREIGN KEY (`DES_NAME`) REFERENCES `DESTINATION` (`DES_NAME`) ON DELETE CASCADE,
+  CONSTRAINT `DMV_DMF_FK` FOREIGN KEY (`DMF_ID`)   REFERENCES `DESTINATION_META_FIELD` (`DMF_ID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ---------------------------------------------------------------
+-- DESTINATION_META_FIELD_TYPE: Junction table linking fields to
+-- specific DES_TYPEs (from DestinationOption). No rows = all types.
+-- ---------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `DESTINATION_META_FIELD_TYPE` (
+  `DMF_ID`   INT NOT NULL,
+  `DES_TYPE` INT NOT NULL,
+  PRIMARY KEY (`DMF_ID`, `DES_TYPE`),
+  CONSTRAINT `DMFT_DMF_FK` FOREIGN KEY (`DMF_ID`) REFERENCES `DESTINATION_META_FIELD` (`DMF_ID`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 SET FOREIGN_KEY_CHECKS = 1;
+
+-- Metadata field definitions (dissemination + acquisition)
+INSERT IGNORE INTO `DESTINATION_META_FIELD` (`DMF_NAME`,`DMF_LABEL`,`DMF_TYPE`,`DMF_CATEGORY`,`DMF_TOOLTIP`,`DMF_MAX_OCCURS`,`DMF_POSITION`,`DMF_ACTIVE`) VALUES
+('organisationWebPage','Organisation Web Page','url','General','URL of the organisation web page',1,10,1),
+('SADNumber','SAD Number','text','General','SAD contract number',1,20,1),
+('contractId','Contract ID','text','General','Contract identifier',1,30,1),
+('generalComments','General Comments','textarea','General','General comments about this destination',1,40,1),
+('disseminationChartsComments','Dissemination Charts Comments','textarea','General','Comments related to dissemination charts',1,50,1),
+('computingRepresentative','Computing Representative','contact','Contacts','Main computing representative',-1,100,1),
+('mainOperationalContact','Main Operational Contact','contact','Contacts','Main operational contact',-1,110,1),
+('computerOperations','Computer Operations','contact','Contacts','Computer operations contact',-1,120,1),
+('telecomOperators','Telecom Operators','contact','Contacts','Telecom operators contact',-1,130,1),
+('meteorologists','Meteorologists','contact','Contacts','Meteorologist contact',-1,140,1),
+('ecpdsContact','ECPDS Contact','contact','Contacts','ECPDS system contact',-1,150,1),
+('ecmwfContact','ECMWF Contact','contact','Contacts','ECMWF point of contact',-1,160,1),
+('technicalContact','Technical Contact','contact','Contacts','Technical contact',-1,170,1),
+('meteorologicalContact','Meteorological Contact','contact','Contacts','Meteorological contact',-1,180,1),
+('switchboard','Switchboard','switchboard','Contacts','Switchboard contact details',-1,190,1),
+('mailGroup','Mail Group','mail-group','Contacts','Mail group for notifications',-1,200,1),
+('documentationUrl','Documentation URL','url','Documentation','Link to documentation',1,300,1),
+('documentationTechDoc','Technical Documentation','url','Documentation','Link to technical documentation',-1,310,1),
+('agency','Agency','text','General','Data providing agency',1,1010,1),
+('centreOfOrigin','Centre of Origin','text','General','Originating centre',1,1020,1),
+('agencyWebPage','Agency Web Page','url','General','URL of agency web page',1,1030,1),
+('sadNumber','SAD Number','text','General','SAD reference number',1,1040,1),
+('dataDescription','Data Description','textarea','General','Description of the data',-1,1050,1),
+('typeOfObservation','Type of Observation','text','Data','Type of observation',1,1100,1),
+('importanceForAssimilation','Importance for Assimilation','text','Data','Importance rating for assimilation',1,1110,1),
+('instrument','Instrument','text','Data','Instrument name',-1,1120,1),
+('instrumentChannels','Instrument Channels','text','Data','Instrument channel information',-1,1130,1),
+('dataFormat','Data Format','text','Data','Format of the data',1,1140,1),
+('ecfsPath','ECFS Path','text','Storage','Path in ECFS storage',1,1200,1),
+('onLineBackup','On-Line Backup','text','Storage','On-line backup location',1,1210,1),
+('opsProcedureWebPage','Ops Procedure Web Page','url','Procedures','URL of operational procedures',1,1300,1),
+('shiftProcedure','Shift Procedure','textarea','Procedures','Shift procedure description',-1,1310,1),
+('analystProcedure','Analyst Procedure','textarea','Procedures','Analyst procedure description',-1,1320,1),
+('warningInfo','Warning Information','textarea','Alerts','Warning information for operators',1,1400,1),
+('metappsSystemChange','METAPPS System Change','textarea','Alerts','METAPPS system change information',-1,1410,1),
+('phoneNumber','Phone Number','phone','Contacts','Contact phone number',-1,1500,1),
+('contactInformation','Contact Information','contact','Contacts','Contact information',-1,1510,1),
+('comments','Comments','textarea','General','General comments',-1,1600,1);
+
+-- Seed junction table: dissemination fields → DES_TYPE=1, acquisition fields → DES_TYPE=0
+INSERT IGNORE INTO `DESTINATION_META_FIELD_TYPE` (DMF_ID, DES_TYPE)
+SELECT DMF_ID, 1 FROM DESTINATION_META_FIELD WHERE DMF_NAME IN (
+  'organisationWebPage','SADNumber','contractId','generalComments','disseminationChartsComments',
+  'computingRepresentative','mainOperationalContact','computerOperations','telecomOperators',
+  'meteorologists','ecpdsContact','ecmwfContact','technicalContact','meteorologicalContact',
+  'switchboard','mailGroup','documentationUrl','documentationTechDoc');
+INSERT IGNORE INTO `DESTINATION_META_FIELD_TYPE` (DMF_ID, DES_TYPE)
+SELECT DMF_ID, 0 FROM DESTINATION_META_FIELD WHERE DMF_NAME IN (
+  'agency','centreOfOrigin','agencyWebPage','sadNumber','dataDescription',
+  'typeOfObservation','importanceForAssimilation','instrument','instrumentChannels','dataFormat',
+  'ecfsPath','onLineBackup','opsProcedureWebPage','shiftProcedure','analystProcedure',
+  'warningInfo','metappsSystemChange','phoneNumber','contactInformation','comments');

@@ -673,6 +673,16 @@
 			name="destinationDetailActionForm" scope="session">
 			<forward name="file" path=".pds.file" />
 		</action>
+		<action path="/transfer/destination/metadata/save"
+			type="ecmwf.ecpds.master.plugin.http.controller.transfer.destination.SaveDestinationMetaDataAction"
+			name="destinationDetailActionForm" scope="session">
+		</action>
+		<action path="/transfer/destination/metadata/import/*"
+			parameter="{1}"
+			type="ecmwf.ecpds.master.plugin.http.controller.transfer.destination.ImportDestinationMetaDataAction"
+			name="destinationDetailActionForm" scope="session">
+			<forward name="success" path=".pds.transfer.destination.metadata.import" />
+		</action>
 		<action path="/transfer/destination/edit/delete_form/*"
 			parameter="{1}"
 			type="ecmwf.ecpds.master.plugin.http.controller.transfer.destination.DeleteFormAction"
@@ -1300,6 +1310,14 @@
 		<action path="/admin"
 			type="ecmwf.ecpds.master.plugin.http.controller.admin.AdminFormAction">
 			<forward name="success" path=".pds.admin.index" />
+		</action>
+		<action path="/admin/metafields"
+			type="ecmwf.ecpds.master.plugin.http.controller.admin.MetaFieldsAction">
+			<forward name="success" path=".pds.admin.metafields" />
+		</action>
+		<action path="/admin/metafields/*" parameter="{1}"
+			type="ecmwf.ecpds.master.plugin.http.controller.admin.MetaFieldsAction">
+			<forward name="success" path=".pds.admin.metafields" />
 		</action>
 		<action path="/admin/upload"
 			type="ecmwf.ecpds.master.plugin.http.controller.admin.UploadAction"

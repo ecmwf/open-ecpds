@@ -384,6 +384,117 @@ public final class ECpdsRESTV1 {
     }
 
     /**
+     * GET /v1/destination/metadata/fields Returns all active metadata field definitions.
+     *
+     * @param authString
+     *            the auth string
+     * @param request
+     *            the request
+     *
+     * @return the response
+     */
+    @GET
+    @Path("destination/metadata/fields")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response destinationMetaFields(@HeaderParam("authorization") final String authString,
+            @Context final HttpServletRequest request) {
+        _checkParameter("authorization", authString);
+        _getUserNameAndPassword(authString, request);
+        final var message = RESTMessage.getSuccessMessage();
+        try {
+            message.put("fields", MasterManager.getDB().getDestinationMetaFields());
+        } catch (final Exception e) {
+            return RESTMessage.getErrorMessage(e).getResponse();
+        }
+        return message.getResponse();
+    }
+
+    /**
+     * GET /v1/destination/{name}/metadata Returns all metadata values for a destination along with field definitions.
+     *
+     * @param authString
+     *            the auth string
+     * @param request
+     *            the request
+     * @param name
+     *            the destination name
+     *
+     * @return the response
+     */
+    @GET
+    @Path("destination/{name}/metadata")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response destinationMetadata(@HeaderParam("authorization") final String authString,
+            @Context final HttpServletRequest request, @PathParam("name") final String name) {
+        _checkParameter("authorization", authString);
+        _checkParameter("name", name);
+        _getUserNameAndPassword(authString, request);
+        final var message = RESTMessage.getSuccessMessage();
+        try {
+            message.put("destination", name);
+            message.put("fields", MasterManager.getDB().getDestinationMetaFields());
+            message.put("values", MasterManager.getDB().getDestinationMetaValuesByDestination(name));
+        } catch (final Exception e) {
+            return RESTMessage.getErrorMessage(e).getResponse();
+        }
+        return message.getResponse();
+    }
+
+    /**
+     * PUT /v1/destination/{name}/metadata Replace all metadata values for a destination with the provided JSON body.
+     * Body: { "values": [ { "DMF_ID": 1, "DMV_VALUE": "...", "DMV_POSITION": 0 }, ... ] }
+     *
+     * @param authString
+     *            the auth string
+     * @param request
+     *            the request
+     * @param name
+     *            the destination name
+     * @param body
+     *            the request body
+     *
+     * @return the response
+     */
+    @PUT
+    @Path("destination/{name}/metadata")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response setDestinationMetadata(@HeaderParam("authorization") final String authString,
+            @Context final HttpServletRequest request, @PathParam("name") final String name,
+            final Map<String, Object> body) {
+        _checkParameter("authorization", authString);
+        _checkParameter("name", name);
+        final var userAndPass = _getUserNameAndPassword(authString, request);
+        final var message = RESTMessage.getSuccessMessage();
+        try {
+            @SuppressWarnings("unchecked")
+            final var rawValues = (java.util.List<Map<String, Object>>) body.get("values");
+            if (rawValues == null) {
+                throw new IllegalArgumentException("Missing 'values' in request body");
+            }
+            final var values = new java.util.ArrayList<ecmwf.common.database.DestinationMetaValue>();
+            for (final var m : rawValues) {
+                final var v = new ecmwf.common.database.DestinationMetaValue();
+                v.setFieldId(Integer.parseInt(String.valueOf(m.get("DMF_ID"))));
+                final var val = m.get("DMV_VALUE");
+                v.setValue(val != null ? String.valueOf(val) : null);
+                final var pos = m.get("DMV_POSITION");
+                if (pos != null) {
+                    v.setPosition(Integer.parseInt(String.valueOf(pos)));
+                }
+                v.setBy(userAndPass.split(":")[0]);
+                values.add(v);
+            }
+            MasterManager.getDB().setDestinationMetaValues(name, values);
+            message.put("destination", name);
+            message.put("count", values.size());
+        } catch (final Exception e) {
+            return RESTMessage.getErrorMessage(e).getResponse();
+        }
+        return message.getResponse();
+    }
+
+    /**
      * Destination list.
      *
      * @param authString

@@ -115,11 +115,11 @@ public class GetResourceListJsonAction extends PDSAction {
     private static String buildActions(final Resource r) {
         final var id = escapeHtml(r.getId());
         return "<a href=\"" + ACCESS_CONTROL_BASE_PATH + "/detailer?page=" + id
-                + "\" title=\"Details\"><i class=\"bi bi-file-text text-secondary\" style=\"font-size:1rem\"></i></a>"
-                + "&nbsp;<a href=\"" + RESOURCE_BASE_PATH + "/edit/update_form/" + id
-                + "\" title=\"Edit\"><i class=\"bi bi-pencil-square text-primary\" style=\"font-size:1rem\"></i></a>"
-                + "&nbsp;<a href=\"" + RESOURCE_BASE_PATH + "/edit/delete_form/" + id
-                + "\" title=\"Delete\"><i class=\"bi bi-trash text-danger\" style=\"font-size:1rem\"></i></a>";
+                + "\" class=\"btn btn-sm btn-outline-secondary me-1\" title=\"Details\"><i class=\"bi bi-file-text\"></i></a>"
+                + "<a href=\"" + RESOURCE_BASE_PATH + "/edit/update_form/" + id
+                + "\" class=\"btn btn-sm btn-outline-primary me-1\" title=\"Edit\"><i class=\"bi bi-pencil\"></i></a>"
+                + "<a href=\"" + RESOURCE_BASE_PATH + "/edit/delete_form/" + id
+                + "\" class=\"btn btn-sm btn-outline-danger\" title=\"Delete\"><i class=\"bi bi-trash\"></i></a>";
     }
 
     private static String escapeHtml(final String s) {

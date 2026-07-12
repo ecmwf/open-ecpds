@@ -20,7 +20,7 @@
     <div class="ms-auto d-flex flex-wrap align-items-center gap-2">
         <div class="input-group input-group-sm" style="width:auto">
             <span class="input-group-text"><i class="bi bi-search"></i></span>
-            <input type="text" id="policiesSearch" class="form-control" placeholder="Search policies..." style="min-width:180px">
+            <input type="text" id="policiesSearch" class="form-control" placeholder="Search fields..." style="min-width:180px">
         </div>
         <div class="input-group flex-nowrap" style="width:auto" title="Page size">
             <span class="input-group-text px-2"><i class="bi bi-list-ol"></i></span>
