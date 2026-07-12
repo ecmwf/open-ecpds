@@ -3387,6 +3387,26 @@ public final class ECpdsBase extends DataBase {
     }
 
     /**
+     * Returns the set of DMF_IDs that have at least one value assigned to any destination.
+     *
+     * @return set of used field ids
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public java.util.Set<Integer> getUsedMetaFieldIds() throws DataBaseException {
+        final var ids = new java.util.HashSet<Integer>();
+        try (var rs = executeSelect("ECpdsBase", "getUsedMetaFieldIds")) {
+            while (rs.next()) {
+                ids.add(rs.getInt("DMF_ID"));
+            }
+        } catch (final Exception e) {
+            throw new DataBaseException(e.getMessage(), e);
+        }
+        return ids;
+    }
+
+    /**
      * Gets the meta data by attribute name.
      *
      * @param id

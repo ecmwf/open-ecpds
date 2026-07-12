@@ -13,6 +13,19 @@
 <div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)">
   <i class="bi bi-list-check text-primary"></i>
   <span class="fw-semibold">Metadata Field Definitions</span>
+  <button class="btn btn-link btn-sm text-muted p-0" type="button"
+      data-bs-toggle="collapse" data-bs-target="#mfInfoPanel"
+      aria-expanded="false" title="About this page">
+    <i class="bi bi-info-circle"></i>
+  </button>
+  <button id="mfUnassignedBtn" type="button" class="btn btn-sm btn-outline-secondary"
+          onclick="mfToggleUnassigned()" title="Show only fields not used by any destination">
+    <i class="bi bi-exclamation-triangle-fill me-1"></i>Unassigned only
+  </button>
+  <a href="<c:url value='/do/transfer/destination/metadata/bulkimport'/>" class="btn btn-sm btn-outline-info"
+     title="Import XML metadata files for all destinations at once">
+    <i class="bi bi-cloud-upload me-1"></i>Bulk Import XML
+  </a>
   <div class="ms-auto d-flex flex-wrap align-items-center gap-2">
     <div class="input-group input-group-sm" style="width:auto">
       <span class="input-group-text"><i class="bi bi-search"></i></span>
@@ -45,6 +58,24 @@
   </div>
 </div>
 
+<div class="collapse" id="mfInfoPanel">
+  <div class="card-body py-2 px-3 border-bottom" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
+    <strong class="d-block mb-1">Metadata Field Definitions &mdash; overview</strong>
+    <p class="mb-1">This page manages the <strong>metadata field definitions</strong> used across all destinations. Each field definition describes a piece of metadata that can be filled in per destination on the destination's Metadata tab.</p>
+    <ul class="mb-1 ps-3">
+      <li><strong>Name</strong> &mdash; unique identifier (no spaces); used as the key in JSON exports and XML imports.</li>
+      <li><strong>Label</strong> &mdash; human-readable name shown on the destination metadata form.</li>
+      <li><strong>Type</strong> &mdash; input type: <em>text</em>, <em>textarea</em>, <em>email</em>, <em>url</em>, <em>phone</em>, <em>password</em>, <em>contact</em>, <em>mail-group</em>, <em>switchboard</em>.</li>
+      <li><strong>Category</strong> &mdash; groups fields into sections on the destination metadata form.</li>
+      <li><strong>Destination Types</strong> &mdash; restricts the field to specific destination types (Acquisition / Dissemination / Time Critical). Empty = applies to all types.</li>
+      <li><strong>Max</strong> &mdash; maximum number of values per destination (&minus;1 = unlimited, 1 = single value).</li>
+      <li><strong>Pos</strong> &mdash; display order within the category.</li>
+      <li><strong>Active</strong> &mdash; inactive fields are hidden from destination metadata forms but their values are preserved.</li>
+      <li><strong>Unassigned only</strong> &mdash; shows only field definitions that have no values saved for any destination. Use with <em>Delete All Unassigned</em> to clean up unused definitions.</li>
+    </ul>
+  </div>
+</div>
+
 <c:if test="${not empty loadError}">
   <div class="card-body py-2"><div class="alert alert-danger mb-0"><i class="bi bi-exclamation-triangle-fill me-2"></i>${loadError}</div></div>
 </c:if>
@@ -69,7 +100,8 @@
     <c:forEach var="f" items="${metaFields}">
     <tr class="${f.active ? '' : 'mf-inactive'}" id="mfRow${f.id}"
         data-mf-name="${f.name}" data-mf-label="${f.label}" data-mf-cat="${f.category}"
-        data-mf-type="${f.type}" data-mf-pos="${f.position}" data-mf-active="${f.active ? 1 : 0}">
+        data-mf-type="${f.type}" data-mf-pos="${f.position}" data-mf-active="${f.active ? 1 : 0}"
+        data-mf-used="${usedFieldIds.contains(f.id) ? '1' : '0'}">
       <td class="td-name">${f.name}</td>
       <td class="mf-col-label">${f.label}</td>
       <td class="td-type mf-col-type"><span class="badge bg-secondary-subtle text-secondary-emphasis border">${f.type}</span></td>
@@ -106,6 +138,15 @@
 <%-- DataTables pagination row --%>
 <div id="mfDtInfo" class="d-flex align-items-start mt-2 px-3 pb-2 small text-muted"></div>
 </div>
+</div>
+
+<div class="mt-3" id="mfDeleteAllUnassignedWrapper" style="display:none">
+  <div id="mfDeleteAllBulkMsg"></div>
+  <button id="mfDeleteAllUnassignedBtn" type="button"
+          class="btn btn-outline-danger"
+          title="Delete all field definitions not used by any destination">
+    <i class="bi bi-trash-fill me-1"></i>Delete All Unassigned (0)
+  </button>
 </div>
 
 <div class="modal fade" id="mfModal" tabindex="-1" aria-labelledby="mfModalLabel">
@@ -464,6 +505,7 @@ var _mfPageLen = 25;
 var _mfColMode = 'auto';
 var _mfSortCol = 'name';
 var _mfSortAsc = true;
+var _mfUnassignedOnly = false;
 var _MF_LEN_KEY  = 'mfPageLen';
 var _MF_COL_KEY  = 'mfColMode';
 var _MF_SORT_KEY = 'mfSortCol';
@@ -551,9 +593,34 @@ function _mfUpdateSortIcons() {
   if (active) active.classList.add(_mfSortAsc ? 'dt-ordering-asc' : 'dt-ordering-desc');
 }
 
+function mfToggleUnassigned() {
+  _mfUnassignedOnly = !_mfUnassignedOnly;
+  var btn = document.getElementById('mfUnassignedBtn');
+  btn.classList.toggle('btn-outline-secondary', !_mfUnassignedOnly);
+  btn.classList.toggle('btn-warning', _mfUnassignedOnly);
+  _mfPage = 0;
+  _mfRender();
+}
+
+function _mfUpdateDeleteAllBtn(unassignedCount) {
+  var wrapper = document.getElementById('mfDeleteAllUnassignedWrapper');
+  var btn = document.getElementById('mfDeleteAllUnassignedBtn');
+  if (_mfUnassignedOnly && unassignedCount > 0) {
+    wrapper.style.display = '';
+    btn.innerHTML = '<i class="bi bi-trash-fill me-1"></i>Delete All Unassigned (' + unassignedCount + ')';
+  } else {
+    wrapper.style.display = 'none';
+  }
+}
+
 function _mfRender() {
   var q = (document.getElementById('mfSearch').value || '').toLowerCase();
+  // Count total unassigned for Delete All button
+  var totalUnassigned = _mfAllRows.filter(function(tr){ return tr.dataset.mfUsed === '0'; }).length;
+  _mfUpdateDeleteAllBtn(totalUnassigned);
+
   var visible = _mfAllRows.filter(function(tr){
+    if (_mfUnassignedOnly && tr.dataset.mfUsed !== '0') return false;
     if (!q) return true;
     return (tr.dataset.mfName||'').toLowerCase().indexOf(q) >= 0
         || (tr.dataset.mfLabel||'').toLowerCase().indexOf(q) >= 0
@@ -612,5 +679,38 @@ function _mfRender() {
 
 function mfGoPage(p) { _mfPage = p; _mfRender(); }
 
-document.addEventListener('DOMContentLoaded', _mfInit);
+document.addEventListener('DOMContentLoaded', function() {
+  _mfInit();
+  document.getElementById('mfDeleteAllUnassignedBtn').addEventListener('click', function() {
+    var n = _mfAllRows.filter(function(tr){ return tr.dataset.mfUsed === '0'; }).length;
+    confirmationDialog({
+      title: 'Delete All Unassigned Fields',
+      message: 'Delete all <strong>' + n + '</strong> field definition' + (n !== 1 ? 's' : '')
+             + ' that are not used by any destination?<br><br>'
+             + '<span class="text-danger">This will permanently remove the field definitions and all associated type restrictions. This action cannot be undone.</span>',
+      confirmText: 'Delete All',
+      showLoading: true,
+      onConfirm: function() {
+        fetch('/do/admin/metafields/deleteUnassigned', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
+          body: '{}'
+        }).then(function(r){ return r.json(); })
+          .then(function(data) {
+            if (data.success) {
+              // Remove deleted rows from DOM and re-render
+              _mfAllRows = _mfAllRows.filter(function(tr){
+                if (tr.dataset.mfUsed === '0') { tr.remove(); return false; }
+                return true;
+              });
+              _mfPage = 0;
+              _mfRender();
+            } else {
+              alert('Error: ' + (data.error || 'unknown'));
+            }
+          }).catch(function(){ alert('Network error'); });
+      }
+    });
+  });
+});
 </script>

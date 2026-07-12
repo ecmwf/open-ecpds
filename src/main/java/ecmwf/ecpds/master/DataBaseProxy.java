@@ -992,6 +992,19 @@ final class DataBaseProxy implements DataBaseInterface {
      * {@inheritDoc}
      */
     @Override
+    public Collection<DestinationMetaField> getDestinationMetaFields(final String user)
+            throws DataBaseException, RemoteException {
+        if (user == null || dataBaseInterface == null) {
+            throw new DataBaseException("Invalid parameter(s) for getDestinationMetaFields");
+        }
+        final var monitor = new MonitorCall("getDestinationMetaFields(" + user.split(":")[0] + ")");
+        return monitor.done(dataBaseInterface.getDestinationMetaFields(user));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public Collection<DestinationMetaField> getAllDestinationMetaFields() throws DataBaseException, RemoteException {
         if (dataBaseInterface == null) {
             throw new DataBaseException("Invalid parameter(s) for getAllDestinationMetaFields");
@@ -1024,6 +1037,15 @@ final class DataBaseProxy implements DataBaseInterface {
         final var monitor = new MonitorCall("deleteDestinationMetaField()");
         dataBaseInterface.deleteDestinationMetaField(field);
         monitor.done();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public java.util.Set<Integer> getUsedMetaFieldIds() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getUsedMetaFieldIds()");
+        return monitor.done(dataBaseInterface.getUsedMetaFieldIds());
     }
 
     /**
@@ -1064,6 +1086,20 @@ final class DataBaseProxy implements DataBaseInterface {
      * {@inheritDoc}
      */
     @Override
+    public Collection<DestinationMetaValue> getDestinationMetaValuesByDestination(final String user,
+            final String destinationName) throws DataBaseException, RemoteException {
+        if (user == null || destinationName == null || dataBaseInterface == null) {
+            throw new DataBaseException("Invalid parameter(s) for getDestinationMetaValuesByDestination");
+        }
+        final var monitor = new MonitorCall(
+                "getDestinationMetaValuesByDestination(" + user.split(":")[0] + "," + destinationName + ")");
+        return monitor.done(dataBaseInterface.getDestinationMetaValuesByDestination(user, destinationName));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public void saveDestinationMetaValue(final DestinationMetaValue value) throws DataBaseException, RemoteException {
         if (value == null) {
             throw new DataBaseException("Invalid parameter(s) for saveDestinationMetaValue");
@@ -1094,6 +1130,21 @@ final class DataBaseProxy implements DataBaseInterface {
         }
         final var monitor = new MonitorCall("setDestinationMetaValues(" + destinationName + ")");
         dataBaseInterface.setDestinationMetaValues(destinationName, values);
+        monitor.done();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setDestinationMetaValues(final String user, final String destinationName,
+            final Collection<DestinationMetaValue> values) throws DataBaseException, RemoteException {
+        if (user == null || destinationName == null || dataBaseInterface == null) {
+            throw new DataBaseException("Invalid parameter(s) for setDestinationMetaValues");
+        }
+        final var monitor = new MonitorCall(
+                "setDestinationMetaValues(" + user.split(":")[0] + "," + destinationName + ")");
+        dataBaseInterface.setDestinationMetaValues(user, destinationName, values);
         monitor.done();
     }
 

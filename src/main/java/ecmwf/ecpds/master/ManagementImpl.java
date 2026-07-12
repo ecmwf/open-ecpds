@@ -82,7 +82,6 @@ import ecmwf.common.database.TransferMethod;
 import ecmwf.common.database.TransferServer;
 import ecmwf.common.database.Url;
 import ecmwf.common.database.WebUser;
-import ecmwf.common.database.DestinationMetaValue;
 import ecmwf.common.monitor.MonitorException;
 import ecmwf.common.monitor.MonitorManager;
 import ecmwf.common.plugin.PluginEvent;

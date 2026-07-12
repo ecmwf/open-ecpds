@@ -683,6 +683,11 @@
 			name="destinationDetailActionForm" scope="session">
 			<forward name="success" path=".pds.transfer.destination.metadata.import" />
 		</action>
+		<action path="/transfer/destination/metadata/bulkimport"
+			type="ecmwf.ecpds.master.plugin.http.controller.transfer.destination.BulkImportDestinationMetaDataAction"
+			name="destinationDetailActionForm" scope="session">
+			<forward name="success" path=".pds.transfer.destination.metadata.bulkimport" />
+		</action>
 		<action path="/transfer/destination/edit/delete_form/*"
 			parameter="{1}"
 			type="ecmwf.ecpds.master.plugin.http.controller.transfer.destination.DeleteFormAction"

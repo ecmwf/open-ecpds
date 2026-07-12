@@ -398,15 +398,19 @@ public final class ECpdsRESTV1 {
     @Produces(MediaType.APPLICATION_JSON)
     public Response destinationMetaFields(@HeaderParam("authorization") final String authString,
             @Context final HttpServletRequest request) {
-        _checkParameter("authorization", authString);
-        _getUserNameAndPassword(authString, request);
-        final var message = RESTMessage.getSuccessMessage();
+        _log.debug("destinationMetaFields");
         try {
-            message.put("fields", MasterManager.getDB().getDestinationMetaFields());
-        } catch (final Exception e) {
-            return RESTMessage.getErrorMessage(e).getResponse();
+            final var userNameAndPassword = _getUserNameAndPassword(authString, request);
+            final var message = RESTMessage.getSuccessMessage();
+            message.put("fields", MasterManager.getDB().getDestinationMetaFields(userNameAndPassword));
+            return message.getResponse();
+        } catch (final WebApplicationException w) {
+            _log.warn("destinationMetaFields", w);
+            throw w;
+        } catch (final Throwable t) {
+            _log.warn("destinationMetaFields", t);
+            return RESTMessage.getErrorMessage(t).getResponse();
         }
-        return message.getResponse();
     }
 
     /**
@@ -426,18 +430,23 @@ public final class ECpdsRESTV1 {
     @Produces(MediaType.APPLICATION_JSON)
     public Response destinationMetadata(@HeaderParam("authorization") final String authString,
             @Context final HttpServletRequest request, @PathParam("name") final String name) {
-        _checkParameter("authorization", authString);
-        _checkParameter("name", name);
-        _getUserNameAndPassword(authString, request);
-        final var message = RESTMessage.getSuccessMessage();
+        _log.debug("destinationMetadata");
         try {
+            final var userNameAndPassword = _getUserNameAndPassword(authString, request);
+            _checkParameter("name", name);
+            final var message = RESTMessage.getSuccessMessage();
             message.put("destination", name);
-            message.put("fields", MasterManager.getDB().getDestinationMetaFields());
-            message.put("values", MasterManager.getDB().getDestinationMetaValuesByDestination(name));
-        } catch (final Exception e) {
-            return RESTMessage.getErrorMessage(e).getResponse();
+            message.put("fields", MasterManager.getDB().getDestinationMetaFields(userNameAndPassword));
+            message.put("values",
+                    MasterManager.getDB().getDestinationMetaValuesByDestination(userNameAndPassword, name));
+            return message.getResponse();
+        } catch (final WebApplicationException w) {
+            _log.warn("destinationMetadata", w);
+            throw w;
+        } catch (final Throwable t) {
+            _log.warn("destinationMetadata", t);
+            return RESTMessage.getErrorMessage(t).getResponse();
         }
-        return message.getResponse();
     }
 
     /**
@@ -462,11 +471,10 @@ public final class ECpdsRESTV1 {
     public Response setDestinationMetadata(@HeaderParam("authorization") final String authString,
             @Context final HttpServletRequest request, @PathParam("name") final String name,
             final Map<String, Object> body) {
-        _checkParameter("authorization", authString);
-        _checkParameter("name", name);
-        final var userAndPass = _getUserNameAndPassword(authString, request);
-        final var message = RESTMessage.getSuccessMessage();
+        _log.debug("setDestinationMetadata");
         try {
+            final var userNameAndPassword = _getUserNameAndPassword(authString, request);
+            _checkParameter("name", name);
             @SuppressWarnings("unchecked")
             final var rawValues = (java.util.List<Map<String, Object>>) body.get("values");
             if (rawValues == null) {
@@ -482,16 +490,21 @@ public final class ECpdsRESTV1 {
                 if (pos != null) {
                     v.setPosition(Integer.parseInt(String.valueOf(pos)));
                 }
-                v.setBy(userAndPass.split(":")[0]);
+                v.setBy(userNameAndPassword.split(":")[0]);
                 values.add(v);
             }
-            MasterManager.getDB().setDestinationMetaValues(name, values);
+            MasterManager.getDB().setDestinationMetaValues(userNameAndPassword, name, values);
+            final var message = RESTMessage.getSuccessMessage();
             message.put("destination", name);
             message.put("count", values.size());
-        } catch (final Exception e) {
-            return RESTMessage.getErrorMessage(e).getResponse();
+            return message.getResponse();
+        } catch (final WebApplicationException w) {
+            _log.warn("setDestinationMetadata", w);
+            throw w;
+        } catch (final Throwable t) {
+            _log.warn("setDestinationMetadata", t);
+            return RESTMessage.getErrorMessage(t).getResponse();
         }
-        return message.getResponse();
     }
 
     /**

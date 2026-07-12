@@ -1085,6 +1085,21 @@ public interface DataBaseInterface extends Remote {
     Collection<DestinationMetaField> getDestinationMetaFields() throws DataBaseException, RemoteException;
 
     /**
+     * Gets active destination metadata field definitions, after checking that the given user is authorised.
+     *
+     * @param user
+     *            the user (username:password in plain text)
+     *
+     * @return the destination meta fields
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    Collection<DestinationMetaField> getDestinationMetaFields(String user) throws DataBaseException, RemoteException;
+
+    /**
      * Gets ALL destination metadata field definitions including inactive fields.
      *
      * @return all fields (active and inactive)
@@ -1121,6 +1136,18 @@ public interface DataBaseInterface extends Remote {
      *             the remote exception
      */
     void deleteDestinationMetaField(DestinationMetaField field) throws DataBaseException, RemoteException;
+
+    /**
+     * Returns the set of DMF_IDs that have at least one value assigned to any destination.
+     *
+     * @return set of used field ids
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    java.util.Set<Integer> getUsedMetaFieldIds() throws DataBaseException, RemoteException;
 
     /**
      * Gets the map of fieldId → allowed DES_TYPE set (empty set = all types).
@@ -1167,6 +1194,24 @@ public interface DataBaseInterface extends Remote {
             throws DataBaseException, RemoteException;
 
     /**
+     * Gets all metadata values for a destination, after checking that the given user is authorised.
+     *
+     * @param user
+     *            the user (username:password in plain text)
+     * @param destinationName
+     *            the destination name
+     *
+     * @return the destination meta values by destination
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    Collection<DestinationMetaValue> getDestinationMetaValuesByDestination(String user, String destinationName)
+            throws DataBaseException, RemoteException;
+
+    /**
      * Saves (insert or update) a destination metadata value.
      *
      * @param value
@@ -1206,6 +1251,24 @@ public interface DataBaseInterface extends Remote {
      *             the remote exception
      */
     void setDestinationMetaValues(String destinationName, Collection<DestinationMetaValue> values)
+            throws DataBaseException, RemoteException;
+
+    /**
+     * Replaces all metadata values for a destination, after checking that the given user is authorised.
+     *
+     * @param user
+     *            the user (username:password in plain text)
+     * @param destinationName
+     *            the destination name
+     * @param values
+     *            the new set of values (replaces all existing values)
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    void setDestinationMetaValues(String user, String destinationName, Collection<DestinationMetaValue> values)
             throws DataBaseException, RemoteException;
 
     /**

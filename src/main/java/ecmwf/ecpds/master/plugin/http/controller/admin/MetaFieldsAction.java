@@ -66,16 +66,22 @@ public class MetaFieldsAction extends PDSAction {
         if ("delete".equals(action)) {
             return handleDelete(request, response);
         }
+        if ("deleteUnassigned".equals(action)) {
+            return handleDeleteUnassigned(request, response);
+        }
 
         // Default: list page
         try {
             final var db = MasterManager.getDB();
             final var fields = new ArrayList<>(db.getAllDestinationMetaFields());
             final var typeMap = db.getDestinationMetaFieldTypeMap();
+            final var usedIds = db.getUsedMetaFieldIds();
             final var destTypes = ecmwf.ecpds.master.transfer.DestinationOption.getList();
             request.setAttribute("metaFields", fields);
+            request.setAttribute("usedFieldIds", usedIds);
             // Serialize to JSON for safe JS embedding
             request.setAttribute("fieldTypeMapJson", _mapper.writeValueAsString(typeMap));
+            request.setAttribute("usedFieldIdsJson", _mapper.writeValueAsString(usedIds));
             final var typesForJs = new java.util.ArrayList<java.util.Map<String, Object>>();
             for (final var t : destTypes) {
                 final var m = new java.util.LinkedHashMap<String, Object>();
@@ -88,6 +94,7 @@ public class MetaFieldsAction extends PDSAction {
             _log.warn("MetaFieldsAction: failed to load fields", e);
             request.setAttribute("metaFields", java.util.Collections.emptyList());
             request.setAttribute("fieldTypeMapJson", "{}");
+            request.setAttribute("usedFieldIdsJson", "[]");
             request.setAttribute("destTypesJson", "[]");
             request.setAttribute("loadError", e.getMessage());
         }
@@ -242,6 +249,33 @@ public class MetaFieldsAction extends PDSAction {
             response.getWriter().write("{\"success\":true}");
         } catch (final Exception e) {
             _log.warn("MetaFieldsAction.handleDelete", e);
+            writeError(response, e.getMessage());
+        }
+        return null;
+    }
+
+    private ActionForward handleDeleteUnassigned(final HttpServletRequest request, final HttpServletResponse response) {
+        response.setContentType("application/json;charset=UTF-8");
+        try {
+            final var db = MasterManager.getDB();
+            final var usedIds = db.getUsedMetaFieldIds();
+            final var fields = db.getAllDestinationMetaFields();
+            int deleted = 0;
+            int errors = 0;
+            for (final var f : fields) {
+                if (!usedIds.contains(f.getId())) {
+                    try {
+                        db.deleteDestinationMetaField(f);
+                        deleted++;
+                    } catch (final Exception e) {
+                        _log.warn("handleDeleteUnassigned: failed to delete field {}", f.getId(), e);
+                        errors++;
+                    }
+                }
+            }
+            response.getWriter().write("{\"success\":true,\"deleted\":" + deleted + ",\"errors\":" + errors + "}");
+        } catch (final Exception e) {
+            _log.warn("MetaFieldsAction.handleDeleteUnassigned", e);
             writeError(response, e.getMessage());
         }
         return null;

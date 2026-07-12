@@ -6,94 +6,112 @@
 <jsp:include page="/WEB-INF/jsp/pds/transfer/destination/destination_header.jsp"/>
 
 <style>
-.dmf-section { margin-bottom: 1.5rem; }
-.dmf-section-title { font-size: 0.85rem; font-weight: 600; text-transform: uppercase;
-    letter-spacing: 0.05em; color: var(--bs-secondary-color); margin-bottom: 0.5rem;
-    padding-bottom: 0.25rem; border-bottom: 1px solid var(--bs-border-color); }
 .dmf-row { display: flex; gap: 0.5rem; align-items: flex-start; margin-bottom: 0.4rem; }
-.dmf-row .dmf-input { flex: 1; }
+.dmf-row .dmf-input { flex: 1; min-width: 0; }
 .dmf-row .dmf-remove { flex: 0 0 auto; }
 .dmf-add { font-size: 0.8rem; }
 .dmf-save-status { font-size: 0.8rem; }
+.dmf-field-item { display: flex; flex-direction: column; gap: 0.25rem; }
+.dmf-field-label { font-size: 0.82rem; font-weight: 600; color: var(--bs-body-color); }
+.dmf-readonly-value { font-size: 0.9rem; padding: 0.15rem 0; color: var(--bs-body-color); word-break: break-word; }
+.dmf-readonly-empty { font-size: 0.85rem; color: var(--bs-secondary-color); font-style: italic; }
 </style>
 
-<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
-  <h6 class="mb-0 fw-semibold"><i class="bi bi-tags me-2"></i>Destination Metadata</h6>
-  <div class="d-flex gap-2 align-items-center">
-    <span id="dmfSaveStatus" class="dmf-save-status text-muted"></span>
-    <auth:if basePathKey="admin.basepath" paths="/metafields">
-    <auth:then>
-    <button type="button" class="btn btn-sm btn-primary" id="dmfSaveBtn" onclick="dmfSave()">
-      <i class="bi bi-floppy me-1"></i>Save
-    </button>
-    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="dmfDownloadJson()" title="Download metadata as JSON">
-      <i class="bi bi-download me-1"></i>JSON
-    </button>
-    <a href="<c:url value='/do/transfer/destination/metadata/import/${destination.name}'/>"
-       class="btn btn-sm btn-outline-secondary">
-      <i class="bi bi-upload me-1"></i>Import XML
-    </a>
-    </auth:then>
-    <auth:else>
-    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="dmfDownloadJson()" title="Download metadata as JSON">
-      <i class="bi bi-download me-1"></i>JSON
-    </button>
-    </auth:else>
-    </auth:if>
-  </div>
-</div>
-
-<div id="dmfForm">
-  <c:if test="${empty metaFields}">
-    <div class="alert alert-info d-flex align-items-center gap-2">
-      <i class="bi bi-info-circle-fill"></i>
-      <span>No metadata fields are configured for this destination type.
-        <auth:if basePathKey="admin.basepath" paths="/metafields">
-        <auth:then>
-          <a href="<bean:message key='admin.basepath'/>/metafields" class="alert-link">Configure fields in the Metadata Fields admin page.</a>
-        </auth:then>
-        <auth:else>
-          Contact your administrator.
-        </auth:else>
-        </auth:if>
-      </span>
+<div class="card border-0 shadow-sm mt-3">
+  <div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+    <i class="bi bi-tags text-primary"></i>
+    <span class="fw-semibold">Destination Metadata</span>
+    <div class="ms-auto d-flex flex-wrap gap-2 align-items-center">
+      <span id="dmfSaveStatus" class="dmf-save-status text-muted"></span>
+      <auth:if basePathKey="admin.basepath" paths="/metafields">
+      <auth:then>
+      <button type="button" class="btn btn-sm btn-primary" id="dmfSaveBtn" onclick="dmfSave()">
+        <i class="bi bi-floppy me-1"></i>Save
+      </button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="dmfDownloadJson()" title="Download metadata as JSON">
+        <i class="bi bi-download me-1"></i>JSON
+      </button>
+      <a href="<c:url value='/do/transfer/destination/metadata/import/${destination.name}'/>"
+         class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-upload me-1"></i>Import XML
+      </a>
+      </auth:then>
+      <auth:else>
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="dmfDownloadJson()" title="Download metadata as JSON">
+        <i class="bi bi-download me-1"></i>JSON
+      </button>
+      </auth:else>
+      </auth:if>
     </div>
-  </c:if>
+  </div>
 
-  <c:if test="${not empty metaFields}">
-    <c:set var="lastCategory" value=""/>
-    <c:forEach var="field" items="${metaFields}">
-      <c:if test="${field.category != lastCategory}">
-        <c:if test="${lastCategory != ''}"></div></c:if>
-        <div class="dmf-section">
-        <div class="dmf-section-title">${field.category}</div>
-        <c:set var="lastCategory" value="${field.category}"/>
-      </c:if>
-
-      <div class="mb-2" id="dmf-group-${field.id}" data-type="${field.type}" data-max-occurs="${field.maxOccurs}">
-        <label class="form-label mb-1 small fw-medium">
-          ${field.label}
-          <c:if test="${not empty field.tooltip}">
-            <i class="bi bi-question-circle text-muted ms-1" title="${field.tooltip}"></i>
-          </c:if>
-        </label>
-        <div id="dmf-values-${field.id}">
-          <%-- Values rendered via JS from dmfData --%>
-        </div>
-        <auth:if basePathKey="admin.basepath" paths="/metafields">
-        <auth:then>
-        <c:if test="${field.maxOccurs == -1 || field.maxOccurs > 1}">
-          <button type="button" class="btn btn-link btn-sm p-0 dmf-add mt-1"
-                  onclick="dmfAddValue(${field.id}, '${field.type}')">
-            <i class="bi bi-plus-circle me-1"></i>Add ${field.label}
-          </button>
-        </c:if>
-        </auth:then>
-        </auth:if>
+  <div class="card-body p-3" id="dmfForm">
+    <c:if test="${empty metaFields}">
+      <div class="alert alert-info d-flex align-items-center gap-2 mb-0">
+        <i class="bi bi-info-circle-fill"></i>
+        <span>No metadata fields are configured for this destination type.
+          <auth:if basePathKey="admin.basepath" paths="/metafields">
+          <auth:then>
+            <a href="<bean:message key='admin.basepath'/>/metafields" class="alert-link">Configure fields in the Metadata Fields admin page.</a>
+          </auth:then>
+          <auth:else>
+            Contact your administrator.
+          </auth:else>
+          </auth:if>
+        </span>
       </div>
-    </c:forEach>
-    <c:if test="${lastCategory != ''}"></div></c:if>
-  </c:if>
+    </c:if>
+
+    <c:if test="${not empty metaFields}">
+      <div class="d-flex flex-column gap-3">
+      <c:set var="lastCategory" value=""/>
+      <c:forEach var="field" items="${metaFields}">
+        <c:if test="${field.category != lastCategory}">
+          <c:if test="${lastCategory != ''}">
+            <%-- close previous card's inner row, card-body, card --%>
+            </div></div></div>
+          </c:if>
+          <div class="card border shadow-sm">
+            <div class="card-header py-2 d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+              <i class="bi bi-folder2-open text-secondary"></i>
+              <span class="fw-semibold small text-uppercase" style="letter-spacing:0.05em">${field.category}</span>
+            </div>
+            <div class="card-body p-3">
+            <div class="row g-3">
+          <c:set var="lastCategory" value="${field.category}"/>
+        </c:if>
+
+        <div class="dmf-field-item col-12<c:choose><c:when test="${field.type == 'contact' or field.type == 'mail-group' or field.type == 'switchboard' or field.type == 'textarea'}"> col-md-6</c:when><c:otherwise> col-sm-6 col-lg-4</c:otherwise></c:choose>"
+             id="dmf-group-${field.id}" data-type="${field.type}" data-max-occurs="${field.maxOccurs}">
+          <div class="dmf-field-label">
+            ${field.label}
+            <c:if test="${not empty field.tooltip}">
+              <i class="bi bi-question-circle text-muted ms-1" title="${field.tooltip}" style="font-weight:normal;font-size:0.8rem"></i>
+            </c:if>
+          </div>
+          <div id="dmf-values-${field.id}">
+            <%-- Values rendered via JS from dmfData --%>
+          </div>
+          <auth:if basePathKey="admin.basepath" paths="/metafields">
+          <auth:then>
+          <c:if test="${field.maxOccurs == -1 || field.maxOccurs > 1}">
+            <button type="button" class="btn btn-link btn-sm p-0 dmf-add mt-1"
+                    onclick="dmfAddValue(${field.id}, '${field.type}')">
+              <i class="bi bi-plus-circle me-1"></i>Add ${field.label}
+            </button>
+          </c:if>
+          </auth:then>
+          </auth:if>
+        </div>
+
+      </c:forEach>
+      <c:if test="${lastCategory != ''}">
+        <%-- close last card's inner row, card-body, card --%>
+        </div></div></div>
+      </c:if>
+      </div><%-- end d-flex flex-column gap-3 --%>
+    </c:if>
+  </div>
 </div>
 
 <script>
@@ -121,15 +139,41 @@ function dmfEscape(s) {
 function dmfRenderInput(fieldId, fieldType, value, idx) {
   if (!dmfCanEdit) {
     // Read-only display
-    if (fieldType === 'contact' || fieldType === 'mail-group' || fieldType === 'switchboard') {
+    if (fieldType === 'contact' || fieldType === 'switchboard') {
       var obj = {};
       try { obj = JSON.parse(value || '{}'); } catch(e) {}
-      var parts = Object.values(obj).filter(function(v){ return v && v.trim(); });
-      return '<span class="form-control-plaintext form-control-sm dmf-input py-0">'
-           + dmfEscape(parts.join(' · ') || '—') + '</span>';
+      var lines = [];
+      if (obj.name)  lines.push('<span class="fw-medium">' + dmfEscape(obj.name) + '</span>');
+      if (obj.email) lines.push('<a href="mailto:' + dmfEscape(obj.email) + '" class="text-decoration-none">' + dmfEscape(obj.email) + '</a>');
+      if (obj.phone) lines.push('<i class="bi bi-telephone me-1 text-muted"></i>' + dmfEscape(obj.phone));
+      if (obj.fax)   lines.push('<i class="bi bi-printer me-1 text-muted"></i>' + dmfEscape(obj.fax));
+      return lines.length ? '<div class="dmf-readonly-value">' + lines.join('<br>') + '</div>'
+                          : '<span class="dmf-readonly-empty">—</span>';
     }
-    return '<span class="form-control-plaintext form-control-sm dmf-input py-0">'
-         + (value ? dmfEscape(value) : '<span class="text-muted fst-italic">—</span>') + '</span>';
+    if (fieldType === 'mail-group') {
+      var obj = {};
+      try { obj = JSON.parse(value || '{}'); } catch(e) {}
+      var lines = [];
+      if (obj.name)  lines.push('<span class="fw-medium">' + dmfEscape(obj.name) + '</span>');
+      if (obj.email) lines.push('<a href="mailto:' + dmfEscape(obj.email) + '" class="text-decoration-none">' + dmfEscape(obj.email) + '</a>');
+      return lines.length ? '<div class="dmf-readonly-value">' + lines.join('<br>') + '</div>'
+                          : '<span class="dmf-readonly-empty">—</span>';
+    }
+    if (fieldType === 'email' && value) {
+      return '<div class="dmf-readonly-value"><a href="mailto:' + dmfEscape(value) + '" class="text-decoration-none">' + dmfEscape(value) + '</a></div>';
+    }
+    if (fieldType === 'url' && value) {
+      return '<div class="dmf-readonly-value"><a href="' + dmfEscape(value) + '" target="_blank" rel="noopener" class="text-decoration-none">' + dmfEscape(value) + ' <i class="bi bi-box-arrow-up-right" style="font-size:0.7rem"></i></a></div>';
+    }
+    if (fieldType === 'password') {
+      return value ? '<div class="dmf-readonly-value text-muted fst-italic">••••••••</div>'
+                   : '<span class="dmf-readonly-empty">—</span>';
+    }
+    if (fieldType === 'textarea' && value) {
+      return '<pre class="dmf-readonly-value mb-0" style="white-space:pre-wrap;font-size:0.85rem">' + dmfEscape(value) + '</pre>';
+    }
+    return value ? '<div class="dmf-readonly-value">' + dmfEscape(value) + '</div>'
+                 : '<span class="dmf-readonly-empty">—</span>';
   }
   var name = 'dmf_' + fieldId + '_' + idx;
   if (fieldType === 'textarea') {
@@ -140,10 +184,10 @@ function dmfRenderInput(fieldId, fieldType, value, idx) {
     try { obj = JSON.parse(value || '{}'); } catch(e) {}
     return '<div class="border rounded p-2 bg-body-secondary dmf-input">' +
       '<div class="row g-1">' +
-      '<div class="col-6"><input type="text" class="form-control form-control-sm" placeholder="Name" data-key="name" value="' + dmfEscape(obj.name||'') + '"></div>' +
-      '<div class="col-6"><input type="email" class="form-control form-control-sm" placeholder="Email" data-key="email" value="' + dmfEscape(obj.email||'') + '"></div>' +
-      '<div class="col-6"><input type="tel" class="form-control form-control-sm" placeholder="Phone" data-key="phone" value="' + dmfEscape(obj.phone||'') + '"></div>' +
-      '<div class="col-6"><input type="tel" class="form-control form-control-sm" placeholder="Fax" data-key="fax" value="' + dmfEscape(obj.fax||'') + '"></div>' +
+      '<div class="col-12 col-sm-6"><input type="text" class="form-control form-control-sm" placeholder="Name" data-key="name" value="' + dmfEscape(obj.name||'') + '"></div>' +
+      '<div class="col-12 col-sm-6"><input type="email" class="form-control form-control-sm" placeholder="Email" data-key="email" value="' + dmfEscape(obj.email||'') + '"></div>' +
+      '<div class="col-12 col-sm-6"><input type="tel" class="form-control form-control-sm" placeholder="Phone" data-key="phone" value="' + dmfEscape(obj.phone||'') + '"></div>' +
+      '<div class="col-12 col-sm-6"><input type="tel" class="form-control form-control-sm" placeholder="Fax" data-key="fax" value="' + dmfEscape(obj.fax||'') + '"></div>' +
       '</div></div>';
   } else if (fieldType === 'mail-group') {
     // JSON: {name, email}
@@ -151,8 +195,8 @@ function dmfRenderInput(fieldId, fieldType, value, idx) {
     try { obj = JSON.parse(value || '{}'); } catch(e) {}
     return '<div class="border rounded p-2 bg-body-secondary dmf-input">' +
       '<div class="row g-1">' +
-      '<div class="col-6"><input type="text" class="form-control form-control-sm" placeholder="Group Name" data-key="name" value="' + dmfEscape(obj.name||'') + '"></div>' +
-      '<div class="col-6"><input type="email" class="form-control form-control-sm" placeholder="Email" data-key="email" value="' + dmfEscape(obj.email||'') + '"></div>' +
+      '<div class="col-12 col-sm-6"><input type="text" class="form-control form-control-sm" placeholder="Group Name" data-key="name" value="' + dmfEscape(obj.name||'') + '"></div>' +
+      '<div class="col-12 col-sm-6"><input type="email" class="form-control form-control-sm" placeholder="Email" data-key="email" value="' + dmfEscape(obj.email||'') + '"></div>' +
       '</div></div>';
   } else if (fieldType === 'switchboard') {
     // JSON: {name, phone}
@@ -160,8 +204,8 @@ function dmfRenderInput(fieldId, fieldType, value, idx) {
     try { obj = JSON.parse(value || '{}'); } catch(e) {}
     return '<div class="border rounded p-2 bg-body-secondary dmf-input">' +
       '<div class="row g-1">' +
-      '<div class="col-6"><input type="text" class="form-control form-control-sm" placeholder="Name" data-key="name" value="' + dmfEscape(obj.name||'') + '"></div>' +
-      '<div class="col-6"><input type="tel" class="form-control form-control-sm" placeholder="Phone" data-key="phone" value="' + dmfEscape(obj.phone||'') + '"></div>' +
+      '<div class="col-12 col-sm-6"><input type="text" class="form-control form-control-sm" placeholder="Name" data-key="name" value="' + dmfEscape(obj.name||'') + '"></div>' +
+      '<div class="col-12 col-sm-6"><input type="tel" class="form-control form-control-sm" placeholder="Phone" data-key="phone" value="' + dmfEscape(obj.phone||'') + '"></div>' +
       '</div></div>';
   } else if (fieldType === 'url') {
     return '<input type="url" class="form-control form-control-sm dmf-input" name="' + name + '" value="' + dmfEscape(value) + '">';

@@ -36,7 +36,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ecmwf.common.database.DestinationMetaValue;
 import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
-import ecmwf.web.controller.ECMWFActionForm;
 import ecmwf.web.controller.ECMWFActionFormException;
 import ecmwf.web.model.users.User;
 

@@ -1534,6 +1534,15 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
      * {@inheritDoc}
      */
     @Override
+    public Collection<DestinationMetaField> getDestinationMetaFields(final String user) throws DataBaseException {
+        checkUser(user, "getDestinationMetaFields");
+        return getDestinationMetaFields();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public Collection<DestinationMetaField> getAllDestinationMetaFields() throws DataBaseException {
         final var monitor = new MonitorCall("getAllDestinationMetaFields()");
         return monitor.done(ecpds.getAllDestinationMetaFields());
@@ -1557,6 +1566,15 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
         final var monitor = new MonitorCall("deleteDestinationMetaField()");
         ecpds.deleteDestinationMetaField(field);
         monitor.done();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public java.util.Set<Integer> getUsedMetaFieldIds() throws DataBaseException {
+        final var monitor = new MonitorCall("getUsedMetaFieldIds()");
+        return monitor.done(ecpds.getUsedMetaFieldIds());
     }
 
     /**
@@ -1593,6 +1611,16 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
      * {@inheritDoc}
      */
     @Override
+    public Collection<DestinationMetaValue> getDestinationMetaValuesByDestination(final String user,
+            final String destinationName) throws DataBaseException {
+        checkUser(user, "getDestinationMetaValuesByDestination");
+        return getDestinationMetaValuesByDestination(destinationName);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public void saveDestinationMetaValue(final DestinationMetaValue value) throws DataBaseException {
         final var monitor = new MonitorCall("saveDestinationMetaValue()");
         ecpds.saveDestinationMetaValue(value);
@@ -1618,6 +1646,16 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
         final var monitor = new MonitorCall("setDestinationMetaValues(" + destinationName + ")");
         ecpds.setDestinationMetaValues(destinationName, values);
         monitor.done();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setDestinationMetaValues(final String user, final String destinationName,
+            final Collection<DestinationMetaValue> values) throws DataBaseException {
+        checkUser(user, "setDestinationMetaValues");
+        setDestinationMetaValues(destinationName, values);
     }
 
     /**
