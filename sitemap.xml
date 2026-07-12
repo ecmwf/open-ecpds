@@ -2,254 +2,258 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/api-reference/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/changelog/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/contributing/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/global-reach/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/glossary/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
+    </url>
+    <url>
+         <loc>https://ecmwf.github.io/open-ecpds/rest-api/</loc>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/support/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/architecture/components/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/architecture/continental-data-movers/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/architecture/data-transfer-lifecycle/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/architecture/datamover-allocation/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/architecture/failover/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/architecture/overview/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/concepts/additional-features/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/concepts/destination-options/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/concepts/entities/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/concepts/host-options/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/concepts/object-storage/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/concepts/protocols/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/concepts/web-user-options/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/deployment/infrastructure/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/deployment/kubernetes/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/deployment/release/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/event-logging/cpy-fields/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/event-logging/dea-fields/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/event-logging/err-fields/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/event-logging/inh-fields/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/event-logging/overview/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/event-logging/prs-fields/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/event-logging/ret-fields/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/event-logging/uph-fields/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/getting-started/first-run/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/getting-started/ide-setup/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/getting-started/installation/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/getting-started/requirements/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/host-directory/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/host-directory/acquisition/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/host-directory/dissemination/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/host-directory/replication/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/monitoring/transfer-statistics/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/notifications/implementation/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/notifications/mqtt-acquisition/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/notifications/mqtt-dissemination/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/notifications/mqtt-overview/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/notifications/wmo-wis2/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/transfer-modules/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/transfer-modules/azure/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/transfer-modules/ecauth/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/transfer-modules/ectrans/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/transfer-modules/ftp/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/transfer-modules/ftps/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/transfer-modules/gcs/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/transfer-modules/http/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/transfer-modules/portal/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/transfer-modules/s3/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/transfer-modules/sftp/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/transfer-modules/test/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/use-cases/acquisition-options/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/use-cases/acquisition/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/use-cases/data-portal-user-options/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/use-cases/data-portal/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/use-cases/dissemination/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/use-cases/ecpds-cli/</loc>
-         <lastmod>2026-07-10</lastmod>
+         <lastmod>2026-07-12</lastmod>
     </url>
 </urlset>
