@@ -21,6 +21,7 @@ data:
 - lbzip2
 - lz4
 - snappy
+- zstd
 
 ## Data Checksumming
 

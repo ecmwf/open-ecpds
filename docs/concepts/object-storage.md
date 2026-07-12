@@ -36,7 +36,7 @@ OpenECPDS supports major cloud object storage platforms both for outgoing transf
 
 - **Data Checksumming** — MD5 for data integrity checks on remote sites, and ADLER32 for
   data integrity checks in the Data Store.
-- **Data Compression** — supports lzma, zip, gzip, bzip2, lbzip2, lz4 and snappy.
+- **Data Compression** — supports lzma, zip, gzip, bzip2, lbzip2, lz4, snappy and zstd.
 - **Garbage Collection** — automatically removes expired data, with no limit on expiry
   dates.
 - **Data Backup** — can be configured to map data sets in OpenECPDS to existing archiving

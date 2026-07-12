@@ -94,7 +94,7 @@ geographically distributed dissemination.
   See [Object Storage](concepts/object-storage.md).
 - **Notification system** — embedded MQTT broker and client. See
   [MQTT Overview](notifications/mqtt-overview.md).
-- **Data compression** — lzma, zip, gzip, bzip2, lbzip2, lz4, snappy.
+- **Data compression** — lzma, zip, gzip, bzip2, lbzip2, lz4, snappy, zstd.
 - **Data checksumming** — MD5 for remote integrity, ADLER32 in the Data Store.
 - **Garbage collection** — automatic removal of expired data.
 - **Data backup** — map data sets to existing archiving systems.
