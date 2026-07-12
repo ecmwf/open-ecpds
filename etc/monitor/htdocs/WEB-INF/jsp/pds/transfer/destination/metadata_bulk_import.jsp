@@ -54,6 +54,7 @@
     <%-- Per-destination accordion --%>
     <div class="accordion mb-3" id="bulkImportAccordion">
       <c:forEach var="destEntry" items="${byDestination}" varStatus="st">
+        <c:set var="destEntries" value="${byDestination[destEntry.key]}"/>
         <div class="accordion-item">
           <h2 class="accordion-header" id="bih-${st.index}">
             <button class="accordion-button collapsed py-2" type="button"
@@ -61,7 +62,7 @@
                     aria-expanded="false" aria-controls="bic-${st.index}">
               <i class="bi bi-hdd-network me-2 text-secondary"></i>
               <strong>${destEntry.key}</strong>
-              <span class="badge bg-primary ms-2">${destEntry.value.size()} value(s)</span>
+              <span class="badge bg-primary ms-2">${destEntries.size()} value(s)</span>
             </button>
           </h2>
           <div id="bic-${st.index}" class="accordion-collapse collapse"
@@ -72,17 +73,19 @@
                   <tr><th>Field Name</th><th>Value</th></tr>
                 </thead>
                 <tbody>
-                  <c:forEach var="row" items="${destEntry.value}">
+                  <c:forEach var="row" items="${destEntries}">
                     <tr>
-                      <c:if test="${not empty row.error}">
-                        <td colspan="2" class="text-danger small">
-                          <i class="bi bi-exclamation-triangle me-1"></i>${row.file}: ${row.error}
-                        </td>
-                      </c:if>
-                      <c:if test="${empty row.error}">
-                        <td><code>${row.fieldName}</code></td>
-                        <td class="text-truncate" style="max-width:420px" title="${row.value}">${row.value}</td>
-                      </c:if>
+                      <c:choose>
+                        <c:when test="${not empty row['error']}">
+                          <td colspan="2" class="text-danger small">
+                            <i class="bi bi-exclamation-triangle me-1"></i>${row['file']}: ${row['error']}
+                          </td>
+                        </c:when>
+                        <c:otherwise>
+                          <td><code>${row['fieldName']}</code></td>
+                          <td class="text-truncate" style="max-width:420px" title="${row['value']}">${row['value']}</td>
+                        </c:otherwise>
+                      </c:choose>
                     </tr>
                   </c:forEach>
                 </tbody>

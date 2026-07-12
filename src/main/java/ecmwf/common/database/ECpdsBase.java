@@ -3426,7 +3426,10 @@ public final class ECpdsBase extends DataBase {
         final var result = new java.util.LinkedHashMap<String, java.util.List<java.util.Map<String, Object>>>();
         final var attachmentsDir = Cnf.at("Server", "attachments", "/tmp/ecpds-attachments");
         final var root = new java.io.File(attachmentsDir);
+        _log.debug("scanMetadataAttachments: root={}, destinationName={}", root.getAbsolutePath(), destinationName);
         if (!root.exists() || !root.isDirectory()) {
+            _log.warn("scanMetadataAttachments: attachments directory does not exist or is not a directory: {}",
+                    root.getAbsolutePath());
             return result;
         }
         // Build field name → id map
@@ -3434,22 +3437,40 @@ public final class ECpdsBase extends DataBase {
         for (final DestinationMetaField f : getDestinationMetaFields()) {
             fieldMap.put(f.getName(), f.getId());
         }
+        // Build set of existing destination names to skip stale attachment directories
+        final var existingDestinations = new java.util.HashSet<String>();
+        for (final java.util.Map.Entry<String, String> e : getDestinationNamesAndComments()) {
+            existingDestinations.add(e.getKey());
+        }
         final java.io.File[] dirsToScan;
         if (destinationName != null) {
             final var single = new java.io.File(root, destinationName);
             dirsToScan = single.isDirectory() ? new java.io.File[] { single } : new java.io.File[0];
+            if (dirsToScan.length == 0) {
+                _log.warn("scanMetadataAttachments: no directory found for destination '{}' under {}", destinationName,
+                        root.getAbsolutePath());
+            }
         } else {
             dirsToScan = root.listFiles(java.io.File::isDirectory);
+            _log.debug("scanMetadataAttachments: found {} destination sub-director(ies) under {}",
+                    dirsToScan != null ? dirsToScan.length : 0, root.getAbsolutePath());
         }
-        if (dirsToScan == null) {
+        if (dirsToScan == null || dirsToScan.length == 0) {
             return result;
         }
         for (final java.io.File destDir : dirsToScan) {
             final var destName = destDir.getName();
-            final var xmlFiles = destDir.listFiles(f -> f.getName().endsWith(".xml"));
-            if (xmlFiles == null || xmlFiles.length == 0) {
+            if (!existingDestinations.contains(destName)) {
+                _log.debug("scanMetadataAttachments: skipping '{}' — destination not found in DB", destName);
                 continue;
             }
+            final var xmlFiles = destDir.listFiles(f -> f.getName().endsWith(".xml"));
+            if (xmlFiles == null || xmlFiles.length == 0) {
+                _log.debug("scanMetadataAttachments: no XML files in {}", destDir.getAbsolutePath());
+                continue;
+            }
+            _log.debug("scanMetadataAttachments: processing {} XML file(s) for destination '{}'", xmlFiles.length,
+                    destName);
             final var entries = new java.util.ArrayList<java.util.Map<String, Object>>();
             for (final java.io.File xmlFile : xmlFiles) {
                 try {
@@ -3469,6 +3490,8 @@ public final class ECpdsBase extends DataBase {
                 result.put(destName, entries);
             }
         }
+        _log.info("scanMetadataAttachments: completed — {} destination(s) with metadata found under {}", result.size(),
+                root.getAbsolutePath());
         return result;
     }
 
