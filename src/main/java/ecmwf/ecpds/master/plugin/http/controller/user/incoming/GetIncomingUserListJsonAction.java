@@ -129,18 +129,19 @@ public class GetIncomingUserListJsonAction extends PDSAction {
 
         // QB filters
         final var enabledFilter = request.getParameter("enabled"); // "yes" | "no"
-        final var anonymousFilter = request.getParameter("anonymous"); // "yes" | "no"
+        final var anonymousFilter = request.getParameter("anonymous"); // "yes" | "no" (legacy, maps to open-access)
+        final var serviceFilter = request.getParameter("service"); // "standard-login" | "open-access" | "self-service"
         final var totpFilter = request.getParameter("totp"); // "yes" | "no"
         final var propErrorsFilter = request.getParameter("propErrors"); // "yes"
         final var countryFilter = request.getParameter("country"); // ISO code e.g. "fr"
         final var commentFilter = request.getParameter("comment"); // wildcard e.g. "*test*"
         if ((enabledFilter != null && !enabledFilter.isBlank())
                 || (anonymousFilter != null && !anonymousFilter.isBlank())
-                || (totpFilter != null && !totpFilter.isBlank()) || "yes".equals(propErrorsFilter)
-                || (countryFilter != null && !countryFilter.isBlank())
+                || (serviceFilter != null && !serviceFilter.isBlank()) || (totpFilter != null && !totpFilter.isBlank())
+                || "yes".equals(propErrorsFilter) || (countryFilter != null && !countryFilter.isBlank())
                 || (commentFilter != null && !commentFilter.isBlank())) {
-            users = filterByQB(users, enabledFilter, anonymousFilter, totpFilter, "yes".equals(propErrorsFilter),
-                    countryFilter, commentFilter);
+            users = filterByQB(users, enabledFilter, anonymousFilter, serviceFilter, totpFilter,
+                    "yes".equals(propErrorsFilter), countryFilter, commentFilter);
         }
 
         // Check once whether the current user can manage (edit/update) incoming users
@@ -167,14 +168,14 @@ public class GetIncomingUserListJsonAction extends PDSAction {
             row.add(escapeHtml(u.getComment()));
             row.add(buildCountryHtml(u));
             row.add(buildBadge(u.getActive()));
-            row.add(buildBadge(u.getIsSynchronized()));
-            row.add(buildAnonymousHtml(u.getAnonymous()));
+            row.add(buildTotpHtml(u.getPortalService(), u.getIsSynchronized()));
+            row.add(buildPortalServiceHtml(u.getPortalService()));
             row.add(connCount);
             row.add(buildActions(u.getId(), connCount, canEdit));
             // Hidden sort values for boolean columns (cols 3, 4, 5)
             row.add(u.getActive() ? 1 : 0);
             row.add(u.getIsSynchronized() ? 1 : 0);
-            row.add(u.getAnonymous() ? 1 : 0);
+            row.add(u.getPortalService());
         }
 
         try {
@@ -226,11 +227,24 @@ public class GetIncomingUserListJsonAction extends PDSAction {
                 + "<i class=\"bi bi-x-circle-fill me-1\"></i>No</span>";
     }
 
-    private static String buildAnonymousHtml(final boolean anonymous) {
-        if (anonymous) {
-            return "<i class=\"bi bi-exclamation-circle-fill text-warning\" title=\"Yes\"></i>";
+    private static String buildTotpHtml(final String portalService, final boolean totp) {
+        if (!"standard-login".equals(portalService)) {
+            return "<span class=\"text-muted\" title=\"Not applicable for this portal service\">N/A</span>";
         }
-        return "<i class=\"bi bi-dash text-muted\" title=\"No\"></i>";
+        return buildBadge(totp);
+    }
+
+    private static String buildPortalServiceHtml(final String service) {
+        if ("open-access".equals(service)) {
+            return "<span class=\"badge rounded-pill bg-warning-subtle text-warning-emphasis border border-warning-subtle fw-normal\">"
+                    + "<i class=\"bi bi-unlock-fill me-1\"></i>Open Access</span>";
+        }
+        if ("self-service".equals(service)) {
+            return "<span class=\"badge rounded-pill bg-info-subtle text-info-emphasis border border-info-subtle fw-normal\">"
+                    + "<i class=\"bi bi-person-plus-fill me-1\"></i>Self-Service</span>";
+        }
+        return "<span class=\"badge rounded-pill bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle fw-normal\">"
+                + "<i class=\"bi bi-lock-fill me-1\"></i>Standard</span>";
     }
 
     private static int countReachableDestinations(final IncomingUser u) {
@@ -346,8 +360,8 @@ public class GetIncomingUserListJsonAction extends PDSAction {
     }
 
     private static Collection<IncomingUser> filterByQB(final Collection<IncomingUser> users, final String enabledFilter,
-            final String anonymousFilter, final String totpFilter, final boolean propErrors, final String countryFilter,
-            final String commentFilter) {
+            final String anonymousFilter, final String serviceFilter, final String totpFilter, final boolean propErrors,
+            final String countryFilter, final String commentFilter) {
         final var filtered = new ArrayList<IncomingUser>();
         for (final IncomingUser u : users) {
             if (enabledFilter != null && !enabledFilter.isBlank()) {
@@ -357,8 +371,14 @@ public class GetIncomingUserListJsonAction extends PDSAction {
                 }
             }
             if (anonymousFilter != null && !anonymousFilter.isBlank()) {
+                // Legacy filter: "yes" means open-access, "no" means not open-access
                 final boolean want = "yes".equalsIgnoreCase(anonymousFilter);
                 if (u.getAnonymous() != want) {
+                    continue;
+                }
+            }
+            if (serviceFilter != null && !serviceFilter.isBlank()) {
+                if (!serviceFilter.equalsIgnoreCase(u.getPortalService())) {
                     continue;
                 }
             }

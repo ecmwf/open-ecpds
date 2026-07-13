@@ -410,6 +410,9 @@
   This is typically larger than the raw file size.<br>
   <strong>Delivery rate</strong> &mdash; the peak TCP goodput measured by the kernel on that socket, in bytes/sec.
   It reflects the sustained throughput seen by the network stack, not application-level speed.<br>
+  <strong>Avg throughput</strong> &mdash; total bytes sent across all sockets divided by the wall-clock duration of the attempt.
+  This is the sustained transfer rate and is generally more representative than the peak delivery rate, which
+  captures only the best burst seen on a single socket.<br>
   <strong>RTT</strong> &mdash; smoothed round-trip time reported by the kernel. High RTT indicates distant or congested paths.<br>
   <strong>Retransmits</strong> &mdash; number of TCP segments retransmitted due to loss or timeout. Any non-zero value suggests
   network congestion or packet loss on the path.</p>
@@ -545,6 +548,9 @@ var _nstGlobalMin = ${_globalMin}, _nstGlobalMax = ${_globalMax};
     </c:choose>
   </span>
   <span><i class="bi bi-speedometer2 text-warning me-1"></i>Peak delivery: <strong class="text-body nst-rate" data-bps="${_nstMaxRate}">${_nstMaxRate} bps</strong></span>
+  <c:if test="${_nstHasSent}">
+  <span><i class="bi bi-graph-up text-info me-1"></i>Avg throughput: <strong class="text-body nst-rate" data-bps="${_nstTotalSent * 1000 / _nstSpan}">${_nstTotalSent * 1000 / _nstSpan} bps</strong></span>
+  </c:if>
   <span><i class="bi bi-clock text-secondary me-1"></i>Wall time: <strong class="text-body">${_nstMaxEnd - _nstMinStart} ms</strong></span>
 </div>
 

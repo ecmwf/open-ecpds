@@ -86,6 +86,9 @@ public class IncomingUserActionForm extends ECMWFActionForm {
     /** The synchronized. */
     private String synchronised = "";
 
+    /** The portal service. */
+    private String portalService = "standard-login";
+
     /** The user. */
     private IncomingUser user = null;
 
@@ -150,6 +153,15 @@ public class IncomingUserActionForm extends ECMWFActionForm {
      */
     public String getIsSynchronized() {
         return synchronised;
+    }
+
+    /**
+     * Gets the portal service.
+     *
+     * @return the portal service
+     */
+    public String getPortalService() {
+        return portalService;
     }
 
     /**
@@ -220,6 +232,16 @@ public class IncomingUserActionForm extends ECMWFActionForm {
      */
     public void setIsSynchronized(final String s) {
         this.synchronised = s;
+    }
+
+    /**
+     * Sets the portal service.
+     *
+     * @param s
+     *            the portal service value ("standard-login", "open-access", or "self-service")
+     */
+    public void setPortalService(final String s) {
+        this.portalService = s != null ? s : "standard-login";
     }
 
     /**
@@ -440,6 +462,7 @@ public class IncomingUserActionForm extends ECMWFActionForm {
         u.setIsSynchronized("on".equalsIgnoreCase(synchronised) || "true".equalsIgnoreCase(synchronised));
         u.setData(getUserData());
         u.setAuthorizedSSHKeys(getAuthorizedSSHKeys());
+        u.setPortalService(getPortalService());
     }
 
     /**
@@ -458,6 +481,7 @@ public class IncomingUserActionForm extends ECMWFActionForm {
         this.setSynchronized(u.getIsSynchronized() ? "on" : "off");
         this.setUserData(u.getData());
         this.setAuthorizedSSHKeys(u.getAuthorizedSSHKeys());
+        this.setPortalService(u.getPortalService());
     }
 
     /**

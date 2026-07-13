@@ -95,7 +95,6 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_FILTERPATTERN;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_FILTER_MINIMUM_SIZE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_LASTUPDATE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_PROXY_USE_DESTINATION_FILTER;
-import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_ANONYMOUS;
 import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_DOWNLOAD_PERIOD;
 import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_GEOBLOCLING;
 import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_MAX_CONNECTIONS;
@@ -840,20 +839,14 @@ public final class MasterServer extends ECaccessProvider
      * @param incomingUser
      *            the incoming user name
      *
-     * @return true if the user exists and has USER_PORTAL_ANONYMOUS set
+     * @return true if the user exists and has portal service set to open-access
      */
     @Override
     public boolean isAnonymousIncomingUser(final String incomingUser) {
         try {
             final var base = getECpdsBase();
             final var user = base.getIncomingUserObject(incomingUser);
-            if (user == null) {
-                return false;
-            }
-            // Use getDataFromUserPolicies to match the behaviour of getIncomingProfile, which
-            // merges policy-level settings with user-level settings when checking the flag.
-            final var setup = USER_PORTAL.getECtransSetup(base.getDataFromUserPolicies(user));
-            return setup.getBoolean(USER_PORTAL_ANONYMOUS);
+            return user != null && "open-access".equals(user.getPortalService());
         } catch (final Throwable t) {
             _log.warn("isAnonymousIncomingUser", t);
             return false;
@@ -1041,8 +1034,8 @@ public final class MasterServer extends ECaccessProvider
                             "TimeStamp=" + Timestamp.from(Instant.now()), incomingUser, from);
                 throw new MasterException("Login failed");
             }
-            if (setup.getBoolean(USER_PORTAL_ANONYMOUS)) {
-                // This is an anonymous user so no authentication required!
+            if ("open-access".equals(user.getPortalService())) {
+                // This is an open-access user so no authentication required!
             } else if (incomingPassword != null) {
                 if (user.getSynchronized()) {
                     // User/password authentication through TOTP. Auto-detect passcodes (6 or 8 digits)

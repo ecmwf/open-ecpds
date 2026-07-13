@@ -7,9 +7,13 @@
 
 ## Authentication & Access
 
+!!! info "Portal Service mode"
+    The overall access mode (Standard Login, Open Access, Self-Service) is **not** configured
+    here — it is a first-class field on the Data User record set in the monitoring interface
+    or via the REST API. See [Data Users — Portal Service modes](data-users.md#portal-service-modes).
+
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `portal.anonymous` | Boolean | `false` | Treat this user as anonymous — no authentication required |
 | `portal.accessGuide` | Boolean | `true` | Show the Access Guide button (connection instructions) in the portal UI. Set to `false` to hide it |
 | `portal.loginButton` | Boolean | `true` | Show the Login button in the portal UI. Set to `false` to hide it |
 | `portal.geoblocking` | String | *none* | Comma-separated list of continents, ISO country codes, and/or city names to restrict portal access by location (e.g. `Europe` or `FR,Paris`). If the source IP cannot be geolocated, access is denied |

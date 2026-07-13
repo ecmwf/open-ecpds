@@ -1424,6 +1424,7 @@ CREATE TABLE `INCOMING_USER` (
   `INU_SYNCHRONIZED` smallint(6) NOT NULL DEFAULT 0,
   `INU_AUTHORIZED_KEYS` mediumtext DEFAULT NULL,
   `INU_DATA_BACKUP` mediumtext DEFAULT NULL,
+  `INU_PORTAL_SERVICE` varchar(16) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT 'standard-login',
   PRIMARY KEY (`INU_ID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -1435,7 +1436,7 @@ CREATE TABLE `INCOMING_USER` (
 LOCK TABLES `INCOMING_USER` WRITE;
 /*!40000 ALTER TABLE `INCOMING_USER` DISABLE KEYS */;
 INSERT INTO `INCOMING_USER` VALUES
-('test','test2021','For accessing the test destinations',1,1759148604470,'Using sftp on DataMover=ecpds-mover from test@127.0.0.1','ew','portal.domain = \"data\"\r\nportal.color = \"dodgerblue\"\r\nportal.headerRegistry = \"\r\n(== {.*.grib2?$}) Content-Type=application/grib\r\n(== {.*.index$}) Content-Type=application/json\r\n\"\r\nportal.maxConnections = \"100\"\r\nportal.order = \"asc\"\r\nportal.recordHistory = \"no\"\r\nportal.recordSplunk = \"yes\"\r\nportal.simpleList = \"no\"\r\nportal.sort = \"target\"\r\nportal.triggerEvent = \"yes\"\r\nportal.triggerLastRangeOnly = \"yes\"\r\nportal.updateLastLoginInformation = \"no\"',0,'','portal.welcome = \"\r\n***********************************************\r\nPDS Data Portal\r\n\r\nPlease note you can also access the Data Portal\r\nwith the same credentials through https/sftp.\r\n***********************************************\r\n\"');
+('test','test2021','For accessing the test destinations',1,1759148604470,'Using sftp on DataMover=ecpds-mover from test@127.0.0.1','ew','portal.domain = \"data\"\r\nportal.color = \"dodgerblue\"\r\nportal.headerRegistry = \"\r\n(== {.*.grib2?$}) Content-Type=application/grib\r\n(== {.*.index$}) Content-Type=application/json\r\n\"\r\nportal.maxConnections = \"100\"\r\nportal.order = \"asc\"\r\nportal.recordHistory = \"no\"\r\nportal.recordSplunk = \"yes\"\r\nportal.simpleList = \"no\"\r\nportal.sort = \"target\"\r\nportal.triggerEvent = \"yes\"\r\nportal.triggerLastRangeOnly = \"yes\"\r\nportal.updateLastLoginInformation = \"no\"',0,'','portal.welcome = \"\r\n***********************************************\r\nPDS Data Portal\r\n\r\nPlease note you can also access the Data Portal\r\nwith the same credentials through https/sftp.\r\n***********************************************\r\n\"','standard-login');
 /*!40000 ALTER TABLE `INCOMING_USER` ENABLE KEYS */;
 UNLOCK TABLES;
 

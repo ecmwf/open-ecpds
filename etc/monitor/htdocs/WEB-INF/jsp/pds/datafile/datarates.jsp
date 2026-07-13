@@ -113,7 +113,20 @@ const tFiles    = _si.map(i=>_tFiles[i]);
   </div>
 </div>
 
-<%-- Summary stat cards --%>
+<%-- Period selector — global, affects both stat cards and chart --%>
+<div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+  <span class="text-muted" style="font-size:0.82rem;">Period:</span>
+  <div class="btn-group btn-group-sm" id="chartPeriodSelector">
+    <button class="btn btn-outline-secondary" data-days="30"  onclick="setChartPeriod(30)">30d</button>
+    <button class="btn btn-outline-secondary" data-days="90"  onclick="setChartPeriod(90)">90d</button>
+    <button class="btn btn-outline-secondary" data-days="180" onclick="setChartPeriod(180)">180d</button>
+    <button class="btn btn-outline-secondary" data-days="365" onclick="setChartPeriod(365)">1y</button>
+    <button class="btn btn-outline-secondary active" data-days="0" onclick="setChartPeriod(0)">All</button>
+  </div>
+  <span id="chartPeriodLabel" class="text-muted ms-1" style="font-size:0.78rem;"></span>
+</div>
+
+<%-- Summary stat cards — reflect the selected period --%>
 <div class="d-flex flex-wrap gap-3 mb-4">
   <div class="traffic-stat-card">
     <div class="stat-label"><i class="bi bi-hdd-fill me-1"></i>Total Volume</div>
@@ -201,17 +214,6 @@ const tFiles    = _si.map(i=>_tFiles[i]);
 
 <%-- CHART VIEW --%>
 <div id="chartView" style="display:none;">
-  <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
-    <span class="text-muted" style="font-size:0.82rem;">Period:</span>
-    <div class="btn-group btn-group-sm" id="chartPeriodSelector">
-      <button class="btn btn-outline-secondary" data-days="30"  onclick="setChartPeriod(30)">30d</button>
-      <button class="btn btn-outline-secondary" data-days="90"  onclick="setChartPeriod(90)">90d</button>
-      <button class="btn btn-outline-secondary" data-days="180" onclick="setChartPeriod(180)">180d</button>
-      <button class="btn btn-outline-secondary" data-days="365" onclick="setChartPeriod(365)">1y</button>
-      <button class="btn btn-outline-secondary active" data-days="0" onclick="setChartPeriod(0)">All</button>
-    </div>
-    <span id="chartPeriodLabel" class="text-muted ms-1" style="font-size:0.78rem;"></span>
-  </div>
   <div class="mb-4 p-2 border rounded" style="position:relative; height:320px;">
     <canvas id="chartBytesRate"></canvas>
   </div>
@@ -406,6 +408,7 @@ function setChartPeriod(days) {
   document.querySelectorAll('#chartPeriodSelector .btn').forEach(function(b) {
     b.classList.toggle('active', parseInt(b.getAttribute('data-days'), 10) === days);
   });
+  computeStats();
   buildCharts();
 }
 
@@ -564,21 +567,22 @@ function setView(v) {
   try { localStorage.setItem('dataRatesView', v); } catch(e) {}
 }
 
-// -- Stat cards ---------------------------------------------------------------
+// -- Stat cards (period-aware) -------------------------------------------------
 function computeStats() {
+  var d = getChartData(_chartPeriod);
   var totalBytes = 0, totalFiles = 0, maxRate = -Infinity, maxRateIdx = 0;
-  for (var i = 0; i < tBytes.length; i++) {
-    totalBytes += tBytes[i];
-    totalFiles += tFiles[i];
-    if (tRates[i] > maxRate) { maxRate = tRates[i]; maxRateIdx = i; }
+  for (var i = 0; i < d.bytes.length; i++) {
+    totalBytes += d.bytes[i];
+    totalFiles += d.files[i];
+    if (d.rates[i] > maxRate) { maxRate = d.rates[i]; maxRateIdx = i; }
   }
-  var n = tBytes.length;
-  var avgRate = n ? tRates.reduce(function(s,v){return s+v;}, 0) / n : 0;
+  var n = d.bytes.length;
+  var avgRate = n ? d.rates.reduce(function(s,v){return s+v;}, 0) / n : 0;
   document.getElementById('statTotalBytes').textContent = fmtBytes(totalBytes);
   document.getElementById('statDays').textContent       = n + (n === 1 ? ' day' : ' days');
   document.getElementById('statAvgRate').textContent    = avgRate.toFixed(1);
   document.getElementById('statPeakRate').textContent   = (maxRate >= 0 ? maxRate.toFixed(1) : '--') + ' Mbit/s';
-  document.getElementById('statPeakDate').textContent   = tLabels[maxRateIdx] || '--';
+  document.getElementById('statPeakDate').textContent   = d.labels[maxRateIdx] || '--';
   document.getElementById('statTotalFiles').textContent = totalFiles.toLocaleString();
   document.getElementById('statAvgFiles').textContent   = n ? Math.round(totalFiles / n) + '/day avg' : '--';
 }

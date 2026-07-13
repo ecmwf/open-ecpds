@@ -1333,7 +1333,7 @@ public final class RESTServer {
             // HTML (default)
             // Load the appropriate template!
             final var setup = session.getECtransSetup();
-            final var anonymous = setup != null && setup.getBoolean(ECtransOptions.USER_PORTAL_ANONYMOUS);
+            final var anonymous = "open-access".equals(session.getPortalService());
             final var sb = new StringBuilder().append(anonymous ? getTemplateContent(homeContent, HOME_FILE)
                     : getTemplateContent(portalContent, PORTAL_FILE));
             // Fill the parameters in the template
@@ -2209,7 +2209,7 @@ public final class RESTServer {
                             // Refresh the cookie only for non-anonymous users — anonymous users have no
                             // TOTP to cache and issuing cookies would waste server memory.
                             final var setup = session.getECtransSetup();
-                            if (setup == null || !setup.getBoolean(ECtransOptions.USER_PORTAL_ANONYMOUS)) {
+                            if (setup == null || !"open-access".equals(session.getPortalService())) {
                                 setPortalSessionCookie(response, session.getToken());
                             }
                             return session;
@@ -2237,7 +2237,7 @@ public final class RESTServer {
                     // Skip for anonymous users — they have no TOTP and issuing cookies would
                     // create unnecessary server-side session entries under high load.
                     final var setup = session.getECtransSetup();
-                    if (setup == null || !setup.getBoolean(ECtransOptions.USER_PORTAL_ANONYMOUS)) {
+                    if (!"open-access".equals(session.getPortalService())) {
                         setPortalSessionCookie(response, session.getToken());
                     }
                     // Log headers if asked to do so?

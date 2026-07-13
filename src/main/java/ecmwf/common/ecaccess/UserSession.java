@@ -100,6 +100,16 @@ public abstract class UserSession {
     }
 
     /**
+     * Gets the portal service mode for this session. Returns "standard-login" by default; overridden by data-portal
+     * sessions.
+     *
+     * @return the portal service ("standard-login", "open-access", or "self-service")
+     */
+    public String getPortalService() {
+        return "standard-login";
+    }
+
+    /**
      * Gets the setup.
      *
      * @return the setup

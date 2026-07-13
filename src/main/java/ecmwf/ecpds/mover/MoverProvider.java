@@ -718,6 +718,18 @@ public final class MoverProvider extends NativeAuthenticationProvider {
         /**
          * {@inheritDoc}
          *
+         * Returns the portal service mode for this data-portal session, using the INU_PORTAL_SERVICE DB column. Falls
+         * back to the legacy portal.anonymous ECtrans option for backward compatibility with existing users that do not
+         * yet have the column set.
+         */
+        @Override
+        public String getPortalService() {
+            return _profile.getIncomingUser().getPortalService();
+        }
+
+        /**
+         * {@inheritDoc}
+         *
          * Delegates to the underlying IncomingProfile permission list.
          */
         @Override

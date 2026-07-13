@@ -67,6 +67,16 @@
             </div>
           </c:if>
           <div class="row g-2 align-items-center">
+            <div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">Portal Service <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Controls how users access the data portal. Standard Login: requires pre-configured credentials. Open Access: anyone can access without credentials. Self-Service: visitors register with their email and receive generated credentials." tabindex="0"></i></label></div>
+            <div class="col-sm-8">
+              <html:select property="portalService" styleClass="form-select form-select-sm">
+                <html:option value="standard-login">Standard Login - pre-configured credentials required</html:option>
+                <html:option value="open-access">Open Access - no credentials needed (anonymous)</html:option>
+                <html:option value="self-service">Self-Service - visitors register via email</html:option>
+              </html:select>
+            </div>
+          </div>
+          <div class="row g-2 align-items-center">
             <div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">Comment <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="A short description or note for this user." tabindex="0"></i></label></div>
             <div class="col-sm-8"><html:text property="comment" styleClass="form-control form-control-sm" /></div>
           </div>
@@ -81,6 +91,7 @@
             <div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">Enabled <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="When disabled, this user cannot connect." tabindex="0"></i></label></div>
             <div class="col-sm-8"><div class="form-check form-switch mb-0"><html:checkbox property="active" styleClass="form-check-input" /></div></div>
           </div>
+          <div id="standardLoginFields">
           <div class="row g-2 align-items-center">
             <div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">TOTP authentication <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Enable Time-based One-Time Password (TOTP) authentication. When enabled, the password field is not used." tabindex="0"></i></label></div>
             <div class="col-sm-8"><div class="form-check form-switch mb-0"><html:checkbox property="isSynchronized" styleId="isSynchronized" onclick="handleTOTPClick(this)" styleClass="form-check-input" /></div></div>
@@ -96,6 +107,7 @@
               </div>
             </div>
           </div>
+          </div><%-- /standardLoginFields --%>
         </div>
       </div>
     </div>
@@ -611,6 +623,17 @@
 
 	function handleTOTPClick(cb) {
 		document.getElementById('passwordRow').style.display = cb.checked ? 'none' : '';
+	}
+
+	function handlePortalServiceChange(sel) {
+		var isStandard = sel.value === 'standard-login';
+		document.getElementById('standardLoginFields').style.display = isStandard ? '' : 'none';
+	}
+
+	var _portalSvcSel = document.querySelector('select[name="portalService"]');
+	if (_portalSvcSel) {
+		_portalSvcSel.addEventListener('change', function() { handlePortalServiceChange(this); });
+		handlePortalServiceChange(_portalSvcSel);
 	}
 
 	handleTOTPClick(document.getElementById("isSynchronized"));

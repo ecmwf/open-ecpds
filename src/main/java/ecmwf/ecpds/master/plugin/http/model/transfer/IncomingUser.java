@@ -130,6 +130,21 @@ public interface IncomingUser extends ModelBean {
     boolean getAnonymous();
 
     /**
+     * Gets the portal service.
+     *
+     * @return the portal service ("standard-login", "open-access", or "self-service")
+     */
+    String getPortalService();
+
+    /**
+     * Sets the portal service.
+     *
+     * @param service
+     *            the portal service value
+     */
+    void setPortalService(String service);
+
+    /**
      * Gets the properties.
      *
      * @return the properties

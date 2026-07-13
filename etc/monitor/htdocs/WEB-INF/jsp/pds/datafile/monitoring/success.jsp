@@ -304,6 +304,7 @@ function setChartPeriod(days) {
   document.querySelectorAll('#chartPeriodSelector .btn').forEach(function(b) {
     b.classList.toggle('active', parseInt(b.getAttribute('data-days'), 10) === days);
   });
+  computeStats();
   buildCharts();
 }
 
@@ -464,28 +465,22 @@ function setView(v) {
 }
 
 function computeStats() {
-  var totalBytes = 0;
-  var totalFiles = 0;
-  var totalRate = 0;
-  var maxRate = -Infinity;
-  var maxRateDate = '--';
-  for (var i = 0; i < rawBytes.length; i++) {
-    totalBytes += rawBytes[i];
-    totalFiles += rawCount[i];
-    totalRate += rawRate[i];
-    if (rawRate[i] > maxRate) {
-      maxRate = rawRate[i];
-      maxRateDate = rawDates[i];
-    }
+  var d = getChartData(_chartPeriod);
+  var totalBytes = 0, totalFiles = 0, maxRate = -Infinity, maxRateIdx = 0;
+  for (var i = 0; i < d.bytes.length; i++) {
+    totalBytes += d.bytes[i];
+    totalFiles += d.files[i];
+    if (d.rates[i] > maxRate) { maxRate = d.rates[i]; maxRateIdx = i; }
   }
-  var avgRate = rawRate.length ? totalRate / rawRate.length : 0;
+  var n = d.bytes.length;
+  var avgRate = n ? d.rates.reduce(function(s,v){return s+v;}, 0) / n : 0;
   document.getElementById('statTotalBytes').textContent = fmtBytes(totalBytes);
-  document.getElementById('statRows').textContent = rawDates.length.toLocaleString() + ' rows';
+  document.getElementById('statRows').textContent = n + (n === 1 ? ' day' : ' days');
   document.getElementById('statAvgRate').textContent = avgRate.toFixed(1);
   document.getElementById('statPeakRate').textContent = (maxRate > -Infinity ? maxRate.toFixed(1) : '--') + ' Mbit/s';
-  document.getElementById('statPeakDate').textContent = maxRateDate;
+  document.getElementById('statPeakDate').textContent = d.labels[maxRateIdx] || '--';
   document.getElementById('statTotalFiles').textContent = totalFiles.toLocaleString();
-  document.getElementById('statTotalDays').textContent = tLabels.length.toLocaleString() + ' days';
+  document.getElementById('statTotalDays').textContent = n + (n === 1 ? ' day' : ' days');
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -533,6 +528,19 @@ new MutationObserver(function() {
       <i class="bi bi-sort-down-alt" id="btnReverseIcon"></i>
     </button>
   </div>
+</div>
+
+<%-- Period selector — global, affects both stat cards and chart --%>
+<div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+  <span class="text-muted" style="font-size:0.82rem;">Period:</span>
+  <div class="btn-group btn-group-sm" id="chartPeriodSelector">
+    <button class="btn btn-outline-secondary" data-days="30" onclick="setChartPeriod(30)">30d</button>
+    <button class="btn btn-outline-secondary" data-days="90" onclick="setChartPeriod(90)">90d</button>
+    <button class="btn btn-outline-secondary" data-days="180" onclick="setChartPeriod(180)">180d</button>
+    <button class="btn btn-outline-secondary" data-days="365" onclick="setChartPeriod(365)">1y</button>
+    <button class="btn btn-outline-secondary active" data-days="0" onclick="setChartPeriod(0)">All</button>
+  </div>
+  <span id="chartPeriodLabel" class="text-muted ms-1" style="font-size:0.78rem;"></span>
 </div>
 
 <div class="d-flex flex-wrap gap-3 mb-4">
@@ -657,17 +665,6 @@ new MutationObserver(function() {
 </div>
 
 <div id="chartView" style="display:none;">
-  <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
-    <span class="text-muted" style="font-size:0.82rem;">Period:</span>
-    <div class="btn-group btn-group-sm" id="chartPeriodSelector">
-      <button class="btn btn-outline-secondary" data-days="30" onclick="setChartPeriod(30)">30d</button>
-      <button class="btn btn-outline-secondary" data-days="90" onclick="setChartPeriod(90)">90d</button>
-      <button class="btn btn-outline-secondary" data-days="180" onclick="setChartPeriod(180)">180d</button>
-      <button class="btn btn-outline-secondary" data-days="365" onclick="setChartPeriod(365)">1y</button>
-      <button class="btn btn-outline-secondary active" data-days="0" onclick="setChartPeriod(0)">All</button>
-    </div>
-    <span id="chartPeriodLabel" class="text-muted ms-1" style="font-size:0.78rem;"></span>
-  </div>
   <div class="mb-4 p-2 border rounded" style="position:relative; height:320px;">
     <canvas id="chartBytesRate"></canvas>
   </div>

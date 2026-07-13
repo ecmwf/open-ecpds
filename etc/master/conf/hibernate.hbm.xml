@@ -1055,6 +1055,9 @@
 		<property name="INU_AUTHORIZED_KEYS" type="java.lang.String">
 			<column name="INU_AUTHORIZED_KEYS" />
 		</property>
+		<property name="INU_PORTAL_SERVICE" type="java.lang.String">
+			<column name="INU_PORTAL_SERVICE" />
+		</property>
 	</class>
 
 	<class name="IncomingPolicy" table="INCOMING_POLICY">

@@ -68,6 +68,9 @@ public class IncomingUser extends DataBaseObject {
     /** The inu synchronized. */
     protected boolean INU_SYNCHRONIZED;
 
+    /** The inu portal service. */
+    protected String INU_PORTAL_SERVICE;
+
     /** The incoming list of connections. */
     protected List<IncomingConnection> connectionsList = new ArrayList<>();
 
@@ -295,6 +298,25 @@ public class IncomingUser extends DataBaseObject {
      */
     public void setAuthorizedSSHKeys(final String param) {
         INU_AUTHORIZED_KEYS = param;
+    }
+
+    /**
+     * Gets the portal service.
+     *
+     * @return the portal service (e.g. "standard-login", "open-access", "self-service")
+     */
+    public String getPortalService() {
+        return INU_PORTAL_SERVICE != null ? INU_PORTAL_SERVICE : "standard-login";
+    }
+
+    /**
+     * Sets the portal service.
+     *
+     * @param param
+     *            the new portal service
+     */
+    public void setPortalService(final String param) {
+        INU_PORTAL_SERVICE = param;
     }
 
     /**

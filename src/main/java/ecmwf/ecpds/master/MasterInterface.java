@@ -185,7 +185,7 @@ public interface MasterInterface extends ProviderInterface {
      * @param incomingUser
      *            the incoming user name
      *
-     * @return true if the user exists and has USER_PORTAL_ANONYMOUS set to true
+     * @return true if the user exists and has portal service set to open-access
      *
      * @throws RemoteException
      *             the remote exception

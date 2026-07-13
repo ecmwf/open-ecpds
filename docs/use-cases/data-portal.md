@@ -62,6 +62,7 @@ Workflow steps:
 ## Related
 
 - [ECPDS command-line Tool](ecpds-cli.md)
+- [Data Users](data-users.md) — Portal Service modes, authentication, admin management
 - [Data User Options](data-portal-user-options.md) — per-user `portal.*` configuration
 - [Portal Transfer Module](../transfer-modules/portal.md)
 - [INH event fields](../event-logging/inh-fields.md) — incoming history records

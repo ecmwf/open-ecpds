@@ -48,7 +48,7 @@
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="incUsrColModeBtn">
                         <li><a class="dropdown-item" href="#" data-incusr-mode="auto"><strong>Auto</strong><br><small class="text-muted">Hides columns based on screen width</small></a></li>
                         <li><a class="dropdown-item" href="#" data-incusr-mode="all"><strong>All</strong><br><small class="text-muted">Shows all columns</small></a></li>
-                        <li><a class="dropdown-item" href="#" data-incusr-mode="compact"><strong>Compact</strong><br><small class="text-muted">Hides: Comment, Country, TOTP, Anonymous, Sessions</small></a></li>
+                        <li><a class="dropdown-item" href="#" data-incusr-mode="compact"><strong>Compact</strong><br><small class="text-muted">Hides: Comment, Country, TOTP, Portal Service, Sessions</small></a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="#" data-incusr-mode="custom"><strong>Custom</strong><br><small class="text-muted">Choose individual columns</small></a></li>
                         <li id="incUsrCustomColChkPanel" style="display:none;">
@@ -58,7 +58,7 @@
             <div class="form-check mb-0"><input class="form-check-input incUsr-col-chk" type="checkbox" id="incUsrchk-2" data-col="2" checked><label class="form-check-label" for="incUsrchk-2">Country</label></div>
             <div class="form-check mb-0"><input class="form-check-input incUsr-col-chk" type="checkbox" id="incUsrchk-3" data-col="3" checked><label class="form-check-label" for="incUsrchk-3">Enabled</label></div>
             <div class="form-check mb-0"><input class="form-check-input incUsr-col-chk" type="checkbox" id="incUsrchk-4" data-col="4" checked><label class="form-check-label" for="incUsrchk-4">TOTP</label></div>
-            <div class="form-check mb-0"><input class="form-check-input incUsr-col-chk" type="checkbox" id="incUsrchk-5" data-col="5" checked><label class="form-check-label" for="incUsrchk-5">Anonymous</label></div>
+            <div class="form-check mb-0"><input class="form-check-input incUsr-col-chk" type="checkbox" id="incUsrchk-5" data-col="5" checked><label class="form-check-label" for="incUsrchk-5">Portal Service</label></div>
             <div class="form-check mb-0"><input class="form-check-input incUsr-col-chk" type="checkbox" id="incUsrchk-6" data-col="6" checked><label class="form-check-label" for="incUsrchk-6">Sessions</label></div>
             <div class="form-check mb-0"><input class="form-check-input incUsr-col-chk" type="checkbox" id="incUsrchk-7" data-col="7" checked disabled><label class="form-check-label text-muted" for="incUsrchk-7">Actions <small>(required)</small></label></div>
                             </div>
@@ -108,11 +108,12 @@
             </select>
         </div>
         <div class="col-6">
-            <label class="form-label mb-0 fw-semibold"><i class="bi bi-incognito me-1 text-muted"></i>Anonymous</label>
-            <select class="form-select form-select-sm" id="iqb_anonymous">
+            <label class="form-label mb-0 fw-semibold"><i class="bi bi-person-badge me-1 text-muted"></i>Portal Service</label>
+            <select class="form-select form-select-sm" id="iqb_service">
                 <option value="">Any</option>
-                <option value="yes"<c:if test="${param.anonymous == 'yes'}"> selected</c:if>>Yes</option>
-                <option value="no"<c:if test="${param.anonymous == 'no'}"> selected</c:if>>No</option>
+                <option value="standard-login"<c:if test="${param.service == 'standard-login'}"> selected</c:if>>Standard Login</option>
+                <option value="open-access"<c:if test="${param.service == 'open-access'}"> selected</c:if>>Open Access</option>
+                <option value="self-service"<c:if test="${param.service == 'self-service'}"> selected</c:if>>Self-Service</option>
             </select>
         </div>
         <div class="col-6">
@@ -147,10 +148,17 @@
         <p class="mb-1">This page lists all Data Portal users (incoming users). Use the controls in the header to narrow the list:</p>
         <ul class="mb-1 ps-3">
             <li><strong>Unassigned only</strong> &mdash; shows only users with no reachable destinations (neither direct nor via a Data Policy).</li>
-            <li><strong>Filter</strong> &mdash; query builder with Destination, Policy, Comment, Country, Enabled, Anonymous, TOTP, and Properties editor filters. A <span style="color:#dc3545">&#9888;</span> icon in the Data Login column marks users with properties errors.</li>
+            <li><strong>Filter</strong> &mdash; query builder with Destination, Policy, Comment, Country, Enabled, Portal Service, TOTP, and Properties editor filters. A <span style="color:#dc3545">&#9888;</span> icon in the Data Login column marks users with properties errors.</li>
             <li><strong>Search data login</strong> &mdash; client-side text filter on the login name, applied on top of the other filters.</li>
         </ul>
-        <div class="text-muted">Use the <strong>Unassigned only</strong> button to filter just the problematic users (no reachable Destinations neither direct nor via a Data Policy).</div>
+        <strong class="d-block mb-1 mt-2">Portal Service modes</strong>
+        <p class="mb-1">Each Data User has a Portal Service that controls how visitors authenticate on the data portal:</p>
+        <ul class="mb-1 ps-3">
+            <li><span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle fw-normal"><i class="bi bi-lock-fill me-1"></i>Standard Login</span> &mdash; default mode; visitors must log in with pre-configured credentials. TOTP is supported.</li>
+            <li><span class="badge rounded-pill bg-warning-subtle text-warning-emphasis border border-warning-subtle fw-normal"><i class="bi bi-unlock-fill me-1"></i>Open Access</span> &mdash; no credentials required; anyone can access the data portal for this user anonymously.</li>
+            <li><span class="badge rounded-pill bg-info-subtle text-info-emphasis border border-info-subtle fw-normal"><i class="bi bi-person-plus-fill me-1"></i>Self-Service</span> &mdash; visitors self-register with their email address and receive generated credentials by email.</li>
+        </ul>
+        <div class="text-muted">TOTP authentication and password fields are only relevant for <strong>Standard Login</strong> users and are hidden for the other modes.</div>
     </div>
 </div>
 
@@ -165,7 +173,7 @@
             <th>Country</th>
             <th class="text-center">Enabled</th>
             <th class="text-center">TOTP</th>
-            <th class="text-center">Anonymous</th>
+            <th class="text-center">Portal Service</th>
             <th class="text-center">Sessions</th>
             <th class="text-center no-sort">Actions</th>
         </tr>
@@ -212,7 +220,7 @@ function _buildAjaxUrl() {
     if (_unassignedOnly)
         params.push('unassigned=true');
     var en = iqbVal('iqb_enabled');    if (en) params.push('enabled='    + encodeURIComponent(en));
-    var an = iqbVal('iqb_anonymous');  if (an) params.push('anonymous='  + encodeURIComponent(an));
+    var sv = iqbVal('iqb_service');    if (sv) params.push('service='    + encodeURIComponent(sv));
     var tp = iqbVal('iqb_totp');       if (tp) params.push('totp='       + encodeURIComponent(tp));
     var pe = iqbVal('iqb_propErrors'); if (pe) params.push('propErrors=' + encodeURIComponent(pe));
     var co = iqbVal('iqb_country');    if (co) params.push('country='    + encodeURIComponent(co));
@@ -224,7 +232,7 @@ function iqbCountActive() {
     if (_destFilter)              n++;
     if (_policyFilter)            n++;
     if (iqbVal('iqb_enabled'))    n++;
-    if (iqbVal('iqb_anonymous'))  n++;
+    if (iqbVal('iqb_service'))    n++;
     if (iqbVal('iqb_totp'))       n++;
     if (iqbVal('iqb_propErrors')) n++;
     if (iqbVal('iqb_country'))    n++;
@@ -240,13 +248,13 @@ function iqbUpdateBadge() {
 }
 function _syncUrl() {
     var url = new URL(window.location.href);
-    ['destinationNameForSearch','policyNameForSearch','enabled','anonymous','totp','propErrors','country','comment'].forEach(function(k) {
+    ['destinationNameForSearch','policyNameForSearch','enabled','service','totp','propErrors','country','comment'].forEach(function(k) {
         url.searchParams.delete(k);
     });
     if (_destFilter)   url.searchParams.set('destinationNameForSearch', _destFilter);
     if (_policyFilter) url.searchParams.set('policyNameForSearch', _policyFilter);
     var en = iqbVal('iqb_enabled');    if (en) url.searchParams.set('enabled', en);
-    var an = iqbVal('iqb_anonymous');  if (an) url.searchParams.set('anonymous', an);
+    var sv = iqbVal('iqb_service');    if (sv) url.searchParams.set('service', sv);
     var tp = iqbVal('iqb_totp');       if (tp) url.searchParams.set('totp', tp);
     var pe = iqbVal('iqb_propErrors'); if (pe) url.searchParams.set('propErrors', pe);
     var co = iqbVal('iqb_country');    if (co) url.searchParams.set('country', co);
@@ -264,7 +272,7 @@ function iqbClear() {
     _destFilter = ''; _policyFilter = '';
     var di = document.getElementById('destPickerInput');   if (di) di.value = '';
     var pi = document.getElementById('policyPickerInput'); if (pi) pi.value = '';
-    ['iqb_enabled','iqb_anonymous','iqb_totp','iqb_propErrors','iqb_country','iqb_comment'].forEach(function(id) {
+    ['iqb_enabled','iqb_service','iqb_totp','iqb_propErrors','iqb_country','iqb_comment'].forEach(function(id) {
         var el = document.getElementById(id); if (el) el.value = '';
     });
     // Clear country flag

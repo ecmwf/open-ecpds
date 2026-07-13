@@ -1561,9 +1561,6 @@ public enum ECtransOptions {
     /** The host master home dir. */
     HOST_MASTER_HOME_DIR("homeDir", String.class, STRING_NONE),
 
-    /** The user portal anonymous. */
-    USER_PORTAL_ANONYMOUS("anonymous", Boolean.class, false),
-
     /** The user portal access guide. */
     USER_PORTAL_ACCESS_GUIDE("accessGuide", Boolean.class, true),
 

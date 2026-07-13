@@ -224,13 +224,33 @@ public class IncomingUserBean extends ModelBeanBase implements IncomingUser, Ojb
     /**
      * {@inheritDoc}
      *
-     * Gets the anonymous.
+     * Gets the anonymous. Derived from portal service for backward compatibility.
      *
      * @return the anonymous
      */
     @Override
     public boolean getAnonymous() {
-        return setup.getBoolean(ECtransOptions.USER_PORTAL_ANONYMOUS);
+        return "open-access".equals(getPortalService());
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Gets the portal service.
+     */
+    @Override
+    public String getPortalService() {
+        return incomingUser.getPortalService();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Sets the portal service.
+     */
+    @Override
+    public void setPortalService(final String service) {
+        incomingUser.setPortalService(service);
     }
 
     /**

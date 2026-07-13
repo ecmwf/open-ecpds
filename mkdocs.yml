@@ -101,6 +101,7 @@ nav:
   - Use Cases:
       - ECPDS Command-line Tool: use-cases/ecpds-cli.md
       - Data Portal: use-cases/data-portal.md
+      - Data Users: use-cases/data-users.md
       - Data User Options: use-cases/data-portal-user-options.md
       - Acquisition: use-cases/acquisition.md
       - Acquisition Options: use-cases/acquisition-options.md
