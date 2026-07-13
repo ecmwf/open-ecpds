@@ -136,6 +136,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     private static final transient String[] METADATA_TAGS = Cnf.stringListAt("MetaData", "tags", "mailGroup:email",
             "ContactInformations:email");
 
+    /** Pre-compiled pattern to extract the "email" field from a JSON object without a Jackson dependency. */
+    private static final transient Pattern _JSON_EMAIL_PATTERN = Pattern.compile("\"email\"\\s*:\\s*\"([^\"\\\\]*)\"");
+
     /** Whether to use DB for contact lookups (fallback to XML files if false). */
     private static final transient boolean METADATA_USE_DB = Cnf.at("MetaData", "useDB", "true")
             .equalsIgnoreCase("true");
@@ -438,22 +441,18 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
                     if (raw == null || raw.isBlank()) {
                         continue;
                     }
-                    // Try JSON first
-                    try {
-                        final var node = new com.fasterxml.jackson.databind.ObjectMapper().readTree(raw);
-                        final var emailNode = node.get("email");
-                        if (emailNode != null && !emailNode.isNull()) {
-                            final var e = emailNode.asText().trim();
+                    // Extract email: try JSON {"email":"..."} first, then treat as plain address
+                    final var trimmed = raw.trim();
+                    if (trimmed.startsWith("{")) {
+                        final var m = _JSON_EMAIL_PATTERN.matcher(trimmed);
+                        if (m.find()) {
+                            final var e = m.group(1).trim();
                             if (!e.isEmpty()) {
                                 emails.add(e);
                             }
                         }
-                    } catch (final Exception ignored) {
-                        // Plain email
-                        final var trimmed = raw.trim();
-                        if (trimmed.contains("@")) {
-                            emails.add(trimmed);
-                        }
+                    } else if (trimmed.contains("@")) {
+                        emails.add(trimmed);
                     }
                 }
                 if (!emails.isEmpty()) {
