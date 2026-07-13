@@ -61,7 +61,6 @@ public class SaveDestinationMetaDataAction extends PDSAction {
             throws ECMWFActionFormException {
         response.setContentType("application/json;charset=UTF-8");
         try {
-            @SuppressWarnings("unchecked")
             final var body = _mapper.readValue(request.getInputStream(), Map.class);
             final var destinationName = (String) body.get("destination");
             if (destinationName == null || destinationName.isBlank()) {

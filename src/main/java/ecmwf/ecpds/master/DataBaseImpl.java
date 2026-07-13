@@ -96,6 +96,7 @@ import ecmwf.common.database.DestinationMetaValue;
 import ecmwf.common.database.Operation;
 import ecmwf.common.database.PolicyAssociation;
 import ecmwf.common.database.PolicyUser;
+import ecmwf.common.database.PortalSubscriber;
 import ecmwf.common.database.PortalTraffic;
 import ecmwf.common.database.ProductStatus;
 import ecmwf.common.database.Rates;
@@ -3508,6 +3509,58 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
         ecpds.insert(new IncomingPermission(incomingUser, ecpds.getOperation("mtime")), false);
         ecpds.insert(new IncomingPermission(incomingUser, ecpds.getOperation("size")), false);
         return monitor.done(password);
+    }
+
+    public String selfRegisterUser(final String id, final String name, final String email, final String iso)
+            throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("selfRegisterUser(" + id + "," + email + ")");
+        final var incomingUser = ecpds.getIncomingUserObject(id);
+        if (incomingUser == null || !incomingUser.getActive()) {
+            throw new DataBaseException("Data user '" + id + "' not found or not active");
+        }
+        if (!"self-service".equals(incomingUser.getPortalService())) {
+            throw new DataBaseException("Data user '" + id + "' does not accept self-service registrations");
+        }
+        final var existing = ecpds.getPortalSubscriberByEmailAndUser(email, id);
+        if (existing != null) {
+            throw new DataBaseException(existing.getPsbActive() ? "Email '" + email + "' is already registered"
+                    : "Email '" + email + "' is already registered (pending verification)");
+        }
+        final var password = randomString(12);
+        final var token = randomString(32);
+        final var sub = new PortalSubscriber();
+        sub.setPsbInuId(id);
+        sub.setPsbEmail(email);
+        sub.setPsbName(name);
+        sub.setPsbIso(iso);
+        sub.setPsbPassword(password);
+        sub.setPsbActive(false);
+        sub.setPsbVerifyToken(token);
+        sub.setPsbCreatedTime(System.currentTimeMillis());
+        ecpds.insert(sub, false);
+        return monitor.done(token);
+    }
+
+    public String verifyRegistrationToken(final String token, final boolean autoApprove)
+            throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("verifyRegistrationToken(autoApprove=" + autoApprove + ")");
+        if (token == null || token.isBlank() || "VERIFIED".equals(token)) {
+            return monitor.done("invalid");
+        }
+        final var sub = ecpds.getPortalSubscriberByToken(token);
+        if (sub == null) {
+            return monitor.done("invalid");
+        }
+        if (autoApprove) {
+            sub.setPsbActive(true);
+            sub.setPsbVerifyToken(null);
+            ecpds.update(sub);
+            return monitor
+                    .done("activated:" + sub.getPsbEmail() + ":" + sub.getPsbPassword() + ":" + sub.getPsbInuId());
+        }
+        sub.setPsbVerifyToken("VERIFIED");
+        ecpds.update(sub);
+        return monitor.done("verified:" + sub.getPsbEmail() + ":" + sub.getPsbInuId());
     }
 
     /**

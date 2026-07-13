@@ -30,6 +30,7 @@ import java.rmi.RemoteException;
 import java.util.List;
 
 import ecmwf.common.database.Association;
+import ecmwf.common.database.DataBaseException;
 import ecmwf.common.database.DataTransfer;
 import ecmwf.common.database.Destination;
 import ecmwf.common.database.Host;
@@ -368,5 +369,63 @@ public interface MasterInterface extends ProviderInterface {
      */
     boolean updateLocalTransferStatus(String master, boolean standby, String destination, String target,
             String uniqueName, String status) throws RemoteException;
+
+    /**
+     * Self-register a new data portal user (self-service flow). Creates an inactive IncomingUser with
+     * portal_service="self-service", generates a verification token stored in INU_VERIFY_TOKEN, and returns the token
+     * so the caller can send a verification email.
+     *
+     * @param id
+     *            the requested username
+     * @param name
+     *            the user's full name (stored in comment field)
+     * @param email
+     *            the user's email address
+     * @param iso
+     *            ISO 3166-1 alpha-2 country code
+     *
+     * @return the generated verification token
+     *
+     * @throws DataBaseException
+     *             if id already exists or is invalid
+     * @throws RemoteException
+     *             the remote exception
+     */
+    String selfRegisterUser(String id, String name, String email, String iso) throws DataBaseException, RemoteException;
+
+    /**
+     * Verify a self-registration token. If autoApprove is true and the token is valid: activates the user, clears the
+     * token, generates a random password, and returns "activated:userId:password". If autoApprove is false and the
+     * token is valid: marks the email as verified (sets token to "VERIFIED") and returns "verified:userId". Returns
+     * "invalid" if the token is not found.
+     *
+     * @param token
+     *            the verification token from the email link
+     * @param autoApprove
+     *            whether to activate the account immediately
+     *
+     * @return status string: "activated:userId:password", "verified:userId", or "invalid"
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     * @throws RemoteException
+     *             the remote exception
+     */
+    String verifyRegistrationToken(String token, boolean autoApprove) throws DataBaseException, RemoteException;
+
+    /**
+     * Send an email notification via the MasterServer mail infrastructure.
+     *
+     * @param to
+     *            the recipient email address
+     * @param subject
+     *            the email subject
+     * @param body
+     *            the HTML email body
+     *
+     * @throws RemoteException
+     *             the remote exception
+     */
+    void sendNotificationEmail(String to, String subject, String body) throws RemoteException;
 
 }

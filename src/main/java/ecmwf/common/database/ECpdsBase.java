@@ -583,6 +583,38 @@ public final class ECpdsBase extends DataBase {
         }
     }
 
+    public PortalSubscriber getPortalSubscriberByToken(final String token) {
+        try (final var iterator = ecpds.getPortalSubscriberByToken(PortalSubscriber.class, token)) {
+            return iterator.hasNext() ? iterator.next() : null;
+        } catch (final Exception e) {
+            _log.warn("getPortalSubscriberByToken({})", token, e);
+            return null;
+        }
+    }
+
+    public PortalSubscriber getPortalSubscriberByEmailAndUser(final String email, final String inuId) {
+        try (final var iterator = ecpds.getPortalSubscriberByEmailAndUser(PortalSubscriber.class, email, inuId)) {
+            return iterator.hasNext() ? iterator.next() : null;
+        } catch (final Exception e) {
+            _log.warn("getPortalSubscriberByEmailAndUser({}, {})", email, inuId, e);
+            return null;
+        }
+    }
+
+    public PortalSubscriber findActiveSubscriberByPassword(final String inuId, final String password) {
+        try (final var iterator = ecpds.getPortalSubscribersByIncomingUser(PortalSubscriber.class, inuId)) {
+            while (iterator.hasNext()) {
+                final var sub = iterator.next();
+                if (sub.getPsbActive() && password.equals(sub.getPsbPassword())) {
+                    return sub;
+                }
+            }
+        } catch (final Exception e) {
+            _log.warn("findActiveSubscriberByPassword({})", inuId, e);
+        }
+        return null;
+    }
+
     /**
      * Gets the incoming policies for an incoming user.
      *

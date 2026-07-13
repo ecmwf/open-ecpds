@@ -1060,6 +1060,38 @@
 		</property>
 	</class>
 
+	<class name="PortalSubscriber" table="PORTAL_SUBSCRIBER"
+		dynamic-update="true">
+		<id name="PSB_ID" type="java.lang.Long">
+			<column name="PSB_ID" />
+			<generator class="native" />
+		</id>
+		<property name="PSB_INU_ID" type="java.lang.String">
+			<column name="PSB_INU_ID" />
+		</property>
+		<property name="PSB_EMAIL" type="java.lang.String">
+			<column name="PSB_EMAIL" />
+		</property>
+		<property name="PSB_NAME" type="java.lang.String">
+			<column name="PSB_NAME" />
+		</property>
+		<property name="PSB_ISO" type="java.lang.String">
+			<column name="PSB_ISO" />
+		</property>
+		<property name="PSB_PASSWORD" type="java.lang.String">
+			<column name="PSB_PASSWORD" />
+		</property>
+		<property name="PSB_ACTIVE" type="boolean">
+			<column name="PSB_ACTIVE" />
+		</property>
+		<property name="PSB_VERIFY_TOKEN" type="java.lang.String">
+			<column name="PSB_VERIFY_TOKEN" />
+		</property>
+		<property name="PSB_CREATED_TIME" type="java.lang.Long">
+			<column name="PSB_CREATED_TIME" />
+		</property>
+	</class>
+
 	<class name="IncomingPolicy" table="INCOMING_POLICY">
 		<cache usage="read-write" />
 		<id name="INP_ID" type="java.lang.String">

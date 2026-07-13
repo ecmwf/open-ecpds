@@ -183,7 +183,7 @@ public class GetDataTransferAction extends PDSAction {
         final var groups = new java.util.LinkedHashMap<Integer, List<ecmwf.common.database.TransferStatistics>>();
         if (stats != null) {
             for (final var ts : stats) {
-                groups.computeIfAbsent(ts.getRequeueHistory(), k -> new ArrayList<>()).add(ts);
+                groups.computeIfAbsent(ts.getRequeueHistory(), _ -> new ArrayList<>()).add(ts);
             }
         }
         return new ArrayList<>(groups.values());

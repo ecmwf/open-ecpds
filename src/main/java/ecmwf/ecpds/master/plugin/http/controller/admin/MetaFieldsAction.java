@@ -105,7 +105,6 @@ public class MetaFieldsAction extends PDSAction {
             final User user) {
         response.setContentType("application/json;charset=UTF-8");
         try {
-            @SuppressWarnings("unchecked")
             final var body = _mapper.readValue(request.getInputStream(), Map.class);
 
             final var field = new DestinationMetaField();
@@ -201,7 +200,6 @@ public class MetaFieldsAction extends PDSAction {
     private ActionForward handleToggle(final HttpServletRequest request, final HttpServletResponse response) {
         response.setContentType("application/json;charset=UTF-8");
         try {
-            @SuppressWarnings("unchecked")
             final var body = _mapper.readValue(request.getInputStream(), Map.class);
             final int id = Integer.parseInt(String.valueOf(body.get("DMF_ID")));
             final boolean active = Boolean.parseBoolean(String.valueOf(body.get("DMF_ACTIVE")));
@@ -230,7 +228,6 @@ public class MetaFieldsAction extends PDSAction {
     private ActionForward handleDelete(final HttpServletRequest request, final HttpServletResponse response) {
         response.setContentType("application/json;charset=UTF-8");
         try {
-            @SuppressWarnings("unchecked")
             final var body = _mapper.readValue(request.getInputStream(), Map.class);
             final int id = Integer.parseInt(String.valueOf(body.get("DMF_ID")));
             final var db = MasterManager.getDB();

@@ -120,11 +120,17 @@ public final class RESTServer {
     /** The Constant PORTAL_FILE. */
     private static final String PORTAL_FILE = Cnf.at("HttpPlugin", "portalFile");
 
+    /** The Constant REGISTER_FILE. */
+    private static final String REGISTER_FILE = Cnf.at("HttpPlugin", "registerFile");
+
     /** The Constant homeContent. */
     private static final StringBuilder homeContent = new StringBuilder();
 
     /** The Constant portalContent. */
     private static final StringBuilder portalContent = new StringBuilder();
+
+    /** The Constant registerContent. */
+    private static final StringBuilder registerContent = new StringBuilder();
 
     /** The Constant MULTIPART_BOUNDARY. */
     private static final String MULTIPART_BOUNDARY = "MULTIPART_BYTERANGES";
@@ -1362,6 +1368,9 @@ public final class RESTServer {
             Format.replaceAll(sb, "${accessGuide}", String.valueOf(accessGuide));
             final var loginButton = setup == null || setup.getBoolean(ECtransOptions.USER_PORTAL_LOGIN_BUTTON);
             Format.replaceAll(sb, "${loginButtonHidden}", loginButton ? "" : "d-none");
+            final var registrationEnabled = Cnf.at("DataPortal", "registrationEnabled", false)
+                    && "self-service".equals(session.getPortalService());
+            Format.replaceAll(sb, "${registerLinkHidden}", registrationEnabled ? "" : "d-none");
             final var trafficStats = setup == null || setup.getBoolean(ECtransOptions.USER_PORTAL_TRAFFIC_STATS);
             Format.replaceAll(sb, "${trafficStats}", String.valueOf(trafficStats));
             final var userId = session.getUser();
@@ -1554,6 +1563,235 @@ public final class RESTServer {
     /**
      * Logout endpoint — clears the portal session cookie and evicts the token from the cache, then flushes any
      * browser-cached Basic Auth credentials and redirects to the given {@code next} path (default: {@code file}).
+     *
+     * Registration page — serves the self-service account request form (no authentication required).
+     *
+     * @param request
+     *            the HTTP request
+     * @param response
+     *            the HTTP response
+     *
+     * @return the registration HTML page
+     */
+    @GET
+    @Produces(MediaType.TEXT_HTML)
+    @Path("register")
+    public Response registerGet(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response) {
+        _log.debug("REST received request: registerGet");
+        try {
+            final var sb = new StringBuilder().append(getTemplateContent(registerContent, REGISTER_FILE));
+            final var title = System.getProperty("mover.title", "Data Store for Acquisition & Dissemination");
+            final var tab = System.getProperty("mover.tab", title);
+            final var footer = System.getProperty("mover.footer",
+                    "Powered by <a href=\"https://github.com/ecmwf/open-ecpds\" target=\"_blank\">OpenECPDS</a>");
+            final var color = System.getProperty("mover.color", "#000000");
+            Format.replaceAll(sb, "${tab}", tab);
+            Format.replaceAll(sb, "${title}", title);
+            Format.replaceAll(sb, "${footer}", footer);
+            Format.replaceAll(sb, "${color}", color);
+            Format.replaceAll(sb, "${version}", Version.getVersion());
+            Format.replaceAll(sb, "${build}", Version.getBuild());
+            return Response.ok(sb.toString(), MediaType.TEXT_HTML).build();
+        } catch (final Exception e) {
+            _log.warn("registerGet", e);
+            return Response.serverError().entity("Registration page unavailable").build();
+        }
+    }
+
+    /**
+     * Registration submit — creates a pending account and sends a verification email. Accepts JSON:
+     * {@code {"id":"...","name":"...","email":"...","iso":"..."}}. Returns 200 with {@code {"status":"pending"}} on
+     * success, or 400/500 with {@code {"message":"..."}} on failure. No authentication required.
+     *
+     * @param request
+     *            the HTTP request
+     * @param response
+     *            the HTTP response
+     * @param body
+     *            the JSON request body
+     *
+     * @return JSON response
+     */
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("register")
+    public Response registerPost(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+            final String body) {
+        _log.debug("REST received request: registerPost");
+        try {
+            final var mapper = new ObjectMapper();
+            final var json = mapper.readValue(body, Map.class);
+            // 'user' is the IncomingUser ID (e.g., "test") that this subscriber is registering for
+            final var user = trim(json.get("user"));
+            final var name = trim(json.get("name"));
+            final var email = trim(json.get("email"));
+            final var iso = trim(json.get("iso"));
+            if (user.isEmpty() || name.isEmpty() || email.isEmpty() || iso.isEmpty()) {
+                return jsonError(400, "All fields are required");
+            }
+            // Create PortalSubscriber + get verification token via master RMI.
+            // selfRegisterUser(id, name, email, iso) where id = the IncomingUser to subscribe to.
+            final String token;
+            try {
+                token = mover.getMasterInterface().selfRegisterUser(user, name, email, iso);
+            } catch (final ecmwf.common.database.DataBaseException e) {
+                return jsonError(400, e.getMessage());
+            }
+            // Derive the verify URL from the exact URL the client used to reach this endpoint.
+            // Replacing /register at the end gives the correct external URL even behind a
+            // reverse proxy (e.g. https://portal.example.com/ecpds/verify?token=...).
+            final var verifyUrl = request.getRequestURL().toString().replaceFirst("/register$", "/verify") + "?token="
+                    + token;
+            // Send verification email to the registrant
+            final var subject = "Verify your data portal registration";
+            final var emailBody = "<p>Hello " + escapeHtml(name) + ",</p>"
+                    + "<p>Thank you for registering for access to the data portal. "
+                    + "Please click the link below to verify your email address and complete your registration:</p>"
+                    + "<p><a href=\"" + verifyUrl + "\">" + verifyUrl + "</a></p>"
+                    + "<p>Once verified, you will be able to log in to the data portal using:</p>"
+                    + "<ul><li><strong>Username:</strong> " + escapeHtml(user) + "</li>"
+                    + "<li><strong>Email:</strong> " + escapeHtml(email) + "</li></ul>"
+                    + "<p>Your personal password will be sent in a follow-up email after your access is confirmed.</p>"
+                    + "<p>This link expires in 24 hours. If you did not make this request, please ignore this email.</p>";
+            try {
+                mover.getMasterInterface().sendNotificationEmail(email, subject, emailBody);
+            } catch (final Exception e) {
+                _log.warn("Failed to send verification email to {}", email, e);
+            }
+            // Notify admin
+            final var adminEmail = Cnf.at("DataPortal", "registrationAdminEmail", "");
+            if (!adminEmail.isEmpty()) {
+                final var adminSubject = "New registration request for data user '" + user + "'";
+                final var adminBody = "<p>A new subscriber registration has been submitted for data user <strong>"
+                        + escapeHtml(user) + "</strong>:</p>" + "<ul><li><strong>Name:</strong> " + escapeHtml(name)
+                        + "</li>" + "<li><strong>Email:</strong> " + escapeHtml(email) + "</li>"
+                        + "<li><strong>Country:</strong> " + escapeHtml(iso) + "</li></ul>"
+                        + "<p>The subscriber has been sent a verification email. Once verified, the account will be "
+                        + (Cnf.at("DataPortal", "registrationAutoApprove", false) ? "activated automatically."
+                                : "pending your approval in the admin interface.")
+                        + "</p>";
+                try {
+                    mover.getMasterInterface().sendNotificationEmail(adminEmail, adminSubject, adminBody);
+                } catch (final Exception e) {
+                    _log.warn("Failed to send admin notification email", e);
+                }
+            }
+            return Response.ok("{\"status\":\"pending\"}", MediaType.APPLICATION_JSON).build();
+        } catch (final Exception e) {
+            _log.warn("registerPost", e);
+            return jsonError(500, "Internal error. Please try again later.");
+        }
+    }
+
+    /**
+     * Email verification endpoint — called from the link in the verification email. If valid: auto-approves or marks
+     * email as verified, then redirects to the register page with a {@code ?state=} query parameter indicating the
+     * outcome.
+     *
+     * @param token
+     *            the verification token from the email link
+     * @param request
+     *            the HTTP request
+     * @param response
+     *            the HTTP response
+     *
+     * @return redirect to the register page
+     */
+    @GET
+    @Path("verify")
+    public Response verifyGet(@QueryParam("token") final String token, @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response) {
+        _log.debug("REST received request: verifyGet");
+        // Derive the register page redirect URL from the exact URL the client used to
+        // reach /verify — replacing /verify with /register preserves the external base.
+        final var registerBase = request.getRequestURL().toString().replaceFirst("/verify$", "/register") + "?state=";
+        if (token == null || token.isBlank()) {
+            return Response.seeOther(java.net.URI.create(registerBase + "invalid")).build();
+        }
+        try {
+            final var autoApprove = Cnf.at("DataPortal", "registrationAutoApprove", false);
+            final var result = mover.getMasterInterface().verifyRegistrationToken(token, autoApprove);
+            if (result == null || result.equals("invalid")) {
+                return Response.seeOther(java.net.URI.create(registerBase + "invalid")).build();
+            }
+            if (result.startsWith("activated:")) {
+                // result = "activated:email:password:inuId" — auto-approved subscriber
+                final var parts = result.split(":", 4);
+                final var email = parts.length > 1 ? parts[1] : "";
+                final var password = parts.length > 2 ? parts[2] : "";
+                final var inuId = parts.length > 3 ? parts[3] : "";
+                // Send welcome email with credentials directly to the subscriber
+                if (!email.isEmpty()) {
+                    final var credSubject = "Your data portal access is ready";
+                    final var credBody = "<p>Your registration has been confirmed!</p>"
+                            + "<p>You can now log in to the data portal using:</p>"
+                            + "<ul><li><strong>Username:</strong> " + escapeHtml(inuId) + "</li>"
+                            + "<li><strong>Password:</strong> <code>" + escapeHtml(password) + "</code></li></ul>"
+                            + "<p>We recommend changing your password after your first login.</p>";
+                    try {
+                        mover.getMasterInterface().sendNotificationEmail(email, credSubject, credBody);
+                    } catch (final Exception e) {
+                        _log.warn("Failed to send credentials email to {}", email, e);
+                    }
+                }
+                // Notify admin too
+                final var adminEmail = Cnf.at("DataPortal", "registrationAdminEmail", "");
+                if (!adminEmail.isEmpty() && !email.isEmpty()) {
+                    try {
+                        mover.getMasterInterface().sendNotificationEmail(adminEmail,
+                                "Subscriber activated for data user '" + inuId + "'",
+                                "<p>Subscriber <strong>" + escapeHtml(email)
+                                        + "</strong> has been auto-activated for data user <strong>" + escapeHtml(inuId)
+                                        + "</strong>.</p>");
+                    } catch (final Exception e) {
+                        _log.warn("Failed to send admin activation notification", e);
+                    }
+                }
+                return Response.seeOther(java.net.URI.create(registerBase + "activated")).build();
+            }
+            if (result.startsWith("verified:")) {
+                // result = "verified:email:inuId" — email verified but pending admin approval
+                final var parts = result.split(":", 3);
+                final var email = parts.length > 1 ? parts[1] : "";
+                final var inuId = parts.length > 2 ? parts[2] : "";
+                // Notify admin to approve
+                final var adminEmail = Cnf.at("DataPortal", "registrationAdminEmail", "");
+                if (!adminEmail.isEmpty() && !email.isEmpty()) {
+                    final var adminBody = "<p>Subscriber <strong>" + escapeHtml(email)
+                            + "</strong> has verified their email address and is requesting access to data user <strong>"
+                            + escapeHtml(inuId) + "</strong>.</p>"
+                            + "<p>Please log in to the admin interface to approve or reject this request.</p>";
+                    try {
+                        mover.getMasterInterface().sendNotificationEmail(adminEmail,
+                                "Registration pending approval for data user '" + inuId + "'", adminBody);
+                    } catch (final Exception e) {
+                        _log.warn("Failed to send verification notification", e);
+                    }
+                }
+                return Response.seeOther(java.net.URI.create(registerBase + "verified")).build();
+            }
+            return Response.seeOther(java.net.URI.create(registerBase + "invalid")).build();
+        } catch (final Exception e) {
+            _log.warn("verifyGet", e);
+            return Response.seeOther(java.net.URI.create(registerBase + "invalid")).build();
+        }
+    }
+
+    /** Helper: safely trim an object from JSON to a String. */
+    private static String trim(final Object o) {
+        return o == null ? "" : o.toString().trim();
+    }
+
+    /** Build a JSON error response. */
+    private static Response jsonError(final int status, final String message) {
+        final var body = "{\"message\":\"" + message.replace("\"", "\\\"") + "\"}";
+        return Response.status(status).entity(body).type(MediaType.APPLICATION_JSON).build();
+    }
+
+    /**
+     * Logout endpoint.
      *
      * @param next
      *            optional path to redirect to after logout (relative to the context path, e.g. {@code data/list/})
@@ -2236,7 +2474,6 @@ public final class RESTServer {
                     // doesn't need to re-validate TOTP on every subsequent request.
                     // Skip for anonymous users — they have no TOTP and issuing cookies would
                     // create unnecessary server-side session entries under high load.
-                    final var setup = session.getECtransSetup();
                     if (!"open-access".equals(session.getPortalService())) {
                         setPortalSessionCookie(response, session.getToken());
                     }

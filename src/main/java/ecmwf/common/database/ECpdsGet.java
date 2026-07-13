@@ -1541,6 +1541,24 @@ final class ECpdsGet {
                 new String[] { "name=" + paramName });
     }
 
+    <T extends DataBaseObject> DBIterator<T> getPortalSubscriberByToken(final Class<T> resultClass, final String token)
+            throws SQLException, IOException {
+        return _database.executeQuery("ECpdsBase", "getPortalSubscriberByToken", resultClass,
+                new String[] { "token=" + token });
+    }
+
+    <T extends DataBaseObject> DBIterator<T> getPortalSubscribersByIncomingUser(final Class<T> resultClass,
+            final String inuId) throws SQLException, IOException {
+        return _database.executeQuery("ECpdsBase", "getPortalSubscribersByIncomingUser", resultClass,
+                new String[] { "inuId=" + inuId });
+    }
+
+    <T extends DataBaseObject> DBIterator<T> getPortalSubscriberByEmailAndUser(final Class<T> resultClass,
+            final String email, final String inuId) throws SQLException, IOException {
+        return _database.executeQuery("ECpdsBase", "getPortalSubscriberByEmailAndUser", resultClass,
+                new String[] { "email=" + email, "inuId=" + inuId });
+    }
+
     /**
      * Gets the incoming policies for an incoming user.
      *

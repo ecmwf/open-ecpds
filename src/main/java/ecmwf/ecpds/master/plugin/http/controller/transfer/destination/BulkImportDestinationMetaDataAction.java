@@ -19,8 +19,6 @@
 package ecmwf.ecpds.master.plugin.http.controller.transfer.destination;
 
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;

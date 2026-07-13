@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>(function(){var t=localStorage.getItem('ecpds-theme');if(t)document.documentElement.setAttribute('data-bs-theme',t);}());</script>
+  <title>${tab}</title>
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="stylesheet" href="/bootstrap/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/bootstrap-icons/bootstrap-icons.min.css">
+  <style>
+    body { min-height: 100vh; display: flex; flex-direction: column; padding-top: 70px; padding-bottom: 44px; }
+    .topheader {
+      position: fixed; z-index: 1030; top: 0; left: 0; width: 100%; margin: 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.30);
+    }
+    #topheader .container-fluid { flex-wrap: nowrap !important; }
+    .header_simple_title {
+      font-size: 0.75rem; font-weight: 600; letter-spacing: 0.025em;
+      color: rgba(255,255,255,0.95);
+      background: rgba(255,255,255,0.13); border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 20px; padding: 0.18rem 0.7rem;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      flex: 0 1 auto; min-width: 0; max-width: 40%;
+    }
+    .bottomfooter {
+      position: fixed; z-index: 1030; bottom: 0; left: 0; width: 100%; margin: 0;
+    }
+    .footer_simple_title {
+      font-size: 0.78rem; color: rgba(255,255,255,0.85);
+      font-family: "Open Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
+    }
+    .footer_simple_title a { color: #fff; text-decoration: none; font-weight: 600; }
+    .footer_simple_title a:hover { color: #fff; text-decoration: underline; }
+    .register-card {
+      max-width: 520px; margin: 2rem auto; flex: 1;
+    }
+    .field-hint { font-size: 0.78rem; color: var(--bs-secondary-color, #6c757d); }
+  </style>
+</head>
+<body>
+
+<nav id="topheader" class="topheader navbar py-0" style="background-color: ${color};">
+  <div class="container-fluid d-flex align-items-center px-3 py-2">
+    <a class="navbar-brand p-0 me-0 flex-shrink-0" href="/">
+      <img src="/images/logo.production.png" alt="ECPDS" width="140" height="24" style="display:block;">
+    </a>
+    <span class="header_simple_title d-none d-sm-block ms-2">${title}</span>
+    <div class="d-flex align-items-center gap-2 flex-shrink-0 ms-auto">
+      <button id="btnTheme" class="btn btn-sm btn-outline-light p-1 lh-1"
+              onclick="ecpdsToggleTheme()" title="Toggle light/dark theme"
+              style="width:28px;height:28px;">
+        <i id="themeIcon" class="bi bi-moon-fill" style="font-size:0.8rem;"></i>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<div class="container register-card">
+  <!-- State: form (initial) -->
+  <div id="viewForm">
+    <div class="card shadow-sm border-0">
+      <div class="card-header border-0 pt-4 pb-2 px-4" style="background:transparent;">
+        <h5 class="mb-0 fw-semibold"><i class="bi bi-person-plus-fill me-2 text-primary"></i>Request Data Portal Access</h5>
+        <p class="text-muted mb-0 mt-1" style="font-size:0.85rem;">
+          Fill in the form below. You will receive an email to confirm your address,
+          after which your request will be reviewed.
+        </p>
+      </div>
+      <div class="card-body px-4 pb-4 pt-3">
+        <div id="formError" class="alert alert-danger d-none" role="alert"></div>
+
+        <!-- Hidden: data user this registration is for (set from ?user= URL param) -->
+        <input type="hidden" id="fieldUser">
+
+        <!-- Shown when no ?user= param: lets the server inject a list or error -->
+        <div id="userDisplay" class="mb-3 d-none">
+          <label class="form-label fw-medium">Registering for</label>
+          <div class="form-control-plaintext fw-semibold" id="userDisplayText"></div>
+        </div>
+
+        <div class="mb-3">
+          <label for="fieldName" class="form-label fw-medium">Full name <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" id="fieldName" autocomplete="name"
+                 placeholder="e.g. Jane Smith" maxlength="256" required>
+        </div>
+
+        <div class="mb-3">
+          <label for="fieldEmail" class="form-label fw-medium">Email address <span class="text-danger">*</span></label>
+          <input type="email" class="form-control" id="fieldEmail" autocomplete="email"
+                 placeholder="you@example.com" maxlength="512" required>
+          <div class="field-hint mt-1">A verification link will be sent to this address. You will use this email to log in.</div>
+        </div>
+
+        <div class="mb-4">
+          <label for="fieldIso" class="form-label fw-medium">Country <span class="text-danger">*</span></label>
+          <select class="form-select" id="fieldIso" required>
+            <option value="">Select your country…</option>
+            <option value="AF">Afghanistan</option>
+            <option value="AL">Albania</option>
+            <option value="DZ">Algeria</option>
+            <option value="AD">Andorra</option>
+            <option value="AO">Angola</option>
+            <option value="AG">Antigua and Barbuda</option>
+            <option value="AR">Argentina</option>
+            <option value="AM">Armenia</option>
+            <option value="AU">Australia</option>
+            <option value="AT">Austria</option>
+            <option value="AZ">Azerbaijan</option>
+            <option value="BS">Bahamas</option>
+            <option value="BH">Bahrain</option>
+            <option value="BD">Bangladesh</option>
+            <option value="BB">Barbados</option>
+            <option value="BY">Belarus</option>
+            <option value="BE">Belgium</option>
+            <option value="BZ">Belize</option>
+            <option value="BJ">Benin</option>
+            <option value="BT">Bhutan</option>
+            <option value="BO">Bolivia</option>
+            <option value="BA">Bosnia and Herzegovina</option>
+            <option value="BW">Botswana</option>
+            <option value="BR">Brazil</option>
+            <option value="BN">Brunei</option>
+            <option value="BG">Bulgaria</option>
+            <option value="BF">Burkina Faso</option>
+            <option value="BI">Burundi</option>
+            <option value="CV">Cabo Verde</option>
+            <option value="KH">Cambodia</option>
+            <option value="CM">Cameroon</option>
+            <option value="CA">Canada</option>
+            <option value="CF">Central African Republic</option>
+            <option value="TD">Chad</option>
+            <option value="CL">Chile</option>
+            <option value="CN">China</option>
+            <option value="CO">Colombia</option>
+            <option value="KM">Comoros</option>
+            <option value="CD">Congo (DR)</option>
+            <option value="CG">Congo (Republic)</option>
+            <option value="CR">Costa Rica</option>
+            <option value="HR">Croatia</option>
+            <option value="CU">Cuba</option>
+            <option value="CY">Cyprus</option>
+            <option value="CZ">Czech Republic</option>
+            <option value="DK">Denmark</option>
+            <option value="DJ">Djibouti</option>
+            <option value="DM">Dominica</option>
+            <option value="DO">Dominican Republic</option>
+            <option value="EC">Ecuador</option>
+            <option value="EG">Egypt</option>
+            <option value="SV">El Salvador</option>
+            <option value="GQ">Equatorial Guinea</option>
+            <option value="ER">Eritrea</option>
+            <option value="EE">Estonia</option>
+            <option value="SZ">Eswatini</option>
+            <option value="ET">Ethiopia</option>
+            <option value="FJ">Fiji</option>
+            <option value="FI">Finland</option>
+            <option value="FR">France</option>
+            <option value="GA">Gabon</option>
+            <option value="GM">Gambia</option>
+            <option value="GE">Georgia</option>
+            <option value="DE">Germany</option>
+            <option value="GH">Ghana</option>
+            <option value="GR">Greece</option>
+            <option value="GD">Grenada</option>
+            <option value="GT">Guatemala</option>
+            <option value="GN">Guinea</option>
+            <option value="GW">Guinea-Bissau</option>
+            <option value="GY">Guyana</option>
+            <option value="HT">Haiti</option>
+            <option value="HN">Honduras</option>
+            <option value="HU">Hungary</option>
+            <option value="IS">Iceland</option>
+            <option value="IN">India</option>
+            <option value="ID">Indonesia</option>
+            <option value="IR">Iran</option>
+            <option value="IQ">Iraq</option>
+            <option value="IE">Ireland</option>
+            <option value="IL">Israel</option>
+            <option value="IT">Italy</option>
+            <option value="JM">Jamaica</option>
+            <option value="JP">Japan</option>
+            <option value="JO">Jordan</option>
+            <option value="KZ">Kazakhstan</option>
+            <option value="KE">Kenya</option>
+            <option value="KI">Kiribati</option>
+            <option value="KP">Korea (North)</option>
+            <option value="KR">Korea (South)</option>
+            <option value="KW">Kuwait</option>
+            <option value="KG">Kyrgyzstan</option>
+            <option value="LA">Laos</option>
+            <option value="LV">Latvia</option>
+            <option value="LB">Lebanon</option>
+            <option value="LS">Lesotho</option>
+            <option value="LR">Liberia</option>
+            <option value="LY">Libya</option>
+            <option value="LI">Liechtenstein</option>
+            <option value="LT">Lithuania</option>
+            <option value="LU">Luxembourg</option>
+            <option value="MG">Madagascar</option>
+            <option value="MW">Malawi</option>
+            <option value="MY">Malaysia</option>
+            <option value="MV">Maldives</option>
+            <option value="ML">Mali</option>
+            <option value="MT">Malta</option>
+            <option value="MH">Marshall Islands</option>
+            <option value="MR">Mauritania</option>
+            <option value="MU">Mauritius</option>
+            <option value="MX">Mexico</option>
+            <option value="FM">Micronesia</option>
+            <option value="MD">Moldova</option>
+            <option value="MC">Monaco</option>
+            <option value="MN">Mongolia</option>
+            <option value="ME">Montenegro</option>
+            <option value="MA">Morocco</option>
+            <option value="MZ">Mozambique</option>
+            <option value="MM">Myanmar</option>
+            <option value="NA">Namibia</option>
+            <option value="NR">Nauru</option>
+            <option value="NP">Nepal</option>
+            <option value="NL">Netherlands</option>
+            <option value="NZ">New Zealand</option>
+            <option value="NI">Nicaragua</option>
+            <option value="NE">Niger</option>
+            <option value="NG">Nigeria</option>
+            <option value="MK">North Macedonia</option>
+            <option value="NO">Norway</option>
+            <option value="OM">Oman</option>
+            <option value="PK">Pakistan</option>
+            <option value="PW">Palau</option>
+            <option value="PA">Panama</option>
+            <option value="PG">Papua New Guinea</option>
+            <option value="PY">Paraguay</option>
+            <option value="PE">Peru</option>
+            <option value="PH">Philippines</option>
+            <option value="PL">Poland</option>
+            <option value="PT">Portugal</option>
+            <option value="QA">Qatar</option>
+            <option value="RO">Romania</option>
+            <option value="RU">Russia</option>
+            <option value="RW">Rwanda</option>
+            <option value="KN">Saint Kitts and Nevis</option>
+            <option value="LC">Saint Lucia</option>
+            <option value="VC">Saint Vincent and the Grenadines</option>
+            <option value="WS">Samoa</option>
+            <option value="SM">San Marino</option>
+            <option value="ST">Sao Tome and Principe</option>
+            <option value="SA">Saudi Arabia</option>
+            <option value="SN">Senegal</option>
+            <option value="RS">Serbia</option>
+            <option value="SC">Seychelles</option>
+            <option value="SL">Sierra Leone</option>
+            <option value="SG">Singapore</option>
+            <option value="SK">Slovakia</option>
+            <option value="SI">Slovenia</option>
+            <option value="SB">Solomon Islands</option>
+            <option value="SO">Somalia</option>
+            <option value="ZA">South Africa</option>
+            <option value="SS">South Sudan</option>
+            <option value="ES">Spain</option>
+            <option value="LK">Sri Lanka</option>
+            <option value="SD">Sudan</option>
+            <option value="SR">Suriname</option>
+            <option value="SE">Sweden</option>
+            <option value="CH">Switzerland</option>
+            <option value="SY">Syria</option>
+            <option value="TW">Taiwan</option>
+            <option value="TJ">Tajikistan</option>
+            <option value="TZ">Tanzania</option>
+            <option value="TH">Thailand</option>
+            <option value="TL">Timor-Leste</option>
+            <option value="TG">Togo</option>
+            <option value="TO">Tonga</option>
+            <option value="TT">Trinidad and Tobago</option>
+            <option value="TN">Tunisia</option>
+            <option value="TR">Turkey</option>
+            <option value="TM">Turkmenistan</option>
+            <option value="TV">Tuvalu</option>
+            <option value="UG">Uganda</option>
+            <option value="UA">Ukraine</option>
+            <option value="AE">United Arab Emirates</option>
+            <option value="GB">United Kingdom</option>
+            <option value="US">United States</option>
+            <option value="UY">Uruguay</option>
+            <option value="UZ">Uzbekistan</option>
+            <option value="VU">Vanuatu</option>
+            <option value="VE">Venezuela</option>
+            <option value="VN">Vietnam</option>
+            <option value="YE">Yemen</option>
+            <option value="ZM">Zambia</option>
+            <option value="ZW">Zimbabwe</option>
+          </select>
+        </div>
+
+        <button type="button" class="btn btn-primary w-100" id="btnSubmit" onclick="submitForm()">
+          <i class="bi bi-send me-2"></i>Send Verification Email
+        </button>
+        <div class="text-center mt-3">
+          <small class="text-muted">Already have an account?
+            <a href="/ecpds/data/list/" class="text-decoration-none">Sign in</a>
+          </small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- State: email sent -->
+  <div id="viewSent" class="d-none">
+    <div class="card shadow-sm border-0 text-center">
+      <div class="card-body px-4 py-5">
+        <i class="bi bi-envelope-check-fill text-success mb-3" style="font-size:3rem;"></i>
+        <h5 class="fw-semibold mb-2">Check your inbox</h5>
+        <p class="text-muted mb-0">
+          We sent a verification link to <strong id="sentEmail"></strong>.<br>
+          Click the link in the email to confirm your address and complete your registration request.
+        </p>
+        <p class="text-muted mt-3 mb-0" style="font-size:0.82rem;">
+          Didn't receive it? Check your spam folder. The link expires in 24 hours.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- State: already verified / approved (shown by verify endpoint redirect) -->
+  <div id="viewVerified" class="d-none">
+    <div class="card shadow-sm border-0 text-center">
+      <div class="card-body px-4 py-5">
+        <i class="bi bi-check-circle-fill text-success mb-3" style="font-size:3rem;"></i>
+        <h5 class="fw-semibold mb-2" id="verifiedTitle">Email verified</h5>
+        <p class="text-muted mb-3" id="verifiedMsg">
+          Your email address has been verified. Your access request is now pending admin approval —
+          you will receive a follow-up email once it has been reviewed.
+        </p>
+        <a href="/ecpds/data/list/" class="btn btn-outline-primary btn-sm">Go to sign-in</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- State: activated (auto-approve) -->
+  <div id="viewActivated" class="d-none">
+    <div class="card shadow-sm border-0 text-center">
+      <div class="card-body px-4 py-5">
+        <i class="bi bi-person-check-fill text-success mb-3" style="font-size:3rem;"></i>
+        <h5 class="fw-semibold mb-2">Account activated!</h5>
+        <p class="text-muted mb-3">
+          Your account has been activated. Your credentials have been sent to your email address.<br>
+          You can sign in to the data portal now.
+        </p>
+        <a href="/ecpds/data/list/" class="btn btn-primary btn-sm">
+          <i class="bi bi-box-arrow-in-right me-1"></i>Sign in
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- State: invalid token -->
+  <div id="viewInvalid" class="d-none">
+    <div class="card shadow-sm border-0 text-center">
+      <div class="card-body px-4 py-5">
+        <i class="bi bi-x-circle-fill text-danger mb-3" style="font-size:3rem;"></i>
+        <h5 class="fw-semibold mb-2">Link invalid or expired</h5>
+        <p class="text-muted mb-3">
+          This verification link is no longer valid. It may have already been used or expired.<br>
+          Please submit a new registration request.
+        </p>
+        <button class="btn btn-outline-primary btn-sm" onclick="showView('form')">Register again</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="bottomfooter" class="bottomfooter d-flex align-items-center justify-content-between text-white px-3"
+     style="background-color: ${color}; height:34px; border-top:1px solid rgba(255,255,255,0.15);">
+  <div class="footer_simple_title">${footer}</div>
+  <div class="footer_simple_title">
+    <span class="text-white-50">v</span>${version}
+    <span class="text-white-50 small ms-1">(${build})</span>
+  </div>
+</div>
+
+<script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script>
+  /* Theme toggle (same as portal.html) */
+  function ecpdsToggleTheme() {
+    var cur = document.documentElement.getAttribute('data-bs-theme') || 'light';
+    var next = cur === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-bs-theme', next);
+    try { localStorage.setItem('ecpds-theme', next); } catch(e){}
+    document.getElementById('themeIcon').className = next === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-fill';
+  }
+  (function() {
+    var t = localStorage.getItem('ecpds-theme') || 'light';
+    document.getElementById('themeIcon').className = t === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-fill';
+  }());
+
+  /* View switcher */
+  var VIEWS = ['form', 'sent', 'verified', 'activated', 'invalid'];
+  function showView(name) {
+    VIEWS.forEach(function(v) {
+      document.getElementById('view' + v.charAt(0).toUpperCase() + v.slice(1)).classList.toggle('d-none', v !== name);
+    });
+  }
+
+  /* Read ?user= param and pre-fill the hidden field */
+  (function() {
+    var params = new URLSearchParams(window.location.search);
+    var user = params.get('user');
+    var state = params.get('state');
+    if (state === 'verified') {
+      showView('verified');
+      return;
+    } else if (state === 'activated') {
+      showView('activated');
+      return;
+    } else if (state === 'invalid') {
+      showView('invalid');
+      return;
+    }
+    if (user) {
+      document.getElementById('fieldUser').value = user;
+      var display = document.getElementById('userDisplay');
+      display.classList.remove('d-none');
+      document.getElementById('userDisplayText').textContent = user;
+    } else {
+      // No ?user= param: show an error in the form
+      var err = document.getElementById('formError');
+      err.textContent = 'No data user specified. Please use the registration link provided by your administrator.';
+      err.classList.remove('d-none');
+      document.getElementById('btnSubmit').disabled = true;
+    }
+  }());
+
+  /* Form submission */
+  function submitForm() {
+    var user  = document.getElementById('fieldUser').value.trim();
+    var name  = document.getElementById('fieldName').value.trim();
+    var email = document.getElementById('fieldEmail').value.trim();
+    var iso   = document.getElementById('fieldIso').value;
+
+    var errEl = document.getElementById('formError');
+    errEl.classList.add('d-none');
+    errEl.textContent = '';
+
+    if (!user || !name || !email || !iso) {
+      errEl.textContent = 'Please fill in all required fields.';
+      errEl.classList.remove('d-none');
+      return;
+    }
+
+    var btn = document.getElementById('btnSubmit');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Sending…';
+
+    fetch('/ecpds/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user: user, name: name, email: email, iso: iso })
+    })
+    .then(function(r) { return r.json().then(function(j){ return {ok: r.ok, body: j}; }); })
+    .then(function(res) {
+      if (res.ok) {
+        document.getElementById('sentEmail').textContent = email;
+        showView('sent');
+      } else {
+        errEl.textContent = (res.body && res.body.message) ? res.body.message : 'Registration failed. Please try again.';
+        errEl.classList.remove('d-none');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-send me-2"></i>Send Verification Email';
+      }
+    })
+    .catch(function() {
+      errEl.textContent = 'Network error. Please try again.';
+      errEl.classList.remove('d-none');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-send me-2"></i>Send Verification Email';
+    });
+  }
+
+  /* Allow Enter key to submit */
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && document.getElementById('viewForm') &&
+        !document.getElementById('viewForm').classList.contains('d-none')) {
+      submitForm();
+    }
+  });
+</script>
+</body>
+</html>

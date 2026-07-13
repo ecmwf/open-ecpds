@@ -71,6 +71,8 @@ public class IncomingUser extends DataBaseObject {
     /** The inu portal service. */
     protected String INU_PORTAL_SERVICE;
 
+    /** The inu verify token. */
+
     /** The incoming list of connections. */
     protected List<IncomingConnection> connectionsList = new ArrayList<>();
 
