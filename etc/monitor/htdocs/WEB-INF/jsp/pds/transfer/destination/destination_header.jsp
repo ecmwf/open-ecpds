@@ -54,7 +54,7 @@
         <a href='<bean:message key="destination.basepath"/>' class="btn btn-sm btn-outline-secondary" title="All Destinations"><i class="bi bi-arrow-left"></i></a>
         <c:if test="${not empty destination.id}">
         <a id="_destMainPageBtn" href='<bean:message key="destination.basepath"/>/${destination.id}'
-           class="btn btn-sm btn-outline-secondary position-relative" title="Destination Main Page"<c:if test="${destPropErrors}"> data-prop-errors="true"</c:if>><i class="bi bi-house"></i><c:if test="${destPropErrors}"><span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:0.5rem;padding:2px 3px;line-height:1;min-width:0;" title="Properties contain errors"><i class="bi bi-exclamation-circle-fill"></i></span></c:if></a>
+           class="btn btn-sm btn-outline-secondary" title="Destination Main Page"><i class="bi bi-house"></i></a>
         </c:if>
         <div style="border-left:1px solid var(--bs-border-color);height:1.5rem;"></div>
         </auth:then>
@@ -79,10 +79,10 @@
         </auth:if>
         <c:if test="${not empty destination.id}">
         <div class="d-flex gap-1 align-items-center"<c:if test="${_destHasEditGroup}"> style="border-left:1px solid var(--bs-border-color);padding-left:0.5rem;"</c:if>>
-            <auth:if basePathKey="transferhistory.basepath" paths="/">
+            <auth:if basePathKey="destination.basepath" paths="/${destination.id}">
             <auth:then>
             <a href='<bean:message key="destination.basepath"/>/${destination.id}?mode=parameters'
-               class="btn btn-sm btn-outline-secondary" title="Parameters"><i class="bi bi-sliders"></i></a>
+               class="btn btn-sm btn-outline-secondary position-relative" title="Parameters"<c:if test="${destPropErrors}"> data-prop-errors="true"</c:if>><i class="bi bi-sliders"></i><c:if test="${destPropErrors}"><span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:0.5rem;padding:2px 3px;line-height:1;min-width:0;" title="Properties contain errors"><i class="bi bi-exclamation-circle-fill"></i></span></c:if></a>
             </auth:then>
             </auth:if>
             <a href='<bean:message key="destination.basepath"/>/${destination.id}?mode=datausers'

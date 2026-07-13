@@ -328,33 +328,41 @@ var dmfFieldIndex = {};
 </c:forEach>
 
 function dmfDownloadJson() {
-  // Collect current form values (same as dmfCollect but with field metadata)
+  // Build JSON from dmfData (the raw values loaded from the server) and dmfFieldIndex.
+  // This works in both read-only and edit modes, and always includes all fields
+  // (even those with no values yet) grouped by category.
   var result = {
     destination: dmfDestination,
     exportedAt: new Date().toISOString(),
     metadata: {}
   };
 
-  document.querySelectorAll('[id^="dmf-values-"]').forEach(function(container) {
-    var fieldId = parseInt(container.id.replace('dmf-values-',''));
-    var fieldInfo = dmfFieldIndex[fieldId] || {};
-    var fieldType = fieldInfo.type || container.closest('[id^="dmf-group-"]').dataset.type || 'text';
-    var rows = container.querySelectorAll('.dmf-row');
+  Object.keys(dmfFieldIndex).forEach(function(fieldId) {
+    var fieldInfo = dmfFieldIndex[fieldId];
+    var fieldType = fieldInfo.type || 'text';
+    var key = fieldInfo.name || ('field_' + fieldId);
+    var category = fieldInfo.category || 'General';
+    var raw = dmfData[parseInt(fieldId)] || [];
     var values = [];
-    rows.forEach(function(row) {
-      var val = dmfReadInput(row, fieldType);
+    raw.forEach(function(entry) {
+      var val = entry.value;
       if (val && val.trim()) {
-        // For JSON types, try to parse back to object
         if (fieldType === 'contact' || fieldType === 'mail-group' || fieldType === 'switchboard') {
-          try { val = JSON.parse(val); } catch(e) {}
+          try {
+            var obj = JSON.parse(val);
+            // Skip objects where every field is empty
+            if (Object.values(obj).some(function(v) { return v && v.trim(); })) {
+              val = obj;
+            } else {
+              return; // all empty, skip
+            }
+          } catch(e) {}
         }
         values.push(val);
       }
     });
-    if (values.length > 0) {
-      var key = fieldInfo.name || ('field_' + fieldId);
-      result.metadata[key] = values.length === 1 ? values[0] : values;
-    }
+    if (!result.metadata[category]) result.metadata[category] = {};
+    result.metadata[category][key] = values.length === 0 ? null : values.length === 1 ? values[0] : values;
   });
 
   var json = JSON.stringify(result, null, 2);

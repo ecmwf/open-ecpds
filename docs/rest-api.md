@@ -399,11 +399,11 @@ Returns all countries that have at least one destination associated.
 
 ### Destination Metadata
 
-The metadata endpoints allow reading and writing structured metadata fields attached to destinations. Fields are defined globally via the Metadata Field Definitions admin page (`/do/admin/metafields`).
+The metadata endpoints allow reading and writing structured metadata fields attached to destinations. Fields are defined globally via the Metadata Field Definitions admin page (`/do/admin/metafields`). All metadata is grouped by **category** (e.g. `General`, `Contacts`, `Data`, `Storage`, `Documentation`, `Procedures`, `Alerts`) in both GET responses and PUT request bodies.
 
 #### `GET /v1/destination/metadata/fields`
 
-Returns all **active** metadata field definitions (name, label, type, category, etc.).
+Returns all **active** metadata field definitions (name, label, type, category, etc.). Use this as a reference catalogue of all available field names and their types.
 
 **Parameters:** none
 
@@ -416,10 +416,18 @@ Returns all **active** metadata field definitions (name, label, type, category, 
   "fields": [
     {
       "id": 1,
-      "name": "contactEmail",
-      "label": "Contact Email",
-      "type": "email",
-      "category": "Contact Information",
+      "name": "organisationWebPage",
+      "label": "Organisation Web Page",
+      "type": "url",
+      "category": "General",
+      "active": true
+    },
+    {
+      "id": 8,
+      "name": "computerOperations",
+      "label": "Computer Operations",
+      "type": "contact",
+      "category": "Contacts",
       "active": true
     },
     ...
@@ -427,11 +435,25 @@ Returns all **active** metadata field definitions (name, label, type, category, 
 }
 ```
 
+**Field types:**
+
+| Type | Description |
+|---|---|
+| `text` | Plain text |
+| `textarea` | Multi-line text |
+| `url` | URL string |
+| `email` | Email address |
+| `phone` | Phone number |
+| `password` | Stored encrypted |
+| `contact` | JSON object `{"name","email","phone","fax"}` |
+| `mail-group` | JSON object `{"name","email"}` |
+| `switchboard` | JSON object `{"name","phone"}` |
+
 ---
 
 #### `GET /v1/destination/{name}/metadata`
 
-Returns all metadata values for a destination, along with the full field definitions.
+Returns all metadata values for a destination grouped by category. Fields with no value are included as `null`. Multi-value fields (e.g. multiple contacts) are returned as arrays.
 
 **Path parameters:**
 
@@ -446,19 +468,40 @@ Returns all metadata values for a destination, along with the full field definit
 {
   "status": "ok",
   "destination": "hourly_aq",
-  "fields": [ ... ],
-  "values": [
-    { "DMF_ID": 1, "DMV_VALUE": "contact@example.org", "DMV_POSITION": 0 },
-    ...
-  ]
+  "exportedAt": "2026-07-13T09:00:00Z",
+  "metadata": {
+    "General": {
+      "organisationWebPage": "https://www.example.org/",
+      "SADNumber": null,
+      "contractId": null,
+      "generalComments": null
+    },
+    "Contacts": {
+      "computerOperations": [
+        { "name": "Alice Smith", "email": "alice@example.org", "phone": "+44 1234 567890", "fax": null },
+        { "name": "Bob Jones",  "email": "bob@example.org",   "phone": null,               "fax": null }
+      ],
+      "meteorologists": null,
+      "switchboard": { "name": "Switchboard", "phone": "+44 1234 000000" },
+      "mailGroup": { "name": "ops-list", "email": "ops@example.org" }
+    },
+    "Documentation": {
+      "documentationUrl": "https://docs.example.org/"
+    }
+  }
 }
 ```
+
+!!! note
+    Structured field types (`contact`, `mail-group`, `switchboard`) are returned as nested JSON objects rather than raw strings. The exact keys available depend on the field type (see the table under `GET /v1/destination/metadata/fields`).
 
 ---
 
 #### `PUT /v1/destination/{name}/metadata`
 
-Replaces **all** metadata values for a destination with the provided set. Existing values are removed and replaced atomically.
+Replaces **all** metadata values for a destination. Existing values are removed and replaced atomically. The request body must use the same grouped-by-category structure as the GET response — you can GET, modify values, and PUT back without any format transformation.
+
+Fields set to `null` or omitted are skipped (no value stored). Multi-value fields accept either a single value or an array.
 
 **Path parameters:**
 
@@ -470,18 +513,27 @@ Replaces **all** metadata values for a destination with the provided set. Existi
 
 ```json
 {
-  "values": [
-    { "DMF_ID": 1, "DMV_VALUE": "contact@example.org", "DMV_POSITION": 0 },
-    { "DMF_ID": 3, "DMV_VALUE": "https://example.org", "DMV_POSITION": 0 }
-  ]
+  "metadata": {
+    "General": {
+      "organisationWebPage": "https://www.example.org/",
+      "generalComments": "Updated via REST API"
+    },
+    "Contacts": {
+      "computerOperations": [
+        { "name": "Alice Smith", "email": "alice@example.org", "phone": "+44 1234 567890" },
+        { "name": "Bob Jones",   "email": "bob@example.org" }
+      ],
+      "mailGroup": { "name": "ops-list", "email": "ops@example.org" }
+    }
+  }
 }
 ```
 
 | Body field | Type | Description |
 |---|---|---|
-| `DMF_ID` | integer | The metadata field definition ID (from `/v1/destination/metadata/fields`) |
-| `DMV_VALUE` | string | The value to store |
-| `DMV_POSITION` | integer | Position index for multi-value fields (0-based) |
+| `metadata` | object | Required. Top-level object keyed by category name |
+| `metadata.<category>` | object | Field name → value mapping for that category |
+| `metadata.<category>.<fieldName>` | string / object / array / null | Value(s) for the field. Use field names from `/v1/destination/metadata/fields`. Structured types (`contact` etc.) are JSON objects. Multi-value fields accept an array. `null` means no value. |
 
 **Service name:** `setDestinationMetaValues`
 
@@ -490,9 +542,12 @@ Replaces **all** metadata values for a destination with the provided set. Existi
 {
   "status": "ok",
   "destination": "hourly_aq",
-  "count": 2
+  "count": 3
 }
 ```
+
+!!! tip "Round-trip workflow"
+    The simplest way to update metadata is: `GET` the current values, edit the returned `metadata` object, then `PUT` it back. The format is identical in both directions.
 
 ---
 

@@ -414,7 +414,10 @@ public final class ECpdsRESTV1 {
     }
 
     /**
-     * GET /v1/destination/{name}/metadata Returns all metadata values for a destination along with field definitions.
+     * GET /v1/destination/{name}/metadata Returns all metadata values for a destination grouped by category, matching
+     * the structure of the UI JSON export. Each category contains field names mapped to their value(s); fields with no
+     * value are included as null. Multi-value fields are returned as arrays. Structured types (contact, mail-group,
+     * switchboard) are parsed from JSON to nested objects.
      *
      * @param authString
      *            the auth string
@@ -434,11 +437,60 @@ public final class ECpdsRESTV1 {
         try {
             final var userNameAndPassword = _getUserNameAndPassword(authString, request);
             _checkParameter("name", name);
+            final var fields = MasterManager.getDB().getDestinationMetaFields(userNameAndPassword);
+            final var rawValues = MasterManager.getDB().getDestinationMetaValuesByDestination(userNameAndPassword,
+                    name);
+            // Build fieldId → list of values map
+            final var valuesByField = new java.util.LinkedHashMap<Integer, java.util.List<String>>();
+            for (final var v : rawValues) {
+                valuesByField.computeIfAbsent(v.getFieldId(), _ -> new java.util.ArrayList<>()).add(v.getValue());
+            }
+            // Build grouped structure: category → { fieldName → value/array/null }
+            final var STRUCTURED = java.util.Set.of("contact", "mail-group", "switchboard");
+            final var metadata = new java.util.LinkedHashMap<String, java.util.LinkedHashMap<String, Object>>();
+            for (final var f : fields) {
+                final var category = f.getCategory() != null ? f.getCategory() : "General";
+                final var group = metadata.computeIfAbsent(category,
+                        _ -> new java.util.LinkedHashMap<String, Object>());
+                final var rawList = valuesByField.getOrDefault(f.getId(), java.util.List.of());
+                final var parsed = new java.util.ArrayList<Object>();
+                for (final var raw : rawList) {
+                    if (raw == null || raw.isBlank()) {
+                        continue;
+                    }
+                    if (STRUCTURED.contains(f.getType())) {
+                        try {
+                            final var obj = new com.fasterxml.jackson.databind.ObjectMapper().readTree(raw);
+                            // Skip objects where every field is null/blank
+                            final var hasContent = new boolean[] { false };
+                            obj.fields().forEachRemaining(e -> {
+                                if (e.getValue() != null && !e.getValue().isNull()
+                                        && !e.getValue().asText().isBlank()) {
+                                    hasContent[0] = true;
+                                }
+                            });
+                            if (hasContent[0]) {
+                                parsed.add(obj);
+                            }
+                        } catch (final Exception ignored) {
+                            parsed.add(raw);
+                        }
+                    } else {
+                        parsed.add(raw);
+                    }
+                }
+                if (parsed.isEmpty()) {
+                    group.put(f.getName(), null);
+                } else if (parsed.size() == 1) {
+                    group.put(f.getName(), parsed.get(0));
+                } else {
+                    group.put(f.getName(), parsed);
+                }
+            }
             final var message = RESTMessage.getSuccessMessage();
             message.put("destination", name);
-            message.put("fields", MasterManager.getDB().getDestinationMetaFields(userNameAndPassword));
-            message.put("values",
-                    MasterManager.getDB().getDestinationMetaValuesByDestination(userNameAndPassword, name));
+            message.put("exportedAt", java.time.Instant.now().toString());
+            message.put("metadata", metadata);
             return message.getResponse();
         } catch (final WebApplicationException w) {
             _log.warn("destinationMetadata", w);
@@ -450,8 +502,13 @@ public final class ECpdsRESTV1 {
     }
 
     /**
-     * PUT /v1/destination/{name}/metadata Replace all metadata values for a destination with the provided JSON body.
-     * Body: { "values": [ { "DMF_ID": 1, "DMV_VALUE": "...", "DMV_POSITION": 0 }, ... ] }
+     * PUT /v1/destination/{name}/metadata Replace all metadata values for a destination.
+     *
+     * <p>
+     * Body (grouped format, matching the GET response):
+     * {@code {"metadata":{"General":{"organisationWebPage":"..."},"Contacts":{"computerOperations":[{"name":"...","email":"..."}]}}}}
+     * Field names are resolved to IDs via the DB field definitions. Null or missing fields are skipped (no value
+     * stored).
      *
      * @param authString
      *            the auth string
@@ -475,25 +532,61 @@ public final class ECpdsRESTV1 {
         try {
             final var userNameAndPassword = _getUserNameAndPassword(authString, request);
             _checkParameter("name", name);
+            final var user = userNameAndPassword.split(":")[0];
             @SuppressWarnings("unchecked")
-            final var rawValues = (java.util.List<Map<String, Object>>) body.get("values");
-            if (rawValues == null) {
-                throw new IllegalArgumentException("Missing 'values' in request body");
+            final var grouped = (Map<String, Object>) body.get("metadata");
+            if (grouped == null) {
+                throw new IllegalArgumentException("Request body must contain a 'metadata' object grouped by category");
             }
+            final var fieldByName = new java.util.HashMap<String, ecmwf.common.database.DestinationMetaField>();
+            for (final var f : MasterManager.getDB().getDestinationMetaFields(userNameAndPassword)) {
+                fieldByName.put(f.getName(), f);
+            }
+            final var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
             final var values = new java.util.ArrayList<ecmwf.common.database.DestinationMetaValue>();
-            for (final var m : rawValues) {
-                final var v = new ecmwf.common.database.DestinationMetaValue();
-                v.setFieldId(Integer.parseInt(String.valueOf(m.get("DMF_ID"))));
-                final var val = m.get("DMV_VALUE");
-                v.setValue(val != null ? String.valueOf(val) : null);
-                final var pos = m.get("DMV_POSITION");
-                if (pos != null) {
-                    v.setPosition(Integer.parseInt(String.valueOf(pos)));
+            for (final var categoryEntry : grouped.entrySet()) {
+                @SuppressWarnings("unchecked")
+                final var fieldMap = (Map<String, Object>) categoryEntry.getValue();
+                if (fieldMap == null) {
+                    continue;
                 }
-                v.setBy(userNameAndPassword.split(":")[0]);
-                values.add(v);
+                for (final var fieldEntry : fieldMap.entrySet()) {
+                    final var fieldName = fieldEntry.getKey();
+                    final var fieldDef = fieldByName.get(fieldName);
+                    if (fieldDef == null) {
+                        _log.warn("setDestinationMetadata: unknown field name '{}', skipping", fieldName);
+                        continue;
+                    }
+                    final var raw = fieldEntry.getValue();
+                    if (raw == null) {
+                        continue;
+                    }
+                    final var items = raw instanceof java.util.List ? (java.util.List<?>) raw : java.util.List.of(raw);
+                    var pos = 0;
+                    for (final var item : items) {
+                        if (item == null) {
+                            continue;
+                        }
+                        final String strVal = item instanceof String ? ((String) item).trim()
+                                : mapper.writeValueAsString(item);
+                        if (strVal.isBlank()) {
+                            continue;
+                        }
+                        final var v = new ecmwf.common.database.DestinationMetaValue();
+                        v.setFieldId(fieldDef.getId());
+                        v.setValue(strVal);
+                        v.setPosition(pos++);
+                        v.setBy(user);
+                        values.add(v);
+                    }
+                }
             }
             MasterManager.getDB().setDestinationMetaValues(userNameAndPassword, name, values);
+            try {
+                MasterManager.getMI().refreshContactsCache();
+            } catch (final Exception ex) {
+                _log.warn("setDestinationMetadata: could not refresh contacts cache", ex);
+            }
             final var message = RESTMessage.getSuccessMessage();
             message.put("destination", name);
             message.put("count", values.size());

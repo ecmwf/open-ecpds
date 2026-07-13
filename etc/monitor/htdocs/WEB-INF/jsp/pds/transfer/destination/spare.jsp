@@ -35,7 +35,7 @@
 <table class="spareBox2">
     <tr>
         <th>
-            <a title="${destination.id} (${destination.formattedStatus})" href='<bean:message key="destination.basepath"/>/${destination.id}' style="display:inline-flex;align-items:center;gap:0.3rem;">Destination<c:if test="${destPropErrors}"><span class="badge bg-danger" style="font-size:0.6rem;padding:2px 4px;line-height:1;" title="Properties contain errors"><i class="bi bi-exclamation-circle-fill"></i></span></c:if></a>
+            <a title="${destination.id} (${destination.formattedStatus})" href='<bean:message key="destination.basepath"/>/${destination.id}'>Destination</a>
         </th>
     </tr>
     <tr><td style="padding:1px 32px 1px 22px;"><hr style="margin:1px 0;opacity:0.15;border-top:1px solid currentColor;"/></td></tr>
@@ -51,9 +51,9 @@
     </auth:then>
     </auth:if>
 
-    <auth:if basePathKey="transferhistory.basepath" paths="/">
+    <auth:if basePathKey="destination.basepath" paths="/${destination.id}">
         <auth:then>
-            <tr><td><a href='<bean:message key="destination.basepath"/>/${destination.id}?mode=parameters'><i class="bi bi-sliders sidebar-icon"></i> Parameters</a></td></tr>
+            <tr><td><a href='<bean:message key="destination.basepath"/>/${destination.id}?mode=parameters' style="display:inline-flex;align-items:center;gap:0.3rem;"><i class="bi bi-sliders sidebar-icon"></i> Parameters<c:if test="${destPropErrors}"><span class="badge bg-danger" style="font-size:0.6rem;padding:2px 4px;line-height:1;" title="Properties contain errors"><i class="bi bi-exclamation-circle-fill"></i></span></c:if></a></td></tr>
         </auth:then>
     </auth:if>
 
