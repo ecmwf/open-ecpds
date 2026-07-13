@@ -100,6 +100,12 @@ public class ImportDestinationMetaDataAction extends PDSAction {
                 db.setDestinationMetaValues(destinationName, values);
                 request.setAttribute("importDone", true);
                 request.setAttribute("importCount", values.size());
+                // Invalidate the contacts cache so email searches reflect the new data immediately
+                try {
+                    MasterManager.getMI().refreshContactsCache();
+                } catch (final Exception ex) {
+                    _log.warn("ImportDestinationMetaDataAction: could not refresh contacts cache", ex);
+                }
             } else {
                 request.setAttribute("importPreview", preview);
             }

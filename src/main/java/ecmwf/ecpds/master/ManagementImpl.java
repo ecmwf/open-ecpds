@@ -176,6 +176,19 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
+     * Forces the contacts cache to reload on next access.
+     */
+    @Override
+    public void refreshContactsCache() {
+        synchronized (contactsCache) {
+            contactsCacheLastUpdate = -1;
+        }
+        _log.debug("refreshContactsCache: contacts cache invalidated");
+    }
+
+    /**
      * Gets the destination names for contact.
      *
      * Get the destination names which follow the provided rules for the email addresses in their contacts!
@@ -225,9 +238,7 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     private static boolean matchesRule(final Map.Entry<String, String> operator, final String email,
             final boolean caseSensitive) throws IOException {
         if ("=".equals(operator.getKey())) {
-            final var value = caseSensitive ? operator.getValue() : operator.getValue().toLowerCase();
-            final var mail = caseSensitive ? email : email.toLowerCase();
-            return matchesPattern(value, mail);
+            return matchesPattern(operator.getValue(), email, caseSensitive);
         }
         // Operator not recognized or allowed!
         throw new IOException("Only operator '=' is allowed for rule 'email'");
@@ -237,15 +248,31 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
      * Matches pattern.
      *
      * @param pattern
-     *            the pattern
+     *            the pattern (supports * and ? wildcards; all other regex metacharacters are treated as literals)
      * @param email
      *            the email
+     * @param caseSensitive
+     *            whether matching is case-sensitive
      *
      * @return true, if successful
      */
-    private static boolean matchesPattern(final String pattern, final String email) {
-        return Pattern.compile(pattern.replace(".", "\\.").replace("_", ".").replace("%", ".*")).matcher(email)
-                .matches();
+    private static boolean matchesPattern(final String pattern, final String email, final boolean caseSensitive) {
+        // Only * (any chars) and ? (one char) are supported as wildcards; all other
+        // regex metacharacters in the pattern are treated as literals.
+        // % and _ are accepted as SQL-LIKE aliases for * and ? respectively.
+        final var sb = new StringBuilder();
+        for (var i = 0; i < pattern.length(); i++) {
+            final var c = pattern.charAt(i);
+            if (c == '*' || c == '%') {
+                sb.append(".*");
+            } else if (c == '?' || c == '_') {
+                sb.append('.');
+            } else {
+                sb.append(Pattern.quote(String.valueOf(c)));
+            }
+        }
+        final int flags = caseSensitive ? 0 : Pattern.CASE_INSENSITIVE;
+        return Pattern.compile(sb.toString(), flags).matcher(email).matches();
     }
 
     /**

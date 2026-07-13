@@ -108,6 +108,12 @@ public class BulkImportDestinationMetaDataAction extends PDSAction {
                 request.setAttribute("importDone", true);
                 request.setAttribute("importedDests", importedDests);
                 request.setAttribute("importedValues", importedValues);
+                // Invalidate the contacts cache so email searches reflect the new data immediately
+                try {
+                    MasterManager.getMI().refreshContactsCache();
+                } catch (final Exception ex) {
+                    _log.warn("BulkImportDestinationMetaDataAction: could not refresh contacts cache", ex);
+                }
             } else {
                 // Build a lightweight summary list for the preview (no raw values sent to JSP)
                 final var destSummary = new ArrayList<java.util.Map<String, Object>>();

@@ -86,6 +86,12 @@ public class SaveDestinationMetaDataAction extends PDSAction {
                 }
             }
             MasterManager.getDB().setDestinationMetaValues(destinationName, values);
+            // Invalidate contacts cache so email searches see the updated data immediately
+            try {
+                MasterManager.getMI().refreshContactsCache();
+            } catch (final Exception ex) {
+                _log.warn("SaveDestinationMetaDataAction: could not refresh contacts cache", ex);
+            }
             response.getWriter().write("{\"success\":true}");
         } catch (final Exception e) {
             _log.warn("SaveDestinationMetaDataAction", e);

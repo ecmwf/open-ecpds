@@ -103,6 +103,14 @@ public interface ManagementInterface extends Remote {
     Map<String, String> getContacts() throws MasterException, IOException;
 
     /**
+     * Forces the contacts cache to reload on next access (e.g. after a metadata import).
+     *
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    void refreshContactsCache() throws java.rmi.RemoteException;
+
+    /**
      * Gets the destination caches.
      *
      * @return the destination caches

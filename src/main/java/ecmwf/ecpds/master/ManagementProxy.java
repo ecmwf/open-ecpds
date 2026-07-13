@@ -122,6 +122,20 @@ final class ManagementProxy implements ManagementInterface {
     /**
      * {@inheritDoc}
      *
+     * Invalidates the server-side contacts cache and resets the local proxy timestamp so the next call to
+     * {@link #getContacts()} re-fetches from the master.
+     */
+    @Override
+    public void refreshContactsCache() throws java.rmi.RemoteException {
+        final var monitor = new MonitorCall("refreshContactsCache()");
+        managementInterface.refreshContactsCache();
+        contactsUpdate.set(-1); // force proxy to re-fetch on next getContacts()
+        monitor.done();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * Gets the destination caches.
      */
     @Override
