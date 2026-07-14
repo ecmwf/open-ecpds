@@ -87,9 +87,9 @@ portal.corsAllowOrigin = "*"
 
 ```properties
 portal.headerRegistry = "
-  (== {*.grib}) Content-Type=application/grib
-  (== {*.nc}) Content-Type=application/x-netcdf
-  (.= {*.zarr}) Content-Type=application/octet-stream
+(== {*.grib}) Content-Type=application/grib
+(== {*.nc}) Content-Type=application/x-netcdf
+(.= {*.zarr}) Content-Type=application/octet-stream
 "
 ```
 

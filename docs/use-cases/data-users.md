@@ -78,27 +78,88 @@ WMO WIS2 datasets).
 
 ---
 
-### Self-Service *(coming soon)*
+### Self-Service
 
 !!! note ""
-    :material-account-plus: **Visitors register via email**
+    :material-account-plus: **Visitors register themselves via email verification**
 
-Visitors register themselves by providing their email address. OpenECPDS sends them
-generated credentials by email, which they then use to log in. The administrator can
-view, enable, disable, or delete registered users in the monitoring interface.
+Anyone can request access by filling in a registration form. OpenECPDS sends them a
+verification email; once they click the link their credentials are activated and emailed
+to them. They then log in using the **Data User's login name** as the username and their
+own personal, auto-generated password.
 
-- No manual provisioning required — users self-enroll
-- Credentials are unique per registrant
-- Provides an audit trail of who has accessed the data
-- Administrators can revoke access per individual
+All configuration of the Data User (destinations, permissions, portal options) applies
+equally to every registered subscriber — you configure it once and all subscribers
+inherit it automatically.
+
+#### How it works end-to-end
+
+1. **Administrator** sets the Portal Service to **Self-Service** on the Data User and
+   enables registration in `ecmwf.properties`:
+   ```properties
+   registrationEnabled=true
+   registrationAutoApprove=true        # activate on email click (recommended for testing)
+   registrationAdminEmail=you@org.com  # optional: notify an admin on each new registration
+   ```
+2. **Administrator** shares the registration link. When logged into the data portal as
+   the Self-Service Data User, the username menu (top-right) shows a
+   **Share registration link** item which opens:
+   ```
+   https://<portal-host>/ecpds/register?user=<data-login>
+   ```
+3. **Visitor** fills in the form (name, email address, country) and clicks
+   **Send Verification Email**.
+4. OpenECPDS creates an inactive **subscriber record** in the `PORTAL_SUBSCRIBER` table,
+   generates a unique verification token and a random 12-character password, and sends
+   the visitor a verification email.
+5. **Visitor** clicks the link in the email (`/ecpds/verify?token=…`).
+   - If `registrationAutoApprove=true` → subscriber is immediately activated and receives
+     a second email containing their login credentials (username + personal password).
+   - If `registrationAutoApprove=false` → the administrator is notified and must manually
+     activate the subscriber in the admin interface before credentials are sent.
+6. **Visitor** logs into the data portal using:
+   - **Username:** the Data User's login (e.g. `myorg_data`)
+   - **Password:** their personal auto-generated password
+
+#### Subscriber table (`PORTAL_SUBSCRIBER`)
+
+Each registrant is stored as an independent row:
+
+| Column | Description |
+|---|---|
+| `PSB_INU_ID` | The Data User this subscriber belongs to |
+| `PSB_EMAIL` | Subscriber's email (also their identifier; unique per Data User) |
+| `PSB_NAME` | Full name provided at registration |
+| `PSB_ISO` | Two-letter country code |
+| `PSB_PASSWORD` | Auto-generated personal password (plain text, stored server-side) |
+| `PSB_ACTIVE` | `1` = active (can log in), `0` = pending verification or disabled |
+| `PSB_VERIFY_TOKEN` | Token sent in the verification email; cleared on activation |
+| `PSB_CREATED_TIME` | Epoch-millisecond registration timestamp |
+
+#### Configuration reference (`ecmwf.properties` `[DataPortal]` section)
+
+| Property | Default | Description |
+|---|---|---|
+| `registrationEnabled` | `false` | Show the *Share registration link* item in the portal menu |
+| `registrationAutoApprove` | `false` | Activate subscriber immediately when they verify their email |
+| `registrationAdminEmail` | *(empty)* | Email address to notify on each new registration or activation |
+
+#### Testing without email
+
+To test the flow without a live mail server, fetch the token directly from the database
+and call the verify endpoint manually:
+
+```sql
+SELECT PSB_EMAIL, PSB_PASSWORD, PSB_VERIFY_TOKEN, PSB_ACTIVE
+FROM PORTAL_SUBSCRIBER
+WHERE PSB_INU_ID = 'myorg_data';
+```
+
+Then open `https://<portal-host>/ecpds/verify?token=<PSB_VERIFY_TOKEN>` in a browser.
 
 **Use when:** the audience is too large or dynamic to provision manually, but you still
-want to know who is accessing the data (unlike Open Access).
-
-!!! note
-    The full Self-Service registration flow (email sending, registration page, admin UI)
-    is under active development. The `self-service` mode value can already be set on a
-    Data User in preparation.
+want to know who is accessing the data and be able to revoke individual access — unlike
+Open Access which is fully anonymous.
 
 ---
 
